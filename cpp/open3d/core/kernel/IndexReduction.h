@@ -14,12 +14,21 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-void IndexSum_(const Tensor& index, const Tensor& src, Tensor& dst);
+void IndexAdd_(int64_t dim,
+               const Tensor& index,
+               const Tensor& src,
+               Tensor& dst);
 
-void IndexSumCPU_(const Tensor& index, const Tensor& src, Tensor& dst);
+void IndexAddCPU_(int64_t dim,
+                  const Tensor& index,
+                  const Tensor& src,
+                  Tensor& dst);
 
 #ifdef BUILD_CUDA_MODULE
-void IndexSumCUDA_(const Tensor& index, const Tensor& src, Tensor& dst);
+void IndexAddCUDA_(int64_t dim,
+                   const Tensor& index,
+                   const Tensor& src,
+                   Tensor& dst);
 #endif
 
 }  // namespace kernel

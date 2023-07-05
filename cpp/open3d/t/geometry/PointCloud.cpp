@@ -305,18 +305,25 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
 
     auto index_count =
             core::Tensor::Zeros({num_points_down}, core::Float32, device_);
-    index_count.IndexSum_(
-            origin2down_indices,
+    index_count.IndexAdd_(
+            0, origin2down_indices,
             core::Tensor::Ones({num_points}, core::Float32, device_));
     // utility::LogInfo("indices = {}", origin2down_indices.ToString());
     utility::LogInfo("index_count = {}", index_count.ToString());
 
     for (auto &kv : point_attr_) {
-        auto down_attr = core::Tensor::Zeros({num_points_down, 3},
-                                             kv.second.GetDtype(), device_);
+        utility::LogInfo("key: {}, shape {}", kv.first, kv.second.GetShape());
+        // TODO: strict checks
+
+        auto attr_dtype = kv.second.GetDtype();
+        auto down_attr =
+                core::Tensor::Zeros({num_points_down, kv.second.GetShape(1)},
+                                    core::Float32, device_);
         if (reduction == "mean") {
-            down_attr.IndexSum_(origin2down_indices, kv.second);
-            down_attr /= index_count;
+            down_attr.IndexAdd_(0, origin2down_indices,
+                                kv.second.To(core::Float32));
+            down_attr /= index_count.View({-1, 1});
+            down_attr = down_attr.To(attr_dtype);
         }
         pcd_down.SetPointAttr(kv.first, down_attr);
     }

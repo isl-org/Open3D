@@ -583,10 +583,7 @@ public:
     /// self[index[i]] = operator(self[index[i]], src[i])
     ///
     /// Note: Only support 1D index and src tensors now.
-    void IndexAdd_(const Tensor& index, const Tensor& src);
-    void IndexSum_(const Tensor& index, const Tensor& src);
-    void IndexMax_(const Tensor& index, const Tensor& src);
-    void IndexMin_(const Tensor& index, const Tensor& src);
+    void IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src);
 
     /// \brief Permute (dimension shuffle) the Tensor, returns a view.
     ///

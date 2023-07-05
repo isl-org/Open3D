@@ -13,16 +13,44 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-void IndexSum_(const Tensor& index, const Tensor& src, Tensor& dst) {
+void IndexAdd_(int64_t dim,
+               const Tensor& index,
+               const Tensor& src,
+               Tensor& dst) {
+    SizeVector permute = {};
+    SizeVector reverse_permute = {};
+    for (int64_t d = 0; d <= dim; ++d) {
+        if (d == 0) {
+            permute.push_back(dim);
+        } else {
+            permute.push_back(d - 1);
+        }
+        if (d == dim) {
+            reverse_permute.push_back(0);
+        } else {
+            reverse_permute.push_back(d + 1);
+        }
+    }
+    for (int64_t d = dim + 1; d < src.NumDims(); ++d) {
+        permute.push_back(d);
+        reverse_permute.push_back(d);
+    }
+
+    auto src_permute = src.Permute(permute);
+    auto dst_permute = dst.Permute(permute);
+
     if (dst.IsCPU()) {
-        IndexSumCPU_(index, src, dst);
-    } else if (src.IsCUDA()) {
+        IndexAddCPU_(dim, index, src_permute, dst_permute);
+    } else if (dst.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
-        IndexSumCUDA_(index, src, dst);
+        IndexAddCUDA_(dim, index, src_permute, dst_permute);
 #endif
     } else {
-        utility::LogError("IndexSum_: Unimplemented device");
+        utility::LogError("IndexAdd_: Unimplemented device");
     }
+
+    // Not sure if it is necessary
+    dst = dst_permute.Permute(reverse_permute);
 }
 
 }  // namespace kernel

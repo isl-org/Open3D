@@ -956,23 +956,46 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 }
 
-void Tensor::IndexAdd_(const Tensor& index, const Tensor& src) {}
-
-void Tensor::IndexSum_(const Tensor& index, const Tensor& src) {
-    if (NumDims() != 1 || index.NumDims() != 1 || src.NumDims() != 1) {
-        utility::LogError("IndexSum_ only supports 1D tensors.");
+void Tensor::IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src) {
+    if (index.NumDims() != 1) {
+        utility::LogError("IndexAdd_ only supports 1D index tensors.");
     }
 
+    // dim check
+    if (dim < 0) {
+        utility::LogError("IndexAdd_ only supports sum at non-negative dim.");
+    }
+    if (NumDims() <= dim) {
+        utility::LogError("Sum dim {} exceeds tensor dim {}.", dim, NumDims());
+    }
+
+    // shape check
+    if (src.NumDims() != NumDims()) {
+        utility::LogError(
+                "IndexAdd_ only supports src tensor with same dimension as "
+                "this tensor.");
+    }
+
+    utility::LogInfo("src shape = {}, dst_shape = {}", src.GetShape(),
+                     GetShape());
+    for (int64_t d = 0; d < NumDims(); ++d) {
+        if (d != dim && src.GetShape(d) != GetShape(d)) {
+            utility::LogError(
+                    "IndexAdd_ only supports src tensor with same shape as "
+                    "this "
+                    "tensor except dim {}.",
+                    dim);
+        }
+    }
+
+    // type check
     AssertTensorDtype(index, core::Int64);
-    AssertTensorShape(index, src.GetShape());
     AssertTensorDtype(*this, src.GetDtype());
 
-    kernel::IndexSum_(index, src, *this);
+    // Call
+    // Permute dim to the 1st dim for reduction
+    kernel::IndexAdd_(dim, index, src, *this);
 }
-
-void Tensor::IndexMin_(const Tensor& index, const Tensor& src) {}
-
-void Tensor::IndexMax_(const Tensor& index, const Tensor& src) {}
 
 Tensor Tensor::Permute(const SizeVector& dims) const {
     // Check dimension size
