@@ -27,75 +27,33 @@ void LaunchIndexReductionKernel(int64_t dim,
     OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
     // index: [N,], src: [N, D], dst: [M, D]
-    core::Tensor reshaped_index = index;
-    if (src.NumDims() > 1) {
-        reshaped_index = reshaped_index.View({-1, 1});
-    }
-    Indexer indexer({reshaped_index.View({-1}), src.View({-1})}, dst.View({-1}),
-                    DtypePolicy::NONE);
-    utility::LogInfo("dst ptr = {}", dst.GetDataPtr());
+    // In Indexer, output shape defines the actual master strides.
+    // However, in IndexAdd_, input dominates the iterations.
+    // So put dst (output) at indexer's input, and src (input) at output.
+    Indexer indexer({dst}, src, DtypePolicy::NONE);
+
+    // Index is simply a 1D contiguous tensor, with a different stride
+    // behavior to src. So use raw pointer for simplicity.
+    auto index_ptr = index.GetDataPtr<int64_t>();
 
     int64_t broadcasting_elems = 1;
     for (int64_t d = 1; d < src.NumDims(); ++d) {
         broadcasting_elems *= src.GetShape(d);
     }
-
-    std::cout << "Master shape: \n";
-    for (int i = 0; i < indexer.NumDims(); ++i) {
-        std::cout << indexer.GetMasterShape()[i] << " ";
-    }
-    std::cout << "\n";
-
-    std::cout << "Master stride: \n";
-    for (int i = 0; i < indexer.NumDims(); ++i) {
-        std::cout << indexer.GetMasterStrides()[i] << " ";
-    }
-    std::cout << "\n";
-
-    // TensorRef index_tr = indexer.GetInput(0);
-    // std::cout << "index_tr shape: \n";
-    // for (int i = 0; i < index_tr.ndims_; ++i) {
-    //     std::cout << index_tr.shape_[i] << " ";
-    // }
-    // std::cout << "\n";
-
-    // TensorRef src_tr = indexer.GetInput(1);
-    // std::cout << "src_tr shape: \n";
-    // for (int i = 0; i < src_tr.ndims_; ++i) {
-    //     std::cout << src_tr.shape_[i] << " ";
-    // }
-    // std::cout << "\n";
-
-    // TensorRef dst_tr = indexer.GetOutput(0);
-    // std::cout << "dst_tr shape: \n";
-    // for (int i = 0; i < dst_tr.ndims_; ++i) {
-    //     std::cout << dst_tr.shape_[i] << " ";
-    // }
-    // std::cout << "\n";
-
-    utility::LogInfo("broadcasting_elems: {}, index length: {}",
-                     broadcasting_elems, reshaped_index.GetLength());
-
     auto element_func = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
         int reduction_idx = workload_idx / broadcasting_elems;
         int broadcasting_idx = workload_idx % broadcasting_elems;
 
-        const int64_t idx = *(indexer.GetInputPtr<int64_t>(0, reduction_idx));
-        int64_t output_idx = idx * broadcasting_elems + broadcasting_idx;
-        // printf("output_idx: %ld, output_ptr %p\n", output_idx,
-        //        indexer.GetOutputPtr(output_idx));
-        // printf("workload idx: %ld reduction idx: %d broadcasting idx: %d idx:
-        // "
-        //        "%ld output_idx: %ld\n",
-        //        workload_idx, reduction_idx, broadcasting_idx, idx,
-        //        output_idx);
+        const int64_t idx = index_ptr[reduction_idx];
+        int64_t dst_idx = idx * broadcasting_elems + broadcasting_idx;
 
-        element_kernel(indexer.GetInputPtr(1, workload_idx),
-                       indexer.GetOutputPtr(output_idx));
+        void* src_ptr = indexer.GetOutputPtr(0, workload_idx);
+        void* dst_ptr = indexer.GetInputPtr(0, dst_idx);
+        // Note input and output is switched here to adapt to the indexer
+        element_kernel(src_ptr, dst_ptr);
     };
 
-    ParallelFor(device, reshaped_index.GetLength() * broadcasting_elems,
-                element_func);
+    ParallelFor(device, indexer.NumWorkloads(), element_func);
     OPEN3D_GET_LAST_CUDA_ERROR("LaunchIndexReductionKernel failed.");
     utility::LogInfo("LaunchIndexReductionKernel done, dst = {}",
                      dst.ToString());
