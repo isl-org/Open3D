@@ -244,8 +244,8 @@ build_pip_package() {
 
     echo "Packaging Open3D full pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
-    mv open3d*.whl lib/python_package/pip_package/   # restore CPU wheel
-    popd # PWD=Open3D
+    mv open3d*.whl lib/python_package/pip_package/ # restore CPU wheel
+    popd                                           # PWD=Open3D
 }
 
 # Test wheel in blank virtual environment
@@ -464,10 +464,13 @@ build_docs() {
 }
 
 maximize_ubuntu_github_actions_build_space() {
-    df -h
-    $SUDO rm -rf /usr/share/dotnet
-    $SUDO rm -rf /usr/local/lib/android
-    $SUDO rm -rf /opt/ghc
+    # https://github.com/easimon/maximize-build-space/blob/master/action.yml
+    df -h .                                  # => 26GB
+    $SUDO rm -rf /usr/share/dotnet           # ~17GB
+    $SUDO rm -rf /usr/local/lib/android      # ~11GB
+    $SUDO rm -rf /opt/ghc                    # ~2.7GB
+    $SUDO rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+    $SUDO docker image prune --all --force   # ~4.5GB
     $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
-    df -h
+    df -h . # => 53GB
 }
