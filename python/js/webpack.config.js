@@ -30,7 +30,7 @@ module.exports = (env, argv) => {
       // This bundle contains the implementation for the custom widget views and
       // custom widget.
       // It must be an amd module
-      entry: ['./amd-public-path.js', './lib/index.js'],
+      entry: ["./amd-public-path.js", "./lib/index.js"],
       output: {
         filename: "index.js",
         path: path.resolve(__dirname, "..", "open3d", "nbextension"),
@@ -41,8 +41,8 @@ module.exports = (env, argv) => {
       module: {
         rules: rules,
       },
-      // 'module' is the magic requirejs dependency used to set the publicPath
-      externals: ['@jupyter-widgets/base', 'module']
+      // "module" is the magic requirejs dependency used to set the publicPath
+      externals: ["@jupyter-widgets/base", "module"]
     },
     {
       // Embeddable open3d bundle
@@ -54,19 +54,19 @@ module.exports = (env, argv) => {
       //
       // The target bundle is always `dist/index.js`, which is the path
       // required by the custom widget embedder.
-      entry: ['./amd-public-path.js', './lib/index.js'],
+      entry: ["./amd-public-path.js", "./lib/index.js"],
       output: {
         filename: "index.js",
         path: path.resolve(__dirname, "dist"),
         libraryTarget: "amd",
-        publicPath: '', // Set in amd-public-path.js
+        publicPath: "", // Set in amd-public-path.js
       },
       devtool,
       module: {
         rules: rules,
       },
-      // 'module' is the magic requirejs dependency used to set the publicPath
-      externals: ['@jupyter-widgets/base', 'module']
+      // "module" is the magic requirejs dependency used to set the publicPath
+      externals: ["@jupyter-widgets/base", "module"]
     },
   ];
 };

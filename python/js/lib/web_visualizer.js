@@ -99,7 +99,7 @@ class WebVisualizerView extends widgets.DOMWidgetView {
       json_result
     );
     return json_result;
-  };
+  }
 
   commsCall(url, data = {}) {
     // https://stackoverflow.com/a/736970/1255535
