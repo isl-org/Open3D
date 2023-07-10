@@ -1,8 +1,8 @@
 {
   "name": "open3d",
   "version": "@PROJECT_VERSION_THREE_NUMBER@",
-  "description": "Open3D: A Modern Library for 3D Data Processing",
-  "author": "Open3D.org",
+  "description": "@PROJECT_DESCRIPTION@",
+  "author": "@PROJECT_EMAIL@",
   "main": "lib/index.js",
   "repository": {
     "type": "git",
@@ -36,7 +36,7 @@
     "rimraf": "^2.6.1"
   },
   "dependencies": {
-    "@jupyter-widgets/base": "^1.1 || ^2 || ^3 || ^4",
+    "@jupyter-widgets/base": "^2 || ^3 || ^4 || ^5 || ^6",
     "lodash": "^4.17.4",
     "webrtc-adapter": "^4.2.2"
   },

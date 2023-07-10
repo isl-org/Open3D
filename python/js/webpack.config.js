@@ -16,13 +16,11 @@ module.exports = (env, argv) => {
       // some configuration for requirejs, and provides the legacy
       // "load_ipython_extension" function which is required for any notebook
       // extension.
-      //
       entry: "./lib/extension.js",
       output: {
         filename: "extension.js",
         path: path.resolve(__dirname, "..", "open3d", "nbextension"),
         libraryTarget: "amd",
-        publicPath: "", // publicPath is set in extension.js
       },
       devtool,
     },
@@ -32,47 +30,43 @@ module.exports = (env, argv) => {
       // This bundle contains the implementation for the custom widget views and
       // custom widget.
       // It must be an amd module
-      //
-      entry: "./lib/index.js",
+      entry: ["./amd-public-path.js", "./lib/index.js"],
       output: {
         filename: "index.js",
         path: path.resolve(__dirname, "..", "open3d", "nbextension"),
         libraryTarget: "amd",
-        publicPath: "",
+        publicPath: "", // Set in amd-public-path.js
       },
       devtool,
       module: {
         rules: rules,
       },
-      externals: ["@jupyter-widgets/base"],
+      // "module" is the magic requirejs dependency used to set the publicPath
+      externals: ["@jupyter-widgets/base", "module"]
     },
     {
       // Embeddable open3d bundle
       //
-      // This bundle is generally almost identical to the notebook bundle
-      // containing the custom widget views and models.
+      // This bundle is identical to the notebook bundle containing the custom
+      // widget views and models. The only difference is it is placed in the
+      // dist/ directory and shipped with the npm package for use from a CDN
+      // like jsdelivr.
       //
-      // The only difference is in the configuration of the webpack public path
-      // for the static assets.
-      //
-      // It will be automatically distributed by unpkg to work with the static
-      // widget embedder.
-      //
-      // The target bundle is always `dist/index.js`, which is the path required
-      // by the custom widget embedder.
-      //
-      entry: "./lib/embed.js",
+      // The target bundle is always `dist/index.js`, which is the path
+      // required by the custom widget embedder.
+      entry: ["./amd-public-path.js", "./lib/index.js"],
       output: {
         filename: "index.js",
         path: path.resolve(__dirname, "dist"),
         libraryTarget: "amd",
-        publicPath: "https://unpkg.com/open3d@" + version + "/dist/",
+        publicPath: "", // Set in amd-public-path.js
       },
       devtool,
       module: {
         rules: rules,
       },
-      externals: ["@jupyter-widgets/base"],
+      // "module" is the magic requirejs dependency used to set the publicPath
+      externals: ["@jupyter-widgets/base", "module"]
     },
   ];
 };
