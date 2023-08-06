@@ -1415,6 +1415,40 @@ TEST_P(TensorPermuteDevicePairs, IndexSetBroadcast) {
                                   0, 0, 0, 0, 20, 20, 20, 0, 0, 0, 0, 0}));
 }
 
+TEST_P(TensorPermuteDevices, IndexAdd_) {
+    core::Device device = GetParam();
+
+    const int tensor_size = 100;
+
+    // Test one: dst_t[np.array([0, 1, 2, 3, 4])] += np.array([1, 1, 1, 1, 1])
+    {
+        core::Tensor index =
+                core::Tensor::Arange(0, tensor_size, 1, core::Int64, device);
+        core::Tensor src =
+                core::Tensor::Zeros({tensor_size}, core::Float32, device);
+        src.IndexAdd_(
+                /*dim=*/0, index,
+                core::Tensor::Ones({tensor_size}, core::Float32, device));
+        EXPECT_TRUE(src.AllClose(
+                core::Tensor::Ones({tensor_size}, core::Float32, device)));
+    }
+
+    // Test two: dst_t[np.array([0, 0, 0, 0, 0])] += np.array([1, 1, 1, 1, 1])
+    {
+        core::Tensor index =
+                core::Tensor::Zeros({tensor_size}, core::Int64, device);
+        core::Tensor src =
+                core::Tensor::Zeros({tensor_size}, core::Float32, device);
+        src.IndexAdd_(
+                /*dim=*/0, index,
+                core::Tensor::Ones({tensor_size}, core::Float32, device));
+        EXPECT_EQ(src[0].Item<float>(), tensor_size);
+        EXPECT_TRUE(src.Slice(0, 1, tensor_size)
+                            .AllClose(core::Tensor::Zeros(
+                                    {tensor_size - 1}, core::Float32, device)));
+    }
+}
+
 TEST_P(TensorPermuteDevices, Permute) {
     core::Device device = GetParam();
 
