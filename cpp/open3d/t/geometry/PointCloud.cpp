@@ -322,8 +322,10 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
         auto attr_dtype = point_attr.GetDtype();
 
         // Use float to avoid unsupported tensor types.
-        auto voxel_attr = core::Tensor::Zeros(
-                {num_voxels, point_attr.GetShape(1)}, core::Float32, device_);
+        core::SizeVector attr_shape = point_attr.GetShape();
+        attr_shape[0] = num_voxels;
+        auto voxel_attr =
+                core::Tensor::Zeros(attr_shape, core::Float32, device_);
         if (reduction == "mean") {
             voxel_attr.IndexAdd_(0, index_map_point2voxel,
                                  point_attr.To(core::Float32));
