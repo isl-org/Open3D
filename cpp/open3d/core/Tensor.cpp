@@ -961,7 +961,7 @@ void Tensor::IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src) {
         utility::LogError("IndexAdd_ only supports 1D index tensors.");
     }
 
-    // dim check
+    // Dim check.
     if (dim < 0) {
         utility::LogError("IndexAdd_ only supports sum at non-negative dim.");
     }
@@ -975,9 +975,6 @@ void Tensor::IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src) {
                 "IndexAdd_ only supports src tensor with same dimension as "
                 "this tensor.");
     }
-
-    utility::LogInfo("src shape = {}, dst_shape = {}", src.GetShape(),
-                     GetShape());
     for (int64_t d = 0; d < NumDims(); ++d) {
         if (d != dim && src.GetShape(d) != GetShape(d)) {
             utility::LogError(
@@ -988,12 +985,11 @@ void Tensor::IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src) {
         }
     }
 
-    // type check
+    // Type check.
     AssertTensorDtype(index, core::Int64);
     AssertTensorDtype(*this, src.GetDtype());
 
-    // Call
-    // Permute dim to the 1st dim for reduction
+    // Apply kernel.
     kernel::IndexAdd_(dim, index, src, *this);
 }
 

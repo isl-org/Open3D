@@ -17,23 +17,17 @@ void IndexAdd_(int64_t dim,
                const Tensor& index,
                const Tensor& src,
                Tensor& dst) {
+    // Permute the reduction dimension to the first.
     SizeVector permute = {};
-    SizeVector reverse_permute = {};
     for (int64_t d = 0; d <= dim; ++d) {
         if (d == 0) {
             permute.push_back(dim);
         } else {
             permute.push_back(d - 1);
         }
-        if (d == dim) {
-            reverse_permute.push_back(0);
-        } else {
-            reverse_permute.push_back(d + 1);
-        }
     }
     for (int64_t d = dim + 1; d < src.NumDims(); ++d) {
         permute.push_back(d);
-        reverse_permute.push_back(d);
     }
 
     auto src_permute = src.Permute(permute);
@@ -48,9 +42,6 @@ void IndexAdd_(int64_t dim,
     } else {
         utility::LogError("IndexAdd_: Unimplemented device");
     }
-
-    // Not sure if it is necessary
-    dst = dst_permute.Permute(reverse_permute);
 }
 
 }  // namespace kernel

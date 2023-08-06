@@ -284,48 +284,55 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
         utility::LogError("Reduction can only be 'mean' for VoxelDownSample.");
     }
 
-    core::Tensor points_voxeld = GetPointPositions() / voxel_size;
-    core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
+    // Discretize voxels.
+    core::Tensor voxeld = GetPointPositions() / voxel_size;
+    core::Tensor voxeli = voxeld.Floor().To(core::Int64);
 
-    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
-                                        {3}, device_);
+    // Map discrete voxels to indices.
+    core::HashSet voxeli_hashset(voxeli.GetLength(), core::Int64, {3}, device_);
 
-    // Maps voxel to indices ranging from 0 to set.size()
-    core::Tensor origin2down_indices, masks;
-    points_voxeli_hashset.Insert(points_voxeli, origin2down_indices, masks);
+    // Index map: (0, original_points) -> (0, unique_points).
+    core::Tensor index_map_point2voxel, masks;
+    voxeli_hashset.Insert(voxeli, index_map_point2voxel, masks);
 
-    // Find and insert are two different passes
-    points_voxeli_hashset.Find(points_voxeli, origin2down_indices, masks);
-    origin2down_indices = origin2down_indices.To(core::Int64);
+    // Insert and find are two different passes.
+    // In the insertion pass, -1/false is returned for already existing
+    // downsampled corresponding points.
+    // In the find pass, actual indices are returned corresponding downsampled
+    // points.
+    voxeli_hashset.Find(voxeli, index_map_point2voxel, masks);
+    index_map_point2voxel = index_map_point2voxel.To(core::Int64);
 
-    int64_t num_points = points_voxeli.GetLength();
-    int64_t num_points_down = points_voxeli_hashset.Size();
+    int64_t num_points = voxeli.GetLength();
+    int64_t num_voxels = voxeli_hashset.Size();
 
-    PointCloud pcd_down(device_);
-
-    auto index_count =
-            core::Tensor::Zeros({num_points_down}, core::Float32, device_);
-    index_count.IndexAdd_(
-            0, origin2down_indices,
+    // Count the number of points in each voxel.
+    auto voxel_num_points =
+            core::Tensor::Zeros({num_voxels}, core::Float32, device_);
+    voxel_num_points.IndexAdd_(
+            /*dim*/ 0, index_map_point2voxel,
             core::Tensor::Ones({num_points}, core::Float32, device_));
-    // utility::LogInfo("indices = {}", origin2down_indices.ToString());
-    utility::LogInfo("index_count = {}", index_count.ToString());
 
+    // Create a new point cloud.
+    PointCloud pcd_down(device_);
     for (auto &kv : point_attr_) {
-        utility::LogInfo("key: {}, shape {}", kv.first, kv.second.GetShape());
-        // TODO: strict checks
+        auto point_attr = kv.second;
 
-        auto attr_dtype = kv.second.GetDtype();
-        auto down_attr =
-                core::Tensor::Zeros({num_points_down, kv.second.GetShape(1)},
-                                    core::Float32, device_);
+        std::string attr_string = kv.first;
+        auto attr_dtype = point_attr.GetDtype();
+
+        // Use float to avoid unsupported tensor types.
+        auto voxel_attr = core::Tensor::Zeros(
+                {num_voxels, point_attr.GetShape(1)}, core::Float32, device_);
         if (reduction == "mean") {
-            down_attr.IndexAdd_(0, origin2down_indices,
-                                kv.second.To(core::Float32));
-            down_attr /= index_count.View({-1, 1});
-            down_attr = down_attr.To(attr_dtype);
+            voxel_attr.IndexAdd_(0, index_map_point2voxel,
+                                 point_attr.To(core::Float32));
+            voxel_attr /= voxel_num_points.View({-1, 1});
+            voxel_attr = voxel_attr.To(attr_dtype);
+        } else {
+            utility::LogError("Unsupported reduction type {}.", reduction);
         }
-        pcd_down.SetPointAttr(kv.first, down_attr);
+        pcd_down.SetPointAttr(attr_string, voxel_attr);
     }
 
     return pcd_down;

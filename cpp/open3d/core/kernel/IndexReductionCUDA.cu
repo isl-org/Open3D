@@ -49,14 +49,12 @@ void LaunchIndexReductionKernel(int64_t dim,
 
         void* src_ptr = indexer.GetOutputPtr(0, workload_idx);
         void* dst_ptr = indexer.GetInputPtr(0, dst_idx);
-        // Note input and output is switched here to adapt to the indexer
+        // Note input and output is switched here to adapt to the indexer.
         element_kernel(src_ptr, dst_ptr);
     };
 
     ParallelFor(device, indexer.NumWorkloads(), element_func);
     OPEN3D_GET_LAST_CUDA_ERROR("LaunchIndexReductionKernel failed.");
-    utility::LogInfo("LaunchIndexReductionKernel done, dst = {}",
-                     dst.ToString());
 }
 
 template <typename scalar_t>
