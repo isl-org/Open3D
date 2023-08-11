@@ -80,7 +80,7 @@ RANSACResult EvaluateRANSACBasedOnDistance(
         double distance = std::abs(plane_model.dot(point));
 
         if (distance < distance_threshold) {
-            error += distance;
+            error += distance * distance;
             inliers.emplace_back(idx);
         }
     }
@@ -91,7 +91,7 @@ RANSACResult EvaluateRANSACBasedOnDistance(
         result.inlier_rmse_ = 0;
     } else {
         result.fitness_ = (double)inlier_num / (double)points.size();
-        result.inlier_rmse_ = error / std::sqrt((double)inlier_num);
+        result.inlier_rmse_ = std::sqrt(error / (double)inlier_num);
     }
     return result;
 }
