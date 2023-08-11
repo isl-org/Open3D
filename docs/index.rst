@@ -48,23 +48,6 @@ Open3D: A Modern Library for 3D Data Processing
 
 .. toctree::
     :maxdepth: 1
-    :caption: Contribute
-
-    contribute/contribute
-    contribute/contribution_recipes
-    contribute/styleguide
-
-.. toctree::
-    :maxdepth: 1
-    :caption: C++ API
-
-    cpp_api
-
-..
-    Note: when adding new modules, please also update documented_modules.txt.
-
-.. toctree::
-    :maxdepth: 1
     :caption: Python API
 
     python_api/open3d.camera
@@ -88,3 +71,20 @@ Open3D: A Modern Library for 3D Data Processing
     python_example/pipelines/index
     python_example/utility/index
     python_example/visualization/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: C++ API
+
+    cpp_api
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Contribute
+
+    contribute/contribute
+    contribute/contribution_recipes
+    contribute/styleguide
+
+..
+    Note: when adding new modules, please also update documented_modules.txt.
