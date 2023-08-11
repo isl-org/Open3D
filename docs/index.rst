@@ -26,9 +26,9 @@ Open3D: A Modern Library for 3D Data Processing
     compilation
     cpp_project
     builddocs
-    open3d_ml
-    arm
     docker
+    arm
+    open3d_ml
 
 .. toctree::
     :maxdepth: 2
