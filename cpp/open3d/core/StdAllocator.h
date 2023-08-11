@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -48,7 +29,7 @@ public:
     StdAllocator() = default;
 
     /// Constructor from device.
-    explicit StdAllocator(const Device& device) : device_(device) {}
+    explicit StdAllocator(int device_id) : device_id_(device_id) {}
 
     /// Default copy constructor.
     StdAllocator(const StdAllocator&) = default;
@@ -64,19 +45,23 @@ public:
 
     /// Rebind copy constructor.
     template <typename U>
-    StdAllocator(const StdAllocator<U>& other) : device_(other.device_) {}
+    StdAllocator(const StdAllocator<U>& other) : device_id_(other.device_id_) {}
 
     /// Allocates memory of size \p n.
     T* allocate(std::size_t n) {
-        return static_cast<T*>(MemoryManager::Malloc(n * sizeof(T), device_));
+        void* ptr = MemoryManager::Malloc(
+                n * sizeof(T), Device(Device::DeviceType::CUDA, device_id_));
+        return static_cast<T*>(ptr);
     }
 
     /// Deallocates memory from pointer \p p of size \p n .
-    void deallocate(T* p, std::size_t n) { MemoryManager::Free(p, device_); }
+    void deallocate(T* p, std::size_t n) {
+        MemoryManager::Free(p, Device(Device::DeviceType::CUDA, device_id_));
+    }
 
     /// Returns true if the instances are equal, false otherwise.
     bool operator==(const StdAllocator& other) const {
-        return device_ == other.device_;
+        return device_id_ == other.device_id_;
     }
 
     /// Returns true if the instances are not equal, false otherwise.
@@ -85,14 +70,14 @@ public:
     }
 
     /// Returns the device on which memory is allocated.
-    Device GetDevice() const { return device_; }
+    int GetDeviceID() const { return device_id_; }
 
 private:
     // Allow access in rebind constructor.
     template <typename T2>
     friend class StdAllocator;
 
-    Device device_;
+    int device_id_;
 };
 
 }  // namespace core

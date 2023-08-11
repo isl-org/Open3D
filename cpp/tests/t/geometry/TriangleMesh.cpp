@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/TriangleMesh.h"
@@ -413,6 +394,9 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
             Eigen::Vector2d(0.4, 0.5), Eigen::Vector2d(0.6, 0.7),
             Eigen::Vector2d(0.8, 0.9), Eigen::Vector2d(1.0, 1.1)};
 
+    auto& mat = legacy_mesh.materials_["Mat1"];
+    mat.baseColor = mat.baseColor.CreateRGB(1, 1, 1);
+
     core::Dtype float_dtype = core::Float32;
     core::Dtype int_dtype = core::Int64;
     t::geometry::TriangleMesh mesh = t::geometry::TriangleMesh::FromLegacy(
@@ -456,6 +440,15 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
                         .AllClose(core::Tensor::Arange(0., 1.1, 0.1,
                                                        float_dtype, device)
                                           .Reshape({-1, 3, 2})));
+    EXPECT_TRUE(mesh.HasMaterial());
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseColor() ==
+                Eigen::Vector4f(1, 1, 1, 1));
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseMetallic() == 0.0f);
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseRoughness() == 1.0f);
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseReflectance() == 0.5f);
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseClearcoat() == 0.0f);
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseClearcoatRoughness() == 0.0f);
+    EXPECT_TRUE(mesh.GetMaterial().GetAnisotropy() == 0.0f);
 }
 
 TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
@@ -478,6 +471,7 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
     mesh.SetTriangleAttr("texture_uvs",
                          core::Tensor::Arange(0., 1.1, 0.1, float_dtype, device)
                                  .Reshape({-1, 3, 2}));
+    mesh.GetMaterial().SetDefaultProperties();
 
     geometry::TriangleMesh legacy_mesh = mesh.ToLegacy();
     EXPECT_EQ(legacy_mesh.vertices_,
@@ -502,6 +496,17 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
                                   Pointwise(FloatEq(), {0.6, 0.7}),
                                   Pointwise(FloatEq(), {0.8, 0.9}),
                                   Pointwise(FloatEq(), {1.0, 1.1})}));
+
+    EXPECT_TRUE(legacy_mesh.materials_.count("Mat1") > 0);
+    auto& mat = legacy_mesh.materials_["Mat1"];
+    EXPECT_TRUE(Eigen::Vector4f(mat.baseColor.f4) ==
+                Eigen::Vector4f(1, 1, 1, 1));
+    EXPECT_TRUE(mat.baseMetallic == 0.0);
+    EXPECT_TRUE(mat.baseRoughness == 1.0);
+    EXPECT_TRUE(mat.baseReflectance == 0.5);
+    EXPECT_TRUE(mat.baseClearCoat == 0.0);
+    EXPECT_TRUE(mat.baseClearCoatRoughness == 0.0);
+    EXPECT_TRUE(mat.baseAnisotropy == 0.0);
 }
 
 TEST_P(TriangleMeshPermuteDevices, CreateBox) {

@@ -30,10 +30,11 @@ Python applications looks like this:
 .. code-block:: dockerfile
 
     # This could also be another Ubuntu or Debian based distribution
-    FROM ubuntu:latest
+    FROM ubuntu:22.04
 
     # Install Open3D system dependencies and pip
     RUN apt-get update && apt-get install --no-install-recommends -y \
+        libegl1 \
         libgl1 \
         libgomp1 \
         python3-pip \
@@ -52,11 +53,11 @@ To run GUI applications from the docker container, add these options to the
 
 1. GPU:
 
-  - Intel (Mesa drivers): ``--device=/dev/dri:/dev/dri``
+  - Intel (Mesa drivers): ``--device=/dev/dri:/dev/dri`` or ``--device=/dev/dri/card0:/dev/dri/card0 --device=/dev/dri/renderD128:/dev/dri/renderD128``, depending on your hardware.
 
   - NVIDIA: ``--gpus 'all,"capabilities=compute,utility,graphics"'``
 
-  - No GPU (CPU rendering): ``--env OPEN3D_CPU_RENDERING=true``
+  - No GPU (CPU rendering): ``--env OPEN3D_CPU_RENDERING=true`` on Ubuntu 18.04. Later versions automaticaly select CPU rendering if a GPU is not available.
 
 2. X server: ``-v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY``
 
@@ -72,7 +73,7 @@ folder that contains data you wish to visualize.
     wget https://github.com/isl-org/Open3D/releases/download/v@OPEN3D_VERSION@/open3d-app-@OPEN3D_VERSION@-Ubuntu.deb
     # Build docker image in folder containing Open3D deb package.
     docker build -t open3d-viewer -f- . <<EOF
-    FROM ubuntu:latest
+    FROM ubuntu:20.04
     COPY open3d*.deb /root/
     RUN apt-get update \
         && apt-get install --yes /root/open3d*.deb \
@@ -91,22 +92,21 @@ folder that contains data you wish to visualize.
         -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY \
         -v "$PWD":/root open3d-viewer:latest
     # Run Open3D viewer docker image without a GPU (CPU rendering)
-    docker run  --env OPEN3D_CPU_RENDERING=true\
-        -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY \
+    docker run -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY \
         -v "$PWD":/root open3d-viewer:latest
 
 Also see the `docker tutorial for ROS
 <http://wiki.ros.org/docker/Tutorials/Hardware%20Acceleration>`__ for more
-information.
+information. Note that differences in hardware, OS drivers and OS packages may
+require you to modify these instructions.
 
 
 Headless rendering
 ------------------
 If a GUI display server (X11 or Wayland) is not available (either in the docker
-container or the host OS), Open3D can still be used for headless rendering. This
-requires installing some additional dependencies. Here is an example Ubuntu /
-Debian based docker file that runs the ``render_to_image.py`` rendering example.
-Other Linux (e.g. RHEL) distributions will need different dependency packages.
+container or the host OS), Open3D can still be used for headless rendering. In
+Ubuntu 20.04+ (with Mesa version 20.2+) this requires configuring the Mesa
+driver with an environment variable (``EGL_PLATFORM=surfaceless``):
 
 .. code-block:: bash
 
@@ -114,7 +114,43 @@ Other Linux (e.g. RHEL) distributions will need different dependency packages.
     wget https://raw.githubusercontent.com/isl-org/Open3D/v@OPEN3D_VERSION@/examples/python/visualization/render_to_image.py
     # Build docker image
     docker build -t open3d-headless -f- . <<EOF
-    FROM ubuntu:latest
+    FROM ubuntu:20.04
+    RUN apt-get update \
+        && apt-get install --yes --no-install-recommends \
+        libegl1 libgl1 libgomp1 python3-pip \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install Open3D from the PyPI repositories
+    RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+        python3 -m pip install --no-cache-dir --upgrade open3d==@OPEN3D_VERSION@
+
+    # Configure Mesa EGL for headless rendering
+    ENV EGL_PLATFORM=surfaceless
+    WORKDIR /root/
+    ENTRYPOINT ["python3", "/root/render_to_image.py"]
+    EOF
+
+    # Run headless rendering example with Intel GPU
+    docker run --device=/dev/dri:/dev/dri \
+        -v "$PWD":/root open3d-headless:latest
+    # Run headless rendering example with Nvidia GPU
+    docker run  --gpus 'all,"capabilities=compute,utility,graphics"' \
+        -v "$PWD":/root open3d-headless:latest
+    # Run headless rendering example without GPU (CPU rendering)
+    docker run -v "$PWD":/root open3d-headless:latest
+
+In Ubuntu 18.04, we need to install some additional dependencies. Here is an
+example Ubuntu / Debian based docker file that runs the ``render_to_image.py``
+rendering example.  Other (old) Linux (e.g. RHEL) distributions will need
+different dependency packages.
+
+.. code-block:: bash
+
+    mkdir open3d-headless-docker && cd open3d-headless-docker
+    wget https://raw.githubusercontent.com/isl-org/Open3D/v@OPEN3D_VERSION@/examples/python/visualization/render_to_image.py
+    # Build docker image
+    docker build -t open3d-headless -f- . <<EOF
+    FROM ubuntu:18.04
     RUN apt-get update \
         && apt-get install --yes --no-install-recommends \
         libgl1 libgomp1 python3-pip \

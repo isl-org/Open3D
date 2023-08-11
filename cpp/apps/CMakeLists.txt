@@ -1,4 +1,4 @@
-macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
+macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
     set(APPS_DIR "${PROJECT_SOURCE_DIR}/cpp/apps")
     set(SOURCE_DIR "${APPS_DIR}/${SRC_DIR}")
 
@@ -18,7 +18,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2022 www.open3d.org")
+        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2023 www.open3d.org")
     endif()
 
     # Copy the resource files. This needs to be done as a post-build step
@@ -73,6 +73,9 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
             # Various caches need to be updated for the app to become visible
             install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
         elseif (WIN32)
+            # Don't create a command window on launch
+            target_sources(${TARGET_NAME} PRIVATE "${SOURCE_DIR}/icon.rc")   # add icon
+
             # MSVC puts the binary in bin/Open3D/Release/Open3D.exe
             # so we can't just install() the build results, and need to do them piecemeal.
             install(DIRECTORY   "${APP_DIR}/resources"
@@ -105,9 +108,6 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
                               OUTPUT_NAME ${APP_NAME}
                              )
     elseif (WIN32)
-        # MSVC started giving LNK:1114, error 5, which appears to be caused by
-        # the executable having the same name as the library. (Except that this
-        # was working before, so not sure what changed.)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
     else()
@@ -128,7 +128,7 @@ endmacro()
 
 if (BUILD_GUI)
     open3d_add_app_common(Open3DViewer Open3D Open3DViewer)
-    open3d_add_app(Open3DViewer Open3D Open3DViewer)
+    open3d_add_app_gui(Open3DViewer Open3D Open3DViewer)
 endif()
 
 open3d_add_app_common(OfflineReconstruction OfflineReconstruction OfflineReconstruction)

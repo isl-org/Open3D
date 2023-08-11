@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/registration/Registration.h"
@@ -299,8 +280,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const Feature &source_feature,
-        const Feature &target_feature,
+        const Feature &source_features,
+        const Feature &target_features,
         bool mutual_filter,
         double max_correspondence_distance,
         const TransformationEstimation
@@ -314,62 +295,11 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         return RegistrationResult();
     }
 
-    int num_src_pts = int(source.points_.size());
-    int num_tgt_pts = int(target.points_.size());
-
-    geometry::KDTreeFlann kdtree_target(target_feature);
-    pipelines::registration::CorrespondenceSet corres_ij(num_src_pts);
-
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < num_src_pts; i++) {
-        std::vector<int> corres_tmp(1);
-        std::vector<double> dist_tmp(1);
-
-        kdtree_target.SearchKNN(Eigen::VectorXd(source_feature.data_.col(i)), 1,
-                                corres_tmp, dist_tmp);
-        int j = corres_tmp[0];
-        corres_ij[i] = Eigen::Vector2i(i, j);
-    }
-
-    // Do reverse check if mutual_filter is enabled
-    if (mutual_filter) {
-        geometry::KDTreeFlann kdtree_source(source_feature);
-        pipelines::registration::CorrespondenceSet corres_ji(num_tgt_pts);
-
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-        for (int j = 0; j < num_tgt_pts; ++j) {
-            std::vector<int> corres_tmp(1);
-            std::vector<double> dist_tmp(1);
-            kdtree_source.SearchKNN(
-                    Eigen::VectorXd(target_feature.data_.col(j)), 1, corres_tmp,
-                    dist_tmp);
-            int i = corres_tmp[0];
-            corres_ji[j] = Eigen::Vector2i(i, j);
-        }
-
-        pipelines::registration::CorrespondenceSet corres_mutual;
-        for (int i = 0; i < num_src_pts; ++i) {
-            int j = corres_ij[i](1);
-            if (corres_ji[j](0) == i) {
-                corres_mutual.emplace_back(i, j);
-            }
-        }
-
-        // Empirically mutual correspondence set should not be too small
-        if (int(corres_mutual.size()) >= ransac_n * 3) {
-            utility::LogDebug("{:d} correspondences remain after mutual filter",
-                              corres_mutual.size());
-            return RegistrationRANSACBasedOnCorrespondence(
-                    source, target, corres_mutual, max_correspondence_distance,
-                    estimation, ransac_n, checkers, criteria);
-        }
-        utility::LogDebug(
-                "Too few correspondences after mutual filter, fall back to "
-                "original correspondences.");
-    }
+    CorrespondenceSet corres = CorrespondencesFromFeatures(
+            source_features, target_features, mutual_filter);
 
     return RegistrationRANSACBasedOnCorrespondence(
-            source, target, corres_ij, max_correspondence_distance, estimation,
+            source, target, corres, max_correspondence_distance, estimation,
             ransac_n, checkers, criteria);
 }
 

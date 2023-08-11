@@ -16,9 +16,7 @@
 #   This make the Docker image reproducible across different machines.
 set -euo pipefail
 
-# Disable Docker build kit to show all outputs, as `--progress plain`` does not
-# work on all systems.
-export DOCKER_BUILDKIT=0
+export BUILDKIT_PROGRESS=plain
 
 __usage_docker_build="USAGE:
     $(basename $0) [OPTION]

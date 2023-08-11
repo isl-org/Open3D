@@ -19,12 +19,12 @@ concurrency:
 
 env:
   GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
-  GCE_CLI_GHA_VERSION: "302.0.0"
+  GCE_CLI_GHA_VERSION: "416.0.0"
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
   skip-check:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     name: Skip job for forks
     outputs:
       skip: ${{ steps.check.outputs.skip }}
@@ -34,15 +34,15 @@ jobs:
         run: |
           if [ "${GITHUB_REPOSITORY}" == "isl-org/Open3D" ] && [ -n "${GCE_GPU_CI_SA}" ] ; then
             echo "Secrets available: performing GCE test"
-            echo "::set-output name=skip::no"
+            echo "skip=no" >> $GITHUB_OUTPUT
           else
             echo "Secrets not available: skipping GCE test"
-            echo "::set-output name=skip::yes"
+            echo "skip=yes" >> $GITHUB_OUTPUT
           fi
 
   build-and-run-docker:
     name: Build and run
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     needs: [skip-check]
     if: needs.skip-check.outputs.skip == 'no'
     strategy:
@@ -63,7 +63,7 @@ jobs:
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'false'
       - name: Package code
@@ -72,11 +72,15 @@ jobs:
           cd "${GITHUB_WORKSPACE}/.."
           tar -czvf Open3D.tar.gz Open3D
           ls -alh
+      - name: GCloud CLI auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_PROJECT }}
       - name: VM create
         run: |
@@ -145,7 +149,7 @@ jobs:
 
       - name: Upload package
         if: ${{ env.BUILD_PACKAGE == 'true' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d-devel-linux-x86_64-cuda
           path: open3d-devel-linux*.tar.xz

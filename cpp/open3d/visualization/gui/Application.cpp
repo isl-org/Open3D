@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/gui/Application.h"
@@ -106,7 +87,10 @@ std::string FindResourcePath(int argc, const char *argv[]) {
 
     auto resource_path = path + "/resources";
     if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
-        return path + "/../resources";  // building with Xcode
+        resource_path = path + "/../resources";  // building with Xcode
+        if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
+            resource_path = path + "/share/resources";  // GNU
+        }
     }
     return resource_path;
 }
@@ -470,18 +454,21 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
 }
 
 void Application::RemoveWindow(Window *window) {
+    if (impl_->should_quit_) {
+        return;
+    }
+
     for (auto it = impl_->windows_.begin(); it != impl_->windows_.end(); ++it) {
         if (it->get() == window) {
-            window->Show(false);
             impl_->windows_to_be_destroyed_.insert(*it);
             impl_->windows_.erase(it);
+            if (impl_->windows_.empty()) {
+                impl_->should_quit_ = true;
+            }
             break;
         }
     }
-
-    if (impl_->windows_.empty()) {
-        impl_->should_quit_ = true;
-    }
+    window->Show(false);
 }
 
 void Application::Quit() {

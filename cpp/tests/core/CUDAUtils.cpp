@@ -1,37 +1,30 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #ifdef BUILD_CUDA_MODULE
 
 #include "open3d/core/CUDAUtils.h"
 
+#include <sstream>
 #include <thread>
 #include <vector>
 
 #include "tests/Tests.h"
+
+// #include <fmt/std.h>   // fmt version >=9, else:
+namespace {
+// Use std::ostringstream to get string representation.
+template <typename T>
+std::string to_str(T var) {
+    std::ostringstream ss;
+    ss << var;
+    return ss.str();
+}
+}  // namespace
 
 namespace open3d {
 namespace tests {
@@ -98,7 +91,7 @@ void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
     for (int i = 0; i < kThreads; ++i) {
         threads.emplace_back([&kIterations, &func]() {
             utility::LogDebug("Starting thread with ID {}",
-                              std::this_thread::get_id());
+                              to_str(std::this_thread::get_id()));
             for (int i = 0; i < kIterations; ++i) {
                 func();
             }
@@ -107,7 +100,8 @@ void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
 
     for (auto& thread : threads) {
         if (thread.joinable()) {
-            utility::LogDebug("Joining thread with ID {}", thread.get_id());
+            utility::LogDebug("Joining thread with ID {}",
+                              to_str(thread.get_id()));
             thread.join();
         }
     }

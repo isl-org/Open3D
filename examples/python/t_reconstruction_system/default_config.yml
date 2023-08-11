@@ -8,7 +8,6 @@ depth_folder: depth
 color_folder: color
 path_intrinsic: ''
 path_color_intrinsic: ''
-fragment_size: 100
 depth_min: 0.1
 depth_max: 3.0
 depth_scale: 1000.0
@@ -21,7 +20,7 @@ icp_voxelsize: 0.05
 icp_distance_thr: 0.07
 global_registration_method: ransac
 registration_loop_weight: 0.1
-integration_mode: color
+integrate_color: true
 voxel_size: 0.0058
 trunc_voxel_multiplier: 8.0
 block_count: 40000

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/registration/Feature.h"
@@ -158,6 +139,68 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     return feature;
 }
 
+CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
+                                              const Feature &target_features,
+                                              bool mutual_filter,
+                                              float mutual_consistent_ratio) {
+    const int num_searches = mutual_filter ? 2 : 1;
+
+    // Access by reference, since Eigen Matrix could be copied
+    std::array<std::reference_wrapper<const Feature>, 2> features{
+            std::reference_wrapper<const Feature>(source_features),
+            std::reference_wrapper<const Feature>(target_features)};
+    std::array<int, 2> num_pts{int(source_features.data_.cols()),
+                               int(target_features.data_.cols())};
+    std::vector<CorrespondenceSet> corres(num_searches);
+
+    const int kMaxThreads = utility::EstimateMaxThreads();
+
+    const int kOuterThreads = std::min(kMaxThreads, num_searches);
+    const int kInnerThreads = std::max(kMaxThreads / num_searches, 1);
+#pragma omp parallel for num_threads(kOuterThreads)
+    for (int k = 0; k < num_searches; ++k) {
+        geometry::KDTreeFlann kdtree(features[1 - k]);
+
+        int num_pts_k = num_pts[k];
+        corres[k] = CorrespondenceSet(num_pts_k);
+#pragma omp parallel for num_threads(kInnerThreads)
+        for (int i = 0; i < num_pts_k; i++) {
+            std::vector<int> corres_tmp(1);
+            std::vector<double> dist_tmp(1);
+
+            kdtree.SearchKNN(Eigen::VectorXd(features[k].get().data_.col(i)), 1,
+                             corres_tmp, dist_tmp);
+            int j = corres_tmp[0];
+            corres[k][i] = Eigen::Vector2i(i, j);
+        }
+    }
+
+    // corres[0]: corres_ij, corres[1]: corres_ji
+    if (!mutual_filter) return corres[0];
+
+    // should not use parallel for due to emplace back
+    CorrespondenceSet corres_mutual;
+    int num_src_pts = num_pts[0];
+    for (int i = 0; i < num_src_pts; ++i) {
+        int j = corres[0][i](1);
+        if (corres[1][j](1) == i) {
+            corres_mutual.emplace_back(i, j);
+        }
+    }
+
+    // Empirically mutual correspondence set should not be too small
+    if (int(corres_mutual.size()) >=
+        int(mutual_consistent_ratio * num_src_pts)) {
+        utility::LogDebug("{:d} correspondences remain after mutual filter",
+                          corres_mutual.size());
+        return corres_mutual;
+    }
+    utility::LogWarning(
+            "Too few correspondences ({:d}) after mutual filter, fall back to "
+            "original correspondences.",
+            corres_mutual.size());
+    return corres[0];
+}
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace open3d

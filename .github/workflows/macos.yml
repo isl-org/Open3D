@@ -22,6 +22,7 @@ env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   MacOS:
@@ -38,9 +39,9 @@ jobs:
       LOW_MEM_USAGE: ON
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -53,7 +54,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
       - name: Install dependencies
@@ -86,21 +87,24 @@ jobs:
 
       - name: Upload package
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d-devel-macosx
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' && env.BUILD_SHARED_LIBS == 'ON' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' && env.BUILD_SHARED_LIBS == 'ON' }}
-        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Upload package to GCS bucket
         if: ${{ github.ref == 'refs/heads/master' && env.BUILD_SHARED_LIBS == 'ON' }}
@@ -109,7 +113,7 @@ jobs:
           echo "Download devel package at: https://storage.googleapis.com/open3d-releases-master/devel/${{ env.DEVEL_PKG_NAME }}"
 
       - name: Upload Open3D viewer app
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15
@@ -139,16 +143,16 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -162,7 +166,7 @@ jobs:
             ${{ runner.os }}-ccache
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -195,20 +199,24 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_macosx_x86_64_wheels
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Upload wheel to GCS bucket
         if: ${{ github.ref == 'refs/heads/master' }}
@@ -241,23 +249,23 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
           name: open3d_macosx_x86_64_wheels
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -277,17 +285,20 @@ jobs:
   ready-docs:
     name: Ready docs archive
     # no need to run on macOS
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build-wheel, MacOS]
     steps:
+      - name: GCloud CLI auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Check wheels and ready documentation archive
         run: |
             touch marker_file

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -57,7 +38,7 @@ public:
     StdGPUAllocator() = default;
 
     /// Constructor from device.
-    explicit StdGPUAllocator(const Device& device) : std_allocator_(device) {}
+    explicit StdGPUAllocator(int device_id) : std_allocator_(device_id) {}
 
     /// Default copy constructor.
     StdGPUAllocator(const StdGPUAllocator&) = default;
@@ -78,10 +59,6 @@ public:
 
     /// Allocates memory of size \p n.
     T* allocate(std::size_t n) {
-        if (!GetDevice().IsCUDA()) {
-            utility::LogError("Unsupported device.");
-        }
-
         T* p = std_allocator_.allocate(n);
         stdgpu::register_memory(p, n, stdgpu::dynamic_memory_type::device);
         return p;
@@ -89,10 +66,6 @@ public:
 
     /// Deallocates memory from pointer \p p of size \p n .
     void deallocate(T* p, std::size_t n) {
-        if (!GetDevice().IsCUDA()) {
-            utility::LogError("Unsupported device.");
-        }
-
         stdgpu::deregister_memory(p, n, stdgpu::dynamic_memory_type::device);
         std_allocator_.deallocate(p, n);
     }
@@ -104,9 +77,6 @@ public:
 
     /// Returns true if the instances are not equal, false otherwise.
     bool operator!=(const StdGPUAllocator& other) { return !operator==(other); }
-
-    /// Returns the device on which memory is allocated.
-    Device GetDevice() const { return std_allocator_.GetDevice(); }
 
 private:
     // Allow access in rebind constructor.
@@ -431,7 +401,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
 
         impl_ = InternalStdGPUHashBackend<Key, Hash, Eq>::createDeviceObject(
                 this->capacity_,
-                InternalStdGPUHashBackendAllocator<Key>(this->device_));
+                InternalStdGPUHashBackendAllocator<Key>(this->device_.GetID()));
         cuda::Synchronize(this->device_);
     }
 }

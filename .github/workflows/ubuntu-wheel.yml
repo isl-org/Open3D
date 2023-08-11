@@ -17,10 +17,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
+
 jobs:
   build-wheel:
     name: Build wheel
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -41,7 +44,7 @@ jobs:
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -67,43 +70,46 @@ jobs:
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py310
           fi
-          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.whl)"
+          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
+          PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
+          echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
       - name: Upload wheel to GitHub artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_linux_x86_64_wheels
-          path: ${{ env.PIP_PKG_NAME }}
+          path: |
+            ${{ env.PIP_PKG_NAME }}
+            ${{ env.PIP_CPU_PKG_NAME }}
           if-no-files-found: error
-      - name: GCloud CLI setup (GCE_SA_KEY_DOCS_CI)
+      - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
+      - name: GCloud CLI setup
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Upload ccache to GCS
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
-      - name: GCloud CLI setup (GCE_SA_KEY_GPU_CI)
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
       - name: Upload wheel to GCS
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
-          echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
+            ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }} gs://open3d-releases-master/python-wheels/
+          echo "Download pip package at:
+            https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}
+            https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_CPU_PKG_NAME }}"
 
   test-wheel-cpu:
     name: Test wheel CPU
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-wheel]
     strategy:
       fail-fast: false
@@ -122,22 +128,22 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
       - name: Download wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: open3d_linux_x86_64_wheels
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
       - name: Test Python package
@@ -145,26 +151,42 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel open3d*-"$pi_tag"-*.whl
+          test_wheel open3d-[0-9]*-"$pi_tag"-*.whl
       - name: Run Python unit tests
         run: |
           source util/ci_utils.sh
           echo "Running Open3D python tests..."
           run_python_tests
+      - name: Test Python package (CPU)
+        env:
+          BUILD_CUDA_MODULE: OFF
+        run: |
+          python -V
+          source util/ci_utils.sh
+          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          test_wheel open3d_cpu*-"$pi_tag"-*.whl
+      - name: Run Python unit tests (CPU)
+        run: |
+          source util/ci_utils.sh
+          echo "Running Open3D python tests (CPU wheel)..."
+          run_python_tests
 
   ready-docs:
     name: Ready docs archive
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build-wheel]
     steps:
+      - name: GCloud CLI auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Check wheels and ready documentation archive
         run: |
             touch marker_file

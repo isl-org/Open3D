@@ -41,12 +41,34 @@ target_include_directories(pybind SYSTEM PRIVATE
 
 open3d_show_and_abort_on_warning(pybind)
 open3d_set_global_properties(pybind)
+target_link_libraries(pybind PRIVATE Open3D::Open3D)
+
 
 if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
+    # TODO(Sameer): Only export PyInit_pybind, open3d_core_cuda_device_count
+elseif (APPLE)
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[_PyInit_pybind
+open3d_core_cuda_device_count
+        ]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
+        -Wl,-exported_symbols_list
+        "${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+elseif (UNIX)   # Linux
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[{
+    global:
+        PyInit_pybind;
+        open3d_core_cuda_device_count;
+    local:
+        *;
+};]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
+        "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+    target_link_options(pybind PRIVATE "-flto=auto")
 endif()
 
-target_link_libraries(pybind PRIVATE Open3D::Open3D)
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
@@ -181,6 +203,7 @@ add_custom_target(python-package
             -DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}
             -DOPEN3D_ML_ROOT=${OPEN3D_ML_ROOT}
             -DBUILD_GUI=${BUILD_GUI}
+            -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOMEPAGE_URL=${PROJECT_HOMEPAGE_URL}
@@ -188,6 +211,7 @@ add_custom_target(python-package
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
             -DPROJECT_VERSION=${OPEN3D_VERSION_FULL}
+            -DPROJECT_DESCRIPTION=${PROJECT_DESCRIPTION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake

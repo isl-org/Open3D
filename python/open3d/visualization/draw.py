@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 from . import gui
@@ -37,6 +18,8 @@ def draw(geometry=None,
          eye=None,
          up=None,
          field_of_view=60.0,
+         intrinsic_matrix=None,
+         extrinsic_matrix=None,
          bg_color=(1.0, 1.0, 1.0, 1.0),
          bg_image=None,
          ibl=None,
@@ -84,6 +67,8 @@ def draw(geometry=None,
     w.reset_camera_to_default()  # make sure far/near get setup nicely
     if lookat is not None and eye is not None and up is not None:
         w.setup_camera(field_of_view, lookat, eye, up)
+    elif intrinsic_matrix is not None and extrinsic_matrix is not None:
+        w.setup_camera(intrinsic_matrix, extrinsic_matrix, width, height)
 
     w.animation_time_step = animation_time_step
     if animation_duration is not None:

@@ -269,7 +269,7 @@ endfunction()
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
 #
 function(open3d_find_package_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;VERSION;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_find_package_3rdparty_library(${name} ${ARGN})")
@@ -281,6 +281,9 @@ function(open3d_find_package_3rdparty_library name)
         set(arg_PACKAGE_VERSION_VAR "${arg_PACKAGE}_VERSION")
     endif()
     set(find_package_args "")
+    if(arg_VERSION)
+        list(APPEND find_package_args "${arg_VERSION}")
+    endif()
     if(arg_REQUIRED)
         list(APPEND find_package_args "REQUIRED")
     endif()
@@ -539,11 +542,26 @@ endif()
 
 # cutlass
 if(BUILD_CUDA_MODULE)
-    include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
-    open3d_import_3rdparty_library(3rdparty_cutlass
-        INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
-        DEPENDS      ext_cutlass
-    )
+    if(USE_SYSTEM_CUTLASS)
+        find_path(3rdparty_cutlass_INCLUDE_DIR NAMES cutlass/cutlass.h)
+        if(3rdparty_cutlass_INCLUDE_DIR)
+            add_library(3rdparty_cutlass INTERFACE)
+            target_include_directories(3rdparty_cutlass INTERFACE ${3rdparty_cutlass_INCLUDE_DIR})
+            add_library(Open3D::3rdparty_cutlass ALIAS 3rdparty_cutlass)
+            if(NOT BUILD_SHARED_LIBS)
+                install(TARGETS 3rdparty_cutlass EXPORT ${PROJECT_NAME}Targets)
+            endif()
+        else()
+            set(USE_SYSTEM_CUTLASS OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_CUTLASS)
+        include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
+        open3d_import_3rdparty_library(3rdparty_cutlass
+            INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
+            DEPENDS      ext_cutlass
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cutlass)
 endif()
 
@@ -581,6 +599,7 @@ endif()
 if(USE_SYSTEM_NANOFLANN)
     open3d_find_package_3rdparty_library(3rdparty_nanoflann
         PACKAGE nanoflann
+        VERSION 1.5.0
         TARGETS nanoflann::nanoflann
     )
     if(NOT 3rdparty_nanoflann_FOUND)
@@ -827,39 +846,60 @@ endif()
 # - Curl should be linked before PNG, otherwise it will have undefined symbols.
 # - openssl.cmake needs to be included before curl.cmake, for the
 #   BORINGSSL_ROOT_DIR variable.
-include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
-include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
-open3d_import_3rdparty_library(3rdparty_curl
-    INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    LIB_DIR      ${CURL_LIB_DIR}
-    LIBRARIES    ${CURL_LIBRARIES}
-    DEPENDS      ext_zlib ext_curl
-)
-if(APPLE)
-    # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
-    # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
-    # Fixes error:
-    # ```
-    # Undefined symbols for architecture arm64:
-    # "_SCDynamicStoreCopyProxies", referenced from:
-    #     _Curl_resolv in libcurl.a(hostip.c.o)
-    # ```
-    # The "Foundation" framework is already linked by GLFW.
-    target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+if(USE_SYSTEM_CURL)
+    open3d_pkg_config_3rdparty_library(3rdparty_curl
+        SEARCH_ARGS libcurl
+    )
+    if(NOT 3rdparty_curl_FOUND)
+        set(USE_SYSTEM_CURL OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_CURL)
+    if(USE_SYSTEM_OPENSSL)
+        open3d_find_package_3rdparty_library(3rdparty_openssl
+            PACKAGE OpenSSL
+            TARGETS OpenSSL::Crypto
+        )
+        if(NOT 3rdparty_openssl_FOUND)
+            set(USE_SYSTEM_OPENSSL OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_OPENSSL)
+        # BoringSSL
+        include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+        open3d_import_3rdparty_library(3rdparty_openssl
+            INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+            INCLUDE_ALL
+            INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+            LIB_DIR      ${BORINGSSL_LIB_DIR}
+            LIBRARIES    ${BORINGSSL_LIBRARIES}
+            DEPENDS      ext_zlib ext_boringssl
+        )
+    endif()
+
+    include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
+    open3d_import_3rdparty_library(3rdparty_curl
+        INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        LIB_DIR      ${CURL_LIB_DIR}
+        LIBRARIES    ${CURL_LIBRARIES}
+        DEPENDS      ext_zlib ext_curl
+    )
+    if(APPLE)
+        # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
+        # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
+        # Fixes error:
+        # ```
+        # Undefined symbols for architecture arm64:
+        # "_SCDynamicStoreCopyProxies", referenced from:
+        #     _Curl_resolv in libcurl.a(hostip.c.o)
+        # ```
+        # The "Foundation" framework is already linked by GLFW.
+        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+    endif()
+    target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl)
-
-# BoringSSL
-open3d_import_3rdparty_library(3rdparty_openssl
-    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
-    LIB_DIR      ${BORINGSSL_LIB_DIR}
-    LIBRARIES    ${BORINGSSL_LIBRARIES}
-    DEPENDS      ext_zlib ext_boringssl
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_openssl)
 
 # PNG
 if(USE_SYSTEM_PNG)
@@ -1028,6 +1068,8 @@ endif()
 
 # fmt
 if(USE_SYSTEM_FMT)
+    # MSVC >= 17.x required for building fmt 8+
+    # SYCL / DPC++ needs fmt ver <8 or >= 9.2: https://github.com/fmtlib/fmt/issues/3005
     open3d_find_package_3rdparty_library(3rdparty_fmt
         PUBLIC
         PACKAGE fmt
@@ -1052,7 +1094,7 @@ if(NOT USE_SYSTEM_FMT)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)
 else()
-    list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_fmt)
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_fmt)
 endif()
 
 # Pybind11
@@ -1085,6 +1127,14 @@ open3d_import_3rdparty_library(3rdparty_poisson
     DEPENDS      ext_poisson
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_poisson)
+
+# Minizip
+if(WITH_MINIZIP)
+    open3d_pkg_config_3rdparty_library(3rdparty_minizip
+        SEARCH_ARGS minizip
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+endif()
 
 # Googletest
 if (BUILD_UNIT_TESTS)
@@ -1406,9 +1456,15 @@ endif()
 # msgpack
 if(USE_SYSTEM_MSGPACK)
     open3d_find_package_3rdparty_library(3rdparty_msgpack
-        PACKAGE msgpack
-        TARGETS msgpackc
+        PACKAGE msgpack-cxx
+        TARGETS msgpack-cxx
     )
+    if(NOT 3rdparty_msgpack_FOUND)
+        open3d_find_package_3rdparty_library(3rdparty_msgpack
+            PACKAGE msgpack
+            TARGETS msgpackc
+        )
+    endif()
     if(NOT 3rdparty_msgpack_FOUND)
         open3d_pkg_config_3rdparty_library(3rdparty_msgpack
             SEARCH_ARGS msgpack
@@ -1430,16 +1486,41 @@ else()
 endif()
 
 # VTK
-include(${Open3D_3RDPARTY_DIR}/vtk/vtk_build.cmake)
-open3d_import_3rdparty_library(3rdparty_vtk
-    HIDDEN
-    INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
-    LIB_DIR      ${VTK_LIB_DIR}
-    LIBRARIES    ${VTK_LIBRARIES}
-    DEPENDS      ext_vtk
-)
-if(UNIX AND NOT APPLE)
-    target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+if(USE_SYSTEM_VTK)
+    open3d_find_package_3rdparty_library(3rdparty_vtk
+        PACKAGE VTK
+        TARGETS
+            VTK::FiltersGeneral
+            VTK::FiltersSources
+            VTK::FiltersModeling
+            VTK::FiltersCore
+            VTK::CommonExecutionModel
+            VTK::CommonDataModel
+            VTK::CommonTransforms
+            VTK::CommonMath
+            VTK::CommonMisc
+            VTK::CommonSystem
+            VTK::CommonCore
+            VTK::kissfft
+            VTK::pugixml
+            VTK::vtksys
+    )
+    if(NOT 3rdparty_vtk_FOUND)
+        set(USE_SYSTEM_VTK OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_VTK)
+    include(${Open3D_3RDPARTY_DIR}/vtk/vtk_build.cmake)
+    open3d_import_3rdparty_library(3rdparty_vtk
+        HIDDEN
+        INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
+        LIB_DIR      ${VTK_LIB_DIR}
+        LIBRARIES    ${VTK_LIBRARIES}
+        DEPENDS      ext_vtk
+    )
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+    endif()
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
 
@@ -1620,7 +1701,12 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
                     target_link_libraries(3rdparty_blas INTERFACE
                         ${quadmath_lib})
                     # Suppress Apple compiler warnigns.
-                    target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+                    if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+                        message(WARNING "All link warnings have been disabled on Apple Silicon builds "
+                            "due to the large number of spurious warnings that are generated. If you "
+                            "need to see link warnings please build with -DCMAKE_BUILD_TYPE=Debug.")
+                        target_link_options(3rdparty_blas INTERFACE "-Wl,-w")
+                    endif()
                 endif()
             elseif(UNIX AND NOT APPLE)
                 # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
@@ -1773,25 +1859,47 @@ endif ()
 
 # Stdgpu
 if (BUILD_CUDA_MODULE)
-    include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
-    open3d_import_3rdparty_library(3rdparty_stdgpu
-        INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
-        LIB_DIR      ${STDGPU_LIB_DIR}
-        LIBRARIES    ${STDGPU_LIBRARIES}
-        DEPENDS      ext_stdgpu
-    )
+    if(USE_SYSTEM_STDGPU)
+        open3d_find_package_3rdparty_library(3rdparty_stdgpu
+            PACKAGE stdgpu
+            TARGETS stdgpu::stdgpu
+        )
+        if(NOT 3rdparty_stdgpu_FOUND)
+            set(USE_SYSTEM_STDGPU OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_STDGPU)
+        include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
+        open3d_import_3rdparty_library(3rdparty_stdgpu
+            INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
+            LIB_DIR      ${STDGPU_LIB_DIR}
+            LIBRARIES    ${STDGPU_LIBRARIES}
+            DEPENDS      ext_stdgpu
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_stdgpu)
 endif ()
 
 # embree
-include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-open3d_import_3rdparty_library(3rdparty_embree
-    HIDDEN
-    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-    LIB_DIR      ${EMBREE_LIB_DIR}
-    LIBRARIES    ${EMBREE_LIBRARIES}
-    DEPENDS      ext_embree
-)
+if(USE_SYSTEM_EMBREE)
+    open3d_find_package_3rdparty_library(3rdparty_embree
+        PACKAGE embree
+        TARGETS embree
+    )
+    if(NOT 3rdparty_embree_FOUND)
+        set(USE_SYSTEM_EMBREE OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_EMBREE)
+    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+    open3d_import_3rdparty_library(3rdparty_embree
+        HIDDEN
+        INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+        LIB_DIR      ${EMBREE_LIB_DIR}
+        LIBRARIES    ${EMBREE_LIBRARIES}
+        DEPENDS      ext_embree
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
 
 # WebRTC
