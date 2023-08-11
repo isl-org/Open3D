@@ -305,11 +305,11 @@ class PyExampleDocsBuilder:
             f.write(out_string)
 
     @staticmethod
-    def _add_example_to_docs(example, output_path):
+    def _add_example_to_docs(example: Path, output_path):
         shutil.copy(example, output_path)
-        out_string = (f"{example.stem}.py"
-                      f"\n```````````````````````````````````````\n"
-                      f"\n.. literalinclude:: {example.stem}.py"
+        out_string = (f"{example.name}"
+                      f"\n{'`' * (len(example.name))}\n"
+                      f"\n.. literalinclude:: {example.name}"
                       f"\n   :language: python"
                       f"\n   :linenos:"
                       f"\n\n\n")

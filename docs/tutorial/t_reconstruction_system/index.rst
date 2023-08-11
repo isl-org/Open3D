@@ -87,7 +87,7 @@ images using the Intel RealSense camera. For more details, please see
 :ref:`capture_your_own_dataset`.
 
 Getting started with online reconstruction system
-``````````````````````````````````````
+`````````````````````````````````````````````````
 
 .. toctree::
 
