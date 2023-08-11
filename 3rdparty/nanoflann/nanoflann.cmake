@@ -3,8 +3,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_nanoflann
     PREFIX nanoflann
-    URL https://github.com/jlblancoc/nanoflann/archive/refs/tags/v1.3.2.tar.gz
-    URL_HASH SHA256=e100b5fc8d72e9426a80312d852a62c05ddefd23f17cbb22ccd8b458b11d0bea
+    URL https://github.com/jlblancoc/nanoflann/archive/refs/tags/v1.5.0.tar.gz
+    URL_HASH SHA256=89aecfef1a956ccba7e40f24561846d064f309bc547cc184af7f4426e42f8e65
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/nanoflann"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""

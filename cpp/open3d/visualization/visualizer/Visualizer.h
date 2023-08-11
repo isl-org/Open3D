@@ -173,7 +173,6 @@ public:
 
     /// Function to retrieve the associated ViewControl
     ViewControl &GetViewControl() { return *view_control_ptr_; }
-    const ViewControl &GetViewControl() const { return *view_control_ptr_; }
     /// Function to retrieve the associated RenderOption.
     RenderOption &GetRenderOption() { return *render_option_ptr_; }
     /// \brief Function to capture screen and store RGB in a float buffer.
@@ -210,10 +209,17 @@ public:
                                 bool do_render = true,
                                 bool convert_to_world_coordinate = false);
     void CaptureRenderOption(const std::string &filename = "");
+
     /// Function to reset view point.
     void ResetViewPoint(bool reset_bounding_box = false);
 
     const std::string &GetWindowName() const { return window_name_; }
+
+    /// Get the current view status as a json string of ViewTrajectory.
+    std::string GetViewStatus();
+
+    /// Set the current view status from a json string of ViewTrajectory.
+    void SetViewStatus(const std::string &view_status_str);
 
 protected:
     /// Function to initialize OpenGL
@@ -230,11 +236,13 @@ protected:
     /// meshes individually).
     virtual void Render(bool render_screen = false);
 
+    /// Copy the current view status to clipboard.
     void CopyViewStatusToClipboard();
 
+    /// Apply the view point from clipboard.
     void CopyViewStatusFromClipboard();
 
-    // callback functions
+    /// Callback functions
     virtual void WindowRefreshCallback(GLFWwindow *window);
     virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
     virtual void MouseMoveCallback(GLFWwindow *window, double x, double y);

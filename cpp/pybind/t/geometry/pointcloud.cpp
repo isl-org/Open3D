@@ -655,6 +655,7 @@ Returns:
 Example:
 
     This code generates a set of straight lines from a point cloud::
+        
         import open3d as o3d
         import numpy as np
         pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
