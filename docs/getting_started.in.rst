@@ -104,7 +104,7 @@ install the latest development version directly with pip:
 
 .. code-block:: bash
 
-    pip install --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d
+    pip install --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d[gui,ml]
 
 .. note::
    The development wheels for Linux are named according to PEP600. Please
