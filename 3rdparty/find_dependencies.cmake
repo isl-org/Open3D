@@ -269,7 +269,7 @@ endfunction()
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
 #
 function(open3d_find_package_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;VERSION;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_find_package_3rdparty_library(${name} ${ARGN})")
@@ -281,6 +281,9 @@ function(open3d_find_package_3rdparty_library name)
         set(arg_PACKAGE_VERSION_VAR "${arg_PACKAGE}_VERSION")
     endif()
     set(find_package_args "")
+    if(arg_VERSION)
+        list(APPEND find_package_args "${arg_VERSION}")
+    endif()
     if(arg_REQUIRED)
         list(APPEND find_package_args "REQUIRED")
     endif()
@@ -539,11 +542,26 @@ endif()
 
 # cutlass
 if(BUILD_CUDA_MODULE)
-    include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
-    open3d_import_3rdparty_library(3rdparty_cutlass
-        INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
-        DEPENDS      ext_cutlass
-    )
+    if(USE_SYSTEM_CUTLASS)
+        find_path(3rdparty_cutlass_INCLUDE_DIR NAMES cutlass/cutlass.h)
+        if(3rdparty_cutlass_INCLUDE_DIR)
+            add_library(3rdparty_cutlass INTERFACE)
+            target_include_directories(3rdparty_cutlass INTERFACE ${3rdparty_cutlass_INCLUDE_DIR})
+            add_library(Open3D::3rdparty_cutlass ALIAS 3rdparty_cutlass)
+            if(NOT BUILD_SHARED_LIBS)
+                install(TARGETS 3rdparty_cutlass EXPORT ${PROJECT_NAME}Targets)
+            endif()
+        else()
+            set(USE_SYSTEM_CUTLASS OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_CUTLASS)
+        include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
+        open3d_import_3rdparty_library(3rdparty_cutlass
+            INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
+            DEPENDS      ext_cutlass
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cutlass)
 endif()
 
@@ -581,6 +599,7 @@ endif()
 if(USE_SYSTEM_NANOFLANN)
     open3d_find_package_3rdparty_library(3rdparty_nanoflann
         PACKAGE nanoflann
+        VERSION 1.5.0
         TARGETS nanoflann::nanoflann
     )
     if(NOT 3rdparty_nanoflann_FOUND)
@@ -1109,6 +1128,14 @@ open3d_import_3rdparty_library(3rdparty_poisson
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_poisson)
 
+# Minizip
+if(WITH_MINIZIP)
+    open3d_pkg_config_3rdparty_library(3rdparty_minizip
+        SEARCH_ARGS minizip
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+endif()
+
 # Googletest
 if (BUILD_UNIT_TESTS)
     if(USE_SYSTEM_GOOGLETEST)
@@ -1429,9 +1456,15 @@ endif()
 # msgpack
 if(USE_SYSTEM_MSGPACK)
     open3d_find_package_3rdparty_library(3rdparty_msgpack
-        PACKAGE msgpack
-        TARGETS msgpackc
+        PACKAGE msgpack-cxx
+        TARGETS msgpack-cxx
     )
+    if(NOT 3rdparty_msgpack_FOUND)
+        open3d_find_package_3rdparty_library(3rdparty_msgpack
+            PACKAGE msgpack
+            TARGETS msgpackc
+        )
+    endif()
     if(NOT 3rdparty_msgpack_FOUND)
         open3d_pkg_config_3rdparty_library(3rdparty_msgpack
             SEARCH_ARGS msgpack
@@ -1826,25 +1859,47 @@ endif ()
 
 # Stdgpu
 if (BUILD_CUDA_MODULE)
-    include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
-    open3d_import_3rdparty_library(3rdparty_stdgpu
-        INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
-        LIB_DIR      ${STDGPU_LIB_DIR}
-        LIBRARIES    ${STDGPU_LIBRARIES}
-        DEPENDS      ext_stdgpu
-    )
+    if(USE_SYSTEM_STDGPU)
+        open3d_find_package_3rdparty_library(3rdparty_stdgpu
+            PACKAGE stdgpu
+            TARGETS stdgpu::stdgpu
+        )
+        if(NOT 3rdparty_stdgpu_FOUND)
+            set(USE_SYSTEM_STDGPU OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_STDGPU)
+        include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
+        open3d_import_3rdparty_library(3rdparty_stdgpu
+            INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
+            LIB_DIR      ${STDGPU_LIB_DIR}
+            LIBRARIES    ${STDGPU_LIBRARIES}
+            DEPENDS      ext_stdgpu
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_stdgpu)
 endif ()
 
 # embree
-include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-open3d_import_3rdparty_library(3rdparty_embree
-    HIDDEN
-    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-    LIB_DIR      ${EMBREE_LIB_DIR}
-    LIBRARIES    ${EMBREE_LIBRARIES}
-    DEPENDS      ext_embree
-)
+if(USE_SYSTEM_EMBREE)
+    open3d_find_package_3rdparty_library(3rdparty_embree
+        PACKAGE embree
+        TARGETS embree
+    )
+    if(NOT 3rdparty_embree_FOUND)
+        set(USE_SYSTEM_EMBREE OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_EMBREE)
+    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+    open3d_import_3rdparty_library(3rdparty_embree
+        HIDDEN
+        INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+        LIB_DIR      ${EMBREE_LIB_DIR}
+        LIBRARIES    ${EMBREE_LIBRARIES}
+        DEPENDS      ext_embree
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
 
 # WebRTC

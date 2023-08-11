@@ -104,7 +104,6 @@ if __name__ == '__main__':
                             intrinsic,
                             intrinsic,
                             extrinsics,
-                            integrate_color=True,
                             config=config)
 
             pcd = vbg.extract_point_cloud()

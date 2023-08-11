@@ -11,8 +11,10 @@
 
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
+#include <algorithm>
 #include <cmath>
 #include <memory>
+#include <numeric>
 #include <tuple>
 #include <vector>
 
@@ -29,27 +31,26 @@ namespace {
 bool IsLocalMaxima(int query_idx,
                    const std::vector<int>& indices,
                    const std::vector<double>& third_eigen_values) {
-    for (const auto& idx : indices) {
-        if (third_eigen_values[query_idx] < third_eigen_values[idx]) {
-            return false;
-        }
-    }
-    return true;
+    return std::none_of(
+            indices.begin(), indices.end(),
+            [&third_eigen_values, value = third_eigen_values[query_idx]](
+                    const int idx) { return value < third_eigen_values[idx]; });
 }
 
 double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
                               const geometry::KDTreeFlann& kdtree) {
     std::vector<int> indices(2);
     std::vector<double> distances(2);
-    double resolution = 0.0;
+    const double resolution = std::accumulate(
+            points.begin(), points.end(), 0.,
+            [&](double state, const Eigen::Vector3d& point) {
+                if (kdtree.SearchKNN(point, 2, indices, distances) >= 2) {
+                    state += std::sqrt(distances[1]);
+                }
+                return state;
+            });
 
-    for (const auto& point : points) {
-        if (kdtree.SearchKNN(point, 2, indices, distances) != 0) {
-            resolution += std::sqrt(distances[1]);
-        }
-    }
-    resolution /= points.size();
-    return resolution;
+    return resolution / static_cast<double>(points.size());
 }
 
 }  // namespace
@@ -118,6 +119,7 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
 
             if (nb_neighbors >= min_neighbors &&
                 IsLocalMaxima(i, nn_indices, third_eigen_values)) {
+#pragma omp critical
                 kp_indices.emplace_back(i);
             }
         }

@@ -58,7 +58,7 @@ REGISTER_OP("Open3DVoxelize")
             voxel_batch_splits = c->MakeShape({c->UnknownDim()});
             c->set_output(3, voxel_batch_splits);
 
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Voxelization for point clouds.

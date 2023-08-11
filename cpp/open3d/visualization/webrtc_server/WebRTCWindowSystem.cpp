@@ -419,7 +419,7 @@ void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
 std::string WebRTCWindowSystem::CallHttpAPI(const std::string &entry_point,
                                             const std::string &query_string,
                                             const std::string &data) const {
-    utility::LogInfo("[Called HTTP API (custom handshake)] {}", entry_point);
+    utility::LogDebug("[Called HTTP API (custom handshake)] {}", entry_point);
 
     std::string query_string_trimmed = "";
     if (!query_string.empty() && query_string[0] == '?') {
