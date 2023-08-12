@@ -74,7 +74,7 @@ Example config file for online reconstruction system has been provided in
 ``examples/python/t_reconstruction_system/default_config.yml``, which looks like the following:
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/default_config.yml
-   :language: yml
+   :language: yaml
    :lineno-start: 1
    :lines: 1-
    :linenos:
