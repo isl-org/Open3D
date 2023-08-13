@@ -11,20 +11,21 @@
 # (3) make.py calls the actual `sphinx-build`
 
 import argparse
+import importlib
+import inspect
+import multiprocessing
+import os
+import re
+import shutil
+import ssl
 import subprocess
 import sys
-import importlib
-import os
-import inspect
-import shutil
-import re
-from pathlib import Path
-import nbformat
-import nbconvert
-import ssl
-import certifi
 import urllib.request
-import multiprocessing
+from pathlib import Path
+
+import certifi
+import nbconvert
+import nbformat
 
 
 def _create_or_clear_dir(dir_path):
@@ -66,10 +67,10 @@ class PyAPIDocsBuilder:
         self.output_dir = output_dir
         self.input_dir = input_dir
         self.module_names = PyAPIDocsBuilder._get_documented_module_names()
-        print("Generating *.rst Python API docs in directory: %s" %
-              self.output_dir)
 
     def generate_rst(self):
+        print("Generating *.rst Python API docs in directory: %s" %
+              self.output_dir)
         _create_or_clear_dir(self.output_dir)
 
         for module_name in self.module_names:
@@ -279,8 +280,6 @@ class PyExampleDocsBuilder:
         sys.path.append(os.path.join(pwd, "..", "python", "tools"))
         from cli import _get_all_examples_dict
         self.get_all_examples_dict = _get_all_examples_dict
-        print("Generating *.rst Python example docs in directory: %s" %
-              self.output_dir)
 
     def _get_examples_dict(self):
         examples_dict = self.get_all_examples_dict()
@@ -318,6 +317,8 @@ class PyExampleDocsBuilder:
             f.write(out_string)
 
     def generate_rst(self):
+        print("Generating *.rst Python example docs in directory: %s" %
+              self.output_dir)
         _create_or_clear_dir(self.output_dir)
         examples_dict = self._get_examples_dict()
 
@@ -482,22 +483,17 @@ class JupyterDocsBuilder:
         # Jupyter notebooks
         os.environ["CI"] = "true"
 
-        # Copy and execute notebooks in the tutorial folder
+        # Copy from jupyter to the tutorial folder.
         nb_paths = []
-        nb_direct_copy = [
-            'draw_plotly.ipynb',
-            'hashmap.ipynb',
-            'jupyter_visualization.ipynb',
-            't_icp_registration.ipynb',
-            'tensor.ipynb',
-        ]
+        nb_parent_src = Path(self.current_file_dir) / "jupyter"
+        nb_parent_dst = Path(self.current_file_dir) / "tutorial"
         example_dirs = [
-            "geometry", "t_geometry", "core", "data", "pipelines",
-            "visualization", "t_pipelines"
+            name for name in os.listdir(nb_parent_src)
+            if os.path.isdir(nb_parent_src / name)
         ]
         for example_dir in example_dirs:
-            in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)
-            out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
+            in_dir = nb_parent_src / example_dir
+            out_dir = nb_parent_dst / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy(
                 in_dir.parent / "open3d_tutorial.py",
@@ -523,6 +519,15 @@ class JupyterDocsBuilder:
                 shutil.copytree(in_dir / "images", out_dir / "images")
 
         # Execute Jupyter notebooks
+        # Files that should not be executed.
+        nb_direct_copy = [
+            'draw_plotly.ipynb',
+            'hashmap.ipynb',
+            'jupyter_visualization.ipynb',
+            't_icp_registration.ipynb',
+            'tensor.ipynb',
+        ]
+
         for nb_path in nb_paths:
             if nb_path.name in nb_direct_copy:
                 print("[Processing notebook {}, directly copied]".format(
@@ -584,7 +589,7 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help=("Whether to clean existing notebooks in docs/tutorial. "
-              "Notebooks are copied from examples/python to docs/tutorial."),
+              "Notebooks are copied from docs/jupyter to docs/tutorial."),
     )
     parser.add_argument(
         "--execute_notebooks",
