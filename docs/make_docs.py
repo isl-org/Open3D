@@ -491,14 +491,18 @@ class JupyterDocsBuilder:
             name for name in os.listdir(nb_parent_src)
             if os.path.isdir(nb_parent_src / name)
         ]
+
+        print(f"Copying {nb_parent_src / 'open3d_tutorial.py'} "
+              f"to {nb_parent_dst / 'open3d_tutorial.py'}")
+        shutil.copy(
+            nb_parent_src / "open3d_tutorial.py",
+            nb_parent_dst / "open3d_tutorial.py",
+        )
+
         for example_dir in example_dirs:
             in_dir = nb_parent_src / example_dir
             out_dir = nb_parent_dst / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy(
-                in_dir.parent / "open3d_tutorial.py",
-                out_dir.parent / "open3d_tutorial.py",
-            )
 
             if self.clean_notebooks:
                 for nb_out_path in out_dir.glob("*.ipynb"):
