@@ -99,7 +99,9 @@ extra_requires = defaultdict(list)
 
 # Standard Extras
 with open("requirements_gui.txt", "r") as f:
-    extra_requires["standard"] += [line.strip() for line in f.readlines() if line]
+    extra_requires["standard"] += [
+        line.strip() for line in f.readlines() if line
+    ]
 
 # Read requirements for ML.
 if "@BUNDLE_OPEN3D_ML@" == "ON":
