@@ -389,6 +389,13 @@ void pybind_rendering_classes(py::module &m) {
     tri_model.def(py::init<>())
             .def_readwrite("meshes", &TriangleMeshModel::meshes_)
             .def_readwrite("materials", &TriangleMeshModel::materials_);
+    tri_model.def("add_mesh", &TriangleMeshModel::AddMesh,
+                  "Adds a mesh to an existing model and breaks it into "
+                  "separate meshes based on the material index per triangle");
+    tri_model.def_static("from_triangle_mesh",
+                         &TriangleMeshModel::FromTriangleMesh,
+                         "Creates a model by splitting a mesh apart based on "
+                         "the material index per triangle");
 
     // ---- ColorGradingParams ---
     py::class_<ColorGradingParams> color_grading(

@@ -3,8 +3,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_tinygltf
     PREFIX tinygltf
-    URL https://github.com/syoyo/tinygltf/archive/72f4a55edd54742bca1a71ade8ac70afca1d3f07.tar.gz
-    URL_HASH SHA256=9e848dcf0ec7dcb352ced782aea32064a63a51b3c68ed14c68531e08632a2d90
+    URL https://github.com/syoyo/tinygltf/archive/refs/tags/v2.8.3.tar.gz
+    URL_HASH SHA256=fbef83ef47dbc6d1662103b54ea54f05a753ddff7a11d80b9fe0cd306ab5d4d2
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/tinygltf"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""

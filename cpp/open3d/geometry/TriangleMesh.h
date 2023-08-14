@@ -853,7 +853,7 @@ public:
         std::unordered_map<std::string, Image> additionalMaps;
     };
 
-    std::unordered_map<std::string, Material> materials_;
+    std::vector<std::pair<std::string, Material>> materials_;
 
     /// List of material ids.
     std::vector<int> triangle_material_ids_;

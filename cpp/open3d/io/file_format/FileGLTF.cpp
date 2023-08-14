@@ -8,12 +8,15 @@
 #include <tiny_gltf.h>
 
 #include <numeric>
+#include <tcbspan/span.hpp>
 #include <vector>
 
 #include "open3d/io/FileFormatIO.h"
+#include "open3d/io/ModelIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/visualization/rendering/Model.h"
 
 namespace open3d {
 namespace io {
@@ -577,7 +580,7 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     if (filename_ext == "glb") {
         if (!loader.WriteGltfSceneToFile(&model, filename, false, true, true,
                                          true)) {
-            utility::LogWarning("Write GLTF failed.");
+            utility::LogWarning("Write GLB failed.");
             return false;
         }
     } else {
@@ -588,6 +591,539 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         }
     }
 
+    return true;
+}
+
+template <typename T>
+tcb::span<T, tcb::dynamic_extent> GetBufferSpan(
+        tinygltf::Buffer& buff,
+        tinygltf::BufferView& view,
+        const tinygltf::Accessor& accessor) {
+    if (view.byteStride != 0 && view.byteStride != sizeof(T)) {
+        utility::LogError("Cannot get a strided buffer span");
+    }
+
+    if (view.byteLength % 4 != 0) {
+        view.byteLength += 4 - (view.byteLength % 4);
+    }
+
+    // Make sure the buffer can hold that much data
+    buff.data.resize(view.byteOffset + view.byteLength);
+    // Create a span with the correct type aliasing the underlying data
+    return tcb::span<T, tcb::dynamic_extent>(
+            reinterpret_cast<T*>(buff.data.data() + view.byteOffset +
+                                 accessor.byteOffset),
+            accessor.count);
+}
+
+tinygltf::Material ConvertMaterial(
+        const visualization::rendering::MaterialRecord& mat_rec) {
+    tinygltf::Material material;
+    material.name = mat_rec.name;
+    material.emissiveFactor = {{
+            mat_rec.emissive_color(0),
+            mat_rec.emissive_color(1),
+            mat_rec.emissive_color(2),
+    }};
+    material.alphaMode = mat_rec.has_alpha ? "BLEND" : "OPAQUE";
+
+    material.pbrMetallicRoughness.baseColorFactor = {{
+            mat_rec.base_color(0),
+            mat_rec.base_color(1),
+            mat_rec.base_color(2),
+            mat_rec.base_color(3),
+    }};
+    material.pbrMetallicRoughness.metallicFactor = mat_rec.base_metallic;
+    material.pbrMetallicRoughness.roughnessFactor = mat_rec.base_roughness;
+
+    if (mat_rec.thickness != 1.f || mat_rec.transmission != 1.f ||
+        mat_rec.absorption_color != Eigen::Vector3f::Ones() ||
+        mat_rec.absorption_distance != 1.f) {
+        utility::LogWarning(
+                "Refractive materials are not supported when "
+                "exporting to GLTF");
+    }
+
+    if (mat_rec.point_size != 3.f || mat_rec.line_width != 1.f) {
+        utility::LogWarning(
+                "Line and Point materials are not supported "
+                "when exporting to GLTF");
+    }
+
+    if (mat_rec.base_reflectance != 0.5f || mat_rec.reflectance_img) {
+        utility::LogWarning(
+                "Reflectance is not supported when exporting to GLTF");
+    }
+
+    if (mat_rec.base_clearcoat != 0.f ||
+        mat_rec.base_clearcoat_roughness != 0.f || mat_rec.clearcoat_img ||
+        mat_rec.clearcoat_roughness_img || mat_rec.ao_rough_metal_img) {
+        utility::LogWarning(
+                "Clearcoat is not supported when exporting to GLTF");
+    }
+
+    if (mat_rec.base_anisotropy != 0.f || mat_rec.anisotropy_img) {
+        utility::LogWarning(
+                "Anisotropy is not supported when exporting to GLTF");
+    }
+
+    if (mat_rec.ao_rough_metal_img) {
+        utility::LogWarning(
+                "Combined AO/Roughness is not supported "
+                "when exporting to GLTF");
+    }
+
+    if (mat_rec.gradient || mat_rec.scalar_min != 0.f ||
+        mat_rec.scalar_max != 1.f) {
+        utility::LogWarning(
+                "Gradient sampling is not supported "
+                "when exporting to GLTF");
+    }
+
+    for (const auto& kvpair : mat_rec.generic_params) {
+        utility::LogWarning("Skipping material property {}", kvpair.first);
+    }
+
+    for (const auto& kvpair : mat_rec.generic_imgs) {
+        utility::LogWarning("Skipping material texture {}", kvpair.first);
+    }
+    return material;
+}
+
+void SerializeTexture(tinygltf::Model& model,
+                      const geometry::Image& tex_img,
+                      std::size_t primitive_idx,
+                      const std::string& tex_name) {
+    tinygltf::Image image;
+    image.name = tex_img.GetName();
+    if (image.name.empty()) {
+        image.name = fmt::format("primitive-{}-{}", primitive_idx, tex_name);
+    }
+    image.uri = image.name + ".png";
+    image.mimeType = "image/png";
+    image.width = tex_img.width_;
+    image.height = tex_img.height_;
+    image.component = tex_img.num_of_channels_;
+    image.bits = 8;
+    image.pixel_type = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE;
+    // Copy the image data itself
+    if (tex_img.bytes_per_channel_ == 1) {
+        image.image = tex_img.data_;
+    } else if (tex_img.bytes_per_channel_ == 2) {
+        tcb::span<const std::uint16_t> input_span(
+                reinterpret_cast<const std::uint16_t*>(tex_img.data_.data()),
+                tex_img.data_.size() / 2);
+        image.image.resize(input_span.size());
+        tcb::span<std::uint8_t> output_span(image.image.data(),
+                                            image.image.size());
+        std::transform(input_span.begin(), input_span.end(),
+                       output_span.begin(),
+                       [](const auto& val) { return val; });
+    } else {
+        utility::LogError("Primitive {} cannot export {} image for GLTF",
+                          primitive_idx, tex_name);
+    }
+    model.images.emplace_back(std::move(image));
+    model.textures.emplace_back();
+    model.textures.back().name =
+            fmt::format("primitive-{}-{}", primitive_idx, tex_name);
+    model.textures.back().source = static_cast<int>(model.images.size()) - 1;
+}
+
+void WriteImagesToBuffers(tinygltf::Model& model) {
+    for (tinygltf::Image& image : model.images) {
+        model.buffers.emplace_back();
+        tinygltf::Buffer& img_buff = model.buffers.back();
+        img_buff.name = image.name + "-image-buffer";
+
+        model.bufferViews.emplace_back();
+        tinygltf::BufferView& img_buff_view = model.bufferViews.back();
+        img_buff_view.name = image.name + "-image-buff-view";
+        img_buff_view.buffer = static_cast<int>(model.buffers.size()) - 1;
+        if (image.mimeType == "image/png") {
+            if (!stbi_write_png_to_func(tinygltf::WriteToMemory_stbi,
+                                        &img_buff.data, image.width,
+                                        image.height, image.component,
+                                        image.image.data(), 0)) {
+                utility::LogError("Failed to serialize {}", image.name);
+            }
+        } else if (image.mimeType == "image/jpeg") {
+            if (!stbi_write_jpg_to_func(tinygltf::WriteToMemory_stbi,
+                                        &img_buff.data, image.width,
+                                        image.height, image.component,
+                                        image.image.data(), 100)) {
+                utility::LogError("Failed to serialize {}", image.name);
+            }
+        } else if (image.mimeType == "image/bmp") {
+            if (!stbi_write_bmp_to_func(tinygltf::WriteToMemory_stbi,
+                                        &img_buff.data, image.width,
+                                        image.height, image.component,
+                                        image.image.data())) {
+                utility::LogError("Failed to serialize {}", image.name);
+            }
+        } else {
+            utility::LogError("Unsupported mime-type for image {}", image.name);
+        }
+        image.image.clear();
+        image.uri.clear();
+        image.bufferView = static_cast<int>(model.bufferViews.size()) - 1;
+        image.as_is = true;
+        img_buff_view.byteLength = img_buff.data.size();
+    }
+}
+
+void ShrinkBuffersToFit(tinygltf::Model& model) {
+    std::vector<std::size_t> sizes(model.buffers.size(), 0);
+    for (const auto& view : model.bufferViews) {
+        sizes[view.buffer] += view.byteLength;
+    }
+    for (std::size_t i = 0; i < model.buffers.size(); ++i) {
+        model.buffers[i].data.resize(sizes[i]);
+    }
+}
+
+void ConsolidateBuffers(tinygltf::Model& model) {
+    ShrinkBuffersToFit(model);
+    for (int i = 1; i < static_cast<int>(model.buffers.size()); ++i) {
+        for (tinygltf::BufferView& view : model.bufferViews) {
+            if (view.buffer != i) {
+                continue;
+            }
+            view.byteOffset += model.buffers[0].data.size();
+            view.buffer = 0;
+        }
+        model.buffers[0].data.insert(model.buffers[0].data.end(),
+                                     model.buffers[i].data.begin(),
+                                     model.buffers[i].data.end());
+    }
+    model.buffers.erase(std::next(model.buffers.begin()), model.buffers.end());
+}
+
+bool WriteTriangleModelToGLTF(
+        const std::string& filename,
+        const visualization::rendering::TriangleMeshModel& mesh_model) {
+    for (const auto& mesh_info : mesh_model.meshes_) {
+        auto mat_it = std::minmax_element(
+                mesh_info.mesh->triangle_material_ids_.begin(),
+                mesh_info.mesh->triangle_material_ids_.end());
+        if (*mat_it.first != *mat_it.second) {
+            utility::LogWarning(
+                    "Cannot export model because mesh {} has more "
+                    "than one material",
+                    mesh_info.mesh_name);
+            return false;
+        }
+    }
+    std::string base_name =
+            utility::filesystem::GetFileNameWithoutDirectory(filename);
+    base_name = utility::filesystem::GetFileNameWithoutExtension(base_name);
+    tinygltf::Model model;
+    model.asset.generator = "Open3d";
+    model.asset.version = "2.0";
+    model.meshes.emplace_back();
+    model.meshes.back().name = base_name;
+    model.nodes.emplace_back();
+    model.nodes.back().mesh = 0;
+    model.scenes.emplace_back();
+    model.scenes.back().nodes.emplace_back(0);
+    model.defaultScene = 0;
+
+    model.extensionsUsed = {"KHR_materials_unlit"};
+
+    for (std::size_t i = 0; i < mesh_model.meshes_.size(); ++i) {
+        geometry::TriangleMesh mesh;
+        std::vector<Eigen::Vector2d> vertex_uvs;
+        std::tie(mesh, vertex_uvs) =
+                detail::MeshWithPerVertexUVs(*mesh_model.meshes_[i].mesh);
+        if (!mesh.HasTriangles()) {
+            utility::LogWarning(
+                    "Invalid Mesh {}:{} has no triangles and will "
+                    "be skipped",
+                    i, mesh_model.meshes_[i].mesh_name);
+            continue;
+        }
+
+        model.meshes.back().primitives.emplace_back();
+        tinygltf::Primitive& primitive = model.meshes.back().primitives.back();
+        primitive.mode = TINYGLTF_MODE_TRIANGLES;
+
+        model.buffers.emplace_back();
+        tinygltf::Buffer& mesh_buffer = model.buffers.back();
+        mesh_buffer.name = fmt::format("primitive-{}-geometry-buffer", i);
+
+        // Store triangle indices
+        bool save_indices_as_uint16 = mesh.vertices_.size() <=
+                                      std::numeric_limits<std::uint16_t>::max();
+
+        model.bufferViews.emplace_back();
+        tinygltf::BufferView& indices_view = model.bufferViews.back();
+        indices_view.name = fmt::format("primitive-{}-index-buffview", i);
+        indices_view.target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
+        indices_view.buffer = static_cast<int>(model.buffers.size()) - 1;
+
+        tinygltf::Accessor indices_accaessor;
+        indices_accaessor.bufferView =
+                static_cast<int>(model.bufferViews.size()) - 1;
+        indices_accaessor.name = fmt::format("primitive-{}-indices", i);
+        indices_accaessor.type = TINYGLTF_TYPE_SCALAR;
+        indices_accaessor.componentType =
+                save_indices_as_uint16 ? TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT
+                                       : TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT;
+        indices_accaessor.count = 3 * mesh.triangles_.size();
+        indices_accaessor.byteOffset = 0;
+        indices_accaessor.minValues = {0};
+        indices_accaessor.maxValues = {
+                static_cast<double>(mesh.vertices_.size()) - 1};
+
+        if (save_indices_as_uint16) {
+            indices_view.byteLength =
+                    indices_accaessor.count * sizeof(std::uint16_t);
+            using OutType = std::array<std::uint16_t, 3>;
+            auto span = GetBufferSpan<OutType>(mesh_buffer, indices_view,
+                                               indices_accaessor);
+            std::transform(mesh.triangles_.begin(), mesh.triangles_.end(),
+                           span.begin(), [](const Eigen::Vector3i& tri) {
+                               const auto tdat =
+                                       tri.template cast<OutType::value_type>();
+                               return OutType{tdat(0), tdat(1), tdat(2)};
+                           });
+        } else {
+            if (mesh.vertices_.size() >
+                std::numeric_limits<std::uint32_t>::max()) {
+                utility::LogError(
+                        "Number of vertices {} is unsupported "
+                        "by this writer",
+                        mesh.vertices_.size());
+            }
+            indices_view.byteLength =
+                    indices_accaessor.count * sizeof(std::uint32_t);
+            using OutType = std::array<std::uint32_t, 3>;
+            auto span = GetBufferSpan<OutType>(mesh_buffer, indices_view,
+                                               indices_accaessor);
+            std::transform(mesh.triangles_.begin(), mesh.triangles_.end(),
+                           span.begin(), [](const Eigen::Vector3i& tri) {
+                               const auto tdat =
+                                       tri.template cast<OutType::value_type>();
+                               return OutType{tdat(0), tdat(1), tdat(2)};
+                           });
+        }
+        // Add the indices to the primitive
+        model.accessors.emplace_back(std::move(indices_accaessor));
+        primitive.indices = static_cast<int>(model.accessors.size()) - 1;
+
+        model.bufferViews.emplace_back();
+        tinygltf::BufferView& data_view_strided = model.bufferViews.back();
+        data_view_strided.name =
+                fmt::format("primitive-{}-vertdata-buffview", i);
+        data_view_strided.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+        data_view_strided.byteOffset = indices_view.byteLength;
+        data_view_strided.byteStride = 12;
+        data_view_strided.buffer = static_cast<int>(model.buffers.size()) - 1;
+        int data_view_idx = static_cast<int>(model.bufferViews.size()) - 1;
+
+        tinygltf::Accessor vertex_accessor;
+        vertex_accessor.name = fmt::format("primitive-{}-vertices", i);
+        vertex_accessor.type = TINYGLTF_TYPE_VEC3;
+        vertex_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+        vertex_accessor.count = mesh.vertices_.size();
+        vertex_accessor.bufferView = data_view_idx;
+        vertex_accessor.minValues =
+                std::vector<double>(3, std::numeric_limits<double>::max());
+        vertex_accessor.maxValues =
+                std::vector<double>(3, std::numeric_limits<double>::lowest());
+        vertex_accessor.byteOffset = data_view_strided.byteLength;
+        data_view_strided.byteLength +=
+                3 * sizeof(float) * vertex_accessor.count;
+        {
+            using OutType = std::array<float, 3>;
+            auto span = GetBufferSpan<OutType>(mesh_buffer, data_view_strided,
+                                               vertex_accessor);
+            std::transform(
+                    mesh.vertices_.begin(), mesh.vertices_.end(), span.begin(),
+                    [&vertex_accessor](const auto& vert) {
+                        auto vout = vert.template cast<OutType::value_type>();
+                        // Change coordinates system
+                        return OutType{vout(0), vout(2), -vout(1)};
+                    });
+            std::for_each(
+                    span.begin(), span.end(),
+                    [&vertex_accessor](const auto& arr) {
+                        for (int i = 0; i < 3; ++i) {
+                            vertex_accessor.minValues[i] = std::min<double>(
+                                    arr[i], vertex_accessor.minValues[i]);
+                            vertex_accessor.maxValues[i] = std::max<double>(
+                                    arr[i], vertex_accessor.maxValues[i]);
+                        }
+                    });
+        }
+        // Register the positions accessor to the primitive
+        model.accessors.emplace_back(std::move(vertex_accessor));
+        primitive.attributes["POSITION"] =
+                static_cast<int>(model.accessors.size()) - 1;
+
+        if (mesh.HasVertexNormals()) {
+            tinygltf::Accessor normals_accessor;
+            normals_accessor.name = fmt::format("primitive-{}-normals", i);
+            normals_accessor.type = TINYGLTF_TYPE_VEC3;
+            normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+            normals_accessor.count = mesh.vertex_normals_.size();
+            normals_accessor.bufferView = data_view_idx;
+            normals_accessor.byteOffset = data_view_strided.byteLength;
+            data_view_strided.byteLength +=
+                    3 * sizeof(float) * normals_accessor.count;
+            {
+                using OutType = std::array<float, 3>;
+                auto span = GetBufferSpan<OutType>(
+                        mesh_buffer, data_view_strided, normals_accessor);
+                std::transform(
+                        mesh.vertex_normals_.begin(),
+                        mesh.vertex_normals_.end(), span.begin(),
+                        [](const auto& norm) {
+                            auto nout =
+                                    norm.template cast<OutType::value_type>();
+                            return OutType{nout(0), nout(1), nout(2)};
+                        });
+            }
+            // Register the normals accessor to the primitive
+            model.accessors.emplace_back(std::move(normals_accessor));
+            primitive.attributes["NORMAL"] =
+                    static_cast<int>(model.accessors.size()) - 1;
+        }
+
+        if (mesh.HasVertexColors()) {
+            tinygltf::Accessor colors_accessor;
+            colors_accessor.name = fmt::format("primitive-{}-colors", i);
+            colors_accessor.type = TINYGLTF_TYPE_VEC3;
+            colors_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+            colors_accessor.count = mesh.vertex_colors_.size();
+            colors_accessor.bufferView = data_view_idx;
+            colors_accessor.byteOffset = data_view_strided.byteLength;
+            data_view_strided.byteLength +=
+                    3 * sizeof(float) * colors_accessor.count;
+            {
+                using OutType = std::array<float, 3>;
+                auto span = GetBufferSpan<OutType>(
+                        mesh_buffer, data_view_strided, colors_accessor);
+                std::transform(
+                        mesh.vertex_colors_.begin(), mesh.vertex_colors_.end(),
+                        span.begin(), [](const auto& color) {
+                            auto cout =
+                                    color.template cast<OutType::value_type>();
+                            return OutType{cout(0), cout(1), cout(2)};
+                        });
+            }
+            // Register the colors accessor to the primitive
+            model.accessors.emplace_back(std::move(colors_accessor));
+            primitive.attributes["COLOR_0"] =
+                    static_cast<int>(model.accessors.size()) - 1;
+        }
+
+        if (mesh.HasTriangleNormals()) {
+            utility::LogWarning(
+                    "Mesh {}:{} has per-triangle normals which "
+                    "are not supported and will be skipped",
+                    i, mesh_model.meshes_[i].mesh_name);
+        }
+
+        if (mesh.HasAdjacencyList()) {
+            utility::LogWarning(
+                    "Mesh {}:{} has an adjacency list which "
+                    "is not supported and will be skipped",
+                    i, mesh_model.meshes_[i].mesh_name);
+        }
+
+        if (mesh.HasTriangleUvs()) {
+            model.bufferViews.emplace_back();
+            tinygltf::BufferView& uv_buffer_view = model.bufferViews.back();
+            uv_buffer_view.name =
+                    fmt::format("primitive-{}-uvdata-buffview", i);
+            uv_buffer_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+            uv_buffer_view.byteOffset =
+                    data_view_strided.byteOffset + data_view_strided.byteLength;
+            uv_buffer_view.byteStride = 8;
+            uv_buffer_view.buffer = static_cast<int>(model.buffers.size()) - 1;
+
+            tinygltf::Accessor uv_accessor;
+            uv_accessor.name = fmt::format("primitive-{}-uvs", i);
+            uv_accessor.type = TINYGLTF_TYPE_VEC2;
+            uv_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+            uv_accessor.count = vertex_uvs.size();
+            uv_accessor.bufferView =
+                    static_cast<int>(model.bufferViews.size()) - 1;
+            uv_accessor.byteOffset = uv_buffer_view.byteLength;
+            uv_buffer_view.byteLength += 2 * sizeof(float) * uv_accessor.count;
+            {
+                using OutType = std::array<float, 2>;
+                auto span = GetBufferSpan<OutType>(mesh_buffer, uv_buffer_view,
+                                                   uv_accessor);
+                std::transform(
+                        vertex_uvs.begin(), vertex_uvs.end(), span.begin(),
+                        [](const auto& uvs) {
+                            auto uvout =
+                                    uvs.template cast<OutType::value_type>();
+                            return OutType{uvout(0), 1.f - uvout(1)};
+                        });
+            }
+            // Register the uv accessor to the primitive
+            model.accessors.emplace_back(std::move(uv_accessor));
+            primitive.attributes["TEXCOORD_0"] =
+                    static_cast<int>(model.accessors.size()) - 1;
+        }
+
+        // Write the material definition
+        const auto& mat_rec = mesh_model.materials_[i];
+        tinygltf::Material material = ConvertMaterial(mat_rec);
+        const std::string lowercase_mat_name = utility::ToLower(mat_rec.name);
+        if (utility::ContainsString(lowercase_mat_name, "unlit")) {
+            material.extensions = {
+                    std::make_pair("KHR_materials_unlit", tinygltf::Value{})};
+        }
+
+        // Write the textures
+        if (mat_rec.albedo_img && mat_rec.albedo_img->HasData()) {
+            SerializeTexture(model, *mat_rec.albedo_img, i, "albedo");
+            material.pbrMetallicRoughness.baseColorTexture.index =
+                    static_cast<int>(model.textures.size()) - 1;
+        }
+        if (mat_rec.roughness_img && mat_rec.roughness_img->HasData()) {
+            SerializeTexture(model, *mat_rec.roughness_img, i, "roughness");
+            material.pbrMetallicRoughness.metallicRoughnessTexture.index =
+                    static_cast<int>(model.textures.size()) - 1;
+        }
+        if (mat_rec.normal_img && mat_rec.normal_img->HasData()) {
+            SerializeTexture(model, *mat_rec.normal_img, i, "normals");
+            material.normalTexture.index =
+                    static_cast<int>(model.textures.size()) - 1;
+        }
+        if (mat_rec.ao_img && mat_rec.ao_img->HasData()) {
+            SerializeTexture(model, *mat_rec.ao_img, i, "ao");
+            material.occlusionTexture.index =
+                    static_cast<int>(model.textures.size()) - 1;
+        }
+        model.materials.emplace_back(std::move(material));
+        primitive.material = static_cast<int>(model.materials.size()) - 1;
+    }
+
+    tinygltf::TinyGLTF loader;
+    std::string filename_ext =
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
+    ShrinkBuffersToFit(model);
+    if (filename_ext == "glb") {
+        WriteImagesToBuffers(model);
+        ShrinkBuffersToFit(model);
+        ConsolidateBuffers(model);
+        if (!loader.WriteGltfSceneToFile(&model, filename, true, true, true,
+                                         true)) {
+            utility::LogWarning("Write GLB failed.");
+            return false;
+        }
+    } else {
+        if (!loader.WriteGltfSceneToFile(&model, filename, false, false, true,
+                                         false)) {
+            utility::LogWarning("Write GLTF failed.");
+            return false;
+        }
+    }
     return true;
 }
 

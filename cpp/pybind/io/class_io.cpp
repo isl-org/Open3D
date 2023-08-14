@@ -245,6 +245,17 @@ void pybind_class_io(py::module &m_io) {
     docstring::FunctionDocInject(m_io, "read_triangle_model",
                                  map_shared_argument_docstrings);
 
+    m_io.def(
+            "write_triangle_model",
+            [](const std::string &filename,
+               const geometry::TriangleMesh &mesh) {
+                py::gil_scoped_release release;
+                return WriteTriangleMesh(filename, mesh, );
+            },
+            "Function to write TriangleMesh to file", "filename"_a, "mesh"_a);
+    docstring::FunctionDocInject(m_io, "write_triangle_mesh",
+                                 map_shared_argument_docstrings);
+
     // open3d::geometry::VoxelGrid
     m_io.def(
             "read_voxel_grid",

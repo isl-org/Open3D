@@ -394,7 +394,9 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
             Eigen::Vector2d(0.4, 0.5), Eigen::Vector2d(0.6, 0.7),
             Eigen::Vector2d(0.8, 0.9), Eigen::Vector2d(1.0, 1.1)};
 
-    auto& mat = legacy_mesh.materials_["Mat1"];
+    legacy_mesh.materials_.emplace_back();
+    legacy_mesh.materials_.front().first = "Mat1";
+    auto& mat = legacy_mesh.materials_.front().second;
     mat.baseColor = mat.baseColor.CreateRGB(1, 1, 1);
 
     core::Dtype float_dtype = core::Float32;
@@ -497,8 +499,11 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
                                   Pointwise(FloatEq(), {0.8, 0.9}),
                                   Pointwise(FloatEq(), {1.0, 1.1})}));
 
-    EXPECT_TRUE(legacy_mesh.materials_.count("Mat1") > 0);
-    auto& mat = legacy_mesh.materials_["Mat1"];
+    auto mat_iterator = std::find_if(
+            legacy_mesh.materials_.begin(), legacy_mesh.materials_.end(),
+            [](const auto& pair) -> bool { return pair.first == "Mat1"; });
+    EXPECT_TRUE(mat_iterator != legacy_mesh.materials_.end());
+    auto& mat = mat_iterator->second;
     EXPECT_TRUE(Eigen::Vector4f(mat.baseColor.f4) ==
                 Eigen::Vector4f(1, 1, 1, 1));
     EXPECT_TRUE(mat.baseMetallic == 0.0);
