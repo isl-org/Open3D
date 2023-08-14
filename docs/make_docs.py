@@ -69,8 +69,8 @@ class PyAPIDocsBuilder:
         self.module_names = PyAPIDocsBuilder._get_documented_module_names()
 
     def generate_rst(self):
-        print("Generating *.rst Python API docs in directory: %s" %
-              self.output_dir)
+        print(f"Generating *.rst Python API docs in directory: "
+              f"{self.output_dir}")
         _create_or_clear_dir(self.output_dir)
 
         for module_name in self.module_names:
@@ -317,8 +317,8 @@ class PyExampleDocsBuilder:
             f.write(out_string)
 
     def generate_rst(self):
-        print("Generating *.rst Python example docs in directory: %s" %
-              self.output_dir)
+        print(f"Generating *.rst Python example docs in directory: "
+              f"{self.output_dir}")
         _create_or_clear_dir(self.output_dir)
         examples_dict = self._get_examples_dict()
 
