@@ -29,6 +29,7 @@ public:
     explicit RandomSampler(const size_t total_size) : total_size_(total_size) {}
 
     std::vector<T> operator()(size_t sample_size) {
+        std::lock_guard<std::mutex> lock(mutex_);
         std::vector<T> samples;
         samples.reserve(sample_size);
 
@@ -48,6 +49,7 @@ public:
 
 private:
     size_t total_size_;
+    std::mutex mutex_;
 };
 
 /// \class RANSACResult
