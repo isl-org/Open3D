@@ -18,6 +18,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/utility/Random.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/Tests.h"
 
@@ -1369,6 +1370,31 @@ TEST(PointCloud, SegmentPlaneSpecialCase) {
     EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, 0));
     EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, -1));
     EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, 1.5));
+}
+
+TEST(PointCloud, SegmentPlaneDeterministic) {
+    geometry::PointCloud pcd;
+    data::PCDPointCloud pointcloud_pcd;
+    io::ReadPointCloud(pointcloud_pcd.GetPath(), pcd);
+    EXPECT_EQ(pcd.points_.size(), 113662);
+
+    // Hard-coded test
+    Eigen::Vector4d plane_model;
+    std::vector<size_t> inliers;
+    utility::random::Seed(0);
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000, 1.0);
+    ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
+
+    // Test segment plane for 10 times with the same random seed.
+    for (int i = 0; i < 10; ++i) {
+        // Reset random seed.
+        utility::random::Seed(0);
+        Eigen::Vector4d plane_model_d;
+        std::vector<size_t> inliers_d;
+        std::tie(plane_model_d, inliers_d) =
+                pcd.SegmentPlane(0.01, 3, 1000, 1.0);
+        ExpectEQ(plane_model, plane_model_d);
+    }
 }
 
 TEST(PointCloud, DetectPlanarPatches) {
