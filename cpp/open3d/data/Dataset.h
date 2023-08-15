@@ -775,7 +775,7 @@ private:
 };
 
 /// \class RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// \brief Data class for `RedwoodIndoorLivingRoom2`, containing dense point
 /// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
 /// sequence, and ground-truth camera trajectory.
 ///
@@ -831,7 +831,7 @@ private:
 };
 
 /// \class RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// \brief Data class for `RedwoodIndoorOffice1`, containing dense point
 /// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
 /// sequence, and ground-truth camera trajectory.
 ///
@@ -887,7 +887,7 @@ private:
 };
 
 /// \class RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// \brief Data class for `RedwoodIndoorOffice2`, containing dense point
 /// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
 /// sequence, and ground-truth camera trajectory.
 ///
