@@ -127,6 +127,7 @@ exclude_patterns = [
     "docker.in.rst",
     "getting_started.in.rst",
     "jupyter/*/*.ipynb",
+    "python_api_in/*.rst",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
