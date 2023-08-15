@@ -575,6 +575,16 @@ public:
     void IndexSet(const std::vector<Tensor>& index_tensors,
                   const Tensor& src_tensor);
 
+    /// \brief Advanced in-place reduction by index.
+    ///
+    /// See
+    /// https://pytorch.org/docs/stable/generated/torch.Tensor.index_add_.html
+    ///
+    /// self[index[i]] = operator(self[index[i]], src[i]).
+    ///
+    /// Note: Only support 1D index and src tensors now.
+    void IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src);
+
     /// \brief Permute (dimension shuffle) the Tensor, returns a view.
     ///
     /// \param dims The desired ordering of dimensions.
