@@ -31,7 +31,6 @@ import os
 import re
 import subprocess
 import sys
-from typing import List
 
 
 def get_git_short_hash():
@@ -272,25 +271,8 @@ def skip(app, what, name, obj, would_skip, options):
     return would_skip
 
 
-ESCAPE_VERTICAL_BAR_IN_CLASSES_DOCS: List[str] = [
-    "open3d.data.RedwoodIndoorLivingRoom1",
-    "open3d.data.RedwoodIndoorLivingRoom2",
-    "open3d.data.RedwoodIndoorOffice1",
-    "open3d.data.RedwoodIndoorOffice2",
-]
-
-
-def escape_vertical_bars(app, what, name, obj, options, lines: List[str]):
-    # Note - Latex docs also contain Vertical Bar, so we
-    # apply this filtering only to specific classes.
-    if name in ESCAPE_VERTICAL_BAR_IN_CLASSES_DOCS:
-        for index in range(len(lines)):
-            lines[index] = lines[index].replace("|", "\|")
-
-
 def setup(app):
     app.connect("autodoc-skip-member", skip)
-    app.connect("autodoc-process-docstring", escape_vertical_bars)
     # Add Google analytics
     app.add_js_file("https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3",
                     **{'async': 'async'})
