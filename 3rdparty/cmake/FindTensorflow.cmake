@@ -41,12 +41,12 @@ if(NOT Tensorflow_FOUND)
     string(REGEX REPLACE "::" ";" Tensorflow_DEFINITIONS ${Tensorflow_DEFINITIONS})
 
     # Get Tensorflow_FRAMEWORK_LIB
-    find_library(
-        Tensorflow_FRAMEWORK_LIB
-        NAMES tensorflow_framework libtensorflow_framework.so.2
-        PATHS "${Tensorflow_LIB_DIR}"
-        NO_DEFAULT_PATH
-    )
+    # find_library(
+    #     Tensorflow_FRAMEWORK_LIB
+    #     NAMES tensorflow_framework libtensorflow_framework.so.2
+    #     PATHS "${Tensorflow_LIB_DIR}"
+    #     NO_DEFAULT_PATH
+    # )
 endif()
 
 message(STATUS "TensorFlow       version: ${Tensorflow_VERSION}")
@@ -76,4 +76,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
     Tensorflow DEFAULT_MSG Tensorflow_INCLUDE_DIR Tensorflow_LIB_DIR
-    Tensorflow_FRAMEWORK_LIB Tensorflow_DEFINITIONS)
+    Tensorflow_DEFINITIONS)
