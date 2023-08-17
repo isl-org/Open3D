@@ -16,24 +16,20 @@ __usage_docker_test="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py37-dev     : OpenBLAS AMD64 3.7 wheel, developer mode
     openblas-amd64-py38-dev     : OpenBLAS AMD64 3.8 wheel, developer mode
     openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
     openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
-    openblas-amd64-py37         : OpenBLAS AMD64 3.7 wheel, release mode
     openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
     openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
-    openblas-arm64-py37-dev     : OpenBLAS ARM64 3.7 wheel, developer mode
     openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
     openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
-    openblas-arm64-py37         : OpenBLAS ARM64 3.7 wheel, release mode
     openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
     openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
@@ -212,11 +208,6 @@ echo "[$(basename $0)] building $1"
 source "${HOST_OPEN3D_ROOT}/docker/docker_build.sh"
 case "$1" in
 # OpenBLAS AMD64
-openblas-amd64-py37-dev)
-    openblas_export_env amd64 py37 dev
-    openblas_print_env
-    cpp_python_linking_uninstall_test
-    ;;
 openblas-amd64-py38-dev)
     openblas_export_env amd64 py38 dev
     openblas_print_env
@@ -234,11 +225,6 @@ openblas-amd64-py310-dev)
     ;;
 openblas-amd64-py311-dev)
     openblas_export_env amd64 py311 dev
-    openblas_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-openblas-amd64-py37)
-    openblas_export_env amd64 py37
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -264,11 +250,6 @@ openblas-amd64-py311)
     ;;
 
 # OpenBLAS ARM64
-openblas-arm64-py37-dev)
-    openblas_export_env arm64 py37 dev
-    openblas_print_env
-    cpp_python_linking_uninstall_test
-    ;;
 openblas-arm64-py38-dev)
     openblas_export_env arm64 py38 dev
     openblas_print_env
@@ -286,11 +267,6 @@ openblas-arm64-py310-dev)
     ;;
 openblas-arm64-py311-dev)
     openblas_export_env arm64 py311 dev
-    openblas_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-openblas-arm64-py37)
-    openblas_export_env arm64 py37
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;

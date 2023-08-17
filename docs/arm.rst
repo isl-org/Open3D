@@ -67,7 +67,6 @@ commands:
 
     cd docker
 
-    ./docker_build.sh openblas-arm64-py37   # Python 3.7
     ./docker_build.sh openblas-arm64-py38   # Python 3.8
     ./docker_build.sh openblas-arm64-py39   # Python 3.9
     ./docker_build.sh openblas-arm64-py310  # Python 3.10

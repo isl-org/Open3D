@@ -127,7 +127,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -158,7 +157,7 @@ if sys.platform.startswith("linux") and platform.machine() in (
 setup_args = dict(
     name=name,
     version="@PROJECT_VERSION@",
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),

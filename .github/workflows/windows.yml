@@ -101,7 +101,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.8
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -246,12 +246,10 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.8', '3.9', '3.10', '3.11']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
-          - is_master: false
-            python_version: '3.7'
           - is_master: false
             python_version: '3.8'
           - is_master: false
@@ -351,12 +349,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.8', '3.9', '3.10', '3.11']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
-          - is_master: false
-            python_version: '3.7'
           - is_master: false
             python_version: '3.8'
           - is_master: false
