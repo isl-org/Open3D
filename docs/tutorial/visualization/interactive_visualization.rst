@@ -3,7 +3,10 @@
 Interactive visualization
 -------------------------------------
 
-This tutorial introduces user interaction features of the visualizer window.
+This tutorial introduces user interaction features of the visualizer window provided by:-
+
+#. ``open3d.visualization.draw_geometries_with_editing``
+#. ``open3d.visualization.VisualizerWithEditing``
 
 .. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
