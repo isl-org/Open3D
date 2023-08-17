@@ -289,7 +289,8 @@ ci_build() {
     export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-    export BUILD_TENSORFLOW_OPS=ON
+     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
@@ -304,7 +305,8 @@ ci_build() {
     export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-    export BUILD_TENSORFLOW_OPS=ON
+     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
@@ -349,7 +351,8 @@ ci_build() {
     export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
-    export BUILD_TENSORFLOW_OPS=ON
+     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
     export BUILD_SYCL_MODULE=OFF
@@ -394,7 +397,8 @@ cpu-shared-ml_export_env() {
     export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-    export BUILD_TENSORFLOW_OPS=ON
+     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
@@ -424,7 +428,8 @@ cpu-shared-ml-release_export_env() {
     export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-    export BUILD_TENSORFLOW_OPS=ON
+     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
