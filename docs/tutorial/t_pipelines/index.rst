@@ -1,7 +1,7 @@
 .. _t_pipelines:
 
 Pipelines (Tensor) 
-=========
+==================
 
 .. toctree::
 
