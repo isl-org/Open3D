@@ -30,7 +30,7 @@ if(WIN32)
 endif()
 
 if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
+set (CMAKE_OSX_DEPLOYMENT_TARGET "12.6" CACHE STRING
     "Minimum OS X deployment version" FORCE)
 endif()
 
