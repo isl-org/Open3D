@@ -78,6 +78,7 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.20.6-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.20.6-linux-aarch64
+CUDA_VERSION=11.7.1-cudnn8
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -168,7 +169,7 @@ openblas_build() {
 }
 
 cuda_wheel_build() {
-    BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
+    BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
 
     options="$(echo "$@" | tr ' ' '|')"
@@ -256,7 +257,7 @@ ci_build() {
 2-bionic_export_env() {
     export DOCKER_TAG=open3d-ci:2-bionic
 
-    export BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-2-bionic
     export PYTHON_VERSION=3.7
@@ -271,7 +272,7 @@ ci_build() {
 3-ml-shared-bionic_export_env() {
     export DOCKER_TAG=open3d-ci:3-ml-shared-bionic
 
-    export BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
     export PYTHON_VERSION=3.7
@@ -286,7 +287,7 @@ ci_build() {
 3-ml-shared-bionic-release_export_env() {
     export DOCKER_TAG=open3d-ci:3-ml-shared-bionic
 
-    export BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
     export PYTHON_VERSION=3.7
@@ -301,7 +302,7 @@ ci_build() {
 4-shared-bionic_export_env() {
     export DOCKER_TAG=open3d-ci:4-shared-bionic
 
-    export BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.7
@@ -316,7 +317,7 @@ ci_build() {
 4-shared-bionic-release_export_env() {
     export DOCKER_TAG=open3d-ci:4-shared-bionic
 
-    export BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.7
@@ -331,7 +332,7 @@ ci_build() {
 5-ml-focal_export_env() {
     export DOCKER_TAG=open3d-ci:5-ml-focal
 
-    export BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu20.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-5-ml-focal
     export PYTHON_VERSION=3.7
