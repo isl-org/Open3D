@@ -7,8 +7,7 @@ This tutorial introduces user interaction features of the visualizer window.
 
 .. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
-   :lineno-start: 27
-   :lines: 27-
+   :start-at: # examples/python/visualization/interactive_visualization.py
    :linenos:
 
 This script executes two applications of user interaction: ``demo_crop_geometry`` and ``demo_manual_registration``.
@@ -20,8 +19,7 @@ Crop geometry
 
 .. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
-   :lineno-start: 37
-   :lines: 37-51
+   :pyobject: demo_crop_geometry
    :linenos:
 
 This function simply reads a point cloud and calls ``draw_geometries_with_editing``. This function provides vertex selection and cropping.
@@ -58,26 +56,27 @@ To finish selection mode, press ``F`` to switch to freeview mode.
 Manual registration
 `````````````````````````````````````````````
 
-Select correspondences
-=====================================
-
 The following script registers two point clouds using point-to-point ICP. It gets initial alignment via user interaction.
+
+Prepare data
+=====================================
 
 .. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
-   :lineno-start: 61
-   :lines: 61-76
+   :pyobject: prepare_data
    :linenos:
 
-The script reads two point clouds, and visualizes the point clouds before alignment.
+This function reads two point clouds, and visualizes the point clouds before performing manual alignment.
 
 .. image:: ../../_static/visualization/interactive_visualization/manual_icp_initial.png
     :width: 400px
 
+Select correspondences
+=====================================
+
 .. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
-   :lineno-start: 52
-   :lines: 52-60
+   :pyobject: pick_points
    :linenos:
 
 The function ``pick_points(pcd)`` makes an instance of ``VisualizerWithEditing``. To mimic ``draw_geometries``, it creates windows, adds the geometry, visualizes the geometry, and then terminates. A novel interface function from ``VisualizerWithEditing`` is ``get_picked_points()`` that returns the indices of user-picked vertices.
@@ -115,8 +114,7 @@ Registration using user correspondences
 
 .. literalinclude:: ../../../examples/python/visualization/interactive_visualization.py
    :language: python
-   :lineno-start: 77
-   :lines: 77-110
+   :pyobject: register_via_correspondences
    :linenos:
 
 The later part of the demo computes an initial transformation based on the user-provided correspondences. This script builds pairs of correspondences using ``Vector2iVector(corr)``. It utilizes ``TransformationEstimationPointToPoint.compute_transformation`` to compute the initial transformation from the correspondences. The initial transformation is refined using ``registration_icp``.
