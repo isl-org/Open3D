@@ -124,10 +124,6 @@ build_all() {
 
     mkdir -p build
     cd build
-    GLIBCXX_USE_CXX11_ABI=ON
-    if [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
-        GLIBCXX_USE_CXX11_ABI=OFF
-    fi
 
     cmakeOptions=(
         -DDEVELOPER_BUILD=$DEVELOPER_BUILD
@@ -137,7 +133,8 @@ build_all() {
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
         -DBUILD_COMMON_CUDA_ARCHS=ON
         -DBUILD_COMMON_ISPC_ISAS=ON
-        -DGLIBCXX_USE_CXX11_ABI="$GLIBCXX_USE_CXX11_ABI"
+        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
+        -DGLIBCXX_USE_CXX11_ABI=OFF
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
