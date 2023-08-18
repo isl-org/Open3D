@@ -7,7 +7,6 @@
 
 import os
 
-import argparse
 import configargparse
 
 
@@ -109,8 +108,8 @@ class ConfigParser(configargparse.ArgParser):
 
         integration_parser = self.add_argument_group('integration')
         integration_parser.add(
-            '--integrate_color', action=argparse.BooleanOptionalAction,
-            default=True, help='Volumetric integration mode.')
+            '--integrate_color', action='store_true',
+            default=False, help='Volumetric integration mode.')
         integration_parser.add(
             '--voxel_size', type=float,
             help='Voxel size in meter for volumetric integration.')
