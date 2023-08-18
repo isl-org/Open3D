@@ -14,6 +14,7 @@ In the activation step, we first locate blocks that contain points unprojected f
    :language: python
    :lineno-start: 52
    :lines: 52-54
+   :dedent: 8
 
 Integration
 ````````````
@@ -25,6 +26,7 @@ We may use optimized functions, along with raw depth images with calibration par
    :language: python
    :lineno-start: 58
    :lines: 58-60
+   :dedent: 12
 
 Currently, to use our optimized function, we assume the below combinations of data types, in the order of ``depth image``, ``color image``, ``tsdf in voxel grid``, ``weight in voxel grid``, ``color in voxel grid`` in CPU
 
@@ -40,7 +42,7 @@ and CUDA
    :lineno-start: 255
    :lines: 256-262
 
-For more generalized functionalities, you may extend the macros and/or the kernel functions and compile Open3D from scratch achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
+For more generalized functionalities, you may extend the macros and/or the kernel functions and compile Open3D from scratch to achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
 
 Surface extraction
 ``````````````````
@@ -51,7 +53,7 @@ You may use the provided APIs to extract surface points.
    :lineno-start: 106
    :lines: 106-110
 
-Note ``extract_triangle_mesh`` applies marching cubes and generate mesh. ``extract_point_cloud`` uses the similar algorithm, but skips the triangle face generation step.
+Note ``extract_triangle_mesh`` applies marching cubes and generates mesh. ``extract_point_cloud`` uses a similar algorithm, but skips the triangle face generation step.
 
 Save and load
 ``````````````
