@@ -57,8 +57,8 @@ class PoseGraphWrapper:
         for (i, j) in self.dict_edges:
             if not (i in self.dict_nodes) or not (j in self.dict_nodes):
                 print(
-                    'Edge node ({} {}) not found, abort pose graph construction'
-                    .format(i, j))
+                    f'Edge node ({i} {j}) not found, abort pose graph construction'
+                )
             trans, info, is_loop = self.dict_edges[(i, j)]
             ki = nodes2indices[i]
             kj = nodes2indices[j]
