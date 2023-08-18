@@ -34,13 +34,13 @@ Open3D: A Modern Library for 3D Data Processing
     :maxdepth: 2
     :caption: Tutorial
 
+    tutorial/core/index
     tutorial/geometry/index
     tutorial/t_geometry/index
+    tutorial/data/index
+    tutorial/visualization/index
     tutorial/pipelines/index
     tutorial/t_pipelines/index
-    tutorial/visualization/index
-    tutorial/core/index
-    tutorial/data/index
     tutorial/reconstruction_system/index
     tutorial/t_reconstruction_system/index
     tutorial/sensor/index
