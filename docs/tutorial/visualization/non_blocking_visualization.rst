@@ -28,6 +28,7 @@ This rendering loop can be readily customized. For example, a custom loop can be
 
     vis = Visualizer()
     vis.create_window()
+    vis.add_geometry(geometry)
     for i in range(icp_iteration):
         # do ICP single iteration
         # transform geometry using ICP
