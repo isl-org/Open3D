@@ -1,5 +1,5 @@
 Geometry (Tensor)
-========
+=================
 
 .. toctree::
     :caption: Basics
