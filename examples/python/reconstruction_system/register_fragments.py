@@ -161,7 +161,6 @@ def make_posegraph_for_scene(ply_file_names, config):
     if config["python_multi_threading"] == True:
         from joblib import Parallel, delayed
         import multiprocessing
-        import subprocess
         MAX_THREAD = min(multiprocessing.cpu_count(),
                          max(len(matching_results), 1))
         results = Parallel(n_jobs=MAX_THREAD)(delayed(
