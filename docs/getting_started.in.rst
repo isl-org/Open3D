@@ -104,7 +104,7 @@ install the latest development version directly with pip:
 
 .. code-block:: bash
 
-    pip install --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d[gui,ml]
+    pip install -U --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d[gui,ml]
 
 .. note::
    The development wheels for Linux are named according to PEP600. Please
@@ -148,9 +148,7 @@ demonstrate the usage of Open3D Python interface. See ``examples/python`` for
 all Python examples.
 
 .. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``,
-    ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction
-    system. Please read ``util/install-deps-python.sh`` for installing these
-    packages.
+    ``matplotlib``, ``opencv-python``.
 
 .. _install_open3d_c++:
 
