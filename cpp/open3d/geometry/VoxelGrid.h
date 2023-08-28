@@ -123,7 +123,7 @@ public:
     /// Add a voxel with specified grid index and color.
     void AddVoxel(const Voxel &voxel);
 
-    /// Remove a voxel with specified grid index
+    /// Remove a voxel with specified grid index.
     void RemoveVoxel(const Eigen::Vector3i &idx);
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
