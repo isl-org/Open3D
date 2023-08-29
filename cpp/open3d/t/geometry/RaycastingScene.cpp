@@ -267,6 +267,19 @@ struct RaycastingScene::Impl {
             geometry_ptrs_;
     core::Device tensor_device_;  // cpu
 
+    bool devprop_join_commit;
+
+    void CommitScene() {
+        if (!scene_committed_) {
+            if (devprop_join_commit) {
+                rtcJoinCommitScene(scene_);
+            } else {
+                rtcCommitScene(scene_);
+            }
+            scene_committed_ = true;
+        }
+    }
+
     template <bool LINE_INTERSECTION>
     void CastRays(const float* const rays,
                   const size_t num_rays,
@@ -276,10 +289,7 @@ struct RaycastingScene::Impl {
                   float* primitive_uvs,
                   float* primitive_normals,
                   const int nthreads) {
-        if (!scene_committed_) {
-            rtcJoinCommitScene(scene_);
-            scene_committed_ = true;
-        }
+        CommitScene();
 
         struct RTCIntersectContext context;
         rtcInitIntersectContext(&context);
@@ -365,10 +375,7 @@ struct RaycastingScene::Impl {
                         const float tfar,
                         int8_t* occluded,
                         const int nthreads) {
-        if (!scene_committed_) {
-            rtcJoinCommitScene(scene_);
-            scene_committed_ = true;
-        }
+        CommitScene();
 
         struct RTCIntersectContext context;
         rtcInitIntersectContext(&context);
@@ -420,10 +427,7 @@ struct RaycastingScene::Impl {
                             const size_t num_rays,
                             int* intersections,
                             const int nthreads) {
-        if (!scene_committed_) {
-            rtcJoinCommitScene(scene_);
-            scene_committed_ = true;
-        }
+        CommitScene();
 
         memset(intersections, 0, sizeof(int) * num_rays);
 
@@ -486,10 +490,7 @@ struct RaycastingScene::Impl {
                               float* primitive_uvs,
                               float* primitive_normals,
                               const int nthreads) {
-        if (!scene_committed_) {
-            rtcJoinCommitScene(scene_);
-            scene_committed_ = true;
-        }
+        CommitScene();
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             for (size_t i = range.begin(); i < range.end(); ++i) {
@@ -551,6 +552,9 @@ RaycastingScene::RaycastingScene(int64_t nthreads)
     rtcSetSceneFlags(
             impl_->scene_,
             RTC_SCENE_FLAG_ROBUST | RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION);
+
+    impl_->devprop_join_commit = rtcGetDeviceProperty(
+            impl_->device_, RTC_DEVICE_PROPERTY_JOIN_COMMIT_SUPPORTED);
 
     impl_->scene_committed_ = false;
 }
