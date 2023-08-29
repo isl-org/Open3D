@@ -178,7 +178,7 @@ def estimate_3D_transform_RANSAC(pts_xyz_s, pts_xyz_t):
         if (n_inlier > max_inlier) and (np.linalg.det(R_approx) != 0.0) and \
                 (R_approx[0,0] > 0 and R_approx[1,1] > 0 and R_approx[2,2] > 0):
             Transform_good[:3, :3] = R_approx
-            Transform_good[:3, 3] = [t_approx[0], t_approx[1], t_approx[2]]
+            Transform_good[:3, 3] = t_approx.squeeze(1)
             max_inlier = n_inlier
             inlier_vec = [id_iter for diff_iter, id_iter \
                     in zip(diff, range(n_points)) \

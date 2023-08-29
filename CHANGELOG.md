@@ -1,9 +1,12 @@
 ## Master
 
+* Fix tensor based TSDF integration example.
+* Use GLIBCXX_USE_CXX11_ABI=ON by default
 * Python 3.9 support. Tensorflow bump 2.4.1 -> 2.5.0. PyTorch bump 1.7.1 -> 1.8.1 (LTS)
 * Fix undefined names: docstr and VisibleDeprecationWarning (PR #3844)
 * Corrected documentation for Tensor based PointClound, LineSet, TriangleMesh (PR #4685)
 * Corrected documentation for KDTree (typo in Notebook) (PR #4744)
+* Corrected documentation for visualisation tutorial
 * Remove `setuptools` and `wheel` from requirements for end users (PR #5020)
 * Fix various typos (PR #5070)
 * Exposed more functionality in SLAM and odometry pipelines
@@ -13,6 +16,7 @@
 * Fix Python bindings for CUDA device synchronization, voxel grid saving (PR #5425)
 * Support msgpack versions without cmake
 * Support multi-threading in the RayCastingScene function to commit scene (PR #6051).
+* Fix some bad triangle generation in TriangleMesh::SimplifyQuadricDecimation
 
 ## 0.13
 

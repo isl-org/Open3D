@@ -35,7 +35,7 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
         import jupyterlab  # noqa # pylint: disable=unused-import
     except ImportError as error:
         print(error.__class__.__name__ + ": " + error.message)
-        print("Run `pip install jupyter_packaging ipywidgets jupyterlab`.")
+        print("Run `pip install -r requirements-jupyter-build.txt`.")
 
     here = os.path.dirname(os.path.abspath(__file__))
     js_dir = os.path.join(here, "js")
