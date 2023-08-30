@@ -12,6 +12,7 @@ This tutorial introduces user interaction features of the visualizer window prov
    :language: python
    :start-at: # examples/python/visualization/interactive_visualization.py
    :linenos:
+   :lineno-match:
 
 This script executes two applications of user interaction: ``demo_crop_geometry`` and ``demo_manual_registration``.
 
@@ -24,6 +25,7 @@ Crop geometry
    :language: python
    :pyobject: demo_crop_geometry
    :linenos:
+   :lineno-match:
 
 This function simply reads a point cloud and calls ``draw_geometries_with_editing``. This function provides vertex selection and cropping.
 
@@ -68,6 +70,7 @@ Prepare data
    :language: python
    :pyobject: prepare_data
    :linenos:
+   :lineno-match:
 
 This function reads two point clouds, and visualizes the point clouds before performing manual alignment.
 
@@ -81,6 +84,7 @@ Select correspondences
    :language: python
    :pyobject: pick_points
    :linenos:
+   :lineno-match:
 
 The function ``pick_points(pcd)`` makes an instance of ``VisualizerWithEditing``. To mimic ``draw_geometries``, it creates windows, adds the geometry, visualizes the geometry, and then terminates. A novel interface function from ``VisualizerWithEditing`` is ``get_picked_points()`` that returns the indices of user-picked vertices.
 
@@ -119,6 +123,7 @@ Registration using user correspondences
    :language: python
    :pyobject: register_via_correspondences
    :linenos:
+   :lineno-match:
 
 The later part of the demo computes an initial transformation based on the user-provided correspondences. This script builds pairs of correspondences using ``Vector2iVector(corr)``. It utilizes ``TransformationEstimationPointToPoint.compute_transformation`` to compute the initial transformation from the correspondences. The initial transformation is refined using ``registration_icp``.
 

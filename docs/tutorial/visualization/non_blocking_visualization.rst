@@ -42,6 +42,7 @@ The full script implementing this idea is displayed below.
    :language: python
    :start-at: # examples/python/visualization/non_blocking_visualization.py
    :linenos:
+   :lineno-match:
 
 The following sections explain this script.
 
@@ -52,6 +53,7 @@ Prepare example data
    :language: python
    :pyobject: prepare_data
    :linenos:
+   :lineno-match:
 
 This part reads two point clouds and downsamples them. The source point cloud is intentionally transformed for the misalignment. Both point clouds are flipped for better visualization.
 
@@ -62,8 +64,8 @@ Initialize Visualizer class
    :language: python
    :start-after: def demo_non_blocking_visualization():
    :linenos:
-   :lineno-start: 30
    :lines: 3-7
+   :lineno-match:
 
 These lines make an instance of the visualizer class, open a visualizer window, and add two geometries to the visualizer.
 
@@ -74,8 +76,8 @@ Transform geometry and visualize it
    :language: python
    :start-after: def demo_non_blocking_visualization():
    :linenos:
-   :lineno-start: 30
    :lines: 8-23
+   :lineno-match:
 
 This script calls ``registration_icp`` for every iteration. Note that it explicitly forces only one ICP iteration via ``ICPConvergenceCriteria(max_iteration = 1)``. This is a trick to retrieve a slight pose update from a single ICP iteration. After ICP, source geometry is transformed accordingly.
 
