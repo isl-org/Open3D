@@ -27,7 +27,7 @@ Register RGBD image pairs
    :language: python
    :pyobject: register_one_rgbd_pair
    :linenos:
-   :prepend: # examples/python/reconstruction_system/make_fragments.py
+   :lineno-match:
 
 The function reads a pair of RGBD images and registers the ``source_rgbd_image``
 to the ``target_rgbd_image``. The Open3D function ``compute_rgbd_odometry`` is
@@ -47,7 +47,7 @@ Multiway registration
    :language: python
    :pyobject: make_posegraph_for_fragment
    :linenos:
-   :prepend: # examples/python/reconstruction_system/make_fragments.py
+   :lineno-match:
 
 This script uses the technique demonstrated in
 :ref:`/tutorial/pipelines/multiway_registration.ipynb`. The function
@@ -63,7 +63,7 @@ function ``optimize_posegraph_for_fragment``.
    :language: python
    :pyobject: optimize_posegraph_for_fragment
    :linenos:
-   :prepend: # examples/python/reconstruction_system/optimize_posegraph.py
+   :lineno-match:
 
 This function calls ``global_optimization`` to estimate poses of the RGBD images.
 
@@ -76,7 +76,7 @@ Make a fragment
    :language: python
    :pyobject: integrate_rgb_frames_for_fragment
    :linenos:
-   :prepend: # examples/python/reconstruction_system/make_fragments.py
+   :lineno-match:
 
 Once the poses are estimated, :ref:`/tutorial/pipelines/rgbd_integration.ipynb`
 is used to reconstruct a colored fragment from each RGBD sequence.

@@ -22,7 +22,7 @@ Fine-grained registration
    :language: python
    :linenos:
    :pyobject: multiscale_icp
-   :prepend: # examples/python/reconstruction_system/refine_registration.py
+   :lineno-match:
 
 Two options are given for the fine-grained registration. The ``color`` option is
 recommended since it uses color information to prevent drift. See [Park2017]_
@@ -35,7 +35,7 @@ Multiway registration
    :language: python
    :linenos:
    :pyobject: update_posegraph_for_scene
-   :prepend: # examples/python/reconstruction_system/refine_registration.py
+   :lineno-match:
 
 This script uses the technique demonstrated in :ref:`/tutorial/pipelines/multiway_registration.ipynb`. Function ``update_posegraph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
@@ -46,7 +46,7 @@ for multiway registration.
    :language: python
    :linenos:
    :pyobject: optimize_posegraph_for_scene
-   :prepend: # examples/python/reconstruction_system/optimize_posegraph.py
+   :lineno-match:
 
 Main registration loop
 ``````````````````````````````````````
@@ -57,7 +57,7 @@ The function ``make_posegraph_for_refined_scene`` below calls all the functions 
    :language: python
    :linenos:
    :pyobject: make_posegraph_for_refined_scene
-   :prepend: # examples/python/reconstruction_system/refine_registration.py
+   :lineno-match:
 
 The main workflow is: pairwise local refinement -> multiway registration.
 

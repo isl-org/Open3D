@@ -23,7 +23,7 @@ Integrate RGBD frames
    :language: python
    :pyobject: scalable_integrate_rgb_frames
    :linenos:
-   :prepend: # examples/python/reconstruction_system/integrate_scene.py
+   :lineno-match:
 
 This function first reads the alignment results from both
 :ref:`reconstruction_system_make_fragments` and

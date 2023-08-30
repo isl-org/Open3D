@@ -22,7 +22,7 @@ Preprocess point cloud
    :language: python
    :pyobject: preprocess_point_cloud
    :linenos:
-   :prepend: # examples/python/reconstruction_system/register_fragments.py
+   :lineno-match:
 
 This function downsamples a point cloud to make it sparser and regularly
 distributed. Normals and FPFH feature are precomputed. See
@@ -38,7 +38,7 @@ Compute initial registration
    :language: python
    :pyobject: compute_initial_registration
    :linenos:
-   :prepend: # examples/python/reconstruction_system/register_fragments.py
+   :lineno-match:
 
 This function computes a rough alignment between two fragments. If the fragments
 are neighboring fragments, the rough alignment is determined by an aggregating
@@ -55,7 +55,7 @@ Pairwise global registration
    :language: python
    :pyobject: register_point_cloud_fpfh
    :linenos:
-   :prepend: # examples/python/reconstruction_system/register_fragments.py
+   :lineno-match:
 
 This function uses :ref:`/tutorial/pipelines/global_registration.ipynb#RANSAC` or :ref:`/tutorial/pipelines/global_registration.ipynb#fast-global-registration` for pairwise global registration.
 
@@ -68,7 +68,7 @@ Multiway registration
    :language: python
    :pyobject: update_posegraph_for_scene
    :linenos:
-   :prepend: # examples/python/reconstruction_system/register_fragments.py
+   :lineno-match:
 
 This script uses the technique demonstrated in
 :ref:`/tutorial/pipelines/multiway_registration.ipynb`. The function
@@ -83,7 +83,7 @@ called for multiway registration.
    :language: python
    :pyobject: optimize_posegraph_for_scene
    :linenos:
-   :prepend: # examples/python/reconstruction_system/optimize_posegraph.py
+   :lineno-match:
 
 Main registration loop
 ``````````````````````````````````````
@@ -96,7 +96,7 @@ multiway registration.
    :language: python
    :pyobject: make_posegraph_for_scene
    :linenos:
-   :prepend: # examples/python/reconstruction_system/register_fragments.py
+   :lineno-match:
 
 Results
 ``````````````````````````````````````
