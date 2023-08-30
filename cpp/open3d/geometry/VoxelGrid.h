@@ -242,7 +242,7 @@ public:
 public:
     /// Size of the voxel.
     double voxel_size_ = 0.0;
-    /// Coorindate of the origin point.
+    /// Coordinate of the origin point.
     Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();
     /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,

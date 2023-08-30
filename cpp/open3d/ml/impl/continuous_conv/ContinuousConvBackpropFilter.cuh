@@ -45,7 +45,7 @@ namespace impl {
 /// \param texture_alignment    The texture alignment in bytes. This is used
 ///        for allocating segments within the temporary memory.
 ///
-/// \param filter_backrop    Output array for the computed filter gradient
+/// \param filter_backprop    Output array for the computed filter gradient
 ///        with shape [depth,height,width, inp channels, out channels]
 ///
 /// \param filter_dims    The sizes of the filter dimensions. The size of
