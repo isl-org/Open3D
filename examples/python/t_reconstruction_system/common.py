@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/python/reconstruction_system/common.py
+# examples/python/t_reconstruction_system/common.py
 
 import open3d as o3d
 
