@@ -43,7 +43,7 @@ With the data association, we are able to conduct integration. In this example, 
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 118
+   :lineno-start: 98
    :lines: 8,99-108,113-132
 
 You may follow the example and adapt it to your customized properties. Open3D supports conversion from and to PyTorch tensors without memory any copy, see :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`. This can be use to leverage PyTorch's capabilities such as automatic differentiation and other operators.
