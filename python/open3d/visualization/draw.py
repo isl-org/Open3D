@@ -61,7 +61,7 @@ def draw(geometry=None,
         actions (List[(str, Callable)]): A list of pairs of action names and the
             corresponding functions to execute. These actions are presented as
             buttons in the settings panel. Each callable receives the window
-            (`O3DVisualizer`) as an argument.
+            (``O3DVisualizer``) as an argument.
         lookat (array of shape (3,)): Camera principal axis direction.
         eye (array of shape (3,)): Camera location.
         up (array of shape (3,)): Camera up direction.
@@ -83,20 +83,29 @@ def draw(geometry=None,
         point_size (int): 3D point size (default 3).
         line_width (int): 3D line width (default 1).
         animation_time_step (float): Duration in seconds for each animation
-            frame. ???
-        animation_duration (float): Total animation duration in seconds. ???
+            frame.
+        animation_duration (float): Total animation duration in seconds.
         rpc_interface (bool): Start an RPC interface at localhost:51454 and
             listen for drawing requests. The requests can be made with
             :class:`open3d.visualization.ExternalVisualizer`.
         on_init (Callable): Extra initialization procedure for the underlying
             GUI window. The procedure receives a single argument of type
             :class:`open3d.visualization.O3DVisualizer`.
-        on_animation_frame (Callable): Callback for each animation frame update.
-            ???
-        on_animation_tick (Callable): Callback for each animation time step. ???
-        non_blocking_and_return_uid (bool): Do not block waiting for the user to
-            close the window. Instead return the window ID. This is useful for
-            embedding the visualizer and is used in the WebRTC interface and
+        on_animation_frame (Callable): Callback for each animation frame update
+            with signature::
+
+                Callback(O3DVisualizer, double time) -> None
+
+        on_animation_tick (Callable): Callback for each animation time step with
+            signature::
+
+                Callback(O3DVisualizer, double tick_duration, double time) -> TickResult
+
+            If the callback returns ``TickResult.REDRAW``, the scene is redrawn.
+            It should return ``TickResult.NOCHANGE`` if redraw is not required.
+        non_blocking_and_return_uid (bool): Do not block waiting for the user
+            to close the window. Instead return the window ID. This is useful
+            for embedding the visualizer and is used in the WebRTC interface and
             Tensorboard plugin.
 
     Example:
