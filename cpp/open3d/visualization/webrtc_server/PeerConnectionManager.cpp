@@ -140,19 +140,19 @@ PeerConnectionManager::PeerConnectionManager(
     // Register api in http server.
     func_["/api/getMediaList"] = [this](const struct mg_request_info *req_info,
                                         const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/getMediaList");
+        utility::LogDebug("[Called HTTP API] /api/getMediaList");
         return this->GetMediaList();
     };
 
     func_["/api/getIceServers"] = [this](const struct mg_request_info *req_info,
                                          const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/getIceServers");
+        utility::LogDebug("[Called HTTP API] /api/getIceServers");
         return this->GetIceServers();
     };
 
     func_["/api/call"] = [this](const struct mg_request_info *req_info,
                                 const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/call");
+        utility::LogDebug("[Called HTTP API] /api/call");
         std::string peerid;
         std::string url;  // window_uid.
         std::string options;
@@ -167,7 +167,7 @@ PeerConnectionManager::PeerConnectionManager(
     func_["/api/getIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/getIceCandidate");
+        utility::LogDebug("[Called HTTP API] /api/getIceCandidate");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -178,7 +178,7 @@ PeerConnectionManager::PeerConnectionManager(
     func_["/api/addIceCandidate"] =
             [this](const struct mg_request_info *req_info,
                    const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/addIceCandidate");
+        utility::LogDebug("[Called HTTP API] /api/addIceCandidate");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -188,7 +188,7 @@ PeerConnectionManager::PeerConnectionManager(
 
     func_["/api/hangup"] = [this](const struct mg_request_info *req_info,
                                   const Json::Value &in) -> Json::Value {
-        utility::LogInfo("[Called HTTP API] /api/hangup");
+        utility::LogDebug("[Called HTTP API] /api/hangup");
         std::string peerid;
         if (req_info->query_string) {
             CivetServer::getParam(req_info->query_string, "peerid", peerid);
@@ -713,8 +713,8 @@ void PeerConnectionManager::SendInitFramesToPeer(const std::string &peerid) {
 
 void PeerConnectionManager::CloseWindowConnections(
         const std::string &window_uid) {
-    utility::LogInfo("PeerConnectionManager::CloseWindowConnections: {}",
-                     window_uid);
+    utility::LogDebug("PeerConnectionManager::CloseWindowConnections: {}",
+                      window_uid);
     std::set<std::string> peerids;
     {
         std::lock_guard<std::mutex> mlock(window_uid_to_peerids_mutex_);

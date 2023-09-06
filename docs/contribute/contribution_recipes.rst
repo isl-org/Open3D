@@ -264,7 +264,7 @@ Case 4: When adding a Python tutorial
 .. note::
    When you commit a ipynb notebook file make sure to remove the output cells
    to keep the commit sizes small.
-   You can use the script ``docs/jupyter/jupyter_strip_output.sh`` for
+   You can use the script ``docs/jupyter/jupyter_strip_output.py`` for
    stripping the output cells of all tutorials.
 
 Dos
