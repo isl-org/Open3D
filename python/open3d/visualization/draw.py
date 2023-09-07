@@ -37,24 +37,22 @@ def draw(geometry=None,
          on_animation_tick=None,
          non_blocking_and_return_uid=False):
     """Draw 3D geometry types and 3D models. This is a high level interface to
-    O3DVIsualizer.
+    :class:`open3d.visualization.O3DVisualizer`.
 
     The initial view may be specified either as a combination of (lookat, eye,
     up, and field of view) or (intrinsic matrix, extrinsic matrix) pair. A
     simple pinhole camera model is used.
 
     Args:
-        geometry (List[geometry type] or List[Dict]): The 3D data to be
-            displayed can be provided in different types:
-            - A list of Open3D geometry types (``PointCloud``, ``TriangleMesh``,
-              ``LineSet`` or ``TriangleMeshModel``).
-            - A list of dictionaries with geometry data and additional
-              metadata. The following keys are used:
-                - name (str): Geometry name.
-                - geometry (geometry type): Open3D geometry type as above.
-                - material (``MaterialRecord``): PBR material for the
-                      geometry.
-                - is_visible (bool): Show this geometry?
+        geometry (List[Geometry] or List[Dict]): The 3D data to be displayed can be provided in different types:
+            - A list of any Open3D geometry types (``PointCloud``, ``TriangleMesh``, ``LineSet`` or ``TriangleMeshModel``).
+            - A list of dictionaries with geometry data and additional metadata. The following keys are used:
+                - **name** (str): Geometry name.
+                - **geometry** (Geometry): Open3D geometry to be drawn.
+                - **material** (:class:`open3d.visualization.rendering.MaterialRecord`): PBR material for the geometry.
+                - **group** (str): Assign the geometry to a group. Groups are shown in the settings panel and users can take take joint actions on a group as a whole.
+                - **time** (float): If geometry elements are assigned times, a time bar is displayed and the elements can be animated.
+                - **is_visible** (bool): Show this geometry?
         title (str): Window title.
         width (int): Viewport width.
         height (int): Viewport height.
@@ -85,7 +83,7 @@ def draw(geometry=None,
         animation_time_step (float): Duration in seconds for each animation
             frame.
         animation_duration (float): Total animation duration in seconds.
-        rpc_interface (bool): Start an RPC interface at localhost:51454 and
+        rpc_interface (bool): Start an RPC interface at http://localhost:51454 and
             listen for drawing requests. The requests can be made with
             :class:`open3d.visualization.ExternalVisualizer`.
         on_init (Callable): Extra initialization procedure for the underlying
@@ -109,50 +107,49 @@ def draw(geometry=None,
             Tensorboard plugin.
 
     Example:
+        See `examples/visualization/draw.py` for examples of advanced usage. The ``actions()``
+        example from that file is shown below::
 
-    See `examples/python/visualization/draw.py` for examples of advanced
-    usage. The ``actions()`` example from that file is shown below::
+            import open3d as o3d
+            import open3d.visualization as vis
 
-        import open3d as o3d
-        import open3d.visualization as vis
+            SOURCE_NAME = "Source"
+            RESULT_NAME = "Result (Poisson reconstruction)"
+            TRUTH_NAME = "Ground truth"
 
-        SOURCE_NAME = "Source"
-        RESULT_NAME = "Result (Poisson reconstruction)"
-        TRUTH_NAME = "Ground truth"
+            bunny = o3d.data.BunnyMesh()
+            bunny_mesh = o3d.io.read_triangle_mesh(bunny.path)
+            bunny_mesh.compute_vertex_normals()
 
-        bunny = o3d.data.BunnyMesh()
-        bunny_mesh = o3d.io.read_triangle_mesh(bunny.path)
-        bunny_mesh.compute_vertex_normals()
+            bunny_mesh.paint_uniform_color((1, 0.75, 0))
+            bunny_mesh.compute_vertex_normals()
+            cloud = o3d.geometry.PointCloud()
+            cloud.points = bunny_mesh.vertices
+            cloud.normals = bunny_mesh.vertex_normals
 
-        bunny_mesh.paint_uniform_color((1, 0.75, 0))
-        bunny_mesh.compute_vertex_normals()
-        cloud = o3d.geometry.PointCloud()
-        cloud.points = bunny_mesh.vertices
-        cloud.normals = bunny_mesh.vertex_normals
+            def make_mesh(o3dvis):
+                mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+                    cloud)
+                mesh.paint_uniform_color((1, 1, 1))
+                mesh.compute_vertex_normals()
+                o3dvis.add_geometry({"name": RESULT_NAME, "geometry": mesh})
+                o3dvis.show_geometry(SOURCE_NAME, False)
 
-        def make_mesh(o3dvis):
-            mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-                cloud)
-            mesh.paint_uniform_color((1, 1, 1))
-            mesh.compute_vertex_normals()
-            o3dvis.add_geometry({"name": RESULT_NAME, "geometry": mesh})
-            o3dvis.show_geometry(SOURCE_NAME, False)
+            def toggle_result(o3dvis):
+                truth_vis = o3dvis.get_geometry(TRUTH_NAME).is_visible
+                o3dvis.show_geometry(TRUTH_NAME, not truth_vis)
+                o3dvis.show_geometry(RESULT_NAME, truth_vis)
 
-        def toggle_result(o3dvis):
-            truth_vis = o3dvis.get_geometry(TRUTH_NAME).is_visible
-            o3dvis.show_geometry(TRUTH_NAME, not truth_vis)
-            o3dvis.show_geometry(RESULT_NAME, truth_vis)
-
-        vis.draw([{
-            "name": SOURCE_NAME,
-            "geometry": cloud
-        }, {
-            "name": TRUTH_NAME,
-            "geometry": bunny_mesh,
-            "is_visible": False
-        }],
-             actions=[("Create Mesh", make_mesh),
-                      ("Toggle truth/result", toggle_result)])
+            vis.draw([{
+                "name": SOURCE_NAME,
+                "geometry": cloud
+            }, {
+                "name": TRUTH_NAME,
+                "geometry": bunny_mesh,
+                "is_visible": False
+            }],
+                 actions=[("Create Mesh", make_mesh),
+                          ("Toggle truth/result", toggle_result)])
     """
     gui.Application.instance.initialize()
     w = O3DVisualizer(title, width, height)
