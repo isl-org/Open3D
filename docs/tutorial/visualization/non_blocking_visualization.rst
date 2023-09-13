@@ -62,9 +62,9 @@ Initialize Visualizer class
 
 .. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
-   :start-after: def demo_non_blocking_visualization():
+   :start-at: def demo_non_blocking_visualization():
+   :end-at: save_image = False
    :linenos:
-   :lines: 3-7
    :lineno-match:
 
 These lines make an instance of the visualizer class, open a visualizer window, and add two geometries to the visualizer.
@@ -74,9 +74,9 @@ Transform geometry and visualize it
 
 .. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
-   :start-after: def demo_non_blocking_visualization():
+   :start-at: for i in range(icp_iteration):
+   :end-at: vis.destroy_window()
    :linenos:
-   :lines: 8-23
    :lineno-match:
 
 This script calls ``registration_icp`` for every iteration. Note that it explicitly forces only one ICP iteration via ``ICPConvergenceCriteria(max_iteration = 1)``. This is a trick to retrieve a slight pose update from a single ICP iteration. After ICP, source geometry is transformed accordingly.
