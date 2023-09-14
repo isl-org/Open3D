@@ -75,7 +75,7 @@ REGISTER_OP("Open3DSparseConvTranspose")
             ShapeHandle out_features_shape =
                     MakeShapeHandle(c, num_out, out_channels);
             c->set_output(0, out_features_shape);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Sparse tranpose convolution of two pointclouds.

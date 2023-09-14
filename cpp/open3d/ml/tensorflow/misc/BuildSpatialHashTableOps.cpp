@@ -52,7 +52,7 @@ REGISTER_OP("Open3DBuildSpatialHashTable")
             hash_table_splits_shape = MakeShapeHandle(c, batch_size + 1);
             c->set_output(2, hash_table_splits_shape);
 
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Creates a spatial hash table meant as input for fixed_radius_search

@@ -12,8 +12,8 @@ In the activation step, we first locate blocks that contain points unprojected f
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 82
-   :lines: 27,83-85
+   :lineno-start: 52
+   :lines: 52-54
 
 Integration
 ````````````
@@ -23,8 +23,8 @@ We may use optimized functions, along with raw depth images with calibration par
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 86
-   :lines: 27,87-93
+   :lineno-start: 58
+   :lines: 58-60
 
 Currently, to use our optimized function, we assume the below combinations of data types, in the order of ``depth image``, ``color image``, ``tsdf in voxel grid``, ``weight in voxel grid``, ``color in voxel grid`` in CPU
 
@@ -48,8 +48,8 @@ You may use the provided APIs to extract surface points.
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 135
-   :lines: 27,136-140
+   :lineno-start: 106
+   :lines: 106-110
 
 Note ``extract_triangle_mesh`` applies marching cubes and generate mesh. ``extract_point_cloud`` uses the similar algorithm, but skips the triangle face generation step.
 

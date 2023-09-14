@@ -93,11 +93,9 @@ void pybind_visualizer(py::module &m) {
                  "reset_bounding_box"_a = true)
             .def("clear_geometries", &Visualizer::ClearGeometries,
                  "Function to clear geometries from the visualizer")
-            .def(
-                    "get_view_control",
-                    [](Visualizer &vis) { return vis.GetViewControl(); },
-                    "Function to retrieve the associated ``ViewControl``",
-                    py::return_value_policy::reference_internal)
+            .def("get_view_control", &Visualizer::GetViewControl,
+                 "Function to retrieve the associated ``ViewControl``",
+                 py::return_value_policy::reference_internal)
             .def("get_render_option", &Visualizer::GetRenderOption,
                  "Function to retrieve the associated ``RenderOption``",
                  py::return_value_policy::reference_internal)
@@ -119,7 +117,14 @@ void pybind_visualizer(py::module &m) {
                  &Visualizer::CaptureDepthPointCloud,
                  "Function to capture and save local point cloud", "filename"_a,
                  "do_render"_a = false, "convert_to_world_coordinate"_a = false)
-            .def("get_window_name", &Visualizer::GetWindowName);
+            .def("get_window_name", &Visualizer::GetWindowName)
+            .def("get_view_status", &Visualizer::GetViewStatus,
+                 "Get the current view status as a json string of "
+                 "ViewTrajectory.")
+            .def("set_view_status", &Visualizer::SetViewStatus,
+                 "Set the current view status from a json string of "
+                 "ViewTrajectory.",
+                 "view_status_str"_a);
 
     py::class_<VisualizerWithKeyCallback,
                PyVisualizer<VisualizerWithKeyCallback>,

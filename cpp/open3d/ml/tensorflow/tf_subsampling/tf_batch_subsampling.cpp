@@ -47,7 +47,7 @@ REGISTER_OP("Open3DBatchGridSubsampling")
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &input0_shape));
             c->set_output(0, input0_shape);
             c->set_output(1, c->input(1));
-            return Status::OK();
+            return Status();
         });
 
 class BatchGridSubsamplingOp : public OpKernel {
