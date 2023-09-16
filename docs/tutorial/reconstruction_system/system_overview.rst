@@ -81,7 +81,7 @@ Currently the following datasets are available:
 
 .. code-block:: sh
 
-    # Using jack_jack as the default dataset.
+    # Using bedroom as the default dataset.
     python run_system.py --default_dataset 'bedroom' --make --register --refine --integrate
 
 Running the example with custom dataset using config file.

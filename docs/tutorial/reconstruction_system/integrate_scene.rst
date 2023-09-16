@@ -22,6 +22,7 @@ Integrate RGBD frames
 .. literalinclude:: ../../../examples/python/reconstruction_system/integrate_scene.py
    :language: python
    :pyobject: scalable_integrate_rgb_frames
+   :end-at:        o3d.visualization.draw_geometries([mesh])
    :linenos:
    :lineno-match:
 
