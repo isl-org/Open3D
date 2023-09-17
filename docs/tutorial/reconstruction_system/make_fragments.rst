@@ -81,6 +81,17 @@ Make a fragment
 Once the poses are estimated, :ref:`/tutorial/pipelines/rgbd_integration.ipynb`
 is used to reconstruct a colored fragment from each RGBD sequence.
 
+Batch processing
+``````````````````````````````````````
+
+.. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
+   :language: python
+   :lineno-start: 181
+   :lines: 27,182-205
+   :linenos:
+
+The main function calls each individual function explained above.
+
 .. _reconstruction_system_make_fragments_results:
 
 Results
