@@ -982,6 +982,45 @@ TEST(PointCloud, Crop_OrientedBoundingBox) {
                                     }));
 }
 
+TEST(PointCloud, Crop_AxisAlignedBoundingBox_Invert) {
+    geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
+    geometry::PointCloud pcd({{0, 0, 0},
+                              {2, 2, 2},
+                              {1, 1, 1},
+                              {1, 1, 2},
+                              {3, 1, 1},
+                              {-1, 1, 1}});
+    pcd.normals_ = {{0, 0, 0}, {1, 0, 0}, {2, 0, 0},
+                    {3, 0, 0}, {4, 0, 0}, {5, 0, 0}};
+    pcd.colors_ = {{0.0, 0.0, 0.0}, {0.1, 0.0, 0.0}, {0.2, 0.0, 0.0},
+                   {0.3, 0.0, 0.0}, {0.4, 0.0, 0.0}, {0.5, 0.0, 0.0}};
+    pcd.covariances_ = {
+            0.0 * Eigen::Matrix3d::Identity(),
+            1.0 * Eigen::Matrix3d::Identity(),
+            2.0 * Eigen::Matrix3d::Identity(),
+            3.0 * Eigen::Matrix3d::Identity(),
+            4.0 * Eigen::Matrix3d::Identity(),
+            5.0 * Eigen::Matrix3d::Identity(),
+    };
+    std::shared_ptr<geometry::PointCloud> pc_crop = pcd.Crop(aabb, true);
+    ExpectEQ(pc_crop->points_, std::vector<Eigen::Vector3d>({
+                                       {3, 1, 1},
+                                       {-1, 1, 1}
+                               }));
+    ExpectEQ(pc_crop->normals_, std::vector<Eigen::Vector3d>({
+                                        {4, 0, 0},
+                                        {5, 0, 0}
+                                }));
+    ExpectEQ(pc_crop->colors_, std::vector<Eigen::Vector3d>({
+                                       {0.4, 0.0, 0.0},
+                                       {0.5, 0.0, 0.0}
+                               }));
+    ExpectEQ(pc_crop->covariances_, std::vector<Eigen::Matrix3d>({
+                                            4.0 * Eigen::Matrix3d::Identity(),
+                                            5.0 * Eigen::Matrix3d::Identity()
+                                    }));
+}
+
 TEST(PointCloud, EstimateNormals) {
     geometry::PointCloud pcd({
             {0, 0, 0},

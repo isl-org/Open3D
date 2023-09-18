@@ -86,16 +86,16 @@ void pybind_pointcloud(py::module &m) {
                  "num_samples"_a)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const AxisAlignedBoundingBox &) const) &
+                         const AxisAlignedBoundingBox &, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
-                 "bounding_box"_a)
+                 "bounding_box"_a, "invert"_a = false)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const OrientedBoundingBox &) const) &
+                         const OrientedBoundingBox &, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
-                 "bounding_box"_a)
+                 "bounding_box"_a, "invert"_a = false)
             .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  "Removes all points from the point cloud that have a nan "
                  "entry, or infinite entries. It also removes the "
@@ -289,7 +289,8 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "number of points[0-1]"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
-            {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
+            {{"bounding_box", "AxisAlignedBoundingBox to crop points"},
+            {"invert", "optional boolean to invert cropping"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_non_finite_points",
             {{"remove_nan", "Remove NaN values from the PointCloud"},
