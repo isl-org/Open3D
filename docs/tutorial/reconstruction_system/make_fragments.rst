@@ -86,11 +86,16 @@ Batch processing
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 181
-   :lines: 27,182-205
+   :start-at: def process_single_fragment(fragment_id, color_files, depth_files, n_files,
    :linenos:
+   :lineno-match:
 
-The main function calls each individual function explained above.
+The ``process_single_fragment`` function calls each individual function explained above.
+The ``run`` function determines the number of fragments to generate based on the number
+of images in the dataset and the configuration value ``n_frames_per_fragment``.
+Subsequently, it invokes ``process_single_fragment`` for each of these fragments.
+Furthermore, it leverages multiprocessing to speed up computation of all fragments.
+
 
 .. _reconstruction_system_make_fragments_results:
 
