@@ -3,4 +3,4 @@ pytest-randomly==3.8.0
 scipy==1.11.2
 tensorboard==2.13.0
 oauthlib==3.2.2
-certifi==2022.12.7
+certifi==2023.7.22

@@ -250,8 +250,8 @@ ci_build() {
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -cx "cp /open3d*.tar* /opt/mount \
-               && chown $(id -u):$(id -g) /opt/mount/open3d*.tar*"
+        bash -cx "cp /open3d* /opt/mount \
+               && chown $(id -u):$(id -g) /opt/mount/open3d*"
 }
 
 2-bionic_export_env() {
@@ -358,7 +358,7 @@ cpu-static_export_env() {
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=OFF
+    export PACKAGE=VIEWER
     export BUILD_SYCL_MODULE=OFF
 }
 
