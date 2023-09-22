@@ -290,11 +290,7 @@ endif()
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
-if (BUILD_SYCL_MODULE)
-    set(CMAKE_CXX_STANDARD 17)
-else()
-    set(CMAKE_CXX_STANDARD 14)
-endif()
+set(CMAKE_CXX_STANDARD 17)
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
