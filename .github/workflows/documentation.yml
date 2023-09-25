@@ -39,7 +39,7 @@ jobs:
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v3
         with:
-          repository: OlivierLDff/Open3D-ML
+          repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache

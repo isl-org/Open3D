@@ -12,7 +12,7 @@ import pytest
 import mltest
 if o3d._build_config['BUILD_PYTORCH_OPS']:
     import torch
-if o3d._build_config['BUILD_TENSORFLOW_OPS']: 
+if o3d._build_config['BUILD_TENSORFLOW_OPS']:
     import tensorflow as tf
 
 # skip all tests if the ml ops were not built

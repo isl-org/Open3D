@@ -23,38 +23,19 @@ BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
-# CUDA
-if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON ||
-    $UBUNTU_VERSION != bionic ]]; then
-    # CUDA version in sync with PyTorch and Tensorflow
-    CUDA_VERSION=("11-7" "11.7")
-    CUDNN_MAJOR_VERSION=8
-    CUDNN_VERSION="8.0.5.39_cuda11.7"
-    GCC_MAX_VER=9
-else
-    # Without MLOps, ensure Open3D works with the lowest supported CUDA version
-    # Not available in Nvidia focal repos
-    CUDA_VERSION=("10-1" "10.1")
-    CUDNN_MAJOR_VERSION=8
-    CUDNN_VERSION="8.0.5.39-1+cuda10.1"
-    GCC_MAX_VER=7
-fi
+# CUDA: see docker/docker_build.sh
 # ML
 TENSORFLOW_VER="2.13.0"
-TENSORBOARD_VER="2.13.0"
 TORCH_VER="2.0.1"
 TORCH_CPU_GLNX_VER="${TORCH_VER}+cpu"
-TORCH_CUDA_GLNX_VER="${TORCH_VER}+cu117"
+TORCH_CUDA_GLNX_VER="${TORCH_VER}+cu117" # match CUDA_VERSION in docker/docker_build.sh
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_MACOS_VER="${TORCH_VER}"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
-PIP_VER="21.1.1"
+PIP_VER="23.2.1"
 WHEEL_VER="0.38.4"
 STOOLS_VER="67.3.2"
-PYTEST_VER="7.1.2"
-PYTEST_RANDOMLY_VER="3.8.0"
-SCIPY_VER="1.7.3"
 YAPF_VER="0.30.0"
 PROTOBUF_VER="4.24.0"
 
@@ -68,16 +49,15 @@ install_python_dependencies() {
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U scipy=="$SCIPY_VER" pytest=="$PYTEST_VER" \
-            pytest-randomly=="$PYTEST_RANDOMLY_VER"
+        python -m pip install -U -r python/requirements_test.txt
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
-        TF_ARCH_NAME=tensorflow-gpu
+        TF_ARCH_NAME=tensorflow
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         TORCH_GLNX="torch==$TORCH_CUDA_GLNX_VER"
     else
         TF_ARCH_NAME=tensorflow-cpu
-        TF_ARCH_DISABLE_NAME=tensorflow-gpu
+        TF_ARCH_DISABLE_NAME=tensorflow
         TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
     fi
 
@@ -300,10 +280,7 @@ test_wheel() {
 run_python_tests() {
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install -U pytest=="$PYTEST_VER" \
-        pytest-randomly=="$PYTEST_RANDOMLY_VER" \
-        scipy=="$SCIPY_VER" \
-        tensorboard=="$TENSORBOARD_VER"
+    python -m pip install -U -r python/requirements_test.txt
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
