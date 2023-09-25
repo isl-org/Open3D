@@ -300,11 +300,54 @@ Return:
                    "Function to orient the normals of a point cloud.",
                    "camera_location"_a = core::Tensor::Zeros(
                            {3}, core::Float32, core::Device("CPU:0")));
-    pointcloud.def("orient_normals_consistent_tangent_plane",
-                   &PointCloud::OrientNormalsConsistentTangentPlane,
-                   "Function to orient the normals with respect to consistent "
-                   "tangent planes.",
-                   "k"_a, "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0);
+    pointcloud.def(
+            "orient_normals_consistent_tangent_plane",
+            &PointCloud::OrientNormalsConsistentTangentPlane, "k"_a,
+            "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0,
+            R"(Function to consistently orient the normals of a point cloud based on tangent planes
+                   as described in Hoppe et al., "Surface Reconstruction from Unorganized Points", 1992. 
+                   Additional information about the choice of lambda and cos_alpha_tol for complex point clouds
+                   can be found in Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud", 2023 (https://eugeniovaretti.github.io/meshreco/Piazza_Valentini_Varetti_MeshReconstructionFromPointCloud_2023.pdf).
+Args:
+    k. Number of neighbors to use for tangent plane estimation.
+    lambda. A non-negative real parameter that influences the distance metric used to identify the true neighbors of a point in complex geometries. It penalizes the distance between a point and the tangent plane defined by the reference point and its normal vector, helping to mitigate misclassification issues encountered with traditional Euclidean distance metrics.
+    cos_alpha_tol. Cosine threshold angle used to determine the inclusion boundary of neighbors based on the direction of the normal vector.
+
+Example:
+    We use Bunny point cloud to compute its normals and orient them consistently. The initial reconstruction adheres to Hoppe's algorithm (raw), 
+    whereas the second reconstruction utilises the lambda and cos_alpha_tol parameters.
+    Due to the high density of the Bunny point cloud available in Open3D a larger value of the parameter k is employed to test the algorithm.
+    Usually you do not have at disposal such a refined point clouds, thus you cannot find a proper choice of k: refer to https://eugeniovaretti.github.io/meshreco for these cases.
+
+        # Load point cloud
+        data = o3d.data.BunnyMesh()
+
+        # Case 1, Hoppe (raw):
+        pcd = o3d.io.read_point_cloud(data.path)
+
+        # Compute normals and orient them consistently, using k=100 neighbours
+        pcd.estimate_normals()
+        pcd.orient_normals_consistent_tangent_plane(100)
+
+        # Create mesh from point cloud using Poisson Algorithm
+        poisson_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=8, width=0, scale=1.1, linear_fit=False)[0]
+        poisson_mesh.paint_uniform_color(np.array([[0.5],[0.5],[0.5]]))
+        poisson_mesh.compute_vertex_normals()
+        o3d.visualization.draw_geometries([poisson_mesh])
+
+        # Case 2, reconstruction using lambda and cos_alpha_tol parameters:
+        pcd_robust = o3d.io.read_point_cloud(data.path)
+
+        # Compute normals and orient them consistently, using k=100 neighbours
+        pcd_robust.estimate_normals()
+        pcd_robust.orient_normals_consistent_tangent_plane(100, 10, 0.5)
+
+        # Create mesh from point cloud using Poisson Algorithm
+        poisson_mesh_robust = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd_robust, depth=8, width=0, scale=1.1, linear_fit=False)[0]
+        poisson_mesh_robust.paint_uniform_color(np.array([[0.5],[0.5],[0.5]]))
+        poisson_mesh_robust.compute_vertex_normals()
+        o3d.visualization.draw_geometries([poisson_mesh_robust])");
+
     pointcloud.def(
             "estimate_color_gradients", &PointCloud::EstimateColorGradients,
             py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
