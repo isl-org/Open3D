@@ -96,6 +96,14 @@ void pybind_pointcloud(py::module &m) {
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)
+            .def(
+                    "crop_convex_hull",
+                    [](const PointCloud &pcd, const BoundingConvexHull &bhull,
+                       bool invert) {
+                        return pcd.CropConvexHull(bhull, invert);
+                    },
+                    "mesh"_a, "invert"_a = false,
+                    "Function to crop point cloud.")
             .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  "Removes all points from the point cloud that have a nan "
                  "entry, or infinite entries. It also removes the "
