@@ -731,12 +731,15 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
     }
 }
 
-void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
+void PointCloud::OrientNormalsConsistentTangentPlane(
+        size_t k,
+        const double lambda /* = 0.0*/,
+        const double cos_alpha_tol /* = 1.0*/) {
     PointCloud tpcd(GetPointPositions());
     tpcd.SetPointNormals(GetPointNormals());
 
     open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
-    lpcd.OrientNormalsConsistentTangentPlane(k);
+    lpcd.OrientNormalsConsistentTangentPlane(k, lambda, cos_alpha_tol);
 
     SetPointNormals(core::eigen_converter::EigenVector3dVectorToTensor(
             lpcd.normals_, GetPointPositions().GetDtype(), GetDevice()));

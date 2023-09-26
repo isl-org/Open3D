@@ -248,10 +248,18 @@ public:
     /// \brief Function to consistently orient estimated normals based on
     /// consistent tangent planes as described in Hoppe et al., "Surface
     /// Reconstruction from Unorganized Points", 1992.
+    /// Further details on parameters are described in
+    /// Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud",
+    /// 2023.
     ///
     /// \param k k nearest neighbour for graph reconstruction for normal
     /// propagation.
-    void OrientNormalsConsistentTangentPlane(size_t k);
+    /// \param lambda penalty constant on the distance of a point from the
+    /// tangent plane \param cos_alpha_tol treshold that defines the amplitude
+    /// of the cone spanned by the reference normal
+    void OrientNormalsConsistentTangentPlane(size_t k,
+                                             const double lambda = 0.0,
+                                             const double cos_alpha_tol = 1.0);
 
     /// \brief Function to compute the point to point distances between point
     /// clouds.
