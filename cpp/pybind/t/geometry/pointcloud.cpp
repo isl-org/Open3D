@@ -304,21 +304,37 @@ Return:
             "orient_normals_consistent_tangent_plane",
             &PointCloud::OrientNormalsConsistentTangentPlane, "k"_a,
             "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0,
-            R"(Function to consistently orient the normals of a point cloud based on tangent planes
-                   as described in Hoppe et al., "Surface Reconstruction from Unorganized Points", 1992. 
-                   Additional information about the choice of lambda and cos_alpha_tol for complex point clouds
-                   can be found in Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud", 2023 (https://eugeniovaretti.github.io/meshreco/Piazza_Valentini_Varetti_MeshReconstructionFromPointCloud_2023.pdf).
+            R"(Function to consistently orient the normals of a point cloud based on tangent planes.
+
+The algorithm is described in Hoppe et al., "Surface Reconstruction from Unorganized Points", 1992. 
+Additional information about the choice of lambda and cos_alpha_tol for complex
+point clouds can be found in Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud", 2023 
+(https://eugeniovaretti.github.io/meshreco/Piazza_Valentini_Varetti_MeshReconstructionFromPointCloud_2023.pdf).
+
 Args:
-    k. Number of neighbors to use for tangent plane estimation.
-    lambda. A non-negative real parameter that influences the distance metric used to identify the true neighbors of a point in complex geometries. It penalizes the distance between a point and the tangent plane defined by the reference point and its normal vector, helping to mitigate misclassification issues encountered with traditional Euclidean distance metrics.
-    cos_alpha_tol. Cosine threshold angle used to determine the inclusion boundary of neighbors based on the direction of the normal vector.
+    k (int): Number of neighbors to use for tangent plane estimation.
+    lambda (float): A non-negative real parameter that influences the distance 
+        metric used to identify the true neighbors of a point in complex 
+        geometries. It penalizes the distance between a point and the tangent 
+        plane defined by the reference point and its normal vector, helping to 
+        mitigate misclassification issues encountered with traditional 
+        Euclidean distance metrics.
+    cos_alpha_tol (float): Cosine threshold angle used to determine the 
+        inclusion boundary of neighbors based on the direction of the normal 
+        vector.
 
 Example:
-    We use Bunny point cloud to compute its normals and orient them consistently. The initial reconstruction adheres to Hoppe's algorithm (raw), 
-    whereas the second reconstruction utilises the lambda and cos_alpha_tol parameters.
-    Due to the high density of the Bunny point cloud available in Open3D a larger value of the parameter k is employed to test the algorithm.
-    Usually you do not have at disposal such a refined point clouds, thus you cannot find a proper choice of k: refer to https://eugeniovaretti.github.io/meshreco for these cases.
+    We use Bunny point cloud to compute its normals and orient them consistently.
+    The initial reconstruction adheres to Hoppe's algorithm (raw), whereas the 
+    second reconstruction utilises the lambda and cos_alpha_tol parameters. 
+    Due to the high density of the Bunny point cloud available in Open3D a larger
+    value of the parameter k is employed to test the algorithm.  Usually you do 
+    not have at disposal such a refined point clouds, thus you cannot find a 
+    proper choice of k: refer to 
+    https://eugeniovaretti.github.io/meshreco for these cases.::
 
+        import open3d as o3d
+        import numpy as np
         # Load point cloud
         data = o3d.data.BunnyMesh()
 
@@ -346,8 +362,8 @@ Example:
         poisson_mesh_robust = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd_robust, depth=8, width=0, scale=1.1, linear_fit=False)[0]
         poisson_mesh_robust.paint_uniform_color(np.array([[0.5],[0.5],[0.5]]))
         poisson_mesh_robust.compute_vertex_normals()
-        o3d.visualization.draw_geometries([poisson_mesh_robust])");
 
+        o3d.visualization.draw_geometries([poisson_mesh_robust]) )");
     pointcloud.def(
             "estimate_color_gradients", &PointCloud::EstimateColorGradients,
             py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
@@ -633,11 +649,6 @@ Example:
             m, "PointCloud", "orient_normals_towards_camera_location",
             {{"camera_location",
               "Normals are oriented with towards the camera_location."}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "orient_normals_consistent_tangent_plane",
-            {{"k",
-              "Number of k nearest neighbors used in constructing the "
-              "Riemannian graph used to propagate normal orientation."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
             {{"aabb", "AxisAlignedBoundingBox to crop points."},
