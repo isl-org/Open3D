@@ -318,7 +318,7 @@ OrientedBoundingBox::OrientedBoundingBox(const core::Tensor &center,
         utility::LogError(
                 "Invalid oriented bounding box. Please make sure the values of "
                 "extent are all positive and the rotation matrix is "
-                "othogonal.");
+                "orthogonal.");
     }
 }
 

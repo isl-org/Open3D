@@ -7,9 +7,12 @@
 
 # examples/python/reconstruction_system/register_fragments.py
 
+import multiprocessing
+import os
+import sys
+
 import numpy as np
 import open3d as o3d
-import os, sys
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
@@ -158,16 +161,16 @@ def make_posegraph_for_scene(ply_file_names, config):
         for t in range(s + 1, n_files):
             matching_results[s * n_files + t] = matching_result(s, t)
 
-    if config["python_multi_threading"] == True:
-        from joblib import Parallel, delayed
-        import multiprocessing
-        import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count(),
-                         max(len(matching_results), 1))
-        results = Parallel(n_jobs=MAX_THREAD)(delayed(
-            register_point_cloud_pair)(ply_file_names, matching_results[r].s,
-                                       matching_results[r].t, config)
-                                              for r in matching_results)
+    if config["python_multi_threading"] is True:
+        os.environ['OMP_NUM_THREADS'] = '1'
+        max_workers = max(
+            1, min(multiprocessing.cpu_count() - 1, len(matching_results)))
+        mp_context = multiprocessing.get_context('spawn')
+        with mp_context.Pool(processes=max_workers) as pool:
+            args = [(ply_file_names, v.s, v.t, config)
+                    for k, v in matching_results.items()]
+            results = pool.starmap(register_point_cloud_pair, args)
+
         for i, r in enumerate(matching_results):
             matching_results[r].success = results[i][0]
             matching_results[r].transformation = results[i][1]
@@ -175,9 +178,9 @@ def make_posegraph_for_scene(ply_file_names, config):
     else:
         for r in matching_results:
             (matching_results[r].success, matching_results[r].transformation,
-                    matching_results[r].information) = \
-                    register_point_cloud_pair(ply_file_names,
-                    matching_results[r].s, matching_results[r].t, config)
+             matching_results[r].information) = \
+                register_point_cloud_pair(ply_file_names,
+                                          matching_results[r].s, matching_results[r].t, config)
 
     for r in matching_results:
         if matching_results[r].success:

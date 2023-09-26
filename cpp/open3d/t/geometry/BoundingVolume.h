@@ -146,7 +146,7 @@ public:
             const utility::optional<core::Tensor> &center = utility::nullopt);
 
     /// \brief Add operation for axis-aligned bounding box.
-    /// The device of ohter box must be the same as the device of the current
+    /// The device of other box must be the same as the device of the current
     /// box.
     AxisAlignedBoundingBox &operator+=(const AxisAlignedBoundingBox &other);
 
@@ -223,7 +223,7 @@ protected:
 /// \brief A bounding box oriented along an arbitrary frame of reference.
 ///
 /// - (center, rotation, extent): The oriented bounding box is defined by its
-/// center position, rotation maxtrix and extent.
+/// center position, rotation matrix and extent.
 ///     - Usage
 ///         - OrientedBoundingBox::GetCenter()
 ///         - OrientedBoundingBox::SetCenter(const core::Tensor &center)

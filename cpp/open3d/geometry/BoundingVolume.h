@@ -21,7 +21,7 @@ class AxisAlignedBoundingBox;
 /// \brief A bounding box oriented along an arbitrary frame of reference.
 ///
 /// The oriented bounding box is defined by its center position, rotation
-/// maxtrix and extent.
+/// matrix and extent.
 class OrientedBoundingBox : public Geometry3D {
 public:
     /// \brief Default constructor.

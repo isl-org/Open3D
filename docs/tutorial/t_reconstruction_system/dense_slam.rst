@@ -13,8 +13,8 @@ In a SLAM system, we maintain a ``model`` built upon a :ref:`voxel_block_grid`, 
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/dense_slam.py
    :language: python
-   :lineno-start: 45
-   :lines: 27,46-54
+   :lineno-start: 26
+   :lines: 8,27-35
 
 Frame-to-model tracking
 ````````````````````````
@@ -22,8 +22,8 @@ The frame-to-model tracking runs in a loop:
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/dense_slam.py
    :language: python
-   :lineno-start: 57
-   :lines: 27,58-78
+   :lineno-start: 38
+   :lines: 8,39,42-61
 
 where we iteratively update the synthesized frame via ray-casting from the model, and perform the tensor version of :ref:`/tutorial/pipelines/rgbd_odometry.ipynb` between the input frame and the synthesized frame.
 
@@ -44,7 +44,7 @@ If all above have been correctly set but still no luck, please file an issue.
 
 **Q**: So WHY did my tracking fail?
 
-**A**: For the front end, we are using direct RGB-D odometry. Comparing to feature-based odometry, RGB-D odometry is more accurate when it completes successfully but is less robust. We will add support for feature-based tracking in the future. For the backend, unlike our offline reconstruction system, we do not detect loop closures, and do not perform pose graph optimization or bundle adjustment at the moment.
+**A**: For the front end, we are using direct RGB-D odometry. Compared to feature-based odometry, RGB-D odometry is more accurate when it completes successfully but is less robust. We will add support for feature-based tracking in the future. For the backend, unlike our offline reconstruction system, we do not detect loop closures, and do not perform pose graph optimization or bundle adjustment at the moment.
 
 **Q**: Why don't you implement loop closure or relocalization?
 

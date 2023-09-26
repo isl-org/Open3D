@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/python/reconstruction_system/common.py
+# examples/python/t_reconstruction_system/common.py
 
 import open3d as o3d
 
@@ -95,7 +95,7 @@ def get_default_dataset(config):
 def load_depth_file_names(config):
     if not os.path.exists(config.path_dataset):
         print(
-            'Path \'{}\' not found.'.format(config.path_dataset),
+            f"Path '{config.path_dataset}' not found.",
             'Please provide --path_dataset in the command line or the config file.'
         )
         return [], []
@@ -106,7 +106,7 @@ def load_depth_file_names(config):
     depth_file_names = glob.glob(os.path.join(depth_folder, '*.png'))
     n_depth = len(depth_file_names)
     if n_depth == 0:
-        print('Depth image not found in {}, abort!'.format(depth_folder))
+        print(f'Depth image not found in {depth_folder}, abort!')
         return []
 
     return sorted(depth_file_names)
