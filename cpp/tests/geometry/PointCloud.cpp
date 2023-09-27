@@ -1003,22 +1003,15 @@ TEST(PointCloud, Crop_AxisAlignedBoundingBox_Invert) {
             5.0 * Eigen::Matrix3d::Identity(),
     };
     std::shared_ptr<geometry::PointCloud> pc_crop = pcd.Crop(aabb, true);
-    ExpectEQ(pc_crop->points_, std::vector<Eigen::Vector3d>({
-                                       {3, 1, 1},
-                                       {-1, 1, 1}
-                               }));
-    ExpectEQ(pc_crop->normals_, std::vector<Eigen::Vector3d>({
-                                        {4, 0, 0},
-                                        {5, 0, 0}
-                                }));
-    ExpectEQ(pc_crop->colors_, std::vector<Eigen::Vector3d>({
-                                       {0.4, 0.0, 0.0},
-                                       {0.5, 0.0, 0.0}
-                               }));
-    ExpectEQ(pc_crop->covariances_, std::vector<Eigen::Matrix3d>({
-                                            4.0 * Eigen::Matrix3d::Identity(),
-                                            5.0 * Eigen::Matrix3d::Identity()
-                                    }));
+    ExpectEQ(pc_crop->points_,
+             std::vector<Eigen::Vector3d>({{3, 1, 1}, {-1, 1, 1}}));
+    ExpectEQ(pc_crop->normals_,
+             std::vector<Eigen::Vector3d>({{4, 0, 0}, {5, 0, 0}}));
+    ExpectEQ(pc_crop->colors_,
+             std::vector<Eigen::Vector3d>({{0.4, 0.0, 0.0}, {0.5, 0.0, 0.0}}));
+    ExpectEQ(pc_crop->covariances_,
+             std::vector<Eigen::Matrix3d>({4.0 * Eigen::Matrix3d::Identity(),
+                                           5.0 * Eigen::Matrix3d::Identity()}));
 }
 
 TEST(PointCloud, EstimateNormals) {

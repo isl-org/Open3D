@@ -290,7 +290,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
             {{"bounding_box", "AxisAlignedBoundingBox to crop points"},
-            {"invert", "optional boolean to invert cropping"}});
+             {"invert", "optional boolean to invert cropping"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_non_finite_points",
             {{"remove_nan", "Remove NaN values from the PointCloud"},

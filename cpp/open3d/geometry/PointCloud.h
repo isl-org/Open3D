@@ -186,7 +186,8 @@ public:
     ///
     /// \param bbox AxisAlignedBoundingBox to crop points.
     /// \param invert Optional boolean to invert cropping.
-    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox, bool invert=false) const;
+    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox,
+                                     bool invert = false) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
     ///
@@ -195,7 +196,8 @@ public:
     ///
     /// \param bbox OrientedBoundingBox to crop points.
     /// \param invert Optional boolean to invert cropping.
-    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox, bool invert=false) const;
+    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox,
+                                     bool invert = false) const;
 
     /// \brief Function to remove points that have less than \p nb_points in a
     /// sphere of a given radius.
