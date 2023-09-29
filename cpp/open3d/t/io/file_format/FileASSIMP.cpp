@@ -10,6 +10,7 @@
 #include <assimp/scene.h>
 
 #include <assimp/Importer.hpp>
+#include <assimp/Exporter.hpp>
 #include <assimp/ProgressHandler.hpp>
 #include <fstream>
 #include <numeric>
@@ -169,6 +170,81 @@ bool ReadTriangleMeshUsingASSIMP(
         if (count_mesh_with_uvs > 0) {
             mesh.SetTriangleAttr("texture_uvs", mesh_uvs[0]);
         }
+    }
+
+    return true;
+}
+
+bool WriteTriangleMeshUsingASSIMP(
+        const std::string &filename,
+        const geometry::TriangleMesh &mesh,
+        const bool write_ascii,
+        const bool compressed,
+        const bool write_vertex_normals,
+        const bool write_vertex_colors,
+        const bool write_triangle_uvs,
+        const bool print_progress) {
+    utility::LogWarning("Writing {} to GLB file using ASSIMP!!!", filename);
+
+    // Sanity checks...
+    if (write_ascii) {
+        utility::LogWarning(
+                "TriangleMesh can't be saved in ASCII fromat as .glb");
+        return false;
+    }
+    if (compressed) {
+        utility::LogWarning(
+                "TriangleMesh can't be saved in compressed format as .glb");
+        return false;
+    }
+    if (!mesh.HasVertexPositions()) {
+        utility::LogWarning("TriangleMesh has no vertex positions and can't be saved as .glb");
+        return false;
+    }
+
+    Assimp::Exporter exporter;
+    auto ai_scene = new aiScene;
+
+    // Fill mesh data...
+    ai_scene->mNumMeshes = 1;
+    ai_scene->mMeshes = new aiMesh *[1];
+    auto ai_mesh = new aiMesh;
+    ai_mesh->mName.Set("Object1");
+    auto vertices = mesh.GetVertexPositions();
+    auto indices = mesh.GetTriangleIndices().To(core::Dtype::UInt32);
+    ai_mesh->mNumVertices = vertices.GetShape(0);
+    ai_mesh->mVertices = new aiVector3D[ai_mesh->mNumVertices];
+    memcpy(&ai_mesh->mVertices->x, vertices.GetDataPtr(), sizeof(float)*ai_mesh->mNumVertices*3);
+    utility::LogWarning("Shape dim 0: {}", vertices.GetShape(0));
+    utility::LogWarning("Shape dim 0 of indices: {}", indices.GetShape(0));
+    utility::LogWarning("Shape dim 1 of indices: {}", indices.GetShape(1));
+    ai_mesh->mNumFaces = indices.GetShape(0);
+    ai_mesh->mFaces = new aiFace[ai_mesh->mNumFaces];
+    for (unsigned int i = 0; i < ai_mesh->mNumFaces; ++i) {
+        ai_mesh->mFaces[i].mNumIndices = 3;
+        ai_mesh->mFaces[i].mIndices = new unsigned int[3]; // triangles
+        ai_mesh->mFaces[i].mIndices[0] = indices[i][0].Item<unsigned int>();
+        ai_mesh->mFaces[i].mIndices[1] = indices[i][1].Item<unsigned int>();
+        ai_mesh->mFaces[i].mIndices[2] = indices[i][2].Item<unsigned int>();
+    }
+    ai_scene->mMeshes[0] = ai_mesh;
+
+    // Fill material data...
+    ai_scene->mNumMaterials = 1;
+    ai_scene->mMaterials = new aiMaterial *[ai_scene->mNumMaterials];
+    ai_scene->mMaterials[0] = new aiMaterial;
+
+    auto root_node = new aiNode;
+    root_node->mName.Set("root");
+    root_node->mNumMeshes = 1;
+    root_node->mMeshes = new unsigned int[root_node->mNumMeshes];
+    root_node->mMeshes[0] = 0;
+    ai_scene->mRootNode = root_node;
+
+    // Export
+    if (exporter.Export(ai_scene, "glb", filename.c_str()) == AI_FAILURE) {
+        utility::LogWarning("Got error: {}", exporter.GetErrorString());
+        return false;
     }
 
     return true;
