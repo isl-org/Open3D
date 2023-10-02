@@ -239,6 +239,25 @@ bool WriteTriangleMeshUsingASSIMP(
         memcpy(&ai_mesh->mNormals->x, normals.GetDataPtr(), sizeof(float)*m_normals*3);
     }
 
+    // Add colors if present...
+    if (mesh.HasVertexColors()) {
+        auto colors = mesh.GetVertexColors();
+        auto m_colors = colors.GetShape(0);
+        utility::LogWarning("Adding {} colors...", m_colors);
+        ai_mesh->mColors[0] = new aiColor4D[m_colors];
+        if (colors.GetShape(1) == 4) {
+            memcpy(&ai_mesh->mColors[0][0].r, colors.GetDataPtr(), sizeof(float)*m_colors*3);
+        } else { // must be 3 components
+            auto color_ptr = reinterpret_cast<float*>(colors.GetDataPtr());
+            for (unsigned int i = 0; i < m_colors; ++i) {
+                ai_mesh->mColors[0][i].r = *color_ptr++;
+                ai_mesh->mColors[0][i].g = *color_ptr++;
+                ai_mesh->mColors[0][i].b = *color_ptr++;
+                ai_mesh->mColors[0][i].a = 1.0f;
+            }
+        }
+    }
+
     // Add UVs if present...
     if (mesh.HasTriangleAttr("texture_uvs")) {
         auto triangle_uvs = mesh.GetTriangleAttr("texture_uvs");
