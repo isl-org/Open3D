@@ -184,8 +184,6 @@ bool WriteTriangleMeshUsingASSIMP(
         const bool write_vertex_colors,
         const bool write_triangle_uvs,
         const bool print_progress) {
-    utility::LogWarning("Writing {} to GLB file using ASSIMP!!!", filename);
-
     // Sanity checks...
     if (write_ascii) {
         utility::LogWarning(
@@ -217,9 +215,6 @@ bool WriteTriangleMeshUsingASSIMP(
     ai_mesh->mNumVertices = vertices.GetShape(0);
     ai_mesh->mVertices = new aiVector3D[ai_mesh->mNumVertices];
     memcpy(&ai_mesh->mVertices->x, vertices.GetDataPtr(), sizeof(float)*ai_mesh->mNumVertices*3);
-    utility::LogWarning("Shape dim 0: {}", vertices.GetShape(0));
-    utility::LogWarning("Shape dim 0 of indices: {}", indices.GetShape(0));
-    utility::LogWarning("Shape dim 1 of indices: {}", indices.GetShape(1));
     ai_mesh->mNumFaces = indices.GetShape(0);
     ai_mesh->mFaces = new aiFace[ai_mesh->mNumFaces];
     for (unsigned int i = 0; i < ai_mesh->mNumFaces; ++i) {
@@ -234,7 +229,6 @@ bool WriteTriangleMeshUsingASSIMP(
     if (mesh.HasVertexNormals()) {
         auto normals = mesh.GetVertexNormals();
         auto m_normals = normals.GetShape(0);
-        utility::LogWarning("Adding {} normals...", m_normals);
         ai_mesh->mNormals = new aiVector3D[m_normals];
         memcpy(&ai_mesh->mNormals->x, normals.GetDataPtr(), sizeof(float)*m_normals*3);
     }
@@ -246,7 +240,7 @@ bool WriteTriangleMeshUsingASSIMP(
         utility::LogWarning("Adding {} colors...", m_colors);
         ai_mesh->mColors[0] = new aiColor4D[m_colors];
         if (colors.GetShape(1) == 4) {
-            memcpy(&ai_mesh->mColors[0][0].r, colors.GetDataPtr(), sizeof(float)*m_colors*3);
+            memcpy(&ai_mesh->mColors[0][0].r, colors.GetDataPtr(), sizeof(float)*m_colors*4);
         } else { // must be 3 components
             auto color_ptr = reinterpret_cast<float*>(colors.GetDataPtr());
             for (unsigned int i = 0; i < m_colors; ++i) {
@@ -264,8 +258,11 @@ bool WriteTriangleMeshUsingASSIMP(
         auto vertex_uvs = core::Tensor::Empty(
                 {ai_mesh->mNumVertices, 2}, core::Dtype::Float32);
         auto n_uvs = ai_mesh->mNumVertices;
-        utility::LogWarning("Adding {} texture uvs", n_uvs);
-        vertex_uvs.IndexGet({mesh.GetTriangleIndices()}) = triangle_uvs;
+        for (int64_t i = 0; i < indices.GetShape(0); i++) {
+            vertex_uvs[indices[i][0].Item<uint32_t>()] = triangle_uvs[i][0];
+            vertex_uvs[indices[i][1].Item<uint32_t>()] = triangle_uvs[i][1];
+            vertex_uvs[indices[i][2].Item<uint32_t>()] = triangle_uvs[i][2];
+        }
         ai_mesh->mTextureCoords[0] = new aiVector3D[n_uvs];
         auto uv_ptr = reinterpret_cast<float*>(vertex_uvs.GetDataPtr());
         for (unsigned int i = 0; i < n_uvs; ++i) {
