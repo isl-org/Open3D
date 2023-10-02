@@ -210,6 +210,8 @@ bool WriteTriangleMeshUsingASSIMP(
     ai_scene->mMeshes = new aiMesh *[1];
     auto ai_mesh = new aiMesh;
     ai_mesh->mName.Set("Object1");
+    ai_mesh->mPrimitiveTypes = aiPrimitiveType_TRIANGLE;
+    // Guaranteed to have both vertex positions and triangle indices
     auto vertices = mesh.GetVertexPositions();
     auto indices = mesh.GetTriangleIndices().To(core::Dtype::UInt32);
     ai_mesh->mNumVertices = vertices.GetShape(0);
