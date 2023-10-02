@@ -229,6 +229,32 @@ bool WriteTriangleMeshUsingASSIMP(
         ai_mesh->mFaces[i].mIndices[1] = indices[i][1].Item<unsigned int>();
         ai_mesh->mFaces[i].mIndices[2] = indices[i][2].Item<unsigned int>();
     }
+
+    // Add normals if present...
+    if (mesh.HasVertexNormals()) {
+        auto normals = mesh.GetVertexNormals();
+        auto m_normals = normals.GetShape(0);
+        utility::LogWarning("Adding {} normals...", m_normals);
+        ai_mesh->mNormals = new aiVector3D[m_normals];
+        memcpy(&ai_mesh->mNormals->x, normals.GetDataPtr(), sizeof(float)*m_normals*3);
+    }
+
+    // Add UVs if present...
+    if (mesh.HasTriangleAttr("texture_uvs")) {
+        auto triangle_uvs = mesh.GetTriangleAttr("texture_uvs");
+        auto vertex_uvs = core::Tensor::Empty(
+                {ai_mesh->mNumVertices, 2}, core::Dtype::Float32);
+        auto n_uvs = ai_mesh->mNumVertices;
+        utility::LogWarning("Adding {} texture uvs", n_uvs);
+        vertex_uvs.IndexGet({mesh.GetTriangleIndices()}) = triangle_uvs;
+        ai_mesh->mTextureCoords[0] = new aiVector3D[n_uvs];
+        auto uv_ptr = reinterpret_cast<float*>(vertex_uvs.GetDataPtr());
+        for (unsigned int i = 0; i < n_uvs; ++i) {
+            ai_mesh->mTextureCoords[0][i].x = *uv_ptr++;
+            ai_mesh->mTextureCoords[0][i].y = *uv_ptr++;
+        }
+        ai_mesh->mNumUVComponents[0] = 2;
+    }
     ai_scene->mMeshes[0] = ai_mesh;
 
     // Fill material data...
@@ -244,7 +270,7 @@ bool WriteTriangleMeshUsingASSIMP(
     ai_scene->mRootNode = root_node;
 
     // Export
-    if (exporter.Export(ai_scene, "glb", filename.c_str()) == AI_FAILURE) {
+    if (exporter.Export(ai_scene, "glb2", filename.c_str()) == AI_FAILURE) {
         utility::LogWarning("Got error: {}", exporter.GetErrorString());
         return false;
     }
