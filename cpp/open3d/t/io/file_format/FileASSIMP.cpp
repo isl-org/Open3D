@@ -237,7 +237,6 @@ bool WriteTriangleMeshUsingASSIMP(
     if (mesh.HasVertexColors()) {
         auto colors = mesh.GetVertexColors();
         auto m_colors = colors.GetShape(0);
-        utility::LogWarning("Adding {} colors...", m_colors);
         ai_mesh->mColors[0] = new aiColor4D[m_colors];
         if (colors.GetShape(1) == 4) {
             memcpy(&ai_mesh->mColors[0][0].r, colors.GetDataPtr(), sizeof(float)*m_colors*4);
