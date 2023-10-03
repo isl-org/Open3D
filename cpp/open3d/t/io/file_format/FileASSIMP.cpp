@@ -9,8 +9,8 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include <assimp/Importer.hpp>
 #include <assimp/Exporter.hpp>
+#include <assimp/Importer.hpp>
 #include <assimp/ProgressHandler.hpp>
 #include <fstream>
 #include <numeric>
@@ -175,15 +175,14 @@ bool ReadTriangleMeshUsingASSIMP(
     return true;
 }
 
-bool WriteTriangleMeshUsingASSIMP(
-        const std::string &filename,
-        const geometry::TriangleMesh &mesh,
-        const bool write_ascii,
-        const bool compressed,
-        const bool write_vertex_normals,
-        const bool write_vertex_colors,
-        const bool write_triangle_uvs,
-        const bool print_progress) {
+bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
+                                  const geometry::TriangleMesh& mesh,
+                                  const bool write_ascii,
+                                  const bool compressed,
+                                  const bool write_vertex_normals,
+                                  const bool write_vertex_colors,
+                                  const bool write_triangle_uvs,
+                                  const bool print_progress) {
     // Sanity checks...
     if (write_ascii) {
         utility::LogWarning(
@@ -196,7 +195,9 @@ bool WriteTriangleMeshUsingASSIMP(
         return false;
     }
     if (!mesh.HasVertexPositions()) {
-        utility::LogWarning("TriangleMesh has no vertex positions and can't be saved as .glb");
+        utility::LogWarning(
+                "TriangleMesh has no vertex positions and can't be saved as "
+                ".glb");
         return false;
     }
 
@@ -205,7 +206,7 @@ bool WriteTriangleMeshUsingASSIMP(
 
     // Fill mesh data...
     ai_scene->mNumMeshes = 1;
-    ai_scene->mMeshes = new aiMesh *[1];
+    ai_scene->mMeshes = new aiMesh*[1];
     auto ai_mesh = new aiMesh;
     ai_mesh->mName.Set("Object1");
     ai_mesh->mPrimitiveTypes = aiPrimitiveType_TRIANGLE;
@@ -214,12 +215,13 @@ bool WriteTriangleMeshUsingASSIMP(
     auto indices = mesh.GetTriangleIndices().To(core::Dtype::UInt32);
     ai_mesh->mNumVertices = vertices.GetShape(0);
     ai_mesh->mVertices = new aiVector3D[ai_mesh->mNumVertices];
-    memcpy(&ai_mesh->mVertices->x, vertices.GetDataPtr(), sizeof(float)*ai_mesh->mNumVertices*3);
+    memcpy(&ai_mesh->mVertices->x, vertices.GetDataPtr(),
+           sizeof(float) * ai_mesh->mNumVertices * 3);
     ai_mesh->mNumFaces = indices.GetShape(0);
     ai_mesh->mFaces = new aiFace[ai_mesh->mNumFaces];
     for (unsigned int i = 0; i < ai_mesh->mNumFaces; ++i) {
         ai_mesh->mFaces[i].mNumIndices = 3;
-        ai_mesh->mFaces[i].mIndices = new unsigned int[3]; // triangles
+        ai_mesh->mFaces[i].mIndices = new unsigned int[3];  // triangles
         ai_mesh->mFaces[i].mIndices[0] = indices[i][0].Item<unsigned int>();
         ai_mesh->mFaces[i].mIndices[1] = indices[i][1].Item<unsigned int>();
         ai_mesh->mFaces[i].mIndices[2] = indices[i][2].Item<unsigned int>();
@@ -230,7 +232,8 @@ bool WriteTriangleMeshUsingASSIMP(
         auto normals = mesh.GetVertexNormals();
         auto m_normals = normals.GetShape(0);
         ai_mesh->mNormals = new aiVector3D[m_normals];
-        memcpy(&ai_mesh->mNormals->x, normals.GetDataPtr(), sizeof(float)*m_normals*3);
+        memcpy(&ai_mesh->mNormals->x, normals.GetDataPtr(),
+               sizeof(float) * m_normals * 3);
     }
 
     // Add colors if present...
@@ -239,8 +242,9 @@ bool WriteTriangleMeshUsingASSIMP(
         auto m_colors = colors.GetShape(0);
         ai_mesh->mColors[0] = new aiColor4D[m_colors];
         if (colors.GetShape(1) == 4) {
-            memcpy(&ai_mesh->mColors[0][0].r, colors.GetDataPtr(), sizeof(float)*m_colors*4);
-        } else { // must be 3 components
+            memcpy(&ai_mesh->mColors[0][0].r, colors.GetDataPtr(),
+                   sizeof(float) * m_colors * 4);
+        } else {  // must be 3 components
             auto color_ptr = reinterpret_cast<float*>(colors.GetDataPtr());
             for (unsigned int i = 0; i < m_colors; ++i) {
                 ai_mesh->mColors[0][i].r = *color_ptr++;
@@ -254,8 +258,8 @@ bool WriteTriangleMeshUsingASSIMP(
     // Add UVs if present...
     if (mesh.HasTriangleAttr("texture_uvs")) {
         auto triangle_uvs = mesh.GetTriangleAttr("texture_uvs");
-        auto vertex_uvs = core::Tensor::Empty(
-                {ai_mesh->mNumVertices, 2}, core::Dtype::Float32);
+        auto vertex_uvs = core::Tensor::Empty({ai_mesh->mNumVertices, 2},
+                                              core::Dtype::Float32);
         auto n_uvs = ai_mesh->mNumVertices;
         for (int64_t i = 0; i < indices.GetShape(0); i++) {
             vertex_uvs[indices[i][0].Item<uint32_t>()] = triangle_uvs[i][0];
@@ -274,8 +278,11 @@ bool WriteTriangleMeshUsingASSIMP(
 
     // Fill material data...
     ai_scene->mNumMaterials = 1;
-    ai_scene->mMaterials = new aiMaterial *[ai_scene->mNumMaterials];
-    ai_scene->mMaterials[0] = new aiMaterial;
+    ai_scene->mMaterials = new aiMaterial*[ai_scene->mNumMaterials];
+    auto ai_mat = new aiMaterial;
+    if (mesh.HasMaterial()) {
+    }
+    ai_scene->mMaterials[0] = ai_mat;
 
     auto root_node = new aiNode;
     root_node->mName.Set("root");
