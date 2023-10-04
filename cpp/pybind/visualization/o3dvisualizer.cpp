@@ -134,7 +134,8 @@ void pybind_o3dvisualizer(py::module& m) {
                     "Returns 'window_undefined' otherwise.")
             .def("post_redraw", &O3DVisualizer::PostRedraw,
                  "Tells the window to redraw")
-            .def("show", &O3DVisualizer::Show, "Shows or hides the window")
+            .def("show", &O3DVisualizer::Show, "Shows or hides the window",
+                 "vis"_a)
             .def("close", &O3DVisualizer::Close,
                  "Closes the window and destroys it, unless an on_close "
                  "callback cancels the close.")
@@ -143,17 +144,19 @@ void pybind_o3dvisualizer(py::module& m) {
                     [](O3DVisualizer& w, UnownedPointer<gui::Dialog> dlg) {
                         w.ShowDialog(TakeOwnership<gui::Dialog>(dlg));
                     },
-                    "Displays the dialog")
+                    "Displays the dialog", "dlg"_a)
             .def("close_dialog", &O3DVisualizer::CloseDialog,
                  "Closes the current dialog")
             .def("show_message_box", &O3DVisualizer::ShowMessageBox,
                  "Displays a simple dialog with a title and message and okay "
-                 "button")
+                 "button",
+                 "title"_a, "message"_a)
             .def("set_on_close", &O3DVisualizer::SetOnClose,
                  "Sets a callback that will be called when the window is "
                  "closed. The callback is given no arguments and should return "
                  "True to continue closing the window or False to cancel the "
-                 "close")
+                 "close",
+                 "callback"_a)
             .def("show_menu", &O3DVisualizer::ShowMenu,
                  "show_menu(show): shows or hides the menu in the window, "
                  "except on macOS since the menubar is not in the window "
@@ -337,7 +340,7 @@ void pybind_o3dvisualizer(py::module& m) {
                  "enable_raw_mode(enable): Enables/disables raw mode for "
                  "simplified lighting environment.")
             .def("show_skybox", &O3DVisualizer::ShowSkybox,
-                 "Show/Hide the skybox")
+                 "Show/Hide the skybox", "show"_a)
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {
