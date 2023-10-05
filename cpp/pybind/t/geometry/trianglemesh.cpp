@@ -178,7 +178,7 @@ The attributes of the triangle mesh have different levels::
                       "Rotate points and normals (if exist).");
     triangle_mesh.def("remove_duplicated_triangles",
                       &TriangleMesh::RemoveDuplicatedTriangles,
-                      "Remove duplicate triangles from a triangle");
+                      "Remove duplicated triangles from a triangle");
 
     triangle_mesh.def(
             "normalize_normals", &TriangleMesh::NormalizeNormals,
