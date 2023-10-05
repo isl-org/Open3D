@@ -174,6 +174,98 @@ TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
     return *this;
 }
 
+TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
+    core::Tensor triangles = GetTriangleIndices();
+    int64_t num_triangles = triangles.GetLength();
+    if (num_triangles < 1) {
+        utility::LogError("Mesh must have at least two triangles.");
+    }
+
+    // unordered_map to keep track of existing triangles
+    // hash function with code::Tensor not implemented so we use std::tuple
+    typedef std::tuple<int, int, int> Index3;
+    std::unordered_map<Index3, size_t, utility::hash_tuple<Index3>>
+            triangle_to_old_index;
+
+    // Check is mesh has normals triangles
+    bool has_tri_normal = HasTriangleNormals();
+    // index of triangle to keep (unique triangle)
+    std::vector<int64_t> index_to_keep;
+    int64_t new_size = 0;
+    for (int64_t i = 0; i < num_triangles; i++) {
+        Index3 triangle_in_tuple;
+        // Extract vertices of the triangle
+        core::Tensor triangle_to_check =
+                triangles.GetItem({core::TensorKey::Index(i)});
+        int64_t vertice_0 =
+                triangle_to_check.GetItem({core::TensorKey::Index(0)})
+                        .Item<int64_t>();
+        int64_t vertice_1 =
+                triangle_to_check.GetItem({core::TensorKey::Index(1)})
+                        .Item<int64_t>();
+        int64_t vertice_2 =
+                triangle_to_check.GetItem({core::TensorKey::Index(2)})
+                        .Item<int64_t>();
+        // We first need to find the minimum index. Because triangle (0-1-2)
+        // and triangle (2-0-1) are the same.
+        if (vertice_0 <= vertice_1) {
+            if (vertice_1 <= vertice_2)
+                triangle_in_tuple =
+                        std::make_tuple(vertice_0, vertice_1, vertice_2);
+            else
+                triangle_in_tuple =
+                        std::make_tuple(vertice_0, vertice_2, vertice_1);
+        } else {
+            if (vertice_1 <= vertice_2)
+                triangle_in_tuple =
+                        std::make_tuple(vertice_1, vertice_2, vertice_0);
+            else
+                triangle_in_tuple =
+                        std::make_tuple(vertice_1, vertice_0, vertice_2);
+        }
+        // check is triangle is already present in the mesh
+        if (triangle_to_old_index.find(triangle_in_tuple) ==
+            triangle_to_old_index.end()) {
+            triangle_to_old_index[triangle_in_tuple] = i;
+            index_to_keep.push_back(i);
+            new_size++;
+        }
+    }
+
+    // do this only if there are some triangle to remove
+    if (new_size != num_triangles) {
+        core::Tensor triangles_without_dup = core::Tensor::Empty(
+                {new_size, 3}, triangles.GetDtype(), GetDevice());
+
+        core::Tensor triangles_normals, triangles_normals_without_dup;
+
+        // fill only is there are normals triangle to avoid errors
+        if (has_tri_normal) {
+            triangles_normals = GetTriangleNormals();
+            triangles_normals_without_dup = core::Tensor::Empty(
+                    {new_size, 3}, triangles.GetDtype(), GetDevice());
+        }
+
+        for (int64_t i = 0; i < new_size; i++) {
+            core::Tensor triangle_to_keep = triangles.GetItem(
+                    {core::TensorKey::Index(index_to_keep[i])});
+            triangles_without_dup.SetItem({core::TensorKey::Index(i)},
+                                          triangle_to_keep);
+            if (has_tri_normal) {
+                core::Tensor triangle_normal_to_keep =
+                        triangles_normals.GetItem(
+                                {core::TensorKey::Index(index_to_keep[i])});
+                triangles_normals_without_dup.SetItem(
+                        {core::TensorKey::Index(i)}, triangle_normal_to_keep);
+            }
+        }
+
+        SetTriangleIndices(triangles_without_dup);
+        if (has_tri_normal) SetTriangleNormals(triangles_normals_without_dup);
+    }
+    return *this;
+}
+
 TriangleMesh &TriangleMesh::NormalizeNormals() {
     if (HasVertexNormals()) {
         SetVertexNormals(GetVertexNormals().Contiguous());

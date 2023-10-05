@@ -654,6 +654,8 @@ public:
     /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    TriangleMesh &RemoveDuplicatedTriangles();
+
     /// Normalize both triangle normals and vertex normals to length 1.
     TriangleMesh &NormalizeNormals();
 

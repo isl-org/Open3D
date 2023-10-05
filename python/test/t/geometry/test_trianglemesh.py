@@ -417,3 +417,29 @@ def test_pickle(device):
                                 mesh.vertex.positions.cpu().numpy())
         np.testing.assert_equal(mesh_load.triangle.indices.cpu().numpy(),
                                 mesh.triangle.indices.cpu().numpy())
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_remove_duplicated_triangles(device):
+
+    mesh = o3d.t.geometry.TriangleMesh()
+    vertex_positions = o3c.Tensor(
+        [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0],
+         [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+        o3c.float32, device)
+    triangle_indices = o3c.Tensor(
+        [[4, 7, 5], [4, 6, 7], [0, 2, 4], [2, 6, 4], [0, 1, 2], [1, 3, 2],
+         [1, 5, 7], [1, 7, 3], [2, 3, 7], [2, 7, 6], [4, 6, 7], [0, 4, 1],
+         [1, 4, 5]], o3c.int64, device)
+    mesh.vertex.positions = vertex_positions
+    mesh.triangle.indices = triangle_indices
+
+    mesh.remove_duplicated_triangles()
+
+    assert mesh.triangle.indices.shape == (12, 3)
+    np.testing.assert_allclose(
+        mesh.triangle.indices.cpu().numpy(),
+        o3c.Tensor(
+            [[4, 7, 5], [4, 6, 7], [0, 2, 4], [2, 6, 4], [0, 1, 2], [1, 3, 2],
+             [1, 5, 7], [1, 7, 3], [2, 3, 7], [2, 7, 6], [0, 4, 1], [1, 4, 5]],
+            o3c.int64, device).cpu().numpy())
