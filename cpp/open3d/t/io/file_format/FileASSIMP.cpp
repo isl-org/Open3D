@@ -281,6 +281,33 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     ai_scene->mMaterials = new aiMaterial*[ai_scene->mNumMaterials];
     auto ai_mat = new aiMaterial;
     if (mesh.HasMaterial()) {
+        ai_mat->GetName().Set("mat1");
+        auto shading_mode = aiShadingMode_PBR_BRDF;
+        ai_mat->AddProperty(&shading_mode, 1, AI_MATKEY_SHADING_MODEL);
+
+        // Set base material properties
+        if (mesh.GetMaterial().HasBaseColor()) {
+            auto c = mesh.GetMaterial().GetBaseColor();
+            auto ac = aiColor4D(c.x(), c.y(), c.z(), c.w());
+            ai_mat->AddProperty(&ac, 1, AI_MATKEY_COLOR_DIFFUSE);
+            ai_mat->AddProperty(&ac, 1, AI_MATKEY_BASE_COLOR);
+        }
+        if (mesh.GetMaterial().HasBaseRoughness()) {
+        }
+        if (mesh.GetMaterial().HasBaseMetallic()) {
+        }
+        if (mesh.GetMaterial().HasBaseReflectance()) {
+        }
+
+        // Now set texture maps
+        if (mesh.GetMaterial().HasAlbedoMap()) {
+        }
+        if (mesh.GetMaterial().HasRoughnessMap()) {
+        }
+        if (mesh.GetMaterial().HasMetallicMap()) {
+        }
+        if (mesh.GetMaterial().HasNormalMap()) {
+        }
     }
     ai_scene->mMaterials[0] = ai_mat;
 
