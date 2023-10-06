@@ -202,7 +202,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     }
 
     Assimp::Exporter exporter;
-    auto ai_scene = new aiScene;
+    auto ai_scene = std::unique_ptr<aiScene>(new aiScene);
 
     // Fill mesh data...
     ai_scene->mNumMeshes = 1;
@@ -221,14 +221,19 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     ai_mesh->mFaces = new aiFace[ai_mesh->mNumFaces];
     for (unsigned int i = 0; i < ai_mesh->mNumFaces; ++i) {
         ai_mesh->mFaces[i].mNumIndices = 3;
+        // NOTE: Yes, dynamically allocating 3 ints for each face is inefficient
+        // but this is what Assimp seems to require as it deletes each mIndices
+        // on destruction. We could block allocate space for all the faces,
+        // assign pointers here then zero out the pointers before destruction so
+        // the delete becomes a no-op, but that seems error prone. Could revisit
+        // if this becomes an IO bottleneck.
         ai_mesh->mFaces[i].mIndices = new unsigned int[3];  // triangles
         ai_mesh->mFaces[i].mIndices[0] = indices[i][0].Item<unsigned int>();
         ai_mesh->mFaces[i].mIndices[1] = indices[i][1].Item<unsigned int>();
         ai_mesh->mFaces[i].mIndices[2] = indices[i][2].Item<unsigned int>();
     }
 
-    // Add normals if present...
-    if (mesh.HasVertexNormals()) {
+    if (write_vertex_normals && mesh.HasVertexNormals()) {
         auto normals = mesh.GetVertexNormals();
         auto m_normals = normals.GetShape(0);
         ai_mesh->mNormals = new aiVector3D[m_normals];
@@ -236,8 +241,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
                sizeof(float) * m_normals * 3);
     }
 
-    // Add colors if present...
-    if (mesh.HasVertexColors()) {
+    if (write_vertex_colors && mesh.HasVertexColors()) {
         auto colors = mesh.GetVertexColors();
         auto m_colors = colors.GetShape(0);
         ai_mesh->mColors[0] = new aiColor4D[m_colors];
@@ -255,8 +259,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
         }
     }
 
-    // Add UVs if present...
-    if (mesh.HasTriangleAttr("texture_uvs")) {
+    if (write_triangle_uvs && mesh.HasTriangleAttr("texture_uvs")) {
         auto triangle_uvs = mesh.GetTriangleAttr("texture_uvs");
         auto vertex_uvs = core::Tensor::Empty({ai_mesh->mNumVertices, 2},
                                               core::Dtype::Float32);
@@ -319,7 +322,8 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     ai_scene->mRootNode = root_node;
 
     // Export
-    if (exporter.Export(ai_scene, "glb2", filename.c_str()) == AI_FAILURE) {
+    if (exporter.Export(ai_scene.get(), "glb2", filename.c_str()) ==
+        AI_FAILURE) {
         utility::LogWarning("Got error: {}", exporter.GetErrorString());
         return false;
     }
