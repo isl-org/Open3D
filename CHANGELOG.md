@@ -17,6 +17,7 @@
 * Support msgpack versions without cmake
 * Support multi-threading in the RayCastingScene function to commit scene (PR #6051).
 * Fix some bad triangle generation in TriangleMesh::SimplifyQuadricDecimation
+* Implemented functionality for removing duplicate vertices from TriangleMesh (PR #6414).
 
 ## 0.13
 
