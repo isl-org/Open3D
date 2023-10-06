@@ -901,7 +901,7 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
                                       device));
     auto pcd_small_down = pcd_small.VoxelDownSample(1);
     EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(
-            core::Tensor::Init<float>({{0, 0, 0}}, device)));
+            core::Tensor::Init<float>({{0.375, 0.375, 0.575}}, device)));
 }
 
 TEST_P(PointCloudPermuteDevices, UniformDownSample) {

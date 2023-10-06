@@ -420,7 +420,9 @@ jobs:
     # no need to run on Windows
     runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build-wheel, windows]
+    # temp workaround for Windows CUDA Debug CI out of space. Still update docs.
+    # needs: [build-wheel, windows]
+    needs: [build-wheel]
     steps:
       - name: GCloud CLI auth
         uses: google-github-actions/auth@v1

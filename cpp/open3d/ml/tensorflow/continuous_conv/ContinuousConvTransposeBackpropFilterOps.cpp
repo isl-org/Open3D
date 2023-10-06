@@ -166,7 +166,7 @@ REGISTER_OP("Open3DContinuousConvTransposeBackpropFilter")
             }
 
             c->set_output(0, filters_shape);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Computes the backrop for the filter of the ContinuousConvTranspose

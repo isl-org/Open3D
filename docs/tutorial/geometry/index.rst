@@ -22,6 +22,7 @@ Geometry
     iss_keypoint_detector
     ray_casting
     distance_queries
+    uvmaps
 
 .. toctree::
     :caption: Interface
