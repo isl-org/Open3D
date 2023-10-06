@@ -45,7 +45,7 @@ For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 ## Python quick start
 
 Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
-(64-bit) with Python 3.6-3.10.
+(64-bit) with Python 3.7-3.10.
 
 ```bash
 # Install
@@ -87,8 +87,8 @@ To use Open3D in your C++ project, checkout the following examples
 
 <img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D/master/docs/_static/open3d_viewer.png">
 
-Open3D-Viewer is a standalone 3D viewer app available on Ubuntu and macOS.
-Please stay tuned for Windows. Download Open3D Viewer from the
+Open3D-Viewer is a standalone 3D viewer app available on Debian (Ubuntu), macOS
+and Windows. Download Open3D Viewer from the
 [release page](https://github.com/isl-org/Open3D/releases).
 
 ## Open3D-ML

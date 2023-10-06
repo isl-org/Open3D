@@ -46,7 +46,7 @@ Here are the different ways to do that:
 
     # In Python code
     import os
-    os.environ['EGL_PLATFORM'] = 'surfaceless'   # Ubunu 20.04+
+    os.environ['EGL_PLATFORM'] = 'surfaceless'   # Ubuntu 20.04+
     os.environ['OPEN3D_CPU_RENDERING'] = 'true'  # Ubuntu 18.04
     import open3d as o3d
 
@@ -91,7 +91,24 @@ The method for enabling interactive CPU rendering depends on your system:
    them installed is not sufficient. You can check the drivers in use with the
    ``glxinfo`` command.
 
-2.  **You use Nvidia or AMD drivers or old Mesa drivers (< v20.2).**  We provide
+2.  **You use Nvidia or AMD drivers, but your OS comes with recent Mesa drivers (>= v20.2).** 
+    Install Mesa drivers if they are not installed in your system (e.g. `sudo apt install libglx0-mesa`
+    in Ubuntu). Preload the Mesa driver library before running any Open3D application requiring CPU rendering.
+    For example:
+
+    .. code:: bash
+
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
+        Open3D
+
+    Or with Python code:
+
+    .. code:: bash
+
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
+        python examples/python/visualization/draw.py
+
+3.  **Your OS has old Mesa drivers (< v20.2).**  We provide
     the Mesa software rendering library binary for download `here
     <https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.0.tar.xz>`__.
     This is automatically downloaded to
@@ -115,5 +132,4 @@ The method for enabling interactive CPU rendering depends on your system:
 
     .. code:: bash
 
-        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 python
-        examples/python/visualization/draw.py
+        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 python examples/python/visualization/draw.py

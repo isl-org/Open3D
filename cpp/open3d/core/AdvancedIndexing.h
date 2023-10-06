@@ -49,7 +49,7 @@ public:
             const Tensor& tensor, const std::vector<Tensor>& index_tensors);
 
     /// Expand all tensors to the broadcasted shape, 0-dim tensors are ignored.
-    /// Thorws exception if the common broadcasted shape does not exist.
+    /// Throws exception if the common broadcasted shape does not exist.
     static std::pair<std::vector<Tensor>, SizeVector>
     ExpandToCommonShapeExceptZeroDim(const std::vector<Tensor>& index_tensors);
 
@@ -127,7 +127,7 @@ public:
         if (indexed_shape.size() != indexed_strides.size()) {
             utility::LogError(
                     "Internal error: indexed_shape's ndim {} does not equal to "
-                    "indexd_strides' ndim {}",
+                    "indexed_strides' ndim {}",
                     indexed_shape.size(), indexed_strides.size());
         }
         num_indices_ = indexed_shape.size();

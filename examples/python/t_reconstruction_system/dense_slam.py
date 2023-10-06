@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/python/t_reconstruction_system/ray_casting.py
+# examples/python/t_reconstruction_system/dense_slam.py
 
 # P.S. This example is used in documentation, so, please ensure the changes are
 # synchronized.
@@ -16,7 +16,8 @@ import open3d as o3d
 import time
 
 from config import ConfigParser
-from common import get_default_dataset, load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata, extract_rgbd_frames
+from common import (get_default_dataset, load_rgbd_file_names, save_poses,
+                    load_intrinsic, extract_trianglemesh, extract_rgbd_frames)
 
 
 def slam(depth_file_names, color_file_names, intrinsic, config):
@@ -90,7 +91,7 @@ if __name__ == '__main__':
     # Extract RGB-D frames and intrinsic from bag file.
     if config.path_dataset.endswith(".bag"):
         assert os.path.isfile(
-            config.path_dataset), (f"File {config.path_dataset} not found.")
+            config.path_dataset), f"File {config.path_dataset} not found."
         print("Extracting frames from RGBD video file")
         config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
             config.path_dataset)

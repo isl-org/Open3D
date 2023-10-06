@@ -204,7 +204,7 @@ class PeerConnectionManager {
             const std::string state =
                     webrtc::DataChannelInterface::DataStateString(
                             data_channel_->state());
-            utility::LogInfo(
+            utility::LogDebug(
                     "DataChannelObserver::OnStateChange label: {}, state: {}, "
                     "peerid: {}",
                     label, state, peerid_);

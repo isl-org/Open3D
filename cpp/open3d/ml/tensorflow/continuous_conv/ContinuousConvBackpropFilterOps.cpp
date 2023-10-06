@@ -147,7 +147,7 @@ REGISTER_OP("Open3DContinuousConvBackpropFilter")
             }
 
             c->set_output(0, filters_shape);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Computes the backprop for the filter of the ContinuousConv

@@ -29,6 +29,7 @@ public:
     explicit RandomSampler(const size_t total_size) : total_size_(total_size) {}
 
     std::vector<T> operator()(size_t sample_size) {
+        std::lock_guard<std::mutex> lock(mutex_);
         std::vector<T> samples;
         samples.reserve(sample_size);
 
@@ -48,6 +49,7 @@ public:
 
 private:
     size_t total_size_;
+    std::mutex mutex_;
 };
 
 /// \class RANSACResult
@@ -64,23 +66,24 @@ public:
 };
 
 // Calculates the number of inliers given a list of points and a plane model,
-// and the total distance between the inliers and the plane. These numbers are
-// then used to evaluate how well the plane model fits the given points.
+// and the total squared point-to-plane distance.
+// These numbers are then used to evaluate how well the plane model fits the
+// given points.
 RANSACResult EvaluateRANSACBasedOnDistance(
         const std::vector<Eigen::Vector3d> &points,
         const Eigen::Vector4d plane_model,
         std::vector<size_t> &inliers,
-        double distance_threshold,
-        double error) {
+        double distance_threshold) {
     RANSACResult result;
 
+    double error = 0;
     for (size_t idx = 0; idx < points.size(); ++idx) {
         Eigen::Vector4d point(points[idx](0), points[idx](1), points[idx](2),
                               1);
         double distance = std::abs(plane_model.dot(point));
 
         if (distance < distance_threshold) {
-            error += distance;
+            error += distance * distance;
             inliers.emplace_back(idx);
         }
     }
@@ -91,7 +94,7 @@ RANSACResult EvaluateRANSACBasedOnDistance(
         result.inlier_rmse_ = 0;
     } else {
         result.fitness_ = (double)inlier_num / (double)points.size();
-        result.inlier_rmse_ = error / std::sqrt((double)inlier_num);
+        result.inlier_rmse_ = std::sqrt(error / (double)inlier_num);
     }
     return result;
 }
@@ -202,10 +205,9 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
             continue;
         }
 
-        double error = 0;
         inliers.clear();
         auto this_result = EvaluateRANSACBasedOnDistance(
-                points_, plane_model, inliers, distance_threshold, error);
+                points_, plane_model, inliers, distance_threshold);
 #pragma omp critical
         {
             if (this_result.fitness_ > result.fitness_ ||

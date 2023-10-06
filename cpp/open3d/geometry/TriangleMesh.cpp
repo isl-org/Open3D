@@ -1598,13 +1598,10 @@ void TriangleMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
 
 std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
         const std::vector<size_t> &indices, bool cleanup) const {
-    if (HasTriangleUvs()) {
-        utility::LogWarning(
-                "[SelectByIndex] This mesh contains triangle uvs that are "
-                "not handled in this function");
-    }
     auto output = std::make_shared<TriangleMesh>();
+    bool has_triangle_material_ids = HasTriangleMaterialIds();
     bool has_triangle_normals = HasTriangleNormals();
+    bool has_triangle_uvs = HasTriangleUvs();
     bool has_vertex_normals = HasVertexNormals();
     bool has_vertex_colors = HasVertexColors();
 
@@ -1636,8 +1633,17 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
         if (nvidx0 >= 0 && nvidx1 >= 0 && nvidx2 >= 0) {
             output->triangles_.push_back(
                     Eigen::Vector3i(nvidx0, nvidx1, nvidx2));
+            if (has_triangle_material_ids) {
+                output->triangle_material_ids_.push_back(
+                        triangle_material_ids_[tidx]);
+            }
             if (has_triangle_normals) {
                 output->triangle_normals_.push_back(triangle_normals_[tidx]);
+            }
+            if (has_triangle_uvs) {
+                output->triangle_uvs_.push_back(triangle_uvs_[tidx * 3 + 0]);
+                output->triangle_uvs_.push_back(triangle_uvs_[tidx * 3 + 1]);
+                output->triangle_uvs_.push_back(triangle_uvs_[tidx * 3 + 2]);
             }
         }
     }

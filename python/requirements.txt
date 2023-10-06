@@ -1,5 +1,5 @@
 numpy>=1.18.0
 dash>=2.6.0
 werkzeug>=2.2.3
-nbformat==5.7.0
+nbformat>=5.7.0
 configargparse

@@ -1,5 +1,5 @@
 pywinpty==2.0.2; sys_platform=='win32' and python_version=='3.6'
 ipywidgets>=8.0.4
 pygments>=2.7.4
-jupyter_packaging~=0.10
+jupyter_packaging~=0.12
 jupyterlab>=3.0.0,==3.*

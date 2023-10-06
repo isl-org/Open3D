@@ -7,9 +7,12 @@
 
 # examples/python/reconstruction_system/refine_registration.py
 
+import multiprocessing
+import os
+import sys
+
 import numpy as np
 import open3d as o3d
-import os, sys
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
@@ -163,29 +166,28 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
         s = edge.source_node_id
         t = edge.target_node_id
         matching_results[s * n_files + t] = \
-                matching_result(s, t, edge.transformation)
+            matching_result(s, t, edge.transformation)
 
-    if config["python_multi_threading"] == True:
-        from joblib import Parallel, delayed
-        import multiprocessing
-        import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count(),
-                         max(len(pose_graph.edges), 1))
-        results = Parallel(n_jobs=MAX_THREAD)(
-            delayed(register_point_cloud_pair)(
-                ply_file_names, matching_results[r].s, matching_results[r].t,
-                matching_results[r].transformation, config)
-            for r in matching_results)
+    if config["python_multi_threading"] is True:
+        os.environ['OMP_NUM_THREADS'] = '1'
+        max_workers = max(
+            1, min(multiprocessing.cpu_count() - 1, len(pose_graph.edges)))
+        mp_context = multiprocessing.get_context('spawn')
+        with mp_context.Pool(processes=max_workers) as pool:
+            args = [(ply_file_names, v.s, v.t, v.transformation, config)
+                    for k, v in matching_results.items()]
+            results = pool.starmap(register_point_cloud_pair, args)
+
         for i, r in enumerate(matching_results):
             matching_results[r].transformation = results[i][0]
             matching_results[r].information = results[i][1]
     else:
         for r in matching_results:
             (matching_results[r].transformation,
-                    matching_results[r].information) = \
-                    register_point_cloud_pair(ply_file_names,
-                    matching_results[r].s, matching_results[r].t,
-                    matching_results[r].transformation, config)
+             matching_results[r].information) = \
+                register_point_cloud_pair(ply_file_names,
+                                          matching_results[r].s, matching_results[r].t,
+                                          matching_results[r].transformation, config)
 
     pose_graph_new = o3d.pipelines.registration.PoseGraph()
     odometry = np.identity(4)
