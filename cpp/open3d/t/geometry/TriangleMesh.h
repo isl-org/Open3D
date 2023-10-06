@@ -930,6 +930,12 @@ public:
     /// \return A new mesh with the selected faces.
     TriangleMesh SelectFacesByMask(const core::Tensor &mask) const;
 
+
+    /// Removes duplicate vertices and their associated attributes.
+    /// It also updates the triangle indices to refer to the reduced array of vertices.
+    /// \return Mesh with the duplicate vertices removed.
+    TriangleMesh& RemoveDuplicateVertices();
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
