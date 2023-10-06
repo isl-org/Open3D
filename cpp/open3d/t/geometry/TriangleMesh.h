@@ -930,6 +930,17 @@ public:
     /// \return A new mesh with the selected faces.
     TriangleMesh SelectFacesByMask(const core::Tensor &mask) const;
 
+    /// Returns a new mesh with the vertices selected by a vector of indices.
+    /// Throws an exception if an item from the indices list exceeds the max
+    /// vertex number of the mesh.
+    /// \param indices An integer list of indices. Duplicates are
+    /// allowed, but ignored. If vertex indices of the mesh are of type Int64,
+    /// both Int32 and Int64 are allowed as indices type, otherwise only Int32
+    /// is accepted.
+    /// \return A new mesh with the selected vertices and faces built
+    /// from the selected vertices.
+    TriangleMesh SelectByIndex(const core::Tensor &indices) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;

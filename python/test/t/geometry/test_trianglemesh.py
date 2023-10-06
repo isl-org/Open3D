@@ -417,3 +417,42 @@ def test_pickle(device):
                                 mesh.vertex.positions.cpu().numpy())
         np.testing.assert_equal(mesh_load.triangle.indices.cpu().numpy(),
                                 mesh.triangle.indices.cpu().numpy())
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_select_by_index(device):
+    sphere_custom = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, o3c.float64, o3c.int32, device)
+
+    expected_verts = o3c.Tensor(
+        [[0.0, 0.0, 1.0], [0.866025, 0, 0.5], [0.433013, 0.75, 0.5],
+         [-0.866025, 0.0, 0.5], [-0.433013, -0.75, 0.5], [0.433013, -0.75, 0.5]
+        ], o3c.float64, device)
+
+    expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
+                               o3c.int32, device)
+
+    indices = o3c.Tensor([0, 2, 3, 5, 6, 7], o3c.int64, device)
+    # check indices type mismatch
+    with pytest.raises(RuntimeError) as e:
+        selected = sphere_custom.select_by_index(indices)
+
+    # check the expected mesh
+    indices = o3c.Tensor([0, 2, 3, 5, 6, 7], o3c.int32, device)
+    selected = sphere_custom.select_by_index(indices)
+    assert selected.vertex.positions.allclose(expected_verts)
+    assert selected.triangle.indices.allclose(expected_tris)
+
+    # check that the original mesh is unmodified
+    untouched_sphere = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, o3c.float64, o3c.int32, device)
+
+    assert sphere_custom.vertex.positions.allclose(
+        untouched_sphere.vertex.positions)
+    assert sphere_custom.triangle.indices.allclose(
+        untouched_sphere.triangle.indices)
+
+    # check that the exception is thrown if one of the indices exceeds
+    # the max vertex index of the mesh
+    with pytest.raises(RuntimeError) as e:
+        selected = sphere_custom.select_by_index([2, 3, 6, 99])
