@@ -941,5 +941,92 @@ TEST_P(TriangleMeshPermuteDevices, CreateMobius) {
             triangle_indices_custom));
 }
 
+TEST_P(TriangleMeshPermuteDevices, SelectByIndex_Box) {
+    // create box with normals, colors and labels defined.
+    t::geometry::TriangleMesh box = t::geometry::TriangleMesh::CreateBox();
+    core::Tensor vertex_colors = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                            {1.0, 1.0, 1.0},
+                                                            {2.0, 2.0, 2.0},
+                                                            {3.0, 3.0, 3.0},
+                                                            {4.0, 4.0, 4.0},
+                                                            {5.0, 5.0, 5.0},
+                                                            {6.0, 6.0, 6.0},
+                                                            {7.0, 7.0, 7.0}});
+    ;
+    core::Tensor vertex_labels = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                            {1.0, 1.0, 1.0},
+                                                            {2.0, 2.0, 2.0},
+                                                            {3.0, 3.0, 3.0},
+                                                            {4.0, 4.0, 4.0},
+                                                            {5.0, 5.0, 5.0},
+                                                            {6.0, 6.0, 6.0},
+                                                            {7.0, 7.0, 7.0}}) *
+                                 10;
+    ;
+    core::Tensor triangle_labels =
+            core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                       {1.0, 1.0, 1.0},
+                                       {2.0, 2.0, 2.0},
+                                       {3.0, 3.0, 3.0},
+                                       {4.0, 4.0, 4.0},
+                                       {5.0, 5.0, 5.0},
+                                       {6.0, 6.0, 6.0},
+                                       {7.0, 7.0, 7.0},
+                                       {8.0, 8.0, 8.0},
+                                       {9.0, 9.0, 9.0},
+                                       {10.0, 10.0, 10.0},
+                                       {11.0, 11.0, 11.0}}) *
+            100;
+    box.SetVertexColors(vertex_colors);
+    box.SetVertexAttr("labels", vertex_labels);
+    box.ComputeTriangleNormals();
+    box.SetTriangleAttr("labels", triangle_labels);
+
+    core::Tensor indices = core::Tensor::Init<int64_t>({2, 3, 6, 7});
+    t::geometry::TriangleMesh selected = box.SelectByIndex(indices);
+
+    // Set the expected values.
+    core::Tensor expected_verts = core::Tensor::Init<float>({{0.0, 0.0, 1.0},
+                                                             {1.0, 0.0, 1.0},
+                                                             {0.0, 1.0, 1.0},
+                                                             {1.0, 1.0, 1.0}});
+    core::Tensor expected_vert_colors =
+            core::Tensor::Init<float>({{2.0, 2.0, 2.0},
+                                       {3.0, 3.0, 3.0},
+                                       {6.0, 6.0, 6.0},
+                                       {7.0, 7.0, 7.0}});
+    core::Tensor expected_vert_labels =
+            core::Tensor::Init<float>({{20.0, 20.0, 20.0},
+                                       {30.0, 30.0, 30.0},
+                                       {60.0, 60.0, 60.0},
+                                       {70.0, 70.0, 70.0}});
+
+    core::Tensor expected_tris =
+            core::Tensor::Init<int64_t>({{0, 1, 3}, {0, 3, 2}});
+    core::Tensor tris_mask =
+            core::Tensor::Init<bool>({0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0});
+    core::Tensor expected_tri_normals =
+            box.GetTriangleNormals().IndexGet({tris_mask});
+    core::Tensor expected_tri_labels = core::Tensor::Init<float>(
+            {{800.0, 800.0, 800.0}, {900.0, 900.0, 900.0}});
+
+    EXPECT_TRUE(selected.GetVertexPositions().AllClose(expected_verts));
+    EXPECT_TRUE(selected.GetVertexColors().AllClose(expected_vert_colors));
+    EXPECT_TRUE(
+            selected.GetVertexAttr("labels").AllClose(expected_vert_labels));
+    EXPECT_TRUE(selected.GetTriangleIndices().AllClose(expected_tris));
+    EXPECT_TRUE(selected.GetTriangleNormals().AllClose(expected_tri_normals));
+    EXPECT_TRUE(
+            selected.GetTriangleAttr("labels").AllClose(expected_tri_labels));
+
+    // Check that initial mesh is unchanged.
+    t::geometry::TriangleMesh box_untouched =
+            t::geometry::TriangleMesh::CreateBox();
+    EXPECT_TRUE(box.GetVertexPositions().AllClose(
+            box_untouched.GetVertexPositions()));
+    EXPECT_TRUE(box.GetTriangleIndices().AllClose(
+            box_untouched.GetTriangleIndices()));
+}
+
 }  // namespace tests
 }  // namespace open3d

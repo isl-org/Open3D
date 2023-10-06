@@ -924,6 +924,32 @@ Example:
         o3d.visualization.draw(parts)
 
 )");
+
+    triangle_mesh.def(
+            "select_by_index", &TriangleMesh::SelectByIndex, "indices"_a,
+            R"(Returns a new mesh with the vertices selected according to the indices list.
+Throws an exception if an item from the indices list exceeds the max vertex
+number of the mesh,
+
+Args:
+    indices (open3d.core.Tensor): An integer list of indices. Duplicates are
+    allowed, but ignored. If vertex indices of the mesh are of type Int64,
+    both Int32 and Int64 are allowed as indices type, otherwise only Int32
+    is accepted.
+
+Returns:
+    A new mesh with the selected vertices and faces built from these vertices.
+
+Example:
+
+    This code selets the top face of a box, which has indices [2, 3, 6, 7].
+    parts::
+
+        import open3d as o3d
+        import numpy as np
+        box = o3d.t.geometry.TriangleMesh.create_box()
+        top_face = box.select_by_index([2, 3, 6, 7])
+)");
 }
 
 }  // namespace geometry
