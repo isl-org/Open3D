@@ -357,9 +357,28 @@ TEST_P(TriangleMeshPermuteDevices, RemoveDuplicatedTriangles) {
                                                          {1, 4, 5}},
                                                         device));
 
+    mesh.SetTriangleNormals(core::Tensor::Init<float>({{4, 7, 5},
+                                                       {4, 6, 7},
+                                                       {0, 2, 4},
+                                                       {2, 6, 4},
+                                                       {0, 1, 2},
+                                                       {1, 3, 2},
+                                                       {1, 5, 7},
+                                                       {1, 7, 3},
+                                                       {2, 3, 7},
+                                                       {2, 7, 6},
+                                                       {4, 6, 7},
+                                                       {0, 4, 1},
+                                                       {1, 4, 5}},
+                                                      device));
+
+    mesh.SetTriangleColors(core::Tensor::Ones({13, 3}, core::Float32, device));
+
     mesh.RemoveDuplicatedTriangles();
 
     EXPECT_EQ(mesh.GetTriangleIndices().GetLength(), 12);
+    EXPECT_EQ(mesh.GetTriangleNormals().GetLength(), 12);
+    EXPECT_EQ(mesh.GetTriangleColors().GetLength(), 12);
 
     EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(
             core::Tensor::Init<int64_t>({{4, 7, 5},
@@ -375,6 +394,21 @@ TEST_P(TriangleMeshPermuteDevices, RemoveDuplicatedTriangles) {
                                          {0, 4, 1},
                                          {1, 4, 5}},
                                         device)));
+
+    EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
+            core::Tensor::Init<float>({{4, 7, 5},
+                                       {4, 6, 7},
+                                       {0, 2, 4},
+                                       {2, 6, 4},
+                                       {0, 1, 2},
+                                       {1, 3, 2},
+                                       {1, 5, 7},
+                                       {1, 7, 3},
+                                       {2, 3, 7},
+                                       {2, 7, 6},
+                                       {0, 4, 1},
+                                       {1, 4, 5}},
+                                      device)));
 }
 
 TEST_P(TriangleMeshPermuteDevices, NormalizeNormals) {

@@ -187,11 +187,15 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     std::unordered_map<Index3, size_t, utility::hash_tuple<Index3>>
             triangle_to_old_index;
 
-    // Check is mesh has normals triangles
+    // Check if mesh has normals triangles and colors
     bool has_tri_normal = HasTriangleNormals();
-    // index of triangle to keep (unique triangle)
-    std::vector<int64_t> index_to_keep;
-    int64_t new_size = 0;
+    bool has_tri_colors = HasTriangleColors();
+    bool find_dup = false;
+
+    // mask of triangles to keep
+    core::Tensor mask_of_triangles =
+            core::Tensor::Empty({num_triangles}, core::Bool, GetDevice());
+
     for (int64_t i = 0; i < num_triangles; i++) {
         Index3 triangle_in_tuple;
         // Extract vertices of the triangle
@@ -223,46 +227,33 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
                 triangle_in_tuple =
                         std::make_tuple(vertice_1, vertice_0, vertice_2);
         }
-        // check is triangle is already present in the mesh
+        // check if triangle is already present in the mesh
         if (triangle_to_old_index.find(triangle_in_tuple) ==
             triangle_to_old_index.end()) {
+            mask_of_triangles[i] = true;
             triangle_to_old_index[triangle_in_tuple] = i;
-            index_to_keep.push_back(i);
-            new_size++;
+        } else {
+            find_dup = true;
+            mask_of_triangles[i] = false;
         }
     }
 
-    // do this only if there are some triangle to remove
-    if (new_size != num_triangles) {
-        core::Tensor triangles_without_dup = core::Tensor::Empty(
-                {new_size, 3}, triangles.GetDtype(), GetDevice());
-
-        core::Tensor triangles_normals, triangles_normals_without_dup;
-
-        // fill only is there are normals triangle to avoid errors
+    // do this only if there are some triangles to remove
+    if (find_dup) {
+        TriangleMesh mesh_without_dup = SelectFacesByMask(mask_of_triangles);
+        SetTriangleIndices(mesh_without_dup.GetTriangleIndices());
         if (has_tri_normal) {
-            triangles_normals = GetTriangleNormals();
-            triangles_normals_without_dup = core::Tensor::Empty(
-                    {new_size, 3}, triangles.GetDtype(), GetDevice());
+            core::Tensor tris =
+                    GetTriangleNormals().IndexGet({mask_of_triangles});
+            SetTriangleNormals(tris);
         }
-
-        for (int64_t i = 0; i < new_size; i++) {
-            core::Tensor triangle_to_keep = triangles.GetItem(
-                    {core::TensorKey::Index(index_to_keep[i])});
-            triangles_without_dup.SetItem({core::TensorKey::Index(i)},
-                                          triangle_to_keep);
-            if (has_tri_normal) {
-                core::Tensor triangle_normal_to_keep =
-                        triangles_normals.GetItem(
-                                {core::TensorKey::Index(index_to_keep[i])});
-                triangles_normals_without_dup.SetItem(
-                        {core::TensorKey::Index(i)}, triangle_normal_to_keep);
-            }
+        if (has_tri_colors) {
+            core::Tensor colors =
+                    GetTriangleColors().IndexGet({mask_of_triangles});
+            SetTriangleColors(colors);
         }
-
-        SetTriangleIndices(triangles_without_dup);
-        if (has_tri_normal) SetTriangleNormals(triangles_normals_without_dup);
     }
+
     return *this;
 }
 
