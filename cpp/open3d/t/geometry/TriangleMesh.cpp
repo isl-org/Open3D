@@ -177,8 +177,8 @@ TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
 TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     core::Tensor triangles = GetTriangleIndices();
     int64_t num_triangles = triangles.GetLength();
-    if (num_triangles < 1) {
-        utility::LogError("Mesh must have at least two triangles.");
+    if (num_triangles < 2) {
+        return *this;
     }
 
     // unordered_map to keep track of existing triangles
