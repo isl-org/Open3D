@@ -29,7 +29,6 @@ TENSORFLOW_VER="2.13.0"
 TORCH_VER="2.0.1"
 TORCH_CPU_GLNX_VER="${TORCH_VER}+cpu"
 TORCH_CUDA_GLNX_VER="${TORCH_VER}+cu117" # match CUDA_VERSION in docker/docker_build.sh
-PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_MACOS_VER="${TORCH_VER}"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
@@ -71,14 +70,14 @@ install_python_dependencies() {
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
         # TF happily installs both CPU and GPU versions at the same time, so remove the other
         python -m pip uninstall --yes "$TF_ARCH_DISABLE_NAME"
-        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"
+        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"    # ML/requirements-tensorflow.txt
     fi
-    if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then    # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard
 
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_REPO_URL"
+            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_REPO_URL" tensorboard
         else
             echo "unknown OS $OSTYPE"
             exit 1
@@ -106,7 +105,7 @@ build_all() {
     cd build
 
     cmakeOptions=(
-        -DDEVELOPER_BUILD=$DEVELOPER_BUILD
+        -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
         -DBUILD_SHARED_LIBS="$BUILD_SHARED_LIBS"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
@@ -169,6 +168,13 @@ build_pip_package() {
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
     fi
+    CXX11_ABI=ON
+    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
+        CXX11_ABI=$(python -c "import tensorflow as tf; print('ON' if tf.__cxx11_abi_flag__ else 'OFF')")
+    elif [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+        CXX11_ABI=$(python -c "import torch; print('ON' if torch._C._GLIBCXX_USE_CXX11_ABI else 'OFF')")
+    fi
+    echo Building with GLIBCXX_USE_CXX11_ABI="$CXX11_ABI"
     set -u
 
     echo
@@ -179,8 +185,8 @@ build_pip_package() {
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
-        "-DBUILD_LIBREALSENSE=ON"
-        "-DGLIBCXX_USE_CXX11_ABI=OFF"
+        "-DBUILD_LIBREALSENSE=OFF"
+        "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
@@ -282,7 +288,7 @@ run_python_tests() {
     python -m pip install -U -r python/requirements_test.txt
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
+    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
         echo Testing ML Ops disabled
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
