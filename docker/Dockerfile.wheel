@@ -123,9 +123,9 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build python wheel
+ # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
 RUN export NPROC=$(nproc) \
  && export BUILD_SHARED_LIBS=OFF \
- # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
  && export BUILD_TENSORFLOW_OPS=OFF \
  && export BUILD_PYTORCH_OPS=ON \
  && source /root/Open3D/util/ci_utils.sh \

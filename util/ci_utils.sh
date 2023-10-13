@@ -195,7 +195,6 @@ build_pip_package() {
     cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
     set +x # Echo commands off
     echo
-    make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
 
     echo "Packaging Open3D CPU pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
