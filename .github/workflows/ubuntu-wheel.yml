@@ -19,6 +19,9 @@ concurrency:
 
 env:
   GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
+  BUILD_CUDA_MODULE: 'ON'
+  BUILD_PYTORCH_OPS: 'ON'
+  BUILD_TENSORFLOW_OPS: 'OFF'   # Turn ON when cxx11_abi is same for TF and PyTorch
 
 jobs:
   build-wheel:

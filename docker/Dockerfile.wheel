@@ -8,14 +8,18 @@ ARG CCACHE_TAR_NAME
 ARG CMAKE_VERSION
 ARG CCACHE_VERSION
 ARG PYTHON_VERSION
+ARG BUILD_TENSORFLOW_OPS
+ARG BUILD_PYTORCH_OPS
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
-ARG CCACHE_VERSION=${CCACHE_VERSION}
+ENV CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -123,11 +127,8 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build python wheel
- # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
 RUN export NPROC=$(nproc) \
  && export BUILD_SHARED_LIBS=OFF \
- && export BUILD_TENSORFLOW_OPS=OFF \
- && export BUILD_PYTORCH_OPS=ON \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter
 
