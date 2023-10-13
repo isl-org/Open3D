@@ -516,6 +516,24 @@ void pybind_rendering_classes(py::module &m) {
                  "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG")
+            .def("remove_geometry", &Scene::RemoveGeometry,
+                 "Removes the named geometry from the scene.")
+            .def("show_geometry", &Scene::ShowGeometry,
+                 "Show or hide the named geometry.")
+            .def("geometry_is_visible", &Scene::GeometryIsVisible,
+                 "Returns false if the geometry is hidden, True otherwise. "
+                 "Note: this is different from whether or not the geometry is "
+                 "in view.")
+            .def("geometry_shadows", &Scene::GeometryShadows,
+                 "Controls whether an object casts and/or receives shadows: "
+                 "geometry_shadows(name, cast_shadows, receieve_shadows)")
+            .def("set_geometry_culling", &Scene::SetGeometryCulling,
+                 "Enable/disable view frustum culling on the named object. "
+                 "Culling is enabled by default.")
+            .def("set_geometry_priority", &Scene::SetGeometryPriority,
+                 "Set sorting priority for named object. Objects with higher "
+                 "priority will be rendering on top of overlapping geometry "
+                 "with lower priority.")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
                  "Enables or disables indirect lighting")
             .def("set_indirect_light", &Scene::SetIndirectLight,
