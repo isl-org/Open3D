@@ -318,7 +318,7 @@ OrientedBoundingBox::OrientedBoundingBox(const core::Tensor &center,
         utility::LogError(
                 "Invalid oriented bounding box. Please make sure the values of "
                 "extent are all positive and the rotation matrix is "
-                "othogonal.");
+                "orthogonal.");
     }
 }
 
@@ -405,7 +405,7 @@ core::Tensor OrientedBoundingBox::GetMaxBound() const {
 core::Tensor OrientedBoundingBox::GetBoxPoints() const {
     const t::geometry::AxisAlignedBoundingBox aabb(GetExtent() * -0.5,
                                                    GetExtent() * 0.5);
-    return aabb.GetBoxPoints().Matmul(GetRotation()).Add(GetCenter());
+    return aabb.GetBoxPoints().Matmul(GetRotation().T()).Add(GetCenter());
 }
 
 OrientedBoundingBox &OrientedBoundingBox::Translate(

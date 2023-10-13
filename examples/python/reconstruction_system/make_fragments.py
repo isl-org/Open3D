@@ -8,6 +8,7 @@
 # examples/python/reconstruction_system/make_fragments.py
 
 import math
+import multiprocessing
 import os, sys
 import numpy as np
 import open3d as o3d
@@ -172,13 +173,14 @@ def run(config):
         math.ceil(float(n_files) / config['n_frames_per_fragment']))
 
     if config["python_multi_threading"] is True:
-        from joblib import Parallel, delayed
-        import multiprocessing
-        import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count(), n_fragments)
-        Parallel(n_jobs=MAX_THREAD)(delayed(process_single_fragment)(
-            fragment_id, color_files, depth_files, n_files, n_fragments, config)
-                                    for fragment_id in range(n_fragments))
+        max_workers = min(max(1, multiprocessing.cpu_count() - 1), n_fragments)
+        # Prevent over allocation of open mp threads in child processes
+        os.environ['OMP_NUM_THREADS'] = '1'
+        mp_context = multiprocessing.get_context('spawn')
+        with mp_context.Pool(processes=max_workers) as pool:
+            args = [(fragment_id, color_files, depth_files, n_files,
+                     n_fragments, config) for fragment_id in range(n_fragments)]
+            pool.starmap(process_single_fragment, args)
     else:
         for fragment_id in range(n_fragments):
             process_single_fragment(fragment_id, color_files, depth_files,

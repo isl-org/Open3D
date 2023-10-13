@@ -72,8 +72,8 @@ The attributes of the point cloud have different levels::
     # The shape must be (N, 3). The device of "positions" determines the device
     # of the point cloud.
     pcd.point.positions = o3d.core.Tensor([[0, 0, 0],
-                                              [1, 1, 1],
-                                              [2, 2, 2]], dtype, device)
+                                           [1, 1, 1],
+                                           [2, 2, 2]], dtype, device)
 
     # Common attributes: "normals", "colors".
     # Common attributes are used in built-in point cloud operations. The
@@ -82,11 +82,11 @@ The attributes of the point cloud have different levels::
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the point cloud.
     pcd.point.normals = o3d.core.Tensor([[0, 0, 1],
-                                            [0, 1, 0],
-                                            [1, 0, 0]], dtype, device)
+                                         [0, 1, 0],
+                                         [1, 0, 0]], dtype, device)
     pcd.point.colors = o3d.core.Tensor([[0.0, 0.0, 0.0],
-                                            [0.1, 0.1, 0.1],
-                                            [0.2, 0.2, 0.2]], dtype, device)
+                                        [0.1, 0.1, 0.1],
+                                        [0.2, 0.2, 0.2]], dtype, device)
 
     # User-defined attributes.
     # You can also attach custom attributes. The value tensor must be on the
@@ -211,12 +211,32 @@ The attributes of the point cloud have different levels::
                    "output point cloud.");
     pointcloud.def(
             "voxel_down_sample",
-            [](const PointCloud& pointcloud, const double voxel_size) {
-                return pointcloud.VoxelDownSample(
-                        voxel_size, core::HashBackendType::Default);
+            [](const PointCloud& pointcloud, const double voxel_size,
+               const std::string& reduction) {
+                return pointcloud.VoxelDownSample(voxel_size, reduction);
             },
-            "Downsamples a point cloud with a specified voxel size.",
-            "voxel_size"_a);
+            "Downsamples a point cloud with a specified voxel size and a "
+            "reduction type.",
+            "voxel_size"_a, "reduction"_a = "mean",
+            R"doc(Downsamples a point cloud with a specified voxel size.
+
+Args:
+    voxel_size (float): The size of the voxel used to downsample the point cloud.
+
+    reduction (str): The approach to pool point properties in a voxel. Can only be "mean" at current.
+
+Return:
+    A downsampled point cloud with point properties reduced in each voxel.
+
+Example:
+
+    We will load the Eagle dataset, downsample it, and show the result::
+
+        eagle = o3d.data.EaglePointCloud()
+        pcd = o3d.t.io.read_point_cloud(eagle.path)
+        pcd_down = pcd.voxel_down_sample(voxel_size=0.05)
+        o3d.visualization.draw([{'name': 'pcd', 'geometry': pcd}, {'name': 'pcd_down', 'geometry': pcd_down}])
+    )doc");
     pointcloud.def("uniform_down_sample", &PointCloud::UniformDownSample,
                    "Downsamples a point cloud by selecting every kth index "
                    "point and its attributes.",
@@ -239,8 +259,8 @@ The attributes of the point cloud have different levels::
 sphere of a given search radius. 
 
 Args:
-    nb_points. Number of neighbor points required within the radius.
-    search_radius. Radius of the sphere.
+    nb_points: Number of neighbor points required within the radius.
+    search_radius: Radius of the sphere.
 
 Return:
     Tuple of filtered point cloud and boolean mask tensor for selected values
@@ -253,8 +273,8 @@ Return:
 neighbors in average. This function is not recommended to use on GPU. 
 
 Args:
-    nb_neighbors. Number of neighbors around the target point.
-    std_ratio. Standard deviation ratio.
+    nb_neighbors: Number of neighbors around the target point.
+    std_ratio: Standard deviation ratio.
 
 Return:
     Tuple of filtered point cloud and boolean mask tensor for selected values
@@ -269,8 +289,8 @@ Return:
 infinite value. It also removes the corresponding attributes. 
     
 Args:
-    remove_nan. Remove NaN values from the PointCloud.
-    remove_infinite. Remove infinite values from the PointCloud.
+    remove_nan: Remove NaN values from the PointCloud.
+    remove_infinite: Remove infinite values from the PointCloud.
 
 Return:
     Tuple of filtered point cloud and boolean mask tensor for selected values
@@ -300,11 +320,70 @@ Return:
                    "Function to orient the normals of a point cloud.",
                    "camera_location"_a = core::Tensor::Zeros(
                            {3}, core::Float32, core::Device("CPU:0")));
-    pointcloud.def("orient_normals_consistent_tangent_plane",
-                   &PointCloud::OrientNormalsConsistentTangentPlane,
-                   "Function to orient the normals with respect to consistent "
-                   "tangent planes.",
-                   "k"_a);
+    pointcloud.def(
+            "orient_normals_consistent_tangent_plane",
+            &PointCloud::OrientNormalsConsistentTangentPlane, "k"_a,
+            "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0,
+            R"(Function to consistently orient the normals of a point cloud based on tangent planes.
+
+The algorithm is described in Hoppe et al., "Surface Reconstruction from Unorganized Points", 1992. 
+Additional information about the choice of lambda and cos_alpha_tol for complex
+point clouds can be found in Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud", 2023 
+(https://eugeniovaretti.github.io/meshreco/Piazza_Valentini_Varetti_MeshReconstructionFromPointCloud_2023.pdf).
+
+Args:
+    k (int): Number of neighbors to use for tangent plane estimation.
+    lambda (float): A non-negative real parameter that influences the distance 
+        metric used to identify the true neighbors of a point in complex 
+        geometries. It penalizes the distance between a point and the tangent 
+        plane defined by the reference point and its normal vector, helping to 
+        mitigate misclassification issues encountered with traditional 
+        Euclidean distance metrics.
+    cos_alpha_tol (float): Cosine threshold angle used to determine the 
+        inclusion boundary of neighbors based on the direction of the normal 
+        vector.
+
+Example:
+    We use Bunny point cloud to compute its normals and orient them consistently.
+    The initial reconstruction adheres to Hoppe's algorithm (raw), whereas the 
+    second reconstruction utilises the lambda and cos_alpha_tol parameters. 
+    Due to the high density of the Bunny point cloud available in Open3D a larger
+    value of the parameter k is employed to test the algorithm.  Usually you do 
+    not have at disposal such a refined point clouds, thus you cannot find a 
+    proper choice of k: refer to 
+    https://eugeniovaretti.github.io/meshreco for these cases.::
+
+        import open3d as o3d
+        import numpy as np
+        # Load point cloud
+        data = o3d.data.BunnyMesh()
+
+        # Case 1, Hoppe (raw):
+        pcd = o3d.io.read_point_cloud(data.path)
+
+        # Compute normals and orient them consistently, using k=100 neighbours
+        pcd.estimate_normals()
+        pcd.orient_normals_consistent_tangent_plane(100)
+
+        # Create mesh from point cloud using Poisson Algorithm
+        poisson_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=8, width=0, scale=1.1, linear_fit=False)[0]
+        poisson_mesh.paint_uniform_color(np.array([[0.5],[0.5],[0.5]]))
+        poisson_mesh.compute_vertex_normals()
+        o3d.visualization.draw_geometries([poisson_mesh])
+
+        # Case 2, reconstruction using lambda and cos_alpha_tol parameters:
+        pcd_robust = o3d.io.read_point_cloud(data.path)
+
+        # Compute normals and orient them consistently, using k=100 neighbours
+        pcd_robust.estimate_normals()
+        pcd_robust.orient_normals_consistent_tangent_plane(100, 10, 0.5)
+
+        # Create mesh from point cloud using Poisson Algorithm
+        poisson_mesh_robust = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd_robust, depth=8, width=0, scale=1.1, linear_fit=False)[0]
+        poisson_mesh_robust.paint_uniform_color(np.array([[0.5],[0.5],[0.5]]))
+        poisson_mesh_robust.compute_vertex_normals()
+
+        o3d.visualization.draw_geometries([poisson_mesh_robust]) )");
     pointcloud.def(
             "estimate_color_gradients", &PointCloud::EstimateColorGradients,
             py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
@@ -325,7 +404,7 @@ Return:
             "with_normals"_a = false,
             "Factory function to create a pointcloud (with only 'points') from "
             "a depth image and a camera model.\n\n Given depth value d at (u, "
-            "v) image coordinate, the corresponding 3d point is:\n z = d / "
+            "v) image coordinate, the corresponding 3d point is:\n\n z = d / "
             "depth_scale\n\n x = (u - cx) * z / fx\n\n y = (v - cy) * z / fy");
     pointcloud.def_static(
             "create_from_rgbd_image", &PointCloud::CreateFromRGBDImage,
@@ -370,14 +449,16 @@ This is a wrapper for a CPU implementation and a copy of the point cloud data
 and resulting visible triangle mesh and indiecs will be made.
 
 Args:
-    camera_location. All points not visible from that location will be removed.
-    radius. The radius of the spherical projection.
+    camera_location: All points not visible from that location will be removed.
+
+    radius: The radius of the spherical projection.
 
 Return:
     Tuple of visible triangle mesh and indices of visible points on the same
     device as the point cloud.
 
 Example:
+
     We use armadillo mesh to compute the visible points from given camera::
 
         # Convert mesh to a point cloud and estimate dimensions.
@@ -406,15 +487,18 @@ with Noise', 1996. This is a wrapper for a CPU implementation and a copy of the
 point cloud data and resulting labels will be made.
 
 Args:
-    eps. Density parameter that is used to find neighbouring points.
-    min_points. Minimum number of points to form a cluster.
-    print_progress (default False). If 'True' the progress is visualized in the console.
+    eps: Density parameter that is used to find neighbouring points.
+
+    min_points: Minimum number of points to form a cluster.
+
+print_progress (default False): If 'True' the progress is visualized in the console.
 
 Return:
     A Tensor list of point labels on the same device as the point cloud, -1
     indicates noise according to the algorithm.
 
 Example:
+
     We use Redwood dataset for demonstration::
 
         import matplotlib.pyplot as plt
@@ -433,23 +517,25 @@ Example:
     pointcloud.def(
             "segment_plane", &PointCloud::SegmentPlane,
             "distance_threshold"_a = 0.01, "ransac_n"_a = 3,
-            "num_iterations"_a = 100, "probability"_a = 0.99999999,
+            "num_iterations"_a = 100, "probability"_a = 0.999,
             R"(Segments a plane in the point cloud using the RANSAC algorithm.
 This is a wrapper for a CPU implementation and a copy of the point cloud data and
 resulting plane model and inlier indiecs will be made.
 
 Args:
-    distance_threshold (default 0.01). Max distance a point can be from the plane
-    model, and still be considered an inlier.
-    ransac_n (default 3). Number of initial points to be considered inliers in each iteration.
-    num_iterations (default 100). Maximum number of iterations.
-    probability (default 0.99999999). Expected probability of finding the optimal plane.
+    distance_threshold (default 0.01): Max distance a point can be from the plane model, and still be considered an inlier.
+
+    ransac_n (default 3): Number of initial points to be considered inliers in each iteration.
+    num_iterations (default 100): Maximum number of iterations.
+
+    probability (default 0.999): Expected probability of finding the optimal plane.
 
 Return:
-    Tuple of the plane model ax + by + cz + d = 0 and the indices of
+    Tuple of the plane model `ax + by + cz + d = 0` and the indices of
     the plane inliers on the same device as the point cloud.
 
 Example:
+
     We use Redwood dataset to compute its plane model and inliers::
 
         sample_pcd_data = o3d.data.PCDPointCloud()
@@ -467,16 +553,11 @@ Example:
             R"doc(Compute the convex hull of a triangle mesh using qhull. This runs on the CPU.
 
 Args:
-    joggle_inputs (default False). Handle precision problems by
-    randomly perturbing the input data. Set to True if perturbing the input
-    iis acceptable but you need convex simplicial output. If False,
-    neighboring facets may be merged in case of precision problems. See
-    `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle>`__ for more
-    details.
+    joggle_inputs (default False): Handle precision problems by randomly perturbing the input data. Set to True if perturbing the input is acceptable but you need convex simplicial output. If False, neighboring facets may be merged in case of precision problems. See `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle>`__ for more details.
 
 Return:
     TriangleMesh representing the convexh hull. This contains an
-    extra vertex property "point_indices" that contains the index of the
+    extra vertex property `point_indices` that contains the index of the
     corresponding vertex in the original mesh.
 
 Example:
@@ -495,9 +576,9 @@ The implementation is inspired by the PCL implementation. Reference:
 https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
 
 Args:
-    radius. Neighbor search radius parameter.
-    max_nn (default 30). Maximum number of neighbors to search.
-    angle_threshold (default 90.0). Angle threshold to decide if a point is on the boundary.
+    radius: Neighbor search radius parameter.
+    max_nn (default 30): Maximum number of neighbors to search.
+    angle_threshold (default 90.0): Angle threshold to decide if a point is on the boundary.
 
 Return:
     Tensor of boundary points and its boolean mask tensor.
@@ -591,11 +672,6 @@ Example:
             {{"camera_location",
               "Normals are oriented with towards the camera_location."}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "orient_normals_consistent_tangent_plane",
-            {{"k",
-              "Number of k nearest neighbors used in constructing the "
-              "Riemannian graph used to propagate normal orientation."}});
-    docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
             {{"aabb", "AxisAlignedBoundingBox to crop points."},
              {"invert",
@@ -655,6 +731,7 @@ Returns:
 Example:
 
     This code generates a set of straight lines from a point cloud::
+        
         import open3d as o3d
         import numpy as np
         pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
