@@ -420,7 +420,7 @@ def test_pickle(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_select_by_index(device):
+def test_select_by_index_32(device):
     sphere_custom = o3d.t.geometry.TriangleMesh.create_sphere(
         1, 3, o3c.float64, o3c.int32, device)
 
@@ -432,10 +432,20 @@ def test_select_by_index(device):
     expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
                                o3c.int32, device)
 
-    indices = o3c.Tensor([0, 2, 3, 5, 6, 7], o3c.int64, device)
+    # check indices shape mismatch
+    indices_2d = o3c.Tensor([[0, 2], [3, 5], [6, 7]], o3c.int32, device)
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_by_index(indices_2d)
+
+    # check indices int size mismatch
+    indices_64 = o3c.Tensor([0, 2, 3, 5, 6, 7], o3c.int64, device)
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_by_index(indices_64)
+
     # check indices type mismatch
-    with pytest.raises(RuntimeError) as e:
-        selected = sphere_custom.select_by_index(indices)
+    indices_float = o3c.Tensor([2.0, 4.0], o3c.float32, device)
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_by_index(indices_float)
 
     # check the expected mesh
     indices = o3c.Tensor([0, 2, 3, 5, 6, 7], o3c.int32, device)
@@ -453,5 +463,64 @@ def test_select_by_index(device):
 
     # check that the exception is thrown if one of the indices exceeds
     # the max vertex index of the mesh
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(RuntimeError):
         selected = sphere_custom.select_by_index([2, 3, 6, 99])
+
+    # check that the exception is thrown if one of the indices have a negative
+    # value
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_by_index([2, 3, 6, -7])
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_select_by_index_64(device):
+    sphere_custom = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, o3c.float64, o3c.int64, device)
+
+    # check indices shape mismatch
+    with pytest.raises(RuntimeError):
+        indices_2d = o3c.Tensor([[0, 2], [3, 5], [6, 7]], o3c.int64, device)
+        selected = sphere_custom.select_by_index(indices_2d)
+
+    # check indices type mismatch
+    with pytest.raises(RuntimeError):
+        indices_float = o3c.Tensor([2.0, 4.0], o3c.float64, device)
+        selected = sphere_custom.select_by_index(indices_float)
+
+    expected_verts = o3c.Tensor(
+        [[0.0, 0.0, 1.0], [0.866025, 0, 0.5], [0.433013, 0.75, 0.5],
+         [-0.866025, 0.0, 0.5], [-0.433013, -0.75, 0.5], [0.433013, -0.75, 0.5]
+        ], o3c.float64, device)
+
+    expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
+                               o3c.int64, device)
+
+    # check the expected mesh with int64 input
+    indices_64 = o3c.Tensor([0, 2, 3, 5, 6, 7], o3c.int64, device)
+    selected = sphere_custom.select_by_index(indices_64)
+    assert selected.vertex.positions.allclose(expected_verts)
+    assert selected.triangle.indices.allclose(expected_tris)
+
+    # check the expected mesh with int32 input and unsorted indices
+    indices_32 = o3c.Tensor([7, 6, 3, 5, 0, 2], o3c.int32, device)
+    selected = sphere_custom.select_by_index(indices_32)
+    assert selected.vertex.positions.allclose(expected_verts)
+    assert selected.triangle.indices.allclose(expected_tris)
+
+    # check that the original mesh is unmodified
+    untouched_sphere = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, o3c.float64, o3c.int64, device)
+    assert sphere_custom.vertex.positions.allclose(
+        untouched_sphere.vertex.positions)
+    assert sphere_custom.triangle.indices.allclose(
+        untouched_sphere.triangle.indices)
+
+    # check that the exception is thrown if one of the indices exceeds
+    # the max vertex index of the mesh
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_by_index([2, 3, 6, 99])
+
+    # check that the exception is thrown if one of the indices have a negative
+    # value
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_by_index([2, 3, 6, -7])

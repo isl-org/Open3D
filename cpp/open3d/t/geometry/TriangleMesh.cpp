@@ -1061,9 +1061,9 @@ TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
     return result;
 }
 
-// A helper to compute the vertex and triangle masks based on indices.
-// Additionally updates tris_cpu to new indices.
-template <typename intT>
+/// \brief A helper to compute the vertex and triangle masks based on indices.
+/// Additionally updates tris_cpu to new indices.
+template <typename tri_intT, typename indices_intT>
 static void SBIUpdateMasksAndTrisCPUHelper(const core::Tensor &indices,
                                            core::Tensor &vertex_mask,
                                            core::Tensor &tris_mask,
@@ -1072,25 +1072,29 @@ static void SBIUpdateMasksAndTrisCPUHelper(const core::Tensor &indices,
     const int64_t num_verts = vertex_mask.GetLength();
 
     // compute the vertices mask
-    intT *vertex_mask_ptr = vertex_mask.GetDataPtr<intT>();
-    const intT *indices_ptr = indices.GetDataPtr<intT>();
+    tri_intT *vertex_mask_ptr = vertex_mask.GetDataPtr<tri_intT>();
+    const indices_intT *indices_ptr = indices.GetDataPtr<indices_intT>();
     for (int64_t i = 0; i < indices.GetLength(); ++i) {
+        if (indices_ptr[i] < 0) {
+            utility::LogError(
+                    "[SelectByIndex] indices contains a negative index {}. ",
+                    indices_ptr[i]);
+        }
         if (indices_ptr[i] >= num_verts) {
             utility::LogError(
                     "[SelectByIndex] indices contains index {} out of range. ",
                     indices_ptr[i]);
-            continue;
         }
         vertex_mask_ptr[indices_ptr[i]] = 1;
     }
 
     // compute new vertix indices
-    std::vector<intT> prefix_sum(num_verts + 1, 0);
+    std::vector<tri_intT> prefix_sum(num_verts + 1, 0);
     utility::InclusivePrefixSum(vertex_mask_ptr, vertex_mask_ptr + num_verts,
                                 &prefix_sum[1]);
 
     // update the triangles with new indices and build the triangle mask
-    intT *tris_cpu_ptr = tris_cpu.GetDataPtr<intT>();
+    tri_intT *tris_cpu_ptr = tris_cpu.GetDataPtr<tri_intT>();
     bool *tris_mask_ptr = tris_mask.GetDataPtr<bool>();
     for (int64_t i = 0; i < num_tris; ++i) {
         if (vertex_mask_ptr[tris_cpu_ptr[3 * i]] == 1 &&
@@ -1105,10 +1109,17 @@ static void SBIUpdateMasksAndTrisCPUHelper(const core::Tensor &indices,
 }
 
 TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
+    core::AssertTensorShape(indices, {indices.GetLength()});
+    if (!HasTriangleIndices()) {
+        utility::LogError("[SelectByIndex] mesh has no triangle indices.");
+    }
+    if (!HasVertexPositions()) {
+        utility::LogError("[SelectByIndex] mesh has no vertex positions.");
+    }
     GetTriangleAttr().AssertSizeSynchronized();
     GetVertexAttr().AssertSizeSynchronized();
     if (GetTriangleIndices().GetDtype() == core::Int32) {
-        core::AssertTensorDtype(indices, core::Int32);
+        core::AssertTensorDtype(indices, GetTriangleIndices().GetDtype());
     } else {
         // we allow both Int32 and Int64 if the mesh indicies are Int64
         core::AssertTensorDtypes(indices, {core::Int32, core::Int64});
@@ -1130,11 +1141,16 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
 
     // compute vertex and triangular masks and triangles based on indices
     if (tris_cpu.GetDtype() == core::Int32) {
-        SBIUpdateMasksAndTrisCPUHelper<int32_t>(indices_cpu, vertex_mask,
-                                                tris_mask, tris_cpu);
+        SBIUpdateMasksAndTrisCPUHelper<int32_t, int32_t>(
+                indices_cpu, vertex_mask, tris_mask, tris_cpu);
     } else {
-        SBIUpdateMasksAndTrisCPUHelper<int64_t>(indices_cpu, vertex_mask,
-                                                tris_mask, tris_cpu);
+        if (indices_cpu.GetDtype() == core::Int32) {
+            SBIUpdateMasksAndTrisCPUHelper<int64_t, int32_t>(
+                    indices_cpu, vertex_mask, tris_mask, tris_cpu);
+        } else {
+            SBIUpdateMasksAndTrisCPUHelper<int64_t, int64_t>(
+                    indices_cpu, vertex_mask, tris_mask, tris_cpu);
+        }
     }
 
     // select triangles and send the selected ones to the original device

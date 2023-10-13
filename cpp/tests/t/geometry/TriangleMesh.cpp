@@ -941,7 +941,12 @@ TEST_P(TriangleMeshPermuteDevices, CreateMobius) {
             triangle_indices_custom));
 }
 
-TEST_P(TriangleMeshPermuteDevices, SelectByIndex_Box) {
+TEST_P(TriangleMeshPermuteDevices, SelectByIndex) {
+    // check that an exception is thrown if the mesh is empty
+    t::geometry::TriangleMesh mesh_empty;
+    core::Tensor indices_empty = core::Tensor::Init<int64_t>({});
+    EXPECT_THROW(mesh_empty.SelectByIndex(indices_empty), std::runtime_error);
+
     // create box with normals, colors and labels defined.
     t::geometry::TriangleMesh box = t::geometry::TriangleMesh::CreateBox();
     core::Tensor vertex_colors = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
@@ -982,10 +987,10 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex_Box) {
     box.ComputeTriangleNormals();
     box.SetTriangleAttr("labels", triangle_labels);
 
-    core::Tensor indices = core::Tensor::Init<int64_t>({2, 3, 6, 7});
-    t::geometry::TriangleMesh selected = box.SelectByIndex(indices);
+    // empty index list
+    EXPECT_TRUE(box.SelectByIndex(indices_empty).IsEmpty());
 
-    // Set the expected values.
+    // set the expected valuee
     core::Tensor expected_verts = core::Tensor::Init<float>({{0.0, 0.0, 1.0},
                                                              {1.0, 0.0, 1.0},
                                                              {0.0, 1.0, 1.0},
@@ -1000,7 +1005,6 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex_Box) {
                                        {30.0, 30.0, 30.0},
                                        {60.0, 60.0, 60.0},
                                        {70.0, 70.0, 70.0}});
-
     core::Tensor expected_tris =
             core::Tensor::Init<int64_t>({{0, 1, 3}, {0, 3, 2}});
     core::Tensor tris_mask =
@@ -1010,6 +1014,9 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex_Box) {
     core::Tensor expected_tri_labels = core::Tensor::Init<float>(
             {{800.0, 800.0, 800.0}, {900.0, 900.0, 900.0}});
 
+    core::Tensor indices = core::Tensor::Init<int64_t>({2, 3, 6, 7});
+    t::geometry::TriangleMesh selected = box.SelectByIndex(indices);
+
     EXPECT_TRUE(selected.GetVertexPositions().AllClose(expected_verts));
     EXPECT_TRUE(selected.GetVertexColors().AllClose(expected_vert_colors));
     EXPECT_TRUE(
@@ -1018,6 +1025,23 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex_Box) {
     EXPECT_TRUE(selected.GetTriangleNormals().AllClose(expected_tri_normals));
     EXPECT_TRUE(
             selected.GetTriangleAttr("labels").AllClose(expected_tri_labels));
+
+    core::Tensor indices_duplicate =
+            core::Tensor::Init<int32_t>({2, 2, 3, 3, 6, 7, 7});
+    t::geometry::TriangleMesh selected_duplicate =
+            box.SelectByIndex(indices_duplicate);
+    EXPECT_TRUE(
+            selected_duplicate.GetVertexPositions().AllClose(expected_verts));
+    EXPECT_TRUE(selected_duplicate.GetVertexColors().AllClose(
+            expected_vert_colors));
+    EXPECT_TRUE(selected_duplicate.GetVertexAttr("labels").AllClose(
+            expected_vert_labels));
+    EXPECT_TRUE(
+            selected_duplicate.GetTriangleIndices().AllClose(expected_tris));
+    EXPECT_TRUE(selected_duplicate.GetTriangleNormals().AllClose(
+            expected_tri_normals));
+    EXPECT_TRUE(selected_duplicate.GetTriangleAttr("labels").AllClose(
+            expected_tri_labels));
 
     // Check that initial mesh is unchanged.
     t::geometry::TriangleMesh box_untouched =

@@ -928,8 +928,8 @@ Example:
     triangle_mesh.def(
             "select_by_index", &TriangleMesh::SelectByIndex, "indices"_a,
             R"(Returns a new mesh with the vertices selected according to the indices list.
-Throws an exception if an item from the indices list exceeds the max vertex
-number of the mesh,
+Throws an exception if the mesh is empty or if an item from the indices list exceeds
+the max vertex number of the mesh or a negative value was supplied.
 
 Args:
     indices (open3d.core.Tensor): An integer list of indices. Duplicates are
@@ -942,8 +942,7 @@ Returns:
 
 Example:
 
-    This code selets the top face of a box, which has indices [2, 3, 6, 7].
-    parts::
+    This code selects the top face of a box, which has indices [2, 3, 6, 7]::
 
         import open3d as o3d
         import numpy as np
