@@ -486,10 +486,11 @@ void pybind_rendering_classes(py::module &m) {
             .value("XY", Scene::GroundPlane::XY)
             .value("YZ", Scene::GroundPlane::YZ)
             .export_values();
-    scene.def("add_camera", &Scene::AddCamera, "Adds a camera to the scene")
-            .def("remove_camera", &Scene::RemoveCamera,
+    scene.def("add_camera", &Scene::AddCamera, "name"_a, "camera"_a,
+              "Adds a camera to the scene")
+            .def("remove_camera", &Scene::RemoveCamera, "name"_a,
                  "Removes the camera with the given name")
-            .def("set_active_camera", &Scene::SetActiveCamera,
+            .def("set_active_camera", &Scene::SetActiveCamera, "name"_a,
                  "Sets the camera with the given name as the active camera for "
                  "the scene")
             .def("add_geometry",
@@ -508,69 +509,83 @@ void pybind_rendering_classes(py::module &m) {
                  "name"_a, "geometry"_a, "material"_a,
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
-            .def("has_geometry", &Scene::HasGeometry,
+            .def("has_geometry", &Scene::HasGeometry, "name"_a,
                  "Returns True if a geometry with the provided name exists in "
                  "the scene.")
-            .def("update_geometry", &Scene::UpdateGeometry,
+            .def("update_geometry", &Scene::UpdateGeometry, "name"_a,
+                 "point_cloud"_a, "update_flag"_a,
                  "Updates the flagged arrays from the tgeometry.PointCloud. "
                  "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG")
-            .def("remove_geometry", &Scene::RemoveGeometry,
+            .def("remove_geometry", &Scene::RemoveGeometry, "name"_a,
                  "Removes the named geometry from the scene.")
-            .def("show_geometry", &Scene::ShowGeometry,
+            .def("show_geometry", &Scene::ShowGeometry, "name"_a, "show"_a,
                  "Show or hide the named geometry.")
-            .def("geometry_is_visible", &Scene::GeometryIsVisible,
+            .def("geometry_is_visible", &Scene::GeometryIsVisible, "name"_a,
                  "Returns false if the geometry is hidden, True otherwise. "
                  "Note: this is different from whether or not the geometry is "
                  "in view.")
-            .def("geometry_shadows", &Scene::GeometryShadows,
+            .def("geometry_shadows", &Scene::GeometryShadows, "name"_a,
+                 "cast_shadows"_a, "receive_shadows"_a,
                  "Controls whether an object casts and/or receives shadows: "
                  "geometry_shadows(name, cast_shadows, receieve_shadows)")
-            .def("set_geometry_culling", &Scene::SetGeometryCulling,
+            .def("set_geometry_culling", &Scene::SetGeometryCulling, "name"_a,
+                 "enable"_a,
                  "Enable/disable view frustum culling on the named object. "
                  "Culling is enabled by default.")
-            .def("set_geometry_priority", &Scene::SetGeometryPriority,
+            .def("set_geometry_priority", &Scene::SetGeometryPriority, "name"_a,
+                 "priority"_a,
                  "Set sorting priority for named object. Objects with higher "
                  "priority will be rendering on top of overlapping geometry "
                  "with lower priority.")
             .def("enable_indirect_light", &Scene::EnableIndirectLight,
-                 "Enables or disables indirect lighting")
-            .def("set_indirect_light", &Scene::SetIndirectLight,
+                 "enable"_a, "Enables or disables indirect lighting")
+            .def("set_indirect_light", &Scene::SetIndirectLight, "name"_a,
                  "Loads the indirect light. The name parameter is the name of "
                  "the file to load")
             .def("set_indirect_light_intensity",
-                 &Scene::SetIndirectLightIntensity,
+                 &Scene::SetIndirectLightIntensity, "intensity"_a,
                  "Sets the brightness of the indirect light")
-            .def("enable_sun_light", &Scene::EnableSunLight)
-            .def("set_sun_light", &Scene::SetSunLight,
-                 "Sets the parameters of the sun light: direction, "
+            .def("enable_sun_light", &Scene::EnableSunLight, "enable"_a)
+            .def("set_sun_light", &Scene::SetSunLight, "direction"_a, "color"_a,
+                 "intensity"_a,
+                 "Sets the parameters of the sun light direction, "
                  "color, intensity")
-            .def("add_point_light", &Scene::AddPointLight,
+            .def("add_point_light", &Scene::AddPointLight, "name"_a, "color"_a,
+                 "position"_a, "intensity"_a, "falloff"_a, "cast_shadows"_a,
                  "Adds a point light to the scene: add_point_light(name, "
                  "color, position, intensity, falloff, cast_shadows)")
-            .def("add_spot_light", &Scene::AddSpotLight,
+            .def("add_spot_light", &Scene::AddSpotLight, "name"_a, "color"_a,
+                 "position"_a, "direction"_a, "intensity"_a, "falloff"_a,
+                 "inner_cone_angle"_a, "outer_cone_angle"_a, "cast_shadows"_a,
                  "Adds a spot light to the scene: add_point_light(name, "
                  "color, position, direction, intensity, falloff, "
                  "inner_cone_angle, outer_cone_angle, cast_shadows)")
-            .def("add_directional_light", &Scene::AddDirectionalLight,
+            .def("add_directional_light", &Scene::AddDirectionalLight, "name"_a,
+                 "color"_a, "direction"_a, "intensity"_a, "cast_shadows"_a,
                  "Adds a directional light to the scene: add_point_light(name, "
                  "color, intensity, cast_shadows)")
-            .def("remove_light", &Scene::RemoveLight,
+            .def("remove_light", &Scene::RemoveLight, "name"_a,
                  "Removes the named light from the scene: remove_light(name)")
-            .def("update_light_color", &Scene::UpdateLightColor,
+            .def("update_light_color", &Scene::UpdateLightColor, "name"_a,
+                 "color"_a,
                  "Changes a point, spot, or directional light's color")
-            .def("update_light_position", &Scene::UpdateLightPosition,
-                 "Changes a point or spot light's position")
+            .def("update_light_position", &Scene::UpdateLightPosition, "name"_a,
+                 "position"_a, "Changes a point or spot light's position")
             .def("update_light_direction", &Scene::UpdateLightDirection,
+                 "name"_a, "direction"_a,
                  "Changes a spot or directional light's direction")
             .def("update_light_intensity", &Scene::UpdateLightIntensity,
+                 "name"_a, "intensity"_a,
                  "Changes a point, spot or directional light's intensity")
-            .def("update_light_falloff", &Scene::UpdateLightFalloff,
-                 "Changes a point or spot light's falloff")
+            .def("update_light_falloff", &Scene::UpdateLightFalloff, "name"_a,
+                 "falloff"_a, "Changes a point or spot light's falloff")
             .def("update_light_cone_angles", &Scene::UpdateLightConeAngles,
+                 "name"_a, "inner_cone_angle"_a, "outer_cone_angle"_a,
                  "Changes a spot light's inner and outer cone angles")
-            .def("enable_light_shadow", &Scene::EnableLightShadow,
+            .def("enable_light_shadow", &Scene::EnableLightShadow, "name"_a,
+                 "cast_shadows"_a,
                  "Changes whether a point, spot, or directional light can "
                  "cast shadows:  enable_light_shadow(name, can_cast_shadows)")
             .def("render_to_image", &Scene::RenderToImage,
