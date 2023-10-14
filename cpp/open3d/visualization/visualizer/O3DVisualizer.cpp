@@ -1521,6 +1521,9 @@ struct O3DVisualizer::Impl {
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
+            // Ignore Models since they can never be point clouds
+            if (o.model) continue;
+
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
@@ -1546,6 +1549,9 @@ struct O3DVisualizer::Impl {
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
+            // Ignore Models since they can never be point clouds
+            if (o.model) continue;
+
             o.material.line_width = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
