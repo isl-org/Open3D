@@ -296,10 +296,29 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             ai_mat->AddProperty(&ac, 1, AI_MATKEY_BASE_COLOR);
         }
         if (mesh.GetMaterial().HasBaseRoughness()) {
+            auto r = mesh.GetMaterial().GetBaseRoughness();
+            ai_mat->AddProperty(&r, 1, AI_MATKEY_ROUGHNESS_FACTOR);
         }
         if (mesh.GetMaterial().HasBaseMetallic()) {
+            auto m = mesh.GetMaterial().GetBaseMetallic();
+            ai_mat->AddProperty(&m, 1, AI_MATKEY_METALLIC_FACTOR);
         }
         if (mesh.GetMaterial().HasBaseReflectance()) {
+            auto r = mesh.GetMaterial().GetBaseReflectance();
+            ai_mat->AddProperty(&r, 1, AI_MATKEY_REFLECTIVITY);
+            ai_mat->AddProperty(&r, 1, AI_MATKEY_SHEEN);
+        }
+        if (mesh.GetMaterial().HasAnisotropy()) {
+            auto a = mesh.GetMaterial().GetAnisotropy();
+            ai_mat->AddProperty(&a, 1, AI_MATKEY_ANISOTROPY);
+        }
+        if (mesh.GetMaterial().HasBaseClearcoat()) {
+            auto c = mesh.GetMaterial().GetBaseClearcoat();
+            ai_mat->AddProperty(&c, 1, AI_MATKEY_CLEARCOAT_FACTOR);
+        }
+        if (mesh.GetMaterial().HasBaseClearcoatRoughness()) {
+            auto r = mesh.GetMaterial().GetBaseClearcoatRoughness();
+            ai_mat->AddProperty(&r, 1, AI_MATKEY_CLEARCOAT_ROUGHNESS);
         }
 
         // Now set texture maps
