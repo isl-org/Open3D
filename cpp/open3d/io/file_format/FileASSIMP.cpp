@@ -415,7 +415,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         mat->Get(AI_MATKEY_CLEARCOAT_THICKNESS, o3d_mat.base_clearcoat);
         mat->Get(AI_MATKEY_CLEARCOAT_FACTOR, o3d_mat.base_clearcoat);
-        mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS,
+        mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR,
                  o3d_mat.base_clearcoat_roughness);
         mat->Get(AI_MATKEY_ANISOTROPY, o3d_mat.base_anisotropy);
         aiString alpha_mode;
