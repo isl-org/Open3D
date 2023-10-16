@@ -289,6 +289,8 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
         ai_mat->AddProperty(&shading_mode, 1, AI_MATKEY_SHADING_MODEL);
 
         // Set base material properties
+        // NOTE: not all properties supported by Open3D are supported by Assimp.
+        // Those properties (reflectivity, anisotropy) are not exported
         if (mesh.GetMaterial().HasBaseColor()) {
             auto c = mesh.GetMaterial().GetBaseColor();
             auto ac = aiColor4D(c.x(), c.y(), c.z(), c.w());
@@ -303,22 +305,13 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             auto m = mesh.GetMaterial().GetBaseMetallic();
             ai_mat->AddProperty(&m, 1, AI_MATKEY_METALLIC_FACTOR);
         }
-        if (mesh.GetMaterial().HasBaseReflectance()) {
-            auto r = mesh.GetMaterial().GetBaseReflectance();
-            ai_mat->AddProperty(&r, 1, AI_MATKEY_REFLECTIVITY);
-            ai_mat->AddProperty(&r, 1, AI_MATKEY_SHEEN);
-        }
-        if (mesh.GetMaterial().HasAnisotropy()) {
-            auto a = mesh.GetMaterial().GetAnisotropy();
-            ai_mat->AddProperty(&a, 1, AI_MATKEY_ANISOTROPY);
-        }
         if (mesh.GetMaterial().HasBaseClearcoat()) {
             auto c = mesh.GetMaterial().GetBaseClearcoat();
             ai_mat->AddProperty(&c, 1, AI_MATKEY_CLEARCOAT_FACTOR);
         }
         if (mesh.GetMaterial().HasBaseClearcoatRoughness()) {
             auto r = mesh.GetMaterial().GetBaseClearcoatRoughness();
-            ai_mat->AddProperty(&r, 1, AI_MATKEY_CLEARCOAT_ROUGHNESS);
+            ai_mat->AddProperty(&r, 1, AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR);
         }
 
         // Now set texture maps
