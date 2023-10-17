@@ -103,9 +103,9 @@ bool WriteImageToPNG(const std::string &filename,
     return true;
 }
 
-bool WriteImageToPNGInMemory(std::vector<uint8_t>& buffer,
-                     const t::geometry::Image &image,
-                     int quality) {
+bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
+                             const t::geometry::Image &image,
+                             int quality) {
     if (image.IsEmpty()) {
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
@@ -131,13 +131,16 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t>& buffer,
 
     // Compute bytes required
     size_t mem_bytes = 0;
-    if (png_image_write_to_memory(&pngimage, nullptr, &mem_bytes, 0, image.GetDataPtr(), 0, nullptr) == 0) {
-        utility::LogWarning("Could not compute bytes needed for encoding to PNG in memory.");
+    if (png_image_write_to_memory(&pngimage, nullptr, &mem_bytes, 0,
+                                  image.GetDataPtr(), 0, nullptr) == 0) {
+        utility::LogWarning(
+                "Could not compute bytes needed for encoding to PNG in "
+                "memory.");
         return false;
     }
-    utility::LogWarning("The bytes needed to encode this png: {}", mem_bytes);
     buffer.resize(mem_bytes);
-    if (png_image_write_to_memory(&pngimage, &buffer[0], &mem_bytes, 0, image.GetDataPtr(), 0, nullptr) == 0) {
+    if (png_image_write_to_memory(&pngimage, &buffer[0], &mem_bytes, 0,
+                                  image.GetDataPtr(), 0, nullptr) == 0) {
         utility::LogWarning("Unable to encode to encode to PNG in memory.");
         return false;
     }
