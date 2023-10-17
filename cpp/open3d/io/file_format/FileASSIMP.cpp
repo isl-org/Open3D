@@ -71,6 +71,7 @@ void LoadTextures(const std::string& filename,
         if (mat->GetTextureCount(type) > 0) {
             aiString path;
             mat->GetTexture(type, 0, &path);
+
             // If the texture is an embedded texture, use `GetEmbeddedTexture`.
             if (auto texture = scene->GetEmbeddedTexture(path.C_Str())) {
                 if (texture->CheckFormat("png")) {
@@ -91,13 +92,10 @@ void LoadTextures(const std::string& filename,
                     if (image->HasData()) {
                         img = image;
                     }
-                }
-
-                else {
+                } else {
                     utility::LogWarning(
                             "This format of image is not supported.");
                 }
-
             }
             // Else, build the path to it.
             else {
@@ -122,7 +120,12 @@ void LoadTextures(const std::string& filename,
         }
     };
 
-    texture_loader(aiTextureType_DIFFUSE, maps.albedo);
+    // Prefer BASE_COLOR texture as assimp now uses it for PBR workflows
+    if (mat->GetTextureCount(aiTextureType_BASE_COLOR) > 0) {
+        texture_loader(aiTextureType_BASE_COLOR, maps.albedo);
+    } else {
+        texture_loader(aiTextureType_DIFFUSE, maps.albedo);
+    }
     texture_loader(aiTextureType_NORMALS, maps.normal);
     // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if
     // format has AO support. Prefer that texture if it is preset. Otherwise,
