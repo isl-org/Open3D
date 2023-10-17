@@ -18,6 +18,7 @@
 
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/TensorFunction.h"
+#include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/TriangleMeshIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
@@ -175,6 +176,37 @@ bool ReadTriangleMeshUsingASSIMP(
     return true;
 }
 
+void SetTextureMaterialProperty(aiMaterial* mat,
+                                aiScene* scene,
+                                int texture_idx,
+                                aiTextureType tt,
+                                t::geometry::Image& img) {
+    // Encode image as PNG
+    std::vector<uint8_t> img_buffer;
+    WriteImageToPNGInMemory(img_buffer, img, 6);
+
+    // Fill in Assimp's texture class and add to its material
+    auto tex = scene->mTextures[texture_idx];
+    std::string tex_id("*");
+    tex_id += std::to_string(texture_idx);
+    tex->mFilename = tex_id.c_str();
+    tex->mHeight = 0;
+    tex->mWidth = img_buffer.size();
+    // NOTE: Assimp takes ownership of the data so we need to copy it
+    // into a separate buffer that Assimp can take care of delete []-ing
+    uint8_t* img_data = new uint8_t[img_buffer.size()];
+    memcpy(img_data, img_buffer.data(), img_buffer.size());
+    tex->pcData = reinterpret_cast<aiTexel*>(img_data);
+    strcpy(tex->achFormatHint, "png");
+    aiString uri(tex_id);
+    const int uv_index = 0;
+    const aiTextureMapMode mode = aiTextureMapMode_Wrap;
+    mat->AddProperty(&uri, AI_MATKEY_TEXTURE(tt, 0));
+    mat->AddProperty(&uv_index, 1, AI_MATKEY_UVWSRC(tt, 0));
+    mat->AddProperty(&mode, 1, AI_MATKEY_MAPPINGMODE_U(tt, 0));
+    mat->AddProperty(&mode, 1, AI_MATKEY_MAPPINGMODE_V(tt, 0));
+}
+
 bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
                                   const geometry::TriangleMesh& mesh,
                                   const bool write_ascii,
@@ -314,14 +346,98 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             ai_mat->AddProperty(&r, 1, AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR);
         }
 
-        // Now set texture maps
+        // Count texture maps...
+        // NOTE: GLTF2 expects a single combined roughness/metal map. If the
+        // model has one we just export it, otherwise if both roughness and
+        // metal maps are avaialbe we combine them, otherwise if only one or the
+        // other is available we just export the one map.
+        int n_textures = 0;
+        if (mesh.GetMaterial().HasAlbedoMap()) ++n_textures;
+        if (mesh.GetMaterial().HasNormalMap()) ++n_textures;
+        if (mesh.GetMaterial().HasAORoughnessMetalMap()) {
+            ++n_textures;
+        } else if (mesh.GetMaterial().HasRoughnessMap() &&
+                   mesh.GetMaterial().HasMetallicMap()) {
+            ++n_textures;
+        } else {
+            if (mesh.GetMaterial().HasRoughnessMap()) ++n_textures;
+            if (mesh.GetMaterial().HasMetallicMap()) ++n_textures;
+        }
+        if (n_textures > 0) {
+            ai_scene->mTextures = new aiTexture*[n_textures];
+            for (int i = 0; i < n_textures; ++i) {
+                ai_scene->mTextures[i] = new aiTexture();
+            }
+            ai_scene->mNumTextures = n_textures;
+        }
+
+        // Now embed the textures that are available...
+        int current_idx = 0;
         if (mesh.GetMaterial().HasAlbedoMap()) {
+            auto img = mesh.GetMaterial().GetAlbedoMap();
+            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
+                                       aiTextureType_DIFFUSE, img);
+            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
+                                       aiTextureType_BASE_COLOR, img);
+            ++current_idx;
         }
-        if (mesh.GetMaterial().HasRoughnessMap()) {
-        }
-        if (mesh.GetMaterial().HasMetallicMap()) {
+        if (mesh.GetMaterial().HasAORoughnessMetalMap()) {
+            auto img = mesh.GetMaterial().GetAORoughnessMetalMap();
+            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
+                                       aiTextureType_UNKNOWN, img);
+            ++current_idx;
+        } else if (mesh.GetMaterial().HasRoughnessMap() &&
+                   mesh.GetMaterial().HasMetallicMap()) {
+            auto rough = mesh.GetMaterial().GetRoughnessMap();
+            auto metal = mesh.GetMaterial().GetMetallicMap();
+            auto rows = rough.GetRows();
+            auto cols = rough.GetCols();
+            auto rough_metal =
+                    geometry::Image(rows, cols, 4, core::Dtype::UInt8);
+            rough_metal.AsTensor() =
+                    core::Tensor::Ones(rough_metal.AsTensor().GetShape(),
+                                       core::Dtype::UInt8) *
+                    255;
+            auto metal_channel = metal.AsTensor().GetItem(
+                    {core::TensorKey::Slice(0, rows + 1, core::None),
+                     core::TensorKey::Slice(0, cols + 1, core::None),
+                     core::TensorKey::Index(0)});
+            auto rough_channel = rough.AsTensor().GetItem(
+                    {core::TensorKey::Slice(0, rows + 1, core::None),
+                     core::TensorKey::Slice(0, cols + 1, core::None),
+                     core::TensorKey::Index(0)});
+            rough_metal.AsTensor().SetItem(
+                    {core::TensorKey::Slice(0, rows + 1, core::None),
+                     core::TensorKey::Slice(0, cols + 1, core::None),
+                     core::TensorKey::Index(2)},
+                    metal_channel);
+            rough_metal.AsTensor().SetItem(
+                    {core::TensorKey::Slice(0, rows + 1, core::None),
+                     core::TensorKey::Slice(0, cols + 1, core::None),
+                     core::TensorKey::Index(1)},
+                    rough_channel);
+            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
+                                       aiTextureType_UNKNOWN, rough_metal);
+            ++current_idx;
+        } else {
+            if (mesh.GetMaterial().HasRoughnessMap()) {
+                auto img = mesh.GetMaterial().GetRoughnessMap();
+                SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
+                                           aiTextureType_UNKNOWN, img);
+                ++current_idx;
+            }
+            if (mesh.GetMaterial().HasMetallicMap()) {
+                auto img = mesh.GetMaterial().GetMetallicMap();
+                SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
+                                           aiTextureType_UNKNOWN, img);
+                ++current_idx;
+            }
         }
         if (mesh.GetMaterial().HasNormalMap()) {
+            auto img = mesh.GetMaterial().GetNormalMap();
+            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
+                                       aiTextureType_NORMALS, img);
+            ++current_idx;
         }
     }
     ai_scene->mMaterials[0] = ai_mat;
