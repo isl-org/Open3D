@@ -254,8 +254,9 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     ai_mesh->mName.Set("Object1");
     ai_mesh->mPrimitiveTypes = aiPrimitiveType_TRIANGLE;
     // Guaranteed to have both vertex positions and triangle indices
-    auto vertices = mesh.GetVertexPositions();
-    auto indices = mesh.GetTriangleIndices().To(core::Dtype::UInt32);
+    auto vertices = mesh.GetVertexPositions().Contiguous();
+    auto indices =
+            mesh.GetTriangleIndices().Contiguous().To(core::Dtype::UInt32);
     ai_mesh->mNumVertices = vertices.GetShape(0);
     ai_mesh->mVertices = new aiVector3D[ai_mesh->mNumVertices];
     memcpy(&ai_mesh->mVertices->x, vertices.GetDataPtr(),
@@ -277,7 +278,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     }
 
     if (write_vertex_normals && mesh.HasVertexNormals()) {
-        auto normals = mesh.GetVertexNormals();
+        auto normals = mesh.GetVertexNormals().Contiguous();
         auto m_normals = normals.GetShape(0);
         ai_mesh->mNormals = new aiVector3D[m_normals];
         memcpy(&ai_mesh->mNormals->x, normals.GetDataPtr(),
@@ -285,7 +286,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     }
 
     if (write_vertex_colors && mesh.HasVertexColors()) {
-        auto colors = mesh.GetVertexColors();
+        auto colors = mesh.GetVertexColors().Contiguous();
         auto m_colors = colors.GetShape(0);
         ai_mesh->mColors[0] = new aiColor4D[m_colors];
         if (colors.GetShape(1) == 4) {
@@ -303,7 +304,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     }
 
     if (write_triangle_uvs && mesh.HasTriangleAttr("texture_uvs")) {
-        auto triangle_uvs = mesh.GetTriangleAttr("texture_uvs");
+        auto triangle_uvs = mesh.GetTriangleAttr("texture_uvs").Contiguous();
         auto vertex_uvs = core::Tensor::Empty({ai_mesh->mNumVertices, 2},
                                               core::Dtype::Float32);
         auto n_uvs = ai_mesh->mNumVertices;
