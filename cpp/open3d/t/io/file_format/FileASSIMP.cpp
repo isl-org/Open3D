@@ -232,6 +232,17 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
                 ".glb");
         return false;
     }
+    // Check for unsupported features
+    if (mesh.HasTriangleNormals()) {
+        utility::LogWarning(
+                "Exporting triangle normals is not supported. Please convert "
+                "to vertex normals or export to a format that supports it.");
+    }
+    if (mesh.HasTriangleColors()) {
+        utility::LogWarning(
+                "Exporting triangle colors is not supported. Please convert to "
+                "vertex colors or export to a format that supporst it.");
+    }
 
     Assimp::Exporter exporter;
     auto ai_scene = std::unique_ptr<aiScene>(new aiScene);
