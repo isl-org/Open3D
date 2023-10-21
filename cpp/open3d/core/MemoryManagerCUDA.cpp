@@ -19,12 +19,12 @@ void* MemoryManagerCUDA::Malloc(size_t byte_size, const Device& device) {
 
     void* ptr;
     if (device.IsCUDA()) {
-#if CUDART_VERSION >= 11020
-        OPEN3D_CUDA_CHECK(cudaMallocAsync(static_cast<void**>(&ptr), byte_size,
-                                          cuda::GetStream()));
-#else
-        OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
-#endif
+        if (cuda::SupportsMemoryPools(device)) {
+            OPEN3D_CUDA_CHECK(cudaMallocAsync(static_cast<void**>(&ptr),
+                                              byte_size, cuda::GetStream()));
+        } else {
+            OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+        }
     } else {
         utility::LogError("Internal error: Unimplemented device {}.",
                           device.ToString());
@@ -37,11 +37,11 @@ void MemoryManagerCUDA::Free(void* ptr, const Device& device) {
 
     if (device.IsCUDA()) {
         if (ptr && IsCUDAPointer(ptr, device)) {
-#if CUDART_VERSION >= 11020
-            OPEN3D_CUDA_CHECK(cudaFreeAsync(ptr, cuda::GetStream()));
-#else
-            OPEN3D_CUDA_CHECK(cudaFree(ptr));
-#endif
+            if (cuda::SupportsMemoryPools(device)) {
+                OPEN3D_CUDA_CHECK(cudaFreeAsync(ptr, cuda::GetStream()));
+            } else {
+                OPEN3D_CUDA_CHECK(cudaFree(ptr));
+            }
         }
     } else {
         utility::LogError("Internal error: Unimplemented device {}.",

@@ -255,6 +255,13 @@ void AssertCUDADeviceAvailable(int device_id);
 /// \param device The device to be checked.
 void AssertCUDADeviceAvailable(const Device& device);
 
+/// Checks if the CUDA device support Memory Pools
+/// used by the Stream Ordered Memory Allocator,
+/// see
+/// https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY__POOLS.html
+/// \param device The device to be checked.
+bool SupportsMemoryPools(const Device& device);
+
 #ifdef BUILD_CUDA_MODULE
 
 int GetDevice();
