@@ -110,6 +110,72 @@ void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
     }
 }
 
+struct ListIntersectionsContext {
+    RTCIntersectContext context;
+    std::vector<std::tuple<uint32_t, uint32_t, float>>*
+            previous_geom_prim_ID_tfar;
+    unsigned int* ray_ids;
+    unsigned int* geometry_ids;
+    unsigned int* primitive_ids;
+    float* t_hit;
+    Eigen::VectorXi cumsum;
+    unsigned int* track_intersections;
+};
+
+void ListIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
+    int* valid = args->valid;
+    const ListIntersectionsContext* context =
+            reinterpret_cast<const ListIntersectionsContext*>(args->context);
+    struct RTCRayN* rayN = args->ray;
+    struct RTCHitN* hitN = args->hit;
+    const unsigned int N = args->N; 
+
+    // Avoid crashing when debug visualizations are used.
+    if (context == nullptr) return;
+
+    std::vector<std::tuple<uint32_t, uint32_t, float>>*
+            previous_geom_prim_ID_tfar = context->previous_geom_prim_ID_tfar;
+    unsigned int* ray_ids = context->ray_ids;
+    unsigned int* geometry_ids = context->geometry_ids;
+    unsigned int* primitive_ids = context->primitive_ids;
+    float* t_hit = context->t_hit;    
+    Eigen::VectorXi cumsum = context->cumsum;
+    unsigned int* track_intersections = context->track_intersections;
+
+    // Iterate over all rays in ray packet.
+    for (unsigned int ui = 0; ui < N; ui += 1) {
+        // Calculate loop and execution mask
+        unsigned int vi = ui + 0;
+        if (vi >= N) continue;
+
+        // Ignore inactive rays.
+        if (valid[vi] != -1) continue;
+
+        // Read ray/hit from ray structure.
+        RTCRay ray = rtcGetRayFromRayN(rayN, N, ui);
+        RTCHit hit = rtcGetHitFromHitN(hitN, N, ui);
+
+        unsigned int ray_id = ray.id;
+        std::tuple<uint32_t, uint32_t, float> gpID(hit.geomID, hit.primID,
+                                                   ray.tfar);
+        auto& prev_gpIDtfar = previous_geom_prim_ID_tfar->operator[](ray_id);
+        if (std::get<0>(prev_gpIDtfar) != hit.geomID ||
+            (std::get<1>(prev_gpIDtfar) != hit.primID &&
+             std::get<2>(prev_gpIDtfar) != ray.tfar)) {
+               size_t idx = cumsum[ray_id] + track_intersections[ray_id];
+               ray_ids[idx] = ray_id;
+               geometry_ids[idx]  = hit.geomID;
+               primitive_ids[idx]  = hit.primID;
+               t_hit[idx]  = ray.tfar;
+               previous_geom_prim_ID_tfar->operator[](ray_id) = gpID;
+               ++(track_intersections[ray_id]);
+        }
+        // Always ignore hit
+        valid[ui] = 0;
+    }
+}
+
+
 // Adapted from common/math/closest_point.h
 inline Vec3fa closestPointTriangle(Vec3fa const& p,
                                    Vec3fa const& a,
@@ -481,6 +547,82 @@ struct RaycastingScene::Impl {
                     LoopFn);
         }
     }
+    
+                                
+    void ListIntersections(const float* const rays,
+                            const size_t num_rays,
+                            const size_t num_intersections,
+                            Eigen::VectorXi cumsum,
+                            unsigned int* track_intersections,
+                            unsigned int* ray_ids,
+                            unsigned int* geometry_ids,
+                            unsigned int* primitive_ids,
+                            float* t_hit,
+                            const int nthreads) {
+        CommitScene();
+
+        memset(track_intersections, 0, sizeof(uint32_t) * num_rays);
+        memset(ray_ids, 0, sizeof(uint32_t) * num_intersections);
+        memset(geometry_ids, 0, sizeof(uint32_t) * num_intersections);
+        memset(primitive_ids, 0, sizeof(uint32_t) * num_intersections);
+        memset(t_hit, 0, sizeof(float) * num_intersections);
+
+        std::vector<std::tuple<uint32_t, uint32_t, float>>
+                previous_geom_prim_ID_tfar(
+                        num_rays,
+                        std::make_tuple(uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                        uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                        0.f));
+
+        ListIntersectionsContext context;
+        rtcInitIntersectContext(&context.context);
+        context.context.filter = ListIntersectionsFunc;
+        context.previous_geom_prim_ID_tfar = &previous_geom_prim_ID_tfar;
+        context.ray_ids = ray_ids;
+        context.geometry_ids = geometry_ids;
+        context.primitive_ids = primitive_ids;
+        context.t_hit = t_hit;
+        context.cumsum = cumsum;
+        context.track_intersections = track_intersections;
+
+        auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
+            std::vector<RTCRayHit> rayhits(range.size());
+
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                RTCRayHit* rh = &rayhits[i - range.begin()];
+                const float* r = &rays[i * 6];
+                rh->ray.org_x = r[0];
+                rh->ray.org_y = r[1];
+                rh->ray.org_z = r[2];
+                rh->ray.dir_x = r[3];
+                rh->ray.dir_y = r[4];
+                rh->ray.dir_z = r[5];
+                rh->ray.tnear = 0;
+                rh->ray.tfar = std::numeric_limits<float>::infinity();
+                rh->ray.mask = 0;
+                rh->ray.flags = 0;
+                rh->ray.id = i;
+                rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
+                rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+            }
+            rtcIntersect1M(scene_, &context.context, &rayhits[0], range.size(),
+                           sizeof(RTCRayHit));
+        };
+
+        if (nthreads > 0) {
+            tbb::task_arena arena(nthreads);
+            arena.execute([&]() {
+                tbb::parallel_for(
+                        tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                        LoopFn);
+            });
+        } else {
+            tbb::parallel_for(
+                    tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                    LoopFn);
+        }
+    }                            
+                                
 
     void ComputeClosestPoints(const float* const query_points,
                               const size_t num_query_points,
@@ -690,6 +832,59 @@ core::Tensor RaycastingScene::CountIntersections(const core::Tensor& rays,
                               intersections.GetDataPtr<int>(), nthreads);
     return intersections;
 }
+
+
+std::unordered_map<std::string, core::Tensor>
+RaycastingScene::ListIntersections(const core::Tensor& rays,
+                                                 const int nthreads) {
+    AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
+                                                 impl_->tensor_device_);
+    auto shape = rays.GetShape();
+    shape.pop_back();  // Remove last dim, we want to use this shape for the
+                       // results.
+    size_t num_rays = shape.NumElements();
+    
+    // determine total number of intersections
+    core::Tensor intersections(shape, core::Dtype::FromType<int>());
+    core::Tensor track_intersections(shape, core::Dtype::FromType<uint32_t>());
+    auto data = rays.Contiguous();
+    impl_->CountIntersections(data.GetDataPtr<float>(), num_rays,
+                              intersections.GetDataPtr<int>(), nthreads);    
+    
+    // prepare shape with that number of elements 
+    // not sure how to do proper conversion
+    const core::SizeVector dim = {0};    
+    Eigen::Map<Eigen::VectorXi> intersections_vector(
+      intersections.GetDataPtr<int>(), num_rays);
+    Eigen::Map<Eigen::VectorXi> num_intersections(
+      intersections.Sum(dim).GetDataPtr<int>(), 1); 
+    shape = {num_intersections[0], 1};
+    
+    // prepare ray allocations (cumsum)
+    Eigen::VectorXi cumsum = Eigen::MatrixXi::Zero(num_rays, 1);
+    std::partial_sum(intersections_vector.begin(), intersections_vector.end() - 1, 
+      cumsum.begin() + 1, std::plus<int>());
+    
+    // generate results structure
+    std::unordered_map<std::string, core::Tensor> result;
+    result["ray_ids"] = core::Tensor(shape, core::UInt32);
+    result["geometry_ids"] = core::Tensor(shape, core::UInt32);    
+    result["primitive_ids"] = core::Tensor(shape, core::UInt32);
+    result["t_hit"] = core::Tensor(shape, core::Float32);
+    
+    impl_->ListIntersections(data.GetDataPtr<float>(), 
+                                num_rays, 
+                                num_intersections[0], 
+                                cumsum,
+                                track_intersections.GetDataPtr<uint32_t>(),
+                                result["ray_ids"].GetDataPtr<uint32_t>(),
+                                result["geometry_ids"].GetDataPtr<uint32_t>(),
+                                result["primitive_ids"].GetDataPtr<uint32_t>(),
+                                result["t_hit"].GetDataPtr<float>(),
+                                nthreads);
+    return result;
+}
+
 
 std::unordered_map<std::string, core::Tensor>
 RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points,

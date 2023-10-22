@@ -179,6 +179,41 @@ Returns:
     A tensor with the number of intersections. The shape is {..}.
 )doc");
 
+    raycasting_scene.def("list_intersections",
+                         &RaycastingScene::ListIntersections, "rays"_a,
+                         "nthreads"_a = 0, R"doc(
+Lists the intersections of the rays with the scene.
+
+Args:
+    rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
+        Float32 describing the rays.
+        {..} can be any number of dimensions, e.g., to organize rays for
+        creating an image the shape can be {height, width, 6}.
+        The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+        with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+        necessary to normalize the direction although it should be normalised if 
+        t_hit is to be calculated in coordinate units.
+
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
+
+Returns:
+    The returned dictionary contains
+    
+    ray_ids
+        A tensor with ray IDs. The shape is {..}.
+        
+    geometry_ids
+        A tensor with the geometry IDs. The shape is {..}.
+
+    primitive_ids
+        A tensor with the primitive IDs, which corresponds to the triangle
+        index. The shape is {..}.
+
+    t_hit
+        A tensor with the distance to the hit. The shape is {..}. 
+        
+)doc");
+
     raycasting_scene.def("compute_closest_points",
                          &RaycastingScene::ComputeClosestPoints,
                          "query_points"_a, "nthreads"_a = 0, R"doc(
