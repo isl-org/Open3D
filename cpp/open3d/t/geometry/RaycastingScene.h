@@ -124,7 +124,7 @@ public:
     ///           closest triangle . The shape is {.., 3}.
     std::unordered_map<std::string, core::Tensor> ListIntersections(
             const core::Tensor &rays, const int nthreads = 0);
-    
+
     /// \brief Lists the intersections of the rays with the scene
     /// \param query_points A tensor with >=2 dims, shape {.., 3} and Dtype
     /// Float32 describing the query points. {..} can be any number of
@@ -138,7 +138,8 @@ public:
     ///           {..}.
     ///         - \b primitive_ids A tensor with the primitive IDs, which
     ///           corresponds to the triangle index. The shape is {..}.
-    ///         - \b t_hit A tensor with the distance to the hit. The shape is {..}. 
+    ///         - \b t_hit A tensor with the distance to the hit. The shape is
+    ///         {..}.
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
             const core::Tensor &query_points, const int nthreads = 0);
 
