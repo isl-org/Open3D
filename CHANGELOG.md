@@ -18,6 +18,7 @@
 * Changed TriangleMesh to store materials in a list so they can be accessed by the material index (PR #5938)
 * Support multi-threading in the RayCastingScene function to commit scene (PR #6051).
 * Fix some bad triangle generation in TriangleMesh::SimplifyQuadricDecimation
+* Python 3.11 support. bump pybind11 v2.6.2 -> v2.11.1
 
 ## 0.13
 

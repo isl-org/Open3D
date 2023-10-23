@@ -9,6 +9,7 @@ on:
 jobs:
 
   Linux:
+    # TODO: Convert to docker
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout source code

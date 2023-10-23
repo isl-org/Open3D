@@ -83,6 +83,7 @@ docs/tutorial/**/*.ply
 docs/tutorial/**/*.pcd
 docs/tutorial/**/*.json
 docs/_out/
+docs/_build/
 docs/python_api/
 docs/python_example/
 docs/conf.py
