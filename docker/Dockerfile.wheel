@@ -1,5 +1,5 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
-ARG BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
+ARG BASE_IMAGE=nvidia/cuda:11.7.1-cudnn8-devel-ubuntu18.04
 FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
@@ -8,14 +8,18 @@ ARG CCACHE_TAR_NAME
 ARG CMAKE_VERSION
 ARG CCACHE_VERSION
 ARG PYTHON_VERSION
+ARG BUILD_TENSORFLOW_OPS
+ARG BUILD_PYTORCH_OPS
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
-ARG CCACHE_VERSION=${CCACHE_VERSION}
+ENV CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -125,8 +129,6 @@ WORKDIR /root/Open3D
 # Build python wheel
 RUN export NPROC=$(nproc) \
  && export BUILD_SHARED_LIBS=OFF \
- && export BUILD_TENSORFLOW_OPS=ON \
- && export BUILD_PYTORCH_OPS=ON \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter
 

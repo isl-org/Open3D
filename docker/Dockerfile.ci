@@ -166,17 +166,16 @@ RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && yarn --version
 
 # Build all
-RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]; then \
-        export GLIBCXX_USE_CXX11_ABI=OFF; \
-    else \
-        export GLIBCXX_USE_CXX11_ABI=ON; \
-    fi \
- && if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+RUN \
+    if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
+        export GLIBCXX_USE_CXX11_ABI=ON; \
     else \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
+        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
+        export GLIBCXX_USE_CXX11_ABI=OFF; \
     fi \
  && mkdir build \
  && cd build \

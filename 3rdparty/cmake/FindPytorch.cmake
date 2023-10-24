@@ -97,18 +97,43 @@ foreach(lib ${TORCH_LIBRARIES})
 endforeach(lib)
 
 # Check if the c++11 ABI is compatible on Linux
-if(UNIX AND NOT APPLE AND ((Pytorch_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
-   (NOT Pytorch_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI)))
-    if(Pytorch_CXX11_ABI)
-        set(NEEDED_ABI_FLAG "ON")
+if(UNIX AND NOT APPLE)
+    if((Pytorch_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
+       (NOT Pytorch_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI))
+        if(Pytorch_CXX11_ABI)
+            set(NEEDED_ABI_FLAG "ON")
+        else()
+            set(NEEDED_ABI_FLAG "OFF")
+        endif()
+        message(FATAL_ERROR "PyTorch and Open3D ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
+                            "Please use -DGLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
+                            "in the cmake config command to change the Open3D ABI.")
     else()
-        set(NEEDED_ABI_FLAG "OFF")
+        message(STATUS "PyTorch matches Open3D ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
     endif()
-    message(FATAL_ERROR "PyTorch and Open3D ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
-                        "Please use -DGLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
-                        "in the cmake config command to change the Open3D ABI.")
-else()
-    message(STATUS "PyTorch matches Open3D ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
+endif()
+
+message(STATUS "Pytorch_VERSION: ${Pytorch_VERSION}, CUDAToolkit_VERSION: ${CUDAToolkit_VERSION}")
+if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND CUDAToolkit_VERSION
+        VERSION_GREATER_EQUAL "11.0" AND Pytorch_VERSION VERSION_LESS
+        "1.9")
+    message(WARNING
+        "--------------------------------------------------------------------------------\n"
+        "                                                                                \n"
+        " You are compiling PyTorch ops with CUDA 11 with PyTorch version < 1.9. This    \n"
+        " configuration may have stability issues. See                                   \n"
+        " https://github.com/isl-org/Open3D/issues/3324 and                              \n"
+        " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
+        " problem.                                                                       \n"
+        "                                                                                \n"
+        " We recommend to compile PyTorch from source with compile flags                 \n"
+        "   '-Xcompiler -fno-gnu-unique'                                                 \n"
+        "                                                                                \n"
+        " or use the PyTorch wheels at                                                   \n"
+        "   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2          \n"
+        "                                                                                \n"
+        "--------------------------------------------------------------------------------\n"
+    )
 endif()
 
 include(FindPackageHandleStandardArgs)

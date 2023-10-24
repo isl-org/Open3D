@@ -290,11 +290,14 @@ endif()
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
-if (BUILD_SYCL_MODULE)
+# Tensorflow 2.9+ requires cxx_17, but MSVC 19.29 throws errors with C++17
+# enabled.
+if (BUILD_SYCL_MODULE OR BUILD_TENSORFLOW_OPS)
     set(CMAKE_CXX_STANDARD 17)
 else()
     set(CMAKE_CXX_STANDARD 14)
 endif()
+set(CMAKE_CXX_EXTENSIONS OFF)   # Improved compatibility
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
