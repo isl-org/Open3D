@@ -10,8 +10,10 @@ import numpy as np
 from scipy.spatial import cKDTree
 import pytest
 import mltest
-import torch
-import tensorflow as tf
+if o3d._build_config['BUILD_PYTORCH_OPS']:
+    import torch
+if o3d._build_config['BUILD_TENSORFLOW_OPS']:
+    import tensorflow as tf
 
 # skip all tests if the ml ops were not built
 pytestmark = mltest.default_marks

@@ -35,8 +35,6 @@ jobs:
     env:
       BUILD_SHARED_LIBS: ${{ matrix.BUILD_SHARED_LIBS }}
       BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.MLOPS }}
-      BUILD_PYTORCH_OPS: ${{ matrix.MLOPS }}
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       OPEN3D_CPU_RENDERING: true
     steps:
