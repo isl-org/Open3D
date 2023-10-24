@@ -171,11 +171,7 @@ public:
     /// \param min_bound Lower bounds of the bounding box for all axes.
     /// \param max_bound Upper bounds of the bounding box for all axes.
     AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
-                           const Eigen::Vector3d& max_bound)
-        : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
-          min_bound_(min_bound),
-          max_bound_(max_bound),
-          color_(1, 1, 1) {}
+                           const Eigen::Vector3d& max_bound);
     ~AxisAlignedBoundingBox() override {}
 
 public:
