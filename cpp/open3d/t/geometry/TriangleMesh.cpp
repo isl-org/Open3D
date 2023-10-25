@@ -180,12 +180,12 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     if (num_triangles < 2) {
         return *this;
     }
-
     // unordered_map to keep track of existing triangles
     // hash function with code::Tensor not implemented so we use std::tuple
-    typedef std::tuple<int, int, int> Index3;
+    typedef std::tuple<int64_t, int64_t, int64_t> Index3;
     std::unordered_map<Index3, size_t, utility::hash_tuple<Index3>>
             triangle_to_old_index;
+    std::vector<int64_t> triangle_vec;
 
     // Check if mesh has normals triangles and colors
     bool has_tri_normal = HasTriangleNormals();
@@ -199,35 +199,27 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     for (int64_t i = 0; i < num_triangles; i++) {
         Index3 triangle_in_tuple;
         // Extract vertices of the triangle
-        core::Tensor triangle_to_check =
-                triangles.GetItem({core::TensorKey::Index(i)});
-        int64_t vertice_0 =
-                triangle_to_check.GetItem({core::TensorKey::Index(0)})
-                        .Item<int64_t>();
-        int64_t vertice_1 =
-                triangle_to_check.GetItem({core::TensorKey::Index(1)})
-                        .Item<int64_t>();
-        int64_t vertice_2 =
-                triangle_to_check.GetItem({core::TensorKey::Index(2)})
-                        .Item<int64_t>();
+        core::Tensor triangle_to_check = triangles[i];
+
+        if (triangles.GetDtype() == core::Int32) {
+            auto vertice_0 = triangle_to_check[0].Item<int32_t>();
+            auto vertice_1 = triangle_to_check[1].Item<int32_t>();
+            auto vertice_2 = triangle_to_check[2].Item<int32_t>();
+            triangle_vec = {vertice_0, vertice_1, vertice_2};
+        } else if (triangles.GetDtype() == core::Int64) {
+            auto vertice_0 = triangle_to_check[0].Item<int64_t>();
+            auto vertice_1 = triangle_to_check[1].Item<int64_t>();
+            auto vertice_2 = triangle_to_check[2].Item<int64_t>();
+            triangle_vec = {vertice_0, vertice_1, vertice_2};
+        }
+
         // We first need to find the minimum index. Because triangle (0-1-2)
         // and triangle (2-0-1) are the same.
-        if (vertice_0 <= vertice_1) {
-            if (vertice_1 <= vertice_2)
-                triangle_in_tuple =
-                        std::make_tuple(vertice_0, vertice_1, vertice_2);
-            else
-                triangle_in_tuple =
-                        std::make_tuple(vertice_0, vertice_2, vertice_1);
-        } else {
-            if (vertice_1 <= vertice_2)
-                triangle_in_tuple =
-                        std::make_tuple(vertice_1, vertice_2, vertice_0);
-            else
-                triangle_in_tuple =
-                        std::make_tuple(vertice_1, vertice_0, vertice_2);
-        }
-        // check if triangle is already present in the mesh
+        std::sort(triangle_vec.begin(), triangle_vec.end());
+        triangle_in_tuple = std::make_tuple(triangle_vec[0], triangle_vec[1],
+                                            triangle_vec[2]);
+
+        // check is triangle is already present in the mesh
         if (triangle_to_old_index.find(triangle_in_tuple) ==
             triangle_to_old_index.end()) {
             mask_of_triangles[i] = true;
