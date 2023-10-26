@@ -117,6 +117,7 @@ struct ListIntersectionsContext {
     unsigned int* ray_ids;
     unsigned int* geometry_ids;
     unsigned int* primitive_ids;
+    float* primitive_uvs;
     float* t_hit;
     Eigen::VectorXi cumsum;
     unsigned int* track_intersections;
@@ -138,6 +139,7 @@ void ListIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
     unsigned int* ray_ids = context->ray_ids;
     unsigned int* geometry_ids = context->geometry_ids;
     unsigned int* primitive_ids = context->primitive_ids;
+    float* primitive_uvs = context->primitive_uvs;
     float* t_hit = context->t_hit;
     Eigen::VectorXi cumsum = context->cumsum;
     unsigned int* track_intersections = context->track_intersections;
@@ -166,6 +168,8 @@ void ListIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
             ray_ids[idx] = ray_id;
             geometry_ids[idx] = hit.geomID;
             primitive_ids[idx] = hit.primID;
+            primitive_uvs[idx * 2 + 0] = hit.u;
+            primitive_uvs[idx * 2 + 1] = hit.v;
             t_hit[idx] = ray.tfar;
             previous_geom_prim_ID_tfar->operator[](ray_id) = gpID;
             ++(track_intersections[ray_id]);
@@ -555,6 +559,7 @@ struct RaycastingScene::Impl {
                            unsigned int* ray_ids,
                            unsigned int* geometry_ids,
                            unsigned int* primitive_ids,
+                           float* primitive_uvs,
                            float* t_hit,
                            const int nthreads) {
         CommitScene();
@@ -563,6 +568,7 @@ struct RaycastingScene::Impl {
         memset(ray_ids, 0, sizeof(uint32_t) * num_intersections);
         memset(geometry_ids, 0, sizeof(uint32_t) * num_intersections);
         memset(primitive_ids, 0, sizeof(uint32_t) * num_intersections);
+        memset(primitive_uvs, 0, sizeof(float) * num_intersections * 2);
         memset(t_hit, 0, sizeof(float) * num_intersections);
 
         std::vector<std::tuple<uint32_t, uint32_t, float>>
@@ -579,6 +585,7 @@ struct RaycastingScene::Impl {
         context.ray_ids = ray_ids;
         context.geometry_ids = geometry_ids;
         context.primitive_ids = primitive_ids;
+        context.primitive_uvs = primitive_uvs;
         context.t_hit = t_hit;
         context.cumsum = cumsum;
         context.track_intersections = track_intersections;
@@ -848,13 +855,9 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
                               intersections.GetDataPtr<int>(), nthreads);
 
     // prepare shape with that number of elements
-    // not sure how to do proper conversion
-    const core::SizeVector dim = {0};
     Eigen::Map<Eigen::VectorXi> intersections_vector(
             intersections.GetDataPtr<int>(), num_rays);
-    Eigen::Map<Eigen::VectorXi> num_intersections(
-            intersections.Sum(dim).GetDataPtr<int>(), 1);
-    shape = {num_intersections[0], 1};
+    size_t num_intersections = intersections_vector.sum();
 
     // prepare ray allocations (cumsum)
     Eigen::VectorXi cumsum = Eigen::MatrixXi::Zero(num_rays, 1);
@@ -864,17 +867,21 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
 
     // generate results structure
     std::unordered_map<std::string, core::Tensor> result;
+    shape = {intersections_vector.sum(), 1};
     result["ray_ids"] = core::Tensor(shape, core::UInt32);
     result["geometry_ids"] = core::Tensor(shape, core::UInt32);
     result["primitive_ids"] = core::Tensor(shape, core::UInt32);
     result["t_hit"] = core::Tensor(shape, core::Float32);
+    shape.back() = 2;
+    result["primitive_uvs"] = core::Tensor(shape, core::Float32);
 
     impl_->ListIntersections(data.GetDataPtr<float>(), num_rays,
-                             num_intersections[0], cumsum,
+                             num_intersections, cumsum,
                              track_intersections.GetDataPtr<uint32_t>(),
                              result["ray_ids"].GetDataPtr<uint32_t>(),
                              result["geometry_ids"].GetDataPtr<uint32_t>(),
                              result["primitive_ids"].GetDataPtr<uint32_t>(),
+                             result["primitive_uvs"].GetDataPtr<float>(),
                              result["t_hit"].GetDataPtr<float>(), nthreads);
     return result;
 }

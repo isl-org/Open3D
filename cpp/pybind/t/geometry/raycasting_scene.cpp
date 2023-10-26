@@ -182,7 +182,51 @@ Returns:
     raycasting_scene.def("list_intersections",
                          &RaycastingScene::ListIntersections, "rays"_a,
                          "nthreads"_a = 0, R"doc(
-Lists the intersections of the rays with the scene.
+Lists the intersections of the rays with the scene::
+
+    import open3d as o3d
+    import numpy as np
+
+    # Create scene and add the monkey model.
+    scene = o3d.t.geometry.RaycastingScene()
+    d = o3d.data.MonkeyModel()
+    mesh = o3d.t.io.read_triangle_mesh(d.path)    
+    mesh_id = scene.add_triangles(mesh)
+    
+    # Create an offset grid of rays.
+    p_min = np.min(mesh.vertex['positions'].numpy() - 1, axis=0)
+    p_max = np.max(mesh.vertex['positions'].numpy() - 1, axis=0)
+    x = np.arange(p_min[0], p_max[0], .1)
+    y = np.arange(p_min[1], p_max[1], .1)
+    xv, yv = np.meshgrid(x, y) 
+    orig = np.vstack([xv.flatten(), yv.flatten(), np.tile(p_min[2], xv.size)]).T
+    dest = np.copy(orig)
+    dest[:, 2] = p_max[2] + 1
+    rays = np.hstack([orig, dest - orig]).astype('float32') 
+
+    # Compute the ray intersections.
+    lx = scene.list_intersections(rays)
+
+    # Calculate intersection coordinates.
+    v = mesh.vertex['positions'].numpy()
+    t = mesh.triangle['indices'].numpy()
+    tidx = lx['primitive_ids'].numpy()
+    uv = lx['primitive_uvs'].numpy()
+    w = 1 - np.sum(uv, axis=1)
+    c = \
+      v[t[tidx, 1].flatten(), :] * uv[:, 0][:, None] + \
+      v[t[tidx, 2].flatten(), :] * uv[:, 1][:, None] + \
+      v[t[tidx, 0].flatten(), :] * w[:, None]
+      
+    # Visualize the intersections.
+    entry = o3d.geometry.PointCloud(points = o3d.utility.Vector3dVector(orig))
+    target = o3d.geometry.PointCloud(points = o3d.utility.Vector3dVector(dest))
+    correspondence = [(i, i) for i in range(rays.shape[0])]
+    traj = o3d.geometry.LineSet.create_from_point_cloud_correspondences(entry , target , correspondence)
+    traj.colors = o3d.utility.Vector3dVector(np.tile([1, 0, 0], [rays.shape[0], 1]))
+    x = o3d.geometry.PointCloud(points = o3d.utility.Vector3dVector(c))
+    o3d.visualization.draw([mesh, traj, x])
+    
 
 Args:
     rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
@@ -208,6 +252,10 @@ Returns:
     primitive_ids
         A tensor with the primitive IDs, which corresponds to the triangle
         index. The shape is {..}.
+        
+    primitive_uvs 
+        A tensor with the barycentric coordinates of the closest points within 
+        the triangles. The shape is {.., 2}.
 
     t_hit
         A tensor with the distance to the hit. The shape is {..}. 
