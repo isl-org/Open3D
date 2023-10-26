@@ -554,7 +554,7 @@ struct RaycastingScene::Impl {
     void ListIntersections(const float* const rays,
                            const size_t num_rays,
                            const size_t num_intersections,
-                           Eigen::VectorXi cumsum,
+                           const Eigen::VectorXi cumsum,
                            unsigned int* track_intersections,
                            unsigned int* ray_ids,
                            unsigned int* geometry_ids,
