@@ -254,7 +254,7 @@ Returns:
         index. The shape is {..}.
         
     primitive_uvs 
-        A tensor with the barycentric coordinates of the closest points within 
+        A tensor with the barycentric coordinates of the intersection points within 
         the triangles. The shape is {.., 2}.
 
     t_hit
