@@ -554,7 +554,7 @@ struct RaycastingScene::Impl {
     void ListIntersections(const float* const rays,
                            const size_t num_rays,
                            const size_t num_intersections,
-                           const Eigen::VectorXi cumsum,
+                           const Eigen::VectorXi& cumsum,
                            unsigned int* track_intersections,
                            unsigned int* ray_ids,
                            unsigned int* geometry_ids,
@@ -842,6 +842,7 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
                                    const int nthreads) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
                                                  impl_->tensor_device_);
+
     auto shape = rays.GetShape();
     shape.pop_back();  // Remove last dim, we want to use this shape for the
                        // results.
@@ -867,12 +868,18 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
 
     // generate results structure
     std::unordered_map<std::string, core::Tensor> result;
-    shape = {intersections_vector.sum(), 1};
+    result["ray_splits"] = core::Tensor({cumsum.size() + 1}, core::UInt32);
+    uint32_t* ptr = result["ray_splits"].GetDataPtr<uint32_t>();
+    ptr[0] = 0;
+    for (int i = 1; i < cumsum.size() + 1; ++i) {
+        ptr[i] = cumsum[i - 1];
+    }
+    shape = {intersections_vector.sum()};
     result["ray_ids"] = core::Tensor(shape, core::UInt32);
     result["geometry_ids"] = core::Tensor(shape, core::UInt32);
     result["primitive_ids"] = core::Tensor(shape, core::UInt32);
     result["t_hit"] = core::Tensor(shape, core::Float32);
-    shape.back() = 2;
+    shape.push_back(2);
     result["primitive_uvs"] = core::Tensor(shape, core::Float32);
 
     impl_->ListIntersections(data.GetDataPtr<float>(), num_rays,

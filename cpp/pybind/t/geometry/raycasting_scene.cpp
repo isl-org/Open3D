@@ -246,6 +246,9 @@ Returns:
     ray_ids
         A tensor with ray IDs. The shape is {..}.
         
+    ray_splits
+        A tensor with ray intersection splits. Can be used to iterate over all intersections for each ray. The shape is {..}.        
+        
     geometry_ids
         A tensor with the geometry IDs. The shape is {..}.
 
@@ -259,6 +262,16 @@ Returns:
 
     t_hit
         A tensor with the distance to the hit. The shape is {..}. 
+        
+An example of using ray_splits::
+
+    ray_splits: [0, 2, 3, 6, 6, 8] # note that the length of this is num_rays+1
+    t_hit: [t1, t2, t3, t4, t5, t6, t7, t8]
+
+    for ray_id, (start, end) in enumerate(zip(ray_splits[:-1], ray_splits[1:])):
+        for i,t in enumerate(t_hit[start:end]):
+            print(f'ray {ray_id}, intersection {i} at {t}')
+            
         
 )doc");
 

@@ -134,6 +134,9 @@ public:
     /// \param nthreads The number of threads to use. Set to 0 for automatic.
     /// \return The returned dictionary contains:
     ///         - \b ray_ids A tensor with ray IDs. The shape is {..}.
+    ///         - \b ray_splits A tensor with ray intersection splits. Can be
+    ///         used to iterate over all intersections for each ray. The shape
+    ///         is {..}.
     ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
     ///           {..}.
     ///         - \b primitive_ids A tensor with the primitive IDs, which
