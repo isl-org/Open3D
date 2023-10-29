@@ -868,13 +868,14 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
 
     // generate results structure
     std::unordered_map<std::string, core::Tensor> result;
-    result["ray_splits"] = core::Tensor({cumsum.size() + 1}, core::UInt32);
+    shape[0] = shape[0] + 1;
+    result["ray_splits"] = core::Tensor(shape, core::UInt32);
     uint32_t* ptr = result["ray_splits"].GetDataPtr<uint32_t>();
     ptr[0] = 0;
     for (int i = 1; i < cumsum.size() + 1; ++i) {
         ptr[i] = cumsum[i - 1];
     }
-    shape = {intersections_vector.sum()};
+    shape[0] = intersections_vector.sum();
     result["ray_ids"] = core::Tensor(shape, core::UInt32);
     result["geometry_ids"] = core::Tensor(shape, core::UInt32);
     result["primitive_ids"] = core::Tensor(shape, core::UInt32);

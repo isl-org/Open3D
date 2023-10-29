@@ -78,7 +78,7 @@ class CppFormatter:
         """
         Returns (true, true) if (style, header) is valid.
         """
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             is_valid_header = f.read().startswith(CppFormatter.standard_header)
 
         cmd = [
@@ -156,7 +156,7 @@ class PythonFormatter:
         Returns (true, true) if (style, header) is valid.
         """
 
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
             is_valid_header = (len(content) == 0 or content.startswith(
                 PythonFormatter.standard_header))
@@ -218,7 +218,7 @@ class JupyterFormatter:
         are merged into one.
         """
         # Ref: https://gist.github.com/oskopek/496c0d96c79fb6a13692657b39d7c709
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding='utf-8') as f:
             notebook = nbformat.read(f, as_version=nbformat.NO_CONVERT)
         nbformat.validate(notebook)
 
@@ -241,7 +241,7 @@ class JupyterFormatter:
                 changed = True
 
         if apply:
-            with open(file_path, "w") as f:
+            with open(file_path, "w", encoding='utf-8') as f:
                 nbformat.write(notebook, f, version=nbformat.NO_CONVERT)
 
         return not changed

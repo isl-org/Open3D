@@ -150,7 +150,7 @@ def test_list_intersections():
     ans = scene.list_intersections(rays)
 
     np.testing.assert_allclose(ans['t_hit'].numpy(),
-                               np.array([[1.0], [2.0], [0.5]]),
+                               np.array([1.0, 2.0, 0.5]),
                                rtol=1e-6,
                                atol=1e-6)
 
