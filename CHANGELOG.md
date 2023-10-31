@@ -20,6 +20,7 @@
 * Fix some bad triangle generation in TriangleMesh::SimplifyQuadricDecimation
 * Fix printing of tensor in gpu and add validation check for bounds of axis-aligned bounding box (PR #6444)  
 * Python 3.11 support. bump pybind11 v2.6.2 -> v2.11.1
+* Check for support of CUDA Memory Pools at runtime (#4679)
 
 ## 0.13
 

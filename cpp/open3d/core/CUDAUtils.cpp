@@ -108,6 +108,27 @@ void AssertCUDADeviceAvailable(const Device& device) {
     }
 }
 
+bool SupportsMemoryPools(const Device& device) {
+#if defined(BUILD_CUDA_MODULE) && (CUDART_VERSION >= 11020)
+    if (device.IsCUDA()) {
+        int driverVersion = 0;
+        int deviceSupportsMemoryPools = 0;
+        OPEN3D_CUDA_CHECK(cudaDriverGetVersion(&driverVersion));
+        if (driverVersion >=
+            11020) {  // avoid invalid value error in cudaDeviceGetAttribute
+            OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(
+                    &deviceSupportsMemoryPools, cudaDevAttrMemoryPoolsSupported,
+                    device.GetID()));
+        }
+        return !!deviceSupportsMemoryPools;
+    } else {
+        return false;
+    }
+#else
+    return false;
+#endif
+}
+
 #ifdef BUILD_CUDA_MODULE
 int GetDevice() {
     int device;
