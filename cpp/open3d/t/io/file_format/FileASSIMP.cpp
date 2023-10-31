@@ -256,7 +256,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     // Guaranteed to have both vertex positions and triangle indices
     auto vertices = mesh.GetVertexPositions().Contiguous();
     auto indices =
-            mesh.GetTriangleIndices().Contiguous().To(core::Dtype::UInt32);
+            mesh.GetTriangleIndices().To(core::Dtype::UInt32).Contiguous();
     ai_mesh->mNumVertices = vertices.GetShape(0);
     ai_mesh->mVertices = new aiVector3D[ai_mesh->mNumVertices];
     memcpy(&ai_mesh->mVertices->x, vertices.GetDataPtr(),
