@@ -70,9 +70,9 @@ install_python_dependencies() {
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
         # TF happily installs both CPU and GPU versions at the same time, so remove the other
         python -m pip uninstall --yes "$TF_ARCH_DISABLE_NAME"
-        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"    # ML/requirements-tensorflow.txt
+        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" # ML/requirements-tensorflow.txt
     fi
-    if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then    # ML/requirements-torch.txt
+    if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard
 
@@ -414,9 +414,10 @@ build_docs() {
         -DBUILD_WEBRTC=OFF \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         ..
-    make install-pip-package -j$NPROC
+    make python-package -j$NPROC
     make -j$NPROC
     bin/GLInfo
+    export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}:$PWD/lib/python_package"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never
@@ -434,7 +435,7 @@ build_docs() {
         -DBUILD_WEBRTC=ON \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         ..
-    make install-pip-package -j$NPROC
+    make python-package -j$NPROC
     make -j$NPROC
     bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
