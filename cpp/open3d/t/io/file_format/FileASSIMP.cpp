@@ -176,11 +176,11 @@ bool ReadTriangleMeshUsingASSIMP(
     return true;
 }
 
-void SetTextureMaterialProperty(aiMaterial* mat,
-                                aiScene* scene,
-                                int texture_idx,
-                                aiTextureType tt,
-                                t::geometry::Image& img) {
+static void SetTextureMaterialProperty(aiMaterial* mat,
+                                       aiScene* scene,
+                                       int texture_idx,
+                                       aiTextureType tt,
+                                       t::geometry::Image& img) {
     // Encode image as PNG
     std::vector<uint8_t> img_buffer;
     WriteImageToPNGInMemory(img_buffer, img, 6);
