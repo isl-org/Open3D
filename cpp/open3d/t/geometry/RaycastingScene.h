@@ -105,13 +105,11 @@ public:
                                     const int nthreads = 0);
 
     /// \brief Computes the closest points on the surfaces of the scene.
-    /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
-    /// describing the rays.
-    /// {..} can be any number of dimensions, e.g., to organize rays for
-    /// creating an image the shape can be {height, width, 6};
-    /// The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
-    /// with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
-    /// necessary to normalize the direction.
+    /// \param query_points A tensor with >=2 dims, shape {.., 3} and Dtype
+    /// Float32 describing the query points. {..} can be any number of
+    /// dimensions, e.g., to organize the query_point to create a 3D grid the
+    /// shape can be {depth, height, width, 3}. The last dimension must be 3 and
+    /// has the format [x, y, z].
     /// \param nthreads The number of threads to use. Set to 0 for automatic.
     /// \return The returned dictionary contains:
     ///         - \b points A tensor with the closest surface points. The shape

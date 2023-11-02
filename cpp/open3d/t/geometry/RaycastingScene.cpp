@@ -872,10 +872,10 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
     shape.push_back(num_rays + 1);
     result["ray_splits"] = core::Tensor(shape, core::UInt32);
     uint32_t* ptr = result["ray_splits"].GetDataPtr<uint32_t>();
-    ptr[0] = 0;
-    for (int i = 1; i < cumsum.size() + 1; ++i) {
-        ptr[i] = cumsum[i - 1];
+    for (int i = 0; i < cumsum.size(); ++i) {
+        ptr[i] = cumsum[i];
     }
+    ptr[num_rays] = num_intersections;
     shape[0] = intersections_vector.sum();
     result["ray_ids"] = core::Tensor(shape, core::UInt32);
     result["geometry_ids"] = core::Tensor(shape, core::UInt32);
