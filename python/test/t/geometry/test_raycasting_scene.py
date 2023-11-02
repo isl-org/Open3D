@@ -305,11 +305,10 @@ def test_output_shapes(shape):
     ans = scene.list_intersections(rays)
     nx = np.sum(scene.count_intersections(rays).numpy()).tolist()
     for k, v in ans.items():
-        alt_shape = np.copy(shape)
         if k == 'ray_splits':
-            alt_shape[0] = shape[0] + 1
+            alt_shape = [np.prod(rays.shape[:-1]) + 1]
         else:
-            alt_shape[0] = nx
+            alt_shape = [nx]
         #use np.append otherwise issues if alt_shape = [0] and last_dim[k] = []
         expected_shape = np.append(alt_shape, last_dim[k]).tolist()
         assert list(

@@ -231,9 +231,7 @@ Lists the intersections of the rays with the scene::
 
 Args:
     rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
-        Float32 describing the rays.
-        {..} can be any number of dimensions, e.g., to organize rays for
-        creating an image the shape can be {height, width, 6}.
+        Float32 describing the rays; {..} can be any number of dimensions.
         The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
         with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
         necessary to normalize the direction although it should be normalised if 
@@ -244,25 +242,26 @@ Args:
 Returns:
     The returned dictionary contains
     
-    ray_ids
-        A tensor with ray IDs. The shape is {..}.
-        
     ray_splits
-        A tensor with ray intersection splits. Can be used to iterate over all intersections for each ray. The shape is {..}.        
+        A tensor with ray intersection splits. Can be used to iterate over all intersections for each ray. The shape is {num_rays + 1}.
+    
+    ray_ids
+        A tensor with ray IDs. The shape is {num_intersections}.
+        
+    t_hit
+        A tensor with the distance to the hit. The shape is {num_intersections}. 
         
     geometry_ids
-        A tensor with the geometry IDs. The shape is {..}.
+        A tensor with the geometry IDs. The shape is {num_intersections}.
 
     primitive_ids
         A tensor with the primitive IDs, which corresponds to the triangle
-        index. The shape is {..}.
+        index. The shape is {num_intersections}.
         
     primitive_uvs 
         A tensor with the barycentric coordinates of the intersection points within 
-        the triangles. The shape is {.., 2}.
-
-    t_hit
-        A tensor with the distance to the hit. The shape is {..}. 
+        the triangles. The shape is {num_intersections, 2}.
+    
         
 An example of using ray_splits::
 

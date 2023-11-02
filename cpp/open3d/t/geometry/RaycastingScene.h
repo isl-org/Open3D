@@ -105,11 +105,13 @@ public:
                                     const int nthreads = 0);
 
     /// \brief Computes the closest points on the surfaces of the scene.
-    /// \param query_points A tensor with >=2 dims, shape {.., 3} and Dtype
-    /// Float32 describing the query points. {..} can be any number of
-    /// dimensions, e.g., to organize the query_point to create a 3D grid the
-    /// shape can be {depth, height, width, 3}. The last dimension must be 3 and
-    /// has the format [x, y, z].
+    /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
+    /// describing the rays.
+    /// {..} can be any number of dimensions, e.g., to organize rays for
+    /// creating an image the shape can be {height, width, 6};
+    /// The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+    /// with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+    /// necessary to normalize the direction.
     /// \param nthreads The number of threads to use. Set to 0 for automatic.
     /// \return The returned dictionary contains:
     ///         - \b points A tensor with the closest surface points. The shape
@@ -126,26 +128,29 @@ public:
             const core::Tensor &rays, const int nthreads = 0);
 
     /// \brief Lists the intersections of the rays with the scene
-    /// \param query_points A tensor with >=2 dims, shape {.., 3} and Dtype
-    /// Float32 describing the query points. {..} can be any number of
-    /// dimensions, e.g., to organize the query_point to create a 3D grid the
-    /// shape can be {depth, height, width, 3}. The last dimension must be 3 and
-    /// has the format [x, y, z].
+    /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
+    /// describing the rays; {..} can be any number of dimensions.
+    /// The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+    /// with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+    /// necessary to normalize the direction although it should be normalised if
+    /// t_hit is to be calculated in coordinate units.
     /// \param nthreads The number of threads to use. Set to 0 for automatic.
-    /// \return The returned dictionary contains:
-    ///         - \b ray_ids A tensor with ray IDs. The shape is {..}.
+    /// \return The returned dictionary contains:    ///
     ///         - \b ray_splits A tensor with ray intersection splits. Can be
     ///         used to iterate over all intersections for each ray. The shape
-    ///         is {..}.
+    ///         is {num_rays + 1}.
+    ///         - \b ray_ids A tensor with ray IDs. The shape is
+    ///         {num_intersections}.
+    ///         - \b t_hit A tensor with the distance to the hit. The shape is
+    ///         {num_intersections}.
     ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
-    ///           {..}.
+    ///           {num_intersections}.
     ///         - \b primitive_ids A tensor with the primitive IDs, which
-    ///           corresponds to the triangle index. The shape is {..}.
+    ///           corresponds to the triangle index. The shape is
+    ///           {num_intersections}.
     ///         - \b primitive_uvs A tensor with the barycentric coordinates of
     ///           the intersection points within the triangles. The shape is
-    ///           {.., 2}.
-    ///         - \b t_hit A tensor with the distance to the hit. The shape is
-    ///         {..}.
+    ///           {num_intersections, 2}.
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
             const core::Tensor &query_points, const int nthreads = 0);
 

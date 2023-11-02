@@ -868,7 +868,8 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
 
     // generate results structure
     std::unordered_map<std::string, core::Tensor> result;
-    shape[0] = shape[0] + 1;
+    shape.clear();
+    shape.push_back(num_rays + 1);
     result["ray_splits"] = core::Tensor(shape, core::UInt32);
     uint32_t* ptr = result["ray_splits"].GetDataPtr<uint32_t>();
     ptr[0] = 0;
