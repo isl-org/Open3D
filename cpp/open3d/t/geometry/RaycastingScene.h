@@ -104,7 +104,6 @@ public:
     core::Tensor CountIntersections(const core::Tensor &rays,
                                     const int nthreads = 0);
 
-
     /// \brief Lists the intersections of the rays with the scene
     /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
     /// describing the rays; {..} can be any number of dimensions.
