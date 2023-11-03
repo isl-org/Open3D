@@ -104,26 +104,6 @@ public:
     core::Tensor CountIntersections(const core::Tensor &rays,
                                     const int nthreads = 0);
 
-    /// \brief Computes the closest points on the surfaces of the scene.
-    /// \param query_points A tensor with >=2 dims, shape {.., 3} and Dtype
-    /// Float32 describing the query points. {..} can be any number of
-    /// dimensions, e.g., to organize the query_point to create a 3D grid the
-    /// shape can be {depth, height, width, 3}. The last dimension must be 3 and
-    /// has the format [x, y, z].
-    /// \param nthreads The number of threads to use. Set to 0 for automatic.
-    /// \return The returned dictionary contains:
-    ///         - \b points A tensor with the closest surface points. The shape
-    ///           is {..}.
-    ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
-    ///           {..}.
-    ///         - \b primitive_ids A tensor with the primitive IDs, which
-    ///           corresponds to the triangle index. The shape is {..}.
-    ///         - \b primitive_uvs A tensor with the barycentric coordinates of
-    ///           the closest points within the triangles. The shape is {.., 2}.
-    ///         - \b primitive_normals A tensor with the normals of the
-    ///           closest triangle . The shape is {.., 3}.
-    std::unordered_map<std::string, core::Tensor> ListIntersections(
-            const core::Tensor &rays, const int nthreads = 0);
 
     /// \brief Lists the intersections of the rays with the scene
     /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
@@ -149,6 +129,27 @@ public:
     ///         - \b primitive_uvs A tensor with the barycentric coordinates of
     ///           the intersection points within the triangles. The shape is
     ///           {num_intersections, 2}.
+    std::unordered_map<std::string, core::Tensor> ListIntersections(
+            const core::Tensor &rays, const int nthreads = 0);
+
+    /// \brief Computes the closest points on the surfaces of the scene.
+    /// \param query_points A tensor with >=2 dims, shape {.., 3} and Dtype
+    /// Float32 describing the query points. {..} can be any number of
+    /// dimensions, e.g., to organize the query_point to create a 3D grid the
+    /// shape can be {depth, height, width, 3}. The last dimension must be 3 and
+    /// has the format [x, y, z].
+    /// \param nthreads The number of threads to use. Set to 0 for automatic.
+    /// \return The returned dictionary contains:
+    ///         - \b points A tensor with the closest surface points. The shape
+    ///           is {..}.
+    ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
+    ///           {..}.
+    ///         - \b primitive_ids A tensor with the primitive IDs, which
+    ///           corresponds to the triangle index. The shape is {..}.
+    ///         - \b primitive_uvs A tensor with the barycentric coordinates of
+    ///           the closest points within the triangles. The shape is {.., 2}.
+    ///         - \b primitive_normals A tensor with the normals of the
+    ///           closest triangle . The shape is {.., 3}.
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
             const core::Tensor &query_points, const int nthreads = 0);
 
