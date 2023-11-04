@@ -1,0 +1,20 @@
+{% if display_all_docs_versions %}
+{# Add rst-badge after rst-versions for small badge style. #}
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      <span class="fa fa-book"> Docs version</span>
+      {{ version }}
+      <span class="fa fa-caret-down"></span>
+    </span>
+    <!-- A hack to include an external page to get around CORS policy -->
+    <!-- https://stackoverflow.com/a/15250208/1255535 -->
+    <div class="rst-other-versions">
+        <dl>
+        <dt>{{ _('Versions') }}</dt>
+            <dd><ul>
+                <script src="http://www.open3d.org/docs/versions.js"></script>
+            </ul></dd>
+        </dl>
+    </div>
+  </div>
+{% endif %}
