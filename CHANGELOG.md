@@ -1,5 +1,6 @@
 ## Master
 
+* Fix ComputeRMSE bug when ColoredICP.
 * Fix tensor based TSDF integration example.
 * Use GLIBCXX_USE_CXX11_ABI=ON by default
 * Python 3.9 support. Tensorflow bump 2.4.1 -> 2.5.0. PyTorch bump 1.7.1 -> 1.8.1 (LTS)
