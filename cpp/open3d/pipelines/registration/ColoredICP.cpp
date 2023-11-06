@@ -208,7 +208,7 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
         residual += residual_geometric * residual_geometric +
                     residual_photometric * residual_photometric;
     }
-    return residual;
+    return std::sqrt(residual / (double)corres.size());
 };
 
 RegistrationResult RegistrationColoredICP(
