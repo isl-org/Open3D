@@ -420,6 +420,96 @@ def test_pickle(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
+def test_select_faces_by_mask_32(device):
+    sphere_custom = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, o3c.float64, o3c.int32, device)
+
+    expected_verts = o3c.Tensor(
+        [[0.0, 0.0, 1.0], [0.866025, 0, 0.5], [0.433013, 0.75, 0.5],
+         [-0.866025, 0.0, 0.5], [-0.433013, -0.75, 0.5], [0.433013, -0.75, 0.5]
+        ], o3c.float64, device)
+
+    expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
+                               o3c.int32, device)
+
+    # check indices shape mismatch
+    mask_2d = o3c.Tensor([[False, False], [False, False], [False, False]],
+                         o3c.bool, device)
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_faces_by_mask(mask_2d)
+
+    # check indices type mismatch
+    mask_float = o3c.Tensor([
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ], o3c.float32, device)
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_faces_by_mask(mask_float)
+
+    # check the basic case
+    mask = o3c.Tensor([
+        True, False, False, False, False, False, True, False, True, False, True,
+        False, False, False, False, False, False, False, False, False, False,
+        False, False, False
+    ], o3c.bool, device)
+    selected = sphere_custom.select_faces_by_mask(mask)
+    assert selected.vertex.positions.allclose(expected_verts)
+    assert selected.triangle.indices.allclose(expected_tris)
+
+    # check that the original mesh is unmodified
+    untouched_sphere = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, o3c.float64, o3c.int32, device)
+    assert sphere_custom.vertex.positions.allclose(
+        untouched_sphere.vertex.positions)
+    assert sphere_custom.triangle.indices.allclose(
+        untouched_sphere.triangle.indices)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_select_faces_by_mask_64(device):
+    sphere_custom = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, o3c.float64, o3c.int64, device)
+
+    # check indices shape mismatch
+    mask_2d = o3c.Tensor([[False, False], [False, False], [False, False]],
+                         o3c.bool, device)
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_faces_by_mask(mask_2d)
+
+    # check indices type mismatch
+    mask_float = o3c.Tensor([
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ], o3c.float32, device)
+    with pytest.raises(RuntimeError):
+        selected = sphere_custom.select_faces_by_mask(mask_float)
+
+    expected_verts = o3c.Tensor(
+        [[0.0, 0.0, 1.0], [0.866025, 0, 0.5], [0.433013, 0.75, 0.5],
+         [-0.866025, 0.0, 0.5], [-0.433013, -0.75, 0.5], [0.433013, -0.75, 0.5]
+        ], o3c.float64, device)
+
+    expected_tris = o3c.Tensor([[0, 1, 2], [0, 3, 4], [0, 4, 5], [0, 5, 1]],
+                               o3c.int64, device)
+    # check the basic case
+    mask = o3c.Tensor([
+        True, False, False, False, False, False, True, False, True, False, True,
+        False, False, False, False, False, False, False, False, False, False,
+        False, False, False
+    ], o3c.bool, device)
+
+    selected = sphere_custom.select_faces_by_mask(mask)
+    assert selected.vertex.positions.allclose(expected_verts)
+    assert selected.triangle.indices.allclose(expected_tris)
+
+    # check that the original mesh is unmodified
+    untouched_sphere = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, o3c.float64, o3c.int64, device)
+    assert sphere_custom.vertex.positions.allclose(
+        untouched_sphere.vertex.positions)
+    assert sphere_custom.triangle.indices.allclose(
+        untouched_sphere.triangle.indices)
+
+
+@pytest.mark.parametrize("device", list_devices())
 def test_select_by_index_32(device):
     sphere_custom = o3d.t.geometry.TriangleMesh.create_sphere(
         1, 3, o3c.float64, o3c.int32, device)

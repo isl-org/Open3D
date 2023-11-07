@@ -1042,6 +1042,17 @@ static void CopyAttributesByMasks(TriangleMesh &dst,
 }
 
 TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
+    if (!HasVertexPositions()) {
+        utility::LogWarning(
+                "[SelectFacesByMask] mesh has no vertex positions.");
+        return {};
+    }
+    if (!HasTriangleIndices()) {
+        utility::LogWarning(
+                "[SelectFacesByMask] mesh has no triangle indices.");
+        return {};
+    }
+
     core::AssertTensorShape(mask, {GetTriangleIndices().GetLength()});
     core::AssertTensorDtype(mask, core::Bool);
     GetTriangleAttr().AssertSizeSynchronized();
@@ -1050,55 +1061,32 @@ TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
     // select triangles
     core::Tensor tris = GetTriangleIndices().IndexGet({mask});
     core::Tensor tris_cpu = tris.To(core::Device()).Contiguous();
-    const int64_t num_tris = tris_cpu.GetLength();
 
     // create mask for vertices that are part of the selected faces
     const int64_t num_verts = GetVertexPositions().GetLength();
-    core::Tensor vertex_mask = core::Tensor::Zeros({num_verts}, core::Int32);
-    std::vector<int64_t> prefix_sum(num_verts + 1, 0);
-    {
-        int32_t *vertex_mask_ptr = vertex_mask.GetDataPtr<int32_t>();
-        if (tris_cpu.GetDtype() == core::Int32) {
-            int32_t *vert_idx_ptr = tris_cpu.GetDataPtr<int32_t>();
-            for (int64_t i = 0; i < tris_cpu.GetLength() * 3; ++i) {
-                vertex_mask_ptr[vert_idx_ptr[i]] = 1;
-            }
-        } else {
-            int64_t *vert_idx_ptr = tris_cpu.GetDataPtr<int64_t>();
-            for (int64_t i = 0; i < tris_cpu.GetLength() * 3; ++i) {
-                vertex_mask_ptr[vert_idx_ptr[i]] = 1;
-            }
-        }
-        utility::InclusivePrefixSum(
-                vertex_mask_ptr, vertex_mask_ptr + num_verts, &prefix_sum[1]);
-    }
+    // empty tensor to further construct the vertex mask
+    core::Tensor vertex_mask;
 
-    // update triangle indices
-    if (tris_cpu.GetDtype() == core::Int32) {
-        int32_t *vert_idx_ptr = tris_cpu.GetDataPtr<int32_t>();
+    DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(tris_cpu.GetDtype(), tris, [&]() {
+        vertex_mask = core::Tensor::Zeros(
+                {num_verts}, core::Dtype::FromType<scalar_tris_t>());
+        const int64_t num_tris = tris_cpu.GetLength();
+        scalar_tris_t *vertex_mask_ptr =
+                vertex_mask.GetDataPtr<scalar_tris_t>();
+        scalar_tris_t *vert_idx_ptr = tris_cpu.GetDataPtr<scalar_tris_t>();
+        // mask for the vertices, which are used in the triangles
         for (int64_t i = 0; i < num_tris * 3; ++i) {
-            int64_t new_idx = prefix_sum[vert_idx_ptr[i]];
-            vert_idx_ptr[i] = int32_t(new_idx);
+            vertex_mask_ptr[vert_idx_ptr[i]] = 1;
         }
-    } else {
-        int64_t *vert_idx_ptr = tris_cpu.GetDataPtr<int64_t>();
-        for (int64_t i = 0; i < num_tris * 3; ++i) {
-            int64_t new_idx = prefix_sum[vert_idx_ptr[i]];
-            vert_idx_ptr[i] = new_idx;
-        }
-    }
+        UpdateTriangleIndicesByVertexMask<scalar_tris_t>(tris_cpu, vertex_mask);
+    });
 
     tris = tris_cpu.To(GetDevice());
     vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
     core::Tensor verts = GetVertexPositions().IndexGet({vertex_mask});
     TriangleMesh result(verts, tris);
 
-    // copy attributes
-    for (auto item : GetVertexAttr()) {
-        if (!result.HasVertexAttr(item.first)) {
-            result.SetVertexAttr(item.first,
-                                 item.second.IndexGet({vertex_mask}));
-        }
+    CopyAttributesByMasks(result, *this, vertex_mask, mask);
 
     return result;
 }

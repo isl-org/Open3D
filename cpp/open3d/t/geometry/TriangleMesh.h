@@ -927,7 +927,8 @@ public:
     /// Returns a new mesh with the faces selected by a boolean mask.
     /// \param mask A boolean mask with the shape (N) with N as the number of
     /// faces in the mesh.
-    /// \return A new mesh with the selected faces.
+    /// \return A new mesh with the selected faces. If the original mesh is
+    /// empty, return an empty mesh.
     TriangleMesh SelectFacesByMask(const core::Tensor &mask) const;
 
     /// Returns a new mesh with the vertices selected by a vector of indices.

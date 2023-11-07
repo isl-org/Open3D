@@ -901,7 +901,7 @@ Args:
         number of faces in the mesh.
     
 Returns:
-    A new mesh with the selected faces.
+    A new mesh with the selected faces. If the original mesh is empty, return an empty mesh.
 
 Example:
 
