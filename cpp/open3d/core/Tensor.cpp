@@ -22,6 +22,7 @@
 #include "open3d/core/TensorFunction.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
+#include "open3d/core/kernel/IndexReduction.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/core/linalg/Det.h"
 #include "open3d/core/linalg/Inverse.h"
@@ -749,7 +750,7 @@ std::string Tensor::ToString(bool with_suffix,
     std::ostringstream rc;
     if (IsCUDA() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
-        rc << host_contiguous_tensor.ToString(false, "");
+        rc << host_contiguous_tensor.ToString(with_suffix, indent);
     } else {
         if (shape_.NumElements() == 0) {
             rc << indent;
@@ -953,6 +954,43 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
 
     kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
+}
+
+void Tensor::IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src) {
+    if (index.NumDims() != 1) {
+        utility::LogError("IndexAdd_ only supports 1D index tensors.");
+    }
+
+    // Dim check.
+    if (dim < 0) {
+        utility::LogError("IndexAdd_ only supports sum at non-negative dim.");
+    }
+    if (NumDims() <= dim) {
+        utility::LogError("Sum dim {} exceeds tensor dim {}.", dim, NumDims());
+    }
+
+    // shape check
+    if (src.NumDims() != NumDims()) {
+        utility::LogError(
+                "IndexAdd_ only supports src tensor with same dimension as "
+                "this tensor.");
+    }
+    for (int64_t d = 0; d < NumDims(); ++d) {
+        if (d != dim && src.GetShape(d) != GetShape(d)) {
+            utility::LogError(
+                    "IndexAdd_ only supports src tensor with same shape as "
+                    "this "
+                    "tensor except dim {}.",
+                    dim);
+        }
+    }
+
+    // Type check.
+    AssertTensorDtype(index, core::Int64);
+    AssertTensorDtype(*this, src.GetDtype());
+
+    // Apply kernel.
+    kernel::IndexAdd_(dim, index, src, *this);
 }
 
 Tensor Tensor::Permute(const SizeVector& dims) const {

@@ -140,8 +140,11 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     using MaterialParameter =
             geometry::TriangleMesh::Material::MaterialParameter;
 
-    for (auto& material : materials) {
-        auto& meshMaterial = mesh.materials_[material.name];
+    mesh.materials_.resize(materials.size());
+    for (std::size_t i = 0; i < materials.size(); ++i) {
+        auto& material = materials[i];
+        mesh.materials_[i].first = material.name;
+        auto& meshMaterial = mesh.materials_[i].second;
 
         meshMaterial.baseColor = MaterialParameter::CreateRGB(
                 material.diffuse[0], material.diffuse[1], material.diffuse[2]);

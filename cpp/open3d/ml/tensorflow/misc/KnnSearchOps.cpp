@@ -67,7 +67,7 @@ REGISTER_OP("Open3DKnnSearch")
                 neighbors_distance_shape = c->MakeShape({0});
             c->set_output(2, neighbors_distance_shape);
 
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Computes the indices of k nearest neighbors.

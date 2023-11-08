@@ -974,28 +974,28 @@ void pybind_redwood_indoor_living_room1(py::module& m) {
                     R"doc(RedwoodIndoorLivingRoom1 (Augmented ICL-NUIM Dataset)
 Data class for `RedwoodIndoorLivingRoom1`, containing dense point
 cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-sequence, and ground-truth camera trajectory.
+sequence, and ground-truth camera trajectory. ::
 
-RedwoodIndoorLivingRoom1
-├── colors
-│   ├── 00000.jpg
-│   ├── 00001.jpg
-│   ├── ...
-│   └── 02869.jpg
-├── depth
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02869.png
-├── depth_noisy
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02869.png
-├── dist-model.txt
-├── livingroom1.oni
-├── livingroom1-traj.txt
-└── livingroom.ply
+    RedwoodIndoorLivingRoom1
+    |-- colors
+    |   |-- 00000.jpg
+    |   |-- 00001.jpg
+    |   |-- ...
+    |   '-- 02869.jpg
+    |-- depth
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02869.png
+    |-- depth_noisy
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02869.png
+    |-- dist-model.txt
+    |-- livingroom1.oni
+    |-- livingroom1-traj.txt
+    '-- livingroom.ply
 )doc");
     dataset.def(py::init<const std::string&>(), "data_root"_a = "");
     dataset.def_property_readonly("point_cloud_path",
@@ -1029,28 +1029,28 @@ void pybind_redwood_indoor_living_room2(py::module& m) {
                     R"doc(RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
 Data class for `RedwoodIndoorLivingRoom2`, containing dense point
 cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-sequence, and ground-truth camera trajectory.
+sequence, and ground-truth camera trajectory. ::
 
-RedwoodIndoorLivingRoom2
-├── colors
-│   ├── 00000.jpg
-│   ├── 00001.jpg
-│   ├── ...
-│   └── 02349.jpg
-├── depth
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02349.png
-├── depth_noisy
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02349.png
-├── dist-model.txt
-├── livingroom2.oni
-├── livingroom2-traj.txt
-└── livingroom.ply
+    RedwoodIndoorLivingRoom2
+    |-- colors
+    |   |-- 00000.jpg
+    |   |-- 00001.jpg
+    |   |-- ...
+    |   '-- 02349.jpg
+    |-- depth
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02349.png
+    |-- depth_noisy
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02349.png
+    |-- dist-model.txt
+    |-- livingroom2.oni
+    |-- livingroom2-traj.txt
+    '-- livingroom.ply
 )doc");
     dataset.def(py::init<const std::string&>(), "data_root"_a = "");
     dataset.def_property_readonly("point_cloud_path",
@@ -1083,28 +1083,28 @@ void pybind_redwood_indoor_office1(py::module& m) {
                     R"doc(RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
 Data class for `RedwoodIndoorOffice1`, containing dense point
 cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-sequence, and ground-truth camera trajectory.
+sequence, and ground-truth camera trajectory. ::
 
-RedwoodIndoorOffice1
-├── colors
-│   ├── 00000.jpg
-│   ├── 00001.jpg
-│   ├── ...
-│   └── 02689.jpg
-├── depth
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02689.png
-├── depth_noisy
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02689.png
-├── dist-model.txt
-├── office1.oni
-├── office1-traj.txt
-└── office.ply
+    RedwoodIndoorOffice1
+    |-- colors
+    |   |-- 00000.jpg
+    |   |-- 00001.jpg
+    |   |-- ...
+    |   '-- 02689.jpg
+    |-- depth
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02689.png
+    |-- depth_noisy
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02689.png
+    |-- dist-model.txt
+    |-- office1.oni
+    |-- office1-traj.txt
+    '-- office.ply
 )doc");
     dataset.def(py::init<const std::string&>(), "data_root"_a = "");
     dataset.def_property_readonly("point_cloud_path",
@@ -1136,28 +1136,28 @@ void pybind_redwood_indoor_office2(py::module& m) {
                     R"doc(RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
 Data class for `RedwoodIndoorOffice2`, containing dense point
 cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-sequence, and ground-truth camera trajectory.
+sequence, and ground-truth camera trajectory. ::
 
-RedwoodIndoorOffice2
-├── colors
-│   ├── 00000.jpg
-│   ├── 00001.jpg
-│   ├── ...
-│   └── 02537.jpg
-├── depth
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02537.png
-├── depth_noisy
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02537.png
-├── dist-model.txt
-├── office2.oni
-├── office2-traj.txt
-└── office.ply
+    RedwoodIndoorOffice2
+    |-- colors
+    |   |-- 00000.jpg
+    |   |-- 00001.jpg
+    |   |-- ...
+    |   '-- 02537.jpg
+    |-- depth
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02537.png
+    |-- depth_noisy
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02537.png
+    |-- dist-model.txt
+    |-- office2.oni
+    |-- office2-traj.txt
+    '-- office.ply
 )doc");
     dataset.def(py::init<const std::string&>(), "data_root"_a = "");
     dataset.def_property_readonly("point_cloud_path",

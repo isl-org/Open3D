@@ -30,22 +30,22 @@ the open-source community.
 
 **Core features of Open3D include:**
 
-* 3D data structures
-* 3D data processing algorithms
-* Scene reconstruction
-* Surface alignment
-* 3D visualization
-* Physically based rendering (PBR)
-* 3D machine learning support with PyTorch and TensorFlow
-* GPU acceleration for core 3D operations
-* Available in C++ and Python
+-   3D data structures
+-   3D data processing algorithms
+-   Scene reconstruction
+-   Surface alignment
+-   3D visualization
+-   Physically based rendering (PBR)
+-   3D machine learning support with PyTorch and TensorFlow
+-   GPU acceleration for core 3D operations
+-   Available in C++ and Python
 
 For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
 ## Python quick start
 
 Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
-(64-bit) with Python 3.6-3.10.
+(64-bit) with Python 3.8-3.11.
 
 ```bash
 # Install
@@ -74,21 +74,21 @@ To compile Open3D from source, refer to
 
 Checkout the following links to get started with Open3D C++ API
 
-* Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](http://www.open3d.org/docs/latest/getting_started.html#c)
-* [Compiling Open3D from source](http://www.open3d.org/docs/release/compilation.html)
-* [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
+-   Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](http://www.open3d.org/docs/latest/getting_started.html#c)
+-   [Compiling Open3D from source](http://www.open3d.org/docs/release/compilation.html)
+-   [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
 
 To use Open3D in your C++ project, checkout the following examples
 
-* [Find Pre-Installed Open3D Package in CMake](https://github.com/isl-org/open3d-cmake-find-package)
-* [Use Open3D as a CMake External Project](https://github.com/isl-org/open3d-cmake-external-project)
+-   [Find Pre-Installed Open3D Package in CMake](https://github.com/isl-org/open3d-cmake-find-package)
+-   [Use Open3D as a CMake External Project](https://github.com/isl-org/open3d-cmake-external-project)
 
 ## Open3D-Viewer app
 
 <img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D/master/docs/_static/open3d_viewer.png">
 
-Open3D-Viewer is a standalone 3D viewer app available on Ubuntu and macOS.
-Please stay tuned for Windows. Download Open3D Viewer from the
+Open3D-Viewer is a standalone 3D viewer app available on Debian (Ubuntu), macOS
+and Windows. Download Open3D Viewer from the
 [release page](https://github.com/isl-org/Open3D/releases).
 
 ## Open3D-ML
@@ -102,11 +102,11 @@ top of the Open3D core library and extends it with machine learning tools for
 
 ## Communication channels
 
-* [GitHub Issue](https://github.com/isl-org/Open3D/issues): bug reports,
-  feature requests, etc.
-* [Forum](https://github.com/isl-org/Open3D/discussions): discussion on the usage of Open3D.
-* [Discord Chat](https://discord.gg/D35BGvn): online chats, discussions,
-  and collaboration with other users and developers.
+-   [GitHub Issue](https://github.com/isl-org/Open3D/issues): bug reports,
+    feature requests, etc.
+-   [Forum](https://github.com/isl-org/Open3D/discussions): discussion on the usage of Open3D.
+-   [Discord Chat](https://discord.gg/D35BGvn): online chats, discussions,
+    and collaboration with other users and developers.
 
 ## Citation
 

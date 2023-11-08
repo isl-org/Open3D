@@ -48,7 +48,7 @@ Getting the example code
 
 .. code-block:: sh
 
-    # Activate your conda enviroment, where you have installed open3d pip package.
+    # Activate your conda environment, where you have installed open3d pip package.
     # Clone the Open3D github repository and go to the example.
     cd examples/python/reconstruction_system/
 
@@ -69,7 +69,7 @@ Running the example with default dataset.
     python run_system.py --make --register --refine --integrate
 
 Changing the default dataset.
-One may change the default dataset to other avaialble datasets. 
+One may change the default dataset to other available datasets.
 Currently the following datasets are available:
 
 1. Lounge (keyword: ``lounge``) (Default)
@@ -81,7 +81,7 @@ Currently the following datasets are available:
 
 .. code-block:: sh
 
-    # Using jack_jack as the default dataset.
+    # Using bedroom as the default dataset.
     python run_system.py --default_dataset 'bedroom' --make --register --refine --integrate
 
 Running the example with custom dataset using config file.

@@ -941,11 +941,24 @@ struct O3DVisualizer::Impl {
 
             // Finally assign material properties if geometry is a triangle mesh
             if (tmesh && tmesh->materials_.size() > 0) {
-                // Only a single material is supported for TriangleMesh so we
-                // just grab the first one we find. Users should be using
-                // TriangleMeshModel if they have a model with multiple
-                // materials.
-                auto &mesh_material = tmesh->materials_.begin()->second;
+                std::size_t material_index;
+                if (tmesh->HasTriangleMaterialIds()) {
+                    auto minmax_it = std::minmax_element(
+                            tmesh->triangle_material_ids_.begin(),
+                            tmesh->triangle_material_ids_.end());
+                    if (*minmax_it.first != *minmax_it.second) {
+                        utility::LogWarning(
+                                "Only a single material is "
+                                "supported for TriangleMesh visualization, "
+                                "only the first referenced material will be "
+                                "used. Use TriangleMeshModel if more than one "
+                                "material is required.");
+                    }
+                    material_index = *minmax_it.first;
+                } else {
+                    material_index = 0;
+                }
+                auto &mesh_material = tmesh->materials_[material_index].second;
                 mat.base_color = {mesh_material.baseColor.r(),
                                   mesh_material.baseColor.g(),
                                   mesh_material.baseColor.b(),
@@ -1521,6 +1534,9 @@ struct O3DVisualizer::Impl {
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
+            // Ignore Models since they can never be point clouds
+            if (o.model) continue;
+
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
@@ -1546,6 +1562,9 @@ struct O3DVisualizer::Impl {
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
+            // Ignore Models since they can never be point clouds
+            if (o.model) continue;
+
             o.material.line_width = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }

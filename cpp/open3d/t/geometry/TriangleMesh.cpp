@@ -409,7 +409,9 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
     // Convert material if the t geometry has a valid one
     auto &tmat = GetMaterial();
     if (tmat.IsValid()) {
-        auto &legacy_mat = mesh_legacy.materials_["Mat1"];
+        mesh_legacy.materials_.emplace_back();
+        mesh_legacy.materials_.front().first = "Mat1";
+        auto &legacy_mat = mesh_legacy.materials_.front().second;
         // Convert scalar properties
         if (tmat.HasBaseColor()) {
             legacy_mat.baseColor.f4[0] = tmat.GetBaseColor().x();

@@ -68,7 +68,6 @@ int main(int argc, char *argv[]) {
     FILE *file = utility::filesystem::FOpen(match_filename, "r");
     if (file == NULL) {
         utility::LogWarning("Unable to open file {}", match_filename);
-        fclose(file);
         return 0;
     }
     char buffer[DEFAULT_IO_BUFFER_SIZE];

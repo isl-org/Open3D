@@ -4,13 +4,12 @@ var base = require('@jupyter-widgets/base');
 module.exports = {
   id: 'open3d:plugin',
   requires: [base.IJupyterWidgetRegistry],
-  activate: function(app, widgets) {
-      widgets.registerWidget({
-          name: 'open3d',
-          version: plugin.version,
-          exports: plugin
-      });
+  activate: (app, widgets) => {
+    widgets.registerWidget({
+      name: 'open3d',
+      version: plugin.version,
+      exports: plugin
+    });
   },
   autoStart: true
 };
-

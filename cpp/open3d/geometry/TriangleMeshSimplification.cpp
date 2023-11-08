@@ -311,51 +311,55 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         AddPerpPlaneQuadric(tria(2), tria(0), tria(1), area);
     }
 
+    // Clear the unused vectors to save some memory
+    triangle_areas.clear();
+    triangle_planes.clear();
+    edge_triangle_count.clear();
+
     // Get valid edges and compute cost
-    // Note: We could also select all vertex pairs as edges with dist < eps
-    std::unordered_map<Eigen::Vector2i, Eigen::Vector3d,
-                       utility::hash_eigen<Eigen::Vector2i>>
-            vbars;
-    std::unordered_map<Eigen::Vector2i, double,
-                       utility::hash_eigen<Eigen::Vector2i>>
-            costs;
     auto CostEdgeComp = [](const CostEdge& a, const CostEdge& b) {
         return std::get<0>(a) > std::get<0>(b);
     };
     std::priority_queue<CostEdge, std::vector<CostEdge>, decltype(CostEdgeComp)>
             queue(CostEdgeComp);
 
-    auto AddEdge = [&](int vidx0, int vidx1, bool update) {
-        int min = std::min(vidx0, vidx1);
-        int max = std::max(vidx0, vidx1);
-        Eigen::Vector2i edge(min, max);
-        if (update || vbars.count(edge) == 0) {
-            const Quadric& Q0 = Qs[min];
-            const Quadric& Q1 = Qs[max];
-            Quadric Qbar = Q0 + Q1;
-            double cost;
-            Eigen::Vector3d vbar;
-            if (Qbar.IsInvertible()) {
-                vbar = Qbar.Minimum();
-                cost = Qbar.Eval(vbar);
+    auto compute_cost_vbar = [&](Eigen::Vector2i e) {
+        const Quadric& Q0 = Qs[e(0)];
+        const Quadric& Q1 = Qs[e(1)];
+        const Quadric Qbar = Q0 + Q1;
+        double cost;
+        Eigen::Vector3d vbar;
+        if (Qbar.IsInvertible()) {
+            vbar = Qbar.Minimum();
+            cost = Qbar.Eval(vbar);
+        } else {
+            const Eigen::Vector3d& v0 = mesh->vertices_[e(0)];
+            const Eigen::Vector3d& v1 = mesh->vertices_[e(1)];
+            const Eigen::Vector3d vmid = (v0 + v1) / 2;
+            const double cost0 = Qbar.Eval(v0);
+            const double cost1 = Qbar.Eval(v1);
+            const double costmid = Qbar.Eval(vmid);
+            cost = std::min(cost0, std::min(cost1, costmid));
+            if (cost == costmid) {
+                vbar = vmid;
+            } else if (cost == cost0) {
+                vbar = v0;
             } else {
-                const Eigen::Vector3d& v0 = mesh->vertices_[vidx0];
-                const Eigen::Vector3d& v1 = mesh->vertices_[vidx1];
-                Eigen::Vector3d vmid = (v0 + v1) / 2;
-                double cost0 = Qbar.Eval(v0);
-                double cost1 = Qbar.Eval(v1);
-                double costmid = Qbar.Eval(vmid);
-                cost = std::min(cost0, std::min(cost1, costmid));
-                if (cost == costmid) {
-                    vbar = vmid;
-                } else if (cost == cost0) {
-                    vbar = v0;
-                } else {
-                    vbar = v1;
-                }
+                vbar = v1;
             }
-            vbars[edge] = vbar;
-            costs[edge] = cost;
+        }
+        return std::make_pair(cost, vbar);
+    };
+
+    std::unordered_set<Eigen::Vector2i, utility::hash_eigen<Eigen::Vector2i>>
+            added_edges;
+    auto AddEdge = [&](int vidx0, int vidx1, bool update) {
+        const int min = std::min(vidx0, vidx1);
+        const int max = std::max(vidx0, vidx1);
+        const Eigen::Vector2i edge(min, max);
+        if (update || added_edges.count(edge) == 0) {
+            const auto cost = compute_cost_vbar(edge).first;
+            added_edges.insert(edge);
             queue.push(CostEdge(cost, min, max));
         }
     };
@@ -366,6 +370,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         AddEdge(triangle(1), triangle(2), false);
         AddEdge(triangle(2), triangle(0), false);
     }
+    added_edges.clear();
 
     // perform incremental edge collapse
     bool has_vert_normal = HasVertexNormals();
@@ -384,50 +389,71 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
 
         // test if the edge has been updated (reinserted into queue)
         Eigen::Vector2i edge(vidx0, vidx1);
+        const auto cost_vbar = compute_cost_vbar(edge);
+        const Eigen::Vector3d vbar = cost_vbar.second;
         bool valid = !vertices_deleted[vidx0] && !vertices_deleted[vidx1] &&
-                     cost == costs[edge];
+                     cost == cost_vbar.first;
         if (!valid) {
             continue;
         }
 
-        // avoid flip of triangle normal
-        bool flipped = false;
-        for (int tidx : vert_to_triangles[vidx1]) {
-            if (triangles_deleted[tidx]) {
-                continue;
-            }
+        // avoid flip of triangle normal and creation of degenerate triangles
+        bool creates_invalid_triangle = false;
+        const double degenerate_ratio_threshold = 0.001;
+        std::unordered_map<int, int> edges{};
+        for (int vidx : {vidx1, vidx0}) {
+            for (int tidx : vert_to_triangles[vidx]) {
+                if (triangles_deleted[tidx]) {
+                    continue;
+                }
 
-            const Eigen::Vector3i& tria = mesh->triangles_[tidx];
-            bool has_vidx0 =
-                    vidx0 == tria(0) || vidx0 == tria(1) || vidx0 == tria(2);
-            bool has_vidx1 =
-                    vidx1 == tria(0) || vidx1 == tria(1) || vidx1 == tria(2);
-            if (has_vidx0 && has_vidx1) {
-                continue;
-            }
+                const Eigen::Vector3i& tria = mesh->triangles_[tidx];
+                const bool has_vidx0 = vidx0 == tria(0) || vidx0 == tria(1) ||
+                                       vidx0 == tria(2);
+                const bool has_vidx1 = vidx1 == tria(0) || vidx1 == tria(1) ||
+                                       vidx1 == tria(2);
+                if (has_vidx0 && has_vidx1) {
+                    continue;
+                }
 
-            Eigen::Vector3d vert0 = mesh->vertices_[tria(0)];
-            Eigen::Vector3d vert1 = mesh->vertices_[tria(1)];
-            Eigen::Vector3d vert2 = mesh->vertices_[tria(2)];
-            Eigen::Vector3d norm_before = (vert1 - vert0).cross(vert2 - vert0);
-            norm_before /= norm_before.norm();
+                Eigen::Vector3d verts[3] = {mesh->vertices_[tria(0)],
+                                            mesh->vertices_[tria(1)],
+                                            mesh->vertices_[tria(2)]};
+                Eigen::Vector3d norm_before =
+                        (verts[1] - verts[0]).cross(verts[2] - verts[0]);
+                const double area_before = 0.5 * norm_before.norm();
+                norm_before /= norm_before.norm();
 
-            if (vidx1 == tria(0)) {
-                vert0 = vbars[edge];
-            } else if (vidx1 == tria(1)) {
-                vert1 = vbars[edge];
-            } else if (vidx1 == tria(2)) {
-                vert2 = vbars[edge];
-            }
+                for (auto i = 0; i < 3; ++i) {
+                    if (tria(i) == vidx) {
+                        verts[i] = vbar;
+                        continue;
+                    }
+                    auto& vert_count = edges[tria(i)];
+                    creates_invalid_triangle |= vert_count >= 2;
+                    vert_count += 1;
+                }
 
-            Eigen::Vector3d norm_after = (vert1 - vert0).cross(vert2 - vert0);
-            norm_after /= norm_after.norm();
-            if (norm_before.dot(norm_after) < 0) {
-                flipped = true;
-                break;
+                Eigen::Vector3d norm_after =
+                        (verts[1] - verts[0]).cross(verts[2] - verts[0]);
+                const double area_after = 0.5 * norm_after.norm();
+                norm_after /= norm_after.norm();
+                // Disallow flipping the triangle normal
+                creates_invalid_triangle |= norm_before.dot(norm_after) < 0;
+                // Disallow creating very small triangles (possibly degenerate)
+                creates_invalid_triangle |=
+                        area_after < degenerate_ratio_threshold * area_before;
+
+                if (creates_invalid_triangle) {
+                    // Goto is the only way to jump out of two loops without
+                    // multiple redundant if()'s. Yes, it can lead to spagetti
+                    // code if abused but we're doing a very short jump here
+                    goto end_flip_loop;
+                }
             }
         }
-        if (flipped) {
+    end_flip_loop:
+        if (creates_invalid_triangle) {
             continue;
         }
 
@@ -460,7 +486,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         }
 
         // update vertex vidx0 to vbar
-        mesh->vertices_[vidx0] = vbars[edge];
+        mesh->vertices_[vidx0] = vbar;
         Qs[vidx0] += Qs[vidx1];
         if (has_vert_normal) {
             mesh->vertex_normals_[vidx0] = 0.5 * (mesh->vertex_normals_[vidx0] +

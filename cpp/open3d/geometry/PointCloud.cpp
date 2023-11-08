@@ -541,23 +541,25 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
     return SelectByIndex(selected_indices);
 }
 
-std::shared_ptr<PointCloud> PointCloud::Crop(
-        const AxisAlignedBoundingBox &bbox) const {
+std::shared_ptr<PointCloud> PointCloud::Crop(const AxisAlignedBoundingBox &bbox,
+                                             bool invert) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
                 "AxisAlignedBoundingBox either has zeros size, or has wrong "
                 "bounds.");
     }
-    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
+    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_),
+                         invert);
 }
-std::shared_ptr<PointCloud> PointCloud::Crop(
-        const OrientedBoundingBox &bbox) const {
+std::shared_ptr<PointCloud> PointCloud::Crop(const OrientedBoundingBox &bbox,
+                                             bool invert) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
                 "AxisAlignedBoundingBox either has zeros size, or has wrong "
                 "bounds.");
     }
-    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
+    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_),
+                         invert);
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>

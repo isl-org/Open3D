@@ -21,7 +21,7 @@ class AxisAlignedBoundingBox;
 /// \brief A bounding box oriented along an arbitrary frame of reference.
 ///
 /// The oriented bounding box is defined by its center position, rotation
-/// maxtrix and extent.
+/// matrix and extent.
 class OrientedBoundingBox : public Geometry3D {
 public:
     /// \brief Default constructor.
@@ -171,11 +171,7 @@ public:
     /// \param min_bound Lower bounds of the bounding box for all axes.
     /// \param max_bound Upper bounds of the bounding box for all axes.
     AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
-                           const Eigen::Vector3d& max_bound)
-        : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
-          min_bound_(min_bound),
-          max_bound_(max_bound),
-          color_(1, 1, 1) {}
+                           const Eigen::Vector3d& max_bound);
     ~AxisAlignedBoundingBox() override {}
 
 public:

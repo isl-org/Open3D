@@ -47,6 +47,8 @@ target_sources(core PRIVATE
     kernel/BinaryEWCPU.cpp
     kernel/IndexGetSet.cpp
     kernel/IndexGetSetCPU.cpp
+    kernel/IndexReduction.cpp
+    kernel/IndexReductionCPU.cpp
     kernel/Kernel.cpp
     kernel/NonZero.cpp
     kernel/NonZeroCPU.cpp
@@ -90,6 +92,7 @@ if (BUILD_CUDA_MODULE)
         kernel/ArangeCUDA.cu
         kernel/BinaryEWCUDA.cu
         kernel/IndexGetSetCUDA.cu
+        kernel/IndexReductionCUDA.cu
         kernel/NonZeroCUDA.cu
         kernel/ReductionCUDA.cu
         kernel/UnaryEWCUDA.cu

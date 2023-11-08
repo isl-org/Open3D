@@ -319,6 +319,8 @@ def main():
     multi_objects()
     actions()
     selections()
+    groups()
+    time_animation()
 
 
 if __name__ == "__main__":

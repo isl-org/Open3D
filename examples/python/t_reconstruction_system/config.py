@@ -6,7 +6,9 @@
 # ----------------------------------------------------------------------------
 
 import os
+
 import configargparse
+import open3d as o3d
 
 
 class ConfigParser(configargparse.ArgParser):
@@ -107,9 +109,8 @@ class ConfigParser(configargparse.ArgParser):
 
         integration_parser = self.add_argument_group('integration')
         integration_parser.add(
-            '--integration_mode',type=str,
-            choices=['color', 'depth'],
-            help='Volumetric integration mode.')
+            '--integrate_color', action='store_true',
+            default=False, help='Volumetric integration mode.')
         integration_parser.add(
             '--voxel_size', type=float,
             help='Voxel size in meter for volumetric integration.')
@@ -141,7 +142,7 @@ class ConfigParser(configargparse.ArgParser):
                       'Fallback to hybrid odometry.')
                 config.odometry_method = 'hybrid'
 
-        if config.engine == 'tensor':
+        elif config.engine == 'tensor':
             if config.icp_method == 'generalized':
                 print('Tensor engine does not support generalized ICP.',
                       'Fallback to colored ICP.')
@@ -151,6 +152,13 @@ class ConfigParser(configargparse.ArgParser):
                 print('Tensor engine does not support multiprocessing.',
                       'Disabled.')
                 config.multiprocessing = False
+
+            if (config.device.lower().startswith('cuda') and
+                (not o3d.core.cuda.is_available())):
+                print(
+                    'Open3d not built with cuda support or no cuda device available. ',
+                    'Fallback to CPU.')
+                config.device = 'CPU:0'
 
         return config
 

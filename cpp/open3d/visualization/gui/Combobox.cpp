@@ -147,8 +147,6 @@ Size Combobox::CalcPreferredSize(const LayoutContext& context,
 
 Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
     bool value_changed = false;
-    bool was_open = ImGui::IsPopupOpen(impl_->imgui_id_.c_str());
-    bool did_open = false;
 
     auto& frame = GetFrame();
     ImGui::SetCursorScreenPos(
@@ -166,10 +164,8 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
 
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(float(frame.width));
+
     if (ImGui::BeginCombo(impl_->imgui_id_.c_str(), GetSelectedValue())) {
-        if (!was_open) {
-            did_open = true;
-        }
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             bool isSelected = false;
             if (ImGui::Selectable(impl_->items_[i].c_str(), &isSelected, 0)) {
@@ -185,13 +181,14 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
         }
         ImGui::EndCombo();
     }
+
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
 
     ImGui::PopStyleColor(3);
 
-    return ((value_changed || did_open) ? Widget::DrawResult::REDRAW
-                                        : Widget::DrawResult::NONE);
+    return value_changed ? Widget::DrawResult::REDRAW
+                         : Widget::DrawResult::NONE;
 }
 
 }  // namespace gui

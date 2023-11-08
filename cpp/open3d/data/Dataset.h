@@ -723,26 +723,26 @@ private:
 /// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
 /// sequence, and ground-truth camera trajectory.
 ///
-/// RedwoodIndoorLivingRoom1
-/// ├── colors
-/// │   ├── 00000.jpg
-/// │   ├── 00001.jpg
-/// │   ├── ...
-/// │   └── 02869.jpg
-/// ├── depth
-/// │   ├── 00000.png
-/// │   ├── 00001.png
-/// │   ├── ...
-/// │   └── 02869.png
-/// ├── depth_noisy
-/// │   ├── 00000.png
-/// │   ├── 00001.png
-/// │   ├── ...
-/// │   └── 02869.png
-/// ├── dist-model.txt
-/// ├── livingroom1.oni
-/// ├── livingroom1-traj.txt
-/// └── livingroom.ply
+///     RedwoodIndoorLivingRoom1
+///     ├── colors
+///     │   ├── 00000.jpg
+///     │   ├── 00001.jpg
+///     │   ├── ...
+///     │   └── 02869.jpg
+///     ├── depth
+///     │   ├── 00000.png
+///     │   ├── 00001.png
+///     │   ├── ...
+///     │   └── 02869.png
+///     ├── depth_noisy
+///     │   ├── 00000.png
+///     │   ├── 00001.png
+///     │   ├── ...
+///     │   └── 02869.png
+///     ├── dist-model.txt
+///     ├── livingroom1.oni
+///     ├── livingroom1-traj.txt
+///     └── livingroom.ply
 class RedwoodIndoorLivingRoom1 : public DownloadDataset {
 public:
     RedwoodIndoorLivingRoom1(const std::string& data_root = "");
@@ -775,30 +775,30 @@ private:
 };
 
 /// \class RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// \brief Data class for `RedwoodIndoorLivingRoom2`, containing dense point
 /// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
 /// sequence, and ground-truth camera trajectory.
 ///
-/// RedwoodIndoorLivingRoom2
-/// ├── colors
-/// │   ├── 00000.jpg
-/// │   ├── 00001.jpg
-/// │   ├── ...
-/// │   └── 02349.jpg
-/// ├── depth
-/// │   ├── 00000.png
-/// │   ├── 00001.png
-/// │   ├── ...
-/// │   └── 02349.png
-/// ├── depth_noisy
-/// │   ├── 00000.png
-/// │   ├── 00001.png
-/// │   ├── ...
-/// │   └── 02349.png
-/// ├── dist-model.txt
-/// ├── livingroom2.oni
-/// ├── livingroom2-traj.txt
-/// └── livingroom.ply
+///     RedwoodIndoorLivingRoom2
+///     ├── colors
+///     │   ├── 00000.jpg
+///     │   ├── 00001.jpg
+///     │   ├── ...
+///     │   └── 02349.jpg
+///     ├── depth
+///     │   ├── 00000.png
+///     │   ├── 00001.png
+///     │   ├── ...
+///     │   └── 02349.png
+///     ├── depth_noisy
+///     │   ├── 00000.png
+///     │   ├── 00001.png
+///     │   ├── ...
+///     │   └── 02349.png
+///     ├── dist-model.txt
+///     ├── livingroom2.oni
+///     ├── livingroom2-traj.txt
+///     └── livingroom.ply
 class RedwoodIndoorLivingRoom2 : public DownloadDataset {
 public:
     RedwoodIndoorLivingRoom2(const std::string& data_root = "");
@@ -831,30 +831,30 @@ private:
 };
 
 /// \class RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// \brief Data class for `RedwoodIndoorOffice1`, containing dense point
 /// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
 /// sequence, and ground-truth camera trajectory.
 ///
-/// RedwoodIndoorOffice1
-/// ├── colors
-/// │   ├── 00000.jpg
-/// │   ├── 00001.jpg
-/// │   ├── ...
-/// │   └── 02689.jpg
-/// ├── depth
-/// │   ├── 00000.png
-/// │   ├── 00001.png
-/// │   ├── ...
-/// │   └── 02689.png
-/// ├── depth_noisy
-/// │   ├── 00000.png
-/// │   ├── 00001.png
-/// │   ├── ...
-/// │   └── 02689.png
-/// ├── dist-model.txt
-/// ├── office1.oni
-/// ├── office1-traj.txt
-/// └── office.ply
+///     RedwoodIndoorOffice1
+///     ├── colors
+///     │   ├── 00000.jpg
+///     │   ├── 00001.jpg
+///     │   ├── ...
+///     │   └── 02689.jpg
+///     ├── depth
+///     │   ├── 00000.png
+///     │   ├── 00001.png
+///     │   ├── ...
+///     │   └── 02689.png
+///     ├── depth_noisy
+///     │   ├── 00000.png
+///     │   ├── 00001.png
+///     │   ├── ...
+///     │   └── 02689.png
+///     ├── dist-model.txt
+///     ├── office1.oni
+///     ├── office1-traj.txt
+///     └── office.ply
 class RedwoodIndoorOffice1 : public DownloadDataset {
 public:
     RedwoodIndoorOffice1(const std::string& data_root = "");
@@ -887,30 +887,30 @@ private:
 };
 
 /// \class RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// \brief Data class for `RedwoodIndoorOffice2`, containing dense point
 /// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
 /// sequence, and ground-truth camera trajectory.
 ///
-/// RedwoodIndoorOffice2
-/// ├── colors
-/// │   ├── 00000.jpg
-/// │   ├── 00001.jpg
-/// │   ├── ...
-/// │   └── 02537.jpg
-/// ├── depth
-/// │   ├── 00000.png
-/// │   ├── 00001.png
-/// │   ├── ...
-/// │   └── 02537.png
-/// ├── depth_noisy
-/// │   ├── 00000.png
-/// │   ├── 00001.png
-/// │   ├── ...
-/// │   └── 02537.png
-/// ├── dist-model.txt
-/// ├── office2.oni
-/// ├── office2-traj.txt
-/// └── office.ply
+///     RedwoodIndoorOffice2
+///     ├── colors
+///     │   ├── 00000.jpg
+///     │   ├── 00001.jpg
+///     │   ├── ...
+///     │   └── 02537.jpg
+///     ├── depth
+///     │   ├── 00000.png
+///     │   ├── 00001.png
+///     │   ├── ...
+///     │   └── 02537.png
+///     ├── depth_noisy
+///     │   ├── 00000.png
+///     │   ├── 00001.png
+///     │   ├── ...
+///     │   └── 02537.png
+///     ├── dist-model.txt
+///     ├── office2.oni
+///     ├── office2-traj.txt
+///     └── office.ply
 class RedwoodIndoorOffice2 : public DownloadDataset {
 public:
     RedwoodIndoorOffice2(const std::string& data_root = "");

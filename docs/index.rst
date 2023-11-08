@@ -26,42 +26,25 @@ Open3D: A Modern Library for 3D Data Processing
     compilation
     cpp_project
     builddocs
-    open3d_ml
-    arm
     docker
+    arm
+    open3d_ml
 
 .. toctree::
     :maxdepth: 2
     :caption: Tutorial
 
+    tutorial/core/index
     tutorial/geometry/index
     tutorial/t_geometry/index
+    tutorial/data/index
+    tutorial/visualization/index
     tutorial/pipelines/index
     tutorial/t_pipelines/index
-    tutorial/visualization/index
-    tutorial/core/index
-    tutorial/data/index
     tutorial/reconstruction_system/index
     tutorial/t_reconstruction_system/index
     tutorial/sensor/index
     tutorial/reference
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Contribute
-
-    contribute/contribute
-    contribute/contribution_recipes
-    contribute/styleguide
-
-.. toctree::
-    :maxdepth: 1
-    :caption: C++ API
-
-    cpp_api
-
-..
-    Note: when adding new modules, please also update documented_modules.txt.
 
 .. toctree::
     :maxdepth: 1
@@ -88,3 +71,20 @@ Open3D: A Modern Library for 3D Data Processing
     python_example/pipelines/index
     python_example/utility/index
     python_example/visualization/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: C++ API
+
+    cpp_api
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Contribute
+
+    contribute/contribute
+    contribute/contribution_recipes
+    contribute/styleguide
+
+..
+    Note: when adding new modules, please also update documented_modules.txt.

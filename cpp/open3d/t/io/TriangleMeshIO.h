@@ -58,6 +58,15 @@ bool ReadTriangleMeshFromNPZ(const std::string &filename,
                              geometry::TriangleMesh &mesh,
                              const open3d::io::ReadTriangleMeshOptions &params);
 
+bool WriteTriangleMeshUsingASSIMP(const std::string &filename,
+                                  const geometry::TriangleMesh &mesh,
+                                  const bool write_ascii,
+                                  const bool compressed,
+                                  const bool write_vertex_normals,
+                                  const bool write_vertex_colors,
+                                  const bool write_triangle_uvs,
+                                  const bool print_progress);
+
 bool WriteTriangleMeshToNPZ(const std::string &filename,
                             const geometry::TriangleMesh &mesh,
                             const bool write_ascii,
