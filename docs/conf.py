@@ -69,7 +69,6 @@ extensions = [
     "sphinx.ext.todo",
     "nbsphinx",
     "m2r2",
-    "sphinx_rtd_theme",
 ]
 
 if os.environ.get("skip_notebooks", "false") == "true":
@@ -132,15 +131,17 @@ exclude_patterns = [
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+pygments_dark_style = "monokai"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
+
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 html_favicon = "_static/open3d_logo.ico"
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -159,9 +160,6 @@ html_static_path = ["_static"]
 
 # Display selection of all documentation versions.
 html_context = {'display_all_docs_versions': True}
-
-# Override theme css
-html_css_files = ["theme_overrides.css"]
 
 # added by Jaesik to hide "View page source"
 html_show_sourcelink = False
