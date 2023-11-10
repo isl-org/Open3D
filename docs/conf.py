@@ -8,7 +8,7 @@
 # -*- coding: utf-8 -*-
 #
 # Open3D documentation build configuration file, created by
-# sphinx-quickstart on Mon Apr  3 14:18:28 2017.
+# sphinx-quickstart on Mon Apr 3 14:18:28 2017.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -157,6 +157,9 @@ html_theme_options = {
 
 # '_static' contains the theme overwrite
 html_static_path = ["_static"]
+
+# Theme overrides
+html_css_files = ['css/furo_overrides.css']
 
 # Display selection of all documentation versions.
 html_context = {'display_all_docs_versions': True}

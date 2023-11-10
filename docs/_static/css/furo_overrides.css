@@ -1,0 +1,5 @@
+/* In furo, toctree captions needs to be enlarged. */
+.toctree-wrapper.compound .caption {
+    font-size: 150%;
+    font-weight: bold;
+}
