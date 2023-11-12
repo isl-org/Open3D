@@ -206,7 +206,7 @@ public:
 
     /// Creates the axis-aligned box that encloses the set of points.
     /// \param points A list of points with data type of float32 or float64 (N x
-    /// 3 tensor, where N must be larger than 3).
+    /// 3 tensor).
     /// \return AxisAlignedBoundingBox with same data type and device as input
     /// points.
     static AxisAlignedBoundingBox CreateFromPoints(const core::Tensor &points);

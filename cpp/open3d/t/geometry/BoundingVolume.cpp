@@ -231,8 +231,10 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const core::Tensor &points) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
-    if (points.GetLength() <= 3) {
-        utility::LogWarning("The points number is less than 3.");
+    if (points.GetLength() <= 0) {
+        utility::LogWarning(
+                "The number of points is 0 when creating axis-aligned bounding "
+                "box.");
         return AxisAlignedBoundingBox(points.GetDevice());
     } else {
         const core::Tensor min_bound = points.Min({0});
