@@ -60,10 +60,6 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, Constructor) {
     core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
     core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
 
-    // Attempt to construct with invalid min/max bound.
-    EXPECT_THROW(t::geometry::AxisAlignedBoundingBox(max_bound, min_bound),
-                 std::runtime_error);
-
     t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
 
     // Public members.
@@ -76,6 +72,11 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, Constructor) {
             core::Tensor::Init<float>({1, 1, 1}, device)));
 
     EXPECT_EQ(aabb.GetDevice(), device);
+
+    // Attempt to construct with invalid min/max bound should create a valid
+    // bounding box with a warning.
+    t::geometry::AxisAlignedBoundingBox aabb_invalid(max_bound, min_bound);
+    EXPECT_TRUE(aabb_invalid.GetBoxPoints().AllClose(aabb.GetBoxPoints()));
 }
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevicePairs, CopyDevice) {

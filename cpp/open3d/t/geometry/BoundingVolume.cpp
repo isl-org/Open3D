@@ -42,9 +42,12 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Tensor &min_bound,
 
     // Check if the bounding box is valid.
     if (Volume() < 0) {
-        utility::LogError(
-                "Invalid axis-aligned bounding box. Please make sure all "
-                "the elements in max bound are larger than min bound.");
+        utility::LogWarning(
+                "max_bound {} of bounding box is smaller than min_bound {} in "
+                "one or more axes. Fix input values to remove this warning.",
+                max_bound_.ToString(false), min_bound_.ToString(false));
+        max_bound_ = open3d::core::Maximum(min_bound, max_bound);
+        min_bound_ = open3d::core::Minimum(min_bound, max_bound);
     }
 }
 
