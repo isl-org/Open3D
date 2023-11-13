@@ -91,7 +91,7 @@ class LineSet;
 /// default and common attributes.
 class TriangleMesh : public Geometry, public DrawableGeometry {
 public:
-    /// Construct an empty pointcloud on the provided device.
+    /// Construct an empty trianglemesh on the provided device.
     /// \param device The device on which to initialize the trianglemesh
     /// (default: 'CPU:0').
     TriangleMesh(const core::Device &device = core::Device("CPU:0"));
