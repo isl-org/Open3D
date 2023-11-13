@@ -303,7 +303,7 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(
         const Eigen::Matrix3d& rotation, const Eigen::Vector3d& center) {
     utility::LogError(
-            "A rotation of a AxisAlignedBoundingBox would not be axis aligned "
+            "A rotation of an AxisAlignedBoundingBox would not be axis-aligned "
             "anymore, convert it to an OrientedBoundingBox first");
     return *this;
 }

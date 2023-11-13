@@ -83,7 +83,7 @@ void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
     if (Volume() < 0) {
         utility::LogWarning(
                 "Invalid axis-aligned bounding box. Please make sure all "
-                "the elements in min bound are smaller than min bound.");
+                "the elements in min bound are smaller than max bound.");
         min_bound_ = tmp;
     }
 }
@@ -113,8 +113,8 @@ void AxisAlignedBoundingBox::SetColor(const core::Tensor &color) {
     if (color.Max({0}).To(core::Float64).Item<double>() > 1.0 ||
         color.Min({0}).To(core::Float64).Item<double>() < 0.0) {
         utility::LogError(
-                "The color must be in the range [0, 1], but for range [{}, "
-                "{}].",
+                "The color must be in the range [0, 1], but found in range "
+                "[{}, {}].",
                 color.Min({0}).To(core::Float64).Item<double>(),
                 color.Max({0}).To(core::Float64).Item<double>());
     }
@@ -392,8 +392,8 @@ void OrientedBoundingBox::SetColor(const core::Tensor &color) {
     if (color.Max({0}).To(core::Float64).Item<double>() > 1.0 ||
         color.Min({0}).To(core::Float64).Item<double>() < 0.0) {
         utility::LogError(
-                "The color must be in the range [0, 1], but for range [{}, "
-                "{}].",
+                "The color must be in the range [0, 1], but found in range "
+                "[{}, {}].",
                 color.Min({0}).To(core::Float64).Item<double>(),
                 color.Max({0}).To(core::Float64).Item<double>());
     }
