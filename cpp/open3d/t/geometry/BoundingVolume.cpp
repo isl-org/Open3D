@@ -223,7 +223,9 @@ core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
 }
 
 std::string AxisAlignedBoundingBox::ToString() const {
-    return fmt::format("AxisAlignedBoundingBox[{}, {}]", GetDtype().ToString(),
+    return fmt::format("AxisAlignedBoundingBox[{} - {}, {}, {}]",
+                       GetMinBound().ToString(false),
+                       GetMaxBound().ToString(false), GetDtype().ToString(),
                        GetDevice().ToString());
 }
 
