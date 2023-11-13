@@ -659,36 +659,37 @@ if __name__ == "__main__":
         shutil.rmtree(cpp_build_dir)
         print("Removed directory %s" % cpp_build_dir)
 
-    # Python API reST docs
-    if not args.py_api_rst == "never":
-        print("Building Python API reST")
-        pd = PyAPIDocsBuilder()
-        pd.generate_rst()
-
-    # Python example reST docs
-    py_example_input_dir = os.path.join(pwd, "..", "examples", "python")
-    if not args.py_example_rst == "never":
-        print("Building Python example reST")
-        pe = PyExampleDocsBuilder(input_dir=py_example_input_dir, pwd=pwd)
-        pe.generate_rst()
-
-    # Jupyter docs (needs execution)
-    if not args.execute_notebooks == "never":
-        print("Building Jupyter docs")
-        jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,
-                                 args.execute_notebooks)
-        jdb.run()
-
-    # Remove *.ipynb in the output folder for CI docs.
-    if args.delete_notebooks:
-        print(f"Deleting all *.ipynb files in the {html_output_dir} folder.")
-        for f in Path(html_output_dir).glob("**/*.ipynb"):
-            print(f"Deleting {f}")
-            f.unlink()
-
     # Sphinx is hard-coded to build with the "html" option
     # To customize build, run sphinx-build manually
     if args.sphinx:
+        # Python API reST docs
+        if not args.py_api_rst == "never":
+            print("Building Python API reST")
+            pd = PyAPIDocsBuilder()
+            pd.generate_rst()
+
+        # Python example reST docs
+        py_example_input_dir = os.path.join(pwd, "..", "examples", "python")
+        if not args.py_example_rst == "never":
+            print("Building Python example reST")
+            pe = PyExampleDocsBuilder(input_dir=py_example_input_dir, pwd=pwd)
+            pe.generate_rst()
+
+        # Jupyter docs (needs execution)
+        if not args.execute_notebooks == "never":
+            print("Building Jupyter docs")
+            jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,
+                                     args.execute_notebooks)
+            jdb.run()
+
+        # Remove *.ipynb in the output folder for CI docs.
+        if args.delete_notebooks:
+            print(
+                f"Deleting all *.ipynb files in the {html_output_dir} folder.")
+            for f in Path(html_output_dir).glob("**/*.ipynb"):
+                print(f"Deleting {f}")
+                f.unlink()
+
         print("Building Sphinx docs")
         skip_notebooks = (args.execute_notebooks == "never" and
                           args.clean_notebooks)
