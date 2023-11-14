@@ -32,6 +32,7 @@ INSTANTIATE_TEST_SUITE_P(
                 AxisAlignedBoundingBoxPermuteDevicePairs::TestCases()));
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, ConstructorNoArg) {
+    using ::testing::AnyOf;
     t::geometry::AxisAlignedBoundingBox aabb;
 
     // Inherited from Geometry3D.
@@ -51,7 +52,11 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, ConstructorNoArg) {
     EXPECT_EQ(aabb.GetDevice(), core::Device("CPU:0"));
 
     // Print Information.
-    EXPECT_EQ(aabb.ToString(), "AxisAlignedBoundingBox[[0 0 0] - [0 0 0], Float32, CPU:0]");
+    EXPECT_THAT(
+            aabb.ToString(),  // Compiler dependent output
+            AnyOf("AxisAlignedBoundingBox[[0 0 0] - [0 0 0], Float32, CPU:0]",
+                  "AxisAlignedBoundingBox[[0.0 0.0 0.0] - [0.0 0.0 0.0], "
+                  "Float32, CPU:0]"));
 }
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, Constructor) {
