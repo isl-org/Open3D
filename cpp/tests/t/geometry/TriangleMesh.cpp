@@ -1143,16 +1143,18 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex) {
 
     // check basic case
     core::Tensor indices = core::Tensor::Init<int64_t>({2, 3, 6, 7});
-    t::geometry::TriangleMesh selected = box.SelectByIndex(indices);
+    t::geometry::TriangleMesh selected_basic = box.SelectByIndex(indices);
 
-    EXPECT_TRUE(selected.GetVertexPositions().AllClose(expected_verts));
-    EXPECT_TRUE(selected.GetVertexColors().AllClose(expected_vert_colors));
+    EXPECT_TRUE(selected_basic.GetVertexPositions().AllClose(expected_verts));
     EXPECT_TRUE(
-            selected.GetVertexAttr("labels").AllClose(expected_vert_labels));
-    EXPECT_TRUE(selected.GetTriangleIndices().AllClose(expected_tris));
-    EXPECT_TRUE(selected.GetTriangleNormals().AllClose(expected_tri_normals));
+            selected_basic.GetVertexColors().AllClose(expected_vert_colors));
+    EXPECT_TRUE(selected_basic.GetVertexAttr("labels").AllClose(
+            expected_vert_labels));
+    EXPECT_TRUE(selected_basic.GetTriangleIndices().AllClose(expected_tris));
     EXPECT_TRUE(
-            selected.GetTriangleAttr("labels").AllClose(expected_tri_labels));
+            selected_basic.GetTriangleNormals().AllClose(expected_tri_normals));
+    EXPECT_TRUE(selected_basic.GetTriangleAttr("labels").AllClose(
+            expected_tri_labels));
 
     // check duplicated indices case
     core::Tensor indices_duplicate =
@@ -1171,6 +1173,14 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex) {
             expected_tri_normals));
     EXPECT_TRUE(selected_duplicate.GetTriangleAttr("labels").AllClose(
             expected_tri_labels));
+
+    core::Tensor indices_negative =
+            core::Tensor::Init<int64_t>({2, -4, 3, 6, 7});
+    t::geometry::TriangleMesh selected_negative =
+            box.SelectByIndex(indices_negative);
+    EXPECT_TRUE(
+            selected_negative.GetVertexPositions().AllClose(expected_verts));
+    EXPECT_TRUE(selected_negative.GetTriangleIndices().AllClose(expected_tris));
 
     // select with empty triangles as result
     // set the expected value

@@ -1171,6 +1171,7 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
                                     "out of range. "
                                     "It is ignored.",
                                     indices_ptr[i]);
+                            continue;
                         }
                         vertex_mask_ptr[indices_ptr[i]] = 1;
                     }
