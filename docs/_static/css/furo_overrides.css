@@ -42,3 +42,8 @@
   position: relative;
   float: right;
 }
+
+/* Fix for references. See Open3D PR #6470 */
+div.citation > span {
+	padding-right: 2rem;
+}
