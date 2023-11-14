@@ -51,7 +51,7 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, ConstructorNoArg) {
     EXPECT_EQ(aabb.GetDevice(), core::Device("CPU:0"));
 
     // Print Information.
-    EXPECT_EQ(aabb.ToString(), "AxisAlignedBoundingBox[Float32, CPU:0]");
+    EXPECT_EQ(aabb.ToString(), "AxisAlignedBoundingBox[[0 0 0] - [0 0 0], Float32, CPU:0]");
 }
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, Constructor) {
