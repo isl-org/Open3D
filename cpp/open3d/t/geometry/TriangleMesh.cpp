@@ -1061,6 +1061,7 @@ TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
     return result;
 }
 
+namespace {
 ///
 /// This function shrinks a vertex attribute tensor to have length new_size.
 /// This function is used in RemoveDuplicateVerticesWorker.
@@ -1203,7 +1204,7 @@ TriangleMesh& RemoveDuplicateVerticesWorker(TriangleMesh &mesh)
 
     return mesh;
 }
-
+} //Anonymous namespace
 
 ///
 /// Remove duplicate vertices from a mesh and return the resulting mesh.
