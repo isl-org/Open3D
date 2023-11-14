@@ -35,12 +35,14 @@ Pip (PyPI)
     pip install open3d        # or
     pip install open3d-cpu    # Smaller CPU only wheel on x86_64 Linux (since v0.17+)
 
+.. warning::
 
-.. note::
    Please upgrade your ``pip`` to a version >=20.3 to install Open3D in Linux,
    e.g. with
 
-        ``pip install -U pip>=20.3``
+   .. code-block:: bash
+
+        pip install -U pip>=20.3
 
 .. note::
     In general, we recommend using a
@@ -99,7 +101,7 @@ install the latest development version directly with pip:
 
     pip install -U --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d
 
-.. note::
+.. warning::
    The development wheels for Linux are named according to PEP600. Please
    use ``pip`` version >=20.3 to install them. The wheels are not yet fully
    PEP600 compliant.
@@ -182,7 +184,7 @@ provided here [#]_:
     only.
 .. [#] To check the `glibc` version on your system, run :code:`ldd --version`.
 
-.. note:: In Linux, do not link code with different CXX11 ABIs, since this will
+.. warning:: In Linux, do not link code with different CXX11 ABIs, since this will
     most likely cause linker errors or crashes. Most system libraries in recent
     Linux versions (e.g. if the OS came with GCC versions 5+) use the CXX11 ABI,
     while PyTorch and Tensorflow libraries typically use the pre CXX11 ABI.

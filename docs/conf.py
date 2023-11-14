@@ -8,7 +8,7 @@
 # -*- coding: utf-8 -*-
 #
 # Open3D documentation build configuration file, created by
-# sphinx-quickstart on Mon Apr  3 14:18:28 2017.
+# sphinx-quickstart on Mon Apr 3 14:18:28 2017.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -68,7 +68,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "nbsphinx",
-    'm2r2',
+    "m2r2",
 ]
 
 if os.environ.get("skip_notebooks", "false") == "true":
@@ -131,25 +131,18 @@ exclude_patterns = [
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+pygments_dark_style = "monokai"
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-# html_theme = 'alabaster'
-theme_path = "@OPEN3D_SPHINX_THEME_SOURCE_DIR@"
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [theme_path]
+html_theme = "furo"
 html_favicon = "_static/open3d_logo.ico"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
 html_theme_options = {
     # 'display_version': True
 }
@@ -159,15 +152,13 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 
 # '_static' contains the theme overwrite
-static_path = os.path.join(theme_path, "sphinx_rtd_theme", "static")
-html_static_path = [static_path, "_static"]
+html_static_path = ["_static"]
 
-# Force table wrap: https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
-html_context = {
-    "css_files": [
-        "_static/theme_overrides.css"  # override wide tables in RTD theme
-    ]
-}
+# Theme overrides
+html_css_files = ['css/furo_overrides.css']
+
+# Display selection of all documentation versions.
+html_context = {'display_all_docs_versions': True}
 
 # added by Jaesik to hide "View page source"
 html_show_sourcelink = False

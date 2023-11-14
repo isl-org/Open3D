@@ -13,10 +13,6 @@
 Open3D: A Modern Library for 3D Data Processing
 ===============================================
 
-.. only: not latex
-
-    Contents:
-
 .. toctree::
     :maxdepth: 1
     :caption: Getting Started
