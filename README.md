@@ -40,6 +40,11 @@ the open-source community.
 -   GPU acceleration for core 3D operations
 -   Available in C++ and Python
 
+Here's a brief overview of the different components of Open3D and how they fit
+together to enable full end to end pipelines:
+
+![Open3D_layers](https://github.com/isl-org/Open3D/assets/41028320/e9b8645a-a823-4d78-8310-e85207bbc3e4)
+
 For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
 ## Python quick start

@@ -901,7 +901,7 @@ Args:
         number of faces in the mesh.
     
 Returns:
-    A new mesh with the selected faces.
+    A new mesh with the selected faces. If the original mesh is empty, return an empty mesh.
 
 Example:
 
@@ -923,6 +923,30 @@ Example:
 
         o3d.visualization.draw(parts)
 
+)");
+
+    triangle_mesh.def(
+            "select_by_index", &TriangleMesh::SelectByIndex, "indices"_a,
+            R"(Returns a new mesh with the vertices selected according to the indices list.
+If an item from the indices list exceeds the max vertex number of the mesh
+or has a negative value, it is ignored.
+
+Args:
+    indices (open3d.core.Tensor): An integer list of indices. Duplicates are
+    allowed, but ignored. Signed and unsigned integral types are accepted.
+
+Returns:
+    A new mesh with the selected vertices and faces built from these vertices.
+    If the original mesh is empty, return an empty mesh.
+
+Example:
+
+    This code selects the top face of a box, which has indices [2, 3, 6, 7]::
+
+        import open3d as o3d
+        import numpy as np
+        box = o3d.t.geometry.TriangleMesh.create_box()
+        top_face = box.select_by_index([2, 3, 6, 7])
 )");
 }
 
