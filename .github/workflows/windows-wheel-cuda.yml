@@ -91,6 +91,7 @@ jobs:
             -DBUILD_SHARED_LIBS="${env:SHARED_LIBS}" `
             -DSTATIC_WINDOWS_RUNTIME=OFF `
             -DBUILD_COMMON_ISPC_ISAS=ON `
+            -DENABLE_CACHED_CUDA_MANAGER=OFF `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=OFF `
