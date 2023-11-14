@@ -127,6 +127,7 @@ public:
     /// Visualizer should be updated accordingly.
     ///
     /// \param geometry_ptr The Geometry object.
+    /// \param reset_bounding_box Reset viewpoint to view all geometries.
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
@@ -140,6 +141,7 @@ public:
     /// added by AddGeometry
     ///
     /// \param geometry_ptr The Geometry object.
+    /// \param reset_bounding_box Reset viewpoint to view all geometries.
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
