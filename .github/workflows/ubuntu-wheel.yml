@@ -19,6 +19,9 @@ concurrency:
 
 env:
   GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
+  BUILD_CUDA_MODULE: 'ON'
+  BUILD_PYTORCH_OPS: 'ON'
+  BUILD_TENSORFLOW_OPS: 'OFF'   # Turn ON when cxx11_abi is same for TF and PyTorch
 
 jobs:
   build-wheel:
@@ -27,16 +30,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10']
+        python_version: ['3.8', '3.9', '3.10', '3.11']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: '3.7'
-          - is_master: false
             python_version: '3.8'
           - is_master: false
             python_version: '3.9'
+          - is_master: false
+            python_version: '3.10'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
@@ -53,22 +56,22 @@ jobs:
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
-          if [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py37_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+          if [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py38_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py39_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py310_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py37
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py311_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py38
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py39
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py310
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py311
           fi
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
@@ -114,16 +117,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10']
+        python_version: ['3.8', '3.9', '3.10', '3.11']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: '3.7'
-          - is_master: false
             python_version: '3.8'
           - is_master: false
             python_version: '3.9'
+          - is_master: false
+            python_version: '3.10'
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -199,6 +202,10 @@ jobs:
                 # Rename docs archive:
                 gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
                     gs://open3d-docs/${{ github.sha }}.tar.gz
+                # Set holds on new artifacts, release on old
+                gsutil retention temp release gs://open3d-releases-master/*
+                gsutil retention temp set gs://open3d-releases-master/python-wheels/*${GITHUB_SHA:0:7}*.whl
+                gsutil retention temp set gs://open3d-releases-master/devel/*${GITHUB_SHA:0:7}*
             else
                 echo "All wheels / docs not available yet."
             fi

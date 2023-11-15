@@ -15,8 +15,14 @@
 * Fix raycasting scene: Allow setting of number of threads that are used for building a raycasting scene
 * Fix Python bindings for CUDA device synchronization, voxel grid saving (PR #5425)
 * Support msgpack versions without cmake
+* Changed TriangleMesh to store materials in a list so they can be accessed by the material index (PR #5938)
 * Support multi-threading in the RayCastingScene function to commit scene (PR #6051).
 * Fix some bad triangle generation in TriangleMesh::SimplifyQuadricDecimation
+* Fix printing of tensor in gpu and add validation check for bounds of axis-aligned bounding box (PR #6444)
+* Python 3.11 support. bump pybind11 v2.6.2 -> v2.11.1
+* Check for support of CUDA Memory Pools at runtime (#4679)
+* Fix `toString`, `CreateFromPoints` methods and improve docs in `AxisAlignedBoundingBox`. 🐛📝
+* Migrate Open3d documentation to furo theme ✨ (#6470)
 * Implemented functionality for removing duplicate vertices from TriangleMesh (PR #6414).
 
 ## 0.13

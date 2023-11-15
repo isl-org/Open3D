@@ -58,7 +58,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v4
         with:
-          python-version: '3.7'
+          python-version: '3.8'
 
       - name: Install dependencies
         env:
@@ -123,6 +123,10 @@ jobs:
                 # Rename docs archive:
                 gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
                     gs://open3d-docs/${{ github.sha }}.tar.gz
+                # Set holds on new artifacts, release on old
+                gsutil retention temp release gs://open3d-releases-master/*
+                gsutil retention temp set gs://open3d-releases-master/python-wheels/*${GITHUB_SHA:0:7}*.whl
+                gsutil retention temp set gs://open3d-releases-master/devel/*${GITHUB_SHA:0:7}*
             else
                 echo "All wheels / docs not available yet."
             fi

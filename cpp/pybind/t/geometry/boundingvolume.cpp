@@ -197,7 +197,7 @@ The scaling center will be the box center if it is not specified.)",
             m, "AxisAlignedBoundingBox", "create_from_points",
             {{"points",
               "A list of points with data type of float32 or float64 (N x 3 "
-              "tensor, where N must be larger than 3)."}});
+              "tensor)."}});
 
     py::class_<OrientedBoundingBox, PyGeometry<OrientedBoundingBox>,
                std::shared_ptr<OrientedBoundingBox>, Geometry, DrawableGeometry>

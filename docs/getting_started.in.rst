@@ -13,10 +13,10 @@ Open3D Python packages are distributed via
 
 Supported Python versions:
 
-* 3.7
 * 3.8
 * 3.9
 * 3.10
+* 3.11
 
 Supported operating systems:
 
@@ -35,12 +35,14 @@ Pip (PyPI)
     pip install open3d        # or
     pip install open3d-cpu    # Smaller CPU only wheel on x86_64 Linux (since v0.17+)
 
+.. warning::
 
-.. note::
    Please upgrade your ``pip`` to a version >=20.3 to install Open3D in Linux,
    e.g. with
 
-        ``pip install -U pip>=20.3``
+   .. code-block:: bash
+
+        pip install -U pip>=20.3
 
 .. note::
     In general, we recommend using a
@@ -68,28 +70,28 @@ version (``HEAD`` of ``master`` branch):
     :widths: auto
 
     * - Linux
-      - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
       - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
       - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.11 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_27_x86_64.whl>`__
 
     * - Linux (CPU)
-      - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
       - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
       - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.11 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_27_x86_64.whl>`__
 
     * - MacOS
-      - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_15_x86_64.whl>`__
-      - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_15_x86_64.whl>`__
-      - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_10_15_x86_64.whl>`__
-      - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_10_15_x86_64.whl>`__
+      - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_11_0_x86_64.whl>`__
+      - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_11_0_x86_64.whl>`__
+      - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_11_0_x86_64.whl>`__
+      - `Python 3.11 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-macosx_10_15_universal2.whl>`__
 
     * - Windows
-      - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-win_amd64.whl>`__
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
       - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-win_amd64.whl>`__
       - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-win_amd64.whl>`__
+      - `Python 3.11 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-win_amd64.whl>`__
 
 Please use these links from the `latest version of this page
 <http://www.open3d.org/docs/latest/getting_started.html>`__ only. You can also
@@ -99,7 +101,7 @@ install the latest development version directly with pip:
 
     pip install -U --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d
 
-.. note::
+.. warning::
    The development wheels for Linux are named according to PEP600. Please
    use ``pip`` version >=20.3 to install them. The wheels are not yet fully
    PEP600 compliant.
@@ -182,7 +184,7 @@ provided here [#]_:
     only.
 .. [#] To check the `glibc` version on your system, run :code:`ldd --version`.
 
-.. note:: In Linux, do not link code with different CXX11 ABIs, since this will
+.. warning:: In Linux, do not link code with different CXX11 ABIs, since this will
     most likely cause linker errors or crashes. Most system libraries in recent
     Linux versions (e.g. if the OS came with GCC versions 5+) use the CXX11 ABI,
     while PyTorch and Tensorflow libraries typically use the pre CXX11 ABI.
