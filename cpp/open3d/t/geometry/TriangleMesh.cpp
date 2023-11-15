@@ -1062,57 +1062,6 @@ TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
 }
 
 namespace {
-///
-/// This function shrinks a vertex attribute tensor to have length new_size.
-/// This function is used in RemoveDuplicateVerticesWorker.
-/// Assumptions: 
-/// 1. The new_size is the number of unique vertices in the mesh.
-/// 2. The attribute tensor has been updated during duplicate removal in such a way that
-///    attributes corresponding to unique vertices are moved to the beginning and the rest
-///    can be discarded.
-/// \param attrib The attribute whose tensor has to be shrunk.
-/// \param mesh The mesh from which duplicates have to be removed.
-/// \param new_size The size to shrink the attribute tensor to.
-void ShrinkVertexAttributeTensor(const std::string &attrib, TriangleMesh &mesh, int64_t new_size)    
-{
-    auto old_tensor = mesh.GetVertexAttr(attrib);
-    std::vector<decltype(new_size)> old_shape_vec(old_tensor.GetShape());
-    assert (new_size <= old_shape_vec[0]);
-    old_shape_vec[0] = new_size;
-
-    auto new_shape = core::SizeVector(old_shape_vec);
-    core::Tensor new_tensor = core::Tensor(new_shape, old_tensor.GetDtype(), old_tensor.GetDevice());
-    for(decltype(new_size) i = 0; i < new_size; ++i) {
-        new_tensor[i] = old_tensor[i];
-    }
-    mesh.SetVertexAttr(attrib, new_tensor);
-}
-
-
-/// This function is used in RemoveDuplicateVerticesWorker to update
-/// the triangle indices once a mapping from old indices to newer ones is computed.
-/// \param indices_ptr The triangle indices pointer computed for appropriate datatype from mesh.triangle.indices.
-/// \param index_old_to_new Map from old indices to new indices.
-/// \param mesh The mesh on which the new index mapping for triangles is to be computed
-template<typename T, typename Length_t>
-void RemapTriangleIndices(T *indices_ptr, std::vector<Length_t> &index_old_to_new, TriangleMesh &mesh)
-{
-    auto triangles = mesh.GetTriangleIndices();
-    auto nIndices = triangles.GetLength();
-    std::vector<T> flat_indices(nIndices * 3);
-    for(Length_t tI = 0; tI < nIndices; ++tI) {
-        auto curI = static_cast<Length_t>(tI * 3);
-        flat_indices[curI] = index_old_to_new[indices_ptr[curI]];
-        curI++;
-        flat_indices[curI] = index_old_to_new[indices_ptr[curI]];
-        curI++;
-        flat_indices[curI] = index_old_to_new[indices_ptr[curI]];
-    }
-    core::Tensor new_indices = core::Tensor(flat_indices, triangles.GetShape(),
-                                              triangles.GetDtype(), triangles.GetDevice());
-    mesh.SetTriangleIndices(new_indices);
-}
-
 
 /// This is a templatized local version of RemoveDuplicates.
 /// Use of templates allows us to use common code for different
@@ -1135,7 +1084,7 @@ void RemapTriangleIndices(T *indices_ptr, std::vector<Length_t> &index_old_to_ne
 /// \param mesh The mesh from which duplicate vertices are to be removed.
 template<typename Coord_t, typename Tindex_t>
 TriangleMesh& RemoveDuplicateVerticesWorker(TriangleMesh &mesh)
-{
+{   
     //Algorithm based on Eigen implementation 
     if(!mesh.HasVertexPositions()) {
         utility::LogWarning("TriangeMesh::RemoveDuplicateVertices: No vertices present, ignoring.");
@@ -1147,63 +1096,64 @@ TriangleMesh& RemoveDuplicateVerticesWorker(TriangleMesh &mesh)
             point_to_old_index;
 
     auto vertices = mesh.GetVertexPositions();
-    auto triangles = mesh.GetTriangleIndices();
-
-    //Create a vector of pointers to attribute tensors.
-    std::vector<core::Tensor *> vertexAttrs;
-    std::vector<std::string> vertexAttrNames;
-    std::vector<bool> hasVertexAttrs;
-    for(auto item: mesh.GetVertexAttr()) {
-        vertexAttrNames.push_back(item.first);
-        vertexAttrs.push_back(&mesh.GetVertexAttr(item.first));
-        hasVertexAttrs.push_back(mesh.HasVertexAttr(item.first));
-    }
-
-    auto old_vertex_num = vertices.GetLength();
-    using Length_t = decltype(old_vertex_num);
-    std::vector<Length_t> index_old_to_new(old_vertex_num);
+    auto orig_num_vertices = vertices.GetLength();
+    const auto vmask_type = core::Int32;
+    using vmask_itype = int32_t;
+    core::Tensor vertex_mask = core::Tensor::Zeros({orig_num_vertices}, vmask_type);
+    using Length_t = decltype(orig_num_vertices);
+    std::vector<Length_t> index_old_to_new(orig_num_vertices);
 
     //REM_DUP_VERT_STEP 1: 
     // Compute map from points to old indices, and use a counter
     // to compute a map from old indices to new unique indices.
     const Coord_t *vertices_ptr = vertices.GetDataPtr<Coord_t>();
+    vmask_itype * vertex_mask_ptr = vertex_mask.GetDataPtr<vmask_itype>();
     Length_t k = 0;                                  // new index
-    for (Length_t i = 0; i < old_vertex_num; i++) {  // old index
+    for (Length_t i = 0; i < orig_num_vertices; ++i) {  // old index
         Point3d coord = std::make_tuple(vertices_ptr[i * 3], vertices_ptr[i * 3 + 1],
                                         vertices_ptr[i * 3 + 2]);
         if (point_to_old_index.find(coord) == point_to_old_index.end()) {
             point_to_old_index[coord] = i;
             index_old_to_new[i] = k;
-            //Update attributes, including positions
-            for(size_t j = 0; j < vertexAttrs.size(); ++j) {
-                if (!hasVertexAttrs[j]) continue;
-                auto &vattr = *vertexAttrs[j];
-                vattr[k] = vattr[i];
-            }
-            k++;
+            ++k;
+            vertex_mask_ptr[i] = 1;
         } else {
             index_old_to_new[i] = index_old_to_new[point_to_old_index[coord]];
         }
     }
+    vertex_mask = vertex_mask.To(mesh.GetDevice(), core::Bool);
+
     //REM_DUP_VERT_STEP 2:
-    // Shrink all the vertex attribute tensors to size equal to number of unique vertices.
-    for(size_t j = 0; j < vertexAttrNames.size(); ++j) {
-        ShrinkVertexAttributeTensor(vertexAttrNames[j], mesh, k);
+    // Update vertex attributes, by shrinking them appropriately.
+    for (auto item : mesh.GetVertexAttr()) {
+        mesh.SetVertexAttr(item.first, item.second.IndexGet({vertex_mask}));
     }
 
     //REM_DUP_VERT_STEP 3:
-    // Remap triangle indices to new unique vertex indices.
-    if (k < old_vertex_num) {
+    // Remap triangle indices to new unique vertex indices, if required.
+    if (k < orig_num_vertices) {
+        core::Tensor tris = mesh.GetTriangleIndices();
+        core::Tensor tris_cpu = tris.To(core::Device()).Contiguous();
+        const int64_t num_tris = tris_cpu.GetLength();
         //Update triangle indices.
-        Tindex_t *indices_ptr = triangles.GetDataPtr<Tindex_t>();
-        RemapTriangleIndices(indices_ptr, index_old_to_new, mesh);
+        Tindex_t *indices_ptr = tris_cpu.GetDataPtr<Tindex_t>();
+        for(int64_t i = 0; i < num_tris * 3; ++i) {
+            int64_t new_idx = index_old_to_new[indices_ptr[i]];
+            indices_ptr[i] = Tindex_t(new_idx);
+        }
+        //Update triangle indices, no need to update other attributes.
+        tris = tris_cpu.To(mesh.GetDevice());
+        mesh.SetTriangleIndices(tris);
     }
+
     utility::LogDebug(
              "[RemoveDuplicatedVertices] {:d} vertices have been removed.",
-             (int)(old_vertex_num - k));
+             (int)(orig_num_vertices - k));
 
     return mesh;
+
 }
+
 } //Anonymous namespace
 
 ///

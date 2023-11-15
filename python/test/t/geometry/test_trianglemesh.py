@@ -730,7 +730,7 @@ def verify_rem_dup_success(unique_v: List[List], unique_i: List[List], dup_v: Li
 
     # Make sure all dup and uniq indices point to
     # same vertex coordinates.
-    for i in range(len(unique_i)):
+    for i, _ in enumerate(unique_i):
         for t in range(3):
             dI = dup_i[i][t]
             uI = unique_i[i][t]
