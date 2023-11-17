@@ -435,7 +435,9 @@ class SphinxDocsBuilder:
                               env=sphinx_env,
                               stdout=sys.stdout,
                               stderr=sys.stderr)
-        print(f"Sphinx docs are generated at {build_dir}/index.html")
+        print(
+            f"Sphinx docs are generated at {(Path(build_dir)/'index.html').as_uri()}"
+        )
 
 
 class DoxygenDocsBuilder:
@@ -455,7 +457,9 @@ class DoxygenDocsBuilder:
             os.path.join("doxygen", "html"),
             output_path,
         )
-        print(f"Doxygen docs are generated at {output_path}/index.html")
+        print(
+            f"Doxygen docs are generated at {(Path(output_path)/'index.html').as_uri()}"
+        )
 
         if os.path.exists(doxygen_temp_dir):
             shutil.rmtree(doxygen_temp_dir)
