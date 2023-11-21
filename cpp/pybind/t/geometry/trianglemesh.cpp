@@ -192,6 +192,20 @@ The attributes of the triangle mesh have different levels::
                       "normalized"_a = true);
 
     triangle_mesh.def(
+            "get_surface_area", &TriangleMesh::GetSurfaceArea,
+            R"(Computes the surface area of the mesh, i.e., the sum of the individual triangle surfaces.
+
+Example:
+    This computes the surface area of the Stanford Bunny::
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.io.read_triangle_mesh(bunny.path)
+        print('The surface area is', mesh.get_surface_area())
+
+Returns:
+    A scalar describing the surface area of the mesh.
+)");
+
+    triangle_mesh.def(
             "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
             "joggle_inputs"_a = false,
             R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
