@@ -45,5 +45,11 @@
 
 /* Fix for references. See Open3D PR #6470 */
 div.citation > span {
-	padding-right: 2rem;
+  padding-right: 2rem;
+}
+
+/* Limit output of jupyter notebook within a scrollable area in generated documentation */
+.nboutput .output_area div > pre {
+        overflow-y: scroll !important;
+        max-height: 30em;
 }
