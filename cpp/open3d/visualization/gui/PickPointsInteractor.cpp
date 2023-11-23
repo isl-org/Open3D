@@ -173,7 +173,7 @@ void PickPointsInteractor::SetPickableGeometry(
             points_.insert(points_.end(), mesh->vertices_.begin(),
                            mesh->vertices_.end());
         } else if (lineset) {
-            points_.insert(points_.end(), cloud->points_.begin(),
+            points_.insert(points_.end(), lineset->points_.begin(),
                            lineset->points_.end());
         }
         else if (tcloud || tmesh || tlineset) {
