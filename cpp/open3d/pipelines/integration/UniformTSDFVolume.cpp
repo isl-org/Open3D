@@ -15,6 +15,12 @@
 #include "open3d/pipelines/integration/MarchingCubesConst.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Parallel.h"
+//#include "open3d/t/geometry/VtkUtils.h"
+
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+#include <vtkFlyingEdges3D.h>
+#include <vtkMarchingCubes.h>
 
 namespace open3d {
 namespace pipelines {
@@ -137,6 +143,14 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
     }
     return pointcloud;
 }
+
+std::shared_ptr<geometry::TriangleMesh>
+UniformTSDFVolume::ExtractTriangleMesh_v2() {
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+
+    return mesh;
+}
+
 
 std::shared_ptr<geometry::TriangleMesh>
 UniformTSDFVolume::ExtractTriangleMesh() {
