@@ -13,6 +13,7 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
+#include <cstring>
 #include <unordered_set>
 
 #ifdef _MSC_VER
@@ -658,11 +659,13 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         }
 
         // Update the geometry to reflect new geometry count
+        // ******** NOTE ******** setGeometryAt changed - this code path needs to be
+        // tested!!!!
         if (geometry_update_needed) {
             auto& renderable_mgr = engine_.getRenderableManager();
             auto inst = renderable_mgr.getInstance(g->filament_entity);
             renderable_mgr.setGeometryAt(
-                    inst, 0, filament::RenderableManager::PrimitiveType::POINTS,
+                    inst, 0, filament::RenderableManager::PrimitiveType::POINTS, nullptr, nullptr,
                     0, n_vertices);
         }
     }
@@ -1067,7 +1070,9 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         return map && map->HasData();
     };
     if (is_map_valid(props.albedo_img)) {
+        utility::LogWarning("Adding albedo texture with sRGB true!");
         maps.albedo_map = renderer_.AddTexture(props.albedo_img, true);
+        // maps.albedo_map = renderer_.AddTexture(props.albedo_img);
     }
     if (is_map_valid(props.normal_img)) {
         maps.normal_map = renderer_.AddTexture(props.normal_img);

@@ -76,7 +76,7 @@ void EngineInstance::DestroyInstance() { g_instance.reset(); }
 
 /// external function defined in custom Filament EGL backend for headless
 /// rendering
-extern "C" filament::backend::Platform* CreateEGLHeadlessPlatform();
+// extern "C" filament::backend::Platform* CreateEGLHeadlessPlatform();
 
 EngineInstance::EngineInstance() {
     filament::backend::Backend backend = filament::backend::Backend::DEFAULT;
@@ -99,13 +99,16 @@ EngineInstance::EngineInstance() {
     if (is_headless_) {
 #ifdef __linux__
         utility::LogInfo("EGL headless mode enabled.");
-        custom_platform = CreateEGLHeadlessPlatform();
+        // ******** NOTE ******** FIGURE OUT HEADLESS WITH LATEST FILAMENT!!
+        // custom_platform = CreateEGLHeadlessPlatform();
 #else
         utility::LogError("EGL Headless is not supported on this platform.");
 #endif
     }
 
     engine_ = filament::Engine::create(backend, custom_platform);
+    utility::LogWarning("Feature level detected: {}", (int)engine_->getSupportedFeatureLevel());
+    // engine_->setActiveFeatureLevel(filament::Engine::FeatureLevel::FEATURE_LEVEL_2);
     resource_manager_ = new FilamentResourceManager(*engine_);
 }
 
