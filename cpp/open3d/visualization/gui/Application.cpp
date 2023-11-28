@@ -144,9 +144,13 @@ struct Application::Impl {
         InitWindowSystem();
 
         // Initialize rendering
-        visualization::rendering::EngineInstance::SelectBackend(
-                visualization::rendering::EngineInstance::RenderingType::
-                        kOpenGL);
+#ifndef APPLE
+        // Force OpenGL on Linux and Windows due to inconsistent behavior with the
+        // Vulkan backend. On Apple, leave default which will be Metal
+        // visualization::rendering::EngineInstance::SelectBackend(
+        //         visualization::rendering::EngineInstance::RenderingType::
+        //                 kOpenGL);
+#endif
     }
 
     void CleanupAfterRunning() {
