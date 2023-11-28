@@ -1,6 +1,6 @@
 include(FetchContent)
 
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl bluevk ibl image meshoptimizer smol-v utils vkshaders)
+set(filament_LIBRARIES filameshio filament filaflat filabridge geometry backend bluegl bluevk ibl image ktxreader meshoptimizer smol-v utils vkshaders)
 
 if (FILAMENT_PRECOMPILED_ROOT)
     if (EXISTS "${FILAMENT_PRECOMPILED_ROOT}")
@@ -30,26 +30,32 @@ else()
         set(FILAMENT_SHA256 2765d0ce60647fc17d1880c4618cf7d6b5343d8be4dad87978c3917d9c723b4e)
         string(APPEND lib_dir /x86_64)
     else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
-        execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
-        string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
-        if(${glibc_version} VERSION_LESS "2.31")
-            set(FILAMENT_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux.tgz)
-            set(FILAMENT_SHA256 f0c0b05a543dd0c82b1cd571957a90f28e72cfeee36d19a527c17ac9de4733d5)
-            message(STATUS "GLIBC version ${glibc_version} found: Using "
-                "Google Filament binary.")
-        else()
-            set(FILAMENT_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux-20.04.tgz)
-            set(FILAMENT_SHA256 c756fd76f5c6a40ca554f8c3cca424354a2a22ea6fce3c8ea893d4c4aa39514c)
-            message(STATUS "GLIBC version ${glibc_version} found: Using "
-                "Open3D Filament binary.")
-        endif()
+        set(FILAMENT_URL 
+            https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.46.0-ubuntu20.04.tgz)
+        set(FILAMENT_SHA256 49354c0a49b2180c7d037bcef1453a2051e0b5a51a73dfee40271d411ec43cd4)
+        string(APPEND lib_dir /x86_64)
+        message(STATUS "Filament lib dir is ${lib_dir}")
+        # execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
+        # string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
+        # if(${glibc_version} VERSION_LESS "2.31")
+        #     set(FILAMENT_URL
+        #         https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux.tgz)
+        #     set(FILAMENT_SHA256 f0c0b05a543dd0c82b1cd571957a90f28e72cfeee36d19a527c17ac9de4733d5)
+        #     message(STATUS "GLIBC version ${glibc_version} found: Using "
+        #         "Google Filament binary.")
+        # else()
+        #     set(FILAMENT_URL
+        #         https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux-20.04.tgz)
+        #     set(FILAMENT_SHA256 c756fd76f5c6a40ca554f8c3cca424354a2a22ea6fce3c8ea893d4c4aa39514c)
+        #     message(STATUS "GLIBC version ${glibc_version} found: Using "
+        #         "Open3D Filament binary.")
+        # endif()
     endif()
 
     set(lib_byproducts ${filament_LIBRARIES})
     list(TRANSFORM lib_byproducts PREPEND <SOURCE_DIR>/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
     list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
+    message(STATUS "Filament byproducts: ${lib_byproducts}")
 
     if(WIN32)
         set(lib_byproducts_debug ${filament_LIBRARIES})
@@ -73,6 +79,7 @@ else()
         BUILD_BYPRODUCTS ${lib_byproducts}
     )
     ExternalProject_Get_Property(ext_filament SOURCE_DIR)
+    message(STATUS "Filament source dir is ${SOURCE_DIR}")
     set(FILAMENT_ROOT ${SOURCE_DIR})
 endif()
 

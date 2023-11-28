@@ -1306,6 +1306,7 @@ if(BUILD_GUI)
                 set(FILAMENT_RUNTIME_VER x86_64)
             endif()
         endif()
+        set(FILAMENT_RUNTIME_VER x86_64)
         open3d_import_3rdparty_library(3rdparty_filament
             HEADER
             INCLUDE_DIRS ${FILAMENT_ROOT}/include/
