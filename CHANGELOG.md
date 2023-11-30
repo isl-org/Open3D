@@ -23,6 +23,7 @@
 * Check for support of CUDA Memory Pools at runtime (#4679)
 * Fix `toString`, `CreateFromPoints` methods and improve docs in `AxisAlignedBoundingBox`. 🐛📝
 * Migrate Open3d documentation to furo theme ✨ (#6470)
+* Expose Near Clip + Far Clip parameters to setup_camera in OffscreenRenderer (#6520)
 
 ## 0.13
 
