@@ -21,7 +21,7 @@ if errorlevel 9009 (
     exit /b 1
 )
 
-python make.py %1
+python make_docs.py %1
 goto end
 
 :end

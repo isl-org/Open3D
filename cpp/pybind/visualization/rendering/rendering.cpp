@@ -176,6 +176,8 @@ void pybind_rendering_classes(py::module &m) {
                  "near_clip, far_clip): "
                  "sets camera view using bounding box of current geometry "
                  "if the near_clip and far_clip parameters are unset",
+                 py::arg("verticalFoV"), py::arg("center"),
+                 py::arg("eye"), py::arg("up"),
                  py::arg("nearClip") = -1.0f, py::arg("farClip") = -1.0f)
             .def("setup_camera",
                  py::overload_cast<const camera::PinholeCameraIntrinsic &,
