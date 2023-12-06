@@ -420,7 +420,7 @@ build_docs() {
     export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}:$PWD/lib/python_package"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never
+    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never --py_example_rst=never
     python -m pip uninstall --yes open3d
     cd ../build
     set +x # Echo commands off
@@ -440,7 +440,7 @@ build_docs() {
     bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --py_api_rst=always --execute_notebooks=never --sphinx --doxygen
+    python make_docs.py $DOC_ARGS --py_api_rst=always --py_example_rst=always --execute_notebooks=never --sphinx --doxygen
     set +x # Echo commands off
 }
 
