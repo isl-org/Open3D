@@ -23,6 +23,7 @@
 * Check for support of CUDA Memory Pools at runtime (#4679)
 * Fix `toString`, `CreateFromPoints` methods and improve docs in `AxisAlignedBoundingBox`. 🐛📝
 * Migrate Open3d documentation to furo theme ✨ (#6470)
+* Implemented functionality for removing duplicate vertices from TriangleMesh (PR #6414).
 
 ## 0.13
 

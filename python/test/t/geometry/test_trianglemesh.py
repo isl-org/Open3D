@@ -14,6 +14,8 @@ import tempfile
 
 import sys
 import os
+from copy import deepcopy
+from typing import List
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
@@ -401,6 +403,424 @@ def test_extrude_linear():
     ans = triangle.extrude_linear([0, 0, 1])
     assert ans.vertex.positions.shape == (6, 3)
     assert ans.triangle.indices.shape == (8, 3)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_remove_duplicate_vertices1(device):
+    """Test Remove duplicates works for float32 coords and int32 indices"""
+    dtype_g = o3d.core.float32
+    dtype_i = o3d.core.int32
+    mesh = o3d.t.geometry.TriangleMesh(device)
+    mesh.vertex.positions = o3d.core.Tensor([[0.0, 0.0, 0.0],
+                                             [1.0, 0.0, 0.0],
+                                             [0.0, 0.0, 1.0],
+                                             [1.0, 0.0, 1.0],
+                                             [0.0, 1.0, 0.0],
+                                             [1.0, 1.0, 0.0],
+                                             [0.0, 1.0, 1.0],
+                                             [1.0, 0.0, 0.0],
+                                             [1.0, 1.0, 1.0]], dtype=dtype_g)
+    mesh.triangle.indices = o3d.core.Tensor([[4, 8, 5],
+                                             [4, 6, 8],
+                                             [0, 2, 4],
+                                             [2, 6, 4],
+                                             [0, 1, 2],
+                                             [1, 3, 2],
+                                             [7, 5, 8],
+                                             [7, 8, 3],
+                                             [2, 3, 8],
+                                             [2, 8, 6],
+                                             [0, 4, 1],
+                                             [1, 4, 5]], dtype=dtype_i)
+    mesh.remove_duplicate_vertices()
+    expected_pos = o3d.core.Tensor([[0., 0., 0.],
+                                    [1., 0., 0.],
+                                    [0., 0., 1.],
+                                    [1., 0., 1.],
+                                    [0., 1., 0.],
+                                    [1., 1., 0.],
+                                    [0., 1., 1.],
+                                    [1., 1., 1.]], dtype=dtype_g)
+    expected_ind = o3d.core.Tensor([[4, 7, 5],
+                                    [4, 6, 7],
+                                    [0, 2, 4],
+                                    [2, 6, 4],
+                                    [0, 1, 2],
+                                    [1, 3, 2],
+                                    [1, 5, 7],
+                                    [1, 7, 3],
+                                    [2, 3, 7],
+                                    [2, 7, 6],
+                                    [0, 4, 1],
+                                    [1, 4, 5]], dtype=dtype_i)
+
+    assert(mesh.vertex.positions.allclose(expected_pos))
+    assert(mesh.triangle.indices.allclose(expected_ind))
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_remove_duplicate_vertices2(device):
+    """Test Remove duplicates works for float32 coords and int64 indices"""
+    dtype_g = o3d.core.float32
+    dtype_i = o3d.core.int64
+    mesh = o3d.t.geometry.TriangleMesh(device)
+    mesh.vertex.positions = o3d.core.Tensor([[0.0, 0.0, 0.0],
+                                             [1.0, 0.0, 0.0],
+                                             [0.0, 0.0, 1.0],
+                                             [1.0, 0.0, 1.0],
+                                             [0.0, 1.0, 0.0],
+                                             [1.0, 1.0, 0.0],
+                                             [0.0, 1.0, 1.0],
+                                             [1.0, 0.0, 0.0],
+                                             [1.0, 1.0, 1.0]], dtype=dtype_g)
+    mesh.triangle.indices = o3d.core.Tensor([[4, 8, 5],
+                                             [4, 6, 8],
+                                             [0, 2, 4],
+                                             [2, 6, 4],
+                                             [0, 1, 2],
+                                             [1, 3, 2],
+                                             [7, 5, 8],
+                                             [7, 8, 3],
+                                             [2, 3, 8],
+                                             [2, 8, 6],
+                                             [0, 4, 1],
+                                             [1, 4, 5]], dtype=dtype_i)
+    mesh.remove_duplicate_vertices()
+    expected_pos = o3d.core.Tensor([[0., 0., 0.],
+                                    [1., 0., 0.],
+                                    [0., 0., 1.],
+                                    [1., 0., 1.],
+                                    [0., 1., 0.],
+                                    [1., 1., 0.],
+                                    [0., 1., 1.],
+                                    [1., 1., 1.]], dtype=dtype_g)
+    expected_ind = o3d.core.Tensor([[4, 7, 5],
+                                    [4, 6, 7],
+                                    [0, 2, 4],
+                                    [2, 6, 4],
+                                    [0, 1, 2],
+                                    [1, 3, 2],
+                                    [1, 5, 7],
+                                    [1, 7, 3],
+                                    [2, 3, 7],
+                                    [2, 7, 6],
+                                    [0, 4, 1],
+                                    [1, 4, 5]], dtype=dtype_i)
+
+    assert(mesh.vertex.positions.allclose(expected_pos))
+    assert(mesh.triangle.indices.allclose(expected_ind))
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_remove_duplicate_vertices3(device):
+    """Test Remove duplicates works for float64 coords and int32 indices"""
+    dtype_g = o3d.core.float64
+    dtype_i = o3d.core.int32
+    mesh = o3d.t.geometry.TriangleMesh(device)
+    mesh.vertex.positions = o3d.core.Tensor([[0.0, 0.0, 0.0],
+                                             [1.0, 0.0, 0.0],
+                                             [0.0, 0.0, 1.0],
+                                             [1.0, 0.0, 1.0],
+                                             [0.0, 1.0, 0.0],
+                                             [1.0, 1.0, 0.0],
+                                             [0.0, 1.0, 1.0],
+                                             [1.0, 0.0, 0.0],
+                                             [1.0, 1.0, 1.0]], dtype=dtype_g)
+    mesh.triangle.indices = o3d.core.Tensor([[4, 8, 5],
+                                             [4, 6, 8],
+                                             [0, 2, 4],
+                                             [2, 6, 4],
+                                             [0, 1, 2],
+                                             [1, 3, 2],
+                                             [7, 5, 8],
+                                             [7, 8, 3],
+                                             [2, 3, 8],
+                                             [2, 8, 6],
+                                             [0, 4, 1],
+                                             [1, 4, 5]], dtype=dtype_i)
+    mesh.remove_duplicate_vertices()
+    expected_pos = o3d.core.Tensor([[0., 0., 0.],
+                                    [1., 0., 0.],
+                                    [0., 0., 1.],
+                                    [1., 0., 1.],
+                                    [0., 1., 0.],
+                                    [1., 1., 0.],
+                                    [0., 1., 1.],
+                                    [1., 1., 1.]], dtype=dtype_g)
+    expected_ind = o3d.core.Tensor([[4, 7, 5],
+                                    [4, 6, 7],
+                                    [0, 2, 4],
+                                    [2, 6, 4],
+                                    [0, 1, 2],
+                                    [1, 3, 2],
+                                    [1, 5, 7],
+                                    [1, 7, 3],
+                                    [2, 3, 7],
+                                    [2, 7, 6],
+                                    [0, 4, 1],
+                                    [1, 4, 5]], dtype=dtype_i)
+
+    print(f"DEBUG V: {mesh.vertex.positions}")
+    assert(mesh.vertex.positions.allclose(expected_pos))
+    print(f"DEBUG T: {mesh.triangle.indices}")
+    assert(mesh.triangle.indices.allclose(expected_ind))
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_remove_duplicate_vertices4(device):
+    """Test Remove duplicates works for float64 coords and int64 indices"""
+    dtype_g = o3d.core.float64
+    dtype_i = o3d.core.int64
+    mesh = o3d.t.geometry.TriangleMesh(device)
+    mesh.vertex.positions = o3d.core.Tensor([[0.0, 0.0, 0.0],
+                                             [1.0, 0.0, 0.0],
+                                             [0.0, 0.0, 1.0],
+                                             [1.0, 0.0, 1.0],
+                                             [0.0, 1.0, 0.0],
+                                             [1.0, 1.0, 0.0],
+                                             [0.0, 1.0, 1.0],
+                                             [1.0, 0.0, 0.0],
+                                             [1.0, 1.0, 1.0]], dtype=dtype_g)
+    mesh.triangle.indices = o3d.core.Tensor([[4, 8, 5],
+                                             [4, 6, 8],
+                                             [0, 2, 4],
+                                             [2, 6, 4],
+                                             [0, 1, 2],
+                                             [1, 3, 2],
+                                             [7, 5, 8],
+                                             [7, 8, 3],
+                                             [2, 3, 8],
+                                             [2, 8, 6],
+                                             [0, 4, 1],
+                                             [1, 4, 5]], dtype=dtype_i)
+    mesh.remove_duplicate_vertices()
+    expected_pos = o3d.core.Tensor([[0., 0., 0.],
+                                    [1., 0., 0.],
+                                    [0., 0., 1.],
+                                    [1., 0., 1.],
+                                    [0., 1., 0.],
+                                    [1., 1., 0.],
+                                    [0., 1., 1.],
+                                    [1., 1., 1.]], dtype=dtype_g)
+    expected_ind = o3d.core.Tensor([[4, 7, 5],
+                                    [4, 6, 7],
+                                    [0, 2, 4],
+                                    [2, 6, 4],
+                                    [0, 1, 2],
+                                    [1, 3, 2],
+                                    [1, 5, 7],
+                                    [1, 7, 3],
+                                    [2, 3, 7],
+                                    [2, 7, 6],
+                                    [0, 4, 1],
+                                    [1, 4, 5]], dtype=dtype_i)
+
+    print(f"DEBUG V: {mesh.vertex.positions}")
+    assert(mesh.vertex.positions.allclose(expected_pos))
+    print(f"DEBUG T: {mesh.triangle.indices}")
+    assert(mesh.triangle.indices.allclose(expected_ind))
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_remove_duplicate_vertices5(device):
+    """
+    Test that the vertex attribute colors are updated properly
+    and triangle color attribute are all preserved correctly
+    after remove duplicate operation.
+    """
+    dtype_g = o3d.core.float64
+    dtype_i = o3d.core.int32
+    mesh = o3d.t.geometry.TriangleMesh(device)
+    mesh.vertex.positions = o3d.core.Tensor([[0.0, 0.0, 0.0],
+                                             [1.0, 0.0, 0.0],
+                                             [0.0, 0.0, 1.0],
+                                             [1.0, 0.0, 1.0],
+                                             [0.0, 1.0, 0.0],
+                                             [1.0, 1.0, 0.0],
+                                             [0.0, 1.0, 1.0],
+                                             [1.0, 0.0, 0.0],
+                                             [1.0, 1.0, 1.0]], dtype=dtype_g)
+    mesh.vertex.colors = o3d.core.Tensor([[10, 20, 30],
+                                          [20, 30, 40],
+                                          [30, 40, 50],
+                                          [40, 50, 60],
+                                          [50, 60, 70],
+                                          [60, 70, 80],
+                                          [70, 80, 90],
+                                          [20, 30, 40],
+                                          [80, 90, 100]], dtype=dtype_g)
+    expected_vertex_colors = o3d.core.Tensor([[10, 20, 30],
+                                          [20, 30, 40],
+                                          [30, 40, 50],
+                                          [40, 50, 60],
+                                          [50, 60, 70],
+                                          [60, 70, 80],
+                                          [70, 80, 90],
+                                          [80, 90, 100]], dtype=dtype_g)
+    mesh.triangle.indices = o3d.core.Tensor([[4, 8, 5],
+                                             [4, 6, 8],
+                                             [0, 2, 4],
+                                             [2, 6, 4],
+                                             [0, 1, 2],
+                                             [1, 3, 2],
+                                             [7, 5, 8],
+                                             [7, 8, 3],
+                                             [2, 3, 8],
+                                             [2, 8, 6],
+                                             [0, 4, 1],
+                                             [1, 4, 5]], dtype=dtype_i)
+    expected_tri_colors = o3d.core.Tensor([[100, 11, 20],
+                                           [110, 12, 32],
+                                           [120, 13, 42],
+                                           [130, 14, 52],
+                                           [140, 15, 62],
+                                           [150, 16, 72],
+                                           [160, 17, 82],
+                                           [170, 18, 92],
+                                           [180, 19, 102],
+                                           [190, 20, 112],
+                                           [200, 21, 122],
+                                           [210, 22, 132]], dtype=dtype_g)
+    mesh.triangle.colors = expected_tri_colors
+    mesh.remove_duplicate_vertices()
+    expected_pos = o3d.core.Tensor([[0., 0., 0.],
+                                    [1., 0., 0.],
+                                    [0., 0., 1.],
+                                    [1., 0., 1.],
+                                    [0., 1., 0.],
+                                    [1., 1., 0.],
+                                    [0., 1., 1.],
+                                    [1., 1., 1.]], dtype=dtype_g)
+    expected_ind = o3d.core.Tensor([[4, 7, 5],
+                                    [4, 6, 7],
+                                    [0, 2, 4],
+                                    [2, 6, 4],
+                                    [0, 1, 2],
+                                    [1, 3, 2],
+                                    [1, 5, 7],
+                                    [1, 7, 3],
+                                    [2, 3, 7],
+                                    [2, 7, 6],
+                                    [0, 4, 1],
+                                    [1, 4, 5]], dtype=dtype_i)
+    print(f"DEBUG V: {mesh.vertex.positions}")
+    assert(mesh.vertex.positions.allclose(expected_pos))
+    print(f"DEBUG VC: {mesh.vertex.colors}")
+    assert(mesh.vertex.colors.allclose(expected_vertex_colors))
+    print(f"DEBUG T: {mesh.triangle.indices}")
+    assert(mesh.triangle.indices.allclose(expected_ind))
+    print(f"DEBUG TC: {mesh.triangle.colors.numpy()}")
+    assert(mesh.triangle.colors.allclose(expected_tri_colors))
+
+
+def verify_rem_dup_success(unique_v: List[List], unique_i: List[List], dup_v: List[List], dup_i: List[List]):
+    """Verifies that the remove duplicate operation on dup_v, dup_i,    
+    was successful"""
+    ver2uniqindx = set()
+    # Make sure no duplicates are present
+    for i, v in enumerate(unique_v):
+        vs = str(v)
+        if vs in ver2uniqindx:
+            return False
+        ver2uniqindx.add(vs)
+
+    # Verify that the length of the indices did not change.
+    if len(dup_i) != len(unique_i):
+        return False
+
+    # Make sure all dup and uniq indices point to
+    # same vertex coordinates.
+    for i, _ in enumerate(unique_i):
+        for t in range(3):
+            dI = dup_i[i][t]
+            uI = unique_i[i][t]
+            if not np.allclose(unique_v[uI], dup_v[dI]):
+                return False
+    return True
+
+
+def gen_box_mesh_dup_vertex(unique_v, unique_i, v_index, insert_pos):
+    """
+    Generates a duplicate vertex list and an updated index list from
+    the uniques afte inserting a vertex at v_index in unique_v to position
+    insert_pos.
+    """
+    n_uniq = len(unique_v)
+    assert (v_index < n_uniq and insert_pos <= n_uniq)
+    index_old_to_new = [i for i in range(n_uniq)]
+    dup_v = unique_v[:insert_pos]
+    dup_v.append(unique_v[v_index])
+    dup_v.extend(unique_v[insert_pos:])
+    for i in range(insert_pos, n_uniq):
+        index_old_to_new[i] = i + 1
+    dup_i = deepcopy(unique_i)
+    for triple in dup_i:
+        for t in range(3):
+            triple[t] = index_old_to_new[triple[t]]
+    return dup_v, dup_i
+
+
+def gen_rem_dup_test_cases():
+    """
+    Utility to generate test cases.
+    The duplicates are generated at various positions.
+    """
+    unique_v = [[0., 0., 0.],
+                [1., 0., 0.],
+                [0., 0., 1.],
+                [1., 0., 1.],
+                [0., 1., 0.],
+                [1., 1., 0.],
+                [0., 1., 1.],
+                [1., 1., 1.]]
+    unique_i = [[4, 7, 5],
+                [4, 6, 7],
+                [0, 2, 4],
+                [2, 6, 4],
+                [0, 1, 2],
+                [1, 3, 2],
+                [1, 5, 7],
+                [1, 7, 3],
+                [2, 3, 7],
+                [2, 7, 6],
+                [0, 4, 1],
+                [1, 4, 5]]
+    nv = len(unique_v)
+    # Test cases depending on position of replication.
+    vertind_repind = []
+    # Scenario 1: Replicate vertex at the beginning to end and middle.
+    vertind_repind.extend([(0, 0), (0, nv - 1), (0, nv), (0, nv//2)])
+    # Scenario 2: Replicate vertex at the end to begining and middle.
+    vertind_repind.extend([(nv - 1, nv - 1), (nv - 1, 0), (nv - 1, 1), (nv - 1, nv//2)])
+    # Scenario 3: Replicate vertex at 3 to ends and somewhere in the middle.
+    vertind_repind.extend([(3, 0), (3, nv - 1), (3, nv//2)])
+    for vind, repind in vertind_repind:
+        dup_v, dup_i = gen_box_mesh_dup_vertex(unique_v, unique_i, vind, repind)
+        yield dup_v, dup_i
+        # print(f"Duplicates for vertex at index: {vind}, replicated at: {repind}")
+        # print(f"Dup V: \n{dup_v}")
+        # print(f"Dup I: \n{dup_i}")
+        # Scenario 4: some double replication cases.
+        if vind < repind:
+            dup_v2, dup_i2 = gen_box_mesh_dup_vertex(dup_v, dup_i, vind, repind)
+            yield dup_v2, dup_i2
+            # print(f"Duplicates2 for vertex at index: {vind}, replicated at: {repind}")
+            # print(f"Dup2 V: \n{dup_v2}")
+            # print(f"Dup2 I: \n{dup_i2}")
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_remove_duplicate_vertices_gen6(device):
+    # Runs each generated test case verifies that duplicate removal was successful.
+    mesh = o3d.t.geometry.TriangleMesh(device)
+    for verts, indices in gen_rem_dup_test_cases():
+        mesh.vertex.positions = o3c.Tensor(verts, dtype=o3c.float64)
+        mesh.triangle.indices = o3c.Tensor(indices, dtype=o3c.int32)
+        mesh.remove_duplicate_vertices()
+        unique_v = mesh.vertex.positions.numpy().tolist()
+        unique_i = mesh.triangle.indices.numpy().tolist()
+        # Verify duplicate removal was successful
+        assert(verify_rem_dup_success(unique_v, unique_i, verts, indices))
 
 
 @pytest.mark.parametrize("device", list_devices())
