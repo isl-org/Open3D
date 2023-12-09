@@ -157,6 +157,8 @@ CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
 
     const int kOuterThreads = std::min(kMaxThreads, num_searches);
     const int kInnerThreads = std::max(kMaxThreads / num_searches, 1);
+    (void)kOuterThreads;
+    (void)kInnerThreads;
 #pragma omp parallel for num_threads(kOuterThreads)
     for (int k = 0; k < num_searches; ++k) {
         geometry::KDTreeFlann kdtree(features[1 - k]);
