@@ -144,8 +144,8 @@ build_pip_package() {
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
-        # the build system of the main repo expects a master branch. make sure master exists
-        git -C "${OPEN3D_ML_ROOT}" checkout -b master || true
+        # the build system of the main repo expects a main branch. make sure main exists
+        git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
         BUNDLE_OPEN3D_ML=ON
     else
         echo "Open3D-ML not available."
@@ -256,7 +256,7 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
-    # FIXME: Needed because Open3D-ML master TF and PyTorch is older than dev.
+    # FIXME: Needed because Open3D-ML main TF and PyTorch is older than dev.
     if [ $BUILD_CUDA_MODULE == ON ]; then
         install_python_dependencies with-cuda
     else
@@ -445,7 +445,7 @@ build_docs() {
 }
 
 maximize_ubuntu_github_actions_build_space() {
-    # https://github.com/easimon/maximize-build-space/blob/master/action.yml
+    # https://github.com/easimon/maximize-build-space/blob/main/action.yml
     df -h .                                  # => 26GB
     $SUDO rm -rf /usr/share/dotnet           # ~17GB
     $SUDO rm -rf /usr/local/lib/android      # ~11GB
