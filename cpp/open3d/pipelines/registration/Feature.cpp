@@ -154,10 +154,9 @@ CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
     std::vector<CorrespondenceSet> corres(num_searches);
 
     const int kMaxThreads = utility::EstimateMaxThreads();
-
     const int kOuterThreads = std::min(kMaxThreads, num_searches);
     const int kInnerThreads = std::max(kMaxThreads / num_searches, 1);
-    (void)kOuterThreads;
+    (void)kOuterThreads;  // Avoids compiler warning if OpenMP is disabled
     (void)kInnerThreads;
 #pragma omp parallel for num_threads(kOuterThreads)
     for (int k = 0; k < num_searches; ++k) {
