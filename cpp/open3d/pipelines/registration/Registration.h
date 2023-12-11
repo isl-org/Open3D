@@ -185,8 +185,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.
-/// \param source_feature Source point cloud feature.
-/// \param target_feature Target point cloud feature.
+/// \param source_features Source point cloud feature.
+/// \param target_features Target point cloud feature.
 /// \param mutual_filter Enables mutual filter such that the correspondence of
 /// the source point's correspondence is itself.
 /// \param max_correspondence_distance Maximum correspondence points-pair
@@ -197,8 +197,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const Feature &source_feature,
-        const Feature &target_feature,
+        const Feature &source_features,
+        const Feature &target_features,
         bool mutual_filter,
         double max_correspondence_distance,
         const TransformationEstimation &estimation =

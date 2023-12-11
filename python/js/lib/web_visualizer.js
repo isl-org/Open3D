@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
-// -                        Open3D: www.open3d.org                            -
+// -                         Open3D: www.open3d.org                           -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2023 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright(c) 2018-2023 www.open3d.org
+// SPDX - License - Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // Jupyter widget for Open3D WebRTC visualizer. See web_visualizer.py for the
@@ -44,49 +25,51 @@ let WebRtcStreamer = require("./webrtcstreamer");
 //
 // When serializing the entire widget state for embedding, only values that
 // differ from the defaults will be specified.
-let WebVisualizerModel = widgets.DOMWidgetModel.extend({
-  defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
-    _model_name: "WebVisualizerModel",
-    _view_name: "WebVisualizerView",
-    _model_module: "open3d",
-    _view_module: "open3d",
-    // @...@ is configured by cpp/pybind/make_python_package.cmake.
-    _model_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
-    _view_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
-  }),
-});
+class WebVisualizerModel extends widgets.DOMWidgetModel {
+  defaults() {
+    return _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
+      _model_name: "WebVisualizerModel",
+      _view_name: "WebVisualizerView",
+      _model_module: "open3d",
+      _view_module: "open3d",
+      // @...@ is configured by cpp/pybind/make_python_package.cmake.
+      _model_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
+      _view_module_version: "@PROJECT_VERSION_THREE_NUMBER@",
+    });
+  }
+}
 
 // Custom View. Renders the widget model.
-let WebVisualizerView = widgets.DOMWidgetView.extend({
-  sleep: function (time_ms) {
+class WebVisualizerView extends widgets.DOMWidgetView {
+  sleep(time_ms) {
     return new Promise((resolve) => setTimeout(resolve, time_ms));
-  },
+  }
 
-  logAndReturn: function (value) {
+  logAndReturn(value) {
     console.log("logAndReturn: ", value);
     return value;
-  },
+  }
 
-  callResultReady: function (callId) {
+  callResultReady(callId) {
     let pyjs_channel = this.model.get("pyjs_channel");
     console.log("Current pyjs_channel:", pyjs_channel);
     let callResultMap = JSON.parse(this.model.get("pyjs_channel"));
     return callId in callResultMap;
-  },
+  }
 
-  extractCallResult: function (callId) {
+  extractCallResult(callId) {
     if (!this.callResultReady(callId)) {
       throw "extractCallResult not ready yet.";
     }
     let callResultMap = JSON.parse(this.model.get("pyjs_channel"));
     return callResultMap[callId];
-  },
+  }
 
   /**
    * Hard-coded to call "call_http_api". Args and return value are all
    * strings.
    */
-  callPython: async function (func, args = []) {
+  async callPython(func, args = []) {
     let callId = this.callId.toString();
     this.callId++;
     let message = {
@@ -116,9 +99,9 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
       json_result
     );
     return json_result;
-  },
+  }
 
-  commsCall: function (url, data = {}) {
+  commsCall(url, data = {}) {
     // https://stackoverflow.com/a/736970/1255535
     // parseUrl(url).hostname
     // parseUrl(url).entryPoint
@@ -180,9 +163,9 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
     } else {
       throw "Unsupported entryPoint: " + entryPoint;
     }
-  },
+  }
 
-  render: function () {
+  render() {
     let windowUID = this.model.get("window_uid");
     let onClose = function () {
       console.log("onClose() called for window_uid:", windowUID);
@@ -214,8 +197,8 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
       this.commsCall.bind(this)
     );
     this.webRtcClient.connect(windowUID);
-  },
-});
+  }
+}
 
 module.exports = {
   WebVisualizerModel: WebVisualizerModel,

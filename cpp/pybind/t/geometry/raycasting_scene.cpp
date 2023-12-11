@@ -179,6 +179,102 @@ Returns:
     A tensor with the number of intersections. The shape is {..}.
 )doc");
 
+    raycasting_scene.def("list_intersections",
+                         &RaycastingScene::ListIntersections, "rays"_a,
+                         "nthreads"_a = 0, R"doc(
+Lists the intersections of the rays with the scene::
+
+    import open3d as o3d
+    import numpy as np
+
+    # Create scene and add the monkey model.
+    scene = o3d.t.geometry.RaycastingScene()
+    d = o3d.data.MonkeyModel()
+    mesh = o3d.t.io.read_triangle_mesh(d.path)
+    mesh_id = scene.add_triangles(mesh)
+
+    # Create a grid of rays covering the bounding box
+    bb_min = mesh.vertex['positions'].min(dim=0).numpy()
+    bb_max = mesh.vertex['positions'].max(dim=0).numpy()
+    x,y = np.linspace(bb_min, bb_max, num=10)[:,:2].T
+    xv, yv = np.meshgrid(x,y)
+    orig = np.stack([xv, yv, np.full_like(xv, bb_min[2]-1)], axis=-1).reshape(-1,3)
+    dest = orig + np.full(orig.shape, (0,0,2+bb_max[2]-bb_min[2]),dtype=np.float32)
+    rays = np.concatenate([orig, dest-orig], axis=-1).astype(np.float32)
+
+    # Compute the ray intersections.
+    lx = scene.list_intersections(rays)
+    lx = {k:v.numpy() for k,v in lx.items()}
+
+    # Calculate intersection coordinates using the primitive uvs and the mesh
+    v = mesh.vertex['positions'].numpy()
+    t = mesh.triangle['indices'].numpy()
+    tidx = lx['primitive_ids']
+    uv = lx['primitive_uvs']
+    w = 1 - np.sum(uv, axis=1)
+    c = \
+    v[t[tidx, 1].flatten(), :] * uv[:, 0][:, None] + \
+    v[t[tidx, 2].flatten(), :] * uv[:, 1][:, None] + \
+    v[t[tidx, 0].flatten(), :] * w[:, None]
+
+    # Calculate intersection coordinates using ray_ids
+    c = rays[lx['ray_ids']][:,:3] + rays[lx['ray_ids']][:,3:]*lx['t_hit'][...,None]
+                                    
+    # Visualize the rays and intersections.
+    lines = o3d.t.geometry.LineSet()
+    lines.point.positions = np.hstack([orig,dest]).reshape(-1,3)
+    lines.line.indices = np.arange(lines.point.positions.shape[0]).reshape(-1,2)
+    lines.line.colors = np.full((lines.line.indices.shape[0],3), (1,0,0))
+    x = o3d.t.geometry.PointCloud(positions=c)
+    o3d.visualization.draw([mesh, lines, x], point_size=8)
+
+
+Args:
+    rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
+        Float32 describing the rays; {..} can be any number of dimensions.
+        The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+        with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+        necessary to normalize the direction although it should be normalised if 
+        t_hit is to be calculated in coordinate units.
+
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
+
+Returns:
+    The returned dictionary contains
+    
+    ray_splits
+        A tensor with ray intersection splits. Can be used to iterate over all intersections for each ray. The shape is {num_rays + 1}.
+    
+    ray_ids
+        A tensor with ray IDs. The shape is {num_intersections}.
+        
+    t_hit
+        A tensor with the distance to the hit. The shape is {num_intersections}. 
+        
+    geometry_ids
+        A tensor with the geometry IDs. The shape is {num_intersections}.
+
+    primitive_ids
+        A tensor with the primitive IDs, which corresponds to the triangle
+        index. The shape is {num_intersections}.
+        
+    primitive_uvs 
+        A tensor with the barycentric coordinates of the intersection points within 
+        the triangles. The shape is {num_intersections, 2}.
+    
+        
+An example of using ray_splits::
+
+    ray_splits: [0, 2, 3, 6, 6, 8] # note that the length of this is num_rays+1
+    t_hit: [t1, t2, t3, t4, t5, t6, t7, t8]
+
+    for ray_id, (start, end) in enumerate(zip(ray_splits[:-1], ray_splits[1:])):
+        for i,t in enumerate(t_hit[start:end]):
+            print(f'ray {ray_id}, intersection {i} at {t}')
+            
+        
+)doc");
+
     raycasting_scene.def("compute_closest_points",
                          &RaycastingScene::ComputeClosestPoints,
                          "query_points"_a, "nthreads"_a = 0, R"doc(

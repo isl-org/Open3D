@@ -173,6 +173,12 @@ install(FILES
         "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
         DESTINATION "${Open3D_INSTALL_CMAKE_DIR}" COMPONENT dev)
 
+# Install GUI resources
+if (BUILD_GUI)
+    install(DIRECTORY ${GUI_RESOURCE_DIR}
+         DESTINATION "${Open3D_INSTALL_RESOURCE_DIR}")
+endif()
+
 if (BUILD_SHARED_LIBS AND UNIX)
     file(CONFIGURE OUTPUT Open3D.pc.in
          CONTENT [=[
@@ -184,7 +190,7 @@ Name: Open3D
 Description: @PROJECT_DESCRIPTION@
 URL: @PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
-Cflags: -std=c++@CMAKE_CXX_STANDARD@ -isystem ${includedir} -isystem ${includedir}/open3d/3rdparty -D$<JOIN:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>, -D>
+Cflags: -std=c++@CMAKE_CXX_STANDARD@ -isystem${includedir} -isystem${includedir}/open3d/3rdparty -D$<JOIN:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>, -D>
 Libs: -L${libdir} -Wl,-rpath,${libdir} -lOpen3D]=]  @ONLY NEWLINE_STYLE LF)
     file(GENERATE OUTPUT Open3D.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc.in"
         TARGET "Open3D::Open3D")

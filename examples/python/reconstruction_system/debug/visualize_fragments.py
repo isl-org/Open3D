@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/python/reconstruction_system/debug/visualize_fragment.py
+# examples/python/reconstruction_system/debug/visualize_fragments.py
 
 import argparse
 import json

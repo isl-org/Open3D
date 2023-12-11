@@ -27,28 +27,35 @@ Headless CPU Rendering
 ----------------------
 
 For Python code, you can enable CPU rendering for headless rendering when using
-the :class: `.OffscreenRenderer` for a process by setting the environment
-variable ``OPEN3D_CPU_RENDERING=true`` before importing Open3D. Here are the
-different ways to do that:
+the :class: `.OffscreenRenderer` for a process by setting an environment
+variable  before importing Open3D::
+
+ - ``EGL_PLATFORM=surfaceless`` for Ubuntu 20.04+ (Mesa v20.2 or newer)
+ - ``OPEN3D_CPU_RENDERING=true`` for Ubuntu 18.04 (Mesa older than v20.2).
+
+Here are the different ways to do that:
 
 .. code:: bash
 
-    # from the command line
-    OPEN3D_CPU_RENDERING=true python
-    examples/python/visualization/render_to_image.py
+    # from the command line (Ubuntu 20.04+)
+    EGL_PLATFORM=surfaceless python examples/python/visualization/render_to_image.py
+    # or Ubuntu 18.04
+    OPEN3D_CPU_RENDERING=true python examples/python/visualization/render_to_image.py
 
 .. code:: python
 
     # In Python code
     import os
-    os.environ['OPEN3D_CPU_RENDERING'] = 'true'
+    os.environ['EGL_PLATFORM'] = 'surfaceless'   # Ubuntu 20.04+
+    os.environ['OPEN3D_CPU_RENDERING'] = 'true'  # Ubuntu 18.04
     import open3d as o3d
 
     # In a Jupyter notebook
-    %env OPEN3D_CPU_RENDERING true
+    %env EGL_PLATFORM surfaceless   # Ubuntu 20.04+
+    %env OPEN3D_CPU_RENDERING true  # Ubuntu 18.04
     import open3d as o3d
 
-.. note:: Seeting the environment variable after importing ``open3d`` will not work,
+.. note:: Setting the environment variable after importing ``open3d`` will not work,
     even if ``open3d`` is re-imported. In this case, if no usable GPU is present, the
     Python interpreter or Jupyter kernel will crash when visualization functions are
     used.
@@ -84,13 +91,31 @@ The method for enabling interactive CPU rendering depends on your system:
    them installed is not sufficient. You can check the drivers in use with the
    ``glxinfo`` command.
 
-2.  **You use Nvidia or AMD drivers or old Mesa drivers (< v20.2).**  We provide
+2.  **You use Nvidia or AMD drivers, but your OS comes with recent Mesa drivers (>= v20.2).** 
+    Install Mesa drivers if they are not installed in your system (e.g. `sudo apt install libglx0-mesa`
+    in Ubuntu). Preload the Mesa driver library before running any Open3D application requiring CPU rendering.
+    For example:
+
+    .. code:: bash
+
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
+        Open3D
+
+    Or with Python code:
+
+    .. code:: bash
+
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
+        python examples/python/visualization/draw.py
+
+3.  **Your OS has old Mesa drivers (< v20.2).**  We provide
     the Mesa software rendering library binary for download `here
     <https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.0.tar.xz>`__.
     This is automatically downloaded to
     `build/_deps/download_mesa_libgl-src/libGL.so.1.5.0` when you build Open3D
-    from source. If you want to use CPU rendering all the time, install this
-    library to ``/usr/local/lib`` or ``$HOME/.local/lib`` and *prepend* it to your
+    from source. The prebuilt version works on Ubuntu 18.04 and Ubuntu 20.04. If
+    you want to use CPU rendering all the time, install this library to
+    ``/usr/local/lib`` or ``$HOME/.local/lib`` and *prepend* it to your
     ``LD_LIBRARY_PATH``:
 
     .. code:: bash
@@ -107,5 +132,4 @@ The method for enabling interactive CPU rendering depends on your system:
 
     .. code:: bash
 
-        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 python
-        examples/python/visualization/draw.py
+        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 python examples/python/visualization/draw.py

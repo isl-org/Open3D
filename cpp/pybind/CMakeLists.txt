@@ -66,6 +66,7 @@ elseif (UNIX)   # Linux
 };]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+    target_link_options(pybind PRIVATE "-flto=auto")
 endif()
 
 

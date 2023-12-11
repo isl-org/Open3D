@@ -87,7 +87,10 @@ std::string FindResourcePath(int argc, const char *argv[]) {
 
     auto resource_path = path + "/resources";
     if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
-        return path + "/../resources";  // building with Xcode
+        resource_path = path + "/../resources";  // building with Xcode
+        if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
+            resource_path = path + "/share/resources";  // GNU
+        }
     }
     return resource_path;
 }
@@ -451,18 +454,21 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
 }
 
 void Application::RemoveWindow(Window *window) {
+    if (impl_->should_quit_) {
+        return;
+    }
+
     for (auto it = impl_->windows_.begin(); it != impl_->windows_.end(); ++it) {
         if (it->get() == window) {
-            window->Show(false);
             impl_->windows_to_be_destroyed_.insert(*it);
             impl_->windows_.erase(it);
+            if (impl_->windows_.empty()) {
+                impl_->should_quit_ = true;
+            }
             break;
         }
     }
-
-    if (impl_->windows_.empty()) {
-        impl_->should_quit_ = true;
-    }
+    window->Show(false);
 }
 
 void Application::Quit() {

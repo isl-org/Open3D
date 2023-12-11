@@ -25,7 +25,7 @@ Getting the example code
 
 .. code-block:: sh
 
-    # Activate your conda enviroment, where you have installed open3d pip package.
+    # Activate your conda environment, where you have installed open3d pip package.
     # Clone the Open3D github repository and go to the example.
     cd examples/python/t_reconstruction_system/
 
@@ -40,7 +40,7 @@ Running the example with default dataset.
     # which is ``lounge`` dataset from stanford. 
     python dense_slam_gui.py 
 
-It is recommended to use CUDA if avaialble.
+It is recommended to use CUDA if available.
 
 .. code-block:: sh
 
@@ -49,7 +49,7 @@ It is recommended to use CUDA if avaialble.
     python dense_slam_gui.py --device 'cuda:0'
 
 Changing the default dataset.
-One may change the default dataset to other avaialble datasets. 
+One may change the default dataset to other available datasets.
 Currently the following datasets are available:
 
 1. Lounge (keyword: ``lounge``) (Default)
@@ -74,7 +74,7 @@ Example config file for online reconstruction system has been provided in
 ``examples/python/t_reconstruction_system/default_config.yml``, which looks like the following:
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/default_config.yml
-   :language: yml
+   :language: yaml
    :lineno-start: 1
    :lines: 1-
    :linenos:
@@ -87,7 +87,7 @@ images using the Intel RealSense camera. For more details, please see
 :ref:`capture_your_own_dataset`.
 
 Getting started with online reconstruction system
-``````````````````````````````````````
+`````````````````````````````````````````````````
 
 .. toctree::
 

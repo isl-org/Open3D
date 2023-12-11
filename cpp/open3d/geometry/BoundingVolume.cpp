@@ -256,6 +256,22 @@ OrientedBoundingBox AxisAlignedBoundingBox::GetMinimalOrientedBoundingBox(
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 
+AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
+                                               const Eigen::Vector3d& max_bound)
+    : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
+      min_bound_(min_bound),
+      max_bound_(max_bound),
+      color_(1, 1, 1) {
+    if ((max_bound_.array() < min_bound_.array()).any()) {
+        open3d::utility::LogWarning(
+                "max_bound {} of bounding box is smaller than min_bound {} in "
+                "one or more axes. Fix input values to remove this warning.",
+                max_bound_, min_bound_);
+        max_bound_ = max_bound.cwiseMax(min_bound);
+        min_bound_ = max_bound.cwiseMin(min_bound);
+    }
+}
+
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(
         const Eigen::Matrix4d& transformation) {
     utility::LogError(
@@ -287,7 +303,7 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(
         const Eigen::Matrix3d& rotation, const Eigen::Vector3d& center) {
     utility::LogError(
-            "A rotation of a AxisAlignedBoundingBox would not be axis aligned "
+            "A rotation of an AxisAlignedBoundingBox would not be axis-aligned "
             "anymore, convert it to an OrientedBoundingBox first");
     return *this;
 }
@@ -314,6 +330,9 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points) {
     AxisAlignedBoundingBox box;
     if (points.empty()) {
+        utility::LogWarning(
+                "The number of points is 0 when creating axis-aligned bounding "
+                "box.");
         box.min_bound_ = Eigen::Vector3d(0.0, 0.0, 0.0);
         box.max_bound_ = Eigen::Vector3d(0.0, 0.0, 0.0);
     } else {

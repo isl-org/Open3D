@@ -25,9 +25,9 @@ Register RGBD image pairs
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 46
-   :lines: 27,47-76
+   :pyobject: register_one_rgbd_pair
    :linenos:
+   :lineno-match:
 
 The function reads a pair of RGBD images and registers the ``source_rgbd_image``
 to the ``target_rgbd_image``. The Open3D function ``compute_rgbd_odometry`` is
@@ -45,9 +45,9 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 76
-   :lines: 27,77-123
+   :pyobject: make_posegraph_for_fragment
    :linenos:
+   :lineno-match:
 
 This script uses the technique demonstrated in
 :ref:`/tutorial/pipelines/multiway_registration.ipynb`. The function
@@ -61,9 +61,9 @@ function ``optimize_posegraph_for_fragment``.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/optimize_posegraph.py
    :language: python
-   :lineno-start: 51
-   :lines: 27,52-63
+   :pyobject: optimize_posegraph_for_fragment
    :linenos:
+   :lineno-match:
 
 This function calls ``global_optimization`` to estimate poses of the RGBD images.
 
@@ -74,11 +74,11 @@ Make a fragment
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 124
-   :lines: 27,125-146
+   :pyobject: integrate_rgb_frames_for_fragment
    :linenos:
+   :lineno-match:
 
-Once the poses are estimates, :ref:`/tutorial/pipelines/rgbd_integration.ipynb`
+Once the poses are estimated, :ref:`/tutorial/pipelines/rgbd_integration.ipynb`
 is used to reconstruct a colored fragment from each RGBD sequence.
 
 Batch processing
@@ -86,11 +86,16 @@ Batch processing
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 181
-   :lines: 27,182-205
+   :start-at: def process_single_fragment(fragment_id, color_files, depth_files, n_files,
    :linenos:
+   :lineno-match:
 
-The main function calls each individual function explained above.
+The ``process_single_fragment`` function calls each individual function explained above.
+The ``run`` function determines the number of fragments to generate based on the number
+of images in the dataset and the configuration value ``n_frames_per_fragment``.
+Subsequently, it invokes ``process_single_fragment`` for each of these fragments.
+Furthermore, it leverages multiprocessing to speed up computation of all fragments.
+
 
 .. _reconstruction_system_make_fragments_results:
 

@@ -35,7 +35,7 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
         import jupyterlab  # noqa # pylint: disable=unused-import
     except ImportError as error:
         print(error.__class__.__name__ + ": " + error.message)
-        print("Run `pip install jupyter_packaging ipywidgets jupyterlab`.")
+        print("Run `pip install -r requirements-jupyter-build.txt`.")
 
     here = os.path.dirname(os.path.abspath(__file__))
     js_dir = os.path.join(here, "js")
@@ -127,10 +127,10 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Education",
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Multimedia :: Graphics :: 3D Rendering",
@@ -157,7 +157,7 @@ if sys.platform.startswith("linux") and platform.machine() in (
 setup_args = dict(
     name=name,
     version="@PROJECT_VERSION@",
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),
@@ -178,6 +178,9 @@ setup_args = dict(
     description="@PROJECT_DESCRIPTION@",
     long_description=long_description,
     long_description_content_type="text/x-rst",
+    # Metadata below is valid but currently ignored by pip (<=v23)
+    obsoletes=["open3d_python"],
+    provides=["open3d", "open3d_cpu"],  # For open3d-cpu
 )
 
 setup(**setup_args)
