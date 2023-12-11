@@ -159,6 +159,26 @@ static void AssertInputMultiScaleICP(
         }
     }
 
+    // Doppler ICP requires Doppler velocities and pre-computed directions for
+    // source point cloud.
+    if (estimation.GetTransformationEstimationType() ==
+        TransformationEstimationType::DopplerICP) {
+        if (!target.HasPointNormals()) {
+            utility::LogError(
+                    "DopplerICP requires target pointcloud to have normals.");
+        }
+        if (!source.HasPointAttr("dopplers")) {
+            utility::LogError(
+                    "DopplerICP requires source pointcloud to have Doppler "
+                    "velocities.");
+        }
+        if (!source.HasPointAttr("directions")) {
+            utility::LogError(
+                    "DopplerICP requires source pointcloud to have "
+                    "pre-computed direction vectors.");
+        }
+    }
+
     if (max_correspondence_distances[0] <= 0.0) {
         utility::LogError(
                 " Max correspondence distance must be greater than 0, but"
@@ -254,11 +274,15 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
     int iteration_count = 0;
     for (iteration_count = 0; iteration_count < criteria.max_iteration_;
          ++iteration_count) {
+        // Update the results and find correspondences.
         result = ComputeRegistrationResult(
                 source.GetPointPositions(), target_nns,
                 max_correspondence_distance, result.transformation_);
 
+        // No correspondences.
         if (result.fitness_ <= std::numeric_limits<double>::min()) {
+            result.converged_ = false;
+            result.num_iterations_ = iteration_count;
             return std::make_tuple(result,
                                    prev_iteration_count + iteration_count);
         }
@@ -266,10 +290,11 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
         // Computing Transform between source and target, given
         // correspondences. ComputeTransformation returns {4,4} shaped
         // Float64 transformation tensor on CPU device.
-        core::Tensor update =
+        const core::Tensor update =
                 estimation
-                        .ComputeTransformation(source, target,
-                                               result.correspondences_)
+                        .ComputeTransformation(
+                                source, target, result.correspondences_,
+                                result.transformation_, iteration_count)
                         .To(core::Float64);
 
         // Multiply the transform to the cumulative transformation (update).
@@ -307,6 +332,7 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
                     criteria.relative_fitness_ &&
             std::abs(prev_inlier_rmse - result.inlier_rmse_) <
                     criteria.relative_rmse_) {
+            result.converged_ = true;
             break;
         }
         prev_fitness = result.fitness_;
@@ -386,10 +412,13 @@ RegistrationResult MultiScaleICP(
 
         // No correspondences.
         if (result.fitness_ <= std::numeric_limits<double>::min()) {
+            result.converged_ = false;
             break;
         }
     }
     // ---- Iterating over different resolution scale END --------------------
+
+    result.num_iterations_ = iteration_count;
 
     return result;
 }
