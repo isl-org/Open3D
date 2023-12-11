@@ -94,7 +94,7 @@ RUN conda create -y -n open3d python=${PYTHON_VERSION} \
 RUN which python \
  && python --version
 
-# Checkout Open3D-ML master branch
+# Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN git clone https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}

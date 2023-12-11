@@ -9,7 +9,7 @@ on:
         default: 'ON'
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -64,10 +64,10 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          # the build system of the main repo expects a master branch. make sure
-          # master exists
+          # the build system of the main repo expects a main branch. make sure
+          # main exists
           pushd "${OPEN3D_ML_ROOT}"
-          git checkout -b master || true
+          git checkout -b main || true
           popd
           source util/ci_utils.sh
           install_docs_dependencies "${OPEN3D_ML_ROOT}"
@@ -88,22 +88,22 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: 'google-github-actions/auth@v1'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Deploy docs
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          # Compress and upload the docs, only for master branch
+          # Compress and upload the docs, only for main branch
           docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
           tar_file="${{ github.sha }}_ready.tar.gz"
           rm -rf ${tar_file}
@@ -113,7 +113,7 @@ jobs:
           echo "https://storage.googleapis.com/open3d-docs/${tar_file}"
 
       - name: Check wheels and ready documentation archive
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
             if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
                 -eq 4 ]; then
@@ -124,9 +124,9 @@ jobs:
                 gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
                     gs://open3d-docs/${{ github.sha }}.tar.gz
                 # Set holds on new artifacts, release on old
-                gsutil retention temp release gs://open3d-releases-master/*
-                gsutil retention temp set gs://open3d-releases-master/python-wheels/*${GITHUB_SHA:0:7}*.whl
-                gsutil retention temp set gs://open3d-releases-master/devel/*${GITHUB_SHA:0:7}*
+                gsutil retention temp release gs://open3d-releases/*
+                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
+                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
             else
                 echo "All wheels / docs not available yet."
             fi

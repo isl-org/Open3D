@@ -22,7 +22,7 @@ void LaunchIndexReductionKernel(int64_t dim,
                                 Tensor& dst,
                                 const func_t& element_kernel) {
     // index: [N,], src: [N, D], dst: [M, D]
-    // In Indexer, output shape defines the actual master strides.
+    // In Indexer, output shape defines the actual primary strides.
     // However, in IndexAdd_, input dominates the iterations.
     // So put dst (output) at indexer's input, and src (input) at output.
     Indexer indexer({dst}, src, DtypePolicy::NONE);
