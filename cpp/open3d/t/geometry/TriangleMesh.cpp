@@ -301,10 +301,10 @@ double TriangleMesh::GetSurfaceArea() const {
 
     if (IsCPU()) {
         kernel::trianglemesh::ComputeTriangleAreasCPU(
-                GetVertexPositions(), GetTriangleIndices(), triangle_areas);
+                GetVertexPositions().Contiguous(), GetTriangleIndices().Contiguous(), triangle_areas);
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
-                  GetVertexPositions(), GetTriangleIndices(), triangle_areas);
+                  GetVertexPositions().Contiguous(), GetTriangleIndices().Contiguous(), triangle_areas);
     } else {
         utility::LogError("Unimplemented device");
     }
