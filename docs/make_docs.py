@@ -435,6 +435,9 @@ class SphinxDocsBuilder:
                               env=sphinx_env,
                               stdout=sys.stdout,
                               stderr=sys.stderr)
+        print(
+            f"Sphinx docs are generated at {(Path(build_dir)/'index.html').as_uri()}"
+        )
 
 
 class DoxygenDocsBuilder:
@@ -449,9 +452,13 @@ class DoxygenDocsBuilder:
         cmd = ["doxygen", "Doxyfile"]
         print('Calling: "%s"' % " ".join(cmd))
         subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+        output_path = os.path.join(self.html_output_dir, "html", "cpp_api")
         shutil.copytree(
             os.path.join("doxygen", "html"),
-            os.path.join(self.html_output_dir, "html", "cpp_api"),
+            output_path,
+        )
+        print(
+            f"Doxygen docs are generated at {(Path(output_path)/'index.html').as_uri()}"
         )
 
         if os.path.exists(doxygen_temp_dir):

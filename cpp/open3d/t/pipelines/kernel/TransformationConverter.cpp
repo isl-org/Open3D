@@ -94,6 +94,53 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     return transformation;
 }
 
+template <typename scalar_t>
+static void TransformationToPoseDevice(
+        core::Tensor &pose,
+        const core::Tensor &transformation,
+        const core::Device::DeviceType &device_type) {
+    scalar_t *pose_ptr = pose.GetDataPtr<scalar_t>();
+    const scalar_t *transformation_ptr = transformation.GetDataPtr<scalar_t>();
+
+    if (device_type == core::Device::DeviceType::CPU) {
+        TransformationToPoseImpl<scalar_t>(pose_ptr, transformation_ptr);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        TransformationToPoseCUDA<scalar_t>(pose_ptr, transformation_ptr);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+}
+
+core::Tensor TransformationToPose(const core::Tensor &transformation) {
+    core::AssertTensorShape(transformation, {4, 4});
+    core::AssertTensorDtypes(transformation, {core::Float32, core::Float64});
+
+    const core::Device device = transformation.GetDevice();
+    const core::Dtype dtype = transformation.GetDtype();
+    core::Tensor pose = core::Tensor::Zeros({6}, dtype, device);
+    pose = pose.Contiguous();
+    core::Tensor transformation_ = transformation.Contiguous();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        core::Device::DeviceType device_type = device.GetType();
+        TransformationToPoseDevice<scalar_t>(pose, transformation_,
+                                             device_type);
+    });
+
+    // Set translation parameters in pose vector.
+    pose.SetItem(core::TensorKey::Slice(3, 6, 1),
+                 transformation_
+                         .GetItem({core::TensorKey::Slice(0, 3, 1),
+                                   core::TensorKey::Slice(3, 4, 1)})
+                         .Flatten());
+
+    return pose;
+}
+
 void DecodeAndSolve6x6(const core::Tensor &A_reduction,
                        core::Tensor &delta,
                        float &inlier_residual,

@@ -144,8 +144,8 @@ build_pip_package() {
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
-        # the build system of the main repo expects a master branch. make sure master exists
-        git -C "${OPEN3D_ML_ROOT}" checkout -b master || true
+        # the build system of the main repo expects a main branch. make sure main exists
+        git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
         BUNDLE_OPEN3D_ML=ON
     else
         echo "Open3D-ML not available."
@@ -256,7 +256,7 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
-    # FIXME: Needed because Open3D-ML master TF and PyTorch is older than dev.
+    # FIXME: Needed because Open3D-ML main TF and PyTorch is older than dev.
     if [ $BUILD_CUDA_MODULE == ON ]; then
         install_python_dependencies with-cuda
     else
@@ -420,7 +420,7 @@ build_docs() {
     export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}:$PWD/lib/python_package"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never
+    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never --py_example_rst=never
     python -m pip uninstall --yes open3d
     cd ../build
     set +x # Echo commands off
@@ -440,12 +440,12 @@ build_docs() {
     bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --py_api_rst=always --execute_notebooks=never --sphinx --doxygen
+    python make_docs.py $DOC_ARGS --py_api_rst=always --py_example_rst=always --execute_notebooks=never --sphinx --doxygen
     set +x # Echo commands off
 }
 
 maximize_ubuntu_github_actions_build_space() {
-    # https://github.com/easimon/maximize-build-space/blob/master/action.yml
+    # https://github.com/easimon/maximize-build-space/blob/main/action.yml
     df -h .                                  # => 26GB
     $SUDO rm -rf /usr/share/dotnet           # ~17GB
     $SUDO rm -rf /usr/local/lib/android      # ~11GB
