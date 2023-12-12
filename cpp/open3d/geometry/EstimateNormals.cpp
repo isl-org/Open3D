@@ -359,7 +359,10 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
     }
 }
 
-void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
+void PointCloud::OrientNormalsConsistentTangentPlane(
+        size_t k,
+        const double lambda /* = 0.0*/,
+        const double cos_alpha_tol /* = 1.0*/) {
     if (!HasNormals()) {
         utility::LogError(
                 "No normals in the PointCloud. Call EstimateNormals() first.");
@@ -380,8 +383,20 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
         v1 = pt_map[v1];
         size_t edge = EdgeIndex(v0, v1);
         if (graph_edges.count(edge) == 0) {
-            double dist = (points_[v0] - points_[v1]).squaredNorm();
-            delaunay_graph.push_back(WeightedEdge(v0, v1, dist));
+            const auto diff = points_[v0] - points_[v1];
+            // penalization on normal-plane distance
+            double dist = diff.squaredNorm();
+            double penalization = lambda * std::abs(diff.dot(normals_[v0]));
+
+            // if cos_alpha_tol < 1 some edges will be excluded. In particular
+            // the ones connecting points that form an angle below a certain
+            // threshold (defined by the cosine)
+            double cos_alpha =
+                    std::abs(diff.dot(normals_[v0])) / std::sqrt(dist);
+            if (cos_alpha > cos_alpha_tol)
+                dist = std::numeric_limits<double>::infinity();
+
+            delaunay_graph.push_back(WeightedEdge(v0, v1, dist + penalization));
             graph_edges.insert(edge);
         }
     };
@@ -403,12 +418,50 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
         edge.weight_ = NormalWeight(edge.v0_, edge.v1_);
     }
 
+    // The function below takes v0 and its neighbors as inputs.
+    // The function returns the quartiles of the distances between the neighbors
+    // and a plane defined by the normal vector of v0 and the point v0.
+    auto compute_q1q3 =
+            [&](size_t v0,
+                std::vector<int> neighbors) -> std::array<double, 2> {
+        std::vector<double> dist_plane;
+
+        for (size_t vidx1 = 0; vidx1 < neighbors.size(); ++vidx1) {
+            size_t v1 = size_t(neighbors[vidx1]);
+            const auto diff = points_[v0] - points_[v1];
+            double dist = std::abs(diff.dot(normals_[v0]));
+            dist_plane.push_back(dist);
+        }
+        std::vector<double> dist_plane_ord = dist_plane;
+        std::sort(dist_plane_ord.begin(), dist_plane_ord.end());
+        // calculate quartiles
+        int q1_idx = static_cast<int>(dist_plane_ord.size() * 0.25);
+        double q1 = dist_plane_ord[q1_idx];
+
+        int q3_idx = static_cast<int>(dist_plane_ord.size() * 0.75);
+        double q3 = dist_plane_ord[q3_idx];
+
+        std::array<double, 2> q1q3;
+        q1q3[0] = q1;
+        q1q3[1] = q3;
+
+        return q1q3;
+    };
+
     // Add k nearest neighbors to Riemannian graph
     KDTreeFlann kdtree(*this);
     for (size_t v0 = 0; v0 < points_.size(); ++v0) {
         std::vector<int> neighbors;
         std::vector<double> dists2;
+
         kdtree.SearchKNN(points_[v0], int(k), neighbors, dists2);
+
+        const double DEFAULT_VALUE = std::numeric_limits<double>::quiet_NaN();
+        std::array<double, 2> q1q3 =
+                lambda == 0
+                        ? std::array<double, 2>{DEFAULT_VALUE, DEFAULT_VALUE}
+                        : compute_q1q3(v0, neighbors);
+
         for (size_t vidx1 = 0; vidx1 < neighbors.size(); ++vidx1) {
             size_t v1 = size_t(neighbors[vidx1]);
             if (v0 == v1) {
@@ -416,6 +469,25 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
             }
             size_t edge = EdgeIndex(v0, v1);
             if (graph_edges.count(edge) == 0) {
+                const auto diff = points_[v0] - points_[v1];
+                double normal_dist = std::abs(diff.dot(normals_[v0]));
+
+                double dist = diff.squaredNorm();
+
+                // if cos_alpha_tol < 1 some edges will be excluded. In
+                // particular the ones connecting points that form an angle
+                // below a certain threshold (defined by the cosine)
+                double cos_alpha =
+                        std::abs(diff.dot(normals_[v0])) / std::sqrt(dist);
+                if (cos_alpha > cos_alpha_tol) continue;
+
+                // if we are in a penalizing framework do not consider outliers
+                // in terms of distance from the plane (if any)
+                if (lambda != 0) {
+                    double iqr = q1q3[1] - q1q3[0];
+                    if (normal_dist > q1q3[1] + 1.5 * iqr) continue;
+                }
+
                 double weight = NormalWeight(v0, v1);
                 mst.push_back(WeightedEdge(v0, v1, weight));
                 graph_edges.insert(edge);
@@ -436,13 +508,14 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
     }
 
     // find start node for tree traversal
-    // init with node that maximizes z
-    double max_z = std::numeric_limits<double>::lowest();
+    // init with node that minimizes z
+
+    double min_z = std::numeric_limits<double>::max();
     size_t v0 = 0;
     for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
         const Eigen::Vector3d &v = points_[vidx];
-        if (v(2) > max_z) {
-            max_z = v(2);
+        if (v(2) < min_z) {
+            min_z = v(2);
             v0 = vidx;
         }
     }
@@ -457,7 +530,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
             n1 *= -1;
         }
     };
-    TestAndOrientNormal(Eigen::Vector3d(0, 0, 1), normals_[v0]);
+    TestAndOrientNormal(Eigen::Vector3d(0, 0, -1), normals_[v0]);
     while (!traversal_queue.empty()) {
         v0 = traversal_queue.front();
         traversal_queue.pop();

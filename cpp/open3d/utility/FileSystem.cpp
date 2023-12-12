@@ -32,11 +32,12 @@
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #endif
 #ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
+#include <filesystem>
+namespace fs = std::__fs::filesystem;
+#else
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
+#endif
 
 #include "open3d/utility/Logging.h"
 

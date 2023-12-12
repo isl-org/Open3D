@@ -143,7 +143,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
                                 box_center, box_half_size, v0, v1, v2)) {
                         Eigen::Vector3i grid_index(widx, hidx, didx);
                         output->AddVoxel(geometry::Voxel(grid_index));
-                        break;
+                        // Don't `break` here, since a triangle can span
+                        // across multiple voxels.
                     }
                 }
             }

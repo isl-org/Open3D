@@ -1456,9 +1456,15 @@ endif()
 # msgpack
 if(USE_SYSTEM_MSGPACK)
     open3d_find_package_3rdparty_library(3rdparty_msgpack
-        PACKAGE msgpack
-        TARGETS msgpackc
+        PACKAGE msgpack-cxx
+        TARGETS msgpack-cxx
     )
+    if(NOT 3rdparty_msgpack_FOUND)
+        open3d_find_package_3rdparty_library(3rdparty_msgpack
+            PACKAGE msgpack
+            TARGETS msgpackc
+        )
+    endif()
     if(NOT 3rdparty_msgpack_FOUND)
         open3d_pkg_config_3rdparty_library(3rdparty_msgpack
             SEARCH_ARGS msgpack

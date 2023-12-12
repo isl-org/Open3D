@@ -12,19 +12,19 @@ We provide optimized conventional rendering, and basic support for customized re
 
 Conventional rendering
 ``````````````````````
-From a reconstructed voxel block grid from :ref:`optimized_integration`, we can efficiently render the scene given the input depth as a rough range estimate.
+From a reconstructed voxel block grid :code:`vbg` from :ref:`optimized_integration`, we can efficiently render the scene given the input depth as a rough range estimate.
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
-   :lineno-start: 76
-   :lines: 27,77-92
+   :lineno-start: 68
+   :lines: 8,69-82
 
 The results could be directly obtained and visualized by
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
-   :lineno-start: 90
-   :lines: 27,91,93-95,105-112
+   :lineno-start: 83
+   :lines: 8,84,86-88,98-105
 
 Customized rendering
 `````````````````````
@@ -32,7 +32,7 @@ In customized rendering, we manually perform trilinear-interpolation by accessin
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
-   :lineno-start: 97
-   :lines: 27,98-103,114-115
+   :lineno-start: 90
+   :lines: 8,91-96,107-108
 
 Since the output is rendered via indices, the rendering process could be rewritten in differentiable engines like PyTorch seamlessly via :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`.

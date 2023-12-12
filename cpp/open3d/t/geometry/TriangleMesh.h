@@ -91,7 +91,7 @@ class LineSet;
 /// default and common attributes.
 class TriangleMesh : public Geometry, public DrawableGeometry {
 public:
-    /// Construct an empty pointcloud on the provided device.
+    /// Construct an empty trianglemesh on the provided device.
     /// \param device The device on which to initialize the trianglemesh
     /// (default: 'CPU:0').
     TriangleMesh(const core::Device &device = core::Device("CPU:0"));
@@ -931,8 +931,19 @@ public:
     /// Returns a new mesh with the faces selected by a boolean mask.
     /// \param mask A boolean mask with the shape (N) with N as the number of
     /// faces in the mesh.
-    /// \return A new mesh with the selected faces.
+    /// \return A new mesh with the selected faces. If the original mesh is
+    /// empty, return an empty mesh.
     TriangleMesh SelectFacesByMask(const core::Tensor &mask) const;
+
+    /// Returns a new mesh with the vertices selected by a vector of indices.
+    /// If an item from the indices list exceeds the max vertex number of
+    /// the mesh or has a negative value, it is ignored.
+    /// \param indices An integer list of indices. Duplicates are
+    /// allowed, but ignored. Signed and unsigned integral types are allowed.
+    /// \return A new mesh with the selected vertices and faces built
+    /// from the selected vertices. If the original mesh is empty, return
+    /// an empty mesh.
+    TriangleMesh SelectByIndex(const core::Tensor &indices) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

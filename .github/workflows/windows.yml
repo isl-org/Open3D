@@ -10,7 +10,7 @@ on:
 
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
@@ -19,15 +19,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PIP_VER: "21.1.1"
+  PIP_VER: "23.2.1"
   WHEEL_VER: "0.38.4"
   STOOLS_VER: "67.3.2"
-  PYTEST_VER: "7.1.2"
-  PYTEST_RANDOMLY_VER: "3.8.0"
-  SCIPY_VER: "1.7.3"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
-  TENSORBOARD_VER: "2.8"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -101,7 +97,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: 3.8
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -177,25 +173,25 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         uses: google-github-actions/auth@v1
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         run: |
           gsutil cp ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }} `
-            gs://open3d-releases-master/devel/
+            gs://open3d-releases/devel/
           if ($LastExitCode -eq 0) {
-            echo "Download devel package at: https://storage.googleapis.com/open3d-releases-master/devel/${{ env.DEVEL_PKG_NAME }}"
+            echo "Download devel package at: https://storage.googleapis.com/open3d-releases/devel/${{ env.DEVEL_PKG_NAME }}"
           } else {
             throw "Devel package upload failed"
           }
@@ -246,16 +242,16 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10']
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - is_master: false
-            python_version: '3.7'
-          - is_master: false
+          - is_main: false
             python_version: '3.8'
-          - is_master: false
+          - is_main: false
             python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
 
     steps:
       - name: Checkout source code
@@ -318,28 +314,28 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: google-github-actions/auth@v1
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
           python_version: ${{ matrix.python_version }}
         run: |
           $ErrorActionPreference = 'Stop'
           $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
-          gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
+          gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
           if ($LastExitCode -eq 0) {
-            echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
+            echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
           } else {
             throw "Wheel upload failed"
           }
@@ -351,16 +347,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10']
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - is_master: false
-            python_version: '3.7'
-          - is_master: false
+          - is_main: false
             python_version: '3.8'
-          - is_master: false
+          - is_main: false
             python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
 
     steps:
       - name: Checkout source code
@@ -388,10 +384,7 @@ jobs:
           python -m pip install --upgrade pip==${{ env.PIP_VER }} `
             wheel==${{ env.WHEEL_VER }} `
             setuptools==${{ env.STOOLS_VER }}
-          python -m pip install -U pytest==${{ env.PYTEST_VER }}
-          python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
-          python -m pip install -U scipy==${{ env.SCIPY_VER }} `
-            tensorboard==${{ env.TENSORBOARD_VER }}
+          python -m pip install -U -r python/requirements_test.txt
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
@@ -419,8 +412,10 @@ jobs:
     name: Ready docs archive
     # no need to run on Windows
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build-wheel, windows]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    # temp workaround for Windows CUDA Debug CI out of space. Still update docs.
+    # needs: [build-wheel, windows]
+    needs: [build-wheel]
     steps:
       - name: GCloud CLI auth
         uses: google-github-actions/auth@v1
@@ -444,6 +439,10 @@ jobs:
                 # Rename docs archive:
                 gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
                     gs://open3d-docs/${{ github.sha }}.tar.gz
+                # Set holds on new artifacts, release on old
+                gsutil retention temp release gs://open3d-releases/*
+                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
+                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
             else
                 echo "All wheels / docs not available yet."
             fi

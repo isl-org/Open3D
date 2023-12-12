@@ -123,6 +123,9 @@ public:
     /// Add a voxel with specified grid index and color.
     void AddVoxel(const Voxel &voxel);
 
+    /// Remove a voxel with specified grid index.
+    void RemoveVoxel(const Eigen::Vector3i &idx);
+
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
             const Eigen::Vector3i &index) const;
@@ -242,7 +245,7 @@ public:
 public:
     /// Size of the voxel.
     double voxel_size_ = 0.0;
-    /// Coorindate of the origin point.
+    /// Coordinate of the origin point.
     Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();
     /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,
