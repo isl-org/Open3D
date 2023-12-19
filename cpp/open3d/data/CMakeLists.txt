@@ -14,6 +14,7 @@ target_sources(data PRIVATE
     dataset/DemoColoredICPPointClouds.cpp
     dataset/DemoCropPointCloud.cpp
     dataset/DemoCustomVisualization.cpp
+    dataset/DemoDopplerICPSequence.cpp
     dataset/DemoFeatureMatchingPointClouds.cpp
     dataset/DemoICPPointClouds.cpp
     dataset/DemoPoseGraphOptimization.cpp

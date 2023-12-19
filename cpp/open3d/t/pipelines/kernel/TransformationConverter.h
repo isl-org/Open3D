@@ -30,6 +30,14 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t);
 /// as pose.
 core::Tensor PoseToTransformation(const core::Tensor &pose);
 
+/// \brief Convert transformation matrix to pose.
+///
+/// \param transformation, a tensor of shape {4, 4}, of dtype Float32
+/// \return pose [alpha beta gamma, tx, ty, tz], a shape {6} tensor of dtype and
+/// device same as transformation, where alpha, beta, gamma are the Euler angles
+/// in the ZYX order.
+core::Tensor TransformationToPose(const core::Tensor &transformation);
+
 /// \brief Decodes a 6x6 linear system from a compressed 29x1 tensor.
 /// \param A_reduction 1x29 tensor storing a linear system,
 /// (21 for \f$J^T J\f$ matrix, 6 for \f$J^T r\f$, 1 for residual,
