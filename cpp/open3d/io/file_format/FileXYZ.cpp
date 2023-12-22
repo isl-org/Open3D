@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
-#include <iostream>
+#include <sstream>
 
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/PointCloudIO.h"
