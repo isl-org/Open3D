@@ -26,7 +26,7 @@
 -   Expose Near Clip + Far Clip parameters to setup_camera in OffscreenRenderer (#6520)
 -   Add Doppler ICP in tensor registration pipeline (PR #5237)
 -   Rename master branch to main.
-
+-   Support in memory loading of XYZ files
 
 ## 0.13
 
