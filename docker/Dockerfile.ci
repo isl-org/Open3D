@@ -135,7 +135,7 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && ccache -M 5G \
  && ccache -s
 
-# Checkout Open3D-ML master branch
+# Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}

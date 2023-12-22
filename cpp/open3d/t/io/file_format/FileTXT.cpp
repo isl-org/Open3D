@@ -46,6 +46,8 @@ bool ReadPointCloudFromTXT(const std::string &filename,
 
         if (format_txt == "xyz") {
             num_attrs = 3;
+        } else if (format_txt == "xyzd") {
+            num_attrs = 4;
         } else if (format_txt == "xyzi") {
             num_attrs = 4;
         } else if (format_txt == "xyzn") {
@@ -99,6 +101,9 @@ bool ReadPointCloudFromTXT(const std::string &filename,
         pointcloud.SetPointPositions(pcd_buffer.Slice(1, 0, 3, 1).Contiguous());
         if (format_txt == "xyz") {
             // No additional attributes.
+        } else if (format_txt == "xyzd") {
+            pointcloud.SetPointAttr("dopplers",
+                                    pcd_buffer.Slice(1, 3, 4, 1).Contiguous());
         } else if (format_txt == "xyzi") {
             pointcloud.SetPointAttr("intensities",
                                     pcd_buffer.Slice(1, 3, 4, 1).Contiguous());
@@ -153,6 +158,8 @@ bool WritePointCloudToTXT(const std::string &filename,
         if (format_txt == "xyz") {
             // No additional attributes.
             len_attr = num_points;
+        } else if (format_txt == "xyzd") {
+            len_attr = pointcloud.GetPointAttr("dopplers").GetLength();
         } else if (format_txt == "xyzi") {
             len_attr = pointcloud.GetPointAttr("intensities").GetLength();
         } else if (format_txt == "xyzn") {
@@ -181,6 +188,21 @@ bool WritePointCloudToTXT(const std::string &filename,
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f\n",
                             points_ptr[3 * i + 0], points_ptr[3 * i + 1],
                             points_ptr[3 * i + 2]) < 0) {
+                    utility::LogWarning(
+                            "Write TXT failed: unable to write file: {}",
+                            filename);
+                    return false;  // error happened during writing.
+                }
+                if (i % 1000 == 0) {
+                    reporter.Update(i);
+                }
+            }
+        } else if (format_txt == "xyzd") {
+            attr_ptr = pointcloud.GetPointAttr("dopplers").GetDataPtr<float>();
+            for (int i = 0; i < num_points; i++) {
+                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\n",
+                            points_ptr[3 * i + 0], points_ptr[3 * i + 1],
+                            points_ptr[3 * i + 2], attr_ptr[i]) < 0) {
                     utility::LogWarning(
                             "Write TXT failed: unable to write file: {}",
                             filename);

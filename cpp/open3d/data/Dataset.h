@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "open3d/utility/Eigen.h"
+
 namespace open3d {
 namespace data {
 
@@ -341,6 +343,39 @@ private:
     std::string point_cloud_path_;
     std::string camera_trajectory_path_;
     std::string render_option_path_;
+};
+
+/// \class DemoDopplerICPSequence
+/// \brief Data class for `DemoDopplerICPSequence` contains an example sequence
+/// of 100 point clouds with Doppler velocity channel and corresponding ground
+/// truth poses. The sequence was generated using the CARLA simulator.
+class DemoDopplerICPSequence : public DownloadDataset {
+public:
+    DemoDopplerICPSequence(const std::string& data_root = "");
+
+    /// \brief Returns the list of the point cloud paths in the sequence.
+    std::vector<std::string> GetPaths() const { return paths_; }
+    /// \brief Path to the point cloud at index.
+    std::string GetPath(std::size_t index) const;
+    /// \brief Path to the calibration metadata file, containing transformation
+    /// between the vehicle and sensor frames and the time period.
+    std::string GetCalibrationPath() const { return calibration_path_; }
+    /// \brief Path to the ground truth poses for the entire sequence.
+    std::string GetTrajectoryPath() const { return trajectory_path_; }
+    /// \brief Returns the vehicle to sensor calibration transformation and the
+    /// time period (in secs) between sequential point cloud scans.
+    bool GetCalibration(Eigen::Matrix4d& calibration, double& period) const;
+    /// \brief Returns a list of (timestamp, pose) representing the ground truth
+    /// trajectory of the sequence.
+    std::vector<std::pair<double, Eigen::Matrix4d>> GetTrajectory() const;
+
+private:
+    /// List of paths to the point clouds.
+    std::vector<std::string> paths_;
+    /// Path to the calibration JSON file.
+    std::string calibration_path_;
+    /// Path to the TUM ground truth trajectory text file.
+    std::string trajectory_path_;
 };
 
 /// \class DemoFeatureMatchingPointClouds

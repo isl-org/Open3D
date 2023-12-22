@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/isl-org/Open3D/master/docs/_static/open3d_logo_horizontal.png" width="320" />
+<img src="https://raw.githubusercontent.com/isl-org/Open3D/main/docs/_static/open3d_logo_horizontal.png" width="320" />
 </p>
 
 # Open3D: A Modern Library for 3D Data Processing
@@ -24,9 +24,9 @@ data structures and algorithms in both C++ and Python. The backend is highly
 optimized and is set up for parallelization. We welcome contributions from
 the open-source community.
 
-[![Ubuntu CI](https://github.com/isl-org/Open3D/workflows/Ubuntu%20CI/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22Ubuntu+CI%22)
-[![macOS CI](https://github.com/isl-org/Open3D/workflows/macOS%20CI/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22macOS+CI%22)
-[![Windows CI](https://github.com/isl-org/Open3D/workflows/Windows%20CI/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22Windows+CI%22)
+[![Ubuntu CI](https://github.com/isl-org/Open3D/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22Ubuntu+CI%22)
+[![macOS CI](https://github.com/isl-org/Open3D/actions/workflows/macos.yml/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22macOS+CI%22)
+[![Windows CI](https://github.com/isl-org/Open3D/actions/workflows/windows.yml/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22Windows+CI%22)
 
 **Core features of Open3D include:**
 
@@ -39,6 +39,11 @@ the open-source community.
 -   3D machine learning support with PyTorch and TensorFlow
 -   GPU acceleration for core 3D operations
 -   Available in C++ and Python
+
+Here's a brief overview of the different components of Open3D and how they fit
+together to enable full end to end pipelines:
+
+![Open3D_layers](https://github.com/isl-org/Open3D/assets/41028320/e9b8645a-a823-4d78-8310-e85207bbc3e4)
 
 For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
@@ -85,7 +90,7 @@ To use Open3D in your C++ project, checkout the following examples
 
 ## Open3D-Viewer app
 
-<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D/master/docs/_static/open3d_viewer.png">
+<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D/main/docs/_static/open3d_viewer.png">
 
 Open3D-Viewer is a standalone 3D viewer app available on Debian (Ubuntu), macOS
 and Windows. Download Open3D Viewer from the
@@ -93,7 +98,7 @@ and Windows. Download Open3D Viewer from the
 
 ## Open3D-ML
 
-<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D-ML/master/docs/images/getting_started_ml_visualizer.gif">
+<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D-ML/main/docs/images/getting_started_ml_visualizer.gif">
 
 Open3D-ML is an extension of Open3D for 3D machine learning tasks. It builds on
 top of the Open3D core library and extends it with machine learning tools for

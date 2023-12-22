@@ -151,7 +151,8 @@ public:
 
 /// \class AxisAlignedBoundingBox
 ///
-/// \brief A bounding box that is aligned along the coordinate axes.
+/// \brief A bounding box that is aligned along the coordinate axes and defined
+/// by the min_bound and max_bound.
 ///
 ///  The AxisAlignedBoundingBox uses the coordinate axes for bounding box
 ///  generation. This means that the bounding box is oriented along the
@@ -227,14 +228,20 @@ public:
     /// extents.
     double GetMaxExtent() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
+    /// Calculates the percentage position of the given x-coordinate within
+    /// the x-axis range of this AxisAlignedBoundingBox.
     double GetXPercentage(double x) const {
         return (x - min_bound_(0)) / (max_bound_(0) - min_bound_(0));
     }
 
+    /// Calculates the percentage position of the given y-coordinate within
+    /// the y-axis range of this AxisAlignedBoundingBox.
     double GetYPercentage(double y) const {
         return (y - min_bound_(1)) / (max_bound_(1) - min_bound_(1));
     }
 
+    /// Calculates the percentage position of the given z-coordinate within
+    /// the z-axis range of this AxisAlignedBoundingBox.
     double GetZPercentage(double z) const {
         return (z - min_bound_(2)) / (max_bound_(2) - min_bound_(2));
     }
