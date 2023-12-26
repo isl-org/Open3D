@@ -88,7 +88,7 @@ public:
                         rendering::FilamentRenderer* renderer) override;
 
     MenuBase* CreateOSMenu() override;
-    
+
     void SetFullScreen(OSWindow w, bool bFullScreen) override;
 
 private:
@@ -107,11 +107,11 @@ private:
     static void CharCallback(GLFWwindow* window, unsigned int utf32char);
     static void DragDropCallback(GLFWwindow*, int count, const char* paths[]);
     static void CloseCallback(GLFWwindow* window);
-    
-    int winW;
-    int winH;
-    int winX;
-    int winY;
+
+    int win_width_;
+    int win_height_;
+    int win_x_;
+    int win_y_;
 };
 
 }  // namespace gui

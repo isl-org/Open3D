@@ -111,6 +111,9 @@ public:
 
     MenuBase* CreateOSMenu() override;
 
+    /// SetFullScreen is a no-op
+    void SetFullScreen(OSWindow, bool) override{};
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

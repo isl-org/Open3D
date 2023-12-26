@@ -565,20 +565,17 @@ MenuBase* GLFWWindowSystem::CreateOSMenu() {
 #endif
 }
 
-void GLFWWindowSystem::SetFullScreen(OSWindow w, bool bFullScreen)
-{
+void GLFWWindowSystem::SetFullScreen(OSWindow w, bool bFullScreen) {
     if (!bFullScreen) {
-        glfwSetWindowMonitor((GLFWwindow*)w,
-        	              NULL,
-        		      winX,winY,
-        		      winW,winH,
-        		      GLFW_DONT_CARE);
+        glfwSetWindowMonitor((GLFWwindow*)w, NULL, win_x_, win_y_, win_width_,
+                             win_height_, GLFW_DONT_CARE);
     } else {
-        glfwGetWindowSize((GLFWwindow*)w, &winW, &winH);
-        glfwGetWindowPos((GLFWwindow*)w, &winX, &winY);
-        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-        glfwSetWindowMonitor((GLFWwindow*)w, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        glfwGetWindowSize((GLFWwindow*)w, &win_width_, &win_height_);
+        glfwGetWindowPos((GLFWwindow*)w, &win_x_, &win_y_);
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        glfwSetWindowMonitor((GLFWwindow*)w, monitor, 0, 0, mode->width,
+                             mode->height, mode->refreshRate);
     }
 }
 
