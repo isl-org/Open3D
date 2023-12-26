@@ -11,12 +11,12 @@
 #include <unordered_set>
 
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
-#include "open3d/t/geometry/LineSet.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/rendering/MaterialRecord.h"
@@ -175,10 +175,9 @@ void PickPointsInteractor::SetPickableGeometry(
         } else if (lineset) {
             points_.insert(points_.end(), lineset->points_.begin(),
                            lineset->points_.end());
-        }
-        else if (tcloud || tmesh || tlineset) {
+        } else if (tcloud || tmesh || tlineset) {
             core::Tensor tpoints;
-            if(tcloud) {
+            if (tcloud) {
                 tpoints = tcloud->GetPointPositions();
             } else if (tmesh) {
                 tpoints = tmesh->GetVertexPositions();
@@ -218,7 +217,7 @@ void PickPointsInteractor::SetPickableGeometry(
                 // picking_scene_->AddGeometry(pg.name, tmesh, mat);
             }
         }
-        //TODO what about Lineset selection?
+        // TODO what about Lineset selection?
     }
     // add safety but invalid obj
     lookup_->Add("", points_.size());

@@ -25,6 +25,10 @@ void ComputeVertexNormalsCPU(const core::Tensor& triangles,
                              const core::Tensor& triangle_normals,
                              core::Tensor& vertex_normals);
 
+void ComputeTriangleAreasCPU(const core::Tensor& vertices,
+                             const core::Tensor& triangles,
+                             core::Tensor& triangle_areas);
+
 #ifdef BUILD_CUDA_MODULE
 void NormalizeNormalsCUDA(core::Tensor& normals);
 
@@ -35,6 +39,10 @@ void ComputeTriangleNormalsCUDA(const core::Tensor& vertices,
 void ComputeVertexNormalsCUDA(const core::Tensor& triangles,
                               const core::Tensor& triangle_normals,
                               core::Tensor& vertex_normals);
+
+void ComputeTriangleAreasCUDA(const core::Tensor& vertices,
+                              const core::Tensor& triangles,
+                              core::Tensor& triangle_areas);
 #endif
 
 }  // namespace trianglemesh
