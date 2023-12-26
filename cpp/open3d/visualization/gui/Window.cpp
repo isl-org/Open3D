@@ -676,8 +676,7 @@ void Window::ShowMenu(bool show) {
     SetNeedsLayout();
 }
 
-void Window::SetFullScreen(bool bFullScreen)
-{
+void Window::SetFullScreen(bool bFullScreen) {
     auto& ws = Application::GetInstance().GetWindowSystem();
     ws.SetFullScreen(GetOSWindow(), bFullScreen);
 }
