@@ -279,6 +279,11 @@ class AppWindow:
         h.add_stretch()
         view_ctrls.add_child(h)
 
+        self._fullscreen = gui.Checkbox("Fullscreen")
+        self._fullscreen.set_on_checked(w.set_full_screen)
+        view_ctrls.add_fixed(separation_height)
+        view_ctrls.add_child(self._fullscreen)
+
         self._show_skybox = gui.Checkbox("Show skymap")
         self._show_skybox.set_on_checked(self._on_show_skybox)
         view_ctrls.add_fixed(separation_height)
