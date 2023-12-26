@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
@@ -40,6 +21,11 @@ def render_mesh(mesh, mesh_center):
                 'type': 'rgb',
                 'value': 1.0
             }
+            # NOTE: For better results comment out the constant emitter above
+            # and uncomment out the lines below changing the filename to an HDRI
+            # envmap you have.
+            # 'type': 'envmap',
+            # 'filename': '/home/renes/Downloads/solitude_interior_4k.exr'
         },
         'sensor': {
             'type':
@@ -92,6 +78,13 @@ mi_mesh = mesh.to_mitsuba('monkey')
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test.exr')
 
+print('Render mesh with normal-mapped prnincipled BSDF')
+mesh.material.texture_maps['normal'] = o3d.t.io.read_image(
+    dataset.path_map['normal'])
+mi_mesh = mesh.to_mitsuba('monkey')
+img = render_mesh(mi_mesh, mesh_center.numpy())
+mi.Bitmap(img).write('test2.exr')
+
 print('Rendering mesh with Mitsuba smooth plastic BSDF')
 bsdf_smooth_plastic = mi.load_dict({
     'type': 'plastic',
@@ -103,7 +96,7 @@ bsdf_smooth_plastic = mi.load_dict({
 })
 mi_mesh = mesh.to_mitsuba('monkey', bsdf=bsdf_smooth_plastic)
 img = render_mesh(mi_mesh, mesh_center.numpy())
-mi.Bitmap(img).write('test2.exr')
+mi.Bitmap(img).write('test3.exr')
 
 # Render with Open3D
 o3d.visualization.draw(mesh)

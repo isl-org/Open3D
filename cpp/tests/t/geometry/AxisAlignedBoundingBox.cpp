@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <gmock/gmock.h>
@@ -51,6 +32,7 @@ INSTANTIATE_TEST_SUITE_P(
                 AxisAlignedBoundingBoxPermuteDevicePairs::TestCases()));
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, ConstructorNoArg) {
+    using ::testing::AnyOf;
     t::geometry::AxisAlignedBoundingBox aabb;
 
     // Inherited from Geometry3D.
@@ -70,7 +52,11 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, ConstructorNoArg) {
     EXPECT_EQ(aabb.GetDevice(), core::Device("CPU:0"));
 
     // Print Information.
-    EXPECT_EQ(aabb.ToString(), "AxisAlignedBoundingBox[Float32, CPU:0]");
+    EXPECT_THAT(
+            aabb.ToString(),  // Compiler dependent output
+            AnyOf("AxisAlignedBoundingBox[[0 0 0] - [0 0 0], Float32, CPU:0]",
+                  "AxisAlignedBoundingBox[[0.0 0.0 0.0] - [0.0 0.0 0.0], "
+                  "Float32, CPU:0]"));
 }
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, Constructor) {
@@ -78,10 +64,6 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, Constructor) {
 
     core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
     core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
-
-    // Attempt to construct with invalid min/max bound.
-    EXPECT_THROW(t::geometry::AxisAlignedBoundingBox(max_bound, min_bound),
-                 std::runtime_error);
 
     t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
 
@@ -95,6 +77,11 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, Constructor) {
             core::Tensor::Init<float>({1, 1, 1}, device)));
 
     EXPECT_EQ(aabb.GetDevice(), device);
+
+    // Attempt to construct with invalid min/max bound should create a valid
+    // bounding box with a warning.
+    t::geometry::AxisAlignedBoundingBox aabb_invalid(max_bound, min_bound);
+    EXPECT_TRUE(aabb_invalid.GetBoxPoints().AllClose(aabb.GetBoxPoints()));
 }
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevicePairs, CopyDevice) {

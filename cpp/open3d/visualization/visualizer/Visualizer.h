@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -146,6 +127,7 @@ public:
     /// Visualizer should be updated accordingly.
     ///
     /// \param geometry_ptr The Geometry object.
+    /// \param reset_bounding_box Reset viewpoint to view all geometries.
     virtual bool AddGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
@@ -159,6 +141,7 @@ public:
     /// added by AddGeometry
     ///
     /// \param geometry_ptr The Geometry object.
+    /// \param reset_bounding_box Reset viewpoint to view all geometries.
     virtual bool RemoveGeometry(
             std::shared_ptr<const geometry::Geometry> geometry_ptr,
             bool reset_bounding_box = true);
@@ -192,7 +175,6 @@ public:
 
     /// Function to retrieve the associated ViewControl
     ViewControl &GetViewControl() { return *view_control_ptr_; }
-    const ViewControl &GetViewControl() const { return *view_control_ptr_; }
     /// Function to retrieve the associated RenderOption.
     RenderOption &GetRenderOption() { return *render_option_ptr_; }
     /// \brief Function to capture screen and store RGB in a float buffer.
@@ -229,10 +211,17 @@ public:
                                 bool do_render = true,
                                 bool convert_to_world_coordinate = false);
     void CaptureRenderOption(const std::string &filename = "");
+
     /// Function to reset view point.
     void ResetViewPoint(bool reset_bounding_box = false);
 
     const std::string &GetWindowName() const { return window_name_; }
+
+    /// Get the current view status as a json string of ViewTrajectory.
+    std::string GetViewStatus();
+
+    /// Set the current view status from a json string of ViewTrajectory.
+    void SetViewStatus(const std::string &view_status_str);
 
 protected:
     /// Function to initialize OpenGL
@@ -249,11 +238,13 @@ protected:
     /// meshes individually).
     virtual void Render(bool render_screen = false);
 
+    /// Copy the current view status to clipboard.
     void CopyViewStatusToClipboard();
 
+    /// Apply the view point from clipboard.
     void CopyViewStatusFromClipboard();
 
-    // callback functions
+    /// Callback functions
     virtual void WindowRefreshCallback(GLFWwindow *window);
     virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
     virtual void MouseMoveCallback(GLFWwindow *window, double x, double y);

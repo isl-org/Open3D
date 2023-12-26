@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
@@ -65,6 +46,8 @@ bool ReadPointCloudFromTXT(const std::string &filename,
 
         if (format_txt == "xyz") {
             num_attrs = 3;
+        } else if (format_txt == "xyzd") {
+            num_attrs = 4;
         } else if (format_txt == "xyzi") {
             num_attrs = 4;
         } else if (format_txt == "xyzn") {
@@ -118,6 +101,9 @@ bool ReadPointCloudFromTXT(const std::string &filename,
         pointcloud.SetPointPositions(pcd_buffer.Slice(1, 0, 3, 1).Contiguous());
         if (format_txt == "xyz") {
             // No additional attributes.
+        } else if (format_txt == "xyzd") {
+            pointcloud.SetPointAttr("dopplers",
+                                    pcd_buffer.Slice(1, 3, 4, 1).Contiguous());
         } else if (format_txt == "xyzi") {
             pointcloud.SetPointAttr("intensities",
                                     pcd_buffer.Slice(1, 3, 4, 1).Contiguous());
@@ -172,6 +158,8 @@ bool WritePointCloudToTXT(const std::string &filename,
         if (format_txt == "xyz") {
             // No additional attributes.
             len_attr = num_points;
+        } else if (format_txt == "xyzd") {
+            len_attr = pointcloud.GetPointAttr("dopplers").GetLength();
         } else if (format_txt == "xyzi") {
             len_attr = pointcloud.GetPointAttr("intensities").GetLength();
         } else if (format_txt == "xyzn") {
@@ -200,6 +188,21 @@ bool WritePointCloudToTXT(const std::string &filename,
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f\n",
                             points_ptr[3 * i + 0], points_ptr[3 * i + 1],
                             points_ptr[3 * i + 2]) < 0) {
+                    utility::LogWarning(
+                            "Write TXT failed: unable to write file: {}",
+                            filename);
+                    return false;  // error happened during writing.
+                }
+                if (i % 1000 == 0) {
+                    reporter.Update(i);
+                }
+            }
+        } else if (format_txt == "xyzd") {
+            attr_ptr = pointcloud.GetPointAttr("dopplers").GetDataPtr<float>();
+            for (int i = 0; i < num_points; i++) {
+                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\n",
+                            points_ptr[3 * i + 0], points_ptr[3 * i + 1],
+                            points_ptr[3 * i + 2], attr_ptr[i]) < 0) {
                     utility::LogWarning(
                             "Write TXT failed: unable to write file: {}",
                             filename);

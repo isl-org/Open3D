@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 # Workaround when multiple copies of the OpenMP runtime have been linked to
@@ -98,11 +79,10 @@ if _build_config["BUILD_CUDA_MODULE"]:
                 "Open3D was built with CUDA support, but no suitable CUDA "
                 "devices found. If your system has CUDA devices, check your "
                 "CUDA drivers and runtime.", ImportWarning)
-    except OSError:
+    except OSError as os_error:
         warnings.warn(
-            "Open3D was built with CUDA support, but CUDA libraries could "
-            "not be found! Check your CUDA installation. Falling back to the "
-            "CPU pybind library.", ImportWarning)
+            f'Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.',
+            ImportWarning)
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CUDA Python "
@@ -137,7 +117,8 @@ __version__ = "@PROJECT_VERSION@"
 if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
-if _build_config["BUILD_JUPYTER_EXTENSION"]:
+if _build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
+        "OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true":
     import platform
     if not (platform.machine().startswith("arm") or
             platform.machine().startswith("aarch")):

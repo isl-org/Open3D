@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -56,6 +37,26 @@ core::Tensor ComputeFPFHFeature(
         const utility::optional<int> max_nn = 100,
         const utility::optional<double> radius = utility::nullopt);
 
+/// \brief Function to find correspondences via 1-nearest neighbor feature
+/// matching. Target is used to construct a nearest neighbor search
+/// object, in order to query source.
+/// \param source_feats (N, D) tensor
+/// \param target_feats (M, D) tensor
+/// \param mutual_filter Boolean flag, only return correspondences (i, j) s.t.
+/// source_features[i] and target_features[j] are mutually the nearest neighbor.
+/// \param mutual_consistency_ratio Float threshold to decide whether the number
+/// of correspondences is sufficient. Only used when mutual_filter is set to
+/// True.
+/// \return (K, 2, Int64) tensor. When mutual_filter is disabled: the first
+/// column is arange(0, N) of source, and the second column is the corresponding
+/// index of target. When mutual_filter is enabled, return the filtering subset
+/// of the aforementioned correspondence set where source[i] and target[j] are
+/// mutually the nearest neighbor. If the subset size is smaller than
+/// mutual_consistency_ratio * N, return the unfiltered set.
+core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
+                                         const core::Tensor &target_features,
+                                         bool mutual_filter = false,
+                                         float mutual_consistency_ratio = 0.1);
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

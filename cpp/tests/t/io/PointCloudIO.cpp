@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/io/PointCloudIO.h"
@@ -73,12 +54,14 @@ const std::unordered_map<std::string, TensorCtorData> pc_data_1{
         {"colors",
          {{0.5, 0.3, 0.2, 0, 1, 0.5, 0.6, 0, 1, 1, 0.5, 0.7, 0.3, 0, 0.5},
           {5, 3}}},
+        {"dopplers", {{1, 0.9, 0.8, 0.7, 0.6}, {5, 1}}},
 };
 
 // Bad data.
 const std::unordered_map<std::string, TensorCtorData> pc_data_bad{
         {"positions", {{0, 0, 0, 1, 0, 0}, {2, 3}}},
         {"intensities", {{0}, {1, 1}}},
+        {"dopplers", {{0}, {1, 1}}},
 };
 
 const std::vector<ReadWritePCArgs> pcArgs({
@@ -94,6 +77,10 @@ const std::vector<ReadWritePCArgs> pcArgs({
          IsAscii::ASCII,
          Compressed::UNCOMPRESSED,
          {{"positions", 1e-5}, {"intensities", 1e-5}, {"colors", 1e-5}}},  // 2
+        {"test.xyzd",
+         IsAscii::ASCII,
+         Compressed::UNCOMPRESSED,
+         {{"positions", 1e-5}, {"dopplers", 1e-5}}},  // 0
 });
 
 class ReadWriteTPC : public testing::TestWithParam<ReadWritePCArgs> {};
@@ -406,8 +393,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_pcd;
     t::io::ReadPointCloud(filename_ascii, ascii_pcd);
@@ -422,8 +408,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_binary, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ false, /*compressed*/ false, false, {})));
+            {/*ascii*/ false, /*compressed*/ false, false}));
 
     t::geometry::PointCloud binary_pcd;
     t::io::ReadPointCloud(filename_binary, binary_pcd);
@@ -439,8 +424,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_binary_compressed, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ false, /*compressed*/ true, false, {})));
+            {/*ascii*/ false, /*compressed*/ true, false}));
 
     t::geometry::PointCloud binary_compressed_pcd;
     t::io::ReadPointCloud(filename_binary_compressed, binary_compressed_pcd);
@@ -464,8 +448,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_f32, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_f32_pcd;
     t::io::ReadPointCloud(filename_ascii_f32, ascii_f32_pcd);
@@ -487,8 +470,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_uint32, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_uint32_pcd;
     t::io::ReadPointCloud(filename_ascii_uint32, ascii_uint32_pcd);

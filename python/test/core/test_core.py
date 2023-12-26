@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
@@ -80,8 +61,8 @@ def to_numpy_dtype(dtype: o3c.Dtype):
         o3c.uint16: np.uint16,
         o3c.uint32: np.uint32,
         o3c.uint64: np.uint64,
-        o3c.bool8: np.bool8,  # np.bool deprecated
-        o3c.bool: np.bool8,  # o3c.bool is an alias for o3c.bool8
+        o3c.bool8: np.bool_,
+        o3c.bool: np.bool_,  # o3c.bool is an alias for o3c.bool8
     }
     return conversions[dtype]
 
@@ -182,7 +163,7 @@ def test_tensor_constructor(dtype, device):
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Boolean
-    np_t = np.array([True, False, True], dtype=np.bool8)
+    np_t = np.array([True, False, True], dtype=np.bool_)
     o3_t = o3c.Tensor([True, False, True], o3c.bool, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
     o3_t = o3c.Tensor(np_t, o3c.bool, device)
@@ -820,7 +801,7 @@ def test_setitem(device):
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
     # Scalar boolean set item
-    np_t = np.eye(4, dtype=np.bool8)
+    np_t = np.eye(4, dtype=np.bool_)
     o3_t = o3c.Tensor.eye(4, dtype=o3c.bool)
     np_t[2, 2] = False
     o3_t[2, 2] = False

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -29,21 +29,10 @@ jobs:
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
-        run: |
-          docker/docker_build.sh openblas-amd64-py310-dev
-      - name: GCloud CLI auth
-        uses: 'google-github-actions/auth@v1'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
+        run: docker/docker_build.sh openblas-amd64-py310-dev
+
       - name: Docker test
-        run: |
-          docker/docker_test.sh openblas-amd64-py310-dev
+        run: docker/docker_test.sh openblas-amd64-py310-dev
 
   # With forked repo, the GitHub secret is not available.
   skip-arm64-check-on-fork:

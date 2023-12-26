@@ -1,31 +1,14 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import os
+
 import configargparse
+import open3d as o3d
 
 
 class ConfigParser(configargparse.ArgParser):
@@ -126,9 +109,8 @@ class ConfigParser(configargparse.ArgParser):
 
         integration_parser = self.add_argument_group('integration')
         integration_parser.add(
-            '--integration_mode',type=str,
-            choices=['color', 'depth'],
-            help='Volumetric integration mode.')
+            '--integrate_color', action='store_true',
+            default=False, help='Volumetric integration mode.')
         integration_parser.add(
             '--voxel_size', type=float,
             help='Voxel size in meter for volumetric integration.')
@@ -160,7 +142,7 @@ class ConfigParser(configargparse.ArgParser):
                       'Fallback to hybrid odometry.')
                 config.odometry_method = 'hybrid'
 
-        if config.engine == 'tensor':
+        elif config.engine == 'tensor':
             if config.icp_method == 'generalized':
                 print('Tensor engine does not support generalized ICP.',
                       'Fallback to colored ICP.')
@@ -170,6 +152,13 @@ class ConfigParser(configargparse.ArgParser):
                 print('Tensor engine does not support multiprocessing.',
                       'Disabled.')
                 config.multiprocessing = False
+
+            if (config.device.lower().startswith('cuda') and
+                (not o3d.core.cuda.is_available())):
+                print(
+                    'Open3d not built with cuda support or no cuda device available. ',
+                    'Fallback to CPU.')
+                config.device = 'CPU:0'
 
         return config
 

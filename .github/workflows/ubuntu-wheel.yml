@@ -9,7 +9,7 @@ on:
         default: 'ON'
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -19,6 +19,9 @@ concurrency:
 
 env:
   GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
+  BUILD_CUDA_MODULE: 'ON'
+  BUILD_PYTORCH_OPS: 'ON'
+  BUILD_TENSORFLOW_OPS: 'OFF'   # Turn ON when cxx11_abi is same for TF and PyTorch
 
 jobs:
   build-wheel:
@@ -27,16 +30,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10']
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - is_master: false
-            python_version: '3.7'
-          - is_master: false
+          - is_main: false
             python_version: '3.8'
-          - is_master: false
+          - is_main: false
             python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
@@ -53,70 +56,77 @@ jobs:
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
-          if [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py37_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+          if [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py38_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py39_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py310_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py37
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py311_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py38
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py39
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py310
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py311
           fi
-          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.whl)"
+          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
+          PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
+          echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v3
         with:
           name: open3d_linux_x86_64_wheels
-          path: ${{ env.PIP_PKG_NAME }}
+          path: |
+            ${{ env.PIP_PKG_NAME }}
+            ${{ env.PIP_CPU_PKG_NAME }}
           if-no-files-found: error
       - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: 'google-github-actions/auth@v1'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}
       - name: Upload ccache to GCS
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
       - name: Upload wheel to GCS
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
-          echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
+            ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }} gs://open3d-releases/python-wheels/
+          echo "Download pip package at:
+            https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}
+            https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_CPU_PKG_NAME }}"
 
   test-wheel-cpu:
     name: Test wheel CPU
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10']
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - is_master: false
-            python_version: '3.7'
-          - is_master: false
+          - is_main: false
             python_version: '3.8'
-          - is_master: false
+          - is_main: false
             python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -144,27 +154,38 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel open3d*-"$pi_tag"-*.whl
+          test_wheel open3d-[0-9]*-"$pi_tag"-*.whl
       - name: Run Python unit tests
         run: |
           source util/ci_utils.sh
           echo "Running Open3D python tests..."
           run_python_tests
+      - name: Test Python package (CPU)
+        env:
+          BUILD_CUDA_MODULE: OFF
+        run: |
+          python -V
+          source util/ci_utils.sh
+          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          test_wheel open3d_cpu*-"$pi_tag"-*.whl
+      - name: Run Python unit tests (CPU)
+        run: |
+          source util/ci_utils.sh
+          echo "Running Open3D python tests (CPU wheel)..."
+          run_python_tests
 
   ready-docs:
     name: Ready docs archive
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: [build-wheel]
     steps:
       - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/master' }}
         uses: 'google-github-actions/auth@v1'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
@@ -181,6 +202,10 @@ jobs:
                 # Rename docs archive:
                 gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
                     gs://open3d-docs/${{ github.sha }}.tar.gz
+                # Set holds on new artifacts, release on old
+                gsutil retention temp release gs://open3d-releases/*
+                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
+                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
             else
                 echo "All wheels / docs not available yet."
             fi

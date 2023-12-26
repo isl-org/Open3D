@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
@@ -100,16 +81,22 @@ public:
     void SetupCamera(float verticalFoV,
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
-                     const Eigen::Vector3f &up) {
+                     const Eigen::Vector3f &up,
+                     float nearClip = -1.0f,
+                     float farClip = -1.0f) {
         float aspect = 1.0f;
         if (height_ > 0) {
             aspect = float(width_) / float(height_);
         }
         auto *camera = scene_->GetCamera();
-        auto far_plane =
-                Camera::CalcFarPlane(*camera, scene_->GetBoundingBox());
-        camera->SetProjection(verticalFoV, aspect, Camera::CalcNearPlane(),
-                              far_plane, rendering::Camera::FovType::Vertical);
+        auto far_plane = farClip > 0.0
+                                 ? farClip
+                                 : Camera::CalcFarPlane(
+                                           *camera, scene_->GetBoundingBox());
+        camera->SetProjection(
+                verticalFoV, aspect,
+                nearClip > 0.0 ? nearClip : Camera::CalcNearPlane(), far_plane,
+                rendering::Camera::FovType::Vertical);
         camera->LookAt(center, eye, up);
     }
 
@@ -183,10 +170,15 @@ void pybind_rendering_classes(py::module &m) {
             .def("setup_camera",
                  py::overload_cast<float, const Eigen::Vector3f &,
                                    const Eigen::Vector3f &,
-                                   const Eigen::Vector3f &>(
+                                   const Eigen::Vector3f &, float, float>(
                          &PyOffscreenRenderer::SetupCamera),
-                 "setup_camera(vertical_field_of_view, center, eye, up): "
-                 "sets camera view using bounding box of current geometry")
+                 "setup_camera(vertical_field_of_view, center, eye, up, "
+                 "near_clip, far_clip): "
+                 "sets camera view using bounding box of current geometry "
+                 "if the near_clip and far_clip parameters are not set",
+                 py::arg("verticalFoV"), py::arg("center"), py::arg("eye"),
+                 py::arg("up"), py::arg("nearClip") = -1.0f,
+                 py::arg("farClip") = -1.0f)
             .def("setup_camera",
                  py::overload_cast<const camera::PinholeCameraIntrinsic &,
                                    const Eigen::Matrix4d &>(

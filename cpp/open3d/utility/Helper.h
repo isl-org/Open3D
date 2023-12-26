@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -169,6 +150,24 @@ inline std::string FormatString(const std::string& format, Args... args) {
     std::snprintf(buf.get(), size, format.c_str(), args...);
     return std::string(buf.get(),
                        buf.get() + size - 1);  // We don't want the '\0' inside
+};
+
+/// Format string fast (Unix / BSD Only)
+template <typename... Args>
+inline std::string FastFormatString(const std::string& format, Args... args) {
+#ifdef _WIN32
+    return FormatString(format, args...);
+#else
+    char* buffer = nullptr;
+    int size_s = asprintf(&buffer, format.c_str(), args...);
+    if (size_s == -1) {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto ret = std::string(buffer,
+                           buffer + size_s);  // no + 1 since we ignore the \0
+    std::free(buffer);                        // asprintf calls malloc
+    return ret;
+#endif  // _WIN32
 };
 
 void Sleep(int milliseconds);

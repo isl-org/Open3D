@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
@@ -960,11 +941,24 @@ struct O3DVisualizer::Impl {
 
             // Finally assign material properties if geometry is a triangle mesh
             if (tmesh && tmesh->materials_.size() > 0) {
-                // Only a single material is supported for TriangleMesh so we
-                // just grab the first one we find. Users should be using
-                // TriangleMeshModel if they have a model with multiple
-                // materials.
-                auto &mesh_material = tmesh->materials_.begin()->second;
+                std::size_t material_index;
+                if (tmesh->HasTriangleMaterialIds()) {
+                    auto minmax_it = std::minmax_element(
+                            tmesh->triangle_material_ids_.begin(),
+                            tmesh->triangle_material_ids_.end());
+                    if (*minmax_it.first != *minmax_it.second) {
+                        utility::LogWarning(
+                                "Only a single material is "
+                                "supported for TriangleMesh visualization, "
+                                "only the first referenced material will be "
+                                "used. Use TriangleMeshModel if more than one "
+                                "material is required.");
+                    }
+                    material_index = *minmax_it.first;
+                } else {
+                    material_index = 0;
+                }
+                auto &mesh_material = tmesh->materials_[material_index].second;
                 mat.base_color = {mesh_material.baseColor.r(),
                                   mesh_material.baseColor.g(),
                                   mesh_material.baseColor.b(),
@@ -1540,6 +1534,9 @@ struct O3DVisualizer::Impl {
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
+            // Ignore Models since they can never be point clouds
+            if (o.model) continue;
+
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
@@ -1565,6 +1562,9 @@ struct O3DVisualizer::Impl {
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
+            // Ignore Models since they can never be point clouds
+            if (o.model) continue;
+
             o.material.line_width = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
@@ -2045,12 +2045,32 @@ struct O3DVisualizer::Impl {
 
     void UpdateSelectableGeometry() {
         std::vector<SceneWidget::PickableGeometry> pickable;
-        pickable.reserve(objects_.size());
+        // Count number of meshes stored in TriangleMeshModels
+        size_t model_mesh_count = 0;
+        size_t model_count = 0;
         for (auto &o : objects_) {
             if (!IsGeometryVisible(o)) {
                 continue;
             }
-            pickable.emplace_back(o.name, o.geometry.get(), o.tgeometry.get());
+            if (o.model.get()) {
+                model_count++;
+                model_mesh_count += o.model.get()->meshes_.size();
+            }
+        }
+        pickable.reserve(objects_.size() + model_mesh_count - model_count);
+        for (auto &o : objects_) {
+            if (!IsGeometryVisible(o)) {
+                continue;
+            }
+            if (o.model.get()) {
+                for (auto &g : o.model->meshes_) {
+                    pickable.emplace_back(g.mesh_name, g.mesh.get(),
+                                          o.tgeometry.get());
+                }
+            } else {
+                pickable.emplace_back(o.name, o.geometry.get(),
+                                      o.tgeometry.get());
+            }
         }
         selections_->SetSelectableGeometry(pickable);
     }
@@ -2092,7 +2112,7 @@ struct O3DVisualizer::Impl {
                 (std::string("Open3D ") + OPEN3D_VERSION).c_str());
         auto text = std::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
-                "Copyright (c) 2018-2021 www.open3d.org\n\n"
+                "Copyright (c) 2018-2023 www.open3d.org\n\n"
 
                 "Permission is hereby granted, free of charge, to any person "
                 "obtaining a copy of this software and associated "

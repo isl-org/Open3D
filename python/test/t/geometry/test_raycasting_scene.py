@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
@@ -156,6 +137,39 @@ def test_count_lots_of_intersections():
     _ = scene.count_intersections(rays)
 
 
+def test_list_intersections():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
+        o3d.geometry.TriangleMesh.create_box())
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(cube)
+
+    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+                            [10, 10, 10, 1, 0, 0]],
+                           dtype=o3d.core.float32)
+    ans = scene.list_intersections(rays)
+
+    np.testing.assert_allclose(ans['t_hit'].numpy(),
+                               np.array([1.0, 2.0, 0.5]),
+                               rtol=1e-6,
+                               atol=1e-6)
+
+
+# list lots of random ray intersections to test the internal batching
+# we expect no errors for this test
+def test_list_lots_of_intersections():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
+        o3d.geometry.TriangleMesh.create_box())
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(cube)
+
+    rs = np.random.RandomState(123)
+    rays = o3d.core.Tensor.from_numpy(rs.rand(123456, 6).astype(np.float32))
+
+    _ = scene.list_intersections(rays)
+
+
 def test_compute_closest_points():
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32)
@@ -267,7 +281,9 @@ def test_output_shapes(shape):
         'primitive_ids': [],
         'primitive_uvs': [2],
         'primitive_normals': [3],
-        'points': [3]
+        'points': [3],
+        'ray_ids': [],
+        'ray_splits': []
     }
 
     ans = scene.cast_rays(rays)
@@ -281,6 +297,20 @@ def test_output_shapes(shape):
     ans = scene.compute_closest_points(query_points)
     for k, v in ans.items():
         expected_shape = shape + last_dim[k]
+        assert list(
+            v.shape
+        ) == expected_shape, 'shape mismatch: expected {} but got {} for {}'.format(
+            expected_shape, list(v.shape), k)
+
+    ans = scene.list_intersections(rays)
+    nx = np.sum(scene.count_intersections(rays).numpy()).tolist()
+    for k, v in ans.items():
+        if k == 'ray_splits':
+            alt_shape = [np.prod(rays.shape[:-1]) + 1]
+        else:
+            alt_shape = [nx]
+        #use np.append otherwise issues if alt_shape = [0] and last_dim[k] = []
+        expected_shape = np.append(alt_shape, last_dim[k]).tolist()
         assert list(
             v.shape
         ) == expected_shape, 'shape mismatch: expected {} but got {} for {}'.format(

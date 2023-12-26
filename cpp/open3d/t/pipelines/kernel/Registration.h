@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -86,6 +67,62 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_positions,
                                    const core::Tensor &correspondence_indices,
                                    const registration::RobustKernel &kernel,
                                    const double &lambda_geometric);
+
+/// \brief Computes pose for DopplerICP registration method.
+///
+/// \param source_points source point positions of Float32 or Float64 dtype.
+/// \param source_dopplers source point Dopplers of same dtype as source point
+/// positions.
+/// \param source_directions source point direction of same dtype as source
+/// point positions.
+/// \param target_points target point positions of same dtype as source point
+/// positions.
+/// \param target_normals target point normals of same dtype as source point
+/// positions.
+/// \param correspondence_indices Tensor of type Int64 containing indices of
+/// corresponding target positions, where the value is the target index and the
+/// index of the value itself is the source index. It contains -1 as value at
+/// index with no correspondence.
+/// \param current_transform The current pose estimate of ICP.
+/// \param transform_vehicle_to_sensor The 4x4 extrinsic transformation matrix
+/// between the vehicle and the sensor frames.
+/// \param iteration current iteration number of the ICP algorithm.
+/// \param period Time period (in seconds) between the source and the target
+/// point clouds.
+/// \param lambda_doppler weight for the Doppler objective.
+/// \param reject_dynamic_outliers Whether or not to prune dynamic point
+/// outlier correspondences.
+/// \param doppler_outlier_threshold Correspondences with Doppler error
+/// greater than this threshold are rejected from optimization.
+/// \param outlier_rejection_min_iteration Number of iterations of ICP after
+/// which outlier rejection is enabled.
+/// \param geometric_robust_loss_min_iteration Number of iterations of ICP
+/// after which robust loss for geometric term kicks in.
+/// \param doppler_robust_loss_min_iteration Number of iterations of ICP
+/// after which robust loss for Doppler term kicks in.
+/// \param geometric_kernel statistical robust kernel for outlier rejection.
+/// \param doppler_kernel statistical robust kernel for outlier rejection.
+/// \return Pose [alpha beta gamma, tx, ty, tz], a shape {6} tensor of dtype
+/// Float64, where alpha, beta, gamma are the Euler angles in the ZYX order.
+core::Tensor ComputePoseDopplerICP(
+        const core::Tensor &source_points,
+        const core::Tensor &source_dopplers,
+        const core::Tensor &source_directions,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const core::Tensor &correspondence_indices,
+        const core::Tensor &current_transform,
+        const core::Tensor &transform_vehicle_to_sensor,
+        const std::size_t iteration,
+        const double period,
+        const double lambda_doppler,
+        const bool reject_dynamic_outliers,
+        const double doppler_outlier_threshold,
+        const std::size_t outlier_rejection_min_iteration,
+        const std::size_t geometric_robust_loss_min_iteration,
+        const std::size_t doppler_robust_loss_min_iteration,
+        const registration::RobustKernel &geometric_kernel,
+        const registration::RobustKernel &doppler_kernel);
 
 /// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
 /// for point to point registration method.

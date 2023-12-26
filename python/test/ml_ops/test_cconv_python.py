@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Tests the reference python implementation of the continuous conv"""
 
@@ -47,8 +28,8 @@ pytestmark = mltest.default_marks
 def test_compare_to_conv3d(dtype, filter_size, out_channels, in_channels,
                            with_inp_importance, with_normalization):
     """Compares to the 3D convolution in tensorflow"""
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+    tf = pytest.importorskip('tensorflow')
+    ml3d = pytest.importorskip('open3d.ml.tf')
     np.random.seed(0)
 
     conv_attrs = {
@@ -142,8 +123,8 @@ def test_cconv_gradient(filter_size, out_channels, in_channels,
                         with_inp_importance, with_neighbors_importance,
                         with_individual_extent, with_normalization,
                         align_corners, coordinate_mapping, interpolation):
-    import tensorflow as tf
-    import open3d.ml.tf as ml3d
+    tf = pytest.importorskip('tensorflow')
+    ml3d = pytest.importorskip('open3d.ml.tf')
     dtype = np.float64
     np.random.seed(0)
 

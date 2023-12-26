@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 # examples/python/t_reconstruction_system/integrate.py
@@ -29,25 +10,22 @@
 # P.S. This example is used in documentation, so, please ensure the changes are
 # synchronized.
 
-import os
-import numpy as np
+import time
+
 import open3d as o3d
 import open3d.core as o3c
-import time
-import matplotlib.pyplot as plt
 from tqdm import tqdm
-from config import ConfigParser
 
 from common import load_rgbd_file_names, load_depth_file_names, load_intrinsic, load_extrinsics, get_default_dataset
+from config import ConfigParser
 
 
 def integrate(depth_file_names, color_file_names, depth_intrinsic,
-              color_intrinsic, extrinsics, integrate_color, config):
-
+              color_intrinsic, extrinsics, config):
     n_files = len(depth_file_names)
     device = o3d.core.Device(config.device)
 
-    if integrate_color:
+    if config.integrate_color:
         vbg = o3d.t.geometry.VoxelBlockGrid(
             attr_names=('tsdf', 'weight', 'color'),
             attr_dtypes=(o3c.float32, o3c.float32, o3c.float32),
@@ -75,7 +53,7 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
             depth, depth_intrinsic, extrinsic, config.depth_scale,
             config.depth_max)
 
-        if integrate_color:
+        if config.integrate_color:
             color = o3d.t.io.read_image(color_file_names[i]).to(device)
             vbg.integrate(frustum_block_coords, depth, color, depth_intrinsic,
                           color_intrinsic, extrinsic, config.depth_scale,
@@ -102,7 +80,6 @@ if __name__ == '__main__':
                'Default dataset may be selected from the following options: '
                '[lounge, jack_jack]',
                default='lounge')
-    parser.add('--integrate_color', action='store_true')
     parser.add('--path_trajectory',
                help='path to the trajectory .log or .json file.')
     parser.add('--path_npz',

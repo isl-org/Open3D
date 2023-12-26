@@ -1,34 +1,17 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
+#include <sstream>
 
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
@@ -73,6 +56,37 @@ bool ReadPointCloudFromXYZ(const std::string &filename,
     }
 }
 
+bool ReadPointCloudInMemoryFromXYZ(const unsigned char *buffer,
+                                   const size_t length,
+                                   geometry::PointCloud &pointcloud,
+                                   const ReadPointCloudOption &params) {
+    try {
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(static_cast<int64_t>(length));
+
+        std::string content(reinterpret_cast<const char *>(buffer), length);
+        std::istringstream ibs(content);
+        pointcloud.Clear();
+        int i = 0;
+        double x, y, z;
+        std::string line;
+        while (std::getline(ibs, line)) {
+            if (sscanf(line.c_str(), "%lf %lf %lf", &x, &y, &z) == 3) {
+                pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
+            }
+            if (++i % 1000 == 0) {
+                reporter.Update(ibs.tellg());
+            }
+        }
+        reporter.Finish();
+
+        return true;
+    } catch (const std::exception &e) {
+        utility::LogWarning("Read XYZ failed with exception: {}", e.what());
+        return false;
+    }
+}
+
 bool WritePointCloudToXYZ(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params) {
@@ -98,6 +112,41 @@ bool WritePointCloudToXYZ(const std::string &filename,
                 reporter.Update(i);
             }
         }
+        reporter.Finish();
+        return true;
+    } catch (const std::exception &e) {
+        utility::LogWarning("Write XYZ failed with exception: {}", e.what());
+        return false;
+    }
+}
+
+bool WritePointCloudInMemoryToXYZ(unsigned char *&buffer,
+                                  size_t &length,
+                                  const geometry::PointCloud &pointcloud,
+                                  const WritePointCloudOption &params) {
+    try {
+        utility::CountingProgressReporter reporter(params.update_progress);
+        reporter.SetTotal(pointcloud.points_.size());
+
+        std::string content;
+        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
+            const Eigen::Vector3d &point = pointcloud.points_[i];
+            std::string line = utility::FastFormatString(
+                    "%.10f %.10f %.10f\n", point(0), point(1), point(2));
+            content.append(line);
+            if (i % 1000 == 0) {
+                reporter.Update(i);
+            }
+        }
+        // nothing to report...
+        if (content.length() == 0) {
+            reporter.Finish();
+            return false;
+        }
+        length = content.length();
+        buffer = new unsigned char[length];  // we do this for the caller
+        std::memcpy(buffer, content.c_str(), length);
+
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {

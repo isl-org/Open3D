@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pybind/data/dataset.h"
@@ -184,6 +165,39 @@ void pybind_demo_crop_pointcloud(py::module& m) {
                                     "point_cloud_path");
     docstring::ClassMethodDocInject(m, "DemoCropPointCloud",
                                     "cropped_json_path");
+}
+
+void pybind_demo_doppler_icp_sequence(py::module& m) {
+    // open3d.data.DemoDopplerICPSequence
+    py::class_<DemoDopplerICPSequence,
+               PyDownloadDataset<DemoDopplerICPSequence>,
+               std::shared_ptr<DemoDopplerICPSequence>, DownloadDataset>
+            demo_doppler_icp_sequence(
+                    m, "DemoDopplerICPSequence",
+                    "Data class for `DemoDopplerICPSequence` contains an "
+                    "example sequence of 100 point clouds with Doppler "
+                    "velocity channel and corresponding ground truth poses. "
+                    "The sequence was generated using the CARLA simulator.");
+    demo_doppler_icp_sequence
+            .def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "paths", &DemoDopplerICPSequence::GetPaths,
+                    "Returns list of the point cloud paths in the sequence.")
+            .def_property_readonly(
+                    "calibration_path",
+                    &DemoDopplerICPSequence::GetCalibrationPath,
+                    "Path to the calibration metadata file, containing "
+                    "transformation between the vehicle and sensor frames and "
+                    "the time period.")
+            .def_property_readonly(
+                    "trajectory_path",
+                    &DemoDopplerICPSequence::GetTrajectoryPath,
+                    "Path to the ground truth poses for the entire sequence.");
+    docstring::ClassMethodDocInject(m, "DemoDopplerICPSequence", "paths");
+    docstring::ClassMethodDocInject(m, "DemoDopplerICPSequence",
+                                    "calibration_path");
+    docstring::ClassMethodDocInject(m, "DemoDopplerICPSequence",
+                                    "trajectory_path");
 }
 
 void pybind_demo_feature_matching_point_clouds(py::module& m) {
@@ -993,28 +1007,28 @@ void pybind_redwood_indoor_living_room1(py::module& m) {
                     R"doc(RedwoodIndoorLivingRoom1 (Augmented ICL-NUIM Dataset)
 Data class for `RedwoodIndoorLivingRoom1`, containing dense point
 cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-sequence, and ground-truth camera trajectory.
+sequence, and ground-truth camera trajectory. ::
 
-RedwoodIndoorLivingRoom1
-├── colors
-│   ├── 00000.jpg
-│   ├── 00001.jpg
-│   ├── ...
-│   └── 02869.jpg
-├── depth
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02869.png
-├── depth_noisy
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02869.png
-├── dist-model.txt
-├── livingroom1.oni
-├── livingroom1-traj.txt
-└── livingroom.ply
+    RedwoodIndoorLivingRoom1
+    |-- colors
+    |   |-- 00000.jpg
+    |   |-- 00001.jpg
+    |   |-- ...
+    |   '-- 02869.jpg
+    |-- depth
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02869.png
+    |-- depth_noisy
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02869.png
+    |-- dist-model.txt
+    |-- livingroom1.oni
+    |-- livingroom1-traj.txt
+    '-- livingroom.ply
 )doc");
     dataset.def(py::init<const std::string&>(), "data_root"_a = "");
     dataset.def_property_readonly("point_cloud_path",
@@ -1048,28 +1062,28 @@ void pybind_redwood_indoor_living_room2(py::module& m) {
                     R"doc(RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
 Data class for `RedwoodIndoorLivingRoom2`, containing dense point
 cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-sequence, and ground-truth camera trajectory.
+sequence, and ground-truth camera trajectory. ::
 
-RedwoodIndoorLivingRoom2
-├── colors
-│   ├── 00000.jpg
-│   ├── 00001.jpg
-│   ├── ...
-│   └── 02349.jpg
-├── depth
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02349.png
-├── depth_noisy
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02349.png
-├── dist-model.txt
-├── livingroom2.oni
-├── livingroom2-traj.txt
-└── livingroom.ply
+    RedwoodIndoorLivingRoom2
+    |-- colors
+    |   |-- 00000.jpg
+    |   |-- 00001.jpg
+    |   |-- ...
+    |   '-- 02349.jpg
+    |-- depth
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02349.png
+    |-- depth_noisy
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02349.png
+    |-- dist-model.txt
+    |-- livingroom2.oni
+    |-- livingroom2-traj.txt
+    '-- livingroom.ply
 )doc");
     dataset.def(py::init<const std::string&>(), "data_root"_a = "");
     dataset.def_property_readonly("point_cloud_path",
@@ -1102,28 +1116,28 @@ void pybind_redwood_indoor_office1(py::module& m) {
                     R"doc(RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
 Data class for `RedwoodIndoorOffice1`, containing dense point
 cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-sequence, and ground-truth camera trajectory.
+sequence, and ground-truth camera trajectory. ::
 
-RedwoodIndoorOffice1
-├── colors
-│   ├── 00000.jpg
-│   ├── 00001.jpg
-│   ├── ...
-│   └── 02689.jpg
-├── depth
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02689.png
-├── depth_noisy
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02689.png
-├── dist-model.txt
-├── office1.oni
-├── office1-traj.txt
-└── office.ply
+    RedwoodIndoorOffice1
+    |-- colors
+    |   |-- 00000.jpg
+    |   |-- 00001.jpg
+    |   |-- ...
+    |   '-- 02689.jpg
+    |-- depth
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02689.png
+    |-- depth_noisy
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02689.png
+    |-- dist-model.txt
+    |-- office1.oni
+    |-- office1-traj.txt
+    '-- office.ply
 )doc");
     dataset.def(py::init<const std::string&>(), "data_root"_a = "");
     dataset.def_property_readonly("point_cloud_path",
@@ -1155,28 +1169,28 @@ void pybind_redwood_indoor_office2(py::module& m) {
                     R"doc(RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
 Data class for `RedwoodIndoorOffice2`, containing dense point
 cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-sequence, and ground-truth camera trajectory.
+sequence, and ground-truth camera trajectory. ::
 
-RedwoodIndoorOffice2
-├── colors
-│   ├── 00000.jpg
-│   ├── 00001.jpg
-│   ├── ...
-│   └── 02537.jpg
-├── depth
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02537.png
-├── depth_noisy
-│   ├── 00000.png
-│   ├── 00001.png
-│   ├── ...
-│   └── 02537.png
-├── dist-model.txt
-├── office2.oni
-├── office2-traj.txt
-└── office.ply
+    RedwoodIndoorOffice2
+    |-- colors
+    |   |-- 00000.jpg
+    |   |-- 00001.jpg
+    |   |-- ...
+    |   '-- 02537.jpg
+    |-- depth
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02537.png
+    |-- depth_noisy
+    |   |-- 00000.png
+    |   |-- 00001.png
+    |   |-- ...
+    |   '-- 02537.png
+    |-- dist-model.txt
+    |-- office2.oni
+    |-- office2-traj.txt
+    '-- office.ply
 )doc");
     dataset.def(py::init<const std::string&>(), "data_root"_a = "");
     dataset.def_property_readonly("point_cloud_path",
@@ -1208,6 +1222,7 @@ void pybind_data(py::module& m) {
     pybind_demo_icp_pointclouds(m_submodule);
     pybind_demo_colored_icp_pointclouds(m_submodule);
     pybind_demo_crop_pointcloud(m_submodule);
+    pybind_demo_doppler_icp_sequence(m_submodule);
     pybind_demo_feature_matching_point_clouds(m_submodule);
     pybind_demo_pose_graph_optimization(m_submodule);
     pybind_demo_custom_visualization(m_submodule);

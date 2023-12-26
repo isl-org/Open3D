@@ -16,7 +16,7 @@ Recommended procedure
 3. Check existing classes, examples, and related code.
 4. Fork Open3D on `GitHub <https://github.com/isl-org/Open3D>`_.
 5. Create new features in your fork. Do not forget unit tests and documentation. Double-check the :ref:`style_guide`.
-6. Make a pull request to the `master branch <https://github.com/isl-org/Open3D/tree/master>`_.
+6. Make a pull request to the `main branch <https://github.com/isl-org/Open3D/tree/main>`_.
 7. Make sure your PR passes the CI tests. If it doesn’t, fix the code until it builds and passes the CI tests.
 8. Your PR will be assigned to reviewers.
 9. Engage with your reviewers during the review process. Address issues or concerns raised during the review. Don’t let the review die.
@@ -264,7 +264,7 @@ Case 4: When adding a Python tutorial
 .. note::
    When you commit a ipynb notebook file make sure to remove the output cells
    to keep the commit sizes small.
-   You can use the script ``docs/jupyter/jupyter_strip_output.sh`` for
+   You can use the script ``docs/jupyter/jupyter_strip_output.py`` for
    stripping the output cells of all tutorials.
 
 Dos

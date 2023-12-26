@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -110,7 +91,7 @@ class LineSet;
 /// default and common attributes.
 class TriangleMesh : public Geometry, public DrawableGeometry {
 public:
-    /// Construct an empty pointcloud on the provided device.
+    /// Construct an empty trianglemesh on the provided device.
     /// \param device The device on which to initialize the trianglemesh
     /// (default: 'CPU:0').
     TriangleMesh(const core::Device &device = core::Device("CPU:0"));
@@ -684,6 +665,10 @@ public:
     /// rendering.
     TriangleMesh &ComputeVertexNormals(bool normalized = true);
 
+    /// \brief Function that computes the surface area of the mesh, i.e. the sum
+    /// of the individual triangle surfaces.
+    double GetSurfaceArea() const;
+
     /// \brief Clip mesh with a plane.
     /// This method clips the triangle mesh with the specified plane.
     /// Parts of the mesh on the positive side of the plane will be kept and
@@ -832,9 +817,23 @@ public:
     /// \param gutter This is the space around the uv islands in pixels.
     /// \param max_stretch The maximum amount of stretching allowed. The
     /// parameter range is [0..1] with 0 meaning no stretch allowed.
-    void ComputeUVAtlas(size_t size = 512,
-                        float gutter = 1.0f,
-                        float max_stretch = 1.f / 6);
+    /// \param parallel_partitions The approximate number of partitions created
+    /// before computing the UV atlas for parallelizing the computation.
+    /// Parallelization can be enabled with values > 1. Note that
+    /// parallelization increases the number of UV islands and can lead to
+    /// results with lower quality.
+    /// \param nthreads The number of threads used
+    /// when parallel_partitions is > 1. Set to 0 for automatic number of thread
+    /// detection.
+    ///
+    /// \return Tuple with (max stretch, num_charts, num_partitions) storing the
+    /// actual amount of stretch, the number of created charts, and the number
+    /// of parallel partitions created.
+    std::tuple<float, int, int> ComputeUVAtlas(size_t size = 512,
+                                               float gutter = 1.0f,
+                                               float max_stretch = 1.f / 6,
+                                               int parallel_partitions = 1,
+                                               int nthreads = 0);
 
     /// Bake vertex attributes into textures.
     ///
@@ -921,6 +920,30 @@ public:
     TriangleMesh ExtrudeLinear(const core::Tensor &vector,
                                double scale = 1.0,
                                bool capping = true) const;
+
+    /// Partition the mesh by recursively doing PCA.
+    /// This function creates a new triangle attribute with the name
+    /// "partition_ids".
+    /// \param max_faces The maximum allowed number of faces in a partition.
+    /// \return The number of partitions.
+    int PCAPartition(int max_faces);
+
+    /// Returns a new mesh with the faces selected by a boolean mask.
+    /// \param mask A boolean mask with the shape (N) with N as the number of
+    /// faces in the mesh.
+    /// \return A new mesh with the selected faces. If the original mesh is
+    /// empty, return an empty mesh.
+    TriangleMesh SelectFacesByMask(const core::Tensor &mask) const;
+
+    /// Returns a new mesh with the vertices selected by a vector of indices.
+    /// If an item from the indices list exceeds the max vertex number of
+    /// the mesh or has a negative value, it is ignored.
+    /// \param indices An integer list of indices. Duplicates are
+    /// allowed, but ignored. Signed and unsigned integral types are allowed.
+    /// \return A new mesh with the selected vertices and faces built
+    /// from the selected vertices. If the original mesh is empty, return
+    /// an empty mesh.
+    TriangleMesh SelectByIndex(const core::Tensor &indices) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

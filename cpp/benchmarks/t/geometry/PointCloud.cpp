@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/PointCloud.h"
@@ -88,7 +69,7 @@ void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
 void VoxelDownSample(benchmark::State& state,
                      const core::Device& device,
                      float voxel_size,
-                     const core::HashBackendType& backend) {
+                     const std::string& reduction) {
     t::geometry::PointCloud pcd;
     // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
     // remove_nan_points
@@ -96,10 +77,10 @@ void VoxelDownSample(benchmark::State& state,
     pcd = pcd.To(device);
 
     // Warm up.
-    pcd.VoxelDownSample(voxel_size, backend);
+    pcd.VoxelDownSample(voxel_size, reduction);
 
     for (auto _ : state) {
-        pcd.VoxelDownSample(voxel_size, backend);
+        pcd.VoxelDownSample(voxel_size, reduction);
         core::cuda::Synchronize(device);
     }
 }
@@ -406,28 +387,34 @@ BENCHMARK_CAPTURE(ToLegacyPointCloud, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
-#define ENUM_VOXELSIZE(DEVICE, BACKEND)                                       \
-    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_01, DEVICE, 0.01, BACKEND) \
-            ->Unit(benchmark::kMillisecond);                                  \
-    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_02, DEVICE, 0.08, BACKEND) \
-            ->Unit(benchmark::kMillisecond);                                  \
-    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_04, DEVICE, 0.04, BACKEND) \
-            ->Unit(benchmark::kMillisecond);                                  \
-    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_08, DEVICE, 0.08, BACKEND) \
-            ->Unit(benchmark::kMillisecond);                                  \
-    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_16, DEVICE, 0.16, BACKEND) \
-            ->Unit(benchmark::kMillisecond);                                  \
-    BENCHMARK_CAPTURE(VoxelDownSample, BACKEND##_0_32, DEVICE, 0.32, BACKEND) \
+#define ENUM_VOXELSIZE(DEVICE, REDUCTION)                              \
+    BENCHMARK_CAPTURE(VoxelDownSample, REDUCTION##_0_01, DEVICE, 0.01, \
+                      REDUCTION)                                       \
+            ->Unit(benchmark::kMillisecond);                           \
+    BENCHMARK_CAPTURE(VoxelDownSample, REDUCTION##_0_02, DEVICE, 0.08, \
+                      REDUCTION)                                       \
+            ->Unit(benchmark::kMillisecond);                           \
+    BENCHMARK_CAPTURE(VoxelDownSample, REDUCTION##_0_04, DEVICE, 0.04, \
+                      REDUCTION)                                       \
+            ->Unit(benchmark::kMillisecond);                           \
+    BENCHMARK_CAPTURE(VoxelDownSample, REDUCTION##_0_08, DEVICE, 0.08, \
+                      REDUCTION)                                       \
+            ->Unit(benchmark::kMillisecond);                           \
+    BENCHMARK_CAPTURE(VoxelDownSample, REDUCTION##_0_16, DEVICE, 0.16, \
+                      REDUCTION)                                       \
+            ->Unit(benchmark::kMillisecond);                           \
+    BENCHMARK_CAPTURE(VoxelDownSample, REDUCTION##_0_32, DEVICE, 0.32, \
+                      REDUCTION)                                       \
             ->Unit(benchmark::kMillisecond);
 
+const std::string kReductionMean = "mean";
 #ifdef BUILD_CUDA_MODULE
-#define ENUM_VOXELDOWNSAMPLE_BACKEND()                                  \
-    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashBackendType::TBB)   \
-    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashBackendType::Slab) \
-    ENUM_VOXELSIZE(core::Device("CUDA:0"), core::HashBackendType::StdGPU)
+#define ENUM_VOXELDOWNSAMPLE_REDUCTION()                  \
+    ENUM_VOXELSIZE(core::Device("CPU:0"), kReductionMean) \
+    ENUM_VOXELSIZE(core::Device("CUDA:0"), kReductionMean)
 #else
-#define ENUM_VOXELDOWNSAMPLE_BACKEND() \
-    ENUM_VOXELSIZE(core::Device("CPU:0"), core::HashBackendType::TBB)
+#define ENUM_VOXELDOWNSAMPLE_REDUCTION() \
+    ENUM_VOXELSIZE(core::Device("CPU:0"), kReductionMean)
 #endif
 
 BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_01, 0.01)
@@ -442,7 +429,7 @@ BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_16, 0.16)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
         ->Unit(benchmark::kMillisecond);
-ENUM_VOXELDOWNSAMPLE_BACKEND()
+ENUM_VOXELDOWNSAMPLE_REDUCTION()
 
 BENCHMARK_CAPTURE(LegacyUniformDownSample, Legacy_2, 2)
         ->Unit(benchmark::kMillisecond);

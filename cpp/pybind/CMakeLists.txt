@@ -66,6 +66,7 @@ elseif (UNIX)   # Linux
 };]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+    target_link_options(pybind PRIVATE "-flto=auto")
 endif()
 
 
@@ -170,6 +171,8 @@ if (BUNDLE_OPEN3D_ML)
         open3d_ml
         PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
         GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
+        GIT_TAG origin/main
+        GIT_SHALLOW
         BUILD_IN_SOURCE ON
         # do not configure
         CONFIGURE_COMMAND ""
@@ -202,6 +205,7 @@ add_custom_target(python-package
             -DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}
             -DOPEN3D_ML_ROOT=${OPEN3D_ML_ROOT}
             -DBUILD_GUI=${BUILD_GUI}
+            -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOMEPAGE_URL=${PROJECT_HOMEPAGE_URL}
@@ -209,6 +213,7 @@ add_custom_target(python-package
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
             -DPROJECT_VERSION=${OPEN3D_VERSION_FULL}
+            -DPROJECT_DESCRIPTION=${PROJECT_DESCRIPTION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake

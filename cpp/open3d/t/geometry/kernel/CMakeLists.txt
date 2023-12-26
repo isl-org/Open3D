@@ -3,6 +3,7 @@ open3d_ispc_add_library(tgeometry_kernel OBJECT)
 target_sources(tgeometry_kernel PRIVATE
     Image.cpp
     ImageCPU.cpp
+    PCAPartition.cpp
     PointCloud.cpp
     PointCloudCPU.cpp
     TriangleMesh.cpp

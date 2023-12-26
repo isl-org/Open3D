@@ -1,30 +1,11 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/python/reconstruction_system/common.py
+# examples/python/t_reconstruction_system/common.py
 
 import open3d as o3d
 
@@ -114,7 +95,7 @@ def get_default_dataset(config):
 def load_depth_file_names(config):
     if not os.path.exists(config.path_dataset):
         print(
-            'Path \'{}\' not found.'.format(config.path_dataset),
+            f"Path '{config.path_dataset}' not found.",
             'Please provide --path_dataset in the command line or the config file.'
         )
         return [], []
@@ -125,7 +106,7 @@ def load_depth_file_names(config):
     depth_file_names = glob.glob(os.path.join(depth_folder, '*.png'))
     n_depth = len(depth_file_names)
     if n_depth == 0:
-        print('Depth image not found in {}, abort!'.format(depth_folder))
+        print(f'Depth image not found in {depth_folder}, abort!')
         return []
 
     return sorted(depth_file_names)

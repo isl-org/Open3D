@@ -1,30 +1,11 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/python/t_reconstruction_system/ray_casting.py
+# examples/python/t_reconstruction_system/dense_slam.py
 
 # P.S. This example is used in documentation, so, please ensure the changes are
 # synchronized.
@@ -35,7 +16,8 @@ import open3d as o3d
 import time
 
 from config import ConfigParser
-from common import get_default_dataset, load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata, extract_rgbd_frames
+from common import (get_default_dataset, load_rgbd_file_names, save_poses,
+                    load_intrinsic, extract_trianglemesh, extract_rgbd_frames)
 
 
 def slam(depth_file_names, color_file_names, intrinsic, config):
@@ -109,7 +91,7 @@ if __name__ == '__main__':
     # Extract RGB-D frames and intrinsic from bag file.
     if config.path_dataset.endswith(".bag"):
         assert os.path.isfile(
-            config.path_dataset), (f"File {config.path_dataset} not found.")
+            config.path_dataset), f"File {config.path_dataset} not found."
         print("Extracting frames from RGBD video file")
         config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
             config.path_dataset)

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -55,9 +36,9 @@ static OPEN3D_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t& m00,
 }
 
 template <typename scalar_t>
-OPEN3D_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t* A_3x3,
-                                                     const scalar_t* B_3x1,
-                                                     scalar_t* C_3x1) {
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t* A_3x3,
+                                                          const scalar_t* B_3x1,
+                                                          scalar_t* C_3x1) {
     C_3x1[0] = A_3x3[0] * B_3x1[0] + A_3x3[1] * B_3x1[1] + A_3x3[2] * B_3x1[2];
     C_3x1[1] = A_3x3[3] * B_3x1[0] + A_3x3[4] * B_3x1[1] + A_3x3[5] * B_3x1[2];
     C_3x1[2] = A_3x3[6] * B_3x1[0] + A_3x3[7] * B_3x1[1] + A_3x3[8] * B_3x1[2];
@@ -89,6 +70,18 @@ OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void cross_3x1(
             A_3x1_input[2] * B_3x1_input[0] - A_3x1_input[0] * B_3x1_input[2];
     C_3x1_output[2] =
             A_3x1_input[0] * B_3x1_input[1] - A_3x1_input[1] * B_3x1_input[0];
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE scalar_t
+cross_mag_3x1(const scalar_t* A_3x1_input, const scalar_t* B_3x1_input) {
+    scalar_t temp_0 =
+            A_3x1_input[1] * B_3x1_input[2] - A_3x1_input[2] * B_3x1_input[1];
+    scalar_t temp_1 =
+            A_3x1_input[2] * B_3x1_input[0] - A_3x1_input[0] * B_3x1_input[2];
+    scalar_t temp_2 =
+            A_3x1_input[0] * B_3x1_input[1] - A_3x1_input[1] * B_3x1_input[0];
+    return sqrt(temp_0 * temp_0 + temp_1 * temp_1 + temp_2 * temp_2);
 }
 
 template <typename scalar_t>

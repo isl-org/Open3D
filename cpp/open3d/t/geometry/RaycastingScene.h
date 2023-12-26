@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -122,6 +103,33 @@ public:
     /// \return A tensor with the number of intersections. The shape is {..}.
     core::Tensor CountIntersections(const core::Tensor &rays,
                                     const int nthreads = 0);
+
+    /// \brief Lists the intersections of the rays with the scene
+    /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
+    /// describing the rays; {..} can be any number of dimensions.
+    /// The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+    /// with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+    /// necessary to normalize the direction although it should be normalised if
+    /// t_hit is to be calculated in coordinate units.
+    /// \param nthreads The number of threads to use. Set to 0 for automatic.
+    /// \return The returned dictionary contains:    ///
+    ///         - \b ray_splits A tensor with ray intersection splits. Can be
+    ///         used to iterate over all intersections for each ray. The shape
+    ///         is {num_rays + 1}.
+    ///         - \b ray_ids A tensor with ray IDs. The shape is
+    ///         {num_intersections}.
+    ///         - \b t_hit A tensor with the distance to the hit. The shape is
+    ///         {num_intersections}.
+    ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
+    ///           {num_intersections}.
+    ///         - \b primitive_ids A tensor with the primitive IDs, which
+    ///           corresponds to the triangle index. The shape is
+    ///           {num_intersections}.
+    ///         - \b primitive_uvs A tensor with the barycentric coordinates of
+    ///           the intersection points within the triangles. The shape is
+    ///           {num_intersections, 2}.
+    std::unordered_map<std::string, core::Tensor> ListIntersections(
+            const core::Tensor &rays, const int nthreads = 0);
 
     /// \brief Computes the closest points on the surfaces of the scene.
     /// \param query_points A tensor with >=2 dims, shape {.., 3} and Dtype

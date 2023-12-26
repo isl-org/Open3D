@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -204,7 +185,9 @@ public:
     /// clipped.
     ///
     /// \param bbox AxisAlignedBoundingBox to crop points.
-    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox) const;
+    /// \param invert Optional boolean to invert cropping.
+    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox,
+                                     bool invert = false) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
     ///
@@ -212,7 +195,9 @@ public:
     /// clipped.
     ///
     /// \param bbox OrientedBoundingBox to crop points.
-    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox) const;
+    /// \param invert Optional boolean to invert cropping.
+    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox,
+                                     bool invert = false) const;
 
     /// \brief Function to remove points that have less than \p nb_points in a
     /// sphere of a given radius.
@@ -267,10 +252,18 @@ public:
     /// \brief Function to consistently orient estimated normals based on
     /// consistent tangent planes as described in Hoppe et al., "Surface
     /// Reconstruction from Unorganized Points", 1992.
+    /// Further details on parameters are described in
+    /// Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud",
+    /// 2023.
     ///
     /// \param k k nearest neighbour for graph reconstruction for normal
     /// propagation.
-    void OrientNormalsConsistentTangentPlane(size_t k);
+    /// \param lambda penalty constant on the distance of a point from the
+    /// tangent plane \param cos_alpha_tol treshold that defines the amplitude
+    /// of the cone spanned by the reference normal
+    void OrientNormalsConsistentTangentPlane(size_t k,
+                                             const double lambda = 0.0,
+                                             const double cos_alpha_tol = 1.0);
 
     /// \brief Function to compute the point to point distances between point
     /// clouds.

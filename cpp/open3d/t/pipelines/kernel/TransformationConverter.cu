@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cuda.h>
@@ -58,6 +39,32 @@ void PoseToTransformationCUDA<double>(double *transformation_ptr,
                                       const double *X_ptr) {
     PoseToTransformationKernel<double>
             <<<1, 1, 0, core::cuda::GetStream()>>>(transformation_ptr, X_ptr);
+}
+
+template <typename scalar_t>
+__global__ void TransformationToPoseKernel(scalar_t *X_ptr,
+                                           const scalar_t *transformation_ptr) {
+    TransformationToPoseImpl(X_ptr, transformation_ptr);
+}
+
+template <typename scalar_t>
+void TransformationToPoseCUDA(scalar_t *X_ptr,
+                              const scalar_t *transformation_ptr) {
+    utility::LogError("Unsupported data type.");
+}
+
+template <>
+void TransformationToPoseCUDA<float>(float *X_ptr,
+                                     const float *transformation_ptr) {
+    TransformationToPoseKernel<float>
+            <<<1, 1, 0, core::cuda::GetStream()>>>(X_ptr, transformation_ptr);
+}
+
+template <>
+void TransformationToPoseCUDA<double>(double *X_ptr,
+                                      const double *transformation_ptr) {
+    TransformationToPoseKernel<double>
+            <<<1, 1, 0, core::cuda::GetStream()>>>(X_ptr, transformation_ptr);
 }
 
 }  // namespace kernel

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/PointCloud.h"
@@ -53,6 +34,7 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/pipelines/registration/Registration.h"
@@ -293,30 +275,66 @@ PointCloud PointCloud::SelectByIndex(
     return pcd;
 }
 
-PointCloud PointCloud::VoxelDownSample(
-        double voxel_size, const core::HashBackendType &backend) const {
+PointCloud PointCloud::VoxelDownSample(double voxel_size,
+                                       const std::string &reduction) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
-    core::Tensor points_voxeld = GetPointPositions() / voxel_size;
-    core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
+    if (reduction != "mean") {
+        utility::LogError("Reduction can only be 'mean' for VoxelDownSample.");
+    }
 
-    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
-                                        {3}, device_, backend);
+    // Discretize voxels.
+    core::Tensor voxeld = GetPointPositions() / voxel_size;
+    core::Tensor voxeli = voxeld.Floor().To(core::Int64);
 
-    core::Tensor buf_indices, masks;
-    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
+    // Map discrete voxels to indices.
+    core::HashSet voxeli_hashset(voxeli.GetLength(), core::Int64, {3}, device_);
 
-    PointCloud pcd_down(GetPointPositions().GetDevice());
+    // Index map: (0, original_points) -> (0, unique_points).
+    core::Tensor index_map_point2voxel, masks;
+    voxeli_hashset.Insert(voxeli, index_map_point2voxel, masks);
+
+    // Insert and find are two different passes.
+    // In the insertion pass, -1/false is returned for already existing
+    // downsampled corresponding points.
+    // In the find pass, actual indices are returned corresponding downsampled
+    // points.
+    voxeli_hashset.Find(voxeli, index_map_point2voxel, masks);
+    index_map_point2voxel = index_map_point2voxel.To(core::Int64);
+
+    int64_t num_points = voxeli.GetLength();
+    int64_t num_voxels = voxeli_hashset.Size();
+
+    // Count the number of points in each voxel.
+    auto voxel_num_points =
+            core::Tensor::Zeros({num_voxels}, core::Float32, device_);
+    voxel_num_points.IndexAdd_(
+            /*dim*/ 0, index_map_point2voxel,
+            core::Tensor::Ones({num_points}, core::Float32, device_));
+
+    // Create a new point cloud.
+    PointCloud pcd_down(device_);
     for (auto &kv : point_attr_) {
-        if (kv.first == "positions") {
-            pcd_down.SetPointAttr(kv.first,
-                                  points_voxeli.IndexGet({masks}).To(
-                                          GetPointPositions().GetDtype()) *
-                                          voxel_size);
+        auto point_attr = kv.second;
+
+        std::string attr_string = kv.first;
+        auto attr_dtype = point_attr.GetDtype();
+
+        // Use float to avoid unsupported tensor types.
+        core::SizeVector attr_shape = point_attr.GetShape();
+        attr_shape[0] = num_voxels;
+        auto voxel_attr =
+                core::Tensor::Zeros(attr_shape, core::Float32, device_);
+        if (reduction == "mean") {
+            voxel_attr.IndexAdd_(0, index_map_point2voxel,
+                                 point_attr.To(core::Float32));
+            voxel_attr /= voxel_num_points.View({-1, 1});
+            voxel_attr = voxel_attr.To(attr_dtype);
         } else {
-            pcd_down.SetPointAttr(kv.first, kv.second.IndexGet({masks}));
+            utility::LogError("Unsupported reduction type {}.", reduction);
         }
+        pcd_down.SetPointAttr(attr_string, voxel_attr);
     }
 
     return pcd_down;
@@ -713,12 +731,15 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
     }
 }
 
-void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
+void PointCloud::OrientNormalsConsistentTangentPlane(
+        size_t k,
+        const double lambda /* = 0.0*/,
+        const double cos_alpha_tol /* = 1.0*/) {
     PointCloud tpcd(GetPointPositions());
     tpcd.SetPointNormals(GetPointNormals());
 
     open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
-    lpcd.OrientNormalsConsistentTangentPlane(k);
+    lpcd.OrientNormalsConsistentTangentPlane(k, lambda, cos_alpha_tol);
 
     SetPointNormals(core::eigen_converter::EigenVector3dVectorToTensor(
             lpcd.normals_, GetPointPositions().GetDtype(), GetDevice()));
@@ -1261,6 +1282,15 @@ PointCloud PointCloud::Crop(const OrientedBoundingBox &obb, bool invert) const {
     }
     return SelectByIndex(
             obb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
+}
+
+int PointCloud::PCAPartition(int max_points) {
+    int num_partitions;
+    core::Tensor partition_ids;
+    std::tie(num_partitions, partition_ids) =
+            kernel::pcapartition::PCAPartition(GetPointPositions(), max_points);
+    SetPointAttr("partition_ids", partition_ids.To(GetDevice()));
+    return num_partitions;
 }
 
 }  // namespace geometry
