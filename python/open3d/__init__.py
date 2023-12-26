@@ -118,7 +118,7 @@ if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
 if _build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
-        "DISABLE_OPEN3D_WEB_VISUALIZER", "False") != "True":
+        "OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true":
     import platform
     if not (platform.machine().startswith("arm") or
             platform.machine().startswith("aarch")):

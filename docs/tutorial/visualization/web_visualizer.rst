@@ -55,6 +55,9 @@ Additional notes on compatibility:
   source for ARM. See the ``3rdparty/webrtc`` folder for more details.
 - Google Colab and Kaggle notebook are not supported. You'll need to run you own
   Jupyter or JupyterLab server.
+- If you prefer using native windows (with blocking calls) instead of embedded
+  graphics in Jupyter cells, you can set the environment variable
+  ``OPEN3D_DISABLE_WEB_VISUALIZER=true`` before importing Open3D.
 
 Standalone mode
 ------------------
