@@ -26,9 +26,6 @@ int main(int argc, const char *argv[]) {
 
     auto &app = Application::GetInstance();
     app.Initialize(argc, argv);
-    if (kUseHeadless) {
-        EngineInstance::EnableHeadless();
-    }
 
     auto *renderer =
             new FilamentRenderer(EngineInstance::GetInstance(), width, height,
