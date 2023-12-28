@@ -13,7 +13,6 @@
 #include <cstring>
 #include <set>
 #include <unordered_set>
-#include <cstring>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/BoundingVolume.h"
