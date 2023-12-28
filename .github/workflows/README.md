@@ -14,7 +14,7 @@ actions updates. On macOS and Windows, using Ubuntu reduces CI cost.
 
 -   `.github/workflows/documentation.yml`: Github Actions workflow file to
     create and deploy documentation. Documentation is created for every branch
-    as a CI test, but deployed only for `master`.
+    as a CI test, but deployed only for `main`.
 -   `util/ci_utils.sh:build_docs()`: Called by GitHub Actions to build documentation.
 -   `unpack_docs.sh`: Called by the documentation server to deploy the docs into
     the website.
@@ -43,9 +43,9 @@ actions updates. On macOS and Windows, using Ubuntu reduces CI cost.
     gsutil lifecycle set gcs.lifecycle.json gs://open3d-docs/
     ```
 
-    Objects will be stored in the bucket for one week. Currently, the
-    documentation server fetches the latest docs from `master` branch every hour.
-    If the documentation server fails to fetch the docs matching the `master`
+    Objects will be stored in the bucket for 30 days. Currently, the
+    documentation server fetches the latest docs from `main` branch every hour.
+    If the documentation server fails to fetch the docs matching the `main`
     commit id, the last successfully fetched docs will be displayed.
 3.  Create service account
     ```bash
@@ -163,14 +163,14 @@ used for running CI.
 -   ARM64 cache (limit 1.5GB) is stored on Google cloud bucket
     (`open3d-ci-cache` in the `isl-buckets` project). The bucket is world
     readable, but needs the `open3d-ci-sa` service account for writing. Every
-    ARM64 build downloads the cache contents before build. Only `master` branch
+    ARM64 build downloads the cache contents before build. Only `main` branch
     builds use `gsutil rsync` to update the cache in GCS. Cache transfer only
     takes a few minutes, but reduces ARM64 CI time to about 1:15 hours.
 
 ## Development wheels and binary archives for user testing
 
-`master` branch Python wheels and binary archives are uploaded to a world
-readable GCS bucket in `open3d-releases-master/{python-wheels,devel}` for users
+`main` branch Python wheels and binary archives are uploaded to a world
+readable GCS bucket in `open3d-releases/{python-wheels,devel}` for users
 to try out development wheels.
 
 ### Google Cloud storage
@@ -185,10 +185,10 @@ bucket with:
 -   One month (30 days) object lifecycle
 
 ```bash
-gsutil mb -p open3d-dev -c STANDARD -l US -b on gs://open3d-releases-master
-gsutil acl ch -u AllUsers:R gs://open3d-releases-master
-gsutil lifecycle set gcs.lifecycle.json gs:/open3d-releases-master
+gsutil mb -p open3d-dev -c STANDARD -l US -b on gs://open3d-releases
+gsutil acl ch -u AllUsers:R gs://open3d-releases
+gsutil lifecycle set gcs.lifecycle.json gs:/open3d-releases
 gsutil iam ch \
     serviceAccount:open3d-ci-sa-gpu@open3d-dev.iam.gserviceaccount.com:objectAdmin \
-    gs://open3d-releases-master
+    gs://open3d-releases
 ```

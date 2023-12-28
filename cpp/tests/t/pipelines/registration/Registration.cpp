@@ -283,6 +283,119 @@ TEST_P(RegistrationPermuteDevices, ICPColored) {
     }
 }
 
+core::Tensor ComputeDirectionVectors(const core::Tensor& positions) {
+    core::Tensor directions = core::Tensor::Empty(
+            positions.GetShape(), positions.GetDtype(), positions.GetDevice());
+    for (int64_t i = 0; i < positions.GetLength(); ++i) {
+        // Compute the norm of the position vector.
+        core::Tensor norm = (positions[i][0] * positions[i][0] +
+                             positions[i][1] * positions[i][1] +
+                             positions[i][2] * positions[i][2])
+                                    .Sqrt();
+
+        // If the norm is zero, set the direction vector to zero.
+        if (norm.Item<float>() == 0.0) {
+            directions[i].Fill(0.0);
+        } else {
+            // Otherwise, compute the direction vector by dividing the position
+            // vector by its norm.
+            directions[i] = positions[i] / norm;
+        }
+    }
+    return directions;
+}
+
+static std::tuple<t::geometry::PointCloud,
+                  t::geometry::PointCloud,
+                  core::Tensor,
+                  core::Tensor,
+                  double,
+                  double>
+GetDopplerICPRegistrationTestData(core::Dtype& dtype, core::Device& device) {
+    t::geometry::PointCloud source_tpcd, target_tpcd;
+    data::DemoDopplerICPSequence demo_sequence;
+    t::io::ReadPointCloud(demo_sequence.GetPath(0), source_tpcd);
+    t::io::ReadPointCloud(demo_sequence.GetPath(1), target_tpcd);
+
+    source_tpcd.SetPointAttr(
+            "directions",
+            ComputeDirectionVectors(source_tpcd.GetPointPositions()));
+
+    source_tpcd = source_tpcd.To(device).UniformDownSample(5);
+    target_tpcd = target_tpcd.To(device).UniformDownSample(5);
+
+    Eigen::Matrix4d calibration{Eigen::Matrix4d::Identity()};
+    double period{0.0};
+    demo_sequence.GetCalibration(calibration, period);
+
+    // Calibration transformation input.
+    const core::Tensor calibration_t =
+            core::eigen_converter::EigenMatrixToTensor(calibration)
+                    .To(device, dtype);
+
+    // Get the ground truth pose for the pair<0, 1> (on CPU:0).
+    auto trajectory = demo_sequence.GetTrajectory();
+    const core::Tensor pose_t =
+            core::eigen_converter::EigenMatrixToTensor(trajectory[1].second);
+
+    const double max_correspondence_dist = 0.3;
+    const double normals_search_radius = 10.0;
+    const int normals_max_neighbors = 30;
+
+    target_tpcd.EstimateNormals(normals_search_radius, normals_max_neighbors);
+
+    return std::make_tuple(source_tpcd, target_tpcd, calibration_t, pose_t,
+                           period, max_correspondence_dist);
+}
+
+TEST_P(RegistrationPermuteDevices, ICPDoppler) {
+    core::Device device = GetParam();
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        // Get data and parameters.
+        t::geometry::PointCloud source_tpcd, target_tpcd;
+        // Calibration transformation input.
+        core::Tensor calibration_t;
+        // Ground truth pose.
+        core::Tensor pose_t;
+        // Time period between each point cloud scan.
+        double period{0.0};
+        // Search radius.
+        double max_correspondence_dist{0.0};
+        std::tie(source_tpcd, target_tpcd, calibration_t, pose_t, period,
+                 max_correspondence_dist) =
+                GetDopplerICPRegistrationTestData(dtype, device);
+
+        const double relative_fitness = 1e-6;
+        const double relative_rmse = 1e-6;
+        const int max_iterations = 20;
+
+        t_reg::TransformationEstimationForDopplerICP estimation_dicp;
+        estimation_dicp.period_ = period;
+        estimation_dicp.transform_vehicle_to_sensor_ = calibration_t;
+
+        // DopplerICP - Tensor.
+        t_reg::RegistrationResult reg_doppler_t = t_reg::ICP(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                core::Tensor::Eye(4, dtype, device), estimation_dicp,
+                t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations),
+                -1.0);
+
+        core::Tensor estimated_pose =
+                t::pipelines::kernel::TransformationToPose(
+                        reg_doppler_t.transformation_.Inverse());
+        core::Tensor expected_pose =
+                t::pipelines::kernel::TransformationToPose(pose_t);
+
+        const double pose_diff =
+                (expected_pose - estimated_pose).Abs().Sum({0}).Item<double>();
+
+        EXPECT_NEAR(reg_doppler_t.fitness_ - 0.9, 0.0, 0.05);
+        EXPECT_NEAR(pose_diff - 0.017, 0.0, 0.005);
+    }
+}
+
 TEST_P(RegistrationPermuteDevices, RobustKernel) {
     double scaling_parameter = 1.0;
     double shape_parameter = 1.0;

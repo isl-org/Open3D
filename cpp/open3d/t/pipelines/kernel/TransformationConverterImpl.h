@@ -41,6 +41,24 @@ OPEN3D_HOST_DEVICE inline void PoseToTransformationImpl(
     transformation_ptr[10] = cos(pose_ptr[1]) * cos(pose_ptr[0]);
 }
 
+/// Shared implementation for TransformationToPose function.
+/// Reference method: utility::TransformMatrix4dToVector6d.
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE inline void TransformationToPoseImpl(
+        scalar_t *pose_ptr, const scalar_t *transformation_ptr) {
+    const scalar_t sy = sqrt(transformation_ptr[0] * transformation_ptr[0] +
+                             transformation_ptr[4] * transformation_ptr[4]);
+    if (!(sy < 1e-6)) {
+        pose_ptr[0] = atan2(transformation_ptr[9], transformation_ptr[10]);
+        pose_ptr[1] = atan2(-transformation_ptr[8], sy);
+        pose_ptr[2] = atan2(transformation_ptr[4], transformation_ptr[0]);
+    } else {
+        pose_ptr[0] = atan2(-transformation_ptr[6], transformation_ptr[5]);
+        pose_ptr[1] = atan2(-transformation_ptr[8], sy);
+        pose_ptr[2] = 0;
+    }
+}
+
 #ifdef BUILD_CUDA_MODULE
 /// \brief Helper function for PoseToTransformationCUDA.
 /// Do not call this independently, as it only sets the transformation part
@@ -49,6 +67,14 @@ OPEN3D_HOST_DEVICE inline void PoseToTransformationImpl(
 template <typename scalar_t>
 void PoseToTransformationCUDA(scalar_t *transformation_ptr,
                               const scalar_t *pose_ptr);
+
+/// \brief Helper function for TransformationToPoseCUDA.
+/// Do not call this independently, as it only sets the rotation part in the
+/// pose, using the Transformation, the rest is set in the parent function
+/// TransformationToPose.
+template <typename scalar_t>
+void TransformationToPoseCUDA(scalar_t *pose_ptr,
+                              const scalar_t *transformation_ptr);
 #endif
 
 }  // namespace kernel

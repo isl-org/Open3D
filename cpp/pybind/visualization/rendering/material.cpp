@@ -39,8 +39,8 @@ void pybind_material(py::module& m) {
             "such as TriangleMesh, LineSets, and PointClouds");
 
     mat.def(py::init<>())
-            .def(py::init<Material>())
-            .def(py::init<const std::string&>())
+            .def(py::init<Material>(), "", "mat"_a)
+            .def(py::init<const std::string&>(), "", "material_name"_a)
             .def("set_default_properties", &Material::SetDefaultProperties,
                  "Fills material with defaults for common PBR material "
                  "properties used by Open3D")

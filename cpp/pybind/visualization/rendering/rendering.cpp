@@ -81,16 +81,22 @@ public:
     void SetupCamera(float verticalFoV,
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
-                     const Eigen::Vector3f &up) {
+                     const Eigen::Vector3f &up,
+                     float nearClip = -1.0f,
+                     float farClip = -1.0f) {
         float aspect = 1.0f;
         if (height_ > 0) {
             aspect = float(width_) / float(height_);
         }
         auto *camera = scene_->GetCamera();
-        auto far_plane =
-                Camera::CalcFarPlane(*camera, scene_->GetBoundingBox());
-        camera->SetProjection(verticalFoV, aspect, Camera::CalcNearPlane(),
-                              far_plane, rendering::Camera::FovType::Vertical);
+        auto far_plane = farClip > 0.0
+                                 ? farClip
+                                 : Camera::CalcFarPlane(
+                                           *camera, scene_->GetBoundingBox());
+        camera->SetProjection(
+                verticalFoV, aspect,
+                nearClip > 0.0 ? nearClip : Camera::CalcNearPlane(), far_plane,
+                rendering::Camera::FovType::Vertical);
         camera->LookAt(center, eye, up);
     }
 
@@ -164,10 +170,15 @@ void pybind_rendering_classes(py::module &m) {
             .def("setup_camera",
                  py::overload_cast<float, const Eigen::Vector3f &,
                                    const Eigen::Vector3f &,
-                                   const Eigen::Vector3f &>(
+                                   const Eigen::Vector3f &, float, float>(
                          &PyOffscreenRenderer::SetupCamera),
-                 "setup_camera(vertical_field_of_view, center, eye, up): "
-                 "sets camera view using bounding box of current geometry")
+                 "setup_camera(vertical_field_of_view, center, eye, up, "
+                 "near_clip, far_clip): "
+                 "sets camera view using bounding box of current geometry "
+                 "if the near_clip and far_clip parameters are not set",
+                 py::arg("verticalFoV"), py::arg("center"), py::arg("eye"),
+                 py::arg("up"), py::arg("nearClip") = -1.0f,
+                 py::arg("farClip") = -1.0f)
             .def("setup_camera",
                  py::overload_cast<const camera::PinholeCameraIntrinsic &,
                                    const Eigen::Matrix4d &>(

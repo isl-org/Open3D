@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/isl-org/Open3D/master/docs/_static/open3d_logo_horizontal.png" width="320" />
+<img src="https://raw.githubusercontent.com/isl-org/Open3D/main/docs/_static/open3d_logo_horizontal.png" width="320" />
 </p>
 
 # Open3D: A Modern Library for 3D Data Processing
@@ -90,7 +90,7 @@ To use Open3D in your C++ project, checkout the following examples
 
 ## Open3D-Viewer app
 
-<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D/master/docs/_static/open3d_viewer.png">
+<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D/main/docs/_static/open3d_viewer.png">
 
 Open3D-Viewer is a standalone 3D viewer app available on Debian (Ubuntu), macOS
 and Windows. Download Open3D Viewer from the
@@ -98,7 +98,7 @@ and Windows. Download Open3D Viewer from the
 
 ## Open3D-ML
 
-<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D-ML/master/docs/images/getting_started_ml_visualizer.gif">
+<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D-ML/main/docs/images/getting_started_ml_visualizer.gif">
 
 Open3D-ML is an extension of Open3D for 3D machine learning tasks. It builds on
 top of the Open3D core library and extends it with machine learning tools for

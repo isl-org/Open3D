@@ -283,6 +283,39 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
     return *this;
 }
 
+double TriangleMesh::GetSurfaceArea() const {
+    double surface_area = 0;
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return surface_area;
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return surface_area;
+    }
+
+    const int64_t triangle_num = GetTriangleIndices().GetLength();
+    const core::Dtype dtype = GetVertexPositions().GetDtype();
+    core::Tensor triangle_areas({triangle_num}, dtype, GetDevice());
+
+    if (IsCPU()) {
+        kernel::trianglemesh::ComputeTriangleAreasCPU(
+                GetVertexPositions().Contiguous(),
+                GetTriangleIndices().Contiguous(), triangle_areas);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
+                  GetVertexPositions().Contiguous(),
+                  GetTriangleIndices().Contiguous(), triangle_areas);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    surface_area = triangle_areas.Sum({0}).To(core::Float64).Item<double>();
+
+    return surface_area;
+}
+
 geometry::TriangleMesh TriangleMesh::FromLegacy(
         const open3d::geometry::TriangleMesh &mesh_legacy,
         core::Dtype float_dtype,

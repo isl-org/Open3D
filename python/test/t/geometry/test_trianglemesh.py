@@ -420,6 +420,27 @@ def test_pickle(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
+def test_get_surface_area(device):
+    # Test with custom parameters.
+    cube = o3d.t.geometry.TriangleMesh.create_box(float_dtype=o3c.float64,
+                                                  int_dtype=o3c.int32,
+                                                  device=device)
+    np.testing.assert_equal(cube.get_surface_area(), 6)
+
+    empty = o3d.t.geometry.TriangleMesh(device=device)
+    empty.get_surface_area()
+    np.testing.assert_equal(empty.get_surface_area(), 0)
+
+    # test noncontiguous
+    sphere = o3d.t.geometry.TriangleMesh.create_sphere(device=device)
+    area1 = sphere.get_surface_area()
+    sphere.vertex.positions = sphere.vertex.positions.T().contiguous().T()
+    sphere.triangle.indices = sphere.triangle.indices.T().contiguous().T()
+    area2 = sphere.get_surface_area()
+    np.testing.assert_almost_equal(area1, area2)
+
+
+@pytest.mark.parametrize("device", list_devices())
 def test_select_faces_by_mask_32(device):
     sphere_custom = o3d.t.geometry.TriangleMesh.create_sphere(
         1, 3, o3c.float64, o3c.int32, device)
