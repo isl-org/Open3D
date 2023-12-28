@@ -1070,9 +1070,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         return map && map->HasData();
     };
     if (is_map_valid(props.albedo_img)) {
-        utility::LogWarning("Adding albedo texture with sRGB true!");
         maps.albedo_map = renderer_.AddTexture(props.albedo_img, true);
-        // maps.albedo_map = renderer_.AddTexture(props.albedo_img);
     }
     if (is_map_valid(props.normal_img)) {
         maps.normal_map = renderer_.AddTexture(props.normal_img);
