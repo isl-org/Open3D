@@ -13,13 +13,8 @@ else()
     set(lib_dir lib)
     # Setup download links
     if(WIN32)
-        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.9.9/filament-v1.9.9-windows.tgz)
-        set(FILAMENT_SHA256 3a937a54a0c6b693c833737878761f8ba8ee02744be3c2f9ec33b1c6399ba31b)
-        # Required for filament v1.9.9
-        # Older versions of filament do not contain vkshaders.
-        # They also have a different directory structure.
-        # Remove vkshaders here so we can use newer versions with FILAMENT_PRECOMPILED_ROOT.
-        list(REMOVE_ITEM filament_LIBRARIES vkshaders)
+        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.49.1/filament-v1.49.1-windows.tgz)
+        set(FILAMENT_SHA256 afbd43c106f14065c6672923e51a6bfd7ea0d87d404df62b4b6c29c81d078d2d)
         if (STATIC_WINDOWS_RUNTIME)
             string(APPEND lib_dir /x86_64/mt)
         else()
