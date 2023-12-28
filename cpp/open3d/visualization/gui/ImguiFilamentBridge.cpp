@@ -22,8 +22,9 @@
  * limitations under the License.
  */
 
-#include <cstring>
 #include "open3d/visualization/gui/ImguiFilamentBridge.h"
+
+#include <cstring>
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 // 4305: LightManager.h needs to specify some constants as floats
@@ -32,17 +33,17 @@
 #pragma warning(disable : 4068 4305)
 #endif  // _MSC_VER
 
-#include <cerrno>
-#include <iostream>
-#include <map>
-#include <vector>
-
 #include <filament/Fence.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <filament/TextureSampler.h>
 #include <filament/TransformManager.h>
 #include <utils/EntityManager.h>
+
+#include <cerrno>
+#include <iostream>
+#include <map>
+#include <vector>
 
 #ifdef _MSC_VER
 #pragma warning(pop)

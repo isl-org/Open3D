@@ -144,9 +144,9 @@ struct Application::Impl {
         InitWindowSystem();
 
         // Initialize rendering
-        // NOTE: This is where we used to manually select a backend for Filament but we
-        // feel comfortable now allowing Filament to select the best backend for the
-        // platform so there's no code here anymore
+        // NOTE: This is where we used to manually select a backend for Filament
+        // but we feel comfortable now allowing Filament to select the best
+        // backend for the platform so there's no code here anymore
     }
 
     void CleanupAfterRunning() {

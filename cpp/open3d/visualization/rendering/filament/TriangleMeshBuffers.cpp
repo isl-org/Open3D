@@ -137,8 +137,8 @@ VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine,
 
     if (has_colors) {
         builder.attribute(VertexAttribute::COLOR, 0,
-                           VertexBuffer::AttributeType::FLOAT4,
-                           GetVertexColorOffset<TexturedVertex>(), stride);
+                          VertexBuffer::AttributeType::FLOAT4,
+                          GetVertexColorOffset<TexturedVertex>(), stride);
     }
 
     if (has_uvs) {

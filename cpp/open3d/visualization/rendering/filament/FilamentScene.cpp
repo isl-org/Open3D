@@ -659,14 +659,14 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         }
 
         // Update the geometry to reflect new geometry count
-        // ******** NOTE ******** setGeometryAt changed - this code path needs to be
-        // tested!!!!
+        // ******** NOTE ******** setGeometryAt changed - this code path needs
+        // to be tested!!!!
         if (geometry_update_needed) {
             auto& renderable_mgr = engine_.getRenderableManager();
             auto inst = renderable_mgr.getInstance(g->filament_entity);
             renderable_mgr.setGeometryAt(
-                    inst, 0, filament::RenderableManager::PrimitiveType::POINTS, nullptr, nullptr,
-                    0, n_vertices);
+                    inst, 0, filament::RenderableManager::PrimitiveType::POINTS,
+                    nullptr, nullptr, 0, n_vertices);
         }
     }
 }

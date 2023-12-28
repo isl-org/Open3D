@@ -163,7 +163,8 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
     // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // // NOTE: Setting alpha and stencil bits to match GLX standard default
     // // values. GLFW sets these internally to 8 and 8 respectively if not
-    // // specified which causes problems with Filament on Linux with Nvidia binary
+    // // specified which causes problems with Filament on Linux with Nvidia
+    // binary
     // // driver
     // glfwWindowHint(GLFW_ALPHA_BITS, 0);
     // glfwWindowHint(GLFW_STENCIL_BITS, 0);

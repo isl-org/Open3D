@@ -141,7 +141,7 @@ void FilamentView::SetWireframe(bool enable) {
     }
 }
 
-void FilamentView::SetSampleCount(int n) { 
+void FilamentView::SetSampleCount(int n) {
     auto msaao = view_->getMultiSampleAntiAliasingOptions();
     msaao.sampleCount = n;
     view_->setMultiSampleAntiAliasingOptions(msaao);

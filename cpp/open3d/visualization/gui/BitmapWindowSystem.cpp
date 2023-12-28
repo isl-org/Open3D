@@ -129,8 +129,7 @@ struct BitmapWindowSystem::Impl {
 };
 
 BitmapWindowSystem::BitmapWindowSystem(Rendering mode /*= Rendering::NORMAL*/)
-    : impl_(new BitmapWindowSystem::Impl()) {
-}
+    : impl_(new BitmapWindowSystem::Impl()) {}
 
 BitmapWindowSystem::~BitmapWindowSystem() {}
 
