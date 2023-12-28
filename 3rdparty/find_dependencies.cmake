@@ -1299,6 +1299,7 @@ if(BUILD_GUI)
                 endif()
             endif()
         endif()
+        set(FILAMENT_RUNTIME_VER x86_64)
         if (APPLE)
             if (APPLE_AARCH64)
                 set(FILAMENT_RUNTIME_VER arm64)
@@ -1306,7 +1307,6 @@ if(BUILD_GUI)
                 set(FILAMENT_RUNTIME_VER x86_64)
             endif()
         endif()
-        set(FILAMENT_RUNTIME_VER x86_64)
         open3d_import_3rdparty_library(3rdparty_filament
             HEADER
             INCLUDE_DIRS ${FILAMENT_ROOT}/include/
