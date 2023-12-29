@@ -456,6 +456,10 @@ if(WIN32)
         #
         # See: https://github.com/tensorflow/tensorflow/pull/10962
         add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj;/Ob2>")
+
+        # Suppress deprecation warnings that become errors for features depcrecated in
+        # C++20 that we still use.
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/D_SILENCE_CXX20_IS_POD_DEPRECATION_WARNING>")
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
