@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/PointCloud.h"
@@ -29,7 +10,6 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <numeric>
-#include <random>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/KDTreeFlann.h"
@@ -39,6 +19,7 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/ProgressBar.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace geometry {
@@ -69,6 +50,11 @@ AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
 
 OrientedBoundingBox PointCloud::GetOrientedBoundingBox(bool robust) const {
     return OrientedBoundingBox::CreateFromPoints(points_, robust);
+}
+
+OrientedBoundingBox PointCloud::GetMinimalOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromPointsMinimal(points_, robust);
 }
 
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
@@ -158,6 +144,41 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     return distances;
 }
 
+PointCloud &PointCloud::RemoveDuplicatedPoints() {
+    const bool has_normals = HasNormals();
+    const bool has_colors = HasColors();
+    const bool has_covariances = HasCovariances();
+    const size_t old_points_num = points_.size();
+    size_t k = 0;
+
+    typedef std::tuple<double, double, double> Coordinate3;
+    std::unordered_map<Coordinate3, size_t, utility::hash_tuple<Coordinate3>>
+            point_to_old_index;
+
+    for (size_t i = 0; i < old_points_num; i++) {
+        Coordinate3 coord =
+                std::make_tuple(points_[i](0), points_[i](1), points_[i](2));
+        if (point_to_old_index.find(coord) == point_to_old_index.end()) {
+            point_to_old_index[coord] = i;
+            points_[k] = points_[i];
+            if (has_normals) normals_[k] = normals_[i];
+            if (has_covariances) covariances_[k] = covariances_[i];
+            if (has_colors) colors_[k] = colors_[i];
+            k++;
+        }
+    }
+
+    points_.resize(k);
+    if (has_normals) normals_.resize(k);
+    if (has_covariances) covariances_.resize(k);
+    if (has_colors) colors_.resize(k);
+
+    utility::LogDebug("[RemoveDuplicatedPoints] {:d} points have been removed.",
+                      (int)(old_points_num - k));
+
+    return *this;
+}
+
 PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
     bool has_normal = HasNormals();
@@ -180,13 +201,16 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             k++;
         }
     }
+
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
     if (has_covariance) covariances_.resize(k);
+
     utility::LogDebug(
             "[RemoveNonFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
+
     return *this;
 }
 
@@ -210,9 +234,11 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
             if (has_covariance) output->covariances_.push_back(covariances_[i]);
         }
     }
+
     utility::LogDebug(
             "Pointcloud down sampled from {:d} points to {:d} points.",
             (int)points_.size(), (int)output->points_.size());
+
     return output;
 }
 
@@ -471,9 +497,11 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
     }
     std::vector<size_t> indices(points_.size());
     std::iota(std::begin(indices), std::end(indices), (size_t)0);
-    std::random_device rd;
-    std::mt19937 prng(rd());
-    std::shuffle(indices.begin(), indices.end(), prng);
+    {
+        std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+        std::shuffle(indices.begin(), indices.end(),
+                     *utility::random::GetEngine());
+    }
     indices.resize((int)(sampling_ratio * points_.size()));
     return SelectByIndex(indices);
 }
@@ -513,23 +541,25 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
     return SelectByIndex(selected_indices);
 }
 
-std::shared_ptr<PointCloud> PointCloud::Crop(
-        const AxisAlignedBoundingBox &bbox) const {
+std::shared_ptr<PointCloud> PointCloud::Crop(const AxisAlignedBoundingBox &bbox,
+                                             bool invert) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
                 "AxisAlignedBoundingBox either has zeros size, or has wrong "
                 "bounds.");
     }
-    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
+    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_),
+                         invert);
 }
-std::shared_ptr<PointCloud> PointCloud::Crop(
-        const OrientedBoundingBox &bbox) const {
+std::shared_ptr<PointCloud> PointCloud::Crop(const OrientedBoundingBox &bbox,
+                                             bool invert) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
                 "AxisAlignedBoundingBox either has zeros size, or has wrong "
                 "bounds.");
     }
-    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
+    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_),
+                         invert);
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>

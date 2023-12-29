@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -114,8 +95,8 @@ public:
     core::Tensor GetVoxelCoordinates(const core::Tensor &voxel_indices) const;
 
     /// Accelerated combination of GetVoxelIndices and GetVoxelCoordinates.
-    /// Returns a (N, 3) coordinate in float, and a (N, ) flattend index tensor,
-    /// where N is the number of active voxels located at buf_indices.
+    /// Returns a (N, 3) coordinate in float, and a (N, ) flattened index
+    /// tensor, where N is the number of active voxels located at buf_indices.
     std::pair<core::Tensor, core::Tensor>
     GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor &buf_indices);
 
@@ -237,8 +218,20 @@ public:
     /// Load a voxel block grid from a .npz file.
     static VoxelBlockGrid Load(const std::string &file_name);
 
+    /// Convert the hash map to another device.
+    VoxelBlockGrid To(const core::Device &device, bool copy = false) const;
+
 private:
     void AssertInitialized() const;
+
+    VoxelBlockGrid(float voxelSize,
+                   int64_t blockResolution,
+                   const std::shared_ptr<core::HashMap> &blockHashmap,
+                   const std::unordered_map<std::string, int> &nameAttrMap)
+        : voxel_size_(voxelSize),
+          block_resolution_(blockResolution),
+          block_hashmap_(blockHashmap),
+          name_attr_map_(nameAttrMap) {}
 
     float voxel_size_ = -1;
     int64_t block_resolution_ = -1;
@@ -251,6 +244,9 @@ private:
 
     // Map: attribute name -> index to access the attribute in SoA.
     std::unordered_map<std::string, int> name_attr_map_;
+
+    // Allocated fragment buffer for reuse in depth estimation
+    core::Tensor fragment_buffer_;
 };
 }  // namespace geometry
 }  // namespace t

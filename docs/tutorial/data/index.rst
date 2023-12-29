@@ -43,7 +43,7 @@ PointCloud
 ~~~~~~~~~~
 
 PCDPointCloud
--------------------
+-------------
 
 Colored point cloud of a living room from the Redwood dataset in PCD format.
 
@@ -58,7 +58,7 @@ Colored point cloud of a living room from the Redwood dataset in PCD format.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 PLYPointCloud
--------------------
+-------------
 
 Colored point cloud of a living room from the Redwood dataset in PLY format.
 
@@ -88,7 +88,7 @@ Eagle colored point cloud.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 LivingRoomPointClouds
-----------------------------
+---------------------
 
 57 point clouds of binary PLY format from the Redwood RGB-D Dataset.
 
@@ -108,7 +108,7 @@ LivingRoomPointClouds
     }
 
 OfficePointClouds
-------------------------
+-----------------
 
 53 point clouds of binary PLY format from Redwood RGB-D Dataset.
 
@@ -175,6 +175,260 @@ A 3D Mobius knot mesh in PLY format.
     data::KnotMesh dataset;
     auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
+TriangleModel with PRB texture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+MonkeyModel
+-----------
+
+The monkey model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.MonkeyModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::BunnyMesh dataset;
+    visualization::rendering::TriangleMeshModel model;
+    auto model = io::ReadTriangleModel(dataset.GetPath(), model);
+
+SwordModel
+----------
+
+The sword model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.SwordModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::SwordModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+CrateModel
+----------
+
+The crate model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.CrateModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::CrateModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+FlightHelmetModel
+-----------------
+
+The flight helmet gltf model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.FlightHelmetModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::FlightHelmetModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+AvocadoModel
+------------
+
+The Avocado glb model with PNG format embedded textures.
+
+.. code-block:: python
+
+    dataset = o3d.data.AvocadoModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::AvocadoModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+DamagedHelmetModel
+------------------
+
+The damaged helmet glb model with JPG format embedded textures.
+
+.. code-block:: python
+
+    dataset = o3d.data.DamagedHelmetModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::DamagedHelmetModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+Texture material images
+~~~~~~~~~~~~~~~~~~~~~~~
+
+MetalTexture
+------------
+
+Albedo, normal, roughness and metallic texture files for metal based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.MetalTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+    mat.metallic_img = o3d.io.read_image(mat_data.metallic_texture_path)
+
+.. code-block:: cpp
+
+    data::MetalTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+    mat.metallic_img = io::CreateImageFromFile(mat_data.metallic_texture_path);
+
+PaintedPlasterTexture
+---------------------
+
+Albedo, normal and roughness texture files for painted plaster based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.PaintedPlasterTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::PaintedPlasterTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+TilesTexture
+------------
+
+Albedo, normal and roughness texture files for tiles based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.TilesTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::TilesTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+TerrazzoTexture
+---------------
+
+Albedo, normal and roughness texture files for terrazzo based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.TerrazzoTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::TerrazzoTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+WoodTexture
+-----------
+
+Albedo, normal and roughness texture files for wood based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.WoodTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::WoodTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+WoodFloorTexture
+----------------
+
+Albedo, normal and roughness texture files for wooden floor based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.WoodFloorTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::WoodFloorTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
 Image
 ~~~~~
 
@@ -197,7 +451,7 @@ RGBDImage
 ~~~~~~~~~
 
 SampleRedwoodRGBDImages
-------------------------
+-----------------------
 
 Sample set of 5 color images, 5 depth images from the Redwood RGBD
 living-room1 dataset. It also contains a camera trajectory log, a camera
@@ -238,7 +492,7 @@ TSDF.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetReconstructionPath());
 
 SampleFountainRGBDImages
--------------------------
+------------------------
 
 Sample set of 33 color and depth images from the Fountain RGBD dataset.
 It also contains camera poses at key frames log and mesh reconstruction.
@@ -337,7 +591,7 @@ RGBD dataset.
 
     auto color_raw = io::CreateImageFromFile(dataset.GetColorPath());
     auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPath());
-    
+
     auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(
         *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ false);
 
@@ -363,6 +617,84 @@ RGBD dataset.
     auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPath());
     auto rgbd_image = geometry::RGBDImage::CreateFromTUMFormat(
         *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ false);
+
+LoungeRGBDImages
+------------------
+
+Lounge RGBD dataset from Stanford containing ``color`` and ``depth``
+sequence of 3000 images, along with ``camera trajectory`` and ``reconstruction``.
+
+.. code-block:: python
+
+    dataset = o3d.data.LoungeRGBDImages()
+
+    rgbd_images = []
+    for i in range(len(dataset.depth_paths)):
+        color_raw = o3d.io.read_image(dataset.color_paths[i])
+        depth_raw = o3d.io.read_image(dataset.depth_paths[i])
+        rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+                                                   color_raw, depth_raw)
+        rgbd_images.append(rgbd_image)
+
+    mesh = o3d.io.read_triangle_mesh(dataset.reconstruction_path)
+
+.. code-block:: cpp
+
+    data::LoungeRGBDImages dataset;
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
+    for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
+        auto color_raw = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+
+        auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
+                *color_raw, *depth_raw,
+                /*depth_scale =*/1000.0,
+                /*depth_trunc =*/3.0,
+                /*convert_rgb_to_intensity =*/false);
+        rgbd_images.push_back(rgbd_image);
+    }
+
+    auto mesh = io::CreateTriangleMeshFromFile(dataset.GetReconstructionPath());
+
+BedroomRGBDImages
+------------------
+
+Bedroom RGBD dataset from Redwood containing ``color`` and ``depth``
+sequence of 21931 images, along with ``camera trajectory`` and ``reconstruction``.
+
+.. code-block:: python
+
+    dataset = o3d.data.BedroomRGBDImages()
+
+    rgbd_images = []
+    for i in range(len(dataset.depth_paths)):
+        color_raw = o3d.io.read_image(dataset.color_paths[i])
+        depth_raw = o3d.io.read_image(dataset.depth_paths[i])
+        rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+                                                   color_raw, depth_raw)
+        rgbd_images.append(rgbd_image)
+
+    mesh = o3d.io.read_triangle_mesh(dataset.reconstruction_path)
+
+.. code-block:: cpp
+
+    data::BedroomRGBDImages dataset;
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
+    for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
+        auto color_raw = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+
+        auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
+                *color_raw, *depth_raw,
+                /*depth_scale =*/1000.0,
+                /*depth_trunc =*/3.0,
+                /*convert_rgb_to_intensity =*/false);
+        rgbd_images.push_back(rgbd_image);
+    }
+
+    auto mesh = io::CreateTriangleMeshFromFile(dataset.GetReconstructionPath());
 
 Demo
 ~~~~
@@ -427,7 +759,7 @@ This data is used for point cloud crop demo.
     auto chair = vol.CropPointCloud(*pcd);
 
 DemoFeatureMatchingPointClouds
------------------------------
+------------------------------
 
 Sample set of 2 point cloud fragments and their respective FPFH features and
 L32D features. This data is used for point cloud feature matching demo.
@@ -479,3 +811,228 @@ graph optimization demo.
                         dataset.GetPoseGraphFragmentPath());
     auto pose_graph_global = io::CreatePoseGraphFromFile(
                         dataset.GetPoseGraphGlobalPath());
+
+RedwoodIndoorLivingRoom1
+------------------------
+
+The living room 1 scene of the Redwood indoor dataset (Augmented ICL-NUIM
+Dataset). The dataset contains a dense point cloud, a rgb sequence, a clean
+depth sequence, a noisy depth sequence, an oni file, and camera trajectory.
+
+
+.. code-block:: python
+
+    dataset = o3d.data.RedwoodIndoorLivingRoom1()
+    assert Path(gt_download_dir).is_dir()
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+
+.. code-block:: cpp
+
+    data::RedwoodIndoorLivingRoom1 dataset;
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+
+RedwoodIndoorLivingRoom2
+------------------------
+
+The living room 2 scene of the Redwood indoor dataset (Augmented ICL-NUIM
+Dataset). The dataset contains a dense point cloud, a rgb sequence, a clean
+depth sequence, a noisy depth sequence, an oni file, and camera trajectory.
+
+
+.. code-block:: python
+
+    dataset = o3d.data.RedwoodIndoorLivingRoom2()
+    assert Path(gt_download_dir).is_dir()
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+
+.. code-block:: cpp
+
+    data::RedwoodIndoorLivingRoom2 dataset;
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+
+
+RedwoodIndoorOffice1
+--------------------
+
+The office 1 scene of the Redwood indoor dataset (Augmented ICL-NUIM
+Dataset). The dataset contains a dense point cloud, a rgb sequence, a clean
+depth sequence, a noisy depth sequence, an oni file, and camera trajectory.
+
+
+.. code-block:: python
+
+    dataset = o3d.data.RedwoodIndoorOffice1()
+    assert Path(gt_download_dir).is_dir()
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+
+.. code-block:: cpp
+
+    data::RedwoodIndoorOffice1 dataset;
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+
+RedwoodIndoorOffice2
+--------------------
+
+The office 2 scene of the Redwood indoor dataset (Augmented ICL-NUIM
+Dataset). The dataset contains a dense point cloud, a rgb sequence, a clean
+depth sequence, a noisy depth sequence, an oni file, and camera trajectory.
+
+
+.. code-block:: python
+
+    dataset = o3d.data.RedwoodIndoorOffice2()
+    assert Path(gt_download_dir).is_dir()
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+
+.. code-block:: cpp
+
+    data::RedwoodIndoorOffice2 dataset;
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }

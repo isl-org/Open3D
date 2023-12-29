@@ -68,7 +68,6 @@ A new configuration file is required to specify path to the new dataset.
 Note that ``path_dataset`` and ``path_intrinsic`` indicates paths of dataset
 and intrinsic parameters.
 
-
 Run reconstruction system
 ``````````````````````````````````````
 

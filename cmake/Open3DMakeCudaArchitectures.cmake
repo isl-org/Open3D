@@ -13,7 +13,7 @@ function(open3d_make_cuda_architectures cuda_archs)
 
     if(BUILD_COMMON_CUDA_ARCHS)
         # Build with all supported architectures for previous 2 generations and
-        # M0 (minor=0) architectures for previous generations (inluding
+        # M0 (minor=0) architectures for previous generations (including
         # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
         # This is a tradeoff between binary size / build time and runtime on
         # older architectures. See:

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -37,18 +18,18 @@
 namespace open3d {
 namespace core {
 
-class DeviceMemoryManager;
+class MemoryManagerDevice;
 
 /// Top-level memory interface. Calls to any of the member functions will
-/// automatically dispatch the appropriate DeviceMemoryManager instance based on
+/// automatically dispatch the appropriate MemoryManagerDevice instance based on
 /// the provided device which is used to execute the requested functionality.
 ///
 /// The memory managers are dispatched as follows:
 ///
-/// DeviceType = CPU : CPUMemoryManager
+/// DeviceType = CPU : MemoryManagerCPU
 /// DeviceType = CUDA :
-///   BUILD_CACHED_CUDA_MANAGER = ON : CachedMemoryManager w/ CUDAMemoryManager
-///   Otherwise :                      CUDAMemoryManager
+///   ENABLE_CACHED_CUDA_MANAGER = ON : MemoryManagerCached w/ MemoryManagerCUDA
+///   Otherwise :                      MemoryManagerCUDA
 ///
 class MemoryManager {
 public:
@@ -80,15 +61,15 @@ public:
                              size_t num_bytes);
 
 protected:
-    /// Internally dispatches the appropriate DeviceMemoryManager instance.
-    static std::shared_ptr<DeviceMemoryManager> GetDeviceMemoryManager(
+    /// Internally dispatches the appropriate MemoryManagerDevice instance.
+    static std::shared_ptr<MemoryManagerDevice> GetMemoryManagerDevice(
             const Device& device);
 };
 
-/// Interface for all concrete memory manager classses.
-class DeviceMemoryManager {
+/// Interface for all concrete memory manager classes.
+class MemoryManagerDevice {
 public:
-    virtual ~DeviceMemoryManager() = default;
+    virtual ~MemoryManagerDevice() = default;
 
     /// Allocates memory of \p byte_size bytes on device \p device and returns a
     /// pointer to the beginning of the allocated memory block.
@@ -121,12 +102,12 @@ public:
 /// \p ReleaseCache or automatically if a direct allocation fails after
 /// observing a cache miss.
 ///
-class CachedMemoryManager : public DeviceMemoryManager {
+class MemoryManagerCached : public MemoryManagerDevice {
 public:
     /// Constructs a cached memory manager instance that wraps the existing
     /// direct memory manager \p device_mm.
-    explicit CachedMemoryManager(
-            const std::shared_ptr<DeviceMemoryManager>& device_mm);
+    explicit MemoryManagerCached(
+            const std::shared_ptr<MemoryManagerDevice>& device_mm);
 
     /// Allocates memory of \p byte_size bytes on device \p device and returns a
     /// pointer to the beginning of the allocated memory block.
@@ -148,16 +129,16 @@ public:
     static void ReleaseCache(const Device& device);
 
     /// Frees all releasable memory blocks on all known devices.
-    /// Note that this may also affect other instances of CachedMemoryManager.
+    /// Note that this may also affect other instances of MemoryManagerCached.
     static void ReleaseCache();
 
 protected:
-    std::shared_ptr<DeviceMemoryManager> device_mm_;
+    std::shared_ptr<MemoryManagerDevice> device_mm_;
 };
 
 /// Direct memory manager which performs allocations and deallocations on the
 /// CPU via \p std::malloc and \p std::free.
-class CPUMemoryManager : public DeviceMemoryManager {
+class MemoryManagerCPU : public MemoryManagerDevice {
 public:
     /// Allocates memory of \p byte_size bytes on device \p device and returns a
     /// pointer to the beginning of the allocated memory block.
@@ -178,7 +159,7 @@ public:
 #ifdef BUILD_CUDA_MODULE
 /// Direct memory manager which performs allocations and deallocations on CUDA
 /// devices via \p cudaMalloc and \p cudaFree.
-class CUDAMemoryManager : public DeviceMemoryManager {
+class MemoryManagerCUDA : public MemoryManagerDevice {
 public:
     /// Allocates memory of \p byte_size bytes on device \p device and returns a
     /// pointer to the beginning of the allocated memory block.
@@ -197,6 +178,33 @@ public:
 
 protected:
     bool IsCUDAPointer(const void* ptr, const Device& device);
+};
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+/// Direct memory manager which performs allocations and deallocations on SYCL
+/// devices.
+/// - sycl::malloc_device: Device malloc (default)
+/// - sycl::malloc_shared: Device malloc (experimental)
+///                        Used when ENABLE_SYCL_UNIFIED_SHARED_MEMORY
+/// - sycl::malloc_host  : Host malloc (not used)
+/// - sycl::free         : Free SYCL host, device, or shared memory
+class MemoryManagerSYCL : public MemoryManagerDevice {
+public:
+    /// Allocates memory of \p byte_size bytes on device \p device and returns a
+    /// pointer to the beginning of the allocated memory block.
+    void* Malloc(size_t byte_size, const Device& device) override;
+
+    /// Frees previously allocated memory at address \p ptr on device \p device.
+    void Free(void* ptr, const Device& device) override;
+
+    /// Copies \p num_bytes bytes of memory at address \p src_ptr on device
+    /// \p src_device to address \p dst_ptr on device \p dst_device.
+    void Memcpy(void* dst_ptr,
+                const Device& dst_device,
+                const void* src_ptr,
+                const Device& src_device,
+                size_t num_bytes) override;
 };
 #endif
 

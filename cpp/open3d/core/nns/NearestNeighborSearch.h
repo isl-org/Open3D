@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -47,9 +28,11 @@ public:
     ///
     /// \param dataset_points Dataset points for constructing search index. Must
     /// be 2D, with shape {n, d}.
-    NearestNeighborSearch(const Tensor &dataset_points)
-        : dataset_points_(dataset_points){};
-
+    // NearestNeighborSearch(const Tensor &dataset_points)
+    //     : dataset_points_(dataset_points){};
+    NearestNeighborSearch(const Tensor &dataset_points,
+                          const Dtype &index_dtype = core::Int32)
+        : dataset_points_(dataset_points), index_dtype_(index_dtype){};
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
     NearestNeighborSearch &operator=(const NearestNeighborSearch &) = delete;
@@ -81,7 +64,7 @@ public:
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param knn Number of neighbors to search per query point.
     /// \return Pair of Tensors, (indices, distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int32.
+    /// - indices: Tensor of shape {n, knn}, with dtype same as index_dtype_.
     /// - distances: Tensor of shape {n, knn}, same dtype with query_points.
     ///              The distances are squared L2 distances.
     std::pair<Tensor, Tensor> KnnSearch(const Tensor &query_points, int knn);
@@ -91,12 +74,14 @@ public:
     /// \param query_points Data points for querying. Must be 2D, with shape {n,
     /// d}.
     /// \param radius Radius.
+    /// \param sort Sort the results by distance. Default is True.
     /// \return Tuple of Tensors, (indices, distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
-    /// Int32.
+    /// same as index_dtype_.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
     /// with query_points. The distances are squared L2 distances.
-    /// - num_neighbors: Tensor of shape {n,}, with dtype Int32.
+    /// - num_neighbors: Tensor of shape {n+1,}, with dtype Int64. The Tensor is
+    /// a prefix sum of the number of neighbors for each query point.
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
             const Tensor &query_points, double radius, bool sort = true);
 
@@ -107,10 +92,11 @@ public:
     /// Must be 1D, with shape {n,}.
     /// \return Tuple of Tensors, (indices,distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
-    /// Int32.
+    /// same as index_dtype_.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
     /// with query_points. The distances are squared L2 distances.
-    /// - num_neighbors: Tensor of shape {n,}, with dtype Int32.
+    /// - num_neighbors: Tensor of shape {n+1,}, with dtype Int64. The Tensor is
+    /// a prefix sum of the number of neighbors for each query point.
     std::tuple<Tensor, Tensor, Tensor> MultiRadiusSearch(
             const Tensor &query_points, const Tensor &radii);
 
@@ -121,11 +107,11 @@ public:
     /// \param radius Radius.
     /// \param max_knn Maximum number of neighbor to search per query.
     /// \return Tuple of Tensors, (indices, distances, counts):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int32.
+    /// - indices: Tensor of shape {n, knn}, with dtype same as index_dtype_.
     /// - distainces: Tensor of shape {n, knn}, with same dtype with
     /// query_points. The distances are squared L2 distances.
     /// - counts: Counts of neighbour for each query points. [Tensor
-    /// of shape {n}, with dtype Int32].
+    /// of shape {n}, with dtype same as index_dtype_].
     std::tuple<Tensor, Tensor, Tensor> HybridSearch(const Tensor &query_points,
                                                     const double radius,
                                                     const int max_knn) const;
@@ -141,6 +127,7 @@ protected:
     std::unique_ptr<nns::FixedRadiusIndex> fixed_radius_index_;
     std::unique_ptr<nns::KnnIndex> knn_index_;
     const Tensor dataset_points_;
+    const Dtype index_dtype_;
 };
 }  // namespace nns
 }  // namespace core

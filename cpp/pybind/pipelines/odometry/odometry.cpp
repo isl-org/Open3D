@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/odometry/Odometry.h"
@@ -67,23 +48,23 @@ void pybind_odometry_classes(py::module &m) {
     odometry_option
             .def(py::init(
                          [](std::vector<int> iteration_number_per_pyramid_level,
-                            double max_depth_diff, double min_depth,
-                            double max_depth) {
+                            double depth_diff_max, double depth_min,
+                            double depth_max) {
                              return new OdometryOption(
                                      iteration_number_per_pyramid_level,
-                                     max_depth_diff, min_depth, max_depth);
+                                     depth_diff_max, depth_min, depth_max);
                          }),
                  "iteration_number_per_pyramid_level"_a =
                          std::vector<int>{20, 10, 5},
-                 "max_depth_diff"_a = 0.03, "min_depth"_a = 0.0,
-                 "max_depth"_a = 4.0)
+                 "depth_diff_max"_a = 0.03, "depth_min"_a = 0.0,
+                 "depth_max"_a = 4.0)
             .def_readwrite("iteration_number_per_pyramid_level",
                            &OdometryOption::iteration_number_per_pyramid_level_,
                            "List(int): Iteration number per image pyramid "
                            "level, typically larger image in the pyramid have "
-                           "lower interation number to reduce computation "
+                           "lower iteration number to reduce computation "
                            "time.")
-            .def_readwrite("max_depth_diff", &OdometryOption::max_depth_diff_,
+            .def_readwrite("depth_diff_max", &OdometryOption::depth_diff_max_,
                            "Maximum depth difference to be considered as "
                            "correspondence. In depth image domain, if two "
                            "aligned pixels have a depth difference less than "
@@ -91,10 +72,10 @@ void pybind_odometry_classes(py::module &m) {
                            "correspondence. Larger value induce more "
                            "aggressive search, but it is prone to unstable "
                            "result.")
-            .def_readwrite("min_depth", &OdometryOption::min_depth_,
+            .def_readwrite("depth_min", &OdometryOption::depth_min_,
                            "Pixels that has smaller than specified depth "
                            "values are ignored.")
-            .def_readwrite("max_depth", &OdometryOption::max_depth_,
+            .def_readwrite("depth_max", &OdometryOption::depth_max_,
                            "Pixels that has larger than specified depth values "
                            "are ignored.")
             .def("__repr__", [](const OdometryOption &c) {
@@ -112,12 +93,12 @@ void pybind_odometry_classes(py::module &m) {
                           std::to_string(c.odo_init_) +*/
                        std::string("\niteration_number_per_pyramid_level = ") +
                        str_iteration_number_per_pyramid_level_ +
-                       std::string("\nmax_depth_diff = ") +
-                       std::to_string(c.max_depth_diff_) +
-                       std::string("\nmin_depth = ") +
-                       std::to_string(c.min_depth_) +
-                       std::string("\nmax_depth = ") +
-                       std::to_string(c.max_depth_);
+                       std::string("\ndepth_diff_max = ") +
+                       std::to_string(c.depth_diff_max_) +
+                       std::string("\ndepth_min = ") +
+                       std::to_string(c.depth_min_) +
+                       std::string("\ndepth_max = ") +
+                       std::to_string(c.depth_max_);
             });
 
     // open3d.odometry.RGBDOdometryJacobian
@@ -126,6 +107,18 @@ void pybind_odometry_classes(py::module &m) {
             jacobian(
                     m, "RGBDOdometryJacobian",
                     "Base class that computes Jacobian from two RGB-D images.");
+
+    jacobian.def(
+            "compute_jacobian_and_residual",
+            &RGBDOdometryJacobian::ComputeJacobianAndResidual,
+            py::call_guard<py::gil_scoped_release>(),
+            "Function to compute i-th row of J and r the vector form of J_r is "
+            "basically 6x1 matrix, but it can be easily extendable to 6xn "
+            "matrix. See RGBDOdometryJacobianFromHybridTerm for this case."
+            "row"_a,
+            "J_r"_a, "r"_a, "w"_a, "source"_a, "target"_a, "source_xyz"_a,
+            "target_dx"_a, "target_dy"_a, "intrinsic"_a, "extrinsic"_a,
+            "corresps"_a);
 
     // open3d.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromColorTerm,
@@ -199,7 +192,25 @@ void pybind_odometry_methods(py::module &m) {
                      "RGBDOdometryJacobianFromHybridTerm()`` or "
                      "``RGBDOdometryJacobianFromColorTerm("
                      ").``"},
-                    {"option", "Odometry hyper parameteres."},
+                    {"option", "Odometry hyper parameters."},
+            });
+
+    m.def("compute_correspondence", &ComputeCorrespondence,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function to estimate point to point correspondences from two depth "
+          "images. A vector of u_s, v_s, u_t, v_t which maps the 2d "
+          "coordinates of source to target.",
+          "intrinsic_matrix"_a, "extrinsic"_a, "depth_s"_a, "depth_t"_a,
+          "option"_a = OdometryOption());
+    docstring::FunctionDocInject(
+            m, "compute_correspondence",
+            {
+                    {"intrinsic_matrix", "Camera intrinsic parameters."},
+                    {"extrinsic",
+                     "Estimation of transform from source to target."},
+                    {"depth_s", "Source depth image."},
+                    {"depth_t", "Target depth image."},
+                    {"option", "Odometry hyper parameters."},
             });
 }
 

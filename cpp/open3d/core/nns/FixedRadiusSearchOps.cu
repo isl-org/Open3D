@@ -1,30 +1,12 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
@@ -42,13 +24,14 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
                                const Tensor& hash_table_splits,
                                Tensor& hash_table_index,
                                Tensor& hash_table_cell_splits) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
 
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
-    open3d::core::nns::impl::BuildSpatialHashTableCUDA(
+    impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
@@ -63,7 +46,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
             Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
     temp_ptr = temp_tensor.GetDataPtr();
 
-    open3d::core::nns::impl::BuildSpatialHashTableCUDA(
+    impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
@@ -74,7 +57,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
             hash_table_index.GetDataPtr<uint32_t>());
 }
 
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCUDA(const Tensor& points,
                            const Tensor& queries,
                            double radius,
@@ -90,17 +73,19 @@ void FixedRadiusSearchCUDA(const Tensor& points,
                            Tensor& neighbors_index,
                            Tensor& neighbors_row_splits,
                            Tensor& neighbors_distance) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
 
     Device device = points.GetDevice();
     Dtype dtype = points.GetDtype();
+    Dtype index_dtype = Dtype::FromType<TIndex>();
 
-    NeighborSearchAllocator<T> output_allocator(device);
+    NeighborSearchAllocator<T, TIndex> output_allocator(device);
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
-    open3d::core::nns::impl::FixedRadiusSearchCUDA(
+    impl::FixedRadiusSearchCUDA<T, TIndex>(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.GetDataPtr<int64_t>(), points.GetShape()[0],
             points.GetDataPtr<T>(), queries.GetShape()[0],
@@ -118,7 +103,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
             Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
     temp_ptr = temp_tensor.GetDataPtr();
 
-    open3d::core::nns::impl::FixedRadiusSearchCUDA(
+    impl::FixedRadiusSearchCUDA<T, TIndex>(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.GetDataPtr<int64_t>(), points.GetShape()[0],
             points.GetDataPtr<T>(), queries.GetShape()[0],
@@ -146,35 +131,35 @@ void FixedRadiusSearchCUDA(const Tensor& points,
         int64_t num_indices = indices_unsorted.GetShape()[0];
         int64_t num_segments = neighbors_row_splits.GetShape()[0] - 1;
         Tensor indices_sorted =
-                Tensor::Empty({num_indices}, Dtype::Int32, device);
+                Tensor::Empty({num_indices}, index_dtype, device);
         Tensor distances_sorted = Tensor::Empty({num_indices}, dtype, device);
 
         // Determine temp_size for sorting
-        open3d::core::nns::impl::SortPairs(
-                temp_ptr, temp_size, texture_alignment, num_indices,
-                num_segments, neighbors_row_splits.GetDataPtr<int64_t>(),
-                indices_unsorted.GetDataPtr<int32_t>(),
-                distances_unsorted.GetDataPtr<T>(),
-                indices_sorted.GetDataPtr<int32_t>(),
-                distances_sorted.GetDataPtr<T>());
+        impl::SortPairs(temp_ptr, temp_size, texture_alignment, num_indices,
+                        num_segments,
+                        neighbors_row_splits.GetDataPtr<int64_t>(),
+                        indices_unsorted.GetDataPtr<TIndex>(),
+                        distances_unsorted.GetDataPtr<T>(),
+                        indices_sorted.GetDataPtr<TIndex>(),
+                        distances_sorted.GetDataPtr<T>());
 
         temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
         temp_ptr = temp_tensor.GetDataPtr();
 
         // Actually run the sorting.
-        open3d::core::nns::impl::SortPairs(
-                temp_ptr, temp_size, texture_alignment, num_indices,
-                num_segments, neighbors_row_splits.GetDataPtr<int64_t>(),
-                indices_unsorted.GetDataPtr<int32_t>(),
-                distances_unsorted.GetDataPtr<T>(),
-                indices_sorted.GetDataPtr<int32_t>(),
-                distances_sorted.GetDataPtr<T>());
+        impl::SortPairs(temp_ptr, temp_size, texture_alignment, num_indices,
+                        num_segments,
+                        neighbors_row_splits.GetDataPtr<int64_t>(),
+                        indices_unsorted.GetDataPtr<TIndex>(),
+                        distances_unsorted.GetDataPtr<T>(),
+                        indices_sorted.GetDataPtr<TIndex>(),
+                        distances_sorted.GetDataPtr<T>());
         neighbors_index = indices_sorted;
         neighbors_distance = distances_sorted;
     }
 }
 
-template <class T>
+template <class T, class TIndex>
 void HybridSearchCUDA(const Tensor& points,
                       const Tensor& queries,
                       double radius,
@@ -188,13 +173,14 @@ void HybridSearchCUDA(const Tensor& points,
                       Tensor& neighbors_index,
                       Tensor& neighbors_count,
                       Tensor& neighbors_distance) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     const cudaStream_t stream = 0;
 
     Device device = points.GetDevice();
 
-    NeighborSearchAllocator<T> output_allocator(device);
+    NeighborSearchAllocator<T, TIndex> output_allocator(device);
 
-    open3d::core::nns::impl::HybridSearchCUDA(
+    impl::HybridSearchCUDA<T, TIndex>(
             stream, points.GetShape()[0], points.GetDataPtr<T>(),
             queries.GetShape()[0], queries.GetDataPtr<T>(), T(radius), max_knn,
             points_row_splits.GetShape()[0],
@@ -217,8 +203,8 @@ void HybridSearchCUDA(const Tensor& points,
             const Tensor& points_row_splits, const Tensor& hash_table_splits, \
             Tensor& hash_table_index, Tensor& hash_table_cell_splits);
 
-#define INSTANTIATE_RADIUS(T)                                                  \
-    template void FixedRadiusSearchCUDA<T>(                                    \
+#define INSTANTIATE_RADIUS(T, TIndex)                                          \
+    template void FixedRadiusSearchCUDA<T, TIndex>(                            \
             const Tensor& points, const Tensor& queries, double radius,        \
             const Tensor& points_row_splits, const Tensor& queries_row_splits, \
             const Tensor& hash_table_splits, const Tensor& hash_table_index,   \
@@ -227,8 +213,8 @@ void HybridSearchCUDA(const Tensor& points,
             const bool sort, Tensor& neighbors_index,                          \
             Tensor& neighbors_row_splits, Tensor& neighbors_distance);
 
-#define INSTANTIATE_HYBRID(T)                                                  \
-    template void HybridSearchCUDA<T>(                                         \
+#define INSTANTIATE_HYBRID(T, TIndex)                                          \
+    template void HybridSearchCUDA<T, TIndex>(                                 \
             const Tensor& points, const Tensor& queries, double radius,        \
             int max_knn, const Tensor& points_row_splits,                      \
             const Tensor& queries_row_splits, const Tensor& hash_table_splits, \
@@ -240,11 +226,15 @@ void HybridSearchCUDA(const Tensor& points,
 INSTANTIATE_BUILD(float)
 INSTANTIATE_BUILD(double)
 
-INSTANTIATE_RADIUS(float)
-INSTANTIATE_RADIUS(double)
+INSTANTIATE_RADIUS(float, int32_t)
+INSTANTIATE_RADIUS(float, int64_t)
+INSTANTIATE_RADIUS(double, int32_t)
+INSTANTIATE_RADIUS(double, int64_t)
 
-INSTANTIATE_HYBRID(float)
-INSTANTIATE_HYBRID(double)
+INSTANTIATE_HYBRID(float, int32_t)
+INSTANTIATE_HYBRID(float, int64_t)
+INSTANTIATE_HYBRID(double, int32_t)
+INSTANTIATE_HYBRID(double, int64_t)
 
 }  // namespace nns
 }  // namespace core

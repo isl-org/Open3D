@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -568,7 +549,7 @@ void CopyPointIndices(const cudaStream_t& stream,
 ///
 /// \param row_splits    row_splits for defining batches.
 ///
-/// \param voxel_size    The edge lenghts of the voxel. The shape is
+/// \param voxel_size    The edge lengths of the voxel. The shape is
 ///        [NDIM]. This pointer points to host memory!
 ///
 /// \param points_range_min    The lower bound of the domain to be
@@ -595,7 +576,7 @@ void CopyPointIndices(const cudaStream_t& stream,
 ///         size), AllocVoxelPointRowSplits(int64_t** ptr, int64_t
 ///         size) and AllocVoxelBatchSplits(int64_t** ptr, int64_t size).
 ///         All functions should allocate memory and return a pointer
-///         to that memory in ptr. The argments size, rows, and cols
+///         to that memory in ptr. The arguments size, rows, and cols
 ///         define the size of the array as the number of elements.
 ///         All functions must accept zero size arguments. In this case
 ///         ptr does not need to be set.

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -34,16 +15,20 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
+
+class LineSet;
 
 /// \class PointCloud
 /// \brief A point cloud contains a list of 3D points.
@@ -123,6 +108,9 @@ public:
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
 
+    /// Getter for point_attr_ TensorMap.
+    TensorMap &GetPointAttr() { return point_attr_; }
+
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
@@ -192,7 +180,7 @@ public:
         SetPointAttr("normals", value);
     }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute key exist
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
@@ -211,14 +199,14 @@ public:
     /// This is a convenience function.
     bool HasPointPositions() const { return HasPointAttr("positions"); }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as points' length
     /// 3) attribute "colors"'s length > 0
     /// This is a convenience function.
     bool HasPointColors() const { return HasPointAttr("colors"); }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as points' length
     /// 3) attribute "normals"'s length > 0
@@ -311,36 +299,252 @@ public:
     /// \return Rotated point cloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Assigns uniform color to the point cloud.
+    ///
+    /// \param color  RGB color for the point cloud. {3,} shaped Tensor.
+    /// Floating color values are clipped between 0.0 and 1.0.
+    PointCloud &PaintUniformColor(const core::Tensor &color);
+
+    /// \brief Select points from input pointcloud, based on boolean mask
+    /// indices into output point cloud.
+    ///
+    /// \param boolean_mask Boolean indexing tensor of shape {n,} containing
+    /// true value for the indices that is to be selected.
+    /// \param invert Set to `True` to invert the selection of indices.
+    PointCloud SelectByMask(const core::Tensor &boolean_mask,
+                            bool invert = false) const;
+
+    /// \brief Select points from input pointcloud, based on indices list into
+    /// output point cloud.
+    ///
+    /// \param indices Int64 indexing tensor of shape {n,} containing
+    /// index value that is to be selected.
+    /// \param invert Set to `True` to invert the selection of indices, and also
+    /// ignore the duplicated indices.
+    /// \param remove_duplicates Set to `True` to remove the duplicated indices.
+    PointCloud SelectByIndex(const core::Tensor &indices,
+                             bool invert = false,
+                             bool remove_duplicates = false) const;
+
     /// \brief Downsamples a point cloud with a specified voxel size.
+    ///
     /// \param voxel_size Voxel size. A positive number.
+    /// \param reduction Reduction type. Currently only support "mean".
     PointCloud VoxelDownSample(double voxel_size,
-                               const core::HashBackendType &backend =
-                                       core::HashBackendType::Default) const;
+                               const std::string &reduction = "mean") const;
+
+    /// \brief Downsamples a point cloud by selecting every kth index point and
+    /// its attributes.
+    ///
+    /// \param every_k_points Sample rate, the selected point indices are [0, k,
+    /// 2k, …].
+    PointCloud UniformDownSample(size_t every_k_points) const;
+
+    /// \brief Downsample a pointcloud by selecting random index point and its
+    /// attributes.
+    ///
+    /// \param sampling_ratio Sampling ratio, the ratio of sample to total
+    /// number of points in the pointcloud.
+    PointCloud RandomDownSample(double sampling_ratio) const;
+
+    /// \brief Downsample a pointcloud into output pointcloud with a set of
+    /// points has farthest distance.
+    ///
+    /// The sampling is performed by selecting the farthest point from previous
+    /// selected points iteratively.
+    ///
+    /// \param num_samples Number of points to be sampled.
+    PointCloud FarthestPointDownSample(size_t num_samples) const;
+
+    /// \brief Remove points that have less than \p nb_points neighbors in a
+    /// sphere of a given radius.
+    ///
+    /// \param nb_points Number of neighbor points required within the radius.
+    /// \param search_radius Radius of the sphere.
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
+            size_t nb_points, double search_radius) const;
+
+    /// \brief Remove points that are further away from their \p nb_neighbor
+    /// neighbors in average. This function is not recommended to use on GPU.
+    ///
+    /// \param nb_neighbors Number of neighbors around the target point.
+    /// \param std_ratio Standard deviation ratio.
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveStatisticalOutliers(
+            size_t nb_neighbors, double std_ratio) const;
+
+    /// \brief Remove duplicated points and there associated attributes.
+    ///
+    /// \return Tuple of filtered PointCloud and boolean indexing tensor w.r.t.
+    /// input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveDuplicatedPoints() const;
+
+    /// \brief Remove all points from the point cloud that have a nan entry, or
+    /// infinite value. It also removes the corresponding attributes.
+    ///
+    /// \param remove_nan Remove NaN values from the PointCloud.
+    /// \param remove_infinite Remove infinite values from the PointCloud.
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveNonFinitePoints(
+            bool remove_nan = true, bool remove_infinite = true) const;
 
     /// \brief Returns the device attribute of this PointCloud.
-    core::Device GetDevice() const { return device_; }
+    core::Device GetDevice() const override { return device_; }
+
+    /// \brief This is an implementation of the Hidden Point Removal operator
+    /// described in Katz et. al. 'Direct Visibility of Point Sets', 2007.
+    ///
+    /// Additional information about the choice of radius
+    /// for noisy point clouds can be found in Mehra et. al. 'Visibility of
+    /// Noisy Point Cloud Data', 2010.
+    ///
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting visible triangle mesh and indiecs will be made.
+    ///
+    /// \param camera_location All points not visible from that location will be
+    /// removed.
+    /// \param radius The radius of the spherical projection.
+    /// \return Tuple of visible triangle mesh and indices of visible points on
+    /// the same device as the point cloud.
+    std::tuple<TriangleMesh, core::Tensor> HiddenPointRemoval(
+            const core::Tensor &camera_location, double radius) const;
+
+    /// \brief Cluster PointCloud using the DBSCAN algorithm
+    /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
+    /// in Large Spatial Databases with Noise", 1996
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting labels will be made.
+    ///
+    /// \param eps Density parameter that is used to find neighbouring points.
+    /// \param min_points Minimum number of points to form a cluster.
+    /// \param print_progress If `true` the progress is visualized in the
+    /// console.
+    /// \return A Tensor list of point labels on the same device as the point
+    /// cloud, -1 indicates noise according to the algorithm.
+    core::Tensor ClusterDBSCAN(double eps,
+                               size_t min_points,
+                               bool print_progress = false) const;
+
+    /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting plane model and inlier indiecs will be made.
+    ///
+    /// \param distance_threshold Max distance a point can be from the plane
+    /// model, and still be considered an inlier.
+    /// \param ransac_n Number of initial points to be considered inliers in
+    /// each iteration.
+    /// \param num_iterations Maximum number of iterations.
+    /// \param probability Expected probability of finding the optimal plane.
+    /// \return Tuple of the plane model ax + by + cz + d = 0 and the indices of
+    /// the plane inliers on the same device as the point cloud.
+    std::tuple<core::Tensor, core::Tensor> SegmentPlane(
+            const double distance_threshold = 0.01,
+            const int ransac_n = 3,
+            const int num_iterations = 100,
+            const double probability = 0.99999999) const;
+
+    /// Compute the convex hull of a point cloud using qhull.
+    ///
+    /// This runs on the CPU.
+    ///
+    /// \param joggle_inputs (default False). Handle precision problems by
+    /// randomly perturbing the input data. Set to True if perturbing the input
+    /// iis acceptable but you need convex simplicial output. If False,
+    /// neighboring facets may be merged in case of precision problems. See
+    /// [QHull docs](http://www.qhull.org/html/qh-impre.htm#joggle) for more
+    /// details.
+    ///
+    /// \return TriangleMesh representing the convexh hull. This contains an
+    /// extra vertex property "point_map" that contains the index of the
+    /// corresponding vertex in the original mesh.
+    TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
+
+    /// \brief Compute the boundary points of a point cloud.
+    /// The implementation is inspired by the PCL implementation. Reference:
+    /// https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
+    ///
+    /// \param radius Neighbor search radius parameter.
+    /// \param max_nn Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param angle_threshold Angle threshold to decide if a point is on the
+    /// boundary [Default = 90.0].
+    /// \return Tensor of boundary points and its boolean mask tensor.
+    std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
+            double radius,
+            int max_nn = 30,
+            double angle_threshold = 90.0) const;
 
 public:
+    /// Normalize point normals to length 1.
+    PointCloud &NormalizeNormals();
+
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
-    /// It uses KNN search if only max_nn parameter is provided, and
-    /// HybridSearch if radius parameter is also provided.
-    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    /// \param radius [optional] NeighbourSearch radius parameter to use
-    /// HybridSearch. [Recommended ~1.4x voxel size].
+    /// It uses KNN search (Not recommended to use on GPU) if only max_nn
+    /// parameter is provided, Radius search (Not recommended to use on GPU) if
+    /// only radius is provided and Hybrid Search (Recommended) if radius
+    /// parameter is also provided.
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter. [Recommended
+    /// ~1.4x voxel size].
     void EstimateNormals(
-            const int max_nn = 30,
+            const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
+
+    /// \brief Function to orient the normals of a point cloud.
+    ///
+    /// \param orientation_reference Normals are oriented with respect to
+    /// orientation_reference.
+    void OrientNormalsToAlignWithDirection(
+            const core::Tensor &orientation_reference =
+                    core::Tensor::Init<float>({0, 0, 1},
+                                              core::Device("CPU:0")));
+
+    /// \brief Function to orient the normals of a point cloud.
+    ///
+    /// \param camera_location Normals are oriented with towards the
+    /// camera_location.
+    void OrientNormalsTowardsCameraLocation(
+            const core::Tensor &camera_location = core::Tensor::Zeros(
+                    {3}, core::Float32, core::Device("CPU:0")));
+
+    /// \brief Function to consistently orient estimated normals based on
+    /// consistent tangent planes as described in Hoppe et al., "Surface
+    /// Reconstruction from Unorganized Points", 1992.
+    /// Further details on parameters are described in
+    /// Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud",
+    /// 2023.
+    ///
+    /// \param k k nearest neighbour for graph reconstruction for normal
+    /// propagation.
+    /// \param lambda penalty constant on the distance of a point from the
+    /// tangent plane \param cos_alpha_tol treshold that defines the amplitude
+    /// of the cone spanned by the reference normal
+    void OrientNormalsConsistentTangentPlane(size_t k,
+                                             const double lambda = 0.0,
+                                             const double cos_alpha_tol = 1.0);
 
     /// \brief Function to compute point color gradients. If radius is provided,
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
     /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    /// \param radius [optional] NeighbourSearch radius parameter to use
+    /// It uses KNN search (Not recommended to use on GPU) if only max_nn
+    /// parameter is provided, Radius search (Not recommended to use on GPU) if
+    /// only radius is provided and Hybrid Search (Recommended) if radius
+    /// parameter is also provided.
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateColorGradients(
-            const int max_nn = 30,
+            const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
 
 public:
@@ -441,6 +645,57 @@ public:
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
+
+    /// Create an axis-aligned bounding box from attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Create an oriented bounding box from attribute "positions".
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
+    /// \brief Function to crop pointcloud into output pointcloud.
+    ///
+    /// \param aabb AxisAlignedBoundingBox to crop points.
+    /// \param invert Crop the points outside of the bounding box or inside of
+    /// the bounding box.
+    PointCloud Crop(const AxisAlignedBoundingBox &aabb,
+                    bool invert = false) const;
+
+    /// \brief Function to crop pointcloud into output pointcloud.
+    ///
+    /// \param obb OrientedBoundingBox to crop points.
+    /// \param invert Crop the points outside of the bounding box or inside of
+    /// the bounding box.
+    PointCloud Crop(const OrientedBoundingBox &obb, bool invert = false) const;
+
+    /// Sweeps the point cloud rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A line set with the result of the sweep operation.
+    LineSet ExtrudeRotation(double angle,
+                            const core::Tensor &axis,
+                            int resolution = 16,
+                            double translation = 0.0,
+                            bool capping = true) const;
+
+    /// Sweeps the point cloud along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A line set
+    /// with the result of the sweep operation.
+    LineSet ExtrudeLinear(const core::Tensor &vector,
+                          double scale = 1.0,
+                          bool capping = true) const;
+
+    /// Partition the point cloud by recursively doing PCA.
+    /// This function creates a new point attribute with the name
+    /// "partition_ids".
+    /// \param max_points The maximum allowed number of points in a partition.
+    /// \return The number of partitions.
+    int PCAPartition(int max_points);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

@@ -3,6 +3,7 @@
 Reference
 -------------------------------------
 
+.. [ArujoAndOliveira2020] A. Araújo and M. Oliveira, A robust statistics approach for plane detection in unorganized point clouds, Pattern Recognition, 2020
 .. [Bernardini1999] F. Bernardini and J. Mittleman and HRushmeier and C. Silva and G. Taubin: The ball-pivoting algorithm for surface reconstruction, IEEE transactions on visualization and computer graphics, 5(4), 349-359, 1999
 .. [BeslAndMcKay1992] Paul J. Besl and Neil D. McKay, A Method for Registration of 3D Shapes, PAMI, 1992.
 .. [ChenAndMedioni1992] Y. Chen and G. G. Medioni, Object modelling by registration of multiple range images, Image and Vision Computing, 10(3), 1992.

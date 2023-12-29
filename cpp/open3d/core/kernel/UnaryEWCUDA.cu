@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/CUDAUtils.h"
@@ -186,8 +167,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
     Device src_device = src.GetDevice();
     Device dst_device = dst.GetDevice();
 
-    if (src_device.GetType() == Device::DeviceType::CUDA &&
-        dst_device.GetType() == Device::DeviceType::CUDA) {
+    if (src_device.IsCUDA() && dst_device.IsCUDA()) {
         if (src.IsContiguous() && dst.IsContiguous() &&
             src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
             // MemoryManager handles p2p and non-p2p device copy.
@@ -239,10 +219,8 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
         } else {
             dst.CopyFrom(src.Contiguous().To(dst_device));
         }
-    } else if (src_device.GetType() == Device::DeviceType::CPU &&
-                       dst_device.GetType() == Device::DeviceType::CUDA ||
-               src_device.GetType() == Device::DeviceType::CUDA &&
-                       dst_device.GetType() == Device::DeviceType::CPU) {
+    } else if (src_device.IsCPU() && dst_device.IsCUDA() ||
+               src_device.IsCUDA() && dst_device.IsCPU()) {
         Tensor src_conti = src.Contiguous();  // No op if already contiguous
         if (dst.IsContiguous() && src.GetShape() == dst.GetShape() &&
             src_dtype == dst_dtype) {
@@ -259,7 +237,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
 }
 
 void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
-    // src and dst have been chaged to have the same shape, dtype, device.
+    // src and dst have been changed to have the same shape, dtype, device.
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
     Device src_device = src.GetDevice();

@@ -197,7 +197,7 @@
             <key>CFBundleTypeIconFile</key>
             <string>documentIcon</string>
             <key>CFBundleTypeName</key>
-            <string>Standard Tesselated Geometry Format</string>
+            <string>Standard Tessellated Geometry Format</string>
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
             <key>LSIsAppleDefaultForType</key>
@@ -473,7 +473,7 @@
                 <string>public.data</string>
             </array>
             <key>UTTypeDescription</key>
-            <string>Standard Tesselated Geometry Format</string>
+            <string>Standard Tessellated Geometry Format</string>
             <key>UTTypeTagSpecification</key>
             <dict>
                 <key>public.filename-extension</key>

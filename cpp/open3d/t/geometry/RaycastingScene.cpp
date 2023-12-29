@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #ifdef _MSC_VER
@@ -33,10 +14,10 @@
 // This header is in the embree src dir (embree/src/ext_embree/..).
 #include <embree3/rtcore.h>
 #include <tbb/parallel_for.h>
-#include <tutorials/common/math/closest_point.h>
 
 #include <Eigen/Core>
 #include <tuple>
+#include <unsupported/Eigen/AlignedVector3>
 #include <vector>
 
 #include "open3d/core/TensorCheck.h"
@@ -44,6 +25,11 @@
 #include "open3d/utility/Logging.h"
 
 namespace {
+
+typedef Eigen::AlignedVector3<float> Vec3fa;
+// Dont force alignment for Vec2f because we use it just for storing
+typedef Eigen::Matrix<float, 2, 1, Eigen::DontAlign> Vec2f;
+typedef Eigen::Vector3f Vec3f;
 
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
@@ -124,22 +110,161 @@ void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
     }
 }
 
+struct ListIntersectionsContext {
+    RTCIntersectContext context;
+    std::vector<std::tuple<uint32_t, uint32_t, float>>*
+            previous_geom_prim_ID_tfar;
+    unsigned int* ray_ids;
+    unsigned int* geometry_ids;
+    unsigned int* primitive_ids;
+    float* primitive_uvs;
+    float* t_hit;
+    Eigen::VectorXi cumsum;
+    unsigned int* track_intersections;
+};
+
+void ListIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
+    int* valid = args->valid;
+    const ListIntersectionsContext* context =
+            reinterpret_cast<const ListIntersectionsContext*>(args->context);
+    struct RTCRayN* rayN = args->ray;
+    struct RTCHitN* hitN = args->hit;
+    const unsigned int N = args->N;
+
+    // Avoid crashing when debug visualizations are used.
+    if (context == nullptr) return;
+
+    std::vector<std::tuple<uint32_t, uint32_t, float>>*
+            previous_geom_prim_ID_tfar = context->previous_geom_prim_ID_tfar;
+    unsigned int* ray_ids = context->ray_ids;
+    unsigned int* geometry_ids = context->geometry_ids;
+    unsigned int* primitive_ids = context->primitive_ids;
+    float* primitive_uvs = context->primitive_uvs;
+    float* t_hit = context->t_hit;
+    Eigen::VectorXi cumsum = context->cumsum;
+    unsigned int* track_intersections = context->track_intersections;
+
+    // Iterate over all rays in ray packet.
+    for (unsigned int ui = 0; ui < N; ui += 1) {
+        // Calculate loop and execution mask
+        unsigned int vi = ui + 0;
+        if (vi >= N) continue;
+
+        // Ignore inactive rays.
+        if (valid[vi] != -1) continue;
+
+        // Read ray/hit from ray structure.
+        RTCRay ray = rtcGetRayFromRayN(rayN, N, ui);
+        RTCHit hit = rtcGetHitFromHitN(hitN, N, ui);
+
+        unsigned int ray_id = ray.id;
+        std::tuple<uint32_t, uint32_t, float> gpID(hit.geomID, hit.primID,
+                                                   ray.tfar);
+        auto& prev_gpIDtfar = previous_geom_prim_ID_tfar->operator[](ray_id);
+        if (std::get<0>(prev_gpIDtfar) != hit.geomID ||
+            (std::get<1>(prev_gpIDtfar) != hit.primID &&
+             std::get<2>(prev_gpIDtfar) != ray.tfar)) {
+            size_t idx = cumsum[ray_id] + track_intersections[ray_id];
+            ray_ids[idx] = ray_id;
+            geometry_ids[idx] = hit.geomID;
+            primitive_ids[idx] = hit.primID;
+            primitive_uvs[idx * 2 + 0] = hit.u;
+            primitive_uvs[idx * 2 + 1] = hit.v;
+            t_hit[idx] = ray.tfar;
+            previous_geom_prim_ID_tfar->operator[](ray_id) = gpID;
+            ++(track_intersections[ray_id]);
+        }
+        // Always ignore hit
+        valid[ui] = 0;
+    }
+}
+
+// Adapted from common/math/closest_point.h
+inline Vec3fa closestPointTriangle(Vec3fa const& p,
+                                   Vec3fa const& a,
+                                   Vec3fa const& b,
+                                   Vec3fa const& c,
+                                   float& tex_u,
+                                   float& tex_v) {
+    const Vec3fa ab = b - a;
+    const Vec3fa ac = c - a;
+    const Vec3fa ap = p - a;
+
+    const float d1 = ab.dot(ap);
+    const float d2 = ac.dot(ap);
+    if (d1 <= 0.f && d2 <= 0.f) {
+        tex_u = 0;
+        tex_v = 0;
+        return a;
+    }
+
+    const Vec3fa bp = p - b;
+    const float d3 = ab.dot(bp);
+    const float d4 = ac.dot(bp);
+    if (d3 >= 0.f && d4 <= d3) {
+        tex_u = 1;
+        tex_v = 0;
+        return b;
+    }
+
+    const Vec3fa cp = p - c;
+    const float d5 = ab.dot(cp);
+    const float d6 = ac.dot(cp);
+    if (d6 >= 0.f && d5 <= d6) {
+        tex_u = 0;
+        tex_v = 1;
+        return c;
+    }
+
+    const float vc = d1 * d4 - d3 * d2;
+    if (vc <= 0.f && d1 >= 0.f && d3 <= 0.f) {
+        const float v = d1 / (d1 - d3);
+        tex_u = v;
+        tex_v = 0;
+        return a + v * ab;
+    }
+
+    const float vb = d5 * d2 - d1 * d6;
+    if (vb <= 0.f && d2 >= 0.f && d6 <= 0.f) {
+        const float v = d2 / (d2 - d6);
+        tex_u = 0;
+        tex_v = v;
+        return a + v * ac;
+    }
+
+    const float va = d3 * d6 - d5 * d4;
+    if (va <= 0.f && (d4 - d3) >= 0.f && (d5 - d6) >= 0.f) {
+        const float v = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+        tex_u = 1 - v;
+        tex_v = v;
+        return b + v * (c - b);
+    }
+
+    const float denom = 1.f / (va + vb + vc);
+    const float v = vb * denom;
+    const float w = vc * denom;
+    tex_u = v;
+    tex_v = w;
+    return a + v * ab + w * ac;
+}
+
 struct ClosestPointResult {
     ClosestPointResult()
         : primID(RTC_INVALID_GEOMETRY_ID),
           geomID(RTC_INVALID_GEOMETRY_ID),
           geometry_ptrs_ptr() {}
 
-    embree::Vec3f p;
+    Vec3f p;
     unsigned int primID;
     unsigned int geomID;
+    Vec2f uv;
+    Vec3f n;
     std::vector<std::tuple<RTCGeometryType, const void*, const void*>>*
             geometry_ptrs_ptr;
 };
 
 // Code adapted from the embree closest_point tutorial.
 bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
-    using namespace embree;
     assert(args->userPtr);
     const unsigned int geomID = args->geomID;
     const unsigned int primID = args->primID;
@@ -170,10 +295,10 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
                   vertex_positions[3 * triangle_indices[3 * primID + 2] + 1],
                   vertex_positions[3 * triangle_indices[3 * primID + 2] + 2]);
 
-        // Determine distance to closest point on triangle (implemented in
-        // common/math/closest_point.h).
-        const Vec3fa p = closestPointTriangle(q, v0, v1, v2);
-        float d = distance(q, p);
+        // Determine distance to closest point on triangle
+        float u, v;
+        const Vec3fa p = closestPointTriangle(q, v0, v1, v2, u, v);
+        float d = (q - p).norm();
 
         // Store result in userPtr and update the query radius if we found a
         // point closer to the query position. This is optional but allows for
@@ -183,6 +308,10 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
             result->p = p;
             result->primID = primID;
             result->geomID = geomID;
+            Vec3fa e1 = v1 - v0;
+            Vec3fa e2 = v2 - v0;
+            result->uv = Vec2f(u, v);
+            result->n = (e1.cross(e2)).normalized();
             return true;  // Return true to indicate that the query radius
                           // changed.
         }
@@ -207,6 +336,19 @@ struct RaycastingScene::Impl {
             geometry_ptrs_;
     core::Device tensor_device_;  // cpu
 
+    bool devprop_join_commit;
+
+    void CommitScene() {
+        if (!scene_committed_) {
+            if (devprop_join_commit) {
+                rtcJoinCommitScene(scene_);
+            } else {
+                rtcCommitScene(scene_);
+            }
+            scene_committed_ = true;
+        }
+    }
+
     template <bool LINE_INTERSECTION>
     void CastRays(const float* const rays,
                   const size_t num_rays,
@@ -216,10 +358,7 @@ struct RaycastingScene::Impl {
                   float* primitive_uvs,
                   float* primitive_normals,
                   const int nthreads) {
-        if (!scene_committed_) {
-            rtcCommitScene(scene_);
-            scene_committed_ = true;
-        }
+        CommitScene();
 
         struct RTCIntersectContext context;
         rtcInitIntersectContext(&context);
@@ -305,10 +444,7 @@ struct RaycastingScene::Impl {
                         const float tfar,
                         int8_t* occluded,
                         const int nthreads) {
-        if (!scene_committed_) {
-            rtcCommitScene(scene_);
-            scene_committed_ = true;
-        }
+        CommitScene();
 
         struct RTCIntersectContext context;
         rtcInitIntersectContext(&context);
@@ -360,10 +496,7 @@ struct RaycastingScene::Impl {
                             const size_t num_rays,
                             int* intersections,
                             const int nthreads) {
-        if (!scene_committed_) {
-            rtcCommitScene(scene_);
-            scene_committed_ = true;
-        }
+        CommitScene();
 
         memset(intersections, 0, sizeof(int) * num_rays);
 
@@ -418,16 +551,92 @@ struct RaycastingScene::Impl {
         }
     }
 
+    void ListIntersections(const float* const rays,
+                           const size_t num_rays,
+                           const size_t num_intersections,
+                           const Eigen::VectorXi& cumsum,
+                           unsigned int* track_intersections,
+                           unsigned int* ray_ids,
+                           unsigned int* geometry_ids,
+                           unsigned int* primitive_ids,
+                           float* primitive_uvs,
+                           float* t_hit,
+                           const int nthreads) {
+        CommitScene();
+
+        memset(track_intersections, 0, sizeof(uint32_t) * num_rays);
+        memset(ray_ids, 0, sizeof(uint32_t) * num_intersections);
+        memset(geometry_ids, 0, sizeof(uint32_t) * num_intersections);
+        memset(primitive_ids, 0, sizeof(uint32_t) * num_intersections);
+        memset(primitive_uvs, 0, sizeof(float) * num_intersections * 2);
+        memset(t_hit, 0, sizeof(float) * num_intersections);
+
+        std::vector<std::tuple<uint32_t, uint32_t, float>>
+                previous_geom_prim_ID_tfar(
+                        num_rays,
+                        std::make_tuple(uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                        uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                        0.f));
+
+        ListIntersectionsContext context;
+        rtcInitIntersectContext(&context.context);
+        context.context.filter = ListIntersectionsFunc;
+        context.previous_geom_prim_ID_tfar = &previous_geom_prim_ID_tfar;
+        context.ray_ids = ray_ids;
+        context.geometry_ids = geometry_ids;
+        context.primitive_ids = primitive_ids;
+        context.primitive_uvs = primitive_uvs;
+        context.t_hit = t_hit;
+        context.cumsum = cumsum;
+        context.track_intersections = track_intersections;
+
+        auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
+            std::vector<RTCRayHit> rayhits(range.size());
+
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                RTCRayHit* rh = &rayhits[i - range.begin()];
+                const float* r = &rays[i * 6];
+                rh->ray.org_x = r[0];
+                rh->ray.org_y = r[1];
+                rh->ray.org_z = r[2];
+                rh->ray.dir_x = r[3];
+                rh->ray.dir_y = r[4];
+                rh->ray.dir_z = r[5];
+                rh->ray.tnear = 0;
+                rh->ray.tfar = std::numeric_limits<float>::infinity();
+                rh->ray.mask = 0;
+                rh->ray.flags = 0;
+                rh->ray.id = i;
+                rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
+                rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+            }
+            rtcIntersect1M(scene_, &context.context, &rayhits[0], range.size(),
+                           sizeof(RTCRayHit));
+        };
+
+        if (nthreads > 0) {
+            tbb::task_arena arena(nthreads);
+            arena.execute([&]() {
+                tbb::parallel_for(
+                        tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                        LoopFn);
+            });
+        } else {
+            tbb::parallel_for(
+                    tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                    LoopFn);
+        }
+    }
+
     void ComputeClosestPoints(const float* const query_points,
                               const size_t num_query_points,
                               float* closest_points,
                               unsigned int* geometry_ids,
                               unsigned int* primitive_ids,
+                              float* primitive_uvs,
+                              float* primitive_normals,
                               const int nthreads) {
-        if (!scene_committed_) {
-            rtcCommitScene(scene_);
-            scene_committed_ = true;
-        }
+        CommitScene();
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             for (size_t i = range.begin(); i < range.end(); ++i) {
@@ -446,11 +655,16 @@ struct RaycastingScene::Impl {
                 rtcPointQuery(scene_, &query, &instStack, &ClosestPointFunc,
                               (void*)&result);
 
-                closest_points[3 * i + 0] = result.p.x;
-                closest_points[3 * i + 1] = result.p.y;
-                closest_points[3 * i + 2] = result.p.z;
+                closest_points[3 * i + 0] = result.p.x();
+                closest_points[3 * i + 1] = result.p.y();
+                closest_points[3 * i + 2] = result.p.z();
                 geometry_ids[i] = result.geomID;
                 primitive_ids[i] = result.primID;
+                primitive_uvs[2 * i + 0] = result.uv.x();
+                primitive_uvs[2 * i + 1] = result.uv.y();
+                primitive_normals[3 * i + 0] = result.n.x();
+                primitive_normals[3 * i + 1] = result.n.y();
+                primitive_normals[3 * i + 2] = result.n.z();
             }
         };
 
@@ -469,8 +683,14 @@ struct RaycastingScene::Impl {
     }
 };
 
-RaycastingScene::RaycastingScene() : impl_(new RaycastingScene::Impl()) {
-    impl_->device_ = rtcNewDevice(NULL);
+RaycastingScene::RaycastingScene(int64_t nthreads)
+    : impl_(new RaycastingScene::Impl()) {
+    if (nthreads > 0) {
+        std::string config("threads=" + std::to_string(nthreads));
+        impl_->device_ = rtcNewDevice(config.c_str());
+    } else {
+        impl_->device_ = rtcNewDevice(NULL);
+    }
     rtcSetDeviceErrorFunction(impl_->device_, ErrorFunction, NULL);
 
     impl_->scene_ = rtcNewScene(impl_->device_);
@@ -478,6 +698,9 @@ RaycastingScene::RaycastingScene() : impl_(new RaycastingScene::Impl()) {
     rtcSetSceneFlags(
             impl_->scene_,
             RTC_SCENE_FLAG_ROBUST | RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION);
+
+    impl_->devprop_join_commit = rtcGetDeviceProperty(
+            impl_->device_, RTC_DEVICE_PROPERTY_JOIN_COMMIT_SUPPORTED);
 
     impl_->scene_committed_ = false;
 }
@@ -615,6 +838,64 @@ core::Tensor RaycastingScene::CountIntersections(const core::Tensor& rays,
 }
 
 std::unordered_map<std::string, core::Tensor>
+RaycastingScene::ListIntersections(const core::Tensor& rays,
+                                   const int nthreads) {
+    AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
+                                                 impl_->tensor_device_);
+
+    auto shape = rays.GetShape();
+    shape.pop_back();  // Remove last dim, we want to use this shape for the
+                       // results.
+    size_t num_rays = shape.NumElements();
+
+    // determine total number of intersections
+    core::Tensor intersections(shape, core::Dtype::FromType<int>());
+    core::Tensor track_intersections(shape, core::Dtype::FromType<uint32_t>());
+    auto data = rays.Contiguous();
+    impl_->CountIntersections(data.GetDataPtr<float>(), num_rays,
+                              intersections.GetDataPtr<int>(), nthreads);
+
+    // prepare shape with that number of elements
+    Eigen::Map<Eigen::VectorXi> intersections_vector(
+            intersections.GetDataPtr<int>(), num_rays);
+    size_t num_intersections = intersections_vector.sum();
+
+    // prepare ray allocations (cumsum)
+    Eigen::VectorXi cumsum = Eigen::MatrixXi::Zero(num_rays, 1);
+    std::partial_sum(intersections_vector.begin(),
+                     intersections_vector.end() - 1, cumsum.begin() + 1,
+                     std::plus<int>());
+
+    // generate results structure
+    std::unordered_map<std::string, core::Tensor> result;
+    shape.clear();
+    shape.push_back(num_rays + 1);
+    result["ray_splits"] = core::Tensor(shape, core::UInt32);
+    uint32_t* ptr = result["ray_splits"].GetDataPtr<uint32_t>();
+    for (int i = 0; i < cumsum.size(); ++i) {
+        ptr[i] = cumsum[i];
+    }
+    ptr[num_rays] = num_intersections;
+    shape[0] = intersections_vector.sum();
+    result["ray_ids"] = core::Tensor(shape, core::UInt32);
+    result["geometry_ids"] = core::Tensor(shape, core::UInt32);
+    result["primitive_ids"] = core::Tensor(shape, core::UInt32);
+    result["t_hit"] = core::Tensor(shape, core::Float32);
+    shape.push_back(2);
+    result["primitive_uvs"] = core::Tensor(shape, core::Float32);
+
+    impl_->ListIntersections(data.GetDataPtr<float>(), num_rays,
+                             num_intersections, cumsum,
+                             track_intersections.GetDataPtr<uint32_t>(),
+                             result["ray_ids"].GetDataPtr<uint32_t>(),
+                             result["geometry_ids"].GetDataPtr<uint32_t>(),
+                             result["primitive_ids"].GetDataPtr<uint32_t>(),
+                             result["primitive_uvs"].GetDataPtr<float>(),
+                             result["t_hit"].GetDataPtr<float>(), nthreads);
+    return result;
+}
+
+std::unordered_map<std::string, core::Tensor>
 RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points,
                                       const int nthreads) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
@@ -629,12 +910,17 @@ RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points,
     result["primitive_ids"] = core::Tensor(shape, core::UInt32);
     shape.push_back(3);
     result["points"] = core::Tensor(shape, core::Float32);
+    result["primitive_normals"] = core::Tensor(shape, core::Float32);
+    shape.back() = 2;
+    result["primitive_uvs"] = core::Tensor(shape, core::Float32);
 
     auto data = query_points.Contiguous();
     impl_->ComputeClosestPoints(data.GetDataPtr<float>(), num_query_points,
                                 result["points"].GetDataPtr<float>(),
                                 result["geometry_ids"].GetDataPtr<uint32_t>(),
                                 result["primitive_ids"].GetDataPtr<uint32_t>(),
+                                result["primitive_uvs"].GetDataPtr<float>(),
+                                result["primitive_normals"].GetDataPtr<float>(),
                                 nthreads);
 
     return result;
@@ -664,60 +950,117 @@ core::Tensor RaycastingScene::ComputeDistance(const core::Tensor& query_points,
     return distance;
 }
 
-core::Tensor RaycastingScene::ComputeSignedDistance(
-        const core::Tensor& query_points, const int nthreads) {
-    AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
-                                                 3, impl_->tensor_device_);
+namespace {
+// Helper function to determine the inside and outside with voting.
+core::Tensor VoteInsideOutside(RaycastingScene& scene,
+                               const core::Tensor& query_points,
+                               const int nthreads = 0,
+                               const int num_votes = 3,
+                               const int inside_val = 1,
+                               const int outside_val = 0) {
     auto shape = query_points.GetShape();
     shape.pop_back();  // Remove last dim, we want to use this shape for the
                        // results.
     size_t num_query_points = shape.NumElements();
 
+    // Use local RNG here to generate rays with a similar direction in a
+    // deterministic manner.
+    std::mt19937 gen(42);
+    std::uniform_real_distribution<float> dist(-0.001, 0.001);
+    Eigen::MatrixXf ray_dirs(3, num_votes);
+    ray_dirs = ray_dirs.unaryExpr([&](float) { return 1 + dist(gen); });
+
+    auto query_points_ = query_points.Contiguous();
+    Eigen::Map<Eigen::MatrixXf> query_points_map(
+            query_points_.GetDataPtr<float>(), 3, num_query_points);
+
+    core::Tensor rays({int64_t(num_votes * num_query_points), 6},
+                      core::Float32);
+    Eigen::Map<Eigen::MatrixXf> rays_map(rays.GetDataPtr<float>(), 6,
+                                         num_votes * num_query_points);
+    if (num_votes > 1) {
+        for (size_t i = 0; i < num_query_points; ++i) {
+            for (int j = 0; j < num_votes; ++j) {
+                rays_map.col(i * num_votes + j).topRows<3>() =
+                        query_points_map.col(i);
+                rays_map.col(i * num_votes + j).bottomRows<3>() =
+                        ray_dirs.col(j);
+            }
+        }
+    } else {
+        for (size_t i = 0; i < num_query_points; ++i) {
+            rays_map.col(i).topRows<3>() = query_points_map.col(i);
+            rays_map.col(i).bottomRows<3>() = ray_dirs;
+        }
+    }
+
+    auto intersections = scene.CountIntersections(rays, nthreads);
+    Eigen::Map<Eigen::MatrixXi> intersections_map(
+            intersections.GetDataPtr<int>(), num_votes, num_query_points);
+
+    if (num_votes > 1) {
+        core::Tensor result({int64_t(num_query_points)}, core::Int32);
+        Eigen::Map<Eigen::VectorXi> result_map(result.GetDataPtr<int>(),
+                                               num_query_points);
+        result_map =
+                intersections_map.unaryExpr([&](const int x) { return x % 2; })
+                        .colwise()
+                        .sum()
+                        .unaryExpr([&](const int x) {
+                            return (x > num_votes / 2) ? inside_val
+                                                       : outside_val;
+                        });
+        return result.Reshape(shape);
+    } else {
+        intersections_map = intersections_map.unaryExpr([&](const int x) {
+            return (x % 2) ? inside_val : outside_val;
+        });
+        return intersections.Reshape(shape);
+    }
+}
+}  // namespace
+
+core::Tensor RaycastingScene::ComputeSignedDistance(
+        const core::Tensor& query_points,
+        const int nthreads,
+        const int nsamples) {
+    AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
+                                                 3, impl_->tensor_device_);
+
+    if (nsamples < 1 || (nsamples % 2) != 1) {
+        open3d::utility::LogError("nsamples must be odd and >= 1 but is {}",
+                                  nsamples);
+    }
+    auto shape = query_points.GetShape();
+    shape.pop_back();  // Remove last dim, we want to use this shape for the
+                       // results.
+    size_t num_query_points = shape.NumElements();
     auto data = query_points.Contiguous();
     auto distance = ComputeDistance(data, nthreads);
-    core::Tensor rays({int64_t(num_query_points), 6}, core::Float32);
-    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                  core::TensorKey::Slice(0, 3, 1)},
-                 data.Reshape({int64_t(num_query_points), 3}));
-    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                  core::TensorKey::Slice(3, 6, 1)},
-                 core::Tensor::Ones({1}, core::Float32, impl_->tensor_device_)
-                         .Expand({int64_t(num_query_points), 3}));
-    auto intersections = CountIntersections(rays, nthreads);
-
     Eigen::Map<Eigen::VectorXf> distance_map(distance.GetDataPtr<float>(),
                                              num_query_points);
-    Eigen::Map<Eigen::VectorXi> intersections_map(
-            intersections.GetDataPtr<int>(), num_query_points);
-    intersections_map = intersections_map.unaryExpr(
-            [](const int x) { return (x % 2) ? -1 : 1; });
-    distance_map.array() *= intersections_map.array().cast<float>();
+
+    auto inside_outside =
+            VoteInsideOutside(*this, data, nthreads, nsamples, -1, 1);
+    Eigen::Map<Eigen::VectorXi> inside_outside_map(
+            inside_outside.GetDataPtr<int>(), num_query_points);
+    distance_map.array() *= inside_outside_map.array().cast<float>();
     return distance;
 }
 
 core::Tensor RaycastingScene::ComputeOccupancy(const core::Tensor& query_points,
-                                               const int nthreads) {
+                                               const int nthreads,
+                                               const int nsamples) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device_);
-    auto shape = query_points.GetShape();
-    shape.pop_back();  // Remove last dim, we want to use this shape for the
-                       // results.
-    size_t num_query_points = shape.NumElements();
 
-    core::Tensor rays({int64_t(num_query_points), 6}, core::Float32);
-    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                  core::TensorKey::Slice(0, 3, 1)},
-                 query_points.Reshape({int64_t(num_query_points), 3}));
-    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                  core::TensorKey::Slice(3, 6, 1)},
-                 core::Tensor::Ones({1}, core::Float32, impl_->tensor_device_)
-                         .Expand({int64_t(num_query_points), 3}));
-    auto intersections = CountIntersections(rays, nthreads);
-    Eigen::Map<Eigen::VectorXi> intersections_map(
-            intersections.GetDataPtr<int>(), num_query_points);
-    intersections_map =
-            intersections_map.unaryExpr([](const int x) { return x % 2; });
-    return intersections.To(core::Float32).Reshape(shape);
+    if (nsamples < 1 || (nsamples % 2) != 1) {
+        open3d::utility::LogError("samples must be odd and >= 1 but is {}",
+                                  nsamples);
+    }
+
+    auto result = VoteInsideOutside(*this, query_points, nthreads, nsamples);
+    return result.To(core::Float32);
 }
 
 core::Tensor RaycastingScene::CreateRaysPinhole(

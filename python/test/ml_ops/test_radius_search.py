@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
@@ -29,6 +10,10 @@ import numpy as np
 from scipy.spatial import cKDTree
 import pytest
 import mltest
+if o3d._build_config['BUILD_PYTORCH_OPS']:
+    import torch
+if o3d._build_config['BUILD_TENSORFLOW_OPS']:
+    import tensorflow as tf
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
@@ -46,9 +31,10 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
 @pytest.mark.parametrize('normalize_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_radius_search(dtype, ml, num_points_queries, metric,
                        ignore_query_point, return_distances,
-                       normalize_distances):
+                       normalize_distances, index_dtype):
     rng = np.random.RandomState(123)
 
     num_points, num_queries = num_points_queries
@@ -68,10 +54,18 @@ def test_radius_search(dtype, ml, num_points_queries, metric,
         tree.query_ball_point(q, r, p=p_norm) for q, r in zip(queries, radii)
     ]
 
+    if ml.module.__name__ == 'tensorflow':
+        index_dtype_ = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
+    elif ml.module.__name__ == 'torch':
+        index_dtype_ = {'int32': torch.int32, 'int64': torch.int64}[index_dtype]
+    else:
+        raise Exception('Unsupported ml framework')
+
     layer = ml.layers.RadiusSearch(metric=metric,
                                    ignore_query_point=ignore_query_point,
                                    return_distances=return_distances,
-                                   normalize_distances=normalize_distances)
+                                   normalize_distances=normalize_distances,
+                                   index_dtype=index_dtype_)
     ans = mltest.run_op(
         ml,
         ml.device,
@@ -81,6 +75,9 @@ def test_radius_search(dtype, ml, num_points_queries, metric,
         queries=queries,
         radii=radii,
     )
+
+    index_dtype_np = {'int32': np.int32, 'int64': np.int64}[index_dtype]
+    assert ans.neighbors_index.dtype == index_dtype_np
 
     for i, q in enumerate(queries):
         # check neighbors

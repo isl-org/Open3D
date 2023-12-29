@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/Image.h"
@@ -101,9 +82,27 @@ void pybind_image(py::module &m) {
                  "tensor"_a);
     docstring::ClassMethodDocInject(m, "Image", "__init__",
                                     map_shared_argument_docstrings);
+    py::detail::bind_copy_functions<Image>(image);
+
+    // Pickle support.
+    image.def(py::pickle(
+            [](const Image &image) {
+                // __getstate__
+                return py::make_tuple(image.AsTensor());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 1) {
+                    utility::LogError(
+                            "Cannot unpickle Image! Expecting a tuple of size "
+                            "1.");
+                }
+                return Image(t[0].cast<core::Tensor>());
+            }));
+
     // Buffer protocol.
     image.def_buffer([](Image &I) -> py::buffer_info {
-        if (I.GetDevice().GetType() != core::Device::DeviceType::CPU) {
+        if (!I.IsCPU()) {
             utility::LogError(
                     "Cannot convert image buffer since it's not on CPU. "
                     "Convert to CPU image by calling .cpu() first.");
@@ -244,7 +243,7 @@ void pybind_image(py::module &m) {
               py::overload_cast<core::Dtype, bool, utility::optional<double>,
                                 double>(&Image::To, py::const_),
               "Returns an Image with the specified Dtype.", "dtype"_a,
-              "scale"_a = py::none(), "offset"_a = 0.0, "copy"_a = false);
+              "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
     docstring::ClassMethodDocInject(
             m, "Image", "to",
             {{"dtype", "The targeted dtype to convert to."},
@@ -273,7 +272,7 @@ void pybind_image(py::module &m) {
             rgbd_image(
                     m, "RGBDImage",
                     "RGBDImage is a pair of color and depth images. For most "
-                    "procesing, the image pair should be aligned (same "
+                    "processing, the image pair should be aligned (same "
                     "viewpoint and  "
                     "resolution).");
     rgbd_image
@@ -282,6 +281,26 @@ void pybind_image(py::module &m) {
             .def(py::init<const Image &, const Image &, bool>(),
                  "Parameterized constructor", "color"_a, "depth"_a,
                  "aligned"_a = true)
+
+            // Pickling support.
+            .def(py::pickle(
+                    [](const RGBDImage &rgbd) {
+                        // __getstate__
+                        return py::make_tuple(rgbd.color_, rgbd.depth_,
+                                              rgbd.aligned_);
+                    },
+                    [](py::tuple t) {
+                        // __setstate__
+                        if (t.size() != 3) {
+                            utility::LogError(
+                                    "Cannot unpickle RGBDImage! Expecting a "
+                                    "tuple of size 3.");
+                        }
+
+                        return RGBDImage(t[0].cast<Image>(), t[1].cast<Image>(),
+                                         t[2].cast<bool>());
+                    }))
+
             // Depth and color images.
             .def_readwrite("color", &RGBDImage::color_, "The color image.")
             .def_readwrite("depth", &RGBDImage::depth_, "The depth image.")

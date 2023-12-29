@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/MemoryManager.h"
@@ -35,34 +16,30 @@ namespace core {
 
 enum class MemoryManagerBackend { Direct, Cached };
 
-std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
+std::shared_ptr<MemoryManagerDevice> MakeMemoryManager(
         const Device& device, const MemoryManagerBackend& backend) {
-    std::shared_ptr<DeviceMemoryManager> device_mm;
+    std::shared_ptr<MemoryManagerDevice> device_mm;
     switch (device.GetType()) {
         case Device::DeviceType::CPU:
-            device_mm = std::make_shared<CPUMemoryManager>();
+            device_mm = std::make_shared<MemoryManagerCPU>();
             break;
-
 #ifdef BUILD_CUDA_MODULE
         case Device::DeviceType::CUDA:
-            device_mm = std::make_shared<CUDAMemoryManager>();
+            device_mm = std::make_shared<MemoryManagerCUDA>();
             break;
 #endif
-
         default:
-            utility::LogError("Unimplemented device");
+            utility::LogError("Unimplemented device {}.", device.ToString());
             break;
     }
 
     switch (backend) {
         case MemoryManagerBackend::Direct:
             return device_mm;
-
         case MemoryManagerBackend::Cached:
-            return std::make_shared<CachedMemoryManager>(device_mm);
-
+            return std::make_shared<MemoryManagerCached>(device_mm);
         default:
-            utility::LogError("Unimplemented backend");
+            utility::LogError("Unimplemented backend.");
             break;
     }
 }
@@ -71,7 +48,7 @@ void Malloc(benchmark::State& state,
             int size,
             const Device& device,
             const MemoryManagerBackend& backend) {
-    CachedMemoryManager::ReleaseCache(device);
+    MemoryManagerCached::ReleaseCache(device);
 
     auto device_mm = MakeMemoryManager(device, backend);
 
@@ -92,14 +69,14 @@ void Malloc(benchmark::State& state,
         state.ResumeTiming();
     }
 
-    CachedMemoryManager::ReleaseCache(device);
+    MemoryManagerCached::ReleaseCache(device);
 }
 
 void Free(benchmark::State& state,
           int size,
           const Device& device,
           const MemoryManagerBackend& backend) {
-    CachedMemoryManager::ReleaseCache(device);
+    MemoryManagerCached::ReleaseCache(device);
 
     auto device_mm = MakeMemoryManager(device, backend);
 
@@ -120,7 +97,7 @@ void Free(benchmark::State& state,
         cuda::Synchronize(device);
     }
 
-    CachedMemoryManager::ReleaseCache(device);
+    MemoryManagerCached::ReleaseCache(device);
 }
 
 #define ENUM_BM_SIZE(FN, DEVICE, DEVICE_NAME, BACKEND)                         \

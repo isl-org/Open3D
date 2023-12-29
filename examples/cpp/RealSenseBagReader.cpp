@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <json/json.h>
@@ -70,9 +51,9 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
     }
 
     value["name"] = bagfile;
-    value["max_depth"] = 3.0;
+    value["depth_max"] = 3.0;
     value["voxel_size"] = 0.05;
-    value["max_depth_diff"] = 0.07;
+    value["depth_diff_max"] = 0.07;
     value["preference_loop_closure_odometry"] = 0.1;
     value["preference_loop_closure_registration"] = 5.0;
     value["tsdf_cubic_size"] = 3.0;
@@ -194,18 +175,7 @@ int main(int argc, char *argv[]) {
     bool is_geometry_added = false;
     int idx = 0;
     const auto bag_metadata = bag_reader.GetMetadata();
-    utility::LogInfo("Recorded with device {}", bag_metadata.device_name_);
-    utility::LogInfo("    Serial number: {}", bag_metadata.serial_number_);
-    utility::LogInfo("Video resolution: {}x{}", bag_metadata.width_,
-                     bag_metadata.height_);
-    utility::LogInfo("      frame rate: {}", bag_metadata.fps_);
-    utility::LogInfo(
-            "      duration: {:.6f}s",
-            static_cast<double>(bag_metadata.stream_length_usec_) * 1e-6);
-    utility::LogInfo("      color pixel format: {}",
-                     bag_metadata.color_format_);
-    utility::LogInfo("      depth pixel format: {}",
-                     bag_metadata.depth_format_);
+    utility::LogInfo("{}", bag_metadata.ToString());
 
     if (write_image) {
         io::WriteIJsonConvertibleToJSON(

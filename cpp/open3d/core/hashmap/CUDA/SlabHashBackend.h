@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -93,22 +74,27 @@ SlabHashBackend<Key, Hash, Eq>::SlabHashBackend(
         const std::vector<int64_t>& value_dsizes,
         const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
+    CUDAScopedDevice scoped_device(this->device_);
     Allocate(init_capacity);
 }
 
 template <typename Key, typename Hash, typename Eq>
 SlabHashBackend<Key, Hash, Eq>::~SlabHashBackend() {
+    CUDAScopedDevice scoped_device(this->device_);
     Free();
 }
 
 template <typename Key, typename Hash, typename Eq>
-void SlabHashBackend<Key, Hash, Eq>::Reserve(int64_t capacity) {}
+void SlabHashBackend<Key, Hash, Eq>::Reserve(int64_t capacity) {
+    CUDAScopedDevice scoped_device(this->device_);
+}
 
 template <typename Key, typename Hash, typename Eq>
 void SlabHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
                                           buf_index_t* output_buf_indices,
                                           bool* output_masks,
                                           int64_t count) {
+    CUDAScopedDevice scoped_device(this->device_);
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
@@ -127,6 +113,7 @@ template <typename Key, typename Hash, typename Eq>
 void SlabHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
                                            bool* output_masks,
                                            int64_t count) {
+    CUDAScopedDevice scoped_device(this->device_);
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
@@ -152,6 +139,7 @@ void SlabHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
 template <typename Key, typename Hash, typename Eq>
 int64_t SlabHashBackend<Key, Hash, Eq>::GetActiveIndices(
         buf_index_t* output_buf_indices) {
+    CUDAScopedDevice scoped_device(this->device_);
     uint32_t* count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
     OPEN3D_CUDA_CHECK(cudaMemset(count, 0, sizeof(uint32_t)));
@@ -177,6 +165,7 @@ int64_t SlabHashBackend<Key, Hash, Eq>::GetActiveIndices(
 
 template <typename Key, typename Hash, typename Eq>
 void SlabHashBackend<Key, Hash, Eq>::Clear() {
+    CUDAScopedDevice scoped_device(this->device_);
     // Clear the heap
     this->buffer_->ResetHeap();
 
@@ -192,16 +181,19 @@ void SlabHashBackend<Key, Hash, Eq>::Clear() {
 
 template <typename Key, typename Hash, typename Eq>
 int64_t SlabHashBackend<Key, Hash, Eq>::Size() const {
+    CUDAScopedDevice scoped_device(this->device_);
     return this->buffer_->GetHeapTopIndex();
 }
 
 template <typename Key, typename Hash, typename Eq>
 int64_t SlabHashBackend<Key, Hash, Eq>::GetBucketCount() const {
+    CUDAScopedDevice scoped_device(this->device_);
     return bucket_count_;
 }
 
 template <typename Key, typename Hash, typename Eq>
 std::vector<int64_t> SlabHashBackend<Key, Hash, Eq>::BucketSizes() const {
+    CUDAScopedDevice scoped_device(this->device_);
     thrust::device_vector<int64_t> elems_per_bucket(impl_.bucket_count_);
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
@@ -222,6 +214,7 @@ std::vector<int64_t> SlabHashBackend<Key, Hash, Eq>::BucketSizes() const {
 
 template <typename Key, typename Hash, typename Eq>
 float SlabHashBackend<Key, Hash, Eq>::LoadFactor() const {
+    CUDAScopedDevice scoped_device(this->device_);
     return float(Size()) / float(this->bucket_count_);
 }
 
@@ -232,6 +225,7 @@ void SlabHashBackend<Key, Hash, Eq>::Insert(
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {
+    CUDAScopedDevice scoped_device(this->device_);
     if (count == 0) return;
 
     /// Increase heap_top to pre-allocate potential memory increment and
@@ -269,6 +263,7 @@ void SlabHashBackend<Key, Hash, Eq>::Insert(
 
 template <typename Key, typename Hash, typename Eq>
 void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
+    CUDAScopedDevice scoped_device(this->device_);
     this->bucket_count_ = capacity * 2;
     this->capacity_ = capacity;
 
@@ -294,6 +289,7 @@ void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
 
 template <typename Key, typename Hash, typename Eq>
 void SlabHashBackend<Key, Hash, Eq>::Free() {
+    CUDAScopedDevice scoped_device(this->device_);
     buffer_accessor_.Shutdown(this->device_);
     MemoryManager::Free(impl_.bucket_list_head_, this->device_);
 }

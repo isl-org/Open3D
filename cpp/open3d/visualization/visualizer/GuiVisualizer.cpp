@@ -1,32 +1,11 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
-
-#include <random>
 
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/BoundingVolume.h"
@@ -86,7 +65,7 @@ std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
             (std::string("Open3D ") + OPEN3D_VERSION).c_str());
     auto text = std::make_shared<gui::Label>(
             "The MIT License (MIT)\n"
-            "Copyright (c) 2018-2021 www.open3d.org\n\n"
+            "Copyright (c) 2018-2023 www.open3d.org\n\n"
 
             "Permission is hereby granted, free of charge, to any person "
             "obtaining a copy of this software and associated documentation "
@@ -316,6 +295,7 @@ private:
 
 const std::string MODEL_NAME = "__model__";
 const std::string INSPECT_MODEL_NAME = "__inspect_model__";
+const std::string WIREFRAME_NAME = "__wireframe_model__";
 
 enum MenuId {
     FILE_OPEN,
@@ -355,12 +335,14 @@ struct GuiVisualizer::Impl {
 
     rendering::TriangleMeshModel loaded_model_;
     rendering::TriangleMeshModel basic_model_;
+    std::shared_ptr<geometry::LineSet> wireframe_model_;
     std::shared_ptr<geometry::PointCloud> loaded_pcd_;
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
     bool sun_follows_camera_ = false;
     bool basic_mode_enabled_ = false;
+    bool wireframe_enabled_ = false;
 
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
@@ -492,24 +474,56 @@ struct GuiVisualizer::Impl {
     }
 
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
-        auto bcolor = settings_.model_.GetBackgroundColor();
-        scene_wgt_->GetScene()->SetBackground(
-                {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
+        auto o3dscene = scene_wgt_->GetScene();
 
         if (settings_.model_.GetShowSkybox()) {
-            scene_wgt_->GetScene()->ShowSkybox(true);
+            o3dscene->ShowSkybox(true);
         } else {
-            scene_wgt_->GetScene()->ShowSkybox(false);
+            o3dscene->ShowSkybox(false);
         }
 
-        scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
-        scene_wgt_->GetScene()->ShowGroundPlane(
-                settings_.model_.GetShowGround(),
-                rendering::Scene::GroundPlane::XZ);
+        o3dscene->ShowAxes(settings_.model_.GetShowAxes());
+        o3dscene->ShowGroundPlane(settings_.model_.GetShowGround(),
+                                  rendering::Scene::GroundPlane::XZ);
 
         // Does user want Point Cloud normals estimated?
         if (settings_.model_.GetUserWantsEstimateNormals()) {
             RunNormalEstimation();
+        }
+
+        // o3dscene->ShowGeometry(WIREFRAME_NAME, true);
+        if (settings_.model_.GetWireframeMode() != wireframe_enabled_) {
+            wireframe_enabled_ = settings_.model_.GetWireframeMode();
+            if (wireframe_enabled_ && !loaded_pcd_) {
+                // create wireframe line set
+                if (!wireframe_model_) {
+                    wireframe_model_ = std::make_shared<geometry::LineSet>();
+                    for (const auto &mi : loaded_model_.meshes_) {
+                        auto lines = geometry::LineSet::CreateFromTriangleMesh(
+                                *mi.mesh);
+                        *wireframe_model_ += *lines;
+                    }
+                }
+                // Add to scene
+                rendering::MaterialRecord wireframe_mat;
+                wireframe_mat.shader = "unlitLine";
+                wireframe_mat.line_width = 2.f;
+                wireframe_mat.base_color = {0.f, 0.3f, 1.f, 1.f};
+                wireframe_mat.emissive_color = {10000.f, 10000.f, 10000.f, 1.f};
+                o3dscene->AddGeometry(WIREFRAME_NAME, wireframe_model_.get(),
+                                      wireframe_mat);
+                // o3dscene->ShowGeometry(WIREFRAME_NAME, true);
+                o3dscene->ShowGeometry(MODEL_NAME, false);
+                o3dscene->GetView()->SetWireframe(true);
+                o3dscene->SetBackground({0.1f, 0.1f, 0.1f, 1.f});
+            } else {
+                o3dscene->RemoveGeometry(WIREFRAME_NAME);
+                o3dscene->ShowGeometry(MODEL_NAME, true);
+                o3dscene->GetView()->SetWireframe(false);
+                auto bcolor = settings_.model_.GetBackgroundColor();
+                o3dscene->SetBackground(
+                        {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
+            }
         }
 
         if (settings_.model_.GetBasicMode() != basic_mode_enabled_) {
@@ -531,8 +545,7 @@ struct GuiVisualizer::Impl {
             current_materials.lit_name ==
                     GuiSettingsModel::MATERIAL_FROM_FILE_NAME &&
             !basic_mode_enabled_) {
-            scene_wgt_->GetScene()->UpdateModelMaterial(MODEL_NAME,
-                                                        loaded_model_);
+            o3dscene->UpdateModelMaterial(MODEL_NAME, loaded_model_);
         } else {
             UpdateMaterials(renderer, current_materials);
             UpdateSceneMaterial();
@@ -1132,6 +1145,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         impl_->loaded_model_.materials_.clear();
         impl_->basic_model_.meshes_.clear();
         impl_->basic_model_.materials_.clear();
+        impl_->wireframe_model_.reset();
         impl_->loaded_pcd_.reset();
 
         auto geometry_type = io::ReadFileGeometryType(path);

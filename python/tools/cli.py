@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import argparse
@@ -37,8 +18,7 @@ import open3d.app as app
 class _Open3DArgumentParser(argparse.ArgumentParser):
 
     def error(self, message):
-        sys.stderr.write("Error: %s\n" % message)
-        self.print_help()
+        print(f"Error: {message}\n", file=sys.stderr)
         self.exit(2)
 
 
@@ -72,15 +52,17 @@ def _get_all_examples_dict():
 def _get_runnable_examples_dict():
     examples_dict = _get_all_examples_dict()
     categories_to_remove = [
-        "benchmark", "reconstruction_system", "t_reconstruction_system"
+        "benchmark",
+        "reconstruction_system",
+        "t_reconstruction_system",
     ]
     examples_to_remove = {
-        "io": ["realsense_io",],
+        "io": ["realsense_io"],
         "visualization": [
             "online_processing",
             "tensorboard_pytorch",
             "tensorboard_tensorflow",
-        ]
+        ],
     }
     for cat in categories_to_remove:
         examples_dict.pop(cat)
@@ -107,7 +89,7 @@ def _get_example_categories():
 
 
 def _get_examples_in_category(category):
-    """Get a set of example names in given cateogry."""
+    """Get a set of example names in given category."""
     examples_dict = _get_runnable_examples_dict()
     examples_dir = _get_examples_dir()
     category_path = os.path.join(examples_dir, category)
@@ -127,7 +109,9 @@ def _example_help_categories():
     msg = f"\ncategories:\n"
     for category in sorted(_get_example_categories()):
         msg += f"  {category}\n"
-    msg += "\nTo view the example in each category, run one of the following commands:\n"
+    msg += (
+        "\nTo view the example in each category, run one of the following commands:\n"
+    )
     for category in sorted(_get_example_categories()):
         msg += f"  open3d example --list {category}\n"
     return msg
@@ -135,7 +119,7 @@ def _example_help_categories():
 
 def _example(parser, args):
 
-    if args.category_example == None:
+    if args.category_example is None:
         if args.list:
             for category in _get_example_categories():
                 print("examples in " + category + ": ")
@@ -150,13 +134,12 @@ def _example(parser, args):
     try:
         category = args.category_example.split("/")[0]
         example = args.category_example.split("/")[1]
-    except:
+    except IndexError:
         category = args.category_example
         example = ""
 
     if category not in _get_example_categories():
-        print("Error: invalid category provided: " + category)
-        parser.print_help()
+        print("Error: invalid category provided: " + category, file=sys.stderr)
         parser.exit(2)
 
     if args.list:
@@ -169,13 +152,17 @@ def _example(parser, args):
             print("  open3d example --list\n")
             return 0
         else:
-            print("Error: invalid category provided: " + args.category_example)
-            parser.print_help()
+            print(
+                "Error: invalid category provided: " + args.category_example,
+                file=sys.stderr,
+            )
             parser.exit(2)
 
     if args.category_example not in _get_all_examples():
-        print("Error: invalid example name provided: " + args.category_example)
-        parser.print_help()
+        print(
+            "Error: invalid example name provided: " + args.category_example,
+            file=sys.stderr,
+        )
         parser.exit(2)
 
     examples_dir = _get_examples_dir()
@@ -202,11 +189,10 @@ def _example(parser, args):
 
 
 def _draw(parser, args):
-    if args.filename == None:
+    if args.filename is None:
         parser.print_help()
     elif not os.path.isfile(args.filename):
-        print(f"Error: could not find file: {args.filename}")
-        parser.print_help()
+        print(f"Error: could not find file: {args.filename}", file=sys.stderr)
         parser.exit(2)
 
     removed_arg = sys.argv[1]
@@ -214,6 +200,26 @@ def _draw(parser, args):
     app.main()
     sys.argv.insert(1, removed_arg)
     return 0
+
+
+def _draw_webrtc(parser, args):
+    if args.filename is None:
+        parser.print_help()
+    elif not os.path.isfile(args.filename):
+        print(f"Error: could not find file: {args.filename}", file=sys.stderr)
+        parser.exit(2)
+    if args.bind_all:
+        os.environ["WEBRTC_IP"] = "0.0.0.0"
+    filetype = o3d.io.read_file_geometry_type(args.filename)
+    if (filetype & o3d.io.CONTAINS_TRIANGLES):
+        geometry = o3d.io.read_triangle_model(args.filename)
+    else:
+        geometry = o3d.t.io.read_point_cloud(args.filename)
+        if 'normals' not in geometry.point and 'colors' not in geometry.point:
+            geometry.estimate_normals()
+            geometry.normalize_normals()
+    o3d.visualization.webrtc_server.enable_webrtc()
+    o3d.visualization.draw(geometry)
 
 
 def main():
@@ -228,12 +234,15 @@ def main():
     main_parser = _Open3DArgumentParser(
         description="Open3D commad-line tools",
         add_help=False,
-        formatter_class=argparse.RawTextHelpFormatter)
-    main_parser.add_argument("-V",
-                             "--version",
-                             action="version",
-                             version="Open3D " + o3d.__version__,
-                             help="Show program's version number and exit.")
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    main_parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version="Open3D " + o3d.__version__,
+        help="Show program's version number and exit.",
+    )
     main_parser.add_argument("-h",
                              "--help",
                              action="help",
@@ -256,13 +265,15 @@ def main():
         add_help=False,
         description=example_help + _example_help_categories(),
         help=example_help,
-        formatter_class=argparse.RawTextHelpFormatter)
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     parser_example.add_argument(
         "category_example",
         nargs="?",
         help=
         "Category/example_name of an example (supports .py extension too)\n",
-        type=_support_choice_with_dot_py)
+        type=_support_choice_with_dot_py,
+    )
     parser_example.add_argument("example_args",
                                 nargs="*",
                                 help="Arguments for the example to be run\n")
@@ -277,7 +288,8 @@ def main():
         "  open3d example --list \n"
         "  open3d example --list [category]\n"
         "e.g.:\n"
-        "  open3d example --list geometry\n ")
+        "  open3d example --list geometry\n ",
+    )
     parser_example.add_argument(
         "-s",
         "--show",
@@ -288,7 +300,8 @@ def main():
         "usage:\n"
         "  open3d example --show [category]/[example_name]\n"
         "e.g.:\n"
-        "  open3d example --show geometry/triangle_mesh_deformation\n ")
+        "  open3d example --show geometry/triangle_mesh_deformation\n",
+    )
     parser_example.add_argument("-h",
                                 "--help",
                                 action="help",
@@ -298,14 +311,15 @@ def main():
     draw_help = (
         "Load and visualize a 3D model. Example usage:\n"
         "  open3d draw                                            # Start a blank Open3D viewer\n"
-        "  open3d draw path/to/model_file                         # Visualize a 3D model file\n"
+        "  open3d draw path/to/model_file                         # Visualize a 3D model file\n\n"
     )
     parser_draw = subparsers.add_parser(
         "draw",
         description=draw_help,
         help=draw_help,
         add_help=False,
-        formatter_class=argparse.RawTextHelpFormatter)
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
 
     parser_draw.add_argument("filename",
                              nargs="?",
@@ -315,6 +329,39 @@ def main():
                              action="help",
                              help="Show this help message and exit.")
     parser_draw.set_defaults(func=_draw)
+
+    draw_web_help = (
+        "Load and visualize a 3D model in a browser with WebRTC. Optionally, you can\n"
+        "customize the serving IP address and port with WEBRTC_IP and WEBRTC_PORT\n"
+        "environment variables. Example usage:\n"
+        "  open3d draw_web path/to/model_file            # Visualize at http://localhost:8888\n"
+        "  open3d draw_web --bind_all path/to/model_file # Serve to the entire local network\n"
+        "                                                # at http://hostname.domainname:8888\n"
+    )
+    parser_draw_web = subparsers.add_parser(
+        "draw_web",
+        description=draw_web_help,
+        help=draw_web_help,
+        add_help=False,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+
+    parser_draw_web.add_argument("filename",
+                                 nargs="?",
+                                 help="Name of the mesh or point cloud file.")
+    parser_draw_web.add_argument(
+        "--bind_all",
+        required=False,
+        action="store_true",
+        dest="bind_all",
+        help="Listen for connections on all interfaces in the local network.\n"
+        "Note: There is no encryption.",
+    )
+    parser_draw_web.add_argument("-h",
+                                 "--help",
+                                 action="help",
+                                 help="Show this help message and exit.")
+    parser_draw_web.set_defaults(func=_draw_webrtc)
 
     args = main_parser.parse_args()
     if args.command in subparsers.choices.keys():

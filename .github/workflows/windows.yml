@@ -10,7 +10,7 @@ on:
 
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
@@ -19,18 +19,16 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PIP_VER: "21.1.1"
-  WHEEL_VER: "0.35.1"
-  STOOLS_VER: "50.3.2"
-  PYTEST_VER: "6.0.1"
-  PYTEST_RANDOMLY_VER: "3.8.0"
-  SCIPY_VER: "1.5.4"
+  PIP_VER: "23.2.1"
+  WHEEL_VER: "0.38.4"
+  STOOLS_VER: "67.3.2"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   windows:
@@ -38,25 +36,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        SHARED: [ON, OFF]
+        BUILD_SHARED_LIBS: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
-        BUILD_CUDA: [ON, OFF]
+        BUILD_CUDA_MODULE: [ON, OFF]
         CONFIG: [Release, Debug]
         exclude:
-          - SHARED: ON
+          - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: ON
         include:
-          - BUILD_CUDA: ON
+          - BUILD_CUDA_MODULE: ON
             CUDA_VERSION: 11.0.3
     env:
-      BUILD_WEBRTC: ${{ ( matrix.SHARED == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
+      BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
 
     steps:
       - name: Disk space used
         run: Get-PSDrive
 
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
+        with:
+          sdk-version: 19041
+
       - name: Install CUDA
-        if: ${{ matrix.BUILD_CUDA == 'ON' }}
+        if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
           # Define variables
           $CUDA_VER_FULL = "${{ matrix.CUDA_VERSION }}"
@@ -89,12 +92,12 @@ jobs:
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: 3.8
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -107,15 +110,16 @@ jobs:
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
-            -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
+            -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
-            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA }} `
+            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
             ${{ env.SRC_DIR }}
 
       - name: Build
@@ -129,7 +133,7 @@ jobs:
 
       - name: Package
         working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
@@ -142,41 +146,58 @@ jobs:
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
             $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Upload package
-        if: ${{ matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
-        uses: actions/upload-artifact@v2
+      - name: Upload Package
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        uses: actions/upload-artifact@v3
         with:
           name: open3d-devel-windows
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
+      - name: Viewer App
+        working-directory: ${{ env.BUILD_DIR }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target Open3DViewer
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target INSTALL
+
+      - name: Upload Viewer
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: open3d-app-windows-amd64
+          path: C:\Program Files\Open3D\bin\Open3D
+          if-no-files-found: error
+
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        uses: google-github-actions/auth@v1
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' && matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
-        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        env:
-          CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
-        env:
-          CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         run: |
           gsutil cp ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }} `
-            gs://open3d-releases-master/devel/
+            gs://open3d-releases/devel/
           if ($LastExitCode -eq 0) {
-            echo "Download devel package at: https://storage.googleapis.com/open3d-releases-master/devel/${{ env.DEVEL_PKG_NAME }}"
+            echo "Download devel package at: https://storage.googleapis.com/open3d-releases/devel/${{ env.DEVEL_PKG_NAME }}"
           } else {
             throw "Devel package upload failed"
           }
 
       - name: Run C++ unit tests
-        if: ${{ matrix.BUILD_CUDA == 'OFF' }}
+        if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
@@ -206,8 +227,8 @@ jobs:
             idna==${{ env.IDNA_VER }}
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
-        # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.SHARED == 'OFF' && matrix.BUILD_CUDA == 'OFF' }}
+        # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         run: |
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
@@ -221,23 +242,28 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - is_master: false
-            python_version: 3.7
-          - is_master: false
-            python_version: 3.8
-          - is_master: false
-            python_version: 3.9
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
+        with:
+          sdk-version: 19041
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -259,6 +285,7 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
@@ -278,40 +305,37 @@ jobs:
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $PYTHON_EXECUTABLE=(python -c "import sys; print(sys.executable)")
-          echo $PYTHON_EXECUTABLE
-          echo "PYTHON_EXECUTABLE=$PYTHON_EXECUTABLE"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_win_amd64_wheels
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: google-github-actions/auth@v1
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
-        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        env:
-          CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
           python_version: ${{ matrix.python_version }}
-          CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         run: |
           $ErrorActionPreference = 'Stop'
           $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
-          gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
+          gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
           if ($LastExitCode -eq 0) {
-            echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
+            echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
           } else {
             throw "Wheel upload failed"
           }
@@ -323,30 +347,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - is_master: false
-            python_version: 3.7
-          - is_master: false
-            python_version: 3.8
-          - is_master: false
-            python_version: 3.9
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
           name: open3d_win_amd64_wheels
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -360,10 +384,7 @@ jobs:
           python -m pip install --upgrade pip==${{ env.PIP_VER }} `
             wheel==${{ env.WHEEL_VER }} `
             setuptools==${{ env.STOOLS_VER }}
-          python -m pip install -U pytest==${{ env.PYTEST_VER }}
-          python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
-          python -m pip install -U scipy==${{ env.SCIPY_VER }} `
-            tensorboard==${{ env.TENSORFLOW_VER }}
+          python -m pip install -U -r python/requirements_test.txt
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
@@ -377,7 +398,7 @@ jobs:
 
           deactivate
 
-      - name: Run Python unit tests (benchmarks)
+      - name: Run Python unit tests
         run: |
           $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1
@@ -390,17 +411,22 @@ jobs:
   ready-docs:
     name: Ready docs archive
     # no need to run on Windows
-    runs-on: ubuntu-18.04
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build-wheel, windows]
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    # temp workaround for Windows CUDA Debug CI out of space. Still update docs.
+    # needs: [build-wheel, windows]
+    needs: [build-wheel]
     steps:
+      - name: GCloud CLI auth
+        uses: google-github-actions/auth@v1
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Check wheels and ready documentation archive
         run: |
             touch marker_file
@@ -413,6 +439,10 @@ jobs:
                 # Rename docs archive:
                 gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
                     gs://open3d-docs/${{ github.sha }}.tar.gz
+                # Set holds on new artifacts, release on old
+                gsutil retention temp release gs://open3d-releases/*
+                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
+                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
             else
                 echo "All wheels / docs not available yet."
             fi

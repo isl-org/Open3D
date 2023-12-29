@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 # examples/python/t_reconstruction_system/ray_casting.py
@@ -38,19 +19,24 @@ import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 from config import ConfigParser
-from common import load_depth_file_names, load_intrinsic, load_extrinsics, get_default_testdata
+from common import load_depth_file_names, load_intrinsic, load_extrinsics, get_default_dataset, extract_rgbd_frames
 import matplotlib.pyplot as plt
 import numpy as np
 
 if __name__ == '__main__':
     parser = ConfigParser()
-    parser.add(
-        '--config',
-        is_config_file=True,
-        help='YAML config file path. Please refer to default_config.yml as a '
-        'reference. It overrides the default config file, but will be '
-        'overridden by other command line inputs.')
-
+    parser.add('--config',
+               is_config_file=True,
+               help='YAML config file path.'
+               'Please refer to config.py for the options,'
+               'and default_config.yml for default settings '
+               'It overrides the default config file, but will be '
+               'overridden by other command line inputs.')
+    parser.add('--default_dataset',
+               help='Default dataset is used when config file is not provided. '
+               'Default dataset may be selected from the following options: '
+               '[lounge, jack_jack]',
+               default='lounge')
     parser.add('--path_trajectory',
                help='path to the trajectory .log or .json file.')
     parser.add('--path_npz',
@@ -59,9 +45,15 @@ if __name__ == '__main__':
     config = parser.get_config()
 
     if config.path_dataset == '':
-        config.path_dataset = get_default_testdata()
-        config.path_trajectory = os.path.join(config.path_dataset,
-                                              'trajectory.log')
+        config = get_default_dataset(config)
+
+    # Extract RGB-D frames and intrinsic from bag file.
+    if config.path_dataset.endswith(".bag"):
+        assert os.path.isfile(
+            config.path_dataset), f"File {config.path_dataset} not found."
+        print("Extracting frames from RGBD video file")
+        config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
+            config.path_dataset)
 
     vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
     depth_file_names = load_depth_file_names(config)

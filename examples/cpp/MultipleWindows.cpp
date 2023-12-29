@@ -1,33 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <atomic>
 #include <chrono>
 #include <mutex>
-#include <random>
 #include <thread>
 
 #include "open3d/Open3D.h"
@@ -86,7 +66,7 @@ private:
         }
 
         new_vis->ResetCameraToDefault();
-        auto center = bounds.GetCenter().cast<float>();
+        Eigen::Vector3f center = bounds.GetCenter().cast<float>();
         new_vis->SetupCamera(60, center, center + CENTER_OFFSET,
                              {0.0f, -1.0f, 0.0f});
         gui::Application::GetInstance().AddWindow(new_vis);
@@ -132,9 +112,7 @@ private:
                 });
 
         Eigen::Vector3d magnitude = 0.005 * extent;
-        auto seed = std::random_device()();
-        std::mt19937 gen_algo(seed);
-        std::uniform_real_distribution<> random(-0.5, 0.5);
+        utility::random::UniformRealGenerator<double> uniform_gen(-0.5, 0.5);
 
         while (main_vis_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -143,9 +121,9 @@ private:
             {
                 std::lock_guard<std::mutex> lock(cloud_lock_);
                 for (size_t i = 0; i < cloud_->points_.size(); ++i) {
-                    Eigen::Vector3d perturb(magnitude[0] * random(gen_algo),
-                                            magnitude[1] * random(gen_algo),
-                                            magnitude[2] * random(gen_algo));
+                    Eigen::Vector3d perturb(magnitude[0] * uniform_gen(),
+                                            magnitude[1] * uniform_gen(),
+                                            magnitude[2] * uniform_gen());
                     cloud_->points_[i] += perturb;
                 }
             }

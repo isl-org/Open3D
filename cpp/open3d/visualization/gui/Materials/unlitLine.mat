@@ -9,7 +9,8 @@ material {
     vertexDomain: world,
 
     parameters : [
-        { type : float3,    name : baseColor },
+        { type : float4,    name : baseColor },
+        { type : float4,    name : emissiveColor },
         { type : float,     name : lineWidth }
     ],
     requires: [
@@ -53,6 +54,9 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
 
-        material.baseColor.rgb = materialParams.baseColor*getColor().rgb;
+        float combined_alpha = getColor().a * materialParams.baseColor.a;
+        material.baseColor.rgb = materialParams.baseColor.rgb * getColor().rgb * combined_alpha;
+        material.baseColor.a = combined_alpha;
+        material.emissive = materialParams.emissiveColor;
 }
 }

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -29,7 +10,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <memory>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -53,22 +36,23 @@ struct hash_tuple {
 namespace {
 
 template <class T>
-inline void hash_combine(std::size_t& seed, T const& v) {
-    seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+inline void hash_combine(std::size_t& hash_seed, T const& v) {
+    hash_seed ^= std::hash<T>()(v) + 0x9e3779b9 + (hash_seed << 6) +
+                 (hash_seed >> 2);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
 struct HashValueImpl {
-    static void apply(size_t& seed, Tuple const& tuple) {
-        HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
-        hash_combine(seed, std::get<Index>(tuple));
+    static void apply(size_t& hash_seed, Tuple const& tuple) {
+        HashValueImpl<Tuple, Index - 1>::apply(hash_seed, tuple);
+        hash_combine(hash_seed, std::get<Index>(tuple));
     }
 };
 
 template <class Tuple>
 struct HashValueImpl<Tuple, 0> {
-    static void apply(size_t& seed, Tuple const& tuple) {
-        hash_combine(seed, std::get<0>(tuple));
+    static void apply(size_t& hash_seed, Tuple const& tuple) {
+        hash_combine(hash_seed, std::get<0>(tuple));
     }
 };
 
@@ -77,22 +61,22 @@ struct HashValueImpl<Tuple, 0> {
 template <typename... TT>
 struct hash_tuple<std::tuple<TT...>> {
     size_t operator()(std::tuple<TT...> const& tt) const {
-        size_t seed = 0;
-        HashValueImpl<std::tuple<TT...>>::apply(seed, tt);
-        return seed;
+        size_t hash_seed = 0;
+        HashValueImpl<std::tuple<TT...>>::apply(hash_seed, tt);
+        return hash_seed;
     }
 };
 
 template <typename T>
 struct hash_eigen {
     std::size_t operator()(T const& matrix) const {
-        size_t seed = 0;
+        size_t hash_seed = 0;
         for (int i = 0; i < (int)matrix.size(); i++) {
             auto elem = *(matrix.data() + i);
-            seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
-                    (seed << 6) + (seed >> 2);
+            hash_seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
+                         (hash_seed << 6) + (hash_seed >> 2);
         }
-        return seed;
+        return hash_seed;
     }
 };
 
@@ -131,7 +115,7 @@ std::string JoinStrings(const std::vector<std::string>& strs,
 
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
-/// as valid charactors in a word
+/// as valid characters in a word
 size_t WordLength(const std::string& doc,
                   size_t start_pos,
                   const std::string& valid_chars = "_");
@@ -142,7 +126,7 @@ std::string& LeftStripString(std::string& str,
 std::string& RightStripString(std::string& str,
                               const std::string& chars = "\t\n\v\f\r ");
 
-/// Strip empty charactors in front and after string. Similar to Python's
+/// Strip empty characters in front and after string. Similar to Python's
 /// str.strip()
 std::string& StripString(std::string& str,
                          const std::string& chars = "\t\n\v\f\r ");
@@ -153,6 +137,39 @@ std::string ToLower(const std::string& s);
 /// Convert string to the upper case
 std::string ToUpper(const std::string& s);
 
+/// Format string
+template <typename... Args>
+inline std::string FormatString(const std::string& format, Args... args) {
+    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) +
+                 1;  // Extra space for '\0'
+    if (size_s <= 0) {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto size = static_cast<size_t>(size_s);
+    auto buf = std::make_unique<char[]>(size);
+    std::snprintf(buf.get(), size, format.c_str(), args...);
+    return std::string(buf.get(),
+                       buf.get() + size - 1);  // We don't want the '\0' inside
+};
+
+/// Format string fast (Unix / BSD Only)
+template <typename... Args>
+inline std::string FastFormatString(const std::string& format, Args... args) {
+#ifdef _WIN32
+    return FormatString(format, args...);
+#else
+    char* buffer = nullptr;
+    int size_s = asprintf(&buffer, format.c_str(), args...);
+    if (size_s == -1) {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto ret = std::string(buffer,
+                           buffer + size_s);  // no + 1 since we ignore the \0
+    std::free(buffer);                        // asprintf calls malloc
+    return ret;
+#endif  // _WIN32
+};
+
 void Sleep(int milliseconds);
 
 /// Computes the quotient of x/y with rounding up
@@ -160,24 +177,6 @@ inline int DivUp(int x, int y) {
     div_t tmp = std::div(x, y);
     return tmp.quot + (tmp.rem != 0 ? 1 : 0);
 }
-
-/// \class UniformRandIntGenerator
-///
-/// \brief Draw pseudo-random integers bounded by min and max (inclusive)
-/// from a uniform distribution
-class UniformRandIntGenerator {
-public:
-    UniformRandIntGenerator(
-            const int min,
-            const int max,
-            std::mt19937::result_type seed = std::random_device{}())
-        : distribution_(min, max), generator_(seed) {}
-    int operator()() { return distribution_(generator_); }
-
-protected:
-    std::uniform_int_distribution<int> distribution_;
-    std::mt19937 generator_;
-};
 
 /// Returns current time stamp.
 std::string GetCurrentTimeStamp();

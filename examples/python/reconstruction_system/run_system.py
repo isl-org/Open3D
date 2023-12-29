@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/run_system.py
@@ -41,11 +22,19 @@ sys.path.append(pyexample_path)
 from open3d_example import check_folder_structure
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from initialize_config import initialize_config
+from initialize_config import initialize_config, dataset_loader
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")
-    parser.add_argument("config", help="path to the config file")
+    parser.add_argument("--config",
+                        help="path to the config file",
+                        default=None)
+    parser.add_argument("--default_dataset",
+                        help="(optional) default dataset to be used, only if "
+                        "config file is not provided. "
+                        "Options: [lounge, bedroom, jack_jack]",
+                        type=str,
+                        default="lounge")
     parser.add_argument("--make",
                         help="Step 1) make fragments from RGBD sequence.",
                         action="store_true")
@@ -66,7 +55,7 @@ if __name__ == "__main__":
         action="store_true")
     parser.add_argument(
         "--slac_integrate",
-        help="Step 6) (optional) integrate fragements using slac to make final "
+        help="Step 6) (optional) integrate fragments using slac to make final "
         "pointcloud / mesh.",
         action="store_true")
     parser.add_argument("--debug_mode",
@@ -90,12 +79,16 @@ if __name__ == "__main__":
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    # check folder structure
+    # load dataset and check folder structure
     if args.config is not None:
         with open(args.config) as json_file:
             config = json.load(json_file)
             initialize_config(config)
-            check_folder_structure(config["path_dataset"])
+            check_folder_structure(config['path_dataset'])
+    else:
+        # load default dataset.
+        config = dataset_loader(args.default_dataset)
+
     assert config is not None
 
     if args.debug_mode:

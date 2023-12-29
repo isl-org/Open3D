@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // Private header. Do not include in Open3d.h.
@@ -53,6 +34,73 @@ inline OPEN3D_HOST_DEVICE float HuberDeriv(float r, float delta) {
 inline OPEN3D_HOST_DEVICE float HuberLoss(float r, float delta) {
     float abs_r = abs(r);
     return abs_r < delta ? 0.5 * r * r : delta * abs_r - 0.5 * delta * delta;
+}
+
+OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPoint(
+        int x,
+        int y,
+        const float square_dist_thr,
+        const NDArrayIndexer& source_vertex_indexer,
+        const NDArrayIndexer& target_vertex_indexer,
+        const TransformIndexer& ti,
+        float* J_x,
+        float* J_y,
+        float* J_z,
+        float& rx,
+        float& ry,
+        float& rz) {
+    float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
+    if (isnan(source_v[0])) {
+        return false;
+    }
+
+    // Transform source points to the target camera's coordinate space.
+    float T_source_to_target_v[3], u, v;
+    ti.RigidTransform(source_v[0], source_v[1], source_v[2],
+                      &T_source_to_target_v[0], &T_source_to_target_v[1],
+                      &T_source_to_target_v[2]);
+    ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
+               T_source_to_target_v[2], &u, &v);
+    u = roundf(u);
+    v = roundf(v);
+
+    if (T_source_to_target_v[2] < 0 ||
+        !target_vertex_indexer.InBoundary(u, v)) {
+        return false;
+    }
+
+    int ui = static_cast<int>(u);
+    int vi = static_cast<int>(v);
+    float* target_v = target_vertex_indexer.GetDataPtr<float>(ui, vi);
+    if (isnan(target_v[0])) {
+        return false;
+    }
+
+    rx = (T_source_to_target_v[0] - target_v[0]);
+    ry = (T_source_to_target_v[1] - target_v[1]);
+    rz = (T_source_to_target_v[2] - target_v[2]);
+    float r2 = rx * rx + ry * ry + rz * rz;
+    if (r2 > square_dist_thr) {
+        return false;
+    }
+
+    // T s - t
+    J_x[0] = J_x[4] = J_x[5] = 0.0;
+    J_x[1] = T_source_to_target_v[2];
+    J_x[2] = -T_source_to_target_v[1];
+    J_x[3] = 1.0;
+
+    J_y[1] = J_y[3] = J_y[5] = 0.0;
+    J_y[0] = -T_source_to_target_v[2];
+    J_y[2] = T_source_to_target_v[0];
+    J_y[4] = 1.0;
+
+    J_z[2] = J_z[3] = J_z[4] = 0.0;
+    J_z[0] = T_source_to_target_v[1];
+    J_z[1] = -T_source_to_target_v[0];
+    J_z[5] = 1.0;
+
+    return true;
 }
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(

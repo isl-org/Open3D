@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <numeric>
@@ -132,27 +113,38 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
     output->voxel_size_ = voxel_size;
     output->origin_ = min_bound;
 
-    Eigen::Vector3d grid_size = max_bound - min_bound;
-    int num_w = int(std::round(grid_size(0) / voxel_size));
-    int num_h = int(std::round(grid_size(1) / voxel_size));
-    int num_d = int(std::round(grid_size(2) / voxel_size));
     const Eigen::Vector3d box_half_size(voxel_size / 2, voxel_size / 2,
                                         voxel_size / 2);
-    for (int widx = 0; widx < num_w; widx++) {
-        for (int hidx = 0; hidx < num_h; hidx++) {
-            for (int didx = 0; didx < num_d; didx++) {
-                const Eigen::Vector3d box_center =
-                        min_bound +
-                        Eigen::Vector3d(widx, hidx, didx) * voxel_size;
-                for (const Eigen::Vector3i &tria : input.triangles_) {
-                    const Eigen::Vector3d &v0 = input.vertices_[tria(0)];
-                    const Eigen::Vector3d &v1 = input.vertices_[tria(1)];
-                    const Eigen::Vector3d &v2 = input.vertices_[tria(2)];
+    for (const Eigen::Vector3i &tria : input.triangles_) {
+        const Eigen::Vector3d &v0 = input.vertices_[tria(0)];
+        const Eigen::Vector3d &v1 = input.vertices_[tria(1)];
+        const Eigen::Vector3d &v2 = input.vertices_[tria(2)];
+        double minx, miny, minz, maxx, maxy, maxz;
+        int num_w, num_h, num_d, inix, iniy, iniz;
+        minx = std::min(v0[0], std::min(v1[0], v2[0]));
+        miny = std::min(v0[1], std::min(v1[1], v2[1]));
+        minz = std::min(v0[2], std::min(v1[2], v2[2]));
+        maxx = std::max(v0[0], std::max(v1[0], v2[0]));
+        maxy = std::max(v0[1], std::max(v1[1], v2[1]));
+        maxz = std::max(v0[2], std::max(v1[2], v2[2]));
+        inix = static_cast<int>(std::floor((minx - min_bound[0]) / voxel_size));
+        iniy = static_cast<int>(std::floor((miny - min_bound[1]) / voxel_size));
+        iniz = static_cast<int>(std::floor((minz - min_bound[2]) / voxel_size));
+        num_w = static_cast<int>((std::round((maxx - minx) / voxel_size))) + 2;
+        num_h = static_cast<int>((std::round((maxy - miny) / voxel_size))) + 2;
+        num_d = static_cast<int>((std::round((maxz - minz) / voxel_size))) + 2;
+        for (int widx = inix; widx < inix + num_w; widx++) {
+            for (int hidx = iniy; hidx < iniy + num_h; hidx++) {
+                for (int didx = iniz; didx < iniz + num_d; didx++) {
+                    const Eigen::Vector3d box_center =
+                            min_bound + box_half_size +
+                            Eigen::Vector3d(widx, hidx, didx) * voxel_size;
                     if (IntersectionTest::TriangleAABB(
                                 box_center, box_half_size, v0, v1, v2)) {
                         Eigen::Vector3i grid_index(widx, hidx, didx);
                         output->AddVoxel(geometry::Voxel(grid_index));
-                        break;
+                        // Don't `break` here, since a triangle can span
+                        // across multiple voxels.
                     }
                 }
             }

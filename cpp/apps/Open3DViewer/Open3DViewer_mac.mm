@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018-2023 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -164,7 +164,7 @@ static void LoadAndCreateWindow(const char *path) {
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
-    // -application:openFile: runs befure applicationDidFinishLaunching: so we
+    // -application:openFile: runs before applicationDidFinishLaunching: so we
     // need to check if we loaded a file or we need to display an empty window.
     if (open_empty_window_) {
         LoadAndCreateWindow("");

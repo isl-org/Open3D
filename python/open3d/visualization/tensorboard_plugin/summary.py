@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Summary writer for the TensorBoard Open3D plugin"""
 import threading
@@ -130,7 +111,7 @@ class _AsyncDataWriter:
                         _log.debug(f"Flushed {tagfilepath}.")
                 except (StopIteration, RuntimeError):
                     # RuntimeError: possible race condition in dict iterator,
-                    # but PEP3106 guarantees no coruption. Try again later.
+                    # but PEP3106 guarantees no corruption. Try again later.
                     pass
                 self._next_flush_time += self._flush_secs
 
@@ -547,7 +528,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                 connection=buf_con):
             raise IOError(
                 "[Open3D set_mesh_data] Geometry data serialization for tag "
-                "{tag} step {step} failed!")
+                f"{tag} step {step} failed!")
         # TODO(ssheorey): This returns a copy instead of the original. Benchmark
         # vs numpy
         data_buffer = buf_con.get_buffer()
@@ -710,11 +691,14 @@ def add_3d(name,
 
         With PyTorch:
 
+        (Note that the `import summary` is needed to make `add_3d()` available,
+        even though `summary` is not used.)
+
         .. code::
 
             from torch.utils.tensorboard import SummaryWriter
             import open3d as o3d
-            from open3d.visualization.tensorboard_plugin import summary
+            from open3d.visualization.tensorboard_plugin import summary  # noqa
             from open3d.visualization.tensorboard_plugin.util import to_dict_batch
             writer = SummaryWriter("demo_logs/")
             cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
@@ -727,7 +711,7 @@ def add_3d(name,
         Now use ``tensorboard --logdir demo_logs`` to visualize the 3D data.
 
     Note:
-        Sumary writing works on all platforms, and the visualization can be
+        Summary writing works on all platforms, and the visualization can be
         accessed from a browser on any platform. Running the tensorboard process
         is not supported on macOS as yet.
     """

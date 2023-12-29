@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Tensor.h"
@@ -41,6 +22,7 @@
 #include "open3d/core/TensorFunction.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
+#include "open3d/core/kernel/IndexReduction.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/core/linalg/Det.h"
 #include "open3d/core/linalg/Inverse.h"
@@ -369,6 +351,18 @@ Tensor& Tensor::operator=(const Tensor& other) && {
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
     return *this;
+}
+
+Tensor Tensor::ReinterpretCast(const core::Dtype& dtype) const {
+    if (dtype_.ByteSize() != dtype.ByteSize()) {
+        utility::LogError(
+                "Cannot reinterpret cast between data-types of different "
+                "sizes. Expected data-type of {} bytes ({}), but got "
+                "data-type {} of {} bytes.",
+                dtype_.ByteSize(), dtype_.ToString(), dtype.ToString(),
+                dtype.ByteSize());
+    }
+    return Tensor(shape_, strides_, data_ptr_, dtype, blob_);
 }
 
 Tensor Tensor::Empty(const SizeVector& shape,
@@ -754,9 +748,9 @@ Tensor Tensor::Contiguous() const {
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
-    if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
+    if (IsCUDA() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
-        rc << host_contiguous_tensor.ToString(false, "");
+        rc << host_contiguous_tensor.ToString(with_suffix, indent);
     } else {
         if (shape_.NumElements() == 0) {
             rc << indent;
@@ -890,7 +884,7 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
         if (index_tensor.IsNonZero()) {
             // E.g. np.array(5)[np.array(True)].
-            return *this;
+            return Clone();
         } else {
             // E.g. np.array(5)[np.array(False)].
             // The output tensor becomes 1D of 0 element.
@@ -960,6 +954,43 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
 
     kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
+}
+
+void Tensor::IndexAdd_(int64_t dim, const Tensor& index, const Tensor& src) {
+    if (index.NumDims() != 1) {
+        utility::LogError("IndexAdd_ only supports 1D index tensors.");
+    }
+
+    // Dim check.
+    if (dim < 0) {
+        utility::LogError("IndexAdd_ only supports sum at non-negative dim.");
+    }
+    if (NumDims() <= dim) {
+        utility::LogError("Sum dim {} exceeds tensor dim {}.", dim, NumDims());
+    }
+
+    // shape check
+    if (src.NumDims() != NumDims()) {
+        utility::LogError(
+                "IndexAdd_ only supports src tensor with same dimension as "
+                "this tensor.");
+    }
+    for (int64_t d = 0; d < NumDims(); ++d) {
+        if (d != dim && src.GetShape(d) != GetShape(d)) {
+            utility::LogError(
+                    "IndexAdd_ only supports src tensor with same shape as "
+                    "this "
+                    "tensor except dim {}.",
+                    dim);
+        }
+    }
+
+    // Type check.
+    AssertTensorDtype(index, core::Int64);
+    AssertTensorDtype(*this, src.GetDtype());
+
+    // Apply kernel.
+    kernel::IndexAdd_(dim, index, src, *this);
 }
 
 Tensor Tensor::Permute(const SizeVector& dims) const {
@@ -1037,7 +1068,8 @@ Tensor Tensor::Add(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Add(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Add);
+
     return dst_tensor;
 }
 
@@ -1054,7 +1086,8 @@ Tensor Tensor::Add_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Add(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Add);
+
     return *this;
 }
 
@@ -1071,7 +1104,8 @@ Tensor Tensor::Sub(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Sub(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Sub);
+
     return dst_tensor;
 }
 
@@ -1088,7 +1122,8 @@ Tensor Tensor::Sub_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Sub(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Sub);
+
     return *this;
 }
 
@@ -1105,7 +1140,8 @@ Tensor Tensor::Mul(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Mul(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Mul);
+
     return dst_tensor;
 }
 
@@ -1122,7 +1158,8 @@ Tensor Tensor::Mul_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Mul(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Mul);
+
     return *this;
 }
 
@@ -1139,7 +1176,8 @@ Tensor Tensor::Div(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Div(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Div);
+
     return dst_tensor;
 }
 
@@ -1156,7 +1194,7 @@ Tensor Tensor::Div_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Div(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Div);
     return *this;
 }
 
@@ -1697,18 +1735,42 @@ bool Tensor::IsNonZero() const {
     return rc;
 }
 
-bool Tensor::All() const {
-    Tensor dst({}, dtype_, GetDevice());
-    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
-                      kernel::ReductionOpCode::All);
-    return dst.Item<bool>();
+Tensor Tensor::All(const utility::optional<SizeVector>& dims,
+                   bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
+    Tensor dst;
+    if (dims.has_value()) {
+        dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
+                     dtype_, GetDevice());
+        kernel::Reduction(*this, dst, dims.value(), keepdim,
+                          kernel::ReductionOpCode::All);
+    } else {
+        dst = Tensor({}, dtype_, GetDevice());
+        kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                          kernel::ReductionOpCode::All);
+    }
+
+    return dst;
 }
 
-bool Tensor::Any() const {
-    Tensor dst({}, dtype_, GetDevice());
-    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
-                      kernel::ReductionOpCode::Any);
-    return dst.Item<bool>();
+Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
+                   bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
+    Tensor dst;
+    if (dims.has_value()) {
+        dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
+                     dtype_, GetDevice());
+        kernel::Reduction(*this, dst, dims.value(), keepdim,
+                          kernel::ReductionOpCode::Any);
+    } else {
+        dst = Tensor({}, dtype_, GetDevice());
+        kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                          kernel::ReductionOpCode::Any);
+    }
+
+    return dst;
 }
 
 DLManagedTensor* Tensor::ToDLPack() const {
@@ -1774,12 +1836,12 @@ bool Tensor::AllEqual(const Tensor& other) const {
     if (shape_ != other.shape_) {
         return false;
     }
-    return (*this == other).All();
+    return (*this == other).All().Item<bool>();
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
     // TODO: support nan;
-    return IsClose(other, rtol, atol).All();
+    return IsClose(other, rtol, atol).All().Item<bool>();
 }
 
 Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {

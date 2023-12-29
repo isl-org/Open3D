@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pybind/camera/camera.h"
@@ -42,10 +23,9 @@ void pybind_camera_classes(py::module &m) {
     py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
     py::detail::bind_copy_functions<PinholeCameraIntrinsic>(pinhole_intr);
     pinhole_intr
-            .def(py::init([](int w, int h, double fx, double fy, double cx,
-                             double cy) {
-                     return new PinholeCameraIntrinsic(w, h, fx, fy, cx, cy);
-                 }),
+            .def(py::init<int, int, const Eigen::Matrix3d>(), "width"_a,
+                 "height"_a, "intrinsic_matrix"_a)
+            .def(py::init<int, int, double, double, double, double>(),
                  "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
             .def(py::init([](PinholeCameraIntrinsicParameters param) {
                      return new PinholeCameraIntrinsic(param);

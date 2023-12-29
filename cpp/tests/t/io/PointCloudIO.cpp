@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/io/PointCloudIO.h"
@@ -52,7 +33,7 @@ INSTANTIATE_TEST_SUITE_P(PointCloudIO,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
 struct TensorCtorData {
-    std::vector<double> values;
+    std::vector<float> values;
     core::SizeVector size;
 };
 
@@ -62,19 +43,25 @@ struct ReadWritePCArgs {
     std::string filename;
     IsAscii write_ascii;
     Compressed compressed;
-    std::unordered_map<std::string, double> attributes_rel_tols;
+    std::unordered_map<std::string, float> attributes_rel_tols;
 };
 
 }  // namespace
 
 const std::unordered_map<std::string, TensorCtorData> pc_data_1{
         {"positions", {{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1}, {5, 3}}},
-        {"intensities", {{0, 0.5, 0.5, 0.5, 1}, {5, 1}}}};
+        {"intensities", {{0, 0.5, 0.5, 0.5, 1}, {5, 1}}},
+        {"colors",
+         {{0.5, 0.3, 0.2, 0, 1, 0.5, 0.6, 0, 1, 1, 0.5, 0.7, 0.3, 0, 0.5},
+          {5, 3}}},
+        {"dopplers", {{1, 0.9, 0.8, 0.7, 0.6}, {5, 1}}},
+};
 
 // Bad data.
 const std::unordered_map<std::string, TensorCtorData> pc_data_bad{
         {"positions", {{0, 0, 0, 1, 0, 0}, {2, 3}}},
         {"intensities", {{0}, {1, 1}}},
+        {"dopplers", {{0}, {1, 1}}},
 };
 
 const std::vector<ReadWritePCArgs> pcArgs({
@@ -82,10 +69,18 @@ const std::vector<ReadWritePCArgs> pcArgs({
          IsAscii::ASCII,
          Compressed::UNCOMPRESSED,
          {{"positions", 1e-5}, {"intensities", 1e-5}}},  // 0
+        {"test.xyzrgb",
+         IsAscii::ASCII,
+         Compressed::UNCOMPRESSED,
+         {{"positions", 1e-5}, {"colors", 1e-5}}},  // 1
         {"test.ply",
          IsAscii::ASCII,
          Compressed::UNCOMPRESSED,
-         {{"positions", 1e-5}, {"intensities", 1e-5}}},  // 1
+         {{"positions", 1e-5}, {"intensities", 1e-5}, {"colors", 1e-5}}},  // 2
+        {"test.xyzd",
+         IsAscii::ASCII,
+         Compressed::UNCOMPRESSED,
+         {{"positions", 1e-5}, {"dopplers", 1e-5}}},  // 0
 });
 
 class ReadWriteTPC : public testing::TestWithParam<ReadWritePCArgs> {};
@@ -94,7 +89,7 @@ INSTANTIATE_TEST_SUITE_P(ReadWritePC, ReadWriteTPC, testing::ValuesIn(pcArgs));
 TEST_P(ReadWriteTPC, Basic) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU:0");
-    core::Dtype dtype = core::Float64;
+    core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pc1(device);
 
     for (const auto &attr_tensor : pc_data_1) {
@@ -118,7 +113,7 @@ TEST_P(ReadWriteTPC, Basic) {
 
     for (const auto &attribute_rel_tol : args.attributes_rel_tols) {
         const std::string &attribute = attribute_rel_tol.first;
-        const double rel_tol = attribute_rel_tol.second;
+        const float rel_tol = attribute_rel_tol.second;
         SCOPED_TRACE(attribute);
         EXPECT_TRUE(pc1.GetPointAttr(attribute).AllClose(
                 pc2.GetPointAttr(attribute), rel_tol));
@@ -142,7 +137,7 @@ TEST_P(ReadWriteTPC, Basic) {
 TEST_P(ReadWriteTPC, WriteBadData) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU:0");
-    core::Dtype dtype = core::Float64;
+    core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pc1(device);
 
     for (const auto &attr_tensor : pc_data_bad) {
@@ -242,11 +237,11 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
     EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::UInt8);
     EXPECT_TRUE(pcd.GetPointPositions()[0].AllClose(
-            core::Tensor::Init<double>({4.24644, -6.42662, -50.2146})));
+            core::Tensor::Init<float>({4.24644, -6.42662, -50.2146})));
     EXPECT_TRUE(pcd.GetPointColors()[0].AllClose(
             core::Tensor::Init<uint8_t>({66, 50, 83})));
     EXPECT_TRUE(pcd.GetPointAttr("intensities")[0].AllClose(
-            core::Tensor::Init<double>({10})));
+            core::Tensor::Init<float>({10})));
 
     // Write pointcloud and match it after read.
     const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
@@ -302,7 +297,7 @@ TEST(TPointCloudIO, WritePTSColorConversion1) {
     t::geometry::PointCloud pcd, pcd_read;
     std::string file_name = utility::filesystem::GetTempDirectoryPath() +
                             "/test_color_conversion.pts";
-    pcd.SetPointPositions(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
+    pcd.SetPointPositions(core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}));
     pcd.SetPointColors(
             core::Tensor::Init<float>({{-1, 0.25, 0.4}, {0, 4, 0.1}}));
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
@@ -317,7 +312,7 @@ TEST(TPointCloudIO, WritePTSColorConversion2) {
     t::geometry::PointCloud pcd, pcd_read;
     std::string file_name = utility::filesystem::GetTempDirectoryPath() +
                             "/test_color_conversion.pts";
-    pcd.SetPointPositions(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
+    pcd.SetPointPositions(core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}));
     pcd.SetPointColors(core::Tensor::Init<bool>({{1, 0, 0}, {1, 0, 1}}));
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
     EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
@@ -398,8 +393,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_pcd;
     t::io::ReadPointCloud(filename_ascii, ascii_pcd);
@@ -414,8 +408,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_binary, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ false, /*compressed*/ false, false, {})));
+            {/*ascii*/ false, /*compressed*/ false, false}));
 
     t::geometry::PointCloud binary_pcd;
     t::io::ReadPointCloud(filename_binary, binary_pcd);
@@ -431,8 +424,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_binary_compressed, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ false, /*compressed*/ true, false, {})));
+            {/*ascii*/ false, /*compressed*/ true, false}));
 
     t::geometry::PointCloud binary_compressed_pcd;
     t::io::ReadPointCloud(filename_binary_compressed, binary_compressed_pcd);
@@ -444,7 +436,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     // Colors data type will be converted to UInt8 during Write / Read.
     // Only Float32, Float64, UInt8, UInt16, UInt32 colors data types are
-    // suppoted for conversion.
+    // supported for conversion.
 
     // PointCloud with Float32 type white color
     core::Tensor color_float32 = core::Tensor::Ones(
@@ -456,8 +448,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_f32, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_f32_pcd;
     t::io::ReadPointCloud(filename_ascii_f32, ascii_f32_pcd);
@@ -479,8 +470,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_uint32, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_uint32_pcd;
     t::io::ReadPointCloud(filename_ascii_uint32, ascii_uint32_pcd);

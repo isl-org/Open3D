@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <png.h>
@@ -111,6 +92,36 @@ bool WriteImageToPNG(const std::string &filename,
                                 image.data_.data(), 0, NULL) == 0) {
         utility::LogWarning("Write PNG failed: unable to write file: {}",
                             filename);
+        return false;
+    }
+    return true;
+}
+
+bool ReadPNGFromMemory(const unsigned char *image_data_ptr,
+                       size_t image_data_size,
+                       geometry::Image &image) {
+    png_image pngimage;
+    memset(&pngimage, 0, sizeof(pngimage));
+    pngimage.version = PNG_IMAGE_VERSION;
+    if (png_image_begin_read_from_memory(&pngimage, image_data_ptr,
+                                         image_data_size) == 0) {
+        utility::LogWarning("Read PNG failed: unable to parse header.");
+        return false;
+    }
+
+    // Clear colormap flag if necessary to ensure libpng expands the colo
+    // indexed pixels to full color
+    if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
+        pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
+    }
+
+    image.Prepare(pngimage.width, pngimage.height,
+                  PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
+                  PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
+
+    if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
+        0) {
+        utility::LogWarning("PNG error: {}", pngimage.message);
         return false;
     }
     return true;

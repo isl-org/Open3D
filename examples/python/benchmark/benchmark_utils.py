@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import os
@@ -30,6 +11,7 @@ import subprocess
 
 import numpy as np
 import tabulate
+import nvidia_smi
 
 
 def get_processor_name():
@@ -97,6 +79,19 @@ def measure_time(fn, min_samples=10, max_samples=100, max_time_in_sec=10.0):
     return np.array(t) / 1e9
 
 
+def measure_memory(fn, handle):
+    """Measure memory to run fn. Returns the maximum allocated memory each run."""
+    try:
+        _ = fn()
+    except Exception as e:
+        print(e)
+        return np.nan
+    info = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
+    memory = info.used / 1000. / 1000. / 1000.
+    print('.', end='')
+    return memory
+
+
 def print_table(methods, results):
     headers = [''] + [f'{n}_setup' for n in methods
                      ] + [f'{n}_search' for n in methods]
@@ -106,6 +101,28 @@ def print_table(methods, results):
         r = [x] + list(
             map(np.median, [r[x]['setup'] for r in results] +
                 [r[x]['search'] for r in results]))
+        rows.append(r)
+
+    print(tabulate.tabulate(rows, headers=headers))
+
+
+def print_table_simple(methods, results):
+    headers = [''] + [f'{n}_search' for n in methods]
+    rows = []
+
+    for x in results[0]:
+        r = [x] + list(map(np.median, [r[x]['search'] for r in results]))
+        rows.append(r)
+
+    print(tabulate.tabulate(rows, headers=headers))
+
+
+def print_table_memory(methods, results):
+    headers = [''] + [f'{n}' for n in methods]
+    rows = []
+
+    for x in results[0]:
+        r = [x] + list(map(np.median, [r[x]['memory'] for r in results]))
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))

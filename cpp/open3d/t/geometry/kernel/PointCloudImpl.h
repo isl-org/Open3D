@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <atomic>
@@ -34,6 +15,7 @@
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
 #include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/Utility.h"
@@ -153,6 +135,347 @@ void UnprojectCPU
     }
 }
 
+#if defined(__CUDACC__)
+void GetPointMaskWithinAABBCUDA
+#else
+void GetPointMaskWithinAABBCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& min_bound,
+         const core::Tensor& max_bound,
+         core::Tensor& mask) {
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const int64_t n = points.GetLength();
+        const scalar_t* min_bound_ptr = min_bound.GetDataPtr<scalar_t>();
+        const scalar_t* max_bound_ptr = max_bound.GetDataPtr<scalar_t>();
+        bool* mask_ptr = mask.GetDataPtr<bool>();
+
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    const scalar_t x = points_ptr[3 * workload_idx + 0];
+                    const scalar_t y = points_ptr[3 * workload_idx + 1];
+                    const scalar_t z = points_ptr[3 * workload_idx + 2];
+
+                    if (x >= min_bound_ptr[0] && x <= max_bound_ptr[0] &&
+                        y >= min_bound_ptr[1] && y <= max_bound_ptr[1] &&
+                        z >= min_bound_ptr[2] && z <= max_bound_ptr[2]) {
+                        mask_ptr[workload_idx] = true;
+                    } else {
+                        mask_ptr[workload_idx] = false;
+                    }
+                });
+    });
+}
+
+#if defined(__CUDACC__)
+void GetPointMaskWithinOBBCUDA
+#else
+void GetPointMaskWithinOBBCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& center,
+         const core::Tensor& rotation,
+         const core::Tensor& extent,
+         core::Tensor& mask) {
+    const core::Tensor half_extent = extent.Div(2);
+    // Since we will extract 3 rotation axis from matrix and use it inside
+    // kernel, the transpose is needed.
+    const core::Tensor rotation_t = rotation.Transpose(0, 1).Contiguous();
+    const core::Tensor pd = points - center;
+    const int64_t n = points.GetLength();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* pd_ptr = pd.GetDataPtr<scalar_t>();
+        // const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
+        const scalar_t* rotation_ptr = rotation_t.GetDataPtr<scalar_t>();
+        const scalar_t* half_extent_ptr = half_extent.GetDataPtr<scalar_t>();
+        bool* mask_ptr = mask.GetDataPtr<bool>();
+
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              int64_t idx = 3 * workload_idx;
+                              if (abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr)) <=
+                                          half_extent_ptr[0] &&
+                                  abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr + 3)) <=
+                                          half_extent_ptr[1] &&
+                                  abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr + 6)) <=
+                                          half_extent_ptr[2]) {
+                                  mask_ptr[workload_idx] = true;
+                              } else {
+                                  mask_ptr[workload_idx] = false;
+                              }
+                          });
+    });
+}
+
+#if defined(__CUDACC__)
+void NormalizeNormalsCUDA
+#else
+void NormalizeNormalsCPU
+#endif
+        (core::Tensor& normals) {
+    const core::Dtype dtype = normals.GetDtype();
+    const int64_t n = normals.GetLength();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t* ptr = normals.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(normals.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              int64_t idx = 3 * workload_idx;
+                              scalar_t x = ptr[idx];
+                              scalar_t y = ptr[idx + 1];
+                              scalar_t z = ptr[idx + 2];
+                              scalar_t norm = sqrt(x * x + y * y + z * z);
+                              if (norm > 0) {
+                                  x /= norm;
+                                  y /= norm;
+                                  z /= norm;
+                              }
+                              ptr[idx] = x;
+                              ptr[idx + 1] = y;
+                              ptr[idx + 2] = z;
+                          });
+    });
+}
+
+#if defined(__CUDACC__)
+void OrientNormalsToAlignWithDirectionCUDA
+#else
+void OrientNormalsToAlignWithDirectionCPU
+#endif
+        (core::Tensor& normals, const core::Tensor& direction) {
+    const core::Dtype dtype = normals.GetDtype();
+    const int64_t n = normals.GetLength();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t* ptr = normals.GetDataPtr<scalar_t>();
+        const scalar_t* direction_ptr = direction.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(normals.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              int64_t idx = 3 * workload_idx;
+                              scalar_t* normal = ptr + idx;
+                              const scalar_t norm = sqrt(normal[0] * normal[0] +
+                                                         normal[1] * normal[1] +
+                                                         normal[2] * normal[2]);
+                              if (norm == 0.0) {
+                                  normal[0] = direction_ptr[0];
+                                  normal[1] = direction_ptr[1];
+                                  normal[2] = direction_ptr[2];
+                              } else if (core::linalg::kernel::dot_3x1(
+                                                 normal, direction_ptr) < 0) {
+                                  normal[0] *= -1;
+                                  normal[1] *= -1;
+                                  normal[2] *= -1;
+                              }
+                          });
+    });
+}
+
+#if defined(__CUDACC__)
+void OrientNormalsTowardsCameraLocationCUDA
+#else
+void OrientNormalsTowardsCameraLocationCPU
+#endif
+        (const core::Tensor& points,
+         core::Tensor& normals,
+         const core::Tensor& camera) {
+    const core::Dtype dtype = points.GetDtype();
+    const int64_t n = normals.GetLength();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
+        const scalar_t* camera_ptr = camera.GetDataPtr<scalar_t>();
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(
+                normals.GetDevice(), n,
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int64_t idx = 3 * workload_idx;
+                    scalar_t* normal = normals_ptr + idx;
+                    const scalar_t* point = points_ptr + idx;
+                    const scalar_t reference[3] = {camera_ptr[0] - point[0],
+                                                   camera_ptr[1] - point[1],
+                                                   camera_ptr[2] - point[2]};
+                    const scalar_t norm =
+                            sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
+                                 normal[2] * normal[2]);
+                    if (norm == 0.0) {
+                        normal[0] = reference[0];
+                        normal[1] = reference[1];
+                        normal[2] = reference[2];
+                        const scalar_t norm_new = sqrt(normal[0] * normal[0] +
+                                                       normal[1] * normal[1] +
+                                                       normal[2] * normal[2]);
+                        if (norm_new == 0.0) {
+                            normal[0] = 0.0;
+                            normal[1] = 0.0;
+                            normal[2] = 1.0;
+                        } else {
+                            normal[0] /= norm_new;
+                            normal[1] /= norm_new;
+                            normal[2] /= norm_new;
+                        }
+                    } else if (core::linalg::kernel::dot_3x1(normal,
+                                                             reference) < 0) {
+                        normal[0] *= -1;
+                        normal[1] *= -1;
+                        normal[2] *= -1;
+                    }
+                });
+    });
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
+                                                   scalar_t* u,
+                                                   scalar_t* v) {
+    // Unless the x and y coords are both close to zero, we can simply take
+    // ( -y, x, 0 ) and normalize it. If both x and y are close to zero,
+    // then the vector is close to the z-axis, so it's far from colinear to
+    // the x-axis for instance. So we take the crossed product with (1,0,0)
+    // and normalize it.
+    if (!(abs(query[0] - query[2]) < 1e-6) ||
+        !(abs(query[1] - query[2]) < 1e-6)) {
+        const scalar_t norm2_inv =
+                1.0 / sqrt(query[0] * query[0] + query[1] * query[1]);
+        v[0] = -1 * query[1] * norm2_inv;
+        v[1] = query[0] * norm2_inv;
+        v[2] = 0;
+    } else {
+        const scalar_t norm2_inv =
+                1.0 / sqrt(query[1] * query[1] + query[2] * query[2]);
+        v[0] = 0;
+        v[1] = -1 * query[2] * norm2_inv;
+        v[2] = query[1] * norm2_inv;
+    }
+
+    core::linalg::kernel::cross_3x1(query, v, u);
+}
+
+template <typename scalar_t>
+inline OPEN3D_HOST_DEVICE void Swap(scalar_t* x, scalar_t* y) {
+    scalar_t tmp = *x;
+    *x = *y;
+    *y = tmp;
+}
+
+template <typename scalar_t>
+inline OPEN3D_HOST_DEVICE void Heapify(scalar_t* arr, int n, int root) {
+    int largest = root;
+    int l = 2 * root + 1;
+    int r = 2 * root + 2;
+
+    if (l < n && arr[l] > arr[largest]) {
+        largest = l;
+    }
+    if (r < n && arr[r] > arr[largest]) {
+        largest = r;
+    }
+    if (largest != root) {
+        Swap<scalar_t>(&arr[root], &arr[largest]);
+        Heapify<scalar_t>(arr, n, largest);
+    }
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE void HeapSort(scalar_t* arr, int n) {
+    for (int i = n / 2 - 1; i >= 0; i--) Heapify(arr, n, i);
+
+    for (int i = n - 1; i > 0; i--) {
+        Swap<scalar_t>(&arr[0], &arr[i]);
+        Heapify<scalar_t>(arr, i, 0);
+    }
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE bool IsBoundaryPoints(const scalar_t* angles,
+                                         int counts,
+                                         double angle_threshold) {
+    scalar_t diff;
+    scalar_t max_diff = 0;
+    // Compute the maximal angle difference between two consecutive angles.
+    for (int i = 0; i < counts - 1; i++) {
+        diff = angles[i + 1] - angles[i];
+        max_diff = max(max_diff, diff);
+    }
+
+    // Get the angle difference between the last and the first.
+    diff = 2 * M_PI - angles[counts - 1] + angles[0];
+    max_diff = max(max_diff, diff);
+
+    return max_diff > angle_threshold * M_PI / 180.0 ? true : false;
+}
+
+#if defined(__CUDACC__)
+void ComputeBoundaryPointsCUDA
+#else
+void ComputeBoundaryPointsCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& normals,
+         const core::Tensor& indices,
+         const core::Tensor& counts,
+         core::Tensor& mask,
+         double angle_threshold) {
+    const int nn_size = indices.GetShape()[1];
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
+        const int64_t n = points.GetLength();
+        const int32_t* indices_ptr = indices.GetDataPtr<int32_t>();
+        const int32_t* counts_ptr = counts.GetDataPtr<int32_t>();
+        bool* mask_ptr = mask.GetDataPtr<bool>();
+
+        core::Tensor angles = core::Tensor::Full(
+                indices.GetShape(), -10, points.GetDtype(), points.GetDevice());
+        scalar_t* angles_ptr = angles.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    scalar_t u[3], v[3];
+                    GetCoordinateSystemOnPlane(normals_ptr + 3 * workload_idx,
+                                               u, v);
+
+                    // Ignore the point itself.
+                    int indices_size = counts_ptr[workload_idx] - 1;
+                    if (indices_size > 0) {
+                        const scalar_t* query = points_ptr + 3 * workload_idx;
+                        for (int i = 1; i < indices_size + 1; i++) {
+                            const int idx = workload_idx * nn_size + i;
+
+                            const scalar_t* point_ref =
+                                    points_ptr + 3 * indices_ptr[idx];
+                            const scalar_t delta[3] = {point_ref[0] - query[0],
+                                                       point_ref[1] - query[1],
+                                                       point_ref[2] - query[2]};
+                            const scalar_t angle = atan2(
+                                    core::linalg::kernel::dot_3x1(v, delta),
+                                    core::linalg::kernel::dot_3x1(u, delta));
+
+                            angles_ptr[idx] = angle;
+                        }
+
+                        // Sort the angles in ascending order.
+                        HeapSort<scalar_t>(
+                                angles_ptr + workload_idx * nn_size + 1,
+                                indices_size);
+
+                        mask_ptr[workload_idx] = IsBoundaryPoints<scalar_t>(
+                                angles_ptr + workload_idx * nn_size + 1,
+                                indices_size, angle_threshold);
+                    }
+                });
+    });
+}
+
 // This is a `two-pass` estimate method for covariance which is numerically more
 // robust than the `textbook` method generally used for covariance computation.
 template <typename scalar_t>
@@ -204,7 +527,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
     }
 
     // Using Bessel's correction (dividing by (n - 1) instead of n).
-    // Refer: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+    // Refer:
+    // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
     const double normalization_factor = static_cast<double>(indices_count - 1);
     for (int i = 0; i < 6; ++i) {
         cumulants[i] /= normalization_factor;
@@ -242,7 +566,7 @@ void EstimateCovariancesUsingHybridSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
-    core::nns::NearestNeighborSearch tree(points);
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
     bool check = tree.HybridIndex(radius);
     if (!check) {
         utility::LogError("Building FixedRadiusIndex failed.");
@@ -281,6 +605,55 @@ void EstimateCovariancesUsingHybridSearchCPU
 }
 
 #if defined(__CUDACC__)
+void EstimateCovariancesUsingRadiusSearchCUDA
+#else
+void EstimateCovariancesUsingRadiusSearchCPU
+#endif
+        (const core::Tensor& points,
+         core::Tensor& covariances,
+         const double& radius) {
+    core::Dtype dtype = points.GetDtype();
+    int64_t n = points.GetLength();
+
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
+    bool check = tree.FixedRadiusIndex(radius);
+    if (!check) {
+        utility::LogError("Building Radius-Index failed.");
+    }
+
+    core::Tensor indices, distance, counts;
+    std::tie(indices, distance, counts) =
+            tree.FixedRadiusSearch(points, radius);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const int32_t* neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
+        const int32_t* neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
+        scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    const int32_t neighbour_offset =
+                            neighbour_counts_ptr[workload_idx];
+                    const int32_t neighbour_count =
+                            (neighbour_counts_ptr[workload_idx + 1] -
+                             neighbour_counts_ptr[workload_idx]);
+                    // Covariance is of shape {3, 3}, so it has an offset
+                    // factor of 9 x workload_idx.
+                    const int32_t covariances_offset = 9 * workload_idx;
+
+                    EstimatePointWiseRobustNormalizedCovarianceKernel(
+                            points_ptr,
+                            neighbour_indices_ptr + neighbour_offset,
+                            neighbour_count,
+                            covariances_ptr + covariances_offset);
+                });
+    });
+
+    core::cuda::Synchronize(points.GetDevice());
+}
+
+#if defined(__CUDACC__)
 void EstimateCovariancesUsingKNNSearchCUDA
 #else
 void EstimateCovariancesUsingKNNSearchCPU
@@ -291,7 +664,7 @@ void EstimateCovariancesUsingKNNSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
-    core::nns::NearestNeighborSearch tree(points);
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
     bool check = tree.KnnIndex();
     if (!check) {
         utility::LogError("Building KNN-Index failed.");
@@ -305,7 +678,8 @@ void EstimateCovariancesUsingKNNSearchCPU
 
     if (nn_count < 3) {
         utility::LogError(
-                "Not enought neighbors to compute Covariances / Normals. Try "
+                "Not enough neighbors to compute Covariances / Normals. "
+                "Try "
                 "increasing the max_nn parameter.");
     }
 
@@ -318,8 +692,8 @@ void EstimateCovariancesUsingKNNSearchCPU
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     // NNS [KNN Search].
                     const int32_t neighbour_offset = nn_count * workload_idx;
-                    // Covariance is of shape {3, 3}, so it has an offset factor
-                    // of 9 x workload_idx.
+                    // Covariance is of shape {3, 3}, so it has an offset
+                    // factor of 9 x workload_idx.
                     const int32_t covariances_offset = 9 * workload_idx;
 
                     EstimatePointWiseRobustNormalizedCovarianceKernel(
@@ -765,12 +1139,11 @@ void EstimateColorGradientsUsingHybridSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
-    core::nns::NearestNeighborSearch tree(points);
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
 
     bool check = tree.HybridIndex(radius);
     if (!check) {
-        utility::LogError(
-                "NearestNeighborSearch::FixedRadiusIndex Index is not set.");
+        utility::LogError("NearestNeighborSearch::HybridIndex is not set.");
     }
 
     core::Tensor indices, distance, counts;
@@ -817,7 +1190,7 @@ void EstimateColorGradientsUsingKNNSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
-    core::nns::NearestNeighborSearch tree(points);
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
 
     bool check = tree.KnnIndex();
     if (!check) {
@@ -832,7 +1205,8 @@ void EstimateColorGradientsUsingKNNSearchCPU
 
     if (nn_count < 4) {
         utility::LogError(
-                "Not enought neighbors to compute Covariances / Normals. Try "
+                "Not enough neighbors to compute Covariances / Normals. "
+                "Try "
                 "changing the search parameter.");
     }
 
@@ -852,6 +1226,61 @@ void EstimateColorGradientsUsingKNNSearchCPU
                             points_ptr, normals_ptr, colors_ptr, idx_offset,
                             neighbour_indices_ptr + neighbour_offset, nn_count,
                             color_gradients_ptr);
+                });
+    });
+
+    core::cuda::Synchronize(points.GetDevice());
+}
+
+#if defined(__CUDACC__)
+void EstimateColorGradientsUsingRadiusSearchCUDA
+#else
+void EstimateColorGradientsUsingRadiusSearchCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& normals,
+         const core::Tensor& colors,
+         core::Tensor& color_gradients,
+         const double& radius) {
+    core::Dtype dtype = points.GetDtype();
+    int64_t n = points.GetLength();
+
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
+
+    bool check = tree.FixedRadiusIndex(radius);
+    if (!check) {
+        utility::LogError("RadiusIndex is not set.");
+    }
+
+    core::Tensor indices, distance, counts;
+    std::tie(indices, distance, counts) =
+            tree.FixedRadiusSearch(points, radius);
+
+    indices = indices.To(core::Int32).Contiguous();
+    counts = counts.Contiguous();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        auto points_ptr = points.GetDataPtr<scalar_t>();
+        auto normals_ptr = normals.GetDataPtr<scalar_t>();
+        auto colors_ptr = colors.GetDataPtr<scalar_t>();
+        auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
+        auto neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
+        auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int32_t neighbour_offset =
+                            neighbour_counts_ptr[workload_idx];
+                    // Count of valid correspondences per point.
+                    const int32_t neighbour_count =
+                            (neighbour_counts_ptr[workload_idx + 1] -
+                             neighbour_counts_ptr[workload_idx]);
+                    int32_t idx_offset = 3 * workload_idx;
+
+                    EstimatePointWiseColorGradientKernel(
+                            points_ptr, normals_ptr, colors_ptr, idx_offset,
+                            neighbour_indices_ptr + neighbour_offset,
+                            neighbour_count, color_gradients_ptr);
                 });
     });
 

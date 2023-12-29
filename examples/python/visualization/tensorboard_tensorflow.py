@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 import copy
 import os
@@ -158,10 +139,10 @@ def with_material(model_dir=MODEL_DIR):
     model = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.io.read_triangle_mesh(model_path))
     summary_3d = {
-        "vertex_positions": model.vertex["positions"],
-        "vertex_normals": model.vertex["normals"],
+        "vertex_positions": model.vertex.positions,
+        "vertex_normals": model.vertex.normals,
         "triangle_texture_uvs": model.triangle["texture_uvs"],
-        "triangle_indices": model.triangle["indices"],
+        "triangle_indices": model.triangle.indices,
         "material_name": "defaultLit"
     }
     names_to_o3dprop = {"ao": "ambient_occlusion"}
@@ -186,7 +167,6 @@ def demo_scene():
     """Write the demo_scene.py example showing rich PBR materials as a summary.
     """
     import demo_scene
-    demo_scene.check_for_required_assets()
     geoms = demo_scene.create_scene()
     logdir = os.path.join(BASE_LOGDIR, 'demo_scene')
     writer = tf.summary.create_file_writer(logdir)

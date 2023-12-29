@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import numpy as np
@@ -104,7 +85,7 @@ def test_set_mesh_data_deserialization():
     assert path == "pcd"
     assert time == 123
     assert isinstance(geom, o3d.t.geometry.PointCloud)
-    np.testing.assert_equal(geom.point['positions'].numpy(), verts)
+    np.testing.assert_equal(geom.point.positions.numpy(), verts)
     for key, value in vert_attrs.items():
         np.testing.assert_equal(geom.point[key].numpy(), value)
 
@@ -124,8 +105,8 @@ def test_set_mesh_data_deserialization():
     assert path == "trimesh"
     assert time == 123
     assert isinstance(geom, o3d.t.geometry.TriangleMesh)
-    np.testing.assert_equal(geom.vertex['positions'].numpy(), verts)
-    np.testing.assert_equal(geom.triangle['indices'].numpy(), tris)
+    np.testing.assert_equal(geom.vertex.positions.numpy(), verts)
+    np.testing.assert_equal(geom.triangle.indices.numpy(), tris)
     for key, value in vert_attrs.items():
         np.testing.assert_equal(geom.vertex[key].numpy(), value)
     for key, value in tri_attrs.items():
@@ -171,8 +152,8 @@ def test_set_mesh_data_deserialization():
     assert path == "lines"
     assert time == 123
     assert isinstance(geom, o3d.t.geometry.LineSet)
-    np.testing.assert_equal(geom.point['positions'].numpy(), verts)
-    np.testing.assert_equal(geom.line['indices'].numpy(), lines)
+    np.testing.assert_equal(geom.point.positions.numpy(), verts)
+    np.testing.assert_equal(geom.line.indices.numpy(), lines)
     for key, value in vert_attrs.items():
         np.testing.assert_equal(geom.point[key].numpy(), value)
     for key, value in line_attrs.items():
@@ -261,7 +242,7 @@ def test_recv_msgpack():
 
     out_o3d = o3d.io.rpc.data_buffer_to_meta_geometry(data)
     assert out_o3d[:2] == ("test", 0.)
-    assert np.allclose(out_o3d[2].point["positions"].numpy(), verts)
+    assert np.allclose(out_o3d[2].point.positions.numpy(), verts)
     assert np.isclose(out_o3d[2].material.scalar_properties['roughness'],
                       roughness)
     assert np.allclose(out_o3d[2].material.vector_properties['base_color'],

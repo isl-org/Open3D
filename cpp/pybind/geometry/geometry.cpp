@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/Geometry.h"
@@ -120,6 +101,26 @@ Returns:
      open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
      bounding box is oriented such that the axes are ordered with respect to
      the principal components.
+)doc")
+            .def("get_minimal_oriented_bounding_box",
+                 &Geometry3D::GetMinimalOrientedBoundingBox, "robust"_a = false,
+                 R"doc(
+Returns the minimal oriented bounding box for the geometry.
+
+Creates the oriented bounding box with the smallest volume.
+The algorithm makes use of the fact that at least one edge of
+the convex hull must be collinear with an edge of the minimum
+bounding box: for each triangle in the convex hull, calculate
+the minimal axis aligned box in the frame of that triangle.
+at the end, return the box with the smallest volume
+
+Args:
+     robust (bool): If set to true uses a more robust method which works in
+          degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+     open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
+     bounding box is oriented such that its volume is minimized.
 )doc")
             .def("transform", &Geometry3D::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "

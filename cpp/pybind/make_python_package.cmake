@@ -33,7 +33,7 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
 endforeach()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)
-# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filname
+# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
     get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)
@@ -50,14 +50,6 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/cli.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/tools/cli.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/app.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/app.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/app/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/app/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/gui/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/rendering/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/web_visualizer.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/web_visualizer.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/lib/web_visualizer.js"

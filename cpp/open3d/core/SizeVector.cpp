@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/SizeVector.h"
@@ -41,17 +22,17 @@ namespace core {
 
 DynamicSizeVector::DynamicSizeVector(
         const std::initializer_list<utility::optional<int64_t>>& dim_sizes)
-    : std::vector<utility::optional<int64_t>>(dim_sizes) {}
+    : super_t(dim_sizes) {}
 
 DynamicSizeVector::DynamicSizeVector(
         const std::vector<utility::optional<int64_t>>& dim_sizes)
-    : std::vector<utility::optional<int64_t>>(dim_sizes) {}
+    : super_t(dim_sizes.begin(), dim_sizes.end()) {}
 
 DynamicSizeVector::DynamicSizeVector(const DynamicSizeVector& other)
-    : std::vector<utility::optional<int64_t>>(other) {}
+    : super_t(other) {}
 
 DynamicSizeVector::DynamicSizeVector(int64_t n, int64_t initial_value)
-    : std::vector<utility::optional<int64_t>>(n, initial_value) {}
+    : super_t(n, initial_value) {}
 
 DynamicSizeVector::DynamicSizeVector(const SizeVector& dim_sizes)
     : DynamicSizeVector(dim_sizes.begin(), dim_sizes.end()) {}
@@ -68,12 +49,12 @@ SizeVector DynamicSizeVector::ToSizeVector() const {
 }
 
 DynamicSizeVector& DynamicSizeVector::operator=(const DynamicSizeVector& v) {
-    static_cast<std::vector<utility::optional<int64_t>>*>(this)->operator=(v);
+    static_cast<super_t*>(this)->operator=(v);
     return *this;
 }
 
 DynamicSizeVector& DynamicSizeVector::operator=(DynamicSizeVector&& v) {
-    static_cast<std::vector<utility::optional<int64_t>>*>(this)->operator=(v);
+    static_cast<super_t*>(this)->operator=(v);
     return *this;
 }
 
@@ -104,23 +85,23 @@ bool DynamicSizeVector::IsDynamic() const {
 }
 
 SizeVector::SizeVector(const std::initializer_list<int64_t>& dim_sizes)
-    : std::vector<int64_t>(dim_sizes) {}
+    : super_t(dim_sizes) {}
 
 SizeVector::SizeVector(const std::vector<int64_t>& dim_sizes)
-    : std::vector<int64_t>(dim_sizes) {}
+    : super_t(dim_sizes.begin(), dim_sizes.end()) {}
 
-SizeVector::SizeVector(const SizeVector& other) : std::vector<int64_t>(other) {}
+SizeVector::SizeVector(const SizeVector& other) : super_t(other) {}
 
 SizeVector::SizeVector(int64_t n, int64_t initial_value)
-    : std::vector<int64_t>(n, initial_value) {}
+    : super_t(n, initial_value) {}
 
 SizeVector& SizeVector::operator=(const SizeVector& v) {
-    static_cast<std::vector<int64_t>*>(this)->operator=(v);
+    static_cast<super_t*>(this)->operator=(v);
     return *this;
 }
 
 SizeVector& SizeVector::operator=(SizeVector&& v) {
-    static_cast<std::vector<int64_t>*>(this)->operator=(v);
+    static_cast<super_t*>(this)->operator=(v);
     return *this;
 }
 
@@ -148,7 +129,9 @@ int64_t SizeVector::GetLength() const {
     }
 }
 
-std::string SizeVector::ToString() const { return fmt::format("{}", *this); }
+std::string SizeVector::ToString() const {
+    return fmt::format("{{{}}}", fmt::join(*this, ", "));
+}
 
 void SizeVector::AssertCompatible(const DynamicSizeVector& dsv,
                                   const std::string msg) const {
@@ -168,7 +151,7 @@ bool SizeVector::IsCompatible(const DynamicSizeVector& dsv) const {
         return false;
     }
     for (size_t i = 0; i < size(); ++i) {
-        if (dsv[i].has_value() && dsv[i].value() != at(i)) {
+        if (dsv[i].has_value() && dsv[i].value() != this->operator[](i)) {
             return false;
         }
     }

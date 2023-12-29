@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/registration/Registration.h"
@@ -45,7 +26,9 @@ namespace registration {
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 30;
+static const int max_iterations = 10;
+
+static const double voxel_downsampling_factor = 0.02;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.05;
@@ -66,7 +49,7 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         target = *target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                " VoxelDownsample: Impractical voxel size [< 0.001], skipping "
                 "downsampling.");
     }
 
@@ -77,9 +60,9 @@ static void BenchmarkICPLegacy(benchmark::State& state,
                                const TransformationEstimationType& type) {
     data::DemoICPPointClouds demo_icp_pointclouds;
     geometry::PointCloud source, target;
-    std::tie(source, target) = LoadPointCloud(
-            demo_icp_pointclouds.GetPaths(0), demo_icp_pointclouds.GetPaths(1),
-            /*voxel_downsampling_factor =*/0.02);
+    std::tie(source, target) = LoadPointCloud(demo_icp_pointclouds.GetPaths(0),
+                                              demo_icp_pointclouds.GetPaths(1),
+                                              voxel_downsampling_factor);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {

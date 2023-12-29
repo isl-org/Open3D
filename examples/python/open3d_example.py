@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
@@ -207,6 +188,18 @@ def add_if_exists(path_dataset, folder_names):
         f"None of the folders {folder_names} found in {path_dataset}")
 
 
+def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
+    color = o3d.io.read_image(color_file)
+    depth = o3d.io.read_image(depth_file)
+    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+        color,
+        depth,
+        depth_scale=config["depth_scale"],
+        depth_trunc=config["depth_max"],
+        convert_rgb_to_intensity=convert_rgb_to_intensity)
+    return rgbd_image
+
+
 def get_rgbd_folders(path_dataset):
     path_color = add_if_exists(path_dataset, ["image/", "rgb/", "color/"])
     path_depth = join(path_dataset, "depth/")
@@ -275,29 +268,6 @@ def read_poses_from_log(traj_log):
             trans_arr.append(T_gt)
 
     return trans_arr
-
-
-def extract_rgbd_frames(rgbd_video_file):
-    """
-    Extract color and aligned depth frames and intrinsic calibration from an
-    RGBD video file (currently only RealSense bag files supported). Folder
-    structure is:
-        <directory of rgbd_video_file/<rgbd_video_file name without extension>/
-            {depth/00000.jpg,color/00000.png,intrinsic.json}
-    """
-    frames_folder = join(dirname(rgbd_video_file),
-                         basename(splitext(rgbd_video_file)[0]))
-    path_intrinsic = join(frames_folder, "intrinsic.json")
-    if isfile(path_intrinsic):
-        warn(f"Skipping frame extraction for {rgbd_video_file} since files are"
-             " present.")
-    else:
-        rgbd_video = o3d.t.io.RGBDVideoReader.create(rgbd_video_file)
-        rgbd_video.save_frames(frames_folder)
-    with open(path_intrinsic) as intr_file:
-        intr = json.load(intr_file)
-    depth_scale = intr["depth_scale"]
-    return frames_folder, path_intrinsic, depth_scale
 
 
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]

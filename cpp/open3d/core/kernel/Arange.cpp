@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/kernel/Arange.h"
@@ -38,8 +19,7 @@ Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
     AssertTensorShape(stop, {});
     AssertTensorShape(step, {});
 
-    Device device = start.GetDevice();
-    Device::DeviceType device_type = device.GetType();
+    const Device device = start.GetDevice();
     AssertTensorDevice(stop, device);
     AssertTensorDevice(step, device);
 
@@ -81,9 +61,9 @@ Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
     // Output.
     Tensor dst = Tensor({num_elements}, dtype, device);
 
-    if (device_type == Device::DeviceType::CPU) {
+    if (device.IsCPU()) {
         ArangeCPU(start, stop, step, dst);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         ArangeCUDA(start, stop, step, dst);
 #else

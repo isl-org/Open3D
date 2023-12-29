@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/MemoryManager.h"
@@ -35,18 +16,18 @@
 namespace open3d {
 namespace tests {
 
-class MemoryManagerPermuteDevices : public PermuteDevices {};
+class MemoryManagerPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(MemoryManager,
                          MemoryManagerPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class MemoryManagerPermuteDevicePairs : public PermuteDevicePairs {};
+class MemoryManagerPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         MemoryManager,
         MemoryManagerPermuteDevicePairs,
         testing::ValuesIn(MemoryManagerPermuteDevicePairs::TestCases()));
 
-class DummyMemoryManager : public core::DeviceMemoryManager {
+class DummyMemoryManager : public core::MemoryManagerDevice {
 public:
     DummyMemoryManager(const core::Device& device,
                        size_t limit = std::numeric_limits<size_t>::max())
@@ -62,7 +43,7 @@ public:
     void* Malloc(size_t byte_size, const core::Device& device) override {
         if (GetAllocatedSize() + byte_size > limit_) {
             utility::LogError(
-                    "This should be catched: Limit {} reached via {} + {} = {}",
+                    "This should be caught: Limit {} reached via {} + {} = {}",
                     limit_, GetAllocatedSize(), byte_size,
                     GetAllocatedSize() + byte_size);
             return nullptr;
@@ -113,16 +94,16 @@ protected:
     size_t limit_;
 };
 
-std::shared_ptr<core::CachedMemoryManager> MakeCachedDeviceMemoryManager(
+std::shared_ptr<core::MemoryManagerCached> MakeCachedMemoryManagerDevice(
         const core::Device& device) {
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        return std::make_shared<core::CachedMemoryManager>(
-                std::make_shared<core::CPUMemoryManager>());
+    if (device.IsCPU()) {
+        return std::make_shared<core::MemoryManagerCached>(
+                std::make_shared<core::MemoryManagerCPU>());
     }
 #ifdef BUILD_CUDA_MODULE
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
-        return std::make_shared<core::CachedMemoryManager>(
-                std::make_shared<core::CUDAMemoryManager>());
+    if (device.IsCUDA()) {
+        return std::make_shared<core::MemoryManagerCached>(
+                std::make_shared<core::MemoryManagerCUDA>());
     }
 #endif
 
@@ -171,37 +152,37 @@ void ExpectStatistic(const std::shared_ptr<DummyMemoryManager>& dummy_mm,
     EXPECT_EQ(dummy_mm->GetAllocatedSize(), allocated_size);
 }
 
-TEST(MemoryManagerPermuteDevices, NestedCachedMemoryManager) {
+TEST(MemoryManagerPermuteDevices, NestedMemoryManagerCached) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    EXPECT_THROW(std::make_shared<core::CachedMemoryManager>(cached_mm),
+    EXPECT_THROW(std::make_shared<core::MemoryManagerCached>(cached_mm),
                  std::runtime_error);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedNone) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = (void*)10;
     EXPECT_THROW(cached_mm->Free(ptr, device), std::runtime_error);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedSingle) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(16, device);
@@ -210,16 +191,16 @@ TEST(MemoryManagerPermuteDevices, CachedSingle) {
     cached_mm->Free(ptr, device);
     ExpectStatistic(dummy_mm, 1, 0, 16);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 1, 1, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedMultiple) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(16, device);
@@ -246,16 +227,16 @@ TEST(MemoryManagerPermuteDevices, CachedMultiple) {
     cached_mm->Free(ptr3, device);
     ExpectStatistic(dummy_mm, 2, 0, 48);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 2, 2, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedRepeated) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     for (int i = 0; i < 5; ++i) {
@@ -266,16 +247,16 @@ TEST(MemoryManagerPermuteDevices, CachedRepeated) {
         ExpectStatistic(dummy_mm, 1, 0, 16);
     }
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 1, 1, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedSplitMergePrev) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(104, device);
@@ -296,16 +277,16 @@ TEST(MemoryManagerPermuteDevices, CachedSplitMergePrev) {
     cached_mm->Free(ptr_part2, device);
     ExpectStatistic(dummy_mm, 1, 0, 104);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 1, 1, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedSplitMergeNext) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(104, device);
@@ -326,16 +307,16 @@ TEST(MemoryManagerPermuteDevices, CachedSplitMergeNext) {
     cached_mm->Free(ptr_part1, device);
     ExpectStatistic(dummy_mm, 1, 0, 104);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 1, 1, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedSplitMergePrevAndNext) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(104, device);
@@ -362,16 +343,16 @@ TEST(MemoryManagerPermuteDevices, CachedSplitMergePrevAndNext) {
     cached_mm->Free(ptr_part2, device);
     ExpectStatistic(dummy_mm, 1, 0, 104);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 1, 1, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedSmallNewMalloc) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(4096, device);
@@ -386,16 +367,16 @@ TEST(MemoryManagerPermuteDevices, CachedSmallNewMalloc) {
     cached_mm->Free(ptr2, device);
     ExpectStatistic(dummy_mm, 2, 0, 4128);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 2, 2, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedLargeAutoReleaseSingle) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device, 8192);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(4096, device);
@@ -416,16 +397,16 @@ TEST(MemoryManagerPermuteDevices, CachedLargeAutoReleaseSingle) {
     cached_mm->Free(ptr, device);
     ExpectStatistic(dummy_mm, 3, 1, 8192);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 3, 3, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedLargeAutoReleaseMultiple) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device, 8192);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(4096, device);
@@ -452,16 +433,16 @@ TEST(MemoryManagerPermuteDevices, CachedLargeAutoReleaseMultiple) {
     cached_mm->Free(ptr4, device);
     ExpectStatistic(dummy_mm, 4, 2, 6176);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 4, 4, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedLargeAutoReleaseAll) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device, 8192);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(4096, device);
@@ -488,31 +469,31 @@ TEST(MemoryManagerPermuteDevices, CachedLargeAutoReleaseAll) {
     cached_mm->Free(ptr4, device);
     ExpectStatistic(dummy_mm, 4, 3, 8192);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 4, 4, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedTooLarge) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device, 8192);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     EXPECT_THROW(cached_mm->Malloc(16384, device), std::runtime_error);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 }
 
 TEST(MemoryManagerPermuteDevices, CachedTooLargeAutoReleaseAll) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device, 8192);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(4096, device);
@@ -536,17 +517,17 @@ TEST(MemoryManagerPermuteDevices, CachedTooLargeAutoReleaseAll) {
     EXPECT_THROW(cached_mm->Malloc(16384, device), std::runtime_error);
     ExpectStatistic(dummy_mm, 3, 3, 0);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 3, 3, 0);
 }
 
-// This must be the last test for core::CachedMemoryManager.
+// This must be the last test for core::MemoryManagerCached.
 TEST(MemoryManagerPermuteDevices, CachedFreeOnProgramEnd) {
     core::Device device = MakeDummyDevice();
     auto dummy_mm = std::make_shared<DummyMemoryManager>(device, 8192);
-    auto cached_mm = std::make_shared<core::CachedMemoryManager>(dummy_mm);
+    auto cached_mm = std::make_shared<core::MemoryManagerCached>(dummy_mm);
 
-    core::CachedMemoryManager::ReleaseCache(device);
+    core::MemoryManagerCached::ReleaseCache(device);
     ExpectStatistic(dummy_mm, 0, 0, 0);
 
     void* ptr = cached_mm->Malloc(4096, device);

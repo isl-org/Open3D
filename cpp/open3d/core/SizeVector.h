@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -30,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "open3d/core/SmallVector.h"
 #include "open3d/utility/Optional.h"
 
 namespace open3d {
@@ -37,15 +19,18 @@ namespace core {
 
 class SizeVector;
 
-/// DynamicSizeVector is a vector of optional<int64_t>, it is used to represent
-/// a shape with unknown (dynamic) dimensions.
+/// DynamicSizeVector is a SmallVector of optional<int64_t>, it is used to
+/// represent a shape with unknown (dynamic) dimensions. Dimensions up to size 4
+/// are stored on the stack, and larger vectors are stored on the heap
+/// automatically.
 ///
 /// Example: create a shape of (None, 3)
 /// ```
 /// core::DynamicSizeVector shape{utility::nullopt, 3};
 /// ```
-class DynamicSizeVector : public std::vector<utility::optional<int64_t>> {
+class DynamicSizeVector : public SmallVector<utility::optional<int64_t>, 4> {
 public:
+    using super_t = SmallVector<utility::optional<int64_t>, 4>;
     DynamicSizeVector() {}
 
     DynamicSizeVector(
@@ -59,7 +44,7 @@ public:
 
     template <class InputIterator>
     DynamicSizeVector(InputIterator first, InputIterator last)
-        : std::vector<utility::optional<int64_t>>(first, last) {}
+        : super_t(first, last) {}
 
     DynamicSizeVector(const SizeVector& dim_sizes);
 
@@ -72,12 +57,18 @@ public:
     std::string ToString() const;
 
     bool IsDynamic() const;
+
+    // required for pybind
+    void shrink_to_fit() {}
 };
 
-/// SizeVector is a vector of int64_t, typically used in Tensor shape and
-/// strides. A signed int64_t type is chosen to allow negative strides.
-class SizeVector : public std::vector<int64_t> {
+/// SizeVector is a SmallVector of int64_t, typically used in Tensor shape and
+/// strides. Dimensions up to size 4 are stored on the stack, and larger vectors
+/// are stored on the heap automatically.  A signed int64_t type is chosen to
+/// allow negative strides.
+class SizeVector : public SmallVector<int64_t, 4> {
 public:
+    using super_t = SmallVector<int64_t, 4>;
     SizeVector() {}
 
     SizeVector(const std::initializer_list<int64_t>& dim_sizes);
@@ -90,7 +81,7 @@ public:
 
     template <class InputIterator>
     SizeVector(InputIterator first, InputIterator last)
-        : std::vector<int64_t>(first, last) {}
+        : super_t(first, last) {}
 
     SizeVector& operator=(const SizeVector& v);
 
@@ -106,6 +97,13 @@ public:
                           const std::string msg = "") const;
 
     bool IsCompatible(const DynamicSizeVector& dsv) const;
+
+    operator std::vector<int64_t>() const {
+        return std::vector<int64_t>(begin(), end());
+    }
+
+    // required for pybind
+    void shrink_to_fit() {}
 };
 
 }  // namespace core

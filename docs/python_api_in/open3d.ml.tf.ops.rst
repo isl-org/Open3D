@@ -24,7 +24,6 @@ open3d.ml.tf.ops
     voxel_pooling_grad
     voxelize
 
-
 .. toctree::
     :hidden:
 

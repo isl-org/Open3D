@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/utility/FileSystem.h"
@@ -51,11 +32,12 @@
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #endif
 #ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
+#include <filesystem>
+namespace fs = std::__fs::filesystem;
+#else
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
+#endif
 
 #include "open3d/utility/Logging.h"
 
@@ -243,6 +225,13 @@ bool ChangeWorkingDirectory(const std::string &directory) {
 
 bool DirectoryExists(const std::string &directory) {
     return fs::is_directory(directory);
+}
+
+bool DirectoryIsEmpty(const std::string &directory) {
+    if (!DirectoryExists(directory)) {
+        utility::LogError("Directory {} does not exist.", directory);
+    }
+    return fs::is_empty(directory);
 }
 
 bool MakeDirectory(const std::string &directory) {
@@ -494,6 +483,31 @@ bool FReadToBuffer(const std::string &path,
 
     fclose(file);
     return true;
+}
+
+std::string JoinPath(const std::string &path_component1,
+                     const std::string &path_component2) {
+    fs::path path(path_component1);
+    return (path / path_component2).string();
+}
+
+std::string JoinPath(const std::vector<std::string> &path_components) {
+    fs::path path;
+    for (const auto &pc : path_components) {
+        path /= pc;
+    }
+    return path.string();
+}
+
+std::string AddIfExist(const std::string &path,
+                       const std::vector<std::string> &folder_names) {
+    for (const auto &folder_name : folder_names) {
+        const std::string folder_path = JoinPath(path, folder_name);
+        if (utility::filesystem::DirectoryExists(folder_path)) {
+            return folder_path;
+        }
+    }
+    return path;
 }
 
 CFile::~CFile() { Close(); }

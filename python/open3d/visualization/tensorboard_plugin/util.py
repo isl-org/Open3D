@@ -1,31 +1,13 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Utility functions for the Open3D TensorBoard plugin."""
 
 import os
+from glob import iglob
 from copy import deepcopy
 from collections import OrderedDict
 import logging
@@ -65,7 +47,7 @@ class ReadWriteLock:
     """A lock object that allows many simultaneous "read locks", but
     only one "write lock."
 
-    Implmentation from Python Cookbook (O'Reilly)
+    Implementation from Python Cookbook (O'Reilly)
     https://www.oreilly.com/library/view/python-cookbook/0596001673/ch06s04.html
     Credit: Sami Hangaslammi
     """
@@ -90,7 +72,7 @@ class ReadWriteLock:
         try:
             self._readers -= 1
             if not self._readers:
-                self._read_ready.notifyAll()
+                self._read_ready.notify_all()
         finally:
             self._read_ready.release()
 
@@ -183,8 +165,8 @@ def _classify_properties(tensormap):
     """
     label_prop = {}
     custom_prop = {}
-    exp_size = (tensormap['positions'].shape[0]
-                if 'positions' in tensormap else tensormap['indices'].shape[0])
+    exp_size = (tensormap.positions.shape[0]
+                if 'positions' in tensormap else tensormap.indices.shape[0])
     for name, tensor in tensormap.items():
         if name in ('positions', 'colors', 'normals',
                     'indices') or name.startswith('_'):
@@ -224,17 +206,37 @@ class Open3DPluginDataReader:
         self._file_handles_lock = threading.Lock()
         self.reload_events()
 
+    def _have_data(self):
+        """Do we have any Open3D data?"""
+        try:
+            next(
+                iglob(os.path.join(self.logdir, "**", "plugins", "Open3D",
+                                   "*.msgpack"),
+                      recursive=True))
+            return True
+        except StopIteration:
+            return False
+
     def reload_events(self):
         """Reload event file"""
-        self.event_mux.AddRunsFromDirectory(self.logdir)
-        self.event_mux.Reload()
-        run_tags = self.event_mux.PluginRunToTagToContent(metadata.PLUGIN_NAME)
-        with self._event_lock:
-            self._run_to_tags = {
-                run: sorted(tagdict.keys())
-                for run, tagdict in sorted(run_tags.items())
-            }
-            self._tensor_events = dict()  # Invalidate index
+        # Quickly check for Open3D data, since adding all runs can take a long
+        # time
+        if not self._have_data():
+            with self._event_lock:
+                self._run_to_tags = {}
+            _log.debug(f"No event data found in {self.logdir}")
+        else:
+            self.event_mux.AddRunsFromDirectory(self.logdir)
+            self.event_mux.Reload()
+            run_tags = self.event_mux.PluginRunToTagToContent(
+                metadata.PLUGIN_NAME)
+            with self._event_lock:
+                self._run_to_tags = {
+                    run: sorted(tagdict.keys())
+                    for run, tagdict in sorted(run_tags.items())
+                }
+            _log.debug(f"Event data reloaded: {self._run_to_tags}")
+        self._tensor_events = dict()  # Invalidate index
         # Close all open files
         with self._file_handles_lock:
             while len(self._file_handles) > 0:
@@ -242,12 +244,11 @@ class Open3DPluginDataReader:
                 with file_handle[1]:
                     file_handle[0].close()
 
-        _log.debug(f"Event data reloaded: {self._run_to_tags}")
-
     def is_active(self):
         """Do we have any Open3D data to display?"""
         with self._event_lock:
-            return any(len(tags) > 0 for tags in self._run_to_tags.values())
+            return self._have_data() and any(
+                len(tags) > 0 for tags in self._run_to_tags.values())
 
     @property
     def run_to_tags(self):
@@ -368,7 +369,7 @@ class Open3DPluginDataReader:
             if prop_map == "vertex" and not isinstance(
                     geometry, o3d.t.geometry.TriangleMesh):
                 prop_map = "point"
-            # geometry.vertex["normals"] = geometry_ref.vertex["normals"]
+            # geometry.vertex.normals = geometry_ref.vertex.normals
             getattr(geometry, prop_map)[prop_attribute] = getattr(
                 geometry_ref, prop_map)[prop_attribute]
 
@@ -666,7 +667,7 @@ class RenderUpdate:
                   self._shader == "defaultUnlit" and
                   geometry_vertex[self._property].shape[1] >= 3):
                 swap.backup(geometry_vertex, "colors")
-                geometry_vertex["colors"], min_val, max_val = _normalize(
+                geometry_vertex.colors, min_val, max_val = _normalize(
                     geometry_vertex[self._property][:, :3])
                 self._update_range(min_val, max_val)
                 geometry_update_flag |= rendering.Scene.UPDATE_COLORS_FLAG
@@ -676,9 +677,9 @@ class RenderUpdate:
             if self._property == "" and self._shader == "unlitSolidColor":
                 swap.backup(geometry.line,
                             "colors",
-                            shape=(len(geometry.line["indices"]), 3),
+                            shape=(len(geometry.line.indices), 3),
                             dtype=o3d.core.uint8)
-                geometry.line["colors"][:] = next(iter(
+                geometry.line.colors[:] = next(iter(
                     self._colormap.values()))[:3]
             elif self._property != "" and self._shader == "unlitGradient.LUT":
                 if self._colormap is None:
@@ -687,10 +688,10 @@ class RenderUpdate:
                     swap.backup(geometry.line, "indices", clone=True)
                     swap.backup(geometry.line,
                                 "colors",
-                                shape=(len(geometry.line["indices"]), 3),
+                                shape=(len(geometry.line.indices), 3),
                                 dtype=o3d.core.uint8)
-                    t_lines = geometry.line["indices"]
-                    t_colors = geometry.line["colors"]
+                    t_lines = geometry.line.indices
+                    t_colors = geometry.line.colors
                     idx = 0
                     for bbir in inference_result:
                         col = self._colormap.setdefault(bbir.label,

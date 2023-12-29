@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/io/rpc/RemoteFunctions.h"
@@ -98,6 +79,8 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
     msg.time = time;
     msg.layer = layer;
 
+    msg.data.SetO3DTypeToTriangleMesh();
+
     msg.data.vertices =
             messages::Array::FromPtr((double*)mesh.vertices_.data(),
                                      {int64_t(mesh.vertices_.size()), 3});
@@ -160,6 +143,47 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
     return ReplyIsOKStatus(*reply);
 }
 
+bool SetTriangleMesh(const t::geometry::TriangleMesh& mesh,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer,
+                     std::shared_ptr<ConnectionBase> connection) {
+    std::map<std::string, core::Tensor> vertex_attributes(
+            mesh.GetVertexAttr().begin(), mesh.GetVertexAttr().end());
+    std::map<std::string, core::Tensor> face_attributes(
+            mesh.GetTriangleAttr().begin(), mesh.GetTriangleAttr().end());
+
+    std::string material_name;
+    std::map<std::string, float> material_scalar_attributes;
+    std::map<std::string, std::array<float, 4>> material_vector_attributes;
+    std::map<std::string, t::geometry::Image> texture_maps;
+    if (mesh.HasMaterial()) {
+        const auto& material = mesh.GetMaterial();
+        material_name = material.GetMaterialName();
+        material_scalar_attributes = std::map<std::string, float>(
+                material.GetScalarProperties().begin(),
+                material.GetScalarProperties().end());
+        for (const auto& it : material.GetVectorProperties()) {
+            std::array<float, 4> vec = {it.second(0), it.second(1),
+                                        it.second(2), it.second(3)};
+            material_vector_attributes[it.first] = vec;
+        }
+        texture_maps = std::map<std::string, t::geometry::Image>(
+                material.GetTextureMaps().begin(),
+                material.GetTextureMaps().end());
+    }
+
+    messages::MeshData o3d_type;
+    o3d_type.SetO3DTypeToTriangleMesh();
+
+    return SetMeshData(path, time, layer, mesh.GetVertexPositions(),
+                       vertex_attributes, mesh.GetTriangleIndices(),
+                       face_attributes, core::Tensor(),
+                       std::map<std::string, core::Tensor>(), material_name,
+                       material_scalar_attributes, material_vector_attributes,
+                       texture_maps, o3d_type.o3d_type, connection);
+}
+
 bool SetMeshData(const std::string& path,
                  int time,
                  const std::string& layer,
@@ -214,7 +238,7 @@ bool SetMeshData(const std::string& path,
             LogError(
                     "SetMeshData: faces must have dtype Int32 or Int64 but "
                     "is {}",
-                    vertices.GetDtype().ToString());
+                    faces.GetDtype().ToString());
         } else if (faces.NumDims() != 2) {
             LogError("SetMeshData: faces must have rank 2 but is {}",
                      faces.NumDims());

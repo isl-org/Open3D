@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -192,6 +173,7 @@ Eigen::Array<typename TDerived::Scalar, VECSIZE, 1> NeighborsDist(
 /// Implementation of FixedRadiusSearchCPU with template params for metrics
 /// and boolean options.
 template <class T,
+          class TIndex,
           class OUTPUT_ALLOCATOR,
           int METRIC,
           bool IGNORE_QUERY_POINT,
@@ -217,7 +199,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 #define VECSIZE 8
     typedef MiniVec<T, 3> Vec3_t;
     typedef Eigen::Array<T, VECSIZE, 1> Vec_t;
-    typedef Eigen::Array<int32_t, VECSIZE, 1> Veci_t;
+    typedef Eigen::Array<TIndex, VECSIZE, 1> Veci_t;
 
     typedef Eigen::Array<T, 3, 1> Pos_t;
     typedef Eigen::Array<T, VECSIZE, 3> Poslist_t;
@@ -229,7 +211,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
     if (num_points == 0 || num_queries == 0) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
-        int32_t* indices_ptr;
+        TIndex* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T* distances_ptr;
@@ -340,7 +322,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
     // Allocate output arrays
     // output for the indices to the neighbors
-    int32_t* indices_ptr;
+    TIndex* indices_ptr;
     output_allocator.AllocIndices(&indices_ptr, num_indices);
 
     // output for the distances
@@ -544,7 +526,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                           const size_t num_points,
                           const T* const points,
@@ -572,11 +554,12 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
             hash_table_cell_splits_size, hash_table_cell_splits,            \
             hash_table_index, output_allocator
 
-#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)            \
-    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point &&        \
-        RETURN_DISTANCES == return_distances)                                  \
-        _FixedRadiusSearchCPU<T, OUTPUT_ALLOCATOR, METRIC, IGNORE_QUERY_POINT, \
-                              RETURN_DISTANCES>(FN_PARAMETERS);
+#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)     \
+    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point && \
+        RETURN_DISTANCES == return_distances)                           \
+        _FixedRadiusSearchCPU<T, TIndex, OUTPUT_ALLOCATOR, METRIC,      \
+                              IGNORE_QUERY_POINT, RETURN_DISTANCES>(    \
+                FN_PARAMETERS);
 
 #define CALL_TEMPLATE2(METRIC)         \
     CALL_TEMPLATE(METRIC, true, true)  \

@@ -1,31 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/pipelines/kernel/Registration.h"
 
+#include "open3d/core/Dispatch.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 
@@ -41,20 +23,20 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const registration::RobustKernel &kernel) {
     const core::Device device = source_points.GetDevice();
 
-    // Pose {6,} tensor [ouput].
+    // Pose {6,} tensor [output].
     core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
 
     float residual = 0;
     int inlier_count = 0;
 
-    const core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (source_points.IsCPU()) {
         ComputePosePointToPlaneCPU(
                 source_points.Contiguous(), target_points.Contiguous(),
                 target_normals.Contiguous(),
                 correspondence_indices.Contiguous(), pose, residual,
                 inlier_count, source_points.GetDtype(), device, kernel);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (source_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         CUDA_CALL(ComputePosePointToPlaneCUDA, source_points.Contiguous(),
                   target_points.Contiguous(), target_normals.Contiguous(),
                   correspondence_indices.Contiguous(), pose, residual,
@@ -80,14 +62,13 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                                    const double &lambda_geometric) {
     const core::Device device = source_points.GetDevice();
 
-    // Pose {6,} tensor [ouput].
+    // Pose {6,} tensor [output].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
 
     float residual = 0;
     int inlier_count = 0;
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (source_points.IsCPU()) {
         ComputePoseColoredICPCPU(
                 source_points.Contiguous(), source_colors.Contiguous(),
                 target_points.Contiguous(), target_normals.Contiguous(),
@@ -95,7 +76,8 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                 correspondence_indices.Contiguous(), pose, residual,
                 inlier_count, source_points.GetDtype(), device, kernel,
                 lambda_geometric);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (source_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         CUDA_CALL(ComputePoseColoredICPCUDA, source_points.Contiguous(),
                   source_colors.Contiguous(), target_points.Contiguous(),
                   target_normals.Contiguous(), target_colors.Contiguous(),
@@ -113,6 +95,113 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
     return pose;
 }
 
+core::Tensor ComputePoseDopplerICP(
+        const core::Tensor &source_points,
+        const core::Tensor &source_dopplers,
+        const core::Tensor &source_directions,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const core::Tensor &correspondence_indices,
+        const core::Tensor &current_transform,
+        const core::Tensor &transform_vehicle_to_sensor,
+        const std::size_t iteration,
+        const double period,
+        const double lambda_doppler,
+        const bool reject_dynamic_outliers,
+        const double doppler_outlier_threshold,
+        const std::size_t outlier_rejection_min_iteration,
+        const std::size_t geometric_robust_loss_min_iteration,
+        const std::size_t doppler_robust_loss_min_iteration,
+        const registration::RobustKernel &geometric_kernel,
+        const registration::RobustKernel &doppler_kernel) {
+    const core::Device device = source_points.GetDevice();
+    const core::Dtype dtype = source_points.GetDtype();
+
+    // Pose {6,} tensor [ouput].
+    core::Tensor output_pose =
+            core::Tensor::Empty({6}, core::Dtype::Float64, device);
+
+    float residual = 0;
+    int inlier_count = 0;
+
+    // Use robust kernels only after a specified minimum number of iterations.
+    const auto kernel_default = registration::RobustKernel(
+            registration::RobustKernelMethod::L2Loss, 1.0, 1.0);
+    const auto kernel_geometric =
+            (iteration >= geometric_robust_loss_min_iteration)
+                    ? geometric_kernel
+                    : kernel_default;
+    const auto kernel_doppler = (iteration >= doppler_robust_loss_min_iteration)
+                                        ? doppler_kernel
+                                        : kernel_default;
+
+    // Enable outlier rejection based on the current iteration count.
+    const bool reject_outliers = reject_dynamic_outliers &&
+                                 (iteration >= outlier_rejection_min_iteration);
+
+    // Extract the rotation and translation parts from the matrix.
+    const core::Tensor R_S_to_V =
+            transform_vehicle_to_sensor
+                    .GetItem({core::TensorKey::Slice(0, 3, 1),
+                              core::TensorKey::Slice(0, 3, 1)})
+                    .Inverse()
+                    .Flatten()
+                    .To(device, dtype);
+    const core::Tensor r_v_to_s_in_V =
+            transform_vehicle_to_sensor
+                    .GetItem({core::TensorKey::Slice(0, 3, 1),
+                              core::TensorKey::Slice(3, 4, 1)})
+                    .Flatten()
+                    .To(device, dtype);
+
+    // Compute the pose (rotation + translation) vector.
+    const core::Tensor state_vector =
+            pipelines::kernel::TransformationToPose(current_transform)
+                    .To(device, dtype);
+
+    // Compute the linear and angular velocity from the pose vector.
+    const core::Tensor w_v_in_V =
+            (state_vector.GetItem(core::TensorKey::Slice(0, 3, 1)).Neg() /
+             period)
+                    .To(device, dtype);
+    const core::Tensor v_v_in_V =
+            (state_vector.GetItem(core::TensorKey::Slice(3, 6, 1)).Neg() /
+             period)
+                    .To(device, dtype);
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        ComputePoseDopplerICPCPU(
+                source_points.Contiguous(), source_dopplers.Contiguous(),
+                source_directions.Contiguous(), target_points.Contiguous(),
+                target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), output_pose, residual,
+                inlier_count, dtype, device, R_S_to_V.Contiguous(),
+                r_v_to_s_in_V.Contiguous(), w_v_in_V.Contiguous(),
+                v_v_in_V.Contiguous(), period, reject_outliers,
+                doppler_outlier_threshold, kernel_geometric, kernel_doppler,
+                lambda_doppler);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(ComputePoseDopplerICPCUDA, source_points.Contiguous(),
+                  source_dopplers.Contiguous(), source_directions.Contiguous(),
+                  target_points.Contiguous(), target_normals.Contiguous(),
+                  correspondence_indices.Contiguous(), output_pose, residual,
+                  inlier_count, dtype, device, R_S_to_V.Contiguous(),
+                  r_v_to_s_in_V.Contiguous(), w_v_in_V.Contiguous(),
+                  v_v_in_V.Contiguous(), period, reject_outliers,
+                  doppler_outlier_threshold, kernel_geometric, kernel_doppler,
+                  lambda_doppler);
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+
+    utility::LogDebug(
+            "DopplerPointToPlane Transform: residual {}, inlier_count {}",
+            residual, inlier_count);
+
+    return output_pose;
+}
+
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
@@ -124,15 +213,15 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
 
     int inlier_count = 0;
 
-    const core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (source_points.IsCPU()) {
         // Pointer to point cloud data - indexed according to correspondences.
         ComputeRtPointToPointCPU(
                 source_points.Contiguous(), target_points.Contiguous(),
                 correspondence_indices.Contiguous(), R, t, inlier_count,
                 source_points.GetDtype(), device);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (source_points.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         // TODO: Implement optimized CUDA reduction kernel.
         core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
         // correpondence_set : (i, corres[i]).
@@ -196,12 +285,12 @@ core::Tensor ComputeInformationMatrix(
     core::Tensor information_matrix =
             core::Tensor::Empty({6, 6}, core::Float64, core::Device("CPU:0"));
 
-    const core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (target_points.IsCPU()) {
         ComputeInformationMatrixCPU(
                 target_points.Contiguous(), correspondence_indices.Contiguous(),
                 information_matrix, target_points.GetDtype(), device);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (target_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(target_points.GetDevice());
         CUDA_CALL(ComputeInformationMatrixCUDA, target_points.Contiguous(),
                   correspondence_indices.Contiguous(), information_matrix,
                   target_points.GetDtype(), device);

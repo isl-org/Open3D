@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/Open3D.h"
@@ -41,6 +22,10 @@ void TryGLVersion(int major,
     std::string forwardCompatStr =
             (forwardCompat ? "GLFW_OPENGL_FORWARD_COMPAT " : "");
     std::string profileStr = "UnknownProfile";
+    // Some versions of GCC reports Wstringop-overflow error if string storage
+    // is not reserved. This might be related to a bug reported here:
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96963
+    profileStr.reserve(32);
 #define OPEN3D_CHECK_PROFILESTR(p) \
     if (profileId == p) {          \
         profileStr = #p;           \
@@ -81,7 +66,8 @@ void TryGLVersion(int major,
         if (!r) {
             utility::LogWarning("Unable to get info on {} id {:d}", name, id);
         } else {
-            utility::LogDebug("{}:\t{}", name, r);
+            utility::LogDebug("{}:\t{}", name,
+                              reinterpret_cast<const char *>(r));
         }
     };
 #define OPEN3D_REPORT_GL_STRING(n) reportGlStringFunc(n, #n)

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cuda.h>
@@ -160,13 +141,13 @@ public:
             // Map block.x to the fastest reducing dimension. It implies:
             //   1. BlockXReduce is required.
             //   2. block.y now max out to num_outputs.
-            dim0 = indexer.GetMasterShape()[0];
+            dim0 = indexer.GetPrimaryShape()[0];
             dim1 = num_outputs_;
         } else {
             // Map block.x to the fastest non reducing dimension. It implies:
             //   1. BlockXReduce is turned off.
             //   2. block.y now max out to num_inputs_per_output_.
-            dim0 = indexer.GetMasterShape()[indexer.NumReductionDims()];
+            dim0 = indexer.GetPrimaryShape()[indexer.NumReductionDims()];
             dim1 = num_inputs_per_output_;
         }
 
@@ -371,7 +352,7 @@ static OffsetCalculator<2, index_t> MakeOutputCalculator(
             indexer.GetOutput().byte_strides_ + num_reduction_dims,
             indexer.GetInput(0).byte_strides_ + num_reduction_dims,
     };
-    const int64_t* shape = indexer.GetMasterShape() + num_reduction_dims;
+    const int64_t* shape = indexer.GetPrimaryShape() + num_reduction_dims;
     return OffsetCalculator<2, index_t>(num_output_dims, shape, strides.data());
 }
 
@@ -383,7 +364,7 @@ static OffsetCalculator<1, index_t> MakeInputCalculator(
             indexer.GetInput(0).byte_strides_,
     };
     return OffsetCalculator<1, index_t>(
-            num_reduction_dims, indexer.GetMasterShape(), strides.data());
+            num_reduction_dims, indexer.GetPrimaryShape(), strides.data());
 }
 
 template <int vt, typename index_t, typename func_t>
@@ -880,7 +861,7 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         if (indexer_.NumWorkloads() == 0) {
             utility::LogError(
-                    "0-sized input should be handled outside of the reudction "
+                    "0-sized input should be handled outside of the reduction "
                     "engine.");
         }
         if (indexer_.NumInputs() != 1) {
@@ -942,7 +923,7 @@ private:
                 for (int dim = 0; dim < indexer.NumDims(); dim++) {
                     output_memory_size = std::max(
                             output_memory_size,
-                            indexer.GetMasterShape()[dim] *
+                            indexer.GetPrimaryShape()[dim] *
                                     indexer.GetOutput().byte_strides_[dim]);
                 }
                 owned_buf_ptr.reset(new AccumulationBuffer(
@@ -1044,10 +1025,10 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::Min:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport Min.");
+                                "Zero-size Tensor does not support Min.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a < b ? a : b; },
+                                       -> scalar_t { return min(a, b); },
                                static_cast<scalar_t>(
                                        std::numeric_limits<scalar_t>::max()));
                     }
@@ -1055,10 +1036,10 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::Max:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport Max.");
+                                "Zero-size Tensor does not support Max.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a > b ? a : b; },
+                                       -> scalar_t { return max(a, b); },
                                static_cast<scalar_t>(std::numeric_limits<
                                                      scalar_t>::lowest()));
                     }
@@ -1082,7 +1063,7 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::ArgMin:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport ArgMin.");
+                                "Zero-size Tensor does not support ArgMin.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> bool { return a < b; },
@@ -1093,7 +1074,7 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::ArgMax:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport ArgMax.");
+                                "Zero-size Tensor does not support ArgMax.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> bool { return a > b; },

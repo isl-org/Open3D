@@ -1,37 +1,22 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <Eigen/Dense>
 #include <iostream>
 #include <list>
 
+#include "open3d/core/EigenConverter.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -172,6 +157,30 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
     utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] done remove duplicate triangles "
             "and unreferenced vertices");
+
+    auto tmesh = t::geometry::TriangleMesh::FromLegacy(*mesh);
+
+    // use new object tmesh2 here even if some arrays share memory with tmesh.
+    // We don't want to replace the blobs in tmesh.
+    auto tmesh2 = t::geometry::vtkutils::ComputeNormals(
+            tmesh, /*vertex_normals=*/true, /*face_normals=*/false,
+            /*consistency=*/true, /*auto_orient_normals=*/true,
+            /*splitting=*/false);
+
+    mesh->vertices_ = core::eigen_converter::TensorToEigenVector3dVector(
+            tmesh2.GetVertexPositions());
+    mesh->triangles_ = core::eigen_converter::TensorToEigenVector3iVector(
+            tmesh2.GetTriangleIndices());
+    if (mesh->HasVertexColors()) {
+        mesh->vertex_colors_ =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        tmesh2.GetVertexColors());
+    }
+    if (mesh->HasVertexNormals()) {
+        mesh->vertex_normals_ =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        tmesh2.GetVertexNormals());
+    }
 
     return mesh;
 }

@@ -61,6 +61,8 @@ compile_commands.json
 examples/python/reconstruction_system/dataset/
 examples/python/geometry/voxel_grid_test.ply
 examples/python/benchmark/testdata/
+examples/python/benchmark/*.pkl
+examples/python/benchmark/*.png
 examples/python/misc/test.jpg
 examples/python/pipelines/multiway_registration.pcd
 examples/python/geometry/test.json
@@ -81,6 +83,7 @@ docs/tutorial/**/*.ply
 docs/tutorial/**/*.pcd
 docs/tutorial/**/*.json
 docs/_out/
+docs/_build/
 docs/python_api/
 docs/python_example/
 docs/conf.py

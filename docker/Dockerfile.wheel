@@ -1,21 +1,25 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
-ARG BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+ARG BASE_IMAGE=nvidia/cuda:11.7.1-cudnn8-devel-ubuntu18.04
 FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
-ARG DEVELOPER_BUILD=ON
-ARG CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-ARG CCACHE_VERSION=4.3
-ARG PYTHON_VERSION=3.6
+ARG DEVELOPER_BUILD
+ARG CCACHE_TAR_NAME
+ARG CMAKE_VERSION
+ARG CCACHE_VERSION
+ARG PYTHON_VERSION
+ARG BUILD_TENSORFLOW_OPS
+ARG BUILD_PYTORCH_OPS
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
-ARG CCACHE_VERSION=${CCACHE_VERSION}
+ENV CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -24,6 +28,15 @@ ENV SUDO=command
 
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
+
+# Fix Nvidia repo key rotation issue
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
+# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
+RUN export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn \
+ && apt-key del 7fa2af80 \
+ && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub \
+ && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
 
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
@@ -64,7 +77,7 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && cd ${CCACHE_DIR_PARENT} \
  && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
-# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# We need to set ccache size explicitly with -M, otherwise the default size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN ccache -M 5G \
  && ccache -s
@@ -81,7 +94,7 @@ RUN conda create -y -n open3d python=${PYTHON_VERSION} \
 RUN which python \
  && python --version
 
-# Checkout Open3D-ML master branch
+# Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN git clone https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
@@ -115,9 +128,7 @@ WORKDIR /root/Open3D
 
 # Build python wheel
 RUN export NPROC=$(nproc) \
- && export SHARED=OFF \
- && export BUILD_TENSORFLOW_OPS=ON \
- && export BUILD_PYTORCH_OPS=ON \
+ && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter
 

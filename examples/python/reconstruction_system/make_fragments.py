@@ -1,32 +1,14 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/make_fragments.py
 
 import math
+import multiprocessing
 import os, sys
 import numpy as np
 import open3d as o3d
@@ -34,7 +16,7 @@ import open3d as o3d
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import join, make_clean_folder, get_rgbd_file_lists, initialize_opencv
+from open3d_example import *
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_fragment
@@ -45,18 +27,6 @@ if with_opencv:
     from opencv_pose_estimation import pose_estimation
 
 
-def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
-    color = o3d.io.read_image(color_file)
-    depth = o3d.io.read_image(depth_file)
-    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-        color,
-        depth,
-        depth_scale=config["depth_scale"],
-        depth_trunc=config["max_depth"],
-        convert_rgb_to_intensity=convert_rgb_to_intensity)
-    return rgbd_image
-
-
 def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
                            with_opencv, config):
     source_rgbd_image = read_rgbd_image(color_files[s], depth_files[s], True,
@@ -65,7 +35,7 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
                                         config)
 
     option = o3d.pipelines.odometry.OdometryOption()
-    option.max_depth_diff = config["max_depth_diff"]
+    option.depth_diff_max = config["depth_diff_max"]
     if abs(s - t) != 1:
         if with_opencv:
             success_5pt, odo_init = pose_estimation(source_rgbd_image,
@@ -203,13 +173,14 @@ def run(config):
         math.ceil(float(n_files) / config['n_frames_per_fragment']))
 
     if config["python_multi_threading"] is True:
-        from joblib import Parallel, delayed
-        import multiprocessing
-        import subprocess
-        MAX_THREAD = min(multiprocessing.cpu_count(), n_fragments)
-        Parallel(n_jobs=MAX_THREAD)(delayed(process_single_fragment)(
-            fragment_id, color_files, depth_files, n_files, n_fragments, config)
-                                    for fragment_id in range(n_fragments))
+        max_workers = min(max(1, multiprocessing.cpu_count() - 1), n_fragments)
+        # Prevent over allocation of open mp threads in child processes
+        os.environ['OMP_NUM_THREADS'] = '1'
+        mp_context = multiprocessing.get_context('spawn')
+        with mp_context.Pool(processes=max_workers) as pool:
+            args = [(fragment_id, color_files, depth_files, n_files,
+                     n_fragments, config) for fragment_id in range(n_fragments)]
+            pool.starmap(process_single_fragment, args)
     else:
         for fragment_id in range(n_fragments):
             process_single_fragment(fragment_id, color_files, depth_files,

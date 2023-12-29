@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 #pragma once
 
@@ -348,9 +329,13 @@ void CountNeighbors(const cudaStream_t& stream,
 }
 
 /// Kernel for WriteNeighborsIndicesAndDistances
-template <class T, int METRIC, bool IGNORE_QUERY_POINT, bool RETURN_DISTANCES>
+template <class T,
+          class TIndex,
+          int METRIC,
+          bool IGNORE_QUERY_POINT,
+          bool RETURN_DISTANCES>
 __global__ void WriteNeighborsIndicesAndDistancesKernel(
-        int32_t* __restrict__ indices,
+        TIndex* __restrict__ indices,
         T* __restrict__ distances,
         const int64_t* const __restrict__ neighbors_row_splits,
         const uint32_t* const __restrict__ point_index_table,
@@ -467,10 +452,10 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 ///        distances for each neighbor to its query point in the same format
 ///        as the indices.
 ///        Note that for the L2 metric the squared distances will be returned!!
-template <class T>
+template <class T, class TIndex>
 void WriteNeighborsIndicesAndDistances(
         const cudaStream_t& stream,
-        int32_t* indices,
+        TIndex* indices,
         T* distances,
         const int64_t* const neighbors_row_splits,
         const uint32_t* const point_index_table,
@@ -497,12 +482,12 @@ void WriteNeighborsIndicesAndDistances(
             hash_table_cell_splits, hash_table_cell_splits_size, query_points, \
             num_queries, points, inv_voxel_size, radius, threshold
 
-#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)            \
-    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point &&        \
-        RETURN_DISTANCES == return_distances) {                                \
-        WriteNeighborsIndicesAndDistancesKernel<T, METRIC, IGNORE_QUERY_POINT, \
-                                                RETURN_DISTANCES>              \
-                <<<grid, block, 0, stream>>>(FN_PARAMETERS);                   \
+#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)      \
+    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point &&  \
+        RETURN_DISTANCES == return_distances) {                          \
+        WriteNeighborsIndicesAndDistancesKernel<                         \
+                T, TIndex, METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES> \
+                <<<grid, block, 0, stream>>>(FN_PARAMETERS);             \
     }
 
 #define CALL_TEMPLATE2(METRIC)         \
@@ -526,11 +511,11 @@ void WriteNeighborsIndicesAndDistances(
 }
 
 /// Kernel for WriteNeighborsHybrid
-template <class T, int METRIC, bool RETURN_DISTANCES>
+template <class T, class TIndex, int METRIC, bool RETURN_DISTANCES>
 __global__ void WriteNeighborsHybridKernel(
-        int32_t* __restrict__ indices,
+        TIndex* __restrict__ indices,
         T* __restrict__ distances,
-        int32_t* __restrict__ counts,
+        TIndex* __restrict__ counts,
         size_t query_offset,
         const uint32_t* const __restrict__ point_index_table,
         const uint32_t* const __restrict__ hash_table_cell_splits,
@@ -634,7 +619,7 @@ __global__ void WriteNeighborsHybridKernel(
             if (distances[indices_offset + j] >
                 distances[indices_offset + j + 1]) {
                 T dist_tmp = distances[indices_offset + j];
-                int32_t ind_tmp = indices[indices_offset + j];
+                TIndex ind_tmp = indices[indices_offset + j];
                 distances[indices_offset + j] =
                         distances[indices_offset + j + 1];
                 indices[indices_offset + j] = indices[indices_offset + j + 1];
@@ -687,11 +672,11 @@ __global__ void WriteNeighborsHybridKernel(
 ///        distances for each neighbor to its query point in the same format
 ///        as the indices.
 ///        Note that for the L2 metric the squared distances will be returned!!
-template <class T>
+template <class T, class TIndex>
 void WriteNeighborsHybrid(const cudaStream_t& stream,
-                          int32_t* indices,
+                          TIndex* indices,
                           T* distances,
-                          int32_t* counts,
+                          TIndex* counts,
                           size_t query_offset,
                           const uint32_t* const point_index_table,
                           const uint32_t* const hash_table_cell_splits,
@@ -718,10 +703,10 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
             query_points, num_queries, points, inv_voxel_size, radius, \
             threshold, max_knn
 
-#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                     \
-    if (METRIC == metric && RETURN_DISTANCES == return_distances) { \
-        WriteNeighborsHybridKernel<T, METRIC, RETURN_DISTANCES>     \
-                <<<grid, block, 0, stream>>>(FN_PARAMETERS);        \
+#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                         \
+    if (METRIC == metric && RETURN_DISTANCES == return_distances) {     \
+        WriteNeighborsHybridKernel<T, TIndex, METRIC, RETURN_DISTANCES> \
+                <<<grid, block, 0, stream>>>(FN_PARAMETERS);            \
     }
 
 #define CALL_TEMPLATE2(METRIC)  \
@@ -839,16 +824,16 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
     }
 }
 
-template <class T>
+template <class T, class TIndex>
 void SortPairs(void* temp,
                size_t& temp_size,
                int texture_alignment,
                int64_t num_indices,
                int64_t num_segments,
                const int64_t* query_neighbors_row_splits,
-               int32_t* indices_unsorted,
+               TIndex* indices_unsorted,
                T* distances_unsorted,
-               int32_t* indices_sorted,
+               TIndex* indices_sorted,
                T* distances_sorted) {
     const bool get_temp_size = !temp;
 
@@ -884,7 +869,7 @@ void SortPairs(void* temp,
     }
 }
 
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void FixedRadiusSearchCUDA(const cudaStream_t& stream,
                            void* temp,
                            size_t& temp_size,
@@ -918,7 +903,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
     if ((0 == num_points || 0 == num_queries) && !get_temp_size) {
         cudaMemsetAsync(query_neighbors_row_splits, 0,
                         sizeof(int64_t) * (num_queries + 1), stream);
-        int32_t* indices_ptr;
+        TIndex* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T* distances_ptr;
@@ -996,7 +981,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
         // allocate the output array for the neighbor indices
         const size_t num_indices = last_prefix_sum_entry;
 
-        int32_t* indices_ptr;
+        TIndex* indices_ptr;
         T* distances_ptr;
 
         output_allocator.AllocIndices(&indices_ptr, num_indices);
@@ -1021,7 +1006,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
 }
 
 //// Hybrid Search
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void HybridSearchCUDA(const cudaStream_t stream,
                       size_t num_points,
                       const T* const points,
@@ -1041,13 +1026,13 @@ void HybridSearchCUDA(const cudaStream_t stream,
                       OUTPUT_ALLOCATOR& output_allocator) {
     // return empty output arrays if there are no points
     if (0 == num_points || 0 == num_queries) {
-        int32_t* indices_ptr;
+        TIndex* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T* distances_ptr;
         output_allocator.AllocDistances(&distances_ptr, 0);
 
-        int32_t* counts_ptr;
+        TIndex* counts_ptr;
         output_allocator.AllocCounts(&counts_ptr, 0);
         return;
     }
@@ -1059,13 +1044,13 @@ void HybridSearchCUDA(const cudaStream_t stream,
     // Allocate output pointers.
     const size_t num_indices = num_queries * max_knn;
 
-    int32_t* indices_ptr;
+    TIndex* indices_ptr;
     output_allocator.AllocIndices(&indices_ptr, num_indices, -1);
 
     T* distances_ptr;
     output_allocator.AllocDistances(&distances_ptr, num_indices, 0);
 
-    int32_t* counts_ptr;
+    TIndex* counts_ptr;
     output_allocator.AllocCounts(&counts_ptr, num_queries, 0);
 
     for (int i = 0; i < batch_size; ++i) {

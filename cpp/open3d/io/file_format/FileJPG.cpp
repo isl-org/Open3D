@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // clang-format off
@@ -150,6 +131,57 @@ bool WriteImageToJPG(const std::string &filename,
     jpeg_finish_compress(&cinfo);
     fclose(file_out);
     jpeg_destroy_compress(&cinfo);
+    return true;
+}
+
+bool ReadJPGFromMemory(const unsigned char *image_data_ptr,
+                       size_t image_data_size,
+                       geometry::Image &image) {
+    struct jpeg_decompress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+    JSAMPARRAY buffer;
+
+    cinfo.err = jpeg_std_error(&jerr);
+    jpeg_create_decompress(&cinfo);
+    jpeg_mem_src(&cinfo, image_data_ptr, image_data_size);
+    jpeg_read_header(&cinfo, TRUE);
+
+    // We only support two channel types: gray, and RGB.
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+    switch (cinfo.jpeg_color_space) {
+        case JCS_RGB:
+        case JCS_YCbCr:
+            cinfo.out_color_space = JCS_RGB;
+            cinfo.out_color_components = 3;
+            num_of_channels = 3;
+            break;
+        case JCS_GRAYSCALE:
+            cinfo.jpeg_color_space = JCS_GRAYSCALE;
+            cinfo.out_color_components = 1;
+            num_of_channels = 1;
+            break;
+        case JCS_CMYK:
+        case JCS_YCCK:
+        default:
+            utility::LogWarning("Read JPG failed: color space not supported.");
+            jpeg_destroy_decompress(&cinfo);
+            return false;
+    }
+    jpeg_start_decompress(&cinfo);
+    image.Prepare(cinfo.output_width, cinfo.output_height, num_of_channels,
+                  bytes_per_channel);
+    int row_stride = cinfo.output_width * cinfo.output_components;
+    buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE,
+                                        row_stride, 1);
+    uint8_t *pdata = image.data_.data();
+    while (cinfo.output_scanline < cinfo.output_height) {
+        jpeg_read_scanlines(&cinfo, buffer, 1);
+        memcpy(pdata, buffer[0], row_stride);
+        pdata += row_stride;
+    }
+    jpeg_finish_decompress(&cinfo);
+    jpeg_destroy_decompress(&cinfo);
     return true;
 }
 

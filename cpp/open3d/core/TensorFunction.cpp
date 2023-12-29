@@ -1,30 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/TensorFunction.h"
+
+#include "open3d/core/kernel/Kernel.h"
 
 namespace open3d {
 namespace core {
@@ -98,7 +81,7 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
     const int num_tensors = tensors.size();
 
     if (num_tensors < 1) {
-        utility::LogError("Expected atleast 1 tensor, but got 0.");
+        utility::LogError("Expected at least 1 tensor, but got 0.");
     }
     if (num_tensors == 1) {
         std::vector<Tensor> split_tensors;
@@ -136,6 +119,30 @@ Tensor Append(const Tensor& self,
               const Tensor& other,
               const utility::optional<int64_t>& axis) {
     return Concatenate({self, other}, axis);
+}
+
+Tensor Maximum(const Tensor& input, const Tensor& other) {
+    core::AssertTensorDevice(input, other.GetDevice());
+    core::AssertTensorDtype(input, other.GetDtype());
+
+    Tensor dst_tensor(
+            shape_util::BroadcastedShape(input.GetShape(), other.GetShape()),
+            input.GetDtype(), input.GetDevice());
+    kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Maximum);
+
+    return dst_tensor;
+}
+
+Tensor Minimum(const Tensor& input, const Tensor& other) {
+    core::AssertTensorDevice(input, other.GetDevice());
+    core::AssertTensorDtype(input, other.GetDtype());
+
+    Tensor dst_tensor(
+            shape_util::BroadcastedShape(input.GetShape(), other.GetShape()),
+            input.GetDtype(), input.GetDevice());
+    kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Minimum);
+
+    return dst_tensor;
 }
 
 }  // namespace core

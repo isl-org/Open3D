@@ -1,45 +1,45 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/TriangleMesh.h"
+
+#include <vtkBooleanOperationPolyDataFilter.h>
+#include <vtkCleanPolyData.h>
+#include <vtkClipPolyData.h>
+#include <vtkCutter.h>
+#include <vtkFillHolesFilter.h>
+#include <vtkPlane.h>
+#include <vtkQuadricDecimation.h>
 
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/t/geometry/LineSet.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/RaycastingScene.h"
+#include "open3d/t/geometry/VtkUtils.h"
+#include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
+#include "open3d/t/geometry/kernel/TriangleMesh.h"
+#include "open3d/t/geometry/kernel/UVUnwrapping.h"
+#include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
+
+class PointCloud;  // forward declaration
 
 TriangleMesh::TriangleMesh(const core::Device &device)
     : Geometry(Geometry::GeometryType::TriangleMesh, 3),
@@ -64,20 +64,29 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertex_positions,
 }
 
 std::string TriangleMesh::ToString() const {
-    if (vertex_attr_.size() == 0 || triangle_attr_.size() == 0)
-        return fmt::format("TriangleMesh on {} [{} vertices and {} triangles].",
-                           GetDevice().ToString(), vertex_attr_.size(),
-                           triangle_attr_.size());
+    size_t num_vertices = 0;
+    std::string vertex_dtype_str = "";
+    size_t num_triangles = 0;
+    std::string triangles_dtype_str = "";
+    if (vertex_attr_.count(vertex_attr_.GetPrimaryKey())) {
+        num_vertices = GetVertexPositions().GetLength();
+        vertex_dtype_str = fmt::format(
+                " ({})", GetVertexPositions().GetDtype().ToString());
+    }
+    if (triangle_attr_.count(triangle_attr_.GetPrimaryKey())) {
+        num_triangles = GetTriangleIndices().GetLength();
+        triangles_dtype_str = fmt::format(
+                " ({})", GetTriangleIndices().GetDtype().ToString());
+    }
 
     auto str = fmt::format(
-            "TriangleMesh on {} [{} vertices ({}) and {} triangles ({})].",
-            GetDevice().ToString(), GetVertexPositions().GetLength(),
-            GetVertexPositions().GetDtype().ToString(),
-            GetTriangleIndices().GetLength(),
-            GetTriangleIndices().GetDtype().ToString());
+            "TriangleMesh on {} [{} vertices{} and {} triangles{}].",
+            GetDevice().ToString(), num_vertices, vertex_dtype_str,
+            num_triangles, triangles_dtype_str);
 
     std::string vertices_attr_str = "\nVertex Attributes:";
-    if (vertex_attr_.size() == 1) {
+    if ((vertex_attr_.size() -
+         vertex_attr_.count(vertex_attr_.GetPrimaryKey())) == 0) {
         vertices_attr_str += " None.";
     } else {
         for (const auto &kv : vertex_attr_) {
@@ -92,7 +101,8 @@ std::string TriangleMesh::ToString() const {
     }
 
     std::string triangles_attr_str = "\nTriangle Attributes:";
-    if (triangle_attr_.size() == 1) {
+    if ((triangle_attr_.size() -
+         triangle_attr_.count(triangle_attr_.GetPrimaryKey())) == 0) {
         triangles_attr_str += " None.";
     } else {
         for (const auto &kv : triangle_attr_) {
@@ -164,6 +174,148 @@ TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
     return *this;
 }
 
+TriangleMesh &TriangleMesh::NormalizeNormals() {
+    if (HasVertexNormals()) {
+        SetVertexNormals(GetVertexNormals().Contiguous());
+        core::Tensor &vertex_normals = GetVertexNormals();
+        if (IsCPU()) {
+            kernel::trianglemesh::NormalizeNormalsCPU(vertex_normals);
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
+                      vertex_normals);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogWarning("TriangleMesh has no vertex normals.");
+    }
+
+    if (HasTriangleNormals()) {
+        SetTriangleNormals(GetTriangleNormals().Contiguous());
+        core::Tensor &triangle_normals = GetTriangleNormals();
+        if (IsCPU()) {
+            kernel::trianglemesh::NormalizeNormalsCPU(triangle_normals);
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
+                      triangle_normals);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogWarning("TriangleMesh has no triangle normals.");
+    }
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::ComputeTriangleNormals(bool normalized) {
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return *this;
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+
+    const int64_t triangle_num = GetTriangleIndices().GetLength();
+    const core::Dtype dtype = GetVertexPositions().GetDtype();
+    core::Tensor triangle_normals({triangle_num, 3}, dtype, GetDevice());
+    SetVertexPositions(GetVertexPositions().Contiguous());
+    SetTriangleIndices(GetTriangleIndices().Contiguous());
+
+    if (IsCPU()) {
+        kernel::trianglemesh::ComputeTriangleNormalsCPU(
+                GetVertexPositions(), GetTriangleIndices(), triangle_normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeTriangleNormalsCUDA,
+                  GetVertexPositions(), GetTriangleIndices(), triangle_normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    SetTriangleNormals(triangle_normals);
+
+    if (normalized) {
+        NormalizeNormals();
+    }
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return *this;
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+
+    ComputeTriangleNormals(false);
+
+    const int64_t vertex_num = GetVertexPositions().GetLength();
+    const core::Dtype dtype = GetVertexPositions().GetDtype();
+    core::Tensor vertex_normals =
+            core::Tensor::Zeros({vertex_num, 3}, dtype, GetDevice());
+
+    SetTriangleNormals(GetTriangleNormals().Contiguous());
+    SetTriangleIndices(GetTriangleIndices().Contiguous());
+
+    if (IsCPU()) {
+        kernel::trianglemesh::ComputeVertexNormalsCPU(
+                GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeVertexNormalsCUDA,
+                  GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    SetVertexNormals(vertex_normals);
+    if (normalized) {
+        NormalizeNormals();
+    }
+
+    return *this;
+}
+
+double TriangleMesh::GetSurfaceArea() const {
+    double surface_area = 0;
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return surface_area;
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return surface_area;
+    }
+
+    const int64_t triangle_num = GetTriangleIndices().GetLength();
+    const core::Dtype dtype = GetVertexPositions().GetDtype();
+    core::Tensor triangle_areas({triangle_num}, dtype, GetDevice());
+
+    if (IsCPU()) {
+        kernel::trianglemesh::ComputeTriangleAreasCPU(
+                GetVertexPositions().Contiguous(),
+                GetTriangleIndices().Contiguous(), triangle_areas);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
+                  GetVertexPositions().Contiguous(),
+                  GetTriangleIndices().Contiguous(), triangle_areas);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    surface_area = triangle_areas.Sum({0}).To(core::Float64).Item<double>();
+
+    return surface_area;
+}
+
 geometry::TriangleMesh TriangleMesh::FromLegacy(
         const open3d::geometry::TriangleMesh &mesh_legacy,
         core::Dtype float_dtype,
@@ -212,6 +364,40 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         mesh_legacy.triangle_uvs_, float_dtype, device)
                         .Reshape({-1, 3, 2}));
     }
+
+    // Convert material if legacy mesh only has one
+    if (mesh_legacy.materials_.size() == 1) {
+        const auto &mat = mesh_legacy.materials_.begin()->second;
+        auto &tmat = mesh.GetMaterial();
+        tmat.SetDefaultProperties();
+        tmat.SetBaseColor(Eigen::Vector4f{mat.baseColor.f4});
+        tmat.SetBaseRoughness(mat.baseRoughness);
+        tmat.SetBaseMetallic(mat.baseMetallic);
+        tmat.SetBaseReflectance(mat.baseReflectance);
+        tmat.SetAnisotropy(mat.baseAnisotropy);
+        tmat.SetBaseClearcoat(mat.baseClearCoat);
+        tmat.SetBaseClearcoatRoughness(mat.baseClearCoatRoughness);
+        if (mat.albedo) tmat.SetAlbedoMap(Image::FromLegacy(*mat.albedo));
+        if (mat.normalMap) tmat.SetNormalMap(Image::FromLegacy(*mat.normalMap));
+        if (mat.roughness)
+            tmat.SetRoughnessMap(Image::FromLegacy(*mat.roughness));
+        if (mat.metallic) tmat.SetMetallicMap(Image::FromLegacy(*mat.metallic));
+        if (mat.reflectance)
+            tmat.SetReflectanceMap(Image::FromLegacy(*mat.reflectance));
+        if (mat.ambientOcclusion)
+            tmat.SetAOMap(Image::FromLegacy(*mat.ambientOcclusion));
+        if (mat.clearCoat)
+            tmat.SetClearcoatMap(Image::FromLegacy(*mat.clearCoat));
+        if (mat.clearCoatRoughness)
+            tmat.SetClearcoatRoughnessMap(
+                    Image::FromLegacy(*mat.clearCoatRoughness));
+        if (mat.anisotropy)
+            tmat.SetAnisotropyMap(Image::FromLegacy(*mat.anisotropy));
+    } else if (mesh_legacy.materials_.size() > 1) {
+        utility::LogWarning(
+                "Legacy mesh has more than 1 material which is not supported "
+                "by Tensor-based meshes.");
+    }
     return mesh;
 }
 
@@ -253,6 +439,85 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
                             "supported by legacy TriangleMesh. Ignored.");
     }
 
+    // Convert material if the t geometry has a valid one
+    auto &tmat = GetMaterial();
+    if (tmat.IsValid()) {
+        mesh_legacy.materials_.emplace_back();
+        mesh_legacy.materials_.front().first = "Mat1";
+        auto &legacy_mat = mesh_legacy.materials_.front().second;
+        // Convert scalar properties
+        if (tmat.HasBaseColor()) {
+            legacy_mat.baseColor.f4[0] = tmat.GetBaseColor().x();
+            legacy_mat.baseColor.f4[1] = tmat.GetBaseColor().y();
+            legacy_mat.baseColor.f4[2] = tmat.GetBaseColor().z();
+            legacy_mat.baseColor.f4[3] = tmat.GetBaseColor().w();
+            utility::LogWarning("{},{},{},{}", legacy_mat.baseColor.f4[0],
+                                legacy_mat.baseColor.f4[1],
+                                legacy_mat.baseColor.f4[2],
+                                legacy_mat.baseColor.f4[3]);
+        }
+        if (tmat.HasBaseRoughness()) {
+            legacy_mat.baseRoughness = tmat.GetBaseRoughness();
+        }
+        if (tmat.HasBaseMetallic()) {
+            legacy_mat.baseMetallic = tmat.GetBaseMetallic();
+        }
+        if (tmat.HasBaseReflectance()) {
+            legacy_mat.baseReflectance = tmat.GetBaseReflectance();
+        }
+        if (tmat.HasBaseClearcoat()) {
+            legacy_mat.baseClearCoat = tmat.GetBaseClearcoat();
+        }
+        if (tmat.HasBaseClearcoatRoughness()) {
+            legacy_mat.baseClearCoatRoughness =
+                    tmat.GetBaseClearcoatRoughness();
+        }
+        if (tmat.HasAnisotropy()) {
+            legacy_mat.baseAnisotropy = tmat.GetAnisotropy();
+        }
+        // Convert maps
+        if (tmat.HasAlbedoMap()) {
+            legacy_mat.albedo = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.albedo = tmat.GetAlbedoMap().ToLegacy();
+        }
+        if (tmat.HasNormalMap()) {
+            legacy_mat.normalMap = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.normalMap = tmat.GetNormalMap().ToLegacy();
+        }
+        if (tmat.HasAOMap()) {
+            legacy_mat.ambientOcclusion =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.ambientOcclusion = tmat.GetAOMap().ToLegacy();
+        }
+        if (tmat.HasMetallicMap()) {
+            legacy_mat.metallic = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.metallic = tmat.GetMetallicMap().ToLegacy();
+        }
+        if (tmat.HasRoughnessMap()) {
+            legacy_mat.roughness = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.roughness = tmat.GetRoughnessMap().ToLegacy();
+        }
+        if (tmat.HasReflectanceMap()) {
+            legacy_mat.reflectance =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.reflectance = tmat.GetReflectanceMap().ToLegacy();
+        }
+        if (tmat.HasClearcoatMap()) {
+            legacy_mat.clearCoat = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.clearCoat = tmat.GetClearcoatMap().ToLegacy();
+        }
+        if (tmat.HasClearcoatRoughnessMap()) {
+            legacy_mat.clearCoatRoughness =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.clearCoatRoughness =
+                    tmat.GetClearcoatRoughnessMap().ToLegacy();
+        }
+        if (tmat.HasAnisotropyMap()) {
+            legacy_mat.anisotropy = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.anisotropy = tmat.GetAnisotropyMap().ToLegacy();
+        }
+    }
+
     return mesh_legacy;
 }
 
@@ -268,6 +533,719 @@ TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {
         mesh.SetVertexAttr(kv.first, kv.second.To(device, /*copy=*/true));
     }
     return mesh;
+}
+
+TriangleMesh TriangleMesh::ComputeConvexHull(bool joggle_inputs) const {
+    PointCloud pcd(GetVertexPositions());
+    return pcd.ComputeConvexHull();
+}
+
+TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
+                                     const core::Tensor &normal) const {
+    using namespace vtkutils;
+    core::AssertTensorShape(point, {3});
+    core::AssertTensorShape(normal, {3});
+    // allow int types for convenience
+    core::AssertTensorDtypes(
+            point, {core::Float32, core::Float64, core::Int32, core::Int64});
+    core::AssertTensorDtypes(
+            normal, {core::Float32, core::Float64, core::Int32, core::Int64});
+
+    auto point_ = point.To(core::Device(), core::Float64).Contiguous();
+    auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
+
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), GetTriangleAttr().GetKeySet(),
+            {}, {}, false);
+
+    vtkNew<vtkPlane> clipPlane;
+    clipPlane->SetNormal(normal_.GetDataPtr<double>());
+    clipPlane->SetOrigin(point_.GetDataPtr<double>());
+    vtkNew<vtkClipPolyData> clipper;
+    clipper->SetInputData(polydata);
+    clipper->SetClipFunction(clipPlane);
+    vtkNew<vtkCleanPolyData> cleaner;
+    cleaner->SetInputConnection(clipper->GetOutputPort());
+    cleaner->Update();
+    auto clipped_polydata = cleaner->GetOutput();
+    return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
+}
+
+LineSet TriangleMesh::SlicePlane(
+        const core::Tensor &point,
+        const core::Tensor &normal,
+        const std::vector<double> contour_values) const {
+    using namespace vtkutils;
+    core::AssertTensorShape(point, {3});
+    core::AssertTensorShape(normal, {3});
+    // allow int types for convenience
+    core::AssertTensorDtypes(
+            point, {core::Float32, core::Float64, core::Int32, core::Int64});
+    core::AssertTensorDtypes(
+            normal, {core::Float32, core::Float64, core::Int32, core::Int64});
+
+    auto point_ = point.To(core::Device(), core::Float64).Contiguous();
+    auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
+
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+
+    vtkNew<vtkPlane> clipPlane;
+    clipPlane->SetNormal(normal_.GetDataPtr<double>());
+    clipPlane->SetOrigin(point_.GetDataPtr<double>());
+
+    vtkNew<vtkCutter> cutter;
+    cutter->SetInputData(polydata);
+    cutter->SetCutFunction(clipPlane);
+    cutter->GenerateTrianglesOff();
+    cutter->SetNumberOfContours(contour_values.size());
+    int i = 0;
+    for (double value : contour_values) {
+        cutter->SetValue(i++, value);
+    }
+    cutter->Update();
+    auto slices_polydata = cutter->GetOutput();
+
+    return CreateLineSetFromVtkPolyData(slices_polydata);
+}
+
+TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
+        double target_reduction, bool preserve_volume) const {
+    using namespace vtkutils;
+    if (target_reduction >= 1.0 || target_reduction < 0) {
+        utility::LogError(
+                "target_reduction must be in the range [0,1) but is {}",
+                target_reduction);
+    }
+
+    // exclude attributes because they will not be preserved
+    auto polydata = CreateVtkPolyDataFromGeometry(*this, {}, {}, {}, {}, false);
+
+    vtkNew<vtkQuadricDecimation> decimate;
+    decimate->SetInputData(polydata);
+    decimate->SetTargetReduction(target_reduction);
+    decimate->SetVolumePreservation(preserve_volume);
+    decimate->Update();
+    auto decimated_polydata = decimate->GetOutput();
+
+    return CreateTriangleMeshFromVtkPolyData(decimated_polydata);
+}
+
+namespace {
+TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
+                              const TriangleMesh &mesh_B,
+                              double tolerance,
+                              int op) {
+    using namespace vtkutils;
+    // exclude triangle attributes because they will not be preserved
+    auto polydata_A = CreateVtkPolyDataFromGeometry(
+            mesh_A, mesh_A.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+    auto polydata_B = CreateVtkPolyDataFromGeometry(
+            mesh_B, mesh_B.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+
+    // clean meshes before passing them to the boolean operation
+    vtkNew<vtkCleanPolyData> cleaner_A;
+    cleaner_A->SetInputData(polydata_A);
+
+    vtkNew<vtkCleanPolyData> cleaner_B;
+    cleaner_B->SetInputData(polydata_B);
+
+    vtkNew<vtkBooleanOperationPolyDataFilter> boolean_filter;
+    boolean_filter->SetOperation(op);
+    boolean_filter->SetTolerance(tolerance);
+    boolean_filter->SetInputConnection(0, cleaner_A->GetOutputPort());
+    boolean_filter->SetInputConnection(1, cleaner_B->GetOutputPort());
+    boolean_filter->Update();
+    auto out_polydata = boolean_filter->GetOutput();
+
+    return CreateTriangleMeshFromVtkPolyData(out_polydata);
+}
+}  // namespace
+
+TriangleMesh TriangleMesh::BooleanUnion(const TriangleMesh &mesh,
+                                        double tolerance) const {
+    return BooleanOperation(*this, mesh, tolerance,
+                            vtkBooleanOperationPolyDataFilter::VTK_UNION);
+}
+
+TriangleMesh TriangleMesh::BooleanIntersection(const TriangleMesh &mesh,
+                                               double tolerance) const {
+    return BooleanOperation(
+            *this, mesh, tolerance,
+            vtkBooleanOperationPolyDataFilter::VTK_INTERSECTION);
+}
+
+TriangleMesh TriangleMesh::BooleanDifference(const TriangleMesh &mesh,
+                                             double tolerance) const {
+    return BooleanOperation(*this, mesh, tolerance,
+                            vtkBooleanOperationPolyDataFilter::VTK_DIFFERENCE);
+}
+
+AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetVertexPositions());
+}
+
+OrientedBoundingBox TriangleMesh::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(GetVertexPositions());
+}
+
+TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
+    using namespace vtkutils;
+    // do not include triangle attributes because they will not be preserved by
+    // the hole filling algorithm
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+    vtkNew<vtkFillHolesFilter> fill_holes;
+    fill_holes->SetInputData(polydata);
+    fill_holes->SetHoleSize(hole_size);
+    fill_holes->Update();
+    auto result = fill_holes->GetOutput();
+    return CreateTriangleMeshFromVtkPolyData(result);
+}
+
+std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
+        size_t size,
+        float gutter,
+        float max_stretch,
+        int parallel_partitions,
+        int nthreads) {
+    return kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
+                                                max_stretch,
+                                                parallel_partitions, nthreads);
+}
+
+namespace {
+/// Bakes vertex or triangle attributes to a texure.
+///
+/// \tparam TAttr The data type of the attribute.
+/// \tparam TInt The data type for triangle indices.
+/// \tparam VERTEX_ATTR If true bake vertex attributes with interpolation.
+/// If false bake triangle attributes.
+///
+/// \param size The texture size.
+/// \param margin The margin in pixels.
+/// \param attr The vertex or triangle attribute tensor.
+/// \param triangle_indices The triangle_indices of the TriangleMesh.
+/// \param primitive_ids The primitive ids from ComputePrimitiveInfoTexture().
+/// \param primitive_uvs The primitive uvs from ComputePrimitiveInfoTexture().
+/// \param sqrdistance The squared distances from ComputePrimitiveInfoTexture().
+/// \param fill_value Fill value for the generated textures.
+template <class TAttr, class TInt, bool VERTEX_ATTR>
+core::Tensor BakeAttribute(int size,
+                           float margin,
+                           const core::Tensor &attr,
+                           const core::Tensor &triangle_indices,
+                           const core::Tensor &primitive_ids,
+                           const core::Tensor &primitive_uvs,
+                           const core::Tensor &sqrdistance,
+                           TAttr fill_value) {
+    core::SizeVector tex_shape({size, size});
+    tex_shape.insert(tex_shape.end(), attr.GetShapeRef().begin() + 1,
+                     attr.GetShapeRef().end());
+    core::SizeVector components_shape(attr.GetShapeRef().begin() + 1,
+                                      attr.GetShapeRef().end());
+    const int num_components =
+            components_shape.NumElements();  // is 1 for empty shape
+    core::Tensor tex = core::Tensor::Empty(tex_shape, attr.GetDtype());
+
+    const float threshold = (margin / size) * (margin / size);
+    Eigen::Map<const Eigen::MatrixXf> sqrdistance_map(
+            sqrdistance.GetDataPtr<float>(), size, size);
+    Eigen::Map<Eigen::Matrix<TAttr, Eigen::Dynamic, Eigen::Dynamic>> tex_map(
+            tex.GetDataPtr<TAttr>(), num_components, size * size);
+    Eigen::Map<const Eigen::Matrix<uint32_t, Eigen::Dynamic, Eigen::Dynamic>>
+            tid_map(primitive_ids.GetDataPtr<uint32_t>(), size, size);
+    Eigen::Map<const Eigen::MatrixXf> uv_map(primitive_uvs.GetDataPtr<float>(),
+                                             2, size * size);
+    Eigen::Map<const Eigen::Matrix<TAttr, Eigen::Dynamic, Eigen::Dynamic>>
+            attr_map(attr.GetDataPtr<TAttr>(), num_components,
+                     attr.GetLength());
+    Eigen::Map<const Eigen::Matrix<TInt, 3, Eigen::Dynamic>>
+            triangle_indices_map(triangle_indices.GetDataPtr<TInt>(), 3,
+                                 triangle_indices.GetLength());
+
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            const int64_t linear_idx = i * size + j;
+            if (sqrdistance_map(j, i) <= threshold) {
+                const uint32_t tid = tid_map(j, i);
+                if (VERTEX_ATTR) {
+                    const auto &a = attr_map.col(triangle_indices_map(0, tid));
+                    const auto &b = attr_map.col(triangle_indices_map(1, tid));
+                    const auto &c = attr_map.col(triangle_indices_map(2, tid));
+                    TAttr u = uv_map(0, linear_idx);
+                    TAttr v = uv_map(1, linear_idx);
+                    tex_map.col(linear_idx) =
+                            std::max<TAttr>(0, 1 - u - v) * a + u * b + v * c;
+                } else {
+                    tex_map.col(linear_idx) = attr_map.col(tid);
+                }
+            } else {
+                tex_map.col(linear_idx).setConstant(fill_value);
+            }
+        }
+    }
+
+    return tex;
+}
+
+/// Computes textures with the primitive ids, primitive uvs, and the squared
+/// distance to the closest primitive.
+///
+/// This is a helper function for the texture baking functions.
+///
+/// \param size The texture size.
+/// \param primitive_ids The output tensor for the primitive ids.
+/// \param primitive_uvs The output tensor for the primitive uvs.
+/// \param sqrdistance The output tensor for the squared distances.
+/// \param texture_uvs Input tensor with the texture uvs.
+void ComputePrimitiveInfoTexture(int size,
+                                 core::Tensor &primitive_ids,
+                                 core::Tensor &primitive_uvs,
+                                 core::Tensor &sqrdistance,
+                                 const core::Tensor &texture_uvs) {
+    const int64_t num_triangles = texture_uvs.GetLength();
+
+    // Generate vertices for each triangle using (u,v,0) as position.
+    core::Tensor vertices({num_triangles * 3, 3}, core::Float32);
+    {
+        const float *uv_ptr = texture_uvs.GetDataPtr<float>();
+        float *v_ptr = vertices.GetDataPtr<float>();
+        for (int64_t i = 0; i < texture_uvs.GetLength(); ++i) {
+            for (int64_t j = 0; j < 3; ++j) {
+                v_ptr[i * 9 + j * 3 + 0] = uv_ptr[i * 6 + j * 2 + 0];
+                v_ptr[i * 9 + j * 3 + 1] = uv_ptr[i * 6 + j * 2 + 1];
+                v_ptr[i * 9 + j * 3 + 2] = 0;
+            }
+        }
+    }
+    core::Tensor triangle_indices =
+            core::Tensor::Empty({num_triangles, 3}, core::UInt32);
+    std::iota(triangle_indices.GetDataPtr<uint32_t>(),
+              triangle_indices.GetDataPtr<uint32_t>() +
+                      triangle_indices.NumElements(),
+              0);
+
+    RaycastingScene scene;
+    scene.AddTriangles(vertices, triangle_indices);
+
+    core::Tensor query_points =
+            core::Tensor::Empty({size, size, 3}, core::Float32);
+    float *ptr = query_points.GetDataPtr<float>();
+    for (int i = 0; i < size; ++i) {
+        float v = 1 - (i + 0.5f) / size;
+        for (int j = 0; j < size; ++j) {
+            float u = (j + 0.5f) / size;
+            ptr[i * size * 3 + j * 3 + 0] = u;
+            ptr[i * size * 3 + j * 3 + 1] = v;
+            ptr[i * size * 3 + j * 3 + 2] = 0;
+        }
+    }
+
+    auto ans = scene.ComputeClosestPoints(query_points);
+
+    Eigen::Map<Eigen::MatrixXf> query_points_map(
+            query_points.GetDataPtr<float>(), 3, size * size);
+    Eigen::Map<Eigen::MatrixXf> closest_points_map(
+            ans["points"].GetDataPtr<float>(), 3, size * size);
+    sqrdistance = core::Tensor::Empty({size, size}, core::Float32);
+    Eigen::Map<Eigen::VectorXf> sqrdistance_map(sqrdistance.GetDataPtr<float>(),
+                                                size * size);
+    sqrdistance_map =
+            (closest_points_map - query_points_map).colwise().squaredNorm();
+    primitive_ids = ans["primitive_ids"];
+    primitive_uvs = ans["primitive_uvs"];
+}
+void UpdateMaterialTextures(
+        std::unordered_map<std::string, core::Tensor> &textures,
+        visualization::rendering::Material &material) {
+    for (auto &tex : textures) {
+        core::SizeVector element_shape(tex.second.GetShapeRef().begin() + 2,
+                                       tex.second.GetShapeRef().end());
+        core::SizeVector shape(tex.second.GetShapeRef().begin(),
+                               tex.second.GetShapeRef().begin() + 2);
+        if (tex.second.NumDims() > 2) {
+            shape.push_back(element_shape.NumElements());
+        }
+
+        core::Tensor img_data = tex.second.Reshape(shape);
+        material.SetTextureMap(tex.first, Image(img_data));
+    }
+}
+
+}  // namespace
+std::unordered_map<std::string, core::Tensor>
+TriangleMesh::BakeVertexAttrTextures(
+        int size,
+        const std::unordered_set<std::string> &vertex_attr,
+        double margin,
+        double fill,
+        bool update_material) {
+    if (!vertex_attr.size()) {
+        return std::unordered_map<std::string, core::Tensor>();
+    }
+    if (!triangle_attr_.Contains("texture_uvs")) {
+        utility::LogError("Cannot find triangle attribute 'texture_uvs'");
+    }
+
+    core::Tensor texture_uvs =
+            triangle_attr_.at("texture_uvs").To(core::Device()).Contiguous();
+    core::AssertTensorShape(texture_uvs, {core::None, 3, 2});
+    core::AssertTensorDtype(texture_uvs, {core::Float32});
+
+    core::Tensor vertices({GetTriangleIndices().GetLength() * 3, 3},
+                          core::Float32);
+    {
+        float *uv_ptr = texture_uvs.GetDataPtr<float>();
+        float *v_ptr = vertices.GetDataPtr<float>();
+        for (int64_t i = 0; i < texture_uvs.GetLength(); ++i) {
+            for (int64_t j = 0; j < 3; ++j) {
+                v_ptr[i * 9 + j * 3 + 0] = uv_ptr[i * 6 + j * 2 + 0];
+                v_ptr[i * 9 + j * 3 + 1] = uv_ptr[i * 6 + j * 2 + 1];
+                v_ptr[i * 9 + j * 3 + 2] = 0;
+            }
+        }
+    }
+    core::Tensor triangle_indices =
+            core::Tensor::Empty(GetTriangleIndices().GetShape(), core::UInt32);
+    std::iota(triangle_indices.GetDataPtr<uint32_t>(),
+              triangle_indices.GetDataPtr<uint32_t>() +
+                      triangle_indices.NumElements(),
+              0);
+
+    core::Tensor primitive_ids, primitive_uvs, sqrdistance;
+    ComputePrimitiveInfoTexture(size, primitive_ids, primitive_uvs, sqrdistance,
+                                texture_uvs);
+
+    std::unordered_map<std::string, core::Tensor> result;
+    for (auto attr : vertex_attr) {
+        if (!vertex_attr_.Contains(attr)) {
+            utility::LogError("Cannot find vertex attribute '{}'", attr);
+        }
+        core::Tensor tensor =
+                vertex_attr_.at(attr).To(core::Device()).Contiguous();
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(
+                tensor.GetDtype(), GetTriangleIndices().GetDtype(), [&]() {
+                    core::Tensor tex = BakeAttribute<scalar_t, int_t, true>(
+                            size, margin, tensor, GetTriangleIndices(),
+                            primitive_ids, primitive_uvs, sqrdistance,
+                            scalar_t(fill));
+                    result[attr] = tex;
+                });
+    }
+    if (update_material) {
+        UpdateMaterialTextures(result, this->GetMaterial());
+    }
+
+    return result;
+}
+
+std::unordered_map<std::string, core::Tensor>
+TriangleMesh::BakeTriangleAttrTextures(
+        int size,
+        const std::unordered_set<std::string> &triangle_attr,
+        double margin,
+        double fill,
+        bool update_material) {
+    if (!triangle_attr.size()) {
+        return std::unordered_map<std::string, core::Tensor>();
+    }
+    if (!triangle_attr_.Contains("texture_uvs")) {
+        utility::LogError("Cannot find triangle attribute 'texture_uvs'");
+    }
+
+    core::Tensor texture_uvs =
+            triangle_attr_.at("texture_uvs").To(core::Device()).Contiguous();
+    core::AssertTensorShape(texture_uvs, {core::None, 3, 2});
+    core::AssertTensorDtype(texture_uvs, {core::Float32});
+
+    core::Tensor primitive_ids, primitive_uvs, sqrdistance;
+    ComputePrimitiveInfoTexture(size, primitive_ids, primitive_uvs, sqrdistance,
+                                texture_uvs);
+
+    std::unordered_map<std::string, core::Tensor> result;
+    for (auto attr : triangle_attr) {
+        if (!triangle_attr_.Contains(attr)) {
+            utility::LogError("Cannot find triangle attribute '{}'", attr);
+        }
+        core::Tensor tensor =
+                triangle_attr_.at(attr).To(core::Device()).Contiguous();
+        DISPATCH_DTYPE_TO_TEMPLATE(tensor.GetDtype(), [&]() {
+            core::Tensor tex;
+            if (GetTriangleIndices().GetDtype() == core::Int32) {
+                tex = BakeAttribute<scalar_t, int32_t, false>(
+                        size, margin, tensor, GetTriangleIndices(),
+                        primitive_ids, primitive_uvs, sqrdistance,
+                        scalar_t(fill));
+            } else if (GetTriangleIndices().GetDtype() == core::Int64) {
+                tex = BakeAttribute<scalar_t, int64_t, false>(
+                        size, margin, tensor, GetTriangleIndices(),
+                        primitive_ids, primitive_uvs, sqrdistance,
+                        scalar_t(fill));
+            } else {
+                utility::LogError("Unsupported triangle indices data type.");
+            }
+            result[attr] = tex;
+        });
+    }
+    if (update_material) {
+        UpdateMaterialTextures(result, this->GetMaterial());
+    }
+
+    return result;
+}
+
+TriangleMesh TriangleMesh::ExtrudeRotation(double angle,
+                                           const core::Tensor &axis,
+                                           int resolution,
+                                           double translation,
+                                           bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution,
+                                       translation, capping);
+}
+
+TriangleMesh TriangleMesh::ExtrudeLinear(const core::Tensor &vector,
+                                         double scale,
+                                         bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
+}
+
+int TriangleMesh::PCAPartition(int max_faces) {
+    core::Tensor verts = GetVertexPositions();
+    core::Tensor tris = GetTriangleIndices();
+    if (!tris.GetLength()) {
+        utility::LogError("Mesh must have at least one face.");
+    }
+    core::Tensor tris_centers = verts.IndexGet({tris}).Mean({1});
+
+    int num_parititions;
+    core::Tensor partition_ids;
+    std::tie(num_parititions, partition_ids) =
+            kernel::pcapartition::PCAPartition(tris_centers, max_faces);
+    SetTriangleAttr("partition_ids", partition_ids.To(GetDevice()));
+    return num_parititions;
+}
+
+/// A helper to compute new vertex indices out of vertex mask.
+/// \param tris_cpu tensor with triangle indices to update.
+/// \param vertex_mask tensor with the mask for vertices.
+template <typename T>
+static void UpdateTriangleIndicesByVertexMask(core::Tensor &tris_cpu,
+                                              const core::Tensor &vertex_mask) {
+    int64_t num_verts = vertex_mask.GetLength();
+    int64_t num_tris = tris_cpu.GetLength();
+    const T *vertex_mask_ptr = vertex_mask.GetDataPtr<T>();
+    std::vector<T> prefix_sum(num_verts + 1, 0);
+    utility::InclusivePrefixSum(vertex_mask_ptr, vertex_mask_ptr + num_verts,
+                                &prefix_sum[1]);
+
+    // update triangle indices
+    T *vert_idx_ptr = tris_cpu.GetDataPtr<T>();
+    for (int64_t i = 0; i < num_tris * 3; ++i) {
+        vert_idx_ptr[i] = prefix_sum[vert_idx_ptr[i]];
+    }
+}
+
+/// A helper to copy mesh attributes.
+/// \param dst destination mesh
+/// \param src source mesh
+/// \param vertex_mask vertex mask of the source mesh
+/// \param tri_mask triangle mask of the source mesh
+static void CopyAttributesByMasks(TriangleMesh &dst,
+                                  const TriangleMesh &src,
+                                  const core::Tensor &vertex_mask,
+                                  const core::Tensor &tri_mask) {
+    if (src.HasVertexPositions() && dst.HasVertexPositions()) {
+        for (auto item : src.GetVertexAttr()) {
+            if (!dst.HasVertexAttr(item.first)) {
+                dst.SetVertexAttr(item.first,
+                                  item.second.IndexGet({vertex_mask}));
+            }
+        }
+    }
+
+    if (src.HasTriangleIndices() && dst.HasTriangleIndices()) {
+        for (auto item : src.GetTriangleAttr()) {
+            if (!dst.HasTriangleAttr(item.first)) {
+                dst.SetTriangleAttr(item.first,
+                                    item.second.IndexGet({tri_mask}));
+            }
+        }
+    }
+}
+
+TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
+    if (!HasVertexPositions()) {
+        utility::LogWarning(
+                "[SelectFacesByMask] mesh has no vertex positions.");
+        return {};
+    }
+    if (!HasTriangleIndices()) {
+        utility::LogWarning(
+                "[SelectFacesByMask] mesh has no triangle indices.");
+        return {};
+    }
+
+    core::AssertTensorShape(mask, {GetTriangleIndices().GetLength()});
+    core::AssertTensorDtype(mask, core::Bool);
+    GetTriangleAttr().AssertSizeSynchronized();
+    GetVertexAttr().AssertSizeSynchronized();
+
+    // select triangles
+    core::Tensor tris = GetTriangleIndices().IndexGet({mask});
+    core::Tensor tris_cpu = tris.To(core::Device()).Contiguous();
+
+    // create mask for vertices that are part of the selected faces
+    const int64_t num_verts = GetVertexPositions().GetLength();
+    // empty tensor to further construct the vertex mask
+    core::Tensor vertex_mask;
+
+    DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(tris_cpu.GetDtype(), tris, [&]() {
+        vertex_mask = core::Tensor::Zeros(
+                {num_verts}, core::Dtype::FromType<scalar_tris_t>());
+        const int64_t num_tris = tris_cpu.GetLength();
+        scalar_tris_t *vertex_mask_ptr =
+                vertex_mask.GetDataPtr<scalar_tris_t>();
+        scalar_tris_t *vert_idx_ptr = tris_cpu.GetDataPtr<scalar_tris_t>();
+        // mask for the vertices, which are used in the triangles
+        for (int64_t i = 0; i < num_tris * 3; ++i) {
+            vertex_mask_ptr[vert_idx_ptr[i]] = 1;
+        }
+        UpdateTriangleIndicesByVertexMask<scalar_tris_t>(tris_cpu, vertex_mask);
+    });
+
+    tris = tris_cpu.To(GetDevice());
+    vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
+    core::Tensor verts = GetVertexPositions().IndexGet({vertex_mask});
+    TriangleMesh result(verts, tris);
+
+    CopyAttributesByMasks(result, *this, vertex_mask, mask);
+
+    return result;
+}
+
+/// brief Static negative checker for signed integer types
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                          !std::is_same<T, bool>::value &&
+                                          std::is_signed<T>::value,
+                                  T>::type * = nullptr>
+static bool IsNegative(T val) {
+    return val < 0;
+}
+
+/// brief Overloaded static negative checker for unsigned integer types.
+/// It unconditionally returns false, but we need it for template functions.
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                          !std::is_same<T, bool>::value &&
+                                          !std::is_signed<T>::value,
+                                  T>::type * = nullptr>
+static bool IsNegative(T val) {
+    return false;
+}
+
+TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
+    TriangleMesh result;
+    core::AssertTensorShape(indices, {indices.GetLength()});
+    if (!HasVertexPositions()) {
+        utility::LogWarning("[SelectByIndex] TriangleMesh has no vertices.");
+        return result;
+    }
+    GetVertexAttr().AssertSizeSynchronized();
+
+    // we allow indices of an integral type only
+    core::Dtype::DtypeCode indices_dtype_code =
+            indices.GetDtype().GetDtypeCode();
+    if (indices_dtype_code != core::Dtype::DtypeCode::Int &&
+        indices_dtype_code != core::Dtype::DtypeCode::UInt) {
+        utility::LogError(
+                "[SelectByIndex] indices are not of integral type {}.",
+                indices.GetDtype().ToString());
+    }
+    core::Tensor indices_cpu = indices.To(core::Device()).Contiguous();
+    core::Tensor tris_cpu, tri_mask;
+    core::Dtype tri_dtype;
+    if (HasTriangleIndices()) {
+        GetTriangleAttr().AssertSizeSynchronized();
+        tris_cpu = GetTriangleIndices().To(core::Device()).Contiguous();
+        // bool mask for triangles.
+        tri_mask = core::Tensor::Zeros({tris_cpu.GetLength()}, core::Bool);
+        tri_dtype = tris_cpu.GetDtype();
+    } else {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        tri_dtype = core::Int64;
+    }
+
+    // int mask to select vertices for the new mesh.  We need it as int as we
+    // will use its values to sum up and get the map of new indices
+    core::Tensor vertex_mask =
+            core::Tensor::Zeros({GetVertexPositions().GetLength()}, tri_dtype);
+
+    DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(tri_dtype, tris, [&]() {
+        DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(
+                indices_cpu.GetDtype(), indices, [&]() {
+                    const int64_t num_tris = tris_cpu.GetLength();
+                    const int64_t num_verts = vertex_mask.GetLength();
+
+                    // compute the vertices mask
+                    scalar_tris_t *vertex_mask_ptr =
+                            vertex_mask.GetDataPtr<scalar_tris_t>();
+                    const scalar_indices_t *indices_ptr =
+                            indices.GetDataPtr<scalar_indices_t>();
+                    for (int64_t i = 0; i < indices.GetLength(); ++i) {
+                        if (IsNegative(indices_ptr[i]) ||
+                            indices_ptr[i] >=
+                                    static_cast<scalar_indices_t>(num_verts)) {
+                            utility::LogWarning(
+                                    "[SelectByIndex] indices contains index {} "
+                                    "out of range. "
+                                    "It is ignored.",
+                                    indices_ptr[i]);
+                            continue;
+                        }
+                        vertex_mask_ptr[indices_ptr[i]] = 1;
+                    }
+
+                    if (tri_mask.GetDtype() == core::Undefined) {
+                        // we don't need to compute triangles, if there are none
+                        return;
+                    }
+
+                    // Build the triangle mask
+                    scalar_tris_t *tris_cpu_ptr =
+                            tris_cpu.GetDataPtr<scalar_tris_t>();
+                    bool *tri_mask_ptr = tri_mask.GetDataPtr<bool>();
+                    for (int64_t i = 0; i < num_tris; ++i) {
+                        if (vertex_mask_ptr[tris_cpu_ptr[3 * i]] == 1 &&
+                            vertex_mask_ptr[tris_cpu_ptr[3 * i + 1]] == 1 &&
+                            vertex_mask_ptr[tris_cpu_ptr[3 * i + 2]] == 1) {
+                            tri_mask_ptr[i] = true;
+                        }
+                    }
+                    // select only needed triangles
+                    tris_cpu = tris_cpu.IndexGet({tri_mask});
+                    // update the triangle indices
+                    UpdateTriangleIndicesByVertexMask<scalar_tris_t>(
+                            tris_cpu, vertex_mask);
+                });
+    });
+
+    // send the vertex mask to original device and apply to vertices
+    vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
+    core::Tensor new_vertices = GetVertexPositions().IndexGet({vertex_mask});
+    result.SetVertexPositions(new_vertices);
+
+    if (HasTriangleIndices()) {
+        // select triangles and send the selected ones to the original device
+        result.SetTriangleIndices(tris_cpu.To(GetDevice()));
+    }
+
+    CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
+
+    return result;
 }
 
 }  // namespace geometry

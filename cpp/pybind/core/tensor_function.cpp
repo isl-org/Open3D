@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/TensorFunction.h"
@@ -45,7 +26,7 @@ void pybind_core_tensor_function(py::module& m) {
             R"(Concatenates the list of tensors in their order, along the given
 axis into a new tensor. All the tensors must have same data-type, device, and
 number of dimensions. All dimensions must be the same, except the dimension
-along the axis the tensors are to be concatinated.
+along the axis the tensors are to be concatenated.
 Using Concatenate for a single tensor, the tensor is split along its first 
 dimension (length), and concatenated along the axis.
 
@@ -102,6 +83,19 @@ Example:
     [0 1 2 3 4 5]
     Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
             "self"_a, "values"_a, "axis"_a = py::none());
+
+    m.def("maximum", &core::Maximum,
+          R"(Computes the element-wise maximum of input and other. The tensors 
+must have same data type and device.
+If input.GetShape() != other.GetShape(), then they will be broadcasted to a
+common shape (which becomes the shape of the output).)",
+          "input"_a, "other"_a);
+    m.def("minimum", &core::Minimum,
+          R"(Computes the element-wise minimum of input and other. The tensors 
+must have same data type and device.
+If input.GetShape() != other.GetShape(), then they will be broadcasted to a
+common shape (which becomes the shape of the output).)",
+          "input"_a, "other"_a);
 }
 
 }  // namespace core

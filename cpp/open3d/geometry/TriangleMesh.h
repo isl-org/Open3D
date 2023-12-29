@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -358,8 +339,7 @@ public:
             size_t number_of_points,
             std::vector<double> &triangle_areas,
             double surface_area,
-            bool use_triangle_normal,
-            int seed);
+            bool use_triangle_normal);
 
     /// Function to sample points uniformly from the mesh.
     ///
@@ -367,12 +347,8 @@ public:
     /// \param use_triangle_normal Set to true to assign the triangle normals to
     /// the returned points instead of the interpolated vertex normals. The
     /// triangle normals will be computed and added to the mesh if necessary.
-    /// \param seed Sets the seed value used in the random generator, set to -1
-    /// to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points,
-            bool use_triangle_normal = false,
-            int seed = -1);
+            size_t number_of_points, bool use_triangle_normal = false);
 
     /// Function to sample points from the mesh with Possion disk, based on the
     /// method presented in Yuksel, "Sample Elimination for Generating Poisson
@@ -386,14 +362,11 @@ public:
     /// \param use_triangle_normal If True assigns the triangle normals instead
     /// of the interpolated vertex normals to the returned points. The triangle
     /// normals will be computed and added to the mesh if necessary.
-    /// \param seed Sets the seed value used in the random generator, set to -1
-    /// to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
             const std::shared_ptr<PointCloud> pcl_init = nullptr,
-            bool use_triangle_normal = false,
-            int seed = -1);
+            bool use_triangle_normal = false);
 
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
@@ -607,6 +580,15 @@ public:
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateIcosahedron(
             double radius = 1.0, bool create_uv_map = false);
+
+    /// Factory function to create solid mesh from an OrientedBoundingBox.
+    /// \param obox OrientedBoundingBox object to create a mesh of
+    /// \param scale scale factor along each direction of OrientedBoundingBox
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateFromOrientedBoundingBox(
+            const OrientedBoundingBox &obox,
+            const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
+            bool create_uv_map = false);
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
@@ -871,7 +853,7 @@ public:
         std::unordered_map<std::string, Image> additionalMaps;
     };
 
-    std::unordered_map<std::string, Material> materials_;
+    std::vector<std::pair<std::string, Material>> materials_;
 
     /// List of material ids.
     std::vector<int> triangle_material_ids_;

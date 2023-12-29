@@ -1,33 +1,14 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
 
 from pathlib import Path
-import shutil
+import pytest
 
 
 def test_dataset_base():
@@ -55,17 +36,12 @@ def test_simple_dataset_base():
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
         gt_prefix)
 
-    url_mirrors = [
-        "https://github.com/isl-org/open3d_downloads/releases/download/"
-        "20220201-data/BunnyMesh.ply"
-    ]
-    md5 = "568f871d1a221ba6627569f1e6f9a3f2"
-
-    single_download_dataset = o3d.data.SingleDownloadDataset(
-        gt_prefix,
-        url_mirrors,
-        md5,
-        True,
+    data_descriptor = o3d.data.DataDescriptor(
+        url=o3d.data.open3d_downloads_prefix + "20220201-data/BunnyMesh.ply",
+        md5="568f871d1a221ba6627569f1e6f9a3f2")
+    single_download_dataset = o3d.data.DownloadDataset(
+        prefix=gt_prefix,
+        data_descriptor=data_descriptor,
     )
 
     assert Path(gt_extract_dir / "BunnyMesh.ply").is_file()
@@ -528,6 +504,374 @@ def test_knot():
     assert Path(knot.extract_dir) == gt_extract_dir
 
 
+def test_monkey():
+    gt_prefix = "MonkeyModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    monkey = o3d.data.MonkeyModel()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "albedo.png",
+        "ao": Path(gt_extract_dir) / "ao.png",
+        "metallic": Path(gt_extract_dir) / "metallic.png",
+        "monkey_material": Path(gt_extract_dir) / "monkey.mtl",
+        "monkey_model": Path(gt_extract_dir) / "monkey.obj",
+        "monkey_solid_material": Path(gt_extract_dir) / "monkey_solid.mtl",
+        "monkey_solid_model": Path(gt_extract_dir) / "monkey_solid.obj",
+        "normal": Path(gt_extract_dir) / "normal.png",
+        "roughness": Path(gt_extract_dir) / "roughness.png"
+    }
+
+    for file_name in monkey.path_map:
+        assert Path(monkey.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(monkey.path_map[file_name]).is_file()
+
+    assert Path(monkey.path) == gt_extract_dir / "monkey.obj"
+    assert Path(monkey.path).is_file()
+
+    assert monkey.prefix == gt_prefix
+    assert Path(monkey.data_root) == gt_data_root
+    assert Path(monkey.download_dir) == gt_download_dir
+    assert Path(monkey.extract_dir) == gt_extract_dir
+
+
+def test_sword():
+    gt_prefix = "SwordModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    sword = o3d.data.SwordModel()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "sword_material": Path(gt_extract_dir) / "UV.mtl",
+        "sword_model": Path(gt_extract_dir) / "UV.obj",
+        "base_color": Path(gt_extract_dir) / "UV_blinn1SG_BaseColor.png",
+        "metallic": Path(gt_extract_dir) / "UV_blinn1SG_Metallic.png",
+        "normal": Path(gt_extract_dir) / "UV_blinn1SG_Normal.png",
+        "roughness": Path(gt_extract_dir) / "UV_blinn1SG_Roughness.png"
+    }
+
+    for file_name in sword.path_map:
+        assert Path(sword.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(sword.path_map[file_name]).is_file()
+
+    assert Path(sword.path) == gt_extract_dir / "UV.obj"
+    assert Path(sword.path).is_file()
+
+    assert sword.prefix == gt_prefix
+    assert Path(sword.data_root) == gt_data_root
+    assert Path(sword.download_dir) == gt_download_dir
+    assert Path(sword.extract_dir) == gt_extract_dir
+
+
+def test_crate():
+    gt_prefix = "CrateModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    crate = o3d.data.CrateModel()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "crate_material": Path(gt_extract_dir) / "crate.mtl",
+        "crate_model": Path(gt_extract_dir) / "crate.obj",
+        "texture_image": Path(gt_extract_dir) / "crate.jpg"
+    }
+
+    for file_name in crate.path_map:
+        assert Path(crate.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(crate.path_map[file_name]).is_file()
+
+    assert Path(crate.path) == gt_extract_dir / "crate.obj"
+    assert Path(crate.path).is_file()
+
+    assert crate.prefix == gt_prefix
+    assert Path(crate.data_root) == gt_data_root
+    assert Path(crate.download_dir) == gt_download_dir
+    assert Path(crate.extract_dir) == gt_extract_dir
+
+
+def test_flight_helmet():
+    gt_prefix = "FlightHelmetModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    helmet = o3d.data.FlightHelmetModel()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "flight_helmet":
+            Path(gt_extract_dir) / "FlightHelmet.gltf",
+        "flight_helmet_bin":
+            Path(gt_extract_dir) / "FlightHelmet.bin",
+        "mat_glass_plastic_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_GlassPlasticMat_BaseColor.png",
+        "mat_glass_plastic_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_GlassPlasticMat_Normal.png",
+        "mat_glass_plastic_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_GlassPlasticMat_"
+            "OcclusionRoughMetal.png",
+        "mat_leather_parts_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_LeatherPartsMat_BaseColor.png",
+        "mat_leather_parts_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_LeatherPartsMat_Normal.png",
+        "mat_leather_parts_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_LeatherPartsMat_"
+            "OcclusionRoughMetal.png",
+        "mat_lenses_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_LensesMat_BaseColor.png",
+        "mat_lenses_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_LensesMat_Normal.png",
+        "mat_lenses_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_LensesMat_"
+            "OcclusionRoughMetal.png",
+        "mat_metal_parts_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_MetalPartsMat_BaseColor.png",
+        "mat_metal_parts_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_MetalPartsMat_Normal.png",
+        "mat_metal_parts_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_MetalPartsMat_"
+            "OcclusionRoughMetal.png",
+        "mat_rubber_wood_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_RubberWoodMat_BaseColor.png",
+        "mat_rubber_wood_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_RubberWoodMat_Normal.png",
+        "mat_rubber_wood_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_RubberWoodMat_"
+            "OcclusionRoughMetal.png"
+    }
+
+    for file_name in helmet.path_map:
+        assert Path(helmet.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(helmet.path_map[file_name]).is_file()
+
+    assert Path(helmet.path) == gt_extract_dir / "FlightHelmet.gltf"
+    assert Path(helmet.path).is_file()
+
+    assert helmet.prefix == gt_prefix
+    assert Path(helmet.data_root) == gt_data_root
+    assert Path(helmet.download_dir) == gt_download_dir
+    assert Path(helmet.extract_dir) == gt_extract_dir
+
+
+def test_avocado():
+    gt_prefix = "AvocadoModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    avocado = o3d.data.AvocadoModel()
+    assert Path(gt_download_dir).is_dir()
+
+    assert Path(avocado.path) == gt_extract_dir / "AvocadoModel.glb"
+    assert Path(avocado.path).is_file()
+
+    assert avocado.prefix == gt_prefix
+    assert Path(avocado.data_root) == gt_data_root
+    assert Path(avocado.download_dir) == gt_download_dir
+    assert Path(avocado.extract_dir) == gt_extract_dir
+
+
+def test_damaged_helmet():
+    gt_prefix = "DamagedHelmetModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    damaged_helmet = o3d.data.DamagedHelmetModel()
+    assert Path(gt_download_dir).is_dir()
+
+    assert Path(
+        damaged_helmet.path) == gt_extract_dir / "DamagedHelmetModel.glb"
+    assert Path(damaged_helmet.path).is_file()
+
+    assert damaged_helmet.prefix == gt_prefix
+    assert Path(damaged_helmet.data_root) == gt_data_root
+    assert Path(damaged_helmet.download_dir) == gt_download_dir
+    assert Path(damaged_helmet.extract_dir) == gt_extract_dir
+
+
+def test_metal_texture():
+    gt_prefix = "MetalTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.MetalTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "Metal008_Color.jpg",
+        "normal": Path(gt_extract_dir) / "Metal008_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "Metal008_Roughness.jpg",
+        "metallic": Path(gt_extract_dir) / "Metal008_Metalness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+    assert Path(data.metallic_texture_path) == gt_path_map["metallic"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_painted_plaster_texture():
+    gt_prefix = "PaintedPlasterTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.PaintedPlasterTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "PaintedPlaster017_Color.jpg",
+        "normal": Path(gt_extract_dir) / "PaintedPlaster017_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "noiseTexture.png"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_tiles_texture():
+    gt_prefix = "TilesTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.TilesTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "Tiles074_Color.jpg",
+        "normal": Path(gt_extract_dir) / "Tiles074_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "Tiles074_Roughness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_terrazzo_texture():
+    gt_prefix = "TerrazzoTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.TerrazzoTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "Terrazzo018_Color.jpg",
+        "normal": Path(gt_extract_dir) / "Terrazzo018_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "Terrazzo018_Roughness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_wood_texture():
+    gt_prefix = "WoodTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.WoodTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "Wood049_Color.jpg",
+        "normal": Path(gt_extract_dir) / "Wood049_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "Wood049_Roughness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_wood_floor_texture():
+    gt_prefix = "WoodFloorTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.WoodFloorTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "WoodFloor050_Color.jpg",
+        "normal": Path(gt_extract_dir) / "WoodFloor050_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "WoodFloor050_Roughness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
 def test_juneau():
     gt_prefix = "JuneauImage"
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
@@ -543,3 +887,127 @@ def test_juneau():
     assert Path(juneau.data_root) == gt_data_root
     assert Path(juneau.download_dir) == gt_download_dir
     assert Path(juneau.extract_dir) == gt_extract_dir
+
+
+@pytest.mark.skip()
+def test_redwood_indoor_living_room1():
+    gt_prefix = "RedwoodIndoorLivingRoom1"
+    _, gt_download_dir, gt_extract_dir = get_test_data_dirs(gt_prefix)
+    dataset = o3d.data.RedwoodIndoorLivingRoom1()
+
+    assert Path(gt_download_dir).is_dir()
+    assert Path(gt_extract_dir).is_dir()
+
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+    assert len(im_rgbds) == 2870
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+    assert len(im_noisy_rgbds) == 2870
+
+
+@pytest.mark.skip()
+def test_redwood_indoor_living_room2():
+    gt_prefix = "RedwoodIndoorLivingRoom2"
+    _, gt_download_dir, gt_extract_dir = get_test_data_dirs(gt_prefix)
+    dataset = o3d.data.RedwoodIndoorLivingRoom2()
+
+    assert Path(gt_download_dir).is_dir()
+    assert Path(gt_extract_dir).is_dir()
+
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+    assert len(im_rgbds) == 2350
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+    assert len(im_noisy_rgbds) == 2350
+
+
+@pytest.mark.skip()
+def test_redwood_indoor_office1():
+    gt_prefix = "RedwoodIndoorOffice1"
+    _, gt_download_dir, gt_extract_dir = get_test_data_dirs(gt_prefix)
+    dataset = o3d.data.RedwoodIndoorOffice1()
+
+    assert Path(gt_download_dir).is_dir()
+    assert Path(gt_extract_dir).is_dir()
+
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+    assert len(im_rgbds) == 2690
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+    assert len(im_noisy_rgbds) == 2690
+
+
+@pytest.mark.skip()
+def test_redwood_indoor_office2():
+    gt_prefix = "RedwoodIndoorOffice2"
+    _, gt_download_dir, gt_extract_dir = get_test_data_dirs(gt_prefix)
+    dataset = o3d.data.RedwoodIndoorOffice2()
+
+    assert Path(gt_download_dir).is_dir()
+    assert Path(gt_extract_dir).is_dir()
+
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+    assert len(im_rgbds) == 2538
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+    assert len(im_noisy_rgbds) == 2538

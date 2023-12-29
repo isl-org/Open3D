@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
 
@@ -43,7 +24,7 @@ void BuildSpatialHashTableCPU(const Tensor& points,
                               const Tensor& hash_table_splits,
                               Tensor& hash_table_index,
                               Tensor& hash_table_cell_splits) {
-    open3d::core::nns::impl::BuildSpatialHashTableCPU(
+    impl::BuildSpatialHashTableCPU(
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
             points_row_splits.GetDataPtr<int64_t>(),
@@ -53,7 +34,7 @@ void BuildSpatialHashTableCPU(const Tensor& points,
             hash_table_index.GetDataPtr<uint32_t>());
 }
 
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCPU(const Tensor& points,
                           const Tensor& queries,
                           double radius,
@@ -70,9 +51,9 @@ void FixedRadiusSearchCPU(const Tensor& points,
                           Tensor& neighbors_row_splits,
                           Tensor& neighbors_distance) {
     Device device = points.GetDevice();
-    NeighborSearchAllocator<T> output_allocator(device);
+    NeighborSearchAllocator<T, TIndex> output_allocator(device);
 
-    open3d::core::nns::impl::FixedRadiusSearchCPU(
+    impl::FixedRadiusSearchCPU<T, TIndex>(
             neighbors_row_splits.GetDataPtr<int64_t>(), points.GetShape()[0],
             points.GetDataPtr<T>(), queries.GetShape()[0],
             queries.GetDataPtr<T>(), T(radius), points_row_splits.GetShape()[0],
@@ -89,7 +70,7 @@ void FixedRadiusSearchCPU(const Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-template <class T>
+template <class T, class TIndex>
 void HybridSearchCPU(const Tensor& points,
                      const Tensor& queries,
                      double radius,
@@ -112,8 +93,8 @@ void HybridSearchCPU(const Tensor& points,
             const Tensor& points_row_splits, const Tensor& hash_table_splits, \
             Tensor& hash_table_index, Tensor& hash_table_cell_splits);
 
-#define INSTANTIATE_RADIUS(T)                                                  \
-    template void FixedRadiusSearchCPU<T>(                                     \
+#define INSTANTIATE_RADIUS(T, TIndex)                                          \
+    template void FixedRadiusSearchCPU<T, TIndex>(                             \
             const Tensor& points, const Tensor& queries, double radius,        \
             const Tensor& points_row_splits, const Tensor& queries_row_splits, \
             const Tensor& hash_table_splits, const Tensor& hash_table_index,   \
@@ -122,8 +103,8 @@ void HybridSearchCPU(const Tensor& points,
             const bool sort, Tensor& neighbors_index,                          \
             Tensor& neighbors_row_splits, Tensor& neighbors_distance);
 
-#define INSTANTIATE_HYBRID(T)                                                  \
-    template void HybridSearchCPU<T>(                                          \
+#define INSTANTIATE_HYBRID(T, TIndex)                                          \
+    template void HybridSearchCPU<T, TIndex>(                                  \
             const Tensor& points, const Tensor& queries, double radius,        \
             int max_knn, const Tensor& points_row_splits,                      \
             const Tensor& queries_row_splits, const Tensor& hash_table_splits, \
@@ -135,11 +116,15 @@ void HybridSearchCPU(const Tensor& points,
 INSTANTIATE_BUILD(float)
 INSTANTIATE_BUILD(double)
 
-INSTANTIATE_RADIUS(float)
-INSTANTIATE_RADIUS(double)
+INSTANTIATE_RADIUS(float, int32_t)
+INSTANTIATE_RADIUS(float, int64_t)
+INSTANTIATE_RADIUS(double, int32_t)
+INSTANTIATE_RADIUS(double, int64_t)
 
-INSTANTIATE_HYBRID(float)
-INSTANTIATE_HYBRID(double)
+INSTANTIATE_HYBRID(float, int32_t)
+INSTANTIATE_HYBRID(float, int64_t)
+INSTANTIATE_HYBRID(double, int32_t)
+INSTANTIATE_HYBRID(double, int64_t)
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

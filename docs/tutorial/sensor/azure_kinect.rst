@@ -24,7 +24,6 @@ After installation, you may run ``k4aviewer`` from the Linux terminal or
 Currently, Open3D supports the Azure Kinect SDK version ``v1.4.1``, though future
 versions might also be compatible.
 
-
 Install Open3D from Pip
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -58,7 +57,6 @@ CMake config step. That is,
 .. code-block:: sh
 
     cmake -DBUILD_AZURE_KINECT=ON -DOTHER_FLAGS ..
-
 
 Open3D Azure Kinect Viewer
 ==========================
@@ -115,7 +113,6 @@ configs, refer to `this file <https://github.com/microsoft/Azure-Kinect-Sensor-S
         "wired_sync_mode" : "K4A_WIRED_SYNC_MODE_STANDALONE"
     }
 
-
 Open3D Azure Kinect Recorder
 ============================
 
@@ -140,7 +137,6 @@ recording or press ``ESC`` to quit the recorder.
 
 .. image:: https://storage.googleapis.com/open3d-bin/docs/images/azure_kinect_recorder.png
     :alt: azure_kinect_recorder.png
-
 
 Open3D Azure Kinect MKV Reader
 ==============================

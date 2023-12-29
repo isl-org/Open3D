@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -72,6 +53,8 @@ public:
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const override;
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     PointCloud &Translate(const Eigen::Vector3d &translation,
                           bool relative = true) override;
@@ -117,30 +100,34 @@ public:
         return *this;
     }
 
-    /// \brief Remove all points from the point cloud that have a nan entry, or
-    /// infinite entries.
-    ///
-    /// Also removes the corresponding normals and color entries.
+    /// \brief Removes all points from the point cloud that have a nan entry, or
+    /// infinite entries. It also removes the corresponding attributes
+    /// associated with the non-finite point such as normals, covariances and
+    /// color entries. It doesn't re-computes these attributes after removing
+    /// non-finite points.
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
     PointCloud &RemoveNonFinitePoints(bool remove_nan = true,
                                       bool remove_infinite = true);
 
-    /// \brief Function to select points from \p input pointcloud into
-    /// \p output pointcloud.
-    ///
-    /// Points with indices in \p indices are selected.
+    /// \brief Removes duplicated points, i.e., points that have identical
+    /// coordinates. It also removes the corresponding attributes associated
+    /// with the non-finite point such as normals, covariances and color
+    /// entries. It doesn't re-computes these attributes after removing
+    /// duplicated points.
+    PointCloud &RemoveDuplicatedPoints();
+
+    /// \brief Selects points from \p input pointcloud, with indices in \p
+    /// indices, and returns a new point-cloud with selected points.
     ///
     /// \param indices Indices of points to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
     std::shared_ptr<PointCloud> SelectByIndex(
             const std::vector<size_t> &indices, bool invert = false) const;
 
-    /// \brief Function to downsample input pointcloud into output pointcloud
-    /// with a voxel.
-    ///
-    /// Normals and colors are averaged if they exist.
+    /// \brief Downsample input pointcloud with a voxel, and return a new
+    /// point-cloud. Normals, covariances and colors are averaged if they exist.
     ///
     /// \param voxel_size Defines the resolution of the voxel grid,
     /// smaller value leads to denser output point cloud.
@@ -198,7 +185,9 @@ public:
     /// clipped.
     ///
     /// \param bbox AxisAlignedBoundingBox to crop points.
-    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox) const;
+    /// \param invert Optional boolean to invert cropping.
+    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox,
+                                     bool invert = false) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
     ///
@@ -206,7 +195,9 @@ public:
     /// clipped.
     ///
     /// \param bbox OrientedBoundingBox to crop points.
-    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox) const;
+    /// \param invert Optional boolean to invert cropping.
+    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox,
+                                     bool invert = false) const;
 
     /// \brief Function to remove points that have less than \p nb_points in a
     /// sphere of a given radius.
@@ -261,10 +252,18 @@ public:
     /// \brief Function to consistently orient estimated normals based on
     /// consistent tangent planes as described in Hoppe et al., "Surface
     /// Reconstruction from Unorganized Points", 1992.
+    /// Further details on parameters are described in
+    /// Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud",
+    /// 2023.
     ///
     /// \param k k nearest neighbour for graph reconstruction for normal
     /// propagation.
-    void OrientNormalsConsistentTangentPlane(size_t k);
+    /// \param lambda penalty constant on the distance of a point from the
+    /// tangent plane \param cos_alpha_tol treshold that defines the amplitude
+    /// of the cone spanned by the reference normal
+    void OrientNormalsConsistentTangentPlane(size_t k,
+                                             const double lambda = 0.0,
+                                             const double cos_alpha_tol = 1.0);
 
     /// \brief Function to compute the point to point distances between point
     /// clouds.
@@ -355,17 +354,50 @@ public:
     /// each iteration.
     /// \param num_iterations Maximum number of iterations.
     /// \param probability Expected probability of finding the optimal plane.
-    /// \param seed Sets the seed value used in the random
-    /// generator, set to nullopt to use a random seed value with each function
-    /// call.
     /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
     /// the plane inliers.
     std::tuple<Eigen::Vector4d, std::vector<size_t>> SegmentPlane(
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
             const int num_iterations = 100,
-            const double probability = 0.99999999,
-            utility::optional<int> seed = utility::nullopt) const;
+            const double probability = 0.99999999) const;
+
+    /// \brief Robustly detect planar patches in the point cloud using.
+    /// Araújo and Oliveira, “A robust statistics approach for plane
+    /// detection in unorganized point clouds,” Pattern Recognition, 2020.
+    ///
+    /// \param normal_variance_threshold_deg Planes having point normals with
+    /// high variance are rejected. The default value is 60 deg. Larger values
+    /// would allow more noisy planes to be detected. \param coplanarity_deg The
+    /// curvature of plane detections are scored using the angle between the
+    /// plane's normal vector and an auxiliary vector. An ideal plane would have
+    /// a score of 90 deg. The default value for this threshold is 75 deg, and
+    /// detected planes with scores lower than this are rejected. Large
+    /// threshold values encourage a tighter distribution of points around the
+    /// detected plane, i.e., less curvature. \param outlier_ratio Maximum
+    /// allowable ratio of outliers in associated plane points before plane is
+    /// rejected. \param min_plane_edge_length A patch's largest edge must
+    /// greater than this value to be considered a true planar patch. If set to
+    /// 0, defaults to 1% of largest span of point cloud. \param min_num_points
+    /// Determines how deep the associated octree becomes and how many points
+    /// must be used for estimating a plane. If set to 0, defaults to 0.1% of
+    /// the number of points in point cloud. \param search_param Point neighbors
+    /// are used to grow and merge detected planes. Neighbors are found with
+    /// KDTree search using these params. More neighbors results in higher
+    /// quality patches at the cost of compute. \return Returns a list of
+    /// detected planar patches, represented as OrientedBoundingBox objects,
+    /// with the third column (z) of R indicating the planar patch normal
+    /// vector. The extent in the z direction is non-zero so that the
+    /// OrientedBoundingBox contains the points that contribute to the plane
+    /// detection.
+    std::vector<std::shared_ptr<OrientedBoundingBox>> DetectPlanarPatches(
+            double normal_variance_threshold_deg = 60,
+            double coplanarity_deg = 75,
+            double outlier_ratio = 0.75,
+            double min_plane_edge_length = 0.0,
+            size_t min_num_points = 0,
+            const geometry::KDTreeSearchParam &search_param =
+                    geometry::KDTreeSearchParamKNN()) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.
@@ -417,13 +449,13 @@ public:
             const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
             bool project_valid_depth_only = true);
 
-    /// \brief Function to create a PointCloud from a VoxelGrid.
+    /// \brief Factory Function to create a PointCloud from a VoxelGrid.
     ///
     /// It transforms the voxel centers to 3D points using the original point
     /// cloud coordinate (with respect to the center of the voxel grid).
     ///
     /// \param voxel_grid The input VoxelGrid.
-    std::shared_ptr<PointCloud> CreateFromVoxelGrid(
+    static std::shared_ptr<PointCloud> CreateFromVoxelGrid(
             const VoxelGrid &voxel_grid);
 
 public:

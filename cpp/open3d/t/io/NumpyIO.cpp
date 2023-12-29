@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 // Contains source code from: https://github.com/rogersce/cnpy.
@@ -291,7 +272,7 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
 // - bytes[7]                         : \x00      # Minor version, unsigned
 // - bytes[8] to bytes[9]             : HEADER_LEN little-endian uint16_t
 // - bytes[10] to bytes[10+HEADER_LEN]: Dict, padded, terminated by '\n'
-// - (10 + HEADER_LEN) % 64 == 0      : Guranteed
+// - (10 + HEADER_LEN) % 64 == 0      : Guaranteed
 //
 // - We only support Version 1.0 for now.
 // - Version 2.0+ supports up to 4GiB HEADER_LEN and the HEADER_LEN is
@@ -317,7 +298,7 @@ static size_t ParseNpyPreamble(const char* preamble) {
     return static_cast<size_t>(header_len);
 }
 
-// Retruns {shape, type(char), word_size, fortran_order}.
+// Returns {shape, type(char), word_size, fortran_order}.
 // This will advance the file pointer to the end of the header.
 static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
         FILE* fp) {
@@ -718,7 +699,7 @@ std::unordered_map<std::string, core::Tensor> ReadNpz(
             if (std::memcmp(empty_zip_bytes, local_header.Data(), 22) == 0) {
                 break;
             } else {
-                utility::LogError("Inalid empty .npz file.");
+                utility::LogError("Invalid empty .npz file.");
             }
         }
 

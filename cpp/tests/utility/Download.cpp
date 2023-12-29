@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/utility/Download.h"
@@ -47,18 +28,18 @@ TEST(Downloader, DownloadAndVerify) {
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
 
     // This download shall work.
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, prefix), file_path);
+    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
     EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
     EXPECT_TRUE(utility::filesystem::FileExists(file_path));
     EXPECT_EQ(utility::GetMD5(file_path), md5);
 
     // This download shall be skipped as the file already exists (look at the
     // message).
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, prefix), file_path);
+    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
 
     // Mismatch md5.
     EXPECT_ANY_THROW(utility::DownloadFromURL(
-            url, "00000000000000000000000000000000", prefix));
+            url, "00000000000000000000000000000000", file_dir));
 
     // Clean up.
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));

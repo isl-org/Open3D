@@ -35,6 +35,15 @@ function(open3d_make_hardening_flags hardening_cflags hardening_ldflags)
             list(APPEND ${hardening_cflags} -fsanitize=safe-stack)   # Stack execution protection
             list(APPEND ${hardening_ldflags} -fsanitize=safe-stack)  # only static libraries supported
         endif()
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+        set(${hardening_cflags}
+            -fstack-protector               # Stack-based buffer overrun detection
+            -Wformat -Wformat-security      # Format string vulnerability
+        )
+        set(${hardening_ldflags}
+            -Wl,-z,relro,-z,now             # Data relocation protection
+            $<$<CONFIG:Release>:LINKER:-S>  # Exclude debug info
+        )
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         set(${hardening_cflags}
             -fstack-protector               # Stack-based buffer overrun detection
@@ -111,6 +120,7 @@ function(open3d_make_hardening_definitions hardening_definitions)
     if (MSVC)
         # No flags added for MSVC
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
+            CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR
             CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR
             CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(${hardening_definitions} _FORTIFY_SOURCE=2)     # Buffer overflow detection

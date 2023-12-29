@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -90,9 +71,21 @@ public:
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
+
+    /// Creates the axis-aligned bounding box around the object.
+    /// Further details in AxisAlignedBoundingBox::AxisAlignedBoundingBox()
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Creates an oriented bounding box that is identical to the
+    /// axis-aligned bounding from GetAxisAlignedBoundingBox().
     OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const override;
+
+    /// Creates an oriented bounding box that is identical to the
+    /// axis-aligned bounding from GetAxisAlignedBoundingBox().
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
+
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;
@@ -129,6 +122,9 @@ public:
 
     /// Add a voxel with specified grid index and color.
     void AddVoxel(const Voxel &voxel);
+
+    /// Remove a voxel with specified grid index.
+    void RemoveVoxel(const Eigen::Vector3i &idx);
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::vector<Eigen::Vector3d> GetVoxelBoundingPoints(
@@ -249,7 +245,7 @@ public:
 public:
     /// Size of the voxel.
     double voxel_size_ = 0.0;
-    /// Coorindate of the origin point.
+    /// Coordinate of the origin point.
     Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();
     /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,

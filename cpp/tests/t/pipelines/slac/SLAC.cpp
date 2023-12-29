@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <string>
@@ -213,7 +194,7 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     int block_count = 40000;
     float voxel_size = 0.05;
     float depth_scale = 1000.f;
-    float max_depth = 3.f;
+    float depth_max = 3.f;
     t::geometry::VoxelBlockGrid voxel_grid(
             {"tsdf", "weight", "color"},
             {core::Dtype::Float32, core::Dtype::Float32, core::Dtype::Float32},
@@ -265,19 +246,19 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
 
             t::geometry::RGBDImage rgbd_projected =
                     ctr_grid.Deform(rgbd, intrinsic_t, extrinsic_local_t,
-                                    depth_scale, max_depth);
+                                    depth_scale, depth_max);
             core::Tensor frustum_block_coords =
                     voxel_grid.GetUniqueBlockCoordinates(
                             rgbd.depth_, intrinsic_t, extrinsic_t, depth_scale,
-                            max_depth);
+                            depth_max);
             voxel_grid.Integrate(frustum_block_coords, rgbd_projected.depth_,
                                  rgbd_projected.color_, intrinsic_t,
-                                 extrinsic_t, depth_scale, max_depth);
+                                 extrinsic_t, depth_scale, depth_max);
             timer.Stop();
 
             ++k;
             utility::LogDebug("{}: Deformation + Integration takes {}", k,
-                              timer.GetDuration());
+                              timer.GetDurationInMillisecond());
         }
     }
 

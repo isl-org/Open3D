@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/GuiSettingsView.h"
@@ -326,6 +307,11 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetBasicMode(checked);
     });
     mat_grid->AddChild(basic_mode_);
+    mat_grid->AddChild(std::make_shared<gui::Label>("Wireframe"));
+    wireframe_mode_ = std::make_shared<gui::Checkbox>("");
+    wireframe_mode_->SetOnChecked(
+            [this](bool checked) { model_.SetWireframeMode(checked); });
+    mat_grid->AddChild(wireframe_mode_);
 
     materials->AddChild(mat_grid);
 
@@ -454,6 +440,7 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
     sun_follows_camera_->SetEnabled(!enable);
     material_color_->SetEnabled(!enable);
     prefab_material_->SetEnabled(!enable);
+    wireframe_mode_->SetEnabled(!enable);
 
     // Set lighting environment for basic/non-basic mode
     auto lighting = model_.GetLighting();  // copy
@@ -468,6 +455,8 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
         model_.SetCustomLighting(lighting);
         model_.SetSunFollowsCamera(true);
         sun_follows_camera_->SetChecked(true);
+        wireframe_mode_->SetChecked(false);
+        model_.SetWireframeMode(false);
     } else {
         model_.SetLightingProfile(GuiSettingsModel::lighting_profiles_[0]);
         if (!sun_follows_cam_was_on_) {

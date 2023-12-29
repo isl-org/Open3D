@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -62,8 +43,6 @@ public:
 public:
     /// \brief Function to check if two points can be aligned.
     ///
-    /// The two input point
-    /// clouds must have exact the same number of points.
     /// \param source Source point cloud.
     /// \param target Target point cloud.
     /// \param corres Correspondence set between source and target point cloud.
@@ -120,7 +99,7 @@ class CorrespondenceCheckerBasedOnDistance : public CorrespondenceChecker {
 public:
     /// \brief Default Constructor.
     ///
-    /// \param distance_threshold Distance threashold for the check.
+    /// \param distance_threshold Distance threshold for the check.
     CorrespondenceCheckerBasedOnDistance(double distance_threshold)
         : CorrespondenceChecker(true),
           distance_threshold_(distance_threshold) {}
@@ -133,7 +112,7 @@ public:
                const Eigen::Matrix4d &transformation) const override;
 
 public:
-    /// Distance threashold for the check.
+    /// Distance threshold for the check.
     double distance_threshold_;
 };
 

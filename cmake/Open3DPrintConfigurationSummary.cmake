@@ -20,6 +20,13 @@ function(open3d_print_configuration_summary)
     open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
     open3d_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
     open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
+    if(BUILD_CUDA_MODULE)
+        open3d_aligned_print("CUDA cached memory manager" "${ENABLE_CACHED_CUDA_MANAGER}")
+    endif()
+    open3d_aligned_print("SYCL Support" "${BUILD_SYCL_MODULE}")
+    if(ENABLE_SYCL_UNIFIED_SHARED_MEMORY)
+        open3d_aligned_print("SYCL unified shared memory" "${ENABLE_SYCL_UNIFIED_SHARED_MEMORY}")
+    endif()
     open3d_aligned_print("ISPC Support" "${BUILD_ISPC_MODULE}")
     open3d_aligned_print("Build GUI" "${BUILD_GUI}")
     open3d_aligned_print("Build WebRTC visualizer" "${BUILD_WEBRTC}")
@@ -33,24 +40,6 @@ function(open3d_print_configuration_summary)
     open3d_aligned_print("Build Jupyter Extension" "${BUILD_JUPYTER_EXTENSION}")
     open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
     open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
-    if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-        message(WARNING
-            "--------------------------------------------------------------------------------\n"
-            "                                                                                \n"
-            " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
-            " stability issues. See https://github.com/isl-org/Open3D/issues/3324 and        \n"
-            " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
-            " problem.                                                                       \n"
-            "                                                                                \n"
-            " We recommend to compile PyTorch from source with compile flags                 \n"
-            "   '-Xcompiler -fno-gnu-unique'                                                 \n"
-            "                                                                                \n"
-            " or use the PyTorch wheels at                                                   \n"
-            "   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2          \n"
-            "                                                                                \n"
-            "--------------------------------------------------------------------------------\n"
-        )
-    endif()
     open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
     open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
     if(GLIBCXX_USE_CXX11_ABI)
@@ -64,6 +53,7 @@ function(open3d_print_configuration_summary)
     set(3RDPARTY_DEPENDENCIES
         Assimp
         BLAS
+        curl
         Eigen3
         filament
         fmt
@@ -85,6 +75,7 @@ function(open3d_print_configuration_summary)
         tinyfiledialogs
         TinyGLTF
         tinyobjloader
+        VTK
         WebRTC
         ZeroMQ
     )

@@ -21,7 +21,6 @@ open3d.ml.torch.ops
     voxel_pooling
     voxelize
 
-
 .. toctree::
     :hidden:
 

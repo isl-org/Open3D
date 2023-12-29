@@ -1,31 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/linalg/LU.h"
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/LUImpl.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/Tri.h"
@@ -33,7 +15,7 @@
 namespace open3d {
 namespace core {
 
-// Get column permutation tensor from ipiv (swaping index array).
+// Get column permutation tensor from ipiv (swapping index array).
 static core::Tensor GetColPermutation(const Tensor& ipiv,
                                       int number_of_indices,
                                       int number_of_rows) {
@@ -64,7 +46,7 @@ static void OutputToPLU(const Tensor& output,
 
     // Get upper and lower matrix from output matrix.
     Triul(output, upper, lower, 0);
-    // Get column permutaion vector from pivot indices vector.
+    // Get column permutation vector from pivot indices vector.
     Tensor col_permutation = GetColPermutation(ipiv, ipiv.GetShape()[0], n);
     // Creating "Permutation Matrix (P in P.A = L.U)".
     permutation = core::Tensor::Eye(n, output.GetDtype(), device)
@@ -96,7 +78,7 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
-    // "output" tensor is modified in-place as ouput.
+    // "output" tensor is modified in-place as output.
     // Operations are COL_MAJOR.
     output = A.T().Clone();
     void* A_data = output.GetDataPtr();
@@ -106,8 +88,9 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     // elements as U, (diagonal elements of L are unity), and ipiv array,
     // which has the pivot indices (for 1 <= i <= min(M,N), row i of the
     // matrix was interchanged with row IPIV(i).
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         int64_t ipiv_len = std::min(rows, cols);
         ipiv = core::Tensor::Empty({ipiv_len}, core::Int32, device);
         void* ipiv_data = ipiv.GetDataPtr();

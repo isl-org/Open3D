@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -40,7 +21,7 @@ class AxisAlignedBoundingBox;
 /// \brief A bounding box oriented along an arbitrary frame of reference.
 ///
 /// The oriented bounding box is defined by its center position, rotation
-/// maxtrix and extent.
+/// matrix and extent.
 class OrientedBoundingBox : public Geometry3D {
 public:
     /// \brief Default constructor.
@@ -73,9 +54,19 @@ public:
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Creates an axis-aligned bounding box around the
+    /// points (corners) of the object.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Returns the object itself
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust) const override;
+
+    /// Returns the object itself
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust) const override;
+
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
@@ -133,6 +124,19 @@ public:
     static OrientedBoundingBox CreateFromPoints(
             const std::vector<Eigen::Vector3d>& points, bool robust = false);
 
+    /// Creates the oriented bounding box with the smallest volume.
+    /// The algorithm makes use of the fact that at least one edge of
+    /// the convex hull must be collinear with an edge of the minimum
+    /// bounding box: for each triangle in the convex hull, calculate
+    /// the minimal axis aligned box in the frame of that triangle.
+    /// at the end, return the box with the smallest volume
+    /// \param points The input points
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    static OrientedBoundingBox CreateFromPointsMinimal(
+            const std::vector<Eigen::Vector3d>& points, bool robust = false);
+
 public:
     /// The center point of the bounding box.
     Eigen::Vector3d center_;
@@ -147,9 +151,10 @@ public:
 
 /// \class AxisAlignedBoundingBox
 ///
-/// \brief A bounding box that is aligned along the coordinate axes.
+/// \brief A bounding box that is aligned along the coordinate axes and defined
+/// by the min_bound and max_bound.
 ///
-///  The AxisAlignedBoundingBox uses the cooridnate axes for bounding box
+///  The AxisAlignedBoundingBox uses the coordinate axes for bounding box
 ///  generation. This means that the bounding box is oriented along the
 ///  coordinate axes.
 class AxisAlignedBoundingBox : public Geometry3D {
@@ -167,11 +172,7 @@ public:
     /// \param min_bound Lower bounds of the bounding box for all axes.
     /// \param max_bound Upper bounds of the bounding box for all axes.
     AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
-                           const Eigen::Vector3d& max_bound)
-        : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
-          min_bound_(min_bound),
-          max_bound_(max_bound),
-          color_(1, 1, 1) {}
+                           const Eigen::Vector3d& max_bound);
     ~AxisAlignedBoundingBox() override {}
 
 public:
@@ -180,15 +181,25 @@ public:
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Returns the object itself
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Returns an oriented bounding box with the same dimensions
+    /// and orientation as the object
     virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
+
+    /// Returns an oriented bounding box with the same dimensions
+    /// and orientation as the object
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual AxisAlignedBoundingBox& Translate(
             const Eigen::Vector3d& translation, bool relative = true) override;
 
-    /// \brief Scales the axis-aligned bounding boxs.
+    /// \brief Scales the axis-aligned bounding boxes.
     /// If \f$mi\f$ is the min_bound and \f$ma\f$ is the max_bound of
     /// the axis aligned bounding box, and \f$s\f$ and \f$c\f$ are the
     /// provided scaling factor and center respectively, then the new
@@ -217,14 +228,20 @@ public:
     /// extents.
     double GetMaxExtent() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
+    /// Calculates the percentage position of the given x-coordinate within
+    /// the x-axis range of this AxisAlignedBoundingBox.
     double GetXPercentage(double x) const {
         return (x - min_bound_(0)) / (max_bound_(0) - min_bound_(0));
     }
 
+    /// Calculates the percentage position of the given y-coordinate within
+    /// the y-axis range of this AxisAlignedBoundingBox.
     double GetYPercentage(double y) const {
         return (y - min_bound_(1)) / (max_bound_(1) - min_bound_(1));
     }
 
+    /// Calculates the percentage position of the given z-coordinate within
+    /// the z-axis range of this AxisAlignedBoundingBox.
     double GetZPercentage(double z) const {
         return (z - min_bound_(2)) / (max_bound_(2) - min_bound_(2));
     }

@@ -37,7 +37,6 @@ This script installs and activates ``py3env``. The necessary modules, ``numpy`` 
 .. Error:: Anaconda users are recommended to use this configuration as ``conda install matplotlib`` installs additional modules that are not based on OSMesa.
            This will result in **segmentation fault error** at runtime.
 
-
 Build Open3D with OSMesa
 ````````````````````````
 
@@ -105,7 +104,6 @@ Rendered images are at ~/Open3D/examples/test_data/depth and the image folder.
 .. Note:: | ``headless_rendering.py`` saves png files.
           | This may take some time, so try to tweak the script for your purpose.
 
-
 Possible Issues
 ````````````````````````
 
@@ -116,7 +114,6 @@ Try ``cmake`` with ``-DUSE_SYSTEM_GLEW=OFF`` and ``-DUSE_SYSTEM_GLFW=OFF`` flags
 
 .. Error:: | If OSMesa does not support GL 3.3 Core you will get the following error:
            | **GLFW Error: OSMesa: Failed to create context**
-
 
 Open3D currently uses GL 3.3 Core Profile, if that is not supported you will get the above error.
 You can run

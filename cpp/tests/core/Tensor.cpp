@@ -1,30 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Tensor.h"
+
+#include <gmock/gmock.h>
 
 #include <cmath>
 #include <limits>
@@ -35,7 +18,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
+#include "open3d/utility/Random.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
@@ -681,12 +664,14 @@ TEST_P(TensorPermuteDevices, ItemAssign) {
 }
 
 TEST_P(TensorPermuteDevices, ToString) {
+    using ::testing::AnyOf;
     core::Device device = GetParam();
     core::Tensor t;
 
     // 0D
     t = core::Tensor::Ones({}, core::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(1.0)");
+    // IntelLLVM / fmt 6 adds 1 decimal place
+    EXPECT_THAT(t.ToString(/*with_suffix=*/false), AnyOf(R"(1)", R"(1.0)"));
     t = core::Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
                            core::Float32, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
@@ -697,7 +682,9 @@ TEST_P(TensorPermuteDevices, ToString) {
     // 1D float
     t = core::Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5}, core::Float32,
                      device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"([0.0 1.0 2.0 3.0 4.0])");
+    // IntelLLVM / fmt 6 adds 1 decimal place
+    EXPECT_THAT(t.ToString(/*with_suffix=*/false),
+                AnyOf(R"([0 1 2 3 4])", R"([0.0 1.0 2.0 3.0 4.0])"));
 
     // 1D int
     std::vector<int32_t> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
@@ -1083,7 +1070,7 @@ TEST_P(TensorPermuteDevices, Append) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(self.Append(other.To(core::Float64)));
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         EXPECT_ANY_THROW(self.Append(other.To(core::Device("CPU:0"))));
     }
 }
@@ -1426,6 +1413,40 @@ TEST_P(TensorPermuteDevicePairs, IndexSetBroadcast) {
     EXPECT_EQ(dst_t.ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 10, 10, 10, 0, 0, 0, 0, 0,
                                   0, 0, 0, 0, 20, 20, 20, 0, 0, 0, 0, 0}));
+}
+
+TEST_P(TensorPermuteDevices, IndexAdd_) {
+    core::Device device = GetParam();
+
+    const int tensor_size = 100;
+
+    // Test one: dst_t[np.array([0, 1, 2, 3, 4])] += np.array([1, 1, 1, 1, 1])
+    {
+        core::Tensor index =
+                core::Tensor::Arange(0, tensor_size, 1, core::Int64, device);
+        core::Tensor src =
+                core::Tensor::Zeros({tensor_size}, core::Float32, device);
+        src.IndexAdd_(
+                /*dim=*/0, index,
+                core::Tensor::Ones({tensor_size}, core::Float32, device));
+        EXPECT_TRUE(src.AllClose(
+                core::Tensor::Ones({tensor_size}, core::Float32, device)));
+    }
+
+    // Test two: dst_t[np.array([0, 0, 0, 0, 0])] += np.array([1, 1, 1, 1, 1])
+    {
+        core::Tensor index =
+                core::Tensor::Zeros({tensor_size}, core::Int64, device);
+        core::Tensor src =
+                core::Tensor::Zeros({tensor_size}, core::Float32, device);
+        src.IndexAdd_(
+                /*dim=*/0, index,
+                core::Tensor::Ones({tensor_size}, core::Float32, device));
+        EXPECT_EQ(src[0].Item<float>(), tensor_size);
+        EXPECT_TRUE(src.Slice(0, 1, tensor_size)
+                            .AllClose(core::Tensor::Zeros(
+                                    {tensor_size - 1}, core::Float32, device)));
+    }
 }
 
 TEST_P(TensorPermuteDevices, Permute) {
@@ -1814,7 +1835,7 @@ TEST_P(TensorPermuteDevices, ReduceSumSpecialShapes) {
     EXPECT_THROW(dst.Sum({1}, false), std::runtime_error);
     EXPECT_THROW(dst.Sum({1}, true), std::runtime_error);
 
-    // Emtpy reduction axis ().
+    // Empty reduction axis ().
     // This reduces no axis, which is different from reduce all axis.
     // np.sum(np.ones((0)), axis=(), keepdims=*)
     src = core::Tensor::Ones({0}, core::Float32, device);
@@ -2009,7 +2030,7 @@ TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
     int64_t max_size = *std::max_element(sizes.begin(), sizes.end());
     std::vector<int> vals(max_size);
     std::transform(vals.begin(), vals.end(), vals.begin(), [](int x) -> int {
-        return utility::UniformRandIntGenerator(0, 3)();
+        return utility::random::UniformIntGenerator<int>(0, 3)();
     });
 
     for (int64_t size : sizes) {
@@ -2349,6 +2370,21 @@ TEST_P(TensorPermuteDevices, Neg) {
     // Also works for int.
     src = core::Tensor(std::vector<int>{-1, 0, 2}, {1, 3}, core::Int32, device);
     dst = src.Neg();
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>({1, 0, -2}));
+}
+
+TEST_P(TensorPermuteDevices, UnaryMinus) {
+    core::Device device = GetParam();
+
+    std::vector<float> dst_vals{2, 1, 0, -1, -2, -3};
+    core::Tensor src =
+            core::Tensor::Init<float>({{-2, -1, 0}, {1, 2, 3}}, device);
+    core::Tensor dst = -src;
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+
+    // Also works for int.
+    src = core::Tensor(std::vector<int>{-1, 0, 2}, {1, 3}, core::Int32, device);
+    dst = -src;
     EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>({1, 0, -2}));
 }
 
@@ -2759,6 +2795,69 @@ TEST_P(TensorPermuteDevices, NonZeroNumpy) {
               std::vector<int64_t>({1, 0, 0}));
     EXPECT_EQ(results[0].GetShape(), core::SizeVector{3});
     EXPECT_EQ(results[1].GetShape(), core::SizeVector{3});
+}
+
+TEST_P(TensorPermuteDevices, All) {
+    core::Device device = GetParam();
+    core::Tensor t = core::Tensor::Init<bool>(
+            {{false, true}, {true, false}, {true, false}, {true, true}},
+            device);
+
+    // Default. Output is a scalar boolean tensor with value true if all
+    // elements are true.
+    EXPECT_TRUE(t.All().AllClose(core::Tensor::Init<bool>(false, device)));
+
+    // Along axis 0.
+    EXPECT_TRUE(t.All(core::SizeVector({0}), false)
+                        .AllClose(core::Tensor::Init<bool>({false, false},
+                                                           device)));
+    EXPECT_TRUE(t.All(core::SizeVector({0}), true)
+                        .AllClose(core::Tensor::Init<bool>({{false, false}},
+                                                           device)));
+    // // Along axis 1.
+    EXPECT_TRUE(t.All(core::SizeVector({1}), false)
+                        .AllClose(core::Tensor::Init<bool>(
+                                {false, false, false, true}, device)));
+    EXPECT_TRUE(t.All(core::SizeVector({1}), true)
+                        .AllClose(core::Tensor::Init<bool>(
+                                {{false}, {false}, {false}, {true}}, device)));
+
+    // Supports only Bool tensor.
+    EXPECT_ANY_THROW(t.To(core::Int32).All());
+    // Out of dim.
+    EXPECT_ANY_THROW(t.All(core::SizeVector({2})));
+}
+
+TEST_P(TensorPermuteDevices, Any) {
+    core::Device device = GetParam();
+    core::Tensor t = core::Tensor::Init<bool>(
+            {{false, true}, {true, false}, {true, false}, {true, true}},
+            device);
+
+    // Default. Output is a scalar boolean tensor with value true if any
+    // elements is true.
+    EXPECT_TRUE(t.Any().AllClose(core::Tensor::Init<bool>(true, device)));
+
+    // Along axis 0.
+    EXPECT_TRUE(
+            t.Any(core::SizeVector({0}), false)
+                    .AllClose(core::Tensor::Init<bool>({true, true}, device)));
+    EXPECT_TRUE(t.Any(core::SizeVector({0}), true)
+                        .AllClose(core::Tensor::Init<bool>({{true, true}},
+                                                           device)));
+
+    // Along axis 1.
+    EXPECT_TRUE(t.Any(core::SizeVector({1}), false)
+                        .AllClose(core::Tensor::Init<bool>(
+                                {true, true, true, true}, device)));
+    EXPECT_TRUE(t.Any(core::SizeVector({1}), true)
+                        .AllClose(core::Tensor::Init<bool>(
+                                {{true}, {true}, {true}, {true}}, device)));
+
+    // Supports only Bool tensor.
+    EXPECT_ANY_THROW(t.To(core::Int32).Any());
+    // Out of dim.
+    EXPECT_ANY_THROW(t.Any(core::SizeVector({2})));
 }
 
 TEST_P(TensorPermuteDevices, CreationEmpty) {
@@ -3451,5 +3550,19 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
     }
 }
 
+TEST_P(TensorPermuteDevices, TakeOwnership) {
+    core::Device device = GetParam();
+    if (!device.IsCPU()) {
+        GTEST_SKIP();
+    }
+    std::vector<int> values{1, 2, 3, 4, 5, 6};
+    std::vector<int> vec(values);
+    void *vec_data = (void *)vec.data();
+    int64_t vec_size = (int64_t)vec.size();
+    core::Tensor t(std::move(vec));
+    EXPECT_TRUE(t.GetDataPtr<int>() == vec_data);
+    EXPECT_TRUE(t.GetShape() == core::SizeVector({vec_size}));
+    EXPECT_EQ(t.ToFlatVector<int>(), values);
+}
 }  // namespace tests
 }  // namespace open3d

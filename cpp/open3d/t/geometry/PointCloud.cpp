@@ -1,47 +1,44 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/PointCloud.h"
 
+#include <libqhullcpp/PointCoordinates.h>
+#include <libqhullcpp/Qhull.h>
+#include <libqhullcpp/QhullFacet.h>
+#include <libqhullcpp/QhullFacetList.h>
+#include <libqhullcpp/QhullVertexSet.h>
+
 #include <Eigen/Core>
+#include <algorithm>
 #include <limits>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
+#include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
+#include "open3d/t/pipelines/registration/Registration.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace t {
@@ -73,15 +70,20 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
 }
 
 std::string PointCloud::ToString() const {
-    if (point_attr_.size() == 0)
-        return fmt::format("PointCloud on {} [0 points ()] Attributes: None.",
-                           GetDevice().ToString());
+    size_t num_points = 0;
+    std::string points_dtype_str = "";
+    if (point_attr_.count(point_attr_.GetPrimaryKey())) {
+        num_points = GetPointPositions().GetLength();
+        points_dtype_str =
+                fmt::format(" ({})", GetPointPositions().GetDtype().ToString());
+    }
     auto str =
-            fmt::format("PointCloud on {} [{} points ({})] Attributes:",
-                        GetDevice().ToString(), GetPointPositions().GetShape(0),
-                        GetPointPositions().GetDtype().ToString());
+            fmt::format("PointCloud on {} [{} points{}].\nAttributes:",
+                        GetDevice().ToString(), num_points, points_dtype_str);
 
-    if (point_attr_.size() == 1) return str + " None.";
+    if ((point_attr_.size() - point_attr_.count(point_attr_.GetPrimaryKey())) ==
+        0)
+        return str + " None.";
     for (const auto &keyval : point_attr_) {
         if (keyval.first != "positions") {
             str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
@@ -137,7 +139,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
             attr_shape[0] = combined_length;
             if (other_attr_shape != attr_shape) {
                 utility::LogError(
-                        "Shape mismatch. Attribure {}, shape {}, is not "
+                        "Shape mismatch. Attribute {}, shape {}, is not "
                         "compatible with {}.",
                         kv.first, other_attr.GetShape(), kv.second.GetShape());
             }
@@ -212,44 +214,385 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-PointCloud PointCloud::VoxelDownSample(
-        double voxel_size, const core::HashBackendType &backend) const {
+PointCloud PointCloud::SelectByMask(const core::Tensor &boolean_mask,
+                                    bool invert /* = false */) const {
+    const int64_t length = GetPointPositions().GetLength();
+    core::AssertTensorDtype(boolean_mask, core::Dtype::Bool);
+    core::AssertTensorShape(boolean_mask, {length});
+    core::AssertTensorDevice(boolean_mask, GetDevice());
+
+    core::Tensor indices_local;
+    if (invert) {
+        indices_local = boolean_mask.LogicalNot();
+    } else {
+        indices_local = boolean_mask;
+    }
+
+    PointCloud pcd(GetDevice());
+    for (auto &kv : GetPointAttr()) {
+        if (HasPointAttr(kv.first)) {
+            pcd.SetPointAttr(kv.first, kv.second.IndexGet({indices_local}));
+        }
+    }
+
+    utility::LogDebug("Pointcloud down sampled from {} points to {} points.",
+                      length, pcd.GetPointPositions().GetLength());
+    return pcd;
+}
+
+PointCloud PointCloud::SelectByIndex(
+        const core::Tensor &indices,
+        bool invert /* = false */,
+        bool remove_duplicates /* = false */) const {
+    const int64_t length = GetPointPositions().GetLength();
+    core::AssertTensorDtype(indices, core::Int64);
+    core::AssertTensorDevice(indices, GetDevice());
+
+    PointCloud pcd(GetDevice());
+
+    if (!remove_duplicates && !invert) {
+        core::TensorKey key = core::TensorKey::IndexTensor(indices);
+        for (auto &kv : GetPointAttr()) {
+            if (HasPointAttr(kv.first)) {
+                pcd.SetPointAttr(kv.first, kv.second.GetItem(key));
+            }
+        }
+        utility::LogDebug(
+                "Pointcloud down sampled from {} points to {} points.", length,
+                pcd.GetPointPositions().GetLength());
+    } else {
+        // The indices may have duplicate index value and will result in
+        // identity point cloud attributes. We convert indices Tensor into mask
+        // Tensor and call SelectByMask to avoid this situation.
+        core::Tensor mask =
+                core::Tensor::Zeros({length}, core::Bool, GetDevice());
+        mask.SetItem(core::TensorKey::IndexTensor(indices),
+                     core::Tensor::Init<bool>(true, GetDevice()));
+
+        pcd = SelectByMask(mask, invert);
+    }
+
+    return pcd;
+}
+
+PointCloud PointCloud::VoxelDownSample(double voxel_size,
+                                       const std::string &reduction) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
-    core::Tensor points_voxeld = GetPointPositions() / voxel_size;
-    core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
+    if (reduction != "mean") {
+        utility::LogError("Reduction can only be 'mean' for VoxelDownSample.");
+    }
 
-    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
-                                        {3}, device_, backend);
+    // Discretize voxels.
+    core::Tensor voxeld = GetPointPositions() / voxel_size;
+    core::Tensor voxeli = voxeld.Floor().To(core::Int64);
 
-    core::Tensor buf_indices, masks;
-    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
+    // Map discrete voxels to indices.
+    core::HashSet voxeli_hashset(voxeli.GetLength(), core::Int64, {3}, device_);
 
-    PointCloud pcd_down(GetPointPositions().GetDevice());
+    // Index map: (0, original_points) -> (0, unique_points).
+    core::Tensor index_map_point2voxel, masks;
+    voxeli_hashset.Insert(voxeli, index_map_point2voxel, masks);
+
+    // Insert and find are two different passes.
+    // In the insertion pass, -1/false is returned for already existing
+    // downsampled corresponding points.
+    // In the find pass, actual indices are returned corresponding downsampled
+    // points.
+    voxeli_hashset.Find(voxeli, index_map_point2voxel, masks);
+    index_map_point2voxel = index_map_point2voxel.To(core::Int64);
+
+    int64_t num_points = voxeli.GetLength();
+    int64_t num_voxels = voxeli_hashset.Size();
+
+    // Count the number of points in each voxel.
+    auto voxel_num_points =
+            core::Tensor::Zeros({num_voxels}, core::Float32, device_);
+    voxel_num_points.IndexAdd_(
+            /*dim*/ 0, index_map_point2voxel,
+            core::Tensor::Ones({num_points}, core::Float32, device_));
+
+    // Create a new point cloud.
+    PointCloud pcd_down(device_);
     for (auto &kv : point_attr_) {
-        if (kv.first == "positions") {
-            pcd_down.SetPointAttr(kv.first,
-                                  points_voxeli.IndexGet({masks}).To(
-                                          GetPointPositions().GetDtype()) *
-                                          voxel_size);
+        auto point_attr = kv.second;
+
+        std::string attr_string = kv.first;
+        auto attr_dtype = point_attr.GetDtype();
+
+        // Use float to avoid unsupported tensor types.
+        core::SizeVector attr_shape = point_attr.GetShape();
+        attr_shape[0] = num_voxels;
+        auto voxel_attr =
+                core::Tensor::Zeros(attr_shape, core::Float32, device_);
+        if (reduction == "mean") {
+            voxel_attr.IndexAdd_(0, index_map_point2voxel,
+                                 point_attr.To(core::Float32));
+            voxel_attr /= voxel_num_points.View({-1, 1});
+            voxel_attr = voxel_attr.To(attr_dtype);
         } else {
-            pcd_down.SetPointAttr(kv.first, kv.second.IndexGet({masks}));
+            utility::LogError("Unsupported reduction type {}.", reduction);
         }
+        pcd_down.SetPointAttr(attr_string, voxel_attr);
     }
 
     return pcd_down;
 }
 
+PointCloud PointCloud::UniformDownSample(size_t every_k_points) const {
+    if (every_k_points == 0) {
+        utility::LogError(
+                "Illegal sample rate, every_k_points must be larger than 0.");
+    }
+
+    const int64_t length = GetPointPositions().GetLength();
+
+    PointCloud pcd_down(GetDevice());
+    for (auto &kv : GetPointAttr()) {
+        pcd_down.SetPointAttr(
+                kv.first,
+                kv.second.Slice(0, 0, length, (int64_t)every_k_points));
+    }
+
+    return pcd_down;
+}
+
+PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
+    if (sampling_ratio < 0 || sampling_ratio > 1) {
+        utility::LogError(
+                "Illegal sampling_ratio {}, sampling_ratio must be between 0 "
+                "and 1.");
+    }
+
+    const int64_t length = GetPointPositions().GetLength();
+    std::vector<int64_t> indices(length);
+    std::iota(std::begin(indices), std::end(indices), 0);
+    {
+        std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+        std::shuffle(indices.begin(), indices.end(),
+                     *utility::random::GetEngine());
+    }
+
+    const int sample_size = sampling_ratio * length;
+    indices.resize(sample_size);
+    // TODO: Generate random indices in GPU using CUDA rng maybe more efficient
+    // than copy indices data from CPU to GPU.
+    return SelectByIndex(
+            core::Tensor(indices, {sample_size}, core::Int64, GetDevice()),
+            false, false);
+}
+
+PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
+    // We want the sampled points has the attributes of the original point
+    // cloud, so full copy is needed.
+    const open3d::geometry::PointCloud lpcd = ToLegacy();
+    return FromLegacy(*lpcd.FarthestPointDownSample(num_samples),
+                      GetPointPositions().GetDtype(), GetDevice());
+}
+
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
+        size_t nb_points, double search_radius) const {
+    if (nb_points < 1 || search_radius <= 0) {
+        utility::LogError(
+                "Illegal input parameters, number of points and radius must be "
+                "positive");
+    }
+    core::nns::NearestNeighborSearch target_nns(GetPointPositions());
+
+    const bool check = target_nns.FixedRadiusIndex(search_radius);
+    if (!check) {
+        utility::LogError("Fixed radius search index is not set.");
+    }
+
+    core::Tensor indices, distance, row_splits;
+    std::tie(indices, distance, row_splits) = target_nns.FixedRadiusSearch(
+            GetPointPositions(), search_radius, false);
+    row_splits = row_splits.To(GetDevice());
+
+    const int64_t size = row_splits.GetLength();
+    const core::Tensor num_neighbors =
+            row_splits.Slice(0, 1, size) - row_splits.Slice(0, 0, size - 1);
+
+    const core::Tensor valid =
+            num_neighbors.Ge(static_cast<int64_t>(nb_points));
+    return std::make_tuple(SelectByMask(valid), valid);
+}
+
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveStatisticalOutliers(
+        size_t nb_neighbors, double std_ratio) const {
+    if (nb_neighbors < 1 || std_ratio <= 0) {
+        utility::LogError(
+                "Illegal input parameters, the number of neighbors and "
+                "standard deviation ratio must be positive.");
+    }
+    if (GetPointPositions().GetLength() == 0) {
+        return std::make_tuple(PointCloud(GetDevice()),
+                               core::Tensor({0}, core::Bool, GetDevice()));
+    }
+
+    core::nns::NearestNeighborSearch nns(GetPointPositions().Contiguous());
+    const bool check = nns.KnnIndex();
+    if (!check) {
+        utility::LogError("Knn search index is not set.");
+    }
+
+    core::Tensor indices, distance2;
+    std::tie(indices, distance2) =
+            nns.KnnSearch(GetPointPositions(), nb_neighbors);
+
+    core::Tensor avg_distances = distance2.Sqrt().Mean({1});
+    const double cloud_mean =
+            avg_distances.Mean({0}).To(core::Float64).Item<double>();
+    const core::Tensor std_distances_centered = avg_distances - cloud_mean;
+    const double sq_sum = (std_distances_centered * std_distances_centered)
+                                  .Sum({0})
+                                  .To(core::Float64)
+                                  .Item<double>();
+    const double std_dev =
+            std::sqrt(sq_sum / (avg_distances.GetShape()[0] - 1));
+    const double distance_threshold = cloud_mean + std_ratio * std_dev;
+    const core::Tensor valid = avg_distances.Le(distance_threshold);
+
+    return std::make_tuple(SelectByMask(valid), valid);
+}
+
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
+        bool remove_nan, bool remove_inf) const {
+    core::Tensor finite_indices_mask;
+    const core::SizeVector dim = {1};
+    if (remove_nan && remove_inf) {
+        finite_indices_mask =
+                this->GetPointPositions().IsFinite().All(dim, false);
+    } else if (remove_nan) {
+        finite_indices_mask =
+                this->GetPointPositions().IsNan().LogicalNot().All(dim, false);
+    } else if (remove_inf) {
+        finite_indices_mask =
+                this->GetPointPositions().IsInf().LogicalNot().All(dim, false);
+    } else {
+        finite_indices_mask = core::Tensor::Full(
+                {this->GetPointPositions().GetLength()}, true, core::Bool,
+                this->GetPointPositions().GetDevice());
+    }
+
+    utility::LogDebug("Removing non-finite points.");
+    return std::make_tuple(SelectByMask(finite_indices_mask),
+                           finite_indices_mask);
+}
+
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints()
+        const {
+    core::Tensor points_voxeli;
+    const core::Dtype dtype = GetPointPositions().GetDtype();
+    if (dtype.ByteSize() == 4) {
+        points_voxeli = GetPointPositions().ReinterpretCast(core::Int32);
+    } else if (dtype.ByteSize() == 8) {
+        points_voxeli = GetPointPositions().ReinterpretCast(core::Int64);
+    } else {
+        utility::LogError(
+                "Unsupported point position data-type. Only support "
+                "Int32, Int64, Float32 and Float64.");
+    }
+
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(),
+                                        points_voxeli.GetDtype(), {3}, device_);
+    core::Tensor buf_indices, masks;
+    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
+
+    return std::make_tuple(SelectByMask(masks), masks);
+}
+
+PointCloud &PointCloud::NormalizeNormals() {
+    if (!HasPointNormals()) {
+        utility::LogWarning("PointCloud has no normals.");
+        return *this;
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    core::Tensor &normals = GetPointNormals();
+    if (IsCPU()) {
+        kernel::pointcloud::NormalizeNormalsCPU(normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::NormalizeNormalsCUDA, normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    return *this;
+}
+
+PointCloud &PointCloud::PaintUniformColor(const core::Tensor &color) {
+    core::AssertTensorShape(color, {3});
+    core::Tensor clipped_color = color.To(GetDevice());
+    if (color.GetDtype() == core::Float32 ||
+        color.GetDtype() == core::Float64) {
+        clipped_color = clipped_color.Clip(0.0f, 1.0f);
+    }
+    core::Tensor pcd_colors =
+            core::Tensor::Empty({GetPointPositions().GetLength(), 3},
+                                clipped_color.GetDtype(), GetDevice());
+    pcd_colors.AsRvalue() = clipped_color;
+    SetPointColors(pcd_colors);
+
+    return *this;
+}
+
+std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
+        double radius, int max_nn, double angle_threshold) const {
+    core::AssertTensorDtypes(this->GetPointPositions(),
+                             {core::Float32, core::Float64});
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "PointCloud must have normals attribute to compute boundary "
+                "points.");
+    }
+
+    const core::Device device = GetDevice();
+    const int64_t num_points = GetPointPositions().GetLength();
+
+    const core::Tensor points_d = GetPointPositions().Contiguous();
+    const core::Tensor normals_d = GetPointNormals().Contiguous();
+
+    // Compute nearest neighbors.
+    core::Tensor indices, distance2, counts;
+    core::nns::NearestNeighborSearch tree(points_d, core::Int32);
+
+    bool check = tree.HybridIndex(radius);
+    if (!check) {
+        utility::LogError("Building HybridIndex failed.");
+    }
+    std::tie(indices, distance2, counts) =
+            tree.HybridSearch(points_d, radius, max_nn);
+    utility::LogDebug(
+            "Use HybridSearch [max_nn: {} | radius {}] for computing "
+            "boundary points.",
+            max_nn, radius);
+
+    core::Tensor mask = core::Tensor::Zeros({num_points}, core::Bool, device);
+    if (IsCPU()) {
+        kernel::pointcloud::ComputeBoundaryPointsCPU(
+                points_d, normals_d, indices, counts, mask, angle_threshold);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::ComputeBoundaryPointsCUDA, points_d,
+                  normals_d, indices, counts, mask, angle_threshold);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    return std::make_tuple(SelectByMask(mask), mask);
+}
+
 void PointCloud::EstimateNormals(
-        const int max_knn /* = 30*/,
+        const utility::optional<int> max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
     core::AssertTensorDtypes(this->GetPointPositions(),
                              {core::Float32, core::Float64});
 
     const core::Dtype dtype = this->GetPointPositions().GetDtype();
     const core::Device device = GetDevice();
-    const core::Device::DeviceType device_type = device.GetType();
+
     const bool has_normals = HasPointNormals();
 
     if (!has_normals) {
@@ -266,45 +609,63 @@ void PointCloud::EstimateNormals(
             core::Tensor::Empty({GetPointPositions().GetLength(), 3, 3}, dtype,
                                 device));
 
-    if (radius.has_value()) {
+    if (radius.has_value() && max_knn.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing covariances");
         // Computes and sets `covariances` attribute using Hybrid Search
-        // mehtod.
-        if (device_type == core::Device::DeviceType::CPU) {
+        // method.
+        if (IsCPU()) {
             kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
                     this->GetPointPositions().Contiguous(),
-                    this->GetPointAttr("covariances"), radius.value(), max_knn);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
+                    this->GetPointAttr("covariances"), radius.value(),
+                    max_knn.value());
+        } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateCovariancesUsingHybridSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value(),
-                      max_knn);
+                      max_knn.value());
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else if (max_knn.has_value() && !radius.has_value()) {
+        utility::LogDebug("Using KNN Search for computing covariances");
+        // Computes and sets `covariances` attribute using KNN Search method.
+        if (IsCPU()) {
+            kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), max_knn.value());
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), max_knn.value());
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else if (!max_knn.has_value() && radius.has_value()) {
+        utility::LogDebug("Using Radius Search for computing covariances");
+        // Computes and sets `covariances` attribute using KNN Search method.
+        if (IsCPU()) {
+            kernel::pointcloud::EstimateCovariancesUsingRadiusSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value());
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateCovariancesUsingRadiusSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), radius.value());
         } else {
             utility::LogError("Unimplemented device");
         }
     } else {
-        utility::LogDebug("Using KNN Search for computing covariances");
-        // Computes and sets `covariances` attribute using KNN Search method.
-        if (device_type == core::Device::DeviceType::CPU) {
-            kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
-                    this->GetPointPositions().Contiguous(),
-                    this->GetPointAttr("covariances"), max_knn);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
-            CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
-                      this->GetPointPositions().Contiguous(),
-                      this->GetPointAttr("covariances"), max_knn);
-        } else {
-            utility::LogError("Unimplemented device");
-        }
+        utility::LogError("Both max_nn and radius are none.");
     }
 
     // Estimate `normal` of each point using its `covariance` matrix.
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (IsCPU()) {
         kernel::pointcloud::EstimateNormalsFromCovariancesCPU(
                 this->GetPointAttr("covariances"), this->GetPointNormals(),
                 has_normals);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::EstimateNormalsFromCovariancesCUDA,
                   this->GetPointAttr("covariances"), this->GetPointNormals(),
                   has_normals);
@@ -317,8 +678,75 @@ void PointCloud::EstimateNormals(
     RemovePointAttr("covariances");
 }
 
+void PointCloud::OrientNormalsToAlignWithDirection(
+        const core::Tensor &orientation_reference) {
+    core::AssertTensorDevice(orientation_reference, GetDevice());
+    core::AssertTensorShape(orientation_reference, {3});
+
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "No normals in the PointCloud. Call EstimateNormals() first.");
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    core::Tensor reference =
+            orientation_reference.To(GetPointPositions().GetDtype());
+
+    core::Tensor &normals = GetPointNormals();
+    if (IsCPU()) {
+        kernel::pointcloud::OrientNormalsToAlignWithDirectionCPU(normals,
+                                                                 reference);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::OrientNormalsToAlignWithDirectionCUDA,
+                  normals, reference);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void PointCloud::OrientNormalsTowardsCameraLocation(
+        const core::Tensor &camera_location) {
+    core::AssertTensorDevice(camera_location, GetDevice());
+    core::AssertTensorShape(camera_location, {3});
+
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "No normals in the PointCloud. Call EstimateNormals() first.");
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    core::Tensor reference = camera_location.To(GetPointPositions().GetDtype());
+
+    core::Tensor &normals = GetPointNormals();
+    if (IsCPU()) {
+        kernel::pointcloud::OrientNormalsTowardsCameraLocationCPU(
+                GetPointPositions().Contiguous(), normals, reference);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::OrientNormalsTowardsCameraLocationCUDA,
+                  GetPointPositions().Contiguous(), normals, reference);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void PointCloud::OrientNormalsConsistentTangentPlane(
+        size_t k,
+        const double lambda /* = 0.0*/,
+        const double cos_alpha_tol /* = 1.0*/) {
+    PointCloud tpcd(GetPointPositions());
+    tpcd.SetPointNormals(GetPointNormals());
+
+    open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    lpcd.OrientNormalsConsistentTangentPlane(k, lambda, cos_alpha_tol);
+
+    SetPointNormals(core::eigen_converter::EigenVector3dVectorToTensor(
+            lpcd.normals_, GetPointPositions().GetDtype(), GetDevice()));
+}
+
 void PointCloud::EstimateColorGradients(
-        const int max_knn /* = 30*/,
+        const utility::optional<int> max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
     if (!HasPointColors() || !HasPointNormals()) {
         utility::LogError(
@@ -330,7 +758,6 @@ void PointCloud::EstimateColorGradients(
 
     const core::Dtype dtype = this->GetPointColors().GetDtype();
     const core::Device device = GetDevice();
-    const core::Device::DeviceType device_type = device.GetType();
 
     if (!this->HasPointAttr("color_gradients")) {
         this->SetPointAttr(
@@ -348,44 +775,64 @@ void PointCloud::EstimateColorGradients(
     }
 
     // Compute and set `color_gradients` attribute.
-    if (radius.has_value()) {
+    if (radius.has_value() && max_knn.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing color_gradients");
-        if (device_type == core::Device::DeviceType::CPU) {
+        if (IsCPU()) {
             kernel::pointcloud::EstimateColorGradientsUsingHybridSearchCPU(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointNormals().Contiguous(),
                     this->GetPointColors().Contiguous(),
                     this->GetPointAttr("color_gradients"), radius.value(),
-                    max_knn);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
+                    max_knn.value());
+        } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateColorGradientsUsingHybridSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value(),
-                      max_knn);
+                      max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
-    } else {
+    } else if (max_knn.has_value() && !radius.has_value()) {
         utility::LogDebug("Using KNN Search for computing color_gradients");
-        if (device_type == core::Device::DeviceType::CPU) {
+        if (IsCPU()) {
             kernel::pointcloud::EstimateColorGradientsUsingKNNSearchCPU(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointNormals().Contiguous(),
                     this->GetPointColors().Contiguous(),
-                    this->GetPointAttr("color_gradients"), max_knn);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
+                    this->GetPointAttr("color_gradients"), max_knn.value());
+        } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateColorGradientsUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
-                      this->GetPointAttr("color_gradients"), max_knn);
+                      this->GetPointAttr("color_gradients"), max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
+    } else if (!max_knn.has_value() && radius.has_value()) {
+        utility::LogDebug("Using Radius Search for computing color_gradients");
+        if (IsCPU()) {
+            kernel::pointcloud::EstimateColorGradientsUsingRadiusSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value());
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateColorGradientsUsingRadiusSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointNormals().Contiguous(),
+                      this->GetPointColors().Contiguous(),
+                      this->GetPointAttr("color_gradients"), radius.value());
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogError("Both max_nn and radius are none.");
     }
 }
 
@@ -403,9 +850,7 @@ static PointCloud CreatePointCloudWithNormals(
     const float invalid_fill = NAN;
     // Filter defaults for depth processing
     const int bilateral_kernel_size =  // bilateral filter defaults for backends
-            depth_in.GetDevice().GetType() == core::Device::DeviceType::CUDA
-                    ? 3
-                    : 5;
+            depth_in.IsCUDA() ? 3 : 5;
     const float depth_diff_threshold = 0.14f;
     const float bilateral_value_sigma = 10.f;
     const float bilateral_distance_sigma = 10.f;
@@ -655,6 +1100,197 @@ open3d::geometry::PointCloud PointCloud::ToLegacy() const {
                         GetPointNormals());
     }
     return pcd_legacy;
+}
+
+std::tuple<TriangleMesh, core::Tensor> PointCloud::HiddenPointRemoval(
+        const core::Tensor &camera_location, double radius) const {
+    core::AssertTensorShape(camera_location, {3});
+    core::AssertTensorDevice(camera_location, GetDevice());
+
+    // The HiddenPointRemoval only need positions attribute.
+    PointCloud tpcd(GetPointPositions());
+    const open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    const Eigen::Vector3d camera_location_eigen =
+            core::eigen_converter::TensorToEigenMatrixXd(
+                    camera_location.Reshape({3, 1}));
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> lmesh;
+    std::vector<size_t> pt_map;
+    std::tie(lmesh, pt_map) =
+            lpcd.HiddenPointRemoval(camera_location_eigen, radius);
+
+    // Convert pt_map into Int64 Tensor.
+    std::vector<int64_t> indices(pt_map.begin(), pt_map.end());
+
+    return std::make_tuple(
+            TriangleMesh::FromLegacy(*lmesh, GetPointPositions().GetDtype(),
+                                     core::Int64, GetDevice()),
+            core::Tensor(std::move(indices)).To(GetDevice()));
+}
+
+core::Tensor PointCloud::ClusterDBSCAN(double eps,
+                                       size_t min_points,
+                                       bool print_progress) const {
+    // Create a legacy point cloud with only points, no attributes to reduce
+    // copying.
+    PointCloud tpcd(GetPointPositions());
+    open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    std::vector<int> labels =
+            lpcd.ClusterDBSCAN(eps, min_points, print_progress);
+    return core::Tensor(std::move(labels)).To(GetDevice());
+}
+
+std::tuple<core::Tensor, core::Tensor> PointCloud::SegmentPlane(
+        const double distance_threshold,
+        const int ransac_n,
+        const int num_iterations,
+        const double probability) const {
+    // The RANSAC plane fitting only need positions attribute.
+    PointCloud tpcd(GetPointPositions());
+    const open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    std::vector<size_t> inliers;
+    Eigen::Vector4d plane;
+    std::tie(plane, inliers) = lpcd.SegmentPlane(distance_threshold, ransac_n,
+                                                 num_iterations, probability);
+
+    // Convert inliers into Int64 Tensor.
+    std::vector<int64_t> indices(inliers.begin(), inliers.end());
+
+    return std::make_tuple(
+            core::eigen_converter::EigenMatrixToTensor(plane).Flatten().To(
+                    GetDevice()),
+            core::Tensor(std::move(indices)).To(GetDevice()));
+}
+
+TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
+    // QHull needs double dtype on the CPU.
+    static_assert(std::is_same<realT, double>::value,
+                  "Qhull realT is not double. Update code!");
+    using int_t = int32_t;
+    const auto int_dtype = core::Int32;
+    core::Tensor coordinates(
+            GetPointPositions().To(core::Float64).To(core::Device("CPU:0")));
+
+    orgQhull::Qhull qhull;
+    std::string options = "Qt";  // triangulated output
+    if (joggle_inputs) {
+        options = "QJ";  // joggle input to avoid precision problems
+    }
+    qhull.runQhull("", 3, coordinates.GetLength(),
+                   coordinates.GetDataPtr<double>(), options.c_str());
+    orgQhull::QhullFacetList facets = qhull.facetList();
+
+    core::Tensor vertices({qhull.vertexCount(), 3}, core::Float64),
+            triangles({qhull.facetCount(), 3}, int_dtype),
+            point_indices({qhull.vertexCount()}, int_dtype);
+    std::unordered_map<int_t, int_t> vertex_map;  // pcd -> conv hull
+    int_t tidx = 0, next_vtx = 0;
+    auto p_vertices = vertices.GetDataPtr<double>();
+    auto p_triangle = triangles.GetDataPtr<int_t>();
+    auto p_point_indices = point_indices.GetDataPtr<int_t>();
+    for (orgQhull::QhullFacetList::iterator it = facets.begin();
+         it != facets.end(); ++it) {
+        if (!(*it).isGood()) continue;
+
+        orgQhull::QhullVertexSet vSet = it->vertices();
+        int_t triangle_subscript = 0;
+        for (orgQhull::QhullVertexSet::iterator vIt = vSet.begin();
+             vIt != vSet.end(); ++vIt, ++triangle_subscript) {
+            orgQhull::QhullPoint p = (*vIt).point();
+            int_t vidx = p.id();
+
+            auto inserted = vertex_map.insert({vidx, next_vtx});
+            if (inserted.second) {
+                p_triangle[triangle_subscript] = next_vtx;  // hull vertex idx
+                double *coords = p.coordinates();
+                std::copy(coords, coords + 3, p_vertices);
+                p_vertices += 3;
+                p_point_indices[next_vtx++] = vidx;
+            } else {
+                p_triangle[triangle_subscript] =
+                        inserted.first->second;  // hull vertex idx
+            }
+        }
+        if ((*it).isTopOrient()) {
+            std::swap(p_triangle[0], p_triangle[1]);
+        }
+        tidx++;
+        p_triangle += 3;
+    }
+    if (tidx < triangles.GetShape(0)) {
+        triangles = triangles.Slice(0, 0, tidx);
+    }
+    if (next_vtx != vertices.GetShape(0)) {
+        utility::LogError(
+                "Qhull output has incorrect number of vertices {} instead of "
+                "reported {}",
+                next_vtx, vertices.GetShape(0));
+    }
+
+    TriangleMesh convex_hull(vertices, triangles);
+    convex_hull.SetVertexAttr("point_indices", point_indices);
+    return convex_hull.To(GetPointPositions().GetDevice());
+}
+
+AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
+OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
+LineSet PointCloud::ExtrudeRotation(double angle,
+                                    const core::Tensor &axis,
+                                    int resolution,
+                                    double translation,
+                                    bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeRotationLineSet(*this, angle, axis, resolution, translation,
+                                  capping);
+}
+
+LineSet PointCloud::ExtrudeLinear(const core::Tensor &vector,
+                                  double scale,
+                                  bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeLinearLineSet(*this, vector, scale, capping);
+}
+
+PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
+                            bool invert) const {
+    core::AssertTensorDevice(GetPointPositions(), aabb.GetDevice());
+    if (aabb.IsEmpty()) {
+        utility::LogWarning(
+                "Bounding box is empty. Returning empty point cloud if "
+                "invert is false, or the original point cloud if "
+                "invert is true.");
+        return invert ? Clone() : PointCloud(GetDevice());
+    }
+    return SelectByIndex(
+            aabb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
+}
+
+PointCloud PointCloud::Crop(const OrientedBoundingBox &obb, bool invert) const {
+    core::AssertTensorDevice(GetPointPositions(), obb.GetDevice());
+    if (obb.IsEmpty()) {
+        utility::LogWarning(
+                "Bounding box is empty. Returning empty point cloud if "
+                "invert is false, or the original point cloud if "
+                "invert is true.");
+        return invert ? Clone() : PointCloud(GetDevice());
+    }
+    return SelectByIndex(
+            obb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
+}
+
+int PointCloud::PCAPartition(int max_points) {
+    int num_partitions;
+    core::Tensor partition_ids;
+    std::tie(num_partitions, partition_ids) =
+            kernel::pcapartition::PCAPartition(GetPointPositions(), max_points);
+    SetPointAttr("partition_ids", partition_ids.To(GetDevice()));
+    return num_partitions;
 }
 
 }  // namespace geometry

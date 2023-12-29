@@ -10,7 +10,7 @@ on:
 
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
@@ -20,27 +20,28 @@ concurrency:
 
 env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-  NPROC: 3
+  NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   MacOS:
-    runs-on: macos-10.15
+    runs-on: macos-12
     strategy:
       fail-fast: false
       matrix:
         CONFIG: [ON, OFF]
     env:
-      SHARED: ${{ matrix.CONFIG }}
+      BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
       BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
       BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
       LOW_MEM_USAGE: ON
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -53,12 +54,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: 3.8
       - name: Install dependencies
         run: |
-          brew install ccache
+          brew install ccache pkg-config
+          # Install libomp 11.1.0 from old brew bottle for catalina (10.15).
+          # Directly installing the Ruby formula will install for the current OS
+          # https://github.com/microsoft/LightGBM/issues/4229
+          brew unlink libomp
+          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.catalina.bottle.tar.gz \
+          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          brew install -f libomp-11.1.0.catalina.bottle.tar.gz
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -68,7 +76,7 @@ jobs:
           DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
       - name: Build Open3D viewer app
-        if: ${{ env.SHARED == 'OFF' }}
+        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
@@ -78,32 +86,35 @@ jobs:
           ccache -s
 
       - name: Upload package
-        if: ${{ env.SHARED == 'ON' }}
-        uses: actions/upload-artifact@v2
+        if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/upload-artifact@v3
         with:
           name: open3d-devel-macosx
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' && env.SHARED == 'ON' }}
-        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && env.SHARED == 'ON' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
         run: |
-          gsutil cp build/package/${{ env.DEVEL_PKG_NAME }} gs://open3d-releases-master/devel/
-          echo "Download devel package at: https://storage.googleapis.com/open3d-releases-master/devel/${{ env.DEVEL_PKG_NAME }}"
+          gsutil cp build/package/${{ env.DEVEL_PKG_NAME }} gs://open3d-releases/devel/
+          echo "Download devel package at: https://storage.googleapis.com/open3d-releases/devel/${{ env.DEVEL_PKG_NAME }}"
 
       - name: Upload Open3D viewer app
-        uses: actions/upload-artifact@v2
-        if: ${{ env.SHARED == 'OFF' }}
+        uses: actions/upload-artifact@v3
+        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15
           path: build/bin/open3d-app-macosx-10_15.zip
@@ -111,37 +122,37 @@ jobs:
 
   build-wheel:
     name: Build wheel
-    runs-on: macos-10.15
+    runs-on: macos-12
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - is_master: false
-            python_version: 3.7
-          - is_master: false
-            python_version: 3.8
-          - is_master: false
-            python_version: 3.9
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
 
     env:
       BUILD_CUDA_MODULE: OFF
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -155,7 +166,7 @@ jobs:
             ${{ runner.os }}-ccache
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -169,7 +180,12 @@ jobs:
           cmake --version
           source util/ci_utils.sh
           install_python_dependencies
+          # Install libomp 11.1.0. See comment above.
           brew install ccache
+          brew unlink libomp
+          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.catalina.bottle.tar.gz \
+          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          brew install -f libomp-11.1.0.catalina.bottle.tar.gz
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
@@ -183,69 +199,73 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_macosx_x86_64_wheels
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
           python_version: ${{ matrix.python_version }}
         run: |
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
-          gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
-          echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
+          gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
+          echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
 
   test-wheel:
     name: Test wheel
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - is_master: false
-            python_version: 3.7
-          - is_master: false
-            python_version: 3.8
-          - is_master: false
-            python_version: 3.9
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
           name: open3d_macosx_x86_64_wheels
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -265,17 +285,20 @@ jobs:
   ready-docs:
     name: Ready docs archive
     # no need to run on macOS
-    runs-on: ubuntu-18.04
-    if: ${{ github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: [build-wheel, MacOS]
     steps:
+      - name: GCloud CLI auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Check wheels and ready documentation archive
         run: |
             touch marker_file
@@ -288,6 +311,10 @@ jobs:
                 # Rename docs archive:
                 gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
                     gs://open3d-docs/${{ github.sha }}.tar.gz
+                # Set holds on new artifacts, release on old
+                gsutil retention temp release gs://open3d-releases/*
+                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
+                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
             else
                 echo "All wheels / docs not available yet. Docs not ready."
             fi

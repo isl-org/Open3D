@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 /// \file CUDAUtils.h
@@ -66,7 +47,8 @@
 #define OPEN3D_CUDA_CHECK(err)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message)
 #define CUDA_CALL(cuda_function, ...) \
-    utility::LogError("Not built with CUDA, cannot call " #cuda_function);
+    open3d::utility::LogError(        \
+            "Not built with CUDA, cannot call " #cuda_function);
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
@@ -225,6 +207,19 @@ int GetCUDACurrentDeviceTextureAlignment();
 
 /// Returns the size of total global memory for the current device.
 size_t GetCUDACurrentTotalMemSize();
+
+#else
+
+/// When CUDA is not enabled, this is a dummy class.
+class CUDAScopedDevice {
+public:
+    explicit CUDAScopedDevice(int device_id) {}
+    explicit CUDAScopedDevice(const Device& device) {}
+    ~CUDAScopedDevice() {}
+    CUDAScopedDevice(const CUDAScopedDevice&) = delete;
+    CUDAScopedDevice& operator=(const CUDAScopedDevice&) = delete;
+};
+
 #endif
 
 namespace cuda {
@@ -259,6 +254,13 @@ void AssertCUDADeviceAvailable(int device_id);
 /// device-ID must be between 0 to device count - 1.
 /// \param device The device to be checked.
 void AssertCUDADeviceAvailable(const Device& device);
+
+/// Checks if the CUDA device support Memory Pools
+/// used by the Stream Ordered Memory Allocator,
+/// see
+/// https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY__POOLS.html
+/// \param device The device to be checked.
+bool SupportsMemoryPools(const Device& device);
 
 #ifdef BUILD_CUDA_MODULE
 

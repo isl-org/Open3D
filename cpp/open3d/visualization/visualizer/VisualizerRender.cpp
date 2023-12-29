@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/camera/PinholeCameraTrajectory.h"
@@ -162,34 +143,40 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 }
 
 void Visualizer::CopyViewStatusToClipboard() {
-    ViewParameters current_status;
-    if (!view_control_ptr_->ConvertToViewParameters(current_status)) {
-        utility::LogWarning("Something is wrong copying view status.");
-    }
-    ViewTrajectory trajectory;
-    trajectory.view_status_.push_back(current_status);
-    std::string clipboard_string;
-    if (!io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory)) {
-        utility::LogWarning("Something is wrong copying view status.");
-    }
-    glfwSetClipboardString(window_, clipboard_string.c_str());
+    glfwSetClipboardString(window_, GetViewStatus().c_str());
 }
 
 void Visualizer::CopyViewStatusFromClipboard() {
     const char *clipboard_string_buffer = glfwGetClipboardString(window_);
-    if (clipboard_string_buffer != NULL) {
+    if (clipboard_string_buffer != nullptr) {
         std::string clipboard_string(clipboard_string_buffer);
-        ViewTrajectory trajectory;
-        if (!io::ReadIJsonConvertibleFromJSONString(clipboard_string,
-                                                    trajectory)) {
-            utility::LogWarning("Something is wrong copying view status.");
-        }
-        if (trajectory.view_status_.size() != 1) {
-            utility::LogWarning("Something is wrong copying view status.");
-        }
-        view_control_ptr_->ConvertFromViewParameters(
-                trajectory.view_status_[0]);
+        SetViewStatus(clipboard_string);
     }
+}
+
+std::string Visualizer::GetViewStatus() {
+    ViewParameters current_status;
+    if (!view_control_ptr_->ConvertToViewParameters(current_status)) {
+        utility::LogWarning("Cannot convert to view parameters.");
+    }
+    ViewTrajectory trajectory;
+    trajectory.view_status_.push_back(current_status);
+    std::string view_status_str;
+    if (!io::WriteIJsonConvertibleToJSONString(view_status_str, trajectory)) {
+        utility::LogWarning("Cannot convert ViewTrajectory to json string.");
+    }
+    return view_status_str;
+}
+
+void Visualizer::SetViewStatus(const std::string &view_status_str) {
+    ViewTrajectory trajectory;
+    if (!io::ReadIJsonConvertibleFromJSONString(view_status_str, trajectory)) {
+        utility::LogWarning("Cannot convert string to view status.");
+    }
+    if (trajectory.view_status_.size() != 1) {
+        utility::LogWarning("Cannot convert string to view status.");
+    }
+    view_control_ptr_->ConvertFromViewParameters(trajectory.view_status_[0]);
 }
 
 std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
@@ -370,7 +357,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
 #if __APPLE__
     // On OSX with Retina display and glfw3, there is a bug with glReadPixels().
     // When using glReadPixels() to read a block of depth data. The data is
-    // horizontally streched (vertically it is fine). This issue is related
+    // horizontally stretched (vertically it is fine). This issue is related
     // to GLFW_SAMPLES hint. When it is set to 0 (anti-aliasing disabled),
     // glReadPixels() works fine. See this post for details:
     // http://stackoverflow.com/questions/30608121/glreadpixel-one-pass-vs-looping-through-points

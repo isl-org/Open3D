@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -35,7 +16,7 @@ namespace core {
 /// \brief Concatenates the list of tensors in their order, along the given
 /// axis into a new tensor. All the tensors must have same data-type,
 /// device, and number of dimensions. All dimensions must be the same,
-/// except the dimension along the axis the tensors are to be concatinated.
+/// except the dimension along the axis the tensors are to be concatenated.
 /// Using Concatenate for a single tensor, the tensor is split along its
 /// first dimension (length), and concatenated along the axis.
 ///
@@ -44,9 +25,9 @@ namespace core {
 ///
 /// Example:
 /// \code{.cpp}
-/// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
-/// Tensor b = Tensor::Init<int64_t>({4, 5});
-/// Tensor c = Tensor::Init<int64_t>({6, 7});
+/// Tensor a = Tensor::Init<int64_t>({{0, 1}, {2, 3}});
+/// Tensor b = Tensor::Init<int64_t>({{4, 5}});
+/// Tensor c = Tensor::Init<int64_t>({{6, 7}});
 /// Tensor output = core::Concatenate({a, b, c}, 0);
 /// // output:
 /// //  [[0 1],
@@ -84,8 +65,8 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
 ///
 /// Example:
 /// \code{.cpp}
-/// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
-/// Tensor b = Tensor::Init<int64_t>({4, 5});
+/// Tensor a = Tensor::Init<int64_t>({{0, 1}, {2, 3}});
+/// Tensor b = Tensor::Init<int64_t>({{4, 5}});
 /// Tensor t1 = core::Append(a, b, 0);
 /// // t1:
 /// //  [[0 1],
@@ -109,6 +90,26 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
 Tensor Append(const Tensor& self,
               const Tensor& other,
               const utility::optional<int64_t>& axis = utility::nullopt);
+
+/// \brief Computes the element-wise maximum of input and other. The tensors
+/// must have same data type and device.
+///
+/// If input.GetShape() != other.GetShape(), then they will be broadcasted to a
+/// common shape (which becomes the shape of the output).
+///
+/// \param input The input tensor.
+/// \param other The second input tensor.
+Tensor Maximum(const Tensor& input, const Tensor& other);
+
+/// \brief Computes the element-wise minimum of input and other. The tensors
+/// must have same data type and device.
+///
+/// If input.GetShape() != other.GetShape(), then they will be broadcasted to a
+/// common shape (which becomes the shape of the output).
+///
+/// \param input The input tensor.
+/// \param other The second input tensor.
+Tensor Minimum(const Tensor& input, const Tensor& other);
 
 }  // namespace core
 }  // namespace open3d

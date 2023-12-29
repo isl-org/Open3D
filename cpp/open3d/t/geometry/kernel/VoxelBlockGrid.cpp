@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
@@ -46,12 +27,10 @@ void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
                      index_t voxel_grid_resolution,
                      float voxel_size,
                      float sdf_trunc) {
-    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
-
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (hashmap->IsCPU()) {
         PointCloudTouchCPU(hashmap, points, voxel_block_coords,
                            voxel_grid_resolution, voxel_size, sdf_trunc);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (hashmap->IsCUDA()) {
         CUDA_CALL(PointCloudTouchCUDA, hashmap, points, voxel_block_coords,
                   voxel_grid_resolution, voxel_size, sdf_trunc);
     } else {
@@ -70,13 +49,11 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
                 float depth_scale,
                 float depth_max,
                 index_t stride) {
-    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
-
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (hashmap->IsCPU()) {
         DepthTouchCPU(hashmap, depth, intrinsic, extrinsic, voxel_block_coords,
                       voxel_grid_resolution, voxel_size, sdf_trunc, depth_scale,
                       depth_max, stride);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (hashmap->IsCUDA()) {
         CUDA_CALL(DepthTouchCUDA, hashmap, depth, intrinsic, extrinsic,
                   voxel_block_coords, voxel_grid_resolution, voxel_size,
                   sdf_trunc, depth_scale, depth_max, stride);
@@ -91,13 +68,11 @@ void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
                                             core::Tensor& flattened_indices,
                                             index_t block_resolution,
                                             float voxel_size) {
-    core::Device::DeviceType device_type = block_keys.GetDevice().GetType();
-
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (block_keys.IsCPU()) {
         GetVoxelCoordinatesAndFlattenedIndicesCPU(
                 buf_indices, block_keys, voxel_coords, flattened_indices,
                 block_resolution, voxel_size);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (block_keys.IsCUDA()) {
         CUDA_CALL(GetVoxelCoordinatesAndFlattenedIndicesCUDA, buf_indices,
                   block_keys, voxel_coords, flattened_indices, block_resolution,
                   voxel_size);
@@ -178,8 +153,7 @@ void Integrate(const core::Tensor& depth,
         input_color_dtype = color.GetDtype();
     }
 
-    core::Device::DeviceType device_type = depth.GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (depth.IsCPU()) {
         DISPATCH_INPUT_DTYPE_TO_TEMPLATE(
                 input_depth_dtype, input_color_dtype, [&] {
                     DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
@@ -193,7 +167,7 @@ void Integrate(const core::Tensor& depth,
                                         depth_max);
                             });
                 });
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (depth.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_INPUT_DTYPE_TO_TEMPLATE(
                 input_depth_dtype, input_color_dtype, [&] {
@@ -226,22 +200,21 @@ void EstimateRange(const core::Tensor& block_keys,
                    int64_t block_resolution,
                    float voxel_size,
                    float depth_min,
-                   float depth_max) {
+                   float depth_max,
+                   core::Tensor& fragment_buffer) {
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
     core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
 
-    core::Device device = block_keys.GetDevice();
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (block_keys.IsCPU()) {
         EstimateRangeCPU(block_keys, range_minmax_map, intrinsics_d,
                          extrinsics_d, h, w, down_factor, block_resolution,
-                         voxel_size, depth_min, depth_max);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+                         voxel_size, depth_min, depth_max, fragment_buffer);
+    } else if (block_keys.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         EstimateRangeCUDA(block_keys, range_minmax_map, intrinsics_d,
                           extrinsics_d, h, w, down_factor, block_resolution,
-                          voxel_size, depth_min, depth_max);
+                          voxel_size, depth_min, depth_max, fragment_buffer);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -276,8 +249,7 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (hashmap->IsCPU()) {
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
                     RayCastCPU<tsdf_t, weight_t, color_t>(
@@ -288,7 +260,7 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
                             range_map_down_factor);
                 });
 
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (hashmap->IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
@@ -329,8 +301,7 @@ void ExtractPointCloud(const core::Tensor& block_indices,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (block_indices.IsCPU()) {
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
                     ExtractPointCloudCPU<tsdf_t, weight_t, color_t>(
@@ -340,7 +311,7 @@ void ExtractPointCloud(const core::Tensor& block_indices,
                             weight_threshold, valid_size);
                 });
 
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (block_indices.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
@@ -382,8 +353,7 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (block_indices.IsCPU()) {
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
                     ExtractTriangleMeshCPU<tsdf_t, weight_t, color_t>(
@@ -393,7 +363,7 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
                             block_resolution, voxel_size, weight_threshold,
                             vertex_count);
                 });
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (block_indices.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Indexer.h"
@@ -86,9 +67,10 @@ TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
     EXPECT_EQ(indexer_a.GetOutput(), indexer_b.GetOutput());
     EXPECT_EQ(indexer_a.NumDims(), indexer_b.NumDims());
     for (int64_t i = 0; i < indexer_a.NumDims(); i++) {
-        EXPECT_EQ(indexer_a.GetMasterShape()[i], indexer_b.GetMasterShape()[i]);
-        EXPECT_EQ(indexer_a.GetMasterStrides()[i],
-                  indexer_b.GetMasterStrides()[i]);
+        EXPECT_EQ(indexer_a.GetPrimaryShape()[i],
+                  indexer_b.GetPrimaryShape()[i]);
+        EXPECT_EQ(indexer_a.GetPrimaryStrides()[i],
+                  indexer_b.GetPrimaryStrides()[i]);
         EXPECT_EQ(indexer_a.IsReductionDim(i), indexer_b.IsReductionDim(i));
     }
 }
@@ -112,11 +94,11 @@ TEST_P(IndexerPermuteDevices, BroadcastRestride) {
     // Check core::Indexer's global info
     EXPECT_EQ(indexer.NumInputs(), 2);
     EXPECT_EQ(indexer.NumWorkloads(), 24);
-    EXPECT_EQ(core::SizeVector(indexer.GetMasterShape(),
-                               indexer.GetMasterShape() + indexer.NumDims()),
+    EXPECT_EQ(core::SizeVector(indexer.GetPrimaryShape(),
+                               indexer.GetPrimaryShape() + indexer.NumDims()),
               core::SizeVector({2, 2, 2, 1, 3}));
-    EXPECT_EQ(core::SizeVector(indexer.GetMasterStrides(),
-                               indexer.GetMasterStrides() + indexer.NumDims()),
+    EXPECT_EQ(core::SizeVector(indexer.GetPrimaryStrides(),
+                               indexer.GetPrimaryStrides() + indexer.NumDims()),
               core::SizeVector({12, 6, 3, 3, 1}));
 
     // Check tensor shape

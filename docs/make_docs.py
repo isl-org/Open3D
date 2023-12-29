@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 # Sphinx makefile with api docs generation
@@ -30,19 +11,21 @@
 # (3) make.py calls the actual `sphinx-build`
 
 import argparse
+import importlib
+import inspect
+import multiprocessing
+import os
+import re
+import shutil
+import ssl
 import subprocess
 import sys
-import importlib
-import os
-import inspect
-import shutil
-import re
-from pathlib import Path
-import nbformat
-import nbconvert
-import ssl
-import certifi
 import urllib.request
+from pathlib import Path
+
+import certifi
+import nbconvert
+import nbformat
 
 
 def _create_or_clear_dir(dir_path):
@@ -84,10 +67,10 @@ class PyAPIDocsBuilder:
         self.output_dir = output_dir
         self.input_dir = input_dir
         self.module_names = PyAPIDocsBuilder._get_documented_module_names()
-        print("Generating *.rst Python API docs in directory: %s" %
-              self.output_dir)
 
     def generate_rst(self):
+        print(f"Generating *.rst Python API docs in directory: "
+              f"{self.output_dir}")
         _create_or_clear_dir(self.output_dir)
 
         for module_name in self.module_names:
@@ -297,8 +280,6 @@ class PyExampleDocsBuilder:
         sys.path.append(os.path.join(pwd, "..", "python", "tools"))
         from cli import _get_all_examples_dict
         self.get_all_examples_dict = _get_all_examples_dict
-        print("Generating *.rst Python example docs in directory: %s" %
-              self.output_dir)
 
     def _get_examples_dict(self):
         examples_dict = self.get_all_examples_dict()
@@ -323,21 +304,21 @@ class PyExampleDocsBuilder:
             f.write(out_string)
 
     @staticmethod
-    def _add_example_to_docs(example, output_path):
+    def _add_example_to_docs(example: Path, output_path):
         shutil.copy(example, output_path)
-        out_string = (f"{example.stem}.py"
-                      f"\n```````````````````````````````````````\n"
-                      f"\n.. literalinclude:: {example.stem}.py"
+        out_string = (f"{example.name}"
+                      f"\n{'`' * (len(example.name))}\n"
+                      f"\n.. literalinclude:: {example.name}"
                       f"\n   :language: python"
                       f"\n   :linenos:"
-                      f"\n   :lineno-start: 27"
-                      f"\n   :lines: 27-"
                       f"\n\n\n")
 
         with open(output_path / "index.rst", "a") as f:
             f.write(out_string)
 
     def generate_rst(self):
+        print(f"Generating *.rst Python example docs in directory: "
+              f"{self.output_dir}")
         _create_or_clear_dir(self.output_dir)
         examples_dict = self._get_examples_dict()
 
@@ -385,11 +366,12 @@ class SphinxDocsBuilder:
     """
 
     def __init__(self, current_file_dir, html_output_dir, is_release,
-                 skip_notebooks):
+                 skip_notebooks, parallel):
         self.current_file_dir = current_file_dir
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
+        self.parallel = parallel
 
     def run(self):
         """
@@ -407,6 +389,13 @@ class SphinxDocsBuilder:
                 shutil.copy(open3d_ml_doc, self.current_file_dir)
 
         build_dir = os.path.join(self.html_output_dir, "html")
+        nproc = multiprocessing.cpu_count() if self.parallel else 1
+        print(f"Building docs with {nproc} processes")
+        today = os.environ.get("SPHINX_TODAY", None)
+        if today:
+            cmd_args_today = ["-D", "today=" + today]
+        else:
+            cmd_args_today = []
 
         if self.is_release:
             version_list = [
@@ -417,21 +406,21 @@ class SphinxDocsBuilder:
             print("Building docs for release:", release_version)
 
             cmd = [
-                "sphinx-build",
-                "-b",
-                "html",
-                "-D",
-                "version=" + release_version,
-                "-D",
-                "release=" + release_version,
+                "sphinx-build", "-j",
+                str(nproc), "-b", "html", "-D", "version=" + release_version,
+                "-D", "release=" + release_version
+            ] + cmd_args_today + [
                 ".",
                 build_dir,
             ]
         else:
             cmd = [
                 "sphinx-build",
+                "-j",
+                str(nproc),
                 "-b",
                 "html",
+            ] + cmd_args_today + [
                 ".",
                 build_dir,
             ]
@@ -446,6 +435,9 @@ class SphinxDocsBuilder:
                               env=sphinx_env,
                               stdout=sys.stdout,
                               stderr=sys.stderr)
+        print(
+            f"Sphinx docs are generated at {(Path(build_dir)/'index.html').as_uri()}"
+        )
 
 
 class DoxygenDocsBuilder:
@@ -460,9 +452,13 @@ class DoxygenDocsBuilder:
         cmd = ["doxygen", "Doxyfile"]
         print('Calling: "%s"' % " ".join(cmd))
         subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
+        output_path = os.path.join(self.html_output_dir, "html", "cpp_api")
         shutil.copytree(
             os.path.join("doxygen", "html"),
-            os.path.join(self.html_output_dir, "html", "cpp_api"),
+            output_path,
+        )
+        print(
+            f"Doxygen docs are generated at {(Path(output_path)/'index.html').as_uri()}"
         )
 
         if os.path.exists(doxygen_temp_dir):
@@ -494,24 +490,26 @@ class JupyterDocsBuilder:
         # Jupyter notebooks
         os.environ["CI"] = "true"
 
-        # Copy and execute notebooks in the tutorial folder
+        # Copy from jupyter to the tutorial folder.
         nb_paths = []
-        nb_direct_copy = [
-            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb',
-            'jupyter_visualization.ipynb'
-        ]
+        nb_parent_src = Path(self.current_file_dir) / "jupyter"
+        nb_parent_dst = Path(self.current_file_dir) / "tutorial"
         example_dirs = [
-            "geometry", "core", "data", "pipelines", "visualization",
-            "t_pipelines"
+            name for name in os.listdir(nb_parent_src)
+            if os.path.isdir(nb_parent_src / name)
         ]
+
+        print(f"Copying {nb_parent_src / 'open3d_tutorial.py'} "
+              f"to {nb_parent_dst / 'open3d_tutorial.py'}")
+        shutil.copy(
+            nb_parent_src / "open3d_tutorial.py",
+            nb_parent_dst / "open3d_tutorial.py",
+        )
+
         for example_dir in example_dirs:
-            in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)
-            out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
+            in_dir = nb_parent_src / example_dir
+            out_dir = nb_parent_dst / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy(
-                in_dir.parent / "open3d_tutorial.py",
-                out_dir.parent / "open3d_tutorial.py",
-            )
 
             if self.clean_notebooks:
                 for nb_out_path in out_dir.glob("*.ipynb"):
@@ -532,6 +530,15 @@ class JupyterDocsBuilder:
                 shutil.copytree(in_dir / "images", out_dir / "images")
 
         # Execute Jupyter notebooks
+        # Files that should not be executed.
+        nb_direct_copy = [
+            'draw_plotly.ipynb',
+            'hashmap.ipynb',
+            'jupyter_visualization.ipynb',
+            't_icp_registration.ipynb',
+            'tensor.ipynb',
+        ]
+
         for nb_path in nb_paths:
             if nb_path.name in nb_direct_copy:
                 print("[Processing notebook {}, directly copied]".format(
@@ -593,13 +600,20 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help=("Whether to clean existing notebooks in docs/tutorial. "
-              "Notebooks are copied from examples/python to docs/tutorial."),
+              "Notebooks are copied from docs/jupyter to docs/tutorial."),
     )
     parser.add_argument(
         "--execute_notebooks",
         default="auto",
         choices=("auto", "always", "never"),
         help="Jupyter notebook execution mode.",
+    )
+    parser.add_argument(
+        "--delete_notebooks",
+        action="store_true",
+        default=False,
+        help="Delete all *.ipynb files recursively in the output folder. "
+        "This is for CI only, please use with caution.",
     )
     parser.add_argument(
         "--py_api_rst",
@@ -631,6 +645,13 @@ if __name__ == "__main__":
         default=False,
         help="Show Open3D version number rather than git hash.",
     )
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        default=False,
+        help="Enable parallel Sphinx build.",
+    )
+
     args = parser.parse_args()
 
     pwd = os.path.dirname(os.path.realpath(__file__))
@@ -665,6 +686,13 @@ if __name__ == "__main__":
                                  args.execute_notebooks)
         jdb.run()
 
+    # Remove *.ipynb in the output folder for CI docs.
+    if args.delete_notebooks:
+        print(f"Deleting all *.ipynb files in the {html_output_dir} folder.")
+        for f in Path(html_output_dir).glob("**/*.ipynb"):
+            print(f"Deleting {f}")
+            f.unlink()
+
     # Sphinx is hard-coded to build with the "html" option
     # To customize build, run sphinx-build manually
     if args.sphinx:
@@ -672,7 +700,7 @@ if __name__ == "__main__":
         skip_notebooks = (args.execute_notebooks == "never" and
                           args.clean_notebooks)
         sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release,
-                                skip_notebooks)
+                                skip_notebooks, args.parallel)
         sdb.run()
     else:
         print("Sphinx build disabled, use --sphinx to enable")

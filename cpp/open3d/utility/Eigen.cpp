@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/utility/Eigen.h"
@@ -383,6 +364,51 @@ template Eigen::Matrix3d ComputeCovariance(
 template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
         const std::vector<Eigen::Vector3d> &points,
         const std::vector<int> &indices);
+
+template <typename RealType, typename IdxType>
+std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const RealType *const points, const std::vector<IdxType> &indices) {
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d covariance;
+    Eigen::Matrix<double, 9, 1> cumulants;
+    cumulants.setZero();
+    for (const auto &idx : indices) {
+        const Eigen::Map<const Eigen::Matrix<RealType, 3, 1>> point(points +
+                                                                    3 * idx);
+        cumulants(0) += point(0);
+        cumulants(1) += point(1);
+        cumulants(2) += point(2);
+        cumulants(3) += point(0) * point(0);
+        cumulants(4) += point(0) * point(1);
+        cumulants(5) += point(0) * point(2);
+        cumulants(6) += point(1) * point(1);
+        cumulants(7) += point(1) * point(2);
+        cumulants(8) += point(2) * point(2);
+    }
+    cumulants /= (double)indices.size();
+    mean(0) = cumulants(0);
+    mean(1) = cumulants(1);
+    mean(2) = cumulants(2);
+    covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
+    covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
+    covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
+    covariance(0, 1) = cumulants(4) - cumulants(0) * cumulants(1);
+    covariance(1, 0) = covariance(0, 1);
+    covariance(0, 2) = cumulants(5) - cumulants(0) * cumulants(2);
+    covariance(2, 0) = covariance(0, 2);
+    covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
+    covariance(2, 1) = covariance(1, 2);
+    return std::make_tuple(mean, covariance);
+}
+
+template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const float *const points, const std::vector<size_t> &indices);
+template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const double *const points, const std::vector<size_t> &indices);
+template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const float *const points, const std::vector<int> &indices);
+template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
+        const double *const points, const std::vector<int> &indices);
 
 Eigen::Matrix3d SkewMatrix(const Eigen::Vector3d &vec) {
     Eigen::Matrix3d skew;

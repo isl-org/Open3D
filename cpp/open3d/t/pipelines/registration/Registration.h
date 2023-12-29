@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -110,6 +91,10 @@ public:
     /// For ICP: the overlapping area (# of inlier correspondences / # of points
     /// in target). Higher is better.
     double fitness_;
+    /// Specifies whether the algorithm converged or not.
+    bool converged_{false};
+    /// Number of iterations the algorithm took to converge.
+    size_t num_iterations_{0};
 };
 
 /// \brief Function for evaluating registration between point clouds.
@@ -140,7 +125,7 @@ RegistrationResult EvaluateRegistration(
 /// \param voxel_size The input pointclouds will be down-sampled to this
 /// `voxel_size` scale. If voxel_size < 0, original scale will be used.
 /// However it is highly recommended to down-sample the point-cloud for
-/// performance. By default origianl scale of the point-cloud will be used.
+/// performance. By default original scale of the point-cloud will be used.
 /// \param callback_after_iteration Optional lambda function, saves string to
 /// tensor map of attributes such as "iteration_index", "scale_index",
 /// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
@@ -161,7 +146,7 @@ ICP(const geometry::PointCloud &source,
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
 /// The vector of ICPConvergenceCriteria(relative fitness, relative rmse,
-/// max_iterations) contains the stoping condition for each voxel level.
+/// max_iterations) contains the stopping condition for each voxel level.
 /// The length of voxel_sizes vector, criteria vector,
 /// max_correspondence_distances vector must be same, and voxel_sizes must
 /// contain positive values in strictly decreasing order [Lower the voxel size,

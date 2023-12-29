@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/gui/PickPointsInteractor.h"
@@ -30,8 +11,10 @@
 #include <unordered_set>
 
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
@@ -180,15 +163,27 @@ void PickPointsInteractor::SetPickableGeometry(
         auto mesh = dynamic_cast<const geometry::TriangleMesh *>(pg.geometry);
         auto tmesh =
                 dynamic_cast<const t::geometry::TriangleMesh *>(pg.tgeometry);
+        auto lineset = dynamic_cast<const geometry::LineSet *>(pg.geometry);
+        auto tlineset =
+                dynamic_cast<const t::geometry::LineSet *>(pg.tgeometry);
         if (cloud) {
             points_.insert(points_.end(), cloud->points_.begin(),
                            cloud->points_.end());
         } else if (mesh) {
             points_.insert(points_.end(), mesh->vertices_.begin(),
                            mesh->vertices_.end());
-        } else if (tcloud || tmesh) {
-            const auto &tpoints = (tcloud ? tcloud->GetPointPositions()
-                                          : tmesh->GetVertexPositions());
+        } else if (lineset) {
+            points_.insert(points_.end(), lineset->points_.begin(),
+                           lineset->points_.end());
+        } else if (tcloud || tmesh || tlineset) {
+            core::Tensor tpoints;
+            if (tcloud) {
+                tpoints = tcloud->GetPointPositions();
+            } else if (tmesh) {
+                tpoints = tmesh->GetVertexPositions();
+            } else if (tlineset) {
+                tpoints = tlineset->GetPointPositions();
+            }
             const size_t n = tpoints.NumElements();
             float *pts = (float *)tpoints.GetDataPtr();
             points_.reserve(points_.size() + n);
@@ -222,6 +217,7 @@ void PickPointsInteractor::SetPickableGeometry(
                 // picking_scene_->AddGeometry(pg.name, tmesh, mat);
             }
         }
+        // TODO what about Lineset selection?
     }
     // add safety but invalid obj
     lookup_->Add("", points_.size());

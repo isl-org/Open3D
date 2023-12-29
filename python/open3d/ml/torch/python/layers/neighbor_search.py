@@ -1,27 +1,8 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# The MIT License (MIT)
-#
-# Copyright (c) 2018-2021 www.open3d.org
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-# IN THE SOFTWARE.
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 from ...python import ops
@@ -68,12 +49,15 @@ class FixedRadiusSearch(torch.nn.Module):
                  ignore_query_point=False,
                  return_distances=False,
                  max_hash_table_size=32 * 2**20,
+                 index_dtype=torch.int32,
                  **kwargs):
         super().__init__()
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.max_hash_table_size = max_hash_table_size
+        assert index_dtype in [torch.int32, torch.int64]
+        self.index_dtype = index_dtype
 
     def forward(self,
                 points,
@@ -159,7 +143,8 @@ class FixedRadiusSearch(torch.nn.Module):
             queries_row_splits=queries_row_splits,
             hash_table_splits=table.hash_table_splits,
             hash_table_index=table.hash_table_index,
-            hash_table_cell_splits=table.hash_table_cell_splits)
+            hash_table_cell_splits=table.hash_table_cell_splits,
+            index_dtype=self.index_dtype)
         return result
 
 
@@ -204,11 +189,14 @@ class RadiusSearch(torch.nn.Module):
                  ignore_query_point=False,
                  return_distances=False,
                  normalize_distances=False,
+                 index_dtype=torch.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.normalize_distances = normalize_distances
+        assert index_dtype in [torch.int32, torch.int64]
+        self.index_dtype = index_dtype
         super().__init__()
 
     def forward(self,
@@ -265,7 +253,8 @@ class RadiusSearch(torch.nn.Module):
                                    queries=queries,
                                    radii=radii,
                                    points_row_splits=points_row_splits,
-                                   queries_row_splits=queries_row_splits)
+                                   queries_row_splits=queries_row_splits,
+                                   index_dtype=self.index_dtype)
         return result
 
 
@@ -309,10 +298,13 @@ class KNNSearch(torch.nn.Module):
                  metric='L2',
                  ignore_query_point=False,
                  return_distances=False,
+                 index_dtype=torch.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
+        assert index_dtype in [torch.int32, torch.int64]
+        self.index_dtype = index_dtype
         super().__init__()
 
     def forward(self,
@@ -367,5 +359,6 @@ class KNNSearch(torch.nn.Module):
                                 queries=queries,
                                 k=k,
                                 points_row_splits=points_row_splits,
-                                queries_row_splits=queries_row_splits)
+                                queries_row_splits=queries_row_splits,
+                                index_dtype=self.index_dtype)
         return result

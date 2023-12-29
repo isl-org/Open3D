@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
@@ -66,17 +47,14 @@ public:
     /// \param maximum_tuple_count Maximum numer of tuples.
     /// \param tuple_test Set to `true` to perform geometric compatibility tests
     /// on initial set of correspondences.
-    /// \param seed Random seed.
-    FastGlobalRegistrationOption(
-            double division_factor = 1.4,
-            bool use_absolute_scale = false,
-            bool decrease_mu = true,
-            double maximum_correspondence_distance = 0.025,
-            int iteration_number = 64,
-            double tuple_scale = 0.95,
-            int maximum_tuple_count = 1000,
-            bool tuple_test = true,
-            utility::optional<unsigned int> seed = utility::nullopt)
+    FastGlobalRegistrationOption(double division_factor = 1.4,
+                                 bool use_absolute_scale = false,
+                                 bool decrease_mu = true,
+                                 double maximum_correspondence_distance = 0.025,
+                                 int iteration_number = 64,
+                                 double tuple_scale = 0.95,
+                                 int maximum_tuple_count = 1000,
+                                 bool tuple_test = true)
         : division_factor_(division_factor),
           use_absolute_scale_(use_absolute_scale),
           decrease_mu_(decrease_mu),
@@ -84,8 +62,7 @@ public:
           iteration_number_(iteration_number),
           tuple_scale_(tuple_scale),
           maximum_tuple_count_(maximum_tuple_count),
-          tuple_test_(tuple_test),
-          seed_(seed) {}
+          tuple_test_(tuple_test) {}
     ~FastGlobalRegistrationOption() {}
 
 public:
@@ -109,8 +86,6 @@ public:
     /// Set to `true` to perform geometric compatibility tests on initial set of
     /// correspondences.
     bool tuple_test_;
-    /// Random seed
-    utility::optional<unsigned int> seed_;
 };
 
 /// \brief Fast Global Registration based on a given set of correspondences.

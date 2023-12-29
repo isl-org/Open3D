@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <atomic>
@@ -172,7 +153,7 @@ private:
                         pointclouds_device_[0].To(core::Device("CPU:0"));
 
                 // Removing `normal` attribute before passing it to
-                // the visualizer might give us some performance benifits.
+                // the visualizer might give us some performance benefits.
                 pcd_and_bbox_.current_scan_.RemovePointAttr("normals");
             }
 
@@ -190,14 +171,15 @@ private:
                 // Getting bounding box and center to setup camera view.
                 pcd_and_bbox_.bbox_ =
                         this->widget3d_->GetScene()->GetBoundingBox();
-                auto center = pcd_and_bbox_.bbox_.GetCenter().cast<float>();
+                Eigen::Vector3f center =
+                        pcd_and_bbox_.bbox_.GetCenter().cast<float>();
                 this->widget3d_->SetupCamera(verticalFoV, pcd_and_bbox_.bbox_,
                                              center);
             });
         }
         // ------------------------------------------------------------------
 
-        // Initial transfrom from source to target, to initialize ICP.
+        // Initial transform from source to target, to initialize ICP.
         core::Tensor initial_transform = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
 
@@ -253,7 +235,7 @@ private:
             // so, `cumulative_transform @ (result.transformation_).Inverse`
             // gives `transformation of [i + 1]th frame to 0` [reference or
             // initial] frame. So, pose of the ego-vehicle / sensor
-            // till this frame w.r.t. the inital frame, or `global_pose`
+            // till this frame w.r.t. the initial frame, or `global_pose`
             // or `frame to model transform` is given by `cumulative_transform.`
             cumulative_transform = cumulative_transform.Matmul(
                     t::geometry::InverseTransformation(
@@ -293,7 +275,7 @@ private:
                                     .GetLength();
 
                     // Removing `normal` attribute before passing it to
-                    // the visualizer might give us some performance benifits.
+                    // the visualizer might give us some performance benefits.
                     pcd_and_bbox_.current_scan_.RemovePointAttr("normals");
                 }
 
@@ -334,8 +316,9 @@ private:
                                     &pcd_and_bbox_.current_scan_, mat_);
 
                             // Setup camera.
-                            auto center = pcd_and_bbox_.bbox_.GetCenter()
-                                                  .cast<float>();
+                            Eigen::Vector3f center =
+                                    pcd_and_bbox_.bbox_.GetCenter()
+                                            .cast<float>();
                             this->widget3d_->SetupCamera(
                                     verticalFoV, pcd_and_bbox_.bbox_, center);
                         });
@@ -343,7 +326,7 @@ private:
             // --------------------------------------------------------------
 
             time_total.Stop();
-            total_time_i += time_total.GetDuration();
+            total_time_i += time_total.GetDurationInMillisecond();
         }
         // ------------------------------------------------------------------
         utility::LogInfo(" Total Average FPS: {}", 1000 * i / total_time_i);
@@ -413,7 +396,7 @@ private:
         }
         //-------------------------------------------------------------------
 
-        //-------- Prining values and intilising class data members ---------
+        //-------- Printing values and intialising class data members -------
 
         if (end_index_ < start_index_ + 1) {
             utility::LogError(
@@ -425,8 +408,7 @@ private:
 
         // The dataset might be too large for your memory. If that is the case,
         // one may directly read the pointcloud frame inside
-        if (end_index_ - start_index_ > 500 &&
-            device_.GetType() == core::Device::DeviceType::CUDA) {
+        if (end_index_ - start_index_ > 500 && device_.IsCUDA()) {
             utility::LogWarning(
                     "The range of data might exceed memory. "
                     "You might want to avoid pre-fetching the data to your "
@@ -569,7 +551,7 @@ private:
                                 .To(dtype_, false));
 
                 // Normals are required by `PointToPlane` registration method.
-                // Currenly Normal Estimation is not supported by
+                // Currently Normal Estimation is not supported by
                 // Tensor Pointcloud.
                 if (registration_method_ == "PointToPlane" &&
                     !pointcloud_local.HasPointNormals()) {
@@ -654,7 +636,7 @@ private:
     // the value, ensuring the visualizer thread doesn't read the
     // data, while we are modifying it.
     struct {
-        // Mutex lock to protect data memeber current_scan_.
+        // Mutex lock to protect data member current_scan_.
         std::mutex lock_;
         // Pointcloud to store the "current scan", used for visualization.
         t::geometry::PointCloud current_scan_;

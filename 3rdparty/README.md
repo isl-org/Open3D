@@ -125,6 +125,23 @@ boringssl:                  edfe413            Dual OpenSSL, SSLeay, ISC license
 BoringSSL is a fork of OpenSSL that is designed to meet Google's needs.
 https://github.com/google/boringssl
 --------------------------------------------------------------------------------
+vtk                            9.1                                   BSD license
+The Visualization Toolkit (VTK)
+https://gitlab.kitware.com/vtk/vtk
+--------------------------------------------------------------------------------
+DirectX-Headers           v1.606.3                                   MIT license
+Official DirectX headers available under an open source license
+https://github.com/microsoft/DirectX-Headers
+--------------------------------------------------------------------------------
+DirectXMath                may2022                                   MIT license
+DirectXMath is an all inline SIMD C++ linear algebra library for use in games
+and graphics apps
+https://github.com/microsoft/DirectXMath
+--------------------------------------------------------------------------------
+UVAtlas                    may2022                                   MIT license
+UVAtlas isochart texture atlas
+https://github.com/microsoft/uvatlas
+--------------------------------------------------------------------------------
 ```
 
 ## Patching a third-party library

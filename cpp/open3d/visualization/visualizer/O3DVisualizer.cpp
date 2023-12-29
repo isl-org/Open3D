@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
@@ -302,6 +283,7 @@ struct O3DVisualizer::Impl {
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
     std::vector<DrawObject> inspection_objects_;
+    std::vector<DrawObject> wireframe_objects_;
     std::shared_ptr<O3DVisualizerSelections> selections_;
     bool polygon_selection_unselects_ = false;
     bool selections_need_update_ = true;
@@ -348,6 +330,7 @@ struct O3DVisualizer::Impl {
         Checkbox *show_axes;
         Checkbox *show_ground;
         Checkbox *basic_mode;
+        Checkbox *wireframe_mode;
         Combobox *ground_plane;
         ColorEdit *bg_color;
         Slider *point_size;
@@ -638,6 +621,9 @@ struct O3DVisualizer::Impl {
         settings.basic_mode = new Checkbox("");
         settings.basic_mode->SetOnChecked(
                 [this](bool enable) { this->EnableBasicMode(enable); });
+        settings.wireframe_mode = new Checkbox("");
+        settings.wireframe_mode->SetOnChecked(
+                [this](bool enable) { this->EnableWireframeMode(enable); });
 
         auto *grid = new VGrid(2, v_spacing);
         settings.scene_panel->AddChild(GiveOwnership(grid));
@@ -652,6 +638,8 @@ struct O3DVisualizer::Impl {
         grid->AddChild(GiveOwnership(settings.lighting));
         grid->AddChild(std::make_shared<Label>("Raw Mode"));
         grid->AddChild(GiveOwnership(settings.basic_mode));
+        grid->AddChild(std::make_shared<Label>("Wireframe"));
+        grid->AddChild(GiveOwnership(settings.wireframe_mode));
 
         // Light list
         settings.light_panel = new CollapsableVert("Lighting", 0, margins);
@@ -953,11 +941,24 @@ struct O3DVisualizer::Impl {
 
             // Finally assign material properties if geometry is a triangle mesh
             if (tmesh && tmesh->materials_.size() > 0) {
-                // Only a single material is supported for TriangleMesh so we
-                // just grab the first one we find. Users should be using
-                // TriangleMeshModel if they have a model with multiple
-                // materials.
-                auto &mesh_material = tmesh->materials_.begin()->second;
+                std::size_t material_index;
+                if (tmesh->HasTriangleMaterialIds()) {
+                    auto minmax_it = std::minmax_element(
+                            tmesh->triangle_material_ids_.begin(),
+                            tmesh->triangle_material_ids_.end());
+                    if (*minmax_it.first != *minmax_it.second) {
+                        utility::LogWarning(
+                                "Only a single material is "
+                                "supported for TriangleMesh visualization, "
+                                "only the first referenced material will be "
+                                "used. Use TriangleMeshModel if more than one "
+                                "material is required.");
+                    }
+                    material_index = *minmax_it.first;
+                } else {
+                    material_index = 0;
+                }
+                auto &mesh_material = tmesh->materials_[material_index].second;
                 mat.base_color = {mesh_material.baseColor.r(),
                                   mesh_material.baseColor.g(),
                                   mesh_material.baseColor.b(),
@@ -1058,8 +1059,8 @@ struct O3DVisualizer::Impl {
         for (size_t i = 0; i < objects_.size(); ++i) {
             if (objects_[i].name == name) {
                 group = objects_[i].group;
-                objects_.erase(objects_.begin() + i);
                 settings.object2itemid.erase(objects_[i].name);
+                objects_.erase(objects_.begin() + i);
                 break;
             }
         }
@@ -1252,6 +1253,83 @@ struct O3DVisualizer::Impl {
         }
     }
 
+    void UpdateGeometryForWireframeMode(bool enable) {
+        if (enable) {
+            // Material for wireframe
+            MaterialRecord mat;
+            mat.shader = "unlitLine";
+            mat.line_width = 2.f;
+            mat.base_color = {0.f, 0.3f, 1.f, 1.f};
+            mat.emissive_color = {10000.f, 10000.f, 10000.f, 1.f};
+            // Create line sets for eligible geometry
+            for (auto &o : objects_) {
+                if (o.geometry &&
+                    o.geometry->GetGeometryType() ==
+                            geometry::Geometry::GeometryType::TriangleMesh) {
+                    // Hide original geometry
+                    scene_->GetScene()->ShowGeometry(o.name, false);
+                    auto tmesh =
+                            std::dynamic_pointer_cast<geometry::TriangleMesh>(
+                                    o.geometry);
+                    auto lines =
+                            geometry::LineSet::CreateFromTriangleMesh(*tmesh);
+                    DrawObject draw_obj;
+                    draw_obj.name = o.name + "_wireframe";
+                    draw_obj.geometry = lines;
+                    draw_obj.material = mat;
+                    wireframe_objects_.push_back(draw_obj);
+                    scene_->GetScene()->AddGeometry(draw_obj.name,
+                                                    draw_obj.geometry.get(),
+                                                    draw_obj.material);
+                } else if (o.tgeometry &&
+                           o.tgeometry->GetGeometryType() ==
+                                   t::geometry::Geometry::GeometryType::
+                                           TriangleMesh) {
+                    // Hide original geometry
+                    scene_->GetScene()->ShowGeometry(o.name, false);
+                    auto tmesh = std::dynamic_pointer_cast<
+                            t::geometry::TriangleMesh>(o.tgeometry);
+                    auto tmesh_legacy = tmesh->ToLegacy();
+                    auto lines = geometry::LineSet::CreateFromTriangleMesh(
+                            tmesh_legacy);
+                    DrawObject draw_obj;
+                    draw_obj.name = o.name + "_wireframe";
+                    draw_obj.geometry = lines;
+                    draw_obj.material = mat;
+                    wireframe_objects_.push_back(draw_obj);
+                    scene_->GetScene()->AddGeometry(draw_obj.name,
+                                                    draw_obj.geometry.get(),
+                                                    draw_obj.material);
+                } else if (o.model) {
+                    // Hide original geometry
+                    scene_->GetScene()->ShowGeometry(o.name, false);
+                    for (auto &mi : o.model->meshes_) {
+                        auto lines = geometry::LineSet::CreateFromTriangleMesh(
+                                *mi.mesh);
+                        DrawObject draw_obj;
+                        draw_obj.name = mi.mesh_name + "_wireframe";
+                        draw_obj.geometry = lines;
+                        draw_obj.material = mat;
+                        wireframe_objects_.push_back(draw_obj);
+                        scene_->GetScene()->AddGeometry(draw_obj.name,
+                                                        draw_obj.geometry.get(),
+                                                        draw_obj.material);
+                    }
+                }
+            }
+        } else {
+            // Remove inspection geometries
+            for (auto &o : wireframe_objects_) {
+                scene_->GetScene()->RemoveGeometry(o.name);
+            }
+            wireframe_objects_.clear();
+            // Show original geometries
+            for (auto &o : objects_) {
+                scene_->GetScene()->ShowGeometry(o.name, true);
+            }
+        }
+    }
+
     void Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
         scene_->AddLabel(pos, text);
     }
@@ -1391,6 +1469,7 @@ struct O3DVisualizer::Impl {
         settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]->SetEnabled(
                 enable);
         settings.sun_follows_camera->SetEnabled(enable);
+        settings.wireframe_mode->SetEnabled(enable);
     }
 
     void EnableBasicMode(bool enable) {
@@ -1414,6 +1493,8 @@ struct O3DVisualizer::Impl {
                 was_using_sun_follows_cam_ = true;
             }
             // Update geometry for inspection
+            settings.wireframe_mode->SetChecked(false);
+            EnableWireframeMode(false);
             UpdateGeometryForInspectionMode(true);
             EnableInspectionRelatedUI(false);
             // Force screen redraw
@@ -1431,12 +1512,31 @@ struct O3DVisualizer::Impl {
         }
     }
 
+    void EnableWireframeMode(bool enable) {
+        auto o3dscene = scene_->GetScene();
+        auto view = o3dscene->GetView();
+        auto low_scene = o3dscene->GetScene();
+        UpdateGeometryForWireframeMode(enable);
+        if (enable) {
+            o3dscene->SetBackground({0.1f, 0.1f, 0.1f, 1.0f});
+            low_scene->ShowSkybox(false);
+            view->SetWireframe(true);
+            scene_->ForceRedraw();
+        } else {
+            view->SetWireframe(false);
+            SetUIState(ui_state_);
+        }
+    }
+
     void SetPointSize(int px) {
         ui_state_.point_size = px;
         settings.point_size->SetValue(double(px));
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
+            // Ignore Models since they can never be point clouds
+            if (o.model) continue;
+
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
@@ -1462,6 +1562,9 @@ struct O3DVisualizer::Impl {
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
+            // Ignore Models since they can never be point clouds
+            if (o.model) continue;
+
             o.material.line_width = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
@@ -1942,12 +2045,32 @@ struct O3DVisualizer::Impl {
 
     void UpdateSelectableGeometry() {
         std::vector<SceneWidget::PickableGeometry> pickable;
-        pickable.reserve(objects_.size());
+        // Count number of meshes stored in TriangleMeshModels
+        size_t model_mesh_count = 0;
+        size_t model_count = 0;
         for (auto &o : objects_) {
             if (!IsGeometryVisible(o)) {
                 continue;
             }
-            pickable.emplace_back(o.name, o.geometry.get(), o.tgeometry.get());
+            if (o.model.get()) {
+                model_count++;
+                model_mesh_count += o.model.get()->meshes_.size();
+            }
+        }
+        pickable.reserve(objects_.size() + model_mesh_count - model_count);
+        for (auto &o : objects_) {
+            if (!IsGeometryVisible(o)) {
+                continue;
+            }
+            if (o.model.get()) {
+                for (auto &g : o.model->meshes_) {
+                    pickable.emplace_back(g.mesh_name, g.mesh.get(),
+                                          o.tgeometry.get());
+                }
+            } else {
+                pickable.emplace_back(o.name, o.geometry.get(),
+                                      o.tgeometry.get());
+            }
         }
         selections_->SetSelectableGeometry(pickable);
     }
@@ -1989,7 +2112,7 @@ struct O3DVisualizer::Impl {
                 (std::string("Open3D ") + OPEN3D_VERSION).c_str());
         auto text = std::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
-                "Copyright (c) 2018-2021 www.open3d.org\n\n"
+                "Copyright (c) 2018-2023 www.open3d.org\n\n"
 
                 "Permission is hereby granted, free of charge, to any person "
                 "obtaining a copy of this software and associated "
@@ -2303,6 +2426,10 @@ void O3DVisualizer::SetGroundPlane(rendering::Scene::GroundPlane plane) {
 
 void O3DVisualizer::EnableBasicMode(bool enable) {
     impl_->EnableBasicMode(enable);
+}
+
+void O3DVisualizer::EnableWireframeMode(bool enable) {
+    impl_->EnableWireframeMode(enable);
 }
 
 void O3DVisualizer::SetPointSize(int point_size) {

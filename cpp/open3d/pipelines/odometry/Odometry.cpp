@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/odometry/Odometry.h"
@@ -116,8 +97,8 @@ static int CountCorrespondence(const geometry::Image &correspondence_map) {
     return correspondence_count;
 }
 
-static CorrespondenceSetPixelWise ComputeCorrespondence(
-        const Eigen::Matrix3d intrinsic_matrix,
+CorrespondenceSetPixelWise ComputeCorrespondence(
+        const Eigen::Matrix3d &intrinsic_matrix,
         const Eigen::Matrix4d &extrinsic,
         const geometry::Image &depth_s,
         const geometry::Image &depth_t,
@@ -154,7 +135,7 @@ static CorrespondenceSetPixelWise ComputeCorrespondence(
                         double d_t = *depth_t.PointerAt<float>(u_t, v_t);
                         if (!std::isnan(d_t) &&
                             std::abs(transformed_d_s - d_t) <=
-                                    option.max_depth_diff_) {
+                                    option.depth_diff_max_) {
                             AddElementToCorrespondenceMap(
                                     correspondence_map_private,
                                     depth_buffer_private, u_s, v_s, u_t, v_t,
@@ -321,7 +302,7 @@ static std::shared_ptr<geometry::Image> PreprocessDepth(
     for (int y = 0; y < depth_processed->height_; y++) {
         for (int x = 0; x < depth_processed->width_; x++) {
             float *p = depth_processed->PointerAt<float>(x, y);
-            if ((*p < option.min_depth_ || *p > option.max_depth_ || *p <= 0))
+            if ((*p < option.depth_min_ || *p > option.depth_max_ || *p <= 0))
                 *p = std::numeric_limits<float>::quiet_NaN();
         }
     }

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Indexer.h"
@@ -172,7 +153,8 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                         output_tensors[i].GetShape());
             }
 
-            // For each reduction dim, set the corresponding ouput strides to 0.
+            // For each reduction dim, set the corresponding output strides to
+            // 0.
             ReductionRestride(outputs_[i], inputs_[0].ndims_, inputs_[0].shape_,
                               reduction_dims);
         }
@@ -185,7 +167,7 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
 
         // Fill global shape
         for (int64_t i = 0; i < ndims_; ++i) {
-            master_shape_[i] = inputs_[0].shape_[i];
+            primary_shape_[i] = inputs_[0].shape_[i];
         }
 
         // Combine dimensions to reduce index computation.
@@ -203,12 +185,12 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
         // outputs_[0] is used since all outputs have the same shape.
         ndims_ = outputs_[0].ndims_;
         for (int64_t i = 0; i < ndims_; ++i) {
-            master_shape_[i] = outputs_[0].shape_[i];
+            primary_shape_[i] = outputs_[0].shape_[i];
         }
     }
 
-    // Fill global strides master_strides_.
-    UpdateMasterStrides();
+    // Fill global strides primary_strides_.
+    UpdatePrimaryStrides();
 
     UpdateContiguousFlags();
 }
@@ -226,7 +208,7 @@ bool Indexer::CanUse32BitIndexing() const {
         int64_t max_offset = 1;
         for (int dim = 0; dim < ndims_; dim++) {
             max_offset +=
-                    (master_shape_[dim] - 1) * inputs_[i].byte_strides_[dim];
+                    (primary_shape_[dim] - 1) * inputs_[i].byte_strides_[dim];
         }
         if (max_offset > max_value) {
             return false;
@@ -238,7 +220,7 @@ bool Indexer::CanUse32BitIndexing() const {
         int64_t max_offset = 1;
         for (int dim = 0; dim < ndims_; dim++) {
             max_offset +=
-                    (master_shape_[dim] - 1) * outputs_[i].byte_strides_[dim];
+                    (primary_shape_[dim] - 1) * outputs_[i].byte_strides_[dim];
         }
 
         if (max_offset > max_value) {
@@ -259,15 +241,15 @@ std::unique_ptr<Indexer> Indexer::SplitLargestDim() {
         utility::LogError("Cannot split when ndims_ == 0");
         return nullptr;
     }
-    if (master_shape_[ndims_ - 1] < 2) {
-        utility::LogError("master_shape_[ndims_ - 1] = {} < 2, cannot split.",
-                          master_shape_[ndims_ - 1]);
+    if (primary_shape_[ndims_ - 1] < 2) {
+        utility::LogError("primary_shape_[ndims_ - 1] = {} < 2, cannot split.",
+                          primary_shape_[ndims_ - 1]);
         return nullptr;
     }
     int64_t max_extent = -1;
     int64_t dim_to_split = -1;
     for (int64_t dim = ndims_ - 1; dim >= 0; dim--) {
-        int64_t size = master_shape_[dim];
+        int64_t size = primary_shape_[dim];
 
         // Inputs
         for (int64_t i = 0; i < num_inputs_; i++) {
@@ -299,17 +281,17 @@ std::unique_ptr<Indexer> Indexer::SplitLargestDim() {
                 ndims_, dim_to_split);
         return nullptr;
     }
-    if (master_shape_[dim_to_split] < 2) {
+    if (primary_shape_[dim_to_split] < 2) {
         utility::LogError(
                 "Internal error: cannot split dimension size {}, must be >= 2.",
-                master_shape_[dim_to_split]);
+                primary_shape_[dim_to_split]);
         return nullptr;
     }
 
     std::unique_ptr<Indexer> copy(new Indexer(*this));
     bool overlaps = IsReductionDim(dim_to_split);
-    auto copy_size = master_shape_[dim_to_split] / 2;
-    auto this_size = master_shape_[dim_to_split] - copy_size;
+    auto copy_size = primary_shape_[dim_to_split] / 2;
+    auto this_size = primary_shape_[dim_to_split] - copy_size;
     copy->ShrinkDim(dim_to_split, 0, copy_size);
     copy->final_output_ &= !overlaps;
     this->ShrinkDim(dim_to_split, copy_size, this_size);
@@ -334,7 +316,7 @@ Indexer Indexer::GetPerOutputIndexer(int64_t output_idx) const {
         if (IsReductionDim(i)) {
             output_shape[i] = 1;
         } else {
-            output_shape[i] = master_shape_[i];
+            output_shape[i] = primary_shape_[i];
         }
     }
     int64_t stride = 1;
@@ -369,10 +351,10 @@ Indexer Indexer::GetPerOutputIndexer(int64_t output_idx) const {
             }
         }
         if (!sub_indexer.IsReductionDim(dim)) {
-            sub_indexer.GetMasterShape()[dim] = 1;
+            sub_indexer.GetPrimaryShape()[dim] = 1;
         }
     }
-    sub_indexer.UpdateMasterStrides();
+    sub_indexer.UpdatePrimaryStrides();
 
     sub_indexer.UpdateContiguousFlags();
 
@@ -400,8 +382,8 @@ void Indexer::ShrinkDim(int64_t dim, int64_t start, int64_t size) {
                                 outputs_[i].byte_strides_[dim] * start;
     }
 
-    master_shape_[dim] = size;
-    UpdateMasterStrides();
+    primary_shape_[dim] = size;
+    UpdatePrimaryStrides();
 
     UpdateContiguousFlags();
 
@@ -424,7 +406,7 @@ int64_t Indexer::NumReductionDims() const {
 int64_t Indexer::NumWorkloads() const {
     int64_t num_workloads = 1;
     for (int64_t i = 0; i < ndims_; ++i) {
-        num_workloads *= master_shape_[i];
+        num_workloads *= primary_shape_[i];
     }
     return num_workloads;
 }
@@ -433,8 +415,8 @@ int64_t Indexer::NumOutputElements() const {
     // All outputs have the same shape, so  it's okay to use outputs_[0].
     int64_t num_output_elements = 1;
     for (int64_t i = 0; i < ndims_; ++i) {
-        if (outputs_[0].byte_strides_[i] != 0 || master_shape_[i] == 0) {
-            num_output_elements *= master_shape_[i];
+        if (outputs_[0].byte_strides_[i] != 0 || primary_shape_[i] == 0) {
+            num_output_elements *= primary_shape_[i];
         }
     }
     return num_output_elements;
@@ -446,8 +428,8 @@ void Indexer::CoalesceDimensions() {
     }
 
     auto can_coalesce = [&](int64_t dim0, int64_t dim1) {
-        auto shape0 = master_shape_[dim0];
-        auto shape1 = master_shape_[dim1];
+        auto shape0 = primary_shape_[dim0];
+        auto shape1 = primary_shape_[dim1];
         if (shape0 == 1 || shape1 == 1) {
             return true;
         }
@@ -480,15 +462,15 @@ void Indexer::CoalesceDimensions() {
     int64_t prev_dim = 0;
     for (int64_t dim = 1; dim < ndims_; dim++) {
         if (can_coalesce(prev_dim, dim)) {
-            if (master_shape_[prev_dim] == 1) {
+            if (primary_shape_[prev_dim] == 1) {
                 replace_stride(prev_dim, dim);
             }
-            master_shape_[prev_dim] *= master_shape_[dim];
+            primary_shape_[prev_dim] *= primary_shape_[dim];
         } else {
             prev_dim++;
             if (prev_dim != dim) {
                 replace_stride(prev_dim, dim);
-                master_shape_[prev_dim] = master_shape_[dim];
+                primary_shape_[prev_dim] = primary_shape_[dim];
             }
         }
     }
@@ -501,7 +483,7 @@ void Indexer::CoalesceDimensions() {
         outputs_[i].ndims_ = ndims_;
     }
 
-    UpdateMasterStrides();
+    UpdatePrimaryStrides();
 
     UpdateContiguousFlags();
 }
@@ -571,12 +553,12 @@ void Indexer::ReorderDimensions(const SizeVector& reduction_dims) {
     }
 }
 
-void Indexer::UpdateMasterStrides() {
+void Indexer::UpdatePrimaryStrides() {
     int64_t stride = 1;
     for (int64_t i = ndims_ - 1; i >= 0; --i) {
-        master_strides_[i] = stride;
+        primary_strides_[i] = stride;
         // Handles 0-sized dimensions
-        stride = master_shape_[i] > 1 ? stride * master_shape_[i] : stride;
+        stride = primary_shape_[i] > 1 ? stride * primary_shape_[i] : stride;
     }
 }
 
@@ -647,8 +629,8 @@ ispc::Indexer Indexer::ToISPC() const {
         ispc_indexer.outputs_contiguous_[i] = GetOutput(i).IsContiguous();
     }
     for (int64_t i = 0; i < NumDims(); ++i) {
-        ispc_indexer.master_shape_[i] = GetMasterShape()[i];
-        ispc_indexer.master_strides_[i] = GetMasterStrides()[i];
+        ispc_indexer.primary_shape_[i] = GetPrimaryShape()[i];
+        ispc_indexer.primary_strides_[i] = GetPrimaryStrides()[i];
     }
     ispc_indexer.ndims_ = NumDims();
 

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"
@@ -494,54 +475,58 @@ void VisualizerWithVertexSelection::KeyPressCallback(
         is_redraw_required_ = true;
     }
 
-    switch (key) {
-        case GLFW_KEY_X:
-            view_control.ToggleEditingX();
-            utility::LogDebug("[Visualizer] Enter orthogonal X editing mode.");
-            break;
-        case GLFW_KEY_Y:
-            view_control.ToggleEditingY();
-            utility::LogDebug("[Visualizer] Enter orthogonal Y editing mode.");
-            break;
-        case GLFW_KEY_Z:
-            view_control.ToggleEditingZ();
-            utility::LogDebug("[Visualizer] Enter orthogonal Z editing mode.");
-            break;
-        case GLFW_KEY_R:
-            if (mods & GLFW_MOD_CONTROL) {
-                ui_selected_points_geometry_ptr_->points_.clear();
-                ui_selected_points_geometry_ptr_->PaintUniformColor(
-                        SELECTED_POINTS_COLOR);
-                ui_selected_points_renderer_ptr_->UpdateGeometry();
-                is_redraw_required_ = true;
-            } else {
+    if (action != GLFW_RELEASE) {
+        switch (key) {
+            case GLFW_KEY_X:
+                view_control.ToggleEditingX();
+                utility::LogDebug(
+                        "[Visualizer] Enter orthogonal X editing mode.");
+                break;
+            case GLFW_KEY_Y:
+                view_control.ToggleEditingY();
+                utility::LogDebug(
+                        "[Visualizer] Enter orthogonal Y editing mode.");
+                break;
+            case GLFW_KEY_Z:
+                view_control.ToggleEditingZ();
+                utility::LogInfo(
+                        "[Visualizer] Enter orthogonal Z editing mode.");
+                break;
+            case GLFW_KEY_R:
+                if (mods & GLFW_MOD_CONTROL) {
+                    ClearPickedPoints();
+
+                    is_redraw_required_ = true;
+                } else {
+                    Visualizer::KeyPressCallback(window, key, scancode, action,
+                                                 mods);
+                }
+                break;
+            case GLFW_KEY_MINUS: {
+                if (action == GLFW_PRESS) {
+                    SetPointSize(pick_point_opts_.point_size_ - 1.0);
+                    is_redraw_required_ = true;
+                } else {
+                    Visualizer::KeyPressCallback(window, key, scancode, action,
+                                                 mods);
+                }
+                break;
+            }
+            case GLFW_KEY_EQUAL: {
+                if (action == GLFW_PRESS) {
+                    SetPointSize(pick_point_opts_.point_size_ + 1.0);
+                    is_redraw_required_ = true;
+                } else {
+                    Visualizer::KeyPressCallback(window, key, scancode, action,
+                                                 mods);
+                }
+                break;
+            }
+            default:
                 Visualizer::KeyPressCallback(window, key, scancode, action,
                                              mods);
-            }
-            break;
-        case GLFW_KEY_MINUS: {
-            if (action == GLFW_PRESS) {
-                SetPointSize(pick_point_opts_.point_size_ - 1.0);
-                is_redraw_required_ = true;
-            } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action,
-                                             mods);
-            }
-            break;
+                break;
         }
-        case GLFW_KEY_EQUAL: {
-            if (action == GLFW_PRESS) {
-                SetPointSize(pick_point_opts_.point_size_ + 1.0);
-                is_redraw_required_ = true;
-            } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action,
-                                             mods);
-            }
-            break;
-        }
-        default:
-            Visualizer::KeyPressCallback(window, key, scancode, action, mods);
-            break;
     }
     is_redraw_required_ = true;
     UpdateWindowTitle();
@@ -702,6 +687,10 @@ void VisualizerWithVertexSelection::ClearPickedPoints() {
     if (ui_selected_points_geometry_ptr_) {
         ui_selected_points_geometry_ptr_->points_.clear();
         ui_selected_points_renderer_ptr_->UpdateGeometry();
+    }
+
+    if (on_selection_changed_) {
+        on_selection_changed_();
     }
 }
 

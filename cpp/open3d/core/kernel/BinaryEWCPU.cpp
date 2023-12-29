@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Dispatch.h"
@@ -68,6 +49,18 @@ static void LaunchBinaryEWKernel(const Indexer& indexer,
                              indexer.GetOutputPtr<dst_t>(i));
             },
             vec_func);
+}
+
+template <typename scalar_t>
+static void CPUMaxElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::max(*static_cast<const scalar_t*>(lhs),
+                                            *static_cast<const scalar_t*>(rhs));
+}
+
+template <typename scalar_t>
+static void CPUMinElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::min(*static_cast<const scalar_t*>(lhs),
+                                            *static_cast<const scalar_t*>(rhs));
 }
 
 template <typename scalar_t>
@@ -342,6 +335,23 @@ void BinaryEWCPU(const Tensor& lhs,
                     "Boolean op's output type must be boolean or the "
                     "same type as the input.");
         }
+    } else if (op_code == BinaryEWOpCode::Maximum ||
+               op_code == BinaryEWOpCode::Minimum) {
+        Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+            switch (op_code) {
+                case BinaryEWOpCode::Maximum:
+                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUMaxElementKernel<scalar_t>);
+                    break;
+                case BinaryEWOpCode::Minimum:
+                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUMinElementKernel<scalar_t>);
+                    break;
+                default:
+                    break;
+            }
+        });
     } else {
         Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
 #ifdef BUILD_ISPC_MODULE

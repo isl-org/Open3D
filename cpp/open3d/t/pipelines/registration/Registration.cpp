@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/pipelines/registration/Registration.h"
@@ -143,8 +124,7 @@ static void AssertInputMultiScaleICP(
     core::AssertTensorDtype(target.GetPointPositions(), dtype);
     core::AssertTensorDevice(target.GetPointPositions(), device);
 
-    if (dtype == core::Float64 &&
-        device.GetType() == core::Device::DeviceType::CUDA) {
+    if (dtype == core::Float64 && device.IsCUDA()) {
         utility::LogDebug(
                 "Use Float32 pointcloud for best performance on CUDA device.");
     }
@@ -176,6 +156,26 @@ static void AssertInputMultiScaleICP(
         if (!source.HasPointColors()) {
             utility::LogError(
                     "ColoredICP requires source pointcloud to have colors.");
+        }
+    }
+
+    // Doppler ICP requires Doppler velocities and pre-computed directions for
+    // source point cloud.
+    if (estimation.GetTransformationEstimationType() ==
+        TransformationEstimationType::DopplerICP) {
+        if (!target.HasPointNormals()) {
+            utility::LogError(
+                    "DopplerICP requires target pointcloud to have normals.");
+        }
+        if (!source.HasPointAttr("dopplers")) {
+            utility::LogError(
+                    "DopplerICP requires source pointcloud to have Doppler "
+                    "velocities.");
+        }
+        if (!source.HasPointAttr("directions")) {
+            utility::LogError(
+                    "DopplerICP requires source pointcloud to have "
+                    "pre-computed direction vectors.");
         }
     }
 
@@ -229,7 +229,7 @@ InitializePointCloudPyramidForMultiScaleICP(
         // `max_correspondence_distance * 2.0` or
         // `voxel_sizes[num_iterations - 1] * 4.0` is an approximation, for
         // `search_radius` in `EstimateColorGradients`. For more control /
-        // performance tunning, one may compute and save the `color_gradient`
+        // performance tuning, one may compute and save the `color_gradient`
         // attribute in the target pointcloud manually by calling the function
         // `EstimateColorGradients`, before passing it to the `ICP` function.
         if (voxel_sizes[num_iterations - 1] <= 0) {
@@ -274,11 +274,15 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
     int iteration_count = 0;
     for (iteration_count = 0; iteration_count < criteria.max_iteration_;
          ++iteration_count) {
+        // Update the results and find correspondences.
         result = ComputeRegistrationResult(
                 source.GetPointPositions(), target_nns,
                 max_correspondence_distance, result.transformation_);
 
+        // No correspondences.
         if (result.fitness_ <= std::numeric_limits<double>::min()) {
+            result.converged_ = false;
+            result.num_iterations_ = iteration_count;
             return std::make_tuple(result,
                                    prev_iteration_count + iteration_count);
         }
@@ -286,10 +290,11 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
         // Computing Transform between source and target, given
         // correspondences. ComputeTransformation returns {4,4} shaped
         // Float64 transformation tensor on CPU device.
-        core::Tensor update =
+        const core::Tensor update =
                 estimation
-                        .ComputeTransformation(source, target,
-                                               result.correspondences_)
+                        .ComputeTransformation(
+                                source, target, result.correspondences_,
+                                result.transformation_, iteration_count)
                         .To(core::Float64);
 
         // Multiply the transform to the cumulative transformation (update).
@@ -327,8 +332,11 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
                     criteria.relative_fitness_ &&
             std::abs(prev_inlier_rmse - result.inlier_rmse_) <
                     criteria.relative_rmse_) {
+            result.converged_ = true;
             break;
         }
+        prev_fitness = result.fitness_;
+        prev_inlier_rmse = result.inlier_rmse_;
     }
     return std::make_tuple(result, prev_iteration_count + iteration_count);
 }
@@ -404,10 +412,13 @@ RegistrationResult MultiScaleICP(
 
         // No correspondences.
         if (result.fitness_ <= std::numeric_limits<double>::min()) {
+            result.converged_ = false;
             break;
         }
     }
     // ---- Iterating over different resolution scale END --------------------
+
+    result.num_iterations_ = iteration_count;
 
     return result;
 }

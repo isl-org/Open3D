@@ -43,7 +43,7 @@ if(NOT Tensorflow_FOUND)
     # Get Tensorflow_FRAMEWORK_LIB
     find_library(
         Tensorflow_FRAMEWORK_LIB
-        NAMES tensorflow_framework libtensorflow_framework.so.2
+        NAMES tensorflow_framework tensorflow_framework.2 libtensorflow_framework.so.2
         PATHS "${Tensorflow_LIB_DIR}"
         NO_DEFAULT_PATH
     )
@@ -59,21 +59,23 @@ if (UNIX AND NOT APPLE)
 endif()
 
 # Check if the c++11 ABI is compatible
-if(UNIX AND NOT APPLE AND ((Tensorflow_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
-   (NOT Tensorflow_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI)))
-    if(TensorFlow_CXX11_ABI)
-        set(NEEDED_ABI_FLAG "ON")
+if (UNIX AND NOT APPLE)
+    if(((Tensorflow_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
+       (NOT Tensorflow_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI)))
+        if(TensorFlow_CXX11_ABI)
+            set(NEEDED_ABI_FLAG "ON")
+        else()
+            set(NEEDED_ABI_FLAG "OFF")
+        endif()
+        message(FATAL_ERROR "TensorFlow and Open3D ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
+                            "Please use -D GLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
+                            "in the cmake config command to change the Open3D ABI.")
     else()
-        set(NEEDED_ABI_FLAG "OFF")
+        message(STATUS "TensorFlow matches Open3D ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
     endif()
-    message(FATAL_ERROR "TensorFlow and Open3D ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
-                        "Please use -D GLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
-                        "in the cmake config command to change the Open3D ABI.")
-else()
-    message(STATUS "TensorFlow matches Open3D ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
     Tensorflow DEFAULT_MSG Tensorflow_INCLUDE_DIR Tensorflow_LIB_DIR
-    Tensorflow_FRAMEWORK_LIB Tensorflow_DEFINITIONS)
+    Tensorflow_DEFINITIONS)

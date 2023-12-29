@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
@@ -32,8 +13,8 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/Registration.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace pipelines {
@@ -88,9 +69,7 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
-    unsigned int seed_val = option.seed_.has_value() ? option.seed_.value()
-                                                     : std::random_device{}();
-    utility::UniformRandIntGenerator rand_generator(0, ncorr - 1, seed_val);
+    utility::random::UniformIntGenerator<int> rand_generator(0, ncorr - 1);
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
         rand0 = rand_generator();
@@ -217,6 +196,7 @@ static Eigen::Matrix4d OptimizePairwiseRegistration(
         JTJ.setZero();
         JTr.setZero();
         double r = 0.0, r2 = 0.0;
+        (void)r2;  // r2 is not used for now. Suppress clang warning.
 
         for (size_t c = 0; c < corres.size(); c++) {
             int ii = corres[c].first;
@@ -258,6 +238,7 @@ static Eigen::Matrix4d OptimizePairwiseRegistration(
             r2 += r * r * s[c2];
             r2 += (par * (1.0 - sqrt(s[c2])) * (1.0 - sqrt(s[c2])));
         }
+        (void)r2;  // Fix warning in Clang.
         bool success;
         Eigen::VectorXd result;
         std::tie(success, result) = utility::SolveLinearSystemPSD(-JTJ, JTr);
@@ -316,13 +297,7 @@ RegistrationResult FastGlobalRegistrationBasedOnCorrespondence(
     }
 
     if (option.tuple_test_) {
-        // for AdvancedMatching ensure the first point cloud is the larger one
-        if (source.points_.size() > target.points_.size()) {
-            corresvec = AdvancedMatching(source, target, corresvec, option);
-        } else {
-            corresvec = AdvancedMatching(target, source, corresvec, option);
-            for (auto& p : corresvec) std::swap(p.first, p.second);
-        }
+        corresvec = AdvancedMatching(source, target, corresvec, option);
     }
 
     Eigen::Matrix4d transformation;
@@ -359,8 +334,8 @@ RegistrationResult FastGlobalRegistrationBasedOnFeatureMatching(
 
     std::vector<std::pair<int, int>> corres;
     if (option.tuple_test_) {
-        // for AdvancedMatching ensure the first point cloud is the larger one
-        if (source.points_.size() > target.points_.size()) {
+        // use the smaller point cloud as the query during knn search
+        if (source.points_.size() >= target.points_.size()) {
             corres = AdvancedMatching(
                     source, target,
                     InitialMatching(source_feature, target_feature), option);

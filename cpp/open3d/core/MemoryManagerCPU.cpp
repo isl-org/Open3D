@@ -1,37 +1,19 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cstdlib>
 
 #include "open3d/core/MemoryManager.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
-void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* MemoryManagerCPU::Malloc(size_t byte_size, const Device& device) {
     void* ptr;
     ptr = std::malloc(byte_size);
     if (byte_size != 0 && !ptr) {
@@ -40,13 +22,13 @@ void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     return ptr;
 }
 
-void CPUMemoryManager::Free(void* ptr, const Device& device) {
+void MemoryManagerCPU::Free(void* ptr, const Device& device) {
     if (ptr) {
         std::free(ptr);
     }
 }
 
-void CPUMemoryManager::Memcpy(void* dst_ptr,
+void MemoryManagerCPU::Memcpy(void* dst_ptr,
                               const Device& dst_device,
                               const void* src_ptr,
                               const Device& src_device,

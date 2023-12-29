@@ -27,23 +27,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macOS 10.15 build does not work on macOS 10.14 due to this issue:
-        # https://openradar.appspot.com/FB7647406
-        # macOS 10.14 build works on both 10.14 and 10.15
-        os: [ubuntu-18.04, macos-10.15]
+        os: [ubuntu-18.04, macos-11]
         GLIBCXX_USE_CXX11_ABI: [0, 1]
         exclude:
-          - os: macos-10.15
+          - os: macos-11
             GLIBCXX_USE_CXX11_ABI: 0
     env:
       GLIBCXX_USE_CXX11_ABI: ${{ matrix.GLIBCXX_USE_CXX11_ABI }}
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
@@ -64,7 +61,7 @@ jobs:
           build_webrtc
 
       - name: Upload WebRTC
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: webrtc_release
           path: |
@@ -74,7 +71,7 @@ jobs:
 
   Windows:
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
-    runs-on: windows-latest
+    runs-on: windows-2019
     env:
       WORK_DIR: "C:\\WebRTC"  # Not enough space in D:
       OPEN3D_DIR: "D:\\a\\open3d\\open3d"
@@ -84,12 +81,12 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: '3.8'
 
       - name: Disk space
         run: |
@@ -108,7 +105,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           echo "Get depot_tools"
           # Checkout to a specific version
-          # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
+          # Ref: https://chromium.googlesource.com/chromium/src/+/main/docs/building_old_revisions.md
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           git -C depot_tools checkout $env:DEPOT_TOOLS_COMMIT
           $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
@@ -170,7 +167,7 @@ jobs:
           cmake -E sha256sum webrtc_${env:WEBRTC_COMMIT_SHORT}_win.zip | Tee-Object -FilePath checksum_win.txt
 
       - name: Upload WebRTC
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: webrtc_release
           path: |
