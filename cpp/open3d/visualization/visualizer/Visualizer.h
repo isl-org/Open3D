@@ -37,6 +37,8 @@ class Image;
 
 namespace visualization {
 
+class GLFWContext;
+
 /// \class Visualizer
 ///
 /// \brief The main Visualizer class.
@@ -262,6 +264,10 @@ protected:
     // window
     GLFWwindow *window_ = NULL;
     std::string window_name_ = "Open3D";
+
+    /// \brief Shared GLFW context.
+    std::shared_ptr<GLFWContext> glfw_context_ = nullptr;
+
     Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
     Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
     std::function<bool(Visualizer *)> animation_callback_func_ = nullptr;
