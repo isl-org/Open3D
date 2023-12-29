@@ -116,10 +116,9 @@ void pybind_rendering_classes(py::module &m) {
                          const std::shared_ptr<geometry::Image>, bool)) &
                          Renderer::AddTexture,
                  "image"_a, "is_sRGB"_a = false,
-                 "Adds a texture: add_texture(geometry.Image, bool). The first "
-                 "parameter is the image, the second parameter is optional and "
-                 "is True if the image is in the sRGB colorspace and False "
-                 "otherwise")
+                 "Adds a texture. The first parameter is the image, the second "
+                 "parameter is optional and is True if the image is in the "
+                 "sRGB colorspace and False otherwise")
             .def("update_texture",
                  (bool (Renderer::*)(TextureHandle,
                                      const std::shared_ptr<geometry::Image>,
@@ -134,7 +133,7 @@ void pybind_rendering_classes(py::module &m) {
                  "add_texture(geometry.Image, bool). The first parameter is "
                  "the image, the second parameter is optional and is True "
                  "if the image is in the sRGB colorspace and False otherwise")
-            .def("remove_texture", &Renderer::RemoveTexture,
+            .def("remove_texture", &Renderer::RemoveTexture, "texture"_a,
                  "Deletes the texture. This does not remove the texture from "
                  "any existing materials or GUI widgets, and must be done "
                  "prior to this call.");
@@ -166,21 +165,21 @@ void pybind_rendering_classes(py::module &m) {
                                    const Eigen::Vector3f &,
                                    const Eigen::Vector3f &>(
                          &PyOffscreenRenderer::SetupCamera),
-                 "setup_camera(vertical_field_of_view, center, eye, up): "
-                 "sets camera view using bounding box of current geometry")
+                 "vertical_field_of_view"_a, "center"_a, "eye"_a, "up"_a,
+                 "Sets camera view using bounding box of current geometry")
             .def("setup_camera",
                  py::overload_cast<const camera::PinholeCameraIntrinsic &,
                                    const Eigen::Matrix4d &>(
                          &PyOffscreenRenderer::SetupCamera),
-                 "setup_camera(intrinsics, extrinsic_matrix): "
-                 "sets the camera view using bounding box of current geometry")
+                 "intrinsics"_a, "extrinsic_matrix"_a,
+                 "Sets the camera view using bounding box of current geometry")
             .def("setup_camera",
                  py::overload_cast<const Eigen::Matrix3d &,
                                    const Eigen::Matrix4d &, int, int>(
                          &PyOffscreenRenderer::SetupCamera),
-                 "setup_camera(intrinsic_matrix, extrinsic_matrix, "
-                 "intrinsic_width_px, intrinsic_height_px): "
-                 "sets the camera view using bounding box of current geometry")
+                 "intrinsic_matrix"_a, "extrinsic_matrix"_a,
+                 "intrinsic_width_px"_a, "intrinsic_height_px"_a,
+                 "Sets the camera view using bounding box of current geometry")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
                  "Renders scene to an image, blocking until the image is "
                  "returned")
@@ -214,31 +213,30 @@ void pybind_rendering_classes(py::module &m) {
             (void (Camera::*)(double, double, double, double,
                               Camera::FovType)) &
                     Camera::SetProjection,
-            "Sets a perspective projection. set_projection(field_of_view, "
-            "aspect_ratio, far_plane, field_of_view_type)")
+            "field_of_view"_a, "aspect_ratio"_a, "far_plane"_a,
+            "field_of_view_type"_a, "Sets a perspective projection.")
             .def("set_projection",
                  (void (Camera::*)(Camera::Projection, double, double, double,
                                    double, double, double)) &
                          Camera::SetProjection,
-                 "Sets the camera projection via a viewing frustum. "
-                 "set_projection(projection_type, left, right, bottom, top, "
-                 "near, far)")
+                 "projection_type"_a, "left"_a, "right"_a, "bottom"_a, "top"_a,
+                 "near"_a, "far"_a,
+                 "Sets the camera projection via a viewing frustum. ")
             .def("set_projection",
                  (void (Camera::*)(const Eigen::Matrix3d &, double, double,
                                    double, double)) &
                          Camera::SetProjection,
-                 "Sets the camera projection via intrinsics matrix. "
-                 "set_projection(intrinsics, near_place, far_plane, "
-                 "image_width, image_height)")
-            .def("look_at", &Camera::LookAt,
-                 "Sets the position and orientation of the camera: "
-                 "look_at(center, eye, up)")
-            .def("unproject", &Camera::Unproject,
-                 "unproject(x, y, z, view_width, view_height): takes the "
-                 "(x, y, z) location in the view, where x, y are the number of "
-                 "pixels from the upper left of the view, and z is the depth "
-                 "value. Returns the world coordinate (x', y', z').")
-            .def("copy_from", &Camera::CopyFrom,
+                 "intrinsics"_a, "near_place"_a, "far_plane"_a, "image_width"_a,
+                 "image_height"_a,
+                 "Sets the camera projection via intrinsics matrix.")
+            .def("look_at", &Camera::LookAt, "center"_a, "eye"_a, "up"_a,
+                 "Sets the position and orientation of the camera: ")
+            .def("unproject", &Camera::Unproject, "x"_a, "y"_a, "z"_a,
+                 "view_width"_a, "view_height"_a,
+                 "Takes the (x, y, z) location in the view, where x, y are the "
+                 "number of pixels from the upper left of the view, and z is "
+                 "the depth value. Returns the world coordinate (x', y', z').")
+            .def("copy_from", &Camera::CopyFrom, "camera"_a,
                  "Copies the settings from the camera passed as the argument "
                  "into this camera")
             .def("get_near", &Camera::GetNear,
@@ -554,48 +552,44 @@ void pybind_rendering_classes(py::module &m) {
                  "color, intensity")
             .def("add_point_light", &Scene::AddPointLight, "name"_a, "color"_a,
                  "position"_a, "intensity"_a, "falloff"_a, "cast_shadows"_a,
-                 "Adds a point light to the scene: add_point_light(name, "
-                 "color, position, intensity, falloff, cast_shadows)")
+                 "Adds a point light to the scene.")
             .def("add_spot_light", &Scene::AddSpotLight, "name"_a, "color"_a,
                  "position"_a, "direction"_a, "intensity"_a, "falloff"_a,
                  "inner_cone_angle"_a, "outer_cone_angle"_a, "cast_shadows"_a,
-                 "Adds a spot light to the scene: add_point_light(name, "
-                 "color, position, direction, intensity, falloff, "
-                 "inner_cone_angle, outer_cone_angle, cast_shadows)")
+                 "Adds a spot light to the scene.")
             .def("add_directional_light", &Scene::AddDirectionalLight, "name"_a,
                  "color"_a, "direction"_a, "intensity"_a, "cast_shadows"_a,
-                 "Adds a directional light to the scene: add_point_light(name, "
-                 "color, intensity, cast_shadows)")
+                 "Adds a directional light to the scene")
             .def("remove_light", &Scene::RemoveLight, "name"_a,
-                 "Removes the named light from the scene: remove_light(name)")
+                 "Removes the named light from the scene.")
             .def("update_light_color", &Scene::UpdateLightColor, "name"_a,
                  "color"_a,
                  "Changes a point, spot, or directional light's color")
             .def("update_light_position", &Scene::UpdateLightPosition, "name"_a,
-                 "position"_a, "Changes a point or spot light's position")
+                 "position"_a, "Changes a point or spot light's position.")
             .def("update_light_direction", &Scene::UpdateLightDirection,
                  "name"_a, "direction"_a,
-                 "Changes a spot or directional light's direction")
+                 "Changes a spot or directional light's direction.")
             .def("update_light_intensity", &Scene::UpdateLightIntensity,
                  "name"_a, "intensity"_a,
-                 "Changes a point, spot or directional light's intensity")
+                 "Changes a point, spot or directional light's intensity.")
             .def("update_light_falloff", &Scene::UpdateLightFalloff, "name"_a,
-                 "falloff"_a, "Changes a point or spot light's falloff")
+                 "falloff"_a, "Changes a point or spot light's falloff.")
             .def("update_light_cone_angles", &Scene::UpdateLightConeAngles,
                  "name"_a, "inner_cone_angle"_a, "outer_cone_angle"_a,
-                 "Changes a spot light's inner and outer cone angles")
+                 "Changes a spot light's inner and outer cone angles.")
             .def("enable_light_shadow", &Scene::EnableLightShadow, "name"_a,
-                 "cast_shadows"_a,
+                 "can_cast_shadows"_a,
                  "Changes whether a point, spot, or directional light can "
-                 "cast shadows:  enable_light_shadow(name, can_cast_shadows)")
+                 "cast shadows.")
             .def("render_to_image", &Scene::RenderToImage,
                  "Renders the scene to an image. This can only be used in a "
                  "GUI app. To render without a window, use "
-                 "Application.render_to_image")
+                 "``Application.render_to_image``.")
             .def("render_to_depth_image", &Scene::RenderToDepthImage,
                  "Renders the scene to a depth image. This can only be used in "
                  "GUI app. To render without a window, use "
-                 "Application.render_to_depth_image. Pixels range from "
+                 "``Application.render_to_depth_image``. Pixels range from "
                  "0.0 (near plane) to 1.0 (far plane)");
 
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
@@ -617,15 +611,15 @@ void pybind_rendering_classes(py::module &m) {
             .export_values();
 
     o3dscene.def(py::init<Renderer &>())
-            .def("show_skybox", &Open3DScene::ShowSkybox,
+            .def("show_skybox", &Open3DScene::ShowSkybox, "enable"_a,
                  "Toggles display of the skybox")
-            .def("show_axes", &Open3DScene::ShowAxes,
+            .def("show_axes", &Open3DScene::ShowAxes, "enable"_a,
                  "Toggles display of xyz axes")
-            .def("show_ground_plane", &Open3DScene::ShowGroundPlane,
-                 "Toggles display of ground plane")
-            .def("set_lighting", &Open3DScene::SetLighting,
-                 "Sets a simple lighting model. set_lighting(profile, "
-                 "sun_dir). The default value is "
+            .def("show_ground_plane", &Open3DScene::ShowGroundPlane, "enable"_a,
+                 "plane"_a, "Toggles display of ground plane")
+            .def("set_lighting", &Open3DScene::SetLighting, "profile"_a,
+                 "sun_dir"_a,
+                 "Sets a simple lighting model. The default value is "
                  "set_lighting(Open3DScene.LightingProfile.MED_SHADOWS, "
                  "(0.577, -0.577, -0.577))")
             .def(
@@ -650,43 +644,45 @@ void pybind_rendering_classes(py::module &m) {
                                    const MaterialRecord &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
-                 "add_downsampled_copy_for_fast_rendering"_a = true)
+                 "add_downsampled_copy_for_fast_rendering"_a = true,
+                 "Adds a geometry with the specified name. Default visible is "
+                 "true.")
             .def("add_geometry",
                  py::overload_cast<const std::string &,
                                    const t::geometry::Geometry *,
                                    const MaterialRecord &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
-                 "add_downsampled_copy_for_fast_rendering"_a = true)
-            .def("add_model", &Open3DScene::AddModel,
+                 "add_downsampled_copy_for_fast_rendering"_a = true,
+                 "Adds a geometry with the specified name. Default visible is "
+                 "true.")
+            .def("add_model", &Open3DScene::AddModel, "model"_a,
                  "Adds TriangleMeshModel to the scene.")
-            .def("has_geometry", &Open3DScene::HasGeometry,
-                 "has_geometry(name): returns True if the geometry has been "
-                 "added to the scene, False otherwise")
-            .def("remove_geometry", &Open3DScene::RemoveGeometry,
+            .def("has_geometry", &Open3DScene::HasGeometry, "name"_a,
+                 "Returns True if the geometry has been added to the scene, "
+                 "False otherwise")
+            .def("remove_geometry", &Open3DScene::RemoveGeometry, "name"_a,
                  "Removes the geometry with the given name")
             .def("geometry_is_visible", &Open3DScene::GeometryIsVisible,
-                 "geometry_is_visible(name): returns True if the geometry name "
-                 "is visible")
+                 "name"_a, "Returns True if the geometry name is visible")
             .def("set_geometry_transform", &Open3DScene::SetGeometryTransform,
-                 "set_geometry_transform(name, transform): sets the pose of the"
-                 " geometry name to transform")
+                 "name"_a, "transform"_a,
+                 "sets the pose of the geometry name to transform")
             .def("get_geometry_transform", &Open3DScene::GetGeometryTransform,
-                 "get_geometry_transform(name): returns the pose of the "
-                 "geometry name in the scene")
+                 "name"_a, "Returns the pose of the geometry name in the scene")
             .def("modify_geometry_material",
-                 &Open3DScene::ModifyGeometryMaterial,
-                 "modify_geometry_material(name, material). Modifies the "
-                 "material of the specified geometry")
-            .def("show_geometry", &Open3DScene::ShowGeometry,
-                 "Shows or hides the geometry with the given name")
-            .def("update_material", &Open3DScene::UpdateMaterial,
+                 &Open3DScene::ModifyGeometryMaterial, "name"_a, "material"_a,
+                 "Modifies the material of the specified geometry")
+            .def("show_geometry", &Open3DScene::ShowGeometry, "name"_a,
+                 "show"_a, "Shows or hides the geometry with the given name")
+            .def("update_material", &Open3DScene::UpdateMaterial, "material"_a,
                  "Applies the passed material to all the geometries")
             .def(
                     "set_view_size",
                     [](Open3DScene *scene, int width, int height) {
                         scene->GetView()->SetViewport(0, 0, width, height);
                     },
+                    "width"_a, "height"_a,
                     "Sets the view size. This should not be used except for "
                     "rendering to an image")
             .def_property_readonly("scene", &Open3DScene::GetScene,

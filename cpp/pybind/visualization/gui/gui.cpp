@@ -888,8 +888,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property_readonly("number_of_items",
                                    &Combobox::GetNumberOfItems,
                                    "The number of items (read-only)")
-            .def("get_item", &Combobox::GetItem,
-                 "Returns the item at the given index")
+            .def("get_item", &Combobox::GetItem, "index"_a,
+                 "Returns the item at the given index. Index must be valid.")
             .def_property("selected_index", &Combobox::GetSelectedIndex,
                           &Combobox::SetSelectedIndex,
                           "The index of the currently selected item")
@@ -1550,7 +1550,7 @@ void pybind_gui_classes(py::module &m) {
             .def("remove_item", &TreeView::RemoveItem,
                  "Removes an item and all its children (if any)")
             .def("clear", &TreeView::Clear, "Removes all items")
-            .def("get_item", &TreeView::GetItem,
+            .def("get_item", &TreeView::GetItem, "item_id"_a,
                  "Returns the widget associated with the provided Item ID. For "
                  "example, to manipulate the widget of the currently selected "
                  "item you would use the ItemID of the selected_item property "
