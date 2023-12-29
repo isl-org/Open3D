@@ -22,9 +22,12 @@
  * limitations under the License.
  */
 
-#include "open3d/visualization/gui/ImguiFilamentBridge.h"
-
+// clang-format off
+// NOTE: this must precede header files that bring in Filament headers
 #include <cstring>
+// clang-format on
+
+#include "open3d/visualization/gui/ImguiFilamentBridge.h"
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 // 4305: LightManager.h needs to specify some constants as floats
