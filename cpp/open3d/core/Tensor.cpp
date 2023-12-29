@@ -750,7 +750,7 @@ std::string Tensor::ToString(bool with_suffix,
     std::ostringstream rc;
     if (IsCUDA() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
-        rc << host_contiguous_tensor.ToString(false, "");
+        rc << host_contiguous_tensor.ToString(with_suffix, indent);
     } else {
         if (shape_.NumElements() == 0) {
             rc << indent;

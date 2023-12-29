@@ -310,14 +310,14 @@ public:
     /// Returns number of dimensions of the Indexer.
     int64_t NumDims() const { return ndims_; }
 
-    /// Returns Indexer's master shape, one can iterate the Indexer with this
+    /// Returns Indexer's primary shape, one can iterate the Indexer with this
     /// shape.
-    const int64_t* GetMasterShape() const { return master_shape_; }
-    int64_t* GetMasterShape() { return master_shape_; }
+    const int64_t* GetPrimaryShape() const { return primary_shape_; }
+    int64_t* GetPrimaryShape() { return primary_shape_; }
 
-    /// Returns Indexer's master strides, one can iterate the Indexer with this
-    /// strides. It is always set to be the default strides from master_shape_.
-    const int64_t* GetMasterStrides() const { return master_strides_; }
+    /// Returns Indexer's primary strides, one can iterate the Indexer with this
+    /// strides. It is always set to be the default strides from primary_shape_.
+    const int64_t* GetPrimaryStrides() const { return primary_strides_; }
 
     /// Returns the total number of workloads (e.g. computations) needed for
     /// the op. The scheduler schedules these workloads to run on parallel
@@ -394,7 +394,7 @@ public:
         // All outputs have the same shape and reduction dims. Even if they
         // don't have the same initial strides, the reduced strides are always
         // set to 0. Thus it is okay to use outputs_[0].
-        return outputs_[0].byte_strides_[dim] == 0 && master_shape_[dim] > 1;
+        return outputs_[0].byte_strides_[dim] == 0 && primary_shape_[dim] > 1;
     }
 
     /// Get input Tensor data pointer based on \p workload_idx.
@@ -492,8 +492,8 @@ protected:
     // thread coalescing.
     void ReorderDimensions(const SizeVector& reduction_dims);
 
-    /// Update master_strides_ based on master_shape_.
-    void UpdateMasterStrides();
+    /// Update primary_strides_ based on primary_shape_.
+    void UpdatePrimaryStrides();
 
     /// Update input_contiguous_ and output_contiguous_.
     void UpdateContiguousFlags();
@@ -552,9 +552,9 @@ protected:
         } else {
             int64_t offset = 0;
             for (int64_t i = 0; i < ndims_; ++i) {
-                offset +=
-                        workload_idx / master_strides_[i] * tr.byte_strides_[i];
-                workload_idx = workload_idx % master_strides_[i];
+                offset += workload_idx / primary_strides_[i] *
+                          tr.byte_strides_[i];
+                workload_idx = workload_idx % primary_strides_[i];
             }
             return static_cast<char*>(tr.data_ptr_) + offset;
         }
@@ -580,9 +580,9 @@ protected:
         } else {
             int64_t offset = 0;
             for (int64_t i = 0; i < ndims_; ++i) {
-                offset +=
-                        workload_idx / master_strides_[i] * tr.byte_strides_[i];
-                workload_idx = workload_idx % master_strides_[i];
+                offset += workload_idx / primary_strides_[i] *
+                          tr.byte_strides_[i];
+                workload_idx = workload_idx % primary_strides_[i];
             }
             return static_cast<T*>(static_cast<void*>(
                     static_cast<char*>(tr.data_ptr_) + offset));
@@ -607,20 +607,20 @@ protected:
 
     /// Indexer's global shape. The shape's number of elements is the
     /// same as GetNumWorkloads() for the Indexer.
-    /// - For broadcasting, master_shape_ is the same as the output shape.
-    /// - For reduction, master_shape_ is the same as the input shape.
+    /// - For broadcasting, primary_shape_ is the same as the output shape.
+    /// - For reduction, primary_shape_ is the same as the input shape.
     /// - Currently we don't allow broadcasting mixed with reduction. But if
-    ///   broadcasting mixed with reduction is allowed, master_shape_ is a mix
+    ///   broadcasting mixed with reduction is allowed, primary_shape_ is a mix
     ///   of input shape and output shape. First, fill in all omitted dimensions
     ///   (in inputs for broadcasting) and reduction dimensions (as if
-    ///   keepdim=true always) with size 1. For each axis, the master dimension
-    ///   is the non-1 dimension (if both are 1, then the master dimension is 1
+    ///   keepdim=true always) with size 1. For each axis, the primary dimension
+    ///   is the non-1 dimension (if both are 1, then the primary dimension is 1
     ///   in that axis).
-    int64_t master_shape_[MAX_DIMS];
+    int64_t primary_shape_[MAX_DIMS];
 
-    /// The default strides for master_shape_ for internal use only. Used to
+    /// The default strides for primary_shape_ for internal use only. Used to
     /// compute the actual strides and ultimately the index offsets.
-    int64_t master_strides_[MAX_DIMS];
+    int64_t primary_strides_[MAX_DIMS];
 
     /// Indexer's global number of dimensions.
     int64_t ndims_ = 0;

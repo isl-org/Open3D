@@ -81,16 +81,22 @@ public:
     void SetupCamera(float verticalFoV,
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
-                     const Eigen::Vector3f &up) {
+                     const Eigen::Vector3f &up,
+                     float nearClip = -1.0f,
+                     float farClip = -1.0f) {
         float aspect = 1.0f;
         if (height_ > 0) {
             aspect = float(width_) / float(height_);
         }
         auto *camera = scene_->GetCamera();
-        auto far_plane =
-                Camera::CalcFarPlane(*camera, scene_->GetBoundingBox());
-        camera->SetProjection(verticalFoV, aspect, Camera::CalcNearPlane(),
-                              far_plane, rendering::Camera::FovType::Vertical);
+        auto far_plane = farClip > 0.0
+                                 ? farClip
+                                 : Camera::CalcFarPlane(
+                                           *camera, scene_->GetBoundingBox());
+        camera->SetProjection(
+                verticalFoV, aspect,
+                nearClip > 0.0 ? nearClip : Camera::CalcNearPlane(), far_plane,
+                rendering::Camera::FovType::Vertical);
         camera->LookAt(center, eye, up);
     }
 
@@ -163,10 +169,12 @@ void pybind_rendering_classes(py::module &m) {
             .def("setup_camera",
                  py::overload_cast<float, const Eigen::Vector3f &,
                                    const Eigen::Vector3f &,
-                                   const Eigen::Vector3f &>(
+                                   const Eigen::Vector3f &, float, float>(
                          &PyOffscreenRenderer::SetupCamera),
                  "vertical_field_of_view"_a, "center"_a, "eye"_a, "up"_a,
-                 "Sets camera view using bounding box of current geometry")
+                 "near_clip"_a = -1.0f, "far_clip"_a = -1.0f,
+                 "Sets camera view using bounding box of current geometry if "
+                 "the near_clip and far_clip parameters are not set")
             .def("setup_camera",
                  py::overload_cast<const camera::PinholeCameraIntrinsic &,
                                    const Eigen::Matrix4d &>(
@@ -213,7 +221,7 @@ void pybind_rendering_classes(py::module &m) {
             (void (Camera::*)(double, double, double, double,
                               Camera::FovType)) &
                     Camera::SetProjection,
-            "field_of_view"_a, "aspect_ratio"_a, "far_plane"_a,
+            "field_of_view"_a, "aspect_ratio"_a, "near_plane"_a, "far_plane"_a,
             "field_of_view_type"_a, "Sets a perspective projection.")
             .def("set_projection",
                  (void (Camera::*)(Camera::Projection, double, double, double,
@@ -226,7 +234,7 @@ void pybind_rendering_classes(py::module &m) {
                  (void (Camera::*)(const Eigen::Matrix3d &, double, double,
                                    double, double)) &
                          Camera::SetProjection,
-                 "intrinsics"_a, "near_place"_a, "far_plane"_a, "image_width"_a,
+                 "intrinsics"_a, "near_plane"_a, "far_plane"_a, "image_width"_a,
                  "image_height"_a,
                  "Sets the camera projection via intrinsics matrix.")
             .def("look_at", &Camera::LookAt, "center"_a, "eye"_a, "up"_a,
@@ -656,7 +664,7 @@ void pybind_rendering_classes(py::module &m) {
                  "add_downsampled_copy_for_fast_rendering"_a = true,
                  "Adds a geometry with the specified name. Default visible is "
                  "true.")
-            .def("add_model", &Open3DScene::AddModel, "model"_a,
+            .def("add_model", &Open3DScene::AddModel, "name"_a, "model"_a,
                  "Adds TriangleMeshModel to the scene.")
             .def("has_geometry", &Open3DScene::HasGeometry, "name"_a,
                  "Returns True if the geometry has been added to the scene, "
