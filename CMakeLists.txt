@@ -288,14 +288,9 @@ if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
     message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
 endif()
 
-# Global flag to set CXX standard.
-# This does not affect 3rd party libraries.
-# Tensorflow 2.9+ requires cxx_17, but MSVC 19.29 throws errors with C++17
-# enabled.
-if (BUILD_SYCL_MODULE OR BUILD_TENSORFLOW_OPS)
-    set(CMAKE_CXX_STANDARD 17)
-else()
-    set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
+if (MSVC)
+    set(CMAKE_CXX_STANDARD 20)
 endif()
 set(CMAKE_CXX_EXTENSIONS OFF)   # Improved compatibility
 
