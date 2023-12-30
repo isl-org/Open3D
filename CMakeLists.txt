@@ -253,7 +253,7 @@ string(CONCAT OPEN3D_VERSION
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
 # Set additional info
 set(PROJECT_EMAIL       "info@open3d.org")
-set(PROJECT_DOCS        "http://www.open3d.org/docs")
+set(PROJECT_DOCS        "https://www.open3d.org/docs")
 set(PROJECT_CODE        "https://github.com/isl-org/Open3D")
 set(PROJECT_ISSUES      "https://github.com/isl-org/Open3D/issues")
 
@@ -262,7 +262,7 @@ project(Open3D
     # Set PROJECT_DESCRIPTION
     DESCRIPTION "Open3D: A Modern Library for 3D Data Processing."
     # Set PROJECT_HOMEPAGE_URL
-    HOMEPAGE_URL "http://www.open3d.org"
+    HOMEPAGE_URL "https://www.open3d.org"
     LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
