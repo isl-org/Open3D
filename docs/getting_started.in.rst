@@ -94,12 +94,12 @@ version (``HEAD`` of ``main`` branch):
       - `Python 3.11 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-win_amd64.whl>`__
 
 Please use these links from the `latest version of this page
-<http://www.open3d.org/docs/latest/getting_started.html>`__ only. You can also
+<https://www.open3d.org/docs/latest/getting_started.html>`__ only. You can also
 install the latest development version directly with pip:
 
 .. code-block:: bash
 
-    pip install -U --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d
+    pip install -U -f https://www.open3d.org/docs/latest/getting_started.html open3d
 
 .. warning::
    The development wheels for Linux are named according to PEP600. Please
@@ -180,7 +180,7 @@ provided here [#]_:
         * `x86_64 Release <https://storage.googleapis.com/open3d-releases/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@.zip>`__
         * `x86_64 Debug <https://storage.googleapis.com/open3d-releases/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@-dbg.zip>`__
 
-.. [#] Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__
+.. [#] Please use these links from the `latest version of this page <https://www.open3d.org/docs/latest/getting_started.html>`__
     only.
 .. [#] To check the `glibc` version on your system, run :code:`ldd --version`.
 

@@ -347,7 +347,7 @@ def _find_clang_format():
 
     raise RuntimeError(
         f"clang-format version {required_clang_format_major} not found. "
-        "See http://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
+        "See https://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
         "for help on clang-format installation.")
 
 
