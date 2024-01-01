@@ -136,6 +136,9 @@ set_target_properties(open3d_tf_ops PROPERTIES
 set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
+# _GLIBCXX_USER_CXX11_ABI is set separately
+list(REMOVE_ITEM Tensorflow_DEFINITIONS "_GLIBCXX_USE_CXX11_ABI=0"
+    "_GLIBCXX_USE_CXX11_ABI=1")
 target_compile_definitions(open3d_tf_ops PRIVATE "${Tensorflow_DEFINITIONS}")
 
 if (BUILD_CUDA_MODULE)

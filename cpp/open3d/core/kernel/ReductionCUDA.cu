@@ -141,13 +141,13 @@ public:
             // Map block.x to the fastest reducing dimension. It implies:
             //   1. BlockXReduce is required.
             //   2. block.y now max out to num_outputs.
-            dim0 = indexer.GetMasterShape()[0];
+            dim0 = indexer.GetPrimaryShape()[0];
             dim1 = num_outputs_;
         } else {
             // Map block.x to the fastest non reducing dimension. It implies:
             //   1. BlockXReduce is turned off.
             //   2. block.y now max out to num_inputs_per_output_.
-            dim0 = indexer.GetMasterShape()[indexer.NumReductionDims()];
+            dim0 = indexer.GetPrimaryShape()[indexer.NumReductionDims()];
             dim1 = num_inputs_per_output_;
         }
 
@@ -352,7 +352,7 @@ static OffsetCalculator<2, index_t> MakeOutputCalculator(
             indexer.GetOutput().byte_strides_ + num_reduction_dims,
             indexer.GetInput(0).byte_strides_ + num_reduction_dims,
     };
-    const int64_t* shape = indexer.GetMasterShape() + num_reduction_dims;
+    const int64_t* shape = indexer.GetPrimaryShape() + num_reduction_dims;
     return OffsetCalculator<2, index_t>(num_output_dims, shape, strides.data());
 }
 
@@ -364,7 +364,7 @@ static OffsetCalculator<1, index_t> MakeInputCalculator(
             indexer.GetInput(0).byte_strides_,
     };
     return OffsetCalculator<1, index_t>(
-            num_reduction_dims, indexer.GetMasterShape(), strides.data());
+            num_reduction_dims, indexer.GetPrimaryShape(), strides.data());
 }
 
 template <int vt, typename index_t, typename func_t>
@@ -923,7 +923,7 @@ private:
                 for (int dim = 0; dim < indexer.NumDims(); dim++) {
                     output_memory_size = std::max(
                             output_memory_size,
-                            indexer.GetMasterShape()[dim] *
+                            indexer.GetPrimaryShape()[dim] *
                                     indexer.GetOutput().byte_strides_[dim]);
                 }
                 owned_buf_ptr.reset(new AccumulationBuffer(

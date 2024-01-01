@@ -139,6 +139,69 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     return feature;
 }
 
+CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
+                                              const Feature &target_features,
+                                              bool mutual_filter,
+                                              float mutual_consistent_ratio) {
+    const int num_searches = mutual_filter ? 2 : 1;
+
+    // Access by reference, since Eigen Matrix could be copied
+    std::array<std::reference_wrapper<const Feature>, 2> features{
+            std::reference_wrapper<const Feature>(source_features),
+            std::reference_wrapper<const Feature>(target_features)};
+    std::array<int, 2> num_pts{int(source_features.data_.cols()),
+                               int(target_features.data_.cols())};
+    std::vector<CorrespondenceSet> corres(num_searches);
+
+    const int kMaxThreads = utility::EstimateMaxThreads();
+    const int kOuterThreads = std::min(kMaxThreads, num_searches);
+    const int kInnerThreads = std::max(kMaxThreads / num_searches, 1);
+    (void)kOuterThreads;  // Avoids compiler warning if OpenMP is disabled
+    (void)kInnerThreads;
+#pragma omp parallel for num_threads(kOuterThreads)
+    for (int k = 0; k < num_searches; ++k) {
+        geometry::KDTreeFlann kdtree(features[1 - k]);
+
+        int num_pts_k = num_pts[k];
+        corres[k] = CorrespondenceSet(num_pts_k);
+#pragma omp parallel for num_threads(kInnerThreads)
+        for (int i = 0; i < num_pts_k; i++) {
+            std::vector<int> corres_tmp(1);
+            std::vector<double> dist_tmp(1);
+
+            kdtree.SearchKNN(Eigen::VectorXd(features[k].get().data_.col(i)), 1,
+                             corres_tmp, dist_tmp);
+            int j = corres_tmp[0];
+            corres[k][i] = Eigen::Vector2i(i, j);
+        }
+    }
+
+    // corres[0]: corres_ij, corres[1]: corres_ji
+    if (!mutual_filter) return corres[0];
+
+    // should not use parallel for due to emplace back
+    CorrespondenceSet corres_mutual;
+    int num_src_pts = num_pts[0];
+    for (int i = 0; i < num_src_pts; ++i) {
+        int j = corres[0][i](1);
+        if (corres[1][j](1) == i) {
+            corres_mutual.emplace_back(i, j);
+        }
+    }
+
+    // Empirically mutual correspondence set should not be too small
+    if (int(corres_mutual.size()) >=
+        int(mutual_consistent_ratio * num_src_pts)) {
+        utility::LogDebug("{:d} correspondences remain after mutual filter",
+                          corres_mutual.size());
+        return corres_mutual;
+    }
+    utility::LogWarning(
+            "Too few correspondences ({:d}) after mutual filter, fall back to "
+            "original correspondences.",
+            corres_mutual.size());
+    return corres[0];
+}
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace open3d

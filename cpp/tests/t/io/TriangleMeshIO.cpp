@@ -71,6 +71,20 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(triangles));
 }
 
+TEST(TriangleMeshIO, ReadWriteTriangleMeshNPZ) {
+    auto cube_mesh = t::geometry::TriangleMesh::CreateBox();
+
+    const std::string filename =
+            utility::filesystem::GetTempDirectoryPath() + "/cube.npz";
+    EXPECT_TRUE(t::io::WriteTriangleMesh(filename, cube_mesh));
+    t::geometry::TriangleMesh mesh;
+    EXPECT_TRUE(t::io::ReadTriangleMesh(filename, mesh));
+    EXPECT_TRUE(
+            mesh.GetVertexPositions().AllClose(cube_mesh.GetVertexPositions()));
+    EXPECT_TRUE(
+            mesh.GetTriangleIndices().AllClose(cube_mesh.GetTriangleIndices()));
+}
+
 // TODO: Add tests for triangle_uvs, materials, triangle_material_ids and
 // textures once these are supported.
 TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {

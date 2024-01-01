@@ -451,7 +451,33 @@ TEST_P(ReadWritePC, UpdateProgressCallback) {
     }
 }
 
+// Test In Memory XYZ
+TEST(ReadWritePC, InMemoryXYZ) {
+    geometry::PointCloud pc_start;
+
+    Eigen::Vector3d r1(1, 2, 3);
+    Eigen::Vector3d r2(4, 5, 6);
+    Eigen::Vector3d r3(7, 8, 9);
+    pc_start.points_.push_back(r1);
+    pc_start.points_.push_back(r2);
+    pc_start.points_.push_back(r3);
+
+    unsigned char *buf = nullptr;
+    size_t len = 0;
+    EXPECT_TRUE(WritePointCloud(buf, len, pc_start,
+                                {"mem::xyz", false, false, true}));
+
+    geometry::PointCloud pc_load;
+    EXPECT_TRUE(ReadPointCloud(buf, len, pc_load,
+                               {"mem::xyz", false, false, true}));
+    EXPECT_EQ(pc_load.points_.size(), 3);
+    // Cleanup
+    delete[] buf;
+}
+
 TEST(PointCloudIO, DISABLED_CreatePointCloudFromFile) { NotImplemented(); }
+
+TEST(PointCloudIO, DISABLED_CreatePointCloudFromMemory) { NotImplemented(); }
 
 }  // namespace tests
 }  // namespace open3d

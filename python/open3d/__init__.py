@@ -90,9 +90,8 @@ if _build_config["BUILD_CUDA_MODULE"]:
             __DEVICE_API__ = "cuda"
     except OSError:
         warnings.warn(
-            "Open3D was built with CUDA support, but CUDA libraries could "
-            "not be found! Check your CUDA installation. Falling back to the "
-            "CPU pybind library.", ImportWarning)
+            f'Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.',
+            ImportWarning)
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CUDA Python "
@@ -127,7 +126,8 @@ __version__ = "@PROJECT_VERSION@"
 if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
-if _build_config["BUILD_JUPYTER_EXTENSION"]:
+if _build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
+        "OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true":
     import platform
     if not (platform.machine().startswith("arm") or
             platform.machine().startswith("aarch")):

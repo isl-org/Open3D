@@ -29,40 +29,20 @@ BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
-# CUDA
-if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON ||
-    $UBUNTU_VERSION != bionic ]]; then
-    # CUDA version in sync with PyTorch and Tensorflow
-    CUDA_VERSION=("11-6" "11.6")
-    CUDNN_MAJOR_VERSION=8
-    CUDNN_VERSION="8.4.1.50_cuda11.6"
-    GCC_MAX_VER=9
-else
-    # Without MLOps, ensure Open3D works with the lowest supported CUDA version
-    # Not available in Nvidia focal repos
-    CUDA_VERSION=("10-1" "10.1")
-    CUDNN_MAJOR_VERSION=8
-    CUDNN_VERSION="8.0.5.39-1+cuda10.1"
-    GCC_MAX_VER=7
-fi
+# CUDA: see docker/docker_build.sh
 # ML
-TENSORFLOW_VER="2.8.4"
-TENSORBOARD_VER="2.8.0"
-TORCH_CPU_GLNX_VER="1.13.1+cpu"
-TORCH_CUDA_GLNX_VER="1.13.1+cu116"
-PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
-# TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_MACOS_VER="1.13.1"
+TENSORFLOW_VER="2.13.0"
+TORCH_VER="2.0.1"
+TORCH_CPU_GLNX_VER="${TORCH_VER}+cpu"
+TORCH_CUDA_GLNX_VER="${TORCH_VER}+cu117" # match CUDA_VERSION in docker/docker_build.sh
+TORCH_MACOS_VER="${TORCH_VER}"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
-PIP_VER="21.1.1"
+PIP_VER="23.2.1"
 WHEEL_VER="0.38.4"
 STOOLS_VER="67.3.2"
-PYTEST_VER="7.1.2"
-PYTEST_RANDOMLY_VER="3.8.0"
-SCIPY_VER="1.7.3"
 YAPF_VER="0.30.0"
-PROTOBUF_VER="3.19.0"
+PROTOBUF_VER="4.24.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -74,16 +54,15 @@ install_python_dependencies() {
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U scipy=="$SCIPY_VER" pytest=="$PYTEST_VER" \
-            pytest-randomly=="$PYTEST_RANDOMLY_VER"
+        python -m pip install -U -r python/requirements_test.txt
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
-        TF_ARCH_NAME=tensorflow-gpu
+        TF_ARCH_NAME=tensorflow
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         TORCH_GLNX="torch==$TORCH_CUDA_GLNX_VER"
     else
         TF_ARCH_NAME=tensorflow-cpu
-        TF_ARCH_DISABLE_NAME=tensorflow-gpu
+        TF_ARCH_DISABLE_NAME=tensorflow
         TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
     fi
 
@@ -97,14 +76,14 @@ install_python_dependencies() {
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
         # TF happily installs both CPU and GPU versions at the same time, so remove the other
         python -m pip uninstall --yes "$TF_ARCH_DISABLE_NAME"
-        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER"
+        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" # ML/requirements-tensorflow.txt
     fi
-    if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+    if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard
 
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_REPO_URL"
+            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_REPO_URL" tensorboard
         else
             echo "unknown OS $OSTYPE"
             exit 1
@@ -130,20 +109,17 @@ build_all() {
 
     mkdir -p build
     cd build
-    GLIBCXX_USE_CXX11_ABI=ON
-    if [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
-        GLIBCXX_USE_CXX11_ABI=OFF
-    fi
 
     cmakeOptions=(
-        -DDEVELOPER_BUILD=$DEVELOPER_BUILD
+        -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
         -DBUILD_SHARED_LIBS="$BUILD_SHARED_LIBS"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
         -DBUILD_COMMON_CUDA_ARCHS=ON
         -DBUILD_COMMON_ISPC_ISAS=ON
-        -DGLIBCXX_USE_CXX11_ABI="$GLIBCXX_USE_CXX11_ABI"
+        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
+        -DGLIBCXX_USE_CXX11_ABI=OFF
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
@@ -175,8 +151,8 @@ build_pip_package() {
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
-        # the build system of the main repo expects a master branch. make sure master exists
-        git -C "${OPEN3D_ML_ROOT}" checkout -b master || true
+        # the build system of the main repo expects a main branch. make sure main exists
+        git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
         BUNDLE_OPEN3D_ML=ON
     else
         echo "Open3D-ML not available."
@@ -209,6 +185,13 @@ build_pip_package() {
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
     fi
+    CXX11_ABI=ON
+    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
+        CXX11_ABI=$(python -c "import tensorflow as tf; print('ON' if tf.__cxx11_abi_flag__ else 'OFF')")
+    elif [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
+        CXX11_ABI=$(python -c "import torch; print('ON' if torch._C._GLIBCXX_USE_CXX11_ABI else 'OFF')")
+    fi
+    echo Building with GLIBCXX_USE_CXX11_ABI="$CXX11_ABI"
     set -u
 
     echo
@@ -221,10 +204,10 @@ build_pip_package() {
         "-DBUILD_COMMON_CUDA_ARCHS=$BUILD_COMMON_CUDA_ARCHS"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
-        "-DBUILD_LIBREALSENSE=ON"
-        "-DGLIBCXX_USE_CXX11_ABI=OFF"
-        "-DBUILD_TENSORFLOW_OPS=ON"
-        "-DBUILD_PYTORCH_OPS=ON"
+        "-DBUILD_LIBREALSENSE=OFF"
+        "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
+        "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
+        "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
@@ -237,7 +220,6 @@ build_pip_package() {
     cmake "${cmakeOptions[@]}" ..
     set +x # Echo commands off
     echo
-    make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
 
     echo "Packaging Open3D pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
@@ -270,7 +252,7 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
-    # FIXME: Needed because Open3D-ML master TF and PyTorch is older than dev.
+    # FIXME: Needed because Open3D-ML main TF and PyTorch is older than dev.
     if [ $BUILD_CUDA_MODULE == ON ]; then
         install_python_dependencies with-cuda
     else
@@ -299,13 +281,10 @@ test_wheel() {
 run_python_tests() {
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install -U pytest=="$PYTEST_VER" \
-        pytest-randomly=="$PYTEST_RANDOMLY_VER" \
-        scipy=="$SCIPY_VER" \
-        tensorboard=="$TENSORBOARD_VER"
+    python -m pip install -U -r python/requirements_test.txt
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
+    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
         echo Testing ML Ops disabled
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
@@ -363,6 +342,7 @@ install_docs_dependencies() {
     sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
     ./util/install_deps_ubuntu.sh assume-yes
     sudo apt-get install --yes cmake
+    sudo apt-get install --yes libxml2-dev libxslt-dev python3-dev
     sudo apt-get install --yes doxygen
     sudo apt-get install --yes texlive
     sudo apt-get install --yes texlive-latex-extra
@@ -418,7 +398,8 @@ build_docs() {
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
         "-DGLIBCXX_USE_CXX11_ABI=OFF"
-        "-DBUILD_TENSORFLOW_OPS=ON"
+        # TODO: PyTorch still use old CXX ABI, re-enable Tensorflow when PyTorch is updated to use new ABI
+        "-DBUILD_TENSORFLOW_OPS=OFF"
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_EXAMPLES=OFF"
     )
@@ -430,12 +411,13 @@ build_docs() {
         -DBUILD_WEBRTC=OFF \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         ..
-    make install-pip-package -j$NPROC
+    make python-package -j$NPROC
     make -j$NPROC
     bin/GLInfo
+    export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}:$PWD/lib/python_package"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never
+    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never --py_example_rst=never
     python -m pip uninstall --yes open3d
     cd ../build
     set +x # Echo commands off
@@ -450,20 +432,23 @@ build_docs() {
         -DBUILD_WEBRTC=ON \
         -DBUILD_JUPYTER_EXTENSION=OFF \
         ..
-    make install-pip-package -j$NPROC
+    make python-package -j$NPROC
     make -j$NPROC
     bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --py_api_rst=always --execute_notebooks=never --sphinx --doxygen
+    python make_docs.py $DOC_ARGS --py_api_rst=always --py_example_rst=always --execute_notebooks=never --sphinx --doxygen
     set +x # Echo commands off
 }
 
 maximize_ubuntu_github_actions_build_space() {
-    df -h
-    $SUDO rm -rf /usr/share/dotnet
-    $SUDO rm -rf /usr/local/lib/android
-    $SUDO rm -rf /opt/ghc
+    # https://github.com/easimon/maximize-build-space/blob/main/action.yml
+    df -h .                                  # => 26GB
+    $SUDO rm -rf /usr/share/dotnet           # ~17GB
+    $SUDO rm -rf /usr/local/lib/android      # ~11GB
+    $SUDO rm -rf /opt/ghc                    # ~2.7GB
+    $SUDO rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+    $SUDO docker image prune --all --force   # ~4.5GB
     $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
-    df -h
+    df -h . # => 53GB
 }

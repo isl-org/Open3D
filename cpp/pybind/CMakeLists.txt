@@ -66,6 +66,7 @@ elseif (UNIX)   # Linux
 };]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+    target_link_options(pybind PRIVATE "-flto=auto")
 endif()
 
 
@@ -171,6 +172,8 @@ if (BUNDLE_OPEN3D_ML)
         open3d_ml
         PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
         GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
+        GIT_TAG origin/main
+        GIT_SHALLOW
         BUILD_IN_SOURCE ON
         # do not configure
         CONFIGURE_COMMAND ""

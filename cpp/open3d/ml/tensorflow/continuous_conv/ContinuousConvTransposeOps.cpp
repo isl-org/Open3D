@@ -145,8 +145,8 @@ REGISTER_OP("Open3DContinuousConvTranspose")
                 if (c->ValueKnown(c->Dim(filters_shape, i))) {
                     int64_t n = c->Value(c->Dim(filters_shape, i));
                     if (n < 1)
-                        return Status(error::INVALID_ARGUMENT,
-                                      "Each filter dimension must be >= 1");
+                        return absl::InvalidArgumentError(
+                                "Each filter dimension must be >= 1");
                 }
             }
 
@@ -168,7 +168,7 @@ REGISTER_OP("Open3DContinuousConvTranspose")
                     c->MakeShape({output_first_dim, output_channel_dim});
 
             c->set_output(0, output_shape);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Continuous tranpose convolution of two pointclouds.

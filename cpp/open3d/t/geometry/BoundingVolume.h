@@ -93,12 +93,12 @@ public:
     /// \param min_bound Tensor with {3,} shape, and type float32 or float64.
     void SetMinBound(const core::Tensor &min_bound);
 
-    /// \brief Set the max boundof the box.
+    /// \brief Set the max bound of the box.
     /// If the data type of the given tensor differs from the data type of the
     /// box, an exception will be thrown.
     ///
     /// If the max bound makes the box invalid, it will not be set to the box.
-    /// \param min_bound Tensor with {3,} shape, and type float32 or float64.
+    /// \param max_bound Tensor with {3,} shape, and type float32 or float64.
     void SetMaxBound(const core::Tensor &max_bound);
 
     /// \brief Set the color of the box.
@@ -146,7 +146,7 @@ public:
             const utility::optional<core::Tensor> &center = utility::nullopt);
 
     /// \brief Add operation for axis-aligned bounding box.
-    /// The device of ohter box must be the same as the device of the current
+    /// The device of other box must be the same as the device of the current
     /// box.
     AxisAlignedBoundingBox &operator+=(const AxisAlignedBoundingBox &other);
 
@@ -156,16 +156,22 @@ public:
     /// Returns the half extent of the bounding box.
     core::Tensor GetHalfExtent() const { return GetExtent() / 2; }
 
-    /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis'
+    /// \brief Returns the maximum extent, i.e. the maximum of X, Y and Z axis'
     /// extents.
     double GetMaxExtent() const {
         return GetExtent().Max({0}).To(core::Float64).Item<double>();
     }
 
+    /// Calculates the percentage position of the given x-coordinate within
+    /// the x-axis range of this AxisAlignedBoundingBox.
     double GetXPercentage(double x) const;
 
+    /// Calculates the percentage position of the given y-coordinate within
+    /// the y-axis range of this AxisAlignedBoundingBox.
     double GetYPercentage(double y) const;
 
+    /// Calculates the percentage position of the given z-coordinate within
+    /// the z-axis range of this AxisAlignedBoundingBox.
     double GetZPercentage(double z) const;
 
     /// Returns the volume of the bounding box.
@@ -173,8 +179,9 @@ public:
         return GetExtent().Prod({0}).To(core::Float64).Item<double>();
     }
 
-    /// Returns the eight points that define the bounding box. The Return tensor
-    /// has shape {8, 3} and data type same as the box.
+    /// \brief Returns the eight points that define the bounding box.
+    ///
+    /// The Return tensor has shape {8, 3} and data type same as the box.
     core::Tensor GetBoxPoints() const;
 
     /// \brief Indices to points that are within the bounding box.
@@ -206,16 +213,21 @@ public:
 
     /// Creates the axis-aligned box that encloses the set of points.
     /// \param points A list of points with data type of float32 or float64 (N x
-    /// 3 tensor, where N must be larger than 3).
+    /// 3 tensor).
     /// \return AxisAlignedBoundingBox with same data type and device as input
     /// points.
     static AxisAlignedBoundingBox CreateFromPoints(const core::Tensor &points);
 
 protected:
+    /// The device to use for the bounding box. The default is CPU:0.
     core::Device device_ = core::Device("CPU:0");
+    /// The data type of the bounding box.
     core::Dtype dtype_ = core::Float32;
+    /// The lower x, y, z bounds of the bounding box.
     core::Tensor min_bound_;
+    /// The upper x, y, z bounds of the bounding box.
     core::Tensor max_bound_;
+    /// The color of the bounding box in RGB. The default is white.
     core::Tensor color_;
 };
 
@@ -223,7 +235,7 @@ protected:
 /// \brief A bounding box oriented along an arbitrary frame of reference.
 ///
 /// - (center, rotation, extent): The oriented bounding box is defined by its
-/// center position, rotation maxtrix and extent.
+/// center position, rotation matrix and extent.
 ///     - Usage
 ///         - OrientedBoundingBox::GetCenter()
 ///         - OrientedBoundingBox::SetCenter(const core::Tensor &center)
@@ -373,8 +385,9 @@ public:
         return GetExtent().Prod({0}).To(core::Float64).Item<double>();
     }
 
-    /// Returns the eight points that define the bounding box. The Return tensor
-    /// has shape {8, 3} and data type same as the box.
+    /// \brief Returns the eight points that define the bounding box.
+    ///
+    /// The Return tensor has shape {8, 3} and data type same as the box.
     ///
     /// \verbatim
     ///      ------- x

@@ -14,21 +14,21 @@ A voxel block grid can be constructed by:
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 56
-   :lines: 27,57-74
+   :lineno-start: 27
+   :lines: 8,28-45
 
-In this example, the multi-value hash map has key shape shape ``(3,)`` and dtype ``int32``. The hash map values are organized as a structure of array (SoA). The hash map values include:
+In this example, the multi-value hash map has key of shape ``(3,)`` and dtype ``float32``. The hash map values are organized as a structure of array (SoA). The hash map values include:
 
 By default it contains:
 
-- Truncated Signed Distance Function (TSDF) of element shape ``(8, 8, 8, 1)``
-- Weight of element shape ``(8, 8, 8, 1)``
-- (Optionally) RGB color of element shape ``(8, 8, 8, 3)``
+- Truncated Signed Distance Function (TSDF) of element shape ``(16, 16, 16, 1)``
+- Weight of element shape ``(16, 16, 16, 1)``
+- (Optionally) RGB color of element shape ``(16, 16, 16, 3)``
 
-where ``8`` stands for the local voxel block grid resolution.
+where ``16`` stands for the local voxel block grid resolution.
 
 By convention, we use ``3.0 / 512`` as the voxel resolution. This spatial resolution is equivalent to representing a ``3m x 3m x 3m`` (m = meter) room with a dense ``512 x 512 x 512`` voxel grid.
 
-The voxel block grid is optimized to run fast on GPU. On CPU the it runs slower. Empirically, we reserve ``100000`` such blocks for a living room-scale scene to avoid frequent rehashing.
+The voxel block grid is optimized to run fast on GPU. On CPU, it runs slower. Empirically, we reserve ``50000`` such blocks for a living room-scale scene to avoid frequent rehashing.
 
-You can always customize your own properties, e.g., ``intensity`` of element shape ``(8, 8, 8, 1)`` in ``float32``, ``label`` of element shape ``(8, 8, 8, 1)`` in ``int32``, etc. To know how to process the data, please refer to :ref:`customized_integration`.
+You can always customize your own properties, e.g., ``intensity`` of element shape ``(16, 16, 16, 1)`` in ``float32``, ``label`` of element shape ``(16, 16, 16, 1)`` in ``int32``, etc. To know how to process the data, please refer to :ref:`customized_integration`.

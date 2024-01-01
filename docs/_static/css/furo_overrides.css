@@ -1,0 +1,55 @@
+/* In furo, toctree captions needs to be enlarged. */
+.toctree-wrapper.compound .caption {
+    font-size: 150%;
+    font-weight: bold;
+}
+
+/* Apply custom CSS for displaying docs version - https://github.com/pradyunsg/furo/pull/500 */
+#furo-versions {
+  font-size: var(--sidebar-item-font-size);
+}
+
+#furo-versions .caption {
+  display: inline-block;
+  color: var(--color-sidebar-caption-text);
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: var(--sidebar-caption-font-size);
+  padding-right: var(--sidebar-expander-width);
+  margin-top: 0;
+}
+
+#furo-versions input[type=checkbox] {
+  display: none;
+  position: absolute;
+  box-sizing: border-box;
+  padding: 0;
+  overflow: visible;
+}
+
+#furo-versions input[type=checkbox]:checked ~ .rst-other-versions {
+  display: inline-block;
+  line-height: var(--sidebar-item-line-height);
+  padding: var(--sidebar-item-spacing-vertical) var(--sidebar-item-spacing-horizontal);
+  text-decoration: none;
+}
+
+#furo-versions .rst-other-versions {
+  display: none;
+}
+
+#furo-versions .versions-label {
+  position: relative;
+  float: right;
+}
+
+/* Fix for references. See Open3D PR #6470 */
+div.citation > span {
+  padding-right: 2rem;
+}
+
+/* Limit output of jupyter notebook within a scrollable area in generated documentation */
+.nboutput .output_area div > pre {
+        overflow-y: scroll !important;
+        max-height: 30em;
+}

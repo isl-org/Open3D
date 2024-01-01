@@ -113,3 +113,67 @@ using open3d::t::pipelines::registration::RobustKernelMethod;
             utility::LogError("Unsupported method.");                        \
         }                                                                    \
     }()
+
+/// \param scalar_t type: float / double.
+/// \param METHOD_1 registration::RobustKernelMethod Loss type.
+/// \param scaling_parameter_1 Scaling parameter for loss fine-tuning.
+/// \param METHOD_2 registration::RobustKernelMethod Loss type.
+/// \param scaling_parameter_2 Scaling parameter for loss fine-tuning.
+#define DISPATCH_DUAL_ROBUST_KERNEL_FUNCTION(scalar_t, METHOD_1,            \
+                                             scaling_parameter_1, METHOD_2, \
+                                             scaling_parameter_2, ...)      \
+    [&] {                                                                   \
+        scalar_t scale_1 = static_cast<scalar_t>(scaling_parameter_1);      \
+        scalar_t scale_2 = static_cast<scalar_t>(scaling_parameter_2);      \
+        if (METHOD_1 == RobustKernelMethod::L2Loss &&                       \
+            METHOD_2 == RobustKernelMethod::L2Loss) {                       \
+            auto GetWeightFromRobustKernelFirst =                           \
+                    [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return 1.0;                                                 \
+            };                                                              \
+            auto GetWeightFromRobustKernelSecond =                          \
+                    [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return 1.0;                                                 \
+            };                                                              \
+            return __VA_ARGS__();                                           \
+        } else if (METHOD_1 == RobustKernelMethod::L2Loss &&                \
+                   METHOD_2 == RobustKernelMethod::TukeyLoss) {             \
+            auto GetWeightFromRobustKernelFirst =                           \
+                    [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return 1.0;                                                 \
+            };                                                              \
+            auto GetWeightFromRobustKernelSecond =                          \
+                    [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return Square(1.0 - Square(min((scalar_t)1.0,               \
+                                               abs(residual) / scale_2)));  \
+            };                                                              \
+            return __VA_ARGS__();                                           \
+        } else if (METHOD_1 == RobustKernelMethod::TukeyLoss &&             \
+                   METHOD_2 == RobustKernelMethod::L2Loss) {                \
+            auto GetWeightFromRobustKernelFirst =                           \
+                    [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return Square(1.0 - Square(min((scalar_t)1.0,               \
+                                               abs(residual) / scale_1)));  \
+            };                                                              \
+            auto GetWeightFromRobustKernelSecond =                          \
+                    [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return 1.0;                                                 \
+            };                                                              \
+            return __VA_ARGS__();                                           \
+        } else if (METHOD_1 == RobustKernelMethod::TukeyLoss &&             \
+                   METHOD_2 == RobustKernelMethod::TukeyLoss) {             \
+            auto GetWeightFromRobustKernelFirst =                           \
+                    [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return Square(1.0 - Square(min((scalar_t)1.0,               \
+                                               abs(residual) / scale_1)));  \
+            };                                                              \
+            auto GetWeightFromRobustKernelSecond =                          \
+                    [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t { \
+                return Square(1.0 - Square(min((scalar_t)1.0,               \
+                                               abs(residual) / scale_2)));  \
+            };                                                              \
+            return __VA_ARGS__();                                           \
+        } else {                                                            \
+            utility::LogError("Unsupported method.");                       \
+        }                                                                   \
+    }()

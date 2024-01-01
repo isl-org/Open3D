@@ -174,13 +174,16 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
         bool allow_arbitrary) {
     auto intrinsic = parameters.intrinsic_;
     auto extrinsic = parameters.extrinsic_;
-    if (!allow_arbitrary && (window_height_ <= 0 || window_width_ <= 0 ||
-                             window_height_ != intrinsic.height_ ||
-                             window_width_ != intrinsic.width_ ||
-                             intrinsic.intrinsic_matrix_(0, 2) !=
-                                     (double)window_width_ / 2.0 - 0.5 ||
-                             intrinsic.intrinsic_matrix_(1, 2) !=
-                                     (double)window_height_ / 2.0 - 0.5)) {
+
+    constexpr double threshold = 1.e-6;
+    if (!allow_arbitrary &&
+        (window_height_ <= 0 || window_width_ <= 0 ||
+         window_height_ != intrinsic.height_ ||
+         window_width_ != intrinsic.width_ ||
+         std::abs(intrinsic.intrinsic_matrix_(0, 2) -
+                  ((double)window_width_ / 2.0 - 0.5)) > threshold ||
+         std::abs(intrinsic.intrinsic_matrix_(1, 2) =
+                          ((double)window_height_ / 2.0 - 0.5)) > threshold)) {
         utility::LogWarning(
                 "[ViewControl] ConvertFromPinholeCameraParameters() failed "
                 "because window height and width do not match.");

@@ -161,7 +161,7 @@ def test_member_functions(device):
 
     pcd_small_down = pcd.voxel_down_sample(1)
     assert pcd_small_down.point.positions.allclose(
-        o3c.Tensor([[0, 0, 0]], dtype, device))
+        o3c.Tensor([[0.375, 0.375, 0.575]], dtype, device))
 
 
 def test_extrude_rotation():
