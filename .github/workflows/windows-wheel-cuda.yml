@@ -6,11 +6,7 @@ on:
       developer_build:
         description: "Set to OFF for Release wheels"
         required: false
-        default: "ON"
-      shared_libs:
-        description: "Set to ON to build shared libraries"
-        required: false
-        default: "ON"
+        default: "OFF"
 
   push:
     branches:
@@ -36,7 +32,6 @@ env:
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
-  SHARED_LIBS: ${{ github.event.inputs.shared_libs || 'ON' }}
   GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
@@ -88,7 +83,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
-            -DBUILD_SHARED_LIBS="${env:SHARED_LIBS}" `
+            -DBUILD_SHARED_LIBS=ON `
             -DSTATIC_WINDOWS_RUNTIME=OFF `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DENABLE_CACHED_CUDA_MANAGER=OFF `

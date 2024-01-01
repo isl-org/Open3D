@@ -6,7 +6,7 @@ on:
       developer_build:
         description: "Set to OFF for Release wheels"
         required: false
-        default: "ON"
+        default: "OFF"
 
   push:
     branches:
