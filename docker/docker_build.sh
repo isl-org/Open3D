@@ -594,7 +594,7 @@ function main() {
     cuda_wheel_py310)
         cuda_wheel_build py310 cuda
         ;;
-    cuda_wheel_py311_dev)
+    cuda_wheel_py311)
         cuda_wheel_build py311 cuda
         ;;
     cpu_wheel_py38_dev)
