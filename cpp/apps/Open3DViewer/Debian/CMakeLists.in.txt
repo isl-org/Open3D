@@ -11,13 +11,16 @@ install(DIRECTORY   "Open3D"
         PATTERN     "Open3D/Open3D.svg" EXCLUDE
         PATTERN     "Open3D/Open3D.desktop" EXCLUDE
         PATTERN     "Open3D/Open3DViewer.xml" EXCLUDE
-        PATTERN     "Open3D/Open3D" EXCLUDE
         PATTERN     "Open3D/CMakeLists.txt" EXCLUDE
+        PATTERN     "Open3D/Open3DViewerLauncher.sh" EXCLUDE
 )
-install(FILES "Open3D/Open3D.desktop" DESTINATION /usr/share/applications)
+install(CODE "file(READ \"${CMAKE_BINARY_DIR}/Open3D/Open3D.desktop\" _DESKTOP_FILE)
+              string(REGEX REPLACE \"Exec=.*/bin/Open3D\" \"Exec=${CPACK_INSTALL_PREFIX}/bin/Open3D\" _DESKTOP_FILE \"\${_DESKTOP_FILE}\")
+              file(WRITE \"${CMAKE_BINARY_DIR}/Open3D/Open3D.deb.desktop\" \"\${_DESKTOP_FILE}\")")
+install(FILES "Open3D/Open3D.deb.desktop" DESTINATION /usr/share/applications RENAME "Open3D.desktop")
 install(FILES "Open3D/Open3DViewer.xml" DESTINATION /usr/share/mime/packages)
 install(FILES "Open3D/Open3D.svg" DESTINATION /usr/share/icons/hicolor/scalable/apps)
-install(PROGRAMS "Open3D/Open3D" DESTINATION bin)
+install(PROGRAMS "Open3D/Open3DViewerLauncher.sh" DESTINATION bin RENAME "Open3D")
 
 # CPACK parameter
 set(CPACK_GENERATOR "DEB")

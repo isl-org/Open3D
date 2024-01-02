@@ -106,18 +106,20 @@ cpp_python_linking_uninstall_test() {
     # - BUILD_PYTORCH_OPS
     # - BUILD_TENSORFLOW_OPS
     # - BUILD_SYCL_MODULE
+    # - NPROC (optional)
     echo "[cpp_python_linking_uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
+    echo "[cpp_python_linking_uninstall_test()] NPROC=${NPROC:=$(nproc)}"
 
     # Config-dependent argument: gpu_run_args
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
-        docker_run="docker run --gpus all"
+        docker_run="docker run --cpus ${NPROC} --gpus all"
     else
-        docker_run="docker run"
+        docker_run="docker run --cpus ${NPROC}"
     fi
 
     # Config-dependent argument: pytest_args
