@@ -4,6 +4,10 @@ project("Open3D-Debian")
 
 message(STATUS "Building package for Debian")
 
+# How to set cpack prefix: https://stackoverflow.com/a/7363073/1255535
+set(CPACK_SET_DESTDIR true)
+set(CPACK_INSTALL_PREFIX /usr/local)
+
 # Install assets
 install(DIRECTORY   "Open3D"
         DESTINATION share
@@ -31,9 +35,5 @@ set(CPACK_DEBIAN_PACKAGE_SECTION "Graphics")
 set(CPACK_PACKAGE_VERSION "@OPEN3D_VERSION@")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc++1, libgomp1, libpng16-16, libglfw3")
 set(CPACK_PACKAGE_HOMEPAGE_URL "@PROJECT_HOMEPAGE_URL@")
-
-# How to set cpack prefix: https://stackoverflow.com/a/7363073/1255535
-set(CPACK_SET_DESTDIR true)
-set(CPACK_INSTALL_PREFIX /usr/local)
 
 include(CPack)

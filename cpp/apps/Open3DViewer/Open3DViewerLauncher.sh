@@ -4,4 +4,4 @@
 SCRIPT=$(readlink -f "$0")
 INSTALL_DIRECTORY=$(readlink -f $(dirname "$SCRIPT")/..)
 OPEN3D_PATH="$INSTALL_DIRECTORY/share/Open3D/Open3D"
-nohup "$OPEN3D_PATH" "$@" &
+"$OPEN3D_PATH" "$@" &
