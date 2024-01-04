@@ -1,3 +1,6 @@
+#!/bin/bash
+#
+
 echo $#
 if [[ $# != 6 ]]; then
     echo "Usage: $0 path/to/Open3d.app path/to/Open3d.entitlements apple-id cert_id team-id password"
