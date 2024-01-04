@@ -78,6 +78,7 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
                 COMMAND cp -a "${CMAKE_BINARY_DIR}/${APP_NAME}" .
                 COMMAND cp "${SOURCE_DIR}/icon.svg" "${APP_NAME}/${APP_NAME}.svg"
                 COMMAND cp "${SOURCE_DIR}/${TARGET_NAME}.xml" "${APP_NAME}/"
+                COMMAND cp "${SOURCE_DIR}/${TARGET_NAME}Launcher.sh" "${APP_NAME}/"
                 COMMAND "${CMAKE_COMMAND}" -S .
                 COMMAND "${CMAKE_COMMAND}" --build . -t package
                 WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/package-${TARGET_NAME}-deb/"

@@ -171,13 +171,14 @@ Compiling Open3D on ARM64 macOS
     # Optional: activate your virtualenv
     conda activate your-virtual-env
 
-    # Configure
+    # Configure and choose build options
     cd Open3D && mkdir build && cd build
-    cmake ..
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TENSORFLOW_OPS=ON -DBUILD_PYTORCH_OPS=ON -DBUNDLE_OPEN3D_ML=ON ..
 
     # Build
-    make -j8
-    make install-pip-package -j8
+    make pip-package -j8    # Build Python wheel
+    make package -j8        # Build macOS devel binary package
+    make Open3DViewer -j8   # Build Open3D viewer app
 
     # Test C++ viewer app
     ./bin/Open3D/Open3D
