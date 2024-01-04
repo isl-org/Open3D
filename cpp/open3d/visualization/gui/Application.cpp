@@ -45,6 +45,7 @@ namespace {
 const double RUNLOOP_DELAY_SEC = 0.010;
 
 std::string FindResourcePath(int argc, const char *argv[]) {
+    namespace o3dfs = open3d::utility::filesystem;
     std::string argv0;
     if (argc != 0 && argv) {
         argv0 = argv[0];
@@ -66,7 +67,7 @@ std::string FindResourcePath(int argc, const char *argv[]) {
         // is absolute path, we're done
     } else {
         // relative path:  prepend working directory
-        auto cwd = open3d::utility::filesystem::GetWorkingDirectory();
+        auto cwd = o3dfs::GetWorkingDirectory();
 #ifdef __APPLE__
         // When running an app from the command line with the full relative
         // path (e.g. `bin/Open3D.app/Contents/MacOS/Open3D`), the working
@@ -85,14 +86,15 @@ std::string FindResourcePath(int argc, const char *argv[]) {
     }
 #endif  // __APPLE__
 
-    auto resource_path = path + "/resources";
-    if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
-        resource_path = path + "/../resources";  // building with Xcode
-        if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
-            resource_path = path + "/share/resources";  // GNU
+    for (auto &subpath :
+         {"/resources", "/../resources" /*building with Xcode */,
+          "/share/resources" /* GNU */, "/share/Open3D/resources" /* GNU */}) {
+        if (o3dfs::DirectoryExists(path + subpath)) {
+            return path + subpath;
         }
     }
-    return resource_path;
+    open3d::utility::LogError("Could not find resource directory.");
+    return "";
 }
 
 }  // namespace
