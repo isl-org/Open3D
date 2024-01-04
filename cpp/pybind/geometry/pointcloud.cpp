@@ -264,7 +264,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
                     [](const std::shared_ptr<PointCloud> pcl) {
                         std::vector<size_t> tri_id;
                         std::vector<Eigen::Vector2d> tri_uv;
-                        for (auto i = 0; i < pcl->origindata_.size(); ++i) {
+                        for (size_t i = 0; i < pcl->origindata_.size(); ++i) {
                             tri_id.push_back(pcl->origindata_[i].tri_id);
                             tri_uv.push_back(pcl->origindata_[i].tri_uv);
                         };
