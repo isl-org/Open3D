@@ -471,7 +471,7 @@ public:
     /// information for PointClouds sampled from a triangular mesh. Can be
     /// expanded as required to include e.g. voxel ID and relative coordinates,
     /// index of a point in original PointCloud etc.
-    static struct OriginData {
+    struct OriginData {
         size_t tri_id;
         Eigen::Vector2d tri_uv;
         // add other data such as voxel ID etc as required
