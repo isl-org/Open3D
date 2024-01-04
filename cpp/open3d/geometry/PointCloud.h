@@ -84,6 +84,11 @@ public:
         return !points_.empty() && covariances_.size() == points_.size();
     }
 
+    /// Returns 'true' if the point cloud contains per-point origin data.
+    bool HasOriginData() const {
+        return !points_.empty() && origindata_.size() == points_.size();
+    }
+
     /// Normalize point normals to length 1.
     PointCloud &NormalizeNormals() {
         for (size_t i = 0; i < normals_.size(); i++) {
@@ -458,6 +463,20 @@ public:
     static std::shared_ptr<PointCloud> CreateFromVoxelGrid(
             const VoxelGrid &voxel_grid);
 
+    /// \brief Structure corresponding to a single point and describing its
+    /// origin depending on the PointCloud creation type.
+    ///
+    /// Optional information about the origin of the point relative to the data
+    /// used to generate the PointCloud. Currently supports adding geometrical
+    /// information for PointClouds sampled from a triangular mesh. Can be
+    /// expanded as required to include e.g. voxel ID and relative coordinates,
+    /// index of a point in original PointCloud etc.
+    static struct OriginData {
+        size_t tri_id;
+        Eigen::Vector2d tri_uv;
+        // add other data such as voxel ID etc as required
+    };
+
 public:
     /// Points coordinates.
     std::vector<Eigen::Vector3d> points_;
@@ -467,6 +486,8 @@ public:
     std::vector<Eigen::Vector3d> colors_;
     /// Covariance Matrix for each point
     std::vector<Eigen::Matrix3d> covariances_;
+    /// Origin Data for each point
+    std::vector<OriginData> origindata_;
 };
 
 }  // namespace geometry

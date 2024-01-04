@@ -29,6 +29,7 @@ PointCloud &PointCloud::Clear() {
     normals_.clear();
     colors_.clear();
     covariances_.clear();
+    origindata_.clear();
     return *this;
 }
 
@@ -111,6 +112,13 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
             covariances_[old_vert_num + i] = cloud.covariances_[i];
     } else {
         covariances_.clear();
+    }
+    if ((!HasPoints() || HasOriginData()) && cloud.HasOriginData()) {
+        origindata_.resize(new_vert_num);
+        for (size_t i = 0; i < add_vert_num; i++)
+            origindata_[old_vert_num + i] = cloud.origindata_[i];
+    } else {
+        origindata_.clear();
     }
     points_.resize(new_vert_num);
     for (size_t i = 0; i < add_vert_num; i++)

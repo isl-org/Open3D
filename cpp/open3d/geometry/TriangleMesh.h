@@ -339,7 +339,8 @@ public:
             size_t number_of_points,
             std::vector<double> &triangle_areas,
             double surface_area,
-            bool use_triangle_normal);
+            bool use_triangle_normal,
+            bool record_origin);
 
     /// Function to sample points uniformly from the mesh.
     ///
@@ -347,8 +348,12 @@ public:
     /// \param use_triangle_normal Set to true to assign the triangle normals to
     /// the returned points instead of the interpolated vertex normals. The
     /// triangle normals will be computed and added to the mesh if necessary.
+    /// \param record_origin Set to true to assign origin triangle ID and
+    /// UV coordinates to the returned points
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points, bool use_triangle_normal = false);
+            size_t number_of_points,
+            bool use_triangle_normal = false,
+            bool record_origin = false);
 
     /// Function to sample points from the mesh with Possion disk, based on the
     /// method presented in Yuksel, "Sample Elimination for Generating Poisson
@@ -362,11 +367,14 @@ public:
     /// \param use_triangle_normal If True assigns the triangle normals instead
     /// of the interpolated vertex normals to the returned points. The triangle
     /// normals will be computed and added to the mesh if necessary.
+    /// \param record_origin Set to true to assign origin triangle ID and
+    /// UV coordinates to the returned points
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
             const std::shared_ptr<PointCloud> pcl_init = nullptr,
-            bool use_triangle_normal = false);
+            bool use_triangle_normal = false,
+            bool record_origin = false);
 
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the

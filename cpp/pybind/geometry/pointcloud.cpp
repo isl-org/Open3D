@@ -46,6 +46,8 @@ void pybind_pointcloud(py::module &m) {
                  "Returns ``True`` if the point cloud contains point colors.")
             .def("has_covariances", &PointCloud::HasCovariances,
                  "Returns ``True`` if the point cloud contains covariances.")
+            .def("has_origin_data", &PointCloud::HasOriginData,
+                 "Returns ``True`` if the point cloud contains origin data.")
             .def("normalize_normals", &PointCloud::NormalizeNormals,
                  "Normalize point normals to length 1.")
             .def("paint_uniform_color", &PointCloud::PaintUniformColor,
@@ -256,10 +258,27 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             .def_readwrite("covariances", &PointCloud::covariances_,
                            "``float64`` array of shape ``(num_points, 3, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
-                           "covariances.");
+                           "covariances.")
+            .def(
+                    "origin_data",
+                    [](const std::shared_ptr<PointCloud> pcl) {
+                        std::vector<size_t> tri_id;
+                        std::vector<Eigen::Vector2d> tri_uv;
+                        for (auto i = 0; i < pcl->origindata_.size(); ++i) {
+                            tri_id.push_back(pcl->origindata_[i].tri_id);
+                            tri_uv.push_back(pcl->origindata_[i].tri_uv);
+                        };
+                        return py::dict("tri_id"_a = tri_id,
+                                        "tri_uv"_a = tri_uv);
+                    },
+                    "dict with entries of shape ``(num_points, ...)``, "
+                    "each corresponding to different origin data information. "
+                    "Use ``numpy.asarray()`` to access matrix data (e.g., "
+                    "tri_uv).");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
+    docstring::ClassMethodDocInject(m, "PointCloud", "has_origin_data");
     docstring::ClassMethodDocInject(m, "PointCloud", "normalize_normals");
     docstring::ClassMethodDocInject(
             m, "PointCloud", "paint_uniform_color",
