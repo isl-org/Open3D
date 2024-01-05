@@ -24,7 +24,11 @@ Collect all release artifacts in the [Github draft release page](https://github.
 -   [ ] Build Open3D app
     -   [ ] Ubuntu 18.04, Windows 10, macOS 10.15 x86_64: (CI)
     -   [ ] macOS 12 arm64 (desktop)
-    -   [ ] macOS (x86_64, arm64) sign (desktop)
+    -   [ ] macOS (x86_64, arm64) sign (desktop):
+
+        From build/bin directory: `../../cpp/apps/sign_open3d_app.sh Open3D.app ../../cpp/apps/Open3DViewer/Open3dViewer.entitlements <apple-id>
+                                    <cert-name> <team-id> <app-password>`
+
     -   [ ] (TBD) Windows app sign
 -   [ ] Testing: Run all (especially visualization) examples and Open3D viewer with
         (Suzanne, Khronos helmet, large point cloud - apartment), on Linux x86-64,
