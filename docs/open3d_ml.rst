@@ -3,7 +3,7 @@
 Open3D-ML
 =========
 
-.. image:: https://raw.githubusercontent.com/isl-org/Open3D-ML/master/docs/images/getting_started_ml_visualizer.gif
+.. image:: https://raw.githubusercontent.com/isl-org/Open3D-ML/main/docs/images/getting_started_ml_visualizer.gif
     :width: 480px
     :align: center
 

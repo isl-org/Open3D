@@ -56,20 +56,20 @@ struct Indexer {
 
     /// Indexer's global shape. The shape's number of elements is the
     /// same as GetNumWorkloads() for the Indexer.
-    /// - For broadcasting, master_shape_ is the same as the output shape.
-    /// - For reduction, master_shape_ is the same as the input shape.
+    /// - For broadcasting, primary_shape_ is the same as the output shape.
+    /// - For reduction, primary_shape_ is the same as the input shape.
     /// - Currently we don't allow broadcasting mixed with reduction. But if
-    ///   broadcasting mixed with reduction is allowed, master_shape_ is a mix
+    ///   broadcasting mixed with reduction is allowed, primary_shape_ is a mix
     ///   of input shape and output shape. First, fill in all omitted dimensions
     ///   (in inputs for broadcasting) and reduction dimensions (as if
-    ///   keepdim=true always) with size 1. For each axis, the master dimension
-    ///   is the non-1 dimension (if both are 1, then the master dimension is 1
+    ///   keepdim=true always) with size 1. For each axis, the primary dimension
+    ///   is the non-1 dimension (if both are 1, then the primary dimension is 1
     ///   in that axis).
-    int64_t master_shape_[MAX_DIMS];
+    int64_t primary_shape_[MAX_DIMS];
 
-    /// The default strides for master_shape_ for internal use only. Used to
+    /// The default strides for primary_shape_ for internal use only. Used to
     /// compute the actual strides and ultimately the index offsets.
-    int64_t master_strides_[MAX_DIMS];
+    int64_t primary_strides_[MAX_DIMS];
 
     /// Indexer's global number of dimensions.
     int64_t ndims_;
@@ -93,11 +93,11 @@ static inline uint8_t* Indexer_GetWorkloadDataPtr(
         for (uniform int64_t i = 0; i < self->ndims_; ++i) {
             offset +=
 #pragma ignore warning(perf)
-                    workload_idx / self->master_strides_[i] *
+                    workload_idx / self->primary_strides_[i] *
                     tr->byte_strides_[i];
 
 #pragma ignore warning(perf)
-            workload_idx = workload_idx % self->master_strides_[i];
+            workload_idx = workload_idx % self->primary_strides_[i];
         }
         return (uint8_t*)(tr->data_ptr_) + offset;
     }
@@ -106,23 +106,23 @@ static inline uint8_t* Indexer_GetWorkloadDataPtr(
 /// Get data pointer from a TensorRef with \p workload_idx.
 /// Note: can be optimized by computing all input ptrs and output ptr
 /// together.
-#define TEMPLATE(T)                                                     \
-    static inline T* OPEN3D_SPECIALIZED(T, Indexer_GetWorkloadDataPtr)( \
-            const uniform Indexer* const uniform self,                  \
-            const uniform TensorRef* const uniform tr,                  \
-            uniform bool tr_contiguous, int64_t workload_idx) {         \
-        cif(workload_idx < 0) { return NULL; }                          \
-        if (tr_contiguous) {                                            \
-            return (T*)(tr->data_ptr_) + workload_idx;                  \
-        } else {                                                        \
-            int64_t offset = 0;                                         \
-            for (uniform int64_t i = 0; i < self->ndims_; ++i) {        \
-                offset += workload_idx / self->master_strides_[i] *     \
-                          tr->byte_strides_[i];                         \
-                workload_idx = workload_idx % self->master_strides_[i]; \
-            }                                                           \
-            return (T*)((uint8_t*)(tr->data_ptr_) + offset);            \
-        }                                                               \
+#define TEMPLATE(T)                                                      \
+    static inline T* OPEN3D_SPECIALIZED(T, Indexer_GetWorkloadDataPtr)(  \
+            const uniform Indexer* const uniform self,                   \
+            const uniform TensorRef* const uniform tr,                   \
+            uniform bool tr_contiguous, int64_t workload_idx) {          \
+        cif(workload_idx < 0) { return NULL; }                           \
+        if (tr_contiguous) {                                             \
+            return (T*)(tr->data_ptr_) + workload_idx;                   \
+        } else {                                                         \
+            int64_t offset = 0;                                          \
+            for (uniform int64_t i = 0; i < self->ndims_; ++i) {         \
+                offset += workload_idx / self->primary_strides_[i] *     \
+                          tr->byte_strides_[i];                          \
+                workload_idx = workload_idx % self->primary_strides_[i]; \
+            }                                                            \
+            return (T*)((uint8_t*)(tr->data_ptr_) + offset);             \
+        }                                                                \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()

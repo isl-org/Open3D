@@ -94,10 +94,20 @@ static void CPUCosElementKernel(const void* src, void* dst) {
             static_cast<scalar_t>(std::cos(*static_cast<const scalar_t*>(src)));
 }
 
-template <typename scalar_t>
+template <typename scalar_t,
+          typename std::enable_if<std::is_integral<scalar_t>::value,
+                                  int>::type = 0>
 static void CPUNegElementKernel(const void* src, void* dst) {
-    *static_cast<scalar_t*>(dst) =
-            static_cast<scalar_t>(-*static_cast<const scalar_t*>(src));
+    using signed_scalar_t = std::make_signed_t<scalar_t>;
+    *static_cast<scalar_t*>(dst) = static_cast<scalar_t>(
+            -static_cast<signed_scalar_t>(*static_cast<const scalar_t*>(src)));
+}
+
+template <typename scalar_t,
+          typename std::enable_if<!std::is_integral<scalar_t>::value,
+                                  int>::type = 0>
+static void CPUNegElementKernel(const void* src, void* dst) {
+    *static_cast<scalar_t*>(dst) = -*static_cast<const scalar_t*>(src);
 }
 
 template <typename scalar_t>

@@ -1,19 +1,19 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/isl-org/Open3D/master/docs/_static/open3d_logo_horizontal.png" width="320" />
+<img src="https://raw.githubusercontent.com/isl-org/Open3D/main/docs/_static/open3d_logo_horizontal.png" width="320" />
 </p>
 
 # Open3D: A Modern Library for 3D Data Processing
 
 <h4>
-    <a href="http://www.open3d.org">Homepage</a> |
-    <a href="http://www.open3d.org/docs">Docs</a> |
-    <a href="http://www.open3d.org/docs/release/getting_started.html">Quick Start</a> |
-    <a href="http://www.open3d.org/docs/release/compilation.html">Compile</a> |
-    <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python</a> |
-    <a href="http://www.open3d.org/docs/release/cpp_api.html">C++</a> |
+    <a href="https://www.open3d.org">Homepage</a> |
+    <a href="https://www.open3d.org/docs">Docs</a> |
+    <a href="https://www.open3d.org/docs/release/getting_started.html">Quick Start</a> |
+    <a href="https://www.open3d.org/docs/release/compilation.html">Compile</a> |
+    <a href="https://www.open3d.org/docs/release/index.html#python-api-index">Python</a> |
+    <a href="https://www.open3d.org/docs/release/cpp_api.html">C++</a> |
     <a href="https://github.com/isl-org/Open3D-ML">Open3D-ML</a> |
     <a href="https://github.com/isl-org/Open3D/releases">Viewer</a> |
-    <a href="http://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
+    <a href="https://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
     <a href="https://github.com/isl-org/Open3D/discussions">Forum</a>
 </h4>
@@ -45,7 +45,7 @@ together to enable full end to end pipelines:
 
 ![Open3D_layers](https://github.com/isl-org/Open3D/assets/41028320/e9b8645a-a823-4d78-8310-e85207bbc3e4)
 
-For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
+For more, please visit the [Open3D documentation](https://www.open3d.org/docs).
 
 ## Python quick start
 
@@ -71,17 +71,17 @@ open3d example visualization/draw
 ```
 
 To get the latest features in Open3D, install the
-[development pip package](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
+[development pip package](https://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
 To compile Open3D from source, refer to
-[compiling from source](http://www.open3d.org/docs/release/compilation.html).
+[compiling from source](https://www.open3d.org/docs/release/compilation.html).
 
 ## C++ quick start
 
 Checkout the following links to get started with Open3D C++ API
 
--   Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](http://www.open3d.org/docs/latest/getting_started.html#c)
--   [Compiling Open3D from source](http://www.open3d.org/docs/release/compilation.html)
--   [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
+-   Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](https://www.open3d.org/docs/latest/getting_started.html#c)
+-   [Compiling Open3D from source](https://www.open3d.org/docs/release/compilation.html)
+-   [Open3D C++ API](https://www.open3d.org/docs/release/cpp_api.html)
 
 To use Open3D in your C++ project, checkout the following examples
 
@@ -90,7 +90,7 @@ To use Open3D in your C++ project, checkout the following examples
 
 ## Open3D-Viewer app
 
-<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D/master/docs/_static/open3d_viewer.png">
+<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D/main/docs/_static/open3d_viewer.png">
 
 Open3D-Viewer is a standalone 3D viewer app available on Debian (Ubuntu), macOS
 and Windows. Download Open3D Viewer from the
@@ -98,7 +98,7 @@ and Windows. Download Open3D Viewer from the
 
 ## Open3D-ML
 
-<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D-ML/master/docs/images/getting_started_ml_visualizer.gif">
+<img width="480" src="https://raw.githubusercontent.com/isl-org/Open3D-ML/main/docs/images/getting_started_ml_visualizer.gif">
 
 Open3D-ML is an extension of Open3D for 3D machine learning tasks. It builds on
 top of the Open3D core library and extends it with machine learning tools for
