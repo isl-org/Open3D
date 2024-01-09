@@ -1029,8 +1029,8 @@ int TriangleMesh::PCAPartition(int max_faces) {
 }
 
 /// A helper to compute new vertex indices out of vertex mask.
-/// \param tris_cpu tensor with triangle indices to update.
-/// \param vertex_mask tensor with the mask for vertices.
+/// \param tris_cpu CPU tensor with triangle indices to update.
+/// \param vertex_mask CPU tensor with the mask for vertices.
 template <typename T>
 static void UpdateTriangleIndicesByVertexMask(core::Tensor &tris_cpu,
                                               const core::Tensor &vertex_mask) {
@@ -1148,11 +1148,13 @@ static bool IsNegative(T val) {
 }
 
 TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
-    TriangleMesh result;
     core::AssertTensorShape(indices, {indices.GetLength()});
+    if (indices.NumElements() == 0) {
+        return {};
+    }
     if (!HasVertexPositions()) {
         utility::LogWarning("[SelectByIndex] TriangleMesh has no vertices.");
-        return result;
+        return {};
     }
     GetVertexAttr().AssertSizeSynchronized();
 
@@ -1194,7 +1196,7 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
                     scalar_tris_t *vertex_mask_ptr =
                             vertex_mask.GetDataPtr<scalar_tris_t>();
                     const scalar_indices_t *indices_ptr =
-                            indices.GetDataPtr<scalar_indices_t>();
+                            indices_cpu.GetDataPtr<scalar_indices_t>();
                     for (int64_t i = 0; i < indices.GetLength(); ++i) {
                         if (IsNegative(indices_ptr[i]) ||
                             indices_ptr[i] >=
@@ -1233,16 +1235,18 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
                 });
     });
 
-    // send the vertex mask to original device and apply to vertices
+    // send the vertex mask and triangle mask to original device and apply to
+    // vertices
     vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
+    if (tri_mask.NumElements() > 0) {  // To() needs non-empty tensor
+        tri_mask = tri_mask.To(GetDevice());
+    }
     core::Tensor new_vertices = GetVertexPositions().IndexGet({vertex_mask});
+    TriangleMesh result(GetDevice());
     result.SetVertexPositions(new_vertices);
-
-    if (HasTriangleIndices()) {
-        // select triangles and send the selected ones to the original device
+    if (tris_cpu.NumElements() > 0) {  // To() needs non-empty tensor
         result.SetTriangleIndices(tris_cpu.To(GetDevice()));
     }
-
     CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
 
     return result;

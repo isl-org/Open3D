@@ -185,7 +185,7 @@ build_pip_package() {
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
-        "-DBUILD_LIBREALSENSE=OFF"
+        "-DBUILD_LIBREALSENSE=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
@@ -346,6 +346,7 @@ install_docs_dependencies() {
     sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
     ./util/install_deps_ubuntu.sh assume-yes
     sudo apt-get install --yes cmake
+    sudo apt-get install --yes libxml2-dev libxslt-dev python3-dev
     sudo apt-get install --yes doxygen
     sudo apt-get install --yes texlive
     sudo apt-get install --yes texlive-latex-extra

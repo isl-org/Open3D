@@ -393,8 +393,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_pcd;
     t::io::ReadPointCloud(filename_ascii, ascii_pcd);
@@ -409,8 +408,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_binary, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ false, /*compressed*/ false, false, {})));
+            {/*ascii*/ false, /*compressed*/ false, false}));
 
     t::geometry::PointCloud binary_pcd;
     t::io::ReadPointCloud(filename_binary, binary_pcd);
@@ -426,8 +424,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_binary_compressed, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ false, /*compressed*/ true, false, {})));
+            {/*ascii*/ false, /*compressed*/ true, false}));
 
     t::geometry::PointCloud binary_compressed_pcd;
     t::io::ReadPointCloud(filename_binary_compressed, binary_compressed_pcd);
@@ -451,8 +448,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_f32, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_f32_pcd;
     t::io::ReadPointCloud(filename_ascii_f32, ascii_f32_pcd);
@@ -474,8 +470,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_uint32, input_pcd,
-            open3d::io::WritePointCloudOption(
-                    /*ascii*/ true, /*compressed*/ false, false, {})));
+            {/*ascii*/ true, /*compressed*/ false, false}));
 
     t::geometry::PointCloud ascii_uint32_pcd;
     t::io::ReadPointCloud(filename_ascii_uint32, ascii_uint32_pcd);

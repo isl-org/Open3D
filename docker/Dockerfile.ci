@@ -158,7 +158,12 @@ RUN source util/ci_utils.sh \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
  && node --version \
@@ -175,7 +180,11 @@ RUN \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
-        export GLIBCXX_USE_CXX11_ABI=OFF; \
+        if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
+            export GLIBCXX_USE_CXX11_ABI=OFF; \
+        else \
+            export GLIBCXX_USE_CXX11_ABI=ON; \
+        fi \
     fi \
  && mkdir build \
  && cd build \

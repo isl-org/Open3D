@@ -94,12 +94,12 @@ version (``HEAD`` of ``main`` branch):
       - `Python 3.11 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-win_amd64.whl>`__
 
 Please use these links from the `latest version of this page
-<http://www.open3d.org/docs/latest/getting_started.html>`__ only. You can also
+<https://www.open3d.org/docs/latest/getting_started.html>`__ only. You can also
 install the latest development version directly with pip:
 
 .. code-block:: bash
 
-    pip install -U --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d
+    pip install -U -f https://www.open3d.org/docs/latest/getting_started.html open3d
 
 .. warning::
    The development wheels for Linux are named according to PEP600. Please
@@ -153,10 +153,10 @@ C++
 To get started with using Open3D in your C++ applications, you can download a
 binary package archive from `Github releases
 <https://github.com/isl-org/Open3D/releases>`__ (since `v0.15`). These binary
-package archives contain the Open3D shared library built with all supported
-features and are available for the main supported platforms. Also, the latest
-development version (``HEAD`` of ``main`` branch) binary package archives are
-provided here [#]_:
+package archives contain the Open3D shared library, include headers and GUI /
+rendering resources. These are built with all supported features and are
+available for the main supported platforms. Also, the latest development version
+(``HEAD`` of ``main`` branch) binary package archives are provided here [#]_:
 
 :Linux (Ubuntu 18.04+ or glibc 2.27+ [#]_):
     .. hlist::
@@ -180,7 +180,7 @@ provided here [#]_:
         * `x86_64 Release <https://storage.googleapis.com/open3d-releases/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@.zip>`__
         * `x86_64 Debug <https://storage.googleapis.com/open3d-releases/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@-dbg.zip>`__
 
-.. [#] Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__
+.. [#] Please use these links from the `latest version of this page <https://www.open3d.org/docs/latest/getting_started.html>`__
     only.
 .. [#] To check the `glibc` version on your system, run :code:`ldd --version`.
 
@@ -203,19 +203,30 @@ Extract the archive and move the contents to a local folder (such as
     Linux / MacOSX:                       Windows:
     Open3D_install                        Open3D_install
     ├── include                           ├── bin
-    │   └── open3d                        │   └── Open3D.dll
-    │       ├── core                      ├── CMake
-    │       ├── ...                       │   ├── Open3DConfig.cmake
-    │       ├── Open3DConfig.h            │   ├── ...
-    │       ├── Open3D.h                  ├── include
-    │       ├── ...                       │   └── open3d
-    └── lib                               │       ├── core
-        ├── cmake                         │       ├── ...
-        │   └── Open3D                    │       ├── Open3DConfig.h
-        │        ├── ...                  │       ├── Open3D.h
-        ├── libOpen3D.so                  │       ├── ...
-        ├── open3d_tf_ops.so              └── lib
-        └── open3d_torch_ops.so               └── Open3D.lib
+    │   └── open3d                        │   ├── Open3D.dll
+    │       ├── core                      │   └── resources
+    │       ├── ...                       │       ├── brightday_ibl.ktx
+    │       ├── Open3DConfig.h            │       ├── ...
+    │       ├── Open3D.h                  │
+    │       ├── ...                       ├── CMake
+    ├── lib                               │   ├── Open3DConfig.cmake
+    │   ├── cmake                         │   ├── ...
+    │   │   └── Open3D                    ├── include
+    │   │        ├── ...                  │   └── open3d
+    │   ├── pkgconfig                     │       ├── core
+    │   │   ├── Open3D.pc                 │       ├── ...
+    │   │   ├── ...                       │       ├── Open3DConfig.h
+    |   |                                 │       ├── Open3D.h
+    │   ├── libOpen3D.so                  │       ├── ...
+    │   ├── open3d_tf_ops.so              └── lib
+    │   └── open3d_torch_ops.so               └── Open3D.lib
+    └── share
+        └── resources
+            ├── html
+            │    ├── ...
+            ├── brightday_ibl.ktx
+            ├── ...
+
 
 Some files may be absent in the case of unsupported functionality. To use Open3D
 with your programs through `cmake`, add ``-D

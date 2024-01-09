@@ -26,7 +26,8 @@
 -   Expose Near Clip + Far Clip parameters to setup_camera in OffscreenRenderer (#6520)
 -   Add Doppler ICP in tensor registration pipeline (PR #5237)
 -   Rename master branch to main.
-
+-   Support in memory loading of XYZ files
+-   Fix geometry picker Error when LineSet objects are presented (PR #6499)
 
 ## 0.13
 
@@ -60,7 +61,7 @@
 -   Added an RPC interface for external visualizers running in a separate process
 -   Added `maximum_error` and `boundary_weight` parameter to `simplify_quadric_decimation`
 -   Remove support for Python 3.5
--   Development wheels are available for user testing. See [Getting Started](http://www.open3d.org/docs/latest/getting_started.html) page for installation.
+-   Development wheels are available for user testing. See [Getting Started](https://www.open3d.org/docs/latest/getting_started.html) page for installation.
 -   PointCloud File IO support for new tensor data types.
 -   New PointCloud format support: XYZI (ASCII).
 -   Fast compression mode for PNG writing. (Issue #846)
