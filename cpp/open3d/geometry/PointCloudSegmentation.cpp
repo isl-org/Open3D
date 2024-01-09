@@ -167,8 +167,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
     std::vector<std::vector<size_t>> all_sampled_indices;
     all_sampled_indices.reserve(num_iterations);    
     for (int i = 0; i < num_iterations; i++) {
-        std::vector<size_t> sampled_indices = sampler(ransac_n);
-        all_sampled_indices.push_back(std::move(sampled_indices));
+        all_sampled_indices.push_back(sampler(ransac_n));
     }
 
     // Return if ransac_n is less than the required plane model parameters.
