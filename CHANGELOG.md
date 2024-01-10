@@ -28,6 +28,7 @@
 -   Rename master branch to main.
 -   Support in memory loading of XYZ files
 -   Fix geometry picker Error when LineSet objects are presented (PR #6499)
+-   Use PEP 508 environment markers to control ML dependency installation (PR #6588)
 
 ## 0.13
 
