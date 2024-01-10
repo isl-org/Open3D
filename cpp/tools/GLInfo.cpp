@@ -62,7 +62,14 @@ void TryGLVersion(int major,
     }
 
     auto reportGlStringFunc = [](GLenum id, std::string name) {
+// Note: with GLFW 3.3.9 it appears that OpenGL entry points are no longer auto
+// loaded? The else part crashes on Apple with a null pointer.
+#ifdef __APPLE__
+        PFNGLGETSTRINGIPROC _glGetString = (PFNGLGETSTRINGIPROC)glfwGetProcAddress("glGetString");
+        const auto r = _glGetString(id,0);
+#else
         const auto r = glGetString(id);
+#endif
         if (!r) {
             utility::LogWarning("Unable to get info on {} id {:d}", name, id);
         } else {
