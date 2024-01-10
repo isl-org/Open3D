@@ -94,9 +94,18 @@ with open("requirements.txt", "r") as f:
     install_requires = [line.strip() for line in f.readlines() if line]
 
 # Read requirements for ML.
-if "@BUNDLE_OPEN3D_ML@" == "ON":
-    with open("@OPEN3D_ML_ROOT@/requirements.txt", "r") as f:
-        install_requires += [line.strip() for line in f.readlines() if line]
+with open("@OPEN3D_ML_ROOT@/requirements.txt", "r") as f:
+    # Unconditionally include the ML dependencies so that all wheels share
+    # the same dependencies. This is needed for the PyPI JSON API to
+    # return consistent results, which tools such as Poetry depend on.
+    # https://discuss.python.org/t/pep-rfc-python-package-index-warehouse-json-api-v1/9205/23
+    # Use PEP 508 environment markers to limit installation of ML
+    # dependencies to only where they are needed.
+    install_requires += [
+        f'{line.strip()} ; platform_system == "Darwin" or (platform_system == "Linux" and platform_machine == "x86_64")'
+        for line in f.readlines()
+        if line
+    ]
 
 entry_points = {
     "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
