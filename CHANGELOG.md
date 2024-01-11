@@ -28,6 +28,7 @@
 -   Rename master branch to main.
 -   Support in memory loading of XYZ files
 -   Fix geometry picker Error when LineSet objects are presented (PR #6499)
+-   Fix regression in printing cuda tensor from PR #6444 🐛
 
 ## 0.13
 
