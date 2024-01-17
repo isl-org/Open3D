@@ -27,6 +27,8 @@ namespace geometry {
 
 namespace {
 
+double tolerance = 1e-6;
+
 /// \brief Planar patch container
 struct PlanarPatch {
     double GetSignedDistanceToPoint(const Eigen::Vector3d& point) const {
@@ -400,9 +402,13 @@ public:
                 (rect.bottom_left(1) + rect.top_right(1)) / 2. * rect.B.col(1);
 
         // Scale basis to fit points
-        const double width = (rect.top_right.x() - rect.bottom_left.x());
-        const double height = (rect.top_right.y() - rect.bottom_left.y());
-        const double depth = (rect.top_right.z() - rect.bottom_left.z());
+        const double _mini = std::min(tolerance, max_point_dist_);
+        const double width =
+                std::max(rect.top_right.x() - rect.bottom_left.x(), _mini);
+        const double height =
+                std::max(rect.top_right.y() - rect.bottom_left.y(), _mini);
+        const double depth =
+                std::max(rect.top_right.z() - rect.bottom_left.z(), _mini);
 
         std::shared_ptr<OrientedBoundingBox> obox =
                 std::make_shared<OrientedBoundingBox>();
@@ -590,6 +596,7 @@ private:
         // Use lower bound of the spread around the median as an indication
         // of how similar the point normals associated with the patch are.
         GetMinMaxRScore(normal_similarities, min_normal_diff_, tmp, 3);
+        min_normal_diff_ = std::min(min_normal_diff_, 1.0 - tolerance);
         // Use upper bound of the spread around the median as an indication
         // of how close the points associated with the patch are to the patch.
         GetMinMaxRScore(point_distances, tmp, max_point_dist_, 3);
@@ -937,7 +944,6 @@ void ExtractPatchesFromPlanes(
             Eigen::Vector3d(0.4660, 0.6740, 0.1880),
             Eigen::Vector3d(0.3010, 0.7450, 0.9330),
             Eigen::Vector3d(0.6350, 0.0780, 0.1840)};
-
     for (size_t i = 0; i < planes.size(); i++) {
         if (!planes[i]->IsFalsePositive()) {
             // create a patch by delimiting the plane using its perimeter points
