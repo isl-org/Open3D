@@ -71,10 +71,10 @@ void pybind_class_io(py::module &m_io) {
     // open3d::t::geometry::Image
     m_io.def(
             "read_image",
-            [](const std::string &filename) {
+            [](const fs::path &filename) {
                 py::gil_scoped_release release;
                 geometry::Image image;
-                ReadImage(filename, image);
+                ReadImage(filename.string(), image);
                 return image;
             },
             "Function to read image from file.", "filename"_a);
@@ -83,10 +83,10 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_image",
-            [](const std::string &filename, const geometry::Image &image,
+            [](const fs::path &filename, const geometry::Image &image,
                int quality) {
                 py::gil_scoped_release release;
-                return WriteImage(filename, image, quality);
+                return WriteImage(filename.string(), image, quality);
             },
             "Function to write Image to file.", "filename"_a, "image"_a,
             "quality"_a = kOpen3DImageIODefaultQuality);
@@ -96,12 +96,12 @@ void pybind_class_io(py::module &m_io) {
     // open3d::t::geometry::PointCloud
     m_io.def(
             "read_point_cloud",
-            [](const std::string &filename, const std::string &format,
+            [](const fs::path &filename, const std::string &format,
                bool remove_nan_points, bool remove_infinite_points,
                bool print_progress) {
                 py::gil_scoped_release release;
                 t::geometry::PointCloud pcd;
-                ReadPointCloud(filename, pcd,
+                ReadPointCloud(filename.string(), pcd,
                                {format, remove_nan_points,
                                 remove_infinite_points, print_progress});
                 return pcd;
@@ -114,12 +114,12 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_point_cloud",
-            [](const std::string &filename,
+            [](const fs::path &filename,
                const t::geometry::PointCloud &pointcloud, bool write_ascii,
                bool compressed, bool print_progress) {
                 py::gil_scoped_release release;
                 return WritePointCloud(
-                        filename, pointcloud,
+                        filename.string(), pointcloud,
                         {write_ascii, compressed, print_progress});
             },
             "Function to write PointCloud with tensor attributes to file.",
@@ -131,14 +131,14 @@ void pybind_class_io(py::module &m_io) {
     // open3d::geometry::TriangleMesh
     m_io.def(
             "read_triangle_mesh",
-            [](const std::string &filename, bool enable_post_processing,
+            [](const fs::path &filename, bool enable_post_processing,
                bool print_progress) {
                 py::gil_scoped_release release;
                 t::geometry::TriangleMesh mesh;
                 open3d::io::ReadTriangleMeshOptions opt;
                 opt.enable_post_processing = enable_post_processing;
                 opt.print_progress = print_progress;
-                ReadTriangleMesh(filename, mesh, opt);
+                ReadTriangleMesh(filename.string(), mesh, opt);
                 return mesh;
             },
             "Function to read TriangleMesh from file", "filename"_a,
@@ -178,13 +178,12 @@ Returns:
 
     m_io.def(
             "write_triangle_mesh",
-            [](const std::string &filename,
-               const t::geometry::TriangleMesh &mesh, bool write_ascii,
-               bool compressed, bool write_vertex_normals,
+            [](const fs::path &filename, const t::geometry::TriangleMesh &mesh,
+               bool write_ascii, bool compressed, bool write_vertex_normals,
                bool write_vertex_colors, bool write_triangle_uvs,
                bool print_progress) {
                 py::gil_scoped_release release;
-                return WriteTriangleMesh(filename, mesh, write_ascii,
+                return WriteTriangleMesh(filename.string(), mesh, write_ascii,
                                          compressed, write_vertex_normals,
                                          write_vertex_colors,
                                          write_triangle_uvs, print_progress);
