@@ -221,7 +221,9 @@ Example::
     # Save noisy depth image (uint16)
     o3d.t.io.write_image("noisy_depth.png", im_dst)
             )");
-    depth_noise_simulator.def(py::init<const std::string &>(),
+    depth_noise_simulator.def(py::init([](const fs::path &fielname) {
+                                  return DepthNoiseSimulator(fielname.string());
+                              }),
                               "noise_model_path"_a);
     depth_noise_simulator.def("simulate", &DepthNoiseSimulator::Simulate,
                               "im_src"_a, "depth_scale"_a = 1000.0f,
