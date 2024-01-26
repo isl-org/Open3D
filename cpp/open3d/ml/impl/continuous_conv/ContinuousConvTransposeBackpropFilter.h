@@ -7,9 +7,8 @@
 
 #pragma once
 
+#include <tbb/mutex.h>
 #include <tbb/parallel_for.h>
-
-#include <mutex>
 
 #include "open3d/ml/impl/continuous_conv/CoordinateTransformation.h"
 
@@ -62,7 +61,7 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
 
     memset(filter_backprop, 0,
            sizeof(TOut) * spatial_filter_size * in_channels * out_channels);
-    std::mutex filter_backprop_mutex;
+    tbb::mutex filter_backprop_mutex;
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
@@ -207,7 +206,7 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                 A = (C * B.transpose()).template cast<TOut>();
 
                 {
-                    std::lock_guard<std::mutex> lock(filter_backprop_mutex);
+                    tbb::mutex::scoped_lock lock(filter_backprop_mutex);
                     int linear_i = 0;
                     for (int j = 0; j < spatial_filter_size * in_channels; ++j)
                         for (int i = 0; i < out_channels; ++i, ++linear_i) {

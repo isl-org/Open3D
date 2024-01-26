@@ -6,10 +6,11 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include <tbb/parallel_for.h>
 
 #include <Eigen/Core>
-#include <mutex>
+
+#include <tbb/mutex.h>
+#include <tbb/parallel_for.h>
 
 namespace open3d {
 namespace ml {
@@ -47,7 +48,7 @@ void _SparseConvTransposeBackpropFilterCPU(
 
     memset(filter_backprop, 0,
            sizeof(TOut) * num_kernel_elements * in_channels * out_channels);
-    std::mutex filter_backprop_mutex;
+    tbb::mutex filter_backprop_mutex;
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
@@ -130,7 +131,7 @@ void _SparseConvTransposeBackpropFilterCPU(
                 A = (C * B.transpose()).template cast<TOut>();
 
                 {
-                    std::lock_guard<std::mutex> lock(filter_backprop_mutex);
+                    tbb::mutex::scoped_lock lock(filter_backprop_mutex);
                     int linear_i = 0;
                     for (int j = 0; j < num_kernel_elements * in_channels; ++j)
                         for (int i = 0; i < out_channels; ++i, ++linear_i) {
