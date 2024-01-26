@@ -7,10 +7,15 @@
 
 #include "open3d/utility/Eigen.h"
 
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_reduce.h>
+#include <tbb/spin_mutex.h>
+
 #include <Eigen/Geometry>
 #include <Eigen/Sparse>
 
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace utility {
@@ -142,47 +147,111 @@ SolveJacobianSystemAndObtainExtrinsicMatrixArray(const Eigen::MatrixXd &JTJ,
     }
 }
 
+// Shared state for both the single valued and vector valued versions
+// This is used instead of lambdas in tbb::parallel reduce
+// to prevent extra allocations of the shared state
+template <typename MatType, typename VecType>
+struct JTJandJTrReduceBodyHelper {
+    // Local data
+    MatType JTJ = MatType::Zero();
+    VecType JTr = VecType::Zero();
+    double r2_sum = 0.0;
+
+    void join(const JTJandJTrReduceBodyHelper& rhs) {
+        JTJ += rhs.JTJ;
+        JTr += rhs.JTr;
+        r2_sum += rhs.r2_sum;
+    }
+
+    std::tuple<MatType, VecType, double> as_tuple() && {
+        return {std::move(JTJ), std::move(JTr), r2_sum};
+    }
+};
+
+template <typename MatType, typename VecType, bool VectorFunc>
+struct JTJandJTrReduceBody;
+
+// Code specific to the single valued reduction
+template <typename MatType, typename VecType>
+struct JTJandJTrReduceBody<MatType, VecType, false>: public
+        JTJandJTrReduceBodyHelper<MatType, VecType> {
+    using FuncType = std::function<void(int, VecType&, double&, double&)>;
+    // Global data
+    FuncType& f;
+
+    // Local data
+    VecType J_r = VecType::Zero();
+    double r = 0.0;
+    double w = 0.0;
+
+    JTJandJTrReduceBody(FuncType& f_)
+        : JTJandJTrReduceBodyHelper<MatType, VecType>(), f(f_) {}
+
+    JTJandJTrReduceBody(JTJandJTrReduceBody& other, tbb::split sp)
+        : JTJandJTrReduceBodyHelper<MatType, VecType>(), f(other.f) {}
+
+    void operator()(const tbb::blocked_range<int>& range) {
+        for (int i = range.begin(); i < range.end(); ++i) {
+            f(i, J_r, r, w);
+            this->JTJ.noalias() += J_r * w * J_r.transpose();
+            this->JTr.noalias() += J_r * w * r;
+            this->r2_sum += r * r;
+        }
+    }
+
+};
+
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         std::function<void(int, VecType &, double &, double &)> f,
         int iteration_num,
         bool verbose /*=true*/) {
-    MatType JTJ;
-    VecType JTr;
-    double r2_sum = 0.0;
-    JTJ.setZero();
-    JTr.setZero();
-#pragma omp parallel
-    {
-        MatType JTJ_private;
-        VecType JTr_private;
-        double r2_sum_private = 0.0;
-        JTJ_private.setZero();
-        JTr_private.setZero();
-        VecType J_r;
-        J_r.setZero();
-        double r = 0.0;
-        double w = 0.0;
-#pragma omp for nowait
-        for (int i = 0; i < iteration_num; i++) {
-            f(i, J_r, r, w);
-            JTJ_private.noalias() += J_r * w * J_r.transpose();
-            JTr_private.noalias() += J_r * w * r;
-            r2_sum_private += r * r;
-        }
-#pragma omp critical(ComputeJTJandJTr)
-        {
-            JTJ += JTJ_private;
-            JTr += JTr_private;
-            r2_sum += r2_sum_private;
-        }
-    }
+    JTJandJTrReduceBody<MatType, VecType, false> reducer(f);
+    tbb::parallel_reduce(tbb::blocked_range<int>(0, iteration_num,
+            utility::DefaultGrainSizeTBB()), reducer);
+    std::tuple<MatType, VecType, double> result = std::move(reducer).as_tuple();
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
-                 r2_sum / (double)iteration_num, iteration_num);
+                 std::get<2>(result) / (double)iteration_num, iteration_num);
     }
-    return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
+    return result;
 }
+
+// Code specific to the vector valued reduction
+template <typename MatType, typename VecType>
+struct JTJandJTrReduceBody<MatType, VecType, true>: public
+        JTJandJTrReduceBodyHelper<MatType, VecType> {
+    using FuncType = std::function<void(int,
+        std::vector<VecType, Eigen::aligned_allocator<VecType>>&,
+        std::vector<double>&, std::vector<double>&)>;
+    // Global data
+    FuncType& f;
+
+    // Local data
+    std::vector<VecType, Eigen::aligned_allocator<VecType>> J_r;
+    std::vector<double> r;
+    std::vector<double> w;
+
+    JTJandJTrReduceBody(FuncType& f_)
+        : JTJandJTrReduceBodyHelper<MatType, VecType>(),
+                f(f_), J_r(), r(), w() {}
+
+    JTJandJTrReduceBody(JTJandJTrReduceBody& other, tbb::split sp)
+        : JTJandJTrReduceBodyHelper<MatType, VecType>(),
+                f(other.f), J_r(), r(), w() {}
+
+    void operator()(const tbb::blocked_range<int>& range) {
+        for (int i = range.begin(); i < range.end(); ++i) {
+            f(i, J_r, r, w);
+            for (int j = 0; j < (int)r.size(); j++) {
+                this->JTJ.noalias() += J_r[j] * w[j] * J_r[j].transpose();
+                this->JTr.noalias() += J_r[j] * w[j] * r[j];
+                this->r2_sum += r[j] * r[j];
+            }
+        }
+    }
+
+};
 
 template <typename MatType, typename VecType>
 std::tuple<MatType, VecType, double> ComputeJTJandJTr(
@@ -193,42 +262,15 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
                      std::vector<double> &)> f,
         int iteration_num,
         bool verbose /*=true*/) {
-    MatType JTJ;
-    VecType JTr;
-    double r2_sum = 0.0;
-    JTJ.setZero();
-    JTr.setZero();
-#pragma omp parallel
-    {
-        MatType JTJ_private;
-        VecType JTr_private;
-        double r2_sum_private = 0.0;
-        JTJ_private.setZero();
-        JTr_private.setZero();
-        std::vector<double> r;
-        std::vector<double> w;
-        std::vector<VecType, Eigen::aligned_allocator<VecType>> J_r;
-#pragma omp for nowait
-        for (int i = 0; i < iteration_num; i++) {
-            f(i, J_r, r, w);
-            for (int j = 0; j < (int)r.size(); j++) {
-                JTJ_private.noalias() += J_r[j] * w[j] * J_r[j].transpose();
-                JTr_private.noalias() += J_r[j] * w[j] * r[j];
-                r2_sum_private += r[j] * r[j];
-            }
-        }
-#pragma omp critical(ComputeJTJandJTr)
-        {
-            JTJ += JTJ_private;
-            JTr += JTr_private;
-            r2_sum += r2_sum_private;
-        }
-    }
+    JTJandJTrReduceBody<MatType, VecType, true> reducer(f);
+    tbb::parallel_reduce(tbb::blocked_range<int>(0, iteration_num,
+            utility::DefaultGrainSizeTBB()), reducer);
+    std::tuple<MatType, VecType, double> result = std::move(reducer).as_tuple();
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
-                 r2_sum / (double)iteration_num, iteration_num);
+                 std::get<2>(result) / (double)iteration_num, iteration_num);
     }
-    return std::make_tuple(std::move(JTJ), std::move(JTr), r2_sum);
+    return result;
 }
 
 // clang-format off

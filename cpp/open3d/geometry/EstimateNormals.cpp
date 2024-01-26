@@ -8,6 +8,7 @@
 #include <Eigen/Eigenvalues>
 #include <queue>
 #include <tuple>
+#include <tbb/parallel_for.h>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
@@ -298,22 +299,25 @@ void PointCloud::EstimateNormals(
     } else {
         covariances = covariances_;
     }
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)covariances.size(); i++) {
-        auto normal = ComputeNormal(covariances[i], fast_normal_computation);
-        if (normal.norm() == 0.0) {
-            if (has_normal) {
-                normal = normals_[i];
-            } else {
-                normal = Eigen::Vector3d(0.0, 0.0, 1.0);
+
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, covariances.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range){
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            auto normal = ComputeNormal(covariances[i], fast_normal_computation);
+            if (normal.norm() == 0.0) {
+                if (has_normal) {
+                    normal = normals_[i];
+                } else {
+                    normal = Eigen::Vector3d(0.0, 0.0, 1.0);
+                }
             }
+            if (has_normal && normal.dot(normals_[i]) < 0.0) {
+                normal *= -1.0;
+            }
+            normals_[i] = normal;
         }
-        if (has_normal && normal.dot(normals_[i]) < 0.0) {
-            normal *= -1.0;
-        }
-        normals_[i] = normal;
-    }
+    });
 }
 
 void PointCloud::OrientNormalsToAlignWithDirection(
@@ -323,16 +327,18 @@ void PointCloud::OrientNormalsToAlignWithDirection(
         utility::LogError(
                 "No normals in the PointCloud. Call EstimateNormals() first.");
     }
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)points_.size(); i++) {
-        auto &normal = normals_[i];
-        if (normal.norm() == 0.0) {
-            normal = orientation_reference;
-        } else if (normal.dot(orientation_reference) < 0.0) {
-            normal *= -1.0;
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range){
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            auto &normal = normals_[i];
+            if (normal.norm() == 0.0) {
+                normal = orientation_reference;
+            } else if (normal.dot(orientation_reference) < 0.0) {
+                normal *= -1.0;
+            }
         }
-    }
+    });
 }
 
 void PointCloud::OrientNormalsTowardsCameraLocation(
@@ -341,22 +347,26 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
         utility::LogError(
                 "No normals in the PointCloud. Call EstimateNormals() first.");
     }
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)points_.size(); i++) {
-        Eigen::Vector3d orientation_reference = camera_location - points_[i];
-        auto &normal = normals_[i];
-        if (normal.norm() == 0.0) {
-            normal = orientation_reference;
+
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range){
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            Eigen::Vector3d orientation_reference =
+                    camera_location - points_[i];
+            auto &normal = normals_[i];
             if (normal.norm() == 0.0) {
-                normal = Eigen::Vector3d(0.0, 0.0, 1.0);
-            } else {
-                normal.normalize();
+                normal = orientation_reference;
+                if (normal.norm() == 0.0) {
+                    normal = Eigen::Vector3d(0.0, 0.0, 1.0);
+                } else {
+                    normal.normalize();
+                }
+            } else if (normal.dot(orientation_reference) < 0.0) {
+                normal *= -1.0;
             }
-        } else if (normal.dot(orientation_reference) < 0.0) {
-            normal *= -1.0;
         }
-    }
+    });
 }
 
 void PointCloud::OrientNormalsConsistentTangentPlane(

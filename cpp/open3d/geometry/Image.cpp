@@ -7,6 +7,8 @@
 
 #include "open3d/geometry/Image.h"
 
+#include <tbb/tbb.h>
+
 #include "open3d/utility/Parallel.h"
 
 namespace {
@@ -133,27 +135,24 @@ std::shared_ptr<Image> Image::Downsample() const {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("Unsupported image format.");
     }
-    int half_width = (int)floor((double)width_ / 2.0);
-    int half_height = (int)floor((double)height_ / 2.0);
-    output->Prepare(half_width, half_height, 1, 4);
+    // Integer division always rounds towards zero
+    output->Prepare(width_ / 2, height_ / 2, 1, 4);
 
-#ifdef _WIN32
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#else
-#pragma omp parallel for collapse(2) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#endif
-    for (int y = 0; y < output->height_; y++) {
-        for (int x = 0; x < output->width_; x++) {
-            float *p1 = PointerAt<float>(x * 2, y * 2);
-            float *p2 = PointerAt<float>(x * 2 + 1, y * 2);
-            float *p3 = PointerAt<float>(x * 2, y * 2 + 1);
-            float *p4 = PointerAt<float>(x * 2 + 1, y * 2 + 1);
-            float *p = output->PointerAt<float>(x, y);
-            *p = (*p1 + *p2 + *p3 + *p4) / 4.0f;
+    tbb::parallel_for(tbb::blocked_range2d<int, int>(
+            0, output->height_, utility::DefaultGrainSizeTBB(),
+            0, output->width_, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range2d<int, int>& range){
+        for (int y = range.rows().begin(); y < range.rows().end(); ++y) {
+            for (int x = range.cols().begin(); x < range.cols().end(); ++x) {
+                float *p1 = PointerAt<float>(x * 2, y * 2);
+                float *p2 = PointerAt<float>(x * 2 + 1, y * 2);
+                float *p3 = PointerAt<float>(x * 2, y * 2 + 1);
+                float *p4 = PointerAt<float>(x * 2 + 1, y * 2 + 1);
+                float *p = output->PointerAt<float>(x, y);
+                *p = (*p1 + *p2 + *p3 + *p4) / 4.0f;
+            }
         }
-    }
+    });
     return output;
 }
 
@@ -169,28 +168,30 @@ std::shared_ptr<Image> Image::FilterHorizontal(
     output->Prepare(width_, height_, 1, 4);
 
     const int half_kernel_size = (int)(floor((double)kernel.size() / 2.0));
-
-#ifdef _WIN32
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#else
-#pragma omp parallel for collapse(2) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#endif
-    for (int y = 0; y < height_; y++) {
-        for (int x = 0; x < width_; x++) {
-            float *po = output->PointerAt<float>(x, y, 0);
-            double temp = 0;
-            for (int i = -half_kernel_size; i <= half_kernel_size; i++) {
-                int x_shift = x + i;
-                if (x_shift < 0) x_shift = 0;
-                if (x_shift > width_ - 1) x_shift = width_ - 1;
-                float *pi = PointerAt<float>(x_shift, y, 0);
-                temp += (*pi * (float)kernel[i + half_kernel_size]);
+    // Define the grain size based on the width of the memory read
+    // Want no more than 1/4 of the read to be the halo cells
+    const std::size_t multiple = (utility::DefaultGrainSizeTBB() +
+        4 * (kernel.size() - 1)) / utility::DefaultGrainSizeTBB();
+    const std::size_t grain_size = multiple * utility::DefaultGrainSizeTBB()
+        + 1 - kernel.size();
+    tbb::parallel_for(tbb::blocked_range2d<int, int>(
+            0, height_, grain_size, 0, width_, grain_size),
+            [&](const tbb::blocked_range2d<int, int>& range){
+        for (int y = range.rows().begin(); y < range.rows().end(); ++y) {
+            for (int x = range.cols().begin(); x < range.cols().end(); ++x) {
+                float *po = output->PointerAt<float>(x, y, 0);
+                double temp = 0;
+                for (int i = -half_kernel_size; i <= half_kernel_size; ++i) {
+                    int x_shift = x + i;
+                    if (x_shift < 0) x_shift = 0;
+                    if (x_shift > width_ - 1) x_shift = width_ - 1;
+                    float *pi = PointerAt<float>(x_shift, y, 0);
+                    temp += (*pi * (float)kernel[i + half_kernel_size]);
+                }
+                *po = (float)temp;
             }
-            *po = (float)temp;
         }
-    }
+    });
     return output;
 }
 
@@ -255,23 +256,21 @@ std::shared_ptr<Image> Image::Transpose() const {
     int in_bytes_per_line = BytesPerLine();
     int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
 
-#ifdef _WIN32
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#else
-#pragma omp parallel for collapse(2) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#endif
-    for (int y = 0; y < height_; y++) {
-        for (int x = 0; x < width_; x++) {
-            std::copy(
+    tbb::parallel_for(tbb::blocked_range2d<int, int>(
+            0, height_, utility::DefaultGrainSizeTBB(),
+            0, width_, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range2d<int, int>& range){
+        for (int y = range.rows().begin(); y < range.rows().end(); ++y) {
+            for (int x = range.cols().begin(); x < range.cols().end(); ++x) {
+                std::copy(
                     data_.data() + y * in_bytes_per_line + x * bytes_per_pixel,
                     data_.data() + y * in_bytes_per_line +
                             (x + 1) * bytes_per_pixel,
                     output->data_.data() + x * out_bytes_per_line +
                             y * bytes_per_pixel);
+            }
         }
-    }
+    });
 
     return output;
 }
@@ -281,13 +280,15 @@ std::shared_ptr<Image> Image::FlipVertical() const {
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 
     int bytes_per_line = BytesPerLine();
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int y = 0; y < height_; y++) {
-        std::copy(data_.data() + y * bytes_per_line,
-                  data_.data() + (y + 1) * bytes_per_line,
-                  output->data_.data() + (height_ - y - 1) * bytes_per_line);
-    }
+    tbb::parallel_for(tbb::blocked_range<int>(
+            0, height_, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<int>& range){
+        for (int y = range.begin(); y < range.end(); ++y) {
+            std::copy(data_.data() + y * bytes_per_line,
+                      data_.data() + (y + 1) * bytes_per_line,
+                      output->data_.data() + (height_ - y - 1) * bytes_per_line);
+        }
+    });
     return output;
 }
 
@@ -297,22 +298,23 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
 
     int bytes_per_line = BytesPerLine();
     int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
-#ifdef _WIN32
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#else
-#pragma omp parallel for collapse(2) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#endif
-    for (int y = 0; y < height_; y++) {
-        for (int x = 0; x < width_; x++) {
-            std::copy(data_.data() + y * bytes_per_line + x * bytes_per_pixel,
-                      data_.data() + y * bytes_per_line +
-                              (x + 1) * bytes_per_pixel,
-                      output->data_.data() + y * bytes_per_line +
-                              (width_ - x - 1) * bytes_per_pixel);
+
+    tbb::parallel_for(tbb::blocked_range2d<int, int>(
+            0, height_, utility::DefaultGrainSizeTBB(),
+            0, width_, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range2d<int, int>& range){
+        for (int y = range.rows().begin(); y < range.rows().end(); ++y) {
+            for (int x = range.cols().begin(); x < range.cols().end(); ++x) {
+                std::copy(
+                    data_.data() + y * bytes_per_line + x * bytes_per_pixel,
+                    data_.data() + y * bytes_per_line +
+                        (x + 1) * bytes_per_pixel,
+                    output->data_.data() + y * bytes_per_line +
+                        (width_ - x - 1) * bytes_per_pixel);
+            }
         }
-    }
+    });
+
 
     return output;
 }
@@ -324,30 +326,29 @@ std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
     }
     output->Prepare(width_, height_, 1, 1);
 
-#ifdef _WIN32
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#else
-#pragma omp parallel for collapse(2) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#endif
-    for (int y = 0; y < height_; y++) {
-        for (int x = 0; x < width_; x++) {
-            for (int yy = -half_kernel_size; yy <= half_kernel_size; yy++) {
-                for (int xx = -half_kernel_size; xx <= half_kernel_size; xx++) {
-                    unsigned char *pi;
-                    if (TestImageBoundary(x + xx, y + yy)) {
-                        pi = PointerAt<unsigned char>(x + xx, y + yy);
-                        if (*pi == 255) {
-                            *output->PointerAt<unsigned char>(x, y, 0) = 255;
-                            xx = half_kernel_size;
-                            yy = half_kernel_size;
+    tbb::parallel_for(tbb::blocked_range2d<int, int>(
+            0, height_, utility::DefaultGrainSizeTBB() - (2 * half_kernel_size),
+            0, width_, utility::DefaultGrainSizeTBB() - (2 * half_kernel_size)),
+            [&](const tbb::blocked_range2d<int, int>& range){
+        for (int y = range.rows().begin(); y < range.rows().end(); ++y) {
+            for (int x = range.cols().begin(); x < range.cols().end(); ++x) {
+                for (int yy = -half_kernel_size; yy <= half_kernel_size; ++yy) {
+                    for (int xx = -half_kernel_size; xx <= half_kernel_size; ++xx) {
+                        unsigned char *pi;
+                        if (TestImageBoundary(x + xx, y + yy)) {
+                            pi = PointerAt<unsigned char>(x + xx, y + yy);
+                            if (*pi == 255) {
+                                *output->PointerAt<unsigned char>(x, y, 0) = 255;
+                                xx = half_kernel_size;
+                                yy = half_kernel_size;
+                            }
                         }
                     }
                 }
             }
         }
-    }
+    });
+
     return output;
 }
 
@@ -364,25 +365,24 @@ std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
     auto mask = std::make_shared<Image>();
     mask->Prepare(width, height, 1, 1);
 
-#ifdef _WIN32
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#else
-#pragma omp parallel for collapse(2) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#endif
-    for (int v = 0; v < height; v++) {
-        for (int u = 0; u < width; u++) {
-            double dx = *depth_image_gradient_dx->PointerAt<float>(u, v);
-            double dy = *depth_image_gradient_dy->PointerAt<float>(u, v);
-            double mag = sqrt(dx * dx + dy * dy);
-            if (mag > depth_threshold_for_discontinuity_check) {
-                *mask->PointerAt<unsigned char>(u, v) = 255;
-            } else {
-                *mask->PointerAt<unsigned char>(u, v) = 0;
+    tbb::parallel_for(tbb::blocked_range2d<int, int>(
+            0, height, utility::DefaultGrainSizeTBB(),
+            0, width, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range2d<int, int>& range){
+        for (int v = range.rows().begin(); v < range.rows().end(); v++) {
+            for (int u = range.cols().begin(); u < range.cols().end(); u++) {
+                double dx = *depth_image_gradient_dx->PointerAt<float>(u, v);
+                double dy = *depth_image_gradient_dy->PointerAt<float>(u, v);
+                double mag = sqrt(dx * dx + dy * dy);
+                if (mag > depth_threshold_for_discontinuity_check) {
+                    *mask->PointerAt<unsigned char>(u, v) = 255;
+                } else {
+                    *mask->PointerAt<unsigned char>(u, v) = 0;
+                }
             }
         }
-    }
+    });
+
     if (half_dilation_kernel_size_for_discontinuity_map >= 1) {
         auto mask_dilated =
                 mask->Dilate(half_dilation_kernel_size_for_discontinuity_map);

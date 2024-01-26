@@ -14,6 +14,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <tbb/parallel_for.h>
+
 #include "libqhullcpp/PointCoordinates.h"
 #include "libqhullcpp/Qhull.h"
 #include "libqhullcpp/QhullVertex.h"
@@ -22,6 +24,7 @@
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
@@ -993,12 +996,16 @@ PointCloud::DetectPlanarPatches(
     kdtree.SetGeometry(*this);
     std::vector<std::vector<int>> neighbors;
     neighbors.resize(points_.size());
-#pragma omp parallel for schedule(static)
-    for (int i = 0; i < static_cast<int>(points_.size()); i++) {
-        std::vector<int> indices;
-        std::vector<double> distance2;
-        kdtree.Search(points_[i], search_param, neighbors[i], distance2);
-    }
+
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            std::vector<int> indices;
+            std::vector<double> distance2;
+            kdtree.Search(points_[i], search_param, neighbors[i], distance2);
+        }
+    });
 
     const double normal_similarity_rad = normal_similarity_deg * M_PI / 180.0;
     const double coplanarity_rad = coplanarity_deg * M_PI / 180.0;

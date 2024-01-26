@@ -11,6 +11,9 @@
 #include <k4arecord/record.h>
 #include <turbojpeg.h>
 
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range2d.h>
+
 #include <memory>
 
 #include "open3d/geometry/RGBDImage.h"
@@ -160,20 +163,19 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
                 "dimensions.");
     }
 
-#ifdef _WIN32
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-#else
-#pragma omp parallel for collapse(3) schedule(static)
-#endif
-    for (int v = 0; v < bgra.height_; ++v) {
-        for (int u = 0; u < bgra.width_; ++u) {
-            for (int c = 0; c < 3; ++c) {
-                *rgb.PointerAt<uint8_t>(u, v, c) =
-                        *bgra.PointerAt<uint8_t>(u, v, 2 - c);
+    tbb::parallel_for(tbb::blocked_range2d<int>(
+            0, bgra.height_, utility::DefaultGrainSizeTBB2D(),
+            0, bgra.width_, utility::DefaultGrainSizeTBB2D()),
+            [&](const tbb::blocked_range2d<int>& range){
+        for (int v = range.rows().begin(); v < range.rows().end(); ++v) {
+            for (int u = range.cols().begin(); u < range.cols().end(); ++u) {
+                for (int c = 0; c < 3; ++c) {
+                    *rgb.PointerAt<uint8_t>(u, v, c) =
+                            *bgra.PointerAt<uint8_t>(u, v, 2 - c);
+                }
             }
         }
-    }
+    });
 }
 
 bool AzureKinectSensor::PrintFirmware(k4a_device_t device) {

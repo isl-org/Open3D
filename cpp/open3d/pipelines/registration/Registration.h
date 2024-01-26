@@ -109,6 +109,11 @@ public:
                                              inlier_rmse_ < other.inlier_rmse_);
     }
 
+    RegistrationResult(const RegistrationResult&) = default;
+    RegistrationResult(RegistrationResult&&) = default;
+    RegistrationResult& operator=(const RegistrationResult&) = default;
+    RegistrationResult& operator=(RegistrationResult&&) = default;
+
 public:
     /// The estimated transformation matrix.
     Eigen::Matrix4d_u transformation_;

@@ -45,13 +45,14 @@ int EstimateMaxThreads() {
 #endif
 }
 
-bool InParallel() {
-    // TODO: when we add TBB/Parallel STL support to ParallelFor, update this.
-#ifdef _OPENMP
-    return omp_in_parallel();
-#else
-    return false;
-#endif
+std::size_t& DefaultGrainSizeTBB() noexcept {
+    static std::size_t GrainSize = 256;
+    return GrainSize;
+}
+
+std::size_t& DefaultGrainSizeTBB2D() noexcept {
+    static std::size_t GrainSize = 32;
+    return GrainSize;
 }
 
 }  // namespace utility

@@ -12,6 +12,8 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 
+#include <tbb/parallel_for.h>
+
 namespace open3d {
 namespace core {
 namespace kernel {
@@ -46,17 +48,19 @@ Tensor NonZeroCPU(const Tensor& src) {
 
     std::vector<std::vector<int64_t>> non_zero_indices_by_dimensions(
             num_dims, std::vector<int64_t>(num_non_zeros, 0));
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int64_t i = 0; i < static_cast<int64_t>(num_non_zeros); i++) {
-        int64_t non_zero_index = non_zero_indices[i];
-        for (int64_t dim = num_dims - 1; dim >= 0; dim--) {
-            void* result_ptr = result_iter.GetPtr(dim * num_non_zeros + i);
-            OPEN3D_ASSERT(result_ptr != nullptr && "Internal error.");
-            *static_cast<int64_t*>(result_ptr) = non_zero_index % shape[dim];
-            non_zero_index = non_zero_index / shape[dim];
+    tbb::parallel_for(tbb::blocked_range<int64_t>(
+            0, num_non_zeros, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<int64_t>& range){
+        for (int64_t i = range.begin(); i < range.end(); i++) {
+            int64_t non_zero_index = non_zero_indices[i];
+            for (int64_t dim = num_dims - 1; dim >= 0; dim--) {
+                void* result_ptr = result_iter.GetPtr(dim * num_non_zeros + i);
+                OPEN3D_ASSERT(result_ptr != nullptr && "Internal error.");
+                *static_cast<int64_t*>(result_ptr) = non_zero_index % shape[dim];
+                non_zero_index = non_zero_index / shape[dim];
+            }
         }
-    }
+    });
 
     return result;
 }

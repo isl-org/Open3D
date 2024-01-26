@@ -14,6 +14,8 @@
 #include <string>
 #include <thread>
 
+#include <tbb/parallel_invoke.h>
+
 #include "open3d/Open3D.h"
 
 using namespace open3d;
@@ -203,23 +205,18 @@ int main(int argc, char *argv[]) {
             }
 
             ++idx;
-            if (write_image)
-#pragma omp parallel sections
-            {
-#pragma omp section
-                {
+            if (write_image) {
+                tbb::parallel_invoke([&](){
                     auto color_file = fmt::format("{0}/color/{1:05d}.jpg",
                                                   output_path, idx);
                     utility::LogInfo("Writing to {}", color_file);
                     io::WriteImage(color_file, im_rgbd.color_);
-                }
-#pragma omp section
-                {
+                }, [&](){
                     auto depth_file = fmt::format("{0}/depth/{1:05d}.png",
                                                   output_path, idx);
                     utility::LogInfo("Writing to {}", depth_file);
                     io::WriteImage(depth_file, im_rgbd.depth_);
-                }
+                });
             }
             vis.UpdateGeometry();
             vis.UpdateRender();

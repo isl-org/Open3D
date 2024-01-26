@@ -8,6 +8,7 @@
 #pragma once
 
 #include <tbb/concurrent_unordered_map.h>
+#include <tbb/parallel_for.h>
 
 #include <limits>
 #include <unordered_map>
@@ -93,15 +94,17 @@ void TBBHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
                                          int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-    for (int64_t i = 0; i < count; ++i) {
-        const Key& key = input_keys_templated[i];
+    tbb::parallel_for(tbb::blocked_range<int64_t>(0, count, 64),
+            [=, &impl=impl_](const tbb::blocked_range<int64_t>& range){
+        for (int64_t i = range.begin(); i < range.end(); ++i) {
+            const Key& key = input_keys_templated[i];
 
-        auto iter = impl_->find(key);
-        bool flag = (iter != impl_->end());
-        output_masks[i] = flag;
-        output_buf_indices[i] = flag ? iter->second : 0;
-    }
+            auto iter = impl->find(key);
+            bool flag = (iter != impl->end());
+            output_masks[i] = flag;
+            output_buf_indices[i] = flag ? iter->second : 0;
+        }
+    });
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -177,43 +180,45 @@ void TBBHashBackend<Key, Hash, Eq>::Insert(
 
     size_t n_values = input_values_soa.size();
 
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-    for (int64_t i = 0; i < count; ++i) {
-        output_buf_indices[i] = 0;
-        output_masks[i] = false;
+    tbb::parallel_for(tbb::blocked_range<int64_t>(0, count, 64),
+            [&](const tbb::blocked_range<int64_t>& range){
+        for (int64_t i = range.begin(); i < range.end(); ++i) {
+            output_buf_indices[i] = 0;
+            output_masks[i] = false;
 
-        const Key& key = input_keys_templated[i];
+            const Key& key = input_keys_templated[i];
 
-        // Try to insert a dummy buffer index.
-        auto res = impl_->insert({key, 0});
+            // Try to insert a dummy buffer index.
+            auto res = impl_->insert({key, 0});
 
-        // Lazy copy key value pair to buffer only if succeeded
-        if (res.second) {
-            buf_index_t buf_index = buffer_accessor_->DeviceAllocate();
-            void* key_ptr = buffer_accessor_->GetKeyPtr(buf_index);
+            // Lazy copy key value pair to buffer only if succeeded
+            if (res.second) {
+                buf_index_t buf_index = buffer_accessor_->DeviceAllocate();
+                void* key_ptr = buffer_accessor_->GetKeyPtr(buf_index);
 
-            // Copy templated key to buffer
-            *static_cast<Key*>(key_ptr) = key;
+                // Copy templated key to buffer
+                *static_cast<Key*>(key_ptr) = key;
 
-            // Copy/reset non-templated value in buffer
-            for (size_t j = 0; j < n_values; ++j) {
-                uint8_t* dst_value = static_cast<uint8_t*>(
-                        buffer_accessor_->GetValuePtr(buf_index, j));
+                // Copy/reset non-templated value in buffer
+                for (size_t j = 0; j < n_values; ++j) {
+                    uint8_t* dst_value = static_cast<uint8_t*>(
+                            buffer_accessor_->GetValuePtr(buf_index, j));
 
-                const uint8_t* src_value =
-                        static_cast<const uint8_t*>(input_values_soa[j]) +
-                        this->value_dsizes_[j] * i;
-                std::memcpy(dst_value, src_value, this->value_dsizes_[j]);
+                    const uint8_t* src_value =
+                            static_cast<const uint8_t*>(input_values_soa[j]) +
+                            this->value_dsizes_[j] * i;
+                    std::memcpy(dst_value, src_value, this->value_dsizes_[j]);
+                }
+
+                // Update from dummy 0
+                res.first->second = buf_index;
+
+                // Write to return variables
+                output_buf_indices[i] = buf_index;
+                output_masks[i] = true;
             }
-
-            // Update from dummy 0
-            res.first->second = buf_index;
-
-            // Write to return variables
-            output_buf_indices[i] = buf_index;
-            output_masks[i] = true;
         }
-    }
+    });
 }
 
 template <typename Key, typename Hash, typename Eq>

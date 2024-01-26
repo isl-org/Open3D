@@ -11,6 +11,9 @@
 #include <algorithm>
 #include <numeric>
 
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
+
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/Qhull.h"
@@ -127,20 +130,22 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     std::vector<double> distances(points_.size());
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)points_.size(); i++) {
-        std::vector<int> indices(1);
-        std::vector<double> dists(1);
-        if (kdtree.SearchKNN(points_[i], 1, indices, dists) == 0) {
-            utility::LogDebug(
-                    "[ComputePointCloudToPointCloudDistance] Found a point "
-                    "without neighbors.");
-            distances[i] = 0.0;
-        } else {
-            distances[i] = std::sqrt(dists[0]);
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            std::vector<int> indices(1);
+            std::vector<double> dists(1);
+            if (kdtree.SearchKNN(points_[i], 1, indices, dists) == 0) {
+                utility::LogDebug(
+                        "[ComputePointCloudToPointCloudDistance] Found a point "
+                        "without neighbors.");
+                distances[i] = 0.0;
+            } else {
+                distances[i] = std::sqrt(dists[0]);
+            }
         }
-    }
+    });
     return distances;
 }
 
@@ -498,9 +503,9 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
     std::vector<size_t> indices(points_.size());
     std::iota(std::begin(indices), std::end(indices), (size_t)0);
     {
-        std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+        tbb::spin_mutex::scoped_lock lock(utility::random::GetMutex());
         std::shuffle(indices.begin(), indices.end(),
-                     *utility::random::GetEngine());
+                     utility::random::GetEngine());
     }
     indices.resize((int)(sampling_ratio * points_.size()));
     return SelectByIndex(indices);
@@ -574,18 +579,22 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
-    utility::OMPProgressBar progress_bar(
+    utility::TBBProgressBar progress_bar(
             points_.size(), "Remove radius outliers: ", print_progress);
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < int(points_.size()); i++) {
-        std::vector<int> tmp_indices;
-        std::vector<double> dist;
-        size_t nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
-                                                  tmp_indices, dist);
-        mask[i] = (nb_neighbors > nb_points);
-        ++progress_bar;
-    }
+
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            std::vector<int> tmp_indices;
+            std::vector<double> dist;
+            size_t nb_neighbors = kdtree.SearchRadius(points_[i],
+                search_radius, tmp_indices, dist);
+            mask[i] = (nb_neighbors > nb_points);
+            ++progress_bar;
+        }
+    });
+
     std::vector<size_t> indices;
     for (size_t i = 0; i < mask.size(); i++) {
         if (mask[i]) {
@@ -612,25 +621,33 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     kdtree.SetGeometry(*this);
     std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
-    size_t valid_distances = 0;
-    utility::OMPProgressBar progress_bar(
+
+    utility::TBBProgressBar progress_bar(
             points_.size(), "Remove statistical outliers: ", print_progress);
 
-#pragma omp parallel for reduction(+ : valid_distances) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < int(points_.size()); i++) {
-        std::vector<int> tmp_indices;
-        std::vector<double> dist;
-        kdtree.SearchKNN(points_[i], int(nb_neighbors), tmp_indices, dist);
-        double mean = -1.0;
-        if (dist.size() > 0u) {
-            valid_distances++;
-            std::for_each(dist.begin(), dist.end(),
-                          [](double &d) { d = std::sqrt(d); });
-            mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
+    size_t valid_distances = tbb::parallel_reduce(
+            tbb::blocked_range<std::size_t>(0, points_.size(),
+            utility::DefaultGrainSizeTBB()), std::size_t{0},
+            [&](const tbb::blocked_range<std::size_t>& range,
+                    std::size_t valid_so_far){
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            std::vector<int> tmp_indices;
+            std::vector<double> dist;
+            kdtree.SearchKNN(points_[i], int(nb_neighbors), tmp_indices, dist);
+            double mean = -1.0;
+            if (dist.size() > 0u) {
+                ++valid_so_far;
+                std::for_each(dist.begin(), dist.end(),
+                              [](double &d) { d = std::sqrt(d); });
+                mean = std::accumulate(dist.begin(), dist.end(),
+                                       0.0) / dist.size();
+            }
+            avg_distances[i] = mean;
+            ++progress_bar;
         }
-        avg_distances[i] = mean;
-        ++progress_bar;
-    }
+        return valid_so_far;
+    }, std::plus<std::size_t>{});
+
     if (valid_distances == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
                                std::vector<size_t>());
@@ -646,7 +663,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                 return x > 0 ? (x - cloud_mean) * (y - cloud_mean) : 0;
             });
     // Bessel's correction
-    double std_dev = std::sqrt(sq_sum / (valid_distances - 1));
+    double std_dev = std::sqrt(sq_sum /
+        static_cast<double>(valid_distances - 1));
     double distance_threshold = cloud_mean + std_ratio * std_dev;
     for (size_t i = 0; i < avg_distances.size(); i++) {
         if (avg_distances[i] > 0 && avg_distances[i] < distance_threshold) {
@@ -665,21 +683,23 @@ std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
 
     KDTreeFlann kdtree;
     kdtree.SetGeometry(input);
-#pragma omp parallel for schedule(static)
-    for (int i = 0; i < (int)points.size(); i++) {
-        std::vector<int> indices;
-        std::vector<double> distance2;
-        if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
-            auto covariance = utility::ComputeCovariance(points, indices);
-            if (input.HasCovariances() && covariance.isIdentity(1e-4)) {
-                covariances[i] = input.covariances_[i];
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(0, points.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            std::vector<int> indices;
+            std::vector<double> distance2;
+            if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
+                auto covariance = utility::ComputeCovariance(points, indices);
+                if (input.HasCovariances() && covariance.isIdentity(1e-4)) {
+                    covariances[i] = input.covariances_[i];
+                } else {
+                    covariances[i] = covariance;
+                }
             } else {
-                covariances[i] = covariance;
+                covariances[i] = Eigen::Matrix3d::Identity();
             }
-        } else {
-            covariances[i] = Eigen::Matrix3d::Identity();
         }
-    }
+    });
     return covariances;
 }
 void PointCloud::EstimateCovariances(
@@ -704,12 +724,14 @@ std::vector<double> PointCloud::ComputeMahalanobisDistance() const {
     Eigen::Matrix3d covariance;
     std::tie(mean, covariance) = ComputeMeanAndCovariance();
     Eigen::Matrix3d cov_inv = covariance.inverse();
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)points_.size(); i++) {
-        Eigen::Vector3d p = points_[i] - mean;
-        mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
-    }
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            Eigen::Vector3d p = points_[i] - mean;
+            mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
+        }
+    });
     return mahalanobis;
 }
 
@@ -720,20 +742,22 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
 
     std::vector<double> nn_dis(points_.size());
     KDTreeFlann kdtree(*this);
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)points_.size(); i++) {
-        std::vector<int> indices(2);
-        std::vector<double> dists(2);
-        if (kdtree.SearchKNN(points_[i], 2, indices, dists) <= 1) {
-            utility::LogDebug(
-                    "[ComputePointCloudNearestNeighborDistance] Found a point "
-                    "without neighbors.");
-            nn_dis[i] = 0.0;
-        } else {
-            nn_dis[i] = std::sqrt(dists[1]);
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            std::vector<int> indices(2);
+            std::vector<double> dists(2);
+            if (kdtree.SearchKNN(points_[i], 2, indices, dists) <= 1) {
+                utility::LogDebug(
+                        "[ComputePointCloudNearestNeighborDistance] "
+                        "Found a point without neighbors.");
+                nn_dis[i] = 0.0;
+            } else {
+                nn_dis[i] = std::sqrt(dists[1]);
+            }
         }
-    }
+    });
     return nn_dis;
 }
 

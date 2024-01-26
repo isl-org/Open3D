@@ -7,6 +7,9 @@
 
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
 
+#include <tbb/spin_mutex.h>
+#include <tbb/parallel_for.h>
+
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -26,8 +29,6 @@ void ProjectCPU(
         float depth_max) {
     const bool has_colors = image_colors.has_value();
 
-    int64_t n = points.GetLength();
-
     const float* points_ptr = points.GetDataPtr<float>();
     const float* point_colors_ptr =
             has_colors ? colors.value().get().GetDataPtr<float>() : nullptr;
@@ -40,7 +41,9 @@ void ProjectCPU(
         color_indexer = NDArrayIndexer(image_colors.value().get(), 2);
     }
 
-    core::ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
+    tbb::spin_mutex mtx;
+    core::ParallelFor(core::Device("CPU:0"), points.GetLength(),
+            [&](int64_t workload_idx) {
         float x = points_ptr[3 * workload_idx + 0];
         float y = points_ptr[3 * workload_idx + 1];
         float z = points_ptr[3 * workload_idx + 2];
@@ -60,10 +63,8 @@ void ProjectCPU(
         float* depth_ptr = depth_indexer.GetDataPtr<float>(
                 static_cast<int64_t>(u), static_cast<int64_t>(v));
         float d = zc * depth_scale;
-        // TODO: this can be wrong if ParallelFor is not implemented with
-        // OpenMP.
-#pragma omp critical(ProjectCPU)
         {
+            tbb::spin_mutex::scoped_lock lock(mtx);
             if (*depth_ptr == 0 || *depth_ptr >= d) {
                 *depth_ptr = d;
 

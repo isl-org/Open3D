@@ -7,6 +7,10 @@
 
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_for_each.h>
+#include <tbb/concurrent_vector.h>
+
 #include "open3d/camera/PinholeCameraTrajectory.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/KDTreeFlann.h"
@@ -123,50 +127,56 @@ CreateVertexAndImageVisibility(
         const camera::PinholeCameraTrajectory& camera_trajectory,
         double maximum_allowable_depth,
         double depth_threshold_for_visibility_check) {
-    size_t n_camera = camera_trajectory.parameters_.size();
-    size_t n_vertex = mesh.vertices_.size();
+    int n_camera = static_cast<int>(camera_trajectory.parameters_.size());
+    int n_vertex = static_cast<int>(mesh.vertices_.size());
     // visibility_image_to_vertex[c]: vertices visible by camera c.
     std::vector<std::vector<int>> visibility_image_to_vertex;
     visibility_image_to_vertex.resize(n_camera);
+
+    tbb::parallel_for(tbb::blocked_range<int>(0, n_camera, 1),
+            [&](const tbb::blocked_range<int>& range) {
+        for (int camera_id = range.begin();
+                               camera_id < range.end(); ++camera_id) {
+            for (int vertex_id = 0; vertex_id < n_vertex; vertex_id++) {
+                Eigen::Vector3d X = mesh.vertices_[vertex_id];
+                float u, v, d;
+                std::tie(u, v, d) = Project3DPointAndGetUVDepth(
+                        X, camera_trajectory.parameters_[camera_id]);
+                int u_d = int(round(u));
+                int v_d = int(round(v));
+                // Skip if vertex in image boundary.
+                if (d < 0.0 ||
+                    !images_depth[camera_id].TestImageBoundary(u_d, v_d)) {
+                    continue;
+                }
+                // Skip if vertex's depth is too large (e.g. background).
+                float d_sensor =
+                        *images_depth[camera_id].PointerAt<float>(u_d, v_d);
+                if (d_sensor > maximum_allowable_depth) {
+                    continue;
+                }
+                // Check depth boundary mask. If a vertex is located at the boundary
+                // of an object, its color will be highly diverse from different
+                // viewing angles.
+                if (*images_mask[camera_id].PointerAt<uint8_t>(u_d, v_d) == 255) {
+                    continue;
+                }
+                // Check depth errors.
+                if (std::fabs(d - d_sensor) >=
+                    depth_threshold_for_visibility_check) {
+                    continue;
+                }
+                visibility_image_to_vertex[camera_id].push_back(vertex_id);
+            }
+        }
+    });
+
     // visibility_vertex_to_image[v]: cameras that can see vertex v.
     std::vector<std::vector<int>> visibility_vertex_to_image;
     visibility_vertex_to_image.resize(n_vertex);
-
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
-        for (int vertex_id = 0; vertex_id < int(n_vertex); vertex_id++) {
-            Eigen::Vector3d X = mesh.vertices_[vertex_id];
-            float u, v, d;
-            std::tie(u, v, d) = Project3DPointAndGetUVDepth(
-                    X, camera_trajectory.parameters_[camera_id]);
-            int u_d = int(round(u));
-            int v_d = int(round(v));
-            // Skip if vertex in image boundary.
-            if (d < 0.0 ||
-                !images_depth[camera_id].TestImageBoundary(u_d, v_d)) {
-                continue;
-            }
-            // Skip if vertex's depth is too large (e.g. background).
-            float d_sensor =
-                    *images_depth[camera_id].PointerAt<float>(u_d, v_d);
-            if (d_sensor > maximum_allowable_depth) {
-                continue;
-            }
-            // Check depth boundary mask. If a vertex is located at the boundary
-            // of an object, its color will be highly diverse from different
-            // viewing angles.
-            if (*images_mask[camera_id].PointerAt<uint8_t>(u_d, v_d) == 255) {
-                continue;
-            }
-            // Check depth errors.
-            if (std::fabs(d - d_sensor) >=
-                depth_threshold_for_visibility_check) {
-                continue;
-            }
-            visibility_image_to_vertex[camera_id].push_back(vertex_id);
-#pragma omp critical(CreateVertexAndImageVisibility)
-            { visibility_vertex_to_image[vertex_id].push_back(camera_id); }
+    for (int i = 0; i < n_camera; ++i) {
+        for (int vidx: visibility_image_to_vertex[i]) {
+            visibility_vertex_to_image[vidx].emplace_back(i);
         }
     }
 
@@ -193,37 +203,39 @@ void SetProxyIntensityForVertex(
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < int(n_vertex); i++) {
-        proxy_intensity[i] = 0.0;
-        float sum = 0.0;
-        for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
-             iter++) {
-            int j = visibility_vertex_to_image[i][iter];
-            float gray;
-            bool valid = false;
-            if (warping_fields.has_value()) {
-                std::tie(valid, gray) = QueryImageIntensity<float>(
-                        images_gray[j], warping_fields.value()[j],
-                        mesh.vertices_[i], camera_trajectory.parameters_[j],
-                        utility::nullopt, image_boundary_margin);
-            } else {
-                std::tie(valid, gray) = QueryImageIntensity<float>(
-                        images_gray[j], utility::nullopt, mesh.vertices_[i],
-                        camera_trajectory.parameters_[j], utility::nullopt,
-                        image_boundary_margin);
-            }
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, n_vertex, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            proxy_intensity[i] = 0.0;
+            float sum = 0.0;
+            for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
+                 iter++) {
+                int j = visibility_vertex_to_image[i][iter];
+                float gray;
+                bool valid = false;
+                if (warping_fields.has_value()) {
+                    std::tie(valid, gray) = QueryImageIntensity<float>(
+                            images_gray[j], warping_fields.value()[j],
+                            mesh.vertices_[i], camera_trajectory.parameters_[j],
+                            utility::nullopt, image_boundary_margin);
+                } else {
+                    std::tie(valid, gray) = QueryImageIntensity<float>(
+                            images_gray[j], utility::nullopt, mesh.vertices_[i],
+                            camera_trajectory.parameters_[j], utility::nullopt,
+                            image_boundary_margin);
+                }
 
-            if (valid) {
-                sum += 1.0;
-                proxy_intensity[i] += gray;
+                if (valid) {
+                    sum += 1.0;
+                    proxy_intensity[i] += gray;
+                }
+            }
+            if (sum > 0) {
+                proxy_intensity[i] /= sum;
             }
         }
-        if (sum > 0) {
-            proxy_intensity[i] /= sum;
-        }
-    }
+    });
 }
 
 void SetGeometryColorAverage(
@@ -237,43 +249,46 @@ void SetGeometryColorAverage(
     size_t n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
-    std::vector<size_t> valid_vertices;
-    std::vector<size_t> invalid_vertices;
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)n_vertex; i++) {
-        mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
-        double sum = 0.0;
-        for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
-             iter++) {
-            int j = visibility_vertex_to_image[i][iter];
-            uint8_t r_temp, g_temp, b_temp;
-            bool valid = false;
-            utility::optional<ImageWarpingField> optional_warping_field;
-            if (warping_fields.has_value()) {
-                optional_warping_field = warping_fields.value()[j];
-            } else {
-                optional_warping_field = utility::nullopt;
+    tbb::concurrent_vector<std::size_t> valid_vertices;
+    tbb::concurrent_vector<std::size_t> invalid_vertices;
+
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, n_vertex, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
+            double sum = 0.0;
+            for (size_t iter = 0; iter < visibility_vertex_to_image[i].size();
+                 iter++) {
+                int j = visibility_vertex_to_image[i][iter];
+                uint8_t r_temp, g_temp, b_temp;
+                bool valid = false;
+                utility::optional<ImageWarpingField> optional_warping_field;
+                if (warping_fields.has_value()) {
+                    optional_warping_field = warping_fields.value()[j];
+                } else {
+                    optional_warping_field = utility::nullopt;
+                }
+                std::tie(valid, r_temp) = QueryImageIntensity<uint8_t>(
+                        images_color[j], optional_warping_field,
+                        mesh.vertices_[i],camera_trajectory.parameters_[j],
+                        0, image_boundary_margin);
+                std::tie(valid, g_temp) = QueryImageIntensity<uint8_t>(
+                        images_color[j], optional_warping_field,
+                        mesh.vertices_[i], camera_trajectory.parameters_[j],
+                        1, image_boundary_margin);
+                std::tie(valid, b_temp) = QueryImageIntensity<uint8_t>(
+                        images_color[j], optional_warping_field,
+                        mesh.vertices_[i], camera_trajectory.parameters_[j],
+                        2, image_boundary_margin);
+                float r = (float)r_temp / 255.0f;
+                float g = (float)g_temp / 255.0f;
+                float b = (float)b_temp / 255.0f;
+                if (valid) {
+                    mesh.vertex_colors_[i] += Eigen::Vector3d(r, g, b);
+                    sum += 1.0;
+                }
             }
-            std::tie(valid, r_temp) = QueryImageIntensity<uint8_t>(
-                    images_color[j], optional_warping_field, mesh.vertices_[i],
-                    camera_trajectory.parameters_[j], 0, image_boundary_margin);
-            std::tie(valid, g_temp) = QueryImageIntensity<uint8_t>(
-                    images_color[j], optional_warping_field, mesh.vertices_[i],
-                    camera_trajectory.parameters_[j], 1, image_boundary_margin);
-            std::tie(valid, b_temp) = QueryImageIntensity<uint8_t>(
-                    images_color[j], optional_warping_field, mesh.vertices_[i],
-                    camera_trajectory.parameters_[j], 2, image_boundary_margin);
-            float r = (float)r_temp / 255.0f;
-            float g = (float)g_temp / 255.0f;
-            float b = (float)b_temp / 255.0f;
-            if (valid) {
-                mesh.vertex_colors_[i] += Eigen::Vector3d(r, g, b);
-                sum += 1.0;
-            }
-        }
-#pragma omp critical(SetGeometryColorAverage)
-        {
             if (sum > 0.0) {
                 mesh.vertex_colors_[i] /= sum;
                 valid_vertices.push_back(i);
@@ -281,15 +296,13 @@ void SetGeometryColorAverage(
                 invalid_vertices.push_back(i);
             }
         }
-    }
+    });
     if (invisible_vertex_color_knn > 0) {
-        std::shared_ptr<geometry::TriangleMesh> valid_mesh =
-                mesh.SelectByIndex(valid_vertices);
+        std::shared_ptr<geometry::TriangleMesh> valid_mesh = mesh.SelectByIndex(
+                {valid_vertices.begin(), valid_vertices.end()});
         geometry::KDTreeFlann kd_tree(*valid_mesh);
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int i = 0; i < (int)invalid_vertices.size(); ++i) {
-            size_t invalid_vertex = invalid_vertices[i];
+        tbb::parallel_for_each(invalid_vertices,
+                [&](std::size_t invalid_vertex){
             std::vector<int> indices;  // indices to valid_mesh
             std::vector<double> dists;
             kd_tree.SearchKNN(mesh.vertices_[invalid_vertex],
@@ -298,11 +311,11 @@ void SetGeometryColorAverage(
             for (const int& index : indices) {
                 new_color += valid_mesh->vertex_colors_[index];
             }
-            if (indices.size() > 0) {
+            if (indices.empty()) {
                 new_color /= static_cast<double>(indices.size());
             }
             mesh.vertex_colors_[invalid_vertex] = new_color;
-        }
+        });
     }
 }
 

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <mutex>
+#include <tbb/spin_mutex.h>
 #include <random>
 
 #include "open3d/utility/Logging.h"
@@ -32,11 +32,11 @@ void Seed(const int seed);
 ///     std::shuffle(vals.begin(), vals.end(), *utility::random::GetEngine());
 /// }
 /// ```
-std::mt19937* GetEngine();
+std::mt19937& GetEngine();
 
 /// Get global singleton mutex to protect the engine call. Also see
 /// random::GetEngine().
-std::mutex* GetMutex();
+tbb::spin_mutex& GetMutex();
 
 /// Generate a random uint32.
 /// This function is globally seeded by utility::random::Seed().
@@ -80,8 +80,8 @@ public:
 
     /// Call this to generate a uniformly distributed integer.
     T operator()() {
-        std::lock_guard<std::mutex> lock(*GetMutex());
-        return distribution_(*GetEngine());
+        tbb::spin_mutex::scoped_lock lock(GetMutex());
+        return distribution_(GetEngine());
     }
 
 protected:
@@ -122,8 +122,8 @@ public:
 
     /// Call this to generate a uniformly distributed floating point value.
     T operator()() {
-        std::lock_guard<std::mutex> lock(*GetMutex());
-        return distribution_(*GetEngine());
+        tbb::spin_mutex::scoped_lock lock(GetMutex());
+        return distribution_(GetEngine());
     }
 
 protected:
@@ -163,8 +163,8 @@ public:
 
     /// Call this to generate a normally distributed floating point value.
     T operator()() {
-        std::lock_guard<std::mutex> lock(*GetMutex());
-        return distribution_(*GetEngine());
+        tbb::spin_mutex::scoped_lock lock(GetMutex());
+        return distribution_(GetEngine());
     }
 
 protected:

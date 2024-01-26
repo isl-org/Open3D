@@ -41,54 +41,47 @@ static void ComputePosePointToPlaneKernelCPU(
     // and 28th as inlier_count.
     std::vector<scalar_t> A_1x29(29, 0.0);
 
-#ifdef _WIN32
     std::vector<scalar_t> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
-            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
-                for (int workload_idx = r.begin(); workload_idx < r.end();
-                     ++workload_idx) {
-#else
-    scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
-                    scalar_t J_ij[6];
-                    scalar_t r = 0;
+            [&](const tbb::blocked_range<int>& range,
+                    std::vector<scalar_t> A_reduction) {
+        for (int workload_idx = range.begin(); workload_idx < range.end();
+             ++workload_idx) {
+            scalar_t J_ij[6];
+            scalar_t r = 0;
 
-                    bool valid = kernel::GetJacobianPointToPlane<scalar_t>(
-                            workload_idx, source_points_ptr, target_points_ptr,
-                            target_normals_ptr, correspondence_indices, J_ij,
-                            r);
+            bool valid = kernel::GetJacobianPointToPlane<scalar_t>(
+                    workload_idx, source_points_ptr, target_points_ptr,
+                    target_normals_ptr, correspondence_indices, J_ij,
+                    r);
 
-                    scalar_t w = GetWeightFromRobustKernel(r);
+            scalar_t w = GetWeightFromRobustKernel(r);
 
-                    if (valid) {
-                        // Dump J, r into JtJ and Jtr
-                        int i = 0;
-                        for (int j = 0; j < 6; ++j) {
-                            for (int k = 0; k <= j; ++k) {
-                                A_reduction[i] += J_ij[j] * w * J_ij[k];
-                                ++i;
-                            }
-                            A_reduction[21 + j] += J_ij[j] * w * r;
-                        }
-                        A_reduction[27] += r;
-                        A_reduction[28] += 1;
+            if (valid) {
+                // Dump J, r into JtJ and Jtr
+                int i = 0;
+                for (int j = 0; j < 6; ++j) {
+                    for (int k = 0; k <= j; ++k) {
+                        A_reduction[i] += J_ij[j] * w * J_ij[k];
+                        ++i;
                     }
+                    A_reduction[21 + j] += J_ij[j] * w * r;
                 }
-#ifdef _WIN32
-                return A_reduction;
-            },
-            // TBB: Defining reduction operation.
-            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
-                std::vector<scalar_t> result(29);
-                for (int j = 0; j < 29; ++j) {
-                    result[j] = a[j] + b[j];
-                }
-                return result;
-            });
-#endif
+                A_reduction[27] += r;
+                A_reduction[28] += 1;
+            }
+        }
+        return A_reduction;
+    },
+    // TBB: Defining reduction operation.
+    [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
+        std::vector<scalar_t> result(29);
+        for (int j = 0; j < 29; ++j) {
+            result[j] = a[j] + b[j];
+        }
+        return result;
+    });
 
     for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
@@ -147,59 +140,52 @@ static void ComputePoseColoredICPKernelCPU(
     // and 28th as inlier_count.
     std::vector<scalar_t> A_1x29(29, 0.0);
 
-#ifdef _WIN32
     std::vector<scalar_t> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
-            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
-                for (int workload_idx = r.begin(); workload_idx < r.end();
-                     ++workload_idx) {
-#else
-    scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
-                    scalar_t J_G[6] = {0}, J_I[6] = {0};
-                    scalar_t r_G = 0, r_I = 0;
+            [&](const tbb::blocked_range<int>& r,
+                std::vector<scalar_t> A_reduction) {
+        for (int workload_idx = r.begin(); workload_idx < r.end();
+             ++workload_idx) {
+            scalar_t J_G[6] = {0}, J_I[6] = {0};
+            scalar_t r_G = 0, r_I = 0;
 
-                    bool valid = GetJacobianColoredICP<scalar_t>(
-                            workload_idx, source_points_ptr, source_colors_ptr,
-                            target_points_ptr, target_normals_ptr,
-                            target_colors_ptr, target_color_gradients_ptr,
-                            correspondence_indices, sqrt_lambda_geometric,
-                            sqrt_lambda_photometric, J_G, J_I, r_G, r_I);
+            bool valid = GetJacobianColoredICP<scalar_t>(
+                    workload_idx, source_points_ptr, source_colors_ptr,
+                    target_points_ptr, target_normals_ptr,
+                    target_colors_ptr, target_color_gradients_ptr,
+                    correspondence_indices, sqrt_lambda_geometric,
+                    sqrt_lambda_photometric, J_G, J_I, r_G, r_I);
 
-                    scalar_t w_G = GetWeightFromRobustKernel(r_G);
-                    scalar_t w_I = GetWeightFromRobustKernel(r_I);
+            scalar_t w_G = GetWeightFromRobustKernel(r_G);
+            scalar_t w_I = GetWeightFromRobustKernel(r_I);
 
-                    if (valid) {
-                        // Dump J, r into JtJ and Jtr
-                        int i = 0;
-                        for (int j = 0; j < 6; ++j) {
-                            for (int k = 0; k <= j; ++k) {
-                                A_reduction[i] += J_G[j] * w_G * J_G[k] +
-                                                  J_I[j] * w_I * J_I[k];
-                                ++i;
-                            }
-                            A_reduction[21 + j] +=
-                                    J_G[j] * w_G * r_G + J_I[j] * w_I * r_I;
-                        }
-                        A_reduction[27] += r_G * r_G + r_I * r_I;
-                        A_reduction[28] += 1;
+            if (valid) {
+                // Dump J, r into JtJ and Jtr
+                int i = 0;
+                for (int j = 0; j < 6; ++j) {
+                    for (int k = 0; k <= j; ++k) {
+                        A_reduction[i] += J_G[j] * w_G * J_G[k] +
+                                          J_I[j] * w_I * J_I[k];
+                        ++i;
                     }
+                    A_reduction[21 + j] +=
+                            J_G[j] * w_G * r_G + J_I[j] * w_I * r_I;
                 }
-#ifdef _WIN32
-                return A_reduction;
-            },
-            // TBB: Defining reduction operation.
-            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
-                std::vector<scalar_t> result(29);
-                for (int j = 0; j < 29; ++j) {
-                    result[j] = a[j] + b[j];
-                }
-                return result;
-            });
-#endif
+                A_reduction[27] += r_G * r_G + r_I * r_I;
+                A_reduction[28] += 1;
+            }
+        }
+        return A_reduction;
+    },
+    // TBB: Defining reduction operation.
+    [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
+        std::vector<scalar_t> result(29);
+        for (int j = 0; j < 29; ++j) {
+            result[j] = a[j] + b[j];
+        }
+        return result;
+    });
 
     for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
@@ -585,48 +571,40 @@ void ComputeInformationMatrixKernelCPU(const scalar_t *target_points_ptr,
     // As, AtA is a symmetric matrix, we only need 21 elements instead of 36.
     std::vector<scalar_t> AtA(21, 0.0);
 
-#ifdef _WIN32
     std::vector<scalar_t> zeros_21(21, 0.0);
     AtA = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_21,
             [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
-                for (int workload_idx = r.begin(); workload_idx < r.end();
-                     ++workload_idx) {
-#else
-    scalar_t *A_reduction = AtA.data();
-#pragma omp parallel for reduction(+ : A_reduction[:21]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
-#endif
-                    scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
+        for (int workload_idx = r.begin(); workload_idx < r.end();
+             ++workload_idx) {
+            scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
 
-                    bool valid = GetInformationJacobians<scalar_t>(
-                            workload_idx, target_points_ptr,
-                            correspondence_indices, J_x, J_y, J_z);
+            bool valid = GetInformationJacobians<scalar_t>(
+                    workload_idx, target_points_ptr,
+                    correspondence_indices, J_x, J_y, J_z);
 
-                    if (valid) {
-                        int i = 0;
-                        for (int j = 0; j < 6; ++j) {
-                            for (int k = 0; k <= j; ++k) {
-                                A_reduction[i] += J_x[j] * J_x[k] +
-                                                  J_y[j] * J_y[k] +
-                                                  J_z[j] * J_z[k];
-                                ++i;
-                            }
-                        }
+            if (valid) {
+                int i = 0;
+                for (int j = 0; j < 6; ++j) {
+                    for (int k = 0; k <= j; ++k) {
+                        A_reduction[i] += J_x[j] * J_x[k] +
+                                          J_y[j] * J_y[k] +
+                                          J_z[j] * J_z[k];
+                        ++i;
                     }
                 }
-#ifdef _WIN32
-                return A_reduction;
-            },
-            // TBB: Defining reduction operation.
-            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
-                std::vector<scalar_t> result(21);
-                for (int j = 0; j < 21; ++j) {
-                    result[j] = a[j] + b[j];
-                }
-                return result;
-            });
-#endif
+            }
+        }
+        return A_reduction;
+    },
+    // TBB: Defining reduction operation.
+    [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
+        std::vector<scalar_t> result(21);
+        for (int j = 0; j < 21; ++j) {
+            result[j] = a[j] + b[j];
+        }
+        return result;
+    });
 
     for (int i = 0; i < 21; ++i) {
         global_sum[i] = AtA[i];

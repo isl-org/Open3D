@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include <tbb/parallel_invoke.h>
+
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/io/sensor/realsense/RSBagReader.h"
@@ -53,25 +55,20 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
     open3d::geometry::Image im_color, im_depth;
     for (auto tim_rgbd = NextFrame(); !IsEOF() && GetTimestamp() < end_time;
          ++idx, tim_rgbd = NextFrame())
-#pragma omp parallel sections
-    {
-#pragma omp section
-        {
+    tbb::parallel_invoke([&](){
             im_color = tim_rgbd.color_.ToLegacy();
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             open3d::io::WriteImage(color_file, im_color);
             utility::LogDebug("Written color image to {}", color_file);
-        }
-#pragma omp section
-        {
+        }, [&](){
             im_depth = tim_rgbd.depth_.ToLegacy();
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             open3d::io::WriteImage(depth_file, im_depth);
             utility::LogDebug("Written depth image to {}", depth_file);
-        }
-    }
+    });
+
     utility::LogInfo("Written {} depth and color images to {}/{{depth,color}}/",
                      idx, frame_path);
 }

@@ -7,6 +7,9 @@
 
 #include "open3d/pipelines/odometry/Odometry.h"
 
+#include <tbb/blocked_range2d.h>
+#include <tbb/parallel_reduce.h>
+
 #include <Eigen/Dense>
 #include <memory>
 
@@ -15,87 +18,144 @@
 #include "open3d/pipelines/odometry/RGBDOdometryJacobian.h"
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Timer.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
 namespace odometry {
 
-static std::tuple<geometry::Image, geometry::Image> InitializeCorrespondenceMap(
-        int width, int height) {
-    // initialization: filling with any (u,v) to (-1,-1)
+struct CorrespondenceReduction {
+    // Global
+    const geometry::Image& depth_s;
+    const geometry::Image& depth_t;
+    const Eigen::Matrix3d& KRK_inv;
+    const Eigen::Vector3d& Kt;
+    const double depth_diff_max;
+    // Local
     geometry::Image correspondence_map;
     geometry::Image depth_buffer;
-    correspondence_map.Prepare(width, height, 2, 4);
-    depth_buffer.Prepare(width, height, 1, 4);
-    for (int v = 0; v < correspondence_map.height_; v++) {
-        for (int u = 0; u < correspondence_map.width_; u++) {
-            *correspondence_map.PointerAt<int>(u, v, 0) = -1;
-            *correspondence_map.PointerAt<int>(u, v, 1) = -1;
-            *depth_buffer.PointerAt<float>(u, v, 0) = -1.0f;
-        }
-    }
-    return std::make_tuple(correspondence_map, depth_buffer);
-}
 
-static inline void AddElementToCorrespondenceMap(
-        geometry::Image &correspondence_map,
-        geometry::Image &depth_buffer,
-        int u_s,
-        int v_s,
-        int u_t,
-        int v_t,
-        float transformed_d_t) {
-    int exist_u_t, exist_v_t;
-    double exist_d_t;
-    exist_u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
-    exist_v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
-    if (exist_u_t != -1 && exist_v_t != -1) {
-        exist_d_t = *depth_buffer.PointerAt<float>(u_s, v_s);
-        if (transformed_d_t <
-            exist_d_t) {  // update nearer point as correspondence
+    CorrespondenceReduction(const geometry::Image& depth_s_,
+                            const geometry::Image& depth_t_,
+                            const Eigen::Matrix3d& KRK_inv_,
+                            const Eigen::Vector3d& Kt_,
+                            const double depth_diff_max_)
+            : depth_s(depth_s_), depth_t(depth_t_), KRK_inv(KRK_inv_),
+            Kt(Kt_), depth_diff_max(depth_diff_max_) {
+        InitializeCorrespondenceMap();
+    }
+
+    CorrespondenceReduction(CorrespondenceReduction& o, tbb::split)
+            : depth_s(o.depth_s), depth_t(o.depth_t), KRK_inv(o.KRK_inv),
+            Kt(o.Kt), depth_diff_max(o.depth_diff_max) {
+        InitializeCorrespondenceMap();
+    }
+
+    void InitializeCorrespondenceMap() {
+        const int width = depth_t.width_;
+        const int height = depth_t.height_;
+        correspondence_map.Prepare(depth_t.width_, depth_t.height_, 2, 4);
+        depth_buffer.Prepare(depth_t.width_, depth_t.height_, 1, 4);
+        std::fill(correspondence_map.PointerAt<int>(0, 0, 0),
+                  correspondence_map.PointerAt<int>(width, height, 1), -1);
+        std::fill(depth_buffer.PointerAt<float>(0, 0, 0),
+                  depth_buffer.PointerAt<float>(width, height, 0), -1.0f);
+    }
+
+    void inline AddElementToCorrespondenceMap(
+            int u_s, int v_s, int u_t, int v_t, float transformed_d_t) {
+        int exist_u_t, exist_v_t;
+        double exist_d_t;
+        exist_u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
+        exist_v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
+        if (exist_u_t != -1 && exist_v_t != -1) {
+            exist_d_t = *depth_buffer.PointerAt<float>(u_s, v_s);
+            if (transformed_d_t < exist_d_t) {
+                // update nearer point as correspondence
+                *correspondence_map.PointerAt<int>(u_s, v_s, 0) = u_t;
+                *correspondence_map.PointerAt<int>(u_s, v_s, 1) = v_t;
+                *depth_buffer.PointerAt<float>(u_s, v_s) = transformed_d_t;
+            }
+        } else {  // register correspondence
             *correspondence_map.PointerAt<int>(u_s, v_s, 0) = u_t;
             *correspondence_map.PointerAt<int>(u_s, v_s, 1) = v_t;
             *depth_buffer.PointerAt<float>(u_s, v_s) = transformed_d_t;
         }
-    } else {  // register correspondence
-        *correspondence_map.PointerAt<int>(u_s, v_s, 0) = u_t;
-        *correspondence_map.PointerAt<int>(u_s, v_s, 1) = v_t;
-        *depth_buffer.PointerAt<float>(u_s, v_s) = transformed_d_t;
     }
-}
 
-static void MergeCorrespondenceMaps(geometry::Image &correspondence_map,
-                                    geometry::Image &depth_buffer,
-                                    geometry::Image &correspondence_map_part,
-                                    geometry::Image &depth_buffer_part) {
-    for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
-        for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
-            int u_t = *correspondence_map_part.PointerAt<int>(u_s, v_s, 0);
-            int v_t = *correspondence_map_part.PointerAt<int>(u_s, v_s, 1);
-            if (u_t != -1 && v_t != -1) {
-                float transformed_d_t =
-                        *depth_buffer_part.PointerAt<float>(u_s, v_s);
-                AddElementToCorrespondenceMap(correspondence_map, depth_buffer,
-                                              u_s, v_s, u_t, v_t,
-                                              transformed_d_t);
+    void MergeCorrespondenceMaps(const CorrespondenceReduction& rhs) {
+        for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
+            for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
+                int u_t = *rhs.correspondence_map.PointerAt<int>(u_s, v_s, 0);
+                int v_t = *rhs.correspondence_map.PointerAt<int>(u_s, v_s, 1);
+                if (u_t != -1 && v_t != -1) {
+                    float transformed_d_t =
+                            *rhs.depth_buffer.PointerAt<float>(u_s, v_s);
+                    AddElementToCorrespondenceMap(
+                            u_s, v_s, u_t, v_t, transformed_d_t);
+                }
             }
         }
     }
-}
 
-static int CountCorrespondence(const geometry::Image &correspondence_map) {
-    int correspondence_count = 0;
-    for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
-        for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
-            int u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
-            int v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
-            if (u_t != -1 && v_t != -1) {
-                correspondence_count++;
+    void operator()(const tbb::blocked_range2d<int>&r) {
+        for (int v_s = r.rows().begin(); v_s < r.rows().end(); ++v_s) {
+            for (int u_s = r.cols().begin(); u_s < r.cols().end(); u_s++) {
+                double d_s = *depth_s.PointerAt<float>(u_s, v_s);
+                if (!std::isnan(d_s)) {
+                    Eigen::Vector3d uv_in_s =
+                            d_s * KRK_inv * Eigen::Vector3d(u_s, v_s, 1.0) + Kt;
+                    double transformed_d_s = uv_in_s(2);
+                    int u_t = (int)std::round(uv_in_s(0) / transformed_d_s);
+                    int v_t = (int)std::round(uv_in_s(1) / transformed_d_s);
+                    if (u_t >= 0 && u_t < depth_t.width_ && v_t >= 0 &&
+                        v_t < depth_t.height_) {
+                        double d_t = *depth_t.PointerAt<float>(u_t, v_t);
+                        if (!std::isnan(d_t) &&
+                            std::abs(transformed_d_s - d_t) <=
+                                    depth_diff_max) {
+                            AddElementToCorrespondenceMap(
+                                    u_s, v_s, u_t, v_t, (float)d_s);
+                        }
+                    }
+                }
             }
         }
     }
-    return correspondence_count;
-}
+
+    inline void join(const CorrespondenceReduction& rhs) {
+        MergeCorrespondenceMaps(rhs);
+    }
+
+    std::size_t CountCorrespondence() const {
+        std::size_t correspondence_count = 0;
+        for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
+            for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
+                int u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
+                int v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
+                if (u_t != -1 && v_t != -1) {
+                    correspondence_count++;
+                }
+            }
+        }
+        return correspondence_count;
+    }
+
+    CorrespondenceSetPixelWise correspondences() const {
+        CorrespondenceSetPixelWise out;
+        out.reserve(CountCorrespondence());
+        for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
+            for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
+                int u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
+                int v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
+                if (u_t != -1 && v_t != -1) {
+                    out.emplace_back(u_s, v_s, u_t, v_t);
+                }
+            }
+        }
+        return out;
+    }
+};
 
 CorrespondenceSetPixelWise ComputeCorrespondence(
         const Eigen::Matrix3d &intrinsic_matrix,
@@ -107,69 +167,15 @@ CorrespondenceSetPixelWise ComputeCorrespondence(
     const Eigen::Matrix3d K_inv = K.inverse();
     const Eigen::Matrix3d R = extrinsic.block<3, 3>(0, 0);
     const Eigen::Matrix3d KRK_inv = K * R * K_inv;
-    Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
+    const Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
 
-    geometry::Image correspondence_map;
-    geometry::Image depth_buffer;
-    std::tie(correspondence_map, depth_buffer) =
-            InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
+    CorrespondenceReduction reducer(depth_s, depth_t,
+        KRK_inv, Kt, option.depth_diff_max_);
+    tbb::parallel_reduce(tbb::blocked_range2d<int>(
+            0, depth_s.height_, utility::DefaultGrainSizeTBB2D(),
+            0, depth_s.width_, utility::DefaultGrainSizeTBB2D()), reducer);
 
-#pragma omp parallel
-    {
-        geometry::Image correspondence_map_private;
-        geometry::Image depth_buffer_private;
-        std::tie(correspondence_map_private, depth_buffer_private) =
-                InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
-#pragma omp for nowait
-        for (int v_s = 0; v_s < depth_s.height_; v_s++) {
-            for (int u_s = 0; u_s < depth_s.width_; u_s++) {
-                double d_s = *depth_s.PointerAt<float>(u_s, v_s);
-                if (!std::isnan(d_s)) {
-                    Eigen::Vector3d uv_in_s =
-                            d_s * KRK_inv * Eigen::Vector3d(u_s, v_s, 1.0) + Kt;
-                    double transformed_d_s = uv_in_s(2);
-                    int u_t = (int)(uv_in_s(0) / transformed_d_s + 0.5);
-                    int v_t = (int)(uv_in_s(1) / transformed_d_s + 0.5);
-                    if (u_t >= 0 && u_t < depth_t.width_ && v_t >= 0 &&
-                        v_t < depth_t.height_) {
-                        double d_t = *depth_t.PointerAt<float>(u_t, v_t);
-                        if (!std::isnan(d_t) &&
-                            std::abs(transformed_d_s - d_t) <=
-                                    option.depth_diff_max_) {
-                            AddElementToCorrespondenceMap(
-                                    correspondence_map_private,
-                                    depth_buffer_private, u_s, v_s, u_t, v_t,
-                                    (float)d_s);
-                        }
-                    }
-                }
-            }
-        }
-#pragma omp critical(ComputeCorrespondence)
-        {
-            MergeCorrespondenceMaps(correspondence_map, depth_buffer,
-                                    correspondence_map_private,
-                                    depth_buffer_private);
-
-        }  //    omp critical
-    }      //    omp parallel
-
-    CorrespondenceSetPixelWise correspondence;
-    int correspondence_count = CountCorrespondence(correspondence_map);
-    correspondence.resize(correspondence_count);
-    int cnt = 0;
-    for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
-        for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
-            int u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
-            int v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
-            if (u_t != -1 && v_t != -1) {
-                Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
-                correspondence[cnt] = pixel_correspondence;
-                cnt++;
-            }
-        }
-    }
-    return correspondence;
+    return reducer.correspondences();
 }
 
 static std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
@@ -215,6 +221,54 @@ static std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
     return pyramid_camera_matrix;
 }
 
+struct InformationMatrixReducer {
+    // Globals
+    const CorrespondenceSetPixelWise& corres;
+    const geometry::Image& xyz_t;
+    // Locals
+    Eigen::Matrix6d GTG;
+
+    InformationMatrixReducer(const CorrespondenceSetPixelWise& corres_,
+                             const geometry::Image& xyz_t_)
+        : corres(corres_), xyz_t(xyz_t_), GTG(Eigen::Matrix6d::Zero()) {}
+
+    InformationMatrixReducer(InformationMatrixReducer& o, tbb::split)
+        : corres(o.corres), xyz_t(o.xyz_t), GTG(Eigen::Matrix6d::Zero()) {}
+
+    void operator()(const tbb::blocked_range<std::size_t>& range) {
+        // write q^*
+        // see http://redwood-data.org/indoor/registration.html
+        // note: I comes first in this implementation
+        Eigen::Vector6d G_r;
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            int u_t = corres[i](2);
+            int v_t = corres[i](3);
+            double x = *xyz_t.PointerAt<float>(u_t, v_t, 0);
+            double y = *xyz_t.PointerAt<float>(u_t, v_t, 1);
+            double z = *xyz_t.PointerAt<float>(u_t, v_t, 2);
+            G_r.setZero();
+            G_r(1) = z;
+            G_r(2) = -y;
+            G_r(3) = 1.0;
+            GTG.noalias() += G_r * G_r.transpose();
+            G_r.setZero();
+            G_r(0) = -z;
+            G_r(2) = x;
+            G_r(4) = 1.0;
+            GTG.noalias() += G_r * G_r.transpose();
+            G_r.setZero();
+            G_r(0) = y;
+            G_r(1) = -x;
+            G_r(5) = 1.0;
+            GTG.noalias() += G_r * G_r.transpose();
+        }
+    }
+
+    void join(InformationMatrixReducer& other) {
+        GTG += other.GTG;
+    }
+};
+
 static Eigen::Matrix6d CreateInformationMatrix(
         const Eigen::Matrix4d &extrinsic,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
@@ -228,41 +282,10 @@ static Eigen::Matrix6d CreateInformationMatrix(
     auto xyz_t = ConvertDepthImageToXYZImage(
             depth_t, pinhole_camera_intrinsic.intrinsic_matrix_);
 
-    // write q^*
-    // see http://redwood-data.org/indoor/registration.html
-    // note: I comes first and q_skew is scaled by factor 2.
-    Eigen::Matrix6d GTG = Eigen::Matrix6d::Identity();
-#pragma omp parallel
-    {
-        Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
-        Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
-#pragma omp for nowait
-        for (int row = 0; row < int(correspondence.size()); row++) {
-            int u_t = correspondence[row](2);
-            int v_t = correspondence[row](3);
-            double x = *xyz_t->PointerAt<float>(u_t, v_t, 0);
-            double y = *xyz_t->PointerAt<float>(u_t, v_t, 1);
-            double z = *xyz_t->PointerAt<float>(u_t, v_t, 2);
-            G_r_private.setZero();
-            G_r_private(1) = z;
-            G_r_private(2) = -y;
-            G_r_private(3) = 1.0;
-            GTG_private.noalias() += G_r_private * G_r_private.transpose();
-            G_r_private.setZero();
-            G_r_private(0) = -z;
-            G_r_private(2) = x;
-            G_r_private(4) = 1.0;
-            GTG_private.noalias() += G_r_private * G_r_private.transpose();
-            G_r_private.setZero();
-            G_r_private(0) = y;
-            G_r_private(1) = -x;
-            G_r_private(5) = 1.0;
-            GTG_private.noalias() += G_r_private * G_r_private.transpose();
-        }
-#pragma omp critical(CreateInformationMatrix)
-        { GTG += GTG_private; }
-    }
-    return GTG;
+    InformationMatrixReducer reducer(correspondence, *xyz_t.get());
+    tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0,
+        correspondence.size(), utility::DefaultGrainSizeTBB()), reducer);
+    return std::move(reducer.GTG);
 }
 
 static void NormalizeIntensity(

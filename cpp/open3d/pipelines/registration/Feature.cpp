@@ -9,6 +9,8 @@
 
 #include <Eigen/Dense>
 
+#include <tbb/parallel_for.h>
+
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Logging.h"
@@ -58,36 +60,38 @@ static std::shared_ptr<Feature> ComputeSPFHFeature(
         const geometry::KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)input.points_.size(); i++) {
-        const auto &point = input.points_[i];
-        const auto &normal = input.normals_[i];
-        std::vector<int> indices;
-        std::vector<double> distance2;
-        if (kdtree.Search(point, search_param, indices, distance2) > 1) {
-            // only compute SPFH feature when a point has neighbors
-            double hist_incr = 100.0 / (double)(indices.size() - 1);
-            for (size_t k = 1; k < indices.size(); k++) {
-                // skip the point itself, compute histogram
-                auto pf = ComputePairFeatures(point, normal,
-                                              input.points_[indices[k]],
-                                              input.normals_[indices[k]]);
-                int h_index = (int)(floor(11 * (pf(0) + M_PI) / (2.0 * M_PI)));
-                if (h_index < 0) h_index = 0;
-                if (h_index >= 11) h_index = 10;
-                feature->data_(h_index, i) += hist_incr;
-                h_index = (int)(floor(11 * (pf(1) + 1.0) * 0.5));
-                if (h_index < 0) h_index = 0;
-                if (h_index >= 11) h_index = 10;
-                feature->data_(h_index + 11, i) += hist_incr;
-                h_index = (int)(floor(11 * (pf(2) + 1.0) * 0.5));
-                if (h_index < 0) h_index = 0;
-                if (h_index >= 11) h_index = 10;
-                feature->data_(h_index + 22, i) += hist_incr;
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, input.points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            const auto &point = input.points_[i];
+            const auto &normal = input.normals_[i];
+            std::vector<int> indices;
+            std::vector<double> distance2;
+            if (kdtree.Search(point, search_param, indices, distance2) > 1) {
+                // only compute SPFH feature when a point has neighbors
+                double hist_incr = 100.0 / (double)(indices.size() - 1);
+                for (size_t k = 1; k < indices.size(); k++) {
+                    // skip the point itself, compute histogram
+                    auto pf = ComputePairFeatures(point, normal,
+                                                  input.points_[indices[k]],
+                                                  input.normals_[indices[k]]);
+                    int h_index = (int)(floor(11 * (pf(0) + M_PI) / (2.0 * M_PI)));
+                    if (h_index < 0) h_index = 0;
+                    if (h_index >= 11) h_index = 10;
+                    feature->data_(h_index, i) += hist_incr;
+                    h_index = (int)(floor(11 * (pf(1) + 1.0) * 0.5));
+                    if (h_index < 0) h_index = 0;
+                    if (h_index >= 11) h_index = 10;
+                    feature->data_(h_index + 11, i) += hist_incr;
+                    h_index = (int)(floor(11 * (pf(2) + 1.0) * 0.5));
+                    if (h_index < 0) h_index = 0;
+                    if (h_index >= 11) h_index = 10;
+                    feature->data_(h_index + 22, i) += hist_incr;
+                }
             }
         }
-    }
+    });
     return feature;
 }
 
@@ -105,37 +109,40 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     if (spfh == nullptr) {
         utility::LogError("Internal error: SPFH feature is nullptr.");
     }
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)input.points_.size(); i++) {
-        const auto &point = input.points_[i];
-        std::vector<int> indices;
-        std::vector<double> distance2;
-        if (kdtree.Search(point, search_param, indices, distance2) > 1) {
-            double sum[3] = {0.0, 0.0, 0.0};
-            for (size_t k = 1; k < indices.size(); k++) {
-                // skip the point itself
-                double dist = distance2[k];
-                if (dist == 0.0) continue;
+
+    tbb::parallel_for(tbb::blocked_range<std::size_t>(
+            0, input.points_.size(), utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            const auto &point = input.points_[i];
+            std::vector<int> indices;
+            std::vector<double> distance2;
+            if (kdtree.Search(point, search_param, indices, distance2) > 1) {
+                double sum[3] = {0.0, 0.0, 0.0};
+                for (size_t k = 1; k < indices.size(); k++) {
+                    // skip the point itself
+                    double dist = distance2[k];
+                    if (dist == 0.0) continue;
+                    for (int j = 0; j < 33; j++) {
+                        double val = spfh->data_(j, indices[k]) / dist;
+                        sum[j / 11] += val;
+                        feature->data_(j, i) += val;
+                    }
+                }
+                for (int j = 0; j < 3; j++)
+                    if (sum[j] != 0.0) sum[j] = 100.0 / sum[j];
                 for (int j = 0; j < 33; j++) {
-                    double val = spfh->data_(j, indices[k]) / dist;
-                    sum[j / 11] += val;
-                    feature->data_(j, i) += val;
+                    feature->data_(j, i) *= sum[j / 11];
+                    // The commented line is the fpfh function in the paper.
+                    // But according to PCL implementation, it is skipped.
+                    // Our initial test shows that the full fpfh function in the
+                    // paper seems to be better than PCL implementation. Further
+                    // test required.
+                    feature->data_(j, i) += spfh->data_(j, i);
                 }
             }
-            for (int j = 0; j < 3; j++)
-                if (sum[j] != 0.0) sum[j] = 100.0 / sum[j];
-            for (int j = 0; j < 33; j++) {
-                feature->data_(j, i) *= sum[j / 11];
-                // The commented line is the fpfh function in the paper.
-                // But according to PCL implementation, it is skipped.
-                // Our initial test shows that the full fpfh function in the
-                // paper seems to be better than PCL implementation. Further
-                // test required.
-                feature->data_(j, i) += spfh->data_(j, i);
-            }
         }
-    }
+    });
     return feature;
 }
 
@@ -153,33 +160,33 @@ CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
                                int(target_features.data_.cols())};
     std::vector<CorrespondenceSet> corres(num_searches);
 
-    const int kMaxThreads = utility::EstimateMaxThreads();
-    const int kOuterThreads = std::min(kMaxThreads, num_searches);
-    const int kInnerThreads = std::max(kMaxThreads / num_searches, 1);
-    (void)kOuterThreads;  // Avoids compiler warning if OpenMP is disabled
-    (void)kInnerThreads;
-#pragma omp parallel for num_threads(kOuterThreads)
-    for (int k = 0; k < num_searches; ++k) {
-        geometry::KDTreeFlann kdtree(features[1 - k]);
+    tbb::parallel_for(tbb::blocked_range<int>(0, num_searches, 1),
+            [&](const tbb::blocked_range<int>& range) {
+        for (int k = range.begin(); k < range.end(); ++k) {
+            geometry::KDTreeFlann kdtree(features[1 - k]);
 
-        int num_pts_k = num_pts[k];
-        corres[k] = CorrespondenceSet(num_pts_k);
-#pragma omp parallel for num_threads(kInnerThreads)
-        for (int i = 0; i < num_pts_k; i++) {
-            std::vector<int> corres_tmp(1);
-            std::vector<double> dist_tmp(1);
+            int num_pts_k = num_pts[k];
+            corres[k] = CorrespondenceSet(num_pts_k);
+            tbb::parallel_for(tbb::blocked_range<int>(
+                    0, num_pts_k, utility::DefaultGrainSizeTBB()),
+                    [&](const tbb::blocked_range<int>& range) {
+                for (int i = range.begin(); i < range.end(); ++i) {
+                    std::vector<int> corres_tmp(1);
+                    std::vector<double> dist_tmp(1);
 
-            kdtree.SearchKNN(Eigen::VectorXd(features[k].get().data_.col(i)), 1,
-                             corres_tmp, dist_tmp);
-            int j = corres_tmp[0];
-            corres[k][i] = Eigen::Vector2i(i, j);
+                    kdtree.SearchKNN(
+                            Eigen::VectorXd(features[k].get().data_.col(i)),
+                            1, corres_tmp, dist_tmp);
+                    int j = corres_tmp[0];
+                    corres[k][i] = Eigen::Vector2i(i, j);
+                }
+            });
         }
-    }
+    });
 
     // corres[0]: corres_ij, corres[1]: corres_ji
     if (!mutual_filter) return corres[0];
 
-    // should not use parallel for due to emplace back
     CorrespondenceSet corres_mutual;
     int num_src_pts = num_pts[0];
     for (int i = 0; i < num_src_pts; ++i) {

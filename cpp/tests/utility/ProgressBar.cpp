@@ -10,6 +10,8 @@
 #include <chrono>
 #include <thread>
 
+#include <tbb/parallel_for.h>
+
 #include "open3d/utility/Parallel.h"
 #include "tests/Tests.h"
 
@@ -38,6 +40,21 @@ TEST(ProgressBar, OMPProgressBar) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         ++progress_bar;
     }
+    EXPECT_TRUE(static_cast<int>(progress_bar.GetCurrentCount()) >= iterations);
+}
+
+TEST(ProgressBar, TBBProgressBar) {
+    int iterations = 1000;
+    utility::TBBProgressBar progress_bar(
+            iterations, "TBBProgressBar test: ", true);
+    tbb::parallel_for(tbb::blocked_range<int>(
+            0, iterations, utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<int>& range) {
+        for (int i = range.begin(); i < range.end(); ++i) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            ++progress_bar;
+        }
+    });
     EXPECT_TRUE(static_cast<int>(progress_bar.GetCurrentCount()) >= iterations);
 }
 

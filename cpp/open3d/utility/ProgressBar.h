@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include <tbb/task_scheduler_observer.h>
+
 namespace open3d {
 namespace utility {
 
@@ -40,6 +42,18 @@ public:
                    const std::string &progress_info,
                    bool active = false);
     ProgressBar &operator++() override;
+};
+
+class TBBProgressBar : public ProgressBar, tbb::task_scheduler_observer {
+public:
+    std::atomic<int> num_threads;
+    TBBProgressBar(std::size_t expected_count,
+                   const std::string &progress_info,
+                   bool active = false);
+    ProgressBar &operator++() override;
+
+    void on_scheduler_entry(bool is_worker) override;
+    void on_scheduler_exit(bool is_worker) override;
 };
 
 }  // namespace utility

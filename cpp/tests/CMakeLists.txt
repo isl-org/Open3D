@@ -40,6 +40,7 @@ target_link_libraries(tests PRIVATE
     Open3D::3rdparty_googletest
     Open3D::3rdparty_threads
     Open3D::3rdparty_vtk
+    Open3D::3rdparty_tbb
 )
 
 if (TARGET Open3D::3rdparty_openmp)

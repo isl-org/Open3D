@@ -13,6 +13,8 @@
 #include <omp.h>
 #endif
 
+#include <tbb/tbb.h>
+
 namespace open3d {
 namespace utility {
 
@@ -83,6 +85,29 @@ ProgressBar &OMPProgressBar::operator++() {
 #else
     SetCurrentCount(current_count_ + 1);
 #endif
+    return *this;
+}
+
+TBBProgressBar::TBBProgressBar(std::size_t expected_count,
+                               const std::string &progress_info,
+                               bool active)
+    : ProgressBar(expected_count, progress_info, active),
+      tbb::task_scheduler_observer(), num_threads(0) {
+    tbb::task_scheduler_observer::observe(true);
+}
+
+void TBBProgressBar::on_scheduler_entry(bool is_worker) {
+    if (is_worker) { ++num_threads; }
+}
+void TBBProgressBar::on_scheduler_exit(bool is_worker) {
+    if (is_worker) { --num_threads; }
+}
+
+ProgressBar &TBBProgressBar::operator++() {
+    // Ref: https://stackoverflow.com/a/44555438
+    if (tbb::this_task_arena::current_thread_index() == 0) {
+        SetCurrentCount(current_count_ + num_threads);
+    }
     return *this;
 }
 
