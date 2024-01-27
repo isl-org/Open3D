@@ -549,15 +549,17 @@ private:
 
         const size_t num_pairs = fragment_matching_results.size();
         if (config_["multi_threading"].asBool()) {
-            tbb::parallel_for(tbb::blocked_range<std::size_t>(0, num_pairs),
-                    [&](const tbb::blocked_range<std::size_t>& range){
-                for (std::size_t i = range.begin(); i < range.end(); ++i) {
-                    RegisterFragmentPair(ply_files,
-                                         fragment_matching_results[i].s_,
-                                         fragment_matching_results[i].t_,
-                                         fragment_matching_results[i]);
-                }
-            });
+            tbb::parallel_for(
+                    tbb::blocked_range<std::size_t>(0, num_pairs),
+                    [&](const tbb::blocked_range<std::size_t>& range) {
+                        for (std::size_t i = range.begin(); i < range.end();
+                             ++i) {
+                            RegisterFragmentPair(
+                                    ply_files, fragment_matching_results[i].s_,
+                                    fragment_matching_results[i].t_,
+                                    fragment_matching_results[i]);
+                        }
+                    });
         } else {
             for (size_t i = 0; i < num_pairs; i++) {
                 RegisterFragmentPair(ply_files, fragment_matching_results[i].s_,
@@ -640,16 +642,18 @@ private:
         }
 
         if (config_["multi_threading"].asBool()) {
-            tbb::parallel_for(tbb::blocked_range<std::size_t>(0,
-                    fragment_matching_results.size()),
-                    [&](const tbb::blocked_range<std::size_t>& range){
-                for (std::size_t i = range.begin(); i < range.end(); ++i) {
-                    const int s = fragment_matching_results[i].s_;
-                    const int t = fragment_matching_results[i].t_;
-                    RefineFragmentPair(ply_files, s, t,
-                                       fragment_matching_results[i]);
-                }
-            });
+            tbb::parallel_for(
+                    tbb::blocked_range<std::size_t>(
+                            0, fragment_matching_results.size()),
+                    [&](const tbb::blocked_range<std::size_t>& range) {
+                        for (std::size_t i = range.begin(); i < range.end();
+                             ++i) {
+                            const int s = fragment_matching_results[i].s_;
+                            const int t = fragment_matching_results[i].t_;
+                            RefineFragmentPair(ply_files, s, t,
+                                               fragment_matching_results[i]);
+                        }
+                    });
         } else {
             for (size_t i = 0; i < fragment_matching_results.size(); i++) {
                 const int s = fragment_matching_results[i].s_;
@@ -748,23 +752,32 @@ private:
                              const std::vector<std::string>& depth_files_,
                              const camera::PinholeCameraIntrinsic& intrinsic_,
                              const PoseGraphT& pose_graph_)
-                : pipeline(pipeline_), fragment_id(fragment_id_),
-              color_files(color_files_), depth_files(depth_files_),
-              intrinsic(intrinsic_), pose_graph(pose_graph_) {}
+            : pipeline(pipeline_),
+              fragment_id(fragment_id_),
+              color_files(color_files_),
+              depth_files(depth_files_),
+              intrinsic(intrinsic_),
+              pose_graph(pose_graph_) {}
 
         PointCloudIntegrator(PointCloudIntegrator& o, tbb::split)
-                : pipeline(o.pipeline), fragment_id(o.fragment_id),
-              color_files(o.color_files), depth_files(o.depth_files),
-              intrinsic(o.intrinsic), pose_graph(o.pose_graph) {}
+            : pipeline(o.pipeline),
+              fragment_id(o.fragment_id),
+              color_files(o.color_files),
+              depth_files(o.depth_files),
+              intrinsic(o.intrinsic),
+              pose_graph(o.pose_graph) {}
 
         void operator()(const tbb::blocked_range<std::size_t>& range) {
             for (std::size_t i = range.begin(); i < range.end(); ++i) {
-                const int i_abs = fragment_id *
-                    pipeline.config_["n_frames_per_fragment"].asInt() + i;
-                utility::LogInfo("Fragment {:03d} / {:03d} :: "
+                const int i_abs =
+                        fragment_id * pipeline.config_["n_frames_per_fragment"]
+                                              .asInt() +
+                        i;
+                utility::LogInfo(
+                        "Fragment {:03d} / {:03d} :: "
                         "Integrate rgbd frame {:d} ({:d} of {:d}).",
-                        fragment_id, pipeline.n_fragments_ - 1, i_abs,
-                        i + 1, pose_graph.nodes_.size());
+                        fragment_id, pipeline.n_fragments_ - 1, i_abs, i + 1,
+                        pose_graph.nodes_.size());
                 const geometry::RGBDImage rgbd = pipeline.ReadRGBDImage(
                         color_files[i_abs], depth_files[i_abs], false);
                 auto pcd = geometry::PointCloud::CreateFromRGBDImage(
@@ -773,9 +786,7 @@ private:
             }
         }
 
-        void join(PointCloudIntegrator& rhs) {
-            fragment += rhs.fragment;
-        }
+        void join(PointCloudIntegrator& rhs) { fragment += rhs.fragment; }
     };
 
     void IntegrateFragmentRGBD(
@@ -784,16 +795,15 @@ private:
             const std::vector<std::string>& depth_files,
             const camera::PinholeCameraIntrinsic& intrinsic,
             const pipelines::registration::PoseGraph& pose_graph) {
-
         const size_t graph_num = pose_graph.nodes_.size();
         PointCloudIntegrator reducer(*this, fragment_id, color_files,
                                      depth_files, intrinsic, pose_graph);
-        tbb::parallel_reduce(tbb::blocked_range<std::size_t>(
-                0, graph_num), reducer);
+        tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0, graph_num),
+                             reducer);
 
         const geometry::PointCloud fragment_down =
                 *reducer.fragment.VoxelDownSample(
-                    config_["tsdf_cubic_size"].asDouble() / 512.0);
+                        config_["tsdf_cubic_size"].asDouble() / 512.0);
         io::WritePointCloud(
                 utility::filesystem::JoinPath(
                         config_["path_dataset"].asString(),

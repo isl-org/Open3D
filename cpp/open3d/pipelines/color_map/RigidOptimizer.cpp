@@ -7,10 +7,10 @@
 
 #include "open3d/pipelines/color_map/RigidOptimizer.h"
 
+#include <tbb/parallel_for.h>
+
 #include <memory>
 #include <vector>
-
-#include <tbb/parallel_for.h>
 
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
@@ -77,7 +77,8 @@ inline void atomic_sum(std::atomic<double>& total, const double& val) {
     total.fetch_add(val);
 #else
     double expected = total;
-    while(!total.compare_exchange_weak(expected, expected + val));
+    while (!total.compare_exchange_weak(expected, expected + val))
+        ;
 #endif
 }
 
@@ -157,46 +158,50 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         std::atomic<double> residual = 0.0;
         total_num_ = 0;
-        tbb::parallel_for(tbb::blocked_range<int>(0, n_camera, 1),
+        tbb::parallel_for(
+                tbb::blocked_range<int>(0, n_camera, 1),
                 [&](const tbb::blocked_range<int>& range) {
-            for (int c = range.begin(); c < range.end(); ++c) {
-                Eigen::Matrix4d pose;
-                pose = opt_camera_trajectory.parameters_[c].extrinsic_;
+                    for (int c = range.begin(); c < range.end(); ++c) {
+                        Eigen::Matrix4d pose;
+                        pose = opt_camera_trajectory.parameters_[c].extrinsic_;
 
-                auto intrinsic = opt_camera_trajectory.
-                                 parameters_[c].intrinsic_.intrinsic_matrix_;
-                auto extrinsic = opt_camera_trajectory.
-                                 parameters_[c].extrinsic_;
-                Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
-                intr.block<3, 3>(0, 0) = intrinsic;
-                intr(3, 3) = 1.0;
+                        auto intrinsic = opt_camera_trajectory.parameters_[c]
+                                                 .intrinsic_.intrinsic_matrix_;
+                        auto extrinsic =
+                                opt_camera_trajectory.parameters_[c].extrinsic_;
+                        Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
+                        intr.block<3, 3>(0, 0) = intrinsic;
+                        intr(3, 3) = 1.0;
 
-                auto f_lambda = [&](int i, Eigen::Vector6d& J_r,
-                                    double& r, double& w) {
-                    w = 1.0;  // Dummy.
-                    ComputeJacobianAndResidualRigid(
-                            i, J_r, r, w, opt_mesh, proxy_intensity,
-                            images_gray[c], images_dx[c], images_dy[c], intr,
-                            extrinsic, visibility_image_to_vertex[c],
-                            option.image_boundary_margin_);
-                };
-                Eigen::Matrix6d JTJ;
-                Eigen::Vector6d JTr;
-                double r2;
-                std::tie(JTJ, JTr, r2) = utility::ComputeJTJandJTr<
-                        Eigen::Matrix6d, Eigen::Vector6d>(f_lambda,
-                            int(visibility_image_to_vertex[c].size()), false);
+                        auto f_lambda = [&](int i, Eigen::Vector6d& J_r,
+                                            double& r, double& w) {
+                            w = 1.0;  // Dummy.
+                            ComputeJacobianAndResidualRigid(
+                                    i, J_r, r, w, opt_mesh, proxy_intensity,
+                                    images_gray[c], images_dx[c], images_dy[c],
+                                    intr, extrinsic,
+                                    visibility_image_to_vertex[c],
+                                    option.image_boundary_margin_);
+                        };
+                        Eigen::Matrix6d JTJ;
+                        Eigen::Vector6d JTr;
+                        double r2;
+                        std::tie(JTJ, JTr, r2) = utility::ComputeJTJandJTr<
+                                Eigen::Matrix6d, Eigen::Vector6d>(
+                                f_lambda,
+                                int(visibility_image_to_vertex[c].size()),
+                                false);
 
-                Eigen::Matrix4d delta;
-                std::tie(std::ignore, delta) =
-                        utility::SolveJacobianSystemAndObtainExtrinsicMatrix(
-                                JTJ, JTr);
-                pose = delta * pose;
-                opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
-                atomic_sum(residual, r2);
-                total_num_ += int(visibility_image_to_vertex[c].size());
-            }
-        });
+                        Eigen::Matrix4d delta;
+                        std::tie(std::ignore, delta) = utility::
+                                SolveJacobianSystemAndObtainExtrinsicMatrix(
+                                        JTJ, JTr);
+                        pose = delta * pose;
+                        opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
+                        atomic_sum(residual, r2);
+                        total_num_ += int(visibility_image_to_vertex[c].size());
+                    }
+                });
         if (total_num_ > 0) {
             utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})",
                               residual, residual / total_num_);

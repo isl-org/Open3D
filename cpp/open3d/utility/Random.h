@@ -8,6 +8,7 @@
 #pragma once
 
 #include <tbb/spin_mutex.h>
+
 #include <random>
 
 #include "open3d/utility/Logging.h"

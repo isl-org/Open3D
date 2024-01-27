@@ -5,10 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/kernel/PointCloudImpl.h"
-
-#include <tbb/spin_mutex.h>
 #include <tbb/parallel_for.h>
+#include <tbb/spin_mutex.h>
+
+#include "open3d/t/geometry/kernel/PointCloudImpl.h"
 
 namespace open3d {
 namespace t {
@@ -42,43 +42,49 @@ void ProjectCPU(
     }
 
     tbb::spin_mutex mtx;
-    core::ParallelFor(core::Device("CPU:0"), points.GetLength(),
+    core::ParallelFor(
+            core::Device("CPU:0"), points.GetLength(),
             [&](int64_t workload_idx) {
-        float x = points_ptr[3 * workload_idx + 0];
-        float y = points_ptr[3 * workload_idx + 1];
-        float z = points_ptr[3 * workload_idx + 2];
+                float x = points_ptr[3 * workload_idx + 0];
+                float y = points_ptr[3 * workload_idx + 1];
+                float z = points_ptr[3 * workload_idx + 2];
 
-        // coordinate in camera (in voxel -> in meter)
-        float xc, yc, zc, u, v;
-        transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
+                // coordinate in camera (in voxel -> in meter)
+                float xc, yc, zc, u, v;
+                transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
 
-        // coordinate in image (in pixel)
-        transform_indexer.Project(xc, yc, zc, &u, &v);
-        u = round(u);
-        v = round(v);
-        if (!depth_indexer.InBoundary(u, v) || zc <= 0 || zc > depth_max) {
-            return;
-        }
-
-        float* depth_ptr = depth_indexer.GetDataPtr<float>(
-                static_cast<int64_t>(u), static_cast<int64_t>(v));
-        float d = zc * depth_scale;
-        {
-            tbb::spin_mutex::scoped_lock lock(mtx);
-            if (*depth_ptr == 0 || *depth_ptr >= d) {
-                *depth_ptr = d;
-
-                if (has_colors) {
-                    float* color_ptr = color_indexer.GetDataPtr<float>(
-                            static_cast<int64_t>(u), static_cast<int64_t>(v));
-
-                    color_ptr[0] = point_colors_ptr[3 * workload_idx + 0];
-                    color_ptr[1] = point_colors_ptr[3 * workload_idx + 1];
-                    color_ptr[2] = point_colors_ptr[3 * workload_idx + 2];
+                // coordinate in image (in pixel)
+                transform_indexer.Project(xc, yc, zc, &u, &v);
+                u = round(u);
+                v = round(v);
+                if (!depth_indexer.InBoundary(u, v) || zc <= 0 ||
+                    zc > depth_max) {
+                    return;
                 }
-            }
-        }
-    });
+
+                float* depth_ptr = depth_indexer.GetDataPtr<float>(
+                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                float d = zc * depth_scale;
+                {
+                    tbb::spin_mutex::scoped_lock lock(mtx);
+                    if (*depth_ptr == 0 || *depth_ptr >= d) {
+                        *depth_ptr = d;
+
+                        if (has_colors) {
+                            float* color_ptr = color_indexer.GetDataPtr<float>(
+                                    static_cast<int64_t>(u),
+                                    static_cast<int64_t>(v));
+
+                            color_ptr[0] =
+                                    point_colors_ptr[3 * workload_idx + 0];
+                            color_ptr[1] =
+                                    point_colors_ptr[3 * workload_idx + 1];
+                            color_ptr[2] =
+                                    point_colors_ptr[3 * workload_idx + 2];
+                        }
+                    }
+                }
+            });
 }
 
 }  // namespace pointcloud

@@ -7,12 +7,12 @@
 
 #include "open3d/pipelines/color_map/NonRigidOptimizer.h"
 
-#include <memory>
-#include <vector>
-
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
+
+#include <memory>
+#include <vector>
 
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/ImageWarpingFieldIO.h"
@@ -47,12 +47,14 @@ static std::vector<ImageWarpingField> CreateWarpingFields(
     return fields;
 }
 
-template <typename MatOutType, typename VecOutType,
-          typename VecInTypeDouble, typename VecInTypeInt>
+template <typename MatOutType,
+          typename VecOutType,
+          typename VecInTypeDouble,
+          typename VecInTypeInt>
 struct JTJandJTrNonRigidReducer {
     // Global Data
-    using FuncType = std::function<void(int,
-        VecInTypeDouble&, double&, VecInTypeInt&)>;
+    using FuncType =
+            std::function<void(int, VecInTypeDouble&, double&, VecInTypeInt&)>;
     FuncType& f;
     // Local Data
     MatOutType JTJ;
@@ -60,11 +62,13 @@ struct JTJandJTrNonRigidReducer {
     double r2_sum = 0.0;
 
     JTJandJTrNonRigidReducer(FuncType& f_, int nonrigidval)
-            : f(f_), JTJ(MatOutType::Zero(6 + nonrigidval, 6 + nonrigidval)),
-            JTr(VecOutType::Zero(6 + nonrigidval)) {};
+        : f(f_),
+          JTJ(MatOutType::Zero(6 + nonrigidval, 6 + nonrigidval)),
+          JTr(VecOutType::Zero(6 + nonrigidval)){};
 
     JTJandJTrNonRigidReducer(JTJandJTrNonRigidReducer& o, tbb::split)
-            : f(o.f), JTJ(MatOutType::Zero(o.JTJ.rows(), o.JTJ.cols())),
+        : f(o.f),
+          JTJ(MatOutType::Zero(o.JTJ.rows(), o.JTJ.cols())),
           JTr(VecOutType::Zero(o.JTr.rows(), o.JTr.cols())) {}
 
     void operator()(const tbb::blocked_range<int>& range) {
@@ -112,13 +116,17 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
         int nonrigidval,
         bool verbose /*=true*/) {
     JTJandJTrNonRigidReducer<MatOutType, VecOutType, VecInTypeDouble,
-            VecInTypeInt> reducer(f, nonrigidval);
-    tbb::parallel_reduce(tbb::blocked_range<int>(0, iteration_num,
-        utility::DefaultGrainSizeTBB()), reducer);
+                             VecInTypeInt>
+            reducer(f, nonrigidval);
+    tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, iteration_num,
+                                    utility::DefaultGrainSizeTBB()),
+            reducer);
     auto out = std::move(reducer).as_tuple();
     if (verbose) {
         utility::LogDebug("Residual : {:.2e} (# of elements : {:d})",
-            std::get<2>(out) / (double)iteration_num, iteration_num);
+                          std::get<2>(out) / (double)iteration_num,
+                          iteration_num);
     }
     return out;
 }
@@ -228,7 +236,8 @@ inline void atomic_sum(std::atomic<double>& total, const double& val) {
     total.fetch_add(val);
 #else
     double expected = total;
-    while(!total.compare_exchange_weak(expected, expected + val));
+    while (!total.compare_exchange_weak(expected, expected + val))
+        ;
 #endif
 }
 
@@ -316,72 +325,81 @@ RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         std::atomic<double> residual = 0.0;
         std::atomic<double> residual_reg = 0.0;
-        tbb::parallel_for(tbb::blocked_range<int>(0, n_camera, 1),
+        tbb::parallel_for(
+                tbb::blocked_range<int>(0, n_camera, 1),
                 [&](const tbb::blocked_range<int>& range) {
-            for (int c = range.begin(); c < range.end(); ++c) {
-                int nonrigidval = warping_fields[c].anchor_w_ *
-                                  warping_fields[c].anchor_h_ * 2;
-                double rr_reg = 0.0;
+                    for (int c = range.begin(); c < range.end(); ++c) {
+                        int nonrigidval = warping_fields[c].anchor_w_ *
+                                          warping_fields[c].anchor_h_ * 2;
+                        double rr_reg = 0.0;
 
-                Eigen::Matrix4d pose;
-                pose = opt_camera_trajectory.parameters_[c].extrinsic_;
+                        Eigen::Matrix4d pose;
+                        pose = opt_camera_trajectory.parameters_[c].extrinsic_;
 
-                auto intrinsic = opt_camera_trajectory.parameters_[c]
-                                         .intrinsic_.intrinsic_matrix_;
-                auto extrinsic = opt_camera_trajectory.
-                                 parameters_[c].extrinsic_;
-                Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
-                intr.block<3, 3>(0, 0) = intrinsic;
-                intr(3, 3) = 1.0;
+                        auto intrinsic = opt_camera_trajectory.parameters_[c]
+                                                 .intrinsic_.intrinsic_matrix_;
+                        auto extrinsic =
+                                opt_camera_trajectory.parameters_[c].extrinsic_;
+                        Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
+                        intr.block<3, 3>(0, 0) = intrinsic;
+                        intr(3, 3) = 1.0;
 
-                auto f_lambda = [&](int i, Eigen::Vector14d& J_r, double& r,
-                                    Eigen::Vector14i& pattern) {
-                    ComputeJacobianAndResidualNonRigid(
-                            i, J_r, r, pattern, opt_mesh, proxy_intensity,
-                            images_gray[c], images_dx[c], images_dy[c],
-                            warping_fields[c], intr, extrinsic,
-                            visibility_image_to_vertex[c],
-                            option.image_boundary_margin_);
-                };
-                Eigen::MatrixXd JTJ;
-                Eigen::VectorXd JTr;
-                double r2;
-                std::tie(JTJ, JTr, r2) =
-                        ComputeJTJandJTrNonRigid<Eigen::Vector14d, Eigen::Vector14i,
-                                                 Eigen::MatrixXd, Eigen::VectorXd>(
-                                f_lambda, int(visibility_image_to_vertex[c].size()),
+                        auto f_lambda = [&](int i, Eigen::Vector14d& J_r,
+                                            double& r,
+                                            Eigen::Vector14i& pattern) {
+                            ComputeJacobianAndResidualNonRigid(
+                                    i, J_r, r, pattern, opt_mesh,
+                                    proxy_intensity, images_gray[c],
+                                    images_dx[c], images_dy[c],
+                                    warping_fields[c], intr, extrinsic,
+                                    visibility_image_to_vertex[c],
+                                    option.image_boundary_margin_);
+                        };
+                        Eigen::MatrixXd JTJ;
+                        Eigen::VectorXd JTr;
+                        double r2;
+                        std::tie(JTJ, JTr, r2) = ComputeJTJandJTrNonRigid<
+                                Eigen::Vector14d, Eigen::Vector14i,
+                                Eigen::MatrixXd, Eigen::VectorXd>(
+                                f_lambda,
+                                int(visibility_image_to_vertex[c].size()),
                                 nonrigidval, false);
 
-                double weight = option.non_rigid_anchor_point_weight_ *
-                                visibility_image_to_vertex[c].size() / n_vertex;
-                for (int j = 0; j < nonrigidval; j++) {
-                    double r = weight * (warping_fields[c].flow_(j) -
-                                         warping_fields_init[c].flow_(j));
-                    JTJ(6 + j, 6 + j) += weight * weight;
-                    JTr(6 + j) += weight * r;
-                    rr_reg += r * r;
-                }
+                        double weight = option.non_rigid_anchor_point_weight_ *
+                                        visibility_image_to_vertex[c].size() /
+                                        n_vertex;
+                        for (int j = 0; j < nonrigidval; j++) {
+                            double r =
+                                    weight * (warping_fields[c].flow_(j) -
+                                              warping_fields_init[c].flow_(j));
+                            JTJ(6 + j, 6 + j) += weight * weight;
+                            JTr(6 + j) += weight * r;
+                            rr_reg += r * r;
+                        }
 
-                bool success;
-                Eigen::VectorXd result;
-                std::tie(success, result) = utility::SolveLinearSystemPSD(
-                        JTJ, -JTr, /*prefer_sparse=*/false,
-                        /*check_symmetric=*/false,
-                        /*check_det=*/false, /*check_psd=*/false);
-                Eigen::Vector6d result_pose;
-                result_pose << result.block(0, 0, 6, 1);
-                auto delta = utility::TransformVector6dToMatrix4d(result_pose);
-                pose = delta * pose;
+                        bool success;
+                        Eigen::VectorXd result;
+                        std::tie(success, result) =
+                                utility::SolveLinearSystemPSD(
+                                        JTJ, -JTr, /*prefer_sparse=*/false,
+                                        /*check_symmetric=*/false,
+                                        /*check_det=*/false,
+                                        /*check_psd=*/false);
+                        Eigen::Vector6d result_pose;
+                        result_pose << result.block(0, 0, 6, 1);
+                        auto delta = utility::TransformVector6dToMatrix4d(
+                                result_pose);
+                        pose = delta * pose;
 
-                for (int j = 0; j < nonrigidval; j++) {
-                    warping_fields[c].flow_(j) += result(6 + j);
-                }
-                opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
+                        for (int j = 0; j < nonrigidval; j++) {
+                            warping_fields[c].flow_(j) += result(6 + j);
+                        }
+                        opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
 
-                atomic_sum(residual, r2);
-                atomic_sum(residual_reg, rr_reg);
-            }
-        });
+                        atomic_sum(residual, r2);
+                        atomic_sum(residual_reg, rr_reg);
+                    }
+                });
         utility::LogDebug("Residual error : {:.6f}, reg : {:.6f}", residual,
                           residual_reg);
         SetProxyIntensityForVertex(opt_mesh, images_gray, warping_fields,

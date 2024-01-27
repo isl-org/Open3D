@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/parallel_for.h>
+#include <tbb/spin_mutex.h>
+
 #include <Eigen/Dense>
 #include <unordered_set>
-
-#include <tbb/spin_mutex.h>
-#include <tbb/parallel_for.h>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
@@ -27,22 +27,23 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
 
     // Precompute all neighbors.
     utility::LogDebug("Precompute neighbors.");
-    utility::ProgressBar progress_bar(points_.size(),
-            "Precompute neighbors.", print_progress);
+    utility::ProgressBar progress_bar(points_.size(), "Precompute neighbors.",
+                                      print_progress);
     std::vector<std::vector<int>> nbs(points_.size());
 
     tbb::spin_mutex mtx;
     tbb::profiling::set_name(mtx, "ClusterDBSCAN");
-    tbb::parallel_for(tbb::blocked_range<std::size_t>(
-            0, points_.size(), utility::DefaultGrainSizeTBB()),
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, points_.size(),
+                                            utility::DefaultGrainSizeTBB()),
             [&](const tbb::blocked_range<std::size_t>& range) {
-        for (std::size_t i = range.begin(); i < range.end(); ++i) {
-            std::vector<double> dists2;
-            kdtree.SearchRadius(points_[i], eps, nbs[i], dists2);
-        }
-        tbb::spin_mutex::scoped_lock lock(mtx);
-        progress_bar += (range.end() - range.begin());
-    });
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    std::vector<double> dists2;
+                    kdtree.SearchRadius(points_[i], eps, nbs[i], dists2);
+                }
+                tbb::spin_mutex::scoped_lock lock(mtx);
+                progress_bar += (range.end() - range.begin());
+            });
 
     utility::LogDebug("Done Precompute neighbors.");
 

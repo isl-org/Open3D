@@ -81,17 +81,13 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
         return;
     }
 
-//    #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-//    for (int64_t i = 0; i < n; ++i) {
-//        func(i);
-//    }
-
     tbb::parallel_for(tbb::blocked_range<int64_t>(0, n, 32),
-            [&func](const tbb::blocked_range<int64_t>& range){
-        for (int64_t i = range.begin(); i < range.end(); ++i) {
-            func(i);
-        }
-    });
+                      [&func](const tbb::blocked_range<int64_t>& range) {
+                          for (int64_t i = range.begin(); i < range.end();
+                               ++i) {
+                              func(i);
+                          }
+                      });
 }
 
 #endif

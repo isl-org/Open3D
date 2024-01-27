@@ -157,7 +157,7 @@ struct JTJandJTrReduceBodyHelper {
     VecType JTr = VecType::Zero();
     double r2_sum = 0.0;
 
-    void join(const JTJandJTrReduceBodyHelper& rhs) {
+    void join(const JTJandJTrReduceBodyHelper &rhs) {
         JTJ += rhs.JTJ;
         JTr += rhs.JTr;
         r2_sum += rhs.r2_sum;
@@ -173,24 +173,24 @@ struct JTJandJTrReduceBody;
 
 // Code specific to the single valued reduction
 template <typename MatType, typename VecType>
-struct JTJandJTrReduceBody<MatType, VecType, false>: public
-        JTJandJTrReduceBodyHelper<MatType, VecType> {
-    using FuncType = std::function<void(int, VecType&, double&, double&)>;
+struct JTJandJTrReduceBody<MatType, VecType, false>
+    : public JTJandJTrReduceBodyHelper<MatType, VecType> {
+    using FuncType = std::function<void(int, VecType &, double &, double &)>;
     // Global data
-    FuncType& f;
+    FuncType &f;
 
     // Local data
     VecType J_r = VecType::Zero();
     double r = 0.0;
     double w = 0.0;
 
-    JTJandJTrReduceBody(FuncType& f_)
+    JTJandJTrReduceBody(FuncType &f_)
         : JTJandJTrReduceBodyHelper<MatType, VecType>(), f(f_) {}
 
-    JTJandJTrReduceBody(JTJandJTrReduceBody& other, tbb::split sp)
+    JTJandJTrReduceBody(JTJandJTrReduceBody &other, tbb::split sp)
         : JTJandJTrReduceBodyHelper<MatType, VecType>(), f(other.f) {}
 
-    void operator()(const tbb::blocked_range<int>& range) {
+    void operator()(const tbb::blocked_range<int> &range) {
         for (int i = range.begin(); i < range.end(); ++i) {
             f(i, J_r, r, w);
             this->JTJ.noalias() += J_r * w * J_r.transpose();
@@ -198,7 +198,6 @@ struct JTJandJTrReduceBody<MatType, VecType, false>: public
             this->r2_sum += r * r;
         }
     }
-
 };
 
 template <typename MatType, typename VecType>
@@ -207,8 +206,10 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         int iteration_num,
         bool verbose /*=true*/) {
     JTJandJTrReduceBody<MatType, VecType, false> reducer(f);
-    tbb::parallel_reduce(tbb::blocked_range<int>(0, iteration_num,
-            utility::DefaultGrainSizeTBB()), reducer);
+    tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, iteration_num,
+                                    utility::DefaultGrainSizeTBB()),
+            reducer);
     std::tuple<MatType, VecType, double> result = std::move(reducer).as_tuple();
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
@@ -219,28 +220,36 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
 
 // Code specific to the vector valued reduction
 template <typename MatType, typename VecType>
-struct JTJandJTrReduceBody<MatType, VecType, true>: public
-        JTJandJTrReduceBodyHelper<MatType, VecType> {
-    using FuncType = std::function<void(int,
-        std::vector<VecType, Eigen::aligned_allocator<VecType>>&,
-        std::vector<double>&, std::vector<double>&)>;
+struct JTJandJTrReduceBody<MatType, VecType, true>
+    : public JTJandJTrReduceBodyHelper<MatType, VecType> {
+    using FuncType = std::function<void(
+            int,
+            std::vector<VecType, Eigen::aligned_allocator<VecType>> &,
+            std::vector<double> &,
+            std::vector<double> &)>;
     // Global data
-    FuncType& f;
+    FuncType &f;
 
     // Local data
     std::vector<VecType, Eigen::aligned_allocator<VecType>> J_r;
     std::vector<double> r;
     std::vector<double> w;
 
-    JTJandJTrReduceBody(FuncType& f_)
+    JTJandJTrReduceBody(FuncType &f_)
         : JTJandJTrReduceBodyHelper<MatType, VecType>(),
-                f(f_), J_r(), r(), w() {}
+          f(f_),
+          J_r(),
+          r(),
+          w() {}
 
-    JTJandJTrReduceBody(JTJandJTrReduceBody& other, tbb::split sp)
+    JTJandJTrReduceBody(JTJandJTrReduceBody &other, tbb::split sp)
         : JTJandJTrReduceBodyHelper<MatType, VecType>(),
-                f(other.f), J_r(), r(), w() {}
+          f(other.f),
+          J_r(),
+          r(),
+          w() {}
 
-    void operator()(const tbb::blocked_range<int>& range) {
+    void operator()(const tbb::blocked_range<int> &range) {
         for (int i = range.begin(); i < range.end(); ++i) {
             f(i, J_r, r, w);
             for (int j = 0; j < (int)r.size(); j++) {
@@ -250,7 +259,6 @@ struct JTJandJTrReduceBody<MatType, VecType, true>: public
             }
         }
     }
-
 };
 
 template <typename MatType, typename VecType>
@@ -263,8 +271,10 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         int iteration_num,
         bool verbose /*=true*/) {
     JTJandJTrReduceBody<MatType, VecType, true> reducer(f);
-    tbb::parallel_reduce(tbb::blocked_range<int>(0, iteration_num,
-            utility::DefaultGrainSizeTBB()), reducer);
+    tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, iteration_num,
+                                    utility::DefaultGrainSizeTBB()),
+            reducer);
     std::tuple<MatType, VecType, double> result = std::move(reducer).as_tuple();
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",

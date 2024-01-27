@@ -49,40 +49,40 @@ void ComputeOdometryInformationMatrixCPU(const core::Tensor& source_vertex_map,
     A_1x21 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_21,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
-        for (int workload_idx = r.begin(); workload_idx < r.end();
-             workload_idx++) {
-            int y = workload_idx / cols;
-            int x = workload_idx % cols;
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     workload_idx++) {
+                    int y = workload_idx / cols;
+                    int x = workload_idx % cols;
 
-            float J_x[6], J_y[6], J_z[6];
-            float rx, ry, rz;
+                    float J_x[6], J_y[6], J_z[6];
+                    float rx, ry, rz;
 
-            bool valid = GetJacobianPointToPoint(
-                    x, y, square_dist_thr, source_vertex_indexer,
-                    target_vertex_indexer, ti, J_x, J_y, J_z, rx, ry,
-                    rz);
+                    bool valid = GetJacobianPointToPoint(
+                            x, y, square_dist_thr, source_vertex_indexer,
+                            target_vertex_indexer, ti, J_x, J_y, J_z, rx, ry,
+                            rz);
 
-            if (valid) {
-                for (int i = 0, j = 0; j < 6; j++) {
-                    for (int k = 0; k <= j; k++) {
-                        A_reduction[i] += J_x[j] * J_x[k];
-                        A_reduction[i] += J_y[j] * J_y[k];
-                        A_reduction[i] += J_z[j] * J_z[k];
-                        i++;
+                    if (valid) {
+                        for (int i = 0, j = 0; j < 6; j++) {
+                            for (int k = 0; k <= j; k++) {
+                                A_reduction[i] += J_x[j] * J_x[k];
+                                A_reduction[i] += J_y[j] * J_y[k];
+                                A_reduction[i] += J_z[j] * J_z[k];
+                                i++;
+                            }
+                        }
                     }
                 }
-            }
-        }
-        return A_reduction;
-    },
-    // TBB: Defining reduction operation.
-    [&](std::vector<float> a, std::vector<float> b) {
-        std::vector<float> result(21);
-        for (int j = 0; j < 21; j++) {
-            result[j] = a[j] + b[j];
-        }
-        return result;
-    });
+                return A_reduction;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<float> a, std::vector<float> b) {
+                std::vector<float> result(21);
+                for (int j = 0; j < 21; j++) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
     core::Tensor A_reduction_tensor(A_1x21, {21}, core::Float32, device);
     float* reduction_ptr = A_reduction_tensor.GetDataPtr<float>();
 
@@ -141,47 +141,47 @@ void ComputeOdometryResultIntensityCPU(
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
-        for (int workload_idx = r.begin(); workload_idx < r.end();
-             workload_idx++) {
-            int y = workload_idx / cols;
-            int x = workload_idx % cols;
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     workload_idx++) {
+                    int y = workload_idx / cols;
+                    int x = workload_idx % cols;
 
-            float J_I[6];
-            float r_I;
+                    float J_I[6];
+                    float r_I;
 
-            bool valid = GetJacobianIntensity(
-                    x, y, depth_outlier_trunc, source_depth_indexer,
-                    target_depth_indexer, source_intensity_indexer,
-                    target_intensity_indexer,
-                    target_intensity_dx_indexer,
-                    target_intensity_dy_indexer, source_vertex_indexer,
-                    ti, J_I, r_I);
+                    bool valid = GetJacobianIntensity(
+                            x, y, depth_outlier_trunc, source_depth_indexer,
+                            target_depth_indexer, source_intensity_indexer,
+                            target_intensity_indexer,
+                            target_intensity_dx_indexer,
+                            target_intensity_dy_indexer, source_vertex_indexer,
+                            ti, J_I, r_I);
 
-            if (valid) {
-                float d_huber = HuberDeriv(r_I, intensity_huber_delta);
-                float r_huber = HuberLoss(r_I, intensity_huber_delta);
+                    if (valid) {
+                        float d_huber = HuberDeriv(r_I, intensity_huber_delta);
+                        float r_huber = HuberLoss(r_I, intensity_huber_delta);
 
-                for (int i = 0, j = 0; j < 6; j++) {
-                    for (int k = 0; k <= j; k++) {
-                        A_reduction[i] += J_I[j] * J_I[k];
-                        i++;
+                        for (int i = 0, j = 0; j < 6; j++) {
+                            for (int k = 0; k <= j; k++) {
+                                A_reduction[i] += J_I[j] * J_I[k];
+                                i++;
+                            }
+                            A_reduction[21 + j] += J_I[j] * d_huber;
+                        }
+                        A_reduction[27] += r_huber;
+                        A_reduction[28] += 1;
                     }
-                    A_reduction[21 + j] += J_I[j] * d_huber;
                 }
-                A_reduction[27] += r_huber;
-                A_reduction[28] += 1;
-            }
-        }
-        return A_reduction;
-    },
-    // TBB: Defining reduction operation.
-    [&](std::vector<float> a, std::vector<float> b) {
-        std::vector<float> result(29);
-        for (int j = 0; j < 29; j++) {
-            result[j] = a[j] + b[j];
-        }
-        return result;
-    });
+                return A_reduction;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<float> a, std::vector<float> b) {
+                std::vector<float> result(29);
+                for (int j = 0; j < 29; j++) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
 
     core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
@@ -234,54 +234,54 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
-        for (int workload_idx = r.begin(); workload_idx < r.end();
-             workload_idx++) {
-            int y = workload_idx / cols;
-            int x = workload_idx % cols;
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     workload_idx++) {
+                    int y = workload_idx / cols;
+                    int x = workload_idx % cols;
 
-            float J_I[6], J_D[6];
-            float r_I, r_D;
+                    float J_I[6], J_D[6];
+                    float r_I, r_D;
 
-            bool valid = GetJacobianHybrid(
-                    x, y, depth_outlier_trunc, source_depth_indexer,
-                    target_depth_indexer, source_intensity_indexer,
-                    target_intensity_indexer, target_depth_dx_indexer,
-                    target_depth_dy_indexer,
-                    target_intensity_dx_indexer,
-                    target_intensity_dy_indexer, source_vertex_indexer,
-                    ti, J_I, J_D, r_I, r_D);
+                    bool valid = GetJacobianHybrid(
+                            x, y, depth_outlier_trunc, source_depth_indexer,
+                            target_depth_indexer, source_intensity_indexer,
+                            target_intensity_indexer, target_depth_dx_indexer,
+                            target_depth_dy_indexer,
+                            target_intensity_dx_indexer,
+                            target_intensity_dy_indexer, source_vertex_indexer,
+                            ti, J_I, J_D, r_I, r_D);
 
-            if (valid) {
-                float d_huber_I =
-                        HuberDeriv(r_I, intensity_huber_delta);
-                float d_huber_D = HuberDeriv(r_D, depth_huber_delta);
+                    if (valid) {
+                        float d_huber_I =
+                                HuberDeriv(r_I, intensity_huber_delta);
+                        float d_huber_D = HuberDeriv(r_D, depth_huber_delta);
 
-                float r_huber_I = HuberLoss(r_I, intensity_huber_delta);
-                float r_huber_D = HuberLoss(r_D, depth_huber_delta);
+                        float r_huber_I = HuberLoss(r_I, intensity_huber_delta);
+                        float r_huber_D = HuberLoss(r_D, depth_huber_delta);
 
-                for (int i = 0, j = 0; j < 6; j++) {
-                    for (int k = 0; k <= j; k++) {
-                        A_reduction[i] +=
-                                J_I[j] * J_I[k] + J_D[j] * J_D[k];
-                        i++;
+                        for (int i = 0, j = 0; j < 6; j++) {
+                            for (int k = 0; k <= j; k++) {
+                                A_reduction[i] +=
+                                        J_I[j] * J_I[k] + J_D[j] * J_D[k];
+                                i++;
+                            }
+                            A_reduction[21 + j] +=
+                                    J_I[j] * d_huber_I + J_D[j] * d_huber_D;
+                        }
+                        A_reduction[27] += r_huber_I + r_huber_D;
+                        A_reduction[28] += 1;
                     }
-                    A_reduction[21 + j] +=
-                            J_I[j] * d_huber_I + J_D[j] * d_huber_D;
                 }
-                A_reduction[27] += r_huber_I + r_huber_D;
-                A_reduction[28] += 1;
-            }
-        }
-        return A_reduction;
-    },
-    // TBB: Defining reduction operation.
-    [&](std::vector<float> a, std::vector<float> b) {
-        std::vector<float> result(29);
-        for (int j = 0; j < 29; j++) {
-            result[j] = a[j] + b[j];
-        }
-        return result;
-    });
+                return A_reduction;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<float> a, std::vector<float> b) {
+                std::vector<float> result(29);
+                for (int j = 0; j < 29; j++) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
     core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
@@ -318,43 +318,43 @@ void ComputeOdometryResultPointToPlaneCPU(
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
-        for (int workload_idx = r.begin(); workload_idx < r.end();
-             workload_idx++) {
-            int y = workload_idx / cols;
-            int x = workload_idx % cols;
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     workload_idx++) {
+                    int y = workload_idx / cols;
+                    int x = workload_idx % cols;
 
-            float J_ij[6];
-            float r;
+                    float J_ij[6];
+                    float r;
 
-            bool valid = GetJacobianPointToPlane(
-                    x, y, depth_outlier_trunc, source_vertex_indexer,
-                    target_vertex_indexer, target_normal_indexer, ti,
-                    J_ij, r);
+                    bool valid = GetJacobianPointToPlane(
+                            x, y, depth_outlier_trunc, source_vertex_indexer,
+                            target_vertex_indexer, target_normal_indexer, ti,
+                            J_ij, r);
 
-            if (valid) {
-                float d_huber = HuberDeriv(r, depth_huber_delta);
-                float r_huber = HuberLoss(r, depth_huber_delta);
-                for (int i = 0, j = 0; j < 6; j++) {
-                    for (int k = 0; k <= j; k++) {
-                        A_reduction[i] += J_ij[j] * J_ij[k];
-                        i++;
+                    if (valid) {
+                        float d_huber = HuberDeriv(r, depth_huber_delta);
+                        float r_huber = HuberLoss(r, depth_huber_delta);
+                        for (int i = 0, j = 0; j < 6; j++) {
+                            for (int k = 0; k <= j; k++) {
+                                A_reduction[i] += J_ij[j] * J_ij[k];
+                                i++;
+                            }
+                            A_reduction[21 + j] += J_ij[j] * d_huber;
+                        }
+                        A_reduction[27] += r_huber;
+                        A_reduction[28] += 1;
                     }
-                    A_reduction[21 + j] += J_ij[j] * d_huber;
                 }
-                A_reduction[27] += r_huber;
-                A_reduction[28] += 1;
-            }
-        }
-        return A_reduction;
-    },
-    // TBB: Defining reduction operation.
-    [&](std::vector<float> a, std::vector<float> b) {
-        std::vector<float> result(29);
-        for (int j = 0; j < 29; j++) {
-            result[j] = a[j] + b[j];
-        }
-        return result;
-    });
+                return A_reduction;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<float> a, std::vector<float> b) {
+                std::vector<float> result(29);
+                for (int j = 0; j < 29; j++) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
 
     core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);

@@ -7,13 +7,13 @@
 
 #include "open3d/pipelines/integration/UniformTSDFVolume.h"
 
+#include <tbb/blocked_range2d.h>
+#include <tbb/blocked_range3d.h>
+#include <tbb/parallel_for.h>
+
 #include <iostream>
 #include <thread>
 #include <unordered_map>
-
-#include <tbb/parallel_for.h>
-#include <tbb/blocked_range2d.h>
-#include <tbb/blocked_range3d.h>
 
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/pipelines/integration/MarchingCubesConst.h"
@@ -261,28 +261,34 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
 
-    tbb::parallel_for(tbb::blocked_range3d<int>(
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D()),
-            [&](const tbb::blocked_range3d<int>& range){
-        for (int x = range.pages().begin(); x < range.pages().end(); x++) {
-            for (int y = range.rows().begin(); y < range.rows().end(); y++) {
-                for (int z = range.cols().begin(); z < range.cols().end(); z++){
-                    const int ind = IndexOf(x, y, z);
-                    const float w = voxels_[ind].weight_;
-                    const float f = voxels_[ind].tsdf_;
-                    if (w != 0.0f && f < 0.98f && f >= -0.98f) {
-                        double c = (f + 1.0) * 0.5;
-                        Eigen::Vector3d color = Eigen::Vector3d(c, c, c);
-                        Eigen::Vector3i index = Eigen::Vector3i(x, y, z);
-                        voxel_grid->voxels_[index] =
-                                geometry::Voxel(index, color);
+    tbb::parallel_for(
+            tbb::blocked_range3d<int>(
+                    0, resolution_, utility::DefaultGrainSizeTBB2D(), 0,
+                    resolution_, utility::DefaultGrainSizeTBB2D(), 0,
+                    resolution_, utility::DefaultGrainSizeTBB2D()),
+            [&](const tbb::blocked_range3d<int> &range) {
+                for (int x = range.pages().begin(); x < range.pages().end();
+                     x++) {
+                    for (int y = range.rows().begin(); y < range.rows().end();
+                         y++) {
+                        for (int z = range.cols().begin();
+                             z < range.cols().end(); z++) {
+                            const int ind = IndexOf(x, y, z);
+                            const float w = voxels_[ind].weight_;
+                            const float f = voxels_[ind].tsdf_;
+                            if (w != 0.0f && f < 0.98f && f >= -0.98f) {
+                                double c = (f + 1.0) * 0.5;
+                                Eigen::Vector3d color =
+                                        Eigen::Vector3d(c, c, c);
+                                Eigen::Vector3i index =
+                                        Eigen::Vector3i(x, y, z);
+                                voxel_grid->voxels_[index] =
+                                        geometry::Voxel(index, color);
+                            }
+                        }
                     }
                 }
-            }
-        }
-    });
+            });
     return voxel_grid;
 }
 
@@ -291,21 +297,25 @@ std::vector<Eigen::Vector2d> UniformTSDFVolume::ExtractVolumeTSDF() const {
     sharedvoxels_.resize(voxel_num_);
 
     tbb::parallel_for(tbb::blocked_range3d<int>(
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D()),
-            [&](const tbb::blocked_range3d<int>& range){
-        for (int x = range.pages().begin(); x < range.pages().end(); x++) {
-            for (int y = range.rows().begin(); y < range.rows().end(); y++) {
-                for (int z = range.cols().begin(); z < range.cols().end(); z++){
-                    const int ind = IndexOf(x, y, z);
-                    const float f = voxels_[ind].tsdf_;
-                    const float w = voxels_[ind].weight_;
-                    sharedvoxels_[ind] = Eigen::Vector2d(f, w);
-                }
-            }
-        }
-    });
+                              0, resolution_, utility::DefaultGrainSizeTBB2D(),
+                              0, resolution_, utility::DefaultGrainSizeTBB2D(),
+                              0, resolution_, utility::DefaultGrainSizeTBB2D()),
+                      [&](const tbb::blocked_range3d<int> &range) {
+                          for (int x = range.pages().begin();
+                               x < range.pages().end(); x++) {
+                              for (int y = range.rows().begin();
+                                   y < range.rows().end(); y++) {
+                                  for (int z = range.cols().begin();
+                                       z < range.cols().end(); z++) {
+                                      const int ind = IndexOf(x, y, z);
+                                      const float f = voxels_[ind].tsdf_;
+                                      const float w = voxels_[ind].weight_;
+                                      sharedvoxels_[ind] =
+                                              Eigen::Vector2d(f, w);
+                                  }
+                              }
+                          }
+                      });
     return sharedvoxels_;
 }
 
@@ -314,57 +324,67 @@ std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor() const {
     sharedcolors_.resize(voxel_num_);
 
     tbb::parallel_for(tbb::blocked_range3d<int>(
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D()),
-            [&](const tbb::blocked_range3d<int>& range){
-        for (int x = range.pages().begin(); x < range.pages().end(); x++) {
-            for (int y = range.rows().begin(); y < range.rows().end(); y++) {
-                for (int z = range.cols().begin(); z < range.cols().end(); z++){
-                    const int ind = IndexOf(x, y, z);
-                    sharedcolors_[ind] = voxels_[ind].color_;
-                }
-            }
-        }
-    });
+                              0, resolution_, utility::DefaultGrainSizeTBB2D(),
+                              0, resolution_, utility::DefaultGrainSizeTBB2D(),
+                              0, resolution_, utility::DefaultGrainSizeTBB2D()),
+                      [&](const tbb::blocked_range3d<int> &range) {
+                          for (int x = range.pages().begin();
+                               x < range.pages().end(); x++) {
+                              for (int y = range.rows().begin();
+                                   y < range.rows().end(); y++) {
+                                  for (int z = range.cols().begin();
+                                       z < range.cols().end(); z++) {
+                                      const int ind = IndexOf(x, y, z);
+                                      sharedcolors_[ind] = voxels_[ind].color_;
+                                  }
+                              }
+                          }
+                      });
     return sharedcolors_;
 }
 
 void UniformTSDFVolume::InjectVolumeTSDF(
         const std::vector<Eigen::Vector2d> &sharedvoxels) {
     tbb::parallel_for(tbb::blocked_range3d<int>(
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D()),
-            [&](const tbb::blocked_range3d<int>& range){
-        for (int x = range.pages().begin(); x < range.pages().end(); x++) {
-            for (int y = range.rows().begin(); y < range.rows().end(); y++) {
-                for (int z = range.cols().begin(); z < range.cols().end(); z++){
-                    const int ind = IndexOf(x, y, z);
-                    voxels_[ind].tsdf_ = sharedvoxels[ind](0);
-                    voxels_[ind].weight_ = sharedvoxels[ind](1);
-                }
-            }
-        }
-    });
+                              0, resolution_, utility::DefaultGrainSizeTBB2D(),
+                              0, resolution_, utility::DefaultGrainSizeTBB2D(),
+                              0, resolution_, utility::DefaultGrainSizeTBB2D()),
+                      [&](const tbb::blocked_range3d<int> &range) {
+                          for (int x = range.pages().begin();
+                               x < range.pages().end(); x++) {
+                              for (int y = range.rows().begin();
+                                   y < range.rows().end(); y++) {
+                                  for (int z = range.cols().begin();
+                                       z < range.cols().end(); z++) {
+                                      const int ind = IndexOf(x, y, z);
+                                      voxels_[ind].tsdf_ = sharedvoxels[ind](0);
+                                      voxels_[ind].weight_ =
+                                              sharedvoxels[ind](1);
+                                  }
+                              }
+                          }
+                      });
 }
 
 void UniformTSDFVolume::InjectVolumeColor(
         const std::vector<Eigen::Vector3d> &sharedcolors) {
     tbb::parallel_for(tbb::blocked_range3d<int>(
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D()),
-            [&](const tbb::blocked_range3d<int>& range){
-        for (int x = range.pages().begin(); x < range.pages().end(); x++) {
-            for (int y = range.rows().begin(); y < range.rows().end(); y++) {
-                for (int z = range.cols().begin(); z < range.cols().end(); z++){
-                    const int ind = IndexOf(x, y, z);
-                    voxels_[ind].color_ = sharedcolors[ind];
-                }
-            }
-        }
-    });
+                              0, resolution_, utility::DefaultGrainSizeTBB2D(),
+                              0, resolution_, utility::DefaultGrainSizeTBB2D(),
+                              0, resolution_, utility::DefaultGrainSizeTBB2D()),
+                      [&](const tbb::blocked_range3d<int> &range) {
+                          for (int x = range.pages().begin();
+                               x < range.pages().end(); x++) {
+                              for (int y = range.rows().begin();
+                                   y < range.rows().end(); y++) {
+                                  for (int z = range.cols().begin();
+                                       z < range.cols().end(); z++) {
+                                      const int ind = IndexOf(x, y, z);
+                                      voxels_[ind].color_ = sharedcolors[ind];
+                                  }
+                              }
+                          }
+                      });
 }
 
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
@@ -385,75 +405,88 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
     const float safe_width_f = intrinsic.width_ - 0.0001f;
     const float safe_height_f = intrinsic.height_ - 0.0001f;
 
-    tbb::parallel_for(tbb::blocked_range2d<int>(
-            0, resolution_, utility::DefaultGrainSizeTBB2D(),
-            0, resolution_, utility::DefaultGrainSizeTBB2D()),
-            [&](const tbb::blocked_range2d<int>& range) {
-        for (int x = range.rows().begin(); x < range.rows().end(); ++x) {
-            for (int y = range.cols().begin(); y < range.cols().end(); ++y) {
-                Eigen::Vector4f pt_3d_homo(
-                    float(half_voxel_length_f + voxel_length_f * x + origin_(0)),
-                    float(half_voxel_length_f + voxel_length_f * y + origin_(1)),
-                    float(half_voxel_length_f + origin_(2)), 1.f);
-                Eigen::Vector4f pt_camera = extrinsic_f * pt_3d_homo;
-                for (int z = 0; z < resolution_; z++,
-                         pt_camera(0) += extrinsic_scaled_f(0, 2),
-                         pt_camera(1) += extrinsic_scaled_f(1, 2),
-                         pt_camera(2) += extrinsic_scaled_f(2, 2)) {
-                    // Skip if negative depth after projection
-                    if (pt_camera(2) <= 0) {
-                        continue;
-                    }
-                    // Skip if x-y coordinate not in range
-                    float u_f = pt_camera(0) * fx / pt_camera(2) + cx + 0.5f;
-                    float v_f = pt_camera(1) * fy / pt_camera(2) + cy + 0.5f;
-                    if (!(u_f >= 0.0001f && u_f < safe_width_f && v_f >= 0.0001f &&
-                          v_f < safe_height_f)) {
-                        continue;
-                    }
-                    // Skip if negative depth in depth image
-                    int u = (int)u_f;
-                    int v = (int)v_f;
-                    float d = *image.depth_.PointerAt<float>(u, v);
-                    if (d <= 0.0f) {
-                        continue;
-                    }
+    tbb::parallel_for(
+            tbb::blocked_range2d<int>(
+                    0, resolution_, utility::DefaultGrainSizeTBB2D(), 0,
+                    resolution_, utility::DefaultGrainSizeTBB2D()),
+            [&](const tbb::blocked_range2d<int> &range) {
+                for (int x = range.rows().begin(); x < range.rows().end();
+                     ++x) {
+                    for (int y = range.cols().begin(); y < range.cols().end();
+                         ++y) {
+                        Eigen::Vector4f pt_3d_homo(
+                                float(half_voxel_length_f + voxel_length_f * x +
+                                      origin_(0)),
+                                float(half_voxel_length_f + voxel_length_f * y +
+                                      origin_(1)),
+                                float(half_voxel_length_f + origin_(2)), 1.f);
+                        Eigen::Vector4f pt_camera = extrinsic_f * pt_3d_homo;
+                        for (int z = 0; z < resolution_; z++,
+                                 pt_camera(0) += extrinsic_scaled_f(0, 2),
+                                 pt_camera(1) += extrinsic_scaled_f(1, 2),
+                                 pt_camera(2) += extrinsic_scaled_f(2, 2)) {
+                            // Skip if negative depth after projection
+                            if (pt_camera(2) <= 0) {
+                                continue;
+                            }
+                            // Skip if x-y coordinate not in range
+                            float u_f = pt_camera(0) * fx / pt_camera(2) + cx +
+                                        0.5f;
+                            float v_f = pt_camera(1) * fy / pt_camera(2) + cy +
+                                        0.5f;
+                            if (!(u_f >= 0.0001f && u_f < safe_width_f &&
+                                  v_f >= 0.0001f && v_f < safe_height_f)) {
+                                continue;
+                            }
+                            // Skip if negative depth in depth image
+                            int u = (int)u_f;
+                            int v = (int)v_f;
+                            float d = *image.depth_.PointerAt<float>(u, v);
+                            if (d <= 0.0f) {
+                                continue;
+                            }
 
-                    int v_ind = IndexOf(x, y, z);
-                    float sdf = (d - pt_camera(2)) *
-                                (*depth_to_camera_distance_multiplier
-                                          .PointerAt<float>(u, v));
-                    if (sdf > -sdf_trunc_f) {
-                        // integrate
-                        float tsdf = std::min(1.0f, sdf * sdf_trunc_inv_f);
-                        voxels_[v_ind].tsdf_ =
-                                (voxels_[v_ind].tsdf_ * voxels_[v_ind].weight_ +
-                                 tsdf) /
-                                (voxels_[v_ind].weight_ + 1.0f);
-                        if (color_type_ == TSDFVolumeColorType::RGB8) {
-                            const uint8_t *rgb =
-                                    image.color_.PointerAt<uint8_t>(u, v, 0);
-                            Eigen::Vector3d rgb_f(rgb[0], rgb[1], rgb[2]);
-                            voxels_[v_ind].color_ =
-                                    (voxels_[v_ind].color_ *
-                                             voxels_[v_ind].weight_ +
-                                     rgb_f) /
-                                    (voxels_[v_ind].weight_ + 1.0f);
-                        } else if (color_type_ == TSDFVolumeColorType::Gray32) {
-                            const float *intensity =
-                                    image.color_.PointerAt<float>(u, v, 0);
-                            voxels_[v_ind].color_ =
-                                    (voxels_[v_ind].color_.array() *
-                                             voxels_[v_ind].weight_ +
-                                     (*intensity)) /
-                                    (voxels_[v_ind].weight_ + 1.0f);
+                            int v_ind = IndexOf(x, y, z);
+                            float sdf = (d - pt_camera(2)) *
+                                        (*depth_to_camera_distance_multiplier
+                                                  .PointerAt<float>(u, v));
+                            if (sdf > -sdf_trunc_f) {
+                                // integrate
+                                float tsdf =
+                                        std::min(1.0f, sdf * sdf_trunc_inv_f);
+                                voxels_[v_ind].tsdf_ =
+                                        (voxels_[v_ind].tsdf_ *
+                                                 voxels_[v_ind].weight_ +
+                                         tsdf) /
+                                        (voxels_[v_ind].weight_ + 1.0f);
+                                if (color_type_ == TSDFVolumeColorType::RGB8) {
+                                    const uint8_t *rgb =
+                                            image.color_.PointerAt<uint8_t>(
+                                                    u, v, 0);
+                                    Eigen::Vector3d rgb_f(rgb[0], rgb[1],
+                                                          rgb[2]);
+                                    voxels_[v_ind].color_ =
+                                            (voxels_[v_ind].color_ *
+                                                     voxels_[v_ind].weight_ +
+                                             rgb_f) /
+                                            (voxels_[v_ind].weight_ + 1.0f);
+                                } else if (color_type_ ==
+                                           TSDFVolumeColorType::Gray32) {
+                                    const float *intensity =
+                                            image.color_.PointerAt<float>(u, v,
+                                                                          0);
+                                    voxels_[v_ind].color_ =
+                                            (voxels_[v_ind].color_.array() *
+                                                     voxels_[v_ind].weight_ +
+                                             (*intensity)) /
+                                            (voxels_[v_ind].weight_ + 1.0f);
+                                }
+                                voxels_[v_ind].weight_ += 1.0f;
+                            }
                         }
-                        voxels_[v_ind].weight_ += 1.0f;
                     }
                 }
-            }
-        }
-    });
+            });
 }
 
 Eigen::Vector3d UniformTSDFVolume::GetNormalAt(const Eigen::Vector3d &p) {

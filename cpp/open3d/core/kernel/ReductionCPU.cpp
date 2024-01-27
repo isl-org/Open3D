@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
+
 #include <limits>
 
 #include "open3d/core/Dispatch.h"
@@ -13,9 +16,6 @@
 #include "open3d/core/kernel/Reduction.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
-
-#include <tbb/parallel_reduce.h>
-#include <tbb/parallel_for.h>
 
 namespace open3d {
 namespace core {
@@ -113,18 +113,20 @@ private:
                     "single-output reduction ops.");
         }
         scalar_t& dst = *reinterpret_cast<scalar_t*>(indexer.GetOutputPtr(0));
-        dst = tbb::parallel_reduce(tbb::blocked_range<int64_t>(
-                0, indexer.NumWorkloads(), utility::DefaultGrainSizeTBB()),
-                identity, [&](const tbb::blocked_range<int64_t>& range,
-                                           scalar_t so_far){
-            for (int64_t workload_idx = range.begin();
-                    workload_idx < range.end(); ++workload_idx) {
-                scalar_t* src = reinterpret_cast<scalar_t*>(
-                        indexer.GetInputPtr(0, workload_idx));
-                so_far = element_kernel(*src, so_far);
-            }
-            return so_far;
-        }, element_kernel);
+        dst = tbb::parallel_reduce(
+                tbb::blocked_range<int64_t>(0, indexer.NumWorkloads(),
+                                            utility::DefaultGrainSizeTBB()),
+                identity,
+                [&](const tbb::blocked_range<int64_t>& range, scalar_t so_far) {
+                    for (int64_t workload_idx = range.begin();
+                         workload_idx < range.end(); ++workload_idx) {
+                        scalar_t* src = reinterpret_cast<scalar_t*>(
+                                indexer.GetInputPtr(0, workload_idx));
+                        so_far = element_kernel(*src, so_far);
+                    }
+                    return so_far;
+                },
+                element_kernel);
     }
 
     template <typename scalar_t, typename func_t>
@@ -155,16 +157,18 @@ private:
                     "LaunchReductionKernelTwoPass instead.");
         }
 
-        // TODO: could theoretically do inner reductions in parallel too with TBB
-        tbb::parallel_for(tbb::blocked_range<int64_t>(
-                0, indexer_shape[best_dim], 1),
-                [&](const tbb::blocked_range<int64_t>& range){
-            for (int64_t i = range.begin(); i < range.end(); ++i) {
-                Indexer sub_indexer(indexer);
-                sub_indexer.ShrinkDim(best_dim, i, 1);
-                LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
-            }
-        });
+        // TODO: could theoretically do inner reductions in parallel too with
+        // TBB
+        tbb::parallel_for(
+                tbb::blocked_range<int64_t>(0, indexer_shape[best_dim], 1),
+                [&](const tbb::blocked_range<int64_t>& range) {
+                    for (int64_t i = range.begin(); i < range.end(); ++i) {
+                        Indexer sub_indexer(indexer);
+                        sub_indexer.ShrinkDim(best_dim, i, 1);
+                        LaunchReductionKernelSerial<scalar_t>(sub_indexer,
+                                                              element_kernel);
+                    }
+                });
     }
 
 private:
@@ -185,37 +189,48 @@ public:
         // sub-iteration.
         int64_t num_output_elements = indexer_.NumOutputElements();
 
-        tbb::parallel_for(tbb::blocked_range<int64_t>(
-                0, num_output_elements, 1),
-                [&](const tbb::blocked_range<int64_t>& range){
-            for (int64_t output_idx = range.begin();
-                    output_idx < range.end(); ++output_idx) {
-                // sub_indexer.NumWorkloads() == ipo.
-                // sub_indexer's workload_idx is indexer_'s ipo_idx.
-                Indexer sub_indexer = indexer_.GetPerOutputIndexer(output_idx);
-                using result_t = std::pair<int64_t, scalar_t>;
-                result_t val_idx{-1, identity};
-                val_idx = tbb::parallel_deterministic_reduce(
-                        tbb::blocked_range<int64_t>(0, sub_indexer.NumWorkloads(),
-                        utility::DefaultGrainSizeTBB()), val_idx,
-                        [&](const tbb::blocked_range<int64_t>& range,
-                            result_t so_far){
-                    for (int64_t workload_idx = range.begin();
-                            workload_idx < range.end(); ++workload_idx) {
-                        scalar_t& src_val = *reinterpret_cast<scalar_t*>(
-                            sub_indexer.GetInputPtr(0, workload_idx));
-                        so_far = reduce_func(workload_idx, src_val,
-                            std::get<0>(so_far), std::get<1>(so_far));
+        tbb::parallel_for(
+                tbb::blocked_range<int64_t>(0, num_output_elements, 1),
+                [&](const tbb::blocked_range<int64_t>& range) {
+                    for (int64_t output_idx = range.begin();
+                         output_idx < range.end(); ++output_idx) {
+                        // sub_indexer.NumWorkloads() == ipo.
+                        // sub_indexer's workload_idx is indexer_'s ipo_idx.
+                        Indexer sub_indexer =
+                                indexer_.GetPerOutputIndexer(output_idx);
+                        using result_t = std::pair<int64_t, scalar_t>;
+                        result_t val_idx{-1, identity};
+                        val_idx = tbb::parallel_deterministic_reduce(
+                                tbb::blocked_range<int64_t>(
+                                        0, sub_indexer.NumWorkloads(),
+                                        utility::DefaultGrainSizeTBB()),
+                                val_idx,
+                                [&](const tbb::blocked_range<int64_t>& range,
+                                    result_t so_far) {
+                                    for (int64_t workload_idx = range.begin();
+                                         workload_idx < range.end();
+                                         ++workload_idx) {
+                                        scalar_t& src_val =
+                                                *reinterpret_cast<scalar_t*>(
+                                                        sub_indexer.GetInputPtr(
+                                                                0,
+                                                                workload_idx));
+                                        so_far = reduce_func(
+                                                workload_idx, src_val,
+                                                std::get<0>(so_far),
+                                                std::get<1>(so_far));
+                                    }
+                                    return so_far;
+                                },
+                                [&reduce_func](result_t a, result_t b) {
+                                    return reduce_func(
+                                            std::get<0>(a), std::get<1>(a),
+                                            std::get<0>(b), std::get<1>(b));
+                                });
+                        *reinterpret_cast<int64_t*>(sub_indexer.GetOutputPtr(
+                                0)) = std::get<0>(val_idx);
                     }
-                    return so_far;
-                }, [&reduce_func](result_t a, result_t b) {
-                    return reduce_func(std::get<0>(a), std::get<1>(a),
-                            std::get<0>(b), std::get<1>(b));
                 });
-                *reinterpret_cast<int64_t *>(sub_indexer.GetOutputPtr(0)) =
-                        std::get<0>(val_idx);
-            }
-        });
     }
 
 private:

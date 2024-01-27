@@ -9,6 +9,9 @@
 // Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------
 
+#include <tbb/concurrent_vector.h>
+#include <tbb/parallel_for.h>
+
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 #include <algorithm>
@@ -17,9 +20,6 @@
 #include <numeric>
 #include <tuple>
 #include <vector>
-
-#include <tbb/concurrent_vector.h>
-#include <tbb/parallel_for.h>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/Keypoint.h"
@@ -86,55 +86,56 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
     }
 
     std::vector<double> third_eigen_values(points.size());
-    tbb::parallel_for(tbb::blocked_range<std::size_t>(
-            0, points.size(), utility::DefaultGrainSizeTBB()),
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, points.size(),
+                                            utility::DefaultGrainSizeTBB()),
             [&](const tbb::blocked_range<std::size_t>& range) {
-        for (std::size_t i = range.begin(); i < range.end(); ++i) {
-            std::vector<int> indices;
-            std::vector<double> dist;
-            int nb_neighbors =
-                    kdtree.SearchRadius(points[i],
-                        salient_radius, indices, dist);
-            if (nb_neighbors < min_neighbors) {
-                continue;
-            }
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    std::vector<int> indices;
+                    std::vector<double> dist;
+                    int nb_neighbors = kdtree.SearchRadius(
+                            points[i], salient_radius, indices, dist);
+                    if (nb_neighbors < min_neighbors) {
+                        continue;
+                    }
 
-            Eigen::Matrix3d cov = utility::ComputeCovariance(points, indices);
-            if (cov.isZero()) {
-                continue;
-            }
+                    Eigen::Matrix3d cov =
+                            utility::ComputeCovariance(points, indices);
+                    if (cov.isZero()) {
+                        continue;
+                    }
 
-            Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(cov);
-            const double& e1c = solver.eigenvalues()[2];
-            const double& e2c = solver.eigenvalues()[1];
-            const double& e3c = solver.eigenvalues()[0];
+                    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(cov);
+                    const double& e1c = solver.eigenvalues()[2];
+                    const double& e2c = solver.eigenvalues()[1];
+                    const double& e3c = solver.eigenvalues()[0];
 
-            if ((e2c / e1c) < gamma_21 && e3c / e2c < gamma_32) {
-                third_eigen_values[i] = e3c;
-            }
-        }
-    });
+                    if ((e2c / e1c) < gamma_21 && e3c / e2c < gamma_32) {
+                        third_eigen_values[i] = e3c;
+                    }
+                }
+            });
 
     tbb::concurrent_vector<std::size_t> kp_indices;
     kp_indices.reserve(points.size());
-    tbb::parallel_for(tbb::blocked_range<std::size_t>(
-            0, points.size(), utility::DefaultGrainSizeTBB()),
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, points.size(),
+                                            utility::DefaultGrainSizeTBB()),
             [&](const tbb::blocked_range<std::size_t>& range) {
-        for (std::size_t i = range.begin(); i < range.end(); ++i) {
-            if (third_eigen_values[i] > 0.0) {
-                std::vector<int> nn_indices;
-                std::vector<double> dist;
-                int nb_neighbors = kdtree.SearchRadius(
-                        points[i], non_max_radius, nn_indices, dist);
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    if (third_eigen_values[i] > 0.0) {
+                        std::vector<int> nn_indices;
+                        std::vector<double> dist;
+                        int nb_neighbors = kdtree.SearchRadius(
+                                points[i], non_max_radius, nn_indices, dist);
 
-                if (nb_neighbors >= min_neighbors &&
-                    IsLocalMaxima(i, nn_indices, third_eigen_values)) {
-                    kp_indices.emplace_back(i);
+                        if (nb_neighbors >= min_neighbors &&
+                            IsLocalMaxima(i, nn_indices, third_eigen_values)) {
+                            kp_indices.emplace_back(i);
+                        }
+                    }
                 }
-            }
-        }
-    });
-
+            });
 
     utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints",
                       kp_indices.size());

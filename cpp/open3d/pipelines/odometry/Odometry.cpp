@@ -17,8 +17,8 @@
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/pipelines/odometry/RGBDOdometryJacobian.h"
 #include "open3d/utility/Eigen.h"
-#include "open3d/utility/Timer.h"
 #include "open3d/utility/Parallel.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace pipelines {
@@ -26,28 +26,34 @@ namespace odometry {
 
 struct CorrespondenceReduction {
     // Global
-    const geometry::Image& depth_s;
-    const geometry::Image& depth_t;
-    const Eigen::Matrix3d& KRK_inv;
-    const Eigen::Vector3d& Kt;
+    const geometry::Image &depth_s;
+    const geometry::Image &depth_t;
+    const Eigen::Matrix3d &KRK_inv;
+    const Eigen::Vector3d &Kt;
     const double depth_diff_max;
     // Local
     geometry::Image correspondence_map;
     geometry::Image depth_buffer;
 
-    CorrespondenceReduction(const geometry::Image& depth_s_,
-                            const geometry::Image& depth_t_,
-                            const Eigen::Matrix3d& KRK_inv_,
-                            const Eigen::Vector3d& Kt_,
+    CorrespondenceReduction(const geometry::Image &depth_s_,
+                            const geometry::Image &depth_t_,
+                            const Eigen::Matrix3d &KRK_inv_,
+                            const Eigen::Vector3d &Kt_,
                             const double depth_diff_max_)
-            : depth_s(depth_s_), depth_t(depth_t_), KRK_inv(KRK_inv_),
-            Kt(Kt_), depth_diff_max(depth_diff_max_) {
+        : depth_s(depth_s_),
+          depth_t(depth_t_),
+          KRK_inv(KRK_inv_),
+          Kt(Kt_),
+          depth_diff_max(depth_diff_max_) {
         InitializeCorrespondenceMap();
     }
 
-    CorrespondenceReduction(CorrespondenceReduction& o, tbb::split)
-            : depth_s(o.depth_s), depth_t(o.depth_t), KRK_inv(o.KRK_inv),
-            Kt(o.Kt), depth_diff_max(o.depth_diff_max) {
+    CorrespondenceReduction(CorrespondenceReduction &o, tbb::split)
+        : depth_s(o.depth_s),
+          depth_t(o.depth_t),
+          KRK_inv(o.KRK_inv),
+          Kt(o.Kt),
+          depth_diff_max(o.depth_diff_max) {
         InitializeCorrespondenceMap();
     }
 
@@ -83,7 +89,7 @@ struct CorrespondenceReduction {
         }
     }
 
-    void MergeCorrespondenceMaps(const CorrespondenceReduction& rhs) {
+    void MergeCorrespondenceMaps(const CorrespondenceReduction &rhs) {
         for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
             for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
                 int u_t = *rhs.correspondence_map.PointerAt<int>(u_s, v_s, 0);
@@ -91,14 +97,14 @@ struct CorrespondenceReduction {
                 if (u_t != -1 && v_t != -1) {
                     float transformed_d_t =
                             *rhs.depth_buffer.PointerAt<float>(u_s, v_s);
-                    AddElementToCorrespondenceMap(
-                            u_s, v_s, u_t, v_t, transformed_d_t);
+                    AddElementToCorrespondenceMap(u_s, v_s, u_t, v_t,
+                                                  transformed_d_t);
                 }
             }
         }
     }
 
-    void operator()(const tbb::blocked_range2d<int>&r) {
+    void operator()(const tbb::blocked_range2d<int> &r) {
         for (int v_s = r.rows().begin(); v_s < r.rows().end(); ++v_s) {
             for (int u_s = r.cols().begin(); u_s < r.cols().end(); u_s++) {
                 double d_s = *depth_s.PointerAt<float>(u_s, v_s);
@@ -112,10 +118,9 @@ struct CorrespondenceReduction {
                         v_t < depth_t.height_) {
                         double d_t = *depth_t.PointerAt<float>(u_t, v_t);
                         if (!std::isnan(d_t) &&
-                            std::abs(transformed_d_s - d_t) <=
-                                    depth_diff_max) {
-                            AddElementToCorrespondenceMap(
-                                    u_s, v_s, u_t, v_t, (float)d_s);
+                            std::abs(transformed_d_s - d_t) <= depth_diff_max) {
+                            AddElementToCorrespondenceMap(u_s, v_s, u_t, v_t,
+                                                          (float)d_s);
                         }
                     }
                 }
@@ -123,7 +128,7 @@ struct CorrespondenceReduction {
         }
     }
 
-    inline void join(const CorrespondenceReduction& rhs) {
+    inline void join(const CorrespondenceReduction &rhs) {
         MergeCorrespondenceMaps(rhs);
     }
 
@@ -169,11 +174,13 @@ CorrespondenceSetPixelWise ComputeCorrespondence(
     const Eigen::Matrix3d KRK_inv = K * R * K_inv;
     const Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
 
-    CorrespondenceReduction reducer(depth_s, depth_t,
-        KRK_inv, Kt, option.depth_diff_max_);
-    tbb::parallel_reduce(tbb::blocked_range2d<int>(
-            0, depth_s.height_, utility::DefaultGrainSizeTBB2D(),
-            0, depth_s.width_, utility::DefaultGrainSizeTBB2D()), reducer);
+    CorrespondenceReduction reducer(depth_s, depth_t, KRK_inv, Kt,
+                                    option.depth_diff_max_);
+    tbb::parallel_reduce(
+            tbb::blocked_range2d<int>(
+                    0, depth_s.height_, utility::DefaultGrainSizeTBB2D(), 0,
+                    depth_s.width_, utility::DefaultGrainSizeTBB2D()),
+            reducer);
 
     return reducer.correspondences();
 }
@@ -223,19 +230,19 @@ static std::vector<Eigen::Matrix3d> CreateCameraMatrixPyramid(
 
 struct InformationMatrixReducer {
     // Globals
-    const CorrespondenceSetPixelWise& corres;
-    const geometry::Image& xyz_t;
+    const CorrespondenceSetPixelWise &corres;
+    const geometry::Image &xyz_t;
     // Locals
     Eigen::Matrix6d GTG;
 
-    InformationMatrixReducer(const CorrespondenceSetPixelWise& corres_,
-                             const geometry::Image& xyz_t_)
+    InformationMatrixReducer(const CorrespondenceSetPixelWise &corres_,
+                             const geometry::Image &xyz_t_)
         : corres(corres_), xyz_t(xyz_t_), GTG(Eigen::Matrix6d::Zero()) {}
 
-    InformationMatrixReducer(InformationMatrixReducer& o, tbb::split)
+    InformationMatrixReducer(InformationMatrixReducer &o, tbb::split)
         : corres(o.corres), xyz_t(o.xyz_t), GTG(Eigen::Matrix6d::Zero()) {}
 
-    void operator()(const tbb::blocked_range<std::size_t>& range) {
+    void operator()(const tbb::blocked_range<std::size_t> &range) {
         // write q^*
         // see http://redwood-data.org/indoor/registration.html
         // note: I comes first in this implementation
@@ -264,9 +271,7 @@ struct InformationMatrixReducer {
         }
     }
 
-    void join(InformationMatrixReducer& other) {
-        GTG += other.GTG;
-    }
+    void join(InformationMatrixReducer &other) { GTG += other.GTG; }
 };
 
 static Eigen::Matrix6d CreateInformationMatrix(
@@ -283,8 +288,10 @@ static Eigen::Matrix6d CreateInformationMatrix(
             depth_t, pinhole_camera_intrinsic.intrinsic_matrix_);
 
     InformationMatrixReducer reducer(correspondence, *xyz_t.get());
-    tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0,
-        correspondence.size(), utility::DefaultGrainSizeTBB()), reducer);
+    tbb::parallel_reduce(
+            tbb::blocked_range<std::size_t>(0, correspondence.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            reducer);
     return std::move(reducer.GTG);
 }
 

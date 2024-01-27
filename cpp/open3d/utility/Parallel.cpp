@@ -9,13 +9,10 @@
 
 #include <tbb/task_arena.h>
 
-
 namespace open3d {
 namespace utility {
 
-int EstimateMaxThreads() {
-    return tbb::this_task_arena::max_concurrency();
-}
+int EstimateMaxThreads() { return tbb::this_task_arena::max_concurrency(); }
 
 std::size_t& DefaultGrainSizeTBB() noexcept {
     static std::size_t GrainSize = 256;

@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/parallel_for.h>
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cstdint>
@@ -13,8 +15,6 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
-
-#include <tbb/parallel_for.h>
 
 #include "libqhullcpp/PointCoordinates.h"
 #include "libqhullcpp/Qhull.h"
@@ -997,15 +997,17 @@ PointCloud::DetectPlanarPatches(
     std::vector<std::vector<int>> neighbors;
     neighbors.resize(points_.size());
 
-    tbb::parallel_for(tbb::blocked_range<std::size_t>(
-            0, points_.size(), utility::DefaultGrainSizeTBB()),
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, points_.size(),
+                                            utility::DefaultGrainSizeTBB()),
             [&](const tbb::blocked_range<std::size_t>& range) {
-        for (std::size_t i = range.begin(); i < range.end(); ++i) {
-            std::vector<int> indices;
-            std::vector<double> distance2;
-            kdtree.Search(points_[i], search_param, neighbors[i], distance2);
-        }
-    });
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    std::vector<int> indices;
+                    std::vector<double> distance2;
+                    kdtree.Search(points_[i], search_param, neighbors[i],
+                                  distance2);
+                }
+            });
 
     const double normal_similarity_rad = normal_similarity_deg * M_PI / 180.0;
     const double coplanarity_rad = coplanarity_deg * M_PI / 180.0;

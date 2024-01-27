@@ -33,21 +33,26 @@ struct RegistrationReduction {
     RegistrationReduction(const geometry::KDTreeFlann& target_kdtree_,
                           const geometry::PointCloud& source_,
                           double max_correspondence_distance_)
-        : target_kdtree(target_kdtree_), source(source_),
+        : target_kdtree(target_kdtree_),
+          source(source_),
           max_distance(max_correspondence_distance_),
-          correspondences(), error2(0.0) {}
+          correspondences(),
+          error2(0.0) {}
 
     RegistrationReduction(RegistrationReduction& other, tbb::split)
-        : target_kdtree(other.target_kdtree), source(other.source),
-          max_distance(other.max_distance), correspondences(), error2(0.0) {}
+        : target_kdtree(other.target_kdtree),
+          source(other.source),
+          max_distance(other.max_distance),
+          correspondences(),
+          error2(0.0) {}
 
     void operator()(const tbb::blocked_range<std::size_t>& range) {
         for (std::size_t i = range.begin(); i < range.end(); ++i) {
             std::vector<int> indices(1);
             std::vector<double> dists(1);
-            const auto &point = source.points_[i];
-            if (target_kdtree.SearchHybrid(point,
-                    max_distance, 1, indices, dists) > 0) {
+            const auto& point = source.points_[i];
+            if (target_kdtree.SearchHybrid(point, max_distance, 1, indices,
+                                           dists) > 0) {
                 error2 += dists[0];
                 correspondences.emplace_back(i, indices[0]);
             }
@@ -56,7 +61,8 @@ struct RegistrationReduction {
 
     void join(RegistrationReduction& other) {
         correspondences.insert(correspondences.end(),
-            other.correspondences.begin(), other.correspondences.end());
+                               other.correspondences.begin(),
+                               other.correspondences.end());
         error2 += other.error2;
     }
 
@@ -66,24 +72,26 @@ struct RegistrationReduction {
 };
 
 static RegistrationResult GetRegistrationResultAndCorrespondences(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const geometry::KDTreeFlann &target_kdtree,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
+        const geometry::KDTreeFlann& target_kdtree,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation) {
+        const Eigen::Matrix4d& transformation) {
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
         return result;
     }
 
-    RegistrationReduction reducer(target_kdtree,
-        source, max_correspondence_distance);
-    tbb::parallel_reduce(tbb::blocked_range<std::size_t>(
-        0, source.points_.size(), utility::DefaultGrainSizeTBB()), reducer);
+    RegistrationReduction reducer(target_kdtree, source,
+                                  max_correspondence_distance);
+    tbb::parallel_reduce(
+            tbb::blocked_range<std::size_t>(0, source.points_.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            reducer);
 
     double error2;
-    std::tie(result.correspondence_set_, error2)
-            = std::move(reducer).as_tuple();
+    std::tie(result.correspondence_set_, error2) =
+            std::move(reducer).as_tuple();
 
     if (result.correspondence_set_.empty()) {
         result.fitness_ = 0.0;
@@ -97,16 +105,16 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
 }
 
 static double EvaluateInlierCorrespondenceRatio(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const CorrespondenceSet &corres,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
+        const CorrespondenceSet& corres,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation) {
+        const Eigen::Matrix4d& transformation) {
     RegistrationResult result(transformation);
 
     int inlier_corres = 0;
     double max_dis2 = max_correspondence_distance * max_correspondence_distance;
-    for (const auto &c : corres) {
+    for (const auto& c : corres) {
         double dis2 =
                 (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
         if (dis2 < max_dis2) {
@@ -118,11 +126,11 @@ static double EvaluateInlierCorrespondenceRatio(
 }
 
 RegistrationResult EvaluateRegistration(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
         double max_correspondence_distance,
-        const Eigen::Matrix4d
-                &transformation /* = Eigen::Matrix4d::Identity()*/) {
+        const Eigen::Matrix4d&
+                transformation /* = Eigen::Matrix4d::Identity()*/) {
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
     geometry::PointCloud pcd = source;
@@ -134,14 +142,14 @@ RegistrationResult EvaluateRegistration(
 }
 
 RegistrationResult RegistrationICP(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
-        const TransformationEstimation &estimation
+        const Eigen::Matrix4d& init /* = Eigen::Matrix4d::Identity()*/,
+        const TransformationEstimation& estimation
         /* = TransformationEstimationPointToPoint(false)*/,
-        const ICPConvergenceCriteria
-                &criteria /* = ICPConvergenceCriteria()*/) {
+        const ICPConvergenceCriteria&
+                criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
         utility::LogError("Invalid max_correspondence_distance.");
     }
@@ -198,7 +206,8 @@ RegistrationResult RegistrationICP(
 template <typename T>
 void atomic_min(std::atomic<T>& min_val, const T& val) noexcept {
     T prev_val = min_val;
-    while (prev_val > val && min_val.compare_exchange_weak(prev_val, val));
+    while (prev_val > val && min_val.compare_exchange_weak(prev_val, val))
+        ;
 }
 
 struct RANSACCorrespondenceReduction {
@@ -207,8 +216,8 @@ struct RANSACCorrespondenceReduction {
     const geometry::PointCloud& target;
     const CorrespondenceSet& corres;
     const TransformationEstimation& estimation;
-    using CheckerType = std::vector<std::reference_wrapper<
-            const CorrespondenceChecker>>;
+    using CheckerType =
+            std::vector<std::reference_wrapper<const CorrespondenceChecker>>;
     const CheckerType& checkers;
     const geometry::KDTreeFlann& kdtree;
     std::atomic<int>& est_k_global;
@@ -223,7 +232,6 @@ struct RANSACCorrespondenceReduction {
     CorrespondenceSet ransac_corres;
     RegistrationResult best_result;
 
-
     RANSACCorrespondenceReduction(const geometry::PointCloud& source_,
                                   const geometry::PointCloud& target_,
                                   const CorrespondenceSet& corres_,
@@ -236,18 +244,33 @@ struct RANSACCorrespondenceReduction {
                                   double max_dist_,
                                   int ransac_n_,
                                   double confidence)
-        : source(source_), target(target_), corres(corres_),
-          estimation(estimation_), checkers(checkers_), kdtree(kdtree_),
-          est_k_global(est_k_global_), total_validation(total_validation_),
-          rand_gen(rand_gen_), max_distance(max_dist_), ransac_n(ransac_n_),
-          log_confidence(std::log(1.0 - confidence)), ransac_corres(ransac_n) {}
+        : source(source_),
+          target(target_),
+          corres(corres_),
+          estimation(estimation_),
+          checkers(checkers_),
+          kdtree(kdtree_),
+          est_k_global(est_k_global_),
+          total_validation(total_validation_),
+          rand_gen(rand_gen_),
+          max_distance(max_dist_),
+          ransac_n(ransac_n_),
+          log_confidence(std::log(1.0 - confidence)),
+          ransac_corres(ransac_n) {}
 
-    RANSACCorrespondenceReduction(RANSACCorrespondenceReduction& o,
-        tbb::split): source(o.source), target(o.target), corres(o.corres),
-            estimation(o.estimation), checkers(o.checkers), kdtree(o.kdtree),
-            est_k_global(o.est_k_global), total_validation(o.total_validation),
-            rand_gen(o.rand_gen), max_distance(o.max_distance),
-            ransac_n(o.ransac_n), log_confidence(o.log_confidence) {}
+    RANSACCorrespondenceReduction(RANSACCorrespondenceReduction& o, tbb::split)
+        : source(o.source),
+          target(o.target),
+          corres(o.corres),
+          estimation(o.estimation),
+          checkers(o.checkers),
+          kdtree(o.kdtree),
+          est_k_global(o.est_k_global),
+          total_validation(o.total_validation),
+          rand_gen(o.rand_gen),
+          max_distance(o.max_distance),
+          ransac_n(o.ransac_n),
+          log_confidence(o.log_confidence) {}
 
     void operator()(const tbb::blocked_range<int>& range) {
         int est_k_local = est_k_global;
@@ -263,8 +286,11 @@ struct RANSACCorrespondenceReduction {
 
                 // Check transformation: inexpensive
                 if (!std::all_of(checkers.begin(), checkers.end(),
-                        [&](const auto& checker){ return checker.get().Check(
-                    source, target, ransac_corres, transformation); })) {
+                                 [&](const auto& checker) {
+                                     return checker.get().Check(source, target,
+                                                                ransac_corres,
+                                                                transformation);
+                                 })) {
                     continue;
                 }
 
@@ -313,16 +339,16 @@ struct RANSACCorrespondenceReduction {
 };
 
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const CorrespondenceSet &corres,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
+        const CorrespondenceSet& corres,
         double max_correspondence_distance,
-        const TransformationEstimation &estimation
+        const TransformationEstimation& estimation
         /* = TransformationEstimationPointToPoint(false)*/,
         int ransac_n /* = 3*/,
-        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
-                &checkers /* = {}*/,
-        const RANSACConvergenceCriteria &criteria
+        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>&
+                checkers /* = {}*/,
+        const RANSACConvergenceCriteria& criteria
         /* = RANSACConvergenceCriteria()*/) {
     if (ransac_n < 3 || (int)corres.size() < ransac_n ||
         max_correspondence_distance <= 0.0) {
@@ -333,11 +359,14 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
     std::atomic<int> est_k_global = criteria.max_iteration_;
     std::atomic<int> total_validation = 0;
     utility::random::UniformIntGenerator<int> rand_gen(0, corres.size() - 1);
-    RANSACCorrespondenceReduction reducer(source, target, corres, estimation,
-        checkers, kdtree, est_k_global, total_validation, rand_gen,
-        max_correspondence_distance, ransac_n, criteria.confidence_);
-    tbb::parallel_reduce(tbb::blocked_range<int>(
-        0, criteria.max_iteration_, utility::DefaultGrainSizeTBB()), reducer);
+    RANSACCorrespondenceReduction reducer(
+            source, target, corres, estimation, checkers, kdtree, est_k_global,
+            total_validation, rand_gen, max_correspondence_distance, ransac_n,
+            criteria.confidence_);
+    tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, criteria.max_iteration_,
+                                    utility::DefaultGrainSizeTBB()),
+            reducer);
     auto best_result = std::move(reducer.best_result);
     utility::LogDebug(
             "RANSAC exits after {:d} validations. Best inlier ratio {:e}, "
@@ -347,19 +376,19 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 }
 
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const Feature &source_features,
-        const Feature &target_features,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
+        const Feature& source_features,
+        const Feature& target_features,
         bool mutual_filter,
         double max_correspondence_distance,
-        const TransformationEstimation
-                &estimation /* = TransformationEstimationPointToPoint(false)*/,
+        const TransformationEstimation&
+                estimation /* = TransformationEstimationPointToPoint(false)*/,
         int ransac_n /* = 3*/,
-        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
-                &checkers /* = {}*/,
-        const RANSACConvergenceCriteria
-                &criteria /* = RANSACConvergenceCriteria()*/) {
+        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>&
+                checkers /* = {}*/,
+        const RANSACConvergenceCriteria&
+                criteria /* = RANSACConvergenceCriteria()*/) {
     if (ransac_n < 3 || max_correspondence_distance <= 0.0) {
         return RegistrationResult();
     }
@@ -414,16 +443,14 @@ struct InformationMatrixReducer {
         }
     }
 
-    void join(InformationMatrixReducer& other) {
-        GTG += other.GTG;
-    }
+    void join(InformationMatrixReducer& other) { GTG += other.GTG; }
 };
 
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
         double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation) {
+        const Eigen::Matrix4d& transformation) {
     geometry::PointCloud pcd = source;
     if (!transformation.isIdentity()) {
         pcd.Transform(transformation);
@@ -435,11 +462,10 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
             transformation);
 
     InformationMatrixReducer reducer(result.correspondence_set_, target);
-    tbb::parallel_reduce(
-            tbb::blocked_range<std::size_t>(0,
-                result.correspondence_set_.size(),
-                utility::DefaultGrainSizeTBB()),
-            reducer);
+    tbb::parallel_reduce(tbb::blocked_range<std::size_t>(
+                                 0, result.correspondence_set_.size(),
+                                 utility::DefaultGrainSizeTBB()),
+                         reducer);
     return std::move(reducer.GTG);
 }
 

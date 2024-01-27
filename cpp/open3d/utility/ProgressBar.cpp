@@ -5,10 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressBar.h"
 
 #include <fmt/printf.h>
+
+#include "open3d/utility/Logging.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -100,8 +101,8 @@ TBBProgressBar::TBBProgressBar(std::size_t expected_count,
 }
 
 void TBBProgressBar::Reset(std::size_t expected_count,
-                        std::string progress_info,
-                        bool active) noexcept(false) {
+                           std::string progress_info,
+                           bool active) noexcept(false) {
     if (expected_count & flag_bit_mask) {
         utility::LogError("Expected count out of range [0, 2^31)");
     }
@@ -138,13 +139,13 @@ void TBBProgressBar::UpdateBar() {
     // If so set the flag bit and print 100%
     // tmp is created so that compare_exchange doesn't modify expected_count
     if (std::size_t tmp = expected_count_;
-            current_count_.compare_exchange_strong(
-            tmp, expected_count_ | flag_bit_mask)) {
+        current_count_.compare_exchange_strong(
+                tmp, expected_count_ | flag_bit_mask)) {
         fmt::print("{}[{}] 100%\n", progress_info_,
                    std::string(resolution_, '='));
     } else if (tbb::this_task_arena::current_thread_index() != 0) {
-        std::size_t new_progress_pixel = current_count_ *
-                resolution_ / expected_count_;
+        std::size_t new_progress_pixel =
+                current_count_ * resolution_ / expected_count_;
         if (new_progress_pixel > progress_pixel_) {
             progress_pixel_ = new_progress_pixel;
             int percent = int(current_count_ * 100 / expected_count_);

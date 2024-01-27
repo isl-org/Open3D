@@ -20,9 +20,7 @@ public:
     ProgressBar(size_t expected_count,
                 std::string progress_info,
                 bool active = false);
-    void Reset(size_t expected_count,
-               std::string progress_info,
-               bool active);
+    void Reset(size_t expected_count, std::string progress_info, bool active);
     inline ProgressBar& operator++() { return *this += 1; };
     virtual ProgressBar& operator+=(std::size_t n);
     void SetCurrentCount(size_t n);
@@ -62,7 +60,6 @@ public:
     inline std::size_t GetCurrentCount() const {
         return current_count_ & ~flag_bit_mask;
     }
-
 
 protected:
     static constexpr std::size_t flag_bit_mask = ~(~std::size_t{} >> 1);

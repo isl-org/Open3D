@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/parallel_for.h>
+
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <algorithm>
-
-#include <tbb/tbb.h>
 
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
@@ -19,8 +19,8 @@ namespace open3d {
 namespace geometry {
 
 std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
-        const std::vector<int> &constraint_vertex_indices,
-        const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
+        const std::vector<int>& constraint_vertex_indices,
+        const std::vector<Eigen::Vector3d>& constraint_vertex_positions,
         size_t max_iter,
         DeformAsRigidAsPossibleEnergy energy_model,
         double smoothed_alpha) const {
@@ -95,77 +95,86 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             std::swap(Rs, Rs_old);
         }
 
-        tbb::parallel_for(tbb::blocked_range<int>(
-                0, vertices_.size(), utility::DefaultGrainSizeTBB()),
-                [&](const tbb::blocked_range<int>& range){
-            for (int i = range.begin(); i < range.end(); ++i) {
-                // Update rotations
-                Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
-                Eigen::Matrix3d R = Eigen::Matrix3d::Zero();
-                int n_nbs = 0;
-                for (int j : prime->adjacency_list_[i]) {
-                    Eigen::Vector3d e0 = vertices_[i] - vertices_[j];
-                    Eigen::Vector3d e1 = prime->vertices_[i] - prime->vertices_[j];
-                    double w = edge_weights[GetOrderedEdge(i, j)];
-                    S += w * (e0 * e1.transpose());
-                    if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed) {
-                        R += Rs_old[j];
+        tbb::parallel_for(
+                tbb::blocked_range<int>(0, vertices_.size(),
+                                        utility::DefaultGrainSizeTBB()),
+                [&](const tbb::blocked_range<int>& range) {
+                    for (int i = range.begin(); i < range.end(); ++i) {
+                        // Update rotations
+                        Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
+                        Eigen::Matrix3d R = Eigen::Matrix3d::Zero();
+                        int n_nbs = 0;
+                        for (int j : prime->adjacency_list_[i]) {
+                            Eigen::Vector3d e0 = vertices_[i] - vertices_[j];
+                            Eigen::Vector3d e1 =
+                                    prime->vertices_[i] - prime->vertices_[j];
+                            double w = edge_weights[GetOrderedEdge(i, j)];
+                            S += w * (e0 * e1.transpose());
+                            if (energy_model ==
+                                DeformAsRigidAsPossibleEnergy::Smoothed) {
+                                R += Rs_old[j];
+                            }
+                            n_nbs++;
+                        }
+                        if (energy_model ==
+                                    DeformAsRigidAsPossibleEnergy::Smoothed &&
+                            iter > 0 && n_nbs > 0) {
+                            S = 2 * S +
+                                (4 * smoothed_alpha * surface_area / n_nbs) *
+                                        R.transpose();
+                        }
+                        Eigen::JacobiSVD<Eigen::Matrix3d> svd(
+                                S, Eigen::ComputeFullU | Eigen::ComputeFullV);
+                        Eigen::Matrix3d U = svd.matrixU();
+                        Eigen::Matrix3d V = svd.matrixV();
+                        Eigen::Vector3d D(1, 1,
+                                          (V * U.transpose()).determinant());
+                        // ensure rotation:
+                        // http://graphics.stanford.edu/~smr/ICP/comparison/eggert_comparison_mva97.pdf
+                        Rs[i] = V * D.asDiagonal() * U.transpose();
+                        if (Rs[i].determinant() <= 0) {
+                            utility::LogError(
+                                    "something went wrong with updating R");
+                        }
                     }
-                    n_nbs++;
-                }
-                if (energy_model == DeformAsRigidAsPossibleEnergy::Smoothed &&
-                    iter > 0 && n_nbs > 0) {
-                    S = 2 * S + (4 * smoothed_alpha * surface_area / n_nbs)
-                        * R.transpose();
-                }
-                Eigen::JacobiSVD<Eigen::Matrix3d> svd(
-                        S, Eigen::ComputeFullU | Eigen::ComputeFullV);
-                Eigen::Matrix3d U = svd.matrixU();
-                Eigen::Matrix3d V = svd.matrixV();
-                Eigen::Vector3d D(1, 1, (V * U.transpose()).determinant());
-                // ensure rotation:
-                // http://graphics.stanford.edu/~smr/ICP/comparison/eggert_comparison_mva97.pdf
-                Rs[i] = V * D.asDiagonal() * U.transpose();
-                if (Rs[i].determinant() <= 0) {
-                    utility::LogError("something went wrong with updating R");
-                }
-            }
-        });
+                });
 
-        tbb::parallel_for(tbb::blocked_range<int>(
-                0, vertices_.size(), utility::DefaultGrainSizeTBB()),
-                [&](const tbb::blocked_range<int>& range){
-            for (int i = range.begin(); i < range.end(); ++i) {
-                // Update Positions
-                Eigen::Vector3d bi(0, 0, 0);
-                if (constraints.count(i) > 0) {
-                    bi = constraints[i];
-                } else {
-                    for (int j : prime->adjacency_list_[i]) {
-                        double w = edge_weights[GetOrderedEdge(i, j)];
-                        bi += w / 2 *
-                              ((Rs[i] + Rs[j]) * (vertices_[i] - vertices_[j]));
+        tbb::parallel_for(
+                tbb::blocked_range<int>(0, vertices_.size(),
+                                        utility::DefaultGrainSizeTBB()),
+                [&](const tbb::blocked_range<int>& range) {
+                    for (int i = range.begin(); i < range.end(); ++i) {
+                        // Update Positions
+                        Eigen::Vector3d bi(0, 0, 0);
+                        if (constraints.count(i) > 0) {
+                            bi = constraints[i];
+                        } else {
+                            for (int j : prime->adjacency_list_[i]) {
+                                double w = edge_weights[GetOrderedEdge(i, j)];
+                                bi += w / 2 *
+                                      ((Rs[i] + Rs[j]) *
+                                       (vertices_[i] - vertices_[j]));
+                            }
+                        }
+                        b[0](i) = bi(0);
+                        b[1](i) = bi(1);
+                        b[2](i) = bi(2);
                     }
-                }
-                b[0](i) = bi(0);
-                b[1](i) = bi(1);
-                b[2](i) = bi(2);
-            }
-        });
+                });
 
-        tbb::parallel_for(tbb::blocked_range<int>(0, 3, 1),
-                [&](const tbb::blocked_range<int>& range){
-            for (int comp = range.begin(); comp < range.end(); ++comp) {
-                Eigen::VectorXd p_prime = solver.solve(b[comp]);
-                if (solver.info() != Eigen::Success) {
-                    utility::LogError("Cholesky solve failed");
-                }
-                for (int i = 0; i < int(vertices_.size()); ++i) {
-                    prime->vertices_[i](comp) = p_prime(i);
-                }
-            }
-        });
-
+        tbb::parallel_for(
+                tbb::blocked_range<int>(0, 3, 1),
+                [&](const tbb::blocked_range<int>& range) {
+                    for (int comp = range.begin(); comp < range.end(); ++comp) {
+                        Eigen::VectorXd p_prime = solver.solve(b[comp]);
+                        if (solver.info() != Eigen::Success) {
+                            utility::LogError("Cholesky solve failed");
+                        }
+                        for (int i = 0; i < int(vertices_.size()); ++i) {
+                            prime->vertices_[i](comp) = p_prime(i);
+                        }
+                    }
+                });
 
         // Compute energy and log
         double energy = 0;

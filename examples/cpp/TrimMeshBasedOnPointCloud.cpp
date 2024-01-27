@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/Open3D.h"
-
 #include <tbb/parallel_for.h>
+
+#include "open3d/Open3D.h"
 
 void PrintHelp() {
     using namespace open3d;

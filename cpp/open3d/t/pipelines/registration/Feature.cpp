@@ -104,16 +104,16 @@ core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
 
     // corres[0]: corres_ij, corres[1]: corres_ji
     tbb::parallel_for(tbb::blocked_range<int>(0, num_searches, 1),
-            [&](const tbb::blocked_range<int>& range){
-        for (int i = range.begin(); i < range.end(); ++i) {
-            core::nns::NearestNeighborSearch nns(
-                    features[1 - i], core::Dtype::Int64);
-            nns.KnnIndex();
-            auto result = nns.KnnSearch(features[i], 1);
+                      [&](const tbb::blocked_range<int> &range) {
+                          for (int i = range.begin(); i < range.end(); ++i) {
+                              core::nns::NearestNeighborSearch nns(
+                                      features[1 - i], core::Dtype::Int64);
+                              nns.KnnIndex();
+                              auto result = nns.KnnSearch(features[i], 1);
 
-            corres[i] = result.first.View({-1});
-        }
-    });
+                              corres[i] = result.first.View({-1});
+                          }
+                      });
 
     auto corres_ij = corres[0];
     core::Tensor arange_source =
