@@ -27,8 +27,8 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
 
     // Precompute all neighbors.
     utility::LogDebug("Precompute neighbors.");
-    utility::ProgressBar progress_bar(points_.size(), "Precompute neighbors.",
-                                      print_progress);
+    utility::ProgressBar progress_bar(points_.size(),
+            "Precompute neighbors.", print_progress);
     std::vector<std::vector<int>> nbs(points_.size());
 
     tbb::spin_mutex mtx;
@@ -39,11 +39,9 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
         for (std::size_t i = range.begin(); i < range.end(); ++i) {
             std::vector<double> dists2;
             kdtree.SearchRadius(points_[i], eps, nbs[i], dists2);
-            {
-                tbb::spin_mutex::scoped_lock lock(mtx);
-                ++progress_bar;
-            }
         }
+        tbb::spin_mutex::scoped_lock lock(mtx);
+        progress_bar += (range.end() - range.begin());
     });
 
     utility::LogDebug("Done Precompute neighbors.");
