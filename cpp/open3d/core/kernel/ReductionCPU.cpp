@@ -194,7 +194,7 @@ public:
                 // sub_indexer's workload_idx is indexer_'s ipo_idx.
                 Indexer sub_indexer = indexer_.GetPerOutputIndexer(output_idx);
                 using result_t = std::pair<int64_t, scalar_t>;
-                result_t val_idx{identity, identity};
+                result_t val_idx{-1, identity};
                 val_idx = tbb::parallel_deterministic_reduce(
                         tbb::blocked_range<int64_t>(0, sub_indexer.NumWorkloads(),
                         utility::DefaultGrainSizeTBB()), val_idx,
@@ -213,7 +213,7 @@ public:
                             std::get<0>(b), std::get<1>(b));
                 });
                 *reinterpret_cast<int64_t *>(sub_indexer.GetOutputPtr(0)) =
-                        std::get<1>(val_idx);
+                        std::get<0>(val_idx);
             }
         });
     }
