@@ -187,13 +187,12 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
 
     // Use size_t here to avoid large integer which exceed max of int.
     std::size_t break_iteration = std::numeric_limits<std::size_t>::max();
-    std::size_t iteration_count = 0;
+    std::atomic<std::size_t> iteration_count = 0;
 
     tbb::spin_rw_mutex mtx;
     tbb::parallel_for(tbb::blocked_range<int>(0, num_iterations, 1),
             [&](const tbb::blocked_range<int>& range) {
         for (int i = range.begin(); i < range.end(); ++i) {
-            // Eschew using a mutex here because doing an extra iteration is ok
             if (iteration_count > break_iteration) {
                 continue;
             }
@@ -238,8 +237,8 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                         }
                     }
                 }
-                iteration_count++;
             }
+            iteration_count++;
         }
     });
 
