@@ -1358,8 +1358,7 @@ bool TriangleMesh::IsVertexManifold() const {
 
 std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const {
-    std::vector<Eigen::Vector2i> self_intersecting_triangles;
-    tbb::spin_mutex out_mtx;
+    tbb::concurrent_vector<Eigen::Vector2i> self_intersecting_triangles;
     tbb::parallel_for(tbb::blocked_range<std::size_t>(
             0, triangles_.size(), utility::DefaultGrainSizeTBB()),
             [&](const tbb::blocked_range<std::size_t>& range){
@@ -1396,14 +1395,14 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
                         q0.array().max(q1.array().max(q2.array()));
                 if (IntersectionTest::AABBAABB(bb_min1, bb_max1, bb_min2, bb_max2) &&
                     IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
-                    tbb::spin_mutex::scoped_lock lock(out_mtx);
                     self_intersecting_triangles.push_back(
                             Eigen::Vector2i(tidx0, tidx1));
                 }
             }
         }
     });
-    return self_intersecting_triangles;
+    return {self_intersecting_triangles.begin(),
+            self_intersecting_triangles.end()};
 }
 
 bool TriangleMesh::IsSelfIntersecting() const {
