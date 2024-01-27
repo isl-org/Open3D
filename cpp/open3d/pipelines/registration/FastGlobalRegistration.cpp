@@ -7,6 +7,9 @@
 
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_invoke.h>
+
 #include <map>
 
 #include "open3d/geometry/KDTreeFlann.h"
@@ -14,6 +17,7 @@
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 #include "open3d/utility/Random.h"
 
 namespace open3d {
@@ -24,34 +28,50 @@ static std::vector<std::pair<int, int>> InitialMatching(
         const Feature& src_features, const Feature& dst_features) {
     geometry::KDTreeFlann src_feature_tree(src_features);
     geometry::KDTreeFlann dst_feature_tree(dst_features);
-    std::map<int, int> corres_ij;
+    std::vector<int> corres_ij(src_features.data_.cols(), -1);
     std::vector<int> corres_ji(dst_features.data_.cols(), -1);
 
-#pragma omp for nowait
-    for (int j = 0; j < dst_features.data_.cols(); j++) {
-        std::vector<int> corres_tmp(1);
-        std::vector<double> dist_tmp(1);
-        src_feature_tree.SearchKNN(Eigen::VectorXd(dst_features.data_.col(j)),
-                                   1, corres_tmp, dist_tmp);
-        int i = corres_tmp[0];
-        corres_ji[j] = i;
-        if (corres_ij.find(i) == corres_ij.end()) {
-            // set a temp value to prevent other threads recomputing
-            // corres_ij[i] until the following dst_feature_tree.SearchKNN()
-            // call completes. There is still a race condition but the result
-            // would be fine since both threads will compute the same result
-            corres_ij[i] = -1;
-            dst_feature_tree.SearchKNN(
-                    Eigen::VectorXd(src_features.data_.col(i)), 1, corres_tmp,
-                    dist_tmp);
-            corres_ij[i] = corres_tmp[0];
-        }
-    }
+    tbb::parallel_invoke(
+            [&]() {
+                tbb::parallel_for(
+                        tbb::blocked_range<int>(0, src_features.data_.cols(),
+                                                utility::DefaultGrainSizeTBB()),
+                        [&](const tbb::blocked_range<int>& range) {
+                            for (int i = range.begin(); i < range.end(); ++i) {
+                                std::vector<int> corres_tmp(1);
+                                std::vector<double> dist_tmp(1);
+                                dst_feature_tree.SearchKNN(
+                                        Eigen::VectorXd(
+                                                src_features.data_.col(i)),
+                                        1, corres_tmp, dist_tmp);
+                                corres_ij[i] = corres_tmp[0];
+                            }
+                        });
+            },
+            [&]() {
+                tbb::parallel_for(
+                        tbb::blocked_range<int>(0, dst_features.data_.cols(),
+                                                utility::DefaultGrainSizeTBB()),
+                        [&](const tbb::blocked_range<int>& range) {
+                            for (int j = range.begin(); j < range.end(); ++j) {
+                                std::vector<int> corres_tmp(1);
+                                std::vector<double> dist_tmp(1);
+                                src_feature_tree.SearchKNN(
+                                        Eigen::VectorXd(
+                                                dst_features.data_.col(j)),
+                                        1, corres_tmp, dist_tmp);
+                                corres_ji[j] = corres_tmp[0];
+                            }
+                        });
+            });
 
     utility::LogDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
-    for (const std::pair<const int, int>& ij : corres_ij) {
-        if (corres_ji[ij.second] == ij.first) corres_cross.push_back(ij);
+    for (int i = 0; i < static_cast<int>(corres_ij.size()); ++i) {
+        int j = corres_ij[i];
+        if (corres_ji[j] == i) {
+            corres_cross.emplace_back(i, j);
+        }
     }
     utility::LogDebug("Initial matchings : {}", corres_cross.size());
     return corres_cross;

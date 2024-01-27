@@ -140,7 +140,7 @@ public:
                                         int line,
                                         const char *function,
                                         const char *format,
-                                        Args &&... args) {
+                                        Args &&...args) {
         if (sizeof...(Args) > 0) {
             Logger::GetInstance().VError(
                     file, line, function,
@@ -155,7 +155,7 @@ public:
                             int line,
                             const char *function,
                             const char *format,
-                            Args &&... args) {
+                            Args &&...args) {
         if (Logger::GetInstance().GetVerbosityLevel() >=
             VerbosityLevel::Warning) {
             if (sizeof...(Args) > 0) {
@@ -173,7 +173,7 @@ public:
                          int line,
                          const char *function,
                          const char *format,
-                         Args &&... args) {
+                         Args &&...args) {
         if (Logger::GetInstance().GetVerbosityLevel() >= VerbosityLevel::Info) {
             if (sizeof...(Args) > 0) {
                 Logger::GetInstance().VInfo(
@@ -190,7 +190,7 @@ public:
                           int line,
                           const char *function,
                           const char *format,
-                          Args &&... args) {
+                          Args &&...args) {
         if (Logger::GetInstance().GetVerbosityLevel() >=
             VerbosityLevel::Debug) {
             if (sizeof...(Args) > 0) {

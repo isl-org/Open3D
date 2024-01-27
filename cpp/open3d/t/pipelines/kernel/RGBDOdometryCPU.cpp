@@ -45,18 +45,12 @@ void ComputeOdometryInformationMatrixCPU(const core::Tensor& source_vertex_map,
 
     std::vector<float> A_1x21(21, 0.0);
 
-#ifdef _MSC_VER
     std::vector<float> zeros_21(21, 0.0);
     A_1x21 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_21,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-#else
-    float* A_reduction = A_1x21.data();
-#pragma omp parallel for reduction(+ : A_reduction[:21]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
-#endif
                     int y = workload_idx / cols;
                     int x = workload_idx % cols;
 
@@ -79,7 +73,6 @@ void ComputeOdometryInformationMatrixCPU(const core::Tensor& source_vertex_map,
                         }
                     }
                 }
-#ifdef _MSC_VER
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -90,7 +83,6 @@ void ComputeOdometryInformationMatrixCPU(const core::Tensor& source_vertex_map,
                 }
                 return result;
             });
-#endif
     core::Tensor A_reduction_tensor(A_1x21, {21}, core::Float32, device);
     float* reduction_ptr = A_reduction_tensor.GetDataPtr<float>();
 
@@ -145,18 +137,12 @@ void ComputeOdometryResultIntensityCPU(
 
     std::vector<float> A_1x29(29, 0.0);
 
-#ifdef _MSC_VER
     std::vector<float> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-#else
-    float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
-#endif
                     int y = workload_idx / cols;
                     int x = workload_idx % cols;
 
@@ -186,7 +172,6 @@ void ComputeOdometryResultIntensityCPU(
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _MSC_VER
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -197,7 +182,7 @@ void ComputeOdometryResultIntensityCPU(
                 }
                 return result;
             });
-#endif
+
     core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
@@ -245,18 +230,12 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
 
     std::vector<float> A_1x29(29, 0.0);
 
-#ifdef _MSC_VER
     std::vector<float> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-#else
-    float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
-#endif
                     int y = workload_idx / cols;
                     int x = workload_idx % cols;
 
@@ -293,7 +272,6 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _MSC_VER
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -304,7 +282,6 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
                 }
                 return result;
             });
-#endif
     core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
@@ -337,18 +314,12 @@ void ComputeOdometryResultPointToPlaneCPU(
 
     std::vector<float> A_1x29(29, 0.0);
 
-#ifdef _MSC_VER
     std::vector<float> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
-#else
-    float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
-#endif
                     int y = workload_idx / cols;
                     int x = workload_idx % cols;
 
@@ -374,7 +345,6 @@ void ComputeOdometryResultPointToPlaneCPU(
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _MSC_VER
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -385,7 +355,7 @@ void ComputeOdometryResultPointToPlaneCPU(
                 }
                 return result;
             });
-#endif
+
     core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
