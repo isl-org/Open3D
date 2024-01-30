@@ -165,7 +165,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
     RandomSampler<size_t> sampler(num_points);
     // Pre-generate all random samples before entering the parallel region
     std::vector<std::vector<size_t>> all_sampled_indices;
-    all_sampled_indices.reserve(num_iterations);    
+    all_sampled_indices.reserve(num_iterations);
     for (int i = 0; i < num_iterations; i++) {
         all_sampled_indices.push_back(sampler(ransac_n));
     }
