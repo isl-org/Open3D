@@ -30,6 +30,7 @@
 -   Fix geometry picker Error when LineSet objects are presented (PR #6499)
 -   Fix mis-configured application .desktop link for the Open3D viewer when installing to a custom path (PR #6599)
 -   Fix regression in printing cuda tensor from PR #6444 🐛
+- Implemented functionality for removing duplicate vertices from TriangleMesh (PR #6414).
 
 ## 0.13
 

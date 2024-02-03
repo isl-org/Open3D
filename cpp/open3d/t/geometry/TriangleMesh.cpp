@@ -1252,6 +1252,139 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
     return result;
 }
 
+namespace {
+
+/// This is a templatized local version of RemoveDuplicates.
+/// Use of templates allows us to use common code for different
+/// datatype possibilities for vertex.positions, namely, float32, float64,
+/// and triangle.indices, namely, int32, int64.
+/// This function first computes two maps 
+/// (MapA.) From vertex coordinates to their indices.
+//          This is implemented using unordered_map.
+/// (MapB.) From the vertex indices before duplicate removal to indices after removal.
+///          This is implemented using std::vector. 
+///          
+/// MapA allows the function to detect duplicates and MapB allows it update triangle indices.
+/// During the computation of the above maps unique vertex attributes including positions
+/// are moved to beginning of the corresponding attribute tensor.
+///
+/// Caveats:
+///   The unordered_map approach is fast in general but if the inputs are close, the
+///   hashing could cause problems and it might be good to consider a sorting based algorithms,
+///   which can do a better job of comparing the double values.
+/// \param mesh The mesh from which duplicate vertices are to be removed.
+template<typename Coord_t, typename Tindex_t>
+TriangleMesh& RemoveDuplicateVerticesWorker(TriangleMesh &mesh)
+{   
+    //Algorithm based on Eigen implementation 
+    if(!mesh.HasVertexPositions()) {
+        utility::LogWarning("TriangeMesh::RemoveDuplicateVertices: No vertices present, ignoring.");
+        return mesh;
+    }
+
+    typedef std::tuple<Coord_t, Coord_t, Coord_t> Point3d;
+    std::unordered_map<Point3d, size_t, utility::hash_tuple<Point3d>>
+            point_to_old_index;
+
+    auto vertices = mesh.GetVertexPositions();
+    auto orig_num_vertices = vertices.GetLength();
+    const auto vmask_type = core::Int32;
+    using vmask_itype = int32_t;
+    core::Tensor vertex_mask = core::Tensor::Zeros({orig_num_vertices}, vmask_type);
+    using Length_t = decltype(orig_num_vertices);
+    std::vector<Length_t> index_old_to_new(orig_num_vertices);
+
+    //REM_DUP_VERT_STEP 1: 
+    // Compute map from points to old indices, and use a counter
+    // to compute a map from old indices to new unique indices.
+    const Coord_t *vertices_ptr = vertices.GetDataPtr<Coord_t>();
+    vmask_itype * vertex_mask_ptr = vertex_mask.GetDataPtr<vmask_itype>();
+    Length_t k = 0;                                  // new index
+    for (Length_t i = 0; i < orig_num_vertices; ++i) {  // old index
+        Point3d coord = std::make_tuple(vertices_ptr[i * 3], vertices_ptr[i * 3 + 1],
+                                        vertices_ptr[i * 3 + 2]);
+        if (point_to_old_index.find(coord) == point_to_old_index.end()) {
+            point_to_old_index[coord] = i;
+            index_old_to_new[i] = k;
+            ++k;
+            vertex_mask_ptr[i] = 1;
+        } else {
+            index_old_to_new[i] = index_old_to_new[point_to_old_index[coord]];
+        }
+    }
+    vertex_mask = vertex_mask.To(mesh.GetDevice(), core::Bool);
+
+    //REM_DUP_VERT_STEP 2:
+    // Update vertex attributes, by shrinking them appropriately.
+    for (auto item : mesh.GetVertexAttr()) {
+        mesh.SetVertexAttr(item.first, item.second.IndexGet({vertex_mask}));
+    }
+
+    //REM_DUP_VERT_STEP 3:
+    // Remap triangle indices to new unique vertex indices, if required.
+    if (k < orig_num_vertices) {
+        core::Tensor tris = mesh.GetTriangleIndices();
+        core::Tensor tris_cpu = tris.To(core::Device()).Contiguous();
+        const int64_t num_tris = tris_cpu.GetLength();
+        //Update triangle indices.
+        Tindex_t *indices_ptr = tris_cpu.GetDataPtr<Tindex_t>();
+        for(int64_t i = 0; i < num_tris * 3; ++i) {
+            int64_t new_idx = index_old_to_new[indices_ptr[i]];
+            indices_ptr[i] = Tindex_t(new_idx);
+        }
+        //Update triangle indices, no need to update other attributes.
+        tris = tris_cpu.To(mesh.GetDevice());
+        mesh.SetTriangleIndices(tris);
+    }
+
+    utility::LogDebug(
+             "[RemoveDuplicatedVertices] {:d} vertices have been removed.",
+             (int)(orig_num_vertices - k));
+
+    return mesh;
+
+}
+
+} //Anonymous namespace
+
+///
+/// Remove duplicate vertices from a mesh and return the resulting mesh.
+///
+TriangleMesh& TriangleMesh::RemoveDuplicateVertices()
+{
+    /// This function mainly does some checks and then calls the RemoveDuplicateVerticesWorker
+    /// with appropriate data type.
+    if(!HasVertexPositions()) {
+        utility::LogWarning("TriangeMesh::RemoveDuplicateVertices: No vertices present, ignoring.");
+        return *this;
+    }
+    auto vertices = GetVertexPositions();
+    auto triangles = GetTriangleIndices();
+    if (core::Int32 != triangles.GetDtype() && core::Int64 != triangles.GetDtype()) {
+        utility::LogError("Only Int32 or Int64 are supported for triangle indices");
+        return *this;
+    }
+    if (core::Float32 != vertices.GetDtype() && core::Float64 != vertices.GetDtype()) {
+        utility::LogError("Only Float32 or Float64 is supported for vertex coordinates");
+        return *this;        
+    }
+    
+    if(core::Float32 == vertices.GetDtype()) {
+        if (core::Int32 == triangles.GetDtype()) {
+            return RemoveDuplicateVerticesWorker<float, int>(*this);
+        } else {
+            return RemoveDuplicateVerticesWorker<float, int64_t>(*this);
+        }
+    } else {
+        if (core::Int32 == triangles.GetDtype()) {
+            return RemoveDuplicateVerticesWorker<double, int>(*this);
+        } else {
+            return RemoveDuplicateVerticesWorker<double, int64_t>(*this);
+        }
+    }
+}
+
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
