@@ -1286,10 +1286,10 @@ TriangleMesh& RemoveDuplicateVerticesWorker(TriangleMesh &mesh)
     std::unordered_map<Point3d, size_t, utility::hash_tuple<Point3d>>
             point_to_old_index;
 
-    auto vertices = mesh.GetVertexPositions();
+    auto vertices = mesh.GetVertexPositions().To(mesh.GetDevice()).Contiguous();
     auto orig_num_vertices = vertices.GetLength();
-    const auto vmask_type = core::Int32;
-    using vmask_itype = int32_t;
+    const auto vmask_type = core::Bool;
+    using vmask_itype = bool;
     core::Tensor vertex_mask = core::Tensor::Zeros({orig_num_vertices}, vmask_type);
     using Length_t = decltype(orig_num_vertices);
     std::vector<Length_t> index_old_to_new(orig_num_vertices);
@@ -1322,7 +1322,7 @@ TriangleMesh& RemoveDuplicateVerticesWorker(TriangleMesh &mesh)
 
     //REM_DUP_VERT_STEP 3:
     // Remap triangle indices to new unique vertex indices, if required.
-    if (k < orig_num_vertices) {
+    if (k < orig_num_vertices && mesh.HasTriangleIndices()) {
         core::Tensor tris = mesh.GetTriangleIndices();
         core::Tensor tris_cpu = tris.To(core::Device()).Contiguous();
         const int64_t num_tris = tris_cpu.GetLength();
@@ -1359,24 +1359,27 @@ TriangleMesh& TriangleMesh::RemoveDuplicateVertices()
         return *this;
     }
     auto vertices = GetVertexPositions();
-    auto triangles = GetTriangleIndices();
-    if (core::Int32 != triangles.GetDtype() && core::Int64 != triangles.GetDtype()) {
-        utility::LogError("Only Int32 or Int64 are supported for triangle indices");
+    auto triangle_dtype = core::Int32;
+    if (HasTriangleIndices()) {
+        triangle_dtype = GetTriangleIndices().GetDtype();
+    }
+    if (core::Int32 != triangle_dtype && core::Int64 != triangle_dtype) {
+        utility::LogWarning("TriangleMesh::RemoveDuplicateVertices: Only Int32 or Int64 are supported for triangle indices");
         return *this;
     }
     if (core::Float32 != vertices.GetDtype() && core::Float64 != vertices.GetDtype()) {
-        utility::LogError("Only Float32 or Float64 is supported for vertex coordinates");
+        utility::LogWarning("TriangleMesh::RemoveDuplicateVertices: Only Float32 or Float64 is supported for vertex coordinates");
         return *this;        
     }
     
     if(core::Float32 == vertices.GetDtype()) {
-        if (core::Int32 == triangles.GetDtype()) {
+        if (core::Int32 == triangle_dtype) {
             return RemoveDuplicateVerticesWorker<float, int>(*this);
         } else {
             return RemoveDuplicateVerticesWorker<float, int64_t>(*this);
         }
     } else {
-        if (core::Int32 == triangles.GetDtype()) {
+        if (core::Int32 == triangle_dtype) {
             return RemoveDuplicateVerticesWorker<double, int>(*this);
         } else {
             return RemoveDuplicateVerticesWorker<double, int64_t>(*this);
