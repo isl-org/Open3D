@@ -52,6 +52,8 @@ public:
                    const Eigen::Matrix4d &extrinsic) override;
     std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override;
     std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override;
+    /// Temporary function will be deleted/"merged" with ExtractTriangleMesh
+    std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh_v2();
 
     /// Debug function to extract the voxel data into a VoxelGrid
     std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud() const;
