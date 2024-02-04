@@ -1383,19 +1383,10 @@ TriangleMesh &TriangleMesh::RemoveDuplicateVertices() {
         return *this;
     }
 
-    if (core::Float32 == vertices.GetDtype()) {
-        if (core::Int32 == triangle_dtype) {
-            return RemoveDuplicateVerticesWorker<float, int>(*this);
-        } else {
-            return RemoveDuplicateVerticesWorker<float, int64_t>(*this);
-        }
-    } else {
-        if (core::Int32 == triangle_dtype) {
-            return RemoveDuplicateVerticesWorker<double, int>(*this);
-        } else {
-            return RemoveDuplicateVerticesWorker<double, int64_t>(*this);
-        }
-    }
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(
+            vertices.GetDtype(), triangle_dtype,
+            [&]() { RemoveDuplicateVerticesWorker<scalar_t, int_t>(*this); });
+    return *this;
 }
 
 }  // namespace geometry
