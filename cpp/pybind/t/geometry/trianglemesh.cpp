@@ -905,10 +905,11 @@ Example:
         print(np.unique(mesh.triangle.partition_ids.numpy(), return_counts=True))
 
 )");
-    triangle_mesh.def(
-            "remove_duplicate_vertices", &TriangleMesh::RemoveDuplicateVertices,
-            "Removes duplicate vertices from vertex attribute"
-            "'positions' and updates other vertex attributes and triangle indices.");
+    triangle_mesh.def("remove_duplicate_vertices",
+                      &TriangleMesh::RemoveDuplicateVertices,
+                      "Removes duplicate vertices from vertex attribute"
+                      "'positions' and updates other vertex attributes and "
+                      "triangle indices.");
 
     triangle_mesh.def(
             "select_faces_by_mask", &TriangleMesh::SelectFacesByMask, "mask"_a,

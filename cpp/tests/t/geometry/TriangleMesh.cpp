@@ -263,52 +263,52 @@ TEST_P(TriangleMeshPermuteDevices, Transform) {
 TEST_P(TriangleMeshPermuteDevices, RemoveDuplicateVertices) {
     core::Device device = GetParam();
     t::geometry::TriangleMesh mesh(device);
-    mesh.SetVertexPositions(
-        core::Tensor::Init<float>({{0.0, 0.0, 0.0},
-                                   {1.0, 0.0, 0.0},
-                                   {0.0, 0.0, 1.0},
-                                   {1.0, 0.0, 1.0},
-                                   {0.0, 1.0, 0.0},
-                                   {1.0, 1.0, 0.0},
-                                   {0.0, 1.0, 1.0},
-                                   {1.0, 0.0, 0.0},
-                                   {1.0, 1.0, 1.0}}, device));
-    mesh.SetTriangleIndices(
-        core::Tensor::Init<int>({{4, 8, 5},
-                                 {4, 6, 8},
-                                 {0, 2, 4},
-                                 {2, 6, 4},
-                                 {0, 1, 2},
-                                 {1, 3, 2},
-                                 {7, 5, 8},
-                                 {7, 8, 3},
-                                 {2, 3, 8},
-                                 {2, 8, 6},
-                                 {0, 4, 1},
-                                 {1, 4, 5}}, device));
+    mesh.SetVertexPositions(core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                       {1.0, 0.0, 0.0},
+                                                       {0.0, 0.0, 1.0},
+                                                       {1.0, 0.0, 1.0},
+                                                       {0.0, 1.0, 0.0},
+                                                       {1.0, 1.0, 0.0},
+                                                       {0.0, 1.0, 1.0},
+                                                       {1.0, 0.0, 0.0},
+                                                       {1.0, 1.0, 1.0}},
+                                                      device));
+    mesh.SetTriangleIndices(core::Tensor::Init<int>({{4, 8, 5},
+                                                     {4, 6, 8},
+                                                     {0, 2, 4},
+                                                     {2, 6, 4},
+                                                     {0, 1, 2},
+                                                     {1, 3, 2},
+                                                     {7, 5, 8},
+                                                     {7, 8, 3},
+                                                     {2, 3, 8},
+                                                     {2, 8, 6},
+                                                     {0, 4, 1},
+                                                     {1, 4, 5}},
+                                                    device));
     mesh.RemoveDuplicateVertices();
     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
-                core::Tensor::Init<float>({{0.0, 0.0, 0.0},
-                                           {1.0, 0.0, 0.0},
-                                           {0.0, 0.0, 1.0},
-                                           {1.0, 0.0, 1.0},
-                                           {0.0, 1.0, 0.0},
-                                           {1.0, 1.0, 0.0},
-                                           {0.0, 1.0, 1.0},
-                                           {1.0, 1.0, 1.0}})));
+            core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                       {1.0, 0.0, 0.0},
+                                       {0.0, 0.0, 1.0},
+                                       {1.0, 0.0, 1.0},
+                                       {0.0, 1.0, 0.0},
+                                       {1.0, 1.0, 0.0},
+                                       {0.0, 1.0, 1.0},
+                                       {1.0, 1.0, 1.0}})));
     EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(
-                core::Tensor::Init<int>({{4, 7, 5},
-                                         {4, 6, 7},
-                                         {0, 2, 4},
-                                         {2, 6, 4},
-                                         {0, 1, 2},
-                                         {1, 3, 2},
-                                         {1, 5, 7},
-                                         {1, 7, 3},
-                                         {2, 3, 7},
-                                         {2, 7, 6},
-                                         {0, 4, 1},
-                                         {1, 4, 5}})));
+            core::Tensor::Init<int>({{4, 7, 5},
+                                     {4, 6, 7},
+                                     {0, 2, 4},
+                                     {2, 6, 4},
+                                     {0, 1, 2},
+                                     {1, 3, 2},
+                                     {1, 5, 7},
+                                     {1, 7, 3},
+                                     {2, 3, 7},
+                                     {2, 7, 6},
+                                     {0, 4, 1},
+                                     {1, 4, 5}})));
 }
 
 TEST_P(TriangleMeshPermuteDevices, Translate) {
