@@ -935,6 +935,11 @@ public:
     /// empty, return an empty mesh.
     TriangleMesh SelectFacesByMask(const core::Tensor &mask) const;
 
+    /// Removes duplicate vertices and their associated attributes.
+    /// It also updates the triangle indices to refer to the reduced array of
+    /// vertices. \return Mesh with the duplicate vertices removed.
+    TriangleMesh &RemoveDuplicateVertices();
+
     /// Returns a new mesh with the vertices selected by a vector of indices.
     /// If an item from the indices list exceeds the max vertex number of
     /// the mesh or has a negative value, it is ignored.
