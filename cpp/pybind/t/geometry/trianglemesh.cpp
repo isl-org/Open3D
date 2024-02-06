@@ -962,6 +962,10 @@ Example:
         box = o3d.t.geometry.TriangleMesh.create_box()
         top_face = box.select_by_index([2, 3, 6, 7])
 )");
+
+    triangle_mesh.def("remove_unreferenced_vertices",
+                      &TriangleMesh::RemoveUnreferencedVertices,
+                      "Removes unreferenced vertices from the mesh in-place.");
 }
 
 }  // namespace geometry
