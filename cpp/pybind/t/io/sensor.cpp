@@ -130,8 +130,12 @@ void pybind_sensor(py::module &m) {
                std::unique_ptr<RGBDVideoReader>>
             rgbd_video_reader(m, "RGBDVideoReader", "RGBD Video file reader.");
     rgbd_video_reader.def(py::init<>())
-            .def_static("create", &RGBDVideoReader::Create, "filename"_a,
-                        "Create RGBD video reader based on filename")
+            .def_static(
+                    "create",
+                    [](const fs::path &filename) {
+                        return RGBDVideoReader::Create(filename.string());
+                    },
+                    "filename"_a, "Create RGBD video reader based on filename")
             .def("save_frames", &RGBDVideoReader::SaveFrames, "frame_path"_a,
                  "start_time_us"_a = 0, "end_time_us"_a = UINT64_MAX,
                  "Save synchronized and aligned individual frames to "

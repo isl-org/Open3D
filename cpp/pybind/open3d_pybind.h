@@ -40,6 +40,9 @@
 // every compilation unit.
 #include "pybind/core/tensor_type_caster.h"
 
+// Replace with <pybind11/stl/filesystem.h> when we require C++17.
+#include "pybind_filesystem.h"
+
 namespace py = pybind11;
 using namespace py::literals;
 
