@@ -283,6 +283,42 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
     return *this;
 }
 
+static core::Tensor ComputeTriangleAreasHelper(const TriangleMesh &mesh) {
+    const int64_t triangle_num = mesh.GetTriangleIndices().GetLength();
+    const core::Dtype dtype = mesh.GetVertexPositions().GetDtype();
+    core::Tensor triangle_areas({triangle_num}, dtype, mesh.GetDevice());
+    if (mesh.IsCPU()) {
+        kernel::trianglemesh::ComputeTriangleAreasCPU(
+                mesh.GetVertexPositions().Contiguous(),
+                mesh.GetTriangleIndices().Contiguous(), triangle_areas);
+    } else if (mesh.IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
+                  mesh.GetVertexPositions().Contiguous(),
+                  mesh.GetTriangleIndices().Contiguous(), triangle_areas);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    return triangle_areas;
+}
+
+TriangleMesh &TriangleMesh::ComputeTriangleAreas() {
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return *this;
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+
+    core::Tensor triangle_areas = ComputeTriangleAreasHelper(*this);
+    SetTriangleAttr("areas", triangle_areas);
+
+    return *this;
+}
+
 double TriangleMesh::GetSurfaceArea() const {
     double surface_area = 0;
     if (IsEmpty()) {
@@ -295,22 +331,7 @@ double TriangleMesh::GetSurfaceArea() const {
         return surface_area;
     }
 
-    const int64_t triangle_num = GetTriangleIndices().GetLength();
-    const core::Dtype dtype = GetVertexPositions().GetDtype();
-    core::Tensor triangle_areas({triangle_num}, dtype, GetDevice());
-
-    if (IsCPU()) {
-        kernel::trianglemesh::ComputeTriangleAreasCPU(
-                GetVertexPositions().Contiguous(),
-                GetTriangleIndices().Contiguous(), triangle_areas);
-    } else if (IsCUDA()) {
-        CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
-                  GetVertexPositions().Contiguous(),
-                  GetTriangleIndices().Contiguous(), triangle_areas);
-    } else {
-        utility::LogError("Unimplemented device");
-    }
-
+    core::Tensor triangle_areas = ComputeTriangleAreasHelper(*this);
     surface_area = triangle_areas.Sum({0}).To(core::Float64).Item<double>();
 
     return surface_area;

@@ -660,3 +660,32 @@ def test_select_by_index_64(device):
         untouched_sphere.vertex.positions)
     assert sphere_custom.triangle.indices.allclose(
         untouched_sphere.triangle.indices)
+
+
+def check_compute_triangle_areas(device, int_t, float_t):
+    torus = o3d.t.geometry.TriangleMesh.create_torus(2, 1, 6, 3, float_t, int_t,
+                                                     device)
+
+    expected_areas = o3c.Tensor([
+        2.341874249399399, 1.1709371246996996, 1.299038105676658,
+        1.2990381056766576, 1.1709371246996996, 2.3418742493993996,
+        2.341874249399399, 1.1709371246996996, 1.299038105676658,
+        1.2990381056766573, 1.1709371246996996, 2.341874249399399,
+        2.341874249399399, 1.1709371246996998, 1.2990381056766582,
+        1.2990381056766576, 1.1709371246996993, 2.3418742493993996,
+        2.3418742493993987, 1.1709371246996996, 1.2990381056766578,
+        1.299038105676657, 1.1709371246996991, 2.3418742493993987,
+        2.3418742493993987, 1.1709371246996996, 1.299038105676658,
+        1.2990381056766573, 1.170937124699699, 2.341874249399399,
+        2.3418742493994, 1.1709371246997002, 1.299038105676659,
+        1.2990381056766582, 1.1709371246997, 2.3418742493994005
+    ], float_t, device)
+    assert torus.compute_triangle_areas().triangle.areas.allclose(
+        expected_areas)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_compute_triangle_areas(device):
+    for int_t in [o3c.int32, o3c.int64]:
+        for float_t in [o3c.float32, o3c.float64]:
+            check_compute_triangle_areas(device, int_t, float_t)
