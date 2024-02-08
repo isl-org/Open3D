@@ -671,6 +671,11 @@ public:
     /// of the individual triangle surfaces.
     double GetSurfaceArea() const;
 
+    /// \brief Function to compute triangle areas and save it as a triangle
+    /// attribute "areas". Prints a warning, if mesh is empty or has no
+    /// triangles.
+    TriangleMesh &ComputeTriangleAreas();
+
     /// \brief Clip mesh with a plane.
     /// This method clips the triangle mesh with the specified plane.
     /// Parts of the mesh on the positive side of the plane will be kept and

@@ -1343,5 +1343,20 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
     EXPECT_TRUE(torus.GetTriangleNormals().AllClose(expected_tri_normals));
 }
 
+TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
+    core::Device device = GetParam();
+    t::geometry::TriangleMesh mesh_empty;
+    EXPECT_NO_THROW(mesh_empty.ComputeTriangleAreas());
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
+    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
+            *mesh, core::Float64, core::Int64, device);
+    std::vector<double> areas;
+    mesh->GetSurfaceArea(areas);
+    t_mesh.ComputeTriangleAreas();
+    EXPECT_TRUE(t_mesh.GetTriangleAttr("areas").AllClose(
+            core::Tensor(areas, {(int)areas.size()}, core::Float64)));
+}
 }  // namespace tests
 }  // namespace open3d

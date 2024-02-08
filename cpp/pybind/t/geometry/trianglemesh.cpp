@@ -985,9 +985,27 @@ Example:
         top_face = box.select_by_index([2, 3, 6, 7])
 )");
 
-    triangle_mesh.def("remove_unreferenced_vertices",
-                      &TriangleMesh::RemoveUnreferencedVertices,
-                      "Removes unreferenced vertices from the mesh in-place.");
+    triangle_mesh.def(
+            "remove_unreferenced_vertices",
+            &TriangleMesh::RemoveUnreferencedVertices,
+            R"(Removes unreferenced vertices from the mesh in-place.)");
+
+    triangle_mesh.def(
+            "compute_triangle_areas", &TriangleMesh::ComputeTriangleAreas,
+            R"(Compute triangle areas and save it as \"areas\" triangle attribute.
+
+Returns:
+    The mesh.
+
+Example:
+
+    This code computes the overall surface area of a box:
+
+        import open3d as o3d
+        box = o3d.t.geometry.TriangleMesh.create_box()
+        surface_area = box.compute_triangle_areas().triangle.areas.sum()
+)");
+
 }
 
 }  // namespace geometry
