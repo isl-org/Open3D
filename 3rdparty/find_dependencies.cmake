@@ -1028,8 +1028,6 @@ if(NOT USE_SYSTEM_QHULLCPP)
             src/libqhull_r/rboxlib_r.c
         INCLUDE_DIRS
             src/
-        DEPENDS
-            ext_qhull
     )
     open3d_build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
@@ -1055,8 +1053,6 @@ if(NOT USE_SYSTEM_QHULLCPP)
             src/libqhullcpp/RoadLogEvent.cpp
         INCLUDE_DIRS
             src/
-        DEPENDS
-            ext_qhull
     )
     target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_qhullcpp)
@@ -1156,8 +1152,6 @@ if (BUILD_UNIT_TESTS)
                 googletest/
                 googlemock/include/
                 googlemock/
-            DEPENDS
-                ext_googletest
         )
     endif()
 endif()
