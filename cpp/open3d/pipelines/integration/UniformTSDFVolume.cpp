@@ -15,16 +15,12 @@
 #include "open3d/pipelines/integration/MarchingCubesConst.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Parallel.h"
-<<<<<<< HEAD
-//#include "open3d/t/geometry/VtkUtils.h"
 
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 #include <vtkFlyingEdges3D.h>
 #include <vtkMarchingCubes.h>
-=======
 #include "open3d/t/geometry/VtkUtils.h"
-//#include "open3d/t/geometry/VtkUtils.h"
 
 #include <vtkPolyData.h>
 #include <vtkImageData.h>
