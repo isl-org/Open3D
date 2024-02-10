@@ -15,6 +15,7 @@
 #include "open3d/pipelines/integration/MarchingCubesConst.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Parallel.h"
+#include "open3d/t/geometry/VtkUtils.h"
 //#include "open3d/t/geometry/VtkUtils.h"
 
 #include <vtkPolyData.h>
@@ -193,18 +194,17 @@ UniformTSDFVolume::ExtractTriangleMesh_v2() {
     const double isoValue = 0.0;
     surface->SetValue(0, isoValue);
 
-    // To remain largest region.
-    vtkNew<vtkPolyDataConnectivityFilter> confilter;
-    confilter->SetInputConnection(surface->GetOutputPort());
-    confilter->SetExtractionModeToLargestRegion();
-    vtkPolyData *pdata = confilter->GetOutput();
+    //// To remain largest region.
+    //// vtkNew<vtkPolyDataConnectivityFilter> confilter;
+    //// confilter->SetInputConnection(surface->GetOutputPort());
+    //// confilter->SetExtractionModeToLargestRegion();
+    //// vtkPolyData *pdata = confilter->GetOutput();
+    //// cout << "pdata: " << pdata << std::endl;
     vtkPolyData *sdata = surface->GetOutput();
-    cout << "pdata: " << pdata << std::endl;
-    cout << "sdata: " << sdata << std::endl;
-
-
-
-    return mesh;
+    auto tmesh = open3d::t::geometry::vtkutils::CreateTriangleMeshFromVtkPolyData(sdata);
+    auto lmesh = tmesh.ToLegacy();
+    std::shared_ptr<geometry::TriangleMesh> pmesh(new geometry::TriangleMesh(lmesh.vertices_, lmesh.triangles_));
+    return pmesh;
 }
 
 
