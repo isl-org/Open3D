@@ -31,7 +31,6 @@
 #include <vtkMarchingCubes.h>
 #include <vtkInformation.h>
 #include <vtkPolyDataConnectivityFilter.h>
->>>>>>> shashigk/sganjugu/flyingobject3
 
 namespace open3d {
 namespace pipelines {
