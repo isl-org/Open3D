@@ -27,16 +27,16 @@ void pybind_renderoption(py::module &m) {
                  })
             .def(
                     "load_from_json",
-                    [](RenderOption &ro, const std::string &filename) {
-                        io::ReadIJsonConvertible(filename, ro);
+                    [](RenderOption &ro, const fs::path &filename) {
+                        io::ReadIJsonConvertible(filename.string(), ro);
                     },
                     "Function to load RenderOption from a JSON "
                     "file.",
                     "filename"_a)
             .def(
                     "save_to_json",
-                    [](RenderOption &ro, const std::string &filename) {
-                        io::WriteIJsonConvertible(filename, ro);
+                    [](RenderOption &ro, const fs::path &filename) {
+                        io::WriteIJsonConvertible(filename.string(), ro);
                     },
                     "Function to save RenderOption to a JSON "
                     "file.",
