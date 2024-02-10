@@ -15,12 +15,27 @@
 #include "open3d/pipelines/integration/MarchingCubesConst.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Parallel.h"
+<<<<<<< HEAD
 //#include "open3d/t/geometry/VtkUtils.h"
 
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 #include <vtkFlyingEdges3D.h>
 #include <vtkMarchingCubes.h>
+=======
+#include "open3d/t/geometry/VtkUtils.h"
+//#include "open3d/t/geometry/VtkUtils.h"
+
+#include <vtkPolyData.h>
+#include <vtkImageData.h>
+#include <vtkPointData.h>
+#include <vtkFloatArray.h>
+#include <vtkSmartPointer.h>
+#include <vtkFlyingEdges3D.h>
+#include <vtkMarchingCubes.h>
+#include <vtkInformation.h>
+#include <vtkPolyDataConnectivityFilter.h>
+>>>>>>> shashigk/sganjugu/flyingobject3
 
 namespace open3d {
 namespace pipelines {
@@ -147,8 +162,58 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
 std::shared_ptr<geometry::TriangleMesh>
 UniformTSDFVolume::ExtractTriangleMesh_v2() {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
+    //float *image_array = new float[resolution_  * resolution_ * resolution_];
+    //const long r_sq = resolution_ * resolution_;
+    int dims[] = {resolution_, resolution_, resolution_};
+    float ***values = new float **[dims[0]];
+    for(int i = 0; i <= dims[1]; ++i) {
+        values[i] = new float *[dims[2]];
+        for (int j = 0; j <= dims[1]; ++j) {
+            values[i][j] = new float[dims[2]];
+        }
+    }
 
-    return mesh;
+    for (int x = 0; x < resolution_ - 1; x++) {
+        for (int y = 0; y < resolution_ - 1; y++) {
+            for (int z = 0; z < resolution_ - 1; z++) {
+                Eigen::Vector3i idx0(x, y, z);
+                const float f = voxels_[IndexOf(idx0)].tsdf_;
+                values[x][y][z] = f;
+            }
+        }
+    }
+    vtkIdType totalSize = (vtkIdType)dims[0] * (vtkIdType) dims[1] * (vtkIdType) dims[2];
+    vtkNew<vtkFloatArray> array;
+    array->SetArray(**values, totalSize, 1);
+    vtkNew<vtkInformation> info;
+    vtkNew<vtkImageData> imageData;
+	imageData->GetPointData()->SetScalars(array);
+	imageData->SetDimensions(dims); 
+	imageData->SetScalarType(VTK_UNSIGNED_SHORT, info);
+	imageData->SetSpacing(1.0, 1.0, 1.0); 
+	imageData->SetOrigin(0.0, 0.0, 0.0);
+
+#ifdef USE_FLYING_EDGES
+    vtkNew<vtkFlyingEdges3D> surface;
+#else
+    vtkNew<vtkMarchingCubes> surface;
+#endif
+    surface->SetInputData(imageData);
+    surface->ComputeNormalsOn();
+    const double isoValue = 0.0;
+    surface->SetValue(0, isoValue);
+
+    //// To remain largest region.
+    //// vtkNew<vtkPolyDataConnectivityFilter> confilter;
+    //// confilter->SetInputConnection(surface->GetOutputPort());
+    //// confilter->SetExtractionModeToLargestRegion();
+    //// vtkPolyData *pdata = confilter->GetOutput();
+    //// cout << "pdata: " << pdata << std::endl;
+    vtkPolyData *sdata = surface->GetOutput();
+    auto tmesh = open3d::t::geometry::vtkutils::CreateTriangleMeshFromVtkPolyData(sdata);
+    auto lmesh = tmesh.ToLegacy();
+    std::shared_ptr<geometry::TriangleMesh> pmesh(new geometry::TriangleMesh(lmesh.vertices_, lmesh.triangles_));
+    return pmesh;
 }
 
 
