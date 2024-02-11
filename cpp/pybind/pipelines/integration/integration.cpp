@@ -136,6 +136,8 @@ In SIGGRAPH, 1996)");
                  "Debug function to inject the voxel TSDF data.", "tsdf"_a)
             .def("inject_volume_color", &UniformTSDFVolume::InjectVolumeColor,
                  "Debug function to inject the voxel Color data.", "color"_a)
+            // TODO remove after debugging
+            .def("extract_triangle_mesh_v2", &UniformTSDFVolume::ExtractTriangleMesh_v2)
             .def_readwrite("length", &UniformTSDFVolume::length_,
                            "Total length, where ``voxel_length = length / "
                            "resolution``.")
