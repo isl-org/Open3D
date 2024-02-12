@@ -184,7 +184,7 @@ struct JTJandJTrReduceBody<MatType, VecType, false>
     double r = 0.0;
     double w = 0.0;
 
-    JTJandJTrReduceBody(FuncType &f_)
+    explicit JTJandJTrReduceBody(FuncType &f_)
         : JTJandJTrReduceBodyHelper<MatType, VecType>(), f(f_) {}
 
     JTJandJTrReduceBody(JTJandJTrReduceBody &other, tbb::split sp)
@@ -235,7 +235,7 @@ struct JTJandJTrReduceBody<MatType, VecType, true>
     std::vector<double> r;
     std::vector<double> w;
 
-    JTJandJTrReduceBody(FuncType &f_)
+    explicit JTJandJTrReduceBody(FuncType &f_)
         : JTJandJTrReduceBodyHelper<MatType, VecType>(),
           f(f_),
           J_r(),
