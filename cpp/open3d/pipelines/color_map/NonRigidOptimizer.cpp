@@ -400,8 +400,8 @@ RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
                         atomic_sum(residual_reg, rr_reg);
                     }
                 });
-        utility::LogDebug("Residual error : {:.6f}, reg : {:.6f}", residual,
-                          residual_reg);
+        utility::LogDebug("Residual error : {:.6f}, reg : {:.6f}",
+                          residual.load(), residual_reg.load());
         SetProxyIntensityForVertex(opt_mesh, images_gray, warping_fields,
                                    opt_camera_trajectory,
                                    visibility_vertex_to_image, proxy_intensity,

@@ -268,7 +268,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
             "RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}, Iteration: "
             "{:d}",
             final_inliers.size(), result.fitness_, result.inlier_rmse_,
-            iteration_count);
+            iteration_count.load());
     return std::make_tuple(best_plane_model, final_inliers);
 }
 
