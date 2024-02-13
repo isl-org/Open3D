@@ -221,7 +221,8 @@ void pybind_trianglemesh(py::module &m) {
             .def("sample_points_uniformly",
                  &TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
-                 "number_of_points"_a = 100, "use_triangle_normal"_a = false)
+                 "number_of_points"_a = 100, "use_triangle_normal"_a = false,
+                 "record_origin"_a = false)
             .def("sample_points_poisson_disk",
                  &TriangleMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
@@ -231,7 +232,7 @@ void pybind_trianglemesh(py::module &m) {
                  "noise). Method is based on Yuksel, \"Sample Elimination for "
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
                  "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
-                 "use_triangle_normal"_a = false)
+                 "use_triangle_normal"_a = false, "record_origin"_a = false)
             .def("subdivide_midpoint", &TriangleMesh::SubdivideMidpoint,
                  "Function subdivide mesh using midpoint algorithm.",
                  "number_of_iterations"_a = 1)
@@ -554,7 +555,10 @@ void pybind_trianglemesh(py::module &m) {
               "If True assigns the triangle normals instead of the "
               "interpolated vertex normals to the returned points. The "
               "triangle normals will be computed and added to the mesh if "
-              "necessary."}});
+              "necessary."},
+             {"record_origin",
+              "If True assigns origin triangle ID and UV coordinates to the "
+              "returned points."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_poisson_disk",
             {{"number_of_points", "Number of points that should be sampled."},
@@ -568,7 +572,10 @@ void pybind_trianglemesh(py::module &m) {
               "If True assigns the triangle normals instead of the "
               "interpolated vertex normals to the returned points. The "
               "triangle normals will be computed and added to the mesh if "
-              "necessary."}});
+              "necessary."},
+             {"record_origin",
+              "If True assigns origin triangle ID and UV coordinates to the "
+              "returned points."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "subdivide_midpoint",
             {{"number_of_iterations",

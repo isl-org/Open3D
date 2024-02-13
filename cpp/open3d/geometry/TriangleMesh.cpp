@@ -435,7 +435,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
         double surface_area,
-        bool use_triangle_normal) {
+        bool use_triangle_normal,
+        bool record_origin) {
     if (surface_area <= 0) {
         utility::LogError("Invalid surface area {}, it must be > 0.",
                           surface_area);
@@ -462,6 +463,9 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     }
     if (has_vert_color) {
         pcd->colors_.resize(number_of_points);
+    }
+    if (record_origin) {
+        pcd->origindata_.resize(number_of_points);
     }
     size_t point_idx = 0;
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
@@ -490,6 +494,10 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
                                           b * vertex_colors_[triangle(1)] +
                                           c * vertex_colors_[triangle(2)];
             }
+            if (record_origin) {
+                pcd->origindata_[point_idx].tri_id = tidx;
+                pcd->origindata_[point_idx].tri_uv = Eigen::Vector2d(a, b);
+            }
 
             point_idx++;
         }
@@ -499,7 +507,9 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points, bool use_triangle_normal /* = false */) {
+        size_t number_of_points,
+        bool use_triangle_normal /* = false */,
+        bool record_origin /* = false */) {
     if (number_of_points <= 0) {
         utility::LogError("number_of_points <= 0");
     }
@@ -512,14 +522,16 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     double surface_area = GetSurfaceArea(triangle_areas);
 
     return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
-                                     surface_area, use_triangle_normal);
+                                     surface_area, use_triangle_normal,
+                                     record_origin);
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
         const std::shared_ptr<PointCloud> pcl_init /* = nullptr */,
-        bool use_triangle_normal /* = false */) {
+        bool use_triangle_normal /* = false */,
+        bool record_origin /* = false */) {
     if (number_of_points <= 0) {
         utility::LogError("number_of_points <= 0");
     }
@@ -546,12 +558,13 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     if (pcl_init == nullptr) {
         pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
                                         triangle_areas, surface_area,
-                                        use_triangle_normal);
+                                        use_triangle_normal, record_origin);
     } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;
         pcl->normals_ = pcl_init->normals_;
         pcl->colors_ = pcl_init->colors_;
+        pcl->origindata_ = pcl_init->origindata_;
     }
 
     // Set-up sample elimination
@@ -635,6 +648,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     // update pcl
     bool has_vert_normal = pcl->HasNormals();
     bool has_vert_color = pcl->HasColors();
+    bool has_origin_data = pcl->HasOriginData();
     int next_free = 0;
     for (size_t idx = 0; idx < pcl->points_.size(); ++idx) {
         if (!deleted[idx]) {
@@ -645,6 +659,9 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
             if (has_vert_color) {
                 pcl->colors_[next_free] = pcl->colors_[idx];
             }
+            if (has_origin_data) {
+                pcl->origindata_[next_free] = pcl->origindata_[idx];
+            }
             next_free++;
         }
     }
@@ -654,6 +671,9 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     }
     if (has_vert_color) {
         pcl->colors_.resize(next_free);
+    }
+    if (has_origin_data) {
+        pcl->origindata_.resize(next_free);
     }
 
     return pcl;
