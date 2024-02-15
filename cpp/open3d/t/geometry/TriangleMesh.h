@@ -949,6 +949,20 @@ public:
     /// an empty mesh.
     TriangleMesh SelectByIndex(const core::Tensor &indices) const;
 
+    /// Removes all non-manifold edges, by successively deleting triangles
+    /// with the smallest surface area adjacent to the
+    /// non-manifold edge until the number of adjacent triangles to the edge is
+    /// `<= 2`. If mesh is empty or has no triangles, prints a warning and
+    /// returns immediately. \return The reference to itself.
+    TriangleMesh RemoveNonManifoldEdges();
+
+    /// Returns the non-manifold edges of the triangle mesh.
+    /// If \param allow_boundary_edges is set to false, then also boundary
+    /// edges are returned.
+    /// \return 2d integral tensor encoding ordered edges. If mesh is empty or
+    /// has no triangles, returns an empty tensor.
+    core::Tensor GetNonManifoldEdges(bool allow_boundary_edges = true) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
