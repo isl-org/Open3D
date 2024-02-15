@@ -1358,5 +1358,69 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
     EXPECT_TRUE(t_mesh.GetTriangleAttr("areas").AllClose(
             core::Tensor(areas, {(int)areas.size()}, core::Float64)));
 }
+
+TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
+    core::Device device = GetParam();
+    t::geometry::TriangleMesh mesh_empty;
+    EXPECT_TRUE(mesh_empty.RemoveNonManifoldEdges().IsEmpty());
+
+    core::Tensor verts = core::Tensor::Init<float>(
+            {
+                    {0.0, 0.0, 0.0},
+                    {1.0, 0.0, 0.0},
+                    {0.0, 0.0, 1.0},
+                    {1.0, 0.0, 1.0},
+                    {0.0, 1.0, 0.0},
+                    {1.0, 1.0, 0.0},
+                    {0.0, 1.0, 1.0},
+                    {1.0, 1.0, 1.0},
+                    {0.0, -0.2, 0.0},
+            },
+            device);
+
+    mesh_empty.SetVertexPositions(verts);
+    EXPECT_TRUE(mesh_empty.GetVertexPositions().AllClose(verts));
+
+    core::Tensor tris = core::Tensor::Init<int64_t>(
+            {{4, 7, 5}, {8, 0, 1}, {8, 0, 1}, {8, 0, 1}, {4, 6, 7}, {0, 2, 4},
+             {2, 6, 4}, {0, 1, 2}, {1, 3, 2}, {1, 5, 7}, {8, 0, 2}, {8, 0, 2},
+             {8, 0, 1}, {1, 7, 3}, {2, 3, 7}, {2, 7, 6}, {8, 0, 2}, {6, 6, 7},
+             {0, 4, 1}, {8, 0, 4}, {1, 4, 5}},
+            device);
+
+    core::Tensor tri_labels = tris * 10;
+
+    t::geometry::TriangleMesh mesh(verts, tris);
+    mesh.SetTriangleAttr("labels", tri_labels);
+
+    geometry::TriangleMesh legacy_mesh = mesh.ToLegacy();
+    core::Tensor expected_edges =
+            core::eigen_converter::EigenVector2iVectorToTensor(
+                    legacy_mesh.GetNonManifoldEdges(), core::Int64, device);
+    EXPECT_TRUE(mesh.GetNonManifoldEdges().AllClose(expected_edges));
+
+    expected_edges = core::eigen_converter::EigenVector2iVectorToTensor(
+            legacy_mesh.GetNonManifoldEdges(true), core::Int64, device);
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(expected_edges));
+    expected_edges = core::eigen_converter::EigenVector2iVectorToTensor(
+            legacy_mesh.GetNonManifoldEdges(false), core::Int64, device);
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(false).AllClose(expected_edges));
+
+    mesh.RemoveNonManifoldEdges();
+
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(
+            core::Tensor({0, 2}, core::Int64)));
+
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(false).AllClose(
+            core::Tensor({0, 2}, core::Int64)));
+
+    t::geometry::TriangleMesh box = t::geometry::TriangleMesh::CreateBox();
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(verts));
+    EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(box.GetTriangleIndices()));
+    core::Tensor expected_labels = tri_labels.IndexGet(
+            {core::Tensor::Init<bool>({1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0,
+                                       0, 0, 1, 1, 1, 0, 0, 1, 0, 1})});
+    EXPECT_TRUE(mesh.GetTriangleAttr("labels").AllClose(expected_labels));
+}
 }  // namespace tests
 }  // namespace open3d

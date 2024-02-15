@@ -1006,6 +1006,21 @@ Example:
         surface_area = box.compute_triangle_areas().triangle.areas.sum()
 )");
 
+    triangle_mesh.def("remove_non_manifold_edges",
+                      &TriangleMesh::RemoveNonManifoldEdges,
+                      R"(Function that removes all non-manifold edges, by
+successively deleting  triangles with the smallest surface
+area adjacent to the non-manifold edge until the number of
+adjacent triangles to the edge is `<= 2`.
+
+Returns:
+    The mesh.
+)");
+
+    triangle_mesh.def("get_non_manifold_edges",
+                      &TriangleMesh::GetNonManifoldEdges,
+                      "allow_boundary_edges"_a = true,
+                      R"(Returns the list consisting of non-manifold edges.)");
 }
 
 }  // namespace geometry
