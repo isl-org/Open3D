@@ -394,8 +394,7 @@ struct RaycastingScene::Impl {
                 rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             }
 
-            rtcIntersect1M(scene_, &context, &rayhits[0], range.size(),
-                           sizeof(RTCRayHit));
+            rtcIntersect1(scene_, &context, &rayhits[0]);
 
             for (size_t i = range.begin(); i < range.end(); ++i) {
                 RTCRayHit rh = rayhits[i - range.begin()];
@@ -467,8 +466,7 @@ struct RaycastingScene::Impl {
                 ray.flags = 0;
             }
 
-            rtcOccluded1M(scene_, &context, &rayvec[0], range.size(),
-                          sizeof(RTCRay));
+            rtcOccluded1(scene_, &context, &rayvec[0]);
 
             for (size_t i = range.begin(); i < range.end(); ++i) {
                 RTCRay ray = rayvec[i - range.begin()];
@@ -533,8 +531,7 @@ struct RaycastingScene::Impl {
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             }
-            rtcIntersect1M(scene_, &context.context, &rayhits[0], range.size(),
-                           sizeof(RTCRayHit));
+            rtcIntersect1(scene_, &context.context, &rayhits[0]);
         };
 
         if (nthreads > 0) {
@@ -610,8 +607,7 @@ struct RaycastingScene::Impl {
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             }
-            rtcIntersect1M(scene_, &context.context, &rayhits[0], range.size(),
-                           sizeof(RTCRayHit));
+            rtcIntersect1(scene_, &context.context, &rayhits[0]);
         };
 
         if (nthreads > 0) {
