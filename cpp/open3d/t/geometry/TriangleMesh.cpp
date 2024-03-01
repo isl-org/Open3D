@@ -365,7 +365,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         .Reshape({-1, 3, 2}));
     }
 
-    // Convert material first material if legacy mesh has one
+    // Convert first material only if one or more are present
     if (mesh_legacy.materials_.size() > 0) {
         const auto &mat = mesh_legacy.materials_.begin()->second;
         auto &tmat = mesh.GetMaterial();
@@ -397,7 +397,8 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
     if (mesh_legacy.materials_.size() > 1) {
         utility::LogWarning(
                 "Legacy mesh has more than 1 material which is not supported "
-                "by Tensor-based mesh. Only first material was converted.");
+                "by Tensor-based mesh. Only material {} was converted.",
+                mesh_legacy.materials_.begin()->first);
     }
     return mesh;
 }
