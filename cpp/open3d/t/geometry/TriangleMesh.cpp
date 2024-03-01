@@ -365,8 +365,8 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         .Reshape({-1, 3, 2}));
     }
 
-    // Convert material if legacy mesh only has one
-    if (mesh_legacy.materials_.size() == 1) {
+    // Convert first material only if one or more are present
+    if (mesh_legacy.materials_.size() > 0) {
         const auto &mat = mesh_legacy.materials_.begin()->second;
         auto &tmat = mesh.GetMaterial();
         tmat.SetDefaultProperties();
@@ -393,10 +393,12 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                     Image::FromLegacy(*mat.clearCoatRoughness));
         if (mat.anisotropy)
             tmat.SetAnisotropyMap(Image::FromLegacy(*mat.anisotropy));
-    } else if (mesh_legacy.materials_.size() > 1) {
+    }
+    if (mesh_legacy.materials_.size() > 1) {
         utility::LogWarning(
                 "Legacy mesh has more than 1 material which is not supported "
-                "by Tensor-based meshes.");
+                "by Tensor-based mesh. Only material {} was converted.",
+                mesh_legacy.materials_.begin()->first);
     }
     return mesh;
 }
