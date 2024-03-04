@@ -69,8 +69,8 @@ endif()
 ExternalProject_Add(
     ext_embree
     PREFIX embree
-    URL https://github.com/embree/embree/archive/refs/tags/v4.0.0.tar.gz
-    URL_HASH SHA256=bb967241f9516712a9f8e399ed7f756d7baeec3c85c223c0005ede8b95c9fa61
+    URL https://github.com/embree/embree/archive/refs/tags/v4.3.1.tar.gz
+    URL_HASH SHA256=824edcbb7a8cd393c5bdb7a16738487b21ecc4e1d004ac9f761e934f97bb02a4
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/embree"
     UPDATE_COMMAND ""
     CMAKE_ARGS
