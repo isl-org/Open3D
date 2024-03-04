@@ -702,9 +702,9 @@ RaycastingScene::RaycastingScene(int64_t nthreads)
 
     impl_->scene_ = rtcNewScene(impl_->device_);
     // set flag for better accuracy
-    rtcSetSceneFlags(
-            impl_->scene_,
-            RTC_SCENE_FLAG_ROBUST | RTC_SCENE_FLAG_FILTER_FUNCTION_IN_ARGUMENTS);
+    rtcSetSceneFlags(impl_->scene_,
+                     RTC_SCENE_FLAG_ROBUST |
+                             RTC_SCENE_FLAG_FILTER_FUNCTION_IN_ARGUMENTS);
 
     impl_->devprop_join_commit = rtcGetDeviceProperty(
             impl_->device_, RTC_DEVICE_PROPERTY_JOIN_COMMIT_SUPPORTED);
