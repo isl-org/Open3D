@@ -153,7 +153,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const int num_iterations /* = 100 */,
         const double probability /* = 0.99999999 */) const {
     if (probability <= 0 || probability > 1) {
-        utility::LogError("Probability must be > 0 or <= 1.0");
+        utility::LogError("Probability must be > 0 and <= 1.0");
     }
 
     RANSACResult result;
