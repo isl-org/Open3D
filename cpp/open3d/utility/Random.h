@@ -171,6 +171,52 @@ protected:
     std::normal_distribution<T> distribution_;
 };
 
+/// Generate discretely distributed integer values according to a range of
+/// weight values.
+/// This class is globally seeded by utility::random::Seed().
+/// This class is a wrapper around std::discrete_distribution.
+///
+/// Example:
+/// ```cpp
+/// #include "open3d/utility/Random.h"
+///
+/// // Globally seed Open3D. This will affect all random functions.
+/// utility::random::Seed(0);
+///
+/// // Weighted random choice of size_t
+/// std::vector<double> weights{1, 2, 3, 4, 5};
+/// utility::random::DiscreteGenerator<size_t> gen(weights.cbegin(),
+/// weights.cend()); for (size_t i = 0; i < 10; i++) {
+///     std::cout << gen() << std::endl;
+/// }
+/// ```
+template <typename T>
+class DiscreteGenerator {
+public:
+    /// Generate discretely distributed integer values according to a range of
+    /// weight values.
+    /// \param first The iterator or pointer pointing to the first element in
+    /// the range of weights.
+    /// \param last The iterator or pointer pointing to one past the last
+    /// element in the range of weights.
+    template <typename InputIt>
+    DiscreteGenerator(InputIt first, InputIt last)
+        : distribution_(first, last) {
+        if (first > last) {
+            utility::LogError("first must be <= last.");
+        }
+    }
+
+    /// Call this to generate a discretely distributed integer value.
+    T operator()() {
+        std::lock_guard<std::mutex> lock(*GetMutex());
+        return distribution_(*GetEngine());
+    }
+
+protected:
+    std::discrete_distribution<T> distribution_;
+};
+
 }  // namespace random
 }  // namespace utility
 }  // namespace open3d
