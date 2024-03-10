@@ -384,7 +384,7 @@ struct RaycastingScene::Impl {
                 } else {
                     rh.ray.tfar = std::numeric_limits<float>::infinity();
                 }
-                rh.ray.mask = 0;
+                rh.ray.mask = -1;
                 rh.ray.id = i - range.begin();
                 rh.ray.flags = 0;
                 rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
@@ -462,7 +462,7 @@ struct RaycastingScene::Impl {
                 ray.dir_z = r[5];
                 ray.tnear = tnear;
                 ray.tfar = tfar;
-                ray.mask = 0;
+                ray.mask = -1;
                 ray.id = i - range.begin();
                 ray.flags = 0;
 
@@ -530,7 +530,7 @@ struct RaycastingScene::Impl {
                 rh->ray.dir_z = r[5];
                 rh->ray.tnear = 0;
                 rh->ray.tfar = std::numeric_limits<float>::infinity();
-                rh->ray.mask = 0;
+                rh->ray.mask = -1;
                 rh->ray.flags = 0;
                 rh->ray.id = i;
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
@@ -611,7 +611,7 @@ struct RaycastingScene::Impl {
                 rh->ray.dir_z = r[5];
                 rh->ray.tnear = 0;
                 rh->ray.tfar = std::numeric_limits<float>::infinity();
-                rh->ray.mask = 0;
+                rh->ray.mask = -1;
                 rh->ray.flags = 0;
                 rh->ray.id = i;
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
@@ -753,6 +753,7 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
         memcpy(index_buffer, data.GetDataPtr(),
                sizeof(uint32_t) * 3 * num_triangles);
     }
+    rtcSetGeometryEnableFilterFunctionFromArguments(geom, true);
     rtcCommitGeometry(geom);
 
     uint32_t geom_id = rtcAttachGeometry(impl_->scene_, geom);
