@@ -55,8 +55,14 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         TORCH_GLNX="torch==$TORCH_CUDA_GLNX_VER"
     else
-        TF_ARCH_NAME=tensorflow-cpu
-        TF_ARCH_DISABLE_NAME=tensorflow
+        # tensorflow-cpu wheels for macOS arm64 are not available
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            TF_ARCH_NAME=tensorflow
+            TF_ARCH_DISABLE_NAME=tensorflow
+        else
+            TF_ARCH_NAME=tensorflow-cpu
+            TF_ARCH_DISABLE_NAME=tensorflow
+        fi
         TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
     fi
 
@@ -140,7 +146,7 @@ build_pip_package() {
     echo "Building Open3D wheel"
     options="$(echo "$@" | tr ' ' '|')"
 
-    BUILD_FILAMENT_FROM_SOURCE=OFF
+    BUILD_FILAMENT_FROM_SOURCE=ON
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
@@ -300,7 +306,7 @@ run_python_tests() {
 # Use: run_unit_tests
 run_cpp_unit_tests() {
     unitTestFlags=--gtest_shuffle
-    [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
+    [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*:RGBDImage.CreateFromNYUFormat:TriangleMesh.CreateFromPointCloudPoisson"
     echo "Run ./bin/tests $unitTestFlags --gtest_random_seed=SEED to repeat this test sequence."
     ./bin/tests "$unitTestFlags"
     echo
