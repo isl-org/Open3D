@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 3.20)
 # - detect IntelLLVM compiler for SYCL
 
 if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
+set (CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING
     "Minimum OS X deployment version" FORCE)
 endif()
 

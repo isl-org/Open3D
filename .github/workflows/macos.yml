@@ -26,7 +26,7 @@ env:
 
 jobs:
   MacOS:
-    runs-on: macos-12
+    runs-on: macos-14
     strategy:
       fail-fast: false
       matrix:
@@ -53,20 +53,31 @@ jobs:
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
             ${{ runner.os }}-ccache
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '14.3.1'
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: '3.10'
       - name: Install dependencies
         run: |
           brew install ccache pkg-config
+          brew reinstall gcc  # gfortran is otherwise not found
           # Install libomp 11.1.0 from old brew bottle for catalina (10.15).
           # Directly installing the Ruby formula will install for the current OS
           # https://github.com/microsoft/LightGBM/issues/4229
-          brew unlink libomp
-          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.catalina.bottle.tar.gz \
-          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          brew install -f libomp-11.1.0.catalina.bottle.tar.gz
+
+          # brew unlink libomp
+          # catalina (10.15) bottle
+          # export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+
+          # arm64_big_sur bottle
+          export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
+          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
+          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
+          brew install -f libomp-11.1.0.bottle.tar.gz
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -116,27 +127,23 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
-          name: open3d-app-macosx-10_15
+          name: open3d-app-macosx-10_15-${{ runner.arch}}
           path: build/bin/open3d-app-macosx-10_15.zip
           if-no-files-found: error
 
   build-wheel:
     name: Build wheel
-    runs-on: macos-12
+    runs-on: macos-14
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.10', '3.11']  # arm64 runners doen't support 3.8 and 3.9
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
-        exclude:
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.10'
+        # exclude:
+        #   - is_main: false
+        #     python_version: '3.10'
 
     env:
       BUILD_CUDA_MODULE: OFF
@@ -165,6 +172,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
 
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '14.3.1'
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -180,12 +192,20 @@ jobs:
           cmake --version
           source util/ci_utils.sh
           install_python_dependencies
+          brew reinstall gcc  # gfortran is otherwise not found
           # Install libomp 11.1.0. See comment above.
           brew install ccache
-          brew unlink libomp
-          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.catalina.bottle.tar.gz \
-          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          brew install -f libomp-11.1.0.catalina.bottle.tar.gz
+
+          # brew unlink libomp
+          # x64 catalina (10.15) bottle
+          # export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          
+          # arm64 big_sur (11.0) bottle
+          export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
+          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
+          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
+          brew install -f libomp-11.1.0.bottle.tar.gz
+
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
@@ -229,21 +249,17 @@ jobs:
 
   test-wheel:
     name: Test wheel
-    runs-on: macos-12
+    runs-on: macos-14
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.10', '3.11']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
-        exclude:
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.10'
+        # exclude:
+        #   - is_main: false
+        #     python_version: '3.10'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
