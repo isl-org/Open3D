@@ -962,6 +962,18 @@ Example:
         box = o3d.t.geometry.TriangleMesh.create_box()
         top_face = box.select_by_index([2, 3, 6, 7])
 )");
+    triangle_mesh.def("remove_non_manifold_edges",
+                      &TriangleMesh::RemoveNonManifoldEdges,
+                      "Remove non-manifold edges from the mesh.");
+
+    triangle_mesh.def("get_non_manifold_edges",
+                      &TriangleMesh::GetNonManifoldEdges,
+                      "allow_boundary_edges"_a = true,
+                      "Return the list consisting of non-manifold edges.");
+
+    triangle_mesh.def("compute_triangle_areas",
+                      &TriangleMesh::ComputeTriangleAreas,
+                      "Compute triangle areas and save it as a mesh attribute");
 }
 
 }  // namespace geometry

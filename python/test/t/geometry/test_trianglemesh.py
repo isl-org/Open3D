@@ -660,3 +660,71 @@ def test_select_by_index_64(device):
         untouched_sphere.vertex.positions)
     assert sphere_custom.triangle.indices.allclose(
         untouched_sphere.triangle.indices)
+
+
+def check_non_manifold_edges(device, int_t, float_t):
+    verts = o3c.Tensor([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0],
+                        [1.0, 0.0, 1.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0],
+                        [0.0, 1.0, 1.0], [1.0, 1.0, 1.0], [0.0, -0.2, 0.0]],
+                       float_t, device)
+
+    tris = o3c.Tensor(
+        [[4, 7, 5], [8, 0, 1], [8, 0, 1], [8, 0, 1], [4, 6, 7], [0, 2, 4],
+         [2, 6, 4], [0, 1, 2], [1, 3, 2], [1, 5, 7], [8, 0, 2], [8, 0, 2],
+         [8, 0, 1], [1, 7, 3], [2, 3, 7], [2, 7, 6], [8, 0, 2], [6, 6, 7],
+         [0, 4, 1], [8, 0, 4], [1, 4, 5]], int_t, device)
+
+    test_box = o3d.t.geometry.TriangleMesh(verts, tris)
+    test_box_legacy = test_box.to_legacy()
+
+    # allow boundary edges
+    edges = test_box_legacy.get_non_manifold_edges()
+    np.testing.assert_allclose(test_box.get_non_manifold_edges().numpy(),
+                               np.asarray(edges))
+    # disallow boundary edges
+    edges = test_box_legacy.get_non_manifold_edges(False)
+    np.testing.assert_allclose(
+        test_box.get_non_manifold_edges(False).numpy(), np.asarray(edges))
+
+    test_box.remove_non_manifold_edges()
+
+    box = o3d.t.geometry.TriangleMesh.create_box(float_dtype=float_t,
+                                                 int_dtype=int_t)
+    assert test_box.vertex.positions.allclose(verts)
+    assert test_box.triangle.indices.allclose(box.triangle.indices)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_remove_non_manifold_edges(device):
+    for int_t in [o3c.int32, o3c.int64]:
+        for float_t in [o3c.float32, o3c.float64]:
+            check_non_manifold_edges(device, int_t, float_t)
+
+
+def check_compute_triangle_areas(device, int_t, float_t):
+    torus = o3d.t.geometry.TriangleMesh.create_torus(2, 1, 6, 3, float_t, int_t,
+                                                     device)
+
+    expected_areas = o3c.Tensor([
+        2.341874249399399, 1.1709371246996996, 1.299038105676658,
+        1.2990381056766576, 1.1709371246996996, 2.3418742493993996,
+        2.341874249399399, 1.1709371246996996, 1.299038105676658,
+        1.2990381056766573, 1.1709371246996996, 2.341874249399399,
+        2.341874249399399, 1.1709371246996998, 1.2990381056766582,
+        1.2990381056766576, 1.1709371246996993, 2.3418742493993996,
+        2.3418742493993987, 1.1709371246996996, 1.2990381056766578,
+        1.299038105676657, 1.1709371246996991, 2.3418742493993987,
+        2.3418742493993987, 1.1709371246996996, 1.299038105676658,
+        1.2990381056766573, 1.170937124699699, 2.341874249399399,
+        2.3418742493994, 1.1709371246997002, 1.299038105676659,
+        1.2990381056766582, 1.1709371246997, 2.3418742493994005
+    ], float_t, device)
+    assert torus.compute_triangle_areas().triangle.areas.allclose(
+        expected_areas)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_compute_triangle_areas(device):
+    for int_t in [o3c.int32, o3c.int64]:
+        for float_t in [o3c.float32, o3c.float64]:
+            check_compute_triangle_areas(device, int_t, float_t)
