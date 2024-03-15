@@ -26,10 +26,12 @@ env:
 
 jobs:
   MacOS:
-    runs-on: macos-14
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        # macos-12 is Intel runner, macos-14 is Apple Silicon
+        os: [macos-12, macos-14]
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
@@ -47,20 +49,25 @@ jobs:
           path: ~/.ccache
           # We include the commit sha in the cache key, as new cache entries are
           # only created if there is no existing entry for the key yet.
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          key: ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }}
           # Restore any ccache cache entry, if none for
-          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }} exists.
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
-            ${{ runner.os }}-ccache
+            ${{ runner.os }}-${{ runner.arch }}-ccache
+      
+      # New Apple linker causes build issues, use old linker for now
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
+        if: ${{ matrix.os == 'macos-14' }}
         with:
           xcode-version: '14.3.1'
+
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ matrix.os == 'macos-14' && '3.10' || '3.8' }}
+
       - name: Install dependencies
         run: |
           brew install ccache pkg-config
@@ -133,17 +140,27 @@ jobs:
 
   build-wheel:
     name: Build wheel
-    runs-on: macos-14
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.10', '3.11']  # arm64 runners doen't support 3.8 and 3.9
+        # macos-12 is Intel runner, macos-14 is Apple Silicon
+        os: [macos-12, macos-14]
+        python_version: ['3.8', '3.9', '3.10', '3.11']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
-        # exclude:
-        #   - is_main: false
-        #     python_version: '3.10'
+        exclude:
+          - os: macos-14
+            python_version: '3.8'
+          - os: macos-14
+            python_version: '3.9'
+          # - is_main: false
+          #   python_version: '3.8'
+          # - is_main: false
+          #   python_version: '3.9'
+          # - is_main: false
+          #   python_version: '3.10'
 
     env:
       BUILD_CUDA_MODULE: OFF
@@ -165,15 +182,16 @@ jobs:
           path: ~/.ccache
           # We include the commit sha in the cache key, as new cache entries are
           # only created if there is no existing entry for the key yet.
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          key: ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }}
           # Restore any ccache cache entry, if none for
-          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }} exists.
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
-            ${{ runner.os }}-ccache
+            ${{ runner.os }}-${{ runner.arch }}-ccache
 
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
+        if: ${{ matrix.os == 'macos-14' }}
         with:
           xcode-version: '14.3.1'
 
@@ -192,20 +210,21 @@ jobs:
           cmake --version
           source util/ci_utils.sh
           install_python_dependencies
-          brew reinstall gcc  # gfortran is otherwise not found
           # Install libomp 11.1.0. See comment above.
-          brew install ccache
-
-          # brew unlink libomp
-          # x64 catalina (10.15) bottle
-          # export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          
-          # arm64 big_sur (11.0) bottle
-          export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
+          if [[ ${{ runner.arch}} == "X64"  ]]; then
+            brew unlink libomp
+            # x64 catalina (10.15) bottle
+            export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          fi
+          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
+            brew reinstall gcc  # gfortran is otherwise not found
+            # arm64 big_sur (11.0) bottle
+            export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
+          fi
           curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
           https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
           brew install -f libomp-11.1.0.bottle.tar.gz
-
+          brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
@@ -249,17 +268,26 @@ jobs:
 
   test-wheel:
     name: Test wheel
-    runs-on: macos-14
+    runs-on: ${{ matrix.os }}
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11']
+        os: [macos-12, macos-14]
+        python_version: ['3.8', '3.9', '3.10', '3.11']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
-        # exclude:
-        #   - is_main: false
-        #     python_version: '3.10'
+        exclude:
+          - os: macos-14
+            python_version: '3.8'
+          - os: macos-14
+            python_version: '3.9'
+          # - is_main: false
+          #   python_version: '3.8'
+          # - is_main: false
+          #   python_version: '3.9'
+          # - is_main: false
+          #   python_version: '3.10'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
