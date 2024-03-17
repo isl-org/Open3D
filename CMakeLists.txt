@@ -256,7 +256,7 @@ string(CONCAT OPEN3D_VERSION
 )
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
 # Set additional info
-set(PROJECT_EMAIL       "info@open3d.org")
+set(PROJECT_EMAIL       "open3d@intel.com")
 set(PROJECT_DOCS        "https://www.open3d.org/docs")
 set(PROJECT_CODE        "https://github.com/isl-org/Open3D")
 set(PROJECT_ISSUES      "https://github.com/isl-org/Open3D/issues")
