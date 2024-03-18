@@ -192,6 +192,20 @@ The attributes of the triangle mesh have different levels::
                       "normalized"_a = true);
 
     triangle_mesh.def(
+            "get_surface_area", &TriangleMesh::GetSurfaceArea,
+            R"(Computes the surface area of the mesh, i.e., the sum of the individual triangle surfaces.
+
+Example:
+    This computes the surface area of the Stanford Bunny::
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.io.read_triangle_mesh(bunny.path)
+        print('The surface area is', mesh.get_surface_area())
+
+Returns:
+    A scalar describing the surface area of the mesh.
+)");
+
+    triangle_mesh.def(
             "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
             "joggle_inputs"_a = false,
             R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
@@ -901,7 +915,7 @@ Args:
         number of faces in the mesh.
     
 Returns:
-    A new mesh with the selected faces.
+    A new mesh with the selected faces. If the original mesh is empty, return an empty mesh.
 
 Example:
 
@@ -924,6 +938,34 @@ Example:
         o3d.visualization.draw(parts)
 
 )");
+
+    triangle_mesh.def(
+            "select_by_index", &TriangleMesh::SelectByIndex, "indices"_a,
+            R"(Returns a new mesh with the vertices selected according to the indices list.
+If an item from the indices list exceeds the max vertex number of the mesh
+or has a negative value, it is ignored.
+
+Args:
+    indices (open3d.core.Tensor): An integer list of indices. Duplicates are
+    allowed, but ignored. Signed and unsigned integral types are accepted.
+
+Returns:
+    A new mesh with the selected vertices and faces built from these vertices.
+    If the original mesh is empty, return an empty mesh.
+
+Example:
+
+    This code selects the top face of a box, which has indices [2, 3, 6, 7]::
+
+        import open3d as o3d
+        import numpy as np
+        box = o3d.t.geometry.TriangleMesh.create_box()
+        top_face = box.select_by_index([2, 3, 6, 7])
+)");
+
+    triangle_mesh.def("remove_unreferenced_vertices",
+                      &TriangleMesh::RemoveUnreferencedVertices,
+                      "Removes unreferenced vertices from the mesh in-place.");
 }
 
 }  // namespace geometry

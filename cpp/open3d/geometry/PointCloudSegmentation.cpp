@@ -29,6 +29,7 @@ public:
     explicit RandomSampler(const size_t total_size) : total_size_(total_size) {}
 
     std::vector<T> operator()(size_t sample_size) {
+        std::lock_guard<std::mutex> lock(mutex_);
         std::vector<T> samples;
         samples.reserve(sample_size);
 
@@ -48,6 +49,7 @@ public:
 
 private:
     size_t total_size_;
+    std::mutex mutex_;
 };
 
 /// \class RANSACResult
@@ -64,23 +66,24 @@ public:
 };
 
 // Calculates the number of inliers given a list of points and a plane model,
-// and the total distance between the inliers and the plane. These numbers are
-// then used to evaluate how well the plane model fits the given points.
+// and the total squared point-to-plane distance.
+// These numbers are then used to evaluate how well the plane model fits the
+// given points.
 RANSACResult EvaluateRANSACBasedOnDistance(
         const std::vector<Eigen::Vector3d> &points,
         const Eigen::Vector4d plane_model,
         std::vector<size_t> &inliers,
-        double distance_threshold,
-        double error) {
+        double distance_threshold) {
     RANSACResult result;
 
+    double error = 0;
     for (size_t idx = 0; idx < points.size(); ++idx) {
         Eigen::Vector4d point(points[idx](0), points[idx](1), points[idx](2),
                               1);
         double distance = std::abs(plane_model.dot(point));
 
         if (distance < distance_threshold) {
-            error += distance;
+            error += distance * distance;
             inliers.emplace_back(idx);
         }
     }
@@ -91,7 +94,7 @@ RANSACResult EvaluateRANSACBasedOnDistance(
         result.inlier_rmse_ = 0;
     } else {
         result.fitness_ = (double)inlier_num / (double)points.size();
-        result.inlier_rmse_ = error / std::sqrt((double)inlier_num);
+        result.inlier_rmse_ = std::sqrt(error / (double)inlier_num);
     }
     return result;
 }
@@ -150,7 +153,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const int num_iterations /* = 100 */,
         const double probability /* = 0.99999999 */) const {
     if (probability <= 0 || probability > 1) {
-        utility::LogError("Probability must be > 0 or <= 1.0");
+        utility::LogError("Probability must be > 0 and <= 1.0");
     }
 
     RANSACResult result;
@@ -160,6 +163,12 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
 
     size_t num_points = points_.size();
     RandomSampler<size_t> sampler(num_points);
+    // Pre-generate all random samples before entering the parallel region
+    std::vector<std::vector<size_t>> all_sampled_indices;
+    all_sampled_indices.reserve(num_iterations);
+    for (int i = 0; i < num_iterations; i++) {
+        all_sampled_indices.push_back(sampler(ransac_n));
+    }
 
     // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {
@@ -184,8 +193,8 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
             continue;
         }
 
-        const std::vector<size_t> sampled_indices = sampler(ransac_n);
-        std::vector<size_t> inliers = sampled_indices;
+        // Access the pre-generated sampled indices
+        std::vector<size_t> inliers = all_sampled_indices[itr];
 
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.
@@ -202,10 +211,9 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
             continue;
         }
 
-        double error = 0;
         inliers.clear();
         auto this_result = EvaluateRANSACBasedOnDistance(
-                points_, plane_model, inliers, distance_threshold, error);
+                points_, plane_model, inliers, distance_threshold);
 #pragma omp critical
         {
             if (this_result.fitness_ > result.fitness_ ||

@@ -4,9 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - main
   pull_request:
-    types: [opened, reopened, synchronize]
+    # Reduce CI frequency for paid CI.
+    types: [review_requested]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

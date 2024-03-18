@@ -9,7 +9,7 @@ on:
         default: 'ON'
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, reopened, synchronize]
 
@@ -35,8 +35,6 @@ jobs:
     env:
       BUILD_SHARED_LIBS: ${{ matrix.BUILD_SHARED_LIBS }}
       BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.MLOPS }}
-      BUILD_PYTORCH_OPS: ${{ matrix.MLOPS }}
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       OPEN3D_CPU_RENDERING: true
     steps:
@@ -79,20 +77,27 @@ jobs:
           name: open3d-devel-linux-x86_64
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
+      - name: Upload viewer to GitHub artifacts
+        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: open3d-viewer-Linux
+          path: open3d-viewer-*-Linux.deb
+          if-no-files-found: error
       - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: 'google-github-actions/auth@v1'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && env.BUILD_SHARED_LIBS == 'ON' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
         run: |
-          gsutil cp open3d-devel-*.tar.xz gs://open3d-releases-master/devel/
-          echo "Download devel package at: https://storage.googleapis.com/open3d-releases-master/devel/${{ env.DEVEL_PKG_NAME }}"
+          gsutil cp open3d-devel-*.tar.xz gs://open3d-releases/devel/
+          echo "Download devel package at: https://storage.googleapis.com/open3d-releases/devel/${{ env.DEVEL_PKG_NAME }}"

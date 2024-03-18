@@ -24,7 +24,8 @@ Quick Reference to default UV Maps for some primitive shapes provided by Open3D
 
 The examples below all assume the following code preamble:
 
-.. code_block:: python
+.. code-block:: python
+
     import open3d as o3d
     import open3d.visualization.rendering as rendering
 
@@ -45,7 +46,9 @@ Example Texture Map
 Box (map uv to each face = false) 
 ************************************
 
-.. code_block:: python
+.. code-block:: python
+
+
     box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
     o3d.visualization.draw({'name': 'box', 'geometry': box, 'material': material})
 
@@ -62,7 +65,9 @@ Box (map uv to each face = false)
 Box (map uv to each face = true)
 **************************************
 
-.. code_block:: python
+.. code-block:: python
+
+
     box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True, map_texture_to_each_face=True)
     o3d.visualization.draw({'name': 'box', 'geometry': box, 'material': material})
 
@@ -80,7 +85,9 @@ Box (map uv to each face = true)
 Tetrahedral
 *************
 
-.. code_block:: python
+.. code-block:: python
+
+
     tetra = o3d.geometry.TriangleMesh.create_tetrahedron(create_uv_map=True)
     o3d.visualization.draw({'name': 'tetrahedron', 'geometry': tetra, 'material': material})
 
@@ -98,7 +105,9 @@ Tetrahedral
 Octahedral
 ***************
 
-.. code_block:: python
+.. code-block:: python
+
+
     octo = o3d.geometry.TriangleMesh.create_octahedron(create_uv_map=True)
     o3d.visualization.draw({'name': 'octahedron', 'geometry': octo, 'material': material})
 
@@ -115,7 +124,9 @@ Octahedral
 Icosahedron
 **************
 
-.. code_block:: python
+.. code-block:: python
+
+
     ico = o3d.geometry.TriangleMesh.create_icosahedron(create_uv_map=True)
     o3d.visualization.draw({'name': 'icosahedron', 'geometry': ico, 'material': material})
 
@@ -132,7 +143,9 @@ Icosahedron
 Cylinder
 *************
 
-.. code_block:: python
+.. code-block:: python
+
+
     cylinder = o3d.geometry.TriangleMesh.create_cylinder(create_uv_map=True)
     o3d.visualization.draw({'name': 'cylinder', 'geometry': cylinder, 'material': material})
 
@@ -149,7 +162,9 @@ Cylinder
 Cone
 *******
 
-.. code_block:: python
+.. code-block:: python
+
+
     cone = o3d.geometry.TriangleMesh.create_cone(create_uv_map=True)
     o3d.visualization.draw({'name': 'cone', 'geometry': cone, 'material': material})
 
@@ -166,7 +181,9 @@ Cone
 Sphere
 *******
 
-.. code_block:: python
+.. code-block:: python
+
+
     sphere = o3d.geometry.TriangleMesh.create_sphere(create_uv_map=True)
     o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': material})
 

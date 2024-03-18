@@ -28,6 +28,7 @@ This rendering loop can be readily customized. For example, a custom loop can be
 
     vis = Visualizer()
     vis.create_window()
+    vis.add_geometry(geometry)
     for i in range(icp_iteration):
         # do ICP single iteration
         # transform geometry using ICP
@@ -39,9 +40,9 @@ The full script implementing this idea is displayed below.
 
 .. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
-   :lineno-start: 27
-   :lines: 27-
+   :start-at: # examples/python/visualization/non_blocking_visualization.py
    :linenos:
+   :lineno-match:
 
 The following sections explain this script.
 
@@ -50,9 +51,9 @@ Prepare example data
 
 .. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
-   :lineno-start: 35
-   :lines: 35-46
+   :pyobject: prepare_data
    :linenos:
+   :lineno-match:
 
 This part reads two point clouds and downsamples them. The source point cloud is intentionally transformed for the misalignment. Both point clouds are flipped for better visualization.
 
@@ -61,9 +62,10 @@ Initialize Visualizer class
 
 .. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
-   :lineno-start: 47
-   :lines: 47-59
+   :start-at: def demo_non_blocking_visualization():
+   :end-at: save_image = False
    :linenos:
+   :lineno-match:
 
 These lines make an instance of the visualizer class, open a visualizer window, and add two geometries to the visualizer.
 
@@ -72,9 +74,10 @@ Transform geometry and visualize it
 
 .. literalinclude:: ../../../examples/python/visualization/non_blocking_visualization.py
    :language: python
-   :lineno-start: 59
-   :lines: 59-72
+   :start-at: for i in range(icp_iteration):
+   :end-at: vis.destroy_window()
    :linenos:
+   :lineno-match:
 
 This script calls ``registration_icp`` for every iteration. Note that it explicitly forces only one ICP iteration via ``ICPConvergenceCriteria(max_iteration = 1)``. This is a trick to retrieve a slight pose update from a single ICP iteration. After ICP, source geometry is transformed accordingly.
 

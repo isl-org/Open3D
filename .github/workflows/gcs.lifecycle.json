@@ -5,7 +5,11 @@
         "type": "Delete"
       },
       "condition": {
-        "age": 7
+        "age": 30,
+        "matchesPrefix": [
+          "devel/",
+          "python-wheels/"
+        ]
       }
     }
   ]

@@ -337,8 +337,7 @@ public:
     /// mesh.
     std::shared_ptr<PointCloud> SamplePointsUniformlyImpl(
             size_t number_of_points,
-            std::vector<double> &triangle_areas,
-            double surface_area,
+            const std::vector<double> &triangle_areas,
             bool use_triangle_normal);
 
     /// Function to sample points uniformly from the mesh.
@@ -853,7 +852,7 @@ public:
         std::unordered_map<std::string, Image> additionalMaps;
     };
 
-    std::unordered_map<std::string, Material> materials_;
+    std::vector<std::pair<std::string, Material>> materials_;
 
     /// List of material ids.
     std::vector<int> triangle_material_ids_;

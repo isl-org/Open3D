@@ -44,15 +44,15 @@ The package has been tested on:
 
 With Python versions:
 
-* 3.7
 * 3.8
 * 3.9
 * 3.10
+* 3.11
 
 Resources
 ======================
 
-* Website: `www.open3d.org <http://www.open3d.org>`_
+* Website: `www.open3d.org <https://www.open3d.org>`_
 * Code: `github.com/isl-org/Open3D <https://github.com/isl-org/Open3D>`_
-* Documentation: `www.open3d.org/docs <http://www.open3d.org/docs>`_
+* Documentation: `www.open3d.org/docs <https://www.open3d.org/docs>`_
 * License: `The MIT license <https://opensource.org/licenses/MIT>`_

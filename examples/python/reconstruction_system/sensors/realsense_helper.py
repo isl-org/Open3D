@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# examples/python/reconstruction_system/sensors/realsense_pcd_visualizer.py
+# examples/python/reconstruction_system/sensors/realsense_helper.py
 
 # pyrealsense2 is required.
 # Please see instructions in https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python

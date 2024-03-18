@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 import copy
-import os
+from os.path import exists, join, dirname, basename, splitext
 import sys
 import numpy as np
 import open3d as o3d
@@ -14,15 +14,13 @@ from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 import tensorflow as tf
 
 BASE_LOGDIR = "demo_logs/tf/"
-MODEL_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(
-        os.path.realpath(__file__)))), "test_data", "monkey")
+MODEL_PATH = o3d.data.MonkeyModel().path
 
 
 def small_scale(run_name="small_scale"):
     """Basic demo with cube and cylinder with normals and colors.
     """
-    logdir = os.path.join(BASE_LOGDIR, run_name)
+    logdir = join(BASE_LOGDIR, run_name)
     writer = tf.summary.create_file_writer(logdir)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True)
@@ -52,7 +50,7 @@ def property_reference(run_name="property_reference"):
     """Produces identical visualization to small_scale, but does not store
     repeated properties of ``vertex_positions`` and ``vertex_normals``.
     """
-    logdir = os.path.join(BASE_LOGDIR, run_name)
+    logdir = join(BASE_LOGDIR, run_name)
     writer = tf.summary.create_file_writer(logdir)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True)
@@ -90,7 +88,7 @@ def large_scale(n_steps=16,
     """Generate a large scale summary. Geometry resolution increases linearly
     with step. Each element in a batch is painted a different color.
     """
-    logdir = os.path.join(BASE_LOGDIR, run_name)
+    logdir = join(BASE_LOGDIR, run_name)
     writer = tf.summary.create_file_writer(logdir)
     colors = []
     for k in range(batch_size):
@@ -130,14 +128,13 @@ def large_scale(n_steps=16,
                            max_outputs=batch_size)
 
 
-def with_material(model_dir=MODEL_DIR):
+def with_material(model_path=MODEL_PATH):
     """Read an obj model from a directory and write as a TensorBoard summary.
     """
-    model_name = os.path.basename(model_dir)
-    logdir = os.path.join(BASE_LOGDIR, model_name)
-    model_path = os.path.join(model_dir, model_name + ".obj")
-    model = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.io.read_triangle_mesh(model_path))
+    model_dir = dirname(model_path)
+    model_name = splitext(basename(model_path))[0]
+    logdir = join(BASE_LOGDIR, model_name)
+    model = o3d.t.io.read_triangle_mesh(model_path)
     summary_3d = {
         "vertex_positions": model.vertex.positions,
         "vertex_normals": model.vertex.normals,
@@ -148,8 +145,8 @@ def with_material(model_dir=MODEL_DIR):
     names_to_o3dprop = {"ao": "ambient_occlusion"}
 
     for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
-        texture_file = os.path.join(model_dir, texture + ".png")
-        if os.path.exists(texture_file):
+        texture_file = join(model_dir, texture + ".png")
+        if exists(texture_file):
             texture = names_to_o3dprop.get(texture, texture)
             summary_3d.update({
                 ("material_texture_map_" + texture):
@@ -168,7 +165,7 @@ def demo_scene():
     """
     import demo_scene
     geoms = demo_scene.create_scene()
-    logdir = os.path.join(BASE_LOGDIR, 'demo_scene')
+    logdir = join(BASE_LOGDIR, 'demo_scene')
     writer = tf.summary.create_file_writer(logdir)
     for geom_data in geoms:
         geom = geom_data["geometry"]

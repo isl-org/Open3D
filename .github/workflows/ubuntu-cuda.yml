@@ -9,9 +9,10 @@ on:
         default: 'ON'
   push:
     branches:
-      - master
+      - main
   pull_request:
-    types: [opened, reopened, synchronize]
+    # Reduce CI frequency for paid CI.
+    types: [review_requested]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -156,13 +157,13 @@ jobs:
           if-no-files-found: error
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && env.BUILD_PACKAGE == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
             --command="ls -alh \
                        && gsutil cp open3d-devel-linux-*.tar.xz \
-                       gs://open3d-releases-master/devel/"
+                       gs://open3d-releases/devel/"
 
       - name: VM run docker
         run: |
@@ -171,7 +172,7 @@ jobs:
             --command="sudo Open3D/docker/docker_test.sh ${CI_CONFIG}"
 
       - name: VM ccache upload
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \

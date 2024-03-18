@@ -45,6 +45,7 @@ static const std::unordered_map<
                            const bool)>>
         file_extension_to_trianglemesh_write_function{
                 {"npz", WriteTriangleMeshToNPZ},
+                {"glb", WriteTriangleMeshUsingASSIMP},
         };
 
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(

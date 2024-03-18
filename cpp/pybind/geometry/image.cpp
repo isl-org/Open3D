@@ -86,6 +86,13 @@ void pybind_image(py::module &m) {
              }
              height = (int)info.shape[0];
              width = (int)info.shape[1];
+             if (info.strides[1] != num_of_channels * bytes_per_channel ||
+                 info.strides[0] !=
+                         width * num_of_channels * bytes_per_channel) {
+                 throw std::runtime_error(
+                         "Image can only be initialized from a contiguous "
+                         "buffer.");
+             }
              auto img = new Image();
              img->Prepare(width, height, num_of_channels, bytes_per_channel);
              memcpy(img->data_.data(), info.ptr, img->data_.size());

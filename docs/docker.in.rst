@@ -204,3 +204,6 @@ sample configuration options available are shown below.
 
 Run ``./docker_build.sh`` without arguments to get a list of all available build
 configurations.
+
+.. note:: You can control support for PyTorch and Tensorflow with environment variables: 
+          `BUILD_PYTORCH_OPS=ON` and `BUILD_TENSORFLOW_OPS=ON`

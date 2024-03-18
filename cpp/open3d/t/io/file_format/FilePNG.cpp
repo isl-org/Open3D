@@ -103,6 +103,50 @@ bool WriteImageToPNG(const std::string &filename,
     return true;
 }
 
+bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
+                             const t::geometry::Image &image,
+                             int quality) {
+    if (image.IsEmpty()) {
+        utility::LogWarning("Write PNG failed: image has no data.");
+        return false;
+    }
+    if (image.GetDtype() != core::UInt8 && image.GetDtype() != core::UInt16) {
+        utility::LogWarning("Write PNG failed: unsupported image data.");
+        return false;
+    }
+    if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
+    {
+        quality = 6;
+    }
+    if (quality < 0 || quality > 9) {
+        utility::LogWarning(
+                "Write PNG failed: quality ({}) must be in the range [0,9]",
+                quality);
+        return false;
+    }
+    png_image pngimage;
+    memset(&pngimage, 0, sizeof(pngimage));
+    pngimage.version = PNG_IMAGE_VERSION;
+    SetPNGImageFromImage(image, quality, pngimage);
+
+    // Compute bytes required
+    size_t mem_bytes = 0;
+    if (png_image_write_to_memory(&pngimage, nullptr, &mem_bytes, 0,
+                                  image.GetDataPtr(), 0, nullptr) == 0) {
+        utility::LogWarning(
+                "Could not compute bytes needed for encoding to PNG in "
+                "memory.");
+        return false;
+    }
+    buffer.resize(mem_bytes);
+    if (png_image_write_to_memory(&pngimage, &buffer[0], &mem_bytes, 0,
+                                  image.GetDataPtr(), 0, nullptr) == 0) {
+        utility::LogWarning("Unable to encode to encode to PNG in memory.");
+        return false;
+    }
+    return true;
+}
+
 }  // namespace io
 }  // namespace t
 }  // namespace open3d

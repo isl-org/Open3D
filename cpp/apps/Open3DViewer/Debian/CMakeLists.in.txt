@@ -1,0 +1,39 @@
+# Create Debian package
+cmake_minimum_required(VERSION 3.8.0)
+project("Open3D-Debian")
+
+message(STATUS "Building package for Debian")
+
+# How to set cpack prefix: https://stackoverflow.com/a/7363073/1255535
+set(CPACK_SET_DESTDIR true)
+set(CPACK_INSTALL_PREFIX /usr/local)
+
+# Install assets
+install(DIRECTORY   "Open3D"
+        DESTINATION share
+        USE_SOURCE_PERMISSIONS
+        PATTERN     "Open3D/Open3D.svg" EXCLUDE
+        PATTERN     "Open3D/Open3D.desktop" EXCLUDE
+        PATTERN     "Open3D/Open3DViewer.xml" EXCLUDE
+        PATTERN     "Open3D/CMakeLists.txt" EXCLUDE
+        PATTERN     "Open3D/Open3DViewerLauncher.sh" EXCLUDE
+)
+install(CODE "file(READ \"${CMAKE_BINARY_DIR}/Open3D/Open3D.desktop\" _DESKTOP_FILE)
+              string(REGEX REPLACE \"Exec=.*/bin/Open3D\" \"Exec=${CPACK_INSTALL_PREFIX}/bin/Open3D\" _DESKTOP_FILE \"\${_DESKTOP_FILE}\")
+              file(WRITE \"${CMAKE_BINARY_DIR}/Open3D/Open3D.deb.desktop\" \"\${_DESKTOP_FILE}\")")
+install(FILES "Open3D/Open3D.deb.desktop" DESTINATION /usr/share/applications RENAME "Open3D.desktop")
+install(FILES "Open3D/Open3DViewer.xml" DESTINATION /usr/share/mime/packages)
+install(FILES "Open3D/Open3D.svg" DESTINATION /usr/share/icons/hicolor/scalable/apps)
+install(PROGRAMS "Open3D/Open3DViewerLauncher.sh" DESTINATION bin RENAME "Open3D")
+
+# CPACK parameter
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "open3d-viewer")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Open3D Viewer for 3D files")
+set(CPACK_PACKAGE_CONTACT "Open3D team <@PROJECT_EMAIL@>")
+set(CPACK_DEBIAN_PACKAGE_SECTION "Graphics")
+set(CPACK_PACKAGE_VERSION "@OPEN3D_VERSION@")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc++1, libgomp1, libpng16-16, libglfw3")
+set(CPACK_PACKAGE_HOMEPAGE_URL "@PROJECT_HOMEPAGE_URL@")
+
+include(CPack)

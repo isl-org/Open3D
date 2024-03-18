@@ -135,7 +135,7 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && ccache -M 5G \
  && ccache -s
 
-# Checkout Open3D-ML master branch
+# Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
@@ -158,7 +158,12 @@ RUN source util/ci_utils.sh \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
  && node --version \
@@ -166,17 +171,20 @@ RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && yarn --version
 
 # Build all
-RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]; then \
-        export GLIBCXX_USE_CXX11_ABI=OFF; \
-    else \
-        export GLIBCXX_USE_CXX11_ABI=ON; \
-    fi \
- && if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+RUN \
+    if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
+        export GLIBCXX_USE_CXX11_ABI=ON; \
     else \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
+        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
+        if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
+            export GLIBCXX_USE_CXX11_ABI=OFF; \
+        else \
+            export GLIBCXX_USE_CXX11_ABI=ON; \
+        fi \
     fi \
  && mkdir build \
  && cd build \
@@ -201,7 +209,8 @@ RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
- && if [ "${PACKAGE}" = "ON" ]; then make package; fi
+ && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
+ && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
@@ -211,6 +220,7 @@ RUN ccache -s \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
  && if [ "${PACKAGE}" = "ON" ]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
+ && if [ "${PACKAGE}" = "VIEWER" ]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."

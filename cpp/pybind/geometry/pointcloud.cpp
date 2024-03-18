@@ -91,18 +91,18 @@ void pybind_pointcloud(py::module &m) {
                  "num_samples"_a)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const AxisAlignedBoundingBox &) const) &
+                         const AxisAlignedBoundingBox &, bool) const) &
                          PointCloud::Crop,
                  py::call_guard<py::gil_scoped_release>(),
                  "Function to crop input pointcloud into output pointcloud",
-                 "bounding_box"_a)
+                 "bounding_box"_a, "invert"_a = false)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const OrientedBoundingBox &) const) &
+                         const OrientedBoundingBox &, bool) const) &
                          PointCloud::Crop,
                  py::call_guard<py::gil_scoped_release>(),
                  "Function to crop input pointcloud into output pointcloud",
-                 "bounding_box"_a)
+                 "bounding_box"_a, "invert"_a = false)
             .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  py::call_guard<py::gil_scoped_release>(),
                  "Removes all points from the point cloud that have a nan "
@@ -154,7 +154,7 @@ void pybind_pointcloud(py::module &m) {
                  py::call_guard<py::gil_scoped_release>(),
                  "Function to orient the normals with respect to consistent "
                  "tangent planes",
-                 "k"_a)
+                 "k"_a, "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0)
             .def("compute_point_cloud_distance",
                  &PointCloud::ComputePointCloudDistance,
                  py::call_guard<py::gil_scoped_release>(),
@@ -317,7 +317,8 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "number of points[0-1]"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
-            {{"bounding_box", "AxisAlignedBoundingBox to crop points"}});
+            {{"bounding_box", "AxisAlignedBoundingBox to crop points"},
+             {"invert", "optional boolean to invert cropping"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_non_finite_points",
             {{"remove_nan", "Remove NaN values from the PointCloud"},

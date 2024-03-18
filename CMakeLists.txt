@@ -48,7 +48,11 @@ option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
-option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"        ON )
+if (WIN32)   # Causes CUDA runtime error on Windows (See issue #6555)
+    option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    OFF)
+else()
+    option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    ON )
+endif()
 if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
     option(BUILD_ISPC_MODULE      "Build the ISPC module"                    ON )
 else()
@@ -252,8 +256,8 @@ string(CONCAT OPEN3D_VERSION
 )
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
 # Set additional info
-set(PROJECT_EMAIL       "info@open3d.org")
-set(PROJECT_DOCS        "http://www.open3d.org/docs")
+set(PROJECT_EMAIL       "open3d@intel.com")
+set(PROJECT_DOCS        "https://www.open3d.org/docs")
 set(PROJECT_CODE        "https://github.com/isl-org/Open3D")
 set(PROJECT_ISSUES      "https://github.com/isl-org/Open3D/issues")
 
@@ -262,7 +266,7 @@ project(Open3D
     # Set PROJECT_DESCRIPTION
     DESCRIPTION "Open3D: A Modern Library for 3D Data Processing."
     # Set PROJECT_HOMEPAGE_URL
-    HOMEPAGE_URL "http://www.open3d.org"
+    HOMEPAGE_URL "https://www.open3d.org"
     LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
@@ -290,11 +294,14 @@ endif()
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
-if (BUILD_SYCL_MODULE)
+# Tensorflow 2.9+ requires cxx_17, but MSVC 19.29 throws errors with C++17
+# enabled.
+if (BUILD_SYCL_MODULE OR BUILD_TENSORFLOW_OPS)
     set(CMAKE_CXX_STANDARD 17)
 else()
     set(CMAKE_CXX_STANDARD 14)
 endif()
+set(CMAKE_CXX_EXTENSIONS OFF)   # Improved compatibility
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE

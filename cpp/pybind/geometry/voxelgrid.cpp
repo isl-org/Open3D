@@ -77,6 +77,10 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns ``True`` if the voxel grid contains voxels.")
             .def("get_voxel", &VoxelGrid::GetVoxel, "point"_a,
                  "Returns voxel index given query point.")
+            .def("add_voxel", &VoxelGrid::AddVoxel, "voxel"_a,
+                 "Add a new voxel into the VoxelGrid.")
+            .def("remove_voxel", &VoxelGrid::RemoveVoxel, "idx"_a,
+                 "Remove a voxel given index.")
             .def("check_if_included", &VoxelGrid::CheckIfIncluded,
                  py::call_guard<py::gil_scoped_release>(), "queries"_a,
                  "Element-wise check if a query in the list is included in "
@@ -156,7 +160,7 @@ void pybind_voxelgrid(py::module &m) {
                     "parameters",
                     "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_readwrite("origin", &VoxelGrid::origin_,
-                           "``float64`` vector of length 3: Coorindate of the "
+                           "``float64`` vector of length 3: Coordinate of the "
                            "origin point.")
             .def_readwrite("voxel_size", &VoxelGrid::voxel_size_,
                            "``float64`` Size of the voxel.");
@@ -164,6 +168,11 @@ void pybind_voxelgrid(py::module &m) {
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
                                     {{"point", "The query point."}});
+    docstring::ClassMethodDocInject(m, "VoxelGrid", "add_voxel",
+                                    {{"Voxel", "A new voxel."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "remove_voxel",
+            {{"idx", "The grid index of the target voxel."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "check_if_included",
             {{"query", "a list of voxel indices to check."}});

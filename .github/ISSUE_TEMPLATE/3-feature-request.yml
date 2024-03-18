@@ -11,9 +11,9 @@ body:
     options:
       - label: "I have searched for [similar issues](https://github.com/isl-org/Open3D/issues)."
         required: true
-      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)."
+      - label: "For Python issues, I have tested with the [latest development wheel](https://www.open3d.org/docs/latest/getting_started.html#development-version-pip)."
         required: true
-      - label: "I have checked the [release documentation](http://www.open3d.org/docs/release/) and the [latest documentation](http://www.open3d.org/docs/latest/) (for `master` branch)."
+      - label: "I have checked the [release documentation](https://www.open3d.org/docs/release/) and the [latest documentation](https://www.open3d.org/docs/latest/) (for `main` branch)."
         required: true
 
 - type: textarea
