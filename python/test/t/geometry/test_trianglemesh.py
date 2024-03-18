@@ -660,3 +660,52 @@ def test_select_by_index_64(device):
         untouched_sphere.vertex.positions)
     assert sphere_custom.triangle.indices.allclose(
         untouched_sphere.triangle.indices)
+
+
+def check_no_unreferenced_vertices(device, int_t, float_t):
+    sphere = o3d.t.geometry.TriangleMesh.create_sphere(1, 3, float_t, int_t,
+                                                       device)
+    expected_sphere = o3d.t.geometry.TriangleMesh.create_sphere(
+        1, 3, float_t, int_t, device)
+
+    sphere.remove_unreferenced_vertices()
+
+    # nothing should be removed
+    assert sphere.vertex.positions.allclose(expected_sphere.vertex.positions)
+    assert sphere.triangle.indices.allclose(expected_sphere.triangle.indices)
+
+
+def check_remove_unreferenced_vertices(device, int_t, float_t):
+    expected_mobius = o3d.t.geometry.TriangleMesh.create_mobius(
+        10, 2, 1, 1, 1, 1, 1, float_t, int_t, device)
+
+    verts = o3c.Tensor(
+        [[0.5, 0.0, 0.0], [1.5, 0.0, 0.0], [0.424307, 0.308277, -0.154508],
+         [1.19373, 0.867294, 0.154508], [0.184017, 0.566346, -0.293893],
+         [0.434017, 1.33577, 0.293893], [-0.218199, 0.671548, -0.404508],
+         [-0.399835, 1.23057, 0.404508], [-0.684017, 0.496967, -0.475528],
+         [-0.934017, 0.678603, 0.475528], [-1.0, 0.0, -0.5], [-1.0, 0.0, 0.5],
+         [-0.934017, -0.678603, -0.475528], [-0.684017, -0.496967, 0.475528],
+         [-0.399835, -1.23057, -0.404508], [-0.218199, -0.671548, 0.404508],
+         [0.434017, -1.33577, -0.293893], [0.184017, -0.566346, 0.293893],
+         [0, 0, 0], [1.19373, -0.867294, -0.154508], [1, 1, 1],
+         [0.424307, -0.308277, 0.154508]], float_t, device)
+
+    tris = o3c.Tensor(
+        [[0, 3, 1], [0, 2, 3], [3, 2, 4], [3, 4, 5], [4, 7, 5], [4, 6, 7],
+         [7, 6, 8], [7, 8, 9], [8, 11, 9], [8, 10, 11], [11, 10, 12],
+         [11, 12, 13], [12, 15, 13], [12, 14, 15], [15, 14, 16], [15, 16, 17],
+         [16, 21, 17], [16, 19, 21], [19, 21, 1], [1, 21, 0]], int_t, device)
+
+    mobius = o3d.t.geometry.TriangleMesh(verts, tris)
+    mobius.remove_unreferenced_vertices()
+    assert mobius.vertex.positions.allclose(expected_mobius.vertex.positions)
+    assert mobius.triangle.indices.allclose(expected_mobius.triangle.indices)
+
+
+@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("int_t", (o3c.int32, o3c.int64))
+@pytest.mark.parametrize("float_t", (o3c.float32, o3c.float64))
+def test_remove_unreferenced_vertices(device, int_t, float_t):
+    check_no_unreferenced_vertices(device, int_t, float_t)
+    check_remove_unreferenced_vertices(device, int_t, float_t)
