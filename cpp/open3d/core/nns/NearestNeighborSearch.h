@@ -76,7 +76,7 @@ public:
     /// \param radius Radius.
     /// \param sort Sort the results by distance. Default is True.
     /// \return Tuple of Tensors, (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
+    /// - indices: Tensor of shape {total_number_of_neighbors,}, with dtype
     /// same as index_dtype_.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
     /// with query_points. The distances are squared L2 distances.
