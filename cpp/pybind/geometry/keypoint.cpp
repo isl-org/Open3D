@@ -21,6 +21,7 @@ namespace geometry {
 
 void pybind_keypoint_methods(py::module &m) {
     m.def("compute_iss_keypoints", &keypoint::ComputeISSKeypoints,
+          py::call_guard<py::gil_scoped_release>(),
           "Function that computes the ISS keypoints from an input point "
           "cloud. This implements the keypoint detection modules "
           "proposed in Yu Zhong, 'Intrinsic Shape Signatures: A Shape "
