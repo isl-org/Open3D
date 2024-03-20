@@ -91,3 +91,6 @@ docs/Doxyfile
 docs/getting_started.rst
 docs/docker.rst
 docs/tensorboard.md
+
+# Docker files
+.Open3D_bash_history
