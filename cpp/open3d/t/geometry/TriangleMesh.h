@@ -945,6 +945,10 @@ public:
     /// an empty mesh.
     TriangleMesh SelectByIndex(const core::Tensor &indices) const;
 
+    /// Removes unreferenced vertices from the mesh.
+    /// \return The reference to itself.
+    TriangleMesh RemoveUnreferencedVertices();
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
