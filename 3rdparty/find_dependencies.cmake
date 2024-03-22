@@ -1182,8 +1182,6 @@ if(BUILD_GUI)
                 imgui_tables.cpp
                 imgui_widgets.cpp
                 imgui.cpp
-            DEPENDS
-                ext_imgui
         )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_imgui)
     else()
