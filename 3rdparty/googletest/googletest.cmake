@@ -1,6 +1,6 @@
-include(ExternalProject)
+include(FetchContent)
 
-ExternalProject_Add(
+FetchContent_Declare(
     ext_googletest
     PREFIX googletest
     URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz
@@ -12,5 +12,5 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
 )
 
-ExternalProject_Get_Property(ext_googletest SOURCE_DIR)
-set(GOOGLETEST_SOURCE_DIR ${SOURCE_DIR})
+FetchContent_Populate(ext_googletest)
+FetchContent_GetProperties(ext_googletest SOURCE_DIR GOOGLETEST_SOURCE_DIR)

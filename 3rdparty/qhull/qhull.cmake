@@ -1,6 +1,6 @@
-include(ExternalProject)
+include(FetchContent)
 
-ExternalProject_Add(
+FetchContent_Declare(
     ext_qhull
     PREFIX qhull
     # v8.0.0+ causes seg fault
@@ -14,5 +14,5 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
 )
 
-ExternalProject_Get_Property(ext_qhull SOURCE_DIR)
-set(QHULL_SOURCE_DIR ${SOURCE_DIR})
+FetchContent_Populate(ext_qhull)
+FetchContent_GetProperties(ext_qhull SOURCE_DIR QHULL_SOURCE_DIR)
