@@ -55,13 +55,6 @@ jobs:
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-ccache
-      
-      # New Apple linker causes build issues, use old linker for now
-      - name: Set up Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        if: ${{ matrix.os == 'macos-14' }}
-        with:
-          xcode-version: '14.3.1'
 
       - name: Set up Python version
         uses: actions/setup-python@v5
@@ -71,20 +64,28 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ccache pkg-config
-          brew reinstall gcc  # gfortran is otherwise not found
           # Install libomp 11.1.0 from old brew bottle for catalina (10.15).
           # Directly installing the Ruby formula will install for the current OS
           # https://github.com/microsoft/LightGBM/issues/4229
+          if [[ ${{ runner.arch}} == "X64"  ]]; then
+            brew unlink libomp
+            # x64 catalina (10.15) bottle
+            export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          fi
+          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
+            # fix gfortran not found issue
+            ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
-          # brew unlink libomp
-          # catalina (10.15) bottle
-          # export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+            # default Xcode 15.0.1 linker causes build issues
+            sudo xcode-select -switch /Applications/Xcode_15.2.app
 
-          # arm64_big_sur bottle
-          export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
+            # arm64 big_sur (11.0) bottle
+            export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
+          fi
           curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
           https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
           brew install -f libomp-11.1.0.bottle.tar.gz
+
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -189,12 +190,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-ccache
 
-      - name: Set up Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        if: ${{ matrix.os == 'macos-14' }}
-        with:
-          xcode-version: '14.3.1'
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -217,7 +212,12 @@ jobs:
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           fi
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
-            brew reinstall gcc  # gfortran is otherwise not found
+            # fix gfortran not found issue
+            ln -s $(which gfortran-13) /usr/local/bin/gfortran
+
+            # default Xcode 15.0.1 linker causes build issues
+            sudo xcode-select -switch /Applications/Xcode_15.2.app
+
             # arm64 big_sur (11.0) bottle
             export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
           fi
