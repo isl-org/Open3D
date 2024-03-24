@@ -1265,6 +1265,7 @@ TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
     core::Dtype tri_dtype = HasTriangleIndices()
                                     ? GetTriangleIndices().GetDtype()
                                     : core::Int64;
+        
 
     int64_t num_verts_old = GetVertexPositions().GetLength();
     // int mask for vertices as we need to remap indices.
@@ -1292,6 +1293,7 @@ TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
             UpdateTriangleIndicesByVertexMask<scalar_tris_t>(tris_cpu,
                                                              vertex_mask);
         });
+        SetTriangleIndices(tris_cpu.To(GetDevice()));
     }
 
     // send the vertex mask to original device and apply to
