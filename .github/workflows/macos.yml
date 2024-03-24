@@ -75,8 +75,8 @@ jobs:
             # fix gfortran not found issue
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
-            # default Xcode 15.0.1 linker causes build issues
-            sudo xcode-select -switch /Applications/Xcode_15.2.app
+            # default Xcode 15.0.1 linker causes build issues, embree recommends clang <= 14 for arm64
+            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
 
             # arm64 big_sur (11.0) bottle
             export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
@@ -214,8 +214,8 @@ jobs:
             # fix gfortran not found issue
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
-            # default Xcode 15.0.1 linker causes build issues
-            sudo xcode-select -switch /Applications/Xcode_15.2.app
+            # default Xcode 15.0.1 linker causes build issues, embree recommends clang <= 14 for arm64
+            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
 
             # arm64 big_sur (11.0) bottle
             export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
