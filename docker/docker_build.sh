@@ -210,6 +210,10 @@ cuda_wheel_build() {
         -t open3d-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd
+    if [ ! -z ${CI+x} ] ; then  # Is CI env var set?
+        echo "[cuda_wheel_build()] Remove build cache to recover disk space..."
+        docker builder prune --all --force
+    fi
 
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
