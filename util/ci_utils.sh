@@ -146,7 +146,7 @@ build_pip_package() {
     echo "Building Open3D wheel"
     options="$(echo "$@" | tr ' ' '|')"
 
-    BUILD_FILAMENT_FROM_SOURCE=ON
+    BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
