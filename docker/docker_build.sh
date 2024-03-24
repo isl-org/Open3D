@@ -256,6 +256,10 @@ ci_build() {
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
+    if [ ! -z ${CI+x} ] ; then  # Is CI env var set?
+        echo "[ci_build()] Remove build cache to recover disk space..."
+        docker builder prune --all --force
+    fi
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /open3d* /opt/mount \
