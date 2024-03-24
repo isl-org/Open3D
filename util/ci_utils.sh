@@ -306,7 +306,7 @@ run_python_tests() {
 # Use: run_unit_tests
 run_cpp_unit_tests() {
     unitTestFlags=--gtest_shuffle
-    [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*:RGBDImage.CreateFromNYUFormat:TriangleMesh.CreateFromPointCloudPoisson"
+    [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
     echo "Run ./bin/tests $unitTestFlags --gtest_random_seed=SEED to repeat this test sequence."
     ./bin/tests "$unitTestFlags"
     echo

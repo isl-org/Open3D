@@ -71,8 +71,7 @@ jobs:
             brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          fi
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
+          else # ARM64
             # fix gfortran not found issue
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
@@ -152,16 +151,17 @@ jobs:
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
+          # TODO: remove macos-14 excludes when https://github.com/actions/setup-python/issues/808 is fixed
           - os: macos-14
             python_version: '3.8'
           - os: macos-14
             python_version: '3.9'
-          # - is_main: false
-          #   python_version: '3.8'
-          # - is_main: false
-          #   python_version: '3.9'
-          # - is_main: false
-          #   python_version: '3.10'
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
 
     env:
       BUILD_CUDA_MODULE: OFF
@@ -210,8 +210,7 @@ jobs:
             brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          fi
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
+          else # ARM64
             # fix gfortran not found issue
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
@@ -266,6 +265,79 @@ jobs:
           gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
           echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
 
+  fuse-wheel:
+    name: Fuse universal2 wheel
+    runs-on: [macos-12]
+    needs: [build-wheel]
+    strategy:
+      fail-fast: false
+      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
+      matrix:
+        python_version: ['3.10', '3.11']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
+        exclude:
+          - is_main: false
+            python_version: '3.10'
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Download x64 wheels
+        uses: actions/download-artifact@v3
+        with:
+          name: open3d_macosx_X64_wheels
+          path: x64_wheels
+      - name: Download ARM64 wheels
+        uses: actions/download-artifact@v3
+        with:
+          name: open3d_macosx_ARM64_wheels
+          path: arm64_wheels
+      - name: Fuse x64 and ARM64 wheels
+        env:
+          python_version: ${{ matrix.python_version }}
+        run: |
+          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
+          mkdir universal_wheels
+          
+          pip install delocate
+          delocate-fuse -v x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
+
+          # Normalize file name as delocate-fuse doesn't update it
+          OLD_WHL_NAME=$(basename x64_wheels/open3d-*${PYTAG}*.whl)
+          NEW_WHL_NAME=${OLD_WHL_NAME/x86_64/universal2}
+          mv x64_wheels/${OLD_WHL_NAME} universal_wheels/${NEW_WHL_NAME}
+
+          echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
+      - name: Upload merged wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: open3d_macosx_universal_wheels
+          path: universal_wheels/${{ env.PIP_PKG_NAME }}
+          if-no-files-found: error
+
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
+      - name: GCloud CLI setup
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+
+      - name: Upload wheel to GCS bucket
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          python_version: ${{ matrix.python_version }}
+        run: |
+          gsutil cp universal_wheels/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
+          echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
+        
   test-wheel:
     name: Test wheel
     runs-on: ${{ matrix.os }}
@@ -282,12 +354,12 @@ jobs:
             python_version: '3.8'
           - os: macos-14
             python_version: '3.9'
-          # - is_main: false
-          #   python_version: '3.8'
-          # - is_main: false
-          #   python_version: '3.9'
-          # - is_main: false
-          #   python_version: '3.10'
+          - is_main: false
+            python_version: '3.8'
+          - is_main: false
+            python_version: '3.9'
+          - is_main: false
+            python_version: '3.10'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
@@ -330,7 +402,7 @@ jobs:
     # no need to run on macOS
     runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [build-wheel, MacOS]
+    needs: [fuse-wheel, MacOS]
     steps:
       - name: GCloud CLI auth
         uses: 'google-github-actions/auth@v2'
