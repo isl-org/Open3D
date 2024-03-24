@@ -5,8 +5,8 @@ find_package(Git QUIET REQUIRED)
 ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
-    URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.44.0.tar.gz #  2020 Apr 1
-    URL_HASH SHA256=5b0158592646984f0f7348da3783e2fb49e99308a97f2348fe3cc82c770c6dde
+    URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.54.2.tar.gz #  2023 Sep 28
+    URL_HASH SHA256=e3a767337ff40ae41000049a490ab84bd70b00cbfef65e8cdbadf17fd2e1e5a8
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
     # Patch for libusb static build failure on Linux
