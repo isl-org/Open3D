@@ -1,6 +1,7 @@
 name: Ubuntu SYCL
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
