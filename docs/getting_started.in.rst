@@ -82,10 +82,10 @@ version (``HEAD`` of ``main`` branch):
       - `Python 3.11 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_27_x86_64.whl>`__
 
     * - MacOS
-      - `Python 3.8 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_11_0_x86_64.whl>`__
-      - `Python 3.9 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_11_0_x86_64.whl>`__
-      - `Python 3.10 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_11_0_universal2.whl>`__
-      - `Python 3.11 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-macosx_11_0_universal2.whl>`__
+      - `Python 3.8 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_5_x86_64.whl>`__
+      - `Python 3.9 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_10_5_x86_64.whl>`__
+      - `Python 3.10 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_10_5_universal2.whl>`__
+      - `Python 3.11 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-macosx_10_5_universal2.whl>`__
 
     * - Windows
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
