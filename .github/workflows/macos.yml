@@ -73,7 +73,7 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           ./util/run_ci.sh
-          DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
+          DEVEL_PKG_NAME="$(basename build/package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
@@ -259,10 +259,9 @@ jobs:
 
       - name: Download wheels
         uses: actions/download-artifact@v4
-        # See https://github.com/dawidd6/action-download-artifact for more
-        # flexible artifact download options
         with:
-          name: open3d_macosx_x86_64_wheels
+          pattern: open3d-*macosx*.whl
+          merge-multiple: true
 
       - name: Set up Python
         uses: actions/setup-python@v5

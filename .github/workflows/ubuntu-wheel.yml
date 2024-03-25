@@ -144,7 +144,8 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          name: open3d_linux_x86_64_wheels
+          pattern: open3d*-manylinux*.whl
+          merge-multiple: true
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
