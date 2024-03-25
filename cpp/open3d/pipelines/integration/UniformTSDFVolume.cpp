@@ -260,10 +260,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
 #ifdef _WIN32
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
-#else
-#pragma omp parallel for collapse(2) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
 #endif
+
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
