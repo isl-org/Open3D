@@ -688,6 +688,33 @@ struct RaycastingScene::Impl {
                     LoopFn);
         }
     }
+
+    Eigen::Vector3d ComputeClosestPoint(const Eigen::Vector3d& query_point){
+        if (!scene_committed_) {
+            rtcCommitScene(scene_);
+            scene_committed_ = true;
+        }
+
+        RTCPointQuery query;
+        query.x = query_point.x();
+        query.y = query_point.y();
+        query.z = query_point.z();
+        query.radius = std::numeric_limits<float>::infinity();
+        query.time = 0.f;
+
+        ClosestPointResult result;
+        result.geometry_ptrs_ptr = &geometry_ptrs_;
+
+        RTCPointQueryContext instStack;
+        rtcInitPointQueryContext(&instStack);
+        rtcPointQuery(scene_, &query, &instStack, &ClosestPointFunc,
+                      (void*)&result);
+
+        // TODO (Sebastien-Mascha): return the normal of the face.
+        // primitive_ids[i] = result.primID;
+ 
+        return Eigen::Vector3d(result.p.x, result.p.y, result.p.z);
+    }
 };
 
 RaycastingScene::RaycastingScene(int64_t nthreads)
@@ -932,6 +959,10 @@ RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points,
                                 nthreads);
 
     return result;
+}
+
+Eigen::Vector3d RaycastingScene::ComputeClosestPoint(const Eigen::Vector3d& query_point) {
+    return impl_->ComputeClosestPoint(query_point);
 }
 
 core::Tensor RaycastingScene::ComputeDistance(const core::Tensor& query_points,
