@@ -689,7 +689,7 @@ struct RaycastingScene::Impl {
         }
     }
 
-    Eigen::Vector3d ComputeClosestPoint(const Eigen::Vector3d& query_point){
+    Eigen::Vector3d ComputeClosestPoint(const Eigen::Vector3d& query_point) {
         if (!scene_committed_) {
             rtcCommitScene(scene_);
             scene_committed_ = true;
@@ -712,7 +712,7 @@ struct RaycastingScene::Impl {
 
         // TODO (Sebastien-Mascha): return the normal of the face.
         // primitive_ids[i] = result.primID;
- 
+
         return result.p.cast<double>();
     }
 };
@@ -961,7 +961,8 @@ RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points,
     return result;
 }
 
-Eigen::Vector3d RaycastingScene::ComputeClosestPoint(const Eigen::Vector3d& query_point) {
+Eigen::Vector3d RaycastingScene::ComputeClosestPoint(
+        const Eigen::Vector3d& query_point) {
     return impl_->ComputeClosestPoint(query_point);
 }
 
