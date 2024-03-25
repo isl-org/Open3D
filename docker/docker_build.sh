@@ -212,7 +212,9 @@ cuda_wheel_build() {
     popd
     if [ ! -z ${CI+x} ] ; then  # Is CI env var set?
         echo "[cuda_wheel_build()] Remove build cache to recover disk space..."
+        du -hs $PWD
         docker builder prune --all --force
+        du -hs $PWD
     fi
 
     python_package_dir=/root/Open3D/build/lib/python_package
@@ -258,7 +260,9 @@ ci_build() {
     popd
     if [ ! -z ${CI+x} ] ; then  # Is CI env var set?
         echo "[ci_build()] Remove build cache to recover disk space..."
+        du -hs $PWD
         docker builder prune --all --force
+        du -hs $PWD
     fi
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \

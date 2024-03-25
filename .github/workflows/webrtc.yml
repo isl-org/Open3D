@@ -63,7 +63,7 @@ jobs:
       - name: Upload WebRTC
         uses: actions/upload-artifact@v4
         with:
-          name: webrtc_release
+          name: webrtc_release_${{ matrix.os }}
           path: |
                  webrtc_*.tar.gz
                  checksum_*.txt
@@ -169,7 +169,7 @@ jobs:
       - name: Upload WebRTC
         uses: actions/upload-artifact@v4
         with:
-          name: webrtc_release
+          name: webrtc_release_windows
           path: |
                  ${{ env.WORK_DIR }}/webrtc_*.zip
                  ${{ env.WORK_DIR }}/checksum_*.txt

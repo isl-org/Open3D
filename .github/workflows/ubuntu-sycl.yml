@@ -39,6 +39,7 @@ jobs:
           fi
       - name: Docker test
         run: |
+          du -hs $PWD
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_test.sh sycl-shared
           else

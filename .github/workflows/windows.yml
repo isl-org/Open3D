@@ -150,7 +150,7 @@ jobs:
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         uses: actions/upload-artifact@v4
         with:
-          name: open3d-devel-windows
+          name: ${{ env.DEVEL_PKG_NAME }}
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
@@ -258,7 +258,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Windows SDK
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
         with:
           sdk-version: 19041
 
@@ -309,7 +309,7 @@ jobs:
       - name: Upload wheel
         uses: actions/upload-artifact@v4
         with:
-          name: open3d_win_amd64_wheels
+          name: ${{ env.PIP_PKG_NAME }}
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
@@ -363,7 +363,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download wheels
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:

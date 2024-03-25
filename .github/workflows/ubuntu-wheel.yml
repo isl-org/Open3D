@@ -80,7 +80,7 @@ jobs:
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: open3d_linux_x86_64_wheels
+          name: ${{ env.PIP_PKG_NAME }}
           path: |
             ${{ env.PIP_PKG_NAME }}
             ${{ env.PIP_CPU_PKG_NAME }}
@@ -142,7 +142,7 @@ jobs:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
       - name: Download wheels
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: open3d_linux_x86_64_wheels
       - name: Set up Python

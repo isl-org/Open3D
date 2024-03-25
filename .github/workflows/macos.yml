@@ -89,7 +89,7 @@ jobs:
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
         with:
-          name: open3d-devel-macosx
+          name: ${{ env.DEVEL_PKG_NAME }}
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
@@ -201,7 +201,7 @@ jobs:
       - name: Upload wheel
         uses: actions/upload-artifact@v4
         with:
-          name: open3d_macosx_x86_64_wheels
+          name: ${{ env.PIP_PKG_NAME }}
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
@@ -258,7 +258,7 @@ jobs:
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
