@@ -713,7 +713,7 @@ struct RaycastingScene::Impl {
         // TODO (Sebastien-Mascha): return the normal of the face.
         // primitive_ids[i] = result.primID;
  
-        return Eigen::Vector3d(result.p.x, result.p.y, result.p.z);
+        return result.p.cast<double>();
     }
 };
 
