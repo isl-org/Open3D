@@ -27,20 +27,24 @@ OPTION:
     openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
     openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
+    openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
     openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
     openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
+    openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
     openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
     openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
+    openblas-arm64-py312-dev    : OpenBLAS ARM64 3.12 wheel, developer mode
     openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
     openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
     openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
+    openblas-arm64-py312        : OpenBLAS ARM64 3.12 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
@@ -66,10 +70,12 @@ OPTION:
     cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
+    cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, developer mode
     cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
+    cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -78,7 +84,7 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.20.6-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.20.6-linux-aarch64
-CUDA_VERSION=11.7.1-cudnn8
+CUDA_VERSION=11.8.0-cudnn8
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -127,6 +133,9 @@ openblas_export_env() {
     elif [[ "py311" =~ ^($options)$ ]]; then
         export PYTHON_VERSION=3.11
         export DOCKER_TAG=${DOCKER_TAG}-py311
+    elif [[ "py312" =~ ^($options)$ ]]; then
+        export PYTHON_VERSION=3.12
+        export DOCKER_TAG=${DOCKER_TAG}-py312
     else
         echo "Invalid python version."
         print_usage_and_exit_docker_build
@@ -182,6 +191,8 @@ cuda_wheel_build() {
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
+    elif [[ "py312" =~ ^($options)$ ]]; then
+        PYTHON_VERSION=3.12
     else
         echo "Invalid python version."
         print_usage_and_exit_docker_build
@@ -490,6 +501,10 @@ function main() {
         openblas_export_env amd64 py311 dev
         openblas_build
         ;;
+    openblas-amd64-py312-dev)
+        openblas_export_env amd64 py312 dev
+        openblas_build
+        ;;
     openblas-amd64-py38)
         openblas_export_env amd64 py38
         openblas_build
@@ -504,6 +519,10 @@ function main() {
         ;;
     openblas-amd64-py311)
         openblas_export_env amd64 py311
+        openblas_build
+        ;;
+    openblas-amd64-py312)
+        openblas_export_env amd64 py312
         openblas_build
         ;;
 
@@ -524,6 +543,10 @@ function main() {
         openblas_export_env arm64 py311 dev
         openblas_build
         ;;
+    openblas-arm64-py312-dev)
+        openblas_export_env arm64 py312 dev
+        openblas_build
+        ;;
     openblas-arm64-py38)
         openblas_export_env arm64 py38
         openblas_build
@@ -538,6 +561,10 @@ function main() {
         ;;
     openblas-arm64-py311)
         openblas_export_env arm64 py311
+        openblas_build
+        ;;
+    openblas-arm64-py312)
+        openblas_export_env arm64 py312
         openblas_build
         ;;
 
@@ -586,6 +613,9 @@ function main() {
     cuda_wheel_py311_dev)
         cuda_wheel_build py311 dev
         ;;
+    cuda_wheel_py312_dev)
+        cuda_wheel_build py312 dev
+        ;;
     cuda_wheel_py38)
         cuda_wheel_build py38
         ;;
@@ -598,6 +628,10 @@ function main() {
     cuda_wheel_py311)
         cuda_wheel_build py311
         ;;
+    cuda_wheel_py312)
+        cuda_wheel_build py312
+        ;;
+
 
     # ML CIs
     2-bionic)

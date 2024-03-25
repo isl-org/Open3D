@@ -32,6 +32,7 @@
 -   Fix regression in printing cuda tensor from PR #6444 🐛
 -   Add Python pathlib support for file IO (PR #6619)
 -   Fix log error message for `probability` argument validation in `PointCloud::SegmentPlane` (PR #6622)
+-   Python 3.12 support
 
 ## 0.13
 
