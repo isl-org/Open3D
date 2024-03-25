@@ -40,18 +40,20 @@ ExternalProject_Add(
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}realsense2${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}realsense-file${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}fw${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}rsutils${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
 set(LIBREALSENSE_INCLUDE_DIR "${INSTALL_DIR}/include/") # "/" is critical.
 set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR}")
 
-set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file usb) # The order is critical.
+set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file rsutils usb) # The order is critical.
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
         COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y realsense2d.lib realsense2.lib
         COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y fwd.lib fw.lib
         COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y realsense-filed.lib realsense-file.lib
+        COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y rsutilsd.lib rsutils.lib
         WORKING_DIRECTORY "${LIBREALSENSE_LIB_DIR}"
         DEPENDEES install
     )
