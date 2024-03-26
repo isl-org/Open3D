@@ -152,6 +152,31 @@ public:
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
             const core::Tensor &query_points, const int nthreads = 0);
 
+    /// \brief Computes the closest point on the surface of the scene to a
+    /// single query point.
+    ///
+    /// This function calculates the closest point on any surface within the
+    /// scene to the provided query point. It's optimized for single-point
+    /// queries, making it suitable for applications that require precise,
+    /// real-time calculations of nearest surface points, such as collision
+    /// detection or interactive simulations.
+    ///
+    /// \param query_point An Eigen::Vector3d object representing the
+    /// coordinates of the query point in the format [x, y, z].
+    ///
+    /// \return An Eigen::Vector3d object representing the closest point on the
+    /// surface to the query point.
+    ///         The return format is also [x, y, z], indicating the coordinates
+    ///         of the closest surface point.
+    ///
+    /// \note The scene must be committed (prepared for querying) before calling
+    /// this function. If the scene has not been
+    ///       previously committed, the function will commit it automatically.
+    ///       However, for efficiency, it's recommended to manually commit the
+    ///       scene once all geometries have been added, before performing any
+    ///       queries.
+    Eigen::Vector3d ComputeClosestPoint(const Eigen::Vector3d &query_point);
+
     /// \brief Computes the distance to the surface of the scene.
     /// \param query_points A tensor with >=2 dims, shape {.., 3} and Dtype
     /// Float32 describing the query points. {..} can be any number of
