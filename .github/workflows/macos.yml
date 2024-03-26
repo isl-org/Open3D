@@ -31,6 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
+        # https://github.com/actions/runner-images
         os: [macos-12, macos-14]
         CONFIG: [ON, OFF]
     env:
@@ -59,25 +60,32 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.os == 'macos-14' && '3.10' || '3.8' }}
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
           brew install ccache pkg-config
-          # Install libomp 11.1.0 from old brew bottle for catalina (10.15).
-          # Directly installing the Ruby formula will install for the current OS
+
+          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
+            # Fix gfortran not found issue
+            ln -s $(which gfortran-13) /usr/local/bin/gfortran
+
+            # Default macos-14 image Xcode (version 15.0.1) linker causes build issues.
+            # Newer Xcode versions work, but embree recommends Apple clang <= 14 on
+            # arm64 to avoid possible "EXEC_BAD_INSTRUCTION" runtime exceptions:
+            # https://github.com/embree/embree/releases/tag/v4.3.1
+            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
+          fi
+
+          # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
+          # / arm64 big sur (11.0). Directly installing the Ruby formula will
+          # install for the current OS.
           # https://github.com/microsoft/LightGBM/issues/4229
           if [[ ${{ runner.arch}} == "X64"  ]]; then
             brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
-            # fix gfortran not found issue
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-
-            # default Xcode 15.0.1 linker causes build issues, embree recommends clang <= 14 for arm64
-            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
-
             # arm64 big_sur (11.0) bottle
             export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
           fi
@@ -146,6 +154,7 @@ jobs:
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
+        # https://github.com/actions/runner-images
         os: [macos-12, macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11']
         is_main:
@@ -205,18 +214,19 @@ jobs:
           cmake --version
           source util/ci_utils.sh
           install_python_dependencies
+
+          # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
+          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
+            ln -s $(which gfortran-13) /usr/local/bin/gfortran
+            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
+          fi
+
           # Install libomp 11.1.0. See comment above.
           if [[ ${{ runner.arch}} == "X64"  ]]; then
             brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
-            # fix gfortran not found issue
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-
-            # default Xcode 15.0.1 linker causes build issues, embree recommends clang <= 14 for arm64
-            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
-
             # arm64 big_sur (11.0) bottle
             export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
           fi
