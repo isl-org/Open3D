@@ -312,6 +312,30 @@ Returns:
 
 )doc");
 
+    raycasting_scene.def("compute_closest_point",
+                         &RaycastingScene::ComputeClosestPoint, "query_point"_a,
+                         R"doc(
+Computes the closest point on the surface of the scene to a single query point.
+
+Args:
+    query_point (open3d.core.Tensor): A tensor with 1 dim, shape {3},
+        and Dtype Float32 describing the query point.
+        The dimension must be 3 and has the format [x, y, z].
+
+Returns:
+    An open3d.core.Tensor representing the closest point on the surface to the 
+    query point. The shape is {3}, and the format is [x, y, z], indicating 
+    the coordinates of the closest surface point.
+
+Note:
+    The scene must be committed (prepared for querying) before calling this 
+    function. If the scene has not been previously committed, the function 
+    will commit it automatically. However, for efficiency, it's recommended
+    to manually commit the scene once all geometries have been added, before
+    performing any queries.
+
+)doc");
+
     raycasting_scene.def("compute_distance", &RaycastingScene::ComputeDistance,
                          "query_points"_a, "nthreads"_a = 0, R"doc(
 Computes the distance to the surface of the scene.
