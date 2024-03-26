@@ -211,7 +211,6 @@ cuda_wheel_build() {
         -t open3d-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd
-    df -h $PWD
 
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
