@@ -1919,7 +1919,7 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
         {44, 50, 43},
         {32, 31, 50},
 #if defined(__APPLE__) && defined(__arm64__)
-        // Unkown why these two triangles are different on Apple Silicon
+        // Apple Silicon consistently triangulates the vertices differently
         {44, 45, 50},
         {45, 32, 50},
 #else
