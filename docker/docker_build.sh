@@ -207,15 +207,11 @@ cuda_wheel_build() {
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg CI="${CI:-}" \
         -t open3d-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd
-    if [ ! -z ${CI+x} ] ; then  # Is CI env var set?
-        echo "[cuda_wheel_build()] Remove build cache to recover disk space..."
-        df -h $PWD
-        docker builder prune --all --force
-        df -h $PWD
-    fi
+    df -h $PWD
 
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
@@ -255,15 +251,11 @@ ci_build() {
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
+        --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
-    if [ ! -z ${CI+x} ] ; then  # Is CI env var set?
-        echo "[ci_build()] Remove build cache to recover disk space..."
-        df -h $PWD
-        docker builder prune --all --force
-        df -h $PWD
-    fi
+    df -h $PWD
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /open3d* /opt/mount \
