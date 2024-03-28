@@ -10,6 +10,7 @@ ARG CCACHE_VERSION
 ARG PYTHON_VERSION
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
+ARG CI
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
@@ -130,7 +131,9 @@ WORKDIR /root/Open3D
 RUN export NPROC=$(nproc) \
  && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \
- && build_pip_package build_azure_kinect build_jupyter
+ && build_pip_package build_azure_kinect build_jupyter \
+ && if [ ${CI:-}a != a ]; then cd /root/Open3D/build/ && ls | grep -Ev '^lib$' | xargs rm -rf ; fi
+ # remove build folder (except lib) to save CI space on Github
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
