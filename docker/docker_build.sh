@@ -254,7 +254,6 @@ ci_build() {
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
-    df -h $PWD
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /open3d* /opt/mount \
