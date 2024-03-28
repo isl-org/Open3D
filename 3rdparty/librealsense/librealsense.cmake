@@ -5,8 +5,8 @@ find_package(Git QUIET REQUIRED)
 ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
-    URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.44.0.tar.gz #  2020 Apr 1
-    URL_HASH SHA256=5b0158592646984f0f7348da3783e2fb49e99308a97f2348fe3cc82c770c6dde
+    URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.54.2.tar.gz #  2023 Sep 28
+    URL_HASH SHA256=e3a767337ff40ae41000049a490ab84bd70b00cbfef65e8cdbadf17fd2e1e5a8
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
     # Patch for libusb static build failure on Linux
@@ -40,18 +40,20 @@ ExternalProject_Add(
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}realsense2${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}realsense-file${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}fw${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}rsutils${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
 set(LIBREALSENSE_INCLUDE_DIR "${INSTALL_DIR}/include/") # "/" is critical.
 set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR}")
 
-set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file usb) # The order is critical.
+set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file rsutils usb) # The order is critical.
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
         COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y realsense2d.lib realsense2.lib
         COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y fwd.lib fw.lib
         COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y realsense-filed.lib realsense-file.lib
+        COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y rsutilsd.lib rsutils.lib
         WORKING_DIRECTORY "${LIBREALSENSE_LIB_DIR}"
         DEPENDEES install
     )
