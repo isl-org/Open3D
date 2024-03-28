@@ -174,12 +174,10 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                             VertexBuffer::AttributeType::FLOAT3,
                                             ColoredVertex::GetPositionOffset(),
                                             sizeof(ColoredVertex))
-                                 .normalized(VertexAttribute::COLOR)
                                  .attribute(VertexAttribute::COLOR, 0,
                                             VertexBuffer::AttributeType::FLOAT4,
                                             ColoredVertex::GetColorOffset(),
                                             sizeof(ColoredVertex))
-                                 .normalized(VertexAttribute::TANGENTS)
                                  .attribute(VertexAttribute::TANGENTS, 0,
                                             VertexBuffer::AttributeType::FLOAT4,
                                             ColoredVertex::GetTangentOffset(),
@@ -350,10 +348,8 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
                                  .vertexCount(uint32_t(n_vertices))
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3)
-                                 .normalized(VertexAttribute::COLOR)
                                  .attribute(VertexAttribute::COLOR, 1,
                                             VertexBuffer::AttributeType::FLOAT3)
-                                 .normalized(VertexAttribute::TANGENTS)
                                  .attribute(VertexAttribute::TANGENTS, 2,
                                             VertexBuffer::AttributeType::FLOAT4)
                                  .attribute(VertexAttribute::CUSTOM0, 2,
