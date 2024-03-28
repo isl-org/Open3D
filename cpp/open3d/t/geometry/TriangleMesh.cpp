@@ -1292,6 +1292,7 @@ TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
             UpdateTriangleIndicesByVertexMask<scalar_tris_t>(tris_cpu,
                                                              vertex_mask);
         });
+        SetTriangleIndices(tris_cpu.To(GetDevice()));
     }
 
     // send the vertex mask to original device and apply to
