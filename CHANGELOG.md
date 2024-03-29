@@ -32,6 +32,7 @@
 -   Fix regression in printing cuda tensor from PR #6444 🐛
 -   Add Python pathlib support for file IO (PR #6619)
 -   Fix log error message for `probability` argument validation in `PointCloud::SegmentPlane` (PR #6622)
+-   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
 
 ## 0.13
 
