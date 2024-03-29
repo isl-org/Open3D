@@ -268,8 +268,7 @@ void PickPointsInteractor::SetOnStartedPolygonPicking(
 }
 
 void PickPointsInteractor::Mouse(const MouseEvent &e) {
-    if (e.type != MouseEvent::BUTTON_UP)
-        return;
+    if (e.type != MouseEvent::BUTTON_UP) return;
 
     bool polygon_picking_requested = e.modifiers & int(KeyModifier::ALT);
     if (!polygon_picking_requested) {
@@ -302,7 +301,7 @@ void PickPointsInteractor::Mouse(const MouseEvent &e) {
                 on_ui_changed_(lines);
             }
         }
-    }    
+    }
 }
 
 void PickPointsInteractor::Key(const KeyEvent &e) {

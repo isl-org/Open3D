@@ -384,8 +384,10 @@ struct O3DVisualizer::Impl {
                                std::vector<std::pair<size_t, Eigen::Vector3d>>>
                                &indices,
                        int keymods) {
-                    bool unselect_mode_requested = keymods & int(KeyModifier::SHIFT);
-                    if (unselect_mode_requested || polygon_selection_unselects_) {
+                    bool unselect_mode_requested =
+                            keymods & int(KeyModifier::SHIFT);
+                    if (unselect_mode_requested ||
+                        polygon_selection_unselects_) {
                         selections_->UnselectIndices(indices);
                     } else {
                         selections_->SelectIndices(indices);
@@ -488,8 +490,8 @@ struct O3DVisualizer::Impl {
         });
 
 #if __APPLE__
-        const char *selection_help =
-        const char *selection_help = R"(Cmd-click to select a point
+        const char *selection_help = const char *selection_help =
+                R"(Cmd-click to select a point
 Cmd-shift-click to deselect a point
 Cmd-alt-click to polygon select)";
 #else
@@ -1550,8 +1552,8 @@ Ctrl-alt-click to polygon select)";
 
         auto bbox_extend = scene_->GetScene()->GetBoundingBox().GetExtent();
         auto psize = double(std::max(5, px)) * 0.000666 *
-                     std::max(bbox_extend.x(), 
-                     std::max(bbox_extend.y(), bbox_extend.z()));
+                     std::max(bbox_extend.x(),
+                              std::max(bbox_extend.y(), bbox_extend.z()));
         selections_->SetPointSize(psize);
 
         scene_->SetPickablePointSize(px);
