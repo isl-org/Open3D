@@ -268,37 +268,41 @@ void PickPointsInteractor::SetOnStartedPolygonPicking(
 }
 
 void PickPointsInteractor::Mouse(const MouseEvent &e) {
-    if (e.type == MouseEvent::BUTTON_UP) {
-        if (e.modifiers & int(KeyModifier::ALT)) {
-            if (pending_.empty() || pending_.back().keymods == 0) {
-                pending_.push({{gui::Point(e.x, e.y)}, int(KeyModifier::ALT)});
-                if (on_ui_changed_) {
-                    on_ui_changed_({});
-                }
-            } else {
-                pending_.back().polygon.push_back(gui::Point(e.x, e.y));
-                if (on_started_poly_pick_) {
-                    on_started_poly_pick_();
-                }
-                if (on_ui_changed_) {
-                    std::vector<Eigen::Vector2i> lines;
-                    auto &polygon = pending_.back().polygon;
-                    for (size_t i = 1; i < polygon.size(); ++i) {
-                        auto &p0 = polygon[i - 1];
-                        auto &p1 = polygon[i];
-                        lines.push_back({p0.x, p0.y});
-                        lines.push_back({p1.x, p1.y});
-                    }
-                    lines.push_back({polygon.back().x, polygon.back().y});
-                    lines.push_back({polygon[0].x, polygon[0].y});
-                    on_ui_changed_(lines);
-                }
+    if (e.type != MouseEvent::BUTTON_UP)
+        return;
+
+    bool polygon_picking_requested = e.modifiers & int(KeyModifier::ALT);
+    if (!polygon_picking_requested) {
+        // standard point picking
+        pending_.push({{gui::Point(e.x, e.y)}, e.modifiers});
+        DoPick();
+    } else {
+        // special polygon picking mode
+        if (pending_.empty() || pending_.back().keymods == 0) {
+            pending_.push({{gui::Point(e.x, e.y)}, e.modifiers});
+            if (on_ui_changed_) {
+                on_ui_changed_({});
             }
         } else {
-            pending_.push({{gui::Point(e.x, e.y)}, 0});
-            DoPick();
+            pending_.back().polygon.push_back(gui::Point(e.x, e.y));
+            if (on_started_poly_pick_) {
+                on_started_poly_pick_();
+            }
+            if (on_ui_changed_) {
+                std::vector<Eigen::Vector2i> lines;
+                auto &polygon = pending_.back().polygon;
+                for (size_t i = 1; i < polygon.size(); ++i) {
+                    auto &p0 = polygon[i - 1];
+                    auto &p1 = polygon[i];
+                    lines.push_back({p0.x, p0.y});
+                    lines.push_back({p1.x, p1.y});
+                }
+                lines.push_back({polygon.back().x, polygon.back().y});
+                lines.push_back({polygon[0].x, polygon[0].y});
+                on_ui_changed_(lines);
+            }
         }
-    }
+    }    
 }
 
 void PickPointsInteractor::Key(const KeyEvent &e) {
