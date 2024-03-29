@@ -155,8 +155,6 @@ void PickPointsInteractor::SetPickableGeometry(
     // TriangleMesh so that occluded points are not selected.
     points_.clear();
     for (auto &pg : geometry) {
-        lookup_->Add(pg.name, points_.size());
-
         auto cloud = dynamic_cast<const geometry::PointCloud *>(pg.geometry);
         auto tcloud =
                 dynamic_cast<const t::geometry::PointCloud *>(pg.tgeometry);
@@ -166,6 +164,12 @@ void PickPointsInteractor::SetPickableGeometry(
         auto lineset = dynamic_cast<const geometry::LineSet *>(pg.geometry);
         auto tlineset =
                 dynamic_cast<const t::geometry::LineSet *>(pg.tgeometry);
+
+        // only add geometry with pickable points
+        if (cloud || tcloud || mesh || tmesh || lineset || tlineset) {
+            lookup_->Add(pg.name, points_.size());
+        }
+
         if (cloud) {
             points_.insert(points_.end(), cloud->points_.begin(),
                            cloud->points_.end());
