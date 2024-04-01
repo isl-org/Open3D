@@ -27,9 +27,7 @@ else()
         endif()
     elseif(APPLE)
         if (APPLE_AARCH64)
-            ## TODO: Update url
-            set(FILAMENT_URL https://github.com/sitic/filament/releases/download/filament/filament-v1.9.19-macos_arm64.tgz)
-            # set(FILAMENT_URL https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-macos_arm64.tgz)
+            set(FILAMENT_URL https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-macos_arm64.tgz)
             set(FILAMENT_SHA256 3422bdff451d90144fbb69e625d8dcaeaf3222dc2c28879536067937955bc362)
             string(APPEND lib_dir /arm64)
             # Our arm64 builds use FILAMENT_SUPPORTS_VULKAN=OFF
