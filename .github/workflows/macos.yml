@@ -108,7 +108,7 @@ jobs:
           pushd build
           make -j${NPROC} Open3DViewer
           pushd bin
-          zip -rv open3d-app-macosx-10_15.zip Open3D.app
+          zip -rv open3d-app-macosx-10_15-${{ runner.arch}}.zip Open3D.app
           ccache -s
 
       - name: Upload package
@@ -143,7 +143,36 @@ jobs:
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15-${{ runner.arch}}
-          path: build/bin/open3d-app-macosx-10_15.zip
+          path: build/bin/open3d-app-macosx-10_15-${{ runner.arch}}.zip
+          if-no-files-found: error
+
+  fuse-viewer:
+    name: Merge x64 and ARM64 binaries
+    runs-on: [macos-12]
+    needs: [MacOS]
+    steps:
+      - name: Download viewer apps
+        uses: actions/download-artifact@v4
+        with:
+          pattern: open3d-app-macosx-10_15-*
+          merge-multiple: true
+
+      - name: Fuse x64 and arm64 viewer apps
+        run: |
+          unzip open3d-app-macosx-10_15-X64.zip -d x64
+          unzip open3d-app-macosx-10_15-ARM64.zip -d arm64
+          for i in arm64/Open3D.app/Contents/MacOS/*; do
+            filepath=Open3D.app/Contents/MacOS/$(basename $i)
+            lipo -create arm64/${filepath} x64/${filepath} -output arm64/${filepath}
+          done
+          mv arm64/Open3D.app Open3D.app
+          zip -rv open3d-app-macosx-10_15-universal2.zip Open3D.app
+
+      - name: Upload Open3D viewer app
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-app-macosx-10_15-universal2
+          path: build/bin/open3d-app-macosx-10_15-universal2.zip
           if-no-files-found: error
 
   build-wheel:
