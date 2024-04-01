@@ -291,19 +291,21 @@ jobs:
             python_version: '3.10'
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
-      - name: Download x64 wheels
-        uses: actions/download-artifact@v3
+      - name: Download wheels
+        uses: actions/download-artifact@v4
         with:
-          name: open3d_macosx_X64_wheels
+          pattern: open3d-*macosx*_x86_64.whl
           path: x64_wheels
+          merge-multiple: true
       - name: Download ARM64 wheels
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: open3d_macosx_ARM64_wheels
+          pattern: open3d-*macosx*_arm64.whl
           path: arm64_wheels
+          merge-multiple: true
       - name: Fuse x64 and ARM64 wheels
         env:
           python_version: ${{ matrix.python_version }}
@@ -321,21 +323,21 @@ jobs:
 
           echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
       - name: Upload merged wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: open3d_macosx_universal_wheels
+          name: ${{ env.PIP_PKG_NAME }}
           path: universal_wheels/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}
