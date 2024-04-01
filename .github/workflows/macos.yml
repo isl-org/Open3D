@@ -147,7 +147,7 @@ jobs:
           if-no-files-found: error
 
   fuse-viewer:
-    name: Merge x64 and ARM64 binaries
+    name: Fuse x64 and ARM64 viewer app
     runs-on: [macos-12]
     needs: [MacOS]
     steps:
@@ -172,7 +172,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-macosx-10_15-universal2
-          path: build/bin/open3d-app-macosx-10_15-universal2.zip
+          path: open3d-app-macosx-10_15-universal2.zip
           if-no-files-found: error
 
   build-wheel:
@@ -323,7 +323,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
-      - name: Download wheels
+      - name: Download X64 wheels
         uses: actions/download-artifact@v4
         with:
           pattern: open3d-*macosx*_x86_64.whl
@@ -430,7 +430,7 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel open3d*-"$pi_tag"-*.whl
+          test_wheel open3d*-"$pi_tag"-*_$(uname -m).whl
 
       - name: Run Python unit tests (benchmarks)
         run: |
