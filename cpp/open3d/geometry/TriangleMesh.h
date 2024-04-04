@@ -150,11 +150,12 @@ public:
     TriangleMesh &MergeCloseVertices(double eps);
 
     /// \brief Function to interpolate UVs from input mesh to this mesh.
-    /// UVs are interpolated based on the UVs of the closest vertices 
+    /// UVs are interpolated based on the UVs of the closest vertices
     /// in the input mesh.
-    /// 
+    ///
     /// \param input_mesh The input mesh from which UVs are interpolated.
-    TriangleMesh InterpolateTextureCoordinatesFrom(const TriangleMesh &input_mesh);
+    TriangleMesh InterpolateTextureCoordinatesFrom(
+            const TriangleMesh &input_mesh);
 
     /// \brief Function to sharpen triangle mesh.
     ///
