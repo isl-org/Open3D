@@ -153,6 +153,68 @@ TriangleMesh &TriangleMesh::ComputeAdjacencyList() {
     return *this;
 }
 
+TriangleMesh TriangleMesh::InterpolateTextureCoordinatesFrom(const TriangleMesh &input_mesh){
+    KDTreeFlann kdtree(input_mesh);
+    
+    // Custom equality function for Eigen::Vector2d  
+    struct Vector2dEqual {
+        bool operator()(const Eigen::Vector2d& v1, const Eigen::Vector2d& v2) const {
+            return v1.isApprox(v2);
+        }
+    };
+    using vector2d_set = std::unordered_set<Eigen::Vector2d, utility::hash_eigen<Eigen::Vector2d>, Vector2dEqual>;
+    
+    // Maps vertex index to set of uvs in input mesh 
+    std::unordered_map<int, vector2d_set> vertex_to_uvs;
+    for (size_t i = 0; i < input_mesh.triangles_.size(); i++) {
+        const Eigen::Vector3i &triangle = input_mesh.triangles_[i];
+        for (int j = 0; j < 3; j++) {
+            int vertex_idx = triangle[j];
+            auto uv = input_mesh.triangle_uvs_[i * 3 + j];
+            if(vertex_to_uvs[vertex_idx].find(uv) == vertex_to_uvs[vertex_idx].end()){ 
+                vertex_to_uvs[vertex_idx].insert(uv);
+            }
+        }
+    }
+            
+    
+    auto distance = [](const Eigen::Vector2d &v1, const Eigen::Vector2d &v2) {
+        return (v1 - v2).norm();
+    };
+    
+    // Gets the uvs coordinates that are closest to each other, given 3 sets of uvs corresponding to each vertex
+    // of a triangle
+    auto get_best_uvs = [&distance](const vector2d_set &uvs1, const vector2d_set &uvs2, const vector2d_set &uvs3){
+        std::vector<Eigen::Vector2d> best_uvs{Eigen::Vector2d(0, 0), Eigen::Vector2d(0, 0), Eigen::Vector2d(0, 0)};
+        if (uvs1.size() == 0 || uvs2.size() == 0 || uvs3.size() == 0) return best_uvs;
+        
+        double minimum_distance = std::numeric_limits<double>::max();
+        for(auto &uv1 : uvs1){
+            for(auto &uv2 : uvs2){
+                for(auto &uv3 : uvs3){
+                    auto aggregate_distance = distance(uv1, uv2) + distance(uv2, uv3) + distance(uv3, uv1);
+                    if (aggregate_distance < minimum_distance){
+                        minimum_distance = aggregate_distance;
+                        best_uvs = {uv1, uv2, uv3};
+                    }
+                }
+            }
+        }
+        return best_uvs;
+    };
+    
+    // Writes the uvs to the triangle mesh
+    for(const auto &triangle: triangles_){
+        auto best_uvs = get_best_uvs(vertex_to_uvs[triangle(0)], vertex_to_uvs[triangle(1)], vertex_to_uvs[triangle(2)]);
+        for(auto &uv : best_uvs){
+            triangle_uvs_.push_back(uv);
+        }
+    }
+            
+    return *this; 
+}
+
+
 std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
         int number_of_iterations, double strength, FilterScope scope) const {
     bool filter_vertex =
