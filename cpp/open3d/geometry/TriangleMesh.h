@@ -150,7 +150,7 @@ public:
     TriangleMesh &MergeCloseVertices(double eps);
 
     /// \brief Function to interpolate UVs from input mesh to this mesh.
-    /// UVs are interpolated based on the UVs of the closest vertices
+    /// UVs are interpolated from the UVs of the closest vertices
     /// in the input mesh.
     ///
     /// \param input_mesh The input mesh from which UVs are interpolated.
