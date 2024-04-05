@@ -187,8 +187,9 @@ TriangleMesh TriangleMesh::InterpolateTextureCoordinatesFrom(
         return (v1 - v2).norm();
     };
 
-    // Gets the uvs coordinates that are closest to each other, given 3 sets of
-    // uvs corresponding to each vertex of a triangle
+    // Gets the uv coordinates combination that are closest to each other (one
+    // uv coordinate from each set), given 3 uv sets corresponding to each
+    // vertex of a triangle
     auto get_best_uvs = [&distance](const vector2d_set &uvs1,
                                     const vector2d_set &uvs2,
                                     const vector2d_set &uvs3) {
