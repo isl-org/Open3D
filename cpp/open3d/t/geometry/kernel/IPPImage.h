@@ -50,33 +50,37 @@ void To(const core::Tensor &src_im,
 
 void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im);
 
-void Dilate(const open3d::core::Tensor &srcim,
-            open3d::core::Tensor &dstim,
-            int kernel_size);
+void Dilate(const core::Tensor &srcim, core::Tensor &dstim, int kernel_size);
 
-void Resize(const open3d::core::Tensor &srcim,
-            open3d::core::Tensor &dstim,
+void Resize(const core::Tensor &srcim,
+            core::Tensor &dstim,
             t::geometry::Image::InterpType interp_type);
 
-void Filter(const open3d::core::Tensor &srcim,
-            open3d::core::Tensor &dstim,
-            const open3d::core::Tensor &kernel);
+void Filter(const core::Tensor &srcim,
+            core::Tensor &dstim,
+            const core::Tensor &kernel);
 
-void FilterBilateral(const open3d::core::Tensor &srcim,
-                     open3d::core::Tensor &dstim,
+void FilterBilateral(const core::Tensor &srcim,
+                     core::Tensor &dstim,
                      int kernel_size,
                      float value_sigma,
                      float distance_sigma);
 
-void FilterGaussian(const open3d::core::Tensor &srcim,
-                    open3d::core::Tensor &dstim,
+void FilterGaussian(const core::Tensor &srcim,
+                    core::Tensor &dstim,
                     int kernel_size,
                     float sigma);
 
-void FilterSobel(const open3d::core::Tensor &srcim,
-                 open3d::core::Tensor &dstim_dx,
-                 open3d::core::Tensor &dstim_dy,
+void FilterSobel(const core::Tensor &srcim,
+                 core::Tensor &dstim_dx,
+                 core::Tensor &dstim_dy,
                  int kernel_size);
+
+void Remap(const core::Tensor &src_im /*{Ws, Hs, C}*/,
+           const core::Tensor &dst2src_map /*{Wd, Hd, 2}, float*/,
+           core::Tensor &dst_im /*{Wd, Hd, 2}*/,
+           Image::InterpType interp_type);
+
 }  // namespace ipp
 }  // namespace geometry
 }  // namespace t

@@ -70,7 +70,7 @@ public:
     ///         - \b primitive_normals A tensor with the normals of the hit
     ///           triangles. The shape is {.., 3}.
     std::unordered_map<std::string, core::Tensor> CastRays(
-            const core::Tensor &rays, const int nthreads = 0);
+            const core::Tensor &rays, const int nthreads = 0) const;
 
     /// \brief Checks if the rays have any intersection with the scene.
     /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32

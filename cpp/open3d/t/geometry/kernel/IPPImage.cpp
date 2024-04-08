@@ -7,10 +7,14 @@
 
 #include "open3d/t/geometry/kernel/IPPImage.h"
 
+#include <icv/ippicv.h>
+#include <ippicv_redefs.h>
+
 #include <iw++/iw_image_color.hpp>
 #include <iw++/iw_image_filter.hpp>
 #include <iw++/iw_image_op.hpp>
 #include <iw++/iw_image_transform.hpp>
+#include <unordered_map>
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ParallelFor.h"
@@ -76,8 +80,8 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
     }
 }
 
-void Resize(const open3d::core::Tensor &src_im,
-            open3d::core::Tensor &dst_im,
+void Resize(const core::Tensor &src_im,
+            core::Tensor &dst_im,
             t::geometry::Image::InterpType interp_type) {
     auto dtype = src_im.GetDtype();
     // Create IPP wrappers for all Open3D tensors
@@ -153,9 +157,9 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     }
 }
 
-void Filter(const open3d::core::Tensor &src_im,
-            open3d::core::Tensor &dst_im,
-            const open3d::core::Tensor &kernel) {
+void Filter(const core::Tensor &src_im,
+            core::Tensor &dst_im,
+            const core::Tensor &kernel) {
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     auto dtype = src_im.GetDtype();
@@ -291,7 +295,71 @@ void FilterSobel(const core::Tensor &src_im,
         utility::LogError("IPP-IW error {}: {}", e.m_status, e.m_string);
     }
 }
+
+void Remap(const core::Tensor &src_im /*{Ws, Hs, C}*/,
+           const core::Tensor &dst2src_map /*{Wd, Hd, 2}, float*/,
+           core::Tensor &dst_im /*{Wd, Hd, 2}*/,
+           t::geometry::Image::InterpType interp_type) {
+    auto dtype = src_im.GetDtype();
+    if (dtype != dst_im.GetDtype()) {
+        utility::LogError(
+                "Source ({}) and destination ({}) image dtypes are different!",
+                dtype.ToString(), dst_im.GetDtype().ToString());
+    }
+    if (dst2src_map.GetDtype() != core::Float32) {
+        utility::LogError("dst2src_map dtype ({}) must be Float32.",
+                          dst2src_map.GetDtype().ToString());
+    }
+
+    static const std::unordered_map<t::geometry::Image::InterpType, int>
+            interp_dict = {
+                    {t::geometry::Image::InterpType::Nearest, IPPI_INTER_NN},
+                    {t::geometry::Image::InterpType::Linear, IPPI_INTER_LINEAR},
+                    {t::geometry::Image::InterpType::Cubic, IPPI_INTER_CUBIC},
+                    {t::geometry::Image::InterpType::Lanczos,
+                     IPPI_INTER_LANCZOS},
+                    /* {t::geometry::Image::InterpType::Cubic2p_CatmullRom, */
+                    /*  IPPI_INTER_CUBIC2P_CATMULLROM}, */
+            };
+
+    auto interp_it = interp_dict.find(interp_type);
+    if (interp_it == interp_dict.end()) {
+        utility::LogError("Unsupported interp type {}",
+                          static_cast<int>(interp_type));
+    }
+
+    if (src_im.GetDtype() == core::Float32 && src_im.GetShape(2) == 4) {
+        /* IPPAPI(IppStatus, ippiRemap_32f_C4R, (const Ipp32f* pSrc, IppiSize
+         * srcSize, */
+        /*     int srcStep, IppiRect srcROI, const Ipp32f* pxMap, int xMapStep,
+         */
+        /*     const Ipp32f* pyMap, int yMapStep, Ipp32f* pDst, int dstStep, */
+        /*     IppiSize dstRoiSize, int interpolation)) */
+        IppiSize src_size{static_cast<int>(src_im.GetShape(1)),
+                          static_cast<int>(src_im.GetShape(0))},
+                dst_roi_size{static_cast<int>(dst_im.GetShape(1)),
+                             static_cast<int>(dst_im.GetShape(0))};
+        IppiRect src_roi{0, 0, static_cast<int>(src_im.GetShape(1)),
+                         static_cast<int>(src_im.GetShape(0))};
+
+        IppStatus sts = ippiRemap_32f_C4R(
+                src_im.GetDataPtr<float>(), src_size, 1, src_roi,
+                dst2src_map.GetDataPtr<float>(), 2,
+                dst2src_map.GetDataPtr<float>() + 1, 2,
+                dst_im.GetDataPtr<float>(), 1, dst_roi_size, interp_it->second);
+        if (sts != ippStsNoErr) {
+            // See comments in icv/include/ippicv_types.h for meaning
+            utility::LogError("IPP remap error {}", sts);
+        }
+
+    } else {
+        utility::LogError(
+                "Remap not implemented for dtype ({}) and channels ({}).",
+                src_im.GetDtype().ToString(), src_im.GetShape(2));
+    }
+}
 }  // namespace ipp
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

@@ -16,23 +16,36 @@
 #include <vtkQuadricDecimation.h>
 
 #include <Eigen/Core>
+#include <algorithm>
+#include <memory>
 #include <string>
+#include <tuple>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorKey.h"
+#include "open3d/core/linalg/AddMM.h"
+#include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/RaycastingScene.h"
 #include "open3d/t/geometry/VtkUtils.h"
+#include "open3d/t/geometry/kernel/IPPImage.h"
 #include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/geometry/kernel/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/UVUnwrapping.h"
+#include "open3d/t/io/ImageIO.h"
+#include "open3d/utility/Optional.h"
 #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
@@ -972,7 +985,7 @@ TriangleMesh::BakeTriangleAttrTextures(
         }
         core::Tensor tensor =
                 triangle_attr_.at(attr).To(core::Device()).Contiguous();
-        DISPATCH_DTYPE_TO_TEMPLATE(tensor.GetDtype(), [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(tensor.GetDtype(), [&]() {
             core::Tensor tex;
             if (GetTriangleIndices().GetDtype() == core::Int32) {
                 tex = BakeAttribute<scalar_t, int32_t, false>(
@@ -1149,7 +1162,8 @@ static bool IsNegative(T val) {
     return false;
 }
 
-TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
+TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices,
+                                         bool copy_attributes) const {
     core::AssertTensorShape(indices, {indices.GetLength()});
     if (indices.NumElements() == 0) {
         return {};
@@ -1249,7 +1263,8 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
     if (tris_cpu.NumElements() > 0) {  // To() needs non-empty tensor
         result.SetTriangleIndices(tris_cpu.To(GetDevice()));
     }
-    CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
+    if (copy_attributes)
+        CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
 
     return result;
 }
@@ -1304,9 +1319,227 @@ TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
 
     utility::LogDebug(
             "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
-            (int)(num_verts_old - GetVertexPositions().GetLength()));
+            static_cast<int>(num_verts_old - GetVertexPositions().GetLength()));
 
     return *this;
+}
+
+namespace {
+
+core::Tensor Project(
+        const core::Tensor &t_xyz,                 // contiguous {...,3}
+        const core::Tensor &t_intrinsic_matrix,    // contiguous {3,3}
+        const core::Tensor &t_extrinsic_matrix) {  // contiguous {4,4}
+    auto xy_shape = t_xyz.GetShape();
+    xy_shape[xy_shape.GetLength() - 1] = 2;
+    core::Tensor t_xy(xy_shape, t_xyz.GetDtype());
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(t_xyz.GetDtype(), [&]() {
+        Eigen::Map<Eigen::MatrixX<scalar_t>> xy(t_xy.GetDataPtr<scalar_t>(), 2,
+                                                t_xy.NumElements() / 2);
+        Eigen::Map<const Eigen::MatrixX<scalar_t>> xyz(
+                t_xyz.GetDataPtr<scalar_t>(), 3, t_xyz.NumElements() / 3);
+        Eigen::Map<const Eigen::Matrix3<scalar_t>> intrinsic_matrix(
+                t_intrinsic_matrix.GetDataPtr<scalar_t>());
+        Eigen::Map<const Eigen::Matrix4<scalar_t>> extrinsic_matrix(
+                t_extrinsic_matrix.GetDataPtr<scalar_t>());
+
+        Eigen::ArrayX<scalar_t> pxyz =
+                intrinsic_matrix *
+                (extrinsic_matrix.topLeftCorner<3, 3>() * xyz +
+                 extrinsic_matrix.topRightCorner<3, 1>());  // {...,3}
+        pxyz.leftCols<2>().colwise() /= pxyz.rightCols<1>();
+        xy = pxyz.leftCols<2>();
+    });
+    return t_xy;  // contiguous {...,2}
+}
+}  // namespace
+
+std::pair<core::Tensor, core::Tensor> TriangleMesh::SelectVisible(
+        const core::Tensor &intrinsic_matrix,
+        const core::Tensor &extrinsic_matrix,
+        int width_px,
+        int height_px,
+        const RaycastingScene &rcs) {
+    using tk = core::TensorKey;
+    using core::None;
+    constexpr double EPS = 1e-6;
+    const core::Tensor vertices = GetVertexPositions().To(core::Device());
+    core::Tensor imxy = Project(vertices, intrinsic_matrix, extrinsic_matrix);
+    core::Tensor vis_vert =
+            core::Tensor::Empty({vertices.GetLength()}, core::Bool);
+    bool *vis_vert_ptr = vis_vert.GetDataPtr<bool>();
+    int n_vis = 0;
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(vertices.GetDtype(), [&]() {
+        scalar_t *imxy_ptr = imxy.GetDataPtr<scalar_t>();
+        for (int i = 0; i < vertices.GetLength(); ++i, imxy_ptr += 3) {
+            vis_vert_ptr[i] = (imxy_ptr[0] > 0 && imxy_ptr[0] < width_px &&
+                               imxy_ptr[1] > 0 && imxy_ptr[1] < height_px);
+            n_vis += vis_vert_ptr[i];
+        }
+    });
+    core::Tensor cam_loc =
+            -extrinsic_matrix
+                     .GetItem({tk::Slice(0, 3, None), tk::Slice(0, 3, None)})
+                     .T()
+                     .Matmul(extrinsic_matrix.GetItem(
+                             {tk::Slice(0, 3, None), tk::Index(3)}));
+    utility::LogInfo("cam_loc: {}", cam_loc.ToString());
+    core::Tensor rays = core::Tensor::Empty({n_vis, 6}, vertices.GetDtype());
+    rays.SetItem({tk::Slice(None, None, None), tk::Slice(0, 3, 1)},
+                 cam_loc.T());
+    core::Tensor vis_vert_idx(vis_vert.NonZero().Reshape({-1}));
+    rays.SetItem({tk::Slice(None, None, None), tk::Slice(3, None, 1)},
+                 vertices.GetItem({tk::IndexTensor(vis_vert_idx)}));
+
+    auto result = rcs.CastRays(rays);
+    float *t_hit_ptr = result["t_hit"].GetDataPtr<float>();
+    int64_t *vis_vert_idx_ptr = vis_vert_idx.GetDataPtr<int64_t>();
+    for (int i = 0; i < n_vis; ++i) {
+        vis_vert_ptr[vis_vert_idx_ptr[i]] = t_hit_ptr[i] > 1 - EPS;
+    }
+    core::Tensor vis_tris = core::Tensor::Zeros(
+            {GetTriangleIndices().GetShape(0)}, core::Dtype::Bool);
+    DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(
+            GetTriangleIndices().GetDtype(), tri, [&]() {
+                auto tris_ptr = GetTriangleIndices()
+                                        .To(core::Device())
+                                        .Contiguous()
+                                        .GetDataPtr<scalar_tri_t>();
+                auto vis_tris_ptr = vis_tris.GetDataPtr<bool>();
+                for (int i = 0; i < GetTriangleIndices().GetShape(0); ++i) {
+                    vis_tris_ptr[i] = (vis_vert_ptr[tris_ptr[3 * i + 0]] &&
+                                       vis_vert_ptr[tris_ptr[3 * i + 1]] &&
+                                       vis_vert_ptr[tris_ptr[3 * i + 2]]);
+                }
+            });
+    return std::make_pair(vis_vert, vis_tris);
+}
+
+Image TriangleMesh::ProjectImagesToAlbedo(
+        const std::vector<Image> &images,
+        const std::vector<core::Tensor> &intrinsic_matrices,
+        const std::vector<core::Tensor> &extrinsic_matrices,
+        int tex_size /*=1024*/,
+        bool update_material /*=true*/) {
+    using core::None;
+    using tk = core::TensorKey;
+    constexpr double EPS = 1e-6;
+    if (!triangle_attr_.Contains("texture_uvs")) {
+        utility::LogError("Cannot find triangle attribute 'texture_uvs'");
+    }
+    core::Tensor texture_uvs =
+            triangle_attr_.at("texture_uvs").To(core::Device()).Contiguous();
+    core::AssertTensorShape(texture_uvs, {core::None, 3, 2});
+    core::AssertTensorDtype(texture_uvs, {core::Float32});
+
+    if (images.size() != extrinsic_matrices.size() ||
+        images.size() != intrinsic_matrices.size()) {
+        utility::LogError(
+                "Received {} images, but {} extrinsic matrices and {} "
+                "intrinsic matrices.",
+                images.size(), extrinsic_matrices.size(),
+                intrinsic_matrices.size());
+    }
+    // (u,v) -> (x,y,z) : {tex_size, tex_size, 3}
+    core::Tensor position_map = BakeVertexAttrTextures(
+            tex_size, {"positions"}, 1, 0, false)["positions"];
+    core::Tensor albedo =
+            core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
+    albedo.Slice(2, 3, 4, 1).Fill(EPS);  // regularize
+    core::Tensor this_albedo =
+            core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
+    core::Tensor weighted_image;
+
+    /* For each image, project vertices onto 2D image and do occlusion
+     * culling. This creates (xim, yim) -> (u,v) mapping.  Invert this
+     * mapping with ipp::remap to get (u, v) -> (xim, yim) -> rgb to create
+     * albedo texture rgb(u,v) with bilinear interpolation. Merge albedos
+     * from all images OR (u,v) -> (x, y, z) -> project to (xim, yim) -> rgb
+     * Discard if occlusion test fails / hit test for ray fails
+     */
+    RaycastingScene rcs;
+    rcs.AddTriangles(*this);
+
+    for (size_t i = 0; i < images.size(); ++i) {
+        auto width = images[i].GetCols(), height = images[i].GetRows();
+        core::AssertTensorShape(intrinsic_matrices[i], {3, 3});
+        core::AssertTensorShape(extrinsic_matrices[i], {4, 4});
+
+        // A. Get image space weight matrix
+        auto rays = RaycastingScene::CreateRaysPinhole(
+                intrinsic_matrices[i], extrinsic_matrices[i],
+                images[i].GetCols(), images[i].GetRows());
+        auto result = rcs.CastRays(rays);
+        // Eigen is column-major order
+        Eigen::Map<Eigen::MatrixXf> normals_e(
+                result["primitive_normals"].GetDataPtr<float>(), 3,
+                width * height);
+        Eigen::Map<Eigen::MatrixXf> rays_e(rays.GetDataPtr<float>(), 6,
+                                           width * height);
+        Eigen::Map<Eigen::ArrayXf> t_hit(result["t_hit"].GetDataPtr<float>(), 3,
+                                         width * height);
+        // Weight map based on dot product between ray normals and triangle
+        // normals.
+        auto depth = t_hit * (rays_e.bottomRows<3>() - rays_e.topRows<3>())
+                                     .colwise()
+                                     .norm()
+                                     .array();
+        auto footprint = depth * normals_e
+                                         .cwiseProduct((rays_e.bottomRows<3>() -
+                                                        rays_e.topRows<3>())
+                                                               .colwise()
+                                                               .normalized())
+                                         .sum();
+        if (!weighted_image.GetShape().IsCompatible({height, width, 4})) {
+            weighted_image = core::Tensor({height, width, 4}, core::Float32);
+        }
+        weighted_image.Slice(2, 0, 3, 1) = images[i].AsTensor();
+        Eigen::Map<Eigen::MatrixXf> weighted_image_e(
+                weighted_image.GetDataPtr<float>(), 4, width * height);
+        // footprint is inf if depth or t_hit is inf. Never zero.
+        weighted_image_e.bottomRows<3>() = 1. / footprint;
+        /* weighted_image.Slice(2, 3, 4, 1) = 1. / footprint; */
+
+        // B. Get texture space (u,v) -> (x,y) map and valid domain in uv space.
+        core::Tensor uv2xy = Project(position_map, intrinsic_matrices[i],
+                                     extrinsic_matrices[i]);  // {ts, ts, 2}
+        core::Tensor visible_triangles =
+                SelectVisible(intrinsic_matrices[i], extrinsic_matrices[i],
+                              images[i].GetCols(), images[i].GetRows(), rcs)
+                        .second;
+        SetTriangleAttr("visible", visible_triangles);
+        core::Tensor visible_map = BakeTriangleAttrTextures(
+                tex_size, {"visible"}, 2, 0,
+                false)["visible"];  // uv space {ts, ts, 1}
+        /* RemoveTriangleAttr("visible"); */
+        // do not remap occluded / out of view faces
+        io::WriteImage("visible_map.png", Image(visible_map.To(core::UInt8)));
+        uv2xy.Reshape({-1, 2}).GetItem(
+                tk::IndexTensor(visible_map.Reshape({-1}).NonZero())) = -1.f;
+        // albedo[u,v] = image[ i[u,v], j[u,v] ]
+        // ij[u,v] ? = identity[ uv[i,j] ]
+
+        // C. Interpolate weighted image to weighted texture
+        ipp::Remap(weighted_image /*{height, width, 4} f32*/,
+                   uv2xy /* {texsz, texsz, 2} f32*/,
+                   this_albedo /*{texsz, texsz, 4} f32*/,
+                   t::geometry::Image::InterpType::Cubic);
+        // weighted sum
+        albedo.Slice(2, 0, 3, 1) +=
+                this_albedo.Slice(2, 0, 3, 1) * this_albedo.Slice(2, 3, 4, 1);
+        albedo.Slice(2, 3, 4, 1) += this_albedo.Slice(2, 3, 4, 1);
+    }
+    albedo.Slice(2, 0, 3, 1) /= albedo.Slice(2, 3, 4, 1);
+
+    Image albedo_texture(albedo.Slice(2, 0, 3, 1));
+    if (update_material) {
+        if (!HasMaterial()) {
+            SetMaterial(visualization::rendering::Material());
+            GetMaterial().SetDefaultProperties();  // defaultUnlit
+        }
+        GetMaterial().SetTextureMap("albedo", albedo_texture);
+    }
+    return albedo_texture;
 }
 
 }  // namespace geometry

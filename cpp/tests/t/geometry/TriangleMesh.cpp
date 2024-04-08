@@ -11,7 +11,12 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/t/io/ImageIO.h"
+#include "open3d/t/io/TriangleMeshIO.h"
+#include "open3d/visualization/utility/Draw.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -1340,6 +1345,38 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
     EXPECT_TRUE(torus.GetVertexAttr("labels").AllClose(expected_vert_labels));
     EXPECT_TRUE(torus.GetTriangleIndices().AllClose(expected_tris));
     EXPECT_TRUE(torus.GetTriangleNormals().AllClose(expected_tri_normals));
+}
+
+TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
+    using namespace t::geometry;
+    core::Device device = GetParam();
+    TriangleMesh sphere =
+            TriangleMesh::FromLegacy(*geometry::TriangleMesh::CreateSphere(
+                    1.0, 10, /*create_uv_map=*/true));
+    core::Tensor view = core::Tensor::Zeros({192, 256, 3}, core::Float32);
+    view.Slice(2, 0, 1, 1).Fill(1.0);  // red
+    core::Tensor intrinsic_matrix = core::Tensor::Init<float>(
+            {{256, 0, 96}, {0, 256, 128}, {0, 0, 1}}, device);
+    core::Tensor extrinsic_matrix = core::Tensor::Init<float>(
+            {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 1}, {0, 0, 0, 1}}, device);
+
+    Eigen::Map<Eigen::Matrix3f> e_intrinsic(
+            intrinsic_matrix.GetDataPtr<float>());
+    Eigen::Map<Eigen::Matrix4f> e_extrinsic(
+            extrinsic_matrix.GetDataPtr<float>());
+    auto p_camera = open3d::geometry::LineSet::CreateCameraVisualization(
+            256, 192, e_intrinsic.cast<double>(), e_extrinsic.cast<double>());
+
+    Image texture = sphere.ProjectImagesToAlbedo(
+            {Image(view)}, {intrinsic_matrix}, {extrinsic_matrix}, 256, true);
+    t::io::WriteImage("texture.png", texture);
+    t::io::WriteTriangleMesh("sphere-projected.obj", sphere);
+
+    visualization::Draw(
+            {visualization::DrawObject("camera", p_camera, true),
+             visualization::DrawObject{
+                     "mesh", std::shared_ptr<TriangleMesh>(&sphere), true}},
+            "ProjectImagesToAlbedo", 1024, 768);
 }
 
 }  // namespace tests

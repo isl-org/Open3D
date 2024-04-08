@@ -22,6 +22,7 @@ namespace t {
 namespace geometry {
 
 class LineSet;
+class RaycastingScene;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -940,14 +941,32 @@ public:
     /// the mesh or has a negative value, it is ignored.
     /// \param indices An integer list of indices. Duplicates are
     /// allowed, but ignored. Signed and unsigned integral types are allowed.
+    /// \param copy_attributes Indicates if vertex attributes (other than
+    /// positions) and triangle attributes (other than indices) should be copied
+    /// to the returned mesh.
     /// \return A new mesh with the selected vertices and faces built
     /// from the selected vertices. If the original mesh is empty, return
     /// an empty mesh.
-    TriangleMesh SelectByIndex(const core::Tensor &indices) const;
+    TriangleMesh SelectByIndex(const core::Tensor &indices,
+                               bool copy_attributes = true) const;
 
     /// Removes unreferenced vertices from the mesh.
     /// \return The reference to itself.
     TriangleMesh RemoveUnreferencedVertices();
+
+    std::pair<core::Tensor, core::Tensor> SelectVisible(
+            const core::Tensor &intrinsic_matrix,
+            const core::Tensor &extrinsic_matrix,
+            int width_px,
+            int height_px,
+            const RaycastingScene &rcs);
+
+    Image ProjectImagesToAlbedo(
+            const std::vector<Image> &images,
+            const std::vector<core::Tensor> &intrinsic_matrices,
+            const std::vector<core::Tensor> &extrinsic_matrices,
+            int tex_size = 1024,
+            bool update_material = true);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

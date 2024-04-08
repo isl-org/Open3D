@@ -66,7 +66,7 @@ inline void CheckExtrinsicTensor(const core::Tensor& extrinsic) {
     }
 }
 
-inline void CheckBlockCoorinates(const core::Tensor& block_coords) {
+inline void CheckBlockCoordinates(const core::Tensor& block_coords) {
     if (block_coords.GetDtype() != core::Dtype::Int32) {
         utility::LogError("Unsupported block coordinate dtype {}",
                           block_coords.GetDtype().ToString());
