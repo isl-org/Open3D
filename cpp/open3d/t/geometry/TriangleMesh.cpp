@@ -1331,24 +1331,26 @@ core::Tensor Project(
         const core::Tensor &t_intrinsic_matrix,    // contiguous {3,3}
         const core::Tensor &t_extrinsic_matrix) {  // contiguous {4,4}
     auto xy_shape = t_xyz.GetShape();
-    xy_shape[xy_shape.GetLength() - 1] = 2;
+    xy_shape[t_xyz.NumDims() - 1] = 2;
     core::Tensor t_xy(xy_shape, t_xyz.GetDtype());
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(t_xyz.GetDtype(), [&]() {
+        // Eigen is column major
         Eigen::Map<Eigen::MatrixX<scalar_t>> xy(t_xy.GetDataPtr<scalar_t>(), 2,
                                                 t_xy.NumElements() / 2);
         Eigen::Map<const Eigen::MatrixX<scalar_t>> xyz(
                 t_xyz.GetDataPtr<scalar_t>(), 3, t_xyz.NumElements() / 3);
-        Eigen::Map<const Eigen::Matrix3<scalar_t>> intrinsic_matrix(
+        Eigen::Map<const Eigen::Matrix3<scalar_t>> KT(
                 t_intrinsic_matrix.GetDataPtr<scalar_t>());
-        Eigen::Map<const Eigen::Matrix4<scalar_t>> extrinsic_matrix(
+        Eigen::Map<const Eigen::Matrix4<scalar_t>> TT(
                 t_extrinsic_matrix.GetDataPtr<scalar_t>());
 
-        Eigen::ArrayX<scalar_t> pxyz =
-                intrinsic_matrix *
-                (extrinsic_matrix.topLeftCorner<3, 3>() * xyz +
-                 extrinsic_matrix.topRightCorner<3, 1>());  // {...,3}
-        pxyz.leftCols<2>().colwise() /= pxyz.rightCols<1>();
-        xy = pxyz.leftCols<2>();
+        auto K = KT.transpose();
+        auto T = TT.transpose();
+        auto R = T.topLeftCorner<3, 3>();
+        auto t = T.topRightCorner<3, 1>();
+        auto pxyz = (K * ((R * xyz).colwise()+t)).array();
+        pxyz.topRows<2>().rowwise() /= pxyz.bottomRows<1>();
+        xy = pxyz.topRows<2>();
     });
     return t_xy;  // contiguous {...,2}
 }
@@ -1476,8 +1478,8 @@ Image TriangleMesh::ProjectImagesToAlbedo(
                 width * height);
         Eigen::Map<Eigen::MatrixXf> rays_e(rays.GetDataPtr<float>(), 6,
                                            width * height);
-        Eigen::Map<Eigen::ArrayXf> t_hit(result["t_hit"].GetDataPtr<float>(), 3,
-                                         width * height);
+        Eigen::Map<Eigen::ArrayXXf> t_hit(result["t_hit"].GetDataPtr<float>(),
+                                          1, width * height);
         // Weight map based on dot product between ray normals and triangle
         // normals.
         auto depth = t_hit * (rays_e.bottomRows<3>() - rays_e.topRows<3>())
@@ -1497,7 +1499,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         Eigen::Map<Eigen::MatrixXf> weighted_image_e(
                 weighted_image.GetDataPtr<float>(), 4, width * height);
         // footprint is inf if depth or t_hit is inf. Never zero.
-        weighted_image_e.bottomRows<3>() = 1. / footprint;
+        weighted_image_e.bottomRows<1>() = 1. / footprint;
         /* weighted_image.Slice(2, 3, 4, 1) = 1. / footprint; */
 
         // B. Get texture space (u,v) -> (x,y) map and valid domain in uv space.
@@ -1531,7 +1533,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     }
     albedo.Slice(2, 0, 3, 1) /= albedo.Slice(2, 3, 4, 1);
 
-    Image albedo_texture(albedo.Slice(2, 0, 3, 1));
+    Image albedo_texture(albedo.Slice(2, 0, 3, 1).Contiguous());
     if (update_material) {
         if (!HasMaterial()) {
             SetMaterial(visualization::rendering::Material());
