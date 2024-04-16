@@ -97,6 +97,12 @@ void pybind_trianglemesh(py::module &m) {
                  "function might help to "
                  "close triangle soups.",
                  "eps"_a)
+            .def("interpolate_texture_coordinates_from",
+                 &TriangleMesh::InterpolateTextureCoordinatesFrom,
+                 "Function to interpolate texture coordinates from another "
+                 "triangle mesh. Texture is interpolated from the UVs of the "
+                 "closest vertices in the input mesh",
+                 "input_mesh"_a)
             .def("filter_sharpen", &TriangleMesh::FilterSharpen,
                  "Function to sharpen triangle mesh. The output value "
                  "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
