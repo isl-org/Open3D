@@ -3,8 +3,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_civetweb
     PREFIX civetweb
-    URL https://github.com/civetweb/civetweb/archive/refs/tags/v1.15.tar.gz
-    URL_HASH SHA256=90a533422944ab327a4fbb9969f0845d0dba05354f9cacce3a5005fa59f593b9
+    URL https://github.com/civetweb/civetweb/archive/refs/tags/v1.16.tar.gz
+    URL_HASH SHA256=f0e471c1bf4e7804a6cfb41ea9d13e7d623b2bcc7bc1e2a4dd54951a24d60285
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/civetweb"
     UPDATE_COMMAND ""
     CMAKE_ARGS
