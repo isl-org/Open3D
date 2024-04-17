@@ -490,8 +490,7 @@ struct O3DVisualizer::Impl {
         });
 
 #if __APPLE__
-        const char *selection_help = const char *selection_help =
-                R"(Cmd-click to select a point
+        const char *selection_help = R"(Cmd-click to select a point
 Cmd-shift-click to deselect a point
 Cmd-alt-click to polygon select)";
 #else
