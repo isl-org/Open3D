@@ -1,6 +1,7 @@
 name: Ubuntu SYCL
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -24,7 +25,7 @@ jobs:
         BUILD_SHARED_LIBS: [ON, OFF]
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -38,6 +39,7 @@ jobs:
           fi
       - name: Docker test
         run: |
+          du -hs $PWD
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_test.sh sycl-shared
           else
@@ -46,13 +48,13 @@ jobs:
 
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}

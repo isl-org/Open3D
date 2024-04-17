@@ -104,20 +104,39 @@ void pybind_visualizer(py::module &m) {
                  &Visualizer::CaptureScreenFloatBuffer,
                  "Function to capture screen and store RGB in a float buffer",
                  "do_render"_a = false)
-            .def("capture_screen_image", &Visualizer::CaptureScreenImage,
-                 "Function to capture and save a screen image", "filename"_a,
-                 "do_render"_a = false)
+            .def(
+                    "capture_screen_image",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render) {
+                        return self.CaptureScreenImage(filename.string(),
+                                                       do_render);
+                    },
+                    "Function to capture and save a screen image", "filename"_a,
+                    "do_render"_a = false)
             .def("capture_depth_float_buffer",
                  &Visualizer::CaptureDepthFloatBuffer,
                  "Function to capture depth in a float buffer",
                  "do_render"_a = false)
-            .def("capture_depth_image", &Visualizer::CaptureDepthImage,
-                 "Function to capture and save a depth image", "filename"_a,
-                 "do_render"_a = false, "depth_scale"_a = 1000.0)
-            .def("capture_depth_point_cloud",
-                 &Visualizer::CaptureDepthPointCloud,
-                 "Function to capture and save local point cloud", "filename"_a,
-                 "do_render"_a = false, "convert_to_world_coordinate"_a = false)
+            .def(
+                    "capture_depth_image",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render, double depth_scale) {
+                        self.CaptureDepthImage(filename.string(), do_render,
+                                               depth_scale);
+                    },
+                    "Function to capture and save a depth image", "filename"_a,
+                    "do_render"_a = false, "depth_scale"_a = 1000.0)
+            .def(
+                    "capture_depth_point_cloud",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render, bool convert_to_world_coordinate) {
+                        self.CaptureDepthPointCloud(
+                                filename.string(), do_render,
+                                convert_to_world_coordinate);
+                    },
+                    "Function to capture and save local point cloud",
+                    "filename"_a, "do_render"_a = false,
+                    "convert_to_world_coordinate"_a = false)
             .def("get_window_name", &Visualizer::GetWindowName)
             .def("get_view_status", &Visualizer::GetViewStatus,
                  "Get the current view status as a json string of "

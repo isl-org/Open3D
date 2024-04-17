@@ -54,7 +54,7 @@ public:
     /// \param knn Number of nearest neighbor to search.
     /// \return Pair of Tensors: (indices, distances):
     /// - indices: Tensor of shape {n, knn}, with dtype Int32.
-    /// - distainces: Tensor of shape {n, knn}, same dtype with dataset_points.
+    /// - distances: Tensor of shape {n, knn}, same dtype with dataset_points.
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;
 
@@ -64,7 +64,7 @@ public:
     /// dtype with dataset_points.
     /// \param radii list of radius. Must be 1D, with shape {n, }.
     /// \return Tuple of Tensors: (indices, distances, counts):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int32.
+    /// - indices: Tensor of shape {total_num_neighbors,}, dtype Int32.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
     /// - counts: Tensor of shape {n,}, dtype Int64.
@@ -79,7 +79,7 @@ public:
     /// dtype with dataset_points.
     /// \param radius Radius.
     /// \return Tuple of Tensors, (indices, distances, counts):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int32.
+    /// - indices: Tensor of shape {total_num_neighbors,}, dtype Int32.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
     /// - counts: Tensor of shape {n}, dtype Int64.

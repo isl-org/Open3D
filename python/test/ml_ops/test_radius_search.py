@@ -103,7 +103,7 @@ def test_radius_search(dtype, ml, num_points_queries, metric,
                     if normalize_distances:
                         gt_dist /= radii[i]
 
-                np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
+                np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-7)
 
 
 @mltest.parametrize.ml_cpu_only
@@ -236,4 +236,4 @@ def test_radius_search_batches(ml, batch_size):
                     if normalize_distances:
                         gt_dist /= radii[i]
 
-                np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
+                np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-7)

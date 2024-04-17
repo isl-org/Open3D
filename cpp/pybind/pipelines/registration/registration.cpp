@@ -351,7 +351,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                   "Check if two point clouds build the polygons with similar "
                   "edge lengths. That is, checks if the lengths of any two "
                   "arbitrary edges (line formed by two vertices) individually "
-                  "drawn withinin source point cloud and within the target "
+                  "drawn within the source point cloud and within the target "
                   "point cloud with correspondences are similar. The only "
                   "parameter similarity_threshold is a number between 0 "
                   "(loose) and 1 (strict)");

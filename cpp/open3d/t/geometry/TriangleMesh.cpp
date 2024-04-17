@@ -365,8 +365,8 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         .Reshape({-1, 3, 2}));
     }
 
-    // Convert material if legacy mesh only has one
-    if (mesh_legacy.materials_.size() == 1) {
+    // Convert first material only if one or more are present
+    if (mesh_legacy.materials_.size() > 0) {
         const auto &mat = mesh_legacy.materials_.begin()->second;
         auto &tmat = mesh.GetMaterial();
         tmat.SetDefaultProperties();
@@ -393,10 +393,12 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                     Image::FromLegacy(*mat.clearCoatRoughness));
         if (mat.anisotropy)
             tmat.SetAnisotropyMap(Image::FromLegacy(*mat.anisotropy));
-    } else if (mesh_legacy.materials_.size() > 1) {
+    }
+    if (mesh_legacy.materials_.size() > 1) {
         utility::LogWarning(
                 "Legacy mesh has more than 1 material which is not supported "
-                "by Tensor-based meshes.");
+                "by Tensor-based mesh. Only material {} was converted.",
+                mesh_legacy.materials_.begin()->first);
     }
     return mesh;
 }
@@ -1250,6 +1252,61 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
     CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
 
     return result;
+}
+
+TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
+    if (!HasVertexPositions() || GetVertexPositions().GetLength() == 0) {
+        utility::LogWarning(
+                "[RemoveUnreferencedVertices] TriangleMesh has no vertices.");
+        return *this;
+    }
+    GetVertexAttr().AssertSizeSynchronized();
+
+    core::Dtype tri_dtype = HasTriangleIndices()
+                                    ? GetTriangleIndices().GetDtype()
+                                    : core::Int64;
+
+    int64_t num_verts_old = GetVertexPositions().GetLength();
+    // int mask for vertices as we need to remap indices.
+    core::Tensor vertex_mask = core::Tensor::Zeros({num_verts_old}, tri_dtype);
+
+    if (!HasTriangleIndices() || GetTriangleIndices().GetLength() == 0) {
+        utility::LogWarning(
+                "[RemoveUnreferencedVertices] TriangleMesh has no triangles. "
+                "Removing all vertices.");
+        // in this case we need to empty vertices and their attributes
+    } else {
+        GetTriangleAttr().AssertSizeSynchronized();
+        core::Tensor tris_cpu =
+                GetTriangleIndices().To(core::Device()).Contiguous();
+        DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(tri_dtype, tris, [&]() {
+            scalar_tris_t *tris_ptr = tris_cpu.GetDataPtr<scalar_tris_t>();
+            scalar_tris_t *vertex_mask_ptr =
+                    vertex_mask.GetDataPtr<scalar_tris_t>();
+            for (int i = 0; i < tris_cpu.GetLength(); i++) {
+                vertex_mask_ptr[tris_ptr[3 * i]] = 1;
+                vertex_mask_ptr[tris_ptr[3 * i + 1]] = 1;
+                vertex_mask_ptr[tris_ptr[3 * i + 2]] = 1;
+            }
+
+            UpdateTriangleIndicesByVertexMask<scalar_tris_t>(tris_cpu,
+                                                             vertex_mask);
+        });
+        SetTriangleIndices(tris_cpu.To(GetDevice()));
+    }
+
+    // send the vertex mask to original device and apply to
+    // vertices
+    vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
+    for (auto item : GetVertexAttr()) {
+        SetVertexAttr(item.first, item.second.IndexGet({vertex_mask}));
+    }
+
+    utility::LogDebug(
+            "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
+            (int)(num_verts_old - GetVertexPositions().GetLength()));
+
+    return *this;
 }
 
 }  // namespace geometry

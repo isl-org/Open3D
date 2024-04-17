@@ -207,6 +207,7 @@ cuda_wheel_build() {
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg CI="${CI:-}" \
         -t open3d-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd
@@ -249,6 +250,7 @@ ci_build() {
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
+        --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd

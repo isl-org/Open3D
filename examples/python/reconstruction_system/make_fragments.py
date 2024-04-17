@@ -139,7 +139,11 @@ def make_pointcloud_for_fragment(path_dataset, color_files, depth_files,
     pcd.colors = mesh.vertex_colors
     pcd_name = join(path_dataset,
                     config["template_fragment_pointcloud"] % fragment_id)
-    o3d.io.write_point_cloud(pcd_name, pcd, False, True)
+    o3d.io.write_point_cloud(pcd_name,
+                             pcd,
+                             format='auto',
+                             write_ascii=False,
+                             compressed=True)
 
 
 def process_single_fragment(fragment_id, color_files, depth_files, n_files,

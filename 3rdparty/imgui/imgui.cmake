@@ -1,6 +1,6 @@
-include(ExternalProject)
+include(FetchContent)
 
-ExternalProject_Add(
+FetchContent_Declare(
     ext_imgui
     PREFIX imgui
     URL https://github.com/ocornut/imgui/archive/refs/tags/v1.88.tar.gz
@@ -12,5 +12,5 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
 )
 
-ExternalProject_Get_Property(ext_imgui SOURCE_DIR)
-set(IMGUI_SOURCE_DIR ${SOURCE_DIR})
+FetchContent_Populate(ext_imgui)
+FetchContent_GetProperties(ext_imgui SOURCE_DIR IMGUI_SOURCE_DIR)

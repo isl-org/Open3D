@@ -151,7 +151,7 @@ void pybind_voxelgrid(py::module &m) {
                     "parameters",
                     "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_readwrite("origin", &VoxelGrid::origin_,
-                           "``float64`` vector of length 3: Coorindate of the "
+                           "``float64`` vector of length 3: Coordinate of the "
                            "origin point.")
             .def_readwrite("voxel_size", &VoxelGrid::voxel_size_,
                            "``float64`` Size of the voxel.");

@@ -161,7 +161,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const int num_iterations /* = 100 */,
         const double probability /* = 0.99999999 */) const {
     if (probability <= 0 || probability > 1) {
-        utility::LogError("Probability must be > 0 or <= 1.0");
+        utility::LogError("Probability must be > 0 and <= 1.0");
     }
 
     RANSACResult result;
@@ -171,6 +171,12 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
 
     size_t num_points = points_.size();
     RandomSampler<size_t> sampler(num_points);
+    // Pre-generate all random samples before entering the parallel region
+    std::vector<std::vector<size_t>> all_sampled_indices;
+    all_sampled_indices.reserve(num_iterations);
+    for (int i = 0; i < num_iterations; i++) {
+        all_sampled_indices.push_back(sampler(ransac_n));
+    }
 
     // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {
@@ -198,9 +204,11 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                         continue;
                     }
 
-                    const std::vector<size_t> sampled_indices =
-                            sampler(ransac_n);
-                    std::vector<size_t> inliers = sampled_indices;
+                    // Access the pre-generated sampled indices. iteration_count
+                    // is a "reserved index" for this iteration. Note:
+                    // post-increment is atomic.
+                    std::vector<size_t> inliers =
+                            all_sampled_indices[iteration_count++];
 
                     // Fit model to num_model_parameters randomly selected
                     // points among the inliers.
@@ -243,7 +251,6 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                             }
                         }
                     }
-                    iteration_count++;
                 }
             });
 

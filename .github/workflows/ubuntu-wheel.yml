@@ -47,7 +47,7 @@ jobs:
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -78,22 +78,22 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
           echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
       - name: Upload wheel to GitHub artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: open3d_linux_x86_64_wheels
+          name: ${{ env.PIP_PKG_NAME }}
           path: |
             ${{ env.PIP_PKG_NAME }}
             ${{ env.PIP_CPU_PKG_NAME }}
           if-no-files-found: error
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}
@@ -131,22 +131,23 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
       - name: Download wheels
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: open3d_linux_x86_64_wheels
+          pattern: open3d*-manylinux*.whl
+          merge-multiple: true
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
       - name: Test Python package
@@ -181,12 +182,12 @@ jobs:
     needs: [build-wheel]
     steps:
       - name: GCloud CLI auth
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}
