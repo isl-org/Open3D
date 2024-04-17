@@ -97,17 +97,13 @@ private:
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
 
 protected:
-    using KDTree_t = nanoflann::KDTreeEigenMatrixAdaptor<
-            Eigen::Map<const Eigen::MatrixXd>,
-            -1,
-            nanoflann::metric_L2,
-            false>;
+    using KDTree_t = nanoflann::KDTreeEigenMatrixAdaptor<const Eigen::MatrixXd,
+                                                         -1,
+                                                         nanoflann::metric_L2,
+                                                         false>;
 
-    std::vector<double> data_;
-    std::unique_ptr<Eigen::Map<const Eigen::MatrixXd>> data_interface_;
+    Eigen::MatrixXd data_;
     std::unique_ptr<KDTree_t> nanoflann_index_;
-    size_t dimension_ = 0;
-    size_t dataset_size_ = 0;
 };
 
 }  // namespace geometry
