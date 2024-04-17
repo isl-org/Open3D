@@ -370,7 +370,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
     auto best_result = std::move(reducer.best_result);
     utility::LogDebug(
             "RANSAC exits after {:d} validations. Best inlier ratio {:e}, "
-            "RMSE {:e}", total_validation.load(), best_result.fitness_,
+            "RMSE {:e}",
+            total_validation.load(), best_result.fitness_,
             best_result.inlier_rmse_);
     return best_result;
 }
