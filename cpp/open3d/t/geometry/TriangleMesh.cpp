@@ -377,6 +377,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
         tmat.SetAnisotropy(mat.baseAnisotropy);
         tmat.SetBaseClearcoat(mat.baseClearCoat);
         tmat.SetBaseClearcoatRoughness(mat.baseClearCoatRoughness);
+        // no emissive_color in legacy mesh material
         if (mat.albedo) tmat.SetAlbedoMap(Image::FromLegacy(*mat.albedo));
         if (mat.normalMap) tmat.SetNormalMap(Image::FromLegacy(*mat.normalMap));
         if (mat.roughness)
@@ -453,10 +454,6 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
             legacy_mat.baseColor.f4[1] = tmat.GetBaseColor().y();
             legacy_mat.baseColor.f4[2] = tmat.GetBaseColor().z();
             legacy_mat.baseColor.f4[3] = tmat.GetBaseColor().w();
-            utility::LogWarning("{},{},{},{}", legacy_mat.baseColor.f4[0],
-                                legacy_mat.baseColor.f4[1],
-                                legacy_mat.baseColor.f4[2],
-                                legacy_mat.baseColor.f4[3]);
         }
         if (tmat.HasBaseRoughness()) {
             legacy_mat.baseRoughness = tmat.GetBaseRoughness();
@@ -521,6 +518,26 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
     }
 
     return mesh_legacy;
+}
+
+std::unordered_map<std::string, geometry::TriangleMesh>
+TriangleMesh::FromTriangleMeshModel(
+        const open3d::visualization::rendering::TriangleMeshModel &model,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    std::unordered_map<std::string, TriangleMesh> tmeshes;
+    for (const auto &mobj : model.meshes_) {
+        auto tmesh = TriangleMesh::FromLegacy(*mobj.mesh, float_dtype,
+                                              int_dtype, device);
+        // material textures will be on the CPU. GPU resident texture images is
+        // not yet supported. See comment in Material.cpp
+        tmesh.SetMaterial(
+                visualization::rendering::Material::FromMaterialRecord(
+                        model.materials_[mobj.material_idx]));
+        tmeshes.emplace(mobj.mesh_name, tmesh);
+    }
+    return tmeshes;
 }
 
 TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {

@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <assimp/GltfMaterial.h>
+#include <assimp/material.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
@@ -357,12 +358,17 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             auto r = mesh.GetMaterial().GetBaseClearcoatRoughness();
             ai_mat->AddProperty(&r, 1, AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR);
         }
+        if (mesh.GetMaterial().HasEmissiveColor()) {
+            auto c = mesh.GetMaterial().GetEmissiveColor();
+            auto ac = aiColor4D(c.x(), c.y(), c.z(), c.w());
+            ai_mat->AddProperty(&ac, 1, AI_MATKEY_COLOR_EMISSIVE);
+        }
 
         // Count texture maps...
         // NOTE: GLTF2 expects a single combined roughness/metal map. If the
         // model has one we just export it, otherwise if both roughness and
-        // metal maps are avaialbe we combine them, otherwise if only one or the
-        // other is available we just export the one map.
+        // metal maps are available we combine them, otherwise if only one or
+        // the other is available we just export the one map.
         int n_textures = 0;
         if (mesh.GetMaterial().HasAlbedoMap()) ++n_textures;
         if (mesh.GetMaterial().HasNormalMap()) ++n_textures;
