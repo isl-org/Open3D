@@ -76,9 +76,10 @@ void FilterSobel(const core::Tensor &srcim,
                  core::Tensor &dstim_dy,
                  int kernel_size);
 
-void Remap(const core::Tensor &src_im /*{Ws, Hs, C}*/,
-           const core::Tensor &dst2src_map /*{Wd, Hd, 2}, float*/,
-           core::Tensor &dst_im /*{Wd, Hd, 2}*/,
+void Remap(const core::Tensor &src_im,       /*{Ws, Hs, C}*/
+           const core::Tensor &dst2src_xmap, /*{Wd, Hd}, float*/
+           const core::Tensor &dst2src_ymap, /*{Wd, Hd, 2}, float*/
+           core::Tensor &dst_im,             /*{Wd, Hd, 2}*/
            Image::InterpType interp_type);
 
 }  // namespace ipp

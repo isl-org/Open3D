@@ -1327,12 +1327,15 @@ TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
 namespace {
 
 core::Tensor Project(
-        const core::Tensor &t_xyz,                 // contiguous {...,3}
-        const core::Tensor &t_intrinsic_matrix,    // contiguous {3,3}
-        const core::Tensor &t_extrinsic_matrix) {  // contiguous {4,4}
+        const core::Tensor &t_xyz,               // contiguous {...,3}
+        const core::Tensor &t_intrinsic_matrix,  // contiguous {3,3}
+        const core::Tensor &t_extrinsic_matrix,  // contiguous {4,4}
+        core::Tensor &t_xy) {                    // contiguous {...,2}
     auto xy_shape = t_xyz.GetShape();
     xy_shape[t_xyz.NumDims() - 1] = 2;
-    core::Tensor t_xy(xy_shape, t_xyz.GetDtype());
+    if (t_xy.GetDtype() != t_xyz.GetDtype() || t_xy.GetShape() != xy_shape) {
+        t_xy = core::Tensor(xy_shape, t_xyz.GetDtype());
+    }
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(t_xyz.GetDtype(), [&]() {
         // Eigen is column major
         Eigen::Map<Eigen::MatrixX<scalar_t>> xy(t_xy.GetDataPtr<scalar_t>(), 2,
@@ -1348,9 +1351,8 @@ core::Tensor Project(
         auto T = TT.transpose();
         auto R = T.topLeftCorner<3, 3>();
         auto t = T.topRightCorner<3, 1>();
-        auto pxyz = (K * ((R * xyz).colwise()+t)).array();
-        pxyz.topRows<2>().rowwise() /= pxyz.bottomRows<1>();
-        xy = pxyz.topRows<2>();
+        auto pxyz = (K * ((R * xyz).colwise() + t)).array();
+        xy = pxyz.topRows<2>().rowwise() / pxyz.bottomRows<1>();
     });
     return t_xy;  // contiguous {...,2}
 }
@@ -1366,19 +1368,29 @@ std::pair<core::Tensor, core::Tensor> TriangleMesh::SelectVisible(
     using core::None;
     constexpr double EPS = 1e-6;
     const core::Tensor vertices = GetVertexPositions().To(core::Device());
-    core::Tensor imxy = Project(vertices, intrinsic_matrix, extrinsic_matrix);
-    core::Tensor vis_vert =
-            core::Tensor::Empty({vertices.GetLength()}, core::Bool);
-    bool *vis_vert_ptr = vis_vert.GetDataPtr<bool>();
+    const core::Tensor tris = GetTriangleIndices().To(core::Device()),
+                       trisT = tris.T();
+    core::Tensor tri_centers =
+            (vertices.IndexGet({trisT[0]}) + vertices.IndexGet({trisT[1]}) +
+             vertices.IndexGet({trisT[2]})) /
+                    3.f +
+            0.01;
+    core::Tensor imxy;
+    Project(tri_centers, intrinsic_matrix, extrinsic_matrix, imxy);
+    core::Tensor vis_tris =
+            core::Tensor::Empty({tri_centers.GetLength()}, core::Bool);
+    bool *vis_vert_ptr = vis_tris.GetDataPtr<bool>();
     int n_vis = 0;
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(vertices.GetDtype(), [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(tri_centers.GetDtype(), [&]() {
         scalar_t *imxy_ptr = imxy.GetDataPtr<scalar_t>();
-        for (int i = 0; i < vertices.GetLength(); ++i, imxy_ptr += 3) {
+        for (int i = 0; i < tri_centers.GetLength(); ++i, imxy_ptr += 2) {
             vis_vert_ptr[i] = (imxy_ptr[0] > 0 && imxy_ptr[0] < width_px &&
                                imxy_ptr[1] > 0 && imxy_ptr[1] < height_px);
             n_vis += vis_vert_ptr[i];
         }
     });
+    utility::LogInfo("tri_centers: {}\nprojections: {}", tri_centers.ToString(),
+                     imxy.ToString());
     core::Tensor cam_loc =
             -extrinsic_matrix
                      .GetItem({tk::Slice(0, 3, None), tk::Slice(0, 3, None)})
@@ -1386,34 +1398,25 @@ std::pair<core::Tensor, core::Tensor> TriangleMesh::SelectVisible(
                      .Matmul(extrinsic_matrix.GetItem(
                              {tk::Slice(0, 3, None), tk::Index(3)}));
     utility::LogInfo("cam_loc: {}", cam_loc.ToString());
-    core::Tensor rays = core::Tensor::Empty({n_vis, 6}, vertices.GetDtype());
-    rays.SetItem({tk::Slice(None, None, None), tk::Slice(0, 3, 1)},
-                 cam_loc.T());
-    core::Tensor vis_vert_idx(vis_vert.NonZero().Reshape({-1}));
-    rays.SetItem({tk::Slice(None, None, None), tk::Slice(3, None, 1)},
-                 vertices.GetItem({tk::IndexTensor(vis_vert_idx)}));
+    core::Tensor rays = core::Tensor::Empty({n_vis, 6}, tri_centers.GetDtype());
+    rays.Slice(1, 0, 3, 1) = cam_loc.T();
+    core::Tensor vis_vert_idx(vis_tris.NonZero().View({-1}));
+    rays.Slice(1, 3, 6, 1) =
+            tri_centers.GetItem({tk::IndexTensor(vis_vert_idx)});
 
     auto result = rcs.CastRays(rays);
     float *t_hit_ptr = result["t_hit"].GetDataPtr<float>();
     int64_t *vis_vert_idx_ptr = vis_vert_idx.GetDataPtr<int64_t>();
+    // t_hit is in units of ray segments, so <1 means ray hit something else.
     for (int i = 0; i < n_vis; ++i) {
-        vis_vert_ptr[vis_vert_idx_ptr[i]] = t_hit_ptr[i] > 1 - EPS;
+        vis_vert_ptr[vis_vert_idx_ptr[i]] = (t_hit_ptr[i] > 1 - EPS);
     }
-    core::Tensor vis_tris = core::Tensor::Zeros(
-            {GetTriangleIndices().GetShape(0)}, core::Dtype::Bool);
-    DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(
-            GetTriangleIndices().GetDtype(), tri, [&]() {
-                auto tris_ptr = GetTriangleIndices()
-                                        .To(core::Device())
-                                        .Contiguous()
-                                        .GetDataPtr<scalar_tri_t>();
-                auto vis_tris_ptr = vis_tris.GetDataPtr<bool>();
-                for (int i = 0; i < GetTriangleIndices().GetShape(0); ++i) {
-                    vis_tris_ptr[i] = (vis_vert_ptr[tris_ptr[3 * i + 0]] &&
-                                       vis_vert_ptr[tris_ptr[3 * i + 1]] &&
-                                       vis_vert_ptr[tris_ptr[3 * i + 2]]);
-                }
-            });
+    utility::LogInfo("t_hit = {}", result["t_hit"].ToString());
+    utility::LogInfo("vis_tris = {}", vis_tris.ToString());
+    core::Tensor vis_vert = core::Tensor::Zeros(
+            {GetVertexPositions().GetShape(0)}, core::Dtype::Bool);
+    vis_vert.IndexGet({tris.IndexGet({vis_tris}).View({-1})}) = true;
+    utility::LogInfo("vis_vert = {}", vis_vert.ToString());
     return std::make_pair(vis_vert, vis_tris);
 }
 
@@ -1424,7 +1427,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         int tex_size /*=1024*/,
         bool update_material /*=true*/) {
     using core::None;
-    using tk = core::TensorKey;
+    /* using tk = core::TensorKey; */
     constexpr double EPS = 1e-6;
     if (!triangle_attr_.Contains("texture_uvs")) {
         utility::LogError("Cannot find triangle attribute 'texture_uvs'");
@@ -1445,12 +1448,14 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     // (u,v) -> (x,y,z) : {tex_size, tex_size, 3}
     core::Tensor position_map = BakeVertexAttrTextures(
             tex_size, {"positions"}, 1, 0, false)["positions"];
+    io::WriteImage("position_map.png",
+                   Image(((position_map + 1) * 127.5).To(core::UInt8)));
     core::Tensor albedo =
             core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
     albedo.Slice(2, 3, 4, 1).Fill(EPS);  // regularize
     core::Tensor this_albedo =
-            core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
-    core::Tensor weighted_image;
+            core::Tensor::Empty({tex_size, tex_size, 4}, core::Float32);
+    core::Tensor weighted_image({}, core::Float32), uv2xy({}, core::Float32);
 
     /* For each image, project vertices onto 2D image and do occlusion
      * culling. This creates (xim, yim) -> (u,v) mapping.  Invert this
@@ -1467,7 +1472,8 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         core::AssertTensorShape(intrinsic_matrices[i], {3, 3});
         core::AssertTensorShape(extrinsic_matrices[i], {4, 4});
 
-        // A. Get image space weight matrix
+        // A. Get image space weight matrix, as inverse of pixel footprint on
+        // the mesh.
         auto rays = RaycastingScene::CreateRaysPinhole(
                 intrinsic_matrices[i], extrinsic_matrices[i],
                 images[i].GetCols(), images[i].GetRows());
@@ -1480,18 +1486,17 @@ Image TriangleMesh::ProjectImagesToAlbedo(
                                            width * height);
         Eigen::Map<Eigen::ArrayXXf> t_hit(result["t_hit"].GetDataPtr<float>(),
                                           1, width * height);
-        // Weight map based on dot product between ray normals and triangle
-        // normals.
         auto depth = t_hit * (rays_e.bottomRows<3>() - rays_e.topRows<3>())
                                      .colwise()
                                      .norm()
                                      .array();
-        auto footprint = depth * normals_e
-                                         .cwiseProduct((rays_e.bottomRows<3>() -
-                                                        rays_e.topRows<3>())
-                                                               .colwise()
-                                                               .normalized())
-                                         .sum();
+        auto unit_area_proj = (normals_e.cwiseProduct((rays_e.bottomRows<3>() -
+                                                       rays_e.topRows<3>())
+                                                              .colwise()
+                                                              .normalized()))
+                                      .sum();
+        auto footprint =
+                (depth * unit_area_proj).abs();  // ignore face orientation
         if (!weighted_image.GetShape().IsCompatible({height, width, 4})) {
             weighted_image = core::Tensor({height, width, 4}, core::Float32);
         }
@@ -1500,11 +1505,10 @@ Image TriangleMesh::ProjectImagesToAlbedo(
                 weighted_image.GetDataPtr<float>(), 4, width * height);
         // footprint is inf if depth or t_hit is inf. Never zero.
         weighted_image_e.bottomRows<1>() = 1. / footprint;
-        /* weighted_image.Slice(2, 3, 4, 1) = 1. / footprint; */
 
         // B. Get texture space (u,v) -> (x,y) map and valid domain in uv space.
-        core::Tensor uv2xy = Project(position_map, intrinsic_matrices[i],
-                                     extrinsic_matrices[i]);  // {ts, ts, 2}
+        Project(position_map, intrinsic_matrices[i], extrinsic_matrices[i],
+                uv2xy);  // {ts, ts, 2}
         core::Tensor visible_triangles =
                 SelectVisible(intrinsic_matrices[i], extrinsic_matrices[i],
                               images[i].GetCols(), images[i].GetRows(), rcs)
@@ -1515,17 +1519,48 @@ Image TriangleMesh::ProjectImagesToAlbedo(
                 false)["visible"];  // uv space {ts, ts, 1}
         /* RemoveTriangleAttr("visible"); */
         // do not remap occluded / out of view faces
-        io::WriteImage("visible_map.png", Image(visible_map.To(core::UInt8)));
-        uv2xy.Reshape({-1, 2}).GetItem(
-                tk::IndexTensor(visible_map.Reshape({-1}).NonZero())) = -1.f;
+        io::WriteImage("visible_map.png",
+                       Image(visible_map.To(core::UInt8) * 255));
+        bool *p_visible_map = visible_map.GetDataPtr<bool>();
+        for (float *p_uv2xy = uv2xy.GetDataPtr<float>();
+             p_uv2xy < uv2xy.GetDataPtr<float>() + uv2xy.NumElements();
+             p_uv2xy += 2, ++p_visible_map) {
+            if (!*p_visible_map) *p_uv2xy = *(p_uv2xy + 1) = -1.f;
+        }
+        uv2xy = uv2xy.Permute({2, 0, 1}).Contiguous();  // {2, ts, ts}
+        io::WriteImage("uv2x.png", Image((uv2xy[0].To(core::UInt8))));
+        io::WriteImage("uv2y.png", Image((uv2xy[1].To(core::UInt8))));
         // albedo[u,v] = image[ i[u,v], j[u,v] ]
         // ij[u,v] ? = identity[ uv[i,j] ]
 
         // C. Interpolate weighted image to weighted texture
-        ipp::Remap(weighted_image /*{height, width, 4} f32*/,
-                   uv2xy /* {texsz, texsz, 2} f32*/,
-                   this_albedo /*{texsz, texsz, 4} f32*/,
+        this_albedo.Fill(0.f);
+        ipp::Remap(weighted_image, /*{height, width, 4} f32*/
+                   uv2xy[0],       /* {texsz, texsz} f32*/
+                   uv2xy[1],       /* {texsz, texsz} f32*/
+                   this_albedo,    /*{texsz, texsz, 4} f32*/
                    t::geometry::Image::InterpType::Cubic);
+        io::WriteImage(
+                "this_albedo.png",
+                Image((this_albedo.Slice(2, 0, 3, 1) * 255).To(core::UInt8)));
+        float wtmin = this_albedo.Slice(2, 3, 4, 1)
+                              .Min({0, 1, 2})
+                              .Item<float>(),
+              wtmax = this_albedo.Slice(2, 3, 4, 1)
+                              .Max({0, 1, 2})
+                              .Item<float>();
+        io::WriteImage(
+                "image_weights.png",
+                Image(weighted_image.Slice(2, 3, 4, 1).Contiguous())
+                        .To(core::UInt8, /*copy=*/false,
+                            /*scale=*/255.f / (wtmax - wtmin),
+                            /*offset=*/-wtmin * 255.f / (wtmax - wtmin)));
+        io::WriteImage(
+                "this_albedo_weight.png",
+                Image(this_albedo.Slice(2, 3, 4, 1).Contiguous())
+                        .To(core::UInt8, /*copy=*/false,
+                            /*scale=*/255.f / (wtmax - wtmin),
+                            /*offset=*/-wtmin * 255.f / (wtmax - wtmin)));
         // weighted sum
         albedo.Slice(2, 0, 3, 1) +=
                 this_albedo.Slice(2, 0, 3, 1) * this_albedo.Slice(2, 3, 4, 1);
@@ -1533,7 +1568,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     }
     albedo.Slice(2, 0, 3, 1) /= albedo.Slice(2, 3, 4, 1);
 
-    Image albedo_texture(albedo.Slice(2, 0, 3, 1).Contiguous());
+    Image albedo_texture((albedo.Slice(2, 0, 3, 1) * 255).To(core::UInt8));
     if (update_material) {
         if (!HasMaterial()) {
             SetMaterial(visualization::rendering::Material());

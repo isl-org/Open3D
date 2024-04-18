@@ -16,6 +16,7 @@
 #include <iw++/iw_image_transform.hpp>
 #include <unordered_map>
 
+#include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/ShapeUtil.h"
@@ -82,7 +83,7 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
 
 void Resize(const core::Tensor &src_im,
             core::Tensor &dst_im,
-            t::geometry::Image::InterpType interp_type) {
+            Image::InterpType interp_type) {
     auto dtype = src_im.GetDtype();
     // Create IPP wrappers for all Open3D tensors
     const ::ipp::IwiImage ipp_src_im(
@@ -96,14 +97,13 @@ void Resize(const core::Tensor &src_im,
             0 /* border buffer size */, dst_im.GetDataPtr(),
             dst_im.GetStride(0) * dtype.ByteSize());
 
-    static const std::unordered_map<t::geometry::Image::InterpType,
-                                    IppiInterpolationType>
+    static const std::unordered_map<Image::InterpType, IppiInterpolationType>
             type_dict = {
-                    {t::geometry::Image::InterpType::Nearest, ippNearest},
-                    {t::geometry::Image::InterpType::Linear, ippLinear},
-                    {t::geometry::Image::InterpType::Cubic, ippCubic},
-                    {t::geometry::Image::InterpType::Lanczos, ippLanczos},
-                    {t::geometry::Image::InterpType::Super, ippSuper},
+                    {Image::InterpType::Nearest, ippNearest},
+                    {Image::InterpType::Linear, ippLinear},
+                    {Image::InterpType::Cubic, ippCubic},
+                    {Image::InterpType::Lanczos, ippLanczos},
+                    {Image::InterpType::Super, ippSuper},
             };
 
     auto it = type_dict.find(interp_type);
@@ -296,31 +296,34 @@ void FilterSobel(const core::Tensor &src_im,
     }
 }
 
-void Remap(const core::Tensor &src_im /*{Ws, Hs, C}*/,
-           const core::Tensor &dst2src_map /*{Wd, Hd, 2}, float*/,
-           core::Tensor &dst_im /*{Wd, Hd, 2}*/,
-           t::geometry::Image::InterpType interp_type) {
+void Remap(const core::Tensor &src_im,       /*{Ws, Hs, C}*/
+           const core::Tensor &dst2src_xmap, /*{Wd, Hd}, float*/
+           const core::Tensor &dst2src_ymap, /*{Wd, Hd}, float*/
+           core::Tensor &dst_im,             /*{Wd, Hd, C}*/
+           Image::InterpType interp_type) {
     auto dtype = src_im.GetDtype();
     if (dtype != dst_im.GetDtype()) {
         utility::LogError(
                 "Source ({}) and destination ({}) image dtypes are different!",
                 dtype.ToString(), dst_im.GetDtype().ToString());
     }
-    if (dst2src_map.GetDtype() != core::Float32) {
-        utility::LogError("dst2src_map dtype ({}) must be Float32.",
-                          dst2src_map.GetDtype().ToString());
+    if (dst2src_xmap.GetDtype() != core::Float32) {
+        utility::LogError("dst2src_xmap dtype ({}) must be Float32.",
+                          dst2src_xmap.GetDtype().ToString());
+    }
+    if (dst2src_ymap.GetDtype() != core::Float32) {
+        utility::LogError("dst2src_ymap dtype ({}) must be Float32.",
+                          dst2src_ymap.GetDtype().ToString());
     }
 
-    static const std::unordered_map<t::geometry::Image::InterpType, int>
-            interp_dict = {
-                    {t::geometry::Image::InterpType::Nearest, IPPI_INTER_NN},
-                    {t::geometry::Image::InterpType::Linear, IPPI_INTER_LINEAR},
-                    {t::geometry::Image::InterpType::Cubic, IPPI_INTER_CUBIC},
-                    {t::geometry::Image::InterpType::Lanczos,
-                     IPPI_INTER_LANCZOS},
-                    /* {t::geometry::Image::InterpType::Cubic2p_CatmullRom, */
-                    /*  IPPI_INTER_CUBIC2P_CATMULLROM}, */
-            };
+    static const std::unordered_map<Image::InterpType, int> interp_dict = {
+            {Image::InterpType::Nearest, IPPI_INTER_NN},
+            {Image::InterpType::Linear, IPPI_INTER_LINEAR},
+            {Image::InterpType::Cubic, IPPI_INTER_CUBIC},
+            {Image::InterpType::Lanczos, IPPI_INTER_LANCZOS},
+            /* {Image::InterpType::Cubic2p_CatmullRom, */
+            /*  IPPI_INTER_CUBIC2P_CATMULLROM}, */
+    };
 
     auto interp_it = interp_dict.find(interp_type);
     if (interp_it == interp_dict.end()) {
@@ -328,6 +331,20 @@ void Remap(const core::Tensor &src_im /*{Ws, Hs, C}*/,
                           static_cast<int>(interp_type));
     }
 
+    IppiSize src_size{static_cast<int>(src_im.GetShape(1)),
+                      static_cast<int>(src_im.GetShape(0))},
+            dst_roi_size{static_cast<int>(dst_im.GetShape(1)),
+                         static_cast<int>(dst_im.GetShape(0))};
+    IppiRect src_roi{0, 0, static_cast<int>(src_im.GetShape(1)),
+                     static_cast<int>(src_im.GetShape(0))};
+    IppStatus sts = ippStsNoErr;
+
+    int src_step = src_im.GetDtype().ByteSize() * src_im.GetStride(0);
+    int dst_step = dst_im.GetDtype().ByteSize() * dst_im.GetStride(0);
+    int xmap_step =
+            dst2src_xmap.GetDtype().ByteSize() * dst2src_xmap.GetStride(0);
+    int ymap_step =
+            dst2src_ymap.GetDtype().ByteSize() * dst2src_ymap.GetStride(0);
     if (src_im.GetDtype() == core::Float32 && src_im.GetShape(2) == 4) {
         /* IPPAPI(IppStatus, ippiRemap_32f_C4R, (const Ipp32f* pSrc, IppiSize
          * srcSize, */
@@ -335,27 +352,22 @@ void Remap(const core::Tensor &src_im /*{Ws, Hs, C}*/,
          */
         /*     const Ipp32f* pyMap, int yMapStep, Ipp32f* pDst, int dstStep, */
         /*     IppiSize dstRoiSize, int interpolation)) */
-        IppiSize src_size{static_cast<int>(src_im.GetShape(1)),
-                          static_cast<int>(src_im.GetShape(0))},
-                dst_roi_size{static_cast<int>(dst_im.GetShape(1)),
-                             static_cast<int>(dst_im.GetShape(0))};
-        IppiRect src_roi{0, 0, static_cast<int>(src_im.GetShape(1)),
-                         static_cast<int>(src_im.GetShape(0))};
-
-        IppStatus sts = ippiRemap_32f_C4R(
-                src_im.GetDataPtr<float>(), src_size, 1, src_roi,
-                dst2src_map.GetDataPtr<float>(), 2,
-                dst2src_map.GetDataPtr<float>() + 1, 2,
-                dst_im.GetDataPtr<float>(), 1, dst_roi_size, interp_it->second);
-        if (sts != ippStsNoErr) {
-            // See comments in icv/include/ippicv_types.h for meaning
-            utility::LogError("IPP remap error {}", sts);
-        }
-
+        const auto p_src_im = src_im.GetDataPtr<float>();
+        auto p_dst_im = dst_im.GetDataPtr<float>();
+        const auto p_dst2src_xmap = dst2src_xmap.GetDataPtr<float>();
+        const auto p_dst2src_ymap = dst2src_ymap.GetDataPtr<float>();
+        sts = ippiRemap_32f_C4R(p_src_im, src_size, src_step, src_roi,
+                                p_dst2src_xmap, xmap_step, p_dst2src_ymap,
+                                ymap_step, p_dst_im, dst_step, dst_roi_size,
+                                interp_it->second);
     } else {
         utility::LogError(
                 "Remap not implemented for dtype ({}) and channels ({}).",
                 src_im.GetDtype().ToString(), src_im.GetShape(2));
+    }
+    if (sts != ippStsNoErr) {
+        // See comments in icv/include/ippicv_types.h for meaning
+        utility::LogError("IPP remap error {}", sts);
     }
 }
 }  // namespace ipp
