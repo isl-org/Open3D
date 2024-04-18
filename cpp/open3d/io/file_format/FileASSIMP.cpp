@@ -422,6 +422,9 @@ bool ReadModelUsingAssimp(const std::string& filename,
         mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR,
                  o3d_mat.base_clearcoat_roughness);
         mat->Get(AI_MATKEY_ANISOTROPY, o3d_mat.base_anisotropy);
+        mat->Get(AI_MATKEY_COLOR_EMISSIVE, color);
+        o3d_mat.emissive_color =
+                Eigen::Vector4f(color.r, color.g, color.b, 1.f);
         aiString alpha_mode;
         mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode);
         std::string alpha_mode_str(alpha_mode.C_Str());
