@@ -728,7 +728,7 @@ Args:
 
 Returns:
     This function creates a face attribute "texture_uvs" and returns a tuple
-    with (max stretch, num_charts, num_partitions) storing the 
+    with (max stretch, num_charts, num_partitions) storing the
     actual amount of stretch, the number of created charts, and the number of
     parallel partitions created.
 
@@ -905,7 +905,7 @@ Example:
                       "max_faces"_a,
                       R"(Partition the mesh by recursively doing PCA.
 
-This function creates a new face attribute with the name "partition_ids" storing 
+This function creates a new face attribute with the name "partition_ids" storing
 the partition id for each face.
 
 Args:
@@ -914,7 +914,7 @@ Args:
 
 Example:
 
-    This code partitions a mesh such that each partition contains at most 20k 
+    This code partitions a mesh such that each partition contains at most 20k
     faces::
 
         import open3d as o3d
@@ -933,15 +933,15 @@ Example:
             R"(Returns a new mesh with the faces selected by a boolean mask.
 
 Args:
-    mask (open3d.core.Tensor): A boolean mask with the shape (N) with N as the 
+    mask (open3d.core.Tensor): A boolean mask with the shape (N) with N as the
         number of faces in the mesh.
-    
+
 Returns:
     A new mesh with the selected faces. If the original mesh is empty, return an empty mesh.
 
 Example:
 
-    This code partitions the mesh using PCA and then visualized the individual 
+    This code partitions the mesh using PCA and then visualized the individual
     parts::
 
         import open3d as o3d
