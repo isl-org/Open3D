@@ -38,6 +38,21 @@ void VisualizerWithKeyCallback::RegisterKeyActionCallback(
     key_action_to_callback_[key] = callback;
 }
 
+void VisualizerWithKeyCallback::RegisterMouseMoveCallback(
+        std::function<bool(Visualizer *, double, double)> callback) {
+    mouse_move_callback_ = callback;
+}
+
+void VisualizerWithKeyCallback::RegisterMouseScrollCallback(
+        std::function<bool(Visualizer *, double, double)> callback) {
+    mouse_scroll_callback_ = callback;
+}
+
+void VisualizerWithKeyCallback::RegisterMouseButtonCallback(
+        std::function<bool(Visualizer *, int, int, int)> callback) {
+    mouse_button_callback_ = callback;
+}
+
 void VisualizerWithKeyCallback::KeyPressCallback(
         GLFWwindow *window, int key, int scancode, int action, int mods) {
     auto action_callback = key_action_to_callback_.find(key);
@@ -60,6 +75,42 @@ void VisualizerWithKeyCallback::KeyPressCallback(
         UpdateRender();
     } else {
         Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+    }
+}
+
+void VisualizerWithKeyCallback::MouseMoveCallback(
+        GLFWwindow *window, double x, double y) {
+    if (mouse_move_callback_) {
+        if (mouse_move_callback_(this, x, y)) {
+            UpdateGeometry();
+        }
+        UpdateRender();
+    } else {
+        Visualizer::MouseMoveCallback(window, x, y);
+    }
+}
+
+void VisualizerWithKeyCallback::MouseScrollCallback(
+        GLFWwindow *window, double x, double y) {
+    if (mouse_scroll_callback_) {
+        if (mouse_scroll_callback_(this, x, y)) {
+            UpdateGeometry();
+        }
+        UpdateRender();
+    } else {
+        Visualizer::MouseScrollCallback(window, x, y);
+    }
+}
+
+void VisualizerWithKeyCallback::MouseButtonCallback(
+        GLFWwindow *window, int button, int action, int mods) {
+    if (mouse_button_callback_) {
+        if (mouse_button_callback_(this, button, action, mods)) {
+            UpdateGeometry();
+        }
+        UpdateRender();
+    } else {
+        Visualizer::MouseButtonCallback(window, button, action, mods);
     }
 }
 

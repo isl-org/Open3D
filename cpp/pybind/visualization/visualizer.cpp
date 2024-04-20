@@ -172,7 +172,25 @@ void pybind_visualizer(py::module &m) {
                  "event. The callback function takes Visualizer, action and "
                  "mods as input and returns a boolean indicating if "
                  "UpdateGeometry() needs to be run.",
-                 "key"_a, "callback_func"_a);
+                 "key"_a, "callback_func"_a)
+                 
+            .def("register_mouse_move_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseMoveCallback,
+                 "Function to register a callback function for a mouse move "
+                 "event",
+                 "callback_func"_a)
+
+            .def("register_mouse_scroll_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseScrollCallback,
+                 "Function to register a callback function for a mouse scroll "
+                 "event",
+                 "callback_func"_a)
+
+            .def("register_mouse_button_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseButtonCallback,
+                 "Function to register a callback function for a mouse button "
+                 "event",
+                 "callback_func"_a);
 
     py::class_<VisualizerWithEditing, PyVisualizer<VisualizerWithEditing>,
                std::shared_ptr<VisualizerWithEditing>>

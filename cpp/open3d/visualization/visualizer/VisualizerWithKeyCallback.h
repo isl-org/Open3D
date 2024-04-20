@@ -48,18 +48,36 @@ public:
     void RegisterKeyActionCallback(
             int key, std::function<bool(Visualizer *, int, int)> callback);
 
+    void RegisterMouseMoveCallback(
+            std::function<bool(Visualizer *, double, double)> callback);
+
+    void RegisterMouseScrollCallback(
+            std::function<bool(Visualizer *, double, double)> callback);
+
+    void RegisterMouseButtonCallback(
+            std::function<bool(Visualizer *, int, int, int)> callback);
+
 protected:
     void KeyPressCallback(GLFWwindow *window,
                           int key,
                           int scancode,
                           int action,
                           int mods) override;
+    void MouseMoveCallback(GLFWwindow *window, double x, double y) override;
+    void MouseScrollCallback(GLFWwindow *window, double x, double y) override;
+    void MouseButtonCallback(GLFWwindow *window,
+                            int button,
+                            int action,
+                            int mods) override;
     std::string PrintKeyToString(int key);
 
 protected:
     std::map<int, std::function<bool(Visualizer *)>> key_to_callback_;
     std::map<int, std::function<bool(Visualizer *, int, int)>>
             key_action_to_callback_;
+    std::function<bool(Visualizer *, double, double)> mouse_move_callback_;
+    std::function<bool(Visualizer *, double, double)> mouse_scroll_callback_;
+    std::function<bool(Visualizer *, int, int, int)> mouse_button_callback_;
 };
 
 }  // namespace visualization
