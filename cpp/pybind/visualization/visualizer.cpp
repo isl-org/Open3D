@@ -173,7 +173,7 @@ void pybind_visualizer(py::module &m) {
                  "mods as input and returns a boolean indicating if "
                  "UpdateGeometry() needs to be run.",
                  "key"_a, "callback_func"_a)
-                 
+
             .def("register_mouse_move_callback",
                  &VisualizerWithKeyCallback::RegisterMouseMoveCallback,
                  "Function to register a callback function for a mouse move "

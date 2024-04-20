@@ -66,9 +66,9 @@ protected:
     void MouseMoveCallback(GLFWwindow *window, double x, double y) override;
     void MouseScrollCallback(GLFWwindow *window, double x, double y) override;
     void MouseButtonCallback(GLFWwindow *window,
-                            int button,
-                            int action,
-                            int mods) override;
+                             int button,
+                             int action,
+                             int mods) override;
     std::string PrintKeyToString(int key);
 
 protected:

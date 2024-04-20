@@ -78,8 +78,9 @@ void VisualizerWithKeyCallback::KeyPressCallback(
     }
 }
 
-void VisualizerWithKeyCallback::MouseMoveCallback(
-        GLFWwindow *window, double x, double y) {
+void VisualizerWithKeyCallback::MouseMoveCallback(GLFWwindow *window,
+                                                  double x,
+                                                  double y) {
     if (mouse_move_callback_) {
         if (mouse_move_callback_(this, x, y)) {
             UpdateGeometry();
@@ -90,8 +91,9 @@ void VisualizerWithKeyCallback::MouseMoveCallback(
     }
 }
 
-void VisualizerWithKeyCallback::MouseScrollCallback(
-        GLFWwindow *window, double x, double y) {
+void VisualizerWithKeyCallback::MouseScrollCallback(GLFWwindow *window,
+                                                    double x,
+                                                    double y) {
     if (mouse_scroll_callback_) {
         if (mouse_scroll_callback_(this, x, y)) {
             UpdateGeometry();
@@ -102,8 +104,10 @@ void VisualizerWithKeyCallback::MouseScrollCallback(
     }
 }
 
-void VisualizerWithKeyCallback::MouseButtonCallback(
-        GLFWwindow *window, int button, int action, int mods) {
+void VisualizerWithKeyCallback::MouseButtonCallback(GLFWwindow *window,
+                                                    int button,
+                                                    int action,
+                                                    int mods) {
     if (mouse_button_callback_) {
         if (mouse_button_callback_(this, button, action, mods)) {
             UpdateGeometry();
