@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2023 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -36,10 +36,11 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
         return;
     }
 
-    MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(), src.GetDataPtr(), src.GetDevice(),
+    MemoryManager::Memcpy(dst.GetDataPtr(), dst.GetDevice(), src.GetDataPtr(),
+                          src.GetDevice(),
                           src_dtype.ByteSize() * shape.NumElements());
 }
 
-} // namespace kernel
-} // namespace core
-} // namespace open3d
+}  // namespace kernel
+}  // namespace core
+}  // namespace open3d

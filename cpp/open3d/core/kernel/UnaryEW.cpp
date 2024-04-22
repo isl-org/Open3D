@@ -59,16 +59,15 @@ void Copy(const Tensor& src, Tensor& dst) {
     }
     if (src_device.IsCPU() && dst_device.IsCPU()) {
         CopyCPU(src, dst);
-    } else if ((src_device.IsCPU() || src_device.IsCUDA()) && 
-                (dst_device.IsCPU() || dst_device.IsCUDA())) {
+    } else if ((src_device.IsCPU() || src_device.IsCUDA()) &&
+               (dst_device.IsCPU() || dst_device.IsCUDA())) {
 #ifdef BUILD_CUDA_MODULE
         CopyCUDA(src, dst);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
-    } else if ((src_device.IsCPU() || src_device.IsSYCL()) && 
-                (dst_device.IsCPU() || dst_device.IsSYCL())) {
-
+    } else if ((src_device.IsCPU() || src_device.IsSYCL()) &&
+               (dst_device.IsCPU() || dst_device.IsSYCL())) {
 #ifdef BUILD_SYCL_MODULE
         CopySYCL(src, dst);
 #else
