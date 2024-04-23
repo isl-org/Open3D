@@ -17,6 +17,23 @@
 
 namespace open3d {
 namespace io {
+namespace {
+
+/// Convert libjpeg error messages to std::runtime_error. This prevents
+/// libjpeg from exit() in case of errors.
+void jpeg_error_throw(j_common_ptr p_cinfo) {
+    if (p_cinfo->is_decompressor)
+        jpeg_destroy_decompress(
+                reinterpret_cast<jpeg_decompress_struct *>(p_cinfo));
+    else
+        jpeg_destroy_compress(
+                reinterpret_cast<jpeg_compress_struct *>(p_cinfo));
+    char buffer[JMSG_LENGTH_MAX];
+    (*p_cinfo->err->format_message)(p_cinfo, buffer);
+    utility::LogError("libjpeg error: {}", buffer);
+}
+
+}  // namespace
 
 bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     struct jpeg_decompress_struct cinfo;
@@ -25,8 +42,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     JSAMPARRAY buffer;
 
     if ((file_in = utility::filesystem::FOpen(filename, "rb")) == NULL) {
-        utility::LogWarning("Read JPG failed: unable to open file: {}",
-                            filename);
+        utility::LogError("Read JPG failed: unable to open file: {}", filename);
         return false;
     }
 
@@ -53,7 +69,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
         case JCS_CMYK:
         case JCS_YCCK:
         default:
-            utility::LogWarning("Read JPG failed: color space not supported.");
+            utility::LogError("Read JPG failed: color space not supported.");
             jpeg_destroy_decompress(&cinfo);
             fclose(file_in);
             return false;
@@ -85,13 +101,13 @@ bool WriteImageToJPG(const std::string &filename,
     }
     if (image.bytes_per_channel_ != 1 ||
         (image.num_of_channels_ != 1 && image.num_of_channels_ != 3)) {
-        utility::LogWarning("Write JPG failed: unsupported image data.");
+        utility::LogError("Write JPG failed: unsupported image data.");
         return false;
     }
     if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
         quality = 90;
     if (quality < 0 || quality > 100) {
-        utility::LogWarning(
+        utility::LogError(
                 "Write JPG failed: image quality should be in the range "
                 "[0,100].");
         return false;
@@ -103,12 +119,13 @@ bool WriteImageToJPG(const std::string &filename,
     JSAMPROW row_pointer[1];
 
     if ((file_out = utility::filesystem::FOpen(filename, "wb")) == NULL) {
-        utility::LogWarning("Write JPG failed: unable to open file: {}",
-                            filename);
+        utility::LogError("Write JPG failed: unable to open file: {}",
+                          filename);
         return false;
     }
 
     cinfo.err = jpeg_std_error(&jerr);
+    jerr.error_exit = jpeg_error_throw;
     jpeg_create_compress(&cinfo);
     jpeg_stdio_dest(&cinfo, file_out);
     cinfo.image_width = image.width_;
@@ -142,6 +159,7 @@ bool ReadJPGFromMemory(const unsigned char *image_data_ptr,
     JSAMPARRAY buffer;
 
     cinfo.err = jpeg_std_error(&jerr);
+    jerr.error_exit = jpeg_error_throw;
     jpeg_create_decompress(&cinfo);
     jpeg_mem_src(&cinfo, image_data_ptr, image_data_size);
     jpeg_read_header(&cinfo, TRUE);
@@ -164,7 +182,7 @@ bool ReadJPGFromMemory(const unsigned char *image_data_ptr,
         case JCS_CMYK:
         case JCS_YCCK:
         default:
-            utility::LogWarning("Read JPG failed: color space not supported.");
+            utility::LogError("Read JPG failed: color space not supported.");
             jpeg_destroy_decompress(&cinfo);
             return false;
     }
