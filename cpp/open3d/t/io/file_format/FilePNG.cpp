@@ -40,7 +40,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
     if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
-        utility::LogWarning("Read PNG failed: unable to parse header.");
+        utility::LogError("Read PNG failed: unable to parse header.");
         return false;
     }
 
@@ -61,9 +61,8 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
 
     if (png_image_finish_read(&pngimage, NULL, image.GetDataPtr(), 0, NULL) ==
         0) {
-        utility::LogWarning("Read PNG failed: unable to read file: {}",
-                            filename);
-        utility::LogWarning("PNG error: {}", pngimage.message);
+        utility::LogError("Read PNG failed: unable to read file: {}", filename);
+        utility::LogError("PNG error: {}", pngimage.message);
         return false;
     }
     return true;
@@ -73,11 +72,11 @@ bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
                      int quality) {
     if (image.IsEmpty()) {
-        utility::LogWarning("Write PNG failed: image has no data.");
+        utility::LogError("Write PNG failed: image has no data.");
         return false;
     }
     if (image.GetDtype() != core::UInt8 && image.GetDtype() != core::UInt16) {
-        utility::LogWarning("Write PNG failed: unsupported image data.");
+        utility::LogError("Write PNG failed: unsupported image data.");
         return false;
     }
     if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
@@ -85,7 +84,7 @@ bool WriteImageToPNG(const std::string &filename,
         quality = 6;
     }
     if (quality < 0 || quality > 9) {
-        utility::LogWarning(
+        utility::LogError(
                 "Write PNG failed: quality ({}) must be in the range [0,9]",
                 quality);
         return false;
@@ -96,8 +95,8 @@ bool WriteImageToPNG(const std::string &filename,
     SetPNGImageFromImage(image, quality, pngimage);
     if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
                                 image.GetDataPtr(), 0, NULL) == 0) {
-        utility::LogWarning("Write PNG failed: unable to write file: {}",
-                            filename);
+        utility::LogError("Write PNG failed: unable to write file: {}",
+                          filename);
         return false;
     }
     return true;
@@ -107,11 +106,11 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
                              const t::geometry::Image &image,
                              int quality) {
     if (image.IsEmpty()) {
-        utility::LogWarning("Write PNG failed: image has no data.");
+        utility::LogError("Write PNG failed: image has no data.");
         return false;
     }
     if (image.GetDtype() != core::UInt8 && image.GetDtype() != core::UInt16) {
-        utility::LogWarning("Write PNG failed: unsupported image data.");
+        utility::LogError("Write PNG failed: unsupported image data.");
         return false;
     }
     if (quality == kOpen3DImageIODefaultQuality)  // Set default quality
@@ -119,7 +118,7 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
         quality = 6;
     }
     if (quality < 0 || quality > 9) {
-        utility::LogWarning(
+        utility::LogError(
                 "Write PNG failed: quality ({}) must be in the range [0,9]",
                 quality);
         return false;
@@ -133,7 +132,7 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
     size_t mem_bytes = 0;
     if (png_image_write_to_memory(&pngimage, nullptr, &mem_bytes, 0,
                                   image.GetDataPtr(), 0, nullptr) == 0) {
-        utility::LogWarning(
+        utility::LogError(
                 "Could not compute bytes needed for encoding to PNG in "
                 "memory.");
         return false;
@@ -141,7 +140,7 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
     buffer.resize(mem_bytes);
     if (png_image_write_to_memory(&pngimage, &buffer[0], &mem_bytes, 0,
                                   image.GetDataPtr(), 0, nullptr) == 0) {
-        utility::LogWarning("Unable to encode to encode to PNG in memory.");
+        utility::LogError("Unable to encode to encode to PNG in memory.");
         return false;
     }
     return true;

@@ -173,22 +173,22 @@ TEST(ImageIO, DifferentDtype) {
     EXPECT_TRUE(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 3, core::UInt8)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 3, core::UInt16)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 3, core::Float32)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 3, core::Float64)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 3, core::Int32)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 3, core::Int64)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 3, core::Bool)));
 
@@ -198,19 +198,19 @@ TEST(ImageIO, DifferentDtype) {
     EXPECT_TRUE(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
                               t::geometry::Image(100, 200, 3, core::UInt16)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
                               t::geometry::Image(100, 200, 3, core::Float32)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
                               t::geometry::Image(100, 200, 3, core::Float64)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
                               t::geometry::Image(100, 200, 3, core::Int32)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
                               t::geometry::Image(100, 200, 3, core::Int64)));
-    EXPECT_FALSE(
+    EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
                               t::geometry::Image(100, 200, 3, core::Bool)));
 }
@@ -220,19 +220,23 @@ TEST(ImageIO, CornerCases) {
     EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 0, core::UInt8)));
-    EXPECT_FALSE(t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
-                                   t::geometry::Image(100, 0, 3, core::UInt8)));
-    EXPECT_FALSE(t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
-                                   t::geometry::Image(0, 200, 3, core::UInt8)));
+    EXPECT_ANY_THROW(
+            t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
+                              t::geometry::Image(100, 0, 3, core::UInt8)));
+    EXPECT_ANY_THROW(
+            t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
+                              t::geometry::Image(0, 200, 3, core::UInt8)));
     EXPECT_TRUE(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 1, core::UInt8)));
 
     // Wrong extension
-    EXPECT_FALSE(t::io::WriteImage(tmp_path + "/test_imageio_dtype.jg",
-                                   t::geometry::Image(100, 0, 3, core::UInt8)));
-    EXPECT_FALSE(t::io::WriteImage(tmp_path + "/test_imageio_dtype.pg",
-                                   t::geometry::Image(100, 0, 3, core::UInt8)));
+    EXPECT_ANY_THROW(
+            t::io::WriteImage(tmp_path + "/test_imageio_dtype.jg",
+                              t::geometry::Image(100, 0, 3, core::UInt8)));
+    EXPECT_ANY_THROW(
+            t::io::WriteImage(tmp_path + "/test_imageio_dtype.pg",
+                              t::geometry::Image(100, 0, 3, core::UInt8)));
 }
 
 }  // namespace tests

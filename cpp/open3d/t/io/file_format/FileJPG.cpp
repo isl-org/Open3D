@@ -104,7 +104,7 @@ bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
                      int quality /* = kOpen3DImageIODefaultQuality*/) {
     if (image.IsEmpty()) {
-        utility::LogWarning("Write JPG failed: image has no data.");
+        utility::LogError("Write JPG failed: image has no data.");
         return false;
     }
     if (image.GetDtype() != core::UInt8 ||
