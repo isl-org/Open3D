@@ -1,4 +1,4 @@
-name: Windows CUDA wheel
+name: Windows CUDA Debug wheel
 
 on:
   workflow_dispatch:
