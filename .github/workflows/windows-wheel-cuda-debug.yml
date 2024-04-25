@@ -1,0 +1,114 @@
+name: Windows CUDA wheel
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_build:
+        description: "Set to OFF for Release wheels"
+        required: false
+        default: "OFF"
+
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_VER: "21.1.1"
+  WHEEL_VER: "0.38.4"
+  STOOLS_VER: "67.3.2"
+  PYTEST_VER: "7.1.2"
+  PYTEST_RANDOMLY_VER: "3.8.0"
+  SCIPY_VER: "1.7.3"
+  JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
+  IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
+  TENSORBOARD_VER: "2.8"
+  SRC_DIR: "D:\\a\\open3d\\open3d"
+  BUILD_DIR: "C:\\Open3D\\build"
+  NPROC: 2
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
+
+jobs:
+  build-cuda-wheel:
+    name: Build wheel
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
+      matrix:
+        python_version: ['3.8', '3.9', '3.10', '3.11']
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
+        with:
+          sdk-version: 19041
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install CUDA 
+        uses: Jimver/cuda-toolkit@v0.2.8
+        id: cuda-toolkit
+        with:
+          cuda: '11.6.0'
+
+      - name: Install Python dependencies
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install -r python/requirements.txt
+          python -m pip install -r python/requirements_jupyter_build.txt
+
+      - name: Config
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
+          cd ${{ env.BUILD_DIR }}
+          if (${env:DEVELOPER_BUILD} -ne "OFF") {
+            ${env:DEVELOPER_BUILD}="ON"
+          }
+          cmake -G "Visual Studio 16 2019" -A x64 `
+            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
+            -DBUILD_SHARED_LIBS=ON `
+            -DSTATIC_WINDOWS_RUNTIME=OFF `
+            -DBUILD_COMMON_ISPC_ISAS=ON `
+            -DENABLE_CACHED_CUDA_MANAGER=OFF `
+            -DBUILD_AZURE_KINECT=ON `
+            -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_WEBRTC=OFF `
+            -DBUILD_JUPYTER_EXTENSION=OFF `
+            -DBUILD_CUDA_MODULE=ON `
+            -DBUILD_EXAMPLES=OFF `
+            ${{ env.SRC_DIR }}
+
+      - name: Build Python package
+        working-directory: ${{ env.BUILD_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
+                                          wheel==${{ env.WHEEL_VER }} `
+                                          setuptools==${{ env.STOOLS_VER }}
+          cmake --build . --parallel ${{ env.NPROC }} --config Debug --target pip-package
+          $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v3
+        with:
+          name: open3d_win_amd64_wheels
+          path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+          if-no-files-found: error
