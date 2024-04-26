@@ -10,6 +10,7 @@
 #include <gmock/gmock.h>
 
 #include "core/CoreTest.h"
+#include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"

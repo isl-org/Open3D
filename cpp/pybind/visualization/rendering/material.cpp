@@ -12,6 +12,7 @@
 
 #include "open3d/visualization/rendering/Material.h"
 
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "pybind/open3d_pybind.h"
 
 PYBIND11_MAKE_OPAQUE(
@@ -41,6 +42,9 @@ void pybind_material(py::module& m) {
     mat.def(py::init<>())
             .def(py::init<Material>(), "", "mat"_a)
             .def(py::init<const std::string&>(), "", "material_name"_a)
+            .def(py::init(&Material::FromMaterialRecord), "material_record"_a,
+                 "Convert from MaterialRecord.")
+            .def("__repr__", &Material::ToString)
             .def("set_default_properties", &Material::SetDefaultProperties,
                  "Fills material with defaults for common PBR material "
                  "properties used by Open3D")

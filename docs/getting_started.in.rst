@@ -82,10 +82,10 @@ version (``HEAD`` of ``main`` branch):
       - `Python 3.11 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_27_x86_64.whl>`__
 
     * - MacOS
-      - `Python 3.8 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_11_0_x86_64.whl>`__
-      - `Python 3.9 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_11_0_x86_64.whl>`__
-      - `Python 3.10 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_11_0_x86_64.whl>`__
-      - `Python 3.11 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-macosx_10_15_universal2.whl>`__
+      - `Python 3.8 (x86_64) <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_11_0_x86_64.whl>`__
+      - `Python 3.9 (x86_64) <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_11_0_x86_64.whl>`__
+      - `Python 3.10 (x86_64+arm64) <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_11_0_universal2.whl>`__
+      - `Python 3.11 (x86_64+arm64) <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-macosx_10_15_universal2.whl>`__
 
     * - Windows
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
@@ -172,6 +172,7 @@ available for the main supported platforms. Also, the latest development version
         :columns: 2
 
         * `x86_64 <https://storage.googleapis.com/open3d-releases/devel/open3d-devel-darwin-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
+        * `arm64 <https://storage.googleapis.com/open3d-releases/devel/open3d-devel-darwin-arm64-@OPEN3D_VERSION_FULL@.tar.xz>`__
 
 :Windows 10+:
     .. hlist::

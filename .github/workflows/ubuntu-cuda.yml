@@ -152,7 +152,7 @@ jobs:
         if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: open3d-devel-linux-x86_64-cuda-${CI_CONFIG}
+          name: open3d-devel-linux-x86_64-cuda-${{ matrix.CI_CONFIG }}
           path: open3d-devel-linux*.tar.xz
           if-no-files-found: error
 

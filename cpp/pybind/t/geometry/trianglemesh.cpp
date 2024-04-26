@@ -238,6 +238,28 @@ Example:
             "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
+    triangle_mesh.def_static(
+            "from_triangle_mesh_model", &TriangleMesh::FromTriangleMeshModel,
+            "model"_a, "vertex_dtype"_a = core::Float32,
+            "triangle_dtype"_a = core::Int64,
+            "device"_a = core::Device("CPU:0"),
+            R"(Convert a TriangleMeshModel (e.g. as read from a file with
+`open3d.io.read_triangle_mesh_model()`) to a dictionary of mesh names to
+triangle meshes with the specified vertex and triangle dtypes and moved to the
+specified device. Only a single material per mesh is supported. Materials common
+to multiple meshes will be duplicated. Textures (as t.geometry.Image) will use
+shared storage on the CPU (GPU resident images for textures is not yet supported).
+
+Returns:
+    Dictionary of names to triangle meshes.
+
+Example:
+    flight_helmet = o3d.data.FlightHelmetModel()
+    model = o3d.io.read_triangle_model(flight_helmet.path)
+    mesh_dict = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
+    o3d.visualization.draw(list({"name": name, "geometry": tmesh} for
+        (name, tmesh) in mesh_dict.items()))
+            )");
     // conversion
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
