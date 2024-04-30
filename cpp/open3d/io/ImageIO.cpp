@@ -35,7 +35,6 @@ static const std::unordered_map<
                 {"jpg", WriteImageToJPG},
                 {"jpeg", WriteImageToJPG},
         };
-
 }  // unnamed namespace
 
 std::shared_ptr<geometry::Image> CreateImageFromFile(
@@ -49,21 +48,23 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
     std::string signature_buffer(MAX_SIGNATURE_LEN, 0);
     std::ifstream file(filename, std::ios::binary);
     file.read(&signature_buffer[0], MAX_SIGNATURE_LEN);
+    std::string err_msg;
     if (!file) {
-        utility::LogError("Read geometry::Image failed for file {}. I/O error.",
-                          filename);
-    }
-    file.close();
-    for (const auto &signature_decoder : signature_decoder_list) {
-        if (signature_buffer.compare(0, signature_decoder.first.size(),
-                                     signature_decoder.first) == 0) {
-            return signature_decoder.second(filename, image);
+        err_msg = "Read geometry::Image failed for file {}. I/O error.";
+    } else {
+        file.close();
+        for (const auto &signature_decoder : signature_decoder_list) {
+            if (signature_buffer.compare(0, signature_decoder.first.size(),
+                                         signature_decoder.first) == 0) {
+                return signature_decoder.second(filename, image);
+            }
         }
+        err_msg =
+                "Read geometry::Image failed for file {}. Unknown file "
+                "signature, only PNG and JPG are supported.";
     }
-    utility::LogError(
-            "Read geometry::Image failed for file {}. Unknown file "
-            "signature, only PNG and JPG are supported.",
-            filename);
+    image.Clear();
+    utility::LogWarning(err_msg.c_str(), filename);
     return false;
 }
 
@@ -73,13 +74,13 @@ bool WriteImage(const std::string &filename,
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        utility::LogError(
+        utility::LogWarning(
                 "Write geometry::Image failed: unknown file extension.");
         return false;
     }
     auto map_itr = file_extension_to_image_write_function.find(filename_ext);
     if (map_itr == file_extension_to_image_write_function.end()) {
-        utility::LogError(
+        utility::LogWarning(
                 "Write geometry::Image failed: unknown file extension.");
         return false;
     }
@@ -104,7 +105,7 @@ bool ReadImageFromMemory(const std::string &image_format,
     } else if (image_format == "jpg") {
         return ReadJPGFromMemory(image_data_ptr, image_data_size, image);
     } else {
-        utility::LogError("The format of {} is not supported", image_format);
+        utility::LogWarning("The format of {} is not supported", image_format);
         return false;
     }
 }

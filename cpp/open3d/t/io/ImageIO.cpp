@@ -55,21 +55,23 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
     std::string signature_buffer(MAX_SIGNATURE_LEN, 0);
     std::ifstream file(filename, std::ios::binary);
     file.read(&signature_buffer[0], MAX_SIGNATURE_LEN);
+    std::string err_msg;
     if (!file) {
-        utility::LogError("Read geometry::Image failed for file {}. I/O error.",
-                          filename);
-    }
-    file.close();
-    for (const auto &signature_decoder : signature_decoder_list) {
-        if (signature_buffer.compare(0, signature_decoder.first.size(),
-                                     signature_decoder.first) == 0) {
-            return signature_decoder.second(filename, image);
+        err_msg = "Read geometry::Image failed for file {}. I/O error.";
+    } else {
+        file.close();
+        for (const auto &signature_decoder : signature_decoder_list) {
+            if (signature_buffer.compare(0, signature_decoder.first.size(),
+                                         signature_decoder.first) == 0) {
+                return signature_decoder.second(filename, image);
+            }
         }
+        err_msg =
+                "Read geometry::Image failed for file {}. Unknown file "
+                "signature, only PNG and JPG are supported.";
     }
-    utility::LogError(
-            "Read geometry::Image failed for file {}. Unknown file "
-            "signature, only PNG and JPG are supported.",
-            filename);
+    image.Clear();
+    utility::LogWarning(err_msg.c_str(), filename);
     return false;
 }
 
@@ -79,13 +81,13 @@ bool WriteImage(const std::string &filename,
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
-        utility::LogError(
+        utility::LogWarning(
                 "Write geometry::Image failed: unknown file extension.");
         return false;
     }
     auto map_itr = file_extension_to_image_write_function.find(filename_ext);
     if (map_itr == file_extension_to_image_write_function.end()) {
-        utility::LogError(
+        utility::LogWarning(
                 "Write geometry::Image failed: unknown file extension.");
         return false;
     }
@@ -106,7 +108,8 @@ DepthNoiseSimulator::DepthNoiseSimulator(const std::string &noise_model_path) {
     for (int i = 0; i < skip_first_n_lines; ++i) {
         if (!(line_buffer = file.ReadLine())) {
             utility::LogError(
-                    "Read depth model failed: file {} is less than {} lines.",
+                    "Read depth model failed: file {} is less than {} "
+                    "lines.",
                     noise_model_path, skip_first_n_lines);
         }
     }
@@ -189,11 +192,11 @@ geometry::Image DepthNoiseSimulator::Simulate(const geometry::Image &im_src,
     geometry::kernel::TArrayIndexer<int> dst_indexer(im_dst_tensor, 2);
     geometry::kernel::TArrayIndexer<int> model_indexer(model_, 3);
 
-    // To match the original implementation, we try to keep the same variable
-    // names with reference to the original code. Compared to the original
-    // implementation, parallelization is done in im_dst_tensor per-pixel level,
-    // instead of per-image level. Check out the original code at:
-    // http://redwood-data.org/indoor/data/simdepth.py.
+    // To match the original implementation, we try to keep the same
+    // variable names with reference to the original code. Compared to the
+    // original implementation, parallelization is done in im_dst_tensor
+    // per-pixel level, instead of per-image level. Check out the original
+    // code at: http://redwood-data.org/indoor/data/simdepth.py.
     core::ParallelFor(
             core::Device("CPU:0"), width * height,
             [&] OPEN3D_DEVICE(int workload_idx) {
