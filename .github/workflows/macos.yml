@@ -119,24 +119,12 @@ jobs:
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
-      - name: GCloud CLI auth
+      - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: 'google-github-actions/auth@v2'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
-
-      - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gsutil cp build/package/${{ env.DEVEL_PKG_NAME }} gs://open3d-releases/devel/
-          echo "Download devel package at: https://storage.googleapis.com/open3d-releases/devel/${{ env.DEVEL_PKG_NAME }}"
+          gh release upload main-devel build/package/${{ env.DEVEL_PKG_NAME }} --clobber
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
@@ -341,7 +329,7 @@ jobs:
         run: |
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           mkdir universal_wheels
-          
+
           pip install delocate
           delocate-fuse -v x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
 
@@ -378,7 +366,7 @@ jobs:
         run: |
           gsutil cp universal_wheels/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
           echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
-        
+
   test-wheel:
     name: Test wheel
     runs-on: ${{ matrix.os }}
