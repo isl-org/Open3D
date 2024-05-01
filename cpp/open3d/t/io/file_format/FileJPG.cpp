@@ -32,8 +32,7 @@ void jpeg_error_throw(j_common_ptr p_cinfo) {
                 reinterpret_cast<jpeg_compress_struct *>(p_cinfo));
     char buffer[JMSG_LENGTH_MAX];
     (*p_cinfo->err->format_message)(p_cinfo, buffer);
-    // throws std::runtime_error
-    utility::LogError("libjpeg error: {}", buffer);
+    throw std::runtime_error(buffer);
 }
 
 }  // namespace
@@ -79,6 +78,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
                         "Read JPG failed: color space not supported.");
                 jpeg_destroy_decompress(&cinfo);
                 fclose(file_in);
+                image.Clear();
                 return false;
         }
         jpeg_start_decompress(&cinfo);
@@ -102,9 +102,9 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
         fclose(file_in);
         return true;
     } catch (const std::runtime_error &err) {
-        image.Clear();
         fclose(file_in);
-        utility::LogWarning(err.what());
+        image.Clear();
+        utility::LogWarning("libjpeg error: {}", err.what());
         return false;
     }
 }
