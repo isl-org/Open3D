@@ -188,4 +188,49 @@ typedef struct DLManagedTensor {
 #ifdef __cplusplus
 }  // DLPACK_EXTERN_C
 #endif
+
+#include <fmt/core.h>
+#include <fmt/format.h>
+
+namespace fmt {
+
+template <>
+struct formatter<DLDeviceType> : formatter<string_view> {
+    auto format(const DLDeviceType& c, format_context& ctx) const {
+        string_view text;
+        switch (c) {
+            case kDLCPU:
+                text = "kDLCPU";
+                break;
+            case kDLGPU:
+                text = "kDLGPU";
+                break;
+            case kDLCPUPinned:
+                text = "kDLCPUPinned";
+                break;
+            case kDLOpenCL:
+                text = "kDLOpenCL";
+                break;
+            case kDLVulkan:
+                text = "kDLVulkan";
+                break;
+            case kDLMetal:
+                text = "kDLMetal";
+                break;
+            case kDLVPI:
+                text = "kDLVPI";
+                break;
+            case kDLROCM:
+                text = "kDLROCM";
+                break;
+            case kDLExtDev:
+                text = "kDLExtDev";
+                break;
+        }
+        return formatter<string_view>::format(text, ctx);
+    }
+};
+
+}  // namespace fmt
+
 #endif  // DLPACK_DLPACK_H_

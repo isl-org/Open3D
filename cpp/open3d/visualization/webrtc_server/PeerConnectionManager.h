@@ -456,3 +456,41 @@ protected:
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d
+
+namespace fmt {
+
+template <>
+struct formatter<webrtc::PeerConnectionInterface::SignalingState>
+    : formatter<string_view> {
+    auto format(const webrtc::PeerConnectionInterface::SignalingState& state,
+                format_context& ctx) const {
+        using namespace webrtc;
+        const char* text = nullptr;
+        switch (state) {
+            case PeerConnectionInterface::SignalingState::kStable:
+                text = "kStable";
+                break;
+            case PeerConnectionInterface::SignalingState::kHaveLocalOffer:
+                text = "kHaveLocalOffer";
+                break;
+            case PeerConnectionInterface::SignalingState::kHaveLocalPrAnswer:
+                text = "kHaveLocalPrAnswer";
+                break;
+            case PeerConnectionInterface::SignalingState::kHaveRemoteOffer:
+                text = "kHaveRemoteOffer";
+                break;
+            case webrtc::PeerConnectionInterface::SignalingState::
+                    kHaveRemotePrAnswer:
+                text = "kHaveRemotePrAnswer";
+                break;
+            case webrtc::PeerConnectionInterface::SignalingState::kClosed:
+                text = "kClosed";
+                break;
+            default:
+                text = "unknown";
+        }
+        return formatter<string_view>::format(text, ctx);
+    }
+};
+
+}  // namespace fmt
