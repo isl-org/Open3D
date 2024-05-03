@@ -970,6 +970,7 @@ Example:
 
     triangle_mesh.def(
             "select_by_index", &TriangleMesh::SelectByIndex, "indices"_a,
+            "copy_attributes"_a = true,
             R"(Returns a new mesh with the vertices selected according to the indices list.
 If an item from the indices list exceeds the max vertex number of the mesh
 or has a negative value, it is ignored.
@@ -977,6 +978,9 @@ or has a negative value, it is ignored.
 Args:
     indices (open3d.core.Tensor): An integer list of indices. Duplicates are
     allowed, but ignored. Signed and unsigned integral types are accepted.
+    copy_attributes (bool): Indicates if vertex attributes (other than
+    positions) and triangle attributes (other than indices) should be copied to
+    the returned mesh.
 
 Returns:
     A new mesh with the selected vertices and faces built from these vertices.
@@ -995,6 +999,11 @@ Example:
     triangle_mesh.def("remove_unreferenced_vertices",
                       &TriangleMesh::RemoveUnreferencedVertices,
                       "Removes unreferenced vertices from the mesh in-place.");
+
+    triangle_mesh.def("project_images_to_albedo",
+                      &TriangleMesh::ProjectImagesToAlbedo, "images"_a,
+                      "intrinsic_matrices"_a, "extrinsic_matrices"_a,
+                      "tex_size"_a = 1024, "update_material"_a = true);
 }
 
 }  // namespace geometry

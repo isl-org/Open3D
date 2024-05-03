@@ -79,7 +79,8 @@ bool WriteImage(const std::string &filename,
     auto map_itr = file_extension_to_image_write_function.find(filename_ext);
     if (map_itr == file_extension_to_image_write_function.end()) {
         utility::LogWarning(
-                "Write geometry::Image failed: unknown file extension.");
+                "Write geometry::Image failed: file extension {} unknown.",
+                filename_ext);
         return false;
     }
     return map_itr->second(filename, image.To(core::Device("CPU:0")), quality);

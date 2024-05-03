@@ -979,13 +979,6 @@ public:
     /// \return The reference to itself.
     TriangleMesh RemoveUnreferencedVertices();
 
-    std::pair<core::Tensor, core::Tensor> SelectVisible(
-            const core::Tensor &intrinsic_matrix,
-            const core::Tensor &extrinsic_matrix,
-            int width_px,
-            int height_px,
-            const RaycastingScene &rcs);
-
     Image ProjectImagesToAlbedo(
             const std::vector<Image> &images,
             const std::vector<core::Tensor> &intrinsic_matrices,

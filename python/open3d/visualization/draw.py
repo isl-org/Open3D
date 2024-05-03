@@ -92,12 +92,12 @@ def draw(geometry=None,
         on_animation_frame (Callable): Callback for each animation frame update
             with signature::
 
-                Callback(O3DVisualizer, double time) -> None
+                Callback(O3DVisualizer o3dvis, double time) -> None
 
         on_animation_tick (Callable): Callback for each animation time step with
             signature::
 
-                Callback(O3DVisualizer, double tick_duration, double time) -> TickResult
+                Callback(O3DVisualizer o3dvis, double tick_duration, double time) -> TickResult
 
             If the callback returns ``TickResult.REDRAW``, the scene is redrawn.
             It should return ``TickResult.NOCHANGE`` if redraw is not required.

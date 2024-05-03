@@ -1350,31 +1350,71 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
 
 TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
     using namespace t::geometry;
+    using ls = open3d::geometry::LineSet;
     core::Device device = GetParam();
     TriangleMesh sphere =
             TriangleMesh::FromLegacy(*geometry::TriangleMesh::CreateSphere(
-                    1.0, 10, /*create_uv_map=*/true));
-    core::Tensor view = core::Tensor::Zeros({192, 256, 3}, core::Float32);
-    view.Slice(2, 0, 1, 1).Fill(1.0);  // red
+                    1.0, 20, /*create_uv_map=*/true));
+    core::Tensor view[3] = {core::Tensor::Zeros({192, 256, 3}, core::Float32),
+                            core::Tensor::Zeros({192, 256, 3}, core::Float32),
+                            core::Tensor::Zeros({192, 256, 3}, core::Float32)};
+    view[0].Slice(2, 0, 1, 1).Fill(1.0);  // red
+    view[1].Slice(2, 1, 2, 1).Fill(1.0);  // green
+    view[2].Slice(2, 2, 3, 1).Fill(1.0);  // blue
     core::Tensor intrinsic_matrix = core::Tensor::Init<float>(
-            {{256, 0, 96}, {0, 256, 128}, {0, 0, 1}}, device);
-    core::Tensor extrinsic_matrix = core::Tensor::Init<float>(
-            {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 1}, {0, 0, 0, 1}}, device);
+            {{256, 0, 128}, {0, 256, 96}, {0, 0, 1}}, device);
+    core::Tensor extrinsic_matrix[3] = {
+            core::Tensor::Init<float>(
+                    {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 3}, {0, 0, 0, 1}},
+                    device),
+            core::Tensor::Init<float>({{-0.5, 0, -0.8660254, 0},
+                                       {0, 1, 0, 0},
+                                       {0.8660254, 0, -0.5, 3},
+                                       {0, 0, 0, 1}},
+                                      device),
+            core::Tensor::Init<float>({{-0.5, 0, 0.8660254, 0},
+                                       {0, 1, 0, 0},
+                                       {-0.8660254, 0, -0.5, 3},
+                                       {0, 0, 0, 1}},
+                                      device),
+    };
 
     Eigen::Map<Eigen::Matrix3f> e_intrinsic(
             intrinsic_matrix.GetDataPtr<float>());
-    Eigen::Map<Eigen::Matrix4f> e_extrinsic(
-            extrinsic_matrix.GetDataPtr<float>());
-    auto p_camera = open3d::geometry::LineSet::CreateCameraVisualization(
-            256, 192, e_intrinsic.cast<double>(), e_extrinsic.cast<double>());
+    Eigen::Map<Eigen::Matrix4f> e_extrinsic[3] = {
+            Eigen::Map<Eigen::Matrix4f>(
+                    extrinsic_matrix[0].GetDataPtr<float>()),
+            Eigen::Map<Eigen::Matrix4f>(
+                    extrinsic_matrix[1].GetDataPtr<float>()),
+            Eigen::Map<Eigen::Matrix4f>(
+                    extrinsic_matrix[2].GetDataPtr<float>())};
+    std::shared_ptr<ls> p_camera[3] = {
+            ls::CreateCameraVisualization(
+                    256, 192, e_intrinsic.transpose().cast<double>(),
+                    e_extrinsic[0].transpose().cast<double>()),
+            ls::CreateCameraVisualization(
+                    256, 192, e_intrinsic.transpose().cast<double>(),
+                    e_extrinsic[1].transpose().cast<double>()),
+            ls::CreateCameraVisualization(
+                    256, 192, e_intrinsic.transpose().cast<double>(),
+                    e_extrinsic[2].transpose().cast<double>())};
 
-    Image texture = sphere.ProjectImagesToAlbedo(
-            {Image(view)}, {intrinsic_matrix}, {extrinsic_matrix}, 256, true);
-    t::io::WriteImage("texture.png", texture);
-    t::io::WriteTriangleMesh("sphere-projected.obj", sphere);
+    Image albedo = sphere.ProjectImagesToAlbedo(
+            {Image(view[0]), Image(view[1]), Image(view[2])},
+            {intrinsic_matrix, intrinsic_matrix, intrinsic_matrix},
+            {extrinsic_matrix[0], extrinsic_matrix[1], extrinsic_matrix[2]},
+            256, true);
+    utility::LogInfo("Mesh: {}", sphere.ToString());
+    utility::LogInfo("Texture: {}", albedo.ToString());
+    t::io::WriteImage("albedo.png", albedo);
+    /* t::io::WriteTriangleMesh("sphere-projected.obj", sphere); */
+    t::io::WriteTriangleMesh("sphere-projected.glb", sphere);
+    t::io::WriteTriangleMesh("sphere-projected.npz", sphere);
 
     visualization::Draw(
-            {visualization::DrawObject("camera", p_camera, true),
+            {visualization::DrawObject("camera_0", p_camera[0], true),
+             visualization::DrawObject("camera_1", p_camera[1], true),
+             visualization::DrawObject("camera_2", p_camera[2], true),
              visualization::DrawObject{
                      "mesh", std::shared_ptr<TriangleMesh>(&sphere), true}},
             "ProjectImagesToAlbedo", 1024, 768);
