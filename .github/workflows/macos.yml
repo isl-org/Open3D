@@ -103,11 +103,12 @@ jobs:
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
+          OPEN3D_VERSION-FULL="$(grep -F OPEN3D_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
           make -j${NPROC} Open3DViewer
           pushd bin
-          zip -rv open3d-app-macosx-10_15-${{ runner.arch }}.zip Open3D.app
+          zip -rv "open3d-${OPEN3D_VERSION_FULL}-app-macosx-10_15-${{ runner.arch }}.zip" Open3D.app
           ccache -s
 
       - name: Upload package
@@ -132,7 +133,7 @@ jobs:
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15-${{ runner.arch}}
-          path: build/bin/open3d-app-macosx-10_15-${{ runner.arch }}.zip
+          path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
           if-no-files-found: error
 
   fuse-viewer:
@@ -140,6 +141,8 @@ jobs:
     runs-on: [macos-12]
     needs: [MacOS]
     steps:
+      - name: Checkout source code  # for gh release upload
+        uses: actions/checkout@v4
       - name: Download viewer apps
         uses: actions/download-artifact@v4
         with:
@@ -148,15 +151,16 @@ jobs:
 
       - name: Fuse x64 and arm64 viewer apps
         run: |
-          unzip open3d-app-macosx-10_15-X64.zip -d x64
-          unzip open3d-app-macosx-10_15-ARM64.zip -d arm64
+          unzip open3d-*-app-macosx-10_15-X64.zip -d x64
+          unzip open3d-*-app-macosx-10_15-ARM64.zip -d arm64
+          APP_NAME=$(ls open3d-*-app-macosx-10_15-X64.zip)
+          APP_NAME=${APP_NAME/-X64/-universal2}  # includes version
           for i in arm64/Open3D.app/Contents/MacOS/*; do
             filepath=Open3D.app/Contents/MacOS/$(basename $i)
             lipo -create arm64/${filepath} x64/${filepath} -output arm64/${filepath}
           done
           mv arm64/Open3D.app Open3D.app
-          OPEN3D_VERSION-FULL="$(grep -F OPEN3D_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
-          zip -rv "open3d-${OPEN3D_VERSION_FULL}-app-macosx-10_15-universal2.zip" Open3D.app
+          zip -rv "${APP_NAME}" Open3D.app
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
@@ -165,6 +169,8 @@ jobs:
           path: open3d-*-app-macosx-10_15-universal2.zip
           if-no-files-found: error
 
+      - name: Checkout source code
+        uses: actions/checkout@v4
       - name: Update viewer devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
@@ -296,6 +302,8 @@ jobs:
           - is_main: false
             python_version: '3.10'
     steps:
+      - name: Checkout source code  # for gh release upload
+        uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

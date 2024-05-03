@@ -186,7 +186,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
+          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
           Compress-Archive -Path C:\Program Files\Open3D\bin\Open3D -DestinationPath `
             "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
           gh release upload main-devel open3d-app-windows-amd64.zip --clobber
@@ -314,7 +314,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
           gh release upload main-devel ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
           gh release view main-devel
 
