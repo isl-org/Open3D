@@ -171,6 +171,8 @@ if (BUNDLE_OPEN3D_ML)
         open3d_ml
         PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
         GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
+        GIT_TAG origin/main
+        GIT_SHALLOW
         BUILD_IN_SOURCE ON
         # do not configure
         CONFIGURE_COMMAND ""

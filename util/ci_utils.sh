@@ -55,8 +55,14 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         TORCH_GLNX="torch==$TORCH_CUDA_GLNX_VER"
     else
-        TF_ARCH_NAME=tensorflow-cpu
-        TF_ARCH_DISABLE_NAME=tensorflow
+        # tensorflow-cpu wheels for macOS arm64 are not available
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            TF_ARCH_NAME=tensorflow
+            TF_ARCH_DISABLE_NAME=tensorflow
+        else
+            TF_ARCH_NAME=tensorflow-cpu
+            TF_ARCH_DISABLE_NAME=tensorflow
+        fi
         TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
     fi
 
@@ -144,8 +150,8 @@ build_pip_package() {
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
-        # the build system of the main repo expects a master branch. make sure master exists
-        git -C "${OPEN3D_ML_ROOT}" checkout -b master || true
+        # the build system of the main repo expects a main branch. make sure main exists
+        git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
         BUNDLE_OPEN3D_ML=ON
     else
         echo "Open3D-ML not available."
@@ -185,7 +191,7 @@ build_pip_package() {
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
-        "-DBUILD_LIBREALSENSE=OFF"
+        "-DBUILD_LIBREALSENSE=ON"
         "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
@@ -256,7 +262,7 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
-    # FIXME: Needed because Open3D-ML master TF and PyTorch is older than dev.
+    # FIXME: Needed because Open3D-ML main TF and PyTorch is older than dev.
     if [ $BUILD_CUDA_MODULE == ON ]; then
         install_python_dependencies with-cuda
     else
@@ -346,6 +352,7 @@ install_docs_dependencies() {
     sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
     ./util/install_deps_ubuntu.sh assume-yes
     sudo apt-get install --yes cmake
+    sudo apt-get install --yes libxml2-dev libxslt-dev python3-dev
     sudo apt-get install --yes doxygen
     sudo apt-get install --yes texlive
     sudo apt-get install --yes texlive-latex-extra
@@ -420,7 +427,7 @@ build_docs() {
     export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}:$PWD/lib/python_package"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never
+    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never --py_example_rst=never
     python -m pip uninstall --yes open3d
     cd ../build
     set +x # Echo commands off
@@ -440,12 +447,12 @@ build_docs() {
     bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --py_api_rst=always --execute_notebooks=never --sphinx --doxygen
+    python make_docs.py $DOC_ARGS --py_api_rst=always --py_example_rst=always --execute_notebooks=never --sphinx --doxygen
     set +x # Echo commands off
 }
 
 maximize_ubuntu_github_actions_build_space() {
-    # https://github.com/easimon/maximize-build-space/blob/master/action.yml
+    # https://github.com/easimon/maximize-build-space/blob/main/action.yml
     df -h .                                  # => 26GB
     $SUDO rm -rf /usr/share/dotnet           # ~17GB
     $SUDO rm -rf /usr/local/lib/android      # ~11GB

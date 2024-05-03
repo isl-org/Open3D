@@ -303,7 +303,7 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(
         const Eigen::Matrix3d& rotation, const Eigen::Vector3d& center) {
     utility::LogError(
-            "A rotation of a AxisAlignedBoundingBox would not be axis aligned "
+            "A rotation of an AxisAlignedBoundingBox would not be axis-aligned "
             "anymore, convert it to an OrientedBoundingBox first");
     return *this;
 }
@@ -330,6 +330,9 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points) {
     AxisAlignedBoundingBox box;
     if (points.empty()) {
+        utility::LogWarning(
+                "The number of points is 0 when creating axis-aligned bounding "
+                "box.");
         box.min_bound_ = Eigen::Vector3d(0.0, 0.0, 0.0);
         box.max_bound_ = Eigen::Vector3d(0.0, 0.0, 0.0);
     } else {

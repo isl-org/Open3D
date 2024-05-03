@@ -17,6 +17,7 @@ ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
 ARG BUILD_SYCL_MODULE
+ARG CI
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
@@ -135,7 +136,7 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && ccache -M 5G \
  && ccache -s
 
-# Checkout Open3D-ML master branch
+# Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
@@ -158,7 +159,12 @@ RUN source util/ci_utils.sh \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
  && node --version \
@@ -175,7 +181,11 @@ RUN \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
-        export GLIBCXX_USE_CXX11_ABI=OFF; \
+        if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
+            export GLIBCXX_USE_CXX11_ABI=OFF; \
+        else \
+            export GLIBCXX_USE_CXX11_ABI=ON; \
+        fi \
     fi \
  && mkdir build \
  && cd build \
@@ -201,7 +211,9 @@ RUN \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
  && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
- && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi
+ && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi \
+ && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ippicv mkl mkl_install webrtc; fi
+# If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \

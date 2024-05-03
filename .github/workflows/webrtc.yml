@@ -37,10 +37,10 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python version
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
 
@@ -61,9 +61,9 @@ jobs:
           build_webrtc
 
       - name: Upload WebRTC
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: webrtc_release
+          name: webrtc_release_${{ matrix.os }}
           path: |
                  webrtc_*.tar.gz
                  checksum_*.txt
@@ -81,10 +81,10 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python version
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
@@ -105,7 +105,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           echo "Get depot_tools"
           # Checkout to a specific version
-          # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
+          # Ref: https://chromium.googlesource.com/chromium/src/+/main/docs/building_old_revisions.md
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           git -C depot_tools checkout $env:DEPOT_TOOLS_COMMIT
           $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
@@ -167,9 +167,9 @@ jobs:
           cmake -E sha256sum webrtc_${env:WEBRTC_COMMIT_SHORT}_win.zip | Tee-Object -FilePath checksum_win.txt
 
       - name: Upload WebRTC
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: webrtc_release
+          name: webrtc_release_windows
           path: |
                  ${{ env.WORK_DIR }}/webrtc_*.zip
                  ${{ env.WORK_DIR }}/checksum_*.txt

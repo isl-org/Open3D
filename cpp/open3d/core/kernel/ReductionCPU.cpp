@@ -140,7 +140,7 @@ private:
     static void LaunchReductionParallelDim(const Indexer& indexer,
                                            func_t element_kernel) {
         // Prefers outer dimension >= num_threads.
-        const int64_t* indexer_shape = indexer.GetMasterShape();
+        const int64_t* indexer_shape = indexer.GetPrimaryShape();
         const int64_t num_dims = indexer.NumDims();
         int64_t num_threads = utility::EstimateMaxThreads();
 

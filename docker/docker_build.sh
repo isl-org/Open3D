@@ -44,10 +44,10 @@ OPTION:
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
-    cpu-shared                  : Ubuntu CPU shared
-    cpu-shared-release          : Ubuntu CPU shared, release mode
-    cpu-shared-ml               : Ubuntu CPU shared with ML
-    cpu-shared-ml-release       : Ubuntu CPU shared with ML, release mode
+    cpu-shared                  : Ubuntu CPU shared (cxx11_abi)
+    cpu-shared-release          : Ubuntu CPU shared (cxx11_abi), release mode
+    cpu-shared-ml               : Ubuntu CPU shared with ML (pre_cxx11_abi)
+    cpu-shared-ml-release       : Ubuntu CPU shared with ML (pre_cxx11_abi), release mode
 
     # Sycl CPU CI (Dockerfile.ci)
     sycl-shared                : SYCL (oneAPI) with shared lib
@@ -55,10 +55,10 @@ OPTION:
 
     # ML CIs (Dockerfile.ci)
     2-bionic                   : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic, release mode
-    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic, developer mode
-    4-shared-bionic            : CUDA CI, 4-shared-bionic, developer mode
-    4-shared-bionic-release    : CUDA CI, 4-shared-bionic, release mode
+    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), release mode
+    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
+    4-shared-bionic            : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
+    4-shared-bionic-release    : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
     5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
@@ -207,6 +207,7 @@ cuda_wheel_build() {
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg CI="${CI:-}" \
         -t open3d-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd
@@ -249,6 +250,7 @@ ci_build() {
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
+        --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
@@ -314,7 +316,8 @@ ci_build() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-    export BUILD_TENSORFLOW_OPS=OFF
+     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
@@ -329,7 +332,8 @@ ci_build() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-    export BUILD_TENSORFLOW_OPS=OFF
+     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
@@ -375,7 +379,8 @@ cpu-shared_export_env() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-    export BUILD_TENSORFLOW_OPS=OFF
+     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
@@ -406,7 +411,8 @@ cpu-shared-release_export_env() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-    export BUILD_TENSORFLOW_OPS=OFF
+     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
@@ -432,7 +438,7 @@ sycl-shared_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-shared
 
     # https://hub.docker.com/r/intel/oneapi-basekit
-    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-18.04
+    # https://github.com/intel/oneapi-containers/blob/main/images/docker/basekit/Dockerfile.ubuntu-18.04
     export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
@@ -449,7 +455,7 @@ sycl-static_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-static
 
     # https://hub.docker.com/r/intel/oneapi-basekit
-    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-18.04
+    # https://github.com/intel/oneapi-containers/blob/main/images/docker/basekit/Dockerfile.ubuntu-18.04
     export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl

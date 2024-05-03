@@ -192,6 +192,20 @@ The attributes of the triangle mesh have different levels::
                       "normalized"_a = true);
 
     triangle_mesh.def(
+            "get_surface_area", &TriangleMesh::GetSurfaceArea,
+            R"(Computes the surface area of the mesh, i.e., the sum of the individual triangle surfaces.
+
+Example:
+    This computes the surface area of the Stanford Bunny::
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.io.read_triangle_mesh(bunny.path)
+        print('The surface area is', mesh.get_surface_area())
+
+Returns:
+    A scalar describing the surface area of the mesh.
+)");
+
+    triangle_mesh.def(
             "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
             "joggle_inputs"_a = false,
             R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
@@ -224,6 +238,28 @@ Example:
             "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
+    triangle_mesh.def_static(
+            "from_triangle_mesh_model", &TriangleMesh::FromTriangleMeshModel,
+            "model"_a, "vertex_dtype"_a = core::Float32,
+            "triangle_dtype"_a = core::Int64,
+            "device"_a = core::Device("CPU:0"),
+            R"(Convert a TriangleMeshModel (e.g. as read from a file with
+`open3d.io.read_triangle_mesh_model()`) to a dictionary of mesh names to
+triangle meshes with the specified vertex and triangle dtypes and moved to the
+specified device. Only a single material per mesh is supported. Materials common
+to multiple meshes will be duplicated. Textures (as t.geometry.Image) will use
+shared storage on the CPU (GPU resident images for textures is not yet supported).
+
+Returns:
+    Dictionary of names to triangle meshes.
+
+Example:
+    flight_helmet = o3d.data.FlightHelmetModel()
+    model = o3d.io.read_triangle_model(flight_helmet.path)
+    mesh_dict = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
+    o3d.visualization.draw(list({"name": name, "geometry": tmesh} for
+        (name, tmesh) in mesh_dict.items()))
+            )");
     // conversion
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
@@ -692,7 +728,7 @@ Args:
 
 Returns:
     This function creates a face attribute "texture_uvs" and returns a tuple
-    with (max stretch, num_charts, num_partitions) storing the 
+    with (max stretch, num_charts, num_partitions) storing the
     actual amount of stretch, the number of created charts, and the number of
     parallel partitions created.
 
@@ -869,7 +905,7 @@ Example:
                       "max_faces"_a,
                       R"(Partition the mesh by recursively doing PCA.
 
-This function creates a new face attribute with the name "partition_ids" storing 
+This function creates a new face attribute with the name "partition_ids" storing
 the partition id for each face.
 
 Args:
@@ -878,7 +914,7 @@ Args:
 
 Example:
 
-    This code partitions a mesh such that each partition contains at most 20k 
+    This code partitions a mesh such that each partition contains at most 20k
     faces::
 
         import open3d as o3d
@@ -897,15 +933,15 @@ Example:
             R"(Returns a new mesh with the faces selected by a boolean mask.
 
 Args:
-    mask (open3d.core.Tensor): A boolean mask with the shape (N) with N as the 
+    mask (open3d.core.Tensor): A boolean mask with the shape (N) with N as the
         number of faces in the mesh.
-    
+
 Returns:
-    A new mesh with the selected faces.
+    A new mesh with the selected faces. If the original mesh is empty, return an empty mesh.
 
 Example:
 
-    This code partitions the mesh using PCA and then visualized the individual 
+    This code partitions the mesh using PCA and then visualized the individual
     parts::
 
         import open3d as o3d
@@ -924,6 +960,34 @@ Example:
         o3d.visualization.draw(parts)
 
 )");
+
+    triangle_mesh.def(
+            "select_by_index", &TriangleMesh::SelectByIndex, "indices"_a,
+            R"(Returns a new mesh with the vertices selected according to the indices list.
+If an item from the indices list exceeds the max vertex number of the mesh
+or has a negative value, it is ignored.
+
+Args:
+    indices (open3d.core.Tensor): An integer list of indices. Duplicates are
+    allowed, but ignored. Signed and unsigned integral types are accepted.
+
+Returns:
+    A new mesh with the selected vertices and faces built from these vertices.
+    If the original mesh is empty, return an empty mesh.
+
+Example:
+
+    This code selects the top face of a box, which has indices [2, 3, 6, 7]::
+
+        import open3d as o3d
+        import numpy as np
+        box = o3d.t.geometry.TriangleMesh.create_box()
+        top_face = box.select_by_index([2, 3, 6, 7])
+)");
+
+    triangle_mesh.def("remove_unreferenced_vertices",
+                      &TriangleMesh::RemoveUnreferencedVertices,
+                      "Removes unreferenced vertices from the mesh in-place.");
 }
 
 }  // namespace geometry

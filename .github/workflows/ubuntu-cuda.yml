@@ -9,9 +9,10 @@ on:
         default: 'ON'
   push:
     branches:
-      - master
+      - main
   pull_request:
-    types: [opened, reopened, synchronize]
+    # Reduce CI frequency for paid CI.
+    types: [review_requested]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -63,7 +64,7 @@ jobs:
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'false'
       - name: Package code
@@ -73,12 +74,12 @@ jobs:
           tar -czvf Open3D.tar.gz Open3D
           ls -alh
       - name: GCloud CLI auth
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}
@@ -149,20 +150,20 @@ jobs:
 
       - name: Upload package
         if: ${{ env.BUILD_PACKAGE == 'true' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: open3d-devel-linux-x86_64-cuda
+          name: open3d-devel-linux-x86_64-cuda-${{ matrix.CI_CONFIG }}
           path: open3d-devel-linux*.tar.xz
           if-no-files-found: error
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && env.BUILD_PACKAGE == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
             --command="ls -alh \
                        && gsutil cp open3d-devel-linux-*.tar.xz \
-                       gs://open3d-releases-master/devel/"
+                       gs://open3d-releases/devel/"
 
       - name: VM run docker
         run: |
@@ -171,7 +172,7 @@ jobs:
             --command="sudo Open3D/docker/docker_test.sh ${CI_CONFIG}"
 
       - name: VM ccache upload
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \

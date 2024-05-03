@@ -1,0 +1,21 @@
+{% if display_all_docs_versions %}
+{# Add rst-badge after rst-versions for small badge style. #}
+  <div id="furo-versions" class="rst-versions sidebar-tree" role="note" aria-label="versions" tabindex="0">
+      <p class="caption">Docs Version</p>
+      <input type="checkbox" id="checkbox_toggle" class="toctree-checkbox versions-checkbox" role="switch">
+      <label id="versions-label" class="versions-label" for="checkbox_toggle">
+          <div class="visually-hidden">Toggle child pages in navigation</div>
+          <i class="icon">
+            <svg>
+              <use href="#svg-arrow-right"></use>
+            </svg>
+          </i>
+      </label>
+
+    <!-- A hack to include an external page to get around CORS policy -->
+    <!-- https://stackoverflow.com/a/15250208/1255535 -->
+    <div class="rst-other-versions">
+        <script src="https://www.open3d.org/docs/versions.js"></script>
+    </div>
+  </div>
+{% endif %}

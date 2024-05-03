@@ -14,5 +14,9 @@ TEST(FileXYZ, DISABLED_ReadPointCloudFromXYZ) { NotImplemented(); }
 
 TEST(FileXYZ, DISABLED_WritePointCloudToXYZ) { NotImplemented(); }
 
+TEST(FileXYZ, DISABLED_ReadPointCloudInMemoryFromXYZ) { NotImplemented(); }
+
+TEST(FileXYZ, DISABLED_WritePointCloudInMemoryToXYZ) { NotImplemented(); }
+
 }  // namespace tests
 }  // namespace open3d
