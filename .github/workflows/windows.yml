@@ -189,7 +189,7 @@ jobs:
           $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
           Compress-Archive -Path C:\Program Files\Open3D\bin\Open3D -DestinationPath `
             "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
-          gh release upload main-devel open3d-app-windows-amd64.zip --clobber
+          gh release upload main-devel "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" --clobber
           gh release view main-devel
 
       - name: Run C++ unit tests
