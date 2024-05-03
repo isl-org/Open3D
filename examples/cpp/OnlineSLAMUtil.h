@@ -8,6 +8,7 @@
 #include <atomic>
 #include <sstream>
 #include <thread>
+#include <fmt/std.h>
 
 #include "open3d/Open3D.h"
 
