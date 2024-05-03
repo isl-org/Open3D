@@ -17,9 +17,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
-
 jobs:
   headless-docs:
     # Build headless and docs
@@ -31,102 +28,101 @@ jobs:
       - name: Checkout Open3D source code
         uses: actions/checkout@v4
 
-      - name: Maximize build space
-        run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
+      # - name: Maximize build space
+      #   run: |
+      #     source util/ci_utils.sh
+      #     maximize_ubuntu_github_actions_build_space
 
-      - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v4
-        with:
-          repository: isl-org/Open3D-ML
-          path: ${{ env.OPEN3D_ML_ROOT }}
+      # - name: Checkout Open3D-ML source code
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: isl-org/Open3D-ML
+      #     path: ${{ env.OPEN3D_ML_ROOT }}
 
-      - name: Setup cache
-        uses: actions/cache@v4
-        with:
-          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
-          path: ~/.ccache
-          # We include the commit sha in the cache key, as new cache entries are
-          # only created if there is no existing entry for the key yet.
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
-          # Restore any ccache cache entry, if none for
-          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
-          # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-ccache
-      - name: Set up Python version
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.8'
+      # - name: Setup cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+      #     path: ~/.ccache
+      #     # We include the commit sha in the cache key, as new cache entries are
+      #     # only created if there is no existing entry for the key yet.
+      #     key: ${{ runner.os }}-ccache-${{ github.sha }}
+      #     # Restore any ccache cache entry, if none for
+      #     # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+      #     # Common prefix will be used so that ccache can be used across commits.
+      #     restore-keys: |
+      #       ${{ runner.os }}-ccache
+      # - name: Set up Python version
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.11'
 
-      - name: Install dependencies
+      # - name: Install dependencies
+      #   env:
+      #     DEBIAN_FRONTEND: noninteractive
+      #   run: |
+      #     # the build system of the main repo expects a main branch. make sure
+      #     # main exists
+      #     pushd "${OPEN3D_ML_ROOT}"
+      #     git checkout -b main || true
+      #     popd
+      #     source util/ci_utils.sh
+      #     install_docs_dependencies "${OPEN3D_ML_ROOT}"
+      # - name: Build docs
+      #   run: |
+      #     PATH=/usr/lib/ccache:$PATH
+      #     ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+      #     ccache -s
+      #     source util/ci_utils.sh
+      #     build_docs "$DEVELOPER_BUILD"
+      #     ccache -s
+
+      # - name: Upload docs
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: open3d_docs
+      #     path: docs/_out/html
+      #     if-no-files-found: error
+
+      - name: Deploy docs  # Compress and upload the docs, only for main branch
+        # if: ${{ github.ref == 'refs/heads/main' }}
         env:
-          DEBIAN_FRONTEND: noninteractive
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # the build system of the main repo expects a main branch. make sure
-          # main exists
-          pushd "${OPEN3D_ML_ROOT}"
-          git checkout -b main || true
-          popd
-          source util/ci_utils.sh
-          install_docs_dependencies "${OPEN3D_ML_ROOT}"
-      - name: Build docs
-        run: |
-          PATH=/usr/lib/ccache:$PATH
-          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
-          ccache -s
-          source util/ci_utils.sh
-          build_docs "$DEVELOPER_BUILD"
-          ccache -s
-
-      - name: Upload docs
-        uses: actions/upload-artifact@v4
-        with:
-          name: open3d_docs
-          path: docs/_out/html
-          if-no-files-found: error
-
-      - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: 'google-github-actions/auth@v2'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
-
-      - name: Deploy docs
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: |
-          # Compress and upload the docs, only for main branch
-          docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
-          tar_file="${{ github.sha }}_ready.tar.gz"
+          tar_file="${GITHUB_SHA}.tar.gz"
           rm -rf ${tar_file}
-          tar -C ${docs_out_dir} -czvf ${tar_file} html
-          gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
-          echo "Docs archive uploaded to:"
-          echo "https://storage.googleapis.com/open3d-docs/${tar_file}"
+          # Docs in docs/_out/html
+          echo "Test tar file" > $tar_file
+          # tar -C docs/_out -czvf ${tar_file} html
+          gh release upload main-devel ${tar_file} --clobber
 
-      - name: Check wheels and ready documentation archive
-        if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Check release artifacts and ready documentation archive
+        # if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
-                -eq 4 ]; then
-                echo "All wheels and docs available. Making docs ready."
-                # Remove all marker files: Note _ at end of pattern.
-                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
-                # Rename docs archive:
-                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
-                    gs://open3d-docs/${{ github.sha }}.tar.gz
-                # Set holds on new artifacts, release on old
-                gsutil retention temp release gs://open3d-releases/*
-                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
-                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
-            else
-                echo "All wheels / docs not available yet."
-            fi
+            set -x
+            this_sha=$(echo ${GITHUB_SHA} | cut -c 1-6)
+            last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
+            echo "Waiting for all assets to be ready..."
+            n_this_sha_assets=$(gh release view main-devel --json assets --jq ".assets | map(select(.name | contains(\"${this_sha}\"))) | length")
+            while ((n_this_sha_assets < 3)); do
+                sleep 6
+                echo -n "."
+                n_this_sha_assets=$(gh release view main-devel --json assets --jq ".assets | map(select(.name | contains(\"${this_sha}\"))) | length")
+            done
+            echo "All assets ready. Removing release assets more than 3 commits old..."
+            release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
+            for relass in "${release_assets[@]}"; do
+                found=false
+                for last_sha in "${last_shas[@]}"; do
+                    if [[ $relass == *${last_sha}* ]]; then
+                        found=true
+                    fi
+                done
+                if [ $found == false ]; then
+                    #set -x
+                    gh release delete-asset main-devel $relass
+                    #set +x
+                fi
+            done
