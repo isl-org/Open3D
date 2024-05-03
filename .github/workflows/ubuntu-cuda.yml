@@ -156,14 +156,14 @@ jobs:
           path: open3d-devel-linux*.tar.xz
           if-no-files-found: error
 
-      - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
+      - name: Update devel release
+        #if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
+        if: ${{ env.BUILD_PACKAGE == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          gcloud compute ssh "${INSTANCE_NAME}" \
-            --zone="${GCE_ZONE}" \
-            --command="ls -alh \
-                       && gsutil cp open3d-devel-linux-*.tar.xz \
-                       gs://open3d-releases/devel/"
+          gh release upload main-devel open3d-devel-linux-*.tar.xz --clobber
+          gh release view main-devel
 
       - name: VM run docker
         run: |

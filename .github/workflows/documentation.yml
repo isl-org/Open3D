@@ -28,61 +28,61 @@ jobs:
       - name: Checkout Open3D source code
         uses: actions/checkout@v4
 
-      # - name: Maximize build space
-      #   run: |
-      #     source util/ci_utils.sh
-      #     maximize_ubuntu_github_actions_build_space
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
 
-      # - name: Checkout Open3D-ML source code
-      #   uses: actions/checkout@v4
-      #   with:
-      #     repository: isl-org/Open3D-ML
-      #     path: ${{ env.OPEN3D_ML_ROOT }}
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
 
-      # - name: Setup cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
-      #     path: ~/.ccache
-      #     # We include the commit sha in the cache key, as new cache entries are
-      #     # only created if there is no existing entry for the key yet.
-      #     key: ${{ runner.os }}-ccache-${{ github.sha }}
-      #     # Restore any ccache cache entry, if none for
-      #     # ${{ runner.os }}-ccache-${{ github.sha }} exists.
-      #     # Common prefix will be used so that ccache can be used across commits.
-      #     restore-keys: |
-      #       ${{ runner.os }}-ccache
-      # - name: Set up Python version
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: '3.11'
+      - name: Setup cache
+        uses: actions/cache@v4
+        with:
+          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+          path: ~/.ccache
+          # We include the commit sha in the cache key, as new cache entries are
+          # only created if there is no existing entry for the key yet.
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          # Restore any ccache cache entry, if none for
+          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # Common prefix will be used so that ccache can be used across commits.
+          restore-keys: |
+            ${{ runner.os }}-ccache
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      # - name: Install dependencies
-      #   env:
-      #     DEBIAN_FRONTEND: noninteractive
-      #   run: |
-      #     # the build system of the main repo expects a main branch. make sure
-      #     # main exists
-      #     pushd "${OPEN3D_ML_ROOT}"
-      #     git checkout -b main || true
-      #     popd
-      #     source util/ci_utils.sh
-      #     install_docs_dependencies "${OPEN3D_ML_ROOT}"
-      # - name: Build docs
-      #   run: |
-      #     PATH=/usr/lib/ccache:$PATH
-      #     ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
-      #     ccache -s
-      #     source util/ci_utils.sh
-      #     build_docs "$DEVELOPER_BUILD"
-      #     ccache -s
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          # the build system of the main repo expects a main branch. make sure
+          # main exists
+          pushd "${OPEN3D_ML_ROOT}"
+          git checkout -b main || true
+          popd
+          source util/ci_utils.sh
+          install_docs_dependencies "${OPEN3D_ML_ROOT}"
+      - name: Build docs
+        run: |
+          PATH=/usr/lib/ccache:$PATH
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+          ccache -s
+          source util/ci_utils.sh
+          build_docs "$DEVELOPER_BUILD"
+          ccache -s
 
-      # - name: Upload docs
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: open3d_docs
-      #     path: docs/_out/html
-      #     if-no-files-found: error
+      - name: Upload docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d_docs
+          path: docs/_out/html
+          if-no-files-found: error
 
       - name: Deploy docs  # Compress and upload the docs, only for main branch
         # if: ${{ github.ref == 'refs/heads/main' }}
@@ -92,9 +92,9 @@ jobs:
           tar_file="${GITHUB_SHA}.tar.gz"
           rm -rf ${tar_file}
           # Docs in docs/_out/html
-          echo "Test tar file" > $tar_file
-          # tar -C docs/_out -czvf ${tar_file} html
+          tar -C docs/_out -czvf ${tar_file} html
           gh release upload main-devel ${tar_file} --clobber
+          gh release view main-devel
 
       - name: Check release artifacts and ready documentation archive
         # if: ${{ github.ref == 'refs/heads/main' }}
@@ -126,3 +126,4 @@ jobs:
                     #set +x
                 fi
             done
+            gh release view main-devel
