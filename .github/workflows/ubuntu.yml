@@ -88,6 +88,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-devel-*.tar.gz --clobber || true
+          gh release upload main-devel open3d-devel-*.tar.xz --clobber || true
           gh release upload main-devel open3d-viewer-*-Linux.deb --clobber || true
           gh release view main-devel
