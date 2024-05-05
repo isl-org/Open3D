@@ -460,10 +460,10 @@ protected:
 namespace fmt {
 
 template <>
-struct formatter<webrtc::PeerConnectionInterface::SignalingState>
-    : formatter<string_view> {
+struct formatter<webrtc::PeerConnectionInterface::SignalingState> {
+    template <typename FormatContext>
     auto format(const webrtc::PeerConnectionInterface::SignalingState& state,
-                format_context& ctx) const {
+                FormatContext& ctx) const -> decltype(ctx.out()) {
         using namespace webrtc;
         const char* text = nullptr;
         switch (state) {
@@ -479,17 +479,21 @@ struct formatter<webrtc::PeerConnectionInterface::SignalingState>
             case PeerConnectionInterface::SignalingState::kHaveRemoteOffer:
                 text = "kHaveRemoteOffer";
                 break;
-            case webrtc::PeerConnectionInterface::SignalingState::
-                    kHaveRemotePrAnswer:
+            case PeerConnectionInterface::SignalingState::kHaveRemotePrAnswer:
                 text = "kHaveRemotePrAnswer";
                 break;
-            case webrtc::PeerConnectionInterface::SignalingState::kClosed:
+            case PeerConnectionInterface::SignalingState::kClosed:
                 text = "kClosed";
                 break;
             default:
                 text = "unknown";
         }
-        return formatter<string_view>::format(text, ctx);
+        return format_to(ctx.out(), "{}", text);
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
     }
 };
 

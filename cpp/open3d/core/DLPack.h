@@ -195,9 +195,11 @@ typedef struct DLManagedTensor {
 namespace fmt {
 
 template <>
-struct formatter<DLDeviceType> : formatter<string_view> {
-    auto format(const DLDeviceType& c, format_context& ctx) const {
-        string_view text;
+struct formatter<DLDeviceType> {
+    template <typename FormatContext>
+    auto format(const DLDeviceType& c, FormatContext& ctx) const
+            -> decltype(ctx.out()) {
+        const char* text = nullptr;
         switch (c) {
             case kDLCPU:
                 text = "kDLCPU";
@@ -227,7 +229,12 @@ struct formatter<DLDeviceType> : formatter<string_view> {
                 text = "kDLExtDev";
                 break;
         }
-        return formatter<string_view>::format(text, ctx);
+        return format_to(ctx.out(), text);
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
     }
 };
 

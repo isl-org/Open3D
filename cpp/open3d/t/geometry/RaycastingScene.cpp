@@ -1177,10 +1177,10 @@ uint32_t RaycastingScene::INVALID_ID() { return RTC_INVALID_GEOMETRY_ID; }
 
 namespace fmt {
 template <>
-struct formatter<RTCError> : formatter<string_view> {
+struct formatter<RTCError> {
     template <typename FormatContext>
     auto format(const RTCError& c, FormatContext& ctx) {
-        string_view name;
+        const char* name = nullptr;
         switch (c) {
             case RTC_ERROR_NONE:
                 name = "RTC_ERROR_NONE";
@@ -1204,7 +1204,13 @@ struct formatter<RTCError> : formatter<string_view> {
                 name = "RTC_ERROR_CANCELLED";
                 break;
         }
-        return formatter<string_view>::format(name, ctx);
+        // return formatter<string_view>::format(name, ctx);
+        return format_to(ctx.out(), name);
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
     }
 };
 }  // namespace fmt
