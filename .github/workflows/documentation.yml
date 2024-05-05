@@ -106,8 +106,10 @@ jobs:
             last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
             echo "Waiting for all assets to be ready..."
             n_this_sha_assets=$(gh release view main-devel --json assets --jq ".assets | map(select(.name | contains(\"${this_sha}\"))) | length")
-            while ((n_this_sha_assets < 3)); do
-                sleep 6
+            # Total assets from each main branch commmit:
+            # Docs (1) + Python wheels (4x4) + Viewer (3) + C++ libs (4+2+2) = 28,
+            while ((n_this_sha_assets < 16)); do
+                sleep 60
                 echo -n "."
                 n_this_sha_assets=$(gh release view main-devel --json assets --jq ".assets | map(select(.name | contains(\"${this_sha}\"))) | length")
             done

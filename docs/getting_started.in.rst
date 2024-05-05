@@ -13,7 +13,7 @@ interact with it.  You can download the latest stable release app from `Github
 releases <https://github.com/isl-org/Open3D/releases>`__. The latest development
 version (``HEAD`` of ``main`` branch) viewer app is provided here [#]_:
 
-* `Linux (Ubuntu 18.04+ or glibc 2.27+ [#]_) <https://github.com/isl-org/Open3D/releases/download/devel-main/open3d-viewer-@OPEN3D_VERSION_FULL@-Linux.deb>`__
+* `Linux (Ubuntu 18.04+ or glibc 2.27+) <https://github.com/isl-org/Open3D/releases/download/devel-main/open3d-viewer-@OPEN3D_VERSION_FULL@-Linux.deb>`__ [#]_
 * `MacOSX v10.15+ (Intel or Apple Silicon) <https://github.com/isl-org/Open3D/releases/download/devel-main/open3d-@OPEN3D_VERSION_FULL@-app-macosx-10_15-universal2.zip>`__
 * `Windows 10+ (64-bit) <https://github.com/isl-org/Open3D/releases/download/devel-main/open3d-@OPEN3D_VERSION_FULL@-app-windows-amd64.zip>`__
 
@@ -83,7 +83,6 @@ version (``HEAD`` of ``main`` branch):
 .. list-table::
     :stub-columns: 1
     :widths: auto
-   https://github.com/isl-org/Open3D/releases/download/devel-main/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_27_x86_64.whl
 
     * - Linux
       - `Python 3.8 <https://github.com/isl-org/Open3D/releases/download/devel-main/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__

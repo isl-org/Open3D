@@ -103,7 +103,7 @@ jobs:
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
-          OPEN3D_VERSION-FULL="$(grep -F OPEN3D_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
+          OPEN3D_VERSION_FULL="$(grep -F OPEN3D_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
           make -j${NPROC} Open3DViewer
