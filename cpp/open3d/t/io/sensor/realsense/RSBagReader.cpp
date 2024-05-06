@@ -7,6 +7,7 @@
 
 #include "open3d/t/io/sensor/realsense/RSBagReader.h"
 
+#include <fmt/std.h>
 #include <json/json.h>
 
 #include <chrono>

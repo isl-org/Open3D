@@ -2,16 +2,16 @@ include(ExternalProject)
 
 set(FMT_LIB_NAME fmt)
 
-if (MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+if (MSVC)
     # MSVC has errors when building fmt >6, up till 9.1
     # SYCL / DPC++ needs fmt ver <=6 or >= 9.2: https://github.com/fmtlib/fmt/issues/3005
     set(FMT_VER "6.0.0")
     set(FMT_SHA256
         "f1907a58d5e86e6c382e51441d92ad9e23aea63827ba47fd647eacc0d3a16c78")
 else()
-    set(FMT_VER "9.0.0")
+    set(FMT_VER "10.2.1")
     set(FMT_SHA256
-        "9a1e0e9e843a356d65c7604e2c8bf9402b50fe294c355de0095ebd42fb9bd2c5")
+        "1250e4cc58bf06ee631567523f48848dc4596133e163f02615c97f78bab6c811")
 endif()
 
 ExternalProject_Add(
