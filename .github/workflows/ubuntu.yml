@@ -84,10 +84,13 @@ jobs:
           path: open3d-viewer-*-Linux.deb
           if-no-files-found: error
       - name: Update devel release
-        # if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-devel-*.tar.xz --clobber || true
-          gh release upload main-devel open3d-viewer-*-Linux.deb --clobber || true
+          if [ ${BUILD_SHARED_LIBS} == 'ON' ] ; then
+            gh release upload main-devel open3d-devel-*.tar.xz --clobber
+          else
+            gh release upload main-devel open3d-viewer-*-Linux.deb --clobber
+          fi
           gh release view main-devel

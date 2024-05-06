@@ -157,8 +157,7 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release
-        #if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
-        if: ${{ env.BUILD_PACKAGE == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
