@@ -92,7 +92,7 @@ jobs:
           tar_file="open3d-${GITHUB_SHA}-docs.tar.gz"
           rm -rf ${tar_file}
           # Docs in docs/_out/html
-          tar -C docs/_out -czf ${tar_file} html
+          tar -C docs/_out -cvzf ${tar_file} html
 
           echo "Waiting for other release assets..."
           this_sha=$(echo ${GITHUB_SHA} | cut -c 1-6)
@@ -110,7 +110,6 @@ jobs:
           echo "\nAll assets ready. Removing release assets except from last 3 commits: ${last_shas[@]}"
           release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
           last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
-          echo "Waiting for all assets to be ready..."
           for relass in "${release_assets[@]}"; do
               found=false
               for last_sha in "${last_shas[@]}"; do
