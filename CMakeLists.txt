@@ -257,7 +257,8 @@ string(CONCAT OPEN3D_VERSION
     ".${OPEN3D_VERSION_MINOR}"
     ".${OPEN3D_VERSION_PATCH}"
 )
-set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}" CACHE
+    STRING "Open3D full version.")
 # Set additional info
 set(PROJECT_EMAIL       "open3d@intel.com")
 set(PROJECT_DOCS        "https://www.open3d.org/docs")
