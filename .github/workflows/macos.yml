@@ -22,7 +22,6 @@ env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
-  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   MacOS:
@@ -104,11 +103,12 @@ jobs:
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
+          OPEN3D_VERSION_FULL="$(grep -F OPEN3D_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
           make -j${NPROC} Open3DViewer
           pushd bin
-          zip -rv open3d-app-macosx-10_15-${{ runner.arch}}.zip Open3D.app
+          zip -rv "open3d-${OPEN3D_VERSION_FULL}-app-macosx-10_15-${{ runner.arch }}.zip" Open3D.app
           ccache -s
 
       - name: Upload package
@@ -119,31 +119,20 @@ jobs:
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
-      - name: GCloud CLI auth
+      - name: Update package devel release
         if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: 'google-github-actions/auth@v2'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
-
-      - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gsutil cp build/package/${{ env.DEVEL_PKG_NAME }} gs://open3d-releases/devel/
-          echo "Download devel package at: https://storage.googleapis.com/open3d-releases/devel/${{ env.DEVEL_PKG_NAME }}"
+          gh release upload main-devel build/package/${{ env.DEVEL_PKG_NAME }} --clobber
+          gh release view main-devel
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15-${{ runner.arch}}
-          path: build/bin/open3d-app-macosx-10_15-${{ runner.arch}}.zip
+          path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
           if-no-files-found: error
 
   fuse-viewer:
@@ -151,6 +140,8 @@ jobs:
     runs-on: [macos-12]
     needs: [MacOS]
     steps:
+      - name: Checkout source code  # for gh release upload
+        uses: actions/checkout@v4
       - name: Download viewer apps
         uses: actions/download-artifact@v4
         with:
@@ -159,21 +150,34 @@ jobs:
 
       - name: Fuse x64 and arm64 viewer apps
         run: |
-          unzip open3d-app-macosx-10_15-X64.zip -d x64
-          unzip open3d-app-macosx-10_15-ARM64.zip -d arm64
+          unzip open3d-*-app-macosx-10_15-X64.zip -d x64
+          unzip open3d-*-app-macosx-10_15-ARM64.zip -d arm64
+          APP_NAME=$(ls open3d-*-app-macosx-10_15-X64.zip)
+          APP_NAME=${APP_NAME/-X64/-universal2}  # includes version
           for i in arm64/Open3D.app/Contents/MacOS/*; do
             filepath=Open3D.app/Contents/MacOS/$(basename $i)
             lipo -create arm64/${filepath} x64/${filepath} -output arm64/${filepath}
           done
           mv arm64/Open3D.app Open3D.app
-          zip -rv open3d-app-macosx-10_15-universal2.zip Open3D.app
+          zip -rv "${APP_NAME}" Open3D.app
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-macosx-10_15-universal2
-          path: open3d-app-macosx-10_15-universal2.zip
+          path: open3d-*-app-macosx-10_15-universal2.zip
           if-no-files-found: error
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Update viewer devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload main-devel open3d-*-app-macosx-10_15-universal2.zip --clobber
+          gh release view main-devel
+
 
   build-wheel:
     name: Build wheel
@@ -282,28 +286,6 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-      - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: 'google-github-actions/auth@v2'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
-
-      - name: Upload wheel to GCS bucket
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          python_version: ${{ matrix.python_version }}
-        run: |
-          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
-          gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
-          echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
-
   fuse-wheel:
     name: Fuse universal2 wheel
     runs-on: [macos-12]
@@ -319,38 +301,41 @@ jobs:
           - is_main: false
             python_version: '3.10'
     steps:
+      - name: Checkout source code  # for gh release upload
+        uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
+
       - name: Download X64 wheels
         uses: actions/download-artifact@v4
         with:
           pattern: open3d-*macosx*_x86_64.whl
           path: x64_wheels
           merge-multiple: true
+
       - name: Download ARM64 wheels
         uses: actions/download-artifact@v4
         with:
           pattern: open3d-*macosx*_arm64.whl
           path: arm64_wheels
           merge-multiple: true
+
       - name: Fuse x64 and ARM64 wheels
         env:
           python_version: ${{ matrix.python_version }}
         run: |
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           mkdir universal_wheels
-          
           pip install delocate
           delocate-fuse -v x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
-
           # Normalize file name as delocate-fuse doesn't update it
           OLD_WHL_NAME=$(basename x64_wheels/open3d-*${PYTAG}*.whl)
           NEW_WHL_NAME=${OLD_WHL_NAME/x86_64/universal2}
           mv x64_wheels/${OLD_WHL_NAME} universal_wheels/${NEW_WHL_NAME}
-
           echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
+
       - name: Upload merged wheels
         uses: actions/upload-artifact@v4
         with:
@@ -358,27 +343,14 @@ jobs:
           path: universal_wheels/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-      - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: 'google-github-actions/auth@v2'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
-
-      - name: Upload wheel to GCS bucket
+      - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
-          python_version: ${{ matrix.python_version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gsutil cp universal_wheels/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
-          echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
-        
+          gh release upload main-devel universal_wheels/${{ env.PIP_PKG_NAME }} --clobber
+          gh release view main-devel
+
   test-wheel:
     name: Test wheel
     runs-on: ${{ matrix.os }}
@@ -432,45 +404,8 @@ jobs:
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           test_wheel open3d*-"$pi_tag"-*_$(uname -m).whl
 
-      - name: Run Python unit tests (benchmarks)
+      - name: Run Python unit tests
         run: |
           source util/ci_utils.sh
           echo "Running Open3D python tests..."
           run_python_tests
-
-  ready-docs:
-    name: Ready docs archive
-    # no need to run on macOS
-    runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [fuse-wheel, MacOS]
-    steps:
-      - name: GCloud CLI auth
-        uses: 'google-github-actions/auth@v2'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
-      - name: Check wheels and ready documentation archive
-        run: |
-            touch marker_file
-            gsutil cp marker_file gs://open3d-docs/${{ github.sha }}_ready_macos
-            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
-                -eq 4 ]; then
-                echo "All wheels and docs available. Making docs ready."
-                # Remove all marker files: Note _ at end of pattern.
-                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
-                # Rename docs archive:
-                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
-                    gs://open3d-docs/${{ github.sha }}.tar.gz
-                # Set holds on new artifacts, release on old
-                gsutil retention temp release gs://open3d-releases/*
-                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
-                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
-            else
-                echo "All wheels / docs not available yet. Docs not ready."
-            fi
