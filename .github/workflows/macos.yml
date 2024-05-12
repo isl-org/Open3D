@@ -168,8 +168,6 @@ jobs:
           path: open3d-*-app-macosx-10_15-universal2.zip
           if-no-files-found: error
 
-      - name: Checkout source code
-        uses: actions/checkout@v4
       - name: Update viewer devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
