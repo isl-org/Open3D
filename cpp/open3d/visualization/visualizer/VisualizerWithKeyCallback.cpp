@@ -26,6 +26,13 @@ void VisualizerWithKeyCallback::PrintVisualizerHelp() {
     utility::LogInfo(
             "    The default functions of these keys will be overridden.");
     utility::LogInfo("");
+
+    std::string mouse_callbacks = (mouse_move_callback_ ? "MouseMove, " : "");
+    mouse_callbacks += (mouse_scroll_callback_ ? "MouseScroll, " : "");
+    mouse_callbacks += (mouse_button_callback_ ? "MouseButton, " : "");
+    utility::LogInfo("    Custom mouse callbacks registered for: {}",
+                     mouse_callbacks.substr(0, mouse_callbacks.size() - 2));
+    utility::LogInfo("");
 }
 
 void VisualizerWithKeyCallback::RegisterKeyCallback(

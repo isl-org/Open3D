@@ -48,12 +48,35 @@ public:
     void RegisterKeyActionCallback(
             int key, std::function<bool(Visualizer *, int, int)> callback);
 
+    /// Register callback function with access to GLFW mouse actions.
+    ///
+    /// \param callback The callback function. The callback function takes
+    /// `Visualizer *`, and the x and y mouse position inside the window. See
+    /// [GLFW mouse
+    /// position](https://www.glfw.org/docs/latest/input_guide.html#input_mouse
+    ///  for more details.
     void RegisterMouseMoveCallback(
             std::function<bool(Visualizer *, double, double)> callback);
 
+    /// Register callback function with access to GLFW mouse actions.
+    ///
+    /// \param callback The callback function. The callback function takes
+    /// `Visualizer *`, and the x and y scroll values. A normal mouse only
+    /// provides a y scroll value. See [GLFW
+    /// scroll](https://www.glfw.org/docs/latest/input_guide.html#scrolling)
+    ///  for more details.
     void RegisterMouseScrollCallback(
             std::function<bool(Visualizer *, double, double)> callback);
 
+    /// Register callback function with access to GLFW mouse actions.
+    ///
+    /// \param callback The callback function. The callback function takes
+    /// `Visualizer *`, `button`, `action` and `mods` as input and returns a
+    /// boolean indicating UpdateGeometry() needs to be run. The `action` can be
+    /// one of GLFW_RELEASE (0), GLFW_PRESS (1) or GLFW_REPEAT (2), see [GLFW
+    /// input interface](https://www.glfw.org/docs/latest/group__input.html).
+    /// The `mods` specifies the modifier key, see [GLFW modifier
+    /// key](https://www.glfw.org/docs/latest/group__mods.html).
     void RegisterMouseButtonCallback(
             std::function<bool(Visualizer *, int, int, int)> callback);
 
