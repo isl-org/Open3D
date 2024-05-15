@@ -33,6 +33,7 @@ public:
     void PrintVisualizerHelp() override;
     void RegisterKeyCallback(int key,
                              std::function<bool(Visualizer *)> callback);
+
     /// Register callback function with access to GLFW key actions.
     ///
     /// \param key GLFW key value, see [GLFW key
@@ -51,20 +52,22 @@ public:
     /// Register callback function with access to GLFW mouse actions.
     ///
     /// \param callback The callback function. The callback function takes
-    /// `Visualizer *`, and the x and y mouse position inside the window. See
+    /// `Visualizer *`, and the x and y mouse position inside the window and
+    /// returns a boolean indicating if `UpdateGeometry()` needs to be run. See
     /// [GLFW mouse
-    /// position](https://www.glfw.org/docs/latest/input_guide.html#input_mouse
-    ///  for more details.
+    /// position](https://www.glfw.org/docs/latest/input_guide.html#input_mouse)
+    /// for more details.
     void RegisterMouseMoveCallback(
             std::function<bool(Visualizer *, double, double)> callback);
 
     /// Register callback function with access to GLFW mouse actions.
     ///
     /// \param callback The callback function. The callback function takes
-    /// `Visualizer *`, and the x and y scroll values. A normal mouse only
-    /// provides a y scroll value. See [GLFW
-    /// scroll](https://www.glfw.org/docs/latest/input_guide.html#scrolling)
-    ///  for more details.
+    /// `Visualizer *`, and the x and y scroll values and returns a boolean
+    /// indicating if `UpdateGeometry()` needs to be run. A normal mouse only
+    /// provides a y scroll value. See [GLFW mouse
+    /// scrolling](https://www.glfw.org/docs/latest/input_guide.html#scrolling)
+    /// for more details.
     void RegisterMouseScrollCallback(
             std::function<bool(Visualizer *, double, double)> callback);
 

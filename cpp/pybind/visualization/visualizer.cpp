@@ -169,27 +169,47 @@ void pybind_visualizer(py::module &m) {
             .def("register_key_action_callback",
                  &VisualizerWithKeyCallback::RegisterKeyActionCallback,
                  "Function to register a callback function for a key action "
-                 "event. The callback function takes Visualizer, action and "
-                 "mods as input and returns a boolean indicating if "
-                 "UpdateGeometry() needs to be run.",
+                 "event. The callback function takes `Visualizer`, `action` "
+                 "and `mods` as input and returns a boolean indicating if "
+                 "`UpdateGeometry()` needs to be run.  The `action` can be one "
+                 "of `GLFW_RELEASE` (0), `GLFW_PRESS` (1) or `GLFW_REPEAT` "
+                 "(2), see `GLFW input interface "
+                 "<https://www.glfw.org/docs/latest/group__input.html>`__. The "
+                 "`mods` specifies the modifier key, see `GLFW modifier key "
+                 "<https://www.glfw.org/docs/latest/group__mods.html>`__",
                  "key"_a, "callback_func"_a)
 
             .def("register_mouse_move_callback",
                  &VisualizerWithKeyCallback::RegisterMouseMoveCallback,
                  "Function to register a callback function for a mouse move "
-                 "event",
+                 "event. The callback function takes Visualizer, x and y mouse "
+                 "position inside the window as input and returns a boolean "
+                 "indicating if UpdateGeometry() needs to be run. `GLFW mouse "
+                 "position <https://www.glfw.org/docs/latest/"
+                 "input_guide.html#input_mouse>`__ for more details.",
                  "callback_func"_a)
 
             .def("register_mouse_scroll_callback",
                  &VisualizerWithKeyCallback::RegisterMouseScrollCallback,
                  "Function to register a callback function for a mouse scroll "
-                 "event",
+                 "event. The callback function takes Visualizer, x and y mouse "
+                 "scroll offset as input and returns a boolean "
+                 "indicating if UpdateGeometry() needs to be run. `GLFW mouse "
+                 "scrolling <https://www.glfw.org/docs/latest/"
+                 "input_guide.html#scrolling>`__ for more details.",
                  "callback_func"_a)
 
             .def("register_mouse_button_callback",
                  &VisualizerWithKeyCallback::RegisterMouseButtonCallback,
                  "Function to register a callback function for a mouse button "
-                 "event",
+                 "event. The callback function takes `Visualizer`, `button`, "
+                 "`action` and `mods` as input and returns a boolean "
+                 "indicating `UpdateGeometry()` needs to be run. The `action` "
+                 "can be one of GLFW_RELEASE (0), GLFW_PRESS (1) or "
+                 "GLFW_REPEAT (2), see `GLFW input interface "
+                 "<https://www.glfw.org/docs/latest/group__input.html>`__.  "
+                 "The `mods` specifies the modifier key, see `GLFW modifier "
+                 "key <https://www.glfw.org/docs/latest/group__mods.html>`__.",
                  "callback_func"_a);
 
     py::class_<VisualizerWithEditing, PyVisualizer<VisualizerWithEditing>,
