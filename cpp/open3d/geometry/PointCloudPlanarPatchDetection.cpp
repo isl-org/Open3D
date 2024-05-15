@@ -62,7 +62,7 @@ public:
                             const Eigen::Vector3d& min_bound,
                             const Eigen::Vector3d& max_bound,
                             size_t min_points = 1,
-                            double min_size = 0.0)
+                            double min_size = 1e-10)
         : point_cloud_(point_cloud),
           min_points_(min_points),
           min_size_(min_size),
