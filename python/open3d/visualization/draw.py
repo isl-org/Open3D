@@ -152,7 +152,7 @@ def draw(geometry=None,
                           ("Toggle truth/result", toggle_result)])
     """
     gui.Application.instance.initialize()
-    w = O3DVisualizer(title, width, height)
+    w = O3DVisualizer(title, int(width), int(height))
     w.set_background(bg_color, bg_image)
 
     if actions is not None:

@@ -46,6 +46,7 @@
 #include "open3d/t/geometry/kernel/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/UVUnwrapping.h"
 #include "open3d/t/io/ImageIO.h"
+#include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/Optional.h"
 #include "open3d/utility/ParallelScan.h"
 
@@ -1348,22 +1349,26 @@ core::Tensor Project(const core::Tensor &t_xyz,  // contiguous {...,3}
                      const core::Tensor &t_intrinsic_matrix,  // {3,3}
                      const core::Tensor &t_extrinsic_matrix,  // {4,4}
                      core::Tensor &t_xy) {  // contiguous {...,2}
+    utility::LogInfo("K: {}\ncTw: {}", t_intrinsic_matrix.ToString(),
+                     t_extrinsic_matrix.ToString());
     auto xy_shape = t_xyz.GetShape();
     auto dt = t_xyz.GetDtype();
+    auto t_K = t_intrinsic_matrix.To(dt).Contiguous(),
+         t_T = t_extrinsic_matrix.To(dt).Contiguous();
     xy_shape[t_xyz.NumDims() - 1] = 2;
     if (t_xy.GetDtype() != dt || t_xy.GetShape() != xy_shape) {
         t_xy = core::Tensor(xy_shape, dt);
     }
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(t_xyz.GetDtype(), [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dt, [&]() {
         // Eigen is column major
         Eigen::Map<Eigen::MatrixX<scalar_t>> xy(t_xy.GetDataPtr<scalar_t>(), 2,
                                                 t_xy.NumElements() / 2);
         Eigen::Map<const Eigen::MatrixX<scalar_t>> xyz(
                 t_xyz.GetDataPtr<scalar_t>(), 3, t_xyz.NumElements() / 3);
         Eigen::Map<const Eigen::Matrix3<scalar_t>> KT(
-                t_intrinsic_matrix.To(dt).Contiguous().GetDataPtr<scalar_t>());
+                t_K.GetDataPtr<scalar_t>());
         Eigen::Map<const Eigen::Matrix4<scalar_t>> TT(
-                t_extrinsic_matrix.To(dt).Contiguous().GetDataPtr<scalar_t>());
+                t_T.GetDataPtr<scalar_t>());
 
         auto K = KT.transpose();
         auto T = TT.transpose();
@@ -1384,7 +1389,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         bool update_material /*=true*/) {
     using core::None;
     using tk = core::TensorKey;
-    float pixel_foreshortening_threshold = 0.0f;
+    float pixel_foreshortening_threshold = 0.25f;
     constexpr float EPS = 1e-6;
     if (!triangle_attr_.Contains("texture_uvs")) {
         utility::LogError("Cannot find triangle attribute 'texture_uvs'");
@@ -1454,12 +1459,12 @@ Image TriangleMesh::ProjectImagesToAlbedo(
                                             .colwise()
                                             .sum()
                                             .abs();  // ignore face orientation
-        auto footprint =
+        auto footprint_err =
                 (depth * (pixel_foreshortening < pixel_foreshortening_threshold)
-                                 .select(INFINITY, pixel_foreshortening))
-                        .eval();
+                                 .select(INFINITY, pixel_foreshortening));
         // fix for bad normals
-        footprint = footprint.isNaN().select(INFINITY, footprint).eval();
+        auto footprint =
+                footprint_err.isNaN().select(INFINITY, footprint_err).eval();
 
         utility::LogInfo("Image {}, footprint range: {}-{}", i,
                          footprint.minCoeff(), footprint.maxCoeff());
@@ -1495,9 +1500,9 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         }
         uv2xy = uv2xy.Permute({2, 0, 1}).Contiguous();  // {2, ts, ts}
         io::WriteImage("uv2x_" + i_str + ".png",
-                       Image((uv2xy[0].To(core::UInt8))));
+                       Image((uv2xy[0].To(core::UInt16))));
         io::WriteImage("uv2y_" + i_str + ".png",
-                       Image((uv2xy[1].To(core::UInt8))));
+                       Image((uv2xy[1].To(core::UInt16))));
         // albedo[u,v] = image[ i[u,v], j[u,v] ]
         // ij[u,v] ? = identity[ uv[i,j] ]
 

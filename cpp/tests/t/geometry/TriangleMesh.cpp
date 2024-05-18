@@ -1416,7 +1416,8 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
              visualization::DrawObject("camera_1", p_camera[1], true),
              visualization::DrawObject("camera_2", p_camera[2], true),
              visualization::DrawObject{
-                     "mesh", std::shared_ptr<TriangleMesh>(&sphere), true}},
+                     "mesh", std::make_shared<TriangleMesh>(std::move(sphere)),
+                     true}},
             "ProjectImagesToAlbedo", 1024, 768);
 }
 
