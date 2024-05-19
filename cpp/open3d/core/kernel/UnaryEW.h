@@ -49,6 +49,10 @@ void CopyCPU(const Tensor& src, Tensor& dst);
 void CopyCUDA(const Tensor& src, Tensor& dst);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+void CopySYCL(const Tensor& src, Tensor& dst);
+#endif
+
 }  // namespace kernel
 }  // namespace core
 }  // namespace open3d
