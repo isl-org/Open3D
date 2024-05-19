@@ -50,7 +50,7 @@ void Copy(const Tensor& src, Tensor& dst) {
                           src.GetShape(), dst.GetShape());
     }
 
-    // Disbatch to device
+    // Dispatch to device
     Device src_device = src.GetDevice();
     Device dst_device = dst.GetDevice();
     if ((!src_device.IsCPU() && !src_device.IsCUDA() && !src_device.IsSYCL()) ||
