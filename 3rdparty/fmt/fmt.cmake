@@ -1,9 +1,19 @@
 include(ExternalProject)
 
 set(FMT_LIB_NAME fmt)
-set(FMT_VER "10.2.1")
-set(FMT_SHA256
-    "1250e4cc58bf06ee631567523f48848dc4596133e163f02615c97f78bab6c811")
+
+if (MSVC AND BUILD_CUDA_MODULE)
+    # set(FMT_VER "9.1.0")
+    set(FMT_VER "10.1.1")
+    set(FMT_SHA256
+        "78b8c0a72b1c35e4443a7e308df52498252d1cefc2b08c9a97bc9ee6cfe61f8b"
+        # "5dea48d1fcddc3ec571ce2058e13910a0d4a6bab4cc09a809d8b1dd1c88ae6f2"
+        )
+else()
+    set(FMT_VER "10.2.1")
+    set(FMT_SHA256
+        "1250e4cc58bf06ee631567523f48848dc4596133e163f02615c97f78bab6c811")
+endif()
 
 ExternalProject_Add(
     ext_fmt

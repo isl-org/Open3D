@@ -21,6 +21,7 @@
 #include <fmt/core.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
+#include <fmt/std.h>
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
