@@ -16,7 +16,6 @@
 #include <cublas_v2.h>
 #include <cusolverDn.h>
 #include <cusolver_common.h>
-
 #include <fmt/core.h>
 #include <fmt/format.h>
 
@@ -90,7 +89,8 @@ struct formatter<cusolverStatus_t> {
                 text = "CUSOLVER_STATUS_IRS_OUT_OF_RANGE";
                 break;
             case CUSOLVER_STATUS_IRS_NRHS_NOT_SUPPORTED_FOR_REFINE_GMRES:
-                text = "CUSOLVER_STATUS_IRS_NRHS_NOT_SUPPORTED_FOR_REFINE_GMRES";
+                text = "CUSOLVER_STATUS_IRS_NRHS_NOT_SUPPORTED_FOR_REFINE_"
+                       "GMRES";
                 break;
             case CUSOLVER_STATUS_IRS_INFOS_NOT_INITIALIZED:
                 text = "CUSOLVER_STATUS_IRS_INFOS_NOT_INITIALIZED";
