@@ -94,7 +94,7 @@ RUN conda --version \
 # Activate open3d virtualenv
 # This works during docker build. It becomes the prefix of all RUN commands.
 # Ref: https://stackoverflow.com/a/60148365/1255535
-SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-o", "pipefail", "-c"]
 
 # Dependencies: cmake
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
