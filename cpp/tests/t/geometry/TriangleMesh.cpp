@@ -1404,6 +1404,9 @@ TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
     EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(expected_edges));
     expected_edges = core::eigen_converter::EigenVector2iVectorToTensor(
             legacy_mesh.GetNonManifoldEdges(false), core::Int64, device);
+    std::cout << mesh.GetNonManifoldEdges(false).ToString() << std::endl;
+    std::cout << expected_edges.ToString() << std::endl;
+
     EXPECT_TRUE(mesh.GetNonManifoldEdges(false).AllClose(expected_edges));
 
     mesh.RemoveNonManifoldEdges();
