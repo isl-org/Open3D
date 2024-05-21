@@ -117,9 +117,11 @@ cpp_python_linking_uninstall_test() {
 
     # Config-dependent argument: gpu_run_args
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
-        docker_run="docker run --cpus ${NPROC} --gpus all"
+        docker_run="docker run --cpus ${NPROC} --gpus all -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix"
+    elif [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
+        docker_run="docker run --cpus ${NPROC} --device /dev/dri -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix"
     else
-        docker_run="docker run --cpus ${NPROC}"
+        docker_run="docker run --cpus ${NPROC} -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix"
     fi
 
     # Config-dependent argument: pytest_args
@@ -143,6 +145,8 @@ cpp_python_linking_uninstall_test() {
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
         python -m pytest python/test ${pytest_args} -s"
     restart_docker_daemon_if_on_gcloud
+
+    # Visualization examples test
 
     # Command-line tools test
     echo "testing Open3D command-line tools"

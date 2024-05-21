@@ -236,8 +236,8 @@ LineSet LineSet::CreateCameraVisualization(int view_width_px,
                                            const core::Tensor &color) {
     core::AssertTensorShape(intrinsic_in, {3, 3});
     core::AssertTensorShape(extrinsic_in, {4, 4});
-    core::Tensor intrinsic = intrinsic_in.To(core::Float32);
-    core::Tensor extrinsic = extrinsic_in.To(core::Float32);
+    core::Tensor intrinsic = intrinsic_in.To(core::Float32, "CPU:0");
+    core::Tensor extrinsic = extrinsic_in.To(core::Float32, "CPU:0");
 
     // Calculate points for camera visualization
     float w(view_width_px), h(view_height_px), s(scale);
