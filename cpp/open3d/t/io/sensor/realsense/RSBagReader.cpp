@@ -7,7 +7,9 @@
 
 #include "open3d/t/io/sensor/realsense/RSBagReader.h"
 
+#if FMT_VERSION >= 100000
 #include <fmt/std.h>
+#endif
 #include <json/json.h>
 
 #include <chrono>

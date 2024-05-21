@@ -5,7 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#if FMT_VERSION >= 100000
 #include <fmt/std.h>
+#endif
 
 #include <atomic>
 #include <sstream>
