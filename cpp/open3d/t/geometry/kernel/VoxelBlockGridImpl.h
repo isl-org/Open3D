@@ -8,6 +8,10 @@
 #include <atomic>
 #include <cmath>
 
+#if !defined(__CUDACC__)
+#include <tbb/spin_mutex.h>
+#endif
+
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
@@ -346,7 +350,7 @@ void EstimateRangeCPU
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__)
     using std::max;
     using std::min;
 #endif
@@ -463,10 +467,17 @@ void EstimateRangeCPU
                           range_ptr[1] = depth_min;
                       });
 
+#if !defined(__CUDACC__)
+    tbb::spin_mutex estimate_range_mutex;
+    tbb::profiling::set_name(estimate_range_mutex, "EstimateRangeCPU");
+#define LOCAL_LAMBDA_CAPTURE =, &estimate_range_mutex
+#else
+#defined LOCAL_LAMBDA_CAPTURE =
+#endif
     // Pass 1: iterate over rendering fragment array, fill-in range
     core::ParallelFor(
             block_keys.GetDevice(), frag_count * fragment_size * fragment_size,
-            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            [LOCAL_LAMBDA_CAPTURE] OPEN3D_DEVICE(int64_t workload_idx) {
                 int frag_idx = workload_idx / (fragment_size * fragment_size);
                 int local_idx = workload_idx % (fragment_size * fragment_size);
                 int dv = local_idx / fragment_size;
@@ -486,12 +497,12 @@ void EstimateRangeCPU
                 float z_min = frag_ptr[0];
                 float z_max = frag_ptr[1];
                 float* range_ptr = range_map_indexer.GetDataPtr<float>(u, v);
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
                 atomicMinf(&(range_ptr[0]), z_min);
                 atomicMaxf(&(range_ptr[1]), z_max);
 #else
-#pragma omp critical(EstimateRangeCPU)
                 {
+                    tbb::spin_mutex::scoped_lock lock(estimate_range_mutex);
                     range_ptr[0] = min(z_min, range_ptr[0]);
                     range_ptr[1] = max(z_max, range_ptr[1]);
                 }
@@ -501,6 +512,7 @@ void EstimateRangeCPU
 #if defined(__CUDACC__)
     core::cuda::Synchronize();
 #endif
+#undef LOCAL_LAMBDA_CAPTURE
 
     if (needed_frag_count != frag_count) {
         utility::LogInfo("Reallocating {} fragments for EstimateRange (was {})",

@@ -9,6 +9,9 @@
 // Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------
 
+#include <tbb/concurrent_vector.h>
+#include <tbb/parallel_for.h>
+
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 #include <algorithm>
@@ -23,6 +26,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 
@@ -82,52 +86,60 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
     }
 
     std::vector<double> third_eigen_values(points.size());
-#pragma omp parallel for schedule(static) shared(third_eigen_values)
-    for (int i = 0; i < (int)points.size(); i++) {
-        std::vector<int> indices;
-        std::vector<double> dist;
-        int nb_neighbors =
-                kdtree.SearchRadius(points[i], salient_radius, indices, dist);
-        if (nb_neighbors < min_neighbors) {
-            continue;
-        }
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, points.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    std::vector<int> indices;
+                    std::vector<double> dist;
+                    int nb_neighbors = kdtree.SearchRadius(
+                            points[i], salient_radius, indices, dist);
+                    if (nb_neighbors < min_neighbors) {
+                        continue;
+                    }
 
-        Eigen::Matrix3d cov = utility::ComputeCovariance(points, indices);
-        if (cov.isZero()) {
-            continue;
-        }
+                    Eigen::Matrix3d cov =
+                            utility::ComputeCovariance(points, indices);
+                    if (cov.isZero()) {
+                        continue;
+                    }
 
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(cov);
-        const double& e1c = solver.eigenvalues()[2];
-        const double& e2c = solver.eigenvalues()[1];
-        const double& e3c = solver.eigenvalues()[0];
+                    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(cov);
+                    const double& e1c = solver.eigenvalues()[2];
+                    const double& e2c = solver.eigenvalues()[1];
+                    const double& e3c = solver.eigenvalues()[0];
 
-        if ((e2c / e1c) < gamma_21 && e3c / e2c < gamma_32) {
-            third_eigen_values[i] = e3c;
-        }
-    }
+                    if ((e2c / e1c) < gamma_21 && e3c / e2c < gamma_32) {
+                        third_eigen_values[i] = e3c;
+                    }
+                }
+            });
 
-    std::vector<size_t> kp_indices;
+    tbb::concurrent_vector<std::size_t> kp_indices;
     kp_indices.reserve(points.size());
-#pragma omp parallel for schedule(static) shared(kp_indices)
-    for (int i = 0; i < (int)points.size(); i++) {
-        if (third_eigen_values[i] > 0.0) {
-            std::vector<int> nn_indices;
-            std::vector<double> dist;
-            int nb_neighbors = kdtree.SearchRadius(points[i], non_max_radius,
-                                                   nn_indices, dist);
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, points.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    if (third_eigen_values[i] > 0.0) {
+                        std::vector<int> nn_indices;
+                        std::vector<double> dist;
+                        int nb_neighbors = kdtree.SearchRadius(
+                                points[i], non_max_radius, nn_indices, dist);
 
-            if (nb_neighbors >= min_neighbors &&
-                IsLocalMaxima(i, nn_indices, third_eigen_values)) {
-#pragma omp critical
-                kp_indices.emplace_back(i);
-            }
-        }
-    }
+                        if (nb_neighbors >= min_neighbors &&
+                            IsLocalMaxima(i, nn_indices, third_eigen_values)) {
+                            kp_indices.emplace_back(i);
+                        }
+                    }
+                }
+            });
 
     utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints",
                       kp_indices.size());
-    return input.SelectByIndex(kp_indices);
+    return input.SelectByIndex({kp_indices.begin(), kp_indices.end()});
 }
 
 }  // namespace keypoint

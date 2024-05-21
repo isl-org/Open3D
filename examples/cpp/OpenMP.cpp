@@ -62,7 +62,7 @@ void TestMatrixMultiplication(int argc, char **argv) {
     }
 
 #ifdef _OPENMP
-    utility::LogInfo("OpenMP is supported.");
+    utility::LogWarning("OpenMP is support is deprecated.");
 #else
     utility::LogInfo("OpenMP is not supported.");
 #endif

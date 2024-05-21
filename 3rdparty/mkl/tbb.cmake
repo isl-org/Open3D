@@ -26,13 +26,10 @@ find_package(Git QUIET REQUIRED)
 ExternalProject_Add(
     ext_tbb
     PREFIX tbb
-    URL https://github.com/wjakob/tbb/archive/141b0e310e1fb552bdca887542c9c1a8544d6503.tar.gz # Sept 2020
-    URL_HASH SHA256=bb29b76eabf7549660e3dba2feb86ab501469432a15fb0bf2c21e24d6fbc4c72
+    URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.4.0.tar.gz
+    URL_HASH SHA256=021796c7845e155e616f5ecda16daa606ebb4c6f90b996e5c08aebab7a8d3de3
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/tbb"
     UPDATE_COMMAND ""
-    PATCH_COMMAND ${GIT_EXECUTABLE} init
-    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
-        ${CMAKE_CURRENT_LIST_DIR}/0001-Allow-selecttion-of-static-dynamic-MSVC-runtime.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
         -DSTATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
