@@ -858,13 +858,6 @@ Example:
         plt.imshow(texture_tensors['albedo'].numpy())
 )");
 
-    triangle_mesh.def(
-            "project_images_to_albedo", &TriangleMesh::ProjectImagesToAlbedo,
-            "images"_a, "intrinsic_matrices"_a, "extrinsic_matrices"_a,
-            "tex_size"_a = 1024, "update_material"_a = true,
-            py::call_guard<py::gil_scoped_release>(),
-            R"(Create an albedo texture from images of an object taken with a calibrated camera.)");
-
     triangle_mesh.def("extrude_rotation", &TriangleMesh::ExtrudeRotation,
                       "angle"_a, "axis"_a, "resolution"_a = 16,
                       "translation"_a = 0.0, "capping"_a = true,
@@ -1000,10 +993,44 @@ Example:
                       &TriangleMesh::RemoveUnreferencedVertices,
                       "Removes unreferenced vertices from the mesh in-place.");
 
+    py::enum_<BlendingMethod>(m, "BlendingMethod")
+            .value("MAX", BlendingMethod::MAX)
+            .value("AVERAGE", BlendingMethod::AVERAGE);
     triangle_mesh.def("project_images_to_albedo",
                       &TriangleMesh::ProjectImagesToAlbedo, "images"_a,
                       "intrinsic_matrices"_a, "extrinsic_matrices"_a,
-                      "tex_size"_a = 1024, "update_material"_a = true);
+                      "tex_size"_a = 1024, "update_material"_a = true,
+                      "blending_method"_a = BlendingMethod::MAX,
+                      py::call_guard<py::gil_scoped_release>(), R"(
+Create an albedo for the triangle mesh using calibrated images. The triangle
+mesh must have texture coordinates ("texture_uvs" triangle attribute). This works
+by back projecting the images onto the texture surface. Overlapping images are
+blended together in the resulting albedo. For best results, use images captured
+with exposure and white balance lock to reduce the chance of seams in the output
+texture.
+
+Args:
+    images (List[open3d.t.geometry.Image]): List of images.
+    intrinsic_matrices (List[open3d.core.Tensor]): List of (3,3) intrinsic matrices describing
+        the pinhole camera.
+    extrinsic_matrices (List[open3d.core.Tensor]): List of (4,4) extrinsic matrices describing
+        the position and orientation of the camera.
+    tex_size (int): Output albedo texture size. This is a square image, so
+        only one side is needed.
+    update_material (bool): Whether to update the material of the triangle
+        mesh, possibly overwriting an existing albedo texture.
+    blending_method (BlendingMethod) enum specifying the blending
+        method for overlapping images::
+
+        - `MAX`: For each texel, pick the input pixel with the max weight from
+        all overlapping images. This creates sharp textures but may have
+        visible seams.
+        - `AVERAGE`: The output texel value is the weighted sum of input
+        pixels. This creates smooth blending without seams, but the results
+        may be blurry.
+
+Returns:
+    Image with albedo texture.)");
 }
 
 }  // namespace geometry

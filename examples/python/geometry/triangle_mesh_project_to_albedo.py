@@ -1,22 +1,62 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2023 www.open3d.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+"""This example demonstrates project_image_to_albedo. Use create_dataset mode to
+render images of a 3D mesh or model from different viewpoints.
+albedo_from_dataset mode then uses the calibrated images to re-create the albedo
+texture for the mesh.
+"""
 import argparse
 from pathlib import Path
 import subprocess as sp
+import time
 import numpy as np
 import open3d as o3d
 from open3d.visualization import gui, rendering, O3DVisualizer
 from open3d.core import Tensor
 
 
+def download_smithsonian_baluster_vase():
+    """Download the Smithsonian Baluster Vase 3D model."""
+    vase_url = 'https://3d-api.si.edu/content/document/3d_package:d8c62634-4ebc-11ea-b77f-2e728ce88125/resources/F1980.190%E2%80%93194_baluster_vase-150k-4096.glb'
+    import urllib.request
+
+    def show_progress(block_num, block_size, total_size):
+        total_size = total_size >> 20 if total_size > 0 else "??"  # Convert to MB if known
+        print(
+            "Downloading F1980_baluster_vase.glb... "
+            f"{(block_num * block_size) >>20}MB / {total_size}MB",
+            end="\r")
+
+    urllib.request.urlretrieve(vase_url,
+                               filename="F1980_baluster_vase.glb",
+                               reporthook=show_progress)
+    print("\nDownload complete.")
+
+
 def create_dataset(meshfile, n_images=10, movie=False):
+    """Render images of a 3D mesh from different viewpoints. These form a
+    synthetic dataset to test the project_images_to_albedo function.
+    """
+    # Adjust these parameters to properly frame your model.
+    # Window system pixel scaling (e.g. 1 for normal, 2 for HiDPI / retina display)
     SCALING = 2
-    width, height = 1024, 1024
+    width, height = 1024, 1024  # image width, height
     focal_length = 512
+    d_camera_obj = 0.3  # distance from camera to object
     K = np.array([[focal_length, 0, width / 2], [0, focal_length, height / 2],
                   [0, 0, 1]])
+    t = np.array([0, 0, d_camera_obj])  # origin / object in camera ref frame
+
     model = o3d.io.read_triangle_model(meshfile)
+    # DefaultLit shader will produce non-uniform images with specular
+    # highlights, etc. These should be avoided to accurately capture the diffuse
+    # albedo
     unlit = rendering.MaterialRecord()
     unlit.shader = "unlit"
-    t = np.array([0, 0, 0.3])  # origin / object in camera ref frame
 
     def rotate_camera_and_shoot(o3dvis):
         Rts = []
@@ -52,6 +92,8 @@ def create_dataset(meshfile, n_images=10, movie=False):
                    check=True)
         print("\nDone.")
 
+    print("If the object is properly framed in the GUI window, click on the "
+          "'Save Images' action in the menu.")
     o3d.visualization.draw([{
         'geometry': model,
         'name': meshfile.name,
@@ -61,12 +103,6 @@ def create_dataset(meshfile, n_images=10, movie=False):
                            width=int(width / SCALING),
                            height=int(height / SCALING),
                            actions=[("Save Images", rotate_camera_and_shoot)])
-
-    # Linux only :-(
-    # render = rendering.OffscreenRenderer(width, height)
-    # render.scene.add_geometry(model)
-    # img = render.render_to_image()
-    # o3d.io.write_image("render-image.jpg", img)
 
 
 def albedo_from_images(meshfile, calib_data_file):
@@ -79,9 +115,11 @@ def albedo_from_images(meshfile, calib_data_file):
     Rts = list(Tensor(Rt) for Rt in calib["Rts"])
     images = list(o3d.t.io.read_image(imfile) for imfile in calib["images"])
     calib.close()
-    # breakpoint()
+    start = time.time()
     albedo = tmeshes[0].project_images_to_albedo(images, Ks, Rts, 1024)
+    print(f"project_images_to_albedo ran in {time.time()-start:.2f}s")
     o3d.t.io.write_image("albedo.png", albedo)
+    o3d.t.io.write_triangle_mesh(meshfile.stem + "_albedo.glb", tmeshes[0])
     cam_vis = list({
         "name":
             f"camera-{i:02}",
@@ -94,19 +132,24 @@ def albedo_from_images(meshfile, calib_data_file):
         "geometry": tmeshes[0]
     }],
                            show_ui=True)
-    o3d.t.io.write_triangle_mesh(meshfile.stem + "_albedo.glb", tmeshes[0])
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action",
                         choices=('create_dataset', 'albedo_from_images'))
-    parser.add_argument("meshfile", type=Path)
+    parser.add_argument("--meshfile",
+                        type=Path,
+                        default=".",
+                        help="Path to mesh file.")
     parser.add_argument("--n-images",
                         type=int,
                         default=10,
                         help="Number of images to render.")
+    parser.add_argument("--download_sample_model",
+                        help="Download a sample 3D model for this example.",
+                        action="store_true")
     parser.add_argument(
         "--movie",
         action="store_true",
@@ -116,6 +159,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.action == "create_dataset":
+        if args.download_sample_model:
+            download_smithsonian_baluster_vase()
+            args.meshfile = "F1980_baluster_vase.glb"
+        if args.meshfile == Path("."):
+            parser.error("Please provide a path to a mesh file, or use "
+                         "--download_sample_model.")
         create_dataset(args.meshfile, n_images=args.n_images, movie=args.movie)
     else:
         albedo_from_images(args.meshfile, "cameras.npz")

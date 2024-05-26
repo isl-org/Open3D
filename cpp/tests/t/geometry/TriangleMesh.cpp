@@ -8,10 +8,12 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "core/CoreTest.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
@@ -1350,7 +1352,6 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
 
 TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
     using namespace t::geometry;
-    using ls = open3d::geometry::LineSet;
     core::Device device = GetParam();
     TriangleMesh sphere =
             TriangleMesh::FromLegacy(*geometry::TriangleMesh::CreateSphere(
@@ -1379,46 +1380,22 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
                                       device),
     };
 
-    Eigen::Map<Eigen::Matrix3f> e_intrinsic(
-            intrinsic_matrix.GetDataPtr<float>());
-    Eigen::Map<Eigen::Matrix4f> e_extrinsic[3] = {
-            Eigen::Map<Eigen::Matrix4f>(
-                    extrinsic_matrix[0].GetDataPtr<float>()),
-            Eigen::Map<Eigen::Matrix4f>(
-                    extrinsic_matrix[1].GetDataPtr<float>()),
-            Eigen::Map<Eigen::Matrix4f>(
-                    extrinsic_matrix[2].GetDataPtr<float>())};
-    std::shared_ptr<ls> p_camera[3] = {
-            ls::CreateCameraVisualization(
-                    256, 192, e_intrinsic.transpose().cast<double>(),
-                    e_extrinsic[0].transpose().cast<double>()),
-            ls::CreateCameraVisualization(
-                    256, 192, e_intrinsic.transpose().cast<double>(),
-                    e_extrinsic[1].transpose().cast<double>()),
-            ls::CreateCameraVisualization(
-                    256, 192, e_intrinsic.transpose().cast<double>(),
-                    e_extrinsic[2].transpose().cast<double>())};
-
     Image albedo = sphere.ProjectImagesToAlbedo(
             {Image(view[0]), Image(view[1]), Image(view[2])},
             {intrinsic_matrix, intrinsic_matrix, intrinsic_matrix},
             {extrinsic_matrix[0], extrinsic_matrix[1], extrinsic_matrix[2]},
             256, true);
-    utility::LogInfo("Mesh: {}", sphere.ToString());
-    utility::LogInfo("Texture: {}", albedo.ToString());
-    t::io::WriteImage("albedo.png", albedo);
-    /* t::io::WriteTriangleMesh("sphere-projected.obj", sphere); */
-    t::io::WriteTriangleMesh("sphere-projected.glb", sphere);
-    t::io::WriteTriangleMesh("sphere-projected.npz", sphere);
 
-    visualization::Draw(
-            {visualization::DrawObject("camera_0", p_camera[0], true),
-             visualization::DrawObject("camera_1", p_camera[1], true),
-             visualization::DrawObject("camera_2", p_camera[2], true),
-             visualization::DrawObject{
-                     "mesh", std::make_shared<TriangleMesh>(std::move(sphere)),
-                     true}},
-            "ProjectImagesToAlbedo", 1024, 768);
+    EXPECT_TRUE(sphere.HasMaterial());
+    EXPECT_TRUE(sphere.GetMaterial().HasAlbedoMap());
+    EXPECT_TRUE(albedo.AsTensor().GetShape().IsCompatible({256, 256, 3}));
+    EXPECT_TRUE(albedo.GetDtype() == core::UInt8);
+    core::Tensor mean_color_ref =
+            core::Tensor::Init<float>({92.465515, 71.62926, 67.55928});
+    EXPECT_TRUE(albedo.AsTensor()
+                        .To(core::Float32)
+                        .Mean({0, 1})
+                        .AllClose(mean_color_ref));
 }
 
 }  // namespace tests

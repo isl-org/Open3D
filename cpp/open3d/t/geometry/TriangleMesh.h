@@ -26,6 +26,9 @@ namespace geometry {
 class LineSet;
 class RaycastingScene;
 
+/// Texture Blending method for ProjectImagesToAlbedo() from overlapping images.
+enum class BlendingMethod { MAX, AVERAGE };
+
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
 ///
@@ -979,12 +982,38 @@ public:
     /// \return The reference to itself.
     TriangleMesh RemoveUnreferencedVertices();
 
+    /// Create an albedo for the triangle mesh using calibrated images. The
+    /// triangle mesh must have texture coordinates ("texture_uvs" triangle
+    /// attribute). This works by back projecting the images onto the texture
+    /// surface. Overlapping images are blended together in the resulting
+    /// albedo. For best results, use images captured with exposure and white
+    /// balance lock to reduce the chance of seams in the output texture.
+    ///
+    /// \param images vector of images.
+    /// \param intrinsic_matrices vector of {3,3} intrinsic matrices describing
+    /// the pinhole camera.
+    /// \param extrinsic_matrices vector of {4,4} extrinsic matrices describing
+    /// the position and orientation of the camera.
+    /// \param tex_size Output albedo texture size. This is a square image, so
+    /// only one side is needed.
+    /// \param update_material Whether to update the material of the triangle
+    /// mesh, possibly overwriting an existing albedo texture.
+    /// \param blending_method BlendingMethod enum specifying the blending
+    /// method for overlapping images:
+    ///     - MAX: For each texel, pick the input pixel with the max weight from
+    ///     all overlapping images. This creates sharp textures but may have
+    ///     visible seams.
+    ///     - AVERAGE: The output texel value is the weighted sum of input
+    ///     pixels. This creates smooth blending without seams, but the results
+    ///     may be blurry.
+    /// \return Image with albedo texture
     Image ProjectImagesToAlbedo(
             const std::vector<Image> &images,
             const std::vector<core::Tensor> &intrinsic_matrices,
             const std::vector<core::Tensor> &extrinsic_matrices,
             int tex_size = 1024,
-            bool update_material = true);
+            bool update_material = true,
+            BlendingMethod blending_method = BlendingMethod::MAX);
 
 protected:
     core::Device device_ = core::Device("CPU:0");
