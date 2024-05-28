@@ -405,8 +405,7 @@ public:
                                              const core::Tensor &intrinsic,
                                              const core::Tensor &extrinsic,
                                              double scale,
-                                             const core::Tensor &color = {}
-                                             );
+                                             const core::Tensor &color = {});
 
 protected:
     core::Device device_ = core::Device("CPU:0");

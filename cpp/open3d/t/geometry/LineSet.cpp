@@ -273,7 +273,6 @@ LineSet LineSet::CreateCameraVisualization(int view_width_px,
                                                   {0, 6},
                                                   {0, 7}});
 
-    // Convert Eigen data to Tensors
     LineSet lineset(points, lines);
     if (color.NumElements() == 3) {
         lineset.PaintUniformColor(color);
