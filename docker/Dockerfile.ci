@@ -87,7 +87,12 @@ RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
         wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh; \
         bash Miniconda3-latest-Linux-x86_64.sh -b; \
         rm Miniconda3-latest-Linux-x86_64.sh; \
+    else \
+        wget -q https://registrationcenter-download.intel.com/akdlm/IRC_NAS/063bda92-d923-4acd-8745-c40090f05217/intelpython3-2024.1.0_814-Linux-x86_64.sh; \
+        bash intelpython3-2024.1.0_814-Linux-x86_64.sh -b -u -p /opt/intel/oneapi/intelpython/latest; \
+        rm intelpython3-2024.1.0_814-Linux-x86_64.sh; \
     fi
+
 RUN conda --version \
  && conda create -y -n open3d python=${PYTHON_VERSION}
 
@@ -177,9 +182,11 @@ RUN \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
         export GLIBCXX_USE_CXX11_ABI=ON; \
+        export BUILD_ISPC_MODULE=OFF; \
     else \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
+        export BUILD_ISPC_MODULE=ON; \
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
         if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
             export GLIBCXX_USE_CXX11_ABI=OFF; \
@@ -194,6 +201,7 @@ RUN \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
           -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
+          -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
