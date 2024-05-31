@@ -64,6 +64,11 @@ else()
 endif()
 
 
+if(BUILD_SYCL_MODULE)
+    set(ISA_ARGS -DEMBREE_SYCL_SUPPORT=ON)
+endif()
+
+
 ExternalProject_Add(
     ext_embree
     PREFIX embree

@@ -191,9 +191,11 @@ RUN \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
         export GLIBCXX_USE_CXX11_ABI=ON; \
+        export BUILD_ISPC_MODULE=OFF; \
     else \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
+        export BUILD_ISPC_MODULE=ON; \
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
         if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
             export GLIBCXX_USE_CXX11_ABI=OFF; \
@@ -208,11 +210,12 @@ RUN \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
           -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
+          -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
-          -DBUILD_COMMON_ISPC_ISAS=ON \
+          -DBUILD_COMMON_ISPC_ISAS=${BUILD_ISPC_MODULE}  \
           -DGLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI} \
           -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
           -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
