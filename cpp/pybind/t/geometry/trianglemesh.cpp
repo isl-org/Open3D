@@ -993,9 +993,21 @@ Example:
                       &TriangleMesh::RemoveUnreferencedVertices,
                       "Removes unreferenced vertices from the mesh in-place.");
 
-    py::enum_<BlendingMethod>(m, "BlendingMethod")
-            .value("MAX", BlendingMethod::MAX)
-            .value("AVERAGE", BlendingMethod::AVERAGE);
+    py::enum_<BlendingMethod>(m, "BlendingMethod", py::arithmetic())
+            .value("MAX", BlendingMethod::MAX,
+                   "For each texel, pick the input pixel with the max weight "
+                   "from all overlapping images. This creates sharp textures "
+                   "but may have visible seams.")
+            .value("AVERAGE", BlendingMethod::AVERAGE,
+                   "The output texel value is the weighted sum of input "
+                   "pixels. This creates smooth blending without seams, but "
+                   "the results may be blurry.")
+            .value("COLOR_CORRECTION", BlendingMethod::COLOR_CORRECTION,
+                   "Try to match white balance and exposure settings for the "
+                   "images with a linear 3 channel contrast + brightness "
+                   "correction for each image. Also detects and masks specular "
+                   "highlights and saturated regions. This can be combined "
+                   "with either the `MAX` or `AVERAGE` blending methods.");
     triangle_mesh.def("project_images_to_albedo",
                       &TriangleMesh::ProjectImagesToAlbedo, "images"_a,
                       "intrinsic_matrices"_a, "extrinsic_matrices"_a,
@@ -1028,6 +1040,11 @@ Args:
         - `AVERAGE`: The output texel value is the weighted sum of input
         pixels. This creates smooth blending without seams, but the results
         may be blurry.
+        - `COLOR_CORRECTION`: Try to match white balance and exposure
+        settings for the images with a linear 3 channel contrast +
+        brightness correction for each image. Also detects and masks
+        specular highlights and saturated regions. This can be combined with
+        either the MAX or AVERAGE blending methods.
 
 Returns:
     Image with albedo texture.)");

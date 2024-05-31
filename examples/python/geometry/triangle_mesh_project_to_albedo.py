@@ -38,8 +38,9 @@ def download_smithsonian_baluster_vase():
 
 
 def create_dataset(meshfile, n_images=10, movie=False):
-    """Render images of a 3D mesh from different viewpoints. These form a
-    synthetic dataset to test the project_images_to_albedo function.
+    """Render images of a 3D mesh from different viewpoints, covering the
+    northern hemisphere. These form a synthetic dataset to test the
+    project_images_to_albedo function.
     """
     # Adjust these parameters to properly frame your model.
     # Window system pixel scaling (e.g. 1 for normal, 2 for HiDPI / retina display)
@@ -63,12 +64,25 @@ def create_dataset(meshfile, n_images=10, movie=False):
         images = []
         o3dvis.scene.scene.enable_sun_light(False)
         print("Rendering images: ", end='', flush=True)
+        n_0 = 2 * n_images // 3
+        n_1 = n_images - n_0 - 1
         for n in range(n_images):
-            theta = n * (2 * np.pi) / n_images
             Rt = np.eye(4)
             Rt[:3, 3] = t
-            Rt[:3, :3] = o3d.geometry.Geometry3D.get_rotation_matrix_from_zyx(
-                [np.pi, theta, 0])
+            if n < n_0:
+                theta = n * (2 * np.pi) / n_0
+                Rt[:3, :
+                   3] = o3d.geometry.Geometry3D.get_rotation_matrix_from_zyx(
+                       [np.pi, theta, 0])
+            elif n < n_images - 1:
+                theta = (n - n_0) * (2 * np.pi) / n_1
+                Rt[:3, :
+                   3] = o3d.geometry.Geometry3D.get_rotation_matrix_from_xyz(
+                       [np.pi / 4, theta, np.pi])
+            else:  # one image from the top
+                Rt[:3, :
+                   3] = o3d.geometry.Geometry3D.get_rotation_matrix_from_zyx(
+                       [np.pi, 0, -np.pi / 2])
             Rts.append(Rt)
             o3dvis.setup_camera(K, Rt, width, height)
             o3dvis.post_redraw()
@@ -90,6 +104,7 @@ def create_dataset(meshfile, n_images=10, movie=False):
                 "glob", "-i", "render-*.jpg", "-y", meshfile.stem + ".mp4"
             ],
                    check=True)
+        o3dvis.close()
         print("\nDone.")
 
     print("If the object is properly framed in the GUI window, click on the "
@@ -105,7 +120,7 @@ def create_dataset(meshfile, n_images=10, movie=False):
                            actions=[("Save Images", rotate_camera_and_shoot)])
 
 
-def albedo_from_images(meshfile, calib_data_file):
+def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
 
     model = o3d.io.read_triangle_model(meshfile)
     tmeshes = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
@@ -116,7 +131,10 @@ def albedo_from_images(meshfile, calib_data_file):
     images = list(o3d.t.io.read_image(imfile) for imfile in calib["images"])
     calib.close()
     start = time.time()
-    albedo = tmeshes[0].project_images_to_albedo(images, Ks, Rts, 1024)
+    albedo = tmeshes[0].project_images_to_albedo(
+        images, Ks, Rts, 1024, True, o3d.t.geometry.BlendingMethod.MAX)
+    albedo = albedo.linear_transform(scale=albedo_contrast)  # brighten albedo
+    tmeshes[0].material.texture_maps["albedo"] = albedo
     print(f"project_images_to_albedo ran in {time.time()-start:.2f}s")
     o3d.t.io.write_image("albedo.png", albedo)
     o3d.t.io.write_triangle_mesh(meshfile.stem + "_albedo.glb", tmeshes[0])
@@ -165,6 +183,8 @@ if __name__ == "__main__":
         if args.meshfile == Path("."):
             parser.error("Please provide a path to a mesh file, or use "
                          "--download_sample_model.")
+        if args.n_images < 10:
+            parser.error("Atleast 10 images should be used!")
         create_dataset(args.meshfile, n_images=args.n_images, movie=args.movie)
     else:
         albedo_from_images(args.meshfile, "cameras.npz")

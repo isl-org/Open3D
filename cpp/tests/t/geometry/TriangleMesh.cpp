@@ -1352,6 +1352,8 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
 
 TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
     using namespace t::geometry;
+    using ::testing::ElementsAre;
+    using ::testing::FloatEq;
     core::Device device = GetParam();
     TriangleMesh sphere =
             TriangleMesh::FromLegacy(*geometry::TriangleMesh::CreateSphere(
@@ -1390,12 +1392,12 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
     EXPECT_TRUE(sphere.GetMaterial().HasAlbedoMap());
     EXPECT_TRUE(albedo.AsTensor().GetShape().IsCompatible({256, 256, 3}));
     EXPECT_TRUE(albedo.GetDtype() == core::UInt8);
-    core::Tensor mean_color_ref =
-            core::Tensor::Init<float>({92.465515, 71.62926, 67.55928});
-    EXPECT_TRUE(albedo.AsTensor()
+    EXPECT_THAT(albedo.AsTensor()
                         .To(core::Float32)
                         .Mean({0, 1})
-                        .AllClose(mean_color_ref));
+                        .ToFlatVector<float>(),
+                ElementsAre(FloatEq(92.465515), FloatEq(71.62926),
+                            FloatEq(67.55928)));
 }
 
 }  // namespace tests

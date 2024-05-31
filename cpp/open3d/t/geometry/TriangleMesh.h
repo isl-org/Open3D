@@ -8,6 +8,7 @@
 #pragma once
 
 #include <list>
+#include <type_traits>
 #include <unordered_map>
 
 #include "open3d/core/Tensor.h"
@@ -27,7 +28,23 @@ class LineSet;
 class RaycastingScene;
 
 /// Texture Blending method for ProjectImagesToAlbedo() from overlapping images.
-enum class BlendingMethod { MAX, AVERAGE };
+enum class BlendingMethod : uint8_t {
+    ///  For each texel, pick the input pixel with the max weight from all
+    ///  overlapping images. This creates sharp textures but may have visible
+    ///  seams.
+    MAX = 1 << 0,
+    ///   The output texel value is the weighted sum of input pixels. This
+    ///   creates smooth blending without seams, but the results may be blurry.
+    AVERAGE = 1 << 1,
+    ///  Try to match white balance and exposure settings for the images with a
+    ///  linear 3 channel contrast + brightness correction for each image. Also
+    ///  detects and masks specular highlights and saturated regions. This can
+    ///  be combined with either the MAX or AVERAGE blending methods.
+    COLOR_CORRECTION = 1 << 2
+};
+#define TEST_ENUM_FLAG(ENUM, VALUE, FLAG)               \
+    (static_cast<std::underlying_type_t<ENUM>>(VALUE) & \
+     static_cast<std::underlying_type_t<ENUM>>(ENUM::FLAG))
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -1006,6 +1023,11 @@ public:
     ///     - AVERAGE: The output texel value is the weighted sum of input
     ///     pixels. This creates smooth blending without seams, but the results
     ///     may be blurry.
+    ///     - COLOR_CORRECTION: Try to match white balance and exposure
+    ///     settings for the images with a linear 3 channel contrast +
+    ///     brightness correction for each image. Also detects and masks
+    ///     specular highlights and saturated regions. This can be combined with
+    ///     either the MAX or AVERAGE blending methods.
     /// \return Image with albedo texture
     Image ProjectImagesToAlbedo(
             const std::vector<Image> &images,
