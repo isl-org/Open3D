@@ -265,9 +265,13 @@ endfunction()
 #    LIBRARIES
 #        the expected library variable names to be found in <pkg>.
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
+#    PATHS
+#    DEPENDS
 #
 function(open3d_find_package_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;VERSION;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET"
+        "PACKAGE;VERSION;PACKAGE_VERSION_VAR"
+        "TARGETS;INCLUDE_DIRS;LIBRARIES;PATHS;DEPENDS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_find_package_3rdparty_library(${name} ${ARGN})")
@@ -287,6 +291,9 @@ function(open3d_find_package_3rdparty_library name)
     endif()
     if(arg_QUIET)
         list(APPEND find_package_args "QUIET")
+    endif()
+    if (arg_PATHS)
+        list(APPEND find_package_args PATHS ${arg_PATHS} NO_DEFAULT_PATH)
     endif()
     find_package(${arg_PACKAGE} ${find_package_args})
     if(${arg_PACKAGE}_FOUND)
@@ -318,6 +325,9 @@ function(open3d_find_package_3rdparty_library name)
                 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES ${arg_PACKAGE})
                 set(Open3D_3RDPARTY_EXTERNAL_MODULES ${Open3D_3RDPARTY_EXTERNAL_MODULES} PARENT_SCOPE)
             endif()
+        endif()
+        if(arg_DEPENDS)
+            add_dependencies(${name} ${arg_DEPENDS})
         endif()
         set(${name}_FOUND TRUE PARENT_SCOPE)
         set(${name}_VERSION ${${arg_PACKAGE_VERSION_VAR}} PARENT_SCOPE)
@@ -424,7 +434,7 @@ function(open3d_import_3rdparty_library name)
         else()
             set(HIDDEN 0)
         endif()
-        if(arg_GROUPED)
+        if(arg_GROUPED AND LINUX)
             target_link_libraries(${name} INTERFACE "-Wl,--start-group")
         endif()
         foreach(arg_LIBRARY IN LISTS arg_LIBRARIES)
@@ -453,7 +463,7 @@ function(open3d_import_3rdparty_library name)
                     ${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS} PARENT_SCOPE)
             endif()
         endforeach()
-        if(arg_GROUPED)
+        if(arg_GROUPED AND LINUX)
             target_link_libraries(${name} INTERFACE "-Wl,--end-group")
         endif()
     endif()
@@ -1584,7 +1594,7 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     target_compile_definitions(3rdparty_mkl INTERFACE OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_mkl)
 
-else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
+else(OPEN3D_USE_ONEAPI_PACKAGES)
     # TBB
     if(USE_SYSTEM_TBB)
         open3d_find_package_3rdparty_library(3rdparty_tbb
@@ -1597,12 +1607,20 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
     endif()
     if(NOT USE_SYSTEM_TBB)
         include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-        open3d_import_3rdparty_library(3rdparty_tbb
-            INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
-            LIB_DIR      ${STATIC_TBB_LIB_DIR}
-            LIBRARIES    ${STATIC_TBB_LIBRARIES}
-            DEPENDS      ext_tbb
-        )
+        add_library(3rdparty_tbb INTERFACE)
+        target_include_directories(3rdparty_tbb SYSTEM INTERFACE $<BUILD_INTERFACE:${TBB_INCLUDE_DIR}>)
+        target_link_directories(3rdparty_tbb SYSTEM INTERFACE $<BUILD_INTERFACE:${TBB_LIB_DIR}>)
+        target_link_libraries(3rdparty_tbb INTERFACE ${TBB_LIBRARIES})
+        add_dependencies(3rdparty_tbb ext_tbb)
+        add_library(${PROJECT_NAME}::3rdparty_tbb ALIAS 3rdparty_tbb)
+        install(TARGETS 3rdparty_tbb EXPORT ${PROJECT_NAME}Targets LIBRARY)
+
+        # open3d_import_3rdparty_library(3rdparty_tbb
+        #     INCLUDE_DIRS ${TBB_INCLUDE_DIR}
+        #     LIB_DIR      ${TBB_LIB_DIR}
+        #     LIBRARIES    ${TBB_LIBRARIES}
+        #     DEPENDS      ext_tbb
+        # )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
     else()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
@@ -1729,6 +1747,7 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
         # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
         message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
         open3d_import_3rdparty_library(3rdparty_blas
+            GROUPED
             HIDDEN
             INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
             LIB_DIR      ${STATIC_MKL_LIB_DIR}
@@ -1742,7 +1761,7 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
         target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_blas)
     endif()
-endif() # if(OPEN3D_USE_ONEAPI_PACKAGES)
+endif(OPEN3D_USE_ONEAPI_PACKAGES)
 
 # cuBLAS
 if(BUILD_CUDA_MODULE)

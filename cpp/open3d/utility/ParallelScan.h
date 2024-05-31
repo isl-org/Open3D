@@ -23,8 +23,8 @@
             #include <execution>
             #include <numeric>
         #else
-            #include <pstl/execution>
-            #include <pstl/numeric>
+            #include <oneapi/dpl/execution>
+            #include <oneapi/dpl/numeric>
             // parallelstl incorrectly assumes MSVC to unconditionally implement
             // parallel algorithms even if __cpp_lib_parallel_algorithm is not
             // defined. So manually include the header which pulls all

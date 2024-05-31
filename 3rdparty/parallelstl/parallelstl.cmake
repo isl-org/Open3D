@@ -3,8 +3,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_parallelstl
     PREFIX parallelstl
-    URL https://github.com/oneapi-src/oneDPL/archive/refs/tags/20190522.tar.gz
-    URL_HASH SHA256=40d78c3405a42f781348b5bc9038cb0ce1147591e07fca7329538c9842d36a7b
+    URL https://github.com/oneapi-src/oneDPL/archive/refs/tags/oneDPL-2022.5.0-rc1.tar.gz
+    URL_HASH SHA256=9180c60331ec5b307dd89a5d8bfcd096667985c6761c52322405d4b69193ed88
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/parallelstl"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
