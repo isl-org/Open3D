@@ -20,11 +20,8 @@ elseif(APPLE)
     set(MKL_URL /Users/ssheorey/Downloads/mkl_static-2023.2.2.9-macosx_x86_64.tar.xz)
     set(MKL_SHA256 6cd93bf1d37527d3ab3657e22c1a8a409729d6c6f422c7c381c7a145aa588d6c)
 else()
-    set(MKL_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_217-linux-64.tar.bz2
-        https://anaconda.org/intel/mkl-static/2020.1/download/linux-64/mkl-static-2020.1-intel_217.tar.bz2
-    )
-    set(MKL_SHA256 44fe60fa895c8967fe7c70fd1b680700f23ecac6ae038b267aa0a0c48dce3d59)
+    set(MKL_URL /home/ssheorey/mkl_static-2024.1.0-linux_x86_64.tar.xz)
+    set(MKL_SHA256 f37c9440e3d664d21889a4607effcd47472bcce347da6c2bfc7aae991971b499)
 endif()
 
 # Where MKL and TBB headers and libs will be installed.

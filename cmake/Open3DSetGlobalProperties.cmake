@@ -185,7 +185,7 @@ function(open3d_set_global_properties target)
 
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
-    target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
+    # target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 
     # Enable strip
     open3d_enable_strip(${target})

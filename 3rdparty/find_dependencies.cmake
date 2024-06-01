@@ -1607,20 +1607,6 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     endif()
     if(NOT USE_SYSTEM_TBB)
         include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-        add_library(3rdparty_tbb INTERFACE)
-        target_include_directories(3rdparty_tbb SYSTEM INTERFACE $<BUILD_INTERFACE:${TBB_INCLUDE_DIR}>)
-        target_link_directories(3rdparty_tbb SYSTEM INTERFACE $<BUILD_INTERFACE:${TBB_LIB_DIR}>)
-        target_link_libraries(3rdparty_tbb INTERFACE ${TBB_LIBRARIES})
-        add_dependencies(3rdparty_tbb ext_tbb)
-        add_library(${PROJECT_NAME}::3rdparty_tbb ALIAS 3rdparty_tbb)
-        install(TARGETS 3rdparty_tbb EXPORT ${PROJECT_NAME}Targets LIBRARY)
-
-        # open3d_import_3rdparty_library(3rdparty_tbb
-        #     INCLUDE_DIRS ${TBB_INCLUDE_DIR}
-        #     LIB_DIR      ${TBB_LIB_DIR}
-        #     LIBRARIES    ${TBB_LIBRARIES}
-        #     DEPENDS      ext_tbb
-        # )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
     else()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)

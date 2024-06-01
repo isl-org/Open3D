@@ -21,8 +21,6 @@ set(TBB_INCLUDE_DIR "${STATIC_MKL_INCLUDE_DIR}")
 set(TBB_LIB_DIR "${STATIC_MKL_LIB_DIR}")
 set(TBB_LIBRARIES tbb tbbmalloc)
 
-# find_package(Git QUIET REQUIRED)
-
 ExternalProject_Add(
     ext_tbb
     PREFIX tbb
@@ -31,18 +29,25 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/tbb"
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        # -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
+        -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
         # -DSTATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
         -DTBBMALLOC_BUILD=ON
         -DTBBMALLOC_PROXY_BUILD=OFF
-        # -DTBB_BUILD_SHARED=OFF
-        # -DTBB_BUILD_STATIC=ON
         -DTBB_TEST=OFF
         # -DTBB_INSTALL_ARCHIVE_DIR=${Open3D_INSTALL_LIB_DIR}
         -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
         # -DTBB_CMAKE_PACKAGE_INSTALL_DIR=${Open3D_INSTALL_LIB_DIR}/cmake/tbb
-        ${ExternalProject_CMAKE_ARGS_hidden}
+        ${ExternalProject_CMAKE_ARGS}
     BUILD_BYPRODUCTS
     ${TBB_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}tbb${CMAKE_SHARED_LIBRARY_SUFFIX}
     ${TBB_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}tbbmalloc${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
+
+# TBB is built and linked as a shared library - this is different from all other Open3D dependencies.
+add_library(3rdparty_tbb INTERFACE)
+target_include_directories(3rdparty_tbb SYSTEM INTERFACE $<BUILD_INTERFACE:${TBB_INCLUDE_DIR}>)
+target_link_directories(3rdparty_tbb INTERFACE $<BUILD_INTERFACE:${TBB_LIB_DIR}>)
+target_link_libraries(3rdparty_tbb INTERFACE ${TBB_LIBRARIES})
+add_dependencies(3rdparty_tbb ext_tbb)
+add_library(${PROJECT_NAME}::3rdparty_tbb ALIAS 3rdparty_tbb)
+install(TARGETS 3rdparty_tbb EXPORT ${PROJECT_NAME}Targets LIBRARY)
