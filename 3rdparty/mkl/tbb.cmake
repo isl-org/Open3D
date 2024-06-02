@@ -46,14 +46,14 @@ ExternalProject_Add(
 # TBB is built and linked as a shared library - this is different from all other Open3D dependencies.
 add_library(3rdparty_tbb INTERFACE)
 target_include_directories(3rdparty_tbb SYSTEM INTERFACE $<BUILD_INTERFACE:${TBB_INCLUDE_DIR}>)
-target_link_libraries(3rdparty_tbb INTERFACE ${TBB_LIBRARIES})
-add_dependencies(3rdparty_tbb ext_tbb)
-add_library(${PROJECT_NAME}::3rdparty_tbb ALIAS 3rdparty_tbb)
-install(TARGETS 3rdparty_tbb EXPORT ${PROJECT_NAME}Targets)
 set(TBB_LIBRARIES_PATH "")
 foreach(TBB_LIBRARY IN LISTS TBB_LIBRARIES)
     file(REAL_PATH ${CMAKE_SHARED_LIBRARY_PREFIX}${TBB_LIBRARY}${CMAKE_SHARED_LIBRARY_SUFFIX}
         TBB_LIBRARY_PATH BASE_DIRECTORY ${TBB_LIB_DIR})
     list(APPEND TBB_LIBRARIES_PATH ${TBB_LIBRARY_PATH})
 endforeach()
+target_link_libraries(3rdparty_tbb INTERFACE ${TBB_LIBRARIES_PATH})
+add_dependencies(3rdparty_tbb ext_tbb)
+add_library(${PROJECT_NAME}::3rdparty_tbb ALIAS 3rdparty_tbb)
+install(TARGETS 3rdparty_tbb EXPORT ${PROJECT_NAME}Targets)
 install(FILES ${TBB_LIBRARIES_PATH} DESTINATION ${Open3D_INSTALL_LIB_DIR})
