@@ -37,7 +37,7 @@ endforeach()
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
     get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)
-    string(REGEX REPLACE "\\.so\\.1\\..*" ".so.1" SO_1_NAME ${SO_VER_NAME})
+    string(REGEX REPLACE "\\.so\\.([0-9]+)\\..*" ".so.\\1" SO_1_NAME ${SO_VER_NAME})
     configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
 endforeach()
 

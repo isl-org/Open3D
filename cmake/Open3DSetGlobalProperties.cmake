@@ -194,4 +194,12 @@ function(open3d_set_global_properties target)
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
     target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")
     target_compile_definitions(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_DEFINITIONS}>")
+
+    # RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
+    if (APPLE)
+        set_target_properties(${target} PROPERTIES INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
+    elseif(UNIX)
+        set_target_properties(${target} PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
+    endif()
+
 endfunction()

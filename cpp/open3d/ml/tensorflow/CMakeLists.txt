@@ -123,6 +123,12 @@ open3d_show_and_abort_on_warning(open3d_tf_ops)
 open3d_enable_strip(open3d_tf_ops)
 # do not use open3d_set_global_properties(open3d_tf_ops) here because some
 # options are not compatible for tf op libraries
+# RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
+if (APPLE)
+    set_target_properties(open3d_tf_ops PROPERTIES INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
+elseif(UNIX)
+    set_target_properties(open3d_tf_ops PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
+endif()
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TF_OPS_DIR open3d_tf_ops LIBRARY_OUTPUT_DIRECTORY)
