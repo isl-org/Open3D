@@ -11,16 +11,13 @@
 include(ExternalProject)
 
 if(WIN32)
-    set(MKL_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-static-2020.1-intel_216-win-64.tar.bz2
-        https://anaconda.org/intel/mkl-static/2020.1/download/win-64/mkl-static-2020.1-intel_216.tar.bz2
-    )
-    set(MKL_SHA256 c6f037aa9e53501d91d5245b6e65020399ebf34174cc4d03637818ebb6e6b6b9)
+    set(MKL_URL https://github.com/isl-org/open3d_downloads/releases/download/mkl-static-2024.1/mkl_static-2024.1.0-win_amd64.zip)
+    set(MKL_SHA256 524de5395db5b7a9d9f0d9a76b2223c6edac429d4492c6a1cc79a5c22c4f3346)
 elseif(APPLE)
-    set(MKL_URL /Users/ssheorey/Downloads/mkl_static-2023.2.2.9-macosx_x86_64.tar.xz)
+    set(MKL_URL https://github.com/isl-org/open3d_downloads/releases/download/mkl-static-2024.1/mkl_static-2023.2.2.9-macosx_x86_64.tar.xz)
     set(MKL_SHA256 6cd93bf1d37527d3ab3657e22c1a8a409729d6c6f422c7c381c7a145aa588d6c)
 else()
-    set(MKL_URL /home/ssheorey/mkl_static-2024.1.0-linux_x86_64.tar.xz)
+    set(MKL_URL https://github.com/isl-org/open3d_downloads/releases/download/mkl-static-2024.1/mkl_static-2024.1.0-linux_x86_64.tar.xz)
     set(MKL_SHA256 f37c9440e3d664d21889a4607effcd47472bcce347da6c2bfc7aae991971b499)
 endif()
 
@@ -56,11 +53,9 @@ if(WIN32)
         mkl_core
         mkl_sequential
         mkl_tbb_thread
-        # tbb_static
     )
-    list(REMOVE_ITEM MKL_LIBRARIES "$<$<CONFIG:Debug>:mkl_tbb_thread>")
-    list(REMOVE_ITEM MKL_LIBRARIES "$<$<CONFIG:Debug>:tbb_static>")
-    list(REMOVE_ITEM MKL_LIBRARIES "$<$<CONFIG:Release>:mkl_sequential>")
+    list(REMOVE_ITEM STATIC_MKL_LIBRARIES "$<$<CONFIG:Debug>:mkl_tbb_thread>")
+    list(REMOVE_ITEM STATIC_MKL_LIBRARIES "$<$<CONFIG:Release>:mkl_sequential>")
 else()
     ExternalProject_Add(
         ext_mkl
@@ -78,6 +73,5 @@ else()
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
-    # set(STATIC_MKL_LIBRARIES mkl_intel_ilp64 mkl_tbb_thread mkl_core tbb_static)
     set(STATIC_MKL_LIBRARIES mkl_intel_ilp64 mkl_tbb_thread mkl_core)
 endif()

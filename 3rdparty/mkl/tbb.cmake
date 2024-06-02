@@ -3,10 +3,6 @@
 # - TBB_INCLUDE_DIR
 # - TBB_LIB_DIR
 # - TBB_LIBRARIES
-#
-# Notes:
-# The name "STATIC" is used to avoid naming collisions for other 3rdparty CMake
-# files (e.g. PyTorch) that also depends on MKL.
 
 include(ExternalProject)
 
@@ -30,13 +26,11 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
-        # -DSTATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
+        -DSTATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
         -DTBBMALLOC_BUILD=ON
         -DTBBMALLOC_PROXY_BUILD=OFF
         -DTBB_TEST=OFF
-        # -DTBB_INSTALL_ARCHIVE_DIR=${Open3D_INSTALL_LIB_DIR}
         -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
-        # -DTBB_CMAKE_PACKAGE_INSTALL_DIR=${Open3D_INSTALL_LIB_DIR}/cmake/tbb
         ${ExternalProject_CMAKE_ARGS}
     BUILD_BYPRODUCTS
     ${TBB_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}tbb${CMAKE_SHARED_LIBRARY_SUFFIX}
