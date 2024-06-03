@@ -1772,16 +1772,35 @@ if(BUILD_CUDA_MODULE)
                 CUDA::culibos
             )
         else()
-            # In CUDA12.0 the liblapack_static.a is deprecated and removed.
+            # In CUDA 12.0 the liblapack_static.a is deprecated and removed.
             # Use the libcusolver_lapack_static.a instead.
-            target_link_libraries(3rdparty_cublas INTERFACE
-                CUDA::cusolver_static
-                ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
-                CUDA::cusparse_static
-                CUDA::cublas_static
-                CUDA::cublasLt_static
-                CUDA::culibos
-            )
+            # Use of static libraries is preferred.
+            find_library(CUSOLVER_STATIC CUDA::cusolver_static)
+            find_library(CUSPARSE_STATIC CUDA::cusparse_static)
+            find_library(CUBLAS_STATIC CUDA::cublas_static)
+            find_library(CUBLAS_LT_STATIC CUDA::cublasLt_static)
+            find_library(CULIBOS_STATIC CUDA::culibos_static)
+            if(CUSOLVER_STATIC AND CUSPARSE_STATIC AND CUBLAS_STATIC AND CUBLAS_LT_STATIC AND CULIBOS_STATIC)
+                # Use static libraries if available.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver_static
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
+                    CUDA::cusparse_static
+                    CUDA::cublas_static
+                    CUDA::cublasLt_static
+                    CUDA::culibos_static
+                )
+            else()
+                # Use shared libraries if static libraries are not available.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver.so
+                    CUDA::cusparse
+                    CUDA::cublas
+                    CUDA::cublasLt
+                    CUDA::culibos
+                )
+            endif()
         endif()
         if(NOT BUILD_SHARED_LIBS)
             # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/Open3D/Open3DTargets.cmake.
@@ -1808,16 +1827,49 @@ if (BUILD_CUDA_MODULE)
                     CUDA::nppial
         )
     else()
-        open3d_find_package_3rdparty_library(3rdparty_cuda_npp
-            REQUIRED
-            PACKAGE CUDAToolkit
-            TARGETS CUDA::nppc_static
-                    CUDA::nppicc_static
-                    CUDA::nppif_static
-                    CUDA::nppig_static
-                    CUDA::nppim_static
-                    CUDA::nppial_static
-        )
+        # Check for the existence of the static libraries
+        find_library(NPPC_STATIC CUDA::nppc_static)
+        find_library(NPPICC_STATIC CUDA::nppicc_static)
+        find_library(NPPIF_STATIC CUDA::nppif_static)
+        find_library(NPPIG_STATIC CUDA::nppig_static)
+        find_library(NPPIM_STATIC CUDA::nppim_static)
+        find_library(NPPIAL_STATIC CUDA::nppial_static)
+        if(NPPC_STATIC AND NPPICC_STATIC AND NPPIF_STATIC AND NPPIG_STATIC AND NPPIM_STATIC AND NPPIAL_STATIC)
+            message(STATUS "Using static CUDA NPP libraries")
+            open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+                REQUIRED
+                PACKAGE CUDAToolkit
+                TARGETS CUDA::nppc_static
+                        CUDA::nppicc_static
+                        CUDA::nppif_static
+                        CUDA::nppig_static
+                        CUDA::nppim_static
+                        CUDA::nppial_static
+            )
+        else()
+            # Check for the existence of the shared libraries if static ones are not found
+            find_library(NPPC_SHARED CUDA::nppc)
+            find_library(NPPICC_SHARED CUDA::nppicc)
+            find_library(NPPIF_SHARED CUDA::nppif)
+            find_library(NPPIG_SHARED CUDA::nppig)
+            find_library(NPPIM_SHARED CUDA::nppim)
+            find_library(NPPIAL_SHARED CUDA::nppial)
+            if(NPPC_SHARED AND NPPICC_SHARED AND NPPIF_SHARED AND NPPIG_SHARED AND NPPIM_SHARED AND NPPIAL_SHARED)
+                message(STATUS "Using shared CUDA NPP libraries")
+                open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+                    REQUIRED
+                    PACKAGE CUDAToolkit
+                    TARGETS CUDA::nppc
+                            CUDA::nppicc
+                            CUDA::nppif
+                            CUDA::nppig
+                            CUDA::nppim
+                            CUDA::nppial
+                )
+            else()
+                message(FATAL_ERROR "Neither all required static nor shared CUDA NPP libraries were found")
+            endif()
+        endif()
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cuda_npp)
 endif ()
