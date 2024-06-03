@@ -113,6 +113,8 @@ jobs:
           ccache -s
 
       - name: Upload package
+        permissions:
+          contents: write
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
         with:
@@ -121,6 +123,8 @@ jobs:
           if-no-files-found: error
 
       - name: Update package devel release
+        permissions:
+          contents: write
         if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -129,6 +133,8 @@ jobs:
           gh release view main-devel
 
       - name: Upload Open3D viewer app
+        permissions:
+          contents: write
         uses: actions/upload-artifact@v4
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
@@ -163,6 +169,8 @@ jobs:
           zip -rv "${APP_NAME}" Open3D.app
 
       - name: Upload Open3D viewer app
+        permissions:
+          contents: write
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-macosx-10_15-universal2
@@ -170,6 +178,8 @@ jobs:
           if-no-files-found: error
 
       - name: Update viewer devel release
+        permissions:
+          contents: write
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -279,6 +289,8 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
+        permissions:
+          contents: write
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PIP_PKG_NAME }}
@@ -336,6 +348,8 @@ jobs:
           echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
 
       - name: Upload merged wheels
+        permissions:
+          contents: write
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PIP_PKG_NAME }}
@@ -343,6 +357,8 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release
+        permissions:
+          contents: write
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

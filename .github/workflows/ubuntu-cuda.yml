@@ -150,6 +150,8 @@ jobs:
           fi
 
       - name: Upload package
+        permissions:
+          contents: write
         if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v4
         with:
@@ -158,6 +160,8 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release
+        permissions:
+          contents: write
         if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
