@@ -1835,7 +1835,6 @@ if (BUILD_CUDA_MODULE)
         find_library(NPPIM_STATIC CUDA::nppim_static)
         find_library(NPPIAL_STATIC CUDA::nppial_static)
         if(NPPC_STATIC AND NPPICC_STATIC AND NPPIF_STATIC AND NPPIG_STATIC AND NPPIM_STATIC AND NPPIAL_STATIC)
-            message(STATUS "Using static CUDA NPP libraries")
             open3d_find_package_3rdparty_library(3rdparty_cuda_npp
                 REQUIRED
                 PACKAGE CUDAToolkit
@@ -1847,28 +1846,17 @@ if (BUILD_CUDA_MODULE)
                         CUDA::nppial_static
             )
         else()
-            # Check for the existence of the shared libraries if static ones are not found
-            find_library(NPPC_SHARED CUDA::nppc)
-            find_library(NPPICC_SHARED CUDA::nppicc)
-            find_library(NPPIF_SHARED CUDA::nppif)
-            find_library(NPPIG_SHARED CUDA::nppig)
-            find_library(NPPIM_SHARED CUDA::nppim)
-            find_library(NPPIAL_SHARED CUDA::nppial)
-            if(NPPC_SHARED AND NPPICC_SHARED AND NPPIF_SHARED AND NPPIG_SHARED AND NPPIM_SHARED AND NPPIAL_SHARED)
-                message(STATUS "Using shared CUDA NPP libraries")
-                open3d_find_package_3rdparty_library(3rdparty_cuda_npp
-                    REQUIRED
-                    PACKAGE CUDAToolkit
-                    TARGETS CUDA::nppc
-                            CUDA::nppicc
-                            CUDA::nppif
-                            CUDA::nppig
-                            CUDA::nppim
-                            CUDA::nppial
-                )
-            else()
-                message(FATAL_ERROR "Neither all required static nor shared CUDA NPP libraries were found")
-            endif()
+            # Use shared libraries if static libraries are not available.
+            open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+                REQUIRED
+                PACKAGE CUDAToolkit
+                TARGETS CUDA::nppc
+                        CUDA::nppicc
+                        CUDA::nppif
+                        CUDA::nppig
+                        CUDA::nppim
+                        CUDA::nppial
+            )
         endif()
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cuda_npp)
