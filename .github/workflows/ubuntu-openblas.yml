@@ -1,4 +1,5 @@
 name: Ubuntu OpenBLAS
+permissions: read-all
 
 on:
   workflow_dispatch:

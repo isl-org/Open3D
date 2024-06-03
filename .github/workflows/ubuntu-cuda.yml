@@ -1,4 +1,5 @@
 name: Ubuntu CUDA
+permissions: read-all
 
 on:
   workflow_dispatch:

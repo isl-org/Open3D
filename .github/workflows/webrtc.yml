@@ -1,4 +1,5 @@
 name: WebRTC
+permissions: read-all
 
 on:
   workflow_dispatch:

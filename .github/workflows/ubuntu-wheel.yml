@@ -1,4 +1,5 @@
 name: Ubuntu Wheel
+permissions: read-all
 
 on:
   workflow_dispatch:

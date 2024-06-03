@@ -1,4 +1,5 @@
 name: MacOS
+permissions: read-all
 
 on:
   workflow_dispatch:

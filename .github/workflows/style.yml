@@ -1,4 +1,5 @@
 name: Style Check
+permissions: read-all
 
 on:
   workflow_dispatch:

@@ -1,4 +1,5 @@
 name: VTK Packages
+permissions: read-all
 
 on:
   # pull_request:

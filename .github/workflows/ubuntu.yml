@@ -1,4 +1,5 @@
 name: Ubuntu
+permissions: read-all
 
 on:
   workflow_dispatch:

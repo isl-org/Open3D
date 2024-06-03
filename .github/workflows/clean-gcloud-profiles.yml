@@ -16,6 +16,7 @@
 # happens, run this workflow manually to clean up the login profiles.
 
 name: Clean GCloud Profiles
+permissions: read-all
 
 on:
   workflow_dispatch:
