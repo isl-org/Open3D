@@ -692,10 +692,10 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
 TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
     core::Device device = GetParam();
 
-    if (!t::geometry::Image::HAVE_IPPICV &&
+    if (!t::geometry::Image::HAVE_IPP &&
         device.GetType() ==
                 core::Device::DeviceType::CPU) {  // FilterBilateral on CPU
-                                                  // needs IPPICV
+                                                  // needs IPP
         return;
     }
 

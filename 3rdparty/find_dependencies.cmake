@@ -1828,26 +1828,25 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # IPP
-if (WITH_IPPICV)
+if (WITH_IPP)
     # Ref: https://stackoverflow.com/a/45125525
-    set(IPPICV_SUPPORTED_HW AMD64 x86_64 x64 x86 X86 i386 i686)
+    set(IPP_SUPPORTED_HW AMD64 x86_64 x64)  # 32 bit deprecated: x86 X86 i386 i686
     # Unsupported: ARM64 aarch64 armv7l armv8b armv8l ...
-    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPPICV_SUPPORTED_HW)
-        set(WITH_IPPICV OFF)
-        message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPP_SUPPORTED_HW)
+        set(WITH_IPP OFF)
+        message(WARNING "Intel IPP disabled: Unsupported Platform.")
     else ()
-        include(${Open3D_3RDPARTY_DIR}/ippicv/ippicv.cmake)
-        if (WITH_IPPICV)
-            message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
-            open3d_import_3rdparty_library(3rdparty_ippicv
+        include(${Open3D_3RDPARTY_DIR}/ipp/ipp.cmake)
+        if (WITH_IPP)
+            message(STATUS "Using Intel IPP ${IPP_VERSION_STRING}. IPP_LIBRARIES: ${IPP_LIBRARIES}")
+            open3d_import_3rdparty_library(3rdparty_ipp
                 HIDDEN
-                INCLUDE_DIRS ${IPPICV_INCLUDE_DIR}
-                LIBRARIES    ${IPPICV_LIBRARIES}
-                LIB_DIR      ${IPPICV_LIB_DIR}
-                DEPENDS      ext_ippicv
+                INCLUDE_DIRS ${IPP_INCLUDE_DIR}
+                LIBRARIES    ${IPP_LIBRARIES}
+                LIB_DIR      ${IPP_LIB_DIR}
+                DEPENDS      ext_ipp
             )
-            target_compile_definitions(3rdparty_ippicv INTERFACE ${IPPICV_DEFINITIONS})
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_ippicv)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_ipp)
         endif()
     endif()
 endif ()
