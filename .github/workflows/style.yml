@@ -1,5 +1,7 @@
 name: Style Check
-permissions: read-all
+permissions:
+  contents: read
+  actions: write
 
 on:
   workflow_dispatch:

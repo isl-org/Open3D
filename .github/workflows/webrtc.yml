@@ -1,5 +1,7 @@
 name: WebRTC
-permissions: read-all
+permissions:
+  contents: write
+  actions: write
 
 on:
   workflow_dispatch:
@@ -62,8 +64,6 @@ jobs:
           build_webrtc
 
       - name: Upload WebRTC
-        permissions:
-          contents: write
         uses: actions/upload-artifact@v4
         with:
           name: webrtc_release_${{ matrix.os }}
@@ -170,8 +170,6 @@ jobs:
           cmake -E sha256sum webrtc_${env:WEBRTC_COMMIT_SHORT}_win.zip | Tee-Object -FilePath checksum_win.txt
 
       - name: Upload WebRTC
-        permissions:
-          contents: write
         uses: actions/upload-artifact@v4
         with:
           name: webrtc_release_windows

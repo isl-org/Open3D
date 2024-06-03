@@ -1,5 +1,7 @@
 name: Ubuntu SYCL
-permissions: read-all
+permissions:
+  contents: read
+  actions: write
 
 on:
   workflow_dispatch:

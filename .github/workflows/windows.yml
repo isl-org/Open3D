@@ -1,5 +1,7 @@
 name: Windows
-permissions: read-all
+permissions:
+  contents: write
+  actions: write
 
 on:
   workflow_dispatch:
@@ -147,8 +149,6 @@ jobs:
             $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload Package
-        permissions:
-          contents: write
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         uses: actions/upload-artifact@v4
         with:
@@ -157,8 +157,6 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with package
-        permissions:
-          contents: write
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -177,8 +175,6 @@ jobs:
             --target INSTALL
 
       - name: Upload Viewer
-        permissions:
-          contents: write
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
@@ -187,8 +183,6 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with viewer
-        permissions:
-          contents: write
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -310,8 +304,6 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload wheel
-        permissions:
-          contents: write
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PIP_PKG_NAME }}
@@ -319,8 +311,6 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with wheel
-        permissions:
-          contents: write
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
