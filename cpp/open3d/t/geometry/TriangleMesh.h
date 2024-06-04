@@ -42,6 +42,11 @@ enum class BlendingMethod : uint8_t {
     ///  be combined with either the MAX or AVERAGE blending methods.
     COLOR_CORRECTION = 1 << 2
 };
+inline BlendingMethod operator|(BlendingMethod a, BlendingMethod b) {
+    return static_cast<BlendingMethod>(
+            static_cast<std::underlying_type_t<BlendingMethod>>(a) |
+            static_cast<std::underlying_type_t<BlendingMethod>>(b));
+}
 #define TEST_ENUM_FLAG(ENUM, VALUE, FLAG)               \
     (static_cast<std::underlying_type_t<ENUM>>(VALUE) & \
      static_cast<std::underlying_type_t<ENUM>>(ENUM::FLAG))

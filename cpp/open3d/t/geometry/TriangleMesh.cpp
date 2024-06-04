@@ -1387,7 +1387,10 @@ core::Tensor Project(const core::Tensor &t_xyz,  // contiguous {...,3}
 }
 
 /// Estimate contrast and brightness in each color channel for this_albedo to
-/// match albedo, based on the overlapping area in the texture image.
+/// match albedo, based on the overlapping area in the texture image. Contrast
+/// and brightness are estimated by matching the second and first moments
+/// (variance and mean) of the pixel colors, respectively.
+/// albedo and this_albedo are float images with range [0,1]
 std::tuple<std::array<float, 3>,
            std::array<float, 3>,
            core::Tensor,
@@ -1395,48 +1398,59 @@ std::tuple<std::array<float, 3>,
 get_color_correction(const core::Tensor &albedo,
                      const core::Tensor &this_albedo,
                      float SPECULAR_THRESHOLD) {
-    constexpr double EPS = 1e-6;
-    std::array<float, 3> this_contrast{}, this_brightness{}, sum{}, this_sum{},
-            absdiffsum{EPS, EPS, EPS}, this_absdiffsum{EPS, EPS, EPS};
-    auto q_albedo =
-            Image(albedo).Resize(0.25, Image::InterpType::Linear).AsTensor();
+    const double EPS = 1e-6;
+    const float shift = 0.5f;  // compute shifted sum / sumsqr for stability.
+    const unsigned MIN_OVERLAP_PIXELS = 32 * 32;
+    // Perform the color correction with albedo downsampled to size 256x256.
+    float resize_down = 256.f / albedo.GetShape(0)
+            /*,resize_up = albedo.GetShape(0) / 256.f*/;
+    std::array<float, 3> this_contrast{1.f, 1.f, 1.f},
+            this_brightness{0.f, 0.f, 0.f}, sum{}, this_sum{}, sumsqr{},
+            this_sumsqr{};
+    auto q_albedo = Image(albedo)
+                            .Resize(resize_down, Image::InterpType::Linear)
+                            .AsTensor();
     auto q_this_albedo = Image(this_albedo)
-                                 .Resize(0.25, Image::InterpType::Linear)
+                                 .Resize(resize_down, Image::InterpType::Linear)
                                  .AsTensor();
-    int64_t rowstride = albedo.GetStride(0), row = 0, col = 0;
+    unsigned count = 0;
     for (float *pq_albedo = q_albedo.GetDataPtr<float>(),
                *pq_this_albedo = q_this_albedo.GetDataPtr<float>();
          pq_albedo < q_albedo.GetDataPtr<float>() + q_albedo.NumElements();
-         pq_albedo += 4, pq_this_albedo += 4, ++col) {
-        if (col == albedo.GetShape(1)) {
-            col = 0;
-            ++row;
-        }
+         pq_albedo += 4, pq_this_albedo += 4) {
         if (pq_albedo[3] <= EPS || pq_this_albedo[3] <= EPS) continue;
-        bool update_absdiffsum = row > 0 && row < albedo.GetShape(0) - 1 &&
-                                 col > 0 && col < albedo.GetShape(1) - 1;
+        ++count;
         for (int c = 0; c < 3; ++c) {
-            sum[c] += pq_albedo[c];
-            this_sum[c] += pq_this_albedo[c];
-            // Absolute central difference
-            if (update_absdiffsum) {
-                absdiffsum[c] += std::fabs(
-                        pq_albedo[c] - 0.25 * (pq_albedo[c - 4] +
-                                               pq_albedo[c - 4 - rowstride] +
-                                               pq_albedo[c + 4] +
-                                               pq_albedo[c + rowstride + 4]));
-                this_absdiffsum[c] +=
-                        std::fabs(pq_this_albedo[c] -
-                                  0.25 * (pq_this_albedo[c - 4] +
-                                          pq_this_albedo[c - 4 - rowstride] +
-                                          pq_this_albedo[c + 4] +
-                                          pq_this_albedo[c + rowstride + 4]));
-            }
+            sum[c] += pq_albedo[c] - shift;
+            sumsqr[c] += (pq_albedo[c] - shift) * (pq_albedo[c] - shift);
+            this_sum[c] += pq_this_albedo[c] - shift;
+            this_sumsqr[c] +=
+                    (pq_this_albedo[c] - shift) * (pq_this_albedo[c] - shift);
         }
     }
+    if (count <= MIN_OVERLAP_PIXELS) {
+        utility::LogWarning(
+                "[ProjectImagesToAlbedo] Too few overlapping pixels ({}/{}) "
+                "found for color correction.",
+                count, MIN_OVERLAP_PIXELS);
+        return std::make_tuple(
+                this_contrast, this_brightness,
+                core::Tensor::Zeros({albedo.GetShape(0), albedo.GetShape(1), 1},
+                                    core::Bool),
+                core::Tensor::Zeros({albedo.GetShape(0), albedo.GetShape(1), 1},
+                                    core::Bool));
+    }
     for (int c = 0; c < 3; ++c) {
-        this_contrast[c] = absdiffsum[c] / this_absdiffsum[c];
-        this_brightness[c] = sum[c] - this_contrast[c] * this_sum[c];
+        float variance = (sumsqr[c] - sum[c] * sum[c] / count) / count,
+              this_variance =
+                      (this_sumsqr[c] - this_sum[c] * this_sum[c] / count) /
+                      count;
+        utility::LogWarning("count: {}, variance: {}, this_variance: {}", count,
+                            variance, this_variance);
+        this_contrast[c] = sqrt((variance + EPS) / (this_variance + EPS));
+        sum[c] += count * shift;  // get un-shifted sum for brightness.
+        this_sum[c] += count * shift;
+        this_brightness[c] = (sum[c] - this_contrast[c] * this_sum[c]) / count;
     }
 
     // Detect specular highlights from outliers.
@@ -1465,14 +1479,24 @@ get_color_correction(const core::Tensor &albedo,
         *p_this_highlights_mask =
                 std::max({err[0], err[1], err[2]}) < -SPECULAR_THRESHOLD;
     }
-    highlights_mask = Image(highlights_mask)
-                              .Dilate(/*kernel_size=*/3)
-                              .Resize(4.f)
-                              .AsTensor();
-    this_highlights_mask = Image(this_highlights_mask)
-                                   .Dilate(/*kernel_size=*/3)
-                                   .Resize(4.f)
-                                   .AsTensor();
+    utility::LogInfo(
+            "n_highlights: {}, n_this_highlights: {}",
+            highlights_mask.To(core::UInt32).Sum({0, 1, 2}).Item<unsigned>(),
+            this_highlights_mask.To(core::UInt32)
+                    .Sum({0, 1, 2})
+                    .Item<unsigned>());
+    // highlights_mask = Image(highlights_mask)
+    //                          .Dilate(/*kernel_size=*/3)
+    //                          .Resize(resize_up)
+    //                          .AsTensor();
+    // this_highlights_mask = Image(this_highlights_mask)
+    //                               .Dilate(/*kernel_size=*/3)
+    //                               .Resize(resize_up)
+    //                               .AsTensor();
+    highlights_mask = core::Tensor::Zeros(
+            {albedo.GetShape(0), albedo.GetShape(1), 1}, core::Bool),
+    this_highlights_mask = core::Tensor::Zeros(
+            {albedo.GetShape(0), albedo.GetShape(1), 1}, core::Bool);
     return std::make_tuple(this_contrast, this_brightness, highlights_mask,
                            this_highlights_mask);
 }
@@ -1493,6 +1517,10 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     constexpr float SPECULAR_THRESHOLD = 0.1f;
     if (!triangle_attr_.Contains("texture_uvs")) {
         utility::LogError("Cannot find triangle attribute 'texture_uvs'");
+    }
+    if (!TEST_ENUM_FLAG(BlendingMethod, blending_method, MAX) &&
+        !TEST_ENUM_FLAG(BlendingMethod, blending_method, AVERAGE)) {
+        utility::LogError("Select one of MAX and AVERAGE BlendingMethod s.");
     }
     core::Tensor texture_uvs =
             triangle_attr_.at("texture_uvs").To(core::Device()).Contiguous();
@@ -1538,8 +1566,10 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     // ensures correct computation of color matching (only neded for
     // COLOR_CORRECTION).
     std::condition_variable cv_next_blend_image;
-    std::atomic_uint next_blend_image{0};
-    auto project_one_image = [&](size_t i, tbb::feeder<size_t> &feeder) {
+    size_t next_blend_image{0};
+    /* auto project_one_image = [&](size_t i, tbb::feeder<size_t> &feeder) { */
+    auto project_one_image = [&](size_t i,
+                                 tbb::parallel_do_feeder<size_t> &feeder) {
         size_t widx = tbb::this_task_arena::current_thread_index();
         // initialize thread variables
         if (!this_albedo[widx].GetShape().IsCompatible(
@@ -1633,10 +1663,9 @@ Image TriangleMesh::ProjectImagesToAlbedo(
             io::WriteImage("uv2y_" + i_str + ".png",
                            Image((uv2xy2[1].To(core::UInt16))));
         }
-        // albedo[u,v] = image[ i[u,v], j[u,v] ]
-        // ij[u,v] ? = identity[ uv[i,j] ]
 
         // C. Interpolate weighted image to weighted texture
+        // albedo[u,v] = image[ i[u,v], j[u,v] ]
         this_albedo[widx].Fill(0.f);
         ipp::Remap(weighted_image[widx], /*{height, width, 4} f32*/
                    uv2xy2[0],            /* {texsz, texsz} f32*/
@@ -1672,16 +1701,6 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         std::array<float, 3> this_contrast{1.f, 1.f, 1.f},
                 this_brightness{0.f, 0.f, 0.f};
         core::Tensor highlights_mask, this_highlights_mask;
-        if (TEST_ENUM_FLAG(BlendingMethod, blending_method, COLOR_CORRECTION)) {
-            std::tie(this_contrast, this_brightness, highlights_mask,
-                     this_highlights_mask) =
-                    get_color_correction(albedo, this_albedo[widx],
-                                         SPECULAR_THRESHOLD);
-            utility::LogDebug(
-                    "[ProjectImagesToAlbedo] Image {}, contrast: {}, "
-                    "brightness {}",
-                    i_str, this_contrast, this_brightness);
-        }
 
         std::unique_lock<std::mutex> albedo_lock{albedo_mutex};
         if (TEST_ENUM_FLAG(BlendingMethod, blending_method, COLOR_CORRECTION)) {
@@ -1690,6 +1709,14 @@ Image TriangleMesh::ProjectImagesToAlbedo(
             cv_next_blend_image.wait(albedo_lock, [&i, &next_blend_image]() {
                 return next_blend_image == i;
             });
+            std::tie(this_contrast, this_brightness, highlights_mask,
+                     this_highlights_mask) =
+                    get_color_correction(albedo, this_albedo[widx],
+                                         SPECULAR_THRESHOLD);
+            utility::LogInfo(
+                    "[ProjectImagesToAlbedo] Image {}, contrast: {}, "
+                    "brightness {}",
+                    i_str, this_contrast, this_brightness);
         }
         if (TEST_ENUM_FLAG(BlendingMethod, blending_method, MAX)) {
             utility::LogInfo("Blending image {} with method MAX", i_str);
@@ -1731,9 +1758,10 @@ Image TriangleMesh::ProjectImagesToAlbedo(
             TEST_ENUM_FLAG(BlendingMethod, blending_method, COLOR_CORRECTION)
                     ? std::min(max_workers, images.size())
                     : images.size();
-    std::vector<size_t> range{0, n_init_images};
+    std::vector<size_t> range(n_init_images, 0);
     std::iota(range.begin(), range.end(), 0);
-    tbb::parallel_for_each(range, project_one_image);
+    /* tbb::parallel_for_each(range, project_one_image); */
+    tbb::parallel_do(range.begin(), range.end(), project_one_image);
     if (TEST_ENUM_FLAG(BlendingMethod, blending_method, AVERAGE)) {
         albedo.Slice(2, 0, 3, 1) /= albedo.Slice(2, 3, 4, 1);
     }

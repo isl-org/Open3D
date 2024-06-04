@@ -7,6 +7,8 @@
 
 #include "open3d/t/geometry/TriangleMesh.h"
 
+#include <stdint.h>
+
 #include <string>
 #include <unordered_map>
 
@@ -1007,7 +1009,9 @@ Example:
                    "images with a linear 3 channel contrast + brightness "
                    "correction for each image. Also detects and masks specular "
                    "highlights and saturated regions. This can be combined "
-                   "with either the `MAX` or `AVERAGE` blending methods.");
+                   "with either the `MAX` or `AVERAGE` blending methods.")
+            .def("__or__",
+                 py::overload_cast<BlendingMethod, BlendingMethod>(&operator|));
     triangle_mesh.def("project_images_to_albedo",
                       &TriangleMesh::ProjectImagesToAlbedo, "images"_a,
                       "intrinsic_matrices"_a, "extrinsic_matrices"_a,

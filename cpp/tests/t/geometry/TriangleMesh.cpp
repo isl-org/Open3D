@@ -1386,7 +1386,7 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
             {Image(view[0]), Image(view[1]), Image(view[2])},
             {intrinsic_matrix, intrinsic_matrix, intrinsic_matrix},
             {extrinsic_matrix[0], extrinsic_matrix[1], extrinsic_matrix[2]},
-            256, true);
+            256, true, BlendingMethod::MAX | BlendingMethod::COLOR_CORRECTION);
 
     EXPECT_TRUE(sphere.HasMaterial());
     EXPECT_TRUE(sphere.GetMaterial().HasAlbedoMap());

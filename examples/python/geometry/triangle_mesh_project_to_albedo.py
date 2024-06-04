@@ -37,7 +37,7 @@ def download_smithsonian_baluster_vase():
     print("\nDownload complete.")
 
 
-def create_dataset(meshfile, n_images=10, movie=False):
+def create_dataset(meshfile, n_images=10, movie=False, vary_exposure=False):
     """Render images of a 3D mesh from different viewpoints, covering the
     northern hemisphere. These form a synthetic dataset to test the
     project_images_to_albedo function.
@@ -58,6 +58,10 @@ def create_dataset(meshfile, n_images=10, movie=False):
     # albedo
     unlit = rendering.MaterialRecord()
     unlit.shader = "unlit"
+
+    def triangle_wave(n, period=1):
+        """Triangle wave function between [0,1] with given period."""
+        return abs(n % period - period / 2) / (period / 2)
 
     def rotate_camera_and_shoot(o3dvis):
         Rts = []
@@ -85,6 +89,11 @@ def create_dataset(meshfile, n_images=10, movie=False):
                        [np.pi, 0, -np.pi / 2])
             Rts.append(Rt)
             o3dvis.setup_camera(K, Rt, width, height)
+            # Vary IBL intensity as a poxy for exposure value. IBL ranges from
+            # [0,150000]. We vary it between 20000 and 100000.
+            if vary_exposure:
+                o3dvis.set_ibl_intensity(20000 +
+                                         80000 * triangle_wave(n, n_images / 4))
             o3dvis.post_redraw()
             o3dvis.export_current_image(f"render-{n:02}.jpg")
             images.append(f"render-{n:02}.jpg")
@@ -132,7 +141,8 @@ def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
     calib.close()
     start = time.time()
     albedo = tmeshes[0].project_images_to_albedo(
-        images, Ks, Rts, 1024, True, o3d.t.geometry.BlendingMethod.MAX)
+        images, Ks, Rts, 1024, True, o3d.t.geometry.BlendingMethod.MAX |
+        o3d.t.geometry.BlendingMethod.COLOR_CORRECTION)
     albedo = albedo.linear_transform(scale=albedo_contrast)  # brighten albedo
     tmeshes[0].material.texture_maps["albedo"] = albedo
     print(f"project_images_to_albedo ran in {time.time()-start:.2f}s")
@@ -185,6 +195,9 @@ if __name__ == "__main__":
                          "--download_sample_model.")
         if args.n_images < 10:
             parser.error("Atleast 10 images should be used!")
-        create_dataset(args.meshfile, n_images=args.n_images, movie=args.movie)
+        create_dataset(args.meshfile,
+                       n_images=args.n_images,
+                       movie=args.movie,
+                       vary_exposure=True)
     else:
         albedo_from_images(args.meshfile, "cameras.npz")
