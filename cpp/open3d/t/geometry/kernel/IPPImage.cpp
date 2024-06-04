@@ -7,10 +7,10 @@
 
 #include "open3d/t/geometry/kernel/IPPImage.h"
 
-#include <ipp/iw++/iw_image_color.hpp>
-#include <ipp/iw++/iw_image_filter.hpp>
-#include <ipp/iw++/iw_image_op.hpp>
-#include <ipp/iw++/iw_image_transform.hpp>
+#include <iw++/iw_image_color.hpp>
+#include <iw++/iw_image_filter.hpp>
+#include <iw++/iw_image_op.hpp>
+#include <iw++/iw_image_transform.hpp>
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ParallelFor.h"

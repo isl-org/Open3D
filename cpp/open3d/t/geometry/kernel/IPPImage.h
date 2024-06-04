@@ -11,7 +11,7 @@
 #define IPP_ENABLED_THREADING_LAYER_REDEFINITIONS 1
 #define IPP_CALL(ipp_function, ...) ipp_function(__VA_ARGS__);
 
-#include <ipp/iw++/iw_core.hpp>
+#include <iw++/iw_core.hpp>
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"

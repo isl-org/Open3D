@@ -1838,7 +1838,7 @@ if (WITH_IPP)
     else ()
         include(${Open3D_3RDPARTY_DIR}/ipp/ipp.cmake)
         if (WITH_IPP)
-            message(STATUS "Using Intel IPP ${IPP_VERSION_STRING}. IPP_LIBRARIES: ${IPP_LIBRARIES}")
+            message(STATUS "Using Intel IPP ${IPP_VERSION_STRING}.")
             open3d_import_3rdparty_library(3rdparty_ipp
                 HIDDEN
                 INCLUDE_DIRS ${IPP_INCLUDE_DIR}
