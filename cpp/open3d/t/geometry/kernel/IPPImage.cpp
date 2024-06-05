@@ -7,10 +7,17 @@
 
 #include "open3d/t/geometry/kernel/IPPImage.h"
 
+#ifdef APPLE  // macOS IPP <=v2021.9 uses old directory layout
 #include <iw++/iw_image_color.hpp>
 #include <iw++/iw_image_filter.hpp>
 #include <iw++/iw_image_op.hpp>
 #include <iw++/iw_image_transform.hpp>
+#else  // Linux and Windows IPP >=v2021.10 uses new directory layout
+#include <ipp/iw++/iw_image_color.hpp>
+#include <ipp/iw++/iw_image_filter.hpp>
+#include <ipp/iw++/iw_image_op.hpp>
+#include <ipp/iw++/iw_image_transform.hpp>
+#endif
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ParallelFor.h"

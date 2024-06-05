@@ -25,12 +25,20 @@ function(open3d_enable_strip target)
     endif()
 endfunction()
 
+# RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
+set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+if (APPLE)
+    set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
+elseif(UNIX)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
+endif()
+
 # open3d_set_global_properties(target)
 #
 # Sets important project-related properties to <target>.
 function(open3d_set_global_properties target)
-    # Tell CMake we want a compiler that supports C++14 features
-    target_compile_features(${target} PUBLIC cxx_std_14)
+    # Tell CMake we want a compiler that supports C++17 features
+    target_compile_features(${target} PUBLIC cxx_std_17)
 
     # Detect compiler id and version for utility::CompilerInfo
     # - OPEN3D_CXX_STANDARD
@@ -194,12 +202,5 @@ function(open3d_set_global_properties target)
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
     target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")
     target_compile_definitions(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_DEFINITIONS}>")
-
-    # RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
-    if (APPLE)
-        set_target_properties(${target} PROPERTIES INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
-    elseif(UNIX)
-        set_target_properties(${target} PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
-    endif()
 
 endfunction()
