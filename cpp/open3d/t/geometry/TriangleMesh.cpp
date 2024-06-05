@@ -12,8 +12,10 @@
 #include <vtkClipPolyData.h>
 #include <vtkCutter.h>
 #include <vtkFillHolesFilter.h>
+#include <vtkPolyDataNormals.h>
 #include <vtkPlane.h>
 #include <vtkQuadricDecimation.h>
+#include <vtkPointData.h>
 
 #include <Eigen/Core>
 #include <string>
@@ -717,8 +719,15 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     vtkNew<vtkFillHolesFilter> fill_holes;
     fill_holes->SetInputData(polydata);
     fill_holes->SetHoleSize(hole_size);
-    fill_holes->Update();
-    auto result = fill_holes->GetOutput();
+
+    // make the triangle winding order consistent
+    vtkNew<vtkPolyDataNormals> normals;
+    normals->SetInputConnection(fill_holes->GetOutputPort());
+    normals->SetConsistency(true);
+    normals->SetSplitting(false);
+    normals->Update();
+    auto result = normals->GetOutput();
+
     return CreateTriangleMeshFromVtkPolyData(result);
 }
 
