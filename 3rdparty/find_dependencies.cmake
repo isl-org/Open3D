@@ -1783,7 +1783,7 @@ if(BUILD_CUDA_MODULE)
                     CUDA::cusparse_static
                     CUDA::cublas_static
                     CUDA::cublasLt_static
-                    CUDA::culibos_static
+                    CUDA::culibos
                 )
             else()
                 # Use shared CUDA libraries.
