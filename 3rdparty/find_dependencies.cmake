@@ -1775,13 +1775,8 @@ if(BUILD_CUDA_MODULE)
             # In CUDA 12.0 the liblapack_static.a is deprecated and removed.
             # Use the libcusolver_lapack_static.a instead.
             # Use of static libraries is preferred.
-            find_library(CUSOLVER_STATIC CUDA::cusolver_static)
-            find_library(CUSPARSE_STATIC CUDA::cusparse_static)
-            find_library(CUBLAS_STATIC CUDA::cublas_static)
-            find_library(CUBLAS_LT_STATIC CUDA::cublasLt_static)
-            find_library(CULIBOS_STATIC CUDA::culibos_static)
-            if(CUSOLVER_STATIC AND CUSPARSE_STATIC AND CUBLAS_STATIC AND CUBLAS_LT_STATIC AND CULIBOS_STATIC)
-                # Use static libraries if available.
+            if(BUILD_WITH_CUDA_STATIC)
+                # Use static CUDA libraries.
                 target_link_libraries(3rdparty_cublas INTERFACE
                     CUDA::cusolver_static
                     ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
@@ -1791,7 +1786,7 @@ if(BUILD_CUDA_MODULE)
                     CUDA::culibos_static
                 )
             else()
-                # Use shared libraries if static libraries are not available.
+                # Use shared CUDA libraries.
                 target_link_libraries(3rdparty_cublas INTERFACE
                     CUDA::cusolver
                     ${CUDAToolkit_LIBRARY_DIR}/libcusolver.so
@@ -1827,14 +1822,8 @@ if (BUILD_CUDA_MODULE)
                     CUDA::nppial
         )
     else()
-        # Check for the existence of the static libraries
-        find_library(NPPC_STATIC CUDA::nppc_static)
-        find_library(NPPICC_STATIC CUDA::nppicc_static)
-        find_library(NPPIF_STATIC CUDA::nppif_static)
-        find_library(NPPIG_STATIC CUDA::nppig_static)
-        find_library(NPPIM_STATIC CUDA::nppim_static)
-        find_library(NPPIAL_STATIC CUDA::nppial_static)
-        if(NPPC_STATIC AND NPPICC_STATIC AND NPPIF_STATIC AND NPPIG_STATIC AND NPPIM_STATIC AND NPPIAL_STATIC)
+        if(BUILD_WITH_CUDA_STATIC)
+            # Use static CUDA libraries.
             open3d_find_package_3rdparty_library(3rdparty_cuda_npp
                 REQUIRED
                 PACKAGE CUDAToolkit
@@ -1846,7 +1835,7 @@ if (BUILD_CUDA_MODULE)
                         CUDA::nppial_static
             )
         else()
-            # Use shared libraries if static libraries are not available.
+            # Use shared CUDA libraries.
             open3d_find_package_3rdparty_library(3rdparty_cuda_npp
                 REQUIRED
                 PACKAGE CUDAToolkit
