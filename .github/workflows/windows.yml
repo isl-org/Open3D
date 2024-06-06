@@ -1,4 +1,7 @@
 name: Windows
+permissions:
+  contents: write
+  actions: write
 
 on:
   workflow_dispatch:
@@ -28,7 +31,6 @@ env:
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
-  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   windows:
@@ -154,6 +156,14 @@ jobs:
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
+      - name: Update devel release with package
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload main-devel ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }} --clobber
+          gh release view main-devel
+
       - name: Viewer App
         working-directory: ${{ env.BUILD_DIR }}
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
@@ -172,29 +182,16 @@ jobs:
           path: C:\Program Files\Open3D\bin\Open3D
           if-no-files-found: error
 
-      - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        uses: google-github-actions/auth@v2
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-
-      - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+      - name: Update devel release with viewer
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          gsutil cp ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }} `
-            gs://open3d-releases/devel/
-          if ($LastExitCode -eq 0) {
-            echo "Download devel package at: https://storage.googleapis.com/open3d-releases/devel/${{ env.DEVEL_PKG_NAME }}"
-          } else {
-            throw "Devel package upload failed"
-          }
+          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
+          Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
+            "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
+          gh release upload main-devel "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" --clobber
+          gh release view main-devel
 
       - name: Run C++ unit tests
         if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
@@ -313,32 +310,13 @@ jobs:
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-      - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/auth@v2
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-
-      - name: Upload wheel to GCS bucket
+      - name: Update devel release with wheel
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
-          python_version: ${{ matrix.python_version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
-          gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases/python-wheels/
-          if ($LastExitCode -eq 0) {
-            echo "Download pip package at: https://storage.googleapis.com/open3d-releases/python-wheels/${{ env.PIP_PKG_NAME }}"
-          } else {
-            throw "Wheel upload failed"
-          }
+          gh release upload main-devel ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
+          gh release view main-devel
 
   test-wheel:
     name: Test wheel
@@ -394,7 +372,6 @@ jobs:
           python -m pip install "$PIP_PKG_NAME"
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
-
           deactivate
 
       - name: Run Python unit tests
@@ -406,42 +383,3 @@ jobs:
           echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/ --ignore python/test/ml_ops/
           deactivate
-
-  ready-docs:
-    name: Ready docs archive
-    # no need to run on Windows
-    runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' }}
-    # temp workaround for Windows CUDA Debug CI out of space. Still update docs.
-    # needs: [build-wheel, windows]
-    needs: [build-wheel]
-    steps:
-      - name: GCloud CLI auth
-        uses: google-github-actions/auth@v2
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
-      - name: Check wheels and ready documentation archive
-        run: |
-            touch marker_file
-            gsutil cp marker_file gs://open3d-docs/${{ github.sha }}_ready_windows
-            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
-                -eq 4 ]; then
-                echo "All wheels and docs available. Making docs ready."
-                # Remove all marker files: Note _ at end of pattern.
-                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
-                # Rename docs archive:
-                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
-                    gs://open3d-docs/${{ github.sha }}.tar.gz
-                # Set holds on new artifacts, release on old
-                gsutil retention temp release gs://open3d-releases/*
-                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
-                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
-            else
-                echo "All wheels / docs not available yet."
-            fi

@@ -55,8 +55,14 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         TORCH_GLNX="torch==$TORCH_CUDA_GLNX_VER"
     else
-        TF_ARCH_NAME=tensorflow-cpu
-        TF_ARCH_DISABLE_NAME=tensorflow
+        # tensorflow-cpu wheels for macOS arm64 are not available
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            TF_ARCH_NAME=tensorflow
+            TF_ARCH_DISABLE_NAME=tensorflow
+        else
+            TF_ARCH_NAME=tensorflow-cpu
+            TF_ARCH_DISABLE_NAME=tensorflow
+        fi
         TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
     fi
 

@@ -384,7 +384,9 @@ struct O3DVisualizer::Impl {
                                std::vector<std::pair<size_t, Eigen::Vector3d>>>
                                &indices,
                        int keymods) {
-                    if ((keymods & int(KeyModifier::SHIFT)) ||
+                    bool unselect_mode_requested =
+                            keymods & int(KeyModifier::SHIFT);
+                    if (unselect_mode_requested ||
                         polygon_selection_unselects_) {
                         selections_->UnselectIndices(indices);
                     } else {
@@ -488,11 +490,13 @@ struct O3DVisualizer::Impl {
         });
 
 #if __APPLE__
-        const char *selection_help =
-                "Cmd-click to select a point\nCmd-ctrl-click to polygon select";
+        const char *selection_help = R"(Cmd-click to select a point
+Cmd-shift-click to deselect a point
+Cmd-alt-click to polygon select)";
 #else
-        const char *selection_help =
-                "Ctrl-click to select a point\nCmd-alt-click to polygon select";
+        const char *selection_help = R"(Ctrl-click to select a point
+Ctrl-shift-click to deselect a point
+Ctrl-alt-click to polygon select)";
 #endif  // __APPLE__
         h = new Horiz();
         h->AddStretch();
@@ -1545,12 +1549,10 @@ struct O3DVisualizer::Impl {
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
 
-        auto bbox = scene_->GetScene()->GetBoundingBox();
-        auto xdim = bbox.max_bound_.x() - bbox.min_bound_.x();
-        auto ydim = bbox.max_bound_.y() - bbox.min_bound_.z();
-        auto zdim = bbox.max_bound_.z() - bbox.min_bound_.y();
+        auto bbox_extend = scene_->GetScene()->GetBoundingBox().GetExtent();
         auto psize = double(std::max(5, px)) * 0.000666 *
-                     std::max(xdim, std::max(ydim, zdim));
+                     std::max(bbox_extend.x(),
+                              std::max(bbox_extend.y(), bbox_extend.z()));
         selections_->SetPointSize(psize);
 
         scene_->SetPickablePointSize(px);

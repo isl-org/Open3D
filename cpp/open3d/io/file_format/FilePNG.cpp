@@ -106,6 +106,7 @@ bool ReadPNGFromMemory(const unsigned char *image_data_ptr,
     if (png_image_begin_read_from_memory(&pngimage, image_data_ptr,
                                          image_data_size) == 0) {
         utility::LogWarning("Read PNG failed: unable to parse header.");
+        image.Clear();
         return false;
     }
 
@@ -122,6 +123,7 @@ bool ReadPNGFromMemory(const unsigned char *image_data_ptr,
     if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
         0) {
         utility::LogWarning("PNG error: {}", pngimage.message);
+        image.Clear();
         return false;
     }
     return true;
