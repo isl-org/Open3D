@@ -27,6 +27,7 @@ ExternalProject_Add(
         -DBUILD_PYTHON_BINDINGS=OFF
         -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
         -DUSE_EXTERNAL_USB=ON
+        -DBUILD_TOOLS=OFF
         # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
         # checking CXX_COMPILER_ID is not supported.
         $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}>>
@@ -46,8 +47,10 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_librealsense INSTALL_DIR)
 set(LIBREALSENSE_INCLUDE_DIR "${INSTALL_DIR}/include/") # "/" is critical.
 set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR}")
-
-set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file rsutils usb) # The order is critical.
+set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file rsutils) # The order is critical.
+if (NOT MSVC)
+	list(APPEND LIBREALSENSE_LIBRARIES usb)
+endif()
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
         COMMAND $<IF:$<CONFIG:Debug>,move,rem> /Y realsense2d.lib realsense2.lib
@@ -59,10 +62,12 @@ if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is n
     )
 endif()
 
-ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
-    COMMAND ${CMAKE_COMMAND} -E copy
-    "<BINARY_DIR>/libusb_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}usb${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    "${LIBREALSENSE_LIB_DIR}"
-    DEPENDEES install
-    BYPRODUCTS "${LIBREALSENSE_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}usb${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    )
+if (NOT MSVC)
+	ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
+	    COMMAND ${CMAKE_COMMAND} -E copy
+	    "<BINARY_DIR>/libusb_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}usb${CMAKE_STATIC_LIBRARY_SUFFIX}"
+	    "${LIBREALSENSE_LIB_DIR}"
+	    DEPENDEES install
+	    BYPRODUCTS "${LIBREALSENSE_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}usb${CMAKE_STATIC_LIBRARY_SUFFIX}"
+	    )
+endif()
