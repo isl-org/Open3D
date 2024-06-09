@@ -11,7 +11,8 @@
 #define IPP_ENABLED_THREADING_LAYER_REDEFINITIONS 1
 #define IPP_CALL(ipp_function, ...) ipp_function(__VA_ARGS__);
 
-#ifdef APPLE  // macOS IPP v2021.9.11 uses old directory layout
+#if IPP_VERSION_INT < \
+        20211000  // macOS IPP v2021.9.11 uses old directory layout
 #include <iw++/iw_core.hpp>
 #else  // Linux and Windows IPP v2021.10+ uses new directory layout
 #include <ipp/iw++/iw_core.hpp>

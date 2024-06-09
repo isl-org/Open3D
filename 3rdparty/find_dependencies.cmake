@@ -1550,9 +1550,9 @@ if(BUILD_SYCL_MODULE)
 endif()
 
 if(BUILD_SYCL_MODULE)
-    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." ON)
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." ON)
 else()
-    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." OFF)
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." OFF)
 endif()
 mark_as_advanced(OPEN3D_USE_ONEAPI_PACKAGES)
 
@@ -1565,17 +1565,7 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
 
-    # 2. oneDPL
-    # /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL
-    open3d_find_package_3rdparty_library(3rdparty_onedpl
-        PACKAGE oneDPL
-        TARGETS oneDPL
-    )
-    target_compile_definitions(3rdparty_onedpl INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
-    target_compile_definitions(3rdparty_onedpl INTERFACE PSTL_USE_PARALLEL_POLICIES=0)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_onedpl)
-
-    # 3. oneMKL
+    # 2. oneMKL
     # /opt/intel/oneapi/mkl/latest/lib/cmake/mkl
     set(MKL_THREADING tbb_thread)
     set(MKL_LINK static)
@@ -1611,16 +1601,6 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     else()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
     endif()
-
-    # parallelstl
-    include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
-    open3d_import_3rdparty_library(3rdparty_parallelstl
-    PUBLIC
-    INCLUDE_DIRS ${PARALLELSTL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    DEPENDS      ext_parallelstl
-    )
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_parallelstl)
 
     # MKL/BLAS
     if(USE_BLAS)
@@ -1846,6 +1826,7 @@ if (WITH_IPP)
                 LIB_DIR      ${IPP_LIB_DIR}
                 DEPENDS      ext_ipp
             )
+            target_compile_definitions(3rdparty_ipp INTERFACE IPP_VERSION_INT=${IPP_VERSION_INT})
             list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_ipp)
         endif()
     endif()

@@ -2,13 +2,17 @@
 # - IPP_INCLUDE_DIR
 # - IPP_LIBRARIES
 # - IPP_LIB_DIR
+# - IPP_VERSION_STRING
+# - IPP_VERSION_INT    (for version check)
 
 include(ExternalProject)
 
 # Check in order APPLE -> WIN32 -> UNIX, since UNIX may be defined on APPLE / WIN32 as well
 set(IPP_VERSION_STRING "2021.11.0")  # From ipp/ippversion.h
+set(IPP_VERSION_INT 20211100)
 if(APPLE AND CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL x86_64)
     set(IPP_VERSION_STRING "2021.9.1")  # From ipp/ippversion.h
+    set(IPP_VERSION_INT 20210901)
     set(IPP_URL "https://github.com/isl-org/open3d_downloads/releases/download/mkl-static-2024.1/ipp_static-2021.9.1-macosx_10_15_x86_64.tar.xz")
     set(IPP_HASH "f27e45da604a1f6d1d2a747a0f67ffafeaff084b0f860a963d8c3996e2f40bb3")
 elseif(WIN32 AND CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL AMD64)
@@ -24,10 +28,8 @@ else()
 endif()
 
 if(WIN32)
-    set(TL mt_tl_tbb)
     set(IPP_SUBPATH "Library/")
 else()
-    set(TL _tl_tbb)
     set(IPP_SUBPATH "")
 endif()
 
@@ -48,5 +50,9 @@ set(IPP_INCLUDE_DIR "${SOURCE_DIR}/${IPP_SUBPATH}include/")
 # https://www.intel.com/content/www/us/en/docs/ipp/developer-guide-reference/2021-11/ipp-performace-benefits-with-tl-functions.html
 # Library dependency order:
 # https://www.intel.com/content/www/us/en/docs/ipp/developer-guide-reference/2021-11/library-dependencies-by-domain.html
-set(IPP_LIBRARIES ipp_iw ippcv${TL} ippcv ippi${TL} ippi ippcc${TL} ippcc ipps ippvm ippcore${TL} ippcore)
+if (WIN32)
+    set(IPP_LIBRARIES ipp_iw ippcvmt_tl_tbb ippcvmt ippimt_tl_tbb ippimt ippccmt_tl_tbb ippccmt ippsmt ippvmmt ippcoremt_tl_tbb ippcoremt)
+else()
+    set(IPP_LIBRARIES ipp_iw ippcv_tl_tbb ippcv ippi_tl_tbb ippi ippcc_tl_tbb ippcc ipps ippvm ippcore_tl_tbb ippcore)
+endif()
 set(IPP_LIB_DIR "${SOURCE_DIR}/${IPP_SUBPATH}lib")
