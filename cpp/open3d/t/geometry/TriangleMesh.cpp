@@ -377,6 +377,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
         tmat.SetAnisotropy(mat.baseAnisotropy);
         tmat.SetBaseClearcoat(mat.baseClearCoat);
         tmat.SetBaseClearcoatRoughness(mat.baseClearCoatRoughness);
+        // no emissive_color in legacy mesh material
         if (mat.albedo) tmat.SetAlbedoMap(Image::FromLegacy(*mat.albedo));
         if (mat.normalMap) tmat.SetNormalMap(Image::FromLegacy(*mat.normalMap));
         if (mat.roughness)
@@ -453,10 +454,6 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
             legacy_mat.baseColor.f4[1] = tmat.GetBaseColor().y();
             legacy_mat.baseColor.f4[2] = tmat.GetBaseColor().z();
             legacy_mat.baseColor.f4[3] = tmat.GetBaseColor().w();
-            utility::LogWarning("{},{},{},{}", legacy_mat.baseColor.f4[0],
-                                legacy_mat.baseColor.f4[1],
-                                legacy_mat.baseColor.f4[2],
-                                legacy_mat.baseColor.f4[3]);
         }
         if (tmat.HasBaseRoughness()) {
             legacy_mat.baseRoughness = tmat.GetBaseRoughness();
@@ -521,6 +518,26 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
     }
 
     return mesh_legacy;
+}
+
+std::unordered_map<std::string, geometry::TriangleMesh>
+TriangleMesh::FromTriangleMeshModel(
+        const open3d::visualization::rendering::TriangleMeshModel &model,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    std::unordered_map<std::string, TriangleMesh> tmeshes;
+    for (const auto &mobj : model.meshes_) {
+        auto tmesh = TriangleMesh::FromLegacy(*mobj.mesh, float_dtype,
+                                              int_dtype, device);
+        // material textures will be on the CPU. GPU resident texture images is
+        // not yet supported. See comment in Material.cpp
+        tmesh.SetMaterial(
+                visualization::rendering::Material::FromMaterialRecord(
+                        model.materials_[mobj.material_idx]));
+        tmeshes.emplace(mobj.mesh_name, tmesh);
+    }
+    return tmeshes;
 }
 
 TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {
@@ -1252,6 +1269,61 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
     CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
 
     return result;
+}
+
+TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
+    if (!HasVertexPositions() || GetVertexPositions().GetLength() == 0) {
+        utility::LogWarning(
+                "[RemoveUnreferencedVertices] TriangleMesh has no vertices.");
+        return *this;
+    }
+    GetVertexAttr().AssertSizeSynchronized();
+
+    core::Dtype tri_dtype = HasTriangleIndices()
+                                    ? GetTriangleIndices().GetDtype()
+                                    : core::Int64;
+
+    int64_t num_verts_old = GetVertexPositions().GetLength();
+    // int mask for vertices as we need to remap indices.
+    core::Tensor vertex_mask = core::Tensor::Zeros({num_verts_old}, tri_dtype);
+
+    if (!HasTriangleIndices() || GetTriangleIndices().GetLength() == 0) {
+        utility::LogWarning(
+                "[RemoveUnreferencedVertices] TriangleMesh has no triangles. "
+                "Removing all vertices.");
+        // in this case we need to empty vertices and their attributes
+    } else {
+        GetTriangleAttr().AssertSizeSynchronized();
+        core::Tensor tris_cpu =
+                GetTriangleIndices().To(core::Device()).Contiguous();
+        DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(tri_dtype, tris, [&]() {
+            scalar_tris_t *tris_ptr = tris_cpu.GetDataPtr<scalar_tris_t>();
+            scalar_tris_t *vertex_mask_ptr =
+                    vertex_mask.GetDataPtr<scalar_tris_t>();
+            for (int i = 0; i < tris_cpu.GetLength(); i++) {
+                vertex_mask_ptr[tris_ptr[3 * i]] = 1;
+                vertex_mask_ptr[tris_ptr[3 * i + 1]] = 1;
+                vertex_mask_ptr[tris_ptr[3 * i + 2]] = 1;
+            }
+
+            UpdateTriangleIndicesByVertexMask<scalar_tris_t>(tris_cpu,
+                                                             vertex_mask);
+        });
+        SetTriangleIndices(tris_cpu.To(GetDevice()));
+    }
+
+    // send the vertex mask to original device and apply to
+    // vertices
+    vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
+    for (auto item : GetVertexAttr()) {
+        SetVertexAttr(item.first, item.second.IndexGet({vertex_mask}));
+    }
+
+    utility::LogDebug(
+            "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
+            (int)(num_verts_old - GetVertexPositions().GetLength()));
+
+    return *this;
 }
 
 }  // namespace geometry
