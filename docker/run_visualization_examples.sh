@@ -4,7 +4,7 @@ run_visualization_examples() {
     if [ "${DISPLAY:-unset}" = "unset" ]; then
         export DISPLAY=:71
         echo Starting Xvfb on display $DISPLAY
-        Xvfb $DISPLAY -screen 0 1024x768x16 &
+        Xvfb $DISPLAY &
     else
         echo Using DISPLAY=${DISPLAY}
     fi
@@ -15,7 +15,7 @@ run_visualization_examples() {
         fi
         printf "\nRunning example: $example\n"
         set -x
-        env $environment DISPLAY=$DISPLAY timeout -v 120 open3d example $example &
+        env $environment DISPLAY=$DISPLAY timeout -v 12 open3d example $example &
         set +x
         sleep ${wait_time_s:-1}
         if [ "${keyinput:-}" != "" ]; then
@@ -30,8 +30,8 @@ run_visualization_examples() {
         fi
     done <<CSVEOF
 #example_name,environment,wait_time_s,keyinput
-visualization/add_geometry,,3,Escape
 visualization/all_widgets,,3,Escape
+visualization/add_geometry,,3,Escape
 # crash in macOS
 visualization/customized_visualization,,3,Escape
 # crash in macOS
