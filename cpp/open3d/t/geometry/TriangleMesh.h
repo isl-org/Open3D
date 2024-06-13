@@ -8,6 +8,7 @@
 #pragma once
 
 #include <list>
+#include <unordered_map>
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
@@ -16,6 +17,7 @@
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/visualization/rendering/Model.h"
 
 namespace open3d {
 namespace t {
@@ -701,7 +703,8 @@ public:
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
     /// triangles.
-    /// \param device The device where the resulting TriangleMesh resides in.
+    /// \param device The device where the resulting TriangleMesh resides in
+    /// (default CPU:0).
     static geometry::TriangleMesh FromLegacy(
             const open3d::geometry::TriangleMesh &mesh_legacy,
             core::Dtype float_dtype = core::Float32,
@@ -710,6 +713,28 @@ public:
 
     /// Convert to a legacy Open3D TriangleMesh.
     open3d::geometry::TriangleMesh ToLegacy() const;
+
+    /// Convert a TriangleMeshModel (e.g. as read from a file with
+    /// open3d::io::ReadTriangleMeshModel) to an unordered map of mesh names to
+    /// TriangleMeshes. Only one material is supported per mesh. Materials
+    /// common to multiple meshes will be dupicated. Textures (as
+    /// t::geometry::Image) will use shared storage.
+    /// \param model TriangleMeshModel to convert.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in
+    /// (default CPU:0). Material textures use CPU storage - GPU resident
+    /// texture images are not yet supported.
+    /// \return unordered map of constituent mesh names to TriangleMeshes, with
+    /// materials.
+    static std::unordered_map<std::string, geometry::TriangleMesh>
+    FromTriangleMeshModel(
+            const open3d::visualization::rendering::TriangleMeshModel &model,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
 
     /// Compute the convex hull of the triangle mesh using qhull.
     ///
@@ -944,6 +969,10 @@ public:
     /// from the selected vertices. If the original mesh is empty, return
     /// an empty mesh.
     TriangleMesh SelectByIndex(const core::Tensor &indices) const;
+
+    /// Removes unreferenced vertices from the mesh.
+    /// \return The reference to itself.
+    TriangleMesh RemoveUnreferencedVertices();
 
 protected:
     core::Device device_ = core::Device("CPU:0");

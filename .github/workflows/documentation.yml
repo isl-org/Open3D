@@ -1,4 +1,7 @@
 name: Documentation
+permissions:
+  contents: write
+  actions: write
 
 on:
   workflow_dispatch:
@@ -17,9 +20,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
-
 jobs:
   headless-docs:
     # Build headless and docs
@@ -29,7 +29,7 @@ jobs:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout Open3D source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Maximize build space
         run: |
@@ -37,13 +37,13 @@ jobs:
           maximize_ubuntu_github_actions_build_space
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -56,9 +56,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.11'
 
       - name: Install dependencies
         env:
@@ -81,52 +81,49 @@ jobs:
           ccache -s
 
       - name: Upload docs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: open3d_docs
           path: docs/_out/html
           if-no-files-found: error
 
-      - name: GCloud CLI auth
+      - name: Deploy docs if all artifacts available
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: 'google-github-actions/auth@v1'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
-
-      - name: Deploy docs
-        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # Compress and upload the docs, only for main branch
-          docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
-          tar_file="${{ github.sha }}_ready.tar.gz"
+          tar_file="open3d-${GITHUB_SHA}-docs.tar.gz"
           rm -rf ${tar_file}
-          tar -C ${docs_out_dir} -czvf ${tar_file} html
-          gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
-          echo "Docs archive uploaded to:"
-          echo "https://storage.googleapis.com/open3d-docs/${tar_file}"
+          # Docs in docs/_out/html
+          tar -C docs/_out -cvzf ${tar_file} html
 
-      - name: Check wheels and ready documentation archive
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: |
-            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
-                -eq 4 ]; then
-                echo "All wheels and docs available. Making docs ready."
-                # Remove all marker files: Note _ at end of pattern.
-                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
-                # Rename docs archive:
-                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
-                    gs://open3d-docs/${{ github.sha }}.tar.gz
-                # Set holds on new artifacts, release on old
-                gsutil retention temp release gs://open3d-releases/*
-                gsutil retention temp set gs://open3d-releases/python-wheels/*${GITHUB_SHA:0:7}*.whl
-                gsutil retention temp set gs://open3d-releases/devel/*${GITHUB_SHA:0:7}*
-            else
-                echo "All wheels / docs not available yet."
-            fi
+          echo "Waiting for other release assets..."
+          this_sha=$(echo ${GITHUB_SHA} | cut -c 1-6)
+          n_this_sha_assets=$(gh release view main-devel --json assets --jq ".assets | map(select(.name | contains(\"${this_sha}\"))) | length")
+          # Total assets from each main branch commmit:
+          # Python wheels (4x4) + Viewer (3) + C++ libs (4+2+2) = 27,
+          while ((n_this_sha_assets < 27)); do
+              sleep 60
+              echo -n "."
+              n_this_sha_assets=$(gh release view main-devel --json assets --jq ".assets | map(select(.name | contains(\"${this_sha}\"))) | length")
+          done
+          gh release upload main-devel ${tar_file} --clobber
+          gh release view main-devel
+
+          echo "\nAll assets ready. Removing release assets except from last 3 commits: ${last_shas[@]}"
+          release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
+          last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
+          for relass in "${release_assets[@]}"; do
+              found=false
+              for last_sha in "${last_shas[@]}"; do
+                  if [[ $relass == *${last_sha}* ]]; then
+                      found=true
+                  fi
+              done
+              if [ $found == false ]; then
+                  set -x
+                  gh release delete-asset main-devel $relass
+                  set +x
+              fi
+          done
+          gh release view main-devel

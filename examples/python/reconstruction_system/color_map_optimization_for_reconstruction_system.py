@@ -14,6 +14,7 @@ import open3d as o3d
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 from open3d_example import *
+from initialize_config import initialize_config
 
 
 def parse_keys(filename):
