@@ -1,7 +1,5 @@
 name: Documentation
-permissions:
-  contents: write
-  actions: write
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -22,6 +20,8 @@ concurrency:
 
 jobs:
   headless-docs:
+    permissions:
+      contents: write  # Artifact upload and release upload
     # Build headless and docs
     runs-on: ubuntu-latest  # Warn about build issues in new versions
     env:
@@ -79,40 +79,45 @@ jobs:
           source util/ci_utils.sh
           build_docs "$DEVELOPER_BUILD"
           ccache -s
-
-      - name: Upload docs
-        uses: actions/upload-artifact@v4
-        with:
-          name: open3d_docs
-          path: docs/_out/html
-          if-no-files-found: error
-
-      - name: Deploy docs if all artifacts available
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
           tar_file="open3d-${GITHUB_SHA}-docs.tar.gz"
           rm -rf ${tar_file}
           # Docs in docs/_out/html
           tar -C docs/_out -cvzf ${tar_file} html
 
-          echo "Waiting for other release assets..."
-          this_sha=$(echo ${GITHUB_SHA} | cut -c 1-6)
-          n_this_sha_assets=$(gh release view main-devel --json assets --jq ".assets | map(select(.name | contains(\"${this_sha}\"))) | length")
+      - name: Upload docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-${{ github.sha }}-docs.tar.gz
+          path: open3d-${{ github.sha }}-docs.tar.gz
+          if-no-files-found: error
+          compression-level: 0 # no compression
+
+  update-release:
+    permissions:
+      contents: write  # Release upload
+    on:
+      workflow_run:
+        workflows: [macos, windows, ubuntu, ubuntu-wheel, ubuntu-cuda]
+        types:
+          - completed
+    needs: headless-docs
+    if: ${{ github.ref == 'refs/heads/main' }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Download docs
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-${{ github.sha }}-docs.tar.gz
+      - name: Deploy docs if all artifacts available
+        run: |
+          echo "Uploading docs to main-devel release..."
+          gh release upload main-devel open3d-${{ github.sha }}-docs.tar.gz --clobber
           # Total assets from each main branch commmit:
           # Python wheels (4x4) + Viewer (3) + C++ libs (4+2+2) = 27,
-          while ((n_this_sha_assets < 27)); do
-              sleep 60
-              echo -n "."
-              n_this_sha_assets=$(gh release view main-devel --json assets --jq ".assets | map(select(.name | contains(\"${this_sha}\"))) | length")
-          done
-          gh release upload main-devel ${tar_file} --clobber
-          gh release view main-devel
-
-          echo "\nAll assets ready. Removing release assets except from last 3 commits: ${last_shas[@]}"
           release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
           last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
+          echo "\nAll assets ready. Removing release assets except from last 3 commits: ${last_shas[@]}"
           for relass in "${release_assets[@]}"; do
               found=false
               for last_sha in "${last_shas[@]}"; do

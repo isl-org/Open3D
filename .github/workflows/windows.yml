@@ -1,7 +1,5 @@
 name: Windows
-permissions:
-  contents: write
-  actions: write
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -34,6 +32,8 @@ env:
 
 jobs:
   windows:
+    permissions:
+      contents: write  # upload
     runs-on: windows-2019
     strategy:
       fail-fast: false
@@ -234,6 +234,8 @@ jobs:
 
   build-wheel:
     name: Build wheel
+    permissions:
+      contents: write  # upload
     runs-on: windows-2019
     strategy:
       fail-fast: false
@@ -320,6 +322,8 @@ jobs:
 
   test-wheel:
     name: Test wheel
+    permissions:
+      contents: read
     runs-on: windows-2019
     needs: [build-wheel]
     strategy:
