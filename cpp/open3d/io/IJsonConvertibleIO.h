@@ -82,7 +82,7 @@ bool WriteIJsonConvertibleToJSONString(std::string &json_string,
                 [&str](const std::pair<ENUM_TYPE, std::string> &es_pair)  \
                         -> bool { return es_pair.second == str; });       \
         e = ((it != std::end(m)) ? it : std::begin(m))->first;            \
-        utility::LogDebug("{} -> {}", str, e);                            \
+        utility::LogDebug("{} -> {}", str, enum_to_string(e));            \
     }
 
 }  // namespace io

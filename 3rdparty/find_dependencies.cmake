@@ -1554,7 +1554,9 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         TARGETS TBB::tbb
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
-
+    target_compile_definitions(3rdparty_tbb INTERFACE OPEN3D_USE_ONEAPI_PACKAGES=1)
+    target_compile_definitions(3rdparty_tbb INTERFACE _PSTL_UDR_PRESENT=0)
+    target_compile_definitions(3rdparty_tbb INTERFACE _PSTL_UDS_PRESENT=0)
     # 2. oneDPL
     # /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL
     open3d_find_package_3rdparty_library(3rdparty_onedpl
