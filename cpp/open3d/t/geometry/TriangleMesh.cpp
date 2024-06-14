@@ -309,6 +309,9 @@ TriangleMesh &TriangleMesh::ComputeTriangleAreas() {
     }
 
     if (!HasTriangleIndices()) {
+        SetTriangleAttr("areas", core::Tensor::Empty(
+                                         {0}, GetVertexPositions().GetDtype(),
+                                         GetDevice()));
         utility::LogWarning("TriangleMesh has no triangle indices.");
         return *this;
     }
