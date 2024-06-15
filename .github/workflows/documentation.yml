@@ -80,7 +80,7 @@ jobs:
           # PWD: Open3D/docs
           ccache -s
           tar_file="open3d-${GITHUB_SHA}-docs.tar.gz"
-          rm -rf "${GITHUB_WORKSPACE}/${tar_file}""
+          rm -rf "${GITHUB_WORKSPACE}/${tar_file}"
           # Docs in docs/_out/html
           tar -C _out -cvzf "${GITHUB_WORKSPACE}/${tar_file}" html
 
