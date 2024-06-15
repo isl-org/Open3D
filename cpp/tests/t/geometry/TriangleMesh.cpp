@@ -1343,5 +1343,94 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
     EXPECT_TRUE(torus.GetTriangleNormals().AllClose(expected_tri_normals));
 }
 
+TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
+    core::Device device = GetParam();
+    t::geometry::TriangleMesh mesh_empty;
+    EXPECT_NO_THROW(mesh_empty.ComputeTriangleAreas());
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
+    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
+            *mesh, core::Float64, core::Int64, device);
+    std::vector<double> areas;
+    mesh->GetSurfaceArea(areas);
+    t_mesh.ComputeTriangleAreas();
+    EXPECT_TRUE(t_mesh.GetTriangleAttr("areas").AllClose(
+            core::Tensor(areas, {(int)areas.size()}, core::Float64)));
+}
+
+TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
+    using ::testing::UnorderedElementsAreArray;
+    core::Device device = GetParam();
+    t::geometry::TriangleMesh mesh_empty;
+    EXPECT_TRUE(mesh_empty.RemoveNonManifoldEdges().IsEmpty());
+
+    core::Tensor verts = core::Tensor::Init<float>(
+            {
+                    {0.0, 0.0, 0.0},
+                    {1.0, 0.0, 0.0},
+                    {0.0, 0.0, 1.0},
+                    {1.0, 0.0, 1.0},
+                    {0.0, 1.0, 0.0},
+                    {1.0, 1.0, 0.0},
+                    {0.0, 1.0, 1.0},
+                    {1.0, 1.0, 1.0},
+                    {0.0, -0.2, 0.0},
+            },
+            device);
+
+    mesh_empty.SetVertexPositions(verts);
+    EXPECT_TRUE(mesh_empty.GetVertexPositions().AllClose(verts));
+
+    core::Tensor tris = core::Tensor::Init<int64_t>(
+            {{4, 7, 5}, {8, 0, 1}, {8, 0, 1}, {8, 0, 1}, {4, 6, 7}, {0, 2, 4},
+             {2, 6, 4}, {0, 1, 2}, {1, 3, 2}, {1, 5, 7}, {8, 0, 2}, {8, 0, 2},
+             {8, 0, 1}, {1, 7, 3}, {2, 3, 7}, {2, 7, 6}, {8, 0, 2}, {6, 6, 7},
+             {0, 4, 1}, {8, 0, 4}, {1, 4, 5}},
+            device);
+
+    core::Tensor tri_labels = tris * 10;
+
+    t::geometry::TriangleMesh mesh(verts, tris);
+    mesh.SetTriangleAttr("labels", tri_labels);
+
+    geometry::TriangleMesh legacy_mesh = mesh.ToLegacy();
+    core::Tensor expected_edges =
+            core::eigen_converter::EigenVector2iVectorToTensor(
+                    legacy_mesh.GetNonManifoldEdges(), core::Int64, device);
+    EXPECT_TRUE(mesh.GetNonManifoldEdges().AllClose(expected_edges));
+
+    expected_edges = core::eigen_converter::EigenVector2iVectorToTensor(
+            legacy_mesh.GetNonManifoldEdges(true), core::Int64, device);
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(expected_edges));
+    EXPECT_THAT(
+            core::eigen_converter::TensorToEigenVector2iVector(
+                    mesh.GetNonManifoldEdges(false)),
+            UnorderedElementsAreArray(std::vector<Eigen::Vector2i>{{0, 8},
+                                                                   {1, 8},
+                                                                   {0, 1},
+                                                                   {6, 7},
+                                                                   {0, 2},
+                                                                   {0, 4},
+                                                                   {6, 6},
+                                                                   {4, 8},
+                                                                   {2, 8}}));
+
+    mesh.RemoveNonManifoldEdges();
+
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(
+            core::Tensor({0, 2}, core::Int64)));
+
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(false).AllClose(
+            core::Tensor({0, 2}, core::Int64)));
+
+    t::geometry::TriangleMesh box = t::geometry::TriangleMesh::CreateBox();
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(verts));
+    EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(box.GetTriangleIndices()));
+    core::Tensor expected_labels = tri_labels.IndexGet(
+            {core::Tensor::Init<bool>({1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0,
+                                       0, 0, 1, 1, 1, 0, 0, 1, 0, 1})});
+    EXPECT_TRUE(mesh.GetTriangleAttr("labels").AllClose(expected_labels));
+}
 }  // namespace tests
 }  // namespace open3d
