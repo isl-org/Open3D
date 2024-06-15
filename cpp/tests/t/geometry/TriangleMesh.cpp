@@ -1360,6 +1360,7 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
 }
 
 TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
+    using ::testing::UnorderedElementsAreArray;
     core::Device device = GetParam();
     t::geometry::TriangleMesh mesh_empty;
     EXPECT_TRUE(mesh_empty.RemoveNonManifoldEdges().IsEmpty());
@@ -1402,16 +1403,18 @@ TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
     expected_edges = core::eigen_converter::EigenVector2iVectorToTensor(
             legacy_mesh.GetNonManifoldEdges(true), core::Int64, device);
     EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(expected_edges));
-#ifdef _MSC_VER
-    expected_edges = core::Tensor::Init<int64_t>(
-            {{0 8}, {1 8}, {0 1}, {6 7}, {0 2}, {0 4}, {2, 8}, {6 6}, {4 8}},
-            device);
-#else
-    expected_edges = core::Tensor::Init<int64_t>(
-            {{0 8}, {1 8}, {0 1}, {6 7}, {0 2}, {0 4}, {6 6}, {4 8}, {2 8}},
-            device);
-#endif
-    EXPECT_TRUE(mesh.GetNonManifoldEdges(false).AllClose(expected_edges));
+    EXPECT_THAT(
+            core::eigen_converter::TensorToEigenVector2iVector(
+                    mesh.GetNonManifoldEdges(false)),
+            UnorderedElementsAreArray(std::vector<Eigen::Vector2i>{{0, 8},
+                                                                   {1, 8},
+                                                                   {0, 1},
+                                                                   {6, 7},
+                                                                   {0, 2},
+                                                                   {0, 4},
+                                                                   {6, 6},
+                                                                   {4, 8},
+                                                                   {2, 8}}));
 
     mesh.RemoveNonManifoldEdges();
 

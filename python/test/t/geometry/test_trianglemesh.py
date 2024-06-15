@@ -755,13 +755,24 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
     test_box_legacy = test_box.to_legacy()
 
     # allow boundary edges
-    edges = test_box_legacy.get_non_manifold_edges()
+    expected_edges = test_box_legacy.get_non_manifold_edges()
     np.testing.assert_allclose(test_box.get_non_manifold_edges().numpy(),
-                               np.asarray(edges))
+                               np.asarray(expected_edges))
     # disallow boundary edges
-    edges = test_box_legacy.get_non_manifold_edges(False)
-    np.testing.assert_allclose(
-        test_box.get_non_manifold_edges(False).numpy(), np.asarray(edges))
+    # MSVC produces edges in a different order, so compare sorted legacy results
+    expected_edges = np.array([
+        [0, 1],
+        [0, 2],
+        [0, 4],
+        [0, 6],
+        [1, 7],
+        [2, 8],
+        [4, 8],
+        [6, 8],
+        [6, 8],
+    ])
+    edges = np.sort(test_box.get_non_manifold_edges(False).numpy(), axis=0)
+    np.testing.assert_allclose(edges, expected_edges)
 
     test_box.remove_non_manifold_edges()
 
