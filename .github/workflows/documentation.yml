@@ -19,10 +19,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  headless-docs:
+  headless-docs:   # Build headless and docs
     permissions:
       contents: write  # Artifact upload and release upload
-    # Build headless and docs
     runs-on: ubuntu-latest  # Warn about build issues in new versions
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
@@ -92,43 +91,10 @@ jobs:
           if-no-files-found: error
           compression-level: 0 # no compression
 
-  update-release:
-    permissions:
-      contents: write  # Release upload
-    on:
-      workflow_run:
-        workflows: [macos, windows, ubuntu, ubuntu-wheel, ubuntu-cuda]
-        types:
-          - completed
-    needs: headless-docs
-    if: ${{ github.ref == 'refs/heads/main' }}
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Download docs
-        uses: actions/download-artifact@v4
-        with:
-          name: open3d-${{ github.sha }}-docs.tar.gz
-      - name: Deploy docs if all artifacts available
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Uploading docs to main-devel release..."
           gh release upload main-devel open3d-${{ github.sha }}-docs.tar.gz --clobber
-          # Total assets from each main branch commmit:
-          # Python wheels (4x4) + Viewer (3) + C++ libs (4+2+2) = 27,
-          release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
-          last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
-          echo "\nAll assets ready. Removing release assets except from last 3 commits: ${last_shas[@]}"
-          for relass in "${release_assets[@]}"; do
-              found=false
-              for last_sha in "${last_shas[@]}"; do
-                  if [[ $relass == *${last_sha}* ]]; then
-                      found=true
-                  fi
-              done
-              if [ $found == false ]; then
-                  set -x
-                  gh release delete-asset main-devel $relass
-                  set +x
-              fi
-          done
           gh release view main-devel
