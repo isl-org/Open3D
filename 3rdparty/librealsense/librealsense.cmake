@@ -6,6 +6,7 @@ ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
     URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.54.2.tar.gz #  2023 Sep 28
+    # Future versions after v2.54.2 may not support L515 and SR300
     URL_HASH SHA256=e3a767337ff40ae41000049a490ab84bd70b00cbfef65e8cdbadf17fd2e1e5a8
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
@@ -17,6 +18,7 @@ ExternalProject_Add(
     COMMAND ${GIT_EXECUTABLE} init
     COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
         ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
+        ${CMAKE_CURRENT_LIST_DIR}/fix_mac_apple_silicon_build.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF
