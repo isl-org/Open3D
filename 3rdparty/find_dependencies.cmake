@@ -1311,6 +1311,10 @@ if(BUILD_GUI)
             # search path. LLVM version must be >= 7 to compile Filament.
             if (NOT CLANG_LIBDIR)
                 set(ubuntu_default_llvm_lib_dirs
+                    /usr/lib/llvm-19/lib
+                    /usr/lib/llvm-18/lib
+                    /usr/lib/llvm-17/lib
+                    /usr/lib/llvm-16/lib
                     /usr/lib/llvm-15/lib
                     /usr/lib/llvm-14/lib
                     /usr/lib/llvm-13/lib
@@ -1337,6 +1341,10 @@ if(BUILD_GUI)
             # is not enforced by CMake.
             if (NOT CLANG_LIBDIR)
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                             llvm-19/lib
+                             llvm-18/lib
+                             llvm-17/lib
+                             llvm-16/lib
                              llvm-15/lib
                              llvm-14/lib
                              llvm-13/lib
