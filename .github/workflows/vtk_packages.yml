@@ -1,6 +1,5 @@
 name: VTK Packages
-permissions:
-  contents: write
+permissions: {}
 
 on:
   # Allows you to run this workflow manually from the Actions tab
@@ -9,6 +8,8 @@ on:
 jobs:
 
   Linux:
+    permissions:
+      contents: write
     # TODO: Convert to docker
     runs-on: ubuntu-18.04
     steps:
@@ -34,6 +35,8 @@ jobs:
           if-no-files-found: error
 
   Windows:
+    permissions:
+      contents: write
     runs-on: windows-2019
     env:
       SRC_DIR: "D:\\a\\open3d\\open3d"
@@ -84,6 +87,8 @@ jobs:
           if-no-files-found: error
 
   MacOS:
+    permissions:
+      contents: write
     runs-on: macos-12
     strategy:
       fail-fast: false

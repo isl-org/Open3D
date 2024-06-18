@@ -1,7 +1,5 @@
 name: Ubuntu Wheel
-permissions:
-  contents: write
-  actions: write
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -28,6 +26,8 @@ env:
 
 jobs:
   build-wheel:
+    permissions:
+      contents: write  # Release upload
     name: Build wheel
     runs-on: ubuntu-latest
     strategy:
@@ -115,6 +115,8 @@ jobs:
 
   test-wheel-cpu:
     name: Test wheel CPU
+    permissions:
+      contents: read
     runs-on: ubuntu-20.04
     needs: [build-wheel]
     strategy:

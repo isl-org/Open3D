@@ -1,7 +1,5 @@
 name: MacOS
-permissions:
-  contents: write
-  actions: write
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -28,6 +26,8 @@ env:
 
 jobs:
   MacOS:
+    permissions:
+      contents: write  # upload
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -139,6 +139,8 @@ jobs:
           if-no-files-found: error
 
   fuse-viewer:
+    permissions:
+      contents: write  # Release upload
     name: Fuse x64 and ARM64 viewer app
     runs-on: [macos-12]
     needs: [MacOS]
@@ -182,6 +184,8 @@ jobs:
 
   build-wheel:
     name: Build wheel
+    permissions:
+      contents: write  # upload
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -289,6 +293,8 @@ jobs:
 
   fuse-wheel:
     name: Fuse universal2 wheel
+    permissions:
+      contents: write  # Release upload
     runs-on: [macos-12]
     needs: [build-wheel]
     strategy:
@@ -354,6 +360,8 @@ jobs:
 
   test-wheel:
     name: Test wheel
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     needs: [build-wheel]
     strategy:
