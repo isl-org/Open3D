@@ -53,6 +53,11 @@ TriangleMesh &TriangleMesh::Rotate(const Eigen::Matrix3d &R,
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (mesh.IsEmpty()) return (*this);
     bool is_empty = IsEmpty();
+    bool add_triangle_uvs =
+            mesh.HasTriangleUvs() && (HasTriangleUvs() || is_empty);
+    bool add_textures_and_material_ids =
+            mesh.HasTextures() && mesh.HasTriangleMaterialIds() &&
+            ((HasTextures() && HasTriangleMaterialIds()) || is_empty);
     size_t old_vert_num = vertices_.size();
     MeshBase::operator+=(mesh);
     size_t old_tri_num = triangles_.size();
@@ -75,23 +80,21 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    if (mesh.HasTriangleUvs() && (HasTriangleUvs() || is_empty)) {
+    if (add_triangle_uvs) {
         size_t old_tri_uv_num = triangle_uvs_.size();
         triangle_uvs_.resize(old_tri_uv_num + mesh.triangle_uvs_.size());
         for (size_t i = 0; i < mesh.triangle_uvs_.size(); i++) {
             triangle_uvs_[old_tri_uv_num + i] = mesh.triangle_uvs_[i];
         }
+    } else {
+        triangle_uvs_.clear();
     }
-    if (mesh.HasTextures() && (HasTextures() || is_empty)) {
+    if (add_textures_and_material_ids) {
         size_t old_tex_num = textures_.size();
         textures_.resize(old_tex_num + mesh.textures_.size());
         for (size_t i = 0; i < mesh.textures_.size(); i++) {
             textures_[old_tex_num + i] = mesh.textures_[i];
         }
-    }
-    if (mesh.HasTriangleMaterialIds() &&
-        (HasTriangleMaterialIds() || is_empty)) {
-        size_t old_tex_num = textures_.size();
         size_t old_mat_id_num = triangle_material_ids_.size();
         triangle_material_ids_.resize(old_mat_id_num +
                                       mesh.triangle_material_ids_.size());
@@ -99,6 +102,9 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
             triangle_material_ids_[old_mat_id_num + i] =
                     mesh.triangle_material_ids_[i] + (int)old_tex_num;
         }
+    } else {
+        textures_.clear();
+        triangle_material_ids_.clear();
     }
     return (*this);
 }
