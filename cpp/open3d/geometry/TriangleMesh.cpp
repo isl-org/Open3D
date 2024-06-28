@@ -11,7 +11,6 @@
 #include <numeric>
 #include <queue>
 #include <tuple>
-#include <iostream>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/IntersectionTest.h"
@@ -482,15 +481,21 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
                                       c * vertex_colors_[triangle(2)];
         }
         if (has_textures_ && has_triangle_uvs_) {
-            Eigen::Vector2d uv = a * triangle_uvs_[3*tidx] + 
-                    b * triangle_uvs_[3*tidx+1] + 
-                    c * triangle_uvs_[3*tidx+2];
+            Eigen::Vector2d uv = a * triangle_uvs_[3 * tidx] +
+                                 b * triangle_uvs_[3 * tidx + 1] +
+                                 c * triangle_uvs_[3 * tidx + 2];
             int w = textures_[0].width_;
             int h = textures_[0].height_;
-            pcd->colors_[point_idx] = Eigen::Vector3d(
-                        (double) *(textures_[0].PointerAt<uint8_t>(uv(0) * w, uv(1)*h, 0)) / 255 , 
-                        (double) *(textures_[0].PointerAt<uint8_t>(uv(0) * w, uv(1)*h, 1)) / 255 , 
-                        (double) *(textures_[0].PointerAt<uint8_t>(uv(0) * w, uv(1)*h, 2)) / 255);
+            pcd->colors_[point_idx] =
+                    Eigen::Vector3d((double)*(textures_[0].PointerAt<uint8_t>(
+                                            uv(0) * w, uv(1) * h, 0)) /
+                                            255,
+                                    (double)*(textures_[0].PointerAt<uint8_t>(
+                                            uv(0) * w, uv(1) * h, 1)) /
+                                            255,
+                                    (double)*(textures_[0].PointerAt<uint8_t>(
+                                            uv(0) * w, uv(1) * h, 2)) /
+                                            255);
         }
     }
     return pcd;
