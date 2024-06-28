@@ -637,6 +637,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     // update pcl
     bool has_vert_normal = pcl->HasNormals();
     bool has_vert_color = pcl->HasColors();
+    bool has_textures_ = HasTextures();
+    bool has_triangle_uvs_ = HasTriangleUvs();
     int next_free = 0;
     for (size_t idx = 0; idx < pcl->points_.size(); ++idx) {
         if (!deleted[idx]) {
@@ -644,7 +646,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
             if (has_vert_normal) {
                 pcl->normals_[next_free] = pcl->normals_[idx];
             }
-            if (has_vert_color) {
+            if (has_vert_color || (has_textures_ && has_triangle_uvs_)) {
                 pcl->colors_[next_free] = pcl->colors_[idx];
             }
             next_free++;
