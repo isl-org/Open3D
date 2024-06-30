@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 namespace open3d {
 namespace tests {
