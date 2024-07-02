@@ -1897,6 +1897,7 @@ if(NOT USE_SYSTEM_EMBREE)
     include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
     open3d_import_3rdparty_library(3rdparty_embree
         HIDDEN
+        GROUPED
         INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
         LIB_DIR      ${EMBREE_LIB_DIR}
         LIBRARIES    ${EMBREE_LIBRARIES}
