@@ -121,7 +121,7 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
     auto new_selected_idx = impl_->selected_index_;
     bool is_double_click = false;
     DrawImGuiPushEnabledState();
-    ImVec2 initial_size(0, ImGui::GetFrameHeight());
+    ImVec2 initial_size(0, frame.height);
     if (ImGui::BeginListBox(impl_->imgui_id_.c_str(), initial_size)) {
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             bool is_selected = (int(i) == impl_->selected_index_);
