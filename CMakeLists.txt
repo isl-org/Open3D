@@ -117,6 +117,7 @@ if(LINUX_AARCH64)
 else()
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           OFF)
 endif()
+option(WITH_UV_ATLAS         "Include the TriangleMesh::ComputeUVAtlas function (requires uvatlas and DirectX)." ON)
 
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
 option(WITH_MINIZIP               "Enable MiniZIP"                           OFF)
