@@ -859,12 +859,13 @@ public:
     /// \return Tuple with (max stretch, num_charts, num_partitions) storing the
     /// actual amount of stretch, the number of created charts, and the number
     /// of parallel partitions created.
+#ifdef WITH_UV_ATLAS
     std::tuple<float, int, int> ComputeUVAtlas(size_t size = 512,
                                                float gutter = 1.0f,
                                                float max_stretch = 1.f / 6,
                                                int parallel_partitions = 1,
                                                int nthreads = 0);
-
+#endif
     /// Bake vertex attributes into textures.
     ///
     /// This function assumes a triangle attribute with name 'texture_uvs'.

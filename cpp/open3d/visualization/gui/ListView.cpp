@@ -116,15 +116,13 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
     ImGui::PushStyleColor(ImGuiCol_HeaderActive,  // click-hold color
                           colorToImgui(context.theme.list_selected_color));
 
-    int height_in_items =
-            int(std::floor(frame.height / ImGui::GetFrameHeight()));
 
     auto result = Widget::DrawResult::NONE;
     auto new_selected_idx = impl_->selected_index_;
     bool is_double_click = false;
     DrawImGuiPushEnabledState();
-    if (ImGui::ListBoxHeader(impl_->imgui_id_.c_str(),
-                             int(impl_->items_.size()), height_in_items)) {
+    ImVec2 initial_size(0, ImGui::GetFrameHeight());
+    if (ImGui::BeginListBox(impl_->imgui_id_.c_str(), initial_size)) {
         for (size_t i = 0; i < impl_->items_.size(); ++i) {
             bool is_selected = (int(i) == impl_->selected_index_);
             // ImGUI's list wants to hover over items, which is not done by
@@ -155,7 +153,7 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
             }
             ImGui::PopStyleColor();
         }
-        ImGui::ListBoxFooter();
+        ImGui::EndListBox();
 
         if (new_selected_idx != impl_->selected_index_ || is_double_click) {
             impl_->selected_index_ = new_selected_idx;
