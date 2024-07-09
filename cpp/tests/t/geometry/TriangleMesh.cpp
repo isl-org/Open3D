@@ -1348,21 +1348,26 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
     t::geometry::TriangleMesh mesh_empty;
     EXPECT_NO_THROW(mesh_empty.ComputeTriangleAreas());
 
-    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
-            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
-    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
-            *mesh, core::Float64, core::Int64, device);
-    std::vector<double> areas;
-    mesh->GetSurfaceArea(areas);
+    t::geometry::TriangleMesh t_mesh =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 3).To(device);
+    core::Tensor ref_areas = core::Tensor::Init<float>(
+            {0.39031237489989984, 0.39031237489989995, 0.39031237489989973,
+             0.39031237489989995, 0.39031237489989984, 0.3903123748999,
+             0.3903123748998997,  0.3903123748998999,  0.39031237489989973,
+             0.39031237489989995, 0.3903123748999,     0.3903123748999002,
+             0.4330127018922192,  0.43301270189221924, 0.43301270189221924,
+             0.43301270189221924, 0.43301270189221924, 0.4330127018922193,
+             0.4330127018922191,  0.43301270189221913, 0.4330127018922192,
+             0.43301270189221924, 0.4330127018922195,  0.43301270189221963},
+            device);
     t_mesh.ComputeTriangleAreas();
-    EXPECT_TRUE(t_mesh.GetTriangleAttr("areas").AllClose(
-            core::Tensor(areas, {(int)areas.size()}, core::Float64)));
+    EXPECT_TRUE(t_mesh.GetTriangleAttr("areas").AllClose(ref_areas));
 }
 
 TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
     using ::testing::UnorderedElementsAreArray;
     core::Device device = GetParam();
-    t::geometry::TriangleMesh mesh_empty;
+    t::geometry::TriangleMesh mesh_empty(device);
     EXPECT_TRUE(mesh_empty.RemoveNonManifoldEdges().IsEmpty());
 
     core::Tensor verts = core::Tensor::Init<float>(
@@ -1419,17 +1424,19 @@ TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
     mesh.RemoveNonManifoldEdges();
 
     EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(
-            core::Tensor({0, 2}, core::Int64)));
+            core::Tensor({0, 2}, core::Int64, device)));
 
     EXPECT_TRUE(mesh.GetNonManifoldEdges(false).AllClose(
-            core::Tensor({0, 2}, core::Int64)));
+            core::Tensor({0, 2}, core::Int64, device)));
 
-    t::geometry::TriangleMesh box = t::geometry::TriangleMesh::CreateBox();
+    t::geometry::TriangleMesh box =
+            t::geometry::TriangleMesh::CreateBox().To(device);
     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(verts));
     EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(box.GetTriangleIndices()));
     core::Tensor expected_labels = tri_labels.IndexGet(
             {core::Tensor::Init<bool>({1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0,
-                                       0, 0, 1, 1, 1, 0, 0, 1, 0, 1})});
+                                       0, 0, 1, 1, 1, 0, 0, 1, 0, 1},
+                                      device)});
     EXPECT_TRUE(mesh.GetTriangleAttr("labels").AllClose(expected_labels));
 }
 }  // namespace tests
