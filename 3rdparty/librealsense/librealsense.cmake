@@ -27,7 +27,7 @@ ExternalProject_Add(
         -DBUILD_GLSL_EXTENSIONS=OFF
         -DBUILD_GRAPHICAL_EXAMPLES=OFF
         -DBUILD_PYTHON_BINDINGS=OFF
-        -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
+	-DBUILD_WITH_CUDA=OFF
         -DUSE_EXTERNAL_USB=ON
         -DBUILD_TOOLS=OFF
         # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
