@@ -13,6 +13,14 @@
 // clang-format off
 #if TBB_INTERFACE_VERSION >= 10000
     #ifdef OPEN3D_USE_ONEAPI_PACKAGES
+        #ifdef _PSTL_UDR_PRESENT
+            #undef _PSTL_UDR_PRESENT
+        #endif
+        #define _PSTL_UDR_PRESENT 0
+        #ifdef _PSTL_UDS_PRESENT
+            #undef _PSTL_UDS_PRESENT
+        #endif
+        #define _PSTL_UDS_PRESENT 0
         #include <oneapi/dpl/execution>
         #include <oneapi/dpl/numeric>
     #else

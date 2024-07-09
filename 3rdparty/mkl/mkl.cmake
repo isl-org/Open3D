@@ -7,12 +7,13 @@
 #
 # The name "STATIC" is used to avoid naming collisions for other 3rdparty CMake
 # files (e.g. PyTorch) that also depends on MKL.
+# FIXME: anaconda.org URLs don't work anymore.
 
 include(ExternalProject)
 
 if(WIN32)
     set(MKL_INCLUDE_URL
-        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_216-win-64.tar.bz2W
+        https://github.com/isl-org/Open3D/releases/download/v0.12.0/mkl-include-2020.1-intel_216-win-64.tar.bz2
         https://anaconda.org/intel/mkl-include/2020.1/download/win-64/mkl-include-2020.1-intel_216.tar.bz2
     )
     set(MKL_INCLUDE_SHA256 65cedb770358721fd834224cd8be1fe1cc10b37ef2a1efcc899fc2fefbeb5b31)
