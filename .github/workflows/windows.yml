@@ -27,6 +27,7 @@ env:
   STOOLS_VER: "67.3.2"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
+  CUDA_VERSION: 11.7.1
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -47,7 +48,6 @@ jobs:
             STATIC_RUNTIME: ON
         include:
           - BUILD_CUDA_MODULE: ON
-            CUDA_VERSION: 11.0.3
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
 
@@ -64,16 +64,12 @@ jobs:
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
           # Define variables
-          $CUDA_VER_FULL = "${{ matrix.CUDA_VERSION }}"
+          $CUDA_VER_FULL = "${{ env.CUDA_VERSION }}"
           $CUDA_VER_ARR = $CUDA_VER_FULL.Split(".")
           $CUDA_VER = "$($CUDA_VER_ARR[0]).$($CUDA_VER_ARR[1])"
           $CUDA_VER_ID = "$($CUDA_VER_ARR[0])_$($CUDA_VER_ARR[1])"
           # Installer url
-          if ( $CUDA_VER_ARR[0] -ge 11 ) {
-            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER_FULL/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
-          } else {
-            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER/Prod/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
-          }
+          $CUDA_URL = "https://developer.download.nvidia.com/compute/cuda/$CUDA_VER_FULL/network_installers/cuda_$($CUDA_VER_FULL)_windows_network.exe"
           # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
