@@ -1368,7 +1368,8 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
         [6, 8],
         [6, 8],
     ])
-    edges = np.sort(test_box.get_non_manifold_edges(False).cpu().numpy(), axis=0)
+    edges = np.sort(test_box.get_non_manifold_edges(False).cpu().numpy(),
+                    axis=0)
     np.testing.assert_allclose(edges, expected_edges)
 
     test_box.remove_non_manifold_edges()
