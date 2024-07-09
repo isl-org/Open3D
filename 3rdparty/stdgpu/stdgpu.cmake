@@ -7,8 +7,9 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
-    URL https://github.com/stotko/stdgpu/archive/e10f6f3ccc9902d693af4380c3bcd188ec34a2e6.tar.gz
-    URL_HASH SHA256=7bb2733b099f7cedc86d2aee7830d128ac1222cfafa34cbaa4e818483c0a93f6
+    # Jul 2024: Fix FindThrust.cmake
+    URL https://github.com/stotko/stdgpu/archive/1b6a3319f1fbf180166e1bbc1d75f69ab622a0a0.tar.gz
+    URL_HASH SHA256=FAA3BF9CBE49EF9CC09E2E07E60D10BBF3B896EDB6089C920BEBE0F850FD95E4
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/stdgpu"
     UPDATE_COMMAND ""
     CMAKE_ARGS
