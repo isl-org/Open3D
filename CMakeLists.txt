@@ -299,19 +299,6 @@ else()
 endif()
 set(CMAKE_CXX_EXTENSIONS OFF)   # Improved compatibility
 
-# FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
-if (BUILD_CUDA_MODULE
-    AND CMAKE_CXX_COMPILER MATCHES "MSVC"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
-)
-    # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CUDA_STANDARD 17)
-    # Suppress warnings for deprecated C++17 functions.
-    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
-    message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
-        "Workaround this bug by setting the CUDA standard to C++17.")
-endif()
-
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake")
 
@@ -400,6 +387,14 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_mod
 
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
+    # Suppress nvcc unsupported compiler error for MSVC 2022 with CUDA 11.7 to 12.4
+    # https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12
+    if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
+        # Set this before any CUDA checks
+        set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
+        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022.")
+    endif()
+
     include(Open3DMakeCudaArchitectures)
     open3d_make_cuda_architectures(CUDA_ARCHS)
     set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
