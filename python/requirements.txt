@@ -1,4 +1,4 @@
-numpy>=1.18.0
+numpy>=1.18.0,<2.0.0
 dash>=2.6.0
 werkzeug>=2.2.3
 nbformat>=5.7.0
