@@ -154,6 +154,7 @@ The attributes of the point cloud have different levels::
 
     // Device transfers.
     pointcloud.def("to", &PointCloud::To,
+                   py::call_guard<py::gil_scoped_release>(),
                    "Transfer the point cloud to a specified device.",
                    "device"_a, "copy"_a = false);
     pointcloud.def("clone", &PointCloud::Clone,
@@ -164,6 +165,7 @@ The attributes of the point cloud have different levels::
             [](const PointCloud& pointcloud) {
                 return pointcloud.To(core::Device("CPU:0"));
             },
+            py::call_guard<py::gil_scoped_release>(),
             "Transfer the point cloud to CPU. If the point cloud is "
             "already on CPU, no copy will be performed.");
     pointcloud.def(
@@ -171,38 +173,51 @@ The attributes of the point cloud have different levels::
             [](const PointCloud& pointcloud, int device_id) {
                 return pointcloud.To(core::Device("CUDA", device_id));
             },
+            py::call_guard<py::gil_scoped_release>(),
             "Transfer the point cloud to a CUDA device. If the point cloud is "
             "already on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
 
     // Pointcloud specific functions.
     pointcloud.def("get_min_bound", &PointCloud::GetMinBound,
+                   py::call_guard<py::gil_scoped_release>(),
                    "Returns the min bound for point coordinates.");
     pointcloud.def("get_max_bound", &PointCloud::GetMaxBound,
+                   py::call_guard<py::gil_scoped_release>(),
                    "Returns the max bound for point coordinates.");
     pointcloud.def("get_center", &PointCloud::GetCenter,
+                   py::call_guard<py::gil_scoped_release>(),
                    "Returns the center for point coordinates.");
 
-    pointcloud.def("append",
-                   [](const PointCloud& self, const PointCloud& other) {
-                       return self.Append(other);
-                   });
-    pointcloud.def("__add__",
-                   [](const PointCloud& self, const PointCloud& other) {
-                       return self.Append(other);
-                   });
+    pointcloud.def(
+            "append",
+            [](const PointCloud& self, const PointCloud& other) {
+                return self.Append(other);
+            },
+            py::call_guard<py::gil_scoped_release>());
+    pointcloud.def(
+            "__add__",
+            [](const PointCloud& self, const PointCloud& other) {
+                return self.Append(other);
+            },
+            py::call_guard<py::gil_scoped_release>());
 
-    pointcloud.def("transform", &PointCloud::Transform, "transformation"_a,
+    pointcloud.def("transform", &PointCloud::Transform,
+                   py::call_guard<py::gil_scoped_release>(), "transformation"_a,
                    "Transforms the points and normals (if exist).");
-    pointcloud.def("translate", &PointCloud::Translate, "translation"_a,
+    pointcloud.def("translate", &PointCloud::Translate,
+                   py::call_guard<py::gil_scoped_release>(), "translation"_a,
                    "relative"_a = true, "Translates points.");
-    pointcloud.def("scale", &PointCloud::Scale, "scale"_a, "center"_a,
-                   "Scale points.");
-    pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
+    pointcloud.def("scale", &PointCloud::Scale,
+                   py::call_guard<py::gil_scoped_release>(), "scale"_a,
+                   "center"_a, "Scale points.");
+    pointcloud.def("rotate", &PointCloud::Rotate,
+                   py::call_guard<py::gil_scoped_release>(), "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
 
     pointcloud.def("select_by_mask", &PointCloud::SelectByMask,
-                   "boolean_mask"_a, "invert"_a = false,
+                   py::call_guard<py::gil_scoped_release>(), "boolean_mask"_a,
+                   "invert"_a = false,
                    "Select points from input pointcloud, based on boolean mask "
                    "indices into output point cloud.");
     pointcloud.def("select_by_index", &PointCloud::SelectByIndex, "indices"_a,
@@ -252,11 +267,10 @@ Example:
                    "by selecting the farthest point from previous selected "
                    "points iteratively",
                    "num_samples"_a);
-    pointcloud.def(
-            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
-            "nb_points"_a, "search_radius"_a,
-            R"(Remove points that have less than nb_points neighbors in a 
-sphere of a given search radius. 
+    pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+                   "nb_points"_a, "search_radius"_a,
+                   R"(Remove points that have less than nb_points neighbors in a
+sphere of a given search radius.
 
 Args:
     nb_points: Number of neighbor points required within the radius.
@@ -270,7 +284,7 @@ Return:
             &PointCloud::RemoveStatisticalOutliers, "nb_neighbors"_a,
             "std_ratio"_a,
             R"(Remove points that are further away from their \p nb_neighbor
-neighbors in average. This function is not recommended to use on GPU. 
+neighbors in average. This function is not recommended to use on GPU.
 
 Args:
     nb_neighbors: Number of neighbors around the target point.
@@ -285,9 +299,9 @@ Return:
     pointcloud.def(
             "remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
             "remove_nan"_a = true, "remove_infinite"_a = true,
-            R"(Remove all points from the point cloud that have a nan entry, or 
-infinite value. It also removes the corresponding attributes. 
-    
+            R"(Remove all points from the point cloud that have a nan entry, or
+infinite value. It also removes the corresponding attributes.
+
 Args:
     remove_nan: Remove NaN values from the PointCloud.
     remove_infinite: Remove infinite values from the PointCloud.
@@ -690,13 +704,13 @@ Example:
 
 Args:
     angle (float): The rotation angle in degree.
-    
+
     axis (open3d.core.Tensor): The rotation axis.
-    
+
     resolution (int): The resolution defines the number of intermediate sweeps
         about the rotation axis.
 
-    translation (float): The translation along the rotation axis. 
+    translation (float): The translation along the rotation axis.
 
 Returns:
     A line set with the result of the sweep operation.
@@ -719,9 +733,9 @@ Example:
                    R"(Sweeps the point cloud along a direction vector.
 
 Args:
-    
+
     vector (open3d.core.Tensor): The direction vector.
-    
+
     scale (float): Scalar factor which essentially scales the direction vector.
 
 Returns:

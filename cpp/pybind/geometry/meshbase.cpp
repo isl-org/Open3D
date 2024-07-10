@@ -72,9 +72,11 @@ void pybind_meshbase(py::module &m) {
             .def("normalize_normals", &MeshBase::NormalizeNormals,
                  "Normalize vertex normals to length 1.")
             .def("paint_uniform_color", &MeshBase::PaintUniformColor,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Assigns each vertex in the MeshBase the same color.",
                  "color"_a)
             .def("compute_convex_hull", &MeshBase::ComputeConvexHull,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Computes the convex hull of the triangle mesh.")
             .def_readwrite("vertices", &MeshBase::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "

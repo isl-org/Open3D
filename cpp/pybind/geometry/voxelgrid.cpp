@@ -81,11 +81,13 @@ void pybind_voxelgrid(py::module &m) {
                  "Add a new voxel into the VoxelGrid.")
             .def("remove_voxel", &VoxelGrid::RemoveVoxel, "idx"_a,
                  "Remove a voxel given index.")
-            .def("check_if_included", &VoxelGrid::CheckIfIncluded, "queries"_a,
+            .def("check_if_included", &VoxelGrid::CheckIfIncluded,
+                 py::call_guard<py::gil_scoped_release>(), "queries"_a,
                  "Element-wise check if a query in the list is included in "
                  "the VoxelGrid. Queries are double precision and "
                  "are mapped to the closest voxel.")
-            .def("carve_depth_map", &VoxelGrid::CarveDepthMap, "depth_map"_a,
+            .def("carve_depth_map", &VoxelGrid::CarveDepthMap,
+                 py::call_guard<py::gil_scoped_release>(), "depth_map"_a,
                  "camera_params"_a, "keep_voxels_outside_image"_a = false,
                  "Remove all voxels from the VoxelGrid where none of the "
                  "boundary points of the voxel projects to depth value that is "
@@ -94,16 +96,18 @@ void pybind_voxelgrid(py::module &m) {
                  "only carved if all boundary points project to a valid image "
                  "location.")
             .def("carve_silhouette", &VoxelGrid::CarveSilhouette,
-                 "silhouette_mask"_a, "camera_params"_a,
-                 "keep_voxels_outside_image"_a = false,
+                 py::call_guard<py::gil_scoped_release>(), "silhouette_mask"_a,
+                 "camera_params"_a, "keep_voxels_outside_image"_a = false,
                  "Remove all voxels from the VoxelGrid where none of the "
                  "boundary points of the voxel projects to a valid mask pixel "
                  "(pixel value > 0). If keep_voxels_outside_image is true then "
                  "voxels are only carved if all boundary points project to a "
                  "valid image location.")
-            .def("to_octree", &VoxelGrid::ToOctree, "max_depth"_a,
+            .def("to_octree", &VoxelGrid::ToOctree,
+                 py::call_guard<py::gil_scoped_release>(), "max_depth"_a,
                  "Convert to Octree.")
-            .def("create_from_octree", &VoxelGrid::CreateFromOctree, "octree"_a,
+            .def("create_from_octree", &VoxelGrid::CreateFromOctree,
+                 py::call_guard<py::gil_scoped_release>(), "octree"_a,
                  "Convert from Octree.")
             .def("get_voxel_center_coordinate",
                  &VoxelGrid::GetVoxelCenterCoordinate, "idx"_a,
@@ -114,6 +118,7 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns the 8 bounding points of a voxel given its grid "
                  "index.")
             .def_static("create_dense", &VoxelGrid::CreateDense,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Creates a voxel grid where every voxel is set (hence "
                         "dense). This is a useful starting point for voxel "
                         "carving",
@@ -121,6 +126,7 @@ void pybind_voxelgrid(py::module &m) {
                         "height"_a, "depth"_a)
             .def_static("create_from_point_cloud",
                         &VoxelGrid::CreateFromPointCloud,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Creates a VoxelGrid from a given PointCloud. The "
                         "color value of a given  voxel is the average color "
                         "value of the points that fall into it (if the "
@@ -129,6 +135,7 @@ void pybind_voxelgrid(py::module &m) {
                         "input"_a, "voxel_size"_a)
             .def_static("create_from_point_cloud_within_bounds",
                         &VoxelGrid::CreateFromPointCloudWithinBounds,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Creates a VoxelGrid from a given PointCloud. The "
                         "color value of a given voxel is the average color "
                         "value of the points that fall into it (if the "
@@ -137,6 +144,7 @@ void pybind_voxelgrid(py::module &m) {
                         "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_static("create_from_triangle_mesh",
                         &VoxelGrid::CreateFromTriangleMesh,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Creates a VoxelGrid from a given TriangleMesh. No "
                         "color information is converted. The bounds of the "
                         "created VoxelGrid are computed from the  "
@@ -145,6 +153,7 @@ void pybind_voxelgrid(py::module &m) {
             .def_static(
                     "create_from_triangle_mesh_within_bounds",
                     &VoxelGrid::CreateFromTriangleMeshWithinBounds,
+                    py::call_guard<py::gil_scoped_release>(),
                     "Creates a VoxelGrid from a given TriangleMesh. No color "
                     "information is converted. The bounds "
                     "of the created VoxelGrid are defined by the given "
