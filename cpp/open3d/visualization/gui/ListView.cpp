@@ -116,7 +116,6 @@ Widget::DrawResult ListView::Draw(const DrawContext &context) {
     ImGui::PushStyleColor(ImGuiCol_HeaderActive,  // click-hold color
                           colorToImgui(context.theme.list_selected_color));
 
-
     auto result = Widget::DrawResult::NONE;
     auto new_selected_idx = impl_->selected_index_;
     bool is_double_click = false;

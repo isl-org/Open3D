@@ -661,6 +661,12 @@ def test_hole_filling():
 
 
 def test_uvatlas():
+    if not o3d._build_config['WITH_UV_ATLAS']:
+        # Open3d was compiled without support
+        # for the uvatlas function in TriangleMesh.
+        # This test cannot be performed with that
+        # configuration
+        return
     box = o3d.t.geometry.TriangleMesh.create_box()
     box.compute_uvatlas()
     assert box.triangle["texture_uvs"].shape == (12, 3, 2)
