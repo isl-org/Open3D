@@ -12,6 +12,7 @@
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
 #include <vtkFloatArray.h>
+#include <vtkImageData.h>
 #include <vtkLinearExtrusionFilter.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
@@ -180,6 +181,32 @@ static vtkSmartPointer<vtkPoints> CreateVtkPointsFromTensor(
     auto data_array = CreateVtkDataArrayFromTensor(tensor, copy);
     pts->SetData(data_array);
     return pts;
+}
+
+OPEN3D_LOCAL vtkSmartPointer<vtkImageData> CreateVtkImageDataFromTensor(
+        core::Tensor& tensor, bool copy) {
+    core::AssertTensorDtypes(tensor,
+                             {core::UInt8, core::Float32, core::Float64});
+    if (tensor.NumDims() != 2 && tensor.NumDims() != 3) {
+        utility::LogError(
+                "Cannot convert Tensor to vtkImageData. The number of "
+                "dimensions must be 2 or 3 but is {}",
+                tensor.NumDims());
+    }
+
+    // Create a flat tensor that can be converted to a vtkDataArray
+    auto tensor_flat = tensor.Reshape({tensor.NumElements(), 1});
+    copy = copy && tensor.GetDataPtr() == tensor_flat.GetDataPtr();
+    auto data_array = CreateVtkDataArrayFromTensor(tensor_flat, copy);
+
+    vtkSmartPointer<vtkImageData> im = vtkSmartPointer<vtkImageData>::New();
+    im->GetPointData()->SetScalars(data_array);
+    std::array<int, 3> size{1, 1, 1};
+    for (int i = 0; i < tensor.NumDims(); ++i) {
+        size[i] = tensor.GetShape(tensor.NumDims() - i - 1);
+    }
+    im->SetDimensions(size.data());
+    return im;
 }
 
 namespace {

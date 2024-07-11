@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <vtkFlyingEdges3D.h>
 #include <vtkLinearExtrusionFilter.h>
 #include <vtkNew.h>
 #include <vtkTextSource.h>
@@ -283,6 +284,28 @@ TriangleMesh TriangleMesh::CreateText(const std::string &text,
     tmesh.GetTriangleIndices() =
             tmesh.GetTriangleIndices().To(device, int_dtype);
     return tmesh;
+}
+
+TriangleMesh TriangleMesh::CreateFromVolume(
+        const core::Tensor &volume,
+        const std::vector<double> contour_values,
+        const core::Device &device) {
+    using namespace vtkutils;
+    core::AssertTensorShape(volume, {core::None, core::None, core::None});
+    core::AssertTensorDtypes(volume, {core::Float32, core::Float64});
+
+    auto image_data = vtkutils::CreateVtkImageDataFromTensor(
+            const_cast<core::Tensor &>(volume));
+    vtkNew<vtkFlyingEdges3D> method;
+    method->SetNumberOfContours(contour_values.size());
+    for (int i = 0; i < int(contour_values.size()); ++i) {
+        method->SetValue(i, contour_values[i]);
+    }
+    method->SetInputData(image_data);
+    method->Update();
+    auto polydata = method->GetOutput();
+    auto tmesh = CreateTriangleMeshFromVtkPolyData(polydata);
+    return tmesh.To(device);
 }
 
 }  // namespace geometry

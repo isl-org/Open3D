@@ -594,6 +594,18 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a mesh from a scalar volume by computing the isocontour.
+    /// This method uses the Flying Edges dual contouring method to compute the
+    /// isocontour for one or more values.
+    /// \param volume 3D tensor with the volume.
+    /// \param contour_values A list of contour values at which isocontours will
+    /// be generated.The values used for contouring. The default \param device
+    /// The device for the returned mesh.
+    static TriangleMesh CreateFromVolume(
+            const core::Tensor &volume,
+            const std::vector<double> contour_values = {0.0},
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
