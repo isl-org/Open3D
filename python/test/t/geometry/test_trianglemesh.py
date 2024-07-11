@@ -287,6 +287,14 @@ def test_create_text():
     assert mesh.triangle.indices.shape == (936, 3)
 
 
+def test_create_from_volume():
+    coords = np.stack(np.meshgrid(*3*[np.linspace(-1,1,num=64)], indexing='ij'), axis=-1)
+    vol = np.linalg.norm(coords, axis=-1) - 0.5
+    mesh = o3d.t.geometry.TriangleMesh.create_from_volume(vol)
+    assert mesh.vertex.positions.shape[0] == 4728
+    assert mesh.triangle.indices.shape[0] == 9452
+
+
 def test_simplify_quadric_decimation():
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box().subdivide_midpoint(3))

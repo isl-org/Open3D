@@ -521,6 +521,45 @@ Example:
         o3d.visualization.draw([{'name': 'text', 'geometry': mesh}])
 )");
 
+    triangle_mesh.def_static(
+            "create_from_volume",
+            // Accept anything for contour_values that pybind can convert to
+            // std::list. This also avoids o3d.utility.DoubleVector.
+            [](const core::Tensor& volume, std::list<double> contour_values,
+               const core::Device& device) {
+                std::vector<double> cv(contour_values.begin(),
+                                       contour_values.end());
+                return TriangleMesh::CreateFromVolume(volume, cv, device);
+            },
+            "volume"_a, "contour_values"_a = std::list<double>{0.0},
+            "device"_a = core::Device("CPU:0"),
+            R"(Create a mesh from a scalar volume by computing the isocontour.
+
+This method uses the Flying Edges dual contouring method to compute the
+isocontour for one or more values.
+
+Args:
+    volume (open3d.core.Tensor): 3D tensor with the volume.
+    contour_values (list): A list of contour values at which isocontours will
+        be generated.
+    device (o3d.core.Device): The device for the returned mesh.
+
+Returns:
+    A TriangleMesh with the extracted contours.
+
+
+This example shows how to create a sphere::
+
+    import open3d as o3d
+    import numpy as np
+
+    coords = np.stack(np.meshgrid(*3*[np.linspace(-1,1,num=64)], indexing='ij'), axis=-1)
+    vol = np.linalg.norm(coords, axis=-1) - 0.5
+    mesh = o3d.t.geometry.TriangleMesh.create_from_volume(vol)
+    o3d.visualization.draw(mesh)
+
+)");
+
     triangle_mesh.def(
             "simplify_quadric_decimation",
             &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
