@@ -595,8 +595,8 @@ public:
             const core::Device &device = core::Device("CPU:0"));
 
     /// Create a mesh from a scalar volume by computing the isocontour.
-    /// This method uses the Flying Edges dual contouring method to compute the
-    /// isocontour for one or more values.
+    /// This method uses the Flying Edges dual contouring method that similarly
+    /// like Marching Cubes computes the isocontour.
     /// \param volume 3D tensor with the volume.
     /// \param contour_values A list of contour values at which isocontours will
     /// be generated.The values used for contouring. The default \param device

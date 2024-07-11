@@ -535,8 +535,8 @@ Example:
             "device"_a = core::Device("CPU:0"),
             R"(Create a mesh from a scalar volume by computing the isocontour.
 
-This method uses the Flying Edges dual contouring method to compute the
-isocontour for one or more values.
+This method uses the Flying Edges dual contouring method that similarly like
+Marching Cubes computes the isocontour.
 
 Args:
     volume (open3d.core.Tensor): 3D tensor with the volume.
@@ -548,7 +548,7 @@ Returns:
     A TriangleMesh with the extracted contours.
 
 
-This example shows how to create a sphere::
+This example shows how to create a sphere from a volume::
 
     import open3d as o3d
     import numpy as np

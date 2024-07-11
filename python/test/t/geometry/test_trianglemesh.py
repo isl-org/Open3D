@@ -288,7 +288,9 @@ def test_create_text():
 
 
 def test_create_from_volume():
-    coords = np.stack(np.meshgrid(*3*[np.linspace(-1,1,num=64)], indexing='ij'), axis=-1)
+    coords = np.stack(np.meshgrid(*3 * [np.linspace(-1, 1, num=64)],
+                                  indexing='ij'),
+                      axis=-1)
     vol = np.linalg.norm(coords, axis=-1) - 0.5
     mesh = o3d.t.geometry.TriangleMesh.create_from_volume(vol)
     assert mesh.vertex.positions.shape[0] == 4728
