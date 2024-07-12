@@ -13,7 +13,7 @@ namespace open3d {
 namespace core {
 
 void pybind_sycl_utils_definitions(py::module& m) {
-    m.def("sycl_demo", &sycl::SYCLDemo);
+    m.def("sycl_demo", &sy::SYCLDemo);
 }
 
 }  // namespace core

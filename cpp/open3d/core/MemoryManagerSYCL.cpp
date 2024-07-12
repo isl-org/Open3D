@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <cstdlib>
 #include <unordered_map>
 
@@ -18,24 +18,22 @@
 namespace open3d {
 namespace core {
 
-namespace sy = cl::sycl;
-
 void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
-    const sy::queue& queue =
-            sycl::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const sycl::queue& queue =
+            sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
 #ifdef ENABLE_SYCL_UNIFIED_SHARED_MEMORY
-    return static_cast<void*>(sy::malloc_shared(byte_size, queue));
+    return static_cast<void*>(sycl::malloc_shared(byte_size, queue));
 #else
-    return static_cast<void*>(sy::malloc_device(byte_size, queue));
+    return static_cast<void*>(sycl::malloc_device(byte_size, queue));
 #endif
 }
 
 void MemoryManagerSYCL::Free(void* ptr, const Device& device) {
     if (ptr) {
-        const sy::queue& queue =
-                sycl::SYCLContext::GetInstance().GetDefaultQueue(device);
-        sy::free(ptr, queue);
+        const sycl::queue& queue =
+                sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+        sycl::free(ptr, queue);
     }
 }
 
@@ -62,8 +60,8 @@ void MemoryManagerSYCL::Memcpy(void* dst_ptr,
                           dst_device.ToString());
     }
 
-    sy::queue queue =
-            sycl::SYCLContext::GetInstance().GetDefaultQueue(device_with_queue);
+    sycl::queue queue =
+            sy::SYCLContext::GetInstance().GetDefaultQueue(device_with_queue);
     queue.memcpy(dst_ptr, src_ptr, num_bytes).wait_and_throw();
 }
 

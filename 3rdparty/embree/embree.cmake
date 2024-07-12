@@ -100,10 +100,12 @@ ExternalProject_Add(
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}sys${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}math${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}tasking${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ze_wrapper${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_rthwif${CMAKE_STATIC_LIBRARY_SUFFIX}
         ${ISA_BUILD_BYPRODUCTS}
 )
 
 ExternalProject_Get_Property(ext_embree INSTALL_DIR)
 set(EMBREE_INCLUDE_DIRS ${INSTALL_DIR}/include/ ${INSTALL_DIR}/src/ext_embree/) # "/" is critical.
 set(EMBREE_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(EMBREE_LIBRARIES embree4_sycl embree4 simd lexers sys math tasking ze_wrapper ${ISA_LIBS})
+set(EMBREE_LIBRARIES embree4_sycl embree4 simd lexers sys math tasking ze_wrapper embree_rthwif ${ISA_LIBS})
