@@ -33,7 +33,7 @@ void pybind_core_declarations(py::module& m) {
 
     // opn3d::core::nns namespace.
     py::module m_nns = m_core.def_submodule("nns");
-    nns::pybind_core_nns(m_nns);
+    nns::pybind_core_nns_declarations(m_nns);
 }
 
 void pybind_core_definitions(py::module& m) {
@@ -50,6 +50,8 @@ void pybind_core_definitions(py::module& m) {
     pybind_core_hashmap_definitions(m_core);
     pybind_core_hashset_definitions(m_core);
     pybind_core_scalar_definitions(m_core);
+    auto m_nns = static_cast<py::module>(m_core.attr("nns"));
+    nns::pybind_core_nns_definitions(m_nns);
 }
 
 }  // namespace core
