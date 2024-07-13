@@ -16,7 +16,7 @@ namespace core {
 void pybind_core_declarations(py::module& m);
 void pybind_cuda_utils_declarations(py::module& m);
 void pybind_core_blob_declarations(py::module& m);
-void pybind_core_dtype(py::module& m);
+void pybind_core_dtype_declarations(py::module& m);
 void pybind_core_device_declarations(py::module& m);
 void pybind_core_size_vector(py::module& m);
 void pybind_core_tensor(py::module& m);
@@ -30,6 +30,7 @@ void pybind_core_scalar_declarations(py::module& m);
 void pybind_core_definitions(py::module& m);
 void pybind_cuda_utils_definitions(py::module& m);
 void pybind_sycl_utils_definitions(py::module& m);
+void pybind_core_dtype_definitions(py::module& m);
 void pybind_core_device_definitions(py::module& m);
 void pybind_core_linalg_definitions(py::module& m);
 void pybind_core_kernel_definitions(py::module& m);
