@@ -38,8 +38,7 @@ PYBIND11_MODULE(pybind, m) {
     // The binding order matters: if a class haven't been binded, binding the
     // user of this class will result in "could not convert default argument
     // into a Python object" error.
-    utility::pybind_utility(m);
-
+    utility::pybind_utility_declarations(m);
     camera::pybind_camera_declarations(m);
     core::pybind_core_declarations(m);
     data::pybind_data(m);
@@ -50,6 +49,7 @@ PYBIND11_MODULE(pybind, m) {
     pipelines::pybind_pipelines(m);
     visualization::pybind_visualization(m);
 
+    utility::pybind_utility_definitions(m);
     camera::pybind_camera_definitions(m);
     core::pybind_core_definitions(m);
 
