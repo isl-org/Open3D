@@ -41,7 +41,7 @@ PYBIND11_MODULE(pybind, m) {
     utility::pybind_utility(m);
 
     camera::pybind_camera_declarations(m);
-    core::pybind_core(m);
+    core::pybind_core_declarations(m);
     data::pybind_data(m);
     geometry::pybind_geometry(m);
     t::pybind_t(m);
@@ -51,6 +51,7 @@ PYBIND11_MODULE(pybind, m) {
     visualization::pybind_visualization(m);
 
     camera::pybind_camera_definitions(m);
+    core::pybind_core_definitions(m);
 
     // pybind11 will internally manage the lifetime of default arguments for
     // function bindings. Since these objects will live longer than the memory

@@ -16,7 +16,7 @@
 namespace open3d {
 namespace core {
 
-void pybind_core(py::module& m) {
+void pybind_core_declarations(py::module& m) {
     py::module m_core = m.def_submodule("core");
 
     // opn3d::core namespace.
@@ -24,7 +24,7 @@ void pybind_core(py::module& m) {
     pybind_sycl_utils(m_core);
     pybind_core_blob(m_core);
     pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
+    pybind_core_device_declarations(m_core);
     pybind_core_size_vector(m_core);
     pybind_core_tensor(m_core);
     pybind_core_tensor_function(m_core);
@@ -37,6 +37,11 @@ void pybind_core(py::module& m) {
     // opn3d::core::nns namespace.
     py::module m_nns = m_core.def_submodule("nns");
     nns::pybind_core_nns(m_nns);
+}
+
+void pybind_core_definitions(py::module& m) {
+    auto m_core = static_cast<py::module>(m.attr("core"));
+    pybind_core_device_definitions(m_core);
 }
 
 }  // namespace core
