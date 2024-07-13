@@ -40,7 +40,7 @@ PYBIND11_MODULE(pybind, m) {
     // into a Python object" error.
     utility::pybind_utility(m);
 
-    camera::pybind_camera(m);
+    camera::pybind_camera_declarations(m);
     core::pybind_core(m);
     data::pybind_data(m);
     geometry::pybind_geometry(m);
@@ -49,6 +49,8 @@ PYBIND11_MODULE(pybind, m) {
     io::pybind_io(m);
     pipelines::pybind_pipelines(m);
     visualization::pybind_visualization(m);
+
+    camera::pybind_camera_definitions(m);
 
     // pybind11 will internally manage the lifetime of default arguments for
     // function bindings. Since these objects will live longer than the memory
