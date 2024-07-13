@@ -14,7 +14,7 @@ namespace open3d {
 namespace core {
 
 void pybind_core_declarations(py::module& m);
-void pybind_cuda_utils(py::module& m);
+void pybind_cuda_utils_declarations(py::module& m);
 void pybind_sycl_utils(py::module& m);
 void pybind_core_blob(py::module& m);
 void pybind_core_dtype(py::module& m);
@@ -30,6 +30,7 @@ void pybind_core_hashset(py::module& m);
 void pybind_core_scalar(py::module& m);
 
 void pybind_core_definitions(py::module& m);
+void pybind_cuda_utils_definitions(py::module& m);
 void pybind_core_device_definitions(py::module& m);
 
 }  // namespace core
