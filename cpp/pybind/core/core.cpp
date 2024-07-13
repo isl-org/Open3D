@@ -24,7 +24,7 @@ void pybind_core_declarations(py::module& m) {
     pybind_core_blob_declarations(m_core);
     pybind_core_dtype_declarations(m_core);
     pybind_core_device_declarations(m_core);
-    pybind_core_size_vector(m_core);
+    pybind_core_size_vector_declarations(m_core);
     pybind_core_tensor(m_core);
     pybind_core_tensor_function(m_core);
     pybind_core_kernel_declarations(m_core);
@@ -43,6 +43,7 @@ void pybind_core_definitions(py::module& m) {
     pybind_sycl_utils_definitions(m_core);
     pybind_core_dtype_definitions(m_core);
     pybind_core_device_definitions(m_core);
+    pybind_core_size_vector_definitions(m_core);
     pybind_core_linalg_definitions(m_core);
     pybind_core_kernel_definitions(m_core);
     pybind_core_scalar_definitions(m_core);
