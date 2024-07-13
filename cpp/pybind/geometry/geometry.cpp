@@ -219,29 +219,35 @@ Returns:
 void pybind_geometry_declarations(py::module &m) {
     py::module m_geometry = m.def_submodule("geometry");
     pybind_geometry_classes_declarations(m_geometry);
-    pybind_kdtreeflann(m_geometry);
-    pybind_pointcloud(m_geometry);
-    pybind_keypoint(m_geometry);
-    pybind_voxelgrid(m_geometry);
-    pybind_lineset(m_geometry);
-    pybind_meshbase(m_geometry);
-    pybind_trianglemesh(m_geometry);
-    pybind_halfedgetrianglemesh(m_geometry);
-    pybind_image(m_geometry);
-    pybind_tetramesh(m_geometry);
-    pybind_pointcloud_methods(m_geometry);
-    pybind_voxelgrid_methods(m_geometry);
-    pybind_meshbase_methods(m_geometry);
-    pybind_lineset_methods(m_geometry);
-    pybind_image_methods(m_geometry);
-    pybind_octree_methods(m_geometry);
-    pybind_octree(m_geometry);
-    pybind_boundingvolume(m_geometry);
+    pybind_kdtreeflann_declarations(m_geometry);
+    pybind_pointcloud_declarations(m_geometry);
+    pybind_keypoint_declarations(m_geometry);
+    pybind_voxelgrid_declarations(m_geometry);
+    pybind_lineset_declarations(m_geometry);
+    pybind_meshbase_declarations(m_geometry);
+    pybind_trianglemesh_declarations(m_geometry);
+    pybind_halfedgetrianglemesh_declarations(m_geometry);
+    pybind_image_declarations(m_geometry);
+    pybind_tetramesh_declarations(m_geometry);
+    pybind_octree_declarations(m_geometry);
+    pybind_boundingvolume_declarations(m_geometry);
 }
 
 void pybind_geometry_definitions(py::module &m) {
     auto m_geometry = static_cast<py::module>(m.attr("geometry"));
     pybind_geometry_classes_definitions(m_geometry);
+    pybind_kdtreeflann_definitions(m_geometry);
+    pybind_pointcloud_definitions(m_geometry);
+    pybind_keypoint_definitions(m_geometry);
+    pybind_voxelgrid_definitions(m_geometry);
+    pybind_lineset_definitions(m_geometry);
+    pybind_meshbase_definitions(m_geometry);
+    pybind_trianglemesh_definitions(m_geometry);
+    pybind_halfedgetrianglemesh_definitions(m_geometry);
+    pybind_image_definitions(m_geometry);
+    pybind_tetramesh_definitions(m_geometry);
+    pybind_octree_definitions(m_geometry);
+    pybind_boundingvolume_definitions(m_geometry);
 }
 
 }  // namespace geometry
