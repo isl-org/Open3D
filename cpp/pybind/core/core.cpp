@@ -22,7 +22,7 @@ void pybind_core_declarations(py::module& m) {
     // opn3d::core namespace.
     pybind_cuda_utils_declarations(m_core);
     pybind_core_blob_declarations(m_core);
-    pybind_core_dtype(m_core);
+    pybind_core_dtype_declarations(m_core);
     pybind_core_device_declarations(m_core);
     pybind_core_size_vector(m_core);
     pybind_core_tensor(m_core);
@@ -41,6 +41,7 @@ void pybind_core_definitions(py::module& m) {
     auto m_core = static_cast<py::module>(m.attr("core"));
     pybind_cuda_utils_definitions(m_core);
     pybind_sycl_utils_definitions(m_core);
+    pybind_core_dtype_definitions(m_core);
     pybind_core_device_definitions(m_core);
     pybind_core_linalg_definitions(m_core);
     pybind_core_kernel_definitions(m_core);
