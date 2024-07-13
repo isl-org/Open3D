@@ -20,7 +20,7 @@ void pybind_core_declarations(py::module& m) {
     py::module m_core = m.def_submodule("core");
 
     // opn3d::core namespace.
-    pybind_cuda_utils(m_core);
+    pybind_cuda_utils_declarations(m_core);
     pybind_sycl_utils(m_core);
     pybind_core_blob(m_core);
     pybind_core_dtype(m_core);
@@ -41,6 +41,7 @@ void pybind_core_declarations(py::module& m) {
 
 void pybind_core_definitions(py::module& m) {
     auto m_core = static_cast<py::module>(m.attr("core"));
+    pybind_cuda_utils_definitions(m_core);
     pybind_core_device_definitions(m_core);
 }
 
