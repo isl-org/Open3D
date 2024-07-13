@@ -12,8 +12,7 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_geometry(py::module &m);
-
+void pybind_geometry_declarations(py::module &m);
 void pybind_pointcloud(py::module &m);
 void pybind_keypoint(py::module &m);
 void pybind_voxelgrid(py::module &m);
@@ -33,6 +32,8 @@ void pybind_image_methods(py::module &m);
 void pybind_octree_methods(py::module &m);
 void pybind_octree(py::module &m);
 void pybind_boundingvolume(py::module &m);
+
+void pybind_geometry_definitions(py::module &m);
 
 }  // namespace geometry
 }  // namespace open3d
