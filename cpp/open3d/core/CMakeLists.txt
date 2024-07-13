@@ -56,6 +56,7 @@ target_sources(core PRIVATE
     kernel/ReductionCPU.cpp
     kernel/UnaryEW.cpp
     kernel/UnaryEWCPU.cpp
+    kernel/UnaryEWSYCL.cpp
     linalg/AddMM.cpp
     linalg/AddMMCPU.cpp
     linalg/Det.cpp

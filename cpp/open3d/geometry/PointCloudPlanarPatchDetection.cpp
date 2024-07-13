@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <numeric>
 #include <queue>
 #include <unordered_map>
@@ -57,12 +58,18 @@ public:
 
     /// \brief Constructor for the root node of the octree.
     ///
-    /// \param point_cloud is the associated set of points being partitioned
-    BoundaryVolumeHierarchy(const PointCloud* point_cloud,
-                            const Eigen::Vector3d& min_bound,
-                            const Eigen::Vector3d& max_bound,
-                            size_t min_points = 1,
-                            double min_size = 0.0)
+    /// \param point_cloud is the associated set of points being partitioned.
+    /// \param min_bound is the minimum coordinate of the bounding volume.
+    /// \param max_bound is the maximum coordinate of the bounding volume.
+    /// \param min_points is the threshold number of points in a node to stop
+    /// partitioning it further. \param min_size is the threshold size of a node
+    /// to stop partitioning it further.
+    BoundaryVolumeHierarchy(
+            const PointCloud* point_cloud,
+            const Eigen::Vector3d& min_bound,
+            const Eigen::Vector3d& max_bound,
+            size_t min_points = 1,
+            double min_size = std::numeric_limits<double>::epsilon())
         : point_cloud_(point_cloud),
           min_points_(min_points),
           min_size_(min_size),

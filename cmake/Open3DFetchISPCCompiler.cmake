@@ -50,7 +50,11 @@ function(open3d_fetch_ispc_compiler)
         )
 
         FetchContent_MakeAvailable(ext_ispc)
+        if (WIN32)
+            set(CMAKE_ISPC_COMPILER "${ext_ispc_SOURCE_DIR}/bin/ispc.exe" PARENT_SCOPE)
+        else()  # Linux
+            set(CMAKE_ISPC_COMPILER "${ext_ispc_SOURCE_DIR}/bin/ispc" PARENT_SCOPE)
+        endif()
 
-        set(CMAKE_ISPC_COMPILER "${ext_ispc_SOURCE_DIR}/bin/ispc" PARENT_SCOPE)
     endif()
 endfunction()

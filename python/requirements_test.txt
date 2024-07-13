@@ -5,4 +5,4 @@ scipy==1.11.4; python_version >= "3.12"
 tensorboard==2.13.0; python_version < "3.12"
 tensorboard==2.16.2; python_version >= "3.12"
 oauthlib==3.2.2
-certifi==2023.7.22
+certifi==2024.7.4

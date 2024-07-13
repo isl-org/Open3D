@@ -17,6 +17,7 @@ ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
 ARG BUILD_SYCL_MODULE
+ARG CI
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
@@ -93,7 +94,7 @@ RUN conda --version \
 # Activate open3d virtualenv
 # This works during docker build. It becomes the prefix of all RUN commands.
 # Ref: https://stackoverflow.com/a/60148365/1255535
-SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-o", "pipefail", "-c"]
 
 # Dependencies: cmake
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
@@ -210,7 +211,9 @@ RUN \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
  && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
- && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi
+ && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi \
+ && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ippicv mkl mkl_install webrtc; fi
+# If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <sstream>
 #include <string>
 
 #include "open3d/t/geometry/Image.h"
@@ -34,6 +35,9 @@ public:
 
     Material(const Material &mat) = default;
 
+    /// Convert from MaterialRecord
+    static Material FromMaterialRecord(const MaterialRecord &mat);
+
     Material &operator=(const Material &other) = default;
 
     /// Create an empty but valid material for the specified material name
@@ -50,6 +54,9 @@ public:
 
     /// Get the name of the material.
     const std::string &GetMaterialName() const { return material_name_; }
+
+    /// String reprentation for printing.
+    std::string ToString() const;
 
     /// Returns the texture map map
     const TextureMaps &GetTextureMaps() const { return texture_maps_; }
@@ -249,6 +256,9 @@ public:
     float GetAbsorptionDistance() const {
         return GetScalarProperty("absorption_distance");
     }
+    Eigen::Vector4f GetEmissiveColor() const {
+        return GetVectorProperty("emissive_color");
+    }
 
     bool HasBaseColor() const { return HasVectorProperty("base_color"); }
     bool HasBaseMetallic() const { return HasScalarProperty("metallic"); }
@@ -266,6 +276,9 @@ public:
     }
     bool HasAbsorptionDistance() const {
         return HasScalarProperty("absorption_distance");
+    }
+    bool HasEmissiveColor() const {
+        return HasVectorProperty("emissive_color");
     }
 
     void SetBaseColor(const Eigen::Vector4f &value) {
@@ -294,6 +307,9 @@ public:
     }
     void SetAbsorptionDistance(float value) {
         SetScalarProperty("absorption_distance", value);
+    }
+    void SetEmissiveColor(const Eigen::Vector4f &value) {
+        SetVectorProperty("emissive_color", value);
     }
 
     ////////////////////////////////////////////////////////////////////////////

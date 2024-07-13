@@ -82,8 +82,8 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 
 # Shared variables
 CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.20.6-linux-x86_64
-CMAKE_VERSION_AARCH64=cmake-3.20.6-linux-aarch64
+CMAKE_VERSION=cmake-3.22.5-linux-x86_64
+CMAKE_VERSION_AARCH64=cmake-3.22.5-linux-aarch64
 CUDA_VERSION=11.8.0-cudnn8
 
 print_usage_and_exit_docker_build() {
@@ -218,6 +218,7 @@ cuda_wheel_build() {
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg CI="${CI:-}" \
         -t open3d-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd
@@ -260,6 +261,7 @@ ci_build() {
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
+        --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
@@ -293,7 +295,7 @@ ci_build() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -309,7 +311,7 @@ ci_build() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -325,7 +327,7 @@ ci_build() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -341,7 +343,7 @@ ci_build() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -357,7 +359,7 @@ ci_build() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
@@ -388,7 +390,7 @@ cpu-shared_export_env() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -404,7 +406,7 @@ cpu-shared-ml_export_env() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -420,7 +422,7 @@ cpu-shared-release_export_env() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -436,7 +438,7 @@ cpu-shared-ml-release_export_env() {
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -631,7 +633,6 @@ function main() {
     cuda_wheel_py312)
         cuda_wheel_build py312
         ;;
-
 
     # ML CIs
     2-bionic)
