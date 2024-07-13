@@ -27,8 +27,8 @@ void pybind_core_declarations(py::module& m) {
     pybind_core_size_vector_declarations(m_core);
     pybind_core_tensor_declarations(m_core);
     pybind_core_kernel_declarations(m_core);
-    pybind_core_hashmap(m_core);
-    pybind_core_hashset(m_core);
+    pybind_core_hashmap_declarations(m_core);
+    pybind_core_hashset_declarations(m_core);
     pybind_core_scalar_declarations(m_core);
 
     // opn3d::core::nns namespace.
@@ -47,6 +47,8 @@ void pybind_core_definitions(py::module& m) {
     pybind_core_tensor_function_definitions(m_core);
     pybind_core_linalg_definitions(m_core);
     pybind_core_kernel_definitions(m_core);
+    pybind_core_hashmap_definitions(m_core);
+    pybind_core_hashset_definitions(m_core);
     pybind_core_scalar_definitions(m_core);
 }
 

@@ -23,8 +23,8 @@ void pybind_core_tensor_declarations(py::module& m);
 void pybind_core_tensor_accessor(py::class_<Tensor>& t);
 void pybind_core_tensor_function_definitions(py::module& m);
 void pybind_core_kernel_declarations(py::module& m);
-void pybind_core_hashmap(py::module& m);
-void pybind_core_hashset(py::module& m);
+void pybind_core_hashmap_declarations(py::module& m);
+void pybind_core_hashset_declarations(py::module& m);
 void pybind_core_scalar_declarations(py::module& m);
 
 void pybind_core_definitions(py::module& m);
@@ -36,6 +36,8 @@ void pybind_core_size_vector_definitions(py::module& m);
 void pybind_core_tensor_definitions(py::module& m);
 void pybind_core_linalg_definitions(py::module& m);
 void pybind_core_kernel_definitions(py::module& m);
+void pybind_core_hashmap_definitions(py::module& m);
+void pybind_core_hashset_definitions(py::module& m);
 void pybind_core_scalar_definitions(py::module& m);
 
 }  // namespace core
