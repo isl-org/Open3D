@@ -46,7 +46,7 @@ PYBIND11_MODULE(pybind, m) {
     t::pybind_t_declarations(m);
     ml::pybind_ml(m);
     io::pybind_io(m);
-    pipelines::pybind_pipelines(m);
+    pipelines::pybind_pipelines_declarations(m);
     visualization::pybind_visualization(m);
 
     utility::pybind_utility_definitions(m);
@@ -54,6 +54,7 @@ PYBIND11_MODULE(pybind, m) {
     core::pybind_core_definitions(m);
     geometry::pybind_geometry_definitions(m);
     t::pybind_t_definitions(m);
+    pipelines::pybind_pipelines_definitions(m);
 
     // pybind11 will internally manage the lifetime of default arguments for
     // function bindings. Since these objects will live longer than the memory
