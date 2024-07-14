@@ -23,7 +23,7 @@ template <typename Map,
           typename... Args>
 static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
                                                     const std::string &name,
-                                                    Args &&... args) {
+                                                    Args &&...args) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
     using Class_ = py::class_<Map, holder_type>;
@@ -116,7 +116,11 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
     return cl;
 }
 
-void pybind_tensormap(py::module &m) {
+void pybind_tensormap_declarations(py::module &m) {
+    auto tm = bind_tensor_map<TensorMap>(
+            m, "TensorMap", "Map of String to Tensor with a primary key.");
+}
+void pybind_tensormap_definitions(py::module &m) {
     // Bind to the generic dictionary interface such that it works the same as a
     // regular dictionary in Python, except that types are enforced. Supported
     // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
@@ -124,9 +128,8 @@ void pybind_tensormap(py::module &m) {
     // The `__delitem__` function is removed from bind_map, in bind_tensor_map,
     // and defined in this function, to use TensorMap::Erase, in order to
     // protect users from deleting the `private_key`.
-    auto tm = bind_tensor_map<TensorMap>(
-            m, "TensorMap", "Map of String to Tensor with a primary key.");
-
+    auto tm = static_cast<py::class_<TensorMap, std::unique_ptr<TensorMap>>>(
+            m.attr("TensorMap"));
     tm.def("__delitem__",
            [](TensorMap &m, const std::string &k) { return m.Erase(k); });
 
