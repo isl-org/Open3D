@@ -19,12 +19,13 @@ void pybind_t_declarations(py::module& m) {
     py::module m_t = m.def_submodule("t");
     pipelines::pybind_pipelines_declarations(m_t);
     geometry::pybind_geometry_declarations(m_t);
-    io::pybind_io(m_t);
+    io::pybind_io_declarations(m_t);
 }
 void pybind_t_definitions(py::module& m) {
     auto m_t = static_cast<py::module>(m.attr("t"));
     pipelines::pybind_pipelines_definitions(m_t);
     geometry::pybind_geometry_definitions(m_t);
+    io::pybind_io_definitions(m_t);
 }
 
 }  // namespace t
