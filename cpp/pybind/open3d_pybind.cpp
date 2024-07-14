@@ -44,7 +44,7 @@ PYBIND11_MODULE(pybind, m) {
     data::pybind_data(m);
     geometry::pybind_geometry_declarations(m);
     t::pybind_t_declarations(m);
-    ml::pybind_ml(m);
+    ml::pybind_ml_declarations(m);
     io::pybind_io_declarations(m);
     pipelines::pybind_pipelines_declarations(m);
     visualization::pybind_visualization_declarations(m);
@@ -54,6 +54,7 @@ PYBIND11_MODULE(pybind, m) {
     core::pybind_core_definitions(m);
     geometry::pybind_geometry_definitions(m);
     t::pybind_t_definitions(m);
+    ml::pybind_ml_definitions(m);
     io::pybind_io_definitions(m);
     pipelines::pybind_pipelines_definitions(m);
     visualization::pybind_visualization_definitions(m);
