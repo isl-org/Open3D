@@ -286,7 +286,7 @@ TriangleMesh TriangleMesh::CreateText(const std::string &text,
     return tmesh;
 }
 
-TriangleMesh TriangleMesh::CreateFromVolume(
+TriangleMesh TriangleMesh::CreateIsosurfaces(
         const core::Tensor &volume,
         const std::vector<double> contour_values,
         const core::Device &device) {

@@ -292,7 +292,7 @@ def test_create_from_volume():
                                   indexing='ij'),
                       axis=-1)
     vol = np.linalg.norm(coords, axis=-1) - 0.5
-    mesh = o3d.t.geometry.TriangleMesh.create_from_volume(vol)
+    mesh = o3d.t.geometry.TriangleMesh.create_isosurfaces(vol)
     assert mesh.vertex.positions.shape[0] == 4728
     assert mesh.triangle.indices.shape[0] == 9452
 

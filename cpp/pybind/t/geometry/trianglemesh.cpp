@@ -522,7 +522,7 @@ Example:
 )");
 
     triangle_mesh.def_static(
-            "create_from_volume",
+            "create_isosurfaces",
             // Accept anything for contour_values that pybind can convert to
             // std::list. This also avoids o3d.utility.DoubleVector.
             [](const core::Tensor& volume, std::list<double> contour_values,
@@ -533,19 +533,22 @@ Example:
             },
             "volume"_a, "contour_values"_a = std::list<double>{0.0},
             "device"_a = core::Device("CPU:0"),
-            R"(Create a mesh from a scalar volume by computing the isocontour.
+            R"(Create a mesh from a scalar volume by computing the isosurface.
 
 This method uses the Flying Edges dual contouring method that similarly like
-Marching Cubes computes the isocontour.
+Marching Cubes computes the isosurface.
+
+The center of the first voxel of the volume is at the origin (0,0,0).
+The center of the voxel at index [z,y,x] will be at (x,y,z).
 
 Args:
     volume (open3d.core.Tensor): 3D tensor with the volume.
-    contour_values (list): A list of contour values at which isocontours will
-        be generated.
+    contour_values (list): A list of contour values at which isosurfaces will
+        be generated. The default value is 0.
     device (o3d.core.Device): The device for the returned mesh.
 
 Returns:
-    A TriangleMesh with the extracted contours.
+    A TriangleMesh with the extracted isosurfaces.
 
 
 This example shows how to create a sphere from a volume::
@@ -555,7 +558,7 @@ This example shows how to create a sphere from a volume::
 
     coords = np.stack(np.meshgrid(*3*[np.linspace(-1,1,num=64)], indexing='ij'), axis=-1)
     vol = np.linalg.norm(coords, axis=-1) - 0.5
-    mesh = o3d.t.geometry.TriangleMesh.create_from_volume(vol)
+    mesh = o3d.t.geometry.TriangleMesh.create_isosurfaces(vol)
     o3d.visualization.draw(mesh)
 
 )");
