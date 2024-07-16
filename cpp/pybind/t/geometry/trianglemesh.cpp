@@ -529,7 +529,7 @@ Example:
                const core::Device& device) {
                 std::vector<double> cv(contour_values.begin(),
                                        contour_values.end());
-                return TriangleMesh::CreateFromVolume(volume, cv, device);
+                return TriangleMesh::CreateIsosurfaces(volume, cv, device);
             },
             "volume"_a, "contour_values"_a = std::list<double>{0.0},
             "device"_a = core::Device("CPU:0"),
