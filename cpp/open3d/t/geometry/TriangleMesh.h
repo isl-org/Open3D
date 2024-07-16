@@ -594,14 +594,14 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
-    /// Create a mesh from a scalar volume by computing the isosurface.
-    /// This method uses the Flying Edges dual contouring method that similarly
-    /// like Marching Cubes computes the isosurface.
-    /// The center of the first voxel of the volume is at the origin (0,0,0).
-    /// The center of the voxel at index [z,y,x] will be at (x,y,z).
-    /// \param volume 3D tensor with the volume.
+    /// Create a mesh from a 3D scalar field (volume) by computing the
+    /// isosurface.  This method uses the Flying Edges dual contouring method
+    /// that computes the isosurface similar to Marching Cubes.  The center of
+    /// the first voxel of the volume is at the origin (0,0,0).  The center of
+    /// the voxel at index [z,y,x] will be at (x,y,z).  
+    /// \param volume 3D tensor with the volume.  
     /// \param contour_values A list of contour values at which isosurfaces will
-    /// be generated. The default value is 0.
+    /// be generated. The default value is 0. 
     /// \param device The device for the returned mesh.
     static TriangleMesh CreateIsosurfaces(
             const core::Tensor &volume,
