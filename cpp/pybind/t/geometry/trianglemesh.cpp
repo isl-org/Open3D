@@ -533,13 +533,13 @@ Example:
             },
             "volume"_a, "contour_values"_a = std::list<double>{0.0},
             "device"_a = core::Device("CPU:0"),
-            R"(Create a mesh from a scalar volume by computing the isosurface.
+            R"(Create a mesh from a 3D scalar field (volume) by computing the
+isosurface.
 
-This method uses the Flying Edges dual contouring method that similarly like
-Marching Cubes computes the isosurface.
-
-The center of the first voxel of the volume is at the origin (0,0,0).
-The center of the voxel at index [z,y,x] will be at (x,y,z).
+This method uses the Flying Edges dual contouring method that computes the
+isosurface similar to Marching Cubes. The center of the first voxel of the
+volume is at the origin (0,0,0). The center of the voxel at index [z,y,x]
+will be at (x,y,z).
 
 Args:
     volume (open3d.core.Tensor): 3D tensor with the volume.
