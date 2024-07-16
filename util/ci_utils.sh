@@ -25,8 +25,8 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
-TENSORFLOW_VER="2.16.1"
-TORCH_VER="2.2.0"
+TENSORFLOW_VER="2.16.2"
+TORCH_VER="2.2.2"
 TORCH_CPU_GLNX_VER="${TORCH_VER}+cpu"
 TORCH_CUDA_GLNX_VER="${TORCH_VER}+cu118" # match CUDA_VERSION in docker/docker_build.sh
 TORCH_MACOS_VER="${TORCH_VER}"

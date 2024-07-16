@@ -47,7 +47,7 @@ jobs:
             STATIC_RUNTIME: ON
         include:
           - BUILD_CUDA_MODULE: ON
-            CUDA_VERSION: 11.0.3
+            CUDA_VERSION: 11.8.0
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
 
