@@ -287,7 +287,7 @@ def test_create_text():
     assert mesh.triangle.indices.shape == (936, 3)
 
 
-def test_create_from_volume():
+def test_create_isosurfaces():
     coords = np.stack(np.meshgrid(*3 * [np.linspace(-1, 1, num=64)],
                                   indexing='ij'),
                       axis=-1)
