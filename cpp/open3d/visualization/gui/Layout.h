@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
