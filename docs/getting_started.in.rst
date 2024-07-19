@@ -52,6 +52,16 @@ Pip (PyPI)
 
 .. warning::
 
+   Versions of ``numpy>=2.0.0`` require the latest development version of Open3D or
+   ``Open3D>0.18.0``. If you are using an older version of Open3D, downgrade ``numpy`` 
+   with
+
+   .. code-block:: bash
+
+        pip install "numpy<2.0.0"
+
+.. warning::
+
    Please upgrade your ``pip`` to a version >=20.3 to install Open3D in Linux,
    e.g. with
 
