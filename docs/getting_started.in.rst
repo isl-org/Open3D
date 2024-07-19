@@ -52,8 +52,9 @@ Pip (PyPI)
 
 .. warning::
 
-   Versions of ``numpy>=2.0.0`` are not fully supported by ``Open3D<=0.18.0`` and may lead to errors.
-   Consider downgrading ``numpy``, e.g. with
+   Versions of ``numpy>=2.0.0`` require the latest development version of Open3D or
+   ``Open3D>0.18.0``. If you are using an older version of Open3D, downgrade ``numpy`` 
+   with
 
    .. code-block:: bash
 
