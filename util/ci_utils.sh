@@ -316,9 +316,7 @@ run_cpp_unit_tests() {
 # Need variable OPEN3D_INSTALL_DIR
 test_cpp_example() {
     # Now I am in Open3D/build/
-    cd ..
-    git clone https://github.com/isl-org/open3d-cmake-find-package.git
-    cd open3d-cmake-find-package
+    cd ../examples/cmake/open3d-cmake-find-package
     mkdir build
     cd build
     echo Testing build with cmake
