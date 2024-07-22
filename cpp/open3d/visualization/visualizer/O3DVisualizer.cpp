@@ -1706,7 +1706,7 @@ Ctrl-alt-click to polygon select)";
         }
     }
 
-    void SetCollapsableVertOpen(const std::string &name, bool open) {
+    void SetPanelOpen(const std::string &name, bool open) {
         if (name == settings.mouse_panel->GetText()) {
             settings.mouse_panel->SetIsOpen(open);
         } else if (name == settings.scene_panel->GetText()) {
@@ -2458,8 +2458,8 @@ void O3DVisualizer::SetMouseMode(SceneWidget::Controls mode) {
     impl_->SetMouseMode(mode);
 }
 
-void O3DVisualizer::SetCollapsableVertOpen(const std::string &name, bool open) {
-    impl_->SetCollapsableVertOpen(name, open);
+void O3DVisualizer::SetPanelOpen(const std::string &name, bool open) {
+    impl_->SetPanelOpen(name, open);
 }
 
 void O3DVisualizer::EnableGroup(const std::string &group, bool enable) {

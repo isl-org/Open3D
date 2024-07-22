@@ -175,7 +175,7 @@ public:
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);
     void SetMouseMode(gui::SceneWidget::Controls mode);
-    void SetCollapsableVertOpen(const std::string& name, bool open);
+    void SetPanelOpen(const std::string& name, bool open);
 
     std::vector<O3DVisualizerSelections::SelectionSet> GetSelectionSets() const;
 
