@@ -291,7 +291,6 @@ struct O3DVisualizer::Impl {
     std::function<bool()> on_animation_tick_;
     std::shared_ptr<io::rpc::ZMQReceiver> receiver_;
     std::shared_ptr<MessageProcessor> message_processor_;
-    std::map<std::string, CollapsableVert *> side_panel_verts_;
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
@@ -421,7 +420,6 @@ struct O3DVisualizer::Impl {
         settings.mouse_panel =
                 new CollapsableVert("Mouse Controls", v_spacing, margins);
         settings.panel->AddChild(GiveOwnership(settings.mouse_panel));
-        side_panel_verts_.emplace("Mouse Controls", settings.mouse_panel);
 
         settings.mouse_tab = new TabControl();
         settings.mouse_panel->AddChild(GiveOwnership(settings.mouse_tab));
@@ -543,7 +541,6 @@ Ctrl-alt-click to polygon select)";
         // Scene controls
         settings.scene_panel = new CollapsableVert("Scene", v_spacing, margins);
         settings.panel->AddChild(GiveOwnership(settings.scene_panel));
-        side_panel_verts_.emplace("Scene", settings.scene_panel);
 
         settings.show_skybox = new Checkbox("Show Skybox");
         settings.show_skybox->SetOnChecked(
@@ -652,7 +649,6 @@ Ctrl-alt-click to polygon select)";
         settings.light_panel = new CollapsableVert("Lighting", 0, margins);
         settings.light_panel->SetIsOpen(false);
         settings.panel->AddChild(GiveOwnership(settings.light_panel));
-        side_panel_verts_.emplace("Lighting", settings.light_panel);
 
         h = new Horiz(v_spacing);
         settings.use_ibl = new Checkbox("HDR map");
@@ -773,7 +769,6 @@ Ctrl-alt-click to polygon select)";
         settings.geometries_panel =
                 new CollapsableVert("Geometries", v_spacing, margins);
         settings.panel->AddChild(GiveOwnership(settings.geometries_panel));
-        side_panel_verts_.emplace("Geometries", settings.geometries_panel);
 
         settings.geometries = new TreeView();
         settings.geometries_panel->AddChild(GiveOwnership(settings.geometries));
@@ -1712,10 +1707,14 @@ Ctrl-alt-click to polygon select)";
     }
 
     void SetCollapsableVertOpen(const std::string &name, bool open) {
-        auto it = side_panel_verts_.find(name);
-        if (it != side_panel_verts_.end() && it->second) {
-            it->second->SetIsOpen(open);
-            window_->SetNeedsLayout();
+        if (name == settings.mouse_panel->GetText()) {
+            settings.mouse_panel->SetIsOpen(open);
+        } else if (name == settings.scene_panel->GetText()) {
+            settings.scene_panel->SetIsOpen(open);
+        } else if (name == settings.light_panel->GetText()) {
+            settings.light_panel->SetIsOpen(open);
+        } else if (name == settings.geometries_panel->GetText()) {
+            settings.geometries_panel->SetIsOpen(open);
         }
     }
 
