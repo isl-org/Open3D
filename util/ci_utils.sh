@@ -316,9 +316,9 @@ run_cpp_unit_tests() {
 # Need variable OPEN3D_INSTALL_DIR
 test_cpp_example() {
     # Now I am in Open3D/build/
-    cd ../examples/cmake/open3d-cmake-find-package
+    pushd ../examples/cmake/open3d-cmake-find-package
     mkdir build
-    cd build
+    pushd build
     echo Testing build with cmake
     cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
     make -j"$NPROC" VERBOSE=1
@@ -336,8 +336,9 @@ test_cpp_example() {
             ./Draw --skip-for-unit-test
         fi
     fi
-    # Now I am in Open3D/open3d-cmake-find-package/build/
-    cd ../../build
+    popd
+    popd
+    # Now I am in Open3D/build/
 }
 
 # Install dependencies needed for building documentation (on Ubuntu 18.04)
