@@ -77,8 +77,8 @@ using ResourcesContainer =
 template <class ResourceType>
 std::shared_ptr<ResourceType> MakeShared(ResourceType* pointer,
                                          filament::Engine& engine) {
-    return std::move(std::shared_ptr<ResourceType>(
-            pointer, [&engine](ResourceType* p) { engine.destroy(p); }));
+    return std::shared_ptr<ResourceType>(
+            pointer, [&engine](ResourceType* p) { engine.destroy(p); });
 }
 
 template <class ResourceType>

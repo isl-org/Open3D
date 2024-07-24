@@ -98,7 +98,7 @@ struct REHandle : public REHandle_abstract {
             id = REHandle_abstract::kBadId + 1;
         }
 
-        return std::move(REHandle(id));
+        return REHandle(id);
     }
 
     static REHandle Concretize(const REHandle_abstract& abstract) {

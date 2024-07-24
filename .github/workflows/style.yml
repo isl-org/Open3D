@@ -1,4 +1,5 @@
 name: Style Check
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -14,6 +15,8 @@ concurrency:
 
 jobs:
   style-check:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code

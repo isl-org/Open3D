@@ -1,16 +1,8 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.22)
 # If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
 # official repository https://apt.kitware.com/.
-#
-# CMake 3.19+ is required to:
-# - allow linking with OBJECT libraries
-# - prevent erroneous -gencode option deduplication with CUDA
-# - simplify generator expressions for selecting compile flags and setting
-#   global hardened link flags
-# - use first-class language support for ISPC (3.19.2 patch release required)
-#
-# CMake 3.20+ is required to:
-# - detect IntelLLVM compiler for SYCL
+# CMake 3.22+ is required by Assimp v5.4.2
+# CMake 3.20+ is required to detect IntelLLVM compiler for SYCL
 
 # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
 # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.

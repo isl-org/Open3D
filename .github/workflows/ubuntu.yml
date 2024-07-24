@@ -1,4 +1,5 @@
 name: Ubuntu
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -22,6 +23,8 @@ env:
 
 jobs:
   ubuntu:
+    permissions:
+      contents: write  # Release upload
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

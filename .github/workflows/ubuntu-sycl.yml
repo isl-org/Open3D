@@ -1,4 +1,5 @@
 name: Ubuntu SYCL
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -18,6 +19,8 @@ env:
 
 jobs:
   ubuntu-sycl:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

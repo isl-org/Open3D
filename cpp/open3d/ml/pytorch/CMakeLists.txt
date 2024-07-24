@@ -140,9 +140,18 @@ target_link_libraries(open3d_torch_ops PRIVATE
     Open3D::3rdparty_eigen3
     Open3D::3rdparty_fmt
     Open3D::3rdparty_nanoflann
-    Open3D::3rdparty_parallelstl
     Open3D::3rdparty_tbb
 )
+if (TARGET Open3D::3rdparty_parallelstl)
+    target_link_libraries(open3d_torch_ops PRIVATE
+        Open3D::3rdparty_parallelstl
+    )
+endif()
+if (TARGET Open3D::3rdparty_onedpl)
+    target_link_libraries(open3d_torch_ops PRIVATE
+        Open3D::3rdparty_onedpl
+    )
+endif()
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE

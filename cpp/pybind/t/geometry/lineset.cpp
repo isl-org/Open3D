@@ -300,6 +300,37 @@ Example:
         o3d.visualization.draw([{'name': 'L', 'geometry': mesh}])
 
 )");
+    line_set.def("paint_uniform_color", &LineSet::PaintUniformColor, "color"_a,
+                 "Assigns unifom color to all the lines of the LineSet. "
+                 "Floating color values are clipped between 00 and 1.0. Input "
+                 "`color` should be a (3,) shape tensor.");
+    line_set.def_static(
+            "create_camera_visualization", &LineSet::CreateCameraVisualization,
+            "view_width_px"_a, "view_height_px"_a, "intrinsic"_a, "extrinsic"_a,
+            "scale"_a = 1.f, "color"_a = core::Tensor({}, core::Float32),
+            R"(Factory function to create a LineSet from intrinsic and extrinsic
+matrices. Camera reference frame is shown with XYZ axes in RGB.
+
+Args:
+    view_width_px (int): The width of the view, in pixels.
+    view_height_px (int): The height of the view, in pixels.
+    intrinsic (open3d.core.Tensor): The intrinsic matrix {3,3} shape.
+    extrinsic (open3d.core.Tensor): The extrinsic matrix {4,4} shape.
+    scale (float): camera scale
+    color (open3d.core.Tensor): color with float32 and shape {3}. Default is blue.
+
+Example:
+
+    Draw a purple camera frame with XYZ axes in RGB.
+
+        import open3d.core as o3c
+        from open3d.t.geometry import LineSet
+        from open3d.visualization import draw
+        K = o3c.Tensor([[512, 0, 512], [0, 512, 512], [0, 0, 1]], dtype=o3c.float32)
+        T = o3c.Tensor.eye(4, dtype=o3c.float32)
+        ls = LineSet.create_camera_visualization(1024, 1024, K, T, 1, [0.8, 0.2, 0.8])
+        draw([ls])
+)");
 }
 
 }  // namespace geometry
