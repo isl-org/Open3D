@@ -39,6 +39,7 @@
 -   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
 -   Fix build with fmt v10.2.0 (#6783)
 -   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
+-   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
 
 ## 0.13
 
