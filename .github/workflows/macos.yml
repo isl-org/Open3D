@@ -291,6 +291,15 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
+      - name: Update devel release (x86_64 only wheels)
+        if: ${{ github.ref == 'refs/heads/main' && (matrix.python_version == '3.8' || matrix.python_version == '3.9') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload main-devel build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
+          gh release view main-devel
+
+
   fuse-wheel:
     name: Fuse universal2 wheel
     permissions:
