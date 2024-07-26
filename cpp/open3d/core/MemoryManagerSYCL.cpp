@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <sycl/sycl.hpp>
 #include <cstdlib>
+#include <sycl/sycl.hpp>
 #include <unordered_map>
 
 #include "open3d/core/Device.h"
