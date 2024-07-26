@@ -264,11 +264,10 @@ void pybind_registration_definitions(py::module &m) {
                "with_scaling"_a = false)
             .def("__repr__",
                  [](const TransformationEstimationPointToPoint &te) {
-                     return std::string(
-                                    "TransformationEstimationPointToPoint ") +
-                            (te.with_scaling_
-                                     ? std::string("with scaling.")
-                                     : std::string("without scaling."));
+                     return fmt::format(
+                             "TransformationEstimationPointToPoint("
+                             "with_scaling={})",
+                             te.with_scaling_ ? "True" : "False");
                  })
             .def_readwrite(
                     "with_scaling",
