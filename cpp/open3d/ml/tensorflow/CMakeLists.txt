@@ -123,12 +123,6 @@ open3d_show_and_abort_on_warning(open3d_tf_ops)
 open3d_enable_strip(open3d_tf_ops)
 # do not use open3d_set_global_properties(open3d_tf_ops) here because some
 # options are not compatible for tf op libraries
-# RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
-if (APPLE)
-    set_target_properties(open3d_tf_ops PROPERTIES INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
-elseif(UNIX)
-    set_target_properties(open3d_tf_ops PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
-endif()
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TF_OPS_DIR open3d_tf_ops LIBRARY_OUTPUT_DIRECTORY)
@@ -141,6 +135,12 @@ set_target_properties(open3d_tf_ops PROPERTIES
 # Do not add "lib" prefix
 set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
+# Set BUILD_RPATH to find tbb. We don't install through cmake.
+if (APPLE)
+    set_target_properties(open3d_tf_ops PROPERTIES BUILD_RPATH "@loader_path/..")
+elseif (UNIX)
+    set_target_properties(open3d_tf_ops PROPERTIES BUILD_RPATH "$ORIGIN/..")
+endif()
 
 # _GLIBCXX_USER_CXX11_ABI is set separately
 list(REMOVE_ITEM Tensorflow_DEFINITIONS "_GLIBCXX_USE_CXX11_ABI=0"
@@ -165,8 +165,7 @@ target_link_libraries(open3d_tf_ops PRIVATE
     Open3D::Open3D
     Open3D::3rdparty_fmt
     Open3D::3rdparty_nanoflann
-    Open3D::3rdparty_parallelstl
-    Open3D::3rdparty_tbb
+    TBB::tbb
 )
 
 if (BUILD_CUDA_MODULE)
@@ -200,7 +199,7 @@ URL: @PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
 Requires: Open3D = @PROJECT_VERSION@
 Cflags:
-Libs: -lopen3d_tf_ops]=]  @ONLY NEWLINE_STYLE LF)
+Libs: -lopen3d_tf_ops -ltbb]=]  @ONLY NEWLINE_STYLE LF)
     file(GENERATE OUTPUT open3d_tf_ops.pc INPUT
         "${CMAKE_CURRENT_BINARY_DIR}/open3d_tf_ops.pc.in"
         TARGET open3d_tf_ops)

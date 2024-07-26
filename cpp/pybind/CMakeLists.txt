@@ -75,6 +75,13 @@ endif()
 # `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
 set(PYTHON_COMPILED_MODULE_DIR
     "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+
+# Set BUILD_RPATH to find tbb. We don't install through cmake.
+if (APPLE)
+    set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path/..")
+elseif (UNIX)
+    set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN/..")
+endif()
 set_target_properties(pybind PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
@@ -82,7 +89,7 @@ set_target_properties(pybind PROPERTIES
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament) for Linux.
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
-set(PYTHON_EXTRA_LIBRARIES ${TBB_LIBRARIES_PATH})
+set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:tbb>)
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}
         ${MESA_CPU_GL_LIBRARY})
@@ -102,7 +109,7 @@ if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
     file(GENERATE OUTPUT update_pybind_libomp.sh
         CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |
 grep libomp | tr -d '[:space:]')
-install_name_tool -change $libomp_library @loader_path/../libomp.dylib \
+install_name_tool -change $libomp_library @rpath/$(basename $libomp_library) \
 "$<TARGET_FILE:pybind>"]=])
     add_custom_command(TARGET pybind POST_BUILD
         COMMAND bash update_pybind_libomp.sh
