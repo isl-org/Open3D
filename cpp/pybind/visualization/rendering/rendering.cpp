@@ -516,7 +516,9 @@ void pybind_rendering_definitions(py::module &m) {
                  "Typical values are 2, 4 or 8. The maximum possible value "
                  "depends on the underlying GPU and OpenGL driver.")
             .def("set_shadowing", &View::SetShadowing, "enabled"_a,
-                 "type"_a = View::ShadowType::kPCF,
+                 py::arg_v(
+                         "type", View::ShadowType::kPCF,
+                         "open3d.visualization.rendering.View.ShadowType.PCF"),
                  "True to enable, false to enable all shadow mapping when "
                  "rendering this View. When enabling shadow mapping you may "
                  "also specify one of two shadow mapping algorithms: PCF "
