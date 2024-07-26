@@ -1809,7 +1809,19 @@ void pybind_gui_definitions(py::module &m) {
             .def_readwrite("right", &Margins::right)
             .def_readwrite("bottom", &Margins::bottom)
             .def("get_horiz", &Margins::GetHoriz)
-            .def("get_vert", &Margins::GetVert);
+            .def("get_vert", &Margins::GetVert)
+            .def("__repr__", [](const Margins &m) -> std::string {
+                if (m.left == 0 && m.top == 0 && m.right == 0 && m.bottom == 0)
+                    return "Margins()";
+                else if (m.left == m.top && m.top == m.right &&
+                         m.right == m.bottom)
+                    return fmt::format("Margins({})", m.left);
+                else if (m.left == m.right && m.top == m.bottom)
+                    return fmt::format("Margins({}, {})", m.left, m.top);
+                else
+                    return fmt::format("Margins({}, {}, {}, {})", m.left, m.top,
+                                       m.right, m.bottom);
+            });
 
     // ---- Layout1D ----
     auto layout1d =
