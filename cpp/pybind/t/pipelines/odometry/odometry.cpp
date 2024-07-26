@@ -136,8 +136,11 @@ void pybind_odometry_definitions(py::module &m) {
     py::detail::bind_copy_functions<OdometryResult>(odometry_result);
     odometry_result
             .def(py::init<core::Tensor, double, double>(),
-                 "transformation"_a = core::Tensor::Eye(4, core::Float64,
-                                                        core::Device("CPU:0")),
+                 py::arg_v("transformation",
+                           core::Tensor::Eye(4, core::Float64,
+                                             core::Device("CPU:0")),
+                           "open3d.core.Tensor.eye(4, "
+                           "dtype=open3d.core.Dtype.Float64)"),
                  "inlier_rmse"_a = 0.0, "fitness"_a = 0.0)
             .def_readwrite("transformation", &OdometryResult::transformation_,
                            "``4 x 4`` float64 tensor on CPU: The estimated "
