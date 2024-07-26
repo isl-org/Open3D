@@ -111,6 +111,8 @@ private:
 
 void pybind_rendering_declarations(py::module &m) {
     py::module m_rendering = m.def_submodule("rendering");
+    py::class_<TextureHandle> texture_handle(m_rendering, "TextureHandle",
+                                             "Handle to a texture");
     py::class_<Renderer> renderer(
             m_rendering, "Renderer",
             "Renderer class that manages 3D resources. Get from gui.Window.");
