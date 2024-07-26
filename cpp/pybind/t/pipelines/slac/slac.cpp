@@ -94,10 +94,11 @@ void pybind_slac_definitions(py::module &m) {
                     "folder.")
             .def("__repr__", [](const SLACOptimizerParams &params) {
                 return fmt::format(
-                        "SLACOptimizerParams[max_iterations={:d}, "
+                        "SLACOptimizerParams(max_iterations={:d}, "
                         "voxel_size={:e}, distance_threshold={:e}, "
                         "fitness_threshold={:e}, regularizer_weight={:e}, "
-                        "device={}, slac_folder={}].",
+                        "device=open3d.core.Device(\"{}\"), "
+                        "slac_folder=\"{}\")",
                         params.max_iterations_, params.voxel_size_,
                         params.distance_threshold_, params.fitness_threshold_,
                         params.regularizer_weight_, params.device_.ToString(),
@@ -117,9 +118,9 @@ void pybind_slac_definitions(py::module &m) {
                            "will be skipped for visualization.")
             .def("__repr__", [](const SLACDebugOption &debug_option) {
                 return fmt::format(
-                        "SLACDebugOption[debug={}, "
-                        "debug_start_node_idx={:d}].",
-                        debug_option.debug_,
+                        "SLACDebugOption(debug={}, "
+                        "debug_start_node_idx={:d})",
+                        debug_option.debug_ ? "True" : "False",
                         debug_option.debug_start_node_idx_);
             });
     auto control_grid =
