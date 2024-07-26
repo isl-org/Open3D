@@ -7,10 +7,10 @@
 
 #include "open3d/core/SYCLContext.h"
 
-#include <sycl/sycl.hpp>
 #include <array>
 #include <cstdlib>
 #include <sstream>
+#include <sycl/sycl.hpp>
 
 #include "open3d/core/SYCLUtils.h"
 #include "open3d/utility/Logging.h"
@@ -59,7 +59,8 @@ SYCLContext::SYCLContext() {
         // This could happen if the Intel GPGPU driver is not installed or if
         // your CPU does not have integrated GPU.
         try {
-            const sycl::device &sycl_device = sycl::device(sycl::host_selector());
+            const sycl::device &sycl_device =
+                    sycl::device(sycl::host_selector());
             const Device open3d_device = Device("SYCL:0");
             utility::LogWarning(
                     "SYCL GPU device is not available, falling back to SYCL "

@@ -48,10 +48,11 @@ int SYCLDemo() {
         // Getting write only access to the buffer on a device.
         auto accessor = buffer.get_access<sycl::access::mode::write>(cgh);
         // Execute kernel.
-        cgh.parallel_for<class FillBuffer>(num_workloads, [=](sycl::id<1> WIid) {
-            // Fill buffer with indexes.
-            accessor[WIid] = (sycl::cl_int)WIid.get(0);
-        });
+        cgh.parallel_for<class FillBuffer>(
+                num_workloads, [=](sycl::id<1> WIid) {
+                    // Fill buffer with indexes.
+                    accessor[WIid] = (sycl::cl_int)WIid.get(0);
+                });
     });
 
     // Getting read only access to the buffer on the host.
@@ -167,7 +168,8 @@ void PrintSYCLDevices(bool print_all) {
             utility::LogInfo("- sycl::gpu_selector()        : N/A");
         }
         try {
-            const sycl::device &device = sycl::device(sycl::accelerator_selector());
+            const sycl::device &device =
+                    sycl::device(sycl::accelerator_selector());
             utility::LogInfo("- sycl::accelerator_selector(): {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
