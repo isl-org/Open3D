@@ -344,6 +344,9 @@ void pybind_o3dvisualizer(py::module& m) {
                  "enable"_a)
             .def("show_skybox", &O3DVisualizer::ShowSkybox,
                  "Show/Hide the skybox", "show"_a)
+            .def("set_panel_open", &O3DVisualizer::SetPanelOpen,
+                 "Expand/Collapse verts(panels) within the settings panel",
+                 "name"_a, "open"_a)
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {

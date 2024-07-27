@@ -1,4 +1,5 @@
 name: Ubuntu OpenBLAS
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -6,8 +7,7 @@ on:
     branches:
       - main
   pull_request:
-    # Reduce CI frequency for paid CI.
-    types: [review_requested]
+    types: [opened, reopened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -19,6 +19,8 @@ env:
 
 jobs:
   openblas-amd64:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -54,6 +56,8 @@ jobs:
           fi
 
   openblas-arm64:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: [skip-arm64-check-on-fork]
     if: needs.skip-arm64-check-on-fork.outputs.skip == 'no'
