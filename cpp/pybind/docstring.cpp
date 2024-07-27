@@ -347,6 +347,12 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
         str.replace(parenthesis_pos + 1, 0, ", ");
     }
 
+    // Ignore everything after last argument (right before ") ->")
+    // Otherwise false argument matches might be found in docstrings
+    std::size_t arrow_pos = str.rfind(") -> ");
+    if (arrow_pos == std::string::npos) return {};
+    str = str.substr(0, arrow_pos);
+
     // Get start positions
     std::regex pattern("(, [A-Za-z_][A-Za-z\\d_]*:)");
     std::smatch res;
@@ -366,12 +372,7 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
     for (size_t i = 0; i + 1 < argument_start_positions.size(); ++i) {
         argument_end_positions.push_back(argument_start_positions[i + 1] - 2);
     }
-    std::size_t arrow_pos = str.rfind(") -> ");
-    if (arrow_pos == std::string::npos) {
-        return {};
-    } else {
-        argument_end_positions.push_back(arrow_pos);
-    }
+    argument_end_positions.push_back(arrow_pos);
 
     std::vector<std::string> argument_tokens;
     for (size_t i = 0; i < argument_start_positions.size(); ++i) {
