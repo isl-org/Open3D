@@ -1203,8 +1203,10 @@ struct formatter<RTCError> {
             case RTC_ERROR_CANCELLED:
                 name = "RTC_ERROR_CANCELLED";
                 break;
+            case RTC_ERROR_LEVEL_ZERO_RAYTRACING_SUPPORT_MISSING:
+                name = "RTC_ERROR_LEVEL_ZERO_RAYTRACING_SUPPORT_MISSING";
+                break;
         }
-        // return formatter<string_view>::format(name, ctx);
         return format_to(ctx.out(), name);
     }
 
