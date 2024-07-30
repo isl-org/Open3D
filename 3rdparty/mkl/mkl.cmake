@@ -13,9 +13,13 @@ include(ExternalProject)
 # These files are created from the pip MKL devel packages, and only contain
 # headers, static libraries, and cmake export files. Shared libraries are
 # excluded to reduce download size. Alternately, use:
-# pip install mkl-devel mkl-include mkl-static
-# pip will install to the virtual env site-packages folder. Archive the
-# installed files to create the download archives.
+# pip download -d mkl_static/win_amd64 --platform win_amd64 --no-deps mkl-include==2024.1 mkl-devel==2024.1 mkl-static==2024.1
+# pip download -d mkl_static/linux_x86_64 --platform manylinux1_x86_64 --no-deps mkl-include==2024.1 mkl-devel==2024.1 mkl-static==2024.1
+# pip download -d mkl_static/macosx_x86_64 --platform macosx_11_0_x86_64 --no-deps mkl-include==2023.2.2 mkl-devel==2023.2.2 mkl-static==2023.2.2
+# Extract all files:
+# cd mkl_static/win_amd64 && for whl in *.whl; do wheel unpack $whl; done;
+# Arrange in the standard layout: bin, include, lib (cmake, pkgconfig), share (cmake)
+# Archive and upload to GitHub releases open3d_downloads.
 if(WIN32)
     set(MKL_URL https://github.com/isl-org/open3d_downloads/releases/download/mkl-static-2024.1/mkl_static-2024.1.0-win_amd64.zip)
     set(MKL_SHA256 524de5395db5b7a9d9f0d9a76b2223c6edac429d4492c6a1cc79a5c22c4f3346)
