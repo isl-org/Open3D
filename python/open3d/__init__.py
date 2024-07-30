@@ -47,7 +47,7 @@ if _build_config["BUILD_GUI"] and not (find_library("c++abi") or
         pass
 
 if sys.platform == 'win32':  # Unix: Use rpath to find libraries
-    load_cdll(str(next((Path(__file__).parent).glob("*tbb12.*"))))
+    load_cdll(str(next((Path(__file__).parent).glob("tbb12*dll"))))
 
 # Enable CPU rendering based on env vars
 if _build_config["BUILD_GUI"] and sys.platform.startswith("linux") and (
