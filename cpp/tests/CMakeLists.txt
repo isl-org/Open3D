@@ -51,6 +51,14 @@ endif()
 
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
+# On Windows, running tests from the build folder needs tbb.dll to be in the same folder.
+if (WIN32)
+  add_custom_command(
+      TARGET tests
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
+  )
+endif()
 
 if (BUILD_AZURE_KINECT)
     # K4A headers are directly used in test. Currently we don't need to link
