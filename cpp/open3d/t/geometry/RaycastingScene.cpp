@@ -1180,33 +1180,7 @@ template <>
 struct formatter<RTCError> {
     template <typename FormatContext>
     auto format(const RTCError& c, FormatContext& ctx) {
-        const char* name = nullptr;
-        switch (c) {
-            case RTC_ERROR_NONE:
-                name = "RTC_ERROR_NONE";
-                break;
-            case RTC_ERROR_UNKNOWN:
-                name = "RTC_ERROR_UNKNOWN";
-                break;
-            case RTC_ERROR_INVALID_ARGUMENT:
-                name = "RTC_ERROR_INVALID_ARGUMENT";
-                break;
-            case RTC_ERROR_INVALID_OPERATION:
-                name = "RTC_ERROR_INVALID_OPERATION";
-                break;
-            case RTC_ERROR_OUT_OF_MEMORY:
-                name = "RTC_ERROR_OUT_OF_MEMORY";
-                break;
-            case RTC_ERROR_UNSUPPORTED_CPU:
-                name = "RTC_ERROR_UNSUPPORTED_CPU";
-                break;
-            case RTC_ERROR_CANCELLED:
-                name = "RTC_ERROR_CANCELLED";
-                break;
-            case RTC_ERROR_LEVEL_ZERO_RAYTRACING_SUPPORT_MISSING:
-                name = "RTC_ERROR_LEVEL_ZERO_RAYTRACING_SUPPORT_MISSING";
-                break;
-        }
+        const char* name = rtcGetErrorString(c);
         return format_to(ctx.out(), name);
     }
 
