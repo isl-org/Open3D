@@ -52,7 +52,7 @@ OPTION:
     3-ml-shared-focal         : CUDA CI, 3-ml-shared-focal, developer mode
     4-shared-focal            : CUDA CI, 4-shared-focal, developer mode
     4-shared-focal-release    : CUDA CI, 4-shared-focal, release mode
-    5-ml-noble                 : CUDA CI, 5-ml-noble, developer mode
+    5-ml-jammy                 : CUDA CI, 5-ml-jammy, developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -356,8 +356,8 @@ sycl-static)
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-5-ml-noble)
-    5-ml-noble_export_env
+5-ml-jammy)
+    5-ml-jammy_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;

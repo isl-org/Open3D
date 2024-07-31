@@ -59,7 +59,7 @@ OPTION:
     3-ml-shared-focal         : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
     4-shared-focal            : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
     4-shared-focal-release    : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
-    5-ml-noble                 : CUDA CI, 5-ml-focal, developer mode
+    5-ml-jammy                 : CUDA CI, 5-ml-focal, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
@@ -79,6 +79,7 @@ CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.22.5-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.22.5-linux-aarch64
 CUDA_VERSION=11.7.1-cudnn8
+CUDA_VERSION_LATEST=12.1.1-cudnn8
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -339,12 +340,12 @@ ci_build() {
     export BUILD_SYCL_MODULE=OFF
 }
 
-5-ml-noble_export_env() {
-    export DOCKER_TAG=open3d-ci:5-ml-noble
+5-ml-jammy_export_env() {
+    export DOCKER_TAG=open3d-ci:5-ml-jammy
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu24.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-5-ml-noble
+    export CCACHE_TAR_NAME=open3d-ci-5-ml-jammy
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
@@ -622,8 +623,8 @@ function main() {
         4-shared-focal_export_env
         ci_build
         ;;
-    5-ml-noble)
-        5-ml-noble_export_env
+    5-ml-jammy)
+        5-ml-jammy_export_env
         ci_build
         ;;
     *)
