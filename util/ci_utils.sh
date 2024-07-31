@@ -341,14 +341,14 @@ test_cpp_example() {
     # Now I am in Open3D/build/
 }
 
-# Install dependencies needed for building documentation (on Ubuntu 18.04)
+# Install dependencies needed for building documentation (on Ubuntu 20.04)
 # Usage: install_docs_dependencies "${OPEN3D_ML_ROOT}"
 install_docs_dependencies() {
     echo
     echo Install ubuntu dependencies
-    echo Update cmake needed in Ubuntu 18.04
+    echo Update cmake needed in Ubuntu 20.04
     sudo apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
-    sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ bionic main'
+    sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ focal main'
     ./util/install_deps_ubuntu.sh assume-yes
     sudo apt-get install --yes cmake
     sudo apt-get install --yes libxml2-dev libxslt-dev python3-dev
