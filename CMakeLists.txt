@@ -252,7 +252,7 @@ string(CONCAT OPEN3D_VERSION
 )
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}" CACHE
     STRING "Open3D full version.")
-set(OPEN3D_ABI_VERSION "${OPEN3D_VERSION_MAJOR}.${OPEN3D_VERSION_MINOR}" CACHE 
+set(OPEN3D_ABI_VERSION "${OPEN3D_VERSION_MAJOR}.${OPEN3D_VERSION_MINOR}" CACHE
     STRING "Open3D ABI version / SOVERSION (for releases only).")
 # Set additional info
 set(PROJECT_EMAIL       "open3d@intel.com")
@@ -296,6 +296,8 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)   # Improved compatibility
 
+# Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
+add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake")
 
