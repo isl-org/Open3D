@@ -21,7 +21,7 @@
 namespace open3d {
 namespace core {
 
-void pybind_core_linalg(py::module &m) {
+void pybind_core_linalg_definitions(py::module &m) {
     m.def(
             "matmul",
             [](const Tensor &A, const Tensor &B) {

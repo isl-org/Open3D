@@ -13,8 +13,9 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-void pybind_material(py::module &m);
+void pybind_material_declarations(py::module &m);
+void pybind_material_definitions(py::module &m);
 
-}
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

@@ -13,9 +13,13 @@ namespace open3d {
 namespace t {
 namespace io {
 
-void pybind_io(py::module& m);
-void pybind_class_io(py::module& m);
-void pybind_sensor(py::module& m);
+void pybind_io_declarations(py::module& m);
+void pybind_class_io_declarations(py::module& m);
+void pybind_sensor_declarations(py::module& m);
+
+void pybind_io_definitions(py::module& m);
+void pybind_class_io_definitions(py::module& m);
+void pybind_sensor_definitions(py::module& m);
 
 }  // namespace io
 }  // namespace t

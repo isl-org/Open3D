@@ -14,7 +14,8 @@ namespace t {
 namespace pipelines {
 namespace odometry {
 
-void pybind_odometry(py::module &m);
+void pybind_odometry_declarations(py::module &m);
+void pybind_odometry_definitions(py::module &m);
 
 }  // namespace odometry
 }  // namespace pipelines

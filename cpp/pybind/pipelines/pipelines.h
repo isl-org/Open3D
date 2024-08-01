@@ -12,7 +12,8 @@
 namespace open3d {
 namespace pipelines {
 
-void pybind_pipelines(py::module& m);
+void pybind_pipelines_declarations(py::module& m);
+void pybind_pipelines_definitions(py::module& m);
 
-}
+}  // namespace pipelines
 }  // namespace open3d

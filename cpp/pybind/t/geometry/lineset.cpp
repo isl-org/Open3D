@@ -19,7 +19,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_lineset(py::module& m) {
+void pybind_lineset_declarations(py::module& m) {
     py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry,
                DrawableGeometry>
             line_set(m, "LineSet", R"(
@@ -72,7 +72,12 @@ The attributes of the line set have different levels::
     lineset.point.labels = o3d.core.Tensor(...)
     lineset.line.features = o3d.core.Tensor(...)
 )");
+}
 
+void pybind_lineset_definitions(py::module& m) {
+    auto line_set = static_cast<
+            py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>,
+                       Geometry, DrawableGeometry>>(m.attr("LineSet"));
     // Constructors.
     line_set.def(py::init<const core::Device&>(),
                  "device"_a = core::Device("CPU:0"),
