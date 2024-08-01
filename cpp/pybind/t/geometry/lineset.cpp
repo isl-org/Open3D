@@ -19,7 +19,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_lineset(py::module& m) {
+void pybind_lineset_declarations(py::module& m) {
     py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry,
                DrawableGeometry>
             line_set(m, "LineSet", R"(
@@ -72,7 +72,12 @@ The attributes of the line set have different levels::
     lineset.point.labels = o3d.core.Tensor(...)
     lineset.line.features = o3d.core.Tensor(...)
 )");
+}
 
+void pybind_lineset_definitions(py::module& m) {
+    auto line_set = static_cast<
+            py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>,
+                       Geometry, DrawableGeometry>>(m.attr("LineSet"));
     // Constructors.
     line_set.def(py::init<const core::Device&>(),
                  "device"_a = core::Device("CPU:0"),
@@ -307,7 +312,10 @@ Example:
     line_set.def_static(
             "create_camera_visualization", &LineSet::CreateCameraVisualization,
             "view_width_px"_a, "view_height_px"_a, "intrinsic"_a, "extrinsic"_a,
-            "scale"_a = 1.f, "color"_a = core::Tensor({}, core::Float32),
+            "scale"_a = 1.f,
+            py::arg_v(
+                    "color", core::Tensor({}, core::Float32),
+                    "open3d.core.Tensor([], dtype=open3d.core.Dtype.Float32)"),
             R"(Factory function to create a LineSet from intrinsic and extrinsic
 matrices. Camera reference frame is shown with XYZ axes in RGB.
 

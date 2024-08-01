@@ -13,7 +13,8 @@ namespace open3d {
 namespace visualization {
 namespace app {
 
-void pybind_app(py::module &m);
+void pybind_app_declarations(py::module &m);
+void pybind_app_definitions(py::module &m);
 
 }  // namespace app
 }  // namespace visualization

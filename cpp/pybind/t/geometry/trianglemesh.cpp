@@ -19,7 +19,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_trianglemesh(py::module& m) {
+void pybind_trianglemesh_declarations(py::module& m) {
     py::class_<TriangleMesh, PyGeometry<TriangleMesh>,
                std::shared_ptr<TriangleMesh>, Geometry, DrawableGeometry>
             triangle_mesh(m, "TriangleMesh",
@@ -77,7 +77,13 @@ The attributes of the triangle mesh have different levels::
     pcd.vertex.labels = o3d.core.Tensor(...)
     pcd.triangle.features = o3d.core.Tensor(...)
 )");
+}
 
+void pybind_trianglemesh_definitions(py::module& m) {
+    auto triangle_mesh =
+            static_cast<py::class_<TriangleMesh, PyGeometry<TriangleMesh>,
+                                   std::shared_ptr<TriangleMesh>, Geometry,
+                                   DrawableGeometry>>(m.attr("TriangleMesh"));
     // Constructors.
     triangle_mesh
             .def(py::init<const core::Device&>(),

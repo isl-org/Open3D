@@ -13,8 +13,9 @@ namespace open3d {
 namespace pipelines {
 namespace color_map {
 
-void pybind_color_map(py::module &m);
+void pybind_color_map_declarations(py::module &m);
+void pybind_color_map_definitions(py::module &m);
 
-}
+}  // namespace color_map
 }  // namespace pipelines
 }  // namespace open3d
