@@ -164,7 +164,7 @@ WORKDIR /root/Open3D
 RUN ./util/install_deps_ubuntu.sh assume-yes
 
 # Open3D Python dependencies
-RUN source /open3d_env/bin/activate && source util/ci_utils.sh \
+RUN source /root/open3d/bin/activate && source util/ci_utils.sh \
  && if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
         install_python_dependencies with-cuda with-jupyter; \
     else \
@@ -173,7 +173,7 @@ RUN source /open3d_env/bin/activate && source util/ci_utils.sh \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
-RUN source /open3d_env/bin/activate && mkdir -p /etc/apt/keyrings \
+RUN source /root/open3d/bin/activate && mkdir -p /etc/apt/keyrings \
  && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
  | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
@@ -186,7 +186,7 @@ RUN source /open3d_env/bin/activate && mkdir -p /etc/apt/keyrings \
  && yarn --version
 
 # Build all
-RUN source /open3d_env/bin/activate && \
+RUN source /root/open3d/bin/activate && \
     if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
