@@ -76,8 +76,8 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 
 # Shared variables
 CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.22.5-linux-x86_64
-CMAKE_VERSION_AARCH64=cmake-3.22.5-linux-aarch64
+CMAKE_VERSION=cmake-3.29.2-linux-x86_64
+CMAKE_VERSION_AARCH64=cmake-3.29.2-linux-aarch64
 CUDA_VERSION=11.7.1-cudnn8
 
 print_usage_and_exit_docker_build() {
@@ -439,7 +439,7 @@ sycl-shared_export_env() {
 
     # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/main/images/docker/basekit/Dockerfile.ubuntu-18.04
-    export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
+    export BASE_IMAGE=intel/oneapi-basekit:2024.1.0-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=3.8
@@ -456,7 +456,7 @@ sycl-static_export_env() {
 
     # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/main/images/docker/basekit/Dockerfile.ubuntu-18.04
-    export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
+    export BASE_IMAGE=intel/oneapi-basekit:2024.1.0-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=3.8
