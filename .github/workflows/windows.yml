@@ -50,6 +50,7 @@ jobs:
             CUDA_VERSION: 11.0.3
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
+      CUDAARCHS: 75     # Turing, oldest supported CUDA arch for CUDA v12. Required if no CUDA GPU on build machine.
 
     steps:
       - name: Disk space used

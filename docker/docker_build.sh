@@ -79,7 +79,7 @@ CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.24.4-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
 CUDA_VERSION=11.7.1-cudnn8
-CUDA_VERSION_LATEST=12.1.1-cudnn8
+CUDA_VERSION_LATEST=11.8.0-cudnn8
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"

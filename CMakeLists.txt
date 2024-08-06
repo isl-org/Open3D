@@ -510,6 +510,12 @@ macro(add_source_group module_name)
     source_group("Source Files\\Material" FILES ${MODULE_MATERIAL_FILES})
 endmacro()
 
+if (LINUX_AARCH64)
+# Fix for ImportError: ... /pybind.cpython-310-aarch64-linux-gnu.so: cannot allocate memory in static TLS block
+# https://bugs.launchpad.net/ubuntu/+source/mysql-8.0/+bug/1889851
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftls-model=global-dynamic")
+endif()
+
 # Include convenience functions
 include(Open3DLink3rdpartyLibraries)
 include(Open3DSetGlobalProperties)
