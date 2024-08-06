@@ -154,7 +154,6 @@ openblas_build() {
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
-        --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg CONDA_SUFFIX="${CONDA_SUFFIX}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
@@ -199,7 +198,6 @@ cuda_wheel_build() {
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
-        --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
@@ -238,7 +236,6 @@ ci_build() {
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
-        --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
