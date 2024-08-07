@@ -51,7 +51,7 @@ dirent                      1.21                                     MIT license
 https://github.com/tronkko/dirent
 A C/C++ programming interface for cross-platform filesystem
 --------------------------------------------------------------------------------
-librealsense                2.44.0                               Apache-2 license
+librealsense                2.54.2                               Apache-2 license
 A cross-platform library for capturing data from the Intel RealSense F200,
 SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
@@ -113,7 +113,7 @@ As an alternative, you can modify 3rdparty/zeromq/zeromq_build.cmake to fetch
 zeromq from our fork
 https://github.com/isl-org/libzmq
 --------------------------------------------------------------------------------
-embree                      3.13.0                              Apache-2 license
+embree                      4.3.1                               Apache-2 license
 Embree is a collection of high-performance ray tracing kernels
 https://github.com/embree/embree
 --------------------------------------------------------------------------------

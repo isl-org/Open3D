@@ -25,6 +25,7 @@ env:
   STOOLS_VER: "67.3.2"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
+  CUDA_VERSION: 11.7.1
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -34,7 +35,7 @@ jobs:
   windows:
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -47,7 +48,6 @@ jobs:
             STATIC_RUNTIME: ON
         include:
           - BUILD_CUDA_MODULE: ON
-            CUDA_VERSION: 11.0.3
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
 
@@ -64,16 +64,12 @@ jobs:
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
           # Define variables
-          $CUDA_VER_FULL = "${{ matrix.CUDA_VERSION }}"
+          $CUDA_VER_FULL = "${{ env.CUDA_VERSION }}"
           $CUDA_VER_ARR = $CUDA_VER_FULL.Split(".")
           $CUDA_VER = "$($CUDA_VER_ARR[0]).$($CUDA_VER_ARR[1])"
           $CUDA_VER_ID = "$($CUDA_VER_ARR[0])_$($CUDA_VER_ARR[1])"
           # Installer url
-          if ( $CUDA_VER_ARR[0] -ge 11 ) {
-            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER_FULL/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
-          } else {
-            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER/Prod/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
-          }
+          $CUDA_URL = "https://developer.download.nvidia.com/compute/cuda/$CUDA_VER_FULL/network_installers/cuda_$($CUDA_VER_FULL)_windows_network.exe"
           # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
@@ -110,7 +106,7 @@ jobs:
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
@@ -206,7 +202,7 @@ jobs:
           cd open3d-cmake-find-package
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
@@ -236,7 +232,7 @@ jobs:
     name: Build wheel
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -281,7 +277,7 @@ jobs:
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
@@ -324,7 +320,7 @@ jobs:
     name: Test wheel
     permissions:
       contents: read
-    runs-on: windows-2019
+    runs-on: windows-2019   # build on 2022, test on 2019
     needs: [build-wheel]
     strategy:
       fail-fast: false
