@@ -249,8 +249,8 @@ test_wheel() {
     python -m pip --version
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
     python -m pip install "$wheel_path"
-    python -c "import open3d; print('Installed:', open3d); print('BUILD_CUDA_MODULE: ', open3d._build_config['BUILD_CUDA_MODULE'])"
-    python -c "import open3d; print('CUDA available: ', open3d.core.cuda.is_available())"
+    python -W default -c "import open3d; print('Installed:', open3d); print('BUILD_CUDA_MODULE: ', open3d._build_config['BUILD_CUDA_MODULE'])"
+    python -W default -c "import open3d; print('CUDA available: ', open3d.core.cuda.is_available())"
     echo
     # echo "Dynamic libraries used:"
     # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
@@ -260,27 +260,21 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
-    # FIXME: Needed because Open3D-ML main TF and PyTorch is older than dev.
-    if [ $BUILD_CUDA_MODULE == ON ]; then
-        install_python_dependencies with-cuda
-    else
-        install_python_dependencies
-    fi
     if [ "$BUILD_PYTORCH_OPS" == ON ]; then
-        # python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
-        python -c \
+        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        python  -W default -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
-        # python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
-        python -c \
+        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
+        python  -W default -c \
             "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == ON ] && [ "$BUILD_PYTORCH_OPS" == ON ]; then
         echo "Importing TensorFlow and torch in the reversed order"
-        python -c "import tensorflow as tf; import torch; import open3d.ml.torch as o3d"
+        python -W default -c "import tensorflow as tf; import torch; import open3d.ml.torch as o3d"
         echo "Importing TensorFlow and torch in the normal order"
-        python -c "import open3d.ml.torch as o3d; import tensorflow as tf; import torch"
+        python -W default -c "import open3d.ml.torch as o3d; import tensorflow as tf; import torch"
     fi
     deactivate open3d_test.venv # argument prevents unbound variable error
 }

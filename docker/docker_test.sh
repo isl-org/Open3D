@@ -52,7 +52,7 @@ OPTION:
     3-ml-shared-focal         : CUDA CI, 3-ml-shared-focal, developer mode
     4-shared-focal            : CUDA CI, 4-shared-focal, developer mode
     4-shared-focal-release    : CUDA CI, 4-shared-focal, release mode
-    5-ml-jammy                 : CUDA CI, 5-ml-jammy, developer mode
+    5-ml-jammy                : CUDA CI, 5-ml-jammy, developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
