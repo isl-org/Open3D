@@ -5,6 +5,10 @@
 # lib, and targets that links to the Open3D lib, e.g pybind, unit tests, etc.
 function(open3d_set_open3d_lib_properties target)
     cmake_parse_arguments(arg "HIDDEN" "" "" ${ARGN})
+    set_target_properties(${target} PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        # SOVERSION ${OPEN3D_ABI_VERSION}
+    )
     if(NOT BUILD_SHARED_LIBS)
         target_compile_definitions(${target} PUBLIC OPEN3D_STATIC)
     endif()

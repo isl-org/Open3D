@@ -1,50 +1,40 @@
 # TBB build scripts.
-#
-# - STATIC_TBB_INCLUDE_DIR
-# - STATIC_TBB_LIB_DIR
-# - STATIC_TBB_LIBRARIES
-#
-# Notes:
-# The name "STATIC" is used to avoid naming collisions for other 3rdparty CMake
-# files (e.g. PyTorch) that also depends on MKL.
 
-include(ExternalProject)
+include(FetchContent)
+cmake_policy(SET CMP0077 NEW)
 
 # Where MKL and TBB headers and libs will be installed.
 # This needs to be consistent with mkl.cmake.
 set(MKL_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/mkl_install)
-set(STATIC_MKL_INCLUDE_DIR "${MKL_INSTALL_PREFIX}/include/")
+set(STATIC_MKL_INCLUDE_DIR "${MKL_INSTALL_PREFIX}/${Open3D_INSTALL_INCLUDE_DIR}/")
 set(STATIC_MKL_LIB_DIR "${MKL_INSTALL_PREFIX}/${Open3D_INSTALL_LIB_DIR}")
 
-# TBB variables exported for PyTorch Ops and TensorFlow Ops
-set(STATIC_TBB_INCLUDE_DIR "${STATIC_MKL_INCLUDE_DIR}")
-set(STATIC_TBB_LIB_DIR "${STATIC_MKL_LIB_DIR}")
-set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)
-
-find_package(Git QUIET REQUIRED)
-
-ExternalProject_Add(
+# Save and restore BUILD_SHARED_LIBS since TBB must be built as a shared library
+set(_build_shared_libs ${BUILD_SHARED_LIBS})
+set(BUILD_SHARED_LIBS ON)
+set(_win_exp_all_syms ${CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS})
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)   # ON interferes with TBB symbols
+FetchContent_Declare(
     ext_tbb
-    PREFIX tbb
-    URL https://github.com/wjakob/tbb/archive/141b0e310e1fb552bdca887542c9c1a8544d6503.tar.gz # Sept 2020
-    URL_HASH SHA256=bb29b76eabf7549660e3dba2feb86ab501469432a15fb0bf2c21e24d6fbc4c72
+    URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.12.0.tar.gz # April 2024
+    URL_HASH SHA256=c7bb7aa69c254d91b8f0041a71c5bcc3936acb64408a1719aec0b2b7639dd84f
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/tbb"
-    UPDATE_COMMAND ""
-    PATCH_COMMAND ${GIT_EXECUTABLE} init
-    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
-        ${CMAKE_CURRENT_LIST_DIR}/0001-Allow-selecttion-of-static-dynamic-MSVC-runtime.patch
-    CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
-        -DSTATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
-        -DTBB_BUILD_TBBMALLOC=ON
-        -DTBB_BUILD_TBBMALLOC_PROXYC=OFF
-        -DTBB_BUILD_SHARED=OFF
-        -DTBB_BUILD_STATIC=ON
-        -DTBB_BUILD_TESTS=OFF
-        -DTBB_INSTALL_ARCHIVE_DIR=${Open3D_INSTALL_LIB_DIR}
-        -DTBB_CMAKE_PACKAGE_INSTALL_DIR=${Open3D_INSTALL_LIB_DIR}/cmake/tbb
-        ${ExternalProject_CMAKE_ARGS_hidden}
-    BUILD_BYPRODUCTS
-        ${STATIC_TBB_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}tbb_static${CMAKE_STATIC_LIBRARY_SUFFIX}
-        ${STATIC_TBB_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}tbbmalloc_static${CMAKE_STATIC_LIBRARY_SUFFIX}
+)
+set(TBBMALLOC_BUILD OFF CACHE BOOL "Enable tbbmalloc build.")
+set(TBBMALLOC_PROXY_BUILD OFF CACHE BOOL "Enable tbbmalloc_proxy build.")
+set(TBB_TEST OFF CACHE BOOL "Build TBB tests.")
+set(TBB_INSTALL OFF CACHE BOOL "Enable installation")
+set(TBB_STRICT OFF CACHE BOOL "Treat compiler warnings as errors")
+FetchContent_MakeAvailable(ext_tbb)
+set(BUILD_SHARED_LIBS ${_build_shared_libs})
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${_win_exp_all_syms})
+
+# TBB is built and linked as a shared library - this is different from all other Open3D dependencies.
+install(TARGETS tbb EXPORT ${PROJECT_NAME}Targets
+  ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}     # Windows .lib files
+  COMPONENT tbb
+  LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
+  COMPONENT tbb
+  RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
+  COMPONENT tbb
 )
