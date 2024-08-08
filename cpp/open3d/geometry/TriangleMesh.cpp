@@ -431,6 +431,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     return mesh;
 }
 
+
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         const std::vector<double> &triangle_areas,
@@ -443,6 +444,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     bool has_vert_color = HasVertexColors();
     bool has_textures_ = HasTextures();
     bool has_triangle_uvs_ = HasTriangleUvs();
+    bool has_triangle_material_ids_ = HasTriangleMaterialIds();
 
     utility::random::UniformRealGenerator<double> uniform_generator(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
@@ -475,27 +477,32 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         if (use_triangle_normal) {
             pcd->normals_[point_idx] = triangle_normals_[tidx];
         }
+        // if there is no texture, sample from vertex color
         if (has_vert_color && !has_textures_ && !has_triangle_uvs_) {
             pcd->colors_[point_idx] = a * vertex_colors_[triangle(0)] +
                                       b * vertex_colors_[triangle(1)] +
                                       c * vertex_colors_[triangle(2)];
         }
-        if (has_textures_ && has_triangle_uvs_) {
+        // if there is a texture, sample from texture instead
+        if (has_textures_ && has_triangle_uvs_ && has_triangle_material_ids_){
+          
             Eigen::Vector2d uv = a * triangle_uvs_[3 * tidx] +
-                                 b * triangle_uvs_[3 * tidx + 1] +
-                                 c * triangle_uvs_[3 * tidx + 2];
-            int w = textures_[0].width_;
-            int h = textures_[0].height_;
+                        b * triangle_uvs_[3 * tidx + 1] +
+                        c * triangle_uvs_[3 * tidx + 2];
+            int material_id = triangle_material_ids_[tidx];
+            int w = textures_[material_id].width_;
+            int h = textures_[material_id].height_;
+
             pcd->colors_[point_idx] =
-                    Eigen::Vector3d((double)*(textures_[0].PointerAt<uint8_t>(
-                                            uv(0) * w, uv(1) * h, 0)) /
-                                            255,
-                                    (double)*(textures_[0].PointerAt<uint8_t>(
-                                            uv(0) * w, uv(1) * h, 1)) /
-                                            255,
-                                    (double)*(textures_[0].PointerAt<uint8_t>(
-                                            uv(0) * w, uv(1) * h, 2)) /
-                                            255);
+                Eigen::Vector3d((double)*(textures_[material_id].PointerAt<uint8_t>(
+                            uv(0) * w, uv(1) * h, 0)) /
+                            255,
+                    (double)*(textures_[material_id].PointerAt<uint8_t>(
+                            uv(0) * w, uv(1) * h, 1)) /
+                            255,
+                    (double)*(textures_[material_id].PointerAt<uint8_t>(
+                            uv(0) * w, uv(1) * h, 2)) /
+                            255);
         }
     }
     return pcd;
