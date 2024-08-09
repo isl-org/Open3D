@@ -31,7 +31,6 @@ the :class: `.OffscreenRenderer` for a process by setting an environment
 variable  before importing Open3D::
 
  - ``EGL_PLATFORM=surfaceless`` for Ubuntu 20.04+ (Mesa v20.2 or newer)
- - ``OPEN3D_CPU_RENDERING=true`` for Ubuntu 18.04 (Mesa older than v20.2).
 
 Here are the different ways to do that:
 
@@ -39,20 +38,16 @@ Here are the different ways to do that:
 
     # from the command line (Ubuntu 20.04+)
     EGL_PLATFORM=surfaceless python examples/python/visualization/render_to_image.py
-    # or Ubuntu 18.04
-    OPEN3D_CPU_RENDERING=true python examples/python/visualization/render_to_image.py
 
 .. code:: python
 
     # In Python code
     import os
     os.environ['EGL_PLATFORM'] = 'surfaceless'   # Ubuntu 20.04+
-    os.environ['OPEN3D_CPU_RENDERING'] = 'true'  # Ubuntu 18.04
     import open3d as o3d
 
     # In a Jupyter notebook
     %env EGL_PLATFORM surfaceless   # Ubuntu 20.04+
-    %env OPEN3D_CPU_RENDERING true  # Ubuntu 18.04
     import open3d as o3d
 
 .. note:: Setting the environment variable after importing ``open3d`` will not work,
@@ -107,29 +102,3 @@ The method for enabling interactive CPU rendering depends on your system:
 
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0
         python examples/python/visualization/draw.py
-
-3.  **Your OS has old Mesa drivers (< v20.2).**  We provide
-    the Mesa software rendering library binary for download `here
-    <https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.0.tar.xz>`__.
-    This is automatically downloaded to
-    `build/_deps/download_mesa_libgl-src/libGL.so.1.5.0` when you build Open3D
-    from source. The prebuilt version works on Ubuntu 18.04 and Ubuntu 20.04. If
-    you want to use CPU rendering all the time, install this library to
-    ``/usr/local/lib`` or ``$HOME/.local/lib`` and *prepend* it to your
-    ``LD_LIBRARY_PATH``:
-
-    .. code:: bash
-
-        export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
-
-    For occasional use, you can instead launch a program with CPU rendering with:
-
-    .. code:: bash
-
-        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 Open3D
-
-    Or with Python code:
-
-    .. code:: bash
-
-        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 python examples/python/visualization/draw.py
