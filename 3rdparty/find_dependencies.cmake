@@ -96,8 +96,6 @@ function(open3d_build_3rdparty_library name)
     if(arg_SOURCES)
         foreach(src IN LISTS arg_SOURCES)
             get_filename_component(abs_src "${src}" ABSOLUTE BASE_DIR "${arg_DIRECTORY}")
-            # Mark as generated to skip CMake's file existence checks
-            set_source_files_properties(${abs_src} PROPERTIES GENERATED TRUE)
             target_sources(${name} PRIVATE ${abs_src})
         endforeach()
         foreach(incl IN LISTS include_dirs)
@@ -1032,8 +1030,6 @@ if(NOT USE_SYSTEM_QHULLCPP)
             src/libqhull_r/rboxlib_r.c
         INCLUDE_DIRS
             src/
-        DEPENDS
-            ext_qhull
     )
     open3d_build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
@@ -1059,8 +1055,6 @@ if(NOT USE_SYSTEM_QHULLCPP)
             src/libqhullcpp/RoadLogEvent.cpp
         INCLUDE_DIRS
             src/
-        DEPENDS
-            ext_qhull
     )
     target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_qhullcpp)
@@ -1160,8 +1154,6 @@ if (BUILD_UNIT_TESTS)
                 googletest/
                 googlemock/include/
                 googlemock/
-            DEPENDS
-                ext_googletest
         )
     endif()
 endif()
@@ -1192,8 +1184,6 @@ if(BUILD_GUI)
                 imgui_tables.cpp
                 imgui_widgets.cpp
                 imgui.cpp
-            DEPENDS
-                ext_imgui
         )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_imgui)
     else()
@@ -1323,6 +1313,10 @@ if(BUILD_GUI)
             # search path. LLVM version must be >= 7 to compile Filament.
             if (NOT CLANG_LIBDIR)
                 set(ubuntu_default_llvm_lib_dirs
+                    /usr/lib/llvm-19/lib
+                    /usr/lib/llvm-18/lib
+                    /usr/lib/llvm-17/lib
+                    /usr/lib/llvm-16/lib
                     /usr/lib/llvm-15/lib
                     /usr/lib/llvm-14/lib
                     /usr/lib/llvm-13/lib
@@ -1349,6 +1343,10 @@ if(BUILD_GUI)
             # is not enforced by CMake.
             if (NOT CLANG_LIBDIR)
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                             llvm-19/lib
+                             llvm-18/lib
+                             llvm-17/lib
+                             llvm-16/lib
                              llvm-15/lib
                              llvm-14/lib
                              llvm-13/lib
@@ -1408,24 +1406,6 @@ else()
     set(USE_SYSTEM_OPENGL ON)
 endif()
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_opengl)
-
-# CPU Rendering
-if(BUILD_GUI AND UNIX AND NOT APPLE)
-    include(FetchContent)
-    FetchContent_Declare(
-        download_mesa_libgl
-        PREFIX mesa
-        URL https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.1.4.tar.bz2
-        URL_HASH SHA256=5732bfb70e8fcc747018820bc8fd31cd1867ebae5aa09baf65482b42c134d45a
-        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mesa"
-        )
-    FetchContent_MakeAvailable(download_mesa_libgl)
-
-    set(MESA_CPU_GL_LIBRARY "${download_mesa_libgl_SOURCE_DIR}/libGL.so.1.2.0" "${download_mesa_libgl_SOURCE_DIR}/libEGL.so.1.0.0"
-        "${download_mesa_libgl_SOURCE_DIR}/libgallium_dri.so" "${download_mesa_libgl_SOURCE_DIR}/kms_swrast_dri.so"
-        "${download_mesa_libgl_SOURCE_DIR}/swrast_dri.so")
-    message(STATUS "MESA_CPU_GL_LIBRARY: ${MESA_CPU_GL_LIBRARY}")
-endif()
 
 # RPC interface
 # zeromq
@@ -1566,7 +1546,9 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         TARGETS TBB::tbb
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
-
+    target_compile_definitions(3rdparty_tbb INTERFACE OPEN3D_USE_ONEAPI_PACKAGES=1)
+    target_compile_definitions(3rdparty_tbb INTERFACE _PSTL_UDR_PRESENT=0)
+    target_compile_definitions(3rdparty_tbb INTERFACE _PSTL_UDS_PRESENT=0)
     # 2. oneDPL
     # /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL
     open3d_find_package_3rdparty_library(3rdparty_onedpl
@@ -1784,16 +1766,30 @@ if(BUILD_CUDA_MODULE)
                 CUDA::culibos
             )
         else()
-            # In CUDA12.0 the liblapack_static.a is deprecated and removed.
+            # In CUDA 12.0 the liblapack_static.a is deprecated and removed.
             # Use the libcusolver_lapack_static.a instead.
-            target_link_libraries(3rdparty_cublas INTERFACE
-                CUDA::cusolver_static
-                ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
-                CUDA::cusparse_static
-                CUDA::cublas_static
-                CUDA::cublasLt_static
-                CUDA::culibos
-            )
+            # Use of static libraries is preferred.
+            if(BUILD_WITH_CUDA_STATIC)
+                # Use static CUDA libraries.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver_static
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
+                    CUDA::cusparse_static
+                    CUDA::cublas_static
+                    CUDA::cublasLt_static
+                    CUDA::culibos
+                )
+            else()
+                # Use shared CUDA libraries.
+                target_link_libraries(3rdparty_cublas INTERFACE
+                    CUDA::cusolver
+                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver.so
+                    CUDA::cusparse
+                    CUDA::cublas
+                    CUDA::cublasLt
+                    CUDA::culibos
+                )
+            endif()
         endif()
         if(NOT BUILD_SHARED_LIBS)
             # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/Open3D/Open3DTargets.cmake.
@@ -1820,16 +1816,34 @@ if (BUILD_CUDA_MODULE)
                     CUDA::nppial
         )
     else()
-        open3d_find_package_3rdparty_library(3rdparty_cuda_npp
-            REQUIRED
-            PACKAGE CUDAToolkit
-            TARGETS CUDA::nppc_static
-                    CUDA::nppicc_static
-                    CUDA::nppif_static
-                    CUDA::nppig_static
-                    CUDA::nppim_static
-                    CUDA::nppial_static
-        )
+        if(BUILD_WITH_CUDA_STATIC)
+            # Use static CUDA libraries.
+            open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+                REQUIRED
+                PACKAGE CUDAToolkit
+                TARGETS CUDA::nppc_static
+                        CUDA::nppicc_static
+                        CUDA::nppif_static
+                        CUDA::nppig_static
+                        CUDA::nppim_static
+                        CUDA::nppial_static
+            )
+        else()
+            # Use shared CUDA libraries.
+            open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+                REQUIRED
+                PACKAGE CUDAToolkit
+                TARGETS CUDA::nppc
+                        CUDA::nppicc
+                        CUDA::nppif
+                        CUDA::nppig
+                        CUDA::nppim
+                        CUDA::nppial
+            )
+        endif()
+    endif()
+    if(NOT 3rdparty_cuda_npp_FOUND)
+        message(FATAL_ERROR "CUDA NPP libraries not found.")
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cuda_npp)
 endif ()

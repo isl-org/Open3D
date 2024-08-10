@@ -1,4 +1,5 @@
 name: Ubuntu OpenBLAS
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -18,12 +19,14 @@ env:
 
 jobs:
   openblas-amd64:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -53,6 +56,8 @@ jobs:
           fi
 
   openblas-arm64:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     needs: [skip-arm64-check-on-fork]
     if: needs.skip-arm64-check-on-fork.outputs.skip == 'no'
@@ -65,7 +70,7 @@ jobs:
       GCE_INSTANCE_PREFIX: open3d-ci-openblas-arm64-py310-dev
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Package code
         run: |
           # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
@@ -73,12 +78,12 @@ jobs:
           tar -czvf Open3D.tar.gz Open3D
           ls -alh
       - name: GCloud CLI auth
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}

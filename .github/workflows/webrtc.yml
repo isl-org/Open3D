@@ -1,4 +1,5 @@
 name: WebRTC
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -23,29 +24,31 @@ env:
 jobs:
 
   Unix:
+    permissions:
+      contents: write  # upload
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, macos-11]
+        os: [ubuntu-20.04, macos-12]
         GLIBCXX_USE_CXX11_ABI: [0, 1]
         exclude:
-          - os: macos-11
+          - os: macos-12
             GLIBCXX_USE_CXX11_ABI: 0
     env:
       GLIBCXX_USE_CXX11_ABI: ${{ matrix.GLIBCXX_USE_CXX11_ABI }}
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python version
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
 
       - name: Install dependencies
-        if: ${{ matrix.os == 'ubuntu-18.04' }}
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
         run: |
           source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu
@@ -61,15 +64,17 @@ jobs:
           build_webrtc
 
       - name: Upload WebRTC
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: webrtc_release
+          name: webrtc_release_${{ matrix.os }}
           path: |
                  webrtc_*.tar.gz
                  checksum_*.txt
           if-no-files-found: error
 
   Windows:
+    permissions:
+      contents: write  # upload
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
     runs-on: windows-2019
     env:
@@ -81,10 +86,10 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python version
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
@@ -167,9 +172,9 @@ jobs:
           cmake -E sha256sum webrtc_${env:WEBRTC_COMMIT_SHORT}_win.zip | Tee-Object -FilePath checksum_win.txt
 
       - name: Upload WebRTC
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: webrtc_release
+          name: webrtc_release_windows
           path: |
                  ${{ env.WORK_DIR }}/webrtc_*.zip
                  ${{ env.WORK_DIR }}/checksum_*.txt

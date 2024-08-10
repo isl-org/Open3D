@@ -1772,6 +1772,10 @@ void pybind_gui_classes(py::module &m) {
                  "window is visible")
             .def("get_is_open", &CollapsableVert::GetIsOpen,
                  "Check if widget is open.")
+            .def("set_text", &CollapsableVert::SetText, "text"_a,
+                 "Sets the text for the CollapsableVert")
+            .def("get_text", &CollapsableVert::GetText,
+                 "Gets the text for the CollapsableVert")
             .def_property("font_id", &CollapsableVert::GetFontId,
                           &CollapsableVert::SetFontId,
                           "Set the font using the FontId returned from "

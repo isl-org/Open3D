@@ -1,5 +1,6 @@
 ## Main
 
+-   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
 -   Use GLIBCXX_USE_CXX11_ABI=ON by default
 -   Python 3.9 support. Tensorflow bump 2.4.1 -> 2.5.0. PyTorch bump 1.7.1 -> 1.8.1 (LTS)
@@ -28,6 +29,18 @@
 -   Rename master branch to main.
 -   Support in memory loading of XYZ files
 -   Fix geometry picker Error when LineSet objects are presented (PR #6499)
+-   Fix mis-configured application .desktop link for the Open3D viewer when installing to a custom path (PR #6599)
+-   Fix regression in printing cuda tensor from PR #6444 🐛
+-   Add Python pathlib support for file IO (PR #6619)
+-   Fix log error message for `probability` argument validation in `PointCloud::SegmentPlane` (PR #6622)
+-   Fix macOS arm64 builds, add CI runner for macOS arm64 (PR #6695)
+-   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
+-   Fix RANSAC early stop if no inliers in a specific iteration (PR #6789)
+-   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
+-   Fix build with fmt v10.2.0 (#6783)
+-   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
+-   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
+-   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 
 ## 0.13
 

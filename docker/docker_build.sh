@@ -8,9 +8,9 @@
 # Guidelines:
 # - Use a flat list of options.
 #   We don't want to have a cartesian product of different combinations of
-#   options. E.g., to support Ubuntu {18.04, 20.04} with Python {3.7, 3.8}, we
+#   options. E.g., to support Ubuntu {20.04, 24.04} with Python {3.7, 3.8}, we
 #   don't specify the OS and Python version separately, instead, we have a flat
-#   list of combinations: [u1804_py37, u1804_py38, u2004_py37, u2004_py38].
+#   list of combinations: [u2004_py39, u2004_py310, u2404_py39, u2404_py310].
 # - No external environment variables.
 #   This script should not make assumptions on external environment variables.
 #   This make the Docker image reproducible across different machines.
@@ -54,12 +54,12 @@ OPTION:
     sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-bionic                   : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), release mode
-    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
-    4-shared-bionic            : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
-    4-shared-bionic-release    : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
-    5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
+    2-focal                   : CUDA CI, 2-bionic, developer mode
+    3-ml-shared-focal-release : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), release mode
+    3-ml-shared-focal         : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
+    4-shared-focal            : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
+    4-shared-focal-release    : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
+    5-ml-jammy                 : CUDA CI, 5-ml-focal, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
@@ -76,9 +76,10 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 
 # Shared variables
 CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.20.6-linux-x86_64
-CMAKE_VERSION_AARCH64=cmake-3.20.6-linux-aarch64
+CMAKE_VERSION=cmake-3.24.4-linux-x86_64
+CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
 CUDA_VERSION=11.7.1-cudnn8
+CUDA_VERSION_LATEST=11.8.0-cudnn8
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -101,13 +102,13 @@ openblas_export_env() {
     if [[ "amd64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform AMD64"
         export DOCKER_TAG=open3d-ci:openblas-amd64
-        export BASE_IMAGE=ubuntu:18.04
+        export BASE_IMAGE=ubuntu:20.04
         export CONDA_SUFFIX=x86_64
         export CMAKE_VERSION=${CMAKE_VERSION}
     elif [[ "arm64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform ARM64"
         export DOCKER_TAG=open3d-ci:openblas-arm64
-        export BASE_IMAGE=arm64v8/ubuntu:18.04
+        export BASE_IMAGE=arm64v8/ubuntu:20.04
         export CONDA_SUFFIX=aarch64
         export CMAKE_VERSION=${CMAKE_VERSION_AARCH64}
     else
@@ -153,7 +154,6 @@ openblas_build() {
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
-        --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg CONDA_SUFFIX="${CONDA_SUFFIX}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
@@ -169,8 +169,8 @@ openblas_build() {
 }
 
 cuda_wheel_build() {
-    BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
-    CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
+    BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+    CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-ci-ccache
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
@@ -198,7 +198,6 @@ cuda_wheel_build() {
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
-        --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
@@ -207,6 +206,7 @@ cuda_wheel_build() {
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg CI="${CI:-}" \
         -t open3d-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd
@@ -236,7 +236,6 @@ ci_build() {
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
-        --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
@@ -249,6 +248,7 @@ ci_build() {
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
+        --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
@@ -258,12 +258,12 @@ ci_build() {
                && chown $(id -u):$(id -g) /opt/mount/open3d*"
 }
 
-2-bionic_export_env() {
-    export DOCKER_TAG=open3d-ci:2-bionic
+2-focal_export_env() {
+    export DOCKER_TAG=open3d-ci:2-focal
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-2-bionic
+    export CCACHE_TAR_NAME=open3d-ci-2-focal
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
@@ -273,80 +273,80 @@ ci_build() {
     export BUILD_SYCL_MODULE=OFF
 }
 
-3-ml-shared-bionic_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-bionic
-
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
-    export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
-    export PYTHON_VERSION=3.8
-    export BUILD_SHARED_LIBS=ON
-    export BUILD_CUDA_MODULE=ON
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
-    export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-3-ml-shared-bionic-release_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-bionic
-
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
-    export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
-    export PYTHON_VERSION=3.8
-    export BUILD_SHARED_LIBS=ON
-    export BUILD_CUDA_MODULE=ON
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
-    export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-4-shared-bionic_export_env() {
-    export DOCKER_TAG=open3d-ci:4-shared-bionic
-
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
-    export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
-    export PYTHON_VERSION=3.8
-    export BUILD_SHARED_LIBS=ON
-    export BUILD_CUDA_MODULE=ON
-     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
-    export BUILD_TENSORFLOW_OPS=ON
-    export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-4-shared-bionic-release_export_env() {
-    export DOCKER_TAG=open3d-ci:4-shared-bionic
-
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu18.04
-    export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
-    export PYTHON_VERSION=3.8
-    export BUILD_SHARED_LIBS=ON
-    export BUILD_CUDA_MODULE=ON
-     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
-    export BUILD_TENSORFLOW_OPS=ON
-    export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-5-ml-focal_export_env() {
-    export DOCKER_TAG=open3d-ci:5-ml-focal
+3-ml-shared-focal_export_env() {
+    export DOCKER_TAG=open3d-ci:3-ml-shared-focal
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-5-ml-focal
+    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-focal
+    export PYTHON_VERSION=3.8
+    export BUILD_SHARED_LIBS=ON
+    export BUILD_CUDA_MODULE=ON
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
+    export BUILD_SYCL_MODULE=OFF
+}
+
+3-ml-shared-focal-release_export_env() {
+    export DOCKER_TAG=open3d-ci:3-ml-shared-focal
+
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-focal
+    export PYTHON_VERSION=3.8
+    export BUILD_SHARED_LIBS=ON
+    export BUILD_CUDA_MODULE=ON
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
+    export BUILD_SYCL_MODULE=OFF
+}
+
+4-shared-focal_export_env() {
+    export DOCKER_TAG=open3d-ci:4-shared-focal
+
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-4-shared-focal
+    export PYTHON_VERSION=3.8
+    export BUILD_SHARED_LIBS=ON
+    export BUILD_CUDA_MODULE=ON
+    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+    export BUILD_SYCL_MODULE=OFF
+}
+
+4-shared-focal-release_export_env() {
+    export DOCKER_TAG=open3d-ci:4-shared-focal
+
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-4-shared-focal
+    export PYTHON_VERSION=3.8
+    export BUILD_SHARED_LIBS=ON
+    export BUILD_CUDA_MODULE=ON
+    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+    export BUILD_SYCL_MODULE=OFF
+}
+
+5-ml-jammy_export_env() {
+    export DOCKER_TAG=open3d-ci:5-ml-jammy
+
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-5-ml-jammy
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
@@ -356,7 +356,7 @@ ci_build() {
 cpu-static_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-static
 
-    export BASE_IMAGE=ubuntu:18.04
+    export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.8
@@ -371,13 +371,13 @@ cpu-static_export_env() {
 cpu-shared_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared
 
-    export BASE_IMAGE=ubuntu:18.04
+    export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -387,13 +387,13 @@ cpu-shared_export_env() {
 cpu-shared-ml_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared-ml
 
-    export BASE_IMAGE=ubuntu:18.04
+    export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -403,13 +403,13 @@ cpu-shared-ml_export_env() {
 cpu-shared-release_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared
 
-    export BASE_IMAGE=ubuntu:18.04
+    export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
+    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -419,13 +419,13 @@ cpu-shared-release_export_env() {
 cpu-shared-ml-release_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared-ml
 
-    export BASE_IMAGE=ubuntu:18.04
+    export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
+    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -436,7 +436,7 @@ sycl-shared_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-shared
 
     # https://hub.docker.com/r/intel/oneapi-basekit
-    # https://github.com/intel/oneapi-containers/blob/main/images/docker/basekit/Dockerfile.ubuntu-18.04
+    # https://github.com/intel/oneapi-containers/blob/main/images/docker/basekit/Dockerfile.ubuntu-20.04
     export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
@@ -453,7 +453,7 @@ sycl-static_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-static
 
     # https://hub.docker.com/r/intel/oneapi-basekit
-    # https://github.com/intel/oneapi-containers/blob/main/images/docker/basekit/Dockerfile.ubuntu-18.04
+    # https://github.com/intel/oneapi-containers/blob/main/images/docker/basekit/Dockerfile.ubuntu-20.04
     export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
@@ -600,28 +600,28 @@ function main() {
         ;;
 
     # ML CIs
-    2-bionic)
-        2-bionic_export_env
+    2-focal)
+        2-focal_export_env
         ci_build
         ;;
-    3-ml-shared-bionic-release)
-        3-ml-shared-bionic-release_export_env
+    3-ml-shared-focal-release)
+        3-ml-shared-focal-release_export_env
         ci_build
         ;;
-    3-ml-shared-bionic)
-        3-ml-shared-bionic_export_env
+    3-ml-shared-focal)
+        3-ml-shared-focal_export_env
         ci_build
         ;;
-    4-shared-bionic-release)
-        4-shared-bionic-release_export_env
+    4-shared-focal-release)
+        4-shared-focal-release_export_env
         ci_build
         ;;
-    4-shared-bionic)
-        4-shared-bionic_export_env
+    4-shared-focal)
+        4-shared-focal_export_env
         ci_build
         ;;
-    5-ml-focal)
-        5-ml-focal_export_env
+    5-ml-jammy)
+        5-ml-jammy_export_env
         ci_build
         ;;
     *)

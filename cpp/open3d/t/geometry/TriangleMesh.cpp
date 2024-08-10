@@ -283,6 +283,45 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
     return *this;
 }
 
+static core::Tensor ComputeTriangleAreasHelper(const TriangleMesh &mesh) {
+    const int64_t triangle_num = mesh.GetTriangleIndices().GetLength();
+    const core::Dtype dtype = mesh.GetVertexPositions().GetDtype();
+    core::Tensor triangle_areas({triangle_num}, dtype, mesh.GetDevice());
+    if (mesh.IsCPU()) {
+        kernel::trianglemesh::ComputeTriangleAreasCPU(
+                mesh.GetVertexPositions().Contiguous(),
+                mesh.GetTriangleIndices().Contiguous(), triangle_areas);
+    } else if (mesh.IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
+                  mesh.GetVertexPositions().Contiguous(),
+                  mesh.GetTriangleIndices().Contiguous(), triangle_areas);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    return triangle_areas;
+}
+
+TriangleMesh &TriangleMesh::ComputeTriangleAreas() {
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return *this;
+    }
+
+    if (!HasTriangleIndices()) {
+        SetTriangleAttr("areas", core::Tensor::Empty(
+                                         {0}, GetVertexPositions().GetDtype(),
+                                         GetDevice()));
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+
+    core::Tensor triangle_areas = ComputeTriangleAreasHelper(*this);
+    SetTriangleAttr("areas", triangle_areas);
+
+    return *this;
+}
+
 double TriangleMesh::GetSurfaceArea() const {
     double surface_area = 0;
     if (IsEmpty()) {
@@ -295,22 +334,7 @@ double TriangleMesh::GetSurfaceArea() const {
         return surface_area;
     }
 
-    const int64_t triangle_num = GetTriangleIndices().GetLength();
-    const core::Dtype dtype = GetVertexPositions().GetDtype();
-    core::Tensor triangle_areas({triangle_num}, dtype, GetDevice());
-
-    if (IsCPU()) {
-        kernel::trianglemesh::ComputeTriangleAreasCPU(
-                GetVertexPositions().Contiguous(),
-                GetTriangleIndices().Contiguous(), triangle_areas);
-    } else if (IsCUDA()) {
-        CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
-                  GetVertexPositions().Contiguous(),
-                  GetTriangleIndices().Contiguous(), triangle_areas);
-    } else {
-        utility::LogError("Unimplemented device");
-    }
-
+    core::Tensor triangle_areas = ComputeTriangleAreasHelper(*this);
     surface_area = triangle_areas.Sum({0}).To(core::Float64).Item<double>();
 
     return surface_area;
@@ -365,8 +389,8 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         .Reshape({-1, 3, 2}));
     }
 
-    // Convert material if legacy mesh only has one
-    if (mesh_legacy.materials_.size() == 1) {
+    // Convert first material only if one or more are present
+    if (mesh_legacy.materials_.size() > 0) {
         const auto &mat = mesh_legacy.materials_.begin()->second;
         auto &tmat = mesh.GetMaterial();
         tmat.SetDefaultProperties();
@@ -377,6 +401,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
         tmat.SetAnisotropy(mat.baseAnisotropy);
         tmat.SetBaseClearcoat(mat.baseClearCoat);
         tmat.SetBaseClearcoatRoughness(mat.baseClearCoatRoughness);
+        // no emissive_color in legacy mesh material
         if (mat.albedo) tmat.SetAlbedoMap(Image::FromLegacy(*mat.albedo));
         if (mat.normalMap) tmat.SetNormalMap(Image::FromLegacy(*mat.normalMap));
         if (mat.roughness)
@@ -393,10 +418,12 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                     Image::FromLegacy(*mat.clearCoatRoughness));
         if (mat.anisotropy)
             tmat.SetAnisotropyMap(Image::FromLegacy(*mat.anisotropy));
-    } else if (mesh_legacy.materials_.size() > 1) {
+    }
+    if (mesh_legacy.materials_.size() > 1) {
         utility::LogWarning(
                 "Legacy mesh has more than 1 material which is not supported "
-                "by Tensor-based meshes.");
+                "by Tensor-based mesh. Only material {} was converted.",
+                mesh_legacy.materials_.begin()->first);
     }
     return mesh;
 }
@@ -451,10 +478,6 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
             legacy_mat.baseColor.f4[1] = tmat.GetBaseColor().y();
             legacy_mat.baseColor.f4[2] = tmat.GetBaseColor().z();
             legacy_mat.baseColor.f4[3] = tmat.GetBaseColor().w();
-            utility::LogWarning("{},{},{},{}", legacy_mat.baseColor.f4[0],
-                                legacy_mat.baseColor.f4[1],
-                                legacy_mat.baseColor.f4[2],
-                                legacy_mat.baseColor.f4[3]);
         }
         if (tmat.HasBaseRoughness()) {
             legacy_mat.baseRoughness = tmat.GetBaseRoughness();
@@ -519,6 +542,26 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
     }
 
     return mesh_legacy;
+}
+
+std::unordered_map<std::string, geometry::TriangleMesh>
+TriangleMesh::FromTriangleMeshModel(
+        const open3d::visualization::rendering::TriangleMeshModel &model,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    std::unordered_map<std::string, TriangleMesh> tmeshes;
+    for (const auto &mobj : model.meshes_) {
+        auto tmesh = TriangleMesh::FromLegacy(*mobj.mesh, float_dtype,
+                                              int_dtype, device);
+        // material textures will be on the CPU. GPU resident texture images is
+        // not yet supported. See comment in Material.cpp
+        tmesh.SetMaterial(
+                visualization::rendering::Material::FromMaterialRecord(
+                        model.materials_[mobj.material_idx]));
+        tmeshes.emplace(mobj.mesh_name, tmesh);
+    }
+    return tmeshes;
 }
 
 TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {
@@ -1248,6 +1291,218 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
         result.SetTriangleIndices(tris_cpu.To(GetDevice()));
     }
     CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
+
+    return result;
+}
+
+TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
+    if (!HasVertexPositions() || GetVertexPositions().GetLength() == 0) {
+        utility::LogWarning(
+                "[RemoveUnreferencedVertices] TriangleMesh has no vertices.");
+        return *this;
+    }
+    GetVertexAttr().AssertSizeSynchronized();
+
+    core::Dtype tri_dtype = HasTriangleIndices()
+                                    ? GetTriangleIndices().GetDtype()
+                                    : core::Int64;
+
+    int64_t num_verts_old = GetVertexPositions().GetLength();
+    // int mask for vertices as we need to remap indices.
+    core::Tensor vertex_mask = core::Tensor::Zeros({num_verts_old}, tri_dtype);
+
+    if (!HasTriangleIndices() || GetTriangleIndices().GetLength() == 0) {
+        utility::LogWarning(
+                "[RemoveUnreferencedVertices] TriangleMesh has no triangles. "
+                "Removing all vertices.");
+        // in this case we need to empty vertices and their attributes
+    } else {
+        GetTriangleAttr().AssertSizeSynchronized();
+        core::Tensor tris_cpu =
+                GetTriangleIndices().To(core::Device()).Contiguous();
+        DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(tri_dtype, tris, [&]() {
+            scalar_tris_t *tris_ptr = tris_cpu.GetDataPtr<scalar_tris_t>();
+            scalar_tris_t *vertex_mask_ptr =
+                    vertex_mask.GetDataPtr<scalar_tris_t>();
+            for (int i = 0; i < tris_cpu.GetLength(); i++) {
+                vertex_mask_ptr[tris_ptr[3 * i]] = 1;
+                vertex_mask_ptr[tris_ptr[3 * i + 1]] = 1;
+                vertex_mask_ptr[tris_ptr[3 * i + 2]] = 1;
+            }
+
+            UpdateTriangleIndicesByVertexMask<scalar_tris_t>(tris_cpu,
+                                                             vertex_mask);
+        });
+        SetTriangleIndices(tris_cpu.To(GetDevice()));
+    }
+
+    // send the vertex mask to original device and apply to
+    // vertices
+    vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
+    for (auto item : GetVertexAttr()) {
+        SetVertexAttr(item.first, item.second.IndexGet({vertex_mask}));
+    }
+
+    utility::LogDebug(
+            "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
+            (int)(num_verts_old - GetVertexPositions().GetLength()));
+
+    return *this;
+}
+
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value &&
+                                          !std::is_same<T, bool>::value,
+                                  T>::type * = nullptr>
+using Edge = std::tuple<T, T>;
+
+/// brief Helper function to get an edge with ordered vertex indices.
+template <typename T>
+static inline Edge<T> GetOrderedEdge(T vidx0, T vidx1) {
+    return (vidx0 < vidx1) ? Edge<T>{vidx0, vidx1} : Edge<T>{vidx1, vidx0};
+}
+
+/// brief Helper
+///
+template <typename T>
+static std::unordered_map<Edge<T>,
+                          std::vector<size_t>,
+                          utility::hash_tuple<Edge<T>>>
+GetEdgeToTrianglesMap(const core::Tensor &tris_cpu) {
+    std::unordered_map<Edge<T>, std::vector<size_t>,
+                       utility::hash_tuple<Edge<T>>>
+            tris_per_edge;
+    auto AddEdge = [&](T vidx0, T vidx1, int64_t tidx) {
+        tris_per_edge[GetOrderedEdge(vidx0, vidx1)].push_back(tidx);
+    };
+    const T *tris_ptr = tris_cpu.GetDataPtr<T>();
+    for (int64_t tidx = 0; tidx < tris_cpu.GetLength(); ++tidx) {
+        const T *triangle = &tris_ptr[3 * tidx];
+        AddEdge(triangle[0], triangle[1], tidx);
+        AddEdge(triangle[1], triangle[2], tidx);
+        AddEdge(triangle[2], triangle[0], tidx);
+    }
+    return tris_per_edge;
+}
+
+TriangleMesh TriangleMesh::RemoveNonManifoldEdges() {
+    if (!HasVertexPositions() || GetVertexPositions().GetLength() == 0) {
+        utility::LogWarning(
+                "[RemoveNonManifildEdges] TriangleMesh has no vertices.");
+        return *this;
+    }
+
+    if (!HasTriangleIndices() || GetTriangleIndices().GetLength() == 0) {
+        utility::LogWarning(
+                "[RemoveNonManifoldEdges] TriangleMesh has no triangles.");
+        return *this;
+    }
+
+    GetVertexAttr().AssertSizeSynchronized();
+    GetTriangleAttr().AssertSizeSynchronized();
+
+    core::Tensor tris_cpu =
+            GetTriangleIndices().To(core::Device()).Contiguous();
+
+    ComputeTriangleAreas();
+    core::Tensor tri_areas_cpu =
+            GetTriangleAttr("areas").To(core::Device()).Contiguous();
+
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(
+            GetVertexPositions().GetDtype(), tris_cpu.GetDtype(), [&]() {
+                scalar_t *tri_areas_ptr = tri_areas_cpu.GetDataPtr<scalar_t>();
+                auto edges_to_tris = GetEdgeToTrianglesMap<int_t>(tris_cpu);
+
+                // lambda to compare triangles areas by index
+                auto area_greater_compare = [&tri_areas_ptr](size_t lhs,
+                                                             size_t rhs) {
+                    return tri_areas_ptr[lhs] > tri_areas_ptr[rhs];
+                };
+
+                // go through all edges and for those that have more than 2
+                // triangles attached, remove the triangles with the minimal
+                // area
+                for (auto &kv : edges_to_tris) {
+                    // remove all triangles which are already marked for removal
+                    // (area < 0) note, the erasing of triangles happens
+                    // afterwards
+                    auto tris_end = std::remove_if(
+                            kv.second.begin(), kv.second.end(),
+                            [=](size_t t) { return tri_areas_ptr[t] < 0; });
+                    // count non-removed triangles (with area > 0).
+                    int n_tris = std::distance(kv.second.begin(), tris_end);
+
+                    if (n_tris <= 2) {
+                        // nothing to do here as either:
+                        // - all triangles of the edge are already marked for
+                        // deletion
+                        // - the edge is manifold: it has 1 or 2 triangles with
+                        //   a non-negative area
+                        continue;
+                    }
+
+                    // now erase all triangle indices already marked for removal
+                    kv.second.erase(tris_end, kv.second.end());
+
+                    // find first to triangles with the maximal area
+                    std::nth_element(kv.second.begin(), kv.second.begin() + 1,
+                                     kv.second.end(), area_greater_compare);
+
+                    // mark others for deletion
+                    for (auto it = kv.second.begin() + 2; it < kv.second.end();
+                         ++it) {
+                        tri_areas_ptr[*it] = -1;
+                    }
+                }
+            });
+
+    // mask for triangles with positive area
+    core::Tensor tri_mask = tri_areas_cpu.Gt(0.0).To(GetDevice());
+
+    // pick up positive-area triangles (and their attributes)
+    for (auto item : GetTriangleAttr()) {
+        SetTriangleAttr(item.first, item.second.IndexGet({tri_mask}));
+    }
+
+    return *this;
+}
+
+core::Tensor TriangleMesh::GetNonManifoldEdges(
+        bool allow_boundary_edges /* = true */) const {
+    if (!HasVertexPositions()) {
+        utility::LogWarning(
+                "[GetNonManifoldEdges] TriangleMesh has no vertices.");
+        return {};
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning(
+                "[GetNonManifoldEdges] TriangleMesh has no triangles.");
+        return {};
+    }
+
+    core::Tensor result;
+    core::Tensor tris_cpu =
+            GetTriangleIndices().To(core::Device()).Contiguous();
+    core::Dtype tri_dtype = tris_cpu.GetDtype();
+
+    DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(tri_dtype, tris, [&]() {
+        auto edges = GetEdgeToTrianglesMap<scalar_tris_t>(tris_cpu);
+        std::vector<scalar_tris_t> non_manifold_edges;
+
+        for (auto &kv : edges) {
+            if ((allow_boundary_edges &&
+                 (kv.second.size() < 1 || kv.second.size() > 2)) ||
+                (!allow_boundary_edges && kv.second.size() != 2)) {
+                non_manifold_edges.push_back(std::get<0>(kv.first));
+                non_manifold_edges.push_back(std::get<1>(kv.first));
+            }
+        }
+
+        result = core::Tensor(non_manifold_edges,
+                              {(long int)non_manifold_edges.size() / 2, 2},
+                              tri_dtype, GetTriangleIndices().GetDevice());
+    });
 
     return result;
 }
