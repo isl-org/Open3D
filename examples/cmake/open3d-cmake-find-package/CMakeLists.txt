@@ -23,11 +23,14 @@ target_link_libraries(Draw PRIVATE Open3D::Open3D)
 # On Windows if BUILD_SHARED_LIBS is enabled, copy .dll files to the executable directory
 if(WIN32)
     get_target_property(open3d_type Open3D::Open3D TYPE)
+    message(STATUS "Copying Open3D DLLs to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
     if(open3d_type STREQUAL "SHARED_LIBRARY")
-        message(STATUS "Copying Open3D.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
-        add_custom_command(TARGET Draw POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy
-                                   ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
-                                   ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+        set(copy_dlls ${CMAKE_INSTALL_PREFIX}/bin/tbb12.dll 
+                      ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll)
+    else() 
+        set(copy_dlls ${CMAKE_INSTALL_PREFIX}/bin/tbb12.dll) 
     endif()
+    add_custom_command(TARGET Draw POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy ${copy_dlls}
+                        ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
 endif()

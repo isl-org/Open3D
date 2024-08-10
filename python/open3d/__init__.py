@@ -37,6 +37,7 @@ def load_cdll(path):
     else:
         return CDLL(str(path))
 
+
 if sys.platform == 'win32':  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
 
