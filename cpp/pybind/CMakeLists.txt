@@ -78,9 +78,9 @@ set(PYTHON_COMPILED_MODULE_DIR
 
 # Set BUILD_RPATH to find tbb (and a shared libOpen3D). We don't install through cmake.
 if (APPLE)
-    set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path:@loader_path/..")
+    set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path;@loader_path/..")
 elseif (UNIX)
-    set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN:$ORIGIN/..")
+    set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN;$ORIGIN/..")
 endif()
 set_target_properties(pybind PROPERTIES
                       FOLDER "Python"
@@ -88,7 +88,7 @@ set_target_properties(pybind PROPERTIES
                       ARCHIVE_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}")
 
 if (BUILD_SHARED_LIBS)
-    if (WIN32)    # WIN32 Open3D is not versioned yet
+    if (WIN32)    # CMake does not add soversion suffix to WIN32 DLLs
         set(_libopen3d_soname "Open3D.dll")
     elseif(APPLE)
         set(_libopen3d_soname "libOpen3D.${OPEN3D_ABI_VERSION}.dylib")
