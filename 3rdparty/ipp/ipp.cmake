@@ -7,6 +7,8 @@
 
 include(ExternalProject)
 
+# These archives are created from the pip wheels for ipp-static, ipp-devel and
+# ipp-include and excluding the shared libraries to reduce download size.
 # Check in order APPLE -> WIN32 -> UNIX, since UNIX may be defined on APPLE / WIN32 as well
 set(IPP_VERSION_STRING "2021.11.0")  # From ipp/ippversion.h
 set(IPP_VERSION_INT 20211100)

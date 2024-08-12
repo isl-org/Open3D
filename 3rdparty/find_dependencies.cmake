@@ -1547,15 +1547,7 @@ endif()
 mark_as_advanced(OPEN3D_USE_ONEAPI_PACKAGES)
 
 if(OPEN3D_USE_ONEAPI_PACKAGES)
-    # 1. oneTBB
-    # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
-    open3d_find_package_3rdparty_library(3rdparty_tbb
-        PACKAGE TBB
-        TARGETS TBB::tbb
-    )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
-
-    # 2. oneMKL
+    # 1. oneMKL
     # /opt/intel/oneapi/mkl/latest/lib/cmake/mkl
     set(MKL_THREADING tbb_thread)
     set(MKL_LINK static)
@@ -1574,24 +1566,15 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     target_compile_definitions(3rdparty_mkl INTERFACE OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_mkl)
 
-else(OPEN3D_USE_ONEAPI_PACKAGES)
-    # TBB
-    if(USE_SYSTEM_TBB)
-        open3d_find_package_3rdparty_library(3rdparty_tbb
-            PACKAGE TBB
-            TARGETS TBB::tbb
-        )
-        if(NOT 3rdparty_tbb_FOUND)
-            set(USE_SYSTEM_TBB OFF)
-        endif()
-    endif()
-    if(NOT USE_SYSTEM_TBB)
-        include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM TBB::tbb)
-    else()
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
-    endif()
+    # 2. oneTBB
+    # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
+    open3d_find_package_3rdparty_library(3rdparty_tbb
+        PACKAGE TBB
+        TARGETS TBB::tbb
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
 
+else(OPEN3D_USE_ONEAPI_PACKAGES)
     # MKL/BLAS
     if(USE_BLAS)
         if (USE_SYSTEM_BLAS)
@@ -1717,6 +1700,24 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
         target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_blas)
     endif()
+
+    # TBB
+    if(USE_SYSTEM_TBB)
+        open3d_find_package_3rdparty_library(3rdparty_tbb
+            PACKAGE TBB
+            TARGETS TBB::tbb
+        )
+        if(NOT 3rdparty_tbb_FOUND)
+            set(USE_SYSTEM_TBB OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_TBB)
+        include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM TBB::tbb)
+    else()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
+    endif()
+
 endif(OPEN3D_USE_ONEAPI_PACKAGES)
 
 # cuBLAS

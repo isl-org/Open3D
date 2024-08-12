@@ -191,10 +191,6 @@ function(open3d_set_global_properties target)
     target_compile_options(${target} PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
 
-    # TBB static version is used
-    # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
-    # target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
-
     # Enable strip
     open3d_enable_strip(${target})
 

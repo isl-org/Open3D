@@ -76,16 +76,30 @@ endif()
 set(PYTHON_COMPILED_MODULE_DIR
     "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 
-# Set BUILD_RPATH to find tbb. We don't install through cmake.
+# Set BUILD_RPATH to find tbb (and a shared libOpen3D). We don't install through cmake.
 if (APPLE)
-    set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path/..")
+    set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path:@loader_path/..")
 elseif (UNIX)
-    set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN/..")
+    set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN:$ORIGIN/..")
 endif()
 set_target_properties(pybind PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
                       ARCHIVE_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}")
+
+if (BUILD_SHARED_LIBS)
+    if (WIN32)    # WIN32 Open3D is not versioned yet
+        set(_libopen3d_soname "Open3D.dll")
+    elseif(APPLE)
+        set(_libopen3d_soname "libOpen3D.${OPEN3D_ABI_VERSION}.dylib")
+    else()
+        set(_libopen3d_soname "libOpen3D.so.${OPEN3D_ABI_VERSION}")
+    endif()
+    add_custom_command(TARGET pybind POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:Open3D> $<TARGET_FILE_DIR:pybind>/${_libopen3d_soname}
+    )
+endif()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament) for Linux.
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
@@ -128,6 +142,10 @@ message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 
 # add the open3d python module first
 set(COMPILED_MODULE_PATH_LIST $<TARGET_FILE:pybind>)
+# add the open3d DSO / DLL if shared
+if (BUILD_SHARED_LIBS)
+    list(APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE_DIR:pybind>/${_libopen3d_soname})
+endif()
 
 set(GENERATED_OUTPUTS "")
 
