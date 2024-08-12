@@ -42,6 +42,7 @@ void pybind_tetramesh(py::module &m) {
             .def(py::self += py::self)
             .def("remove_duplicated_vertices",
                  &TetraMesh::RemoveDuplicatedVertices,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that removes duplicated vertices, i.e., vertices "
                  "that have identical coordinates.")
             .def("remove_duplicated_tetras", &TetraMesh::RemoveDuplicatedTetras,
@@ -50,6 +51,7 @@ void pybind_tetramesh(py::module &m) {
                  "independent of their order.")
             .def("remove_unreferenced_vertices",
                  &TetraMesh::RemoveUnreferencedVertices,
+                 py::call_guard<py::gil_scoped_release>(),
                  "This function removes vertices from the tetra mesh that "
                  "are not referenced in any tetra of the mesh.")
             .def("remove_degenerate_tetras", &TetraMesh::RemoveDegenerateTetras,
@@ -62,11 +64,13 @@ void pybind_tetramesh(py::module &m) {
             .def("has_tetras", &TetraMesh::HasTetras,
                  "Returns ``True`` if the mesh contains tetras.")
             .def("extract_triangle_mesh", &TetraMesh::ExtractTriangleMesh,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that generates a triangle mesh of the specified "
                  "iso-surface.",
                  "values"_a, "level"_a)
             .def_static(
                     "create_from_point_cloud", &TetraMesh::CreateFromPointCloud,
+                    py::call_guard<py::gil_scoped_release>(),
                     "Function to create a tetrahedral mesh from a point cloud.",
                     "point_cloud"_a)
             .def_readwrite("vertices", &TetraMesh::vertices_,

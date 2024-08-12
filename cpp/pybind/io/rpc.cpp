@@ -39,6 +39,7 @@ The default connection class which uses a ZeroMQ socket.
                              new rpc::Connection(address, connect_timeout,
                                                  timeout));
                  }),
+                 py::call_guard<py::gil_scoped_release>(),
                  "Creates a connection object",
                  "address"_a = "tcp://127.0.0.1:51454",
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
@@ -53,6 +54,7 @@ A connection writing to a memory buffer.
                     [](const rpc::BufferConnection& self) {
                         return py::bytes(self.buffer().str());
                     },
+                    py::call_guard<py::gil_scoped_release>(),
                     "Returns a copy of the buffer.");
 
     py::class_<rpc::DummyReceiver, std::shared_ptr<rpc::DummyReceiver>>(
@@ -74,9 +76,11 @@ A connection writing to a memory buffer.
                  "messages that have already been received.");
 
     m.def("destroy_zmq_context", &rpc::DestroyZMQContext,
+          py::call_guard<py::gil_scoped_release>(),
           "Destroys the ZMQ context.");
 
-    m.def("set_point_cloud", &rpc::SetPointCloud, "pcd"_a, "path"_a = "",
+    m.def("set_point_cloud", &rpc::SetPointCloud,
+          py::call_guard<py::gil_scoped_release>(), "pcd"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",
           "connection"_a = std::shared_ptr<rpc::Connection>(),
           "Sends a point cloud message to a viewer.");
@@ -97,7 +101,8 @@ A connection writing to a memory buffer.
                             int, const std::string&,
                             std::shared_ptr<rpc::ConnectionBase>>(
                   &rpc::SetTriangleMesh),
-          "mesh"_a, "path"_a = "", "time"_a = 0, "layer"_a = "",
+          py::call_guard<py::gil_scoped_release>(), "mesh"_a, "path"_a = "",
+          "time"_a = 0, "layer"_a = "",
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           R"doc(Sends a triangle mesh to a viewer.
 Args:
@@ -116,7 +121,8 @@ Returns:
                             const std::string&, int, const std::string&,
                             std::shared_ptr<rpc::ConnectionBase>>(
                   &rpc::SetTriangleMesh),
-          "mesh"_a, "path"_a = "", "time"_a = 0, "layer"_a = "",
+          py::call_guard<py::gil_scoped_release>(), "mesh"_a, "path"_a = "",
+          "time"_a = 0, "layer"_a = "",
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           R"doc(Sends a triangle mesh to a viewer.
 Args:
@@ -130,7 +136,8 @@ Returns:
     Returns True if the data was successfully received.
 )doc");
 
-    m.def("set_mesh_data", &rpc::SetMeshData, "path"_a = "", "time"_a = 0,
+    m.def("set_mesh_data", &rpc::SetMeshData,
+          py::call_guard<py::gil_scoped_release>(), "path"_a = "", "time"_a = 0,
           "layer"_a = "", "vertices"_a = core::Tensor({0}, core::Float32),
           "vertex_attributes"_a = std::map<std::string, core::Tensor>(),
           "faces"_a = core::Tensor({0}, core::Int32),
@@ -181,7 +188,8 @@ Returns:
                      "the connection."},
             });
 
-    m.def("set_legacy_camera", &rpc::SetLegacyCamera, "camera"_a, "path"_a = "",
+    m.def("set_legacy_camera", &rpc::SetLegacyCamera,
+          py::call_guard<py::gil_scoped_release>(), "camera"_a, "path"_a = "",
           "time"_a = 0, "layer"_a = "",
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sends a PinholeCameraParameters object.");
@@ -196,8 +204,8 @@ Returns:
                      "the connection."},
             });
 
-    m.def("set_time", &rpc::SetTime, "time"_a,
-          "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
+    m.def("set_time", &rpc::SetTime, py::call_guard<py::gil_scoped_release>(),
+          "time"_a, "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sets the time in the external visualizer.");
     docstring::FunctionDocInject(
             m, "set_time",
@@ -208,7 +216,8 @@ Returns:
                      "the connection."},
             });
 
-    m.def("set_active_camera", &rpc::SetActiveCamera, "path"_a,
+    m.def("set_active_camera", &rpc::SetActiveCamera,
+          py::call_guard<py::gil_scoped_release>(), "path"_a,
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sets the object with the specified path as the active camera.");
     docstring::FunctionDocInject(
@@ -221,7 +230,7 @@ Returns:
             });
 
     m.def("data_buffer_to_meta_geometry", &rpc::DataBufferToMetaGeometry,
-          "data"_a, R"doc(
+          py::call_guard<py::gil_scoped_release>(), "data"_a, R"doc(
 This function returns the geometry, the path and the time stored in a
 SetMeshData message. data must contain the Request header message followed
 by the SetMeshData message. The function returns None for the geometry if not

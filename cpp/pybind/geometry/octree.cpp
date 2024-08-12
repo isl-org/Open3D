@@ -287,18 +287,20 @@ void pybind_octree(py::module &m) {
                      repr << ", max_depth: " << octree.max_depth_;
                      return repr.str();
                  })
-            .def("insert_point", &Octree::InsertPoint, "point"_a, "f_init"_a,
-                 "f_update"_a, "fi_init"_a = nullptr, "fi_update"_a = nullptr,
-                 "Insert a point to the octree.")
+            .def("insert_point", &Octree::InsertPoint,
+                 py::call_guard<py::gil_scoped_release>(), "point"_a,
+                 "f_init"_a, "f_update"_a, "fi_init"_a = nullptr,
+                 "fi_update"_a = nullptr, "Insert a point to the octree.")
             .def("traverse",
                  py::overload_cast<const std::function<bool(
                          const std::shared_ptr<OctreeNode> &,
                          const std::shared_ptr<OctreeNodeInfo> &)> &>(
                          &Octree::Traverse, py::const_),
-                 "f"_a,
+                 py::call_guard<py::gil_scoped_release>(), "f"_a,
                  "DFS traversal of the octree from the root, with a "
                  "callback function f being called for each node.")
-            .def("locate_leaf_node", &Octree::LocateLeafNode, "point"_a,
+            .def("locate_leaf_node", &Octree::LocateLeafNode,
+                 py::call_guard<py::gil_scoped_release>(), "point"_a,
                  "Returns leaf OctreeNode and OctreeNodeInfo where the query"
                  "point should reside.")
             .def_static("is_point_in_bound", &Octree::IsPointInBound, "point"_a,
@@ -306,10 +308,13 @@ void pybind_octree(py::module &m) {
                         "Return true if point within bound, that is, origin<= "
                         "point < origin + size")
             .def("convert_from_point_cloud", &Octree::ConvertFromPointCloud,
-                 "point_cloud"_a, "size_expand"_a = 0.01,
-                 "Convert octree from point cloud.")
-            .def("to_voxel_grid", &Octree::ToVoxelGrid, "Convert to VoxelGrid.")
+                 py::call_guard<py::gil_scoped_release>(), "point_cloud"_a,
+                 "size_expand"_a = 0.01, "Convert octree from point cloud.")
+            .def("to_voxel_grid", &Octree::ToVoxelGrid,
+                 py::call_guard<py::gil_scoped_release>(),
+                 "Convert to VoxelGrid.")
             .def("create_from_voxel_grid", &Octree::CreateFromVoxelGrid,
+                 py::call_guard<py::gil_scoped_release>(),
                  "voxel_grid"_a
                  "Convert from VoxelGrid.")
             .def_readwrite("root_node", &Octree::root_node_,

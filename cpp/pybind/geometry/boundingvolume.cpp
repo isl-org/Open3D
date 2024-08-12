@@ -52,7 +52,8 @@ void pybind_boundingvolume(py::module &m) {
                         "AxisAlignedBoundingBox.",
                         "aabox"_a)
             .def_static("create_from_points",
-                        &OrientedBoundingBox::CreateFromPoints, "points"_a,
+                        &OrientedBoundingBox::CreateFromPoints,
+                        py::call_guard<py::gil_scoped_release>(), "points"_a,
                         "robust"_a = false,
                         R"doc(
 Creates the oriented bounding box that encloses the set of points.
@@ -62,7 +63,7 @@ The returned bounding box is an approximation to the minimal bounding box.
 
 Args:
      points (open3d.utility.Vector3dVector): Input points.
-     robust (bool): If set to true uses a more robust method which works in 
+     robust (bool): If set to true uses a more robust method which works in
           degenerate cases but introduces noise to the points coordinates.
 
 Returns:

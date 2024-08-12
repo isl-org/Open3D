@@ -30,10 +30,7 @@ void pybind_feature(py::module &m) {
                            "``dim x n`` float64 numpy array: Data buffer "
                            "storing features.")
             .def("__repr__", [](const Feature &f) {
-                return std::string(
-                               "Feature class with "
-                               "dimension "
-                               "= ") +
+                return std::string("Feature class with dimension = ") +
                        std::to_string(f.Dimension()) +
                        std::string(" and num = ") + std::to_string(f.Num()) +
                        std::string("\nAccess its data via data member.");
@@ -47,6 +44,7 @@ void pybind_feature(py::module &m) {
 
 void pybind_feature_methods(py::module &m) {
     m.def("compute_fpfh_feature", &ComputeFPFHFeature,
+          py::call_guard<py::gil_scoped_release>(),
           "Function to compute FPFH feature for a point cloud", "input"_a,
           "search_param"_a);
     docstring::FunctionDocInject(

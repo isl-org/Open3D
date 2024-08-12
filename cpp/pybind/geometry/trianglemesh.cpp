@@ -53,51 +53,59 @@ void pybind_trianglemesh(py::module &m) {
             .def(py::self += py::self)
             .def("compute_triangle_normals",
                  &TriangleMesh::ComputeTriangleNormals,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to compute triangle normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
             .def("compute_vertex_normals", &TriangleMesh::ComputeVertexNormals,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to compute vertex normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
             .def("compute_adjacency_list", &TriangleMesh::ComputeAdjacencyList,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to compute adjacency list, call before adjacency "
                  "list is needed")
             .def("remove_duplicated_vertices",
                  &TriangleMesh::RemoveDuplicatedVertices,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that removes duplicated vertices, i.e., vertices "
                  "that have identical coordinates.")
             .def("remove_duplicated_triangles",
                  &TriangleMesh::RemoveDuplicatedTriangles,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that removes duplicated triangles, i.e., removes "
                  "triangles that reference the same three vertices and have "
                  "the same orientation.")
             .def("remove_unreferenced_vertices",
                  &TriangleMesh::RemoveUnreferencedVertices,
+                 py::call_guard<py::gil_scoped_release>(),
                  "This function removes vertices from the triangle mesh that "
                  "are not referenced in any triangle of the mesh.")
             .def("remove_degenerate_triangles",
                  &TriangleMesh::RemoveDegenerateTriangles,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that removes degenerate triangles, i.e., triangles "
                  "that references a single vertex multiple times in a single "
                  "triangle. They are usually the product of removing "
                  "duplicated vertices.")
             .def("remove_non_manifold_edges",
                  &TriangleMesh::RemoveNonManifoldEdges,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that removes all non-manifold edges, by "
                  "successively deleting  triangles with the smallest surface "
                  "area adjacent to the non-manifold edge until the number of "
                  "adjacent triangles to the edge is `<= 2`.")
             .def("merge_close_vertices", &TriangleMesh::MergeCloseVertices,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that will merge close by vertices to a single one. "
-                 "The vertex position, "
-                 "normal and color will be the average of the vertices. The "
-                 "parameter eps "
-                 "defines the maximum distance of close by vertices.  This "
-                 "function might help to "
-                 "close triangle soups.",
+                 "The vertex position, normal and color will be the average of "
+                 "the vertices. The parameter eps defines the maximum distance "
+                 "of close by vertices.  This function might help to close "
+                 "triangle soups.",
                  "eps"_a)
             .def("filter_sharpen", &TriangleMesh::FilterSharpen,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to sharpen triangle mesh. The output value "
                  "(:math:`v_o`) is the input value (:math:`v_i`) plus strength "
                  "times the input value minus he sum of he adjacent values. "
@@ -106,6 +114,7 @@ void pybind_trianglemesh(py::module &m) {
                  "number_of_iterations"_a = 1, "strength"_a = 1,
                  "filter_scope"_a = MeshBase::FilterScope::All)
             .def("filter_smooth_simple", &TriangleMesh::FilterSmoothSimple,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to smooth triangle mesh with simple neighbour "
                  "average. :math:`v_o = \\frac{v_i + \\sum_{n \\in N} "
                  "v_n)}{|N| + 1}`, with :math:`v_i` being the input value, "
@@ -115,6 +124,7 @@ void pybind_trianglemesh(py::module &m) {
                  "filter_scope"_a = MeshBase::FilterScope::All)
             .def("filter_smooth_laplacian",
                  &TriangleMesh::FilterSmoothLaplacian,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to smooth triangle mesh using Laplacian. :math:`v_o "
                  "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
                  ":math:`v_i` being the input value, :math:`v_o` the output "
@@ -125,6 +135,7 @@ void pybind_trianglemesh(py::module &m) {
                  "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
                  "filter_scope"_a = MeshBase::FilterScope::All)
             .def("filter_smooth_taubin", &TriangleMesh::FilterSmoothTaubin,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to smooth triangle mesh using method of Taubin, "
                  "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
                  "Applies in each iteration two times filter_smooth_laplacian, "
@@ -157,41 +168,54 @@ void pybind_trianglemesh(py::module &m) {
                  "Normalize both triangle normals and vertex normals to length "
                  "1.")
             .def("paint_uniform_color", &TriangleMesh::PaintUniformColor,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Assigns each vertex in the TriangleMesh the same color.")
             .def("euler_poincare_characteristic",
                  &TriangleMesh::EulerPoincareCharacteristic,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that computes the Euler-Poincaré characteristic, "
                  "i.e., V + F - E, where V is the number of vertices, F is the "
                  "number of triangles, and E is the number of edges.")
             .def("get_non_manifold_edges", &TriangleMesh::GetNonManifoldEdges,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Get list of non-manifold edges.",
                  "allow_boundary_edges"_a = true)
             .def("is_edge_manifold", &TriangleMesh::IsEdgeManifold,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Tests if the triangle mesh is edge manifold.",
                  "allow_boundary_edges"_a = true)
             .def("get_non_manifold_vertices",
                  &TriangleMesh::GetNonManifoldVertices,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Returns a list of indices to non-manifold vertices.")
             .def("is_vertex_manifold", &TriangleMesh::IsVertexManifold,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Tests if all vertices of the triangle mesh are manifold.")
             .def("is_self_intersecting", &TriangleMesh::IsSelfIntersecting,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Tests if the triangle mesh is self-intersecting.")
             .def("get_self_intersecting_triangles",
                  &TriangleMesh::GetSelfIntersectingTriangles,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Returns a list of indices to triangles that intersect the "
                  "mesh.")
             .def("is_intersecting", &TriangleMesh::IsIntersecting,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Tests if the triangle mesh is intersecting the other "
                  "triangle mesh.")
             .def("is_orientable", &TriangleMesh::IsOrientable,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Tests if the triangle mesh is orientable.")
             .def("is_watertight", &TriangleMesh::IsWatertight,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Tests if the triangle mesh is watertight.")
             .def("orient_triangles", &TriangleMesh::OrientTriangles,
+                 py::call_guard<py::gil_scoped_release>(),
                  "If the mesh is orientable this function orients all "
                  "triangles such that all normals point towards the same "
                  "direction.")
             .def("select_by_index", &TriangleMesh::SelectByIndex,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to select mesh from input triangle mesh into output "
                  "triangle mesh. ``input``: The input triangle mesh. "
                  "``indices``: "
@@ -201,29 +225,35 @@ void pybind_trianglemesh(py::module &m) {
                  (std::shared_ptr<TriangleMesh>(TriangleMesh::*)(
                          const AxisAlignedBoundingBox &) const) &
                          TriangleMesh::Crop,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("crop",
                  (std::shared_ptr<TriangleMesh>(TriangleMesh::*)(
                          const OrientedBoundingBox &) const) &
                          TriangleMesh::Crop,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("get_surface_area",
                  (double (TriangleMesh::*)() const) &
                          TriangleMesh::GetSurfaceArea,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
             .def("get_volume",
                  (double (TriangleMesh::*)() const) & TriangleMesh::GetVolume,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
             .def("sample_points_uniformly",
                  &TriangleMesh::SamplePointsUniformly,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to uniformly sample points from the mesh.",
                  "number_of_points"_a = 100, "use_triangle_normal"_a = false)
             .def("sample_points_poisson_disk",
                  &TriangleMesh::SamplePointsPoissonDisk,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to sample points from the mesh, where each point "
                  "has "
                  "approximately the same distance to the neighbouring points "
@@ -233,29 +263,35 @@ void pybind_trianglemesh(py::module &m) {
                  "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
                  "use_triangle_normal"_a = false)
             .def("subdivide_midpoint", &TriangleMesh::SubdivideMidpoint,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function subdivide mesh using midpoint algorithm.",
                  "number_of_iterations"_a = 1)
             .def("subdivide_loop", &TriangleMesh::SubdivideLoop,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function subdivide mesh using Loop's algorithm. Loop, "
                  "\"Smooth "
                  "subdivision surfaces based on triangles\", 1987.",
                  "number_of_iterations"_a = 1)
             .def("simplify_vertex_clustering",
                  &TriangleMesh::SimplifyVertexClustering,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to simplify mesh using vertex clustering.",
                  "voxel_size"_a,
                  "contraction"_a = MeshBase::SimplificationContraction::Average)
             .def("simplify_quadric_decimation",
                  &TriangleMesh::SimplifyQuadricDecimation,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to simplify mesh using Quadric Error Metric "
                  "Decimation by Garland and Heckbert",
                  "target_number_of_triangles"_a,
                  "maximum_error"_a = std::numeric_limits<double>::infinity(),
                  "boundary_weight"_a = 1.0)
             .def("compute_convex_hull", &TriangleMesh::ComputeConvexHull,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Computes the convex hull of the triangle mesh.")
             .def("cluster_connected_triangles",
                  &TriangleMesh::ClusterConnectedTriangles,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function that clusters connected triangles, i.e., triangles "
                  "that are connected via edges are assigned the same cluster "
                  "index. This function returns an array that contains the "
@@ -264,29 +300,34 @@ void pybind_trianglemesh(py::module &m) {
                  "the surface area per cluster.")
             .def("remove_triangles_by_index",
                  &TriangleMesh::RemoveTrianglesByIndex,
+                 py::call_guard<py::gil_scoped_release>(),
                  "This function removes the triangles with index in "
                  "triangle_indices.  Call remove_unreferenced_vertices to "
                  "clean up vertices afterwards.",
                  "triangle_indices"_a)
             .def("remove_triangles_by_mask",
                  &TriangleMesh::RemoveTrianglesByMask,
+                 py::call_guard<py::gil_scoped_release>(),
                  "This function removes the triangles where triangle_mask is "
                  "set to true.  Call remove_unreferenced_vertices to clean up "
                  "vertices afterwards.",
                  "triangle_mask"_a)
             .def("remove_vertices_by_index",
                  &TriangleMesh::RemoveVerticesByIndex,
+                 py::call_guard<py::gil_scoped_release>(),
                  "This function removes the vertices with index in "
                  "vertex_indices. Note that also all triangles associated with "
                  "the vertices are removed.",
                  "vertex_indices"_a)
             .def("remove_vertices_by_mask", &TriangleMesh::RemoveVerticesByMask,
+                 py::call_guard<py::gil_scoped_release>(),
                  "This function removes the vertices that are masked in "
                  "vertex_mask. Note that also all triangles associated with "
                  "the vertices are removed.",
                  "vertex_mask"_a)
             .def("deform_as_rigid_as_possible",
                  &TriangleMesh::DeformAsRigidAsPossible,
+                 py::call_guard<py::gil_scoped_release>(),
                  "This function deforms the mesh using the method by Sorkine "
                  "and Alexa, "
                  "'As-Rigid-As-Possible Surface Modeling', 2007",
@@ -300,6 +341,7 @@ void pybind_trianglemesh(py::module &m) {
                         return TriangleMesh::CreateFromPointCloudAlphaShape(
                                 pcd, alpha);
                     },
+                    py::call_guard<py::gil_scoped_release>(),
                     "Alpha shapes are a generalization of the convex hull. "
                     "With decreasing alpha value the shape schrinks and "
                     "creates cavities. See Edelsbrunner and Muecke, "
@@ -307,6 +349,7 @@ void pybind_trianglemesh(py::module &m) {
                     "pcd"_a, "alpha"_a)
             .def_static("create_from_point_cloud_alpha_shape",
                         &TriangleMesh::CreateFromPointCloudAlphaShape,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Alpha shapes are a generalization of the convex hull. "
                         "With decreasing alpha value the shape shrinks and "
                         "creates cavities. See Edelsbrunner and Muecke, "
@@ -315,6 +358,7 @@ void pybind_trianglemesh(py::module &m) {
             .def_static(
                     "create_from_point_cloud_ball_pivoting",
                     &TriangleMesh::CreateFromPointCloudBallPivoting,
+                    py::call_guard<py::gil_scoped_release>(),
                     "Function that computes a triangle mesh from a oriented "
                     "PointCloud. This implements the Ball Pivoting algorithm "
                     "proposed in F. Bernardini et al., \"The ball-pivoting "
@@ -328,6 +372,7 @@ void pybind_trianglemesh(py::module &m) {
                     "pcd"_a, "radii"_a)
             .def_static("create_from_point_cloud_poisson",
                         &TriangleMesh::CreateFromPointCloudPoisson,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Function that computes a triangle mesh from a "
                         "oriented PointCloud pcd. This implements the Screened "
                         "Poisson Reconstruction proposed in Kazhdan and Hoppe, "
@@ -339,10 +384,12 @@ void pybind_trianglemesh(py::module &m) {
             .def_static(
                     "create_from_oriented_bounding_box",
                     &TriangleMesh::CreateFromOrientedBoundingBox,
+                    py::call_guard<py::gil_scoped_release>(),
                     "Factory function to create a solid oriented bounding box.",
                     "obox"_a, "scale"_a = Eigen::Vector3d::Ones(),
                     "create_uv_map"_a = false)
             .def_static("create_box", &TriangleMesh::CreateBox,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a box. The left bottom "
                         "corner on the "
                         "front will be placed at (0, 0, 0), and default UV "
@@ -351,6 +398,7 @@ void pybind_trianglemesh(py::module &m) {
                         "create_uv_map"_a = false,
                         "map_texture_to_each_face"_a = false)
             .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a tetrahedron. The "
                         "centroid of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
@@ -358,6 +406,7 @@ void pybind_trianglemesh(py::module &m) {
                         "radius to the center.",
                         "radius"_a = 1.0, "create_uv_map"_a = false)
             .def_static("create_octahedron", &TriangleMesh::CreateOctahedron,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a octahedron. The centroid "
                         "of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
@@ -365,6 +414,7 @@ void pybind_trianglemesh(py::module &m) {
                         "radius to the center.",
                         "radius"_a = 1.0, "create_uv_map"_a = false)
             .def_static("create_icosahedron", &TriangleMesh::CreateIcosahedron,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a icosahedron. The "
                         "centroid of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
@@ -372,23 +422,28 @@ void pybind_trianglemesh(py::module &m) {
                         "radius to the center.",
                         "radius"_a = 1.0, "create_uv_map"_a = false)
             .def_static("create_sphere", &TriangleMesh::CreateSphere,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a sphere mesh centered at "
                         "(0, 0, 0).",
                         "radius"_a = 1.0, "resolution"_a = 20,
                         "create_uv_map"_a = false)
             .def_static("create_cylinder", &TriangleMesh::CreateCylinder,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a cylinder mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
                         "split"_a = 4, "create_uv_map"_a = false)
             .def_static("create_cone", &TriangleMesh::CreateCone,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a cone mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
                         "split"_a = 1, "create_uv_map"_a = false)
             .def_static("create_torus", &TriangleMesh::CreateTorus,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a torus mesh.",
                         "torus_radius"_a = 1.0, "tube_radius"_a = 0.5,
                         "radial_resolution"_a = 30, "tubular_resolution"_a = 20)
             .def_static("create_arrow", &TriangleMesh::CreateArrow,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create an arrow mesh",
                         "cylinder_radius"_a = 1.0, "cone_radius"_a = 1.5,
                         "cylinder_height"_a = 5.0, "cone_height"_a = 4.0,
@@ -396,6 +451,7 @@ void pybind_trianglemesh(py::module &m) {
                         "cone_split"_a = 1)
             .def_static("create_coordinate_frame",
                         &TriangleMesh::CreateCoordinateFrame,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a coordinate frame mesh. "
                         "The coordinate "
                         "frame will be centered at ``origin``. The x, y, z "
@@ -404,6 +460,7 @@ void pybind_trianglemesh(py::module &m) {
                         "size"_a = 1.0,
                         "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
             .def_static("create_mobius", &TriangleMesh::CreateMobius,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Factory function to create a Mobius strip.",
                         "length_split"_a = 70, "width_split"_a = 15,
                         "twists"_a = 1, "raidus"_a = 1, "flatness"_a = 1,

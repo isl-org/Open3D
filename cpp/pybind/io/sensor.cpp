@@ -62,13 +62,17 @@ void pybind_sensor(py::module &m) {
             }),
             "sensor_config"_a);
     azure_kinect_sensor
-            .def("connect", &AzureKinectSensor::Connect, "sensor_index"_a,
+            .def("connect", &AzureKinectSensor::Connect,
+                 py::call_guard<py::gil_scoped_release>(), "sensor_index"_a,
                  "Connect to specified device.")
             .def("disconnect", &AzureKinectSensor::Disconnect,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Disconnect from the connected device.")
             .def("capture_frame", &AzureKinectSensor::CaptureFrame,
+                 py::call_guard<py::gil_scoped_release>(),
                  "enable_align_depth_to_color"_a, "Capture an RGBD frame.")
             .def_static("list_devices", &AzureKinectSensor::ListDevices,
+                        py::call_guard<py::gil_scoped_release>(),
                         "List available Azure Kinect devices");
     docstring::ClassMethodDocInject(m, "AzureKinectSensor", "connect",
                                     map_shared_argument_docstrings);
@@ -89,15 +93,19 @@ void pybind_sensor(py::module &m) {
             "sensor_config"_a, "sensor_index"_a);
     azure_kinect_recorder
             .def("init_sensor", &AzureKinectRecorder::InitSensor,
-                 "Initialize sensor.")
+                 py::call_guard<py::gil_scoped_release>(), "Initialize sensor.")
             .def("is_record_created", &AzureKinectRecorder::IsRecordCreated,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Check if the mkv file is created.")
-            .def("open_record", &AzureKinectRecorder::OpenRecord, "filename"_a,
+            .def("open_record", &AzureKinectRecorder::OpenRecord,
+                 py::call_guard<py::gil_scoped_release>(), "filename"_a,
                  "Attempt to create and open an mkv file.")
             .def("close_record", &AzureKinectRecorder::CloseRecord,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Close the recorded mkv file.")
             .def("record_frame", &AzureKinectRecorder::RecordFrame,
-                 "enable_record"_a, "enable_align_depth_to_color"_a,
+                 py::call_guard<py::gil_scoped_release>(), "enable_record"_a,
+                 "enable_align_depth_to_color"_a,
                  "Record a frame to mkv if flag is on and return an RGBD "
                  "object.");
     docstring::ClassMethodDocInject(m, "AzureKinectRecorder", "init_sensor",
@@ -118,17 +126,25 @@ void pybind_sensor(py::module &m) {
     azure_kinect_mkv_reader.def(py::init([]() { return MKVReader(); }));
     azure_kinect_mkv_reader
             .def("is_opened", &MKVReader::IsOpened,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Check if the mkv file  is opened.")
-            .def("open", &MKVReader::Open, "filename"_a,
+            .def("open", &MKVReader::Open,
+                 py::call_guard<py::gil_scoped_release>(), "filename"_a,
                  "Open an mkv playback.")
-            .def("close", &MKVReader::Close, "Close the opened mkv playback.")
+            .def("close", &MKVReader::Close,
+                 py::call_guard<py::gil_scoped_release>(),
+                 "Close the opened mkv playback.")
             .def("is_eof", &MKVReader::IsEOF,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Check if the mkv file is all read.")
             .def("get_metadata", &MKVReader::GetMetadata,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Get metadata of the mkv playback.")
-            .def("seek_timestamp", &MKVReader::SeekTimestamp, "timestamp"_a,
+            .def("seek_timestamp", &MKVReader::SeekTimestamp,
+                 py::call_guard<py::gil_scoped_release>(), "timestamp"_a,
                  "Seek to the timestamp (in us).")
             .def("next_frame", &MKVReader::NextFrame,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Get next frame from the mkv playback and returns the RGBD "
                  "object.");
     docstring::ClassMethodDocInject(m, "AzureKinectMKVReader", "open",

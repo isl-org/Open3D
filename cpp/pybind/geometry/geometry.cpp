@@ -86,7 +86,8 @@ void pybind_geometry_classes(py::module &m) {
                  &Geometry3D::GetAxisAlignedBoundingBox,
                  "Returns an axis-aligned bounding box of the geometry.")
             .def("get_oriented_bounding_box",
-                 &Geometry3D::GetOrientedBoundingBox, "robust"_a = false,
+                 &Geometry3D::GetOrientedBoundingBox,
+                 py::call_guard<py::gil_scoped_release>(), "robust"_a = false,
                  R"doc(
 Returns the oriented bounding box for the geometry.
 
@@ -94,7 +95,7 @@ Computes the oriented bounding box based on the PCA of the convex hull.
 The returned bounding box is an approximation to the minimal bounding box.
 
 Args:
-     robust (bool): If set to true uses a more robust method which works in 
+     robust (bool): If set to true uses a more robust method which works in
           degenerate cases but introduces noise to the points coordinates.
 
 Returns:
@@ -103,7 +104,8 @@ Returns:
      the principal components.
 )doc")
             .def("get_minimal_oriented_bounding_box",
-                 &Geometry3D::GetMinimalOrientedBoundingBox, "robust"_a = false,
+                 &Geometry3D::GetMinimalOrientedBoundingBox,
+                 py::call_guard<py::gil_scoped_release>(), "robust"_a = false,
                  R"doc(
 Returns the minimal oriented bounding box for the geometry.
 
@@ -123,29 +125,35 @@ Returns:
      bounding box is oriented such that its volume is minimized.
 )doc")
             .def("transform", &Geometry3D::Transform,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
             .def("translate", &Geometry3D::Translate,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Apply translation to the geometry coordinates.",
                  "translation"_a, "relative"_a = true)
             .def("scale",
                  (Geometry3D &
                   (Geometry3D::*)(const double, const Eigen::Vector3d &)) &
                          Geometry3D::Scale,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a)
             .def("scale", &Geometry3D::Scale,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a)
             .def("rotate",
                  py::overload_cast<const Eigen::Matrix3d &>(
                          &Geometry3D::Rotate),
+                 py::call_guard<py::gil_scoped_release>(),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a)
             .def("rotate",
                  py::overload_cast<const Eigen::Matrix3d &,
                                    const Eigen::Vector3d &>(
                          &Geometry3D::Rotate),
+                 py::call_guard<py::gil_scoped_release>(),
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a, "center"_a)
             .def_static("get_rotation_matrix_from_xyz",
