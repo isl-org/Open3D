@@ -201,14 +201,24 @@ std::string FunctionDoc::ToGoogleDocString() const {
         for (size_t i = 0; i < overload.argument_docs_.size(); ++i) {
             const ArgumentDoc& argument_doc = overload.argument_docs_[i];
             rc << argument_doc.name_;
+            if (argument_doc.type_ != "") {
+                rc << ": " << argument_doc.type_;
+            }
             if (argument_doc.default_ != "") {
-                rc << "=" << argument_doc.default_;
+                rc << " = " << argument_doc.default_;
             }
             if (i != overload.argument_docs_.size() - 1) {
                 rc << ", ";
             }
         }
-        rc << ")" << std::endl;
+        rc << ")";
+
+        // Return type
+        if (overload.return_doc_.type_ != "") {
+            rc << " -> " << overload.return_doc_.type_;
+        }
+
+        rc << std::endl;
 
         // Summary line, strictly speaking this shall be at the very front.
         // However from a compiled Python module we need the function signature
