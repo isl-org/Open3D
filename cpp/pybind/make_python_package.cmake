@@ -136,3 +136,8 @@ file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+
+# Generate typing stub files (.pyi)
+message(STATUS "Generating typing stubs...")
+message(STATUS "pybind11-stubgen open3d -o ${PYTHON_PACKAGE_DST_DIR}/stubs")
+execute_process(COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH="${PYTHON_PACKAGE_DST_DIR}" pybind11-stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}")
