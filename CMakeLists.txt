@@ -291,8 +291,8 @@ endif()
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
 # Tensorflow 2.9+ requires cxx_17, but MSVC 19.29 throws errors with C++17
-# enabled.
-if (BUILD_SYCL_MODULE OR BUILD_TENSORFLOW_OPS)
+# enabled. ATen in Pytorch 2.2 requires cxx_17 
+if (BUILD_SYCL_MODULE OR BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
     set(CMAKE_CXX_STANDARD 17)
 else()
     set(CMAKE_CXX_STANDARD 14)
