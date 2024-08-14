@@ -53,12 +53,22 @@ Pip (PyPI)
 
 .. warning::
 
+   Versions of ``numpy>=2.0.0`` require ``Open3D>0.18.0`` or the latest development
+   version of Open3D. If you are using an older version of Open3D, downgrade ``numpy`` 
+   with
+
+   .. code-block:: bash
+
+        pip install "numpy<2.0.0"
+
+.. warning::
+
    Please upgrade your ``pip`` to a version >=20.3 to install Open3D in Linux,
    e.g. with
 
    .. code-block:: bash
 
-        pip install -U pip>=20.3
+        pip install -U "pip>=20.3"
 
 .. note::
     In general, we recommend using a
@@ -119,7 +129,7 @@ install the latest development version directly with pip:
 
 .. code-block:: bash
 
-    pip install -U -f https://www.open3d.org/docs/latest/getting_started.html open3d
+    pip install -U -f https://www.open3d.org/docs/latest/getting_started.html --only-binary open3d open3d
 
 .. warning::
    The development wheels for Linux are named according to PEP600. Please

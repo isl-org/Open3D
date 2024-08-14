@@ -40,6 +40,8 @@
 -   Fix build with fmt v10.2.0 (#6783)
 -   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
 -   Python 3.12 support
+-   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
+-   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 
 ## 0.13
 

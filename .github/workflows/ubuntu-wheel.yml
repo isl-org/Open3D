@@ -48,7 +48,7 @@ jobs:
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
-      CCACHE_TAR_NAME: open3d-ubuntu-1804-cuda-ci-ccache
+      CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
