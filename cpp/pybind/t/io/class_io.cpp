@@ -67,7 +67,35 @@ static const std::unordered_map<std::string, std::string>
                  "If set to true a progress bar is visualized in the console."},
 };
 
-void pybind_class_io(py::module &m_io) {
+void pybind_class_io_declarations(py::module &m_io) {
+    py::class_<DepthNoiseSimulator> depth_noise_simulator(
+            m_io, "DepthNoiseSimulator",
+            R"(Simulate depth image noise from a given noise distortion model. The distortion model is based on *Teichman et. al. "Unsupervised intrinsic calibration of depth sensors via SLAM" RSS 2009*. Also see <http://redwood-data.org/indoor/dataset.html>__
+
+Example::
+
+    import open3d as o3d
+
+    # Redwood Indoor LivingRoom1 (Augmented ICL-NUIM)
+    # http://redwood-data.org/indoor/
+    data = o3d.data.RedwoodIndoorLivingRoom1()
+    noise_model_path = data.noise_model_path
+    im_src_path = data.depth_paths[0]
+    depth_scale = 1000.0
+
+    # Read clean depth image (uint16)
+    im_src = o3d.t.io.read_image(im_src_path)
+
+    # Run noise model simulation
+    simulator = o3d.t.io.DepthNoiseSimulator(noise_model_path)
+    im_dst = simulator.simulate(im_src, depth_scale=depth_scale)
+
+    # Save noisy depth image (uint16)
+    o3d.t.io.write_image("noisy_depth.png", im_dst)
+            )");
+}
+
+void pybind_class_io_definitions(py::module &m_io) {
     // open3d::t::geometry::Image
     m_io.def(
             "read_image",
@@ -153,25 +181,25 @@ The following example reads a triangle mesh with the .ply extension::
 
 Args:
     filename (str): Path to the mesh file.
-    enable_post_processing (bool): If True enables post-processing. 
-        Post-processing will 
+    enable_post_processing (bool): If True enables post-processing.
+        Post-processing will
           - triangulate meshes with polygonal faces
           - remove redundant materials
           - pretransform vertices
           - generate face normals if needed
-        
+
         For more information see ASSIMPs documentation on the flags
-        `aiProcessPreset_TargetRealtime_Fast, aiProcess_RemoveRedundantMaterials, 
+        `aiProcessPreset_TargetRealtime_Fast, aiProcess_RemoveRedundantMaterials,
         aiProcess_OptimizeMeshes, aiProcess_PreTransformVertices`.
-        
+
         Note that identical vertices will always be joined regardless of whether
-        post-processing is enabled or not, which changes the number of vertices 
+        post-processing is enabled or not, which changes the number of vertices
         in the mesh.
 
         The `ply`-format is not affected by the post-processing.
 
     print_progress (bool): If True print the reading progress to the terminal.
-    
+
 Returns:
     Returns the mesh object. On failure an empty mesh is returned.
 )doc");
@@ -196,31 +224,8 @@ Returns:
                                  map_shared_argument_docstrings);
 
     // DepthNoiseSimulator
-    py::class_<DepthNoiseSimulator> depth_noise_simulator(
-            m_io, "DepthNoiseSimulator",
-            R"(Simulate depth image noise from a given noise distortion model. The distortion model is based on *Teichman et. al. "Unsupervised intrinsic calibration of depth sensors via SLAM" RSS 2009*. Also see <http://redwood-data.org/indoor/dataset.html>__
-
-Example::
-
-    import open3d as o3d
-
-    # Redwood Indoor LivingRoom1 (Augmented ICL-NUIM)
-    # http://redwood-data.org/indoor/
-    data = o3d.data.RedwoodIndoorLivingRoom1()
-    noise_model_path = data.noise_model_path
-    im_src_path = data.depth_paths[0]
-    depth_scale = 1000.0
-
-    # Read clean depth image (uint16)
-    im_src = o3d.t.io.read_image(im_src_path)
-
-    # Run noise model simulation
-    simulator = o3d.t.io.DepthNoiseSimulator(noise_model_path)
-    im_dst = simulator.simulate(im_src, depth_scale=depth_scale)
-
-    # Save noisy depth image (uint16)
-    o3d.t.io.write_image("noisy_depth.png", im_dst)
-            )");
+    auto depth_noise_simulator = static_cast<py::class_<DepthNoiseSimulator>>(
+            m_io.attr("DepthNoiseSimulator"));
     depth_noise_simulator.def(py::init([](const fs::path &fielname) {
                                   return DepthNoiseSimulator(fielname.string());
                               }),
