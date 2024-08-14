@@ -431,7 +431,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     return mesh;
 }
 
-
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         const std::vector<double> &triangle_areas,
@@ -484,17 +483,16 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
                                       c * vertex_colors_[triangle(2)];
         }
         // if there is a texture, sample from texture instead
-        if (has_textures_ && has_triangle_uvs_ && has_triangle_material_ids_){
-          
+        if (has_textures_ && has_triangle_uvs_ && has_triangle_material_ids_) {
             Eigen::Vector2d uv = a * triangle_uvs_[3 * tidx] +
-                        b * triangle_uvs_[3 * tidx + 1] +
-                        c * triangle_uvs_[3 * tidx + 2];
+                                 b * triangle_uvs_[3 * tidx + 1] +
+                                 c * triangle_uvs_[3 * tidx + 2];
             int material_id = triangle_material_ids_[tidx];
             int w = textures_[material_id].width_;
             int h = textures_[material_id].height_;
 
-            pcd->colors_[point_idx] =
-                Eigen::Vector3d((double)*(textures_[material_id].PointerAt<uint8_t>(
+            pcd->colors_[point_idx] = Eigen::Vector3d(
+                    (double)*(textures_[material_id].PointerAt<uint8_t>(
                             uv(0) * w, uv(1) * h, 0)) /
                             255,
                     (double)*(textures_[material_id].PointerAt<uint8_t>(
