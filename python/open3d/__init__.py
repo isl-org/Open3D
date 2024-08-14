@@ -16,6 +16,9 @@
 import os
 import sys
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+# Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
+# TBB must not be already loaded.
+os.environ["TCM_ENABLE"] = "1"
 from ctypes import CDLL
 from ctypes.util import find_library
 from pathlib import Path
