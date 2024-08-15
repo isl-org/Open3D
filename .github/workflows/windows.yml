@@ -211,13 +211,17 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }}
           .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           Remove-Item "C:\Program Files\Open3D" -Recurse
-      - name: Install Python package
-        working-directory: ${{ env.BUILD_DIR }}
+      - name: Install Open3D python requirements
+        working-directory: ${{ env.SOURCE_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
           python -m pip install -U -r python/requirements_build.txt
           python -m pip install -U jedi==${{ env.JEDI_VER }} idna==${{ env.IDNA_VER }}
+      - name: Install Python package
+        working-directory: ${{ env.BUILD_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
@@ -268,7 +272,9 @@ jobs:
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
+          python -m pip install -U pip==${{ env.PIP_VER }}
           python -m pip install -r python/requirements.txt
+          python -m pip install -r python/requirements_build.txt
           python -m pip install -r python/requirements_jupyter_build.txt
 
       - name: Config
@@ -296,8 +302,6 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -r python/requirements_build.txt
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
