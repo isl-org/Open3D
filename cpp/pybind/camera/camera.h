@@ -12,7 +12,8 @@
 namespace open3d {
 namespace camera {
 
-void pybind_camera(py::module &m);
+void pybind_camera_declarations(py::module &m);
+void pybind_camera_definitions(py::module &m);
 
 }  // namespace camera
 }  // namespace open3d

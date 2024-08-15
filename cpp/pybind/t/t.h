@@ -12,7 +12,8 @@
 namespace open3d {
 namespace t {
 
-void pybind_t(py::module& m);
+void pybind_t_declarations(py::module& m);
+void pybind_t_definitions(py::module& m);
 
 }  // namespace t
 }  // namespace open3d

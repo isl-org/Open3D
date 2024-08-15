@@ -343,7 +343,7 @@ const py::object Subsample(py::array points,
     }
 }
 
-void pybind_contrib_subsample(py::module& m_contrib) {
+void pybind_contrib_subsample_definitions(py::module& m_contrib) {
     m_contrib.def("subsample", &Subsample, "points"_a,
                   "features"_a = py::none(), "classes"_a = py::none(),
                   "sampleDl"_a = 0.1, "verbose"_a = 0);

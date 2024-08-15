@@ -39,6 +39,9 @@
 -   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
 -   Fix build with fmt v10.2.0 (#6783)
 -   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
+-   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
+-   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
+-   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
 
 ## 0.13

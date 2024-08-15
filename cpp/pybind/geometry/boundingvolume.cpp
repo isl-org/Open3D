@@ -16,12 +16,26 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_boundingvolume(py::module &m) {
+void pybind_boundingvolume_declarations(py::module &m) {
     py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,
                std::shared_ptr<OrientedBoundingBox>, Geometry3D>
             oriented_bounding_box(m, "OrientedBoundingBox",
                                   "Class that defines an oriented box that can "
                                   "be computed from 3D geometries.");
+    py::class_<AxisAlignedBoundingBox, PyGeometry3D<AxisAlignedBoundingBox>,
+               std::shared_ptr<AxisAlignedBoundingBox>, Geometry3D>
+            axis_aligned_bounding_box(m, "AxisAlignedBoundingBox",
+                                      "Class that defines an axis_aligned box "
+                                      "that can be computed from 3D "
+                                      "geometries, The axis aligned bounding "
+                                      "box uses the coordinate axes for "
+                                      "bounding box generation.");
+}
+void pybind_boundingvolume_definitions(py::module &m) {
+    auto oriented_bounding_box = static_cast<
+            py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,
+                       std::shared_ptr<OrientedBoundingBox>, Geometry3D>>(
+            m.attr("OrientedBoundingBox"));
     py::detail::bind_default_constructor<OrientedBoundingBox>(
             oriented_bounding_box);
     py::detail::bind_copy_functions<OrientedBoundingBox>(oriented_bounding_box);
@@ -62,7 +76,7 @@ The returned bounding box is an approximation to the minimal bounding box.
 
 Args:
      points (open3d.utility.Vector3dVector): Input points.
-     robust (bool): If set to true uses a more robust method which works in 
+     robust (bool): If set to true uses a more robust method which works in
           degenerate cases but introduces noise to the points coordinates.
 
 Returns:
@@ -93,14 +107,10 @@ Returns:
               "AxisAlignedBoundingBox object from which OrientedBoundingBox is "
               "created."}});
 
-    py::class_<AxisAlignedBoundingBox, PyGeometry3D<AxisAlignedBoundingBox>,
-               std::shared_ptr<AxisAlignedBoundingBox>, Geometry3D>
-            axis_aligned_bounding_box(m, "AxisAlignedBoundingBox",
-                                      "Class that defines an axis_aligned box "
-                                      "that can be computed from 3D "
-                                      "geometries, The axis aligned bounding "
-                                      "box uses the coordinate axes for "
-                                      "bounding box generation.");
+    auto axis_aligned_bounding_box = static_cast<py::class_<
+            AxisAlignedBoundingBox, PyGeometry3D<AxisAlignedBoundingBox>,
+            std::shared_ptr<AxisAlignedBoundingBox>, Geometry3D>>(
+            m.attr("AxisAlignedBoundingBox"));
     py::detail::bind_default_constructor<AxisAlignedBoundingBox>(
             axis_aligned_bounding_box);
     py::detail::bind_copy_functions<AxisAlignedBoundingBox>(

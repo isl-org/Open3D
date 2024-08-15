@@ -38,12 +38,12 @@ eval $(
     echo DISTRIB_ID="$DISTRIB_ID";
     echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
 )
-if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
-    # Ubuntu 18.04's clang/libc++-dev/libc++abi-dev are version 6.
-    # To build Filament from source, we need version 7+.
-    deps=("${deps[@]/clang/clang-7}")
-    deps=("${deps[@]/libc++-dev/libc++-7-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
+    # Ubuntu 20.04's clang/libc++-dev/libc++abi-dev are version 10.
+    # To build Filament from source, we need version 12+.
+    deps=("${deps[@]/clang/clang-12}")
+    deps=("${deps[@]/libc++-dev/libc++-12-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-12-dev}")
 fi
 
 # Special case for ARM64
