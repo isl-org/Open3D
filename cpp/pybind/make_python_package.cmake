@@ -142,7 +142,6 @@ if(NOT IGNORE_STUBGEN_ERRORS)
     list(APPEND PYBIND11_STUBGEN_FLAGS "--exit-code")
 endif()
 message(STATUS "Generating typing stubs...")
-message(STATUS "pybind11-stubgen open3d -o ${PYTHON_PACKAGE_DST_DIR}/stubs")
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH="${PYTHON_PACKAGE_DST_DIR}" pybind11-stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}" ${PYBIND11_STUBGEN_FLAGS}
     COMMAND_ERROR_IS_FATAL ANY
