@@ -144,6 +144,7 @@ endif()
 message(STATUS "Generating typing stubs...")
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH="${PYTHON_PACKAGE_DST_DIR}" pybind11-stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}" ${PYBIND11_STUBGEN_FLAGS}
+    COMMAND_ECHO STDOUT
     COMMAND_ERROR_IS_FATAL ANY
 )
 file(WRITE "${PYTHON_PACKAGE_DST_DIR}/open3d/py.typed")
