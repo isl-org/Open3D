@@ -48,7 +48,7 @@ jobs:
             CUDA_VERSION: 11.0.3
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
-      WITH_STUBGEN: ${{ ( matrix.BUILD_SHARED_LIBS == 'ON' ) && 'OFF' || 'ON' }}
+      WITH_STUBGEN: ${{ ( matrix.BUILD_SHARED_LIBS == 'ON' || matrix.BUILD_CUDA_MODULE == 'ON' ) && 'OFF' || 'ON' }}
 
     steps:
       - name: Disk space used
@@ -121,7 +121,7 @@ jobs:
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
-            -DWITH_STUBGEN=${{ matrix.WITH_STUBGEN }} `
+            -DWITH_STUBGEN=${{ env.WITH_STUBGEN }} `
             ${{ env.SRC_DIR }}
 
       - name: Build
