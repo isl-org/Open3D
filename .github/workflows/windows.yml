@@ -48,6 +48,7 @@ jobs:
           - BUILD_CUDA_MODULE: ON
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
+      WITH_STUBGEN: ${{ ( matrix.BUILD_SHARED_LIBS == 'ON' ) && 'OFF' || 'ON' }}
 
     steps:
       - name: Disk space used
@@ -121,6 +122,7 @@ jobs:
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
+            -DWITH_STUBGEN=${{ matrix.WITH_STUBGEN }} `
             ${{ env.SRC_DIR }}
 
       - name: Build
@@ -211,14 +213,19 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }}
           .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           Remove-Item "C:\Program Files\Open3D" -Recurse
-      - name: Install Open3D python requirements
+      - name: Install Open3D python build requirements
         working-directory: ${{ env.SOURCE_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
           python -m pip install -U -r python/requirements_build.txt
-          python -m pip install -U -r python/requirements.txt
           python -m pip install -U jedi==${{ env.JEDI_VER }} idna==${{ env.IDNA_VER }}
+      - name: Install Open3D python requirements for stubgen
+        working-directory: ${{ env.SOURCE_DIR }}
+        if: ${{ matrix.WITH_STUBGEN == 'ON' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install -U -r python/requirements.txt
       - name: Install Python package
         working-directory: ${{ env.BUILD_DIR }}
         run: |
