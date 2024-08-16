@@ -217,6 +217,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
           python -m pip install -U -r python/requirements_build.txt
+          python -m pip install -U -r python/requirements.txt
           python -m pip install -U jedi==${{ env.JEDI_VER }} idna==${{ env.IDNA_VER }}
       - name: Install Python package
         working-directory: ${{ env.BUILD_DIR }}
