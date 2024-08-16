@@ -39,6 +39,7 @@ option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON 
 option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
+option(WITH_STUBGEN               "Use pybind11-stubgen to generate stubs"   ON )
 option(IGNORE_STUBGEN_ERRORS      "Ignore all errors during stub generation" ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"         ON )
