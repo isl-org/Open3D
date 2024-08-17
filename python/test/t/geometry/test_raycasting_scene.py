@@ -9,57 +9,66 @@ import open3d as o3d
 import numpy as np
 import pytest
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+from open3d_test import list_devices
+
 
 # test intersection with a single triangle
-def test_cast_rays():
+@pytest.mark.parametrize("device", list_devices())
+def test_cast_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.float32)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
+                               dtype=o3d.core.float32, device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = o3d.t.geometry.RaycastingScene(device=device)
     geom_id = scene.add_triangles(vertices, triangles)
 
     rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32)
+                           dtype=o3d.core.float32, device=device)
     ans = scene.cast_rays(rays)
 
     # first ray hits the triangle
-    assert geom_id == ans['geometry_ids'][0]
+    assert geom_id == ans['geometry_ids'][0].cpu()
     assert np.isclose(ans['t_hit'][0].item(), 1.0)
 
     # second ray misses
-    assert o3d.t.geometry.RaycastingScene.INVALID_ID == ans['geometry_ids'][1]
+    assert o3d.t.geometry.RaycastingScene.INVALID_ID == ans['geometry_ids'][1].cpu()
     assert np.isinf(ans['t_hit'][1].item())
 
 
 # cast lots of random rays to test the internal batching
 # we expect no errors for this test
-def test_cast_lots_of_rays():
+@pytest.mark.parametrize("device", list_devices())
+def test_cast_lots_of_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.float32)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
+                               dtype=o3d.core.float32, device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(rs.rand(7654321, 6).astype(np.float32))
+    rays = rays.to(device)
 
     _ = scene.cast_rays(rays)
 
 
 # test occlusion with a single triangle
-def test_test_occlusions():
+@pytest.mark.parametrize("device", list_devices())
+def test_test_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.float32)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
+                               dtype=o3d.core.float32, device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
 
     rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32)
-    ans = scene.test_occlusions(rays)
+                           dtype=o3d.core.float32, device=device)
+    ans = scene.test_occlusions(rays).cpu()
 
     # first ray is occluded by the triangle
     assert ans[0] == True
@@ -68,26 +77,28 @@ def test_test_occlusions():
     assert ans[1] == False
 
     # set tfar such that no ray is occluded
-    ans = scene.test_occlusions(rays, tfar=0.5)
+    ans = scene.test_occlusions(rays, tfar=0.5).cpu()
     assert ans.any() == False
 
     # set tnear such that no ray is occluded
-    ans = scene.test_occlusions(rays, tnear=1.5)
+    ans = scene.test_occlusions(rays, tnear=1.5).cpu()
     assert ans.any() == False
 
 
 # test lots of random rays for occlusions to test the internal batching
 # we expect no errors for this test
-def test_test_lots_of_occlusions():
+@pytest.mark.parametrize("device", list_devices())
+def test_test_lots_of_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.float32)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
+                               dtype=o3d.core.float32, device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
 
-    scene = o3d.t.geometry.RaycastingScene()
+    scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(rs.rand(7654321, 6).astype(np.float32))
+    rays = rays.to(device)
 
     _ = scene.test_occlusions(rays)
 

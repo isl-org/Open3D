@@ -58,12 +58,22 @@ void pybind_raycasting_scene_definitions(py::module& m) {
     auto raycasting_scene =
             static_cast<py::class_<RaycastingScene>>(m.attr("RaycastingScene"));
     // Constructors.
+#ifdef BUILD_SYCL_MODULE
+    raycasting_scene.def(py::init<int64_t, core::Device>(), "nthreads"_a = 0, "device"_a = core::Device("CPU:0"), R"doc(
+Create a RaycastingScene.
+
+Args:
+    nthreads (int): The number of threads to use for building the scene. Set to 0 for automatic.
+    enable_sycl (bool): Enable SYCL for building the scene. Default is False.
+)doc");
+#else
     raycasting_scene.def(py::init<int64_t>(), "nthreads"_a = 0, R"doc(
 Create a RaycastingScene.
 
 Args:
     nthreads (int): The number of threads to use for building the scene. Set to 0 for automatic.
 )doc");
+#endif
 
     raycasting_scene.def(
             "add_triangles",

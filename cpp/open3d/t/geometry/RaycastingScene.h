@@ -30,7 +30,11 @@ namespace geometry {
 class RaycastingScene {
 public:
     /// \brief Default Constructor.
-    RaycastingScene(int64_t nthreads = 0);
+    RaycastingScene(int64_t nthreads = 0
+#ifdef BUILD_SYCL_MODULE
+        , const core::Device& device = core::Device("CPU:0")
+#endif
+    );
 
     ~RaycastingScene();
 
@@ -250,6 +254,10 @@ public:
 
 private:
     struct Impl;
+    struct CPUImpl;
+#ifdef BUILD_SYCL_MODULE
+    struct SYCLImpl;
+#endif
     std::unique_ptr<Impl> impl_;
 };
 

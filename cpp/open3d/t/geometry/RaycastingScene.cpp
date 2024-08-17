@@ -34,6 +34,17 @@ typedef Eigen::AlignedVector3<float> Vec3fa;
 typedef Eigen::Matrix<float, 2, 1, Eigen::DontAlign> Vec2f;
 typedef Eigen::Vector3f Vec3f;
 
+void enablePersistentJITCache()
+{
+#if defined(_WIN32)
+    _putenv_s("SYCL_CACHE_PERSISTENT","1");
+    _putenv_s("SYCL_CACHE_DIR","cache");
+#else
+    setenv("SYCL_CACHE_PERSISTENT","1",1);
+    setenv("SYCL_CACHE_DIR","cache",1);
+#endif
+}
+
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
     open3d::utility::LogError("embree error: {} {}", error, str);
@@ -329,17 +340,17 @@ namespace t {
 namespace geometry {
 
 struct RaycastingScene::Impl {
-    // The maximum number of rays used in calls to embree.
-    const size_t BATCH_SIZE = 1024;
-    RTCDevice device_;
     RTCScene scene_;
     bool scene_committed_;  // true if the scene has been committed.
+    RTCDevice device_;
     // Vector for storing some information about the added geometry.
     std::vector<std::tuple<RTCGeometryType, const void*, const void*>>
             geometry_ptrs_;
-    core::Device tensor_device_;  // cpu
+    core::Device tensor_device_;  // cpu or sycl
 
     bool devprop_join_commit;
+
+    virtual ~Impl() = default;
 
     void CommitScene() {
         if (!scene_committed_) {
@@ -352,7 +363,80 @@ struct RaycastingScene::Impl {
         }
     }
 
-    template <bool LINE_INTERSECTION>
+    virtual void CastRays(const float* const rays,
+                  const size_t num_rays,
+                  float* t_hit,
+                  unsigned int* geometry_ids,
+                  unsigned int* primitive_ids,
+                  float* primitive_uvs,
+                  float* primitive_normals,
+                  const int nthreads,
+                  const bool line_intersection) = 0;
+    
+    virtual void TestOcclusions(const float* const rays,
+                        const size_t num_rays,
+                        const float tnear,
+                        const float tfar,
+                        int8_t* occluded,
+                        const int nthreads) = 0;
+    
+    virtual void CountIntersections(const float* const rays,
+                            const size_t num_rays,
+                            int* intersections,
+                            const int nthreads) = 0;
+    
+    virtual void ListIntersections(const float* const rays,
+                           const size_t num_rays,
+                           const size_t num_intersections,
+                           const Eigen::VectorXi& cumsum,
+                           unsigned int* track_intersections,
+                           unsigned int* ray_ids,
+                           unsigned int* geometry_ids,
+                           unsigned int* primitive_ids,
+                           float* primitive_uvs,
+                           float* t_hit,
+                           const int nthreads) = 0;
+    
+    virtual void ComputeClosestPoints(const float* const query_points,
+                              const size_t num_query_points,
+                              float* closest_points,
+                              unsigned int* geometry_ids,
+                              unsigned int* primitive_ids,
+                              float* primitive_uvs,
+                              float* primitive_normals,
+                              const int nthreads) = 0;
+};
+
+#ifdef BUILD_SYCL_MODULE
+struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
+    // SYCL variables
+    sycl::queue queue_;
+    sycl::context context_;
+    sycl::device sycl_device_;
+
+    void InitializeDevice() {
+        enablePersistentJITCache();
+
+        try {
+            sycl_device_ = sycl::device(rtcSYCLDeviceSelector);
+        } catch(std::exception& e) {
+            utility::LogError("Caught exception creating sycl::device: {}", e.what());
+            return;
+        }
+
+        queue_ = sycl::queue(sycl_device_);
+        context_ = sycl::context(sycl_device_);
+
+        device_ = rtcNewSYCLDevice(context_, "");
+        rtcSetDeviceSYCLDevice(device_, sycl_device_);
+
+        if (!device_) {
+            utility::LogError(
+                "Error %d: cannot create device\n",
+                rtcGetDeviceError(NULL));
+        }
+    }
+
     void CastRays(const float* const rays,
                   const size_t num_rays,
                   float* t_hit,
@@ -360,7 +444,159 @@ struct RaycastingScene::Impl {
                   unsigned int* primitive_ids,
                   float* primitive_uvs,
                   float* primitive_normals,
-                  const int nthreads) {
+                  const int nthreads,
+                  const bool line_intersection) override {
+        CommitScene();
+
+        auto scene =  this->scene_;
+        queue_.submit([=](sycl::handler& cgh) {            
+            cgh.parallel_for(sycl::range<1>(num_rays),[=](sycl::item<1> item, sycl::kernel_handler kh) {
+                const size_t i = item.get_id(0);
+
+                struct RTCRayHit rh;
+                const float* r = &rays[i * 6];
+                rh.ray.org_x = r[0];
+                rh.ray.org_y = r[1];
+                rh.ray.org_z = r[2];
+                if (line_intersection) {
+                    rh.ray.dir_x = r[3] - r[0];
+                    rh.ray.dir_y = r[4] - r[1];
+                    rh.ray.dir_z = r[5] - r[2];
+                } else {
+                    rh.ray.dir_x = r[3];
+                    rh.ray.dir_y = r[4];
+                    rh.ray.dir_z = r[5];
+                }
+                rh.ray.tnear = 0;
+                if (line_intersection) {
+                    rh.ray.tfar = 1.f;
+                } else {
+                    rh.ray.tfar = std::numeric_limits<float>::infinity();
+                }
+                rh.ray.mask = -1;
+                rh.ray.id = i;
+                rh.ray.flags = 0;
+                rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+                rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+                rtcIntersect1(scene, &rh);
+
+                t_hit[i] = rh.ray.tfar;
+                if (rh.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+                    geometry_ids[i] = rh.hit.geomID;
+                    primitive_ids[i] = rh.hit.primID;
+                    primitive_uvs[i * 2 + 0] = rh.hit.u;
+                    primitive_uvs[i * 2 + 1] = rh.hit.v;
+                    float inv_norm = 1.f / std::sqrt(rh.hit.Ng_x * rh.hit.Ng_x +
+                                                     rh.hit.Ng_y * rh.hit.Ng_y +
+                                                     rh.hit.Ng_z * rh.hit.Ng_z);
+                    primitive_normals[i * 3 + 0] = rh.hit.Ng_x * inv_norm;
+                    primitive_normals[i * 3 + 1] = rh.hit.Ng_y * inv_norm;
+                    primitive_normals[i * 3 + 2] = rh.hit.Ng_z * inv_norm;
+                } else {
+                    geometry_ids[i] = RTC_INVALID_GEOMETRY_ID;
+                    primitive_ids[i] = RTC_INVALID_GEOMETRY_ID;
+                    primitive_uvs[i * 2 + 0] = 0;
+                    primitive_uvs[i * 2 + 1] = 0;
+                    primitive_normals[i * 3 + 0] = 0;
+                    primitive_normals[i * 3 + 1] = 0;
+                    primitive_normals[i * 3 + 2] = 0;
+                }
+            });
+        });
+        queue_.wait_and_throw();
+    }
+    
+    void TestOcclusions(const float* const rays,
+                        const size_t num_rays,
+                        const float tnear,
+                        const float tfar,
+                        int8_t* occluded,
+                        const int nthreads) override {
+        CommitScene();
+
+        auto scene =  this->scene_;
+        queue_.submit([=](sycl::handler& cgh) {            
+            cgh.parallel_for(sycl::range<1>(num_rays),[=](sycl::item<1> item, sycl::kernel_handler kh) {
+                struct RTCRayQueryContext context;
+                rtcInitRayQueryContext(&context);
+
+                RTCOccludedArguments args;
+                rtcInitOccludedArguments(&args);
+                args.context = &context;
+                
+                const size_t i = item.get_id(0);
+
+                struct RTCRay ray;
+                const float* r = &rays[i * 6];
+                ray.org_x = r[0];
+                ray.org_y = r[1];
+                ray.org_z = r[2];
+                ray.dir_x = r[3];
+                ray.dir_y = r[4];
+                ray.dir_z = r[5];
+                ray.tnear = tnear;
+                ray.tfar = tfar;
+                ray.mask = -1;
+                ray.id = i;
+                ray.flags = 0;
+
+                rtcOccluded1(scene, &ray, &args);
+
+                occluded[i] = int8_t(
+                        -std::numeric_limits<float>::infinity() == ray.tfar);
+            });
+        });
+        queue_.wait_and_throw();
+    }
+    
+    void CountIntersections(const float* const rays,
+                            const size_t num_rays,
+                            int* intersections,
+                            const int nthreads) override {
+        throw std::logic_error("Function not yet implemented");
+    }
+    
+    void ListIntersections(const float* const rays,
+                           const size_t num_rays,
+                           const size_t num_intersections,
+                           const Eigen::VectorXi& cumsum,
+                           unsigned int* track_intersections,
+                           unsigned int* ray_ids,
+                           unsigned int* geometry_ids,
+                           unsigned int* primitive_ids,
+                           float* primitive_uvs,
+                           float* t_hit,
+                           const int nthreads) override {
+        throw std::logic_error("Function not yet implemented");
+    }
+    
+    void ComputeClosestPoints(const float* const query_points,
+                              const size_t num_query_points,
+                              float* closest_points,
+                              unsigned int* geometry_ids,
+                              unsigned int* primitive_ids,
+                              float* primitive_uvs,
+                              float* primitive_normals,
+                              const int nthreads) override {
+        throw std::logic_error("Function not yet implemented");
+    }
+};
+#endif
+
+struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
+    // The maximum number of rays used in calls to embree.
+    const size_t BATCH_SIZE = 1024;
+
+    void CastRays(const float* const rays,
+                  const size_t num_rays,
+                  float* t_hit,
+                  unsigned int* geometry_ids,
+                  unsigned int* primitive_ids,
+                  float* primitive_uvs,
+                  float* primitive_normals,
+                  const int nthreads,
+                  const bool line_intersection) override {
         CommitScene();
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
@@ -372,7 +608,7 @@ struct RaycastingScene::Impl {
                 rh.ray.org_x = r[0];
                 rh.ray.org_y = r[1];
                 rh.ray.org_z = r[2];
-                if (LINE_INTERSECTION) {
+                if (line_intersection) {
                     rh.ray.dir_x = r[3] - r[0];
                     rh.ray.dir_y = r[4] - r[1];
                     rh.ray.dir_z = r[5] - r[2];
@@ -382,7 +618,7 @@ struct RaycastingScene::Impl {
                     rh.ray.dir_z = r[5];
                 }
                 rh.ray.tnear = 0;
-                if (LINE_INTERSECTION) {
+                if (line_intersection) {
                     rh.ray.tfar = 1.f;
                 } else {
                     rh.ray.tfar = std::numeric_limits<float>::infinity();
@@ -442,7 +678,7 @@ struct RaycastingScene::Impl {
                         const float tnear,
                         const float tfar,
                         int8_t* occluded,
-                        const int nthreads) {
+                        const int nthreads) override {
         CommitScene();
 
         struct RTCRayQueryContext context;
@@ -497,7 +733,7 @@ struct RaycastingScene::Impl {
     void CountIntersections(const float* const rays,
                             const size_t num_rays,
                             int* intersections,
-                            const int nthreads) {
+                            const int nthreads) override {
         CommitScene();
 
         memset(intersections, 0, sizeof(int) * num_rays);
@@ -567,7 +803,7 @@ struct RaycastingScene::Impl {
                            unsigned int* primitive_ids,
                            float* primitive_uvs,
                            float* t_hit,
-                           const int nthreads) {
+                           const int nthreads) override {
         CommitScene();
 
         memset(track_intersections, 0, sizeof(uint32_t) * num_rays);
@@ -645,7 +881,7 @@ struct RaycastingScene::Impl {
                               unsigned int* primitive_ids,
                               float* primitive_uvs,
                               float* primitive_normals,
-                              const int nthreads) {
+                              const int nthreads) override {
         CommitScene();
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
@@ -693,14 +929,31 @@ struct RaycastingScene::Impl {
     }
 };
 
-RaycastingScene::RaycastingScene(int64_t nthreads)
-    : impl_(new RaycastingScene::Impl()) {
-    if (nthreads > 0) {
-        std::string config("threads=" + std::to_string(nthreads));
-        impl_->device_ = rtcNewDevice(config.c_str());
+RaycastingScene::RaycastingScene(int64_t nthreads
+#ifdef BUILD_SYCL_MODULE
+        , const core::Device& device
+#endif
+    ) {
+
+#ifdef BUILD_SYCL_MODULE
+    if (device.IsSYCL()) {
+        impl_ = std::make_unique<SYCLImpl>();
+        dynamic_cast<RaycastingScene::SYCLImpl*>(impl_.get())->InitializeDevice();
     } else {
-        impl_->device_ = rtcNewDevice(NULL);
+#endif
+        impl_ = std::make_unique<CPUImpl>();
+
+        if (nthreads > 0) {
+            std::string config("threads=" + std::to_string(nthreads));
+            impl_->device_ = rtcNewDevice(config.c_str());
+        } else {
+            impl_->device_ = rtcNewDevice(NULL);
+        }
+#ifdef BUILD_SYCL_MODULE
     }
+#endif
+
+    impl_->tensor_device_ = device;
     rtcSetDeviceErrorFunction(impl_->device_, ErrorFunction, NULL);
 
     impl_->scene_ = rtcNewScene(impl_->device_);
@@ -747,14 +1000,30 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
             3 * sizeof(uint32_t), num_triangles);
 
     {
+#ifdef BUILD_SYCL_MODULE
         auto data = vertex_positions.Contiguous();
-        memcpy(vertex_buffer, data.GetDataPtr(),
-               sizeof(float) * 3 * num_vertices);
+        if (impl_->tensor_device_.IsSYCL()) {
+            dynamic_cast<RaycastingScene::SYCLImpl*>(impl_.get())->queue_.memcpy(vertex_buffer, data.GetDataPtr(), sizeof(float) * 3 * num_vertices).wait();
+        } else {
+#endif
+            memcpy(vertex_buffer, data.GetDataPtr(),
+                   sizeof(float) * 3 * num_vertices);
+#ifdef BUILD_SYCL_MODULE
+        }
+#endif
     }
     {
         auto data = triangle_indices.Contiguous();
-        memcpy(index_buffer, data.GetDataPtr(),
-               sizeof(uint32_t) * 3 * num_triangles);
+#ifdef BUILD_SYCL_MODULE
+        if (impl_->tensor_device_.IsSYCL()) {
+            dynamic_cast<RaycastingScene::SYCLImpl*>(impl_.get())->queue_.memcpy(index_buffer, data.GetDataPtr(), sizeof(uint32_t) * 3 * num_triangles).wait();
+        } else {
+#endif
+            memcpy(index_buffer, data.GetDataPtr(),
+                   sizeof(uint32_t) * 3 * num_triangles);
+#ifdef BUILD_SYCL_MODULE
+        }
+#endif
     }
     rtcSetGeometryEnableFilterFunctionFromArguments(geom, true);
     rtcCommitGeometry(geom);
@@ -789,22 +1058,23 @@ std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
     size_t num_rays = shape.NumElements();
 
     std::unordered_map<std::string, core::Tensor> result;
-    result["t_hit"] = core::Tensor(shape, core::Float32);
-    result["geometry_ids"] = core::Tensor(shape, core::UInt32);
-    result["primitive_ids"] = core::Tensor(shape, core::UInt32);
+    result["t_hit"] = core::Tensor(shape, core::Float32, rays.GetDevice());
+    result["geometry_ids"] = core::Tensor(shape, core::UInt32, rays.GetDevice());
+    result["primitive_ids"] = core::Tensor(shape, core::UInt32, rays.GetDevice());
     shape.push_back(2);
-    result["primitive_uvs"] = core::Tensor(shape, core::Float32);
+    result["primitive_uvs"] = core::Tensor(shape, core::Float32, rays.GetDevice());
     shape.back() = 3;
-    result["primitive_normals"] = core::Tensor(shape, core::Float32);
+    result["primitive_normals"] = core::Tensor(shape, core::Float32, rays.GetDevice());
 
     auto data = rays.Contiguous();
-    impl_->CastRays<false>(data.GetDataPtr<float>(), num_rays,
+    impl_->CastRays(data.GetDataPtr<float>(), num_rays,
                            result["t_hit"].GetDataPtr<float>(),
                            result["geometry_ids"].GetDataPtr<uint32_t>(),
                            result["primitive_ids"].GetDataPtr<uint32_t>(),
                            result["primitive_uvs"].GetDataPtr<float>(),
                            result["primitive_normals"].GetDataPtr<float>(),
-                           nthreads);
+                           nthreads,
+                           false);
 
     return result;
 }
@@ -820,7 +1090,7 @@ core::Tensor RaycastingScene::TestOcclusions(const core::Tensor& rays,
                        // results.
     size_t num_rays = shape.NumElements();
 
-    core::Tensor result(shape, core::Bool);
+    core::Tensor result(shape, core::Bool, rays.GetDevice());
 
     auto data = rays.Contiguous();
     impl_->TestOcclusions(data.GetDataPtr<float>(), num_rays, tnear, tfar,
