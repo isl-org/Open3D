@@ -15,6 +15,7 @@
 # https://github.com/dmlc/xgboost/issues/1715
 import os
 import sys
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 # Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
 # TBB must not be already loaded.
@@ -34,21 +35,23 @@ def load_cdll(path):
     if not path.is_file():
         raise FileNotFoundError(f"Shared library file not found: {path}.")
 
-    if sys.platform == 'win32' and sys.version_info >= (3, 8):
+    if sys.platform == "win32" and sys.version_info >= (3, 8):
         # https://stackoverflow.com/a/64472088/1255535
         return CDLL(str(path), winmode=0)
     else:
         return CDLL(str(path))
 
 
-if sys.platform == 'win32':  # Unix: Use rpath to find libraries
+if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
 
-if _build_config["BUILD_GUI"] and not (find_library("c++abi") or
-                                       find_library("c++")):
-    try:  # Preload libc++.so and libc++abi.so (required by filament)
+if _build_config["BUILD_GUI"] and not (
+    find_library("c++abi") or find_library("c++") or find_library("unwind")
+):
+    try:  # Preload libc++.so, libc++abi.so and libunwind.so (required by filament)
         load_cdll(str(next((Path(__file__).parent).glob("*c++abi.*"))))
         load_cdll(str(next((Path(__file__).parent).glob("*c++.*"))))
+        load_cdll(str(next((Path(__file__).parent).glob("*unwind.*"))))
     except StopIteration:  # Not found: check system paths while loading
         pass
 
@@ -62,35 +65,60 @@ if _build_config["BUILD_CUDA_MODULE"]:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CPU Python "
             "bindings were not found. Open3D will not work on systems without"
-            " CUDA devices.", ImportWarning)
+            " CUDA devices.",
+            ImportWarning,
+        )
     try:
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
         _pybind_cuda = load_cdll(
-            str(next((Path(__file__).parent / "cuda").glob("pybind*"))))
+            str(next((Path(__file__).parent / "cuda").glob("pybind*")))
+        )
         if _pybind_cuda.open3d_core_cuda_device_count() > 0:
-            from open3d.cuda.pybind import (core, camera, data, geometry, io,
-                                            pipelines, utility, t)
+            from open3d.cuda.pybind import (
+                core,
+                camera,
+                data,
+                geometry,
+                io,
+                pipelines,
+                utility,
+                t,
+            )
             from open3d.cuda import pybind
+
             __DEVICE_API__ = "cuda"
         else:
             warnings.warn(
                 "Open3D was built with CUDA support, but no suitable CUDA "
                 "devices found. If your system has CUDA devices, check your "
-                "CUDA drivers and runtime.", ImportWarning)
+                "CUDA drivers and runtime.",
+                ImportWarning,
+            )
     except OSError as os_error:
         warnings.warn(
-            f'Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.',
-            ImportWarning)
+            f"Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
+            ImportWarning,
+        )
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CUDA Python "
             "binding library not found! Falling back to the CPU Python "
-            "binding library.", ImportWarning)
+            "binding library.",
+            ImportWarning,
+        )
 
 if __DEVICE_API__ == "cpu":
-    from open3d.cpu.pybind import (core, camera, data, geometry, io, pipelines,
-                                   utility, t)
+    from open3d.cpu.pybind import (
+        core,
+        camera,
+        data,
+        geometry,
+        io,
+        pipelines,
+        utility,
+        t,
+    )
     from open3d.cpu import pybind
 
 
@@ -109,6 +137,7 @@ def _insert_pybind_names(skip_names=()):
 
 
 import open3d.visualization
+
 _insert_pybind_names(skip_names=("ml",))
 
 __version__ = "@PROJECT_VERSION@"
@@ -116,16 +145,19 @@ __version__ = "@PROJECT_VERSION@"
 if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
-if _build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
-        "OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true":
+if (
+    _build_config["BUILD_JUPYTER_EXTENSION"]
+    and os.environ.get("OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true"
+):
     import platform
-    if not (platform.machine().startswith("arm") or
-            platform.machine().startswith("aarch")):
+
+    if not (
+        platform.machine().startswith("arm") or platform.machine().startswith("aarch")
+    ):
         try:
             shell = get_ipython().__class__.__name__
             if shell == "ZMQInteractiveShell":
-                print("Jupyter environment detected. "
-                      "Enabling Open3D WebVisualizer.")
+                print("Jupyter environment detected. " "Enabling Open3D WebVisualizer.")
                 # Set default window system.
                 open3d.visualization.webrtc_server.enable_webrtc()
                 # HTTP handshake server is needed when Open3D is serving the
@@ -134,8 +166,9 @@ if _build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
         except NameError:
             pass
     else:
-        warnings.warn("Open3D WebVisualizer is not supported on ARM for now.",
-                      RuntimeWarning)
+        warnings.warn(
+            "Open3D WebVisualizer is not supported on ARM for now.", RuntimeWarning
+        )
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
 # If set this will override the integrated Open3D-ML.
@@ -160,10 +193,12 @@ def _jupyter_labextension_paths():
             copies from `src` directory into <jupyter path>/labextensions/<dest>
             directory during widget installation.
     """
-    return [{
-        "src": "labextension",
-        "dest": "open3d",
-    }]
+    return [
+        {
+            "src": "labextension",
+            "dest": "open3d",
+        }
+    ]
 
 
 def _jupyter_nbextension_paths():
@@ -183,14 +218,16 @@ def _jupyter_nbextension_paths():
         require: Path to importable AMD Javascript module inside the
             <jupyter path>/nbextensions/<dest> directory.
     """
-    return [{
-        "section": "notebook",
-        "src": "nbextension",
-        "dest": "open3d",
-        "require": "open3d/extension"
-    }]
+    return [
+        {
+            "section": "notebook",
+            "src": "nbextension",
+            "dest": "open3d",
+            "require": "open3d/extension",
+        }
+    ]
 
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     _win32_dll_dir.close()
 del os, sys, CDLL, load_cdll, find_library, Path, warnings, _insert_pybind_names

@@ -1240,6 +1240,10 @@ if(BUILD_GUI)
                 # If the default version is not sufficient, look for some specific versions
                 if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
                     find_program(CLANG_VERSIONED_CC NAMES
+                                 clang-19
+                                 clang-18
+                                 clang-17
+                                 clang-16
                                  clang-15
                                  clang-14
                                  clang-13
@@ -1251,6 +1255,10 @@ if(BUILD_GUI)
                                  clang-7
                     )
                     find_program(CLANG_VERSIONED_CXX NAMES
+                                 clang++-19
+                                 clang++-18
+                                 clang++-17
+                                 clang++-16
                                  clang++-15
                                  clang++-14
                                  clang++-13
@@ -1278,7 +1286,7 @@ if(BUILD_GUI)
                 #
                 # On aarch64, the symbolic link path may not work for CMake's
                 # find_library. Therefore, when compiling Filament from source,
-                # we explicitly find the corresponidng path based on the clang
+                # we explicitly find the corresponding path based on the clang
                 # version.
                 execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
                 if(clang_version MATCHES "clang version ([0-9]+)")
@@ -1320,26 +1328,14 @@ if(BUILD_GUI)
             # We first search for these paths, and then search CMake's default
             # search path. LLVM version must be >= 7 to compile Filament.
             if (NOT CLANG_LIBDIR)
-                set(ubuntu_default_llvm_lib_dirs
-                    /usr/lib/llvm-19/lib
-                    /usr/lib/llvm-18/lib
-                    /usr/lib/llvm-17/lib
-                    /usr/lib/llvm-16/lib
-                    /usr/lib/llvm-15/lib
-                    /usr/lib/llvm-14/lib
-                    /usr/lib/llvm-13/lib
-                    /usr/lib/llvm-12/lib
-                    /usr/lib/llvm-11/lib
-                    /usr/lib/llvm-10/lib
-                    /usr/lib/llvm-9/lib
-                    /usr/lib/llvm-8/lib
-                    /usr/lib/llvm-7/lib
-                )
-                foreach(llvm_lib_dir in ${ubuntu_default_llvm_lib_dirs})
-                    message(STATUS "Searching ${llvm_lib_dir} for libc++ and libc++abi")
-                    find_library(CPP_LIBRARY    c++    PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
+                message(STATUS "Searching /usr/lib/llvm-[7..19]/lib/ for libc++, libc++abi and libunwind")
+                foreach(llvm_ver RANGE 7 19)
+                    set(llvm_lib_dir "/usr/lib/llvm-${llvm_ver}/lib")
+                    message(STATUS "Searching ${llvm_lib_dir} for libc++, libc++abi and libunwind")
+                    find_library(CPP_LIBRARY    libc++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
                     find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
-                    if (CPP_LIBRARY AND CPPABI_LIBRARY)
+                    find_library(UNWIND_LIBRARY unwind PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
+                    if (CPP_LIBRARY AND CPPABI_LIBRARY AND UNWIND_LIBRARY)
                         set(CLANG_LIBDIR ${llvm_lib_dir})
                         message(STATUS "CLANG_LIBDIR found in ubuntu-default: ${CLANG_LIBDIR}")
                         break()
@@ -1350,6 +1346,9 @@ if(BUILD_GUI)
             # Fallback to non-ubuntu-default paths. Note that the PATH_SUFFIXES
             # is not enforced by CMake.
             if (NOT CLANG_LIBDIR)
+                message(WARNING "libc++, libc++abi and libunwind not found in Ubuntu default paths." 
+                "Have you installed libc++-dev libc++abi-dev and libunwind-dev packages?"
+                "Searching in other paths.")
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
                              llvm-19/lib
                              llvm-18/lib
@@ -1372,16 +1371,16 @@ if(BUILD_GUI)
             if (CLANG_LIBDIR)
                 message(STATUS "Using CLANG_LIBDIR: ${CLANG_LIBDIR}")
             else()
-                message(FATAL_ERROR "Cannot find matching libc++ and libc++abi libraries with version >=7.")
+                message(FATAL_ERROR "Cannot find matching libc++, libc++abi and libunwind libraries with version >=7.")
             endif()
             find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
             find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+            find_library(UNWIND_LIBRARY unwind PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-                                  ${CPP_LIBRARY} ${CPPABI_LIBRARY})
-            message(STATUS "CPP_LIBRARY: ${CPP_LIBRARY}")
-            message(STATUS "CPPABI_LIBRARY: ${CPPABI_LIBRARY}")
+                                  ${CPP_LIBRARY} ${CPPABI_LIBRARY} ${UNIWIND_LIBRARY})
+            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY} ${CPPABI_LIBRARY} ${UNWIND_LIBRARY}")
         endif()
         if (APPLE)
             find_library(CORE_VIDEO CoreVideo)

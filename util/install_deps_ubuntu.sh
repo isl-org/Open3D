@@ -20,6 +20,7 @@ deps=(
     clang
     libc++-dev
     libc++abi-dev
+    libunwind-dev
     libsdl2-dev
     ninja-build
     libxi-dev
