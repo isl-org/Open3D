@@ -101,11 +101,11 @@ if (BUILD_SHARED_LIBS)
     )
 endif()
 # Include additional libraries that may be absent from the user system
-# eg: libc++.so, libc++abi.so, libunwind.so (needed by filament) for Linux.
+# eg: libc++.so, libc++abi.so (needed by filament) for Linux.
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
 set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:tbb>)
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY} ${UNWIND_LIBRARY})
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
 endif()
 if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
 # Package libomp v11.1.0, if it is not installed. Later version cause crash on

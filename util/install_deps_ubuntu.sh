@@ -21,7 +21,6 @@ deps=(
     clang
     libc++-dev
     libc++abi-dev
-    libunwind-dev
     libsdl2-dev
     ninja-build
     libxi-dev
@@ -41,17 +40,11 @@ eval $(
     echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
 )
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
-    # Ubuntu 20.04's clang/libc++-dev/libc++abi-dev are version 10.
-    # To build Filament from source, we need version 12+.
-    deps=("${deps[@]/clang/clang-12}")
-    deps=("${deps[@]/libc++-dev/libc++-12-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-12-dev}")
-elif [ "$DISTRIB_ID" == "Ubuntu" ] && dpkg --compare-versions "$DISTRIB_RELEASE" gt "20.04" ; then
-    # Ubuntu > 20.04 have libunwind-dev breaks libunwind-14-dev !!
-    deps=("${deps[@]/clang/clang-14}")
-    deps=("${deps[@]/libc++-dev/libc++-14-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-14-dev}")
-    deps=("${deps[@]/libunwind-dev/libunwind-14-dev}")
+    # Ubuntu 20.04's clang/libc++-dev/libc++abi-dev are version 8, 10 or 12.
+    # To avoid dependence on libunwind, we don't want to use versions later than 10.
+    deps=("${deps[@]/clang/clang-10}")
+    deps=("${deps[@]/libc++-dev/libc++-10-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-10-dev}")
 fi
 
 # Special case for ARM64
