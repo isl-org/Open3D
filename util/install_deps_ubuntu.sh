@@ -11,6 +11,7 @@ else
 fi
 
 deps=(
+    git
     # Open3D
     xorg-dev
     libxcb-shm0

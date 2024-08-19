@@ -1331,14 +1331,17 @@ if(BUILD_GUI)
                 message(STATUS "Searching /usr/lib/llvm-[7..19]/lib/ for libc++, libc++abi and libunwind")
                 foreach(llvm_ver RANGE 7 19)
                     set(llvm_lib_dir "/usr/lib/llvm-${llvm_ver}/lib")
-                    message(STATUS "Searching ${llvm_lib_dir} for libc++, libc++abi and libunwind")
-                    find_library(CPP_LIBRARY    libc++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
+                    find_library(CPP_LIBRARY    c++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
                     find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
-                    find_library(UNWIND_LIBRARY unwind PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
-                    if (CPP_LIBRARY AND CPPABI_LIBRARY AND UNWIND_LIBRARY)
-                        set(CLANG_LIBDIR ${llvm_lib_dir})
-                        message(STATUS "CLANG_LIBDIR found in ubuntu-default: ${CLANG_LIBDIR}")
-                        break()
+                    if (CPP_LIBRARY AND CPPABI_LIBRARY)
+                    # libunwind.so is in /usr/lib/<ARCH> in Ubuntu 20.04, but libunwind.so is in /usr/lib/llvm-<VERSION>/lib in Ubuntu 22.04+
+                    # The LLVM folder libunwind is needed in Ubuntu 22.04+
+                        find_library(UNWIND_LIBRARY unwind HINTS ${llvm_lib_dir})
+                        if (UNWIND_LIBRARY)
+                            set(CLANG_LIBDIR ${llvm_lib_dir})
+                            message(STATUS "CLANG_LIBDIR found in ubuntu-default: ${CLANG_LIBDIR}")
+                            break()
+                        endif()
                     endif()
                 endforeach()
             endif()
@@ -1346,9 +1349,7 @@ if(BUILD_GUI)
             # Fallback to non-ubuntu-default paths. Note that the PATH_SUFFIXES
             # is not enforced by CMake.
             if (NOT CLANG_LIBDIR)
-                message(WARNING "libc++, libc++abi and libunwind not found in Ubuntu default paths." 
-                "Have you installed libc++-dev libc++abi-dev and libunwind-dev packages?"
-                "Searching in other paths.")
+                message(STATUS "Clang C++ libraries not found. Searching other paths...")
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
                              llvm-19/lib
                              llvm-18/lib
@@ -1375,7 +1376,7 @@ if(BUILD_GUI)
             endif()
             find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
             find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
-            find_library(UNWIND_LIBRARY unwind PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+            find_library(UNWIND_LIBRARY unwind HINTS ${CLANG_LIBDIR} REQUIRED)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
