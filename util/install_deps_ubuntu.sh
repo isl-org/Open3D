@@ -46,6 +46,12 @@ if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
     deps=("${deps[@]/clang/clang-12}")
     deps=("${deps[@]/libc++-dev/libc++-12-dev}")
     deps=("${deps[@]/libc++abi-dev/libc++abi-12-dev}")
+elif [ "$DISTRIB_ID" == "Ubuntu" ] && dpkg --compare-versions "$DISTRIB_RELEASE" gt "20.04" ; then
+    # Ubuntu > 20.04 have libunwind-dev breaks libunwind-14-dev !!
+    deps=("${deps[@]/clang/clang-14}")
+    deps=("${deps[@]/libc++-dev/libc++-14-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-14-dev}")
+    deps=("${deps[@]/libunwind-dev/libunwind-14-dev}")
 fi
 
 # Special case for ARM64

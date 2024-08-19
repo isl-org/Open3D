@@ -45,9 +45,9 @@ def load_cdll(path):
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
 
-if _build_config["BUILD_GUI"] and not (
-    find_library("c++abi") or find_library("c++") or find_library("unwind")
-):
+if _build_config["BUILD_GUI"] and not (find_library("c++abi") or
+                                       find_library("c++") or
+                                       find_library("unwind")):
     try:  # Preload libc++.so, libc++abi.so and libunwind.so (required by filament)
         load_cdll(str(next((Path(__file__).parent).glob("*c++abi.*"))))
         load_cdll(str(next((Path(__file__).parent).glob("*c++.*"))))
@@ -72,8 +72,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
         _pybind_cuda = load_cdll(
-            str(next((Path(__file__).parent / "cuda").glob("pybind*")))
-        )
+            str(next((Path(__file__).parent / "cuda").glob("pybind*"))))
         if _pybind_cuda.open3d_core_cuda_device_count() > 0:
             from open3d.cuda.pybind import (
                 core,
@@ -145,19 +144,17 @@ __version__ = "@PROJECT_VERSION@"
 if int(sys.version_info[0]) < 3:
     raise Exception("Open3D only supports Python 3.")
 
-if (
-    _build_config["BUILD_JUPYTER_EXTENSION"]
-    and os.environ.get("OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true"
-):
+if (_build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
+        "OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true"):
     import platform
 
-    if not (
-        platform.machine().startswith("arm") or platform.machine().startswith("aarch")
-    ):
+    if not (platform.machine().startswith("arm") or
+            platform.machine().startswith("aarch")):
         try:
             shell = get_ipython().__class__.__name__
             if shell == "ZMQInteractiveShell":
-                print("Jupyter environment detected. " "Enabling Open3D WebVisualizer.")
+                print("Jupyter environment detected. "
+                      "Enabling Open3D WebVisualizer.")
                 # Set default window system.
                 open3d.visualization.webrtc_server.enable_webrtc()
                 # HTTP handshake server is needed when Open3D is serving the
@@ -166,9 +163,8 @@ if (
         except NameError:
             pass
     else:
-        warnings.warn(
-            "Open3D WebVisualizer is not supported on ARM for now.", RuntimeWarning
-        )
+        warnings.warn("Open3D WebVisualizer is not supported on ARM for now.",
+                      RuntimeWarning)
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
 # If set this will override the integrated Open3D-ML.
@@ -193,12 +189,10 @@ def _jupyter_labextension_paths():
             copies from `src` directory into <jupyter path>/labextensions/<dest>
             directory during widget installation.
     """
-    return [
-        {
-            "src": "labextension",
-            "dest": "open3d",
-        }
-    ]
+    return [{
+        "src": "labextension",
+        "dest": "open3d",
+    }]
 
 
 def _jupyter_nbextension_paths():
@@ -218,14 +212,12 @@ def _jupyter_nbextension_paths():
         require: Path to importable AMD Javascript module inside the
             <jupyter path>/nbextensions/<dest> directory.
     """
-    return [
-        {
-            "section": "notebook",
-            "src": "nbextension",
-            "dest": "open3d",
-            "require": "open3d/extension",
-        }
-    ]
+    return [{
+        "section": "notebook",
+        "src": "nbextension",
+        "dest": "open3d",
+        "require": "open3d/extension",
+    }]
 
 
 if sys.platform == "win32":
