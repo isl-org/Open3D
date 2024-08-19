@@ -14,5 +14,5 @@ FetchContent_Declare(
     INSTALL_COMMAND ""
 )
 
-FetchContent_Populate(ext_qhull)
+FetchContent_MakeAvailable(ext_qhull)
 FetchContent_GetProperties(ext_qhull SOURCE_DIR QHULL_SOURCE_DIR)
