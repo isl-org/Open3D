@@ -27,6 +27,67 @@
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
+
+namespace callbacks {
+
+struct GeomPrimID {
+    uint32_t geomID;
+    uint32_t primID;
+    float ray_tfar;
+};
+
+struct CountIntersectionsContext {
+    RTCRayQueryContext context;
+    GeomPrimID* previous_geom_prim_ID_tfar;
+    int* intersections;
+};
+
+#ifdef BUILD_SYCL_MODULE
+RTC_SYCL_INDIRECTLY_CALLABLE void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
+#else
+void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
+#endif
+    int* valid = args->valid;
+    const CountIntersectionsContext* context =
+            reinterpret_cast<const CountIntersectionsContext*>(args->context);
+    struct RTCRayN* rayN = args->ray;
+    struct RTCHitN* hitN = args->hit;
+    const unsigned int N = args->N;
+
+    // Avoid crashing when debug visualizations are used.
+    if (context == nullptr) return;
+
+    GeomPrimID *previous_geom_prim_ID_tfar = context->previous_geom_prim_ID_tfar;
+    int* intersections = context->intersections;
+
+    // Iterate over all rays in ray packet.
+    for (unsigned int ui = 0; ui < N; ui += 1) {
+        // Calculate loop and execution mask
+        unsigned int vi = ui + 0;
+        if (vi >= N) continue;
+
+        // Ignore inactive rays.
+        if (valid[vi] != -1) continue;
+
+        // Read ray/hit from ray structure.
+        RTCRay ray = rtcGetRayFromRayN(rayN, N, ui);
+        RTCHit hit = rtcGetHitFromHitN(hitN, N, ui);
+
+        unsigned int ray_id = ray.id;
+        GeomPrimID gpID = {hit.geomID, hit.primID, ray.tfar};
+        auto& prev_gpIDtfar = previous_geom_prim_ID_tfar[ray_id];
+        if (prev_gpIDtfar.geomID != hit.geomID ||
+            (prev_gpIDtfar.primID != hit.primID &&
+             prev_gpIDtfar.ray_tfar != ray.tfar)) {
+            ++(intersections[ray_id]);
+            previous_geom_prim_ID_tfar[ray_id] = gpID;
+        }
+        // Always ignore hit
+        valid[ui] = 0;
+    }
+}
+} // namespace callbacks
+
 namespace {
 
 typedef Eigen::AlignedVector3<float> Vec3fa;
@@ -72,56 +133,6 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
     }
     open3d::core::AssertTensorDtype(tensor,
                                     open3d::core::Dtype::FromType<DTYPE>());
-}
-
-struct CountIntersectionsContext {
-    RTCRayQueryContext context;
-    std::vector<std::tuple<uint32_t, uint32_t, float>>*
-            previous_geom_prim_ID_tfar;
-    int* intersections;
-};
-
-void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
-    int* valid = args->valid;
-    const CountIntersectionsContext* context =
-            reinterpret_cast<const CountIntersectionsContext*>(args->context);
-    struct RTCRayN* rayN = args->ray;
-    struct RTCHitN* hitN = args->hit;
-    const unsigned int N = args->N;
-
-    // Avoid crashing when debug visualizations are used.
-    if (context == nullptr) return;
-
-    std::vector<std::tuple<uint32_t, uint32_t, float>>*
-            previous_geom_prim_ID_tfar = context->previous_geom_prim_ID_tfar;
-    int* intersections = context->intersections;
-
-    // Iterate over all rays in ray packet.
-    for (unsigned int ui = 0; ui < N; ui += 1) {
-        // Calculate loop and execution mask
-        unsigned int vi = ui + 0;
-        if (vi >= N) continue;
-
-        // Ignore inactive rays.
-        if (valid[vi] != -1) continue;
-
-        // Read ray/hit from ray structure.
-        RTCRay ray = rtcGetRayFromRayN(rayN, N, ui);
-        RTCHit hit = rtcGetHitFromHitN(hitN, N, ui);
-
-        unsigned int ray_id = ray.id;
-        std::tuple<uint32_t, uint32_t, float> gpID(hit.geomID, hit.primID,
-                                                   ray.tfar);
-        auto& prev_gpIDtfar = previous_geom_prim_ID_tfar->operator[](ray_id);
-        if (std::get<0>(prev_gpIDtfar) != hit.geomID ||
-            (std::get<1>(prev_gpIDtfar) != hit.primID &&
-             std::get<2>(prev_gpIDtfar) != ray.tfar)) {
-            ++(intersections[ray_id]);
-            previous_geom_prim_ID_tfar->operator[](ray_id) = gpID;
-        }
-        // Always ignore hit
-        valid[ui] = 0;
-    }
 }
 
 struct ListIntersectionsContext {
@@ -554,7 +565,64 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                             const size_t num_rays,
                             int* intersections,
                             const int nthreads) override {
-        throw std::logic_error("Function not yet implemented");
+        CommitScene();
+
+        queue_.memset(intersections, 0, sizeof(int) * num_rays).wait();
+        
+        callbacks::GeomPrimID* previous_geom_prim_ID_tfar = sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
+
+        // Check if allocation was successful
+        if (!previous_geom_prim_ID_tfar) {
+            throw std::runtime_error("Failed to allocate device memory");
+        }
+        
+        auto host_previous_geom_prim_ID_tfar = std::unique_ptr<callbacks::GeomPrimID[], std::default_delete<callbacks::GeomPrimID[]>>(new callbacks::GeomPrimID[num_rays]);
+        for (size_t i = 0; i < num_rays; ++i) {
+            host_previous_geom_prim_ID_tfar[i] = {uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                                uint32_t(RTC_INVALID_GEOMETRY_ID), 0.f};
+        }
+
+        // Copy the initialized data to the device
+        queue_.memcpy(host_previous_geom_prim_ID_tfar.get(), previous_geom_prim_ID_tfar, num_rays * sizeof(callbacks::GeomPrimID)).wait();
+        
+        auto scene =  this->scene_;
+        queue_.submit([=](sycl::handler& cgh) {            
+            cgh.parallel_for(sycl::range<1>(num_rays),[=](sycl::item<1> item, sycl::kernel_handler kh) {
+                callbacks::CountIntersectionsContext context;
+                rtcInitRayQueryContext(&context.context);
+                context.previous_geom_prim_ID_tfar = previous_geom_prim_ID_tfar;
+                context.intersections = intersections;
+
+                RTCIntersectArguments args;
+                rtcInitIntersectArguments(&args);
+                args.filter = callbacks::CountIntersectionsFunc;
+                args.context = &context.context;
+
+                const size_t i = item.get_id(0);
+
+                struct RTCRayHit rh;
+                const float* r = &rays[i * 6];
+                rh.ray.org_x = r[0];
+                rh.ray.org_y = r[1];
+                rh.ray.org_z = r[2];
+                rh.ray.dir_x = r[3];
+                rh.ray.dir_y = r[4];
+                rh.ray.dir_z = r[5];
+                rh.ray.tnear = 0;
+                rh.ray.tfar = std::numeric_limits<float>::infinity();
+                rh.ray.mask = -1;
+                rh.ray.flags = 0;
+                rh.ray.id = i;
+                rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+                rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+                rtcIntersect1(scene, &rh, &args);
+            });
+        });
+        queue_.wait_and_throw();
+
+        // Free the allocated memory
+        sycl::free(previous_geom_prim_ID_tfar, queue_);
     }
     
     void ListIntersections(const float* const rays,
@@ -738,21 +806,20 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
 
         memset(intersections, 0, sizeof(int) * num_rays);
 
-        std::vector<std::tuple<uint32_t, uint32_t, float>>
-                previous_geom_prim_ID_tfar(
-                        num_rays,
-                        std::make_tuple(uint32_t(RTC_INVALID_GEOMETRY_ID),
-                                        uint32_t(RTC_INVALID_GEOMETRY_ID),
-                                        0.f));
+        auto previous_geom_prim_ID_tfar = std::unique_ptr<callbacks::GeomPrimID[], std::default_delete<callbacks::GeomPrimID[]>>(new callbacks::GeomPrimID[num_rays]);
+        for (size_t i = 0; i < num_rays; ++i) {
+            previous_geom_prim_ID_tfar[i] = {uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                             uint32_t(RTC_INVALID_GEOMETRY_ID), 0.f};
+        }
 
-        CountIntersectionsContext context;
+        callbacks::CountIntersectionsContext context;
         rtcInitRayQueryContext(&context.context);
-        context.previous_geom_prim_ID_tfar = &previous_geom_prim_ID_tfar;
+        context.previous_geom_prim_ID_tfar = previous_geom_prim_ID_tfar.get();
         context.intersections = intersections;
 
         RTCIntersectArguments args;
         rtcInitIntersectArguments(&args);
-        args.filter = CountIntersectionsFunc;
+        args.filter = callbacks::CountIntersectionsFunc;
         args.context = &context.context;
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
@@ -1109,7 +1176,7 @@ core::Tensor RaycastingScene::CountIntersections(const core::Tensor& rays,
                        // results.
     size_t num_rays = shape.NumElements();
 
-    core::Tensor intersections(shape, core::Dtype::FromType<int>());
+    core::Tensor intersections(shape, core::Dtype::FromType<int>(), impl_->tensor_device_);
 
     auto data = rays.Contiguous();
 

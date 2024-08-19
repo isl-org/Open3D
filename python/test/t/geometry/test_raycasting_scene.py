@@ -103,47 +103,66 @@ def test_test_lots_of_occlusions(device):
     _ = scene.test_occlusions(rays)
 
 
-def test_add_triangle_mesh():
+@pytest.mark.parametrize("device", list_devices())
+def test_add_triangle_mesh(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
+    vertex_positions = cube.vertex.positions
+    vertex_positions = vertex_positions.to(device)
+    triangle_indices = cube.triangle.indices
+    triangle_indices = triangle_indices.to(o3d.core.Dtype.UInt32)
+    triangle_indices = triangle_indices.to(device)
 
-    scene = o3d.t.geometry.RaycastingScene()
-    scene.add_triangles(cube)
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene.add_triangles(vertex_positions, triangle_indices)
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32)
+                           dtype=o3d.core.float32, device=device)
     ans = scene.count_intersections(rays)
 
-    np.testing.assert_equal(ans.numpy(), [2, 1, 0])
+    np.testing.assert_equal(ans.cpu().numpy(), [2, 1, 0])
 
 
-def test_count_intersections():
+@pytest.mark.parametrize("device", list_devices())
+def test_count_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
+    vertex_positions = cube.vertex.positions
+    vertex_positions = vertex_positions.to(device)
+    triangle_indices = cube.triangle.indices
+    triangle_indices = triangle_indices.to(o3d.core.Dtype.UInt32)
+    triangle_indices = triangle_indices.to(device)
 
-    scene = o3d.t.geometry.RaycastingScene()
-    scene.add_triangles(cube)
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene.add_triangles(vertex_positions, triangle_indices)
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32)
+                           dtype=o3d.core.float32, device=device)
     ans = scene.count_intersections(rays)
 
-    np.testing.assert_equal(ans.numpy(), [2, 1, 0])
+    np.testing.assert_equal(ans.cpu().numpy(), [2, 1, 0])
 
 
 # count lots of random ray intersections to test the internal batching
 # we expect no errors for this test
-def test_count_lots_of_intersections():
+@pytest.mark.parametrize("device", list_devices())
+def test_count_lots_of_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
+    vertex_positions = cube.vertex.positions
+    vertex_positions = vertex_positions.to(device)
+    triangle_indices = cube.triangle.indices
+    triangle_indices = triangle_indices.to(o3d.core.Dtype.UInt32)
+    triangle_indices = triangle_indices.to(device)
 
-    scene = o3d.t.geometry.RaycastingScene()
-    scene.add_triangles(cube)
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene.add_triangles(vertex_positions, triangle_indices)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(rs.rand(1234567, 6).astype(np.float32))
+    rays = rays.to(device)
 
     _ = scene.count_intersections(rays)
 
