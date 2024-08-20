@@ -10,42 +10,6 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_scan.h>
 
-// clang-format off
-#if TBB_INTERFACE_VERSION >= 10000
-    #ifdef OPEN3D_USE_ONEAPI_PACKAGES
-        #ifdef _PSTL_UDR_PRESENT
-            #undef _PSTL_UDR_PRESENT
-        #endif
-        #define _PSTL_UDR_PRESENT 0
-        #ifdef _PSTL_UDS_PRESENT
-            #undef _PSTL_UDS_PRESENT
-        #endif
-        #define _PSTL_UDS_PRESENT 0
-        #include <oneapi/dpl/execution>
-        #include <oneapi/dpl/numeric>
-    #else
-        // Check if the C++ standard library implements parallel algorithms
-        // and use this over parallelstl to avoid conflicts.
-        // Clang does not implement it so far, so checking for C++17 is not sufficient.
-        #ifdef __cpp_lib_parallel_algorithm
-            #include <execution>
-            #include <numeric>
-        #else
-            #include <pstl/execution>
-            #include <pstl/numeric>
-            // parallelstl incorrectly assumes MSVC to unconditionally implement
-            // parallel algorithms even if __cpp_lib_parallel_algorithm is not
-            // defined. So manually include the header which pulls all
-            // "pstl::execution" definitions into the "std" namespace.
-            #if __PSTL_CPP17_EXECUTION_POLICIES_PRESENT
-                #include <pstl/internal/glue_execution_defs.h>
-            #endif
-        #endif
-    #endif
-#endif
-
-// clang-format on
-
 namespace open3d {
 namespace utility {
 
@@ -77,19 +41,9 @@ public:
 
 template <class Tin, class Tout>
 void InclusivePrefixSum(const Tin* first, const Tin* last, Tout* out) {
-#if TBB_INTERFACE_VERSION >= 10000
-    // use parallelstl if we have TBB 2018 or later
-#ifdef OPEN3D_USE_ONEAPI_PACKAGES
-    std::inclusive_scan(oneapi::dpl::execution::par_unseq, first, last, out);
-
-#else
-    std::inclusive_scan(std::execution::par_unseq, first, last, out);
-#endif
-#else
     ScanSumBody<Tin, Tout> body(out, first);
     size_t n = std::distance(first, last);
     tbb::parallel_scan(tbb::blocked_range<size_t>(0, n), body);
-#endif
 }
 
 }  // namespace utility

@@ -57,7 +57,7 @@ To run GUI applications from the docker container, add these options to the
 
   - NVIDIA: ``--gpus 'all,"capabilities=compute,utility,graphics"'``
 
-  - No GPU (CPU rendering): ``--env OPEN3D_CPU_RENDERING=true`` on Ubuntu 18.04. Later versions automaticaly select CPU rendering if a GPU is not available.
+  - No GPU (CPU rendering): CPU rendering is automaticaly selected if a GPU is not available.
 
 2. X server: ``-v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY``
 
