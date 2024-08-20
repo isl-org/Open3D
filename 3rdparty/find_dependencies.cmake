@@ -266,7 +266,9 @@ endfunction()
 #        the expected library variable names to be found in <pkg>.
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
 #    PATHS
+#        Paths with hardcoded guesses. Same as in find_package.
 #    DEPENDS
+#        Adds targets that should be build before "name" as dependency.
 #
 function(open3d_find_package_3rdparty_library name)
     cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET"
