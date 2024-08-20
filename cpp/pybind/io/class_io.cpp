@@ -83,7 +83,7 @@ static const std::unordered_map<std::string, std::string>
                  "If set to true a progress bar is visualized in the console"},
 };
 
-void pybind_class_io(py::module &m_io) {
+void pybind_class_io_declarations(py::module &m_io) {
     py::enum_<FileGeometry> geom_type(m_io, "FileGeometry", py::arithmetic());
     // Trick to write docs without listing the members in the enum class again.
     geom_type.attr("__doc__") = docstring::static_property(
@@ -96,6 +96,8 @@ void pybind_class_io(py::module &m_io) {
             .value("CONTAINS_LINES", FileGeometry::CONTAINS_LINES)
             .value("CONTAINS_TRIANGLES", FileGeometry::CONTAINS_TRIANGLES)
             .export_values();
+}
+void pybind_class_io_definitions(py::module &m_io) {
     m_io.def(
             "read_file_geometry_type", &ReadFileGeometryType,
             "Returns the type of geometry of the file. This is a faster way of "
