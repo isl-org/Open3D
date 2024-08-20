@@ -135,6 +135,12 @@ set_target_properties(open3d_tf_ops PROPERTIES
 # Do not add "lib" prefix
 set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
+# Set BUILD_RPATH to find tbb. We don't install through cmake.
+if (APPLE)
+    set_target_properties(open3d_tf_ops PROPERTIES BUILD_RPATH "@loader_path/..")
+elseif (UNIX)
+    set_target_properties(open3d_tf_ops PROPERTIES BUILD_RPATH "$ORIGIN/..")
+endif()
 
 # _GLIBCXX_USER_CXX11_ABI is set separately
 list(REMOVE_ITEM Tensorflow_DEFINITIONS "_GLIBCXX_USE_CXX11_ABI=0"
@@ -159,8 +165,7 @@ target_link_libraries(open3d_tf_ops PRIVATE
     Open3D::Open3D
     Open3D::3rdparty_fmt
     Open3D::3rdparty_nanoflann
-    Open3D::3rdparty_parallelstl
-    Open3D::3rdparty_tbb
+    TBB::tbb
 )
 
 if (BUILD_CUDA_MODULE)
@@ -194,7 +199,7 @@ URL: @PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
 Requires: Open3D = @PROJECT_VERSION@
 Cflags:
-Libs: -lopen3d_tf_ops]=]  @ONLY NEWLINE_STYLE LF)
+Libs: -lopen3d_tf_ops -ltbb]=]  @ONLY NEWLINE_STYLE LF)
     file(GENERATE OUTPUT open3d_tf_ops.pc INPUT
         "${CMAKE_CURRENT_BINARY_DIR}/open3d_tf_ops.pc.in"
         TARGET open3d_tf_ops)

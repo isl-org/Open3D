@@ -48,7 +48,7 @@ To verify that the ARM64 environment is working, run:
 # The following warning message is expected: "WARNING: The requested image's
 # platform (linux/arm64/v8) does not match the detected host platform
 # (linux/amd64) and no specific platform was requested aarch64."
-docker run --rm arm64v8/ubuntu:18.04 uname -p
+docker run --rm arm64v8/ubuntu:24.04 uname -p
 ```
 
 ## Build and test Docker
