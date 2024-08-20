@@ -322,7 +322,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-4-shared-focal
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
@@ -338,7 +338,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-4-shared-focal
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
@@ -385,7 +385,7 @@ cpu-shared_export_env() {
     export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
@@ -417,7 +417,7 @@ cpu-shared-release_export_env() {
     export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.12   # no TF versions after 2.13.2 for Python 3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi

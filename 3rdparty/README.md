@@ -68,18 +68,13 @@ tinyobjloader                v1.0.0                                  MIT license
 Tiny but powerful single file wavefront obj loader
 https://github.com/syoyo/tinyobjloader
 --------------------------------------------------------------------------------
-pybind11                    v2.6.2                                   BSD license
+pybind11                    v2.13.1                                   BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
 --------------------------------------------------------------------------------
 PoissonReco                 12.0                                     BSD license
 Poisson Surface Reconstruction
 https://github.com/mkazhdan/PoissonRecon
---------------------------------------------------------------------------------
-Parallel STL                20190522                            Apache-2 license
-An implementation of the C++ standard library algorithms with support for
-execution policies
-https://github.com/oneapi-src/oneDPL
 --------------------------------------------------------------------------------
 CUB                         1.8.0                                    BSD license
 A flexible library of cooperative threadblock primitives and other utilities for
@@ -113,7 +108,7 @@ As an alternative, you can modify 3rdparty/zeromq/zeromq_build.cmake to fetch
 zeromq from our fork
 https://github.com/isl-org/libzmq
 --------------------------------------------------------------------------------
-embree                      3.13.0                              Apache-2 license
+embree                      4.3.1                               Apache-2 license
 Embree is a collection of high-performance ray tracing kernels
 https://github.com/embree/embree
 --------------------------------------------------------------------------------

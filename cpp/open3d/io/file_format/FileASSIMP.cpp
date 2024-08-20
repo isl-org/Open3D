@@ -170,7 +170,7 @@ bool ReadTriangleMeshUsingASSIMP(
 
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
-        utility::LogWarning("Unable to load file {} with ASSIMP", filename);
+        utility::LogWarning("ReadTriangleMeshUsingASSIMP error: {}", importer.GetErrorString());
         return false;
     }
 
@@ -326,7 +326,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
     const auto* scene =
             importer.ReadFile(filename.c_str(), kPostProcessFlags_fast);
     if (!scene) {
-        utility::LogWarning("Unable to load file {} with ASSIMP", filename);
+        utility::LogWarning("ReadTriangleMeshUsingASSIMP error: {}", importer.GetErrorString());
         return false;
     }
 

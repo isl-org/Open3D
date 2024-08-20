@@ -58,7 +58,7 @@ bool ReadTriangleMeshUsingASSIMP(
 
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
-        utility::LogWarning("Unable to load file {} with ASSIMP", filename);
+        utility::LogWarning("ReadTriangleMeshUsingASSIMP error: {}", importer.GetErrorString());
         return false;
     }
 
@@ -242,7 +242,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     if (mesh.HasTriangleColors()) {
         utility::LogWarning(
                 "Exporting triangle colors is not supported. Please convert to "
-                "vertex colors or export to a format that supporst it.");
+                "vertex colors or export to a format that supports it.");
     }
 
     Assimp::Exporter exporter;
@@ -470,7 +470,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     // Export
     if (exporter.Export(ai_scene.get(), "glb2", filename.c_str()) ==
         AI_FAILURE) {
-        utility::LogWarning("Got error: {}", exporter.GetErrorString());
+        utility::LogWarning("WriteTriangleMeshUsingASSIMP error: {}", exporter.GetErrorString());
         return false;
     }
 
