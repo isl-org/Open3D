@@ -443,6 +443,10 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     // sample point cloud
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
+    bool has_textures_ = HasTextures();
+    bool has_triangle_uvs_ = HasTriangleUvs();
+    bool has_triangle_material_ids_ = HasTriangleMaterialIds();
+
     utility::random::UniformRealGenerator<double> uniform_generator(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
     pcd->points_.resize(number_of_points);
@@ -452,10 +456,9 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     if (use_triangle_normal && !HasTriangleNormals()) {
         ComputeTriangleNormals(true);
     }
-    if (has_vert_color) {
+    if (has_vert_color || (has_textures_ && has_triangle_uvs_)) {
         pcd->colors_.resize(number_of_points);
     }
-
     for (size_t point_idx = 0; point_idx < number_of_points; ++point_idx) {
         double r1 = uniform_generator();
         double r2 = uniform_generator();
@@ -475,13 +478,33 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         if (use_triangle_normal) {
             pcd->normals_[point_idx] = triangle_normals_[tidx];
         }
-        if (has_vert_color) {
+        // if there is no texture, sample from vertex color
+        if (has_vert_color && !has_textures_ && !has_triangle_uvs_) {
             pcd->colors_[point_idx] = a * vertex_colors_[triangle(0)] +
                                       b * vertex_colors_[triangle(1)] +
                                       c * vertex_colors_[triangle(2)];
         }
-    }
+        // if there is a texture, sample from texture instead
+        if (has_textures_ && has_triangle_uvs_ && has_triangle_material_ids_) {
+            Eigen::Vector2d uv = a * triangle_uvs_[3 * tidx] +
+                                 b * triangle_uvs_[3 * tidx + 1] +
+                                 c * triangle_uvs_[3 * tidx + 2];
+            int material_id = triangle_material_ids_[tidx];
+            int w = textures_[material_id].width_;
+            int h = textures_[material_id].height_;
 
+            pcd->colors_[point_idx] = Eigen::Vector3d(
+                    (double)*(textures_[material_id].PointerAt<uint8_t>(
+                            uv(0) * w, uv(1) * h, 0)) /
+                            255,
+                    (double)*(textures_[material_id].PointerAt<uint8_t>(
+                            uv(0) * w, uv(1) * h, 1)) /
+                            255,
+                    (double)*(textures_[material_id].PointerAt<uint8_t>(
+                            uv(0) * w, uv(1) * h, 2)) /
+                            255);
+        }
+    }
     return pcd;
 }
 
@@ -621,6 +644,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     // update pcl
     bool has_vert_normal = pcl->HasNormals();
     bool has_vert_color = pcl->HasColors();
+    bool has_textures_ = HasTextures();
+    bool has_triangle_uvs_ = HasTriangleUvs();
     int next_free = 0;
     for (size_t idx = 0; idx < pcl->points_.size(); ++idx) {
         if (!deleted[idx]) {
@@ -628,7 +653,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
             if (has_vert_normal) {
                 pcl->normals_[next_free] = pcl->normals_[idx];
             }
-            if (has_vert_color) {
+            if (has_vert_color || (has_textures_ && has_triangle_uvs_)) {
                 pcl->colors_[next_free] = pcl->colors_[idx];
             }
             next_free++;
