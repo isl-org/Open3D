@@ -1,5 +1,5 @@
 ## Main
-
+-   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
 -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
 -   Use GLIBCXX_USE_CXX11_ABI=ON by default
