@@ -1,5 +1,5 @@
-# On Ubuntu 18.04, get the latest CMake from https://apt.kitware.com/.
-cmake_minimum_required(VERSION 3.18)
+# On Ubuntu 20.04, get the latest CMake from https://apt.kitware.com/.
+cmake_minimum_required(VERSION 3.24)
 
 project(Open3DCMakeExternalProject LANGUAGES C CXX)
 

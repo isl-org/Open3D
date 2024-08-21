@@ -5,6 +5,10 @@
 # lib, and targets that links to the Open3D lib, e.g pybind, unit tests, etc.
 function(open3d_set_open3d_lib_properties target)
     cmake_parse_arguments(arg "HIDDEN" "" "" ${ARGN})
+    set_target_properties(${target} PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${OPEN3D_ABI_VERSION}
+    )
     if(NOT BUILD_SHARED_LIBS)
         target_compile_definitions(${target} PUBLIC OPEN3D_STATIC)
     endif()
@@ -191,7 +195,7 @@ Description: @PROJECT_DESCRIPTION@
 URL: @PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
 Cflags: -std=c++@CMAKE_CXX_STANDARD@ -isystem${includedir} -isystem${includedir}/open3d/3rdparty -D$<JOIN:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>, -D>
-Libs: -L${libdir} -Wl,-rpath,${libdir} -lOpen3D]=]  @ONLY NEWLINE_STYLE LF)
+Libs: -L${libdir} -Wl,-rpath,${libdir} -lOpen3D -ltbb]=]  @ONLY NEWLINE_STYLE LF)
     file(GENERATE OUTPUT Open3D.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc.in"
         TARGET "Open3D::Open3D")
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc"

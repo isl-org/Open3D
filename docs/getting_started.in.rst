@@ -13,7 +13,7 @@ interact with it.  You can download the latest stable release app from `Github
 releases <https://github.com/isl-org/Open3D/releases>`__. The latest development
 version (``HEAD`` of ``main`` branch) viewer app is provided here [#]_:
 
-* `Linux (Ubuntu 18.04+ or glibc 2.27+) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-viewer-@OPEN3D_VERSION_FULL@-Linux.deb>`__ [#]_
+* `Linux (Ubuntu 20.04+ or glibc 2.31+) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-viewer-@OPEN3D_VERSION_FULL@-Linux.deb>`__ [#]_
 * `MacOSX v10.15+ (Intel or Apple Silicon) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-app-macosx-10_15-universal2.zip>`__
 * `Windows 10+ (64-bit) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-app-windows-amd64.zip>`__
 
@@ -95,16 +95,16 @@ version (``HEAD`` of ``main`` branch):
     :widths: auto
 
     * - Linux
-      - `Python 3.8 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
-      - `Python 3.9 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
-      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_27_x86_64.whl>`__
-      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.8 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.9 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_31_x86_64.whl>`__
 
     * - Linux (CPU)
-      - `Python 3.8 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
-      - `Python 3.9 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
-      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_27_x86_64.whl>`__
-      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.8 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.9 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_31_x86_64.whl>`__
 
     * - MacOS
       - `Python 3.8 (x86_64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_11_0_x86_64.whl>`__
@@ -183,7 +183,7 @@ rendering resources. These are built with all supported features and are
 available for the main supported platforms. Also, the latest development version
 (``HEAD`` of ``main`` branch) binary package archives are provided here [#]_:
 
-:Linux (Ubuntu 18.04+ or glibc 2.27+ [#]_):
+:Linux (Ubuntu 20.04+ or glibc 2.31+ [#]_):
     .. hlist::
         :columns: 2
 

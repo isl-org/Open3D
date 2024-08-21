@@ -1,5 +1,5 @@
-# On Ubuntu 18.04, get the latest CMake from https://apt.kitware.com/.
-cmake_minimum_required(VERSION 3.18)
+# On Ubuntu 20.04, get the latest CMake from https://apt.kitware.com/.
+cmake_minimum_required(VERSION 3.24)
 
 project(Open3DCMakeFindPackage LANGUAGES C CXX)
 
@@ -24,10 +24,13 @@ target_link_libraries(Draw PRIVATE Open3D::Open3D)
 if(WIN32)
     get_target_property(open3d_type Open3D::Open3D TYPE)
     if(open3d_type STREQUAL "SHARED_LIBRARY")
-        message(STATUS "Copying Open3D.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
-        add_custom_command(TARGET Draw POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy
-                                   ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
-                                   ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+        set(copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/tbb12$<$<CONFIG:Debug>:_debug>.dll" 
+                      "${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll")
+    else() 
+        set(copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/tbb12$<$<CONFIG:Debug>:_debug>.dll") 
     endif()
+    add_custom_command(TARGET Draw POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy ${copy_dlls}
+                        ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>
+                        COMMENT "Copying Open3D DLLs to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
 endif()

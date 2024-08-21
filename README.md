@@ -49,7 +49,7 @@ For more, please visit the [Open3D documentation](https://www.open3d.org/docs).
 
 ## Python quick start
 
-Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
+Pre-built pip packages support Ubuntu 20.04+, macOS 10.15+ and Windows 10+
 (64-bit) with Python 3.8-3.11.
 
 ```bash

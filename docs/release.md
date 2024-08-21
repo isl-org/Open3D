@@ -17,12 +17,12 @@ Collect all release artifacts in the [Github draft release page](https://github.
         Configure: `cmake -DCMAKE_BUILD_TYPE=Release -DDEVELOPER_BUILD=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
                     -DBUILD_TENSORFLOW_OPS=ON -DBUILD_PYTORCH_OPS=ON -DBUNDLE_OPEN3D_ML=ON  ..`
 
-    -   [ ] Ubuntu 18.04 Python (all versions) (follow docs/arm.rst) (desktop)
+    -   [ ] Ubuntu 20.04 Python (all versions) (follow docs/arm.rst) (desktop)
 
         Build command: `cd docker; ./docker_build.sh openblas-arm64-py311; ...`
 
 -   [ ] Build Open3D app
-    -   [ ] Ubuntu 18.04, Windows 10, macOS 10.15 x86_64: (CI)
+    -   [ ] Ubuntu 20.04, Windows 10, macOS 10.15 x86_64: (CI)
     -   [ ] macOS 12 arm64 (desktop)
     -   [ ] macOS (x86_64, arm64) sign (desktop):
 
