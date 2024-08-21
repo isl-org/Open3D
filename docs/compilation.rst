@@ -8,15 +8,15 @@ Build from source
 System requirements
 -------------------
 
-* C++14 compiler:
+* C++17 compiler:
 
-  * Ubuntu 18.04+: GCC 5+, Clang 7+
+  * Ubuntu 20.04+: GCC 5+, Clang 7+
   * macOS 10.15+: XCode 8.0+
   * Windows 10 (64-bit): Visual Studio 2019+
 
-* CMake: 3.19+
+* CMake: 3.24+
 
-  * Ubuntu (18.04 / 20.04):
+  * Ubuntu (20.04+):
 
     * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
     * Install with ``snap``: ``sudo snap install cmake --classic``
@@ -238,12 +238,6 @@ The visualization module depends on the Filament rendering engine and, by defaul
 Open3D uses a prebuilt version of it. You can also build Filament from source
 by setting ``BUILD_FILAMENT_FROM_SOURCE=ON``.
 
-.. note::
-    Whereas Open3D only requires a C++14 compiler, Filament needs a C++17 compiler
-    and only supports Clang 7+, the most recent version of Xcode, and Visual Studio 2019,
-    see `their building instructions <https://github.com/google/filament/blob/main/BUILDING.md>`_.
-    Make sure to use one of these compiler if you build Open3D with ``BUILD_FILAMENT_FROM_SOURCE=ON``.
-
 ML Module
 `````````
 
@@ -390,8 +384,8 @@ After installing ``ccache``, simply reconfigure and recompile the Open3D
 library. Open3D's CMake script can detect and use it automatically. You don't
 need to setup additional paths except for the ``ccache`` program itself.
 
-Ubuntu 18.04, 20.04
-```````````````````
+Ubuntu 20.04+
+`````````````
 
 If you install ``ccache`` via ``sudo apt install ccache``, the 3.x version will
 be installed. To cache CUDA compilations, you'll need the 4.0+ version. Here, we

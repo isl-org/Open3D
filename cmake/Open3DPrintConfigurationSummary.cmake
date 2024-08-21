@@ -61,7 +61,7 @@ function(open3d_print_configuration_summary)
         GLFW
         googletest
         imgui
-        ippicv
+        ipp
         JPEG
         jsoncpp
         liblzf

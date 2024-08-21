@@ -983,6 +983,12 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
                                                 const core::Tensor &extrinsics,
                                                 float depth_scale,
                                                 float depth_max) {
+    if (!HasPointPositions()) {
+        utility::LogWarning(
+                "Called ProjectToDepthImage on a point cloud with no Positions "
+                "attribute. Returning empty image.");
+        return geometry::Image();
+    }
     core::AssertTensorShape(intrinsics, {3, 3});
     core::AssertTensorShape(extrinsics, {4, 4});
 
@@ -1001,6 +1007,12 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
         const core::Tensor &extrinsics,
         float depth_scale,
         float depth_max) {
+    if (!HasPointPositions()) {
+        utility::LogWarning(
+                "Called ProjectToRGBDImage on a point cloud with no Positions "
+                "attribute. Returning empty image.");
+        return geometry::RGBDImage();
+    }
     if (!HasPointColors()) {
         utility::LogError(
                 "Unable to project to RGBD without the Color attribute in the "

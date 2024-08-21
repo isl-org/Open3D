@@ -39,7 +39,7 @@ elif platform.system() == "Windows":
     hanzi = "c:/windows/fonts/msyh.ttc"  # YaHei UI
     chess = "c:/windows/fonts/seguisym.ttf"  # Segoe UI Symbol
 else:
-    # Assumes Ubuntu 18.04
+    # Assumes Ubuntu 20.04
     serif = "DejaVuSerif"
     hanzi = "NotoSansCJK"
     chess = "/usr/share/fonts/truetype/freefont/FreeSerif.ttf"
