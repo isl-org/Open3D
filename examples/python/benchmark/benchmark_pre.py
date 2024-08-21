@@ -8,6 +8,7 @@
 import os
 import sys
 import pickle
+import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)

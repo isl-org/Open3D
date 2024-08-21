@@ -596,6 +596,20 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a mesh from a 3D scalar field (volume) by computing the
+    /// isosurface.  This method uses the Flying Edges dual contouring method
+    /// that computes the isosurface similar to Marching Cubes.  The center of
+    /// the first voxel of the volume is at the origin (0,0,0).  The center of
+    /// the voxel at index [z,y,x] will be at (x,y,z).
+    /// \param volume 3D tensor with the volume.
+    /// \param contour_values A list of contour values at which isosurfaces will
+    /// be generated. The default value is 0.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateIsosurfaces(
+            const core::Tensor &volume,
+            const std::vector<double> contour_values = {0.0},
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -670,6 +684,11 @@ public:
     /// \brief Function that computes the surface area of the mesh, i.e. the sum
     /// of the individual triangle surfaces.
     double GetSurfaceArea() const;
+
+    /// \brief Function to compute triangle areas and save it as a triangle
+    /// attribute "areas". Prints a warning, if mesh is empty or has no
+    /// triangles.
+    TriangleMesh &ComputeTriangleAreas();
 
     /// \brief Clip mesh with a plane.
     /// This method clips the triangle mesh with the specified plane.
@@ -973,6 +992,20 @@ public:
     /// Removes unreferenced vertices from the mesh.
     /// \return The reference to itself.
     TriangleMesh RemoveUnreferencedVertices();
+
+    /// Removes all non-manifold edges, by successively deleting triangles
+    /// with the smallest surface area adjacent to the
+    /// non-manifold edge until the number of adjacent triangles to the edge is
+    /// `<= 2`. If mesh is empty or has no triangles, prints a warning and
+    /// returns immediately. \return The reference to itself.
+    TriangleMesh RemoveNonManifoldEdges();
+
+    /// Returns the non-manifold edges of the triangle mesh.
+    /// If \param allow_boundary_edges is set to false, then also boundary
+    /// edges are returned.
+    /// \return 2d integer tensor with shape {n,2} encoding ordered edges.
+    /// If mesh is empty or has no triangles, returns an empty tensor.
+    core::Tensor GetNonManifoldEdges(bool allow_boundary_edges = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

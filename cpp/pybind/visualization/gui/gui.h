@@ -30,10 +30,11 @@ std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
         int height,
         bool z_in_view_space = false);
 
-void pybind_gui(py::module &m);
+void pybind_gui_declarations(py::module &m);
+void pybind_gui_definitions(py::module &m);
 
-void pybind_gui_events(py::module &m);
-void pybind_gui_classes(py::module &m);
+void pybind_gui_events_declarations(py::module &m);
+void pybind_gui_events_definitions(py::module &m);
 
 }  // namespace gui
 }  // namespace visualization

@@ -65,7 +65,7 @@ else()
     # Optimize for Ubuntu x86. Curl can take a long time to configure.
     #
     # To generate pre-compiled curl:
-    # 1. Use Ubuntu 18.04 (eg. in docker), not 20.04+.
+    # 1. Use oldest supported Ubuntu (eg. in docker), not the latest.
     # 2. -DBUILD_CURL_FROM_SOURCE=ON, build Open3D: make ext_curl
     # 3. cd build/curl
     # 4. tar -czvf curl_7.88.0_linux_x86_64.tar.gz include lib

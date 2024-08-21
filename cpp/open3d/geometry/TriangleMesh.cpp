@@ -130,7 +130,9 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(
 
 TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     ComputeTriangleNormals(false);
-    vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
+    vertex_normals_.resize(vertices_.size());
+    std::fill(vertex_normals_.begin(), vertex_normals_.end(),
+              Eigen::Vector3d::Zero());
     for (size_t i = 0; i < triangles_.size(); i++) {
         auto &triangle = triangles_[i];
         vertex_normals_[triangle(0)] += triangle_normals_[i];

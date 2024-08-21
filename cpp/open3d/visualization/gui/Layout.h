@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
@@ -147,6 +149,9 @@ public:
 
     /// Returns true if open and false if collapsed.
     bool GetIsOpen();
+
+    void SetText(const char* text);
+    std::string GetText() const;
 
     FontId GetFontId() const;
     void SetFontId(FontId font_id);

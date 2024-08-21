@@ -38,9 +38,32 @@ static const std::unordered_map<std::string, std::string>
                 {"reset_bounding_box",
                  "Set to ``False`` to keep current viewpoint"}};
 
-void pybind_visualizer(py::module &m) {
+void pybind_visualizer_declarations(py::module &m) {
     py::class_<Visualizer, PyVisualizer<>, std::shared_ptr<Visualizer>>
             visualizer(m, "Visualizer", "The main Visualizer class.");
+    py::class_<VisualizerWithKeyCallback,
+               PyVisualizer<VisualizerWithKeyCallback>,
+               std::shared_ptr<VisualizerWithKeyCallback>>
+            visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
+                           "Visualizer with custom key callback capabilities.");
+    py::class_<VisualizerWithEditing, PyVisualizer<VisualizerWithEditing>,
+               std::shared_ptr<VisualizerWithEditing>>
+            visualizer_edit(m, "VisualizerWithEditing", visualizer,
+                            "Visualizer with editing capabilities.");
+    py::class_<VisualizerWithVertexSelection,
+               PyVisualizer<VisualizerWithVertexSelection>,
+               std::shared_ptr<VisualizerWithVertexSelection>>
+            visualizer_vselect(
+                    m, "VisualizerWithVertexSelection", visualizer,
+                    "Visualizer with vertex selection capabilities.");
+    py::class_<VisualizerWithVertexSelection::PickedPoint>
+            visualizer_vselect_pickedpoint(m, "PickedPoint");
+}
+
+void pybind_visualizer_definitions(py::module &m) {
+    auto visualizer = static_cast<py::class_<Visualizer, PyVisualizer<>,
+                                             std::shared_ptr<Visualizer>>>(
+            m.attr("Visualizer"));
     py::detail::bind_default_constructor<Visualizer>(visualizer);
     visualizer
             .def("__repr__",
@@ -145,12 +168,11 @@ void pybind_visualizer(py::module &m) {
                  "Set the current view status from a json string of "
                  "ViewTrajectory.",
                  "view_status_str"_a);
-
-    py::class_<VisualizerWithKeyCallback,
-               PyVisualizer<VisualizerWithKeyCallback>,
-               std::shared_ptr<VisualizerWithKeyCallback>>
-            visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
-                           "Visualizer with custom key callback capabilities.");
+    auto visualizer_key =
+            static_cast<py::class_<VisualizerWithKeyCallback,
+                                   PyVisualizer<VisualizerWithKeyCallback>,
+                                   std::shared_ptr<VisualizerWithKeyCallback>>>(
+                    m.attr("VisualizerWithKeyCallback"));
     py::detail::bind_default_constructor<VisualizerWithKeyCallback>(
             visualizer_key);
     visualizer_key
@@ -212,10 +234,11 @@ void pybind_visualizer(py::module &m) {
                  "key <https://www.glfw.org/docs/latest/group__mods.html>`__.",
                  "callback_func"_a);
 
-    py::class_<VisualizerWithEditing, PyVisualizer<VisualizerWithEditing>,
-               std::shared_ptr<VisualizerWithEditing>>
-            visualizer_edit(m, "VisualizerWithEditing", visualizer,
-                            "Visualizer with editing capabilities.");
+    auto visualizer_edit =
+            static_cast<py::class_<VisualizerWithEditing,
+                                   PyVisualizer<VisualizerWithEditing>,
+                                   std::shared_ptr<VisualizerWithEditing>>>(
+                    m.attr("VisualizerWithEditing"));
     py::detail::bind_default_constructor<VisualizerWithEditing>(
             visualizer_edit);
     visualizer_edit
@@ -232,12 +255,11 @@ void pybind_visualizer(py::module &m) {
                  &VisualizerWithEditing::GetCroppedGeometry,
                  "Function to get cropped geometry");
 
-    py::class_<VisualizerWithVertexSelection,
-               PyVisualizer<VisualizerWithVertexSelection>,
-               std::shared_ptr<VisualizerWithVertexSelection>>
-            visualizer_vselect(
-                    m, "VisualizerWithVertexSelection", visualizer,
-                    "Visualizer with vertex selection capabilities.");
+    auto visualizer_vselect = static_cast<
+            py::class_<VisualizerWithVertexSelection,
+                       PyVisualizer<VisualizerWithVertexSelection>,
+                       std::shared_ptr<VisualizerWithVertexSelection>>>(
+            m.attr("VisualizerWithVertexSelection"));
     py::detail::bind_default_constructor<VisualizerWithVertexSelection>(
             visualizer_vselect);
     visualizer_vselect.def(py::init<>())
@@ -279,8 +301,9 @@ void pybind_visualizer(py::module &m) {
                  "Registers a function to be called after selection moves",
                  "f"_a);
 
-    py::class_<VisualizerWithVertexSelection::PickedPoint>
-            visualizer_vselect_pickedpoint(m, "PickedPoint");
+    auto visualizer_vselect_pickedpoint =
+            static_cast<py::class_<VisualizerWithVertexSelection::PickedPoint>>(
+                    m.attr("PickedPoint"));
     visualizer_vselect_pickedpoint.def(py::init<>())
             .def_readwrite("index",
                            &VisualizerWithVertexSelection::PickedPoint::index)
@@ -336,8 +359,6 @@ void pybind_visualizer(py::module &m) {
     docstring::ClassMethodDocInject(m, "Visualizer", "is_full_screen",
                                     map_visualizer_docstrings);
 }
-
-void pybind_visualizer_method(py::module &m) {}
 
 }  // namespace visualization
 }  // namespace open3d

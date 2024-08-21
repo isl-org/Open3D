@@ -1,7 +1,5 @@
 name: Ubuntu Wheel
-permissions:
-  contents: write
-  actions: write
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -28,6 +26,8 @@ env:
 
 jobs:
   build-wheel:
+    permissions:
+      contents: write  # Release upload
     name: Build wheel
     runs-on: ubuntu-latest
     strategy:
@@ -46,7 +46,7 @@ jobs:
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
-      CCACHE_TAR_NAME: open3d-ubuntu-1804-cuda-ci-ccache
+      CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
@@ -115,6 +115,8 @@ jobs:
 
   test-wheel-cpu:
     name: Test wheel CPU
+    permissions:
+      contents: read
     runs-on: ubuntu-20.04
     needs: [build-wheel]
     strategy:

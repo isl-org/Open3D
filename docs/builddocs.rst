@@ -97,3 +97,22 @@ Open ``docs/_out/html/index.html`` in a web browser to preview the docs.
 .. code-block:: bash
 
     google-chrome docs/_out/html/index.html
+
+
+Create Python stubs (type hints) for type checking and autocomplete
+-------------------------------------------------------------------
+
+You can get type checking and auto-complete features in editors and IDES (e.g.
+ VS Code, PyCharm, etc.) using type hints produced from Open3D. These can be
+ created with the pybind11-stubgen tool and placed alongside the Open3D files:
+
+.. code-block:: bash
+
+    # Install open3d and pybind11-stubgen
+    pip install pybind11-stubgen open3d
+    # Print location of install open3d library
+    pip show open3d
+    # This outputs a line like: 
+    # Location: path/to/venv/site-packages
+    # Create stubs and place them next to Open3D files
+    pybind11-stubgen -o <path/to/venv/site-packages/> --root-suffix "" open3d

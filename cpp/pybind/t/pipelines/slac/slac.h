@@ -14,7 +14,8 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
-void pybind_slac(py::module &m);
+void pybind_slac_declarations(py::module &m);
+void pybind_slac_definitions(py::module &m);
 
 }  // namespace slac
 }  // namespace pipelines
