@@ -98,7 +98,8 @@ RUN which python \
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+# Remove branch before merge
+RUN git clone --depth 1 --branch ss/python-3.12 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
 
 # Open3D C++ dependencies
 # Done before copying the full Open3D directory for better Docker caching
