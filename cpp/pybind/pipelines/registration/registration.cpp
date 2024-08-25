@@ -336,10 +336,12 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                  "kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationForColoredICP &te) {
-                    // This is missing kernel, but getting kernel name on C++ is hard
-                     return fmt::format("TransformationEstimationForColoredICP("
-                     "lambda_geometric={})",
-                     te.lambda_geometric_);
+                     // This is missing kernel, but getting kernel name on C++
+                     // is hard
+                     return fmt::format(
+                             "TransformationEstimationForColoredICP("
+                             "lambda_geometric={})",
+                             te.lambda_geometric_);
                  })
             .def_readwrite(
                     "lambda_geometric",
@@ -380,9 +382,10 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                  "kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationForGeneralizedICP &te) {
-                     return fmt::format("TransformationEstimationForGeneralizedICP("
-                            "epsilon={})",
-                            te.epsilon_);
+                     return fmt::format(
+                             "TransformationEstimationForGeneralizedICP("
+                             "epsilon={})",
+                             te.epsilon_);
                  })
             .def_readwrite("epsilon",
                            &TransformationEstimationForGeneralizedICP::epsilon_,
@@ -563,10 +566,11 @@ must hold true for all edges.)");
                         "\ntuple_scale={},"
                         "\nmaximum_tuple_count={},"
                         "\ntuple_test={},"
-                        "\n)", c.division_factor_,
-                        c.use_absolute_scale_, c.decrease_mu_,
-                        c.maximum_correspondence_distance_, c.iteration_number_,
-                        c.tuple_scale_, c.maximum_tuple_count_, c.tuple_test_);
+                        "\n)",
+                        c.division_factor_, c.use_absolute_scale_,
+                        c.decrease_mu_, c.maximum_correspondence_distance_,
+                        c.iteration_number_, c.tuple_scale_,
+                        c.maximum_tuple_count_, c.tuple_test_);
             });
 
     // open3d.registration.RegistrationResult

@@ -93,11 +93,12 @@ void pybind_camera_definitions(py::module &m) {
                            "0, cx], [0, fy, "
                            "cy], [0, 0, 1]]``")
             .def("__repr__", [](const PinholeCameraIntrinsic &c) {
-                return fmt::format("PinholeCameraIntrinsic("
-                "width={}, "
-                "height={}, "
-                ")",
-                c.width_, c.height_);
+                return fmt::format(
+                        "PinholeCameraIntrinsic("
+                        "width={}, "
+                        "height={}, "
+                        ")",
+                        c.width_, c.height_);
             });
     docstring::ClassMethodDocInject(m_camera, "PinholeCameraIntrinsic",
                                     "__init__");
