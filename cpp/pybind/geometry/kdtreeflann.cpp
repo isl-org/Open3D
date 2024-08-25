@@ -59,9 +59,8 @@ void pybind_kdtreeflann_definitions(py::module &m) {
             .def("__repr__",
                  [](const KDTreeSearchParamKNN &param) {
                      return std::string(
-                                    "KDTreeSearchParamKNN with knn "
-                                    "= ") +
-                            std::to_string(param.knn_);
+                                    "KDTreeSearchParamKNN(knn=") +
+                            std::to_string(param.knn_) + ")";
                  })
             .def_readwrite("knn", &KDTreeSearchParamKNN::knn_,
                            "Number of the neighbors that will be searched.");
@@ -74,9 +73,8 @@ void pybind_kdtreeflann_definitions(py::module &m) {
             .def("__repr__",
                  [](const KDTreeSearchParamRadius &param) {
                      return std::string(
-                                    "KDTreeSearchParamRadius with "
-                                    "radius = ") +
-                            std::to_string(param.radius_);
+                                    "KDTreeSearchParamRadius(radius=") +
+                            std::to_string(param.radius_) + ")";
                  })
             .def_readwrite("radius", &KDTreeSearchParamRadius::radius_,
                            "Search radius.");
@@ -90,10 +88,9 @@ void pybind_kdtreeflann_definitions(py::module &m) {
             .def("__repr__",
                  [](const KDTreeSearchParamHybrid &param) {
                      return std::string(
-                                    "KDTreeSearchParamHybrid with "
-                                    "radius = ") +
+                                    "KDTreeSearchParamHybrid(radius=") +
                             std::to_string(param.radius_) +
-                            " and max_nn = " + std::to_string(param.max_nn_);
+                            ", max_nn=" + std::to_string(param.max_nn_) + ")";
                  })
             .def_readwrite("radius", &KDTreeSearchParamHybrid::radius_,
                            "Search radius.")
