@@ -124,8 +124,10 @@ void pybind_odometry_definitions(py::module &m) {
                     "than ``relative_fitness``, the iteration stops.")
             .def("__repr__", [](const OdometryConvergenceCriteria &c) {
                 return fmt::format(
-                        "OdometryConvergenceCriteria[max_iteration={:d}, "
-                        "relative_rmse={:e}, relative_fitness={:e}].",
+                        "OdometryConvergenceCriteria("
+                        "max_iteration={:d}, "
+                        "relative_rmse={:e}, "
+                        "relative_fitness={:e})",
                         c.max_iteration_, c.relative_rmse_,
                         c.relative_fitness_);
             });

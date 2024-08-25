@@ -128,17 +128,16 @@ void pybind_odometry_definitions(py::module &m) {
                                     c.iteration_number_per_pyramid_level_[i]) +
                             ", ";
                 str_iteration_number_per_pyramid_level_ += "] ";
-                return std::string("OdometryOption class.") +
-                       /*std::string("\nodo_init = ") +
-                          std::to_string(c.odo_init_) +*/
-                       std::string("\niteration_number_per_pyramid_level = ") +
-                       str_iteration_number_per_pyramid_level_ +
-                       std::string("\ndepth_diff_max = ") +
-                       std::to_string(c.depth_diff_max_) +
-                       std::string("\ndepth_min = ") +
-                       std::to_string(c.depth_min_) +
-                       std::string("\ndepth_max = ") +
-                       std::to_string(c.depth_max_);
+                return fmt::format("OdometryOption(\n"
+                       "iteration_number_per_pyramid_level={},\n"
+                       "depth_diff_max={},\n"
+                       "depth_min={},\n"
+                       "depth_max={},\n"
+                        ")",
+                       str_iteration_number_per_pyramid_level_,
+                       c.depth_diff_max_,
+                       c.depth_min_,
+                       c.depth_max_);
             });
 
     // open3d.odometry.RGBDOdometryJacobian

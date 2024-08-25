@@ -188,9 +188,10 @@ void pybind_registration_definitions(py::module &m) {
                            "Maximum iteration before iteration stops.")
             .def("__repr__", [](const ICPConvergenceCriteria &c) {
                 return fmt::format(
-                        "ICPConvergenceCriteria class "
-                        "with relative_fitness={:e}, relative_rmse={:e}, "
-                        "and max_iteration={:d}",
+                        "ICPConvergenceCriteria("
+                        "relative_fitness={:e}, "
+                        "relative_rmse={:e}, "
+                        "max_iteration={:d})",
                         c.relative_fitness_, c.relative_rmse_,
                         c.max_iteration_);
             });
@@ -214,9 +215,9 @@ void pybind_registration_definitions(py::module &m) {
                     "termination. Use 1.0 to avoid early termination.")
             .def("__repr__", [](const RANSACConvergenceCriteria &c) {
                 return fmt::format(
-                        "RANSACConvergenceCriteria "
-                        "class with max_iteration={:d}, "
-                        "and confidence={:e}",
+                        "RANSACConvergenceCriteria("
+                        "max_iteration={:d}, "
+                        "confidence={:e})",
                         c.max_iteration_, c.confidence_);
             });
 
@@ -335,10 +336,10 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                  "kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationForColoredICP &te) {
-                     return std::string(
-                                    "TransformationEstimationForColoredICP ") +
-                            ("with lambda_geometric=" +
-                             std::to_string(te.lambda_geometric_));
+                    // This is missing kernel, but getting kernel name on C++ is hard
+                     return fmt::format("TransformationEstimationForColoredICP("
+                     "lambda_geometric={})",
+                     te.lambda_geometric_);
                  })
             .def_readwrite(
                     "lambda_geometric",
@@ -379,10 +380,9 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                  "kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationForGeneralizedICP &te) {
-                     return std::string(
-                                    "TransformationEstimationForGeneralizedICP"
-                                    " ") +
-                            ("with epsilon=" + std::to_string(te.epsilon_));
+                     return fmt::format("TransformationEstimationForGeneralizedICP("
+                            "epsilon={})",
+                            te.epsilon_);
                  })
             .def_readwrite("epsilon",
                            &TransformationEstimationForGeneralizedICP::epsilon_,
@@ -554,16 +554,16 @@ must hold true for all edges.)");
                     "tests on initial set of correspondences.")
             .def("__repr__", [](const FastGlobalRegistrationOption &c) {
                 return fmt::format(
-                        ""
-                        "FastGlobalRegistrationOption class "
-                        "with \ndivision_factor={}"
-                        "\nuse_absolute_scale={}"
-                        "\ndecrease_mu={}"
-                        "\nmaximum_correspondence_distance={}"
-                        "\niteration_number={}"
-                        "\ntuple_scale={}"
-                        "\nmaximum_tuple_count={}",
-                        "\ntuple_test={}", c.division_factor_,
+                        "FastGlobalRegistrationOption("
+                        "\ndivision_factor={},"
+                        "\nuse_absolute_scale={},"
+                        "\ndecrease_mu={},"
+                        "\nmaximum_correspondence_distance={},"
+                        "\niteration_number={},"
+                        "\ntuple_scale={},"
+                        "\nmaximum_tuple_count={},"
+                        "\ntuple_test={},"
+                        "\n)", c.division_factor_,
                         c.use_absolute_scale_, c.decrease_mu_,
                         c.maximum_correspondence_distance_, c.iteration_number_,
                         c.tuple_scale_, c.maximum_tuple_count_, c.tuple_test_);
