@@ -361,7 +361,7 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
     // Otherwise false argument matches might be found in docstrings
     std::size_t arrow_pos = str.rfind(") -> ");
     if (arrow_pos == std::string::npos) return {};
-    str = str.substr(0, arrow_pos);
+    str.resize(arrow_pos);
 
     // Get start positions
     std::regex pattern("(, [A-Za-z_][A-Za-z\\d_]*:)");
