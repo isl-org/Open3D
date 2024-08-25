@@ -1,5 +1,5 @@
 ## Main
-
+-   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
 -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
 -   Use GLIBCXX_USE_CXX11_ABI=ON by default
@@ -42,6 +42,7 @@
 -   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
 -   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
 -   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
+-   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
 
 ## 0.13
 

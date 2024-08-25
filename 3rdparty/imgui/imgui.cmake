@@ -12,5 +12,5 @@ FetchContent_Declare(
     INSTALL_COMMAND ""
 )
 
-FetchContent_Populate(ext_imgui)
+FetchContent_MakeAvailable(ext_imgui)
 FetchContent_GetProperties(ext_imgui SOURCE_DIR IMGUI_SOURCE_DIR)

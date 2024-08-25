@@ -298,7 +298,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         const auto& vert1 = mesh->vertices_[vidx1];
         const auto& vert2 = mesh->vertices_[vidx2];
         Eigen::Vector3d vert2p = (vert2 - vert0).cross(vert2 - vert1);
-        Eigen::Vector4d plane = ComputeTrianglePlane(vert0, vert1, vert2p);
+        Eigen::Vector4d plane =
+                ComputeTrianglePlane(vert0, vert1, vert0 + vert2p);
         Quadric quad(plane, area * boundary_weight);
         Qs[vidx0] += quad;
         Qs[vidx1] += quad;
