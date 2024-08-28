@@ -63,6 +63,15 @@ void pybind_voxelgrid_definitions(py::module &m) {
             static_cast<py::class_<VoxelGrid, PyGeometry3D<VoxelGrid>,
                                    std::shared_ptr<VoxelGrid>, Geometry3D>>(
                     m.attr("VoxelGrid"));
+
+    py::enum_<VoxelGrid::VoxelColorMode> color_mode(
+            voxelgrid, "VoxelColorMode",
+            "Mode of determining color for each voxel.");
+    color_mode.value("AVG", VoxelGrid::VoxelColorMode::AVG)
+            .value("MIN", VoxelGrid::VoxelColorMode::MIN)
+            .value("MAX", VoxelGrid::VoxelColorMode::MAX)
+            .value("SUM", VoxelGrid::VoxelColorMode::SUM);
+
     py::detail::bind_default_constructor<VoxelGrid>(voxelgrid);
     py::detail::bind_copy_functions<VoxelGrid>(voxelgrid);
     voxelgrid
@@ -129,19 +138,23 @@ void pybind_voxelgrid_definitions(py::module &m) {
             .def_static("create_from_point_cloud",
                         &VoxelGrid::CreateFromPointCloud,
                         "Creates a VoxelGrid from a given PointCloud. The "
-                        "color value of a given  voxel is the average color "
+                        "color value of a given  voxel is determined by the "
+                        "VoxelColorMode, e.g. by default the average color "
                         "value of the points that fall into it (if the "
                         "PointCloud has colors). The bounds of the created "
                         "VoxelGrid are computed from the PointCloud.",
-                        "input"_a, "voxel_size"_a)
+                        "input"_a, "voxel_size"_a,
+                        "color_mode"_a = VoxelGrid::VoxelColorMode::AVG)
             .def_static("create_from_point_cloud_within_bounds",
                         &VoxelGrid::CreateFromPointCloudWithinBounds,
                         "Creates a VoxelGrid from a given PointCloud. The "
-                        "color value of a given voxel is the average color "
+                        "color value of a given voxel is determined by the "
+                        "VoxelColorMode, e.g. by default the average color "
                         "value of the points that fall into it (if the "
                         "PointCloud has colors). The bounds of the created "
                         "VoxelGrid are defined by the given parameters.",
-                        "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
+                        "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a,
+                        "color_mode"_a = VoxelGrid::VoxelColorMode::AVG)
             .def_static("create_from_triangle_mesh",
                         &VoxelGrid::CreateFromTriangleMesh,
                         "Creates a VoxelGrid from a given TriangleMesh. No "
@@ -162,6 +175,7 @@ void pybind_voxelgrid_definitions(py::module &m) {
                            "origin point.")
             .def_readwrite("voxel_size", &VoxelGrid::voxel_size_,
                            "``float64`` Size of the voxel.");
+
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_colors");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_voxels");
     docstring::ClassMethodDocInject(m, "VoxelGrid", "get_voxel",
@@ -214,7 +228,8 @@ void pybind_voxelgrid_definitions(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud",
             {{"input", "The input PointCloud"},
-             {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."},
+             {"color_mode", "VoxelColorMode for determining voxel color."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud_within_bounds",
             {{"input", "The input PointCloud"},
@@ -222,7 +237,8 @@ void pybind_voxelgrid_definitions(py::module &m) {
              {"min_bound",
               "Minimum boundary point for the VoxelGrid to create."},
              {"max_bound",
-              "Maximum boundary point for the VoxelGrid to create."}});
+              "Maximum boundary point for the VoxelGrid to create."},
+             {"color_mode", "VoxelColorMode for determining voxel color."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_triangle_mesh",
             {{"input", "The input TriangleMesh"},
