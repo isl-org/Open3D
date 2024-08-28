@@ -7,13 +7,14 @@
 //
 // This file is retrieved from:
 // https://github.com/dmlc/dlpack/blob/master/include/dlpack/dlpack.h
-// Commit: 3ec0443, Feb 16 2020
+// Version: v0.8
 //
 // License:
 // https://github.com/dmlc/dlpack/blob/master/LICENSE
 //
 // Open3D changes:
-// No changes except for automatic style changed by clang-format.
+// - Automatic style changed by clang-format.
+// - Formatting helper
 
 /*!
  *  Copyright (c) 2017 by Contributors
@@ -23,6 +24,9 @@
 #ifndef DLPACK_DLPACK_H_
 #define DLPACK_DLPACK_H_
 
+/**
+ * \brief Compatibility with C++
+ */
 #ifdef __cplusplus
 #define DLPACK_EXTERN_C extern "C"
 #else
@@ -30,7 +34,10 @@
 #endif
 
 /*! \brief The current version of dlpack */
-#define DLPACK_VERSION 020
+#define DLPACK_VERSION 80
+
+/*! \brief The current ABI version of dlpack */
+#define DLPACK_ABI_VERSION 1
 
 /*! \brief DLPACK_DLL prefix for windows */
 #ifdef _WIN32
@@ -50,18 +57,21 @@
 extern "C" {
 #endif
 /*!
- * \brief The device type in DLContext.
+ * \brief The device type in DLDevice.
  */
+#ifdef __cplusplus
+typedef enum : int32_t {
+#else
 typedef enum {
+#endif
     /*! \brief CPU device */
     kDLCPU = 1,
     /*! \brief CUDA GPU device */
-    kDLGPU = 2,
+    kDLCUDA = 2,
     /*!
-     * \brief Pinned CUDA GPU device by cudaMallocHost
-     * \note kDLCPUPinned = kDLCPU | kDLGPU
+     * \brief Pinned CUDA CPU memory by cudaMallocHost
      */
-    kDLCPUPinned = 3,
+    kDLCUDAHost = 3,
     /*! \brief OpenCL devices. */
     kDLOpenCL = 4,
     /*! \brief Vulkan buffer for next generation graphics. */
@@ -73,40 +83,85 @@ typedef enum {
     /*! \brief ROCm GPUs for AMD GPUs */
     kDLROCM = 10,
     /*!
+     * \brief Pinned ROCm CPU memory allocated by hipMallocHost
+     */
+    kDLROCMHost = 11,
+    /*!
      * \brief Reserved extension device type,
      * used for quickly test extension device
      * The semantics can differ depending on the implementation.
      */
     kDLExtDev = 12,
+    /*!
+     * \brief CUDA managed/unified memory allocated by cudaMallocManaged
+     */
+    kDLCUDAManaged = 13,
+    /*!
+     * \brief Unified shared memory allocated on a oneAPI non-partititioned
+     * device. Call to oneAPI runtime is required to determine the device
+     * type, the USM allocation type and the sycl context it is bound to.
+     *
+     */
+    kDLOneAPI = 14,
+    /*! \brief GPU support for next generation WebGPU standard. */
+    kDLWebGPU = 15,
+    /*! \brief Qualcomm Hexagon DSP */
+    kDLHexagon = 16,
 } DLDeviceType;
 
 /*!
- * \brief A Device context for Tensor and operator.
+ * \brief A Device for Tensor and operator.
  */
 typedef struct {
     /*! \brief The device type used in the device. */
     DLDeviceType device_type;
-    /*! \brief The device index */
-    int device_id;
-} DLContext;
+    /*!
+     * \brief The device index.
+     * For vanilla CPU memory, pinned memory, or managed memory, this is set to
+     * 0.
+     */
+    int32_t device_id;
+} DLDevice;
 
 /*!
  * \brief The type code options DLDataType.
  */
 typedef enum {
+    /*! \brief signed integer */
     kDLInt = 0U,
+    /*! \brief unsigned integer */
     kDLUInt = 1U,
+    /*! \brief IEEE floating point */
     kDLFloat = 2U,
+    /*!
+     * \brief Opaque handle type, reserved for testing purposes.
+     * Frameworks need to agree on the handle data type for the exchange to be
+     * well-defined.
+     */
+    kDLOpaqueHandle = 3U,
+    /*! \brief bfloat16 */
     kDLBfloat = 4U,
+    /*!
+     * \brief complex number
+     * (C/C++/Python layout: compact struct per complex number)
+     */
+    kDLComplex = 5U,
+    /*! \brief boolean */
+    kDLBool = 6U,
 } DLDataTypeCode;
 
 /*!
- * \brief The data type the tensor can hold.
+ * \brief The data type the tensor can hold. The data type is assumed to follow
+ * the native endian-ness. An explicit error message should be raised when
+ * attempting to export an array with non-native endianness
  *
  *  Examples
- *   - float: type_code = 2, bits = 32, lanes=1
- *   - float4(vectorized 4 float): type_code = 2, bits = 32, lanes=4
- *   - int8: type_code = 0, bits = 8, lanes=1
+ *   - float: type_code = 2, bits = 32, lanes = 1
+ *   - float4(vectorized 4 float): type_code = 2, bits = 32, lanes = 4
+ *   - int8: type_code = 0, bits = 8, lanes = 1
+ *   - std::complex<float>: type_code = 5, bits = 64, lanes = 1
+ *   - bool: type_code = 6, bits = 8, lanes = 1 (as per common array library
+ * convention, the underlying storage size of bool is 8 bits)
  */
 typedef struct {
     /*!
@@ -128,9 +183,16 @@ typedef struct {
  */
 typedef struct {
     /*!
-     * \brief The opaque data pointer points to the allocated data. This will be
-     * CUDA device pointer or cl_mem handle in OpenCL. This pointer is always
-     * aligned to 256 bytes as in CUDA.
+     * \brief The data pointer points to the allocated data. This will be CUDA
+     * device pointer or cl_mem handle in OpenCL. It may be opaque on some
+     * device types. This pointer is always aligned to 256 bytes as in CUDA. The
+     * `byte_offset` field should be used to point to the beginning of the data.
+     *
+     * Note that as of Nov 2021, multiply libraries (CuPy, PyTorch, TensorFlow,
+     * TVM, perhaps others) do not adhere to this 256 byte aligment requirement
+     * on CPU/CUDA/ROCm, and always use `byte_offset=0`.  This must be fixed
+     * (after which this note will be updated); at the moment it is recommended
+     * to not rely on the data pointer being correctly aligned.
      *
      * For given DLTensor, the size of memory required to store the contents of
      * data is calculated as follows:
@@ -147,10 +209,10 @@ typedef struct {
      * \endcode
      */
     void* data;
-    /*! \brief The device context of the tensor */
-    DLContext ctx;
+    /*! \brief The device of the tensor */
+    DLDevice device;
     /*! \brief Number of dimensions */
-    int ndim;
+    int32_t ndim;
     /*! \brief The data type of the pointer*/
     DLDataType dtype;
     /*! \brief The shape of the tensor */
@@ -185,9 +247,9 @@ typedef struct DLManagedTensor {
      */
     void (*deleter)(struct DLManagedTensor* self);
 } DLManagedTensor;
+
 #ifdef __cplusplus
 }  // DLPACK_EXTERN_C
-#endif
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -204,11 +266,11 @@ struct formatter<DLDeviceType> {
             case kDLCPU:
                 text = "kDLCPU";
                 break;
-            case kDLGPU:
-                text = "kDLGPU";
+            case kDLCUDA:
+                text = "kDLCUDA";
                 break;
-            case kDLCPUPinned:
-                text = "kDLCPUPinned";
+            case kDLCUDAHost:
+                text = "kDLCUDAHost";
                 break;
             case kDLOpenCL:
                 text = "kDLOpenCL";
@@ -225,8 +287,23 @@ struct formatter<DLDeviceType> {
             case kDLROCM:
                 text = "kDLROCM";
                 break;
+            case kDLROCMHost:
+                text = "kDLROCMHost";
+                break;
             case kDLExtDev:
                 text = "kDLExtDev";
+                break;
+            case kDLCUDAManaged:
+                text = "kDLCUDAManaged";
+                break;
+            case kDLOneAPI:
+                text = "kDLOneAPI";
+                break;
+            case kDLWebGPU:
+                text = "kDLWebGPU";
+                break;
+            case kDLHexagon:
+                text = "kDLHexagon";
                 break;
         }
         return format_to(ctx.out(), text);
@@ -240,4 +317,5 @@ struct formatter<DLDeviceType> {
 
 }  // namespace fmt
 
+#endif
 #endif  // DLPACK_DLPACK_H_
