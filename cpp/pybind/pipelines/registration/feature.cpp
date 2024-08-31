@@ -19,8 +19,10 @@ void pybind_feature_declarations(py::module &m_registration) {
     py::class_<Feature, std::shared_ptr<Feature>> feature(
             m_registration, "Feature",
             "Class to store featrues for registration.");
-    m_registration.attr("m") = py::module_::import("typing").attr("TypeVar")("m");
-    m_registration.attr("n") = py::module_::import("typing").attr("TypeVar")("n");
+    m_registration.attr("m") =
+            py::module_::import("typing").attr("TypeVar")("m");
+    m_registration.attr("n") =
+            py::module_::import("typing").attr("TypeVar")("n");
 }
 void pybind_feature_definitions(py::module &m_registration) {
     // open3d.registration.Feature
