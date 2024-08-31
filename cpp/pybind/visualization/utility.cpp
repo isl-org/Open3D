@@ -133,22 +133,28 @@ void pybind_visualization_utility_definitions(py::module &m) {
                        &geometry_ptrs,
                const std::string &window_name, int width, int height, int left,
                int top, bool point_show_normal, bool mesh_show_wireframe,
-               bool mesh_show_back_face, Eigen::Vector3d lookat,
-               Eigen::Vector3d up, Eigen::Vector3d front, double zoom) {
+               bool mesh_show_back_face,
+               utility::optional<Eigen::Vector3d> lookat,
+               utility::optional<Eigen::Vector3d> up,
+               utility::optional<Eigen::Vector3d> front,
+               utility::optional<double> zoom) {
                 std::string current_dir =
                         utility::filesystem::GetWorkingDirectory();
                 DrawGeometries(geometry_ptrs, window_name, width, height, left,
                                top, point_show_normal, mesh_show_wireframe,
-                               mesh_show_back_face, &lookat, &up, &front,
-                               &zoom);
+                               mesh_show_back_face,
+                               lookat.has_value() ? &lookat.value() : nullptr,
+                               up.has_value() ? &up.value() : nullptr,
+                               front.has_value() ? &front.value() : nullptr,
+                               zoom.has_value() ? &zoom.value() : nullptr);
                 utility::filesystem::ChangeWorkingDirectory(current_dir);
             },
             "Function to draw a list of geometry::Geometry objects",
             "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
             "height"_a = 1080, "left"_a = 50, "top"_a = 50,
             "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
-            "mesh_show_back_face"_a = false, "lookat"_a, "up"_a, "front"_a,
-            "zoom"_a);
+            "mesh_show_back_face"_a = false, "lookat"_a = py::none(),
+            "up"_a = py::none(), "front"_a = py::none(), "zoom"_a = py::none());
     docstring::FunctionDocInject(m, "draw_geometries",
                                  map_shared_argument_docstrings);
 
