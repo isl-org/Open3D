@@ -91,7 +91,7 @@ def test_compare_to_conv3d(ml, dtype, kernel_size, out_channels, in_channels,
 
     y = mltest.run_op(ml, ml.device, True, sparse_conv, inp_features,
                       inp_positions * voxel_size, out_positions * voxel_size,
-                      voxel_size, inp_importance)
+                      voxel_size=voxel_size, inp_importance=inp_importance)
 
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
@@ -212,7 +212,7 @@ def test_compare_to_conv3d_batches(ml, dtype, kernel_size, out_channels,
 
     y = mltest.run_op(ml, ml.device, True, sparse_conv, inp_features,
                       inp_positions * voxel_size, out_positions * voxel_size,
-                      voxel_size, inp_importance)
+                      voxel_size=voxel_size, inp_importance=inp_importance)
     for idx in range(batch_size):
         inp_pos = inp_positions[idx].numpy()
         inp_feat = inp_features[idx].numpy()
@@ -338,7 +338,7 @@ def test_compare_to_conv3dtranspose(ml, dtype, kernel_size, out_channels,
 
     y = mltest.run_op(ml, ml.device, True, sparse_conv_transpose, inp_features,
                       inp_positions * voxel_size, out_positions * voxel_size,
-                      voxel_size, out_importance)
+                      voxel_size=voxel_size, out_importance=out_importance)
 
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
@@ -465,7 +465,7 @@ def test_compare_to_conv3dtranspose_batches(ml, dtype, kernel_size,
 
     y = mltest.run_op(ml, ml.device, True, sparse_conv_transpose, inp_features,
                       inp_positions * voxel_size, out_positions * voxel_size,
-                      voxel_size, out_importance)
+                      voxel_size=voxel_size, out_importance=out_importance)
     for idx in range(batch_size):
         inp_pos = inp_positions[idx].numpy()
         inp_feat = inp_features[idx].numpy()
