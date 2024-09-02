@@ -51,6 +51,13 @@ public:
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
+    std::tuple<std::shared_ptr<const geometry::PointCloud>,
+               std::shared_ptr<const geometry::PointCloud>>
+    InitializePointCloudsForTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            double max_correspondence_distance) const override;
+
 public:
     /// Small constant representing covariance along the normal.
     double epsilon_ = 1e-3;

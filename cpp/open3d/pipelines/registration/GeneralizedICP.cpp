@@ -147,6 +147,29 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
 }
 
+std::tuple<std::shared_ptr<const geometry::PointCloud>,
+           std::shared_ptr<const geometry::PointCloud>>
+TransformationEstimationForGeneralizedICP::
+        InitializePointCloudsForTransformation(
+                const geometry::PointCloud &source,
+                const geometry::PointCloud &target,
+                double max_correspondence_distance) const {
+    std::shared_ptr<geometry::PointCloud> source_initialized_c =
+            InitializePointCloudForGeneralizedICP(source, epsilon_);
+    std::shared_ptr<geometry::PointCloud> target_initialized_c =
+            InitializePointCloudForGeneralizedICP(target, epsilon_);
+    if (!source_initialized_c || !target_initialized_c) {
+        utility::LogError(
+                "Internal error: InitializePointCloudsForTransformation "
+                "returns "
+                "nullptr.");
+    }
+    return std::make_pair(std::const_pointer_cast<const geometry::PointCloud>(
+                                  source_initialized_c),
+                          std::const_pointer_cast<const geometry::PointCloud>(
+                                  target_initialized_c));
+}
+
 RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -156,10 +179,8 @@ RegistrationResult RegistrationGeneralizedICP(
                 &estimation /* = TransformationEstimationForGeneralizedICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    return RegistrationICP(
-            *InitializePointCloudForGeneralizedICP(source, estimation.epsilon_),
-            *InitializePointCloudForGeneralizedICP(target, estimation.epsilon_),
-            max_correspondence_distance, init, estimation, criteria);
+    return RegistrationICP(source, target, max_correspondence_distance, init,
+                           estimation, criteria);
 }
 
 }  // namespace registration
