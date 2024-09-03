@@ -421,14 +421,14 @@ This is a wrapper for a CPU implementation.)",
               "degenerate cases but introduces noise to the points "
               "coordinates."}});
     docstring::ClassMethodDocInject(
-        m, "OrientedBoundingBox", "create_minimal_from_points",
-        {{"points",
-          "A list of points with data type of float32 or float64 (N x 3 "
-          "tensor, where N must be larger than 3)."},
-         {"robust",
-          "If set to true uses a more robust method which works in "
-          "degenerate cases but introduces noise to the points "
-          "coordinates."}});
+            m, "OrientedBoundingBox", "create_minimal_from_points",
+            {{"points",
+              "A list of points with data type of float32 or float64 (N x 3 "
+              "tensor, where N must be larger than 3)."},
+             {"robust",
+              "If set to true uses a more robust method which works in "
+              "degenerate cases but introduces noise to the points "
+              "coordinates."}});
 }
 
 }  // namespace geometry
