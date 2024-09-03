@@ -85,8 +85,8 @@ Returns:
      the principal components.
 )doc")
             .def_static("create_minimal_from_points",
-                        &OrientedBoundingBox::CreateFromPointsMinimal, "points"_a,
-                        "robust"_a = false,
+                        &OrientedBoundingBox::CreateFromPointsMinimal,
+                        "points"_a, "robust"_a = false,
                         R"doc(
 Creates the oriented bounding box with the smallest volume.
 
