@@ -384,11 +384,47 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
 }
 
 PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
-    // We want the sampled points has the attributes of the original point
-    // cloud, so full copy is needed.
-    const open3d::geometry::PointCloud lpcd = ToLegacy();
-    return FromLegacy(*lpcd.FarthestPointDownSample(num_samples),
-                      GetPointPositions().GetDtype(), GetDevice());
+    if (IsCUDA()) {
+        // This version works on CPU as well,
+        // but has worse runtime than the legacy implementation (on CPU)
+        const core::Dtype dtype = GetPointPositions().GetDtype();
+        const int64_t num_points = GetPointPositions().GetLength();
+        if (num_samples == 0) {
+            return PointCloud(GetDevice());
+        } else if (num_samples == size_t(num_points)) {
+            return Clone();
+        } else if (num_samples > size_t(num_points)) {
+            utility::LogError(
+                    "Illegal number of samples: {}, must <= point size: {}",
+                    num_samples, num_points);
+        }
+        core::Tensor selection_mask =
+                core::Tensor::Zeros({num_points}, core::Bool, GetDevice());
+        core::Tensor smallest_distances = core::Tensor::Full(
+                {num_points}, std::numeric_limits<double>::infinity(), dtype,
+                GetDevice());
+
+        int64_t farthest_index = 0;
+
+        for (size_t i = 0; i < num_samples; i++) {
+            selection_mask[farthest_index] = true;
+            core::Tensor selected = GetPointPositions()[farthest_index];
+
+            core::Tensor diff = GetPointPositions() - selected;
+            core::Tensor distances_to_selected = (diff * diff).Sum({1});
+            smallest_distances = open3d::core::Minimum(distances_to_selected,
+                                                       smallest_distances);
+
+            farthest_index = smallest_distances.ArgMax({0}).Item<int64_t>();
+        }
+        return SelectByMask(selection_mask);
+    } else {  // use legacy version for CPU
+        // We want the sampled points has the attributes of the original point
+        // cloud, so full copy is needed.
+        const open3d::geometry::PointCloud lpcd = ToLegacy();
+        return FromLegacy(*lpcd.FarthestPointDownSample(num_samples),
+                          GetPointPositions().GetDtype(), GetDevice());
+    }
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
