@@ -44,6 +44,7 @@
 -   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
 -   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
+-   Support lowercase types when reading PCD files (PR #6930)
 
 ## 0.13
 
