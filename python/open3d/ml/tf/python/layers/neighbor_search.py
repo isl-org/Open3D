@@ -122,9 +122,9 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             queries = queries.values
 
         if isinstance(radius, tf.Tensor):
-          radius_ = tf.cast(radius, points.dtype)
+            radius_ = tf.cast(radius, points.dtype)
         else:
-          radius_ = radius
+            radius_ = radius
 
         if points_row_splits is None:
             points_row_splits = tf.cast(tf.stack([0, tf.shape(points)[0]]),
