@@ -345,11 +345,8 @@ jobs:
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           mkdir universal_wheels
           pip install delocate
-          delocate-fuse -v x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
-          # Normalize file name as delocate-fuse doesn't update it
-          OLD_WHL_NAME=$(basename x64_wheels/open3d-*${PYTAG}*.whl)
-          NEW_WHL_NAME=${OLD_WHL_NAME/x86_64/universal2}
-          mv x64_wheels/${OLD_WHL_NAME} universal_wheels/${NEW_WHL_NAME}
+          delocate-merge -v -w universal_wheels x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
+          NEW_WHL_NAME=$(basename universal_wheels/open3d-*${PYTAG}*.whl)
           echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
 
       - name: Upload merged wheels
