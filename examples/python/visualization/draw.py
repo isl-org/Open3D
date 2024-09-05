@@ -153,17 +153,33 @@ def selections():
                 RuntimeWarning)
             return [], []
         if source_name not in sets[0]:
-            warnings.warn("First set should contain Source (yellow) points.",
-                          RuntimeWarning)
+            warnings.warn(
+                "First selection set should contain Source (yellow) points.",
+                RuntimeWarning)
             return [], []
 
         source_set = sets[0][source_name]
         if two_set:
+            if not len(sets) == 2:
+                warnings.warn(
+                    "Two set registration requires exactly two selection sets of corresponding points.",
+                    RuntimeWarning)
+                return [], []
             target_set = sets[1][target_name]
         else:
+            if target_name not in sets[0]:
+                warnings.warn(
+                    "Selection set should contain Target (blue) points.",
+                    RuntimeWarning)
+                return [], []
             target_set = sets[0][target_name]
         source_picked = sorted(list(source_set), key=lambda x: x.order)
         target_picked = sorted(list(target_set), key=lambda x: x.order)
+        if len(source_picked) != len(target_picked):
+            warnings.warn(
+                f"Registration requires equal number of corresponding points (current selection: {len(source_picked)} source, {len(target_picked)} target).",
+                RuntimeWarning)
+            return [], []
         return source_picked, target_picked
 
     def _do_icp(o3dvis, source_picked, target_picked):
