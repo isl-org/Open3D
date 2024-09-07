@@ -392,7 +392,8 @@ if(BUILD_CUDA_MODULE)
     if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
         # Set this before any CUDA checks
         set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
-        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022.")
+        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
+        "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
     endif()
     if (CMAKE_CUDA_ARCHITECTURES)
         message(STATUS "Building with user-provided CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
