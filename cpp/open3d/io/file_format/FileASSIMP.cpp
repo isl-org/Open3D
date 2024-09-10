@@ -97,7 +97,8 @@ void LoadTextures(const std::string& filename,
                     }
                 } else {
                     utility::LogWarning(
-                            "Unsupported texture format for texture {} for file {}: Only jpg and "
+                            "Unsupported texture format for texture {} for "
+                            "file {}: Only jpg and "
                             "png textures are supported.",
                             path.C_Str(), filename);
                 }
