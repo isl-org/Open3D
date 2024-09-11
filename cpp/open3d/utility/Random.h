@@ -210,8 +210,8 @@ public:
 
     /// Call this to generate a discretely distributed integer value.
     T operator()() {
-        std::lock_guard<std::mutex> lock(*GetMutex());
-        return distribution_(*GetEngine());
+        tbb::spin_mutex::scoped_lock lock(GetMutex());
+        return distribution_(GetEngine());
     }
 
 protected:
