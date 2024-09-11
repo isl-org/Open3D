@@ -262,18 +262,12 @@ static void ComputePoseDopplerICPKernelCPU(
     // and 28th as inlier_count.
     std::vector<scalar_t> A_1x29(29, 0.0);
 
-#ifdef _WIN32
     std::vector<scalar_t> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      ++workload_idx) {
-#else
-    scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
                     scalar_t J_G[6] = {0}, J_D[6] = {0};
                     scalar_t r_G = 0, r_D = 0;
 
@@ -306,7 +300,6 @@ static void ComputePoseDopplerICPKernelCPU(
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _WIN32
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -317,7 +310,6 @@ static void ComputePoseDopplerICPKernelCPU(
                 }
                 return result;
             });
-#endif
 
     for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
