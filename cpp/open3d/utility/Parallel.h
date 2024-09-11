@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <cstddef>
 
 namespace open3d {
 namespace utility {
