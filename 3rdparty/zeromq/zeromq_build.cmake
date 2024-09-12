@@ -69,7 +69,9 @@ ExternalProject_Add(
 
 if(WIN32)
     # On windows the lib name is more complicated
-    set(ZEROMQ_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:gd>${lib_suffix})
+    if (${CMAKE_GENERATOR} MATCHES "^Visual Studio.*")
+        set(ZEROMQ_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:gd>${lib_suffix})
+    endif()
 
     # On windows we need to link some additional libs. We will use them
     # directly as targets in find_dependencies.cmake.
