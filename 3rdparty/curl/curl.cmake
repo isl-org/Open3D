@@ -56,7 +56,7 @@ if(BUILD_CURL_FROM_SOURCE)
     ExternalProject_Get_Property(ext_curl INSTALL_DIR)
     set(CURL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
     set(CURL_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-    if(MSVC)
+    if(MSVC AND ${CMAKE_GENERATOR} MATCHES "^Visual Studio.*")
         set(CURL_LIBRARIES ${curl_lib_name}$<$<CONFIG:Debug>:-d>)
     else()
         set(CURL_LIBRARIES ${curl_lib_name})
