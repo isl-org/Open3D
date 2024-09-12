@@ -30,4 +30,8 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_libpng INSTALL_DIR)
 set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(LIBPNG_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(LIBPNG_LIBRARIES ${LIBPNG_LIB_NAME}$<$<PLATFORM_ID:Windows>:$<$<CONFIG:Debug>:d>>)
+if(MSVC AND ${CMAKE_GENERATOR} MATCHES "^Visual Studio.*")
+    set(LIBPNG_LIBRARIES ${LIBPNG_LIB_NAME}$<$<CONFIG:Debug>:d>)
+else()
+    set(LIBPNG_LIBRARIES ${LIBPNG_LIB_NAME})
+endif()
