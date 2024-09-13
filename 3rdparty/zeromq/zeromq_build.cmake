@@ -68,11 +68,6 @@ ExternalProject_Add(
 )
 
 if(WIN32)
-    # On windows the lib name is more complicated
-    if (${CMAKE_GENERATOR} MATCHES "^Visual Studio.*")
-        set(ZEROMQ_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:gd>${lib_suffix})
-    endif()
-
     # On windows we need to link some additional libs. We will use them
     # directly as targets in find_dependencies.cmake.
     # The following code is taken from the zeromq CMakeLists.txt and collects
@@ -97,6 +92,9 @@ if(WIN32)
     if(HAVE_IPHLPAPI)
         list(APPEND ZEROMQ_ADDITIONAL_LIBS iphlpapi)
     endif()
+endif()
+if(MSVC AND ${CMAKE_GENERATOR} MATCHES "^Visual Studio.*")
+    set(ZEROMQ_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:gd>${lib_suffix})
 else()
     set(ZEROMQ_LIBRARIES ${lib_name}${lib_suffix})
 endif()
