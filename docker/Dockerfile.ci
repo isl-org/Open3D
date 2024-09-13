@@ -91,16 +91,20 @@ RUN apt-get update && apt-get install -y \
 
 # pyenv or Intel Python
 # The pyenv python paths are used during docker run, in this way docker run
-# does not need to activate the environment again.
+# does not need to activate the environment again. 
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
-ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
 RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
         curl https://pyenv.run | bash \
         && pyenv update \
         && pyenv install $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
-        && pyenv rehash; \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION}; \
     fi
 RUN python --version && pip --version
 
