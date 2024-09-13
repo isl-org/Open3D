@@ -33,7 +33,8 @@ typedef Eigen::Vector3f Vec3f;
 
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
-    open3d::utility::LogError("embree error: {} {}", error, str);
+    open3d::utility::LogError("Embree error: {} {}", rtcGetErrorString(error),
+                              str);
 }
 
 // Checks the last dim, ensures that the number of dims is >= min_ndim, checks
@@ -1174,19 +1175,3 @@ uint32_t RaycastingScene::INVALID_ID() { return RTC_INVALID_GEOMETRY_ID; }
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
-
-namespace fmt {
-template <>
-struct formatter<RTCError> {
-    template <typename FormatContext>
-    auto format(const RTCError& c, FormatContext& ctx) {
-        const char* name = rtcGetErrorString(c);
-        return format_to(ctx.out(), name);
-    }
-
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-        return ctx.begin();
-    }
-};
-}  // namespace fmt
