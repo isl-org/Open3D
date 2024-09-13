@@ -35,14 +35,16 @@ namespace t {
 namespace io {
 
 // Split all polygons with more than 3 edges into triangles.
+// Ref:
+// https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h
 const unsigned int kPostProcessFlags_compulsory =
         aiProcess_JoinIdenticalVertices | aiProcess_Triangulate |
-        aiProcess_SortByPType;
+        aiProcess_SortByPType | aiProcess_PreTransformVertices;
 
 const unsigned int kPostProcessFlags_fast =
-        aiProcessPreset_TargetRealtime_Fast |
-        aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes |
-        aiProcess_PreTransformVertices;
+        kPostProcessFlags_compulsory | aiProcess_GenNormals |
+        aiProcess_GenUVCoords | aiProcess_RemoveRedundantMaterials |
+        aiProcess_OptimizeMeshes;
 
 bool ReadTriangleMeshUsingASSIMP(
         const std::string& filename,
@@ -58,7 +60,7 @@ bool ReadTriangleMeshUsingASSIMP(
 
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
-        utility::LogWarning("ReadTriangleMeshUsingASSIMP error: {}",
+        utility::LogWarning("Unable to load file {} with ASSIMP: {}", filename,
                             importer.GetErrorString());
         return false;
     }
@@ -220,7 +222,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     // Sanity checks...
     if (write_ascii) {
         utility::LogWarning(
-                "TriangleMesh can't be saved in ASCII fromat as .glb");
+                "TriangleMesh can't be saved in ASCII format as .glb");
         return false;
     }
     if (compressed) {
@@ -471,8 +473,9 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     // Export
     if (exporter.Export(ai_scene.get(), "glb2", filename.c_str()) ==
         AI_FAILURE) {
-        utility::LogWarning("WriteTriangleMeshUsingASSIMP error: {}",
-                            exporter.GetErrorString());
+        utility::LogWarning(
+                "Got error: ({}) while writing TriangleMesh to file {}.",
+                exporter.GetErrorString(), filename);
         return false;
     }
 

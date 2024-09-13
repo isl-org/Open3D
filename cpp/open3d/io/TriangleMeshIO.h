@@ -31,6 +31,7 @@ struct ReadTriangleMeshOptions {
     /// `aiProcessPreset_TargetRealtime_Fast,
     /// aiProcess_RemoveRedundantMaterials, aiProcess_OptimizeMeshes,
     /// aiProcess_PreTransformVertices`.
+    /// https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h
     ///
     /// Note that identical vertices will always be joined regardless of whether
     /// post-processing is enabled or not, which changes the number of vertices

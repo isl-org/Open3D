@@ -1,5 +1,5 @@
 ## Main
-
+-   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
 -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
 -   Use GLIBCXX_USE_CXX11_ABI=ON by default
@@ -37,6 +37,7 @@
 -   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
 -   Fix RANSAC early stop if no inliers in a specific iteration (PR #6789)
 -   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
+-   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)
 -   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
 -   Python 3.12 support
@@ -44,6 +45,7 @@
 -   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
 -   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
+-   Support lowercase types when reading PCD files (PR #6930)
 
 ## 0.13
 
