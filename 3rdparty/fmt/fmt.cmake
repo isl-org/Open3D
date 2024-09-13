@@ -39,4 +39,8 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_fmt INSTALL_DIR)
 set(FMT_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(FMT_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(FMT_LIBRARIES ${FMT_LIB_NAME}$<$<PLATFORM_ID:Windows>:$<$<CONFIG:Debug>:d>>)
+if (MSVC AND ${CMAKE_GENERATOR} MATCHES "^Visual Studio.*")
+    set(FMT_LIBRARIES ${FMT_LIB_NAME}$<$<CONFIG:Debug>:d>)
+else()
+    set(FMT_LIBRARIES ${FMT_LIB_NAME})
+endif()
