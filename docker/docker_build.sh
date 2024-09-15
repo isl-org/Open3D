@@ -84,8 +84,8 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.24.4-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
-CUDA_VERSION=11.8.0-cudnn8
-CUDA_VERSION_LATEST=11.8.0-cudnn8
+CUDA_VERSION=12.3.2-cudnn9
+CUDA_VERSION_LATEST=12.3.2-cudnn9
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
