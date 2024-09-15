@@ -76,18 +76,19 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda or Intel conda
+# Miniforge or Intel conda
 # The **/open3d/bin paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
+ENV PATH="/root/miniforge3/bin:${PATH}"
+ENV PATH="/root/miniforge3/envs/open3d/bin:${PATH}"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/open3d/bin:${PATH}"
 RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
-        wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh; \
-        bash Miniconda3-latest-Linux-x86_64.sh -b; \
-        rm Miniconda3-latest-Linux-x86_64.sh; \
+        wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"; \
+        bash Miniforge3-$(uname)-$(uname -m).sh -b; \
+        rm Miniforge3-$(uname)-$(uname -m).sh; \
     fi
+
 RUN conda --version \
  && conda create -y -n open3d python=${PYTHON_VERSION}
 
