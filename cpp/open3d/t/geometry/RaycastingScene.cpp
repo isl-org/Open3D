@@ -1179,7 +1179,7 @@ namespace fmt {
 template <>
 struct formatter<RTCError> {
     template <typename FormatContext>
-    auto format(const RTCError& c, FormatContext& ctx) {
+    auto format(const RTCError& c, FormatContext& ctx) const {
         const char* name = rtcGetErrorString(c);
         return format_to(ctx.out(), name);
     }
