@@ -53,10 +53,13 @@ open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
 # On Windows, running tests from the build folder needs tbb.dll to be in the same folder.
 if (WIN32)
+  get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+  message(STATUS "GENERATOR_IS_MULTI_CONFIG: ${IS_MULTI_CONFIG}")
   add_custom_command(
       TARGET tests
       POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:TBB::tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
+      COMMAND echo "RUNTIME_OUTPUT_DIRECTORY: $<TARGET_PROPERTY:tests,RUNTIME_OUTPUT_DIRECTORY>/$<$<BOOL:${IS_MULTI_CONFIG}>:$<CONFIG>>"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:TBB::tbb> $<TARGET_PROPERTY:tests,RUNTIME_OUTPUT_DIRECTORY>/$<$<BOOL:${IS_MULTI_CONFIG}>:$<CONFIG>>
   )
 endif()
 
