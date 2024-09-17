@@ -35,6 +35,20 @@ else()
     set(IPP_SUBPATH "")
 endif()
 
+# Threading layer libs must be linked first.
+# https://www.intel.com/content/www/us/en/docs/ipp/developer-guide-reference/2021-11/ipp-performace-benefits-with-tl-functions.html
+# Library dependency order:
+# https://www.intel.com/content/www/us/en/docs/ipp/developer-guide-reference/2021-11/library-dependencies-by-domain.html
+if (WIN32)
+    set(IPP_LIBRARIES ipp_iw ippcvmt_tl_tbb ippcvmt ippimt_tl_tbb ippimt ippccmt_tl_tbb ippccmt ippsmt ippvmmt ippcoremt_tl_tbb ippcoremt)
+else()
+    set(IPP_LIBRARIES ipp_iw ippcv_tl_tbb ippcv ippi_tl_tbb ippi ippcc_tl_tbb ippcc ipps ippvm ippcore_tl_tbb ippcore)
+endif()
+
+foreach(item IN LISTS IPP_LIBRARIES)
+    list(APPEND IPP_BUILD_BYPRODUCTS <SOURCE_DIR>/${IPP_SUBPATH}lib/${CMAKE_STATIC_LIBRARY_PREFIX}${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
+endforeach()
+
 ExternalProject_Add(ext_ipp
     PREFIX ipp
     URL ${IPP_URL} 
@@ -45,16 +59,10 @@ ExternalProject_Add(ext_ipp
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
-    )
+    BUILD_BYPRODUCTS
+        ${IPP_BUILD_BYPRODUCTS}
+)
+
 ExternalProject_Get_Property(ext_ipp SOURCE_DIR)
 set(IPP_INCLUDE_DIR "${SOURCE_DIR}/${IPP_SUBPATH}include/")
-# Threading layer libs must be linked first.
-# https://www.intel.com/content/www/us/en/docs/ipp/developer-guide-reference/2021-11/ipp-performace-benefits-with-tl-functions.html
-# Library dependency order:
-# https://www.intel.com/content/www/us/en/docs/ipp/developer-guide-reference/2021-11/library-dependencies-by-domain.html
-if (WIN32)
-    set(IPP_LIBRARIES ipp_iw ippcvmt_tl_tbb ippcvmt ippimt_tl_tbb ippimt ippccmt_tl_tbb ippccmt ippsmt ippvmmt ippcoremt_tl_tbb ippcoremt)
-else()
-    set(IPP_LIBRARIES ipp_iw ippcv_tl_tbb ippcv ippi_tl_tbb ippi ippcc_tl_tbb ippcc ipps ippvm ippcore_tl_tbb ippcore)
-endif()
 set(IPP_LIB_DIR "${SOURCE_DIR}/${IPP_SUBPATH}lib")

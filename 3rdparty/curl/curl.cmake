@@ -80,7 +80,9 @@ else()
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ""
+        BUILD_BYPRODUCTS
+            <SOURCE_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+            <SOURCE_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}-d${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
 
     ExternalProject_Get_Property(ext_curl SOURCE_DIR)
