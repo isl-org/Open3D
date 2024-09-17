@@ -183,7 +183,10 @@ RUN \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
+        # TODO: Using CUDA 12.x and Pytorch <2.4 gives the error "Unknown CUDA Architecture Name 9.0a in CUDA_SELECT_NVCC_ARCH_FLAGS".
+        #       As a workaround we explicitly set TORCH_CUDA_ARCH_LIST
         if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
+            export TORCH_CUDA_ARCH_LIST="8.0 8.6 8.9 9.0" \
             export GLIBCXX_USE_CXX11_ABI=OFF; \
         else \
             export GLIBCXX_USE_CXX11_ABI=ON; \
