@@ -68,6 +68,8 @@ RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
     fi
 
 # Dependencies: basic and python-build
+# gcc-11 causes a seg fault in tensormap when built in Release mode. Upgrade to
+# gcc-13 instead.
 RUN apt-get update && apt-get install -y \
     git  \
     wget \
@@ -87,11 +89,16 @@ RUN apt-get update && apt-get install -y \
     libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
+ && if c++ --version | grep -F ' 11.' ; then \
+        apt-get install -y g++-13 \
+        && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-13 100 \
+        && c++ --version; \
+    fi \
  && rm -rf /var/lib/apt/lists/*
 
 # pyenv or Intel Python
 # The pyenv python paths are used during docker run, in this way docker run
-# does not need to activate the environment again. 
+# does not need to activate the environment again.
 # The soft link from the python patch level version to the python mino version
 # ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
 # which patch level pyenv will install (latest).
