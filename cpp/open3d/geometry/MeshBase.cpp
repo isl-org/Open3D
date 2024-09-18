@@ -51,7 +51,7 @@ OrientedBoundingBox MeshBase::GetOrientedBoundingBox(bool robust) const {
 }
 
 OrientedBoundingBox MeshBase::GetMinimalOrientedBoundingBox(bool robust) const {
-    return OrientedBoundingBox::CreateFromPoints(vertices_, robust);
+    return OrientedBoundingBox::CreateFromPointsMinimal(vertices_, robust);
 }
 
 MeshBase &MeshBase::Transform(const Eigen::Matrix4d &transformation) {

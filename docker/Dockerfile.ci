@@ -212,7 +212,7 @@ RUN \
  && make install -j$(nproc) \
  && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
  && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi \
- && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ippicv mkl mkl_install webrtc; fi
+ && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc; fi
 # If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory

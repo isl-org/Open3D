@@ -14,7 +14,8 @@ namespace t {
 namespace pipelines {
 namespace slam {
 
-void pybind_slam(py::module &m);
+void pybind_slam_declarations(py::module &m);
+void pybind_slam_definitions(py::module &m);
 
 }  // namespace slam
 }  // namespace pipelines

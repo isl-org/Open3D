@@ -164,7 +164,7 @@ struct formatter<
                          char>> {
     template <typename FormatContext>
     auto format(const open3d::visualization::rendering::REHandle_abstract& uid,
-                FormatContext& ctx) -> decltype(ctx.out()) {
+                FormatContext& ctx) const -> decltype(ctx.out()) {
         return format_to(ctx.out(), "[{}, {}, hash: {}]",
                          open3d::visualization::rendering::REHandle_abstract::
                                  TypeToString(uid.type),

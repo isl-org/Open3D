@@ -11,6 +11,7 @@ else
 fi
 
 deps=(
+    git
     # Open3D
     xorg-dev
     libxcb-shm0
@@ -38,12 +39,12 @@ eval $(
     echo DISTRIB_ID="$DISTRIB_ID";
     echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
 )
-if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
-    # Ubuntu 18.04's clang/libc++-dev/libc++abi-dev are version 6.
-    # To build Filament from source, we need version 7+.
-    deps=("${deps[@]/clang/clang-7}")
-    deps=("${deps[@]/libc++-dev/libc++-7-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
+    # Ubuntu 20.04's clang/libc++-dev/libc++abi-dev are version 8, 10 or 12.
+    # To avoid dependence on libunwind, we don't want to use versions later than 10.
+    deps=("${deps[@]/clang/clang-10}")
+    deps=("${deps[@]/libc++-dev/libc++-10-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-10-dev}")
 fi
 
 # Special case for ARM64

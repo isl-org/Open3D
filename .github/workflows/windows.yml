@@ -196,10 +196,9 @@ jobs:
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
           .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
       - name: Linking to Open3D
+        working-directory: ${{ env.SRC_DIR }}/examples/cmake/open3d-cmake-find-package
         run: |
           $ErrorActionPreference = 'Stop'
-          git clone https://github.com/isl-org/open3d-cmake-find-package.git
-          cd open3d-cmake-find-package
           mkdir build
           cd build
           cmake -G "Visual Studio 17 2022" -A x64 `
