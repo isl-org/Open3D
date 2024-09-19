@@ -1174,7 +1174,7 @@ uint32_t RaycastingScene::INVALID_ID() { return RTC_INVALID_GEOMETRY_ID; }
 
 }  // namespace geometry
 }  // namespace t
-
+}  // namespace open3d
 
 namespace fmt {
 template <>
@@ -1191,4 +1191,3 @@ struct formatter<RTCError> {
     }
 };
 }  // namespace fmt
-
