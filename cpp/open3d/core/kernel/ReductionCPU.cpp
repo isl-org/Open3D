@@ -112,9 +112,13 @@ private:
                     "Internal error: two-pass reduction only works for "
                     "single-output reduction ops.");
         }
+        const auto num_workloads = indexer.NumWorkloads();
+        if (num_workloads == 0) {
+            return;
+        }
         scalar_t& dst = *reinterpret_cast<scalar_t*>(indexer.GetOutputPtr(0));
         dst = tbb::parallel_reduce(
-                tbb::blocked_range<int64_t>(0, indexer.NumWorkloads(),
+                tbb::blocked_range<int64_t>(0, num_workloads,
                                             utility::DefaultGrainSizeTBB()),
                 identity,
                 [&](const tbb::blocked_range<int64_t>& range, scalar_t so_far) {
