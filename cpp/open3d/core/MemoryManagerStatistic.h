@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <map>
 #include <mutex>
+#include <tbb/spin_mutex.h>
 #include <unordered_map>
 
 #include "open3d/core/Device.h"
@@ -86,7 +87,7 @@ private:
     /// Print at each malloc and free, disabled by default.
     bool print_at_malloc_free_ = false;
 
-    std::mutex statistics_mutex_;
+    tbb::spin_mutex statistics_mutex_;
     std::map<Device, MemoryStatistics> statistics_;
 };
 

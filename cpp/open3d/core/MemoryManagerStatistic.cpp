@@ -118,7 +118,7 @@ bool MemoryManagerStatistic::HasLeaks() const {
 void MemoryManagerStatistic::CountMalloc(void* ptr,
                                          size_t byte_size,
                                          const Device& device) {
-    std::lock_guard<std::mutex> lock(statistics_mutex_);
+    tbb::spin_mutex::scoped_lock lock(statistics_mutex_);
 
     // Filter nullptr. Empty allocations are not tracked.
     if (ptr == nullptr && byte_size == 0) {
@@ -141,7 +141,7 @@ void MemoryManagerStatistic::CountMalloc(void* ptr,
 }
 
 void MemoryManagerStatistic::CountFree(void* ptr, const Device& device) {
-    std::lock_guard<std::mutex> lock(statistics_mutex_);
+    tbb::spin_mutex::scoped_lock lock(statistics_mutex_);
 
     // Filter nullptr. Empty allocations are not tracked.
     if (ptr == nullptr) {
@@ -170,7 +170,7 @@ void MemoryManagerStatistic::CountFree(void* ptr, const Device& device) {
 }
 
 void MemoryManagerStatistic::Reset() {
-    std::lock_guard<std::mutex> lock(statistics_mutex_);
+    tbb::spin_mutex::scoped_lock lock(statistics_mutex_);
     statistics_.clear();
 }
 
