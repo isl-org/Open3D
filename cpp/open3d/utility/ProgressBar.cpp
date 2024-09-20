@@ -143,7 +143,7 @@ void TBBProgressBar::UpdateBar() {
                 tmp, expected_count_ | flag_bit_mask)) {
         fmt::print("{}[{}] 100%\n", progress_info_,
                    std::string(resolution_, '='));
-    } else if (tbb::this_task_arena::current_thread_index() != 0) {
+    } else if (tbb::this_task_arena::current_thread_index() == 0) {
         std::size_t new_progress_pixel =
                 current_count_ * resolution_ / expected_count_;
         if (new_progress_pixel > progress_pixel_) {
