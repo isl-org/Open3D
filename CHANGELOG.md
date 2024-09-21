@@ -46,6 +46,7 @@
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
 -   Support lowercase types when reading PCD files (PR #6930)
 -   Fix visualization/draw ICP example and add warnings (PR #6933)
+-   Fix tensor EstimatePointWiseNormalsWithFastEigen3x3 (PR #6980)
 
 ## 0.13
 
