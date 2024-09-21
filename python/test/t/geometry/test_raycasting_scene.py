@@ -167,19 +167,27 @@ def test_count_lots_of_intersections(device):
     _ = scene.count_intersections(rays)
 
 
-def test_list_intersections():
+@pytest.mark.parametrize("device", list_devices())
+def test_list_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
+    vertex_positions = cube.vertex.positions
+    vertex_positions = vertex_positions.to(device)
+    triangle_indices = cube.triangle.indices
+    triangle_indices = triangle_indices.to(o3d.core.Dtype.UInt32)
+    triangle_indices = triangle_indices.to(device)
 
-    scene = o3d.t.geometry.RaycastingScene()
-    scene.add_triangles(cube)
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene.add_triangles(vertex_positions, triangle_indices)
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32)
+                           dtype=o3d.core.float32, device=device)
+    print("PYTHON TEST 1", device)
     ans = scene.list_intersections(rays)
+    print("PYTHON TEST 2")
 
-    np.testing.assert_allclose(ans['t_hit'].numpy(),
+    np.testing.assert_allclose(ans['t_hit'].cpu().numpy(),
                                np.array([1.0, 2.0, 0.5]),
                                rtol=1e-6,
                                atol=1e-6)
