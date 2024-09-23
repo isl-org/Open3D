@@ -29,8 +29,8 @@ void Seed(const int seed);
 ///
 /// {
 ///     // Put the lock and the call to the engine in the same scope.
-///     std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
-///     std::shuffle(vals.begin(), vals.end(), *utility::random::GetEngine());
+///     tbb::spin_mutex::scoped_lock lock(utility::random::GetMutex());
+///     std::shuffle(vals.begin(), vals.end(), utility::random::GetEngine());
 /// }
 /// ```
 std::mt19937& GetEngine();
