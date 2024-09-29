@@ -1363,6 +1363,7 @@ if(BUILD_GUI)
                              llvm-8/lib
                              llvm-7/lib
                 )
+                file(REAL_PATH ${CPPABI_LIBRARY} CPPABI_LIBRARY)
                 get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
                 string(REGEX MATCH "llvm-([0-9]+)/lib" _ ${CLANG_LIBDIR})
                 set(LIBCPP_VERSION ${CMAKE_MATCH_1})
@@ -1384,7 +1385,7 @@ if(BUILD_GUI)
             if (LIBCPP_VERSION GREATER 11)
                 message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that " 
                 "interferes with the system libunwind.so.8 and may crash Python code when exceptions "
-                "are used. Please consider using libc++ v11.")
+                "are used. Please consider using libc++ (LLVM) v11.")
             endif()
         endif()
         if (APPLE)

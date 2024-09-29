@@ -39,16 +39,14 @@ eval $(
     echo DISTRIB_ID="$DISTRIB_ID";
     echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
 )
+# To avoid dependence on libunwind, we don't want to use clang / libc++ versions later than 11.
+# Ubuntu 20.04's has versions 8, 10 or 12 while Ubuntu 22.04 has versions 11 and later.
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
-    # To avoid dependence on libunwind, we don't want to use  clang / libc++ versions later than 11.
-    # Ubuntu 20.04's has versions 8, 10 or 12 while Ubuntu 22.04 has versions 11 and later.
     deps=("${deps[@]/clang/clang-10}")
     deps=("${deps[@]/libc++-dev/libc++-10-dev}")
     deps=("${deps[@]/libc++abi-dev/libc++abi-10-dev}")
 fi
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
-    # To avoid dependence on libunwind, we don't want to use  clang / libc++ versions later than 11.
-    # Ubuntu 20.04's has versions 8, 10 or 12 while Ubuntu 22.04 has versions 11 and later.
     deps=("${deps[@]/clang/clang-11}")
     deps=("${deps[@]/libc++-dev/libc++-11-dev}")
     deps=("${deps[@]/libc++abi-dev/libc++abi-11-dev}")
@@ -56,7 +54,7 @@ fi
 
 # Special case for ARM64
 if [ "$(uname -m)" == "aarch64" ]; then
-    # For compling LAPACK in OpenBLAS
+    # For compiling LAPACK in OpenBLAS
     deps+=("gfortran")
 fi
 

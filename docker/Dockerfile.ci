@@ -68,8 +68,6 @@ RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
     fi
 
 # Dependencies: basic and python-build
-# gcc-11 causes a seg fault in tensormap when built in Release mode. Upgrade to
-# gcc-12 instead.
 RUN apt-get update && apt-get install -y \
     git  \
     wget \
@@ -89,11 +87,6 @@ RUN apt-get update && apt-get install -y \
     libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
- && if c++ --version | grep -F ' 11.' ; then \
-        apt-get install -y g++-12 \
-        && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-12 100 \
-        && c++ --version; \
-    fi \
  && rm -rf /var/lib/apt/lists/*
 
 # pyenv or Intel Python
