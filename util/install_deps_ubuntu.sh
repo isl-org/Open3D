@@ -40,11 +40,18 @@ eval $(
     echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
 )
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
-    # Ubuntu 20.04's clang/libc++-dev/libc++abi-dev are version 8, 10 or 12.
-    # To avoid dependence on libunwind, we don't want to use versions later than 10.
+    # To avoid dependence on libunwind, we don't want to use  clang / libc++ versions later than 11.
+    # Ubuntu 20.04's has versions 8, 10 or 12 while Ubuntu 22.04 has versions 11 and later.
     deps=("${deps[@]/clang/clang-10}")
     deps=("${deps[@]/libc++-dev/libc++-10-dev}")
     deps=("${deps[@]/libc++abi-dev/libc++abi-10-dev}")
+fi
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
+    # To avoid dependence on libunwind, we don't want to use  clang / libc++ versions later than 11.
+    # Ubuntu 20.04's has versions 8, 10 or 12 while Ubuntu 22.04 has versions 11 and later.
+    deps=("${deps[@]/clang/clang-11}")
+    deps=("${deps[@]/libc++-dev/libc++-11-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-11-dev}")
 fi
 
 # Special case for ARM64
