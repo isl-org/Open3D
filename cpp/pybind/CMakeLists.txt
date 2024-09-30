@@ -80,6 +80,9 @@ set(PYTHON_COMPILED_MODULE_DIR
 if (APPLE)
     set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path;@loader_path/..")
 elseif (UNIX)
+    # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
+    # https://stackoverflow.com/questions/69662319/managing-secondary-dependencies-of-shared-libraries
+    target_link_options(pybind PRIVATE "LINKER:--disable-new-dtags")
     set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN;$ORIGIN/..")
 endif()
 set_target_properties(pybind PROPERTIES
