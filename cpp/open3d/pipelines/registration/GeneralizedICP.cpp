@@ -12,6 +12,8 @@
 
 #include "open3d/pipelines/registration/GeneralizedICP.h"
 
+#include <tbb/parallel_for.h>
+
 #include <Eigen/Dense>
 #include <unsupported/Eigen/MatrixFunctions>
 
@@ -64,11 +66,16 @@ std::shared_ptr<geometry::PointCloud> InitializePointCloudForGeneralizedICP(
 
     output->covariances_.resize(output->points_.size());
     const Eigen::Matrix3d C = Eigen::Vector3d(epsilon, 1, 1).asDiagonal();
-#pragma omp parallel for schedule(static)
-    for (int i = 0; i < (int)output->normals_.size(); i++) {
-        const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
-        output->covariances_[i] = Rx * C * Rx.transpose();
-    }
+
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, output->normals_.size(), 1),
+            [&](const tbb::blocked_range<std::size_t> &range) {
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    const auto Rx = GetRotationFromE1ToX(output->normals_[i]);
+                    output->covariances_[i] = Rx * C * Rx.transpose();
+                }
+            });
+
     return output;
 }
 }  // namespace

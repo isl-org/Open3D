@@ -5,6 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/parallel_for.h>
+#include <tbb/spin_mutex.h>
+#include <tbb/spin_rw_mutex.h>
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iostream>
@@ -26,30 +30,28 @@ namespace geometry {
 template <typename T>
 class RandomSampler {
 public:
-    explicit RandomSampler(const size_t total_size) : total_size_(total_size) {}
+    explicit RandomSampler(const std::size_t total_size)
+        : dist(0, total_size - 1) {}
 
-    std::vector<T> operator()(size_t sample_size) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        std::vector<T> samples;
-        samples.reserve(sample_size);
+    std::vector<T> operator()(std::size_t sample_size) {
+        std::vector<T> indices;
+        indices.reserve(sample_size);
 
-        size_t valid_sample = 0;
-        while (valid_sample < sample_size) {
-            const size_t idx = utility::random::RandUint32() % total_size_;
+        tbb::spin_mutex::scoped_lock lock(utility::random::GetMutex());
+        while (indices.size() < sample_size) {
+            const T idx = dist(utility::random::GetEngine());
             // Well, this is slow. But typically the sample_size is small.
-            if (std::find(samples.begin(), samples.end(), idx) ==
-                samples.end()) {
-                samples.push_back(idx);
-                valid_sample++;
+            if (std::find(indices.begin(), indices.end(), idx) ==
+                indices.end()) {
+                indices.emplace_back(idx);
             }
         }
 
-        return samples;
+        return indices;
     }
 
 private:
-    size_t total_size_;
-    std::mutex mutex_;
+    std::uniform_int_distribution<T> dist;
 };
 
 /// \class RANSACResult
@@ -59,6 +61,11 @@ class RANSACResult {
 public:
     RANSACResult() : fitness_(0), inlier_rmse_(0) {}
     ~RANSACResult() {}
+
+    bool IsBetterRANSACThan(const RANSACResult &other) {
+        return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
+                                             inlier_rmse_ < other.inlier_rmse_);
+    }
 
 public:
     double fitness_;
@@ -163,12 +170,6 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
 
     size_t num_points = points_.size();
     RandomSampler<size_t> sampler(num_points);
-    // Pre-generate all random samples before entering the parallel region
-    std::vector<std::vector<size_t>> all_sampled_indices;
-    all_sampled_indices.reserve(num_iterations);
-    for (int i = 0; i < num_iterations; i++) {
-        all_sampled_indices.push_back(sampler(ransac_n));
-    }
 
     // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {
@@ -183,57 +184,65 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                                std::vector<size_t>{});
     }
 
-    // Use size_t here to avoid large integer which acceed max of int.
-    size_t break_iteration = std::numeric_limits<size_t>::max();
-    int iteration_count = 0;
+    // Use size_t here to avoid large integer which exceed max of int.
+    std::size_t break_iteration = std::numeric_limits<std::size_t>::max();
+    std::atomic<std::size_t> iteration_count = 0;
 
-#pragma omp parallel for schedule(static)
-    for (int itr = 0; itr < num_iterations; itr++) {
-        if ((size_t)iteration_count > break_iteration) {
-            continue;
-        }
+    tbb::spin_rw_mutex mtx;
+    tbb::parallel_for(
+            tbb::blocked_range<int>(0, num_iterations, 1),
+            [&](const tbb::blocked_range<int> &range) {
+                for (int i = range.begin(); i < range.end(); ++i) {
+                    if (iteration_count > break_iteration) {
+                        continue;
+                    }
 
-        // Access the pre-generated sampled indices
-        std::vector<size_t> inliers = all_sampled_indices[itr];
+                    std::vector<std::size_t> inliers = sampler(ransac_n);
 
-        // Fit model to num_model_parameters randomly selected points among the
-        // inliers.
-        Eigen::Vector4d plane_model;
-        if (ransac_n == 3) {
-            plane_model = TriangleMesh::ComputeTrianglePlane(
-                    points_[inliers[0]], points_[inliers[1]],
-                    points_[inliers[2]]);
-        } else {
-            plane_model = GetPlaneFromPoints(points_, inliers);
-        }
+                    // Fit model to num_model_parameters randomly selected
+                    // points among the inliers.
+                    Eigen::Vector4d plane_model;
+                    if (ransac_n == 3) {
+                        plane_model = TriangleMesh::ComputeTrianglePlane(
+                                points_[inliers[0]], points_[inliers[1]],
+                                points_[inliers[2]]);
+                    } else {
+                        plane_model = GetPlaneFromPoints(points_, inliers);
+                    }
 
-        if (plane_model.isZero(0)) {
-            continue;
-        }
+                    if (plane_model.isZero(0)) {
+                        continue;
+                    }
 
-        inliers.clear();
-        auto this_result = EvaluateRANSACBasedOnDistance(
-                points_, plane_model, inliers, distance_threshold);
-#pragma omp critical
-        {
-            if (this_result.fitness_ > result.fitness_ ||
-                (this_result.fitness_ == result.fitness_ &&
-                 this_result.inlier_rmse_ < result.inlier_rmse_)) {
-                result = this_result;
-                best_plane_model = plane_model;
-                if (result.fitness_ < 1.0) {
-                    break_iteration = std::min(
-                            log(1 - probability) /
-                                    log(1 - pow(result.fitness_, ransac_n)),
-                            (double)num_iterations);
-                } else {
-                    // Set break_iteration to 0 to force to break the loop.
-                    break_iteration = 0;
+                    inliers.clear();
+                    auto this_result = EvaluateRANSACBasedOnDistance(
+                            points_, plane_model, inliers, distance_threshold);
+                    {
+                        tbb::spin_rw_mutex::scoped_lock lock(mtx);
+                        if (this_result.IsBetterRANSACThan(result)) {
+                            lock.upgrade_to_writer();
+                            // Have to recheck after upgrading lock because
+                            // upgrading requires releasing the lock
+                            if (this_result.IsBetterRANSACThan(result)) {
+                                result = this_result;
+                                best_plane_model = plane_model;
+                                if (result.fitness_ < 1.0) {
+                                    break_iteration = std::min(
+                                            log(1 - probability) /
+                                                    log(1 - pow(result.fitness_,
+                                                                ransac_n)),
+                                            (double)num_iterations);
+                                } else {
+                                    // Set break_iteration to 0 so we break the
+                                    // loop.
+                                    break_iteration = 0;
+                                }
+                            }
+                        }
+                    }
+                    iteration_count++;
                 }
-            }
-            iteration_count++;
-        }
-    }
+            });
 
     // Find the final inliers using best_plane_model.
     std::vector<size_t> final_inliers;
@@ -256,7 +265,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
             "RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}, Iteration: "
             "{:d}",
             final_inliers.size(), result.fitness_, result.inlier_rmse_,
-            iteration_count);
+            iteration_count.load());
     return std::make_tuple(best_plane_model, final_inliers);
 }
 

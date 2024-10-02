@@ -7,14 +7,22 @@
 
 #pragma once
 
+#include <cstddef>
+
 namespace open3d {
 namespace utility {
 
 /// Estimate the maximum number of threads to be used in a parallel region.
 int EstimateMaxThreads();
 
-/// Returns true if in an parallel section.
-bool InParallel();
+/// Returns a reference to the default grain size used by TBB.
+/// Can be altered if needed.
+std::size_t& DefaultGrainSizeTBB() noexcept;
+
+/// Returns a reference to the default grain size used by TBB
+/// for 2d blocked parallel ranges
+/// Can be altered if needed
+std::size_t& DefaultGrainSizeTBB2D() noexcept;
 
 }  // namespace utility
 }  // namespace open3d

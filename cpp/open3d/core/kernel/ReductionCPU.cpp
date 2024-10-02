@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
+
 #include <limits>
 
 #include "open3d/core/Dispatch.h"
@@ -76,9 +79,7 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         // See: PyTorch's TensorIterator::parallel_reduce for the reference
         // design of reduction strategy.
-        if (utility::EstimateMaxThreads() == 1 || utility::InParallel()) {
-            LaunchReductionKernelSerial<scalar_t>(indexer_, reduce_func);
-        } else if (indexer_.NumOutputElements() <= 1) {
+        if (indexer_.NumOutputElements() <= 1) {
             LaunchReductionKernelTwoPass<scalar_t>(indexer_, reduce_func,
                                                    identity);
         } else {
@@ -111,29 +112,25 @@ private:
                     "Internal error: two-pass reduction only works for "
                     "single-output reduction ops.");
         }
-        int64_t num_workloads = indexer.NumWorkloads();
-        int64_t num_threads = utility::EstimateMaxThreads();
-        int64_t workload_per_thread =
-                (num_workloads + num_threads - 1) / num_threads;
-        std::vector<scalar_t> thread_results(num_threads, identity);
-
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-            int64_t start = thread_idx * workload_per_thread;
-            int64_t end = std::min(start + workload_per_thread, num_workloads);
-            for (int64_t workload_idx = start; workload_idx < end;
-                 ++workload_idx) {
-                scalar_t* src = reinterpret_cast<scalar_t*>(
-                        indexer.GetInputPtr(0, workload_idx));
-                thread_results[thread_idx] =
-                        element_kernel(*src, thread_results[thread_idx]);
-            }
+        const auto num_workloads = indexer.NumWorkloads();
+        if (num_workloads == 0) {
+            return;
         }
-        scalar_t* dst = reinterpret_cast<scalar_t*>(indexer.GetOutputPtr(0));
-        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-            *dst = element_kernel(thread_results[thread_idx], *dst);
-        }
+        scalar_t& dst = *reinterpret_cast<scalar_t*>(indexer.GetOutputPtr(0));
+        dst = tbb::parallel_reduce(
+                tbb::blocked_range<int64_t>(0, num_workloads,
+                                            utility::DefaultGrainSizeTBB()),
+                identity,
+                [&](const tbb::blocked_range<int64_t>& range, scalar_t so_far) {
+                    for (int64_t workload_idx = range.begin();
+                         workload_idx < range.end(); ++workload_idx) {
+                        scalar_t* src = reinterpret_cast<scalar_t*>(
+                                indexer.GetInputPtr(0, workload_idx));
+                        so_far = element_kernel(*src, so_far);
+                    }
+                    return so_far;
+                },
+                element_kernel);
     }
 
     template <typename scalar_t, typename func_t>
@@ -164,13 +161,18 @@ private:
                     "LaunchReductionKernelTwoPass instead.");
         }
 
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
-            Indexer sub_indexer(indexer);
-            sub_indexer.ShrinkDim(best_dim, i, 1);
-            LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
-        }
+        // TODO: could theoretically do inner reductions in parallel too with
+        // TBB
+        tbb::parallel_for(
+                tbb::blocked_range<int64_t>(0, indexer_shape[best_dim], 1),
+                [&](const tbb::blocked_range<int64_t>& range) {
+                    for (int64_t i = range.begin(); i < range.end(); ++i) {
+                        Indexer sub_indexer(indexer);
+                        sub_indexer.ShrinkDim(best_dim, i, 1);
+                        LaunchReductionKernelSerial<scalar_t>(sub_indexer,
+                                                              element_kernel);
+                    }
+                });
     }
 
 private:
@@ -191,25 +193,48 @@ public:
         // sub-iteration.
         int64_t num_output_elements = indexer_.NumOutputElements();
 
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int64_t output_idx = 0; output_idx < num_output_elements;
-             output_idx++) {
-            // sub_indexer.NumWorkloads() == ipo.
-            // sub_indexer's workload_idx is indexer_'s ipo_idx.
-            Indexer sub_indexer = indexer_.GetPerOutputIndexer(output_idx);
-            scalar_t dst_val = identity;
-            for (int64_t workload_idx = 0;
-                 workload_idx < sub_indexer.NumWorkloads(); workload_idx++) {
-                int64_t src_idx = workload_idx;
-                scalar_t* src_val = reinterpret_cast<scalar_t*>(
-                        sub_indexer.GetInputPtr(0, workload_idx));
-                int64_t* dst_idx = reinterpret_cast<int64_t*>(
-                        sub_indexer.GetOutputPtr(0, workload_idx));
-                std::tie(*dst_idx, dst_val) =
-                        reduce_func(src_idx, *src_val, *dst_idx, dst_val);
-            }
-        }
+        tbb::parallel_for(
+                tbb::blocked_range<int64_t>(0, num_output_elements, 1),
+                [&](const tbb::blocked_range<int64_t>& range) {
+                    for (int64_t output_idx = range.begin();
+                         output_idx < range.end(); ++output_idx) {
+                        // sub_indexer.NumWorkloads() == ipo.
+                        // sub_indexer's workload_idx is indexer_'s ipo_idx.
+                        Indexer sub_indexer =
+                                indexer_.GetPerOutputIndexer(output_idx);
+                        using result_t = std::pair<int64_t, scalar_t>;
+                        result_t val_idx{-1, identity};
+                        val_idx = tbb::parallel_deterministic_reduce(
+                                tbb::blocked_range<int64_t>(
+                                        0, sub_indexer.NumWorkloads(),
+                                        utility::DefaultGrainSizeTBB()),
+                                val_idx,
+                                [&](const tbb::blocked_range<int64_t>& range,
+                                    result_t so_far) {
+                                    for (int64_t workload_idx = range.begin();
+                                         workload_idx < range.end();
+                                         ++workload_idx) {
+                                        scalar_t& src_val =
+                                                *reinterpret_cast<scalar_t*>(
+                                                        sub_indexer.GetInputPtr(
+                                                                0,
+                                                                workload_idx));
+                                        so_far = reduce_func(
+                                                workload_idx, src_val,
+                                                std::get<0>(so_far),
+                                                std::get<1>(so_far));
+                                    }
+                                    return so_far;
+                                },
+                                [&reduce_func](result_t a, result_t b) {
+                                    return reduce_func(
+                                            std::get<0>(a), std::get<1>(a),
+                                            std::get<0>(b), std::get<1>(b));
+                                });
+                        *reinterpret_cast<int64_t*>(sub_indexer.GetOutputPtr(
+                                0)) = std::get<0>(val_idx);
+                    }
+                });
     }
 
 private:

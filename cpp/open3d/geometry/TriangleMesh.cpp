@@ -7,6 +7,10 @@
 
 #include "open3d/geometry/TriangleMesh.h"
 
+#include <tbb/concurrent_vector.h>
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
+
 #include <Eigen/Dense>
 #include <numeric>
 #include <queue>
@@ -927,13 +931,17 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
     std::vector<std::vector<int>> nbs(vertices_.size());
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int idx = 0; idx < int(vertices_.size()); ++idx) {
-        std::vector<double> dists2;
-        kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
-    }
     utility::LogDebug("Done Precompute Neighbours");
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, vertices_.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t> &range) {
+                std::vector<double> dists2;
+                for (std::size_t idx = range.begin(); idx < range.end();
+                     ++idx) {
+                    kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
+                }
+            });
 
     bool has_vertex_normals = HasVertexNormals();
     bool has_vertex_colors = HasVertexColors();
@@ -973,12 +981,12 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
             new_vert_mapping[nb] = new_vidx;
             n += 1;
         }
-        new_vertices.push_back(vertex / n);
+        new_vertices.emplace_back(vertex / n);
         if (has_vertex_normals) {
-            new_vertex_normals.push_back(normal / n);
+            new_vertex_normals.emplace_back(normal / n);
         }
         if (has_vertex_colors) {
-            new_vertex_colors.push_back(color / n);
+            new_vertex_colors.emplace_back(color / n);
         }
     }
     utility::LogDebug("Merged {} vertices",
@@ -1198,18 +1206,6 @@ double TriangleMesh::GetSurfaceArea(std::vector<double> &triangle_areas) const {
 }
 
 double TriangleMesh::GetVolume() const {
-    // Computes the signed volume of the tetrahedron defined by
-    // the three triangle vertices and the origin. The sign is determined by
-    // checking if the origin is at the same side as the normal with respect to
-    // the triangle.
-    auto GetSignedVolumeOfTriangle = [&](size_t tidx) {
-        const Eigen::Vector3i &triangle = triangles_[tidx];
-        const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
-        const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
-        const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
-        return vertex0.dot(vertex1.cross(vertex2)) / 6.0;
-    };
-
     if (!IsWatertight()) {
         utility::LogError(
                 "The mesh is not watertight, and the volume cannot be "
@@ -1221,13 +1217,26 @@ double TriangleMesh::GetVolume() const {
                 "computed.");
     }
 
-    double volume = 0;
-    int64_t num_triangles = triangles_.size();
-#pragma omp parallel for reduction(+ : volume) num_threads(utility::EstimateMaxThreads())
-    for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
-        volume += GetSignedVolumeOfTriangle(tidx);
-    }
-    return std::abs(volume);
+    return std::abs(tbb::parallel_reduce(
+            tbb::blocked_range<std::size_t>(0, triangles_.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            0.0,
+            [&](const tbb::blocked_range<std::size_t> &range, double volume) {
+                for (std::size_t tidx = range.begin(); tidx < range.end();
+                     ++tidx) {
+                    // Computes the signed volume of the tetrahedron defined by
+                    // the three triangle vertices and the origin. The sign is
+                    // determined by checking if the origin is at the same side
+                    // as the normal with respect to the triangle.
+                    const Eigen::Vector3i &triangle = triangles_[tidx];
+                    const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
+                    const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
+                    const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
+                    volume += vertex0.dot(vertex1.cross(vertex2)) / 6.0;
+                }
+                return volume;
+            },
+            std::plus<double>{}));
 }
 
 Eigen::Vector4d TriangleMesh::ComputeTrianglePlane(const Eigen::Vector3d &p0,
@@ -1358,47 +1367,56 @@ bool TriangleMesh::IsVertexManifold() const {
 
 std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const {
-    std::vector<Eigen::Vector2i> self_intersecting_triangles;
-    for (size_t tidx0 = 0; tidx0 < triangles_.size() - 1; ++tidx0) {
-        const Eigen::Vector3i &tria_p = triangles_[tidx0];
-        const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
-        const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
-        const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
+    tbb::concurrent_vector<Eigen::Vector2i> self_intersecting_triangles;
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, triangles_.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t> &range) {
+                for (std::size_t tidx0 = range.begin(); tidx0 < range.end();
+                     ++tidx0) {
+                    const Eigen::Vector3i &tria_p = triangles_[tidx0];
+                    const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
+                    const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
+                    const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
 
-        const Eigen::Vector3d bb_min1 =
-                p0.array().min(p1.array().min(p2.array()));
-        const Eigen::Vector3d bb_max1 =
-                p0.array().max(p1.array().max(p2.array()));
+                    const Eigen::Vector3d bb_min1 =
+                            p0.array().min(p1.array().min(p2.array()));
+                    const Eigen::Vector3d bb_max1 =
+                            p0.array().max(p1.array().max(p2.array()));
 
-        for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
-            const Eigen::Vector3i &tria_q = triangles_[tidx1];
-            // check if neighbour triangle
-            if (tria_p(0) == tria_q(0) || tria_p(0) == tria_q(1) ||
-                tria_p(0) == tria_q(2) || tria_p(1) == tria_q(0) ||
-                tria_p(1) == tria_q(1) || tria_p(1) == tria_q(2) ||
-                tria_p(2) == tria_q(0) || tria_p(2) == tria_q(1) ||
-                tria_p(2) == tria_q(2)) {
-                continue;
-            }
+                    for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size();
+                         ++tidx1) {
+                        const Eigen::Vector3i &tria_q = triangles_[tidx1];
+                        // check if neighbour triangle
+                        if (tria_p(0) == tria_q(0) || tria_p(0) == tria_q(1) ||
+                            tria_p(0) == tria_q(2) || tria_p(1) == tria_q(0) ||
+                            tria_p(1) == tria_q(1) || tria_p(1) == tria_q(2) ||
+                            tria_p(2) == tria_q(0) || tria_p(2) == tria_q(1) ||
+                            tria_p(2) == tria_q(2)) {
+                            continue;
+                        }
 
-            // check for intersection
-            const Eigen::Vector3d &q0 = vertices_[tria_q(0)];
-            const Eigen::Vector3d &q1 = vertices_[tria_q(1)];
-            const Eigen::Vector3d &q2 = vertices_[tria_q(2)];
+                        // check for intersection
+                        const Eigen::Vector3d &q0 = vertices_[tria_q(0)];
+                        const Eigen::Vector3d &q1 = vertices_[tria_q(1)];
+                        const Eigen::Vector3d &q2 = vertices_[tria_q(2)];
 
-            const Eigen::Vector3d bb_min2 =
-                    q0.array().min(q1.array().min(q2.array()));
-            const Eigen::Vector3d bb_max2 =
-                    q0.array().max(q1.array().max(q2.array()));
-            if (IntersectionTest::AABBAABB(bb_min1, bb_max1, bb_min2,
-                                           bb_max2) &&
-                IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
-                self_intersecting_triangles.push_back(
-                        Eigen::Vector2i(tidx0, tidx1));
-            }
-        }
-    }
-    return self_intersecting_triangles;
+                        const Eigen::Vector3d bb_min2 =
+                                q0.array().min(q1.array().min(q2.array()));
+                        const Eigen::Vector3d bb_max2 =
+                                q0.array().max(q1.array().max(q2.array()));
+                        if (IntersectionTest::AABBAABB(bb_min1, bb_max1,
+                                                       bb_min2, bb_max2) &&
+                            IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0,
+                                                                 q1, q2)) {
+                            self_intersecting_triangles.push_back(
+                                    Eigen::Vector2i(tidx0, tidx1));
+                        }
+                    }
+                }
+            });
+    return {self_intersecting_triangles.begin(),
+            self_intersecting_triangles.end()};
 }
 
 bool TriangleMesh::IsSelfIntersecting() const {
@@ -1441,23 +1459,27 @@ TriangleMesh::ClusterConnectedTriangles() const {
     utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
     auto edges_to_triangles = GetEdgeToTrianglesMap();
     std::vector<std::unordered_set<int>> adjacency_list(triangles_.size());
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
-        const auto &triangle = triangles_[tidx];
-        for (auto tnb :
-             edges_to_triangles[GetOrderedEdge(triangle(0), triangle(1))]) {
-            adjacency_list[tidx].insert(tnb);
-        }
-        for (auto tnb :
-             edges_to_triangles[GetOrderedEdge(triangle(0), triangle(2))]) {
-            adjacency_list[tidx].insert(tnb);
-        }
-        for (auto tnb :
-             edges_to_triangles[GetOrderedEdge(triangle(1), triangle(2))]) {
-            adjacency_list[tidx].insert(tnb);
-        }
-    }
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, triangles_.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t> &range) {
+                for (std::size_t tidx = range.begin(); tidx < range.end();
+                     ++tidx) {
+                    const auto &triangle = triangles_[tidx];
+                    for (auto tnb : edges_to_triangles[GetOrderedEdge(
+                                 triangle(0), triangle(1))]) {
+                        adjacency_list[tidx].insert(tnb);
+                    }
+                    for (auto tnb : edges_to_triangles[GetOrderedEdge(
+                                 triangle(0), triangle(2))]) {
+                        adjacency_list[tidx].insert(tnb);
+                    }
+                    for (auto tnb : edges_to_triangles[GetOrderedEdge(
+                                 triangle(1), triangle(2))]) {
+                        adjacency_list[tidx].insert(tnb);
+                    }
+                }
+            });
     utility::LogDebug(
             "[ClusterConnectedTriangles] Done computing triangle adjacency");
 

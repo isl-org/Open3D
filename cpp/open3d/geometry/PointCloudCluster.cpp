@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/parallel_for.h>
+#include <tbb/spin_mutex.h>
+
 #include <Eigen/Dense>
 #include <unordered_set>
 
@@ -27,15 +30,21 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
     utility::ProgressBar progress_bar(points_.size(), "Precompute neighbors.",
                                       print_progress);
     std::vector<std::vector<int>> nbs(points_.size());
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int idx = 0; idx < int(points_.size()); ++idx) {
-        std::vector<double> dists2;
-        kdtree.SearchRadius(points_[idx], eps, nbs[idx], dists2);
 
-#pragma omp critical(ClusterDBSCAN)
-        { ++progress_bar; }
-    }
+    tbb::spin_mutex mtx;
+    tbb::profiling::set_name(mtx, "ClusterDBSCAN");
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, points_.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    std::vector<double> dists2;
+                    kdtree.SearchRadius(points_[i], eps, nbs[i], dists2);
+                }
+                tbb::spin_mutex::scoped_lock lock(mtx);
+                progress_bar += (range.end() - range.begin());
+            });
+
     utility::LogDebug("Done Precompute neighbors.");
 
     // Set all labels to undefined (-2).
