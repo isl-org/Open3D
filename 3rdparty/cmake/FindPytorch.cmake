@@ -55,15 +55,17 @@ if(NOT Pytorch_FOUND)
     unset(PyTorch_FETCH_PROPERTIES)
     unset(PyTorch_PROPERTIES)
 
+    if(BUILD_CUDA_MODULE)
     # Using CUDA 12.x and Pytorch <2.4 gives the error "Unknown CUDA Architecture Name 9.0a in CUDA_SELECT_NVCC_ARCH_FLAGS".
     # As a workaround we explicitly set TORCH_CUDA_ARCH_LIST
-    set(TORCH_CUDA_ARCH_LIST "")
-    foreach(arch IN LISTS CMAKE_CUDA_ARCHITECTURES)
-        translate_arch_string("${arch}" ptarch)
-        list(APPEND TORCH_CUDA_ARCH_LIST "${ptarch}")
-    endforeach()
+        set(TORCH_CUDA_ARCH_LIST "")
+        foreach(arch IN LISTS CMAKE_CUDA_ARCHITECTURES)
+            translate_arch_string("${arch}" ptarch)
+            list(APPEND TORCH_CUDA_ARCH_LIST "${ptarch}")
+        endforeach()
+        message(STATUS "Using top level CMAKE_CUDA_ARCHITECTURES for TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}")
+    endif()
     
-    message(STATUS "Using top level CMAKE_CUDA_ARCHITECTURES for TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}")
     # Use the cmake config provided by torch
     find_package(Torch REQUIRED PATHS "${Pytorch_ROOT}"
                  NO_DEFAULT_PATH)
