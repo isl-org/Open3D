@@ -25,7 +25,7 @@ env:
   STOOLS_VER: "67.3.2"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
-  CUDA_VERSION: "11.8.0"
+  CUDA_VERSION: "12.1.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2

@@ -27,9 +27,6 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 # ML
 TENSORFLOW_VER="2.16.2"
 TORCH_VER="2.2.2"
-TORCH_CPU_GLNX_VER="${TORCH_VER}+cpu"
-TORCH_CUDA_GLNX_VER="${TORCH_VER}+cu118" # match CUDA_VERSION in docker/docker_build.sh
-TORCH_MACOS_VER="${TORCH_VER}"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="23.2.1"

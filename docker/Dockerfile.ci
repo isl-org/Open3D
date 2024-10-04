@@ -153,8 +153,7 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-# Remove branch before merge
-RUN git clone --depth 1 --branch ss/python-3.12 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
 
 # Open3D repo
 # Always keep /root/Open3D as the WORKDIR

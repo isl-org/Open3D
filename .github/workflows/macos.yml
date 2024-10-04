@@ -405,7 +405,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: ss/python-3.12    # remove before merge
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels
