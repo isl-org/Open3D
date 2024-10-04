@@ -40,6 +40,7 @@
 -   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)
 -   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
+-   Python 3.12 support
 -   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
 -   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
 -   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
