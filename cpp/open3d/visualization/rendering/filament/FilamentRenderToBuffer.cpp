@@ -144,6 +144,10 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
         // overhead and the depth buffer is discarded when post-processing is
         // enabled so the returned image is all 0s.
         view_->ConfigureForColorPicking();
+        // Set shadowing to true as there is a pixel coordinate scaling
+        // issue on Apple Retina displays that results in quarter size depth
+        // images if shadowing is disabled.
+        view_->SetShadowing(true, View::ShadowType::kPCF);
     }
 }
 
