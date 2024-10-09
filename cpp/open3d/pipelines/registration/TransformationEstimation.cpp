@@ -11,6 +11,7 @@
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace pipelines {
@@ -40,6 +41,25 @@ Eigen::Matrix4d TransformationEstimationPointToPoint::ComputeTransformation(
         target_mat.block<3, 1>(0, i) = target.points_[corres[i][1]];
     }
     return Eigen::umeyama(source_mat, target_mat, with_scaling_);
+}
+
+std::tuple<std::shared_ptr<const geometry::PointCloud>,
+           std::shared_ptr<const geometry::PointCloud>>
+TransformationEstimationPointToPoint::InitializePointCloudsForTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_correspondence_distance) const {
+    std::shared_ptr<const geometry::PointCloud> source_initialized_c(
+            &source, [](const geometry::PointCloud *) {});
+    std::shared_ptr<const geometry::PointCloud> target_initialized_c(
+            &target, [](const geometry::PointCloud *) {});
+    if (!source_initialized_c || !target_initialized_c) {
+        utility::LogError(
+                "Internal error: InitializePointCloudsForTransformation "
+                "returns "
+                "nullptr.");
+    }
+    return std::make_tuple(source_initialized_c, target_initialized_c);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
@@ -87,6 +107,29 @@ Eigen::Matrix4d TransformationEstimationPointToPlane::ComputeTransformation(
             utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
 
     return is_success ? extrinsic : Eigen::Matrix4d::Identity();
+}
+
+std::tuple<std::shared_ptr<const geometry::PointCloud>,
+           std::shared_ptr<const geometry::PointCloud>>
+TransformationEstimationPointToPlane::InitializePointCloudsForTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_correspondence_distance) const {
+    if (!target.HasNormals()) {
+        utility::LogError(
+                "PointToPlaneICP requires target pointcloud to have normals.");
+    }
+    std::shared_ptr<const geometry::PointCloud> source_initialized_c(
+            &source, [](const geometry::PointCloud *) {});
+    std::shared_ptr<const geometry::PointCloud> target_initialized_c(
+            &target, [](const geometry::PointCloud *) {});
+    if (!source_initialized_c || !target_initialized_c) {
+        utility::LogError(
+                "Internal error: InitializePointCloudsForTransformation "
+                "returns "
+                "nullptr.");
+    }
+    return std::make_tuple(source_initialized_c, target_initialized_c);
 }
 
 }  // namespace registration
