@@ -38,3 +38,4 @@ install(TARGETS tbb EXPORT ${PROJECT_NAME}Targets
   RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
   COMPONENT tbb
 )
+add_library(${PROJECT_NAME}::3rdparty_tbb ALIAS tbb)

@@ -68,7 +68,9 @@ if(BUILD_SYCL_MODULE)
     set(ISA_ARGS ${ISA_ARGS} -DCMAKE_CXX_COMPILER=icpx)
     set(ISA_ARGS ${ISA_ARGS} -DCMAKE_C_COMPILER=icx)
     set(ISA_ARGS ${ISA_ARGS} -DEMBREE_SYCL_SUPPORT=ON)
-    #list(APPEND ISA_LIBS embree4_sycl)
+    list(APPEND ISA_LIBS embree4_sycl ze_wrapper)
+    list(APPEND ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree4_sycl${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                                    "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ze_wrapper${CMAKE_STATIC_LIBRARY_SUFFIX}")
 endif()
 
 
@@ -101,11 +103,10 @@ ExternalProject_Add(
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}math${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}tasking${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ze_wrapper${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_rthwif${CMAKE_STATIC_LIBRARY_SUFFIX}
         ${ISA_BUILD_BYPRODUCTS}
 )
 
 ExternalProject_Get_Property(ext_embree INSTALL_DIR)
 set(EMBREE_INCLUDE_DIRS ${INSTALL_DIR}/include/ ${INSTALL_DIR}/src/ext_embree/) # "/" is critical.
 set(EMBREE_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(EMBREE_LIBRARIES embree4_sycl embree4 simd lexers sys math tasking ze_wrapper embree_rthwif ${ISA_LIBS})
+set(EMBREE_LIBRARIES embree4 simd lexers sys math tasking ${ISA_LIBS})

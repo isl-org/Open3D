@@ -3,7 +3,7 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 # For bash-specific commands
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-c", "-o", "pipefail"]
 
 # Required build args, should be specified in docker_build.sh
 ARG DEVELOPER_BUILD
@@ -71,7 +71,6 @@ RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
 RUN apt-get update && apt-get install -y \
     git  \
     wget \
-    curl \
     build-essential \
     pkg-config \
     zlib1g \
@@ -89,7 +88,7 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# pyenv or Intel Python
+# pyenv
 # The pyenv python paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
 # The soft link from the python patch level version to the python mino version
@@ -97,16 +96,13 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
-        curl https://pyenv.run | bash \
-        && pyenv update \
-        && pyenv install $PYTHON_VERSION \
-        && pyenv global $PYTHON_VERSION \
-        && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION}; \
-    fi
-RUN python --version && pip --version
+RUN wget -q https://pyenv.run -O- | bash \
+    && pyenv update \
+    && pyenv install $PYTHON_VERSION \
+    && pyenv global $PYTHON_VERSION \
+    && pyenv rehash \
+    && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION} \
+    && python --version && pip --version
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -174,7 +170,7 @@ RUN source util/ci_utils.sh \
 
 # Open3D Jupyter dependencies
 RUN mkdir -p /etc/apt/keyrings \
- && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
  | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
  | tee /etc/apt/sources.list.d/nodesource.list \

@@ -1384,7 +1384,7 @@ if(BUILD_GUI)
                                   ${CPP_LIBRARY} ${CPPABI_LIBRARY})
             message(STATUS "Filament C++ libraries: ${CPP_LIBRARY} ${CPPABI_LIBRARY}")
             if (LIBCPP_VERSION GREATER 11)
-                message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that " 
+                message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that "
                 "interferes with the system libunwind.so.8 and may crash Python code when exceptions "
                 "are used. Please consider using libc++ (LLVM) v11.")
             endif()
@@ -1697,7 +1697,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
             LIB_DIR      ${STATIC_MKL_LIB_DIR}
             LIBRARIES    ${STATIC_MKL_LIBRARIES}
-            DEPENDS      ext_tbb ext_mkl_include ext_mkl
+            DEPENDS      Open3D::3rdparty_tbb ext_mkl_include ext_mkl
         )
         if(UNIX)
             target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
@@ -1719,7 +1719,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     endif()
     if(NOT USE_SYSTEM_TBB)
         include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM TBB::tbb)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
     else()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
     endif()
