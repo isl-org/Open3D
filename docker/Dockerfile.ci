@@ -3,7 +3,7 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 # For bash-specific commands
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-c", "-o", "pipefail"]
 
 # Required build args, should be specified in docker_build.sh
 ARG DEVELOPER_BUILD
@@ -89,7 +89,7 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# pyenv or Intel Python
+# pyenv
 # The pyenv python paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
 # The soft link from the python patch level version to the python mino version
@@ -97,15 +97,12 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
-        curl https://pyenv.run | bash \
+RUN curl https://pyenv.run | bash \
         && pyenv update \
         && pyenv install $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION}; \
-    fi
 RUN python --version && pip --version
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]

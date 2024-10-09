@@ -19,14 +19,18 @@ from open3d_test import list_devices
 @pytest.mark.parametrize("device", list_devices())
 def test_cast_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.float32, device=device)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
+                               dtype=o3d.core.float32,
+                               device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]],
+                                dtype=o3d.core.uint32,
+                                device=device)
 
     scene = o3d.t.geometry.RaycastingScene(device=device)
     geom_id = scene.add_triangles(vertices, triangles)
 
     rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32, device=device)
+                           dtype=o3d.core.float32,
+                           device=device)
     ans = scene.cast_rays(rays)
 
     # first ray hits the triangle
@@ -34,7 +38,8 @@ def test_cast_rays(device):
     assert np.isclose(ans['t_hit'][0].item(), 1.0)
 
     # second ray misses
-    assert o3d.t.geometry.RaycastingScene.INVALID_ID == ans['geometry_ids'][1].cpu()
+    assert o3d.t.geometry.RaycastingScene.INVALID_ID == ans['geometry_ids'][
+        1].cpu()
     assert np.isinf(ans['t_hit'][1].item())
 
 
@@ -43,8 +48,11 @@ def test_cast_rays(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_cast_lots_of_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.float32, device=device)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
+                               dtype=o3d.core.float32,
+                               device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]],
+                                dtype=o3d.core.uint32,
+                                device=device)
 
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
@@ -60,14 +68,18 @@ def test_cast_lots_of_rays(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_test_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.float32, device=device)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
+                               dtype=o3d.core.float32,
+                               device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]],
+                                dtype=o3d.core.uint32,
+                                device=device)
 
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
 
     rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32, device=device)
+                           dtype=o3d.core.float32,
+                           device=device)
     ans = scene.test_occlusions(rays).cpu()
 
     # first ray is occluded by the triangle
@@ -90,8 +102,11 @@ def test_test_occlusions(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_test_lots_of_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
-                               dtype=o3d.core.float32, device=device)
-    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
+                               dtype=o3d.core.float32,
+                               device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]],
+                                dtype=o3d.core.uint32,
+                                device=device)
 
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
@@ -118,7 +133,8 @@ def test_add_triangle_mesh(device):
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32, device=device)
+                           dtype=o3d.core.float32,
+                           device=device)
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.cpu().numpy(), [2, 1, 0])
@@ -139,7 +155,8 @@ def test_count_intersections(device):
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32, device=device)
+                           dtype=o3d.core.float32,
+                           device=device)
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.cpu().numpy(), [2, 1, 0])
@@ -182,7 +199,8 @@ def test_list_intersections(device):
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32, device=device)
+                           dtype=o3d.core.float32,
+                           device=device)
     print("PYTHON TEST 1", device)
     ans = scene.list_intersections(rays)
     print("PYTHON TEST 2")

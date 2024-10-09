@@ -59,7 +59,8 @@ void pybind_raycasting_scene_definitions(py::module& m) {
             static_cast<py::class_<RaycastingScene>>(m.attr("RaycastingScene"));
     // Constructors.
 #ifdef BUILD_SYCL_MODULE
-    raycasting_scene.def(py::init<int64_t, core::Device>(), "nthreads"_a = 0, "device"_a = core::Device("CPU:0"), R"doc(
+    raycasting_scene.def(py::init<int64_t, core::Device>(), "nthreads"_a = 0,
+                         "device"_a = core::Device("CPU:0"), R"doc(
 Create a RaycastingScene.
 
 Args:

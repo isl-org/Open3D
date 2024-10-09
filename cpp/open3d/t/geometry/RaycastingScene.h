@@ -32,7 +32,8 @@ public:
     /// \brief Default Constructor.
     RaycastingScene(int64_t nthreads = 0
 #ifdef BUILD_SYCL_MODULE
-        , const core::Device& device = core::Device("CPU:0")
+                    ,
+                    const core::Device &device = core::Device("CPU:0")
 #endif
     );
 
