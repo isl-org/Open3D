@@ -31,7 +31,7 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
 set(ZLIB_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(ZLIB_LIB_DIR ${INSTALL_DIR}/lib)
-if(MSVC)
+if(MSVC AND ${CMAKE_GENERATOR} MATCHES "^Visual Studio.*")
     set(ZLIB_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
 else()
     set(ZLIB_LIBRARIES ${lib_name})
