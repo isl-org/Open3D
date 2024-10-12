@@ -424,6 +424,12 @@ struct RaycastingScene::Impl {
                                       float* primitive_uvs,
                                       float* primitive_normals,
                                       const int nthreads) = 0;
+    
+    virtual void ArraySum(int* data_ptr, size_t num_elements, size_t &result) = 0;
+
+    virtual void ArrayPartialSum(int* input, int* output, size_t num_elements) = 0;
+
+    virtual void CopyArray(int* src, uint32_t* dst, size_t num_elements) = 0;
 };
 
 #ifdef BUILD_SYCL_MODULE
@@ -765,6 +771,39 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                               float* primitive_normals,
                               const int nthreads) override {
         throw std::logic_error("Function not yet implemented");
+    }
+
+    void ArraySum(int* data_ptr, size_t num_elements, size_t &result) override {
+        int result_data[1] = {0};
+        sycl::buffer<int, 1> result_buf(result_data, sycl::range<1>(1));
+
+        queue_.submit([&](sycl::handler& cgh) {
+            auto result_acc = result_buf.get_access<sycl::access::mode::read_write>(cgh);
+            cgh.parallel_for(
+                    sycl::range<1>(num_elements),
+                    [=](sycl::item<1> item, sycl::kernel_handler kh) {
+                const size_t i = item.get_id(0);
+                result_acc[0] += data_ptr[i];
+            });
+        });
+        queue_.wait_and_throw();
+
+        result = result_data[0];
+    }
+
+    void ArrayPartialSum(int* input, int* output, size_t num_elements) override {
+        queue_.submit([&](sycl::handler& cgh) {
+            cgh.parallel_for(sycl::range<1>(num_elements - 1), [=](sycl::id<1> i) {
+                size_t idx = i[0] + 1;
+                output[idx] = output[idx - 1] + input[idx - 1];
+            });
+        });
+
+        queue_.wait_and_throw();
+    }
+
+    void CopyArray(int* src, uint32_t* dst, size_t num_elements) override {
+        queue_.memcpy(dst, src, num_elements * sizeof(uint32_t)).wait();
     }
 };
 #endif
@@ -1118,6 +1157,25 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
                     LoopFn);
         }
     }
+
+    void ArraySum(int* data_ptr, size_t num_elements, size_t &result) override {
+        for (size_t i = 0; i < num_elements; ++i) {
+            result += data_ptr[i];
+        }
+    }
+
+    void ArrayPartialSum(int* input, int* output, size_t num_elements) override {
+        output[0] = 0;
+        for (size_t i = 1; i < num_elements; ++i) {
+            output[i] = output[i - 1] + input[i - 1];
+        }
+    }
+
+    void CopyArray(int* src, uint32_t* dst, size_t num_elements) override {
+        for (size_t i = 0; i < num_elements; ++i) {
+            dst[i] = src[i];
+        }
+    }
 };
 
 RaycastingScene::RaycastingScene(int64_t nthreads
@@ -1346,29 +1404,23 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
     // prepare shape with that number of elements
     int* data_ptr = intersections.GetDataPtr<int>();
     size_t num_intersections = 0;
-    for (size_t i = 0; i < num_rays; ++i) {
-        num_intersections += data_ptr[i];
-    }
+    impl_->ArraySum(data_ptr, num_rays, num_intersections);
 
     // prepare ray allocations (cumsum)
     core::Tensor cumsum_tensor = core::Tensor::Zeros(
             shape, core::Dtype::FromType<int>(), impl_->tensor_device_);
     int* cumsum_ptr = cumsum_tensor.GetDataPtr<int>();
-
-    cumsum_ptr[0] = 0;
-    for (size_t i = 1; i < num_rays; ++i) {
-        cumsum_ptr[i] = cumsum_ptr[i - 1] + data_ptr[i - 1];
-    }
+    impl_->ArrayPartialSum(data_ptr, cumsum_ptr, num_rays);
 
     // generate results structure
     std::unordered_map<std::string, core::Tensor> result;
     shape.clear();
     shape.push_back(num_rays + 1);
     result["ray_splits"] = core::Tensor(shape, core::UInt32);
+
     uint32_t* ptr = result["ray_splits"].GetDataPtr<uint32_t>();
-    for (size_t i = 0; i < num_rays; ++i) {
-        ptr[i] = cumsum_ptr[i];
-    }
+    impl_->CopyArray(cumsum_ptr, ptr, num_rays);
+
     ptr[num_rays] = num_intersections;
     shape[0] = num_intersections;
     result["ray_ids"] =
