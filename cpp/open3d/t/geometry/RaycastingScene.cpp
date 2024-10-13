@@ -12,10 +12,14 @@
 #include "open3d/t/geometry/RaycastingScene.h"
 
 // This header is in the embree src dir (embree/src/ext_embree/..).
+#ifdef BUILD_SYCL_MODULE
+#include <sycl/sycl.hpp>
+#endif
 #include <embree4/rtcore.h>
 #include <tbb/parallel_for.h>
 
 #include <Eigen/Core>
+#include <cstring>
 #include <tuple>
 #include <unsupported/Eigen/AlignedVector3>
 #include <vector>
@@ -24,12 +28,159 @@
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
+namespace callbacks {
+
+struct GeomPrimID {
+    uint32_t geomID;
+    uint32_t primID;
+    float ray_tfar;
+};
+
+struct CountIntersectionsContext {
+    RTCRayQueryContext context;
+    GeomPrimID* previous_geom_prim_ID_tfar;
+    int* intersections;
+};
+
+#ifdef BUILD_SYCL_MODULE
+RTC_SYCL_INDIRECTLY_CALLABLE void CountIntersectionsFunc(
+        const RTCFilterFunctionNArguments* args) {
+#else
+void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
+#endif
+    int* valid = args->valid;
+    const CountIntersectionsContext* context =
+            reinterpret_cast<const CountIntersectionsContext*>(args->context);
+    struct RTCRayN* rayN = args->ray;
+    struct RTCHitN* hitN = args->hit;
+    const unsigned int N = args->N;
+
+    // Avoid crashing when debug visualizations are used.
+    if (context == nullptr) return;
+
+    GeomPrimID* previous_geom_prim_ID_tfar =
+            context->previous_geom_prim_ID_tfar;
+    int* intersections = context->intersections;
+
+    // Iterate over all rays in ray packet.
+    for (unsigned int ui = 0; ui < N; ui += 1) {
+        // Calculate loop and execution mask
+        unsigned int vi = ui + 0;
+        if (vi >= N) continue;
+
+        // Ignore inactive rays.
+        if (valid[vi] != -1) continue;
+
+        // Read ray/hit from ray structure.
+        RTCRay ray = rtcGetRayFromRayN(rayN, N, ui);
+        RTCHit hit = rtcGetHitFromHitN(hitN, N, ui);
+
+        unsigned int ray_id = ray.id;
+        GeomPrimID gpID = {hit.geomID, hit.primID, ray.tfar};
+        auto& prev_gpIDtfar = previous_geom_prim_ID_tfar[ray_id];
+        if (prev_gpIDtfar.geomID != hit.geomID ||
+            (prev_gpIDtfar.primID != hit.primID &&
+             prev_gpIDtfar.ray_tfar != ray.tfar)) {
+            ++(intersections[ray_id]);
+            previous_geom_prim_ID_tfar[ray_id] = gpID;
+        }
+        // Always ignore hit
+        valid[ui] = 0;
+    }
+}
+
+struct ListIntersectionsContext {
+    RTCRayQueryContext context;
+    GeomPrimID* previous_geom_prim_ID_tfar;
+    unsigned int* ray_ids;
+    unsigned int* geometry_ids;
+    unsigned int* primitive_ids;
+    float* primitive_uvs;
+    float* t_hit;
+    int* cumsum;
+    unsigned int* track_intersections;
+};
+
+#ifdef BUILD_SYCL_MODULE
+RTC_SYCL_INDIRECTLY_CALLABLE void ListIntersectionsFunc(
+        const RTCFilterFunctionNArguments* args) {
+#else
+void ListIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
+#endif
+    int* valid = args->valid;
+    const ListIntersectionsContext* context =
+            reinterpret_cast<const ListIntersectionsContext*>(args->context);
+    struct RTCRayN* rayN = args->ray;
+    struct RTCHitN* hitN = args->hit;
+    const unsigned int N = args->N;
+
+    // Avoid crashing when debug visualizations are used.
+    if (context == nullptr) return;
+
+    GeomPrimID* previous_geom_prim_ID_tfar =
+            context->previous_geom_prim_ID_tfar;
+    unsigned int* ray_ids = context->ray_ids;
+    unsigned int* geometry_ids = context->geometry_ids;
+    unsigned int* primitive_ids = context->primitive_ids;
+    float* primitive_uvs = context->primitive_uvs;
+    float* t_hit = context->t_hit;
+    int* cumsum = context->cumsum;
+    unsigned int* track_intersections = context->track_intersections;
+
+    // Iterate over all rays in ray packet.
+    for (unsigned int ui = 0; ui < N; ui += 1) {
+        // Calculate loop and execution mask
+        unsigned int vi = ui + 0;
+        if (vi >= N) continue;
+
+        // Ignore inactive rays.
+        if (valid[vi] != -1) continue;
+
+        // Read ray/hit from ray structure.
+        RTCRay ray = rtcGetRayFromRayN(rayN, N, ui);
+        RTCHit hit = rtcGetHitFromHitN(hitN, N, ui);
+
+        unsigned int ray_id = ray.id;
+        GeomPrimID gpID = {hit.geomID, hit.primID, ray.tfar};
+        auto& prev_gpIDtfar = previous_geom_prim_ID_tfar[ray_id];
+        if (prev_gpIDtfar.geomID != hit.geomID ||
+            (prev_gpIDtfar.primID != hit.primID &&
+             prev_gpIDtfar.ray_tfar != ray.tfar)) {
+            size_t idx = cumsum[ray_id] + track_intersections[ray_id];
+            ray_ids[idx] = ray_id;
+            geometry_ids[idx] = hit.geomID;
+            primitive_ids[idx] = hit.primID;
+            primitive_uvs[idx * 2 + 0] = hit.u;
+            primitive_uvs[idx * 2 + 1] = hit.v;
+            t_hit[idx] = ray.tfar;
+            previous_geom_prim_ID_tfar[ray_id] = gpID;
+            ++(track_intersections[ray_id]);
+        }
+        // Always ignore hit
+        valid[ui] = 0;
+    }
+}
+
+}  // namespace callbacks
+
 namespace {
 
 typedef Eigen::AlignedVector3<float> Vec3fa;
 // Dont force alignment for Vec2f because we use it just for storing
 typedef Eigen::Matrix<float, 2, 1, Eigen::DontAlign> Vec2f;
 typedef Eigen::Vector3f Vec3f;
+
+#ifdef BUILD_SYCL_MODULE
+void enablePersistentJITCache() {
+#if defined(_WIN32)
+    _putenv_s("SYCL_CACHE_PERSISTENT", "1");
+    _putenv_s("SYCL_CACHE_DIR", "cache");
+#else
+    setenv("SYCL_CACHE_PERSISTENT", "1", 1);
+    setenv("SYCL_CACHE_DIR", "cache", 1);
+#endif
+}
+#endif
 
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
@@ -59,125 +210,6 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
     }
     open3d::core::AssertTensorDtype(tensor,
                                     open3d::core::Dtype::FromType<DTYPE>());
-}
-
-struct CountIntersectionsContext {
-    RTCRayQueryContext context;
-    std::vector<std::tuple<uint32_t, uint32_t, float>>*
-            previous_geom_prim_ID_tfar;
-    int* intersections;
-};
-
-void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
-    int* valid = args->valid;
-    const CountIntersectionsContext* context =
-            reinterpret_cast<const CountIntersectionsContext*>(args->context);
-    struct RTCRayN* rayN = args->ray;
-    struct RTCHitN* hitN = args->hit;
-    const unsigned int N = args->N;
-
-    // Avoid crashing when debug visualizations are used.
-    if (context == nullptr) return;
-
-    std::vector<std::tuple<uint32_t, uint32_t, float>>*
-            previous_geom_prim_ID_tfar = context->previous_geom_prim_ID_tfar;
-    int* intersections = context->intersections;
-
-    // Iterate over all rays in ray packet.
-    for (unsigned int ui = 0; ui < N; ui += 1) {
-        // Calculate loop and execution mask
-        unsigned int vi = ui + 0;
-        if (vi >= N) continue;
-
-        // Ignore inactive rays.
-        if (valid[vi] != -1) continue;
-
-        // Read ray/hit from ray structure.
-        RTCRay ray = rtcGetRayFromRayN(rayN, N, ui);
-        RTCHit hit = rtcGetHitFromHitN(hitN, N, ui);
-
-        unsigned int ray_id = ray.id;
-        std::tuple<uint32_t, uint32_t, float> gpID(hit.geomID, hit.primID,
-                                                   ray.tfar);
-        auto& prev_gpIDtfar = previous_geom_prim_ID_tfar->operator[](ray_id);
-        if (std::get<0>(prev_gpIDtfar) != hit.geomID ||
-            (std::get<1>(prev_gpIDtfar) != hit.primID &&
-             std::get<2>(prev_gpIDtfar) != ray.tfar)) {
-            ++(intersections[ray_id]);
-            previous_geom_prim_ID_tfar->operator[](ray_id) = gpID;
-        }
-        // Always ignore hit
-        valid[ui] = 0;
-    }
-}
-
-struct ListIntersectionsContext {
-    RTCRayQueryContext context;
-    std::vector<std::tuple<uint32_t, uint32_t, float>>*
-            previous_geom_prim_ID_tfar;
-    unsigned int* ray_ids;
-    unsigned int* geometry_ids;
-    unsigned int* primitive_ids;
-    float* primitive_uvs;
-    float* t_hit;
-    Eigen::VectorXi cumsum;
-    unsigned int* track_intersections;
-};
-
-void ListIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
-    int* valid = args->valid;
-    const ListIntersectionsContext* context =
-            reinterpret_cast<const ListIntersectionsContext*>(args->context);
-    struct RTCRayN* rayN = args->ray;
-    struct RTCHitN* hitN = args->hit;
-    const unsigned int N = args->N;
-
-    // Avoid crashing when debug visualizations are used.
-    if (context == nullptr) return;
-
-    std::vector<std::tuple<uint32_t, uint32_t, float>>*
-            previous_geom_prim_ID_tfar = context->previous_geom_prim_ID_tfar;
-    unsigned int* ray_ids = context->ray_ids;
-    unsigned int* geometry_ids = context->geometry_ids;
-    unsigned int* primitive_ids = context->primitive_ids;
-    float* primitive_uvs = context->primitive_uvs;
-    float* t_hit = context->t_hit;
-    Eigen::VectorXi cumsum = context->cumsum;
-    unsigned int* track_intersections = context->track_intersections;
-
-    // Iterate over all rays in ray packet.
-    for (unsigned int ui = 0; ui < N; ui += 1) {
-        // Calculate loop and execution mask
-        unsigned int vi = ui + 0;
-        if (vi >= N) continue;
-
-        // Ignore inactive rays.
-        if (valid[vi] != -1) continue;
-
-        // Read ray/hit from ray structure.
-        RTCRay ray = rtcGetRayFromRayN(rayN, N, ui);
-        RTCHit hit = rtcGetHitFromHitN(hitN, N, ui);
-
-        unsigned int ray_id = ray.id;
-        std::tuple<uint32_t, uint32_t, float> gpID(hit.geomID, hit.primID,
-                                                   ray.tfar);
-        auto& prev_gpIDtfar = previous_geom_prim_ID_tfar->operator[](ray_id);
-        if (std::get<0>(prev_gpIDtfar) != hit.geomID ||
-            (std::get<1>(prev_gpIDtfar) != hit.primID &&
-             std::get<2>(prev_gpIDtfar) != ray.tfar)) {
-            size_t idx = cumsum[ray_id] + track_intersections[ray_id];
-            ray_ids[idx] = ray_id;
-            geometry_ids[idx] = hit.geomID;
-            primitive_ids[idx] = hit.primID;
-            primitive_uvs[idx * 2 + 0] = hit.u;
-            primitive_uvs[idx * 2 + 1] = hit.v;
-            t_hit[idx] = ray.tfar;
-            previous_geom_prim_ID_tfar->operator[](ray_id) = gpID;
-            ++(track_intersections[ray_id]);
-        }
-        // Always ignore hit
-        valid[ui] = 0;
-    }
 }
 
 // Adapted from common/math/closest_point.h
@@ -327,17 +359,17 @@ namespace t {
 namespace geometry {
 
 struct RaycastingScene::Impl {
-    // The maximum number of rays used in calls to embree.
-    const size_t BATCH_SIZE = 1024;
-    RTCDevice device_;
     RTCScene scene_;
     bool scene_committed_;  // true if the scene has been committed.
+    RTCDevice device_;
     // Vector for storing some information about the added geometry.
     std::vector<std::tuple<RTCGeometryType, const void*, const void*>>
             geometry_ptrs_;
-    core::Device tensor_device_;  // cpu
+    core::Device tensor_device_;  // cpu or sycl
 
     bool devprop_join_commit;
+
+    virtual ~Impl() = default;
 
     void CommitScene() {
         if (!scene_committed_) {
@@ -350,7 +382,86 @@ struct RaycastingScene::Impl {
         }
     }
 
-    template <bool LINE_INTERSECTION>
+    virtual void CastRays(const float* const rays,
+                          const size_t num_rays,
+                          float* t_hit,
+                          unsigned int* geometry_ids,
+                          unsigned int* primitive_ids,
+                          float* primitive_uvs,
+                          float* primitive_normals,
+                          const int nthreads,
+                          const bool line_intersection) = 0;
+
+    virtual void TestOcclusions(const float* const rays,
+                                const size_t num_rays,
+                                const float tnear,
+                                const float tfar,
+                                int8_t* occluded,
+                                const int nthreads) = 0;
+
+    virtual void CountIntersections(const float* const rays,
+                                    const size_t num_rays,
+                                    int* intersections,
+                                    const int nthreads) = 0;
+
+    virtual void ListIntersections(const float* const rays,
+                                   const size_t num_rays,
+                                   const size_t num_intersections,
+                                   int* cumsum,
+                                   unsigned int* track_intersections,
+                                   unsigned int* ray_ids,
+                                   unsigned int* geometry_ids,
+                                   unsigned int* primitive_ids,
+                                   float* primitive_uvs,
+                                   float* t_hit,
+                                   const int nthreads) = 0;
+
+    virtual void ComputeClosestPoints(const float* const query_points,
+                                      const size_t num_query_points,
+                                      float* closest_points,
+                                      unsigned int* geometry_ids,
+                                      unsigned int* primitive_ids,
+                                      float* primitive_uvs,
+                                      float* primitive_normals,
+                                      const int nthreads) = 0;
+    
+    virtual void ArraySum(int* data_ptr, size_t num_elements, size_t &result) = 0;
+
+    virtual void ArrayPartialSum(int* input, int* output, size_t num_elements) = 0;
+
+    virtual void CopyArray(int* src, uint32_t* dst, size_t num_elements) = 0;
+};
+
+#ifdef BUILD_SYCL_MODULE
+struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
+    // SYCL variables
+    sycl::queue queue_;
+    sycl::context context_;
+    sycl::device sycl_device_;
+
+    void InitializeDevice() {
+        enablePersistentJITCache();
+
+        try {
+            sycl_device_ = sycl::device(rtcSYCLDeviceSelector);
+        } catch (std::exception& e) {
+            utility::LogError("Caught exception creating sycl::device: {}",
+                              e.what());
+            return;
+        }
+
+        queue_ = sycl::queue(sycl_device_);
+        context_ = sycl::context(sycl_device_);
+
+        device_ = rtcNewSYCLDevice(context_, "");
+        rtcSetDeviceSYCLDevice(device_, sycl_device_);
+
+        if (!device_) {
+            utility::LogError("Error %d: cannot create device\n",
+                              rtcGetDeviceError(NULL));
+        }
+    }
+
     void CastRays(const float* const rays,
                   const size_t num_rays,
                   float* t_hit,
@@ -358,7 +469,359 @@ struct RaycastingScene::Impl {
                   unsigned int* primitive_ids,
                   float* primitive_uvs,
                   float* primitive_normals,
-                  const int nthreads) {
+                  const int nthreads,
+                  const bool line_intersection) override {
+        CommitScene();
+
+        auto scene = this->scene_;
+        queue_.submit([=](sycl::handler& cgh) {
+            cgh.parallel_for(
+                    sycl::range<1>(num_rays),
+                    [=](sycl::item<1> item, sycl::kernel_handler kh) {
+                        const size_t i = item.get_id(0);
+
+                        struct RTCRayHit rh;
+                        const float* r = &rays[i * 6];
+                        rh.ray.org_x = r[0];
+                        rh.ray.org_y = r[1];
+                        rh.ray.org_z = r[2];
+                        if (line_intersection) {
+                            rh.ray.dir_x = r[3] - r[0];
+                            rh.ray.dir_y = r[4] - r[1];
+                            rh.ray.dir_z = r[5] - r[2];
+                        } else {
+                            rh.ray.dir_x = r[3];
+                            rh.ray.dir_y = r[4];
+                            rh.ray.dir_z = r[5];
+                        }
+                        rh.ray.tnear = 0;
+                        if (line_intersection) {
+                            rh.ray.tfar = 1.f;
+                        } else {
+                            rh.ray.tfar =
+                                    std::numeric_limits<float>::infinity();
+                        }
+                        rh.ray.mask = -1;
+                        rh.ray.id = i;
+                        rh.ray.flags = 0;
+                        rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+                        rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+                        rtcIntersect1(scene, &rh);
+
+                        t_hit[i] = rh.ray.tfar;
+                        if (rh.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
+                            geometry_ids[i] = rh.hit.geomID;
+                            primitive_ids[i] = rh.hit.primID;
+                            primitive_uvs[i * 2 + 0] = rh.hit.u;
+                            primitive_uvs[i * 2 + 1] = rh.hit.v;
+                            float inv_norm =
+                                    1.f / std::sqrt(rh.hit.Ng_x * rh.hit.Ng_x +
+                                                    rh.hit.Ng_y * rh.hit.Ng_y +
+                                                    rh.hit.Ng_z * rh.hit.Ng_z);
+                            primitive_normals[i * 3 + 0] =
+                                    rh.hit.Ng_x * inv_norm;
+                            primitive_normals[i * 3 + 1] =
+                                    rh.hit.Ng_y * inv_norm;
+                            primitive_normals[i * 3 + 2] =
+                                    rh.hit.Ng_z * inv_norm;
+                        } else {
+                            geometry_ids[i] = RTC_INVALID_GEOMETRY_ID;
+                            primitive_ids[i] = RTC_INVALID_GEOMETRY_ID;
+                            primitive_uvs[i * 2 + 0] = 0;
+                            primitive_uvs[i * 2 + 1] = 0;
+                            primitive_normals[i * 3 + 0] = 0;
+                            primitive_normals[i * 3 + 1] = 0;
+                            primitive_normals[i * 3 + 2] = 0;
+                        }
+                    });
+        });
+        queue_.wait_and_throw();
+    }
+
+    void TestOcclusions(const float* const rays,
+                        const size_t num_rays,
+                        const float tnear,
+                        const float tfar,
+                        int8_t* occluded,
+                        const int nthreads) override {
+        CommitScene();
+
+        auto scene = this->scene_;
+        queue_.submit([=](sycl::handler& cgh) {
+            cgh.parallel_for(
+                    sycl::range<1>(num_rays),
+                    [=](sycl::item<1> item, sycl::kernel_handler kh) {
+                        struct RTCRayQueryContext context;
+                        rtcInitRayQueryContext(&context);
+
+                        RTCOccludedArguments args;
+                        rtcInitOccludedArguments(&args);
+                        args.context = &context;
+
+                        const size_t i = item.get_id(0);
+
+                        struct RTCRay ray;
+                        const float* r = &rays[i * 6];
+                        ray.org_x = r[0];
+                        ray.org_y = r[1];
+                        ray.org_z = r[2];
+                        ray.dir_x = r[3];
+                        ray.dir_y = r[4];
+                        ray.dir_z = r[5];
+                        ray.tnear = tnear;
+                        ray.tfar = tfar;
+                        ray.mask = -1;
+                        ray.id = i;
+                        ray.flags = 0;
+
+                        rtcOccluded1(scene, &ray, &args);
+
+                        occluded[i] = int8_t(
+                                -std::numeric_limits<float>::infinity() ==
+                                ray.tfar);
+                    });
+        });
+        queue_.wait_and_throw();
+    }
+
+    void CountIntersections(const float* const rays,
+                            const size_t num_rays,
+                            int* intersections,
+                            const int nthreads) override {
+        CommitScene();
+
+        queue_.memset(intersections, 0, sizeof(int) * num_rays).wait();
+
+        callbacks::GeomPrimID* previous_geom_prim_ID_tfar =
+                sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
+
+        // Check if allocation was successful
+        if (!previous_geom_prim_ID_tfar) {
+            throw std::runtime_error("Failed to allocate device memory");
+        }
+
+        auto host_previous_geom_prim_ID_tfar =
+                std::unique_ptr<callbacks::GeomPrimID[],
+                                std::default_delete<callbacks::GeomPrimID[]>>(
+                        new callbacks::GeomPrimID[num_rays]);
+        for (size_t i = 0; i < num_rays; ++i) {
+            host_previous_geom_prim_ID_tfar[i] = {
+                    uint32_t(RTC_INVALID_GEOMETRY_ID),
+                    uint32_t(RTC_INVALID_GEOMETRY_ID), 0.f};
+        }
+
+        // Copy the initialized data to the device
+        queue_.memcpy(host_previous_geom_prim_ID_tfar.get(),
+                      previous_geom_prim_ID_tfar,
+                      num_rays * sizeof(callbacks::GeomPrimID))
+                .wait();
+
+        auto scene = this->scene_;
+        queue_.submit([=](sycl::handler& cgh) {
+            cgh.parallel_for(
+                    sycl::range<1>(num_rays),
+                    [=](sycl::item<1> item, sycl::kernel_handler kh) {
+                        callbacks::CountIntersectionsContext context;
+                        rtcInitRayQueryContext(&context.context);
+                        context.previous_geom_prim_ID_tfar =
+                                previous_geom_prim_ID_tfar;
+                        context.intersections = intersections;
+
+                        RTCIntersectArguments args;
+                        rtcInitIntersectArguments(&args);
+                        args.filter = callbacks::CountIntersectionsFunc;
+                        args.context = &context.context;
+
+                        const size_t i = item.get_id(0);
+
+                        struct RTCRayHit rh;
+                        const float* r = &rays[i * 6];
+                        rh.ray.org_x = r[0];
+                        rh.ray.org_y = r[1];
+                        rh.ray.org_z = r[2];
+                        rh.ray.dir_x = r[3];
+                        rh.ray.dir_y = r[4];
+                        rh.ray.dir_z = r[5];
+                        rh.ray.tnear = 0;
+                        rh.ray.tfar = std::numeric_limits<float>::infinity();
+                        rh.ray.mask = -1;
+                        rh.ray.flags = 0;
+                        rh.ray.id = i;
+                        rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+                        rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+                        rtcIntersect1(scene, &rh, &args);
+                    });
+        });
+        queue_.wait_and_throw();
+
+        // Free the allocated memory
+        sycl::free(previous_geom_prim_ID_tfar, queue_);
+    }
+
+    void ListIntersections(const float* const rays,
+                           const size_t num_rays,
+                           const size_t num_intersections,
+                           int* cumsum,
+                           unsigned int* track_intersections,
+                           unsigned int* ray_ids,
+                           unsigned int* geometry_ids,
+                           unsigned int* primitive_ids,
+                           float* primitive_uvs,
+                           float* t_hit,
+                           const int nthreads) override {
+        CommitScene();
+
+        queue_.memset(track_intersections, 0, sizeof(uint32_t) * num_rays)
+                .wait();
+        queue_.memset(ray_ids, 0, sizeof(uint32_t) * num_intersections).wait();
+        queue_.memset(geometry_ids, 0, sizeof(uint32_t) * num_intersections)
+                .wait();
+        queue_.memset(primitive_ids, 0, sizeof(uint32_t) * num_intersections)
+                .wait();
+        queue_.memset(primitive_uvs, 0, sizeof(float) * num_intersections * 2)
+                .wait();
+        queue_.memset(t_hit, 0, sizeof(float) * num_intersections).wait();
+
+        callbacks::GeomPrimID* previous_geom_prim_ID_tfar =
+                sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
+
+        // Check if allocation was successful
+        if (!previous_geom_prim_ID_tfar) {
+            throw std::runtime_error("Failed to allocate device memory");
+        }
+
+        auto host_previous_geom_prim_ID_tfar =
+                std::unique_ptr<callbacks::GeomPrimID[],
+                                std::default_delete<callbacks::GeomPrimID[]>>(
+                        new callbacks::GeomPrimID[num_rays]);
+        for (size_t i = 0; i < num_rays; ++i) {
+            host_previous_geom_prim_ID_tfar[i] = {
+                    uint32_t(RTC_INVALID_GEOMETRY_ID),
+                    uint32_t(RTC_INVALID_GEOMETRY_ID), 0.f};
+        }
+
+        // Copy the initialized data to the device
+        queue_.memcpy(host_previous_geom_prim_ID_tfar.get(),
+                      previous_geom_prim_ID_tfar,
+                      num_rays * sizeof(callbacks::GeomPrimID))
+                .wait();
+
+        // cumsum
+        int* cumsum_ = sycl::malloc_device<int>(num_rays, queue_);
+        queue_.memcpy(cumsum, cumsum_, num_rays * sizeof(int)).wait();
+
+        auto scene = this->scene_;
+        queue_.submit([=](sycl::handler& cgh) {
+            cgh.parallel_for(
+                    sycl::range<1>(num_rays),
+                    [=](sycl::item<1> item, sycl::kernel_handler kh) {
+                        callbacks::ListIntersectionsContext context;
+                        rtcInitRayQueryContext(&context.context);
+                        context.previous_geom_prim_ID_tfar =
+                                previous_geom_prim_ID_tfar;
+                        context.ray_ids = ray_ids;
+                        context.geometry_ids = geometry_ids;
+                        context.primitive_ids = primitive_ids;
+                        context.primitive_uvs = primitive_uvs;
+                        context.t_hit = t_hit;
+                        context.cumsum = cumsum_;
+                        context.track_intersections = track_intersections;
+
+                        RTCIntersectArguments args;
+                        rtcInitIntersectArguments(&args);
+                        // args.filter = callbacks::ListIntersectionsFunc;
+                        args.context = &context.context;
+
+                        const size_t i = item.get_id(0);
+
+                        struct RTCRayHit rh;
+                        const float* r = &rays[i * 6];
+                        rh.ray.org_x = r[0];
+                        rh.ray.org_y = r[1];
+                        rh.ray.org_z = r[2];
+                        rh.ray.dir_x = r[3];
+                        rh.ray.dir_y = r[4];
+                        rh.ray.dir_z = r[5];
+                        rh.ray.tnear = 0;
+                        rh.ray.tfar = std::numeric_limits<float>::infinity();
+                        rh.ray.mask = -1;
+                        rh.ray.flags = 0;
+                        rh.ray.id = i;
+                        rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+                        rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+                        rtcIntersect1(scene, &rh, &args);
+                    });
+        });
+        queue_.wait_and_throw();
+
+        // Free the allocated memory
+        sycl::free(previous_geom_prim_ID_tfar, queue_);
+        sycl::free(cumsum_, queue_);
+    }
+
+    void ComputeClosestPoints(const float* const query_points,
+                              const size_t num_query_points,
+                              float* closest_points,
+                              unsigned int* geometry_ids,
+                              unsigned int* primitive_ids,
+                              float* primitive_uvs,
+                              float* primitive_normals,
+                              const int nthreads) override {
+        throw std::logic_error("Function not yet implemented");
+    }
+
+    void ArraySum(int* data_ptr, size_t num_elements, size_t &result) override {
+        int result_data[1] = {0};
+        sycl::buffer<int, 1> result_buf(result_data, sycl::range<1>(1));
+
+        queue_.submit([&](sycl::handler& cgh) {
+            auto result_acc = result_buf.get_access<sycl::access::mode::read_write>(cgh);
+            cgh.parallel_for(
+                    sycl::range<1>(num_elements),
+                    [=](sycl::item<1> item, sycl::kernel_handler kh) {
+                const size_t i = item.get_id(0);
+                result_acc[0] += data_ptr[i];
+            });
+        });
+        queue_.wait_and_throw();
+
+        result = result_data[0];
+    }
+
+    void ArrayPartialSum(int* input, int* output, size_t num_elements) override {
+        queue_.submit([&](sycl::handler& cgh) {
+            cgh.single_task([=]() {
+                for (size_t idx = 1; idx < num_elements; ++idx) {
+                    output[idx] = output[idx - 1] + input[idx - 1];
+                }
+            });
+        });
+
+        queue_.wait_and_throw();
+    }
+
+    void CopyArray(int* src, uint32_t* dst, size_t num_elements) override {
+        queue_.memcpy(dst, src, num_elements * sizeof(uint32_t)).wait();
+    }
+};
+#endif
+
+struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
+    // The maximum number of rays used in calls to embree.
+    const size_t BATCH_SIZE = 1024;
+
+    void CastRays(const float* const rays,
+                  const size_t num_rays,
+                  float* t_hit,
+                  unsigned int* geometry_ids,
+                  unsigned int* primitive_ids,
+                  float* primitive_uvs,
+                  float* primitive_normals,
+                  const int nthreads,
+                  const bool line_intersection) override {
         CommitScene();
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
@@ -370,7 +833,7 @@ struct RaycastingScene::Impl {
                 rh.ray.org_x = r[0];
                 rh.ray.org_y = r[1];
                 rh.ray.org_z = r[2];
-                if (LINE_INTERSECTION) {
+                if (line_intersection) {
                     rh.ray.dir_x = r[3] - r[0];
                     rh.ray.dir_y = r[4] - r[1];
                     rh.ray.dir_z = r[5] - r[2];
@@ -380,7 +843,7 @@ struct RaycastingScene::Impl {
                     rh.ray.dir_z = r[5];
                 }
                 rh.ray.tnear = 0;
-                if (LINE_INTERSECTION) {
+                if (line_intersection) {
                     rh.ray.tfar = 1.f;
                 } else {
                     rh.ray.tfar = std::numeric_limits<float>::infinity();
@@ -440,7 +903,7 @@ struct RaycastingScene::Impl {
                         const float tnear,
                         const float tfar,
                         int8_t* occluded,
-                        const int nthreads) {
+                        const int nthreads) override {
         CommitScene();
 
         struct RTCRayQueryContext context;
@@ -495,26 +958,29 @@ struct RaycastingScene::Impl {
     void CountIntersections(const float* const rays,
                             const size_t num_rays,
                             int* intersections,
-                            const int nthreads) {
+                            const int nthreads) override {
         CommitScene();
 
-        memset(intersections, 0, sizeof(int) * num_rays);
+        std::memset(intersections, 0, sizeof(int) * num_rays);
 
-        std::vector<std::tuple<uint32_t, uint32_t, float>>
-                previous_geom_prim_ID_tfar(
-                        num_rays,
-                        std::make_tuple(uint32_t(RTC_INVALID_GEOMETRY_ID),
-                                        uint32_t(RTC_INVALID_GEOMETRY_ID),
-                                        0.f));
+        auto previous_geom_prim_ID_tfar =
+                std::unique_ptr<callbacks::GeomPrimID[],
+                                std::default_delete<callbacks::GeomPrimID[]>>(
+                        new callbacks::GeomPrimID[num_rays]);
+        for (size_t i = 0; i < num_rays; ++i) {
+            previous_geom_prim_ID_tfar[i] = {uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                             uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                             0.f};
+        }
 
-        CountIntersectionsContext context;
+        callbacks::CountIntersectionsContext context;
         rtcInitRayQueryContext(&context.context);
-        context.previous_geom_prim_ID_tfar = &previous_geom_prim_ID_tfar;
+        context.previous_geom_prim_ID_tfar = previous_geom_prim_ID_tfar.get();
         context.intersections = intersections;
 
         RTCIntersectArguments args;
         rtcInitIntersectArguments(&args);
-        args.filter = CountIntersectionsFunc;
+        args.filter = callbacks::CountIntersectionsFunc;
         args.context = &context.context;
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
@@ -558,33 +1024,36 @@ struct RaycastingScene::Impl {
     void ListIntersections(const float* const rays,
                            const size_t num_rays,
                            const size_t num_intersections,
-                           const Eigen::VectorXi& cumsum,
+                           int* cumsum,
                            unsigned int* track_intersections,
                            unsigned int* ray_ids,
                            unsigned int* geometry_ids,
                            unsigned int* primitive_ids,
                            float* primitive_uvs,
                            float* t_hit,
-                           const int nthreads) {
+                           const int nthreads) override {
         CommitScene();
 
-        memset(track_intersections, 0, sizeof(uint32_t) * num_rays);
-        memset(ray_ids, 0, sizeof(uint32_t) * num_intersections);
-        memset(geometry_ids, 0, sizeof(uint32_t) * num_intersections);
-        memset(primitive_ids, 0, sizeof(uint32_t) * num_intersections);
-        memset(primitive_uvs, 0, sizeof(float) * num_intersections * 2);
-        memset(t_hit, 0, sizeof(float) * num_intersections);
+        std::memset(track_intersections, 0, sizeof(uint32_t) * num_rays);
+        std::memset(ray_ids, 0, sizeof(uint32_t) * num_intersections);
+        std::memset(geometry_ids, 0, sizeof(uint32_t) * num_intersections);
+        std::memset(primitive_ids, 0, sizeof(uint32_t) * num_intersections);
+        std::memset(primitive_uvs, 0, sizeof(float) * num_intersections * 2);
+        std::memset(t_hit, 0, sizeof(float) * num_intersections);
 
-        std::vector<std::tuple<uint32_t, uint32_t, float>>
-                previous_geom_prim_ID_tfar(
-                        num_rays,
-                        std::make_tuple(uint32_t(RTC_INVALID_GEOMETRY_ID),
-                                        uint32_t(RTC_INVALID_GEOMETRY_ID),
-                                        0.f));
+        auto previous_geom_prim_ID_tfar =
+                std::unique_ptr<callbacks::GeomPrimID[],
+                                std::default_delete<callbacks::GeomPrimID[]>>(
+                        new callbacks::GeomPrimID[num_rays]);
+        for (size_t i = 0; i < num_rays; ++i) {
+            previous_geom_prim_ID_tfar[i] = {uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                             uint32_t(RTC_INVALID_GEOMETRY_ID),
+                                             0.f};
+        }
 
-        ListIntersectionsContext context;
+        callbacks::ListIntersectionsContext context;
         rtcInitRayQueryContext(&context.context);
-        context.previous_geom_prim_ID_tfar = &previous_geom_prim_ID_tfar;
+        context.previous_geom_prim_ID_tfar = previous_geom_prim_ID_tfar.get();
         context.ray_ids = ray_ids;
         context.geometry_ids = geometry_ids;
         context.primitive_ids = primitive_ids;
@@ -595,7 +1064,7 @@ struct RaycastingScene::Impl {
 
         RTCIntersectArguments args;
         rtcInitIntersectArguments(&args);
-        args.filter = ListIntersectionsFunc;
+        args.filter = callbacks::ListIntersectionsFunc;
         args.context = &context.context;
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
@@ -643,7 +1112,7 @@ struct RaycastingScene::Impl {
                               unsigned int* primitive_ids,
                               float* primitive_uvs,
                               float* primitive_normals,
-                              const int nthreads) {
+                              const int nthreads) override {
         CommitScene();
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
@@ -689,16 +1158,54 @@ struct RaycastingScene::Impl {
                     LoopFn);
         }
     }
+
+    void ArraySum(int* data_ptr, size_t num_elements, size_t &result) override {
+        for (size_t i = 0; i < num_elements; ++i) {
+            result += data_ptr[i];
+        }
+    }
+
+    void ArrayPartialSum(int* input, int* output, size_t num_elements) override {
+        output[0] = 0;
+        for (size_t i = 1; i < num_elements; ++i) {
+            output[i] = output[i - 1] + input[i - 1];
+        }
+    }
+
+    void CopyArray(int* src, uint32_t* dst, size_t num_elements) override {
+        for (size_t i = 0; i < num_elements; ++i) {
+            dst[i] = src[i];
+        }
+    }
 };
 
-RaycastingScene::RaycastingScene(int64_t nthreads)
-    : impl_(new RaycastingScene::Impl()) {
-    if (nthreads > 0) {
-        std::string config("threads=" + std::to_string(nthreads));
-        impl_->device_ = rtcNewDevice(config.c_str());
+RaycastingScene::RaycastingScene(int64_t nthreads
+#ifdef BUILD_SYCL_MODULE
+                                 ,
+                                 const core::Device& device
+#endif
+) {
+
+#ifdef BUILD_SYCL_MODULE
+    if (device.IsSYCL()) {
+        impl_ = std::make_unique<SYCLImpl>();
+        dynamic_cast<RaycastingScene::SYCLImpl*>(impl_.get())
+                ->InitializeDevice();
+        impl_->tensor_device_ = device;
     } else {
-        impl_->device_ = rtcNewDevice(NULL);
+#endif
+        impl_ = std::make_unique<CPUImpl>();
+
+        if (nthreads > 0) {
+            std::string config("threads=" + std::to_string(nthreads));
+            impl_->device_ = rtcNewDevice(config.c_str());
+        } else {
+            impl_->device_ = rtcNewDevice(NULL);
+        }
+#ifdef BUILD_SYCL_MODULE
     }
+#endif
+
     rtcSetDeviceErrorFunction(impl_->device_, ErrorFunction, NULL);
 
     impl_->scene_ = rtcNewScene(impl_->device_);
@@ -746,13 +1253,37 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
 
     {
         auto data = vertex_positions.Contiguous();
-        memcpy(vertex_buffer, data.GetDataPtr(),
-               sizeof(float) * 3 * num_vertices);
+#ifdef BUILD_SYCL_MODULE
+        if (impl_->tensor_device_.IsSYCL()) {
+            dynamic_cast<RaycastingScene::SYCLImpl*>(impl_.get())
+                    ->queue_
+                    .memcpy(vertex_buffer, data.GetDataPtr(),
+                            sizeof(float) * 3 * num_vertices)
+                    .wait();
+        } else {
+#endif
+            std::memcpy(vertex_buffer, data.GetDataPtr(),
+                        sizeof(float) * 3 * num_vertices);
+#ifdef BUILD_SYCL_MODULE
+        }
+#endif
     }
     {
         auto data = triangle_indices.Contiguous();
-        memcpy(index_buffer, data.GetDataPtr(),
-               sizeof(uint32_t) * 3 * num_triangles);
+#ifdef BUILD_SYCL_MODULE
+        if (impl_->tensor_device_.IsSYCL()) {
+            dynamic_cast<RaycastingScene::SYCLImpl*>(impl_.get())
+                    ->queue_
+                    .memcpy(index_buffer, data.GetDataPtr(),
+                            sizeof(uint32_t) * 3 * num_triangles)
+                    .wait();
+        } else {
+#endif
+            std::memcpy(index_buffer, data.GetDataPtr(),
+                        sizeof(uint32_t) * 3 * num_triangles);
+#ifdef BUILD_SYCL_MODULE
+        }
+#endif
     }
     rtcSetGeometryEnableFilterFunctionFromArguments(geom, true);
     rtcCommitGeometry(geom);
@@ -787,22 +1318,26 @@ std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
     size_t num_rays = shape.NumElements();
 
     std::unordered_map<std::string, core::Tensor> result;
-    result["t_hit"] = core::Tensor(shape, core::Float32);
-    result["geometry_ids"] = core::Tensor(shape, core::UInt32);
-    result["primitive_ids"] = core::Tensor(shape, core::UInt32);
+    result["t_hit"] = core::Tensor(shape, core::Float32, rays.GetDevice());
+    result["geometry_ids"] =
+            core::Tensor(shape, core::UInt32, rays.GetDevice());
+    result["primitive_ids"] =
+            core::Tensor(shape, core::UInt32, rays.GetDevice());
     shape.push_back(2);
-    result["primitive_uvs"] = core::Tensor(shape, core::Float32);
+    result["primitive_uvs"] =
+            core::Tensor(shape, core::Float32, rays.GetDevice());
     shape.back() = 3;
-    result["primitive_normals"] = core::Tensor(shape, core::Float32);
+    result["primitive_normals"] =
+            core::Tensor(shape, core::Float32, rays.GetDevice());
 
     auto data = rays.Contiguous();
-    impl_->CastRays<false>(data.GetDataPtr<float>(), num_rays,
-                           result["t_hit"].GetDataPtr<float>(),
-                           result["geometry_ids"].GetDataPtr<uint32_t>(),
-                           result["primitive_ids"].GetDataPtr<uint32_t>(),
-                           result["primitive_uvs"].GetDataPtr<float>(),
-                           result["primitive_normals"].GetDataPtr<float>(),
-                           nthreads);
+    impl_->CastRays(data.GetDataPtr<float>(), num_rays,
+                    result["t_hit"].GetDataPtr<float>(),
+                    result["geometry_ids"].GetDataPtr<uint32_t>(),
+                    result["primitive_ids"].GetDataPtr<uint32_t>(),
+                    result["primitive_uvs"].GetDataPtr<float>(),
+                    result["primitive_normals"].GetDataPtr<float>(), nthreads,
+                    false);
 
     return result;
 }
@@ -818,7 +1353,7 @@ core::Tensor RaycastingScene::TestOcclusions(const core::Tensor& rays,
                        // results.
     size_t num_rays = shape.NumElements();
 
-    core::Tensor result(shape, core::Bool);
+    core::Tensor result(shape, core::Bool, rays.GetDevice());
 
     auto data = rays.Contiguous();
     impl_->TestOcclusions(data.GetDataPtr<float>(), num_rays, tnear, tfar,
@@ -837,7 +1372,8 @@ core::Tensor RaycastingScene::CountIntersections(const core::Tensor& rays,
                        // results.
     size_t num_rays = shape.NumElements();
 
-    core::Tensor intersections(shape, core::Dtype::FromType<int>());
+    core::Tensor intersections(shape, core::Dtype::FromType<int>(),
+                               impl_->tensor_device_);
 
     auto data = rays.Contiguous();
 
@@ -858,49 +1394,56 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
     size_t num_rays = shape.NumElements();
 
     // determine total number of intersections
-    core::Tensor intersections(shape, core::Dtype::FromType<int>());
-    core::Tensor track_intersections(shape, core::Dtype::FromType<uint32_t>());
+    core::Tensor intersections(shape, core::Dtype::FromType<int>(),
+                               impl_->tensor_device_);
+    core::Tensor track_intersections(shape, core::Dtype::FromType<uint32_t>(),
+                                     impl_->tensor_device_);
     auto data = rays.Contiguous();
     impl_->CountIntersections(data.GetDataPtr<float>(), num_rays,
                               intersections.GetDataPtr<int>(), nthreads);
 
     // prepare shape with that number of elements
-    Eigen::Map<Eigen::VectorXi> intersections_vector(
-            intersections.GetDataPtr<int>(), num_rays);
-    size_t num_intersections = intersections_vector.sum();
+    int* data_ptr = intersections.GetDataPtr<int>();
+    size_t num_intersections = 0;
+    impl_->ArraySum(data_ptr, num_rays, num_intersections);
 
     // prepare ray allocations (cumsum)
-    Eigen::VectorXi cumsum = Eigen::MatrixXi::Zero(num_rays, 1);
-    std::partial_sum(intersections_vector.begin(),
-                     intersections_vector.end() - 1, cumsum.begin() + 1,
-                     std::plus<int>());
+    core::Tensor cumsum_tensor = core::Tensor::Zeros(
+            shape, core::Dtype::FromType<int>(), impl_->tensor_device_);
+    int* cumsum_ptr = cumsum_tensor.GetDataPtr<int>();
+    impl_->ArrayPartialSum(data_ptr, cumsum_ptr, num_rays);
 
     // generate results structure
     std::unordered_map<std::string, core::Tensor> result;
     shape.clear();
     shape.push_back(num_rays + 1);
     result["ray_splits"] = core::Tensor(shape, core::UInt32);
+
     uint32_t* ptr = result["ray_splits"].GetDataPtr<uint32_t>();
-    for (int i = 0; i < cumsum.size(); ++i) {
-        ptr[i] = cumsum[i];
-    }
+    impl_->CopyArray(cumsum_ptr, ptr, num_rays);
+
     ptr[num_rays] = num_intersections;
-    shape[0] = intersections_vector.sum();
-    result["ray_ids"] = core::Tensor(shape, core::UInt32);
-    result["geometry_ids"] = core::Tensor(shape, core::UInt32);
-    result["primitive_ids"] = core::Tensor(shape, core::UInt32);
-    result["t_hit"] = core::Tensor(shape, core::Float32);
+    shape[0] = num_intersections;
+    result["ray_ids"] =
+            core::Tensor(shape, core::UInt32, impl_->tensor_device_);
+    result["geometry_ids"] =
+            core::Tensor(shape, core::UInt32, impl_->tensor_device_);
+    result["primitive_ids"] =
+            core::Tensor(shape, core::UInt32, impl_->tensor_device_);
+    result["t_hit"] = core::Tensor(shape, core::Float32, impl_->tensor_device_);
     shape.push_back(2);
-    result["primitive_uvs"] = core::Tensor(shape, core::Float32);
+    result["primitive_uvs"] =
+            core::Tensor(shape, core::Float32, impl_->tensor_device_);
 
     impl_->ListIntersections(data.GetDataPtr<float>(), num_rays,
-                             num_intersections, cumsum,
+                             num_intersections, cumsum_ptr,
                              track_intersections.GetDataPtr<uint32_t>(),
                              result["ray_ids"].GetDataPtr<uint32_t>(),
                              result["geometry_ids"].GetDataPtr<uint32_t>(),
                              result["primitive_ids"].GetDataPtr<uint32_t>(),
                              result["primitive_uvs"].GetDataPtr<float>(),
                              result["t_hit"].GetDataPtr<float>(), nthreads);
+
     return result;
 }
 

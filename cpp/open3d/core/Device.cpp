@@ -137,7 +137,7 @@ std::vector<Device> Device::GetAvailableCUDADevices() {
 }
 
 std::vector<Device> Device::GetAvailableSYCLDevices() {
-    return sycl::GetAvailableSYCLDevices();
+    return sy::GetAvailableSYCLDevices();
 }
 
 void Device::PrintAvailableDevices() {
