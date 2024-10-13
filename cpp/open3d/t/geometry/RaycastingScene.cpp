@@ -793,9 +793,10 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
 
     void ArrayPartialSum(int* input, int* output, size_t num_elements) override {
         queue_.submit([&](sycl::handler& cgh) {
-            cgh.parallel_for(sycl::range<1>(num_elements - 1), [=](sycl::id<1> i) {
-                size_t idx = i[0] + 1;
-                output[idx] = output[idx - 1] + input[idx - 1];
+            cgh.single_task([=]() {
+                for (size_t idx = 1; idx < num_elements; ++idx) {
+                    output[idx] = output[idx - 1] + input[idx - 1];
+                }
             });
         });
 
