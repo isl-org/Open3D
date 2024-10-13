@@ -32,7 +32,10 @@
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/geometry/kernel/TriangleMesh.h"
+
+#ifdef WITH_UV_ATLAS
 #include "open3d/t/geometry/kernel/UVUnwrapping.h"
+#endif
 #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
@@ -746,6 +749,8 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     return CreateTriangleMeshFromVtkPolyData(result);
 }
 
+#ifdef WITH_UV_ATLAS
+
 std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
         size_t size,
         float gutter,
@@ -756,6 +761,7 @@ std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
                                                 max_stretch,
                                                 parallel_partitions, nthreads);
 }
+#endif
 
 namespace {
 /// Bakes vertex or triangle attributes to a texure.
