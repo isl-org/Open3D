@@ -32,6 +32,13 @@ TEST_P(TensorMapPermuteDevices, Constructor) {
     // Primary key is required.
     EXPECT_ANY_THROW(t::geometry::TensorMap());
 
+    // Delete primary key.
+    EXPECT_ANY_THROW(tm0.Erase("positions"));
+
+    // Reserved keys.
+    EXPECT_ANY_THROW(tm0.insert(
+            {"primary_key", core::Tensor::Zeros({2, 3}, dtype, device)}));
+
     // Iterators.
     std::map<std::string, core::Tensor> tensor_map(
             {{"positions", core::Tensor::Zeros({10, 3}, dtype, device)},

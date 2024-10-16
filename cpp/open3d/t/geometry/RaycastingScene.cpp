@@ -33,7 +33,8 @@ typedef Eigen::Vector3f Vec3f;
 
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
-    open3d::utility::LogError("embree error: {} {}", error, str);
+    open3d::utility::LogError("Embree error: {} {}", rtcGetErrorString(error),
+                              str);
 }
 
 // Checks the last dim, ensures that the number of dims is >= min_ndim, checks
