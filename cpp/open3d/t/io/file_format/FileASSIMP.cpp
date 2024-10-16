@@ -245,7 +245,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     if (mesh.HasTriangleColors()) {
         utility::LogWarning(
                 "Exporting triangle colors is not supported. Please convert to "
-                "vertex colors or export to a format that supporst it.");
+                "vertex colors or export to a format that supports it.");
     }
 
     Assimp::Exporter exporter;

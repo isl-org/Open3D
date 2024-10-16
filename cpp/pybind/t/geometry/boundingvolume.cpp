@@ -22,51 +22,19 @@ void pybind_boundingvolume_declarations(py::module& m) {
                std::shared_ptr<AxisAlignedBoundingBox>, Geometry,
                DrawableGeometry>
             aabb(m, "AxisAlignedBoundingBox",
-                 R"(A bounding box that is aligned along the coordinate axes
-and defined by the min_bound and max_bound."
-- (min_bound, max_bound): Lower and upper bounds of the bounding box for all
-axes.
-    - Usage
-        - AxisAlignedBoundingBox::GetMinBound()
-        - AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound)
-        - AxisAlignedBoundingBox::GetMaxBound()
-        - AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound)
-    - Value tensor must have shape {3,}.
-    - Value tensor must have the same data type and device.
-    - Value tensor can only be float32 (default) or float64.
-    - The device of the tensor determines the device of the box.
+                 R"(A bounding box that is aligned along the coordinate axes and
+has the properties:
 
-- color: Color of the bounding box.
-    - Usage
-        - AxisAlignedBoundingBox::GetColor()
-        - AxisAlignedBoundingBox::SetColor(const core::Tensor &color)
-    - Value tensor must have shape {3,}.
-    - Value tensor can only be float32 (default) or float64.
-    - Value tensor can only be range [0.0, 1.0].)");
+- (``min_bound``, ``max_bound``): Lower and upper bounds of the bounding box for all axes. These are tensors with shape (3,) and a common data type and device. The data type can only be ``open3d.core.float32`` (default) or ``open3d.core.float64``. The device of the tensor determines the device of the box.
+- ``color``: Color of the bounding box is a tensor with shape (3,) and a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. Values can only be in the range [0.0, 1.0].)");
     py::class_<OrientedBoundingBox, PyGeometry<OrientedBoundingBox>,
                std::shared_ptr<OrientedBoundingBox>, Geometry, DrawableGeometry>
             obb(m, "OrientedBoundingBox",
-                R"(A bounding box oriented along an arbitrary frame of reference.
-- (center, rotation, extent): The oriented bounding box is defined by its
-center position, rotation maxtrix and extent.
-    - Usage
-        - OrientedBoundingBox::GetCenter()
-        - OrientedBoundingBox::SetCenter(const core::Tensor &center)
-        - OrientedBoundingBox::GetRotation()
-        - OrientedBoundingBox::SetRotation(const core::Tensor &rotation)
-    - Value tensor of center and extent must have shape {3,}.
-    - Value tensor of rotation must have shape {3, 3}.
-    - Value tensor must have the same data type and device.
-    - Value tensor can only be float32 (default) or float64.
-    - The device of the tensor determines the device of the box.
+                R"(A bounding box oriented along an arbitrary frame of reference
+with the properties:
 
-- color: Color of the bounding box.
-    - Usage
-        - OrientedBoundingBox::GetColor()
-        - OrientedBoundingBox::SetColor(const core::Tensor &color)
-    - Value tensor must have shape {3,}.
-    - Value tensor can only be float32 (default) or float64.
-    - Value tensor can only be range [0.0, 1.0].)");
+- (``center``, ``rotation``, ``extent``): The oriented bounding box is defined by its center position (shape (3,)), rotation maxtrix (shape (3,3)) and extent (shape (3,)).  Each of these tensors must have the same data type and device. The data type can only be ``open3d.core.float32`` (default) or ``open3d.core.float64``. The device of the tensor determines the device of the box.
+- ``color``: Color of the bounding box is a tensor with shape (3,) and a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. Values can only be in the range [0.0, 1.0].)");
 }
 void pybind_boundingvolume_definitions(py::module& m) {
     auto aabb = static_cast<py::class_<AxisAlignedBoundingBox,
