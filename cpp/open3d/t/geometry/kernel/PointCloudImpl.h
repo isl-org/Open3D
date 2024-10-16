@@ -956,8 +956,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
             normals_ptr[1] = 0.0;
             normals_ptr[2] = 0.0;
             return;
-        } else if (covariance_ptr[0] < covariance_ptr[4] &&
-                   covariance_ptr[0] < covariance_ptr[8]) {
+        } else if (covariance_ptr[4] < covariance_ptr[0] &&
+                   covariance_ptr[4] < covariance_ptr[8]) {
             normals_ptr[0] = 0.0;
             normals_ptr[1] = 1.0;
             normals_ptr[2] = 0.0;
