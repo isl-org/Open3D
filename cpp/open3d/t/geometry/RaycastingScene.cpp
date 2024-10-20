@@ -731,7 +731,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
 
                         RTCIntersectArguments args;
                         rtcInitIntersectArguments(&args);
-                        // args.filter = callbacks::ListIntersectionsFunc;
+                        args.filter = callbacks::ListIntersectionsFunc;
                         args.context = &context.context;
 
                         const size_t i = item.get_id(0);
@@ -774,8 +774,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
     }
 
     void ArraySum(int* data_ptr, size_t num_elements, size_t &result) override {
-        int result_data[1] = {0};
-        sycl::buffer<int, 1> result_buf(result_data, sycl::range<1>(1));
+        sycl::buffer<size_t, 1> result_buf(&result, sycl::range<1>(1));
 
         queue_.submit([&](sycl::handler& cgh) {
             auto result_acc = result_buf.get_access<sycl::access::mode::read_write>(cgh);
@@ -783,12 +782,11 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                     sycl::range<1>(num_elements),
                     [=](sycl::item<1> item, sycl::kernel_handler kh) {
                 const size_t i = item.get_id(0);
-                result_acc[0] += data_ptr[i];
+                sycl::atomic_ref<size_t, sycl::memory_order::relaxed, sycl::memory_scope::device> atomic_result_data(result_acc[0]);
+                atomic_result_data.fetch_add(data_ptr[i]);
             });
         });
         queue_.wait_and_throw();
-
-        result = result_data[0];
     }
 
     void ArrayPartialSum(int* input, int* output, size_t num_elements) override {
@@ -1408,8 +1406,9 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
     impl_->ArraySum(data_ptr, num_rays, num_intersections);
 
     // prepare ray allocations (cumsum)
-    core::Tensor cumsum_tensor = core::Tensor::Zeros(
-            shape, core::Dtype::FromType<int>(), impl_->tensor_device_);
+    core::Tensor cumsum_tensor_cpu = core::Tensor::Zeros(
+            shape, core::Dtype::FromType<int>());
+    core::Tensor cumsum_tensor = cumsum_tensor_cpu.To(impl_->tensor_device_);
     int* cumsum_ptr = cumsum_tensor.GetDataPtr<int>();
     impl_->ArrayPartialSum(data_ptr, cumsum_ptr, num_rays);
 
@@ -1442,7 +1441,7 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
                              result["geometry_ids"].GetDataPtr<uint32_t>(),
                              result["primitive_ids"].GetDataPtr<uint32_t>(),
                              result["primitive_uvs"].GetDataPtr<float>(),
-                             result["t_hit"].GetDataPtr<float>(), nthreads);
+                             result["t_hit"].GetDataPtr<float>(), nthreads);    
 
     return result;
 }

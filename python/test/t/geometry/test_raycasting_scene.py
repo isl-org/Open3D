@@ -201,9 +201,7 @@ def test_list_intersections(device):
                             [10, 10, 10, 1, 0, 0]],
                            dtype=o3d.core.float32,
                            device=device)
-    print("PYTHON TEST 1", device)
     ans = scene.list_intersections(rays)
-    print("PYTHON TEST 2")
 
     np.testing.assert_allclose(ans['t_hit'].cpu().numpy(),
                                np.array([1.0, 2.0, 0.5]),
