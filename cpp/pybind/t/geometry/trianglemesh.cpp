@@ -744,6 +744,8 @@ Example:
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
 )");
 
+#ifdef WITH_UV_ATLAS
+
     triangle_mesh.def(
             "compute_uvatlas", &TriangleMesh::ComputeUVAtlas, "size"_a = 512,
             "gutter"_a = 1.f, "max_stretch"_a = 1.f / 6,
@@ -794,6 +796,7 @@ Example:
         mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(texture_data.albedo_texture_path)
         o3d.visualization.draw(mesh)
 )");
+#endif
 
     triangle_mesh.def("bake_vertex_attr_textures",
                       &TriangleMesh::BakeVertexAttrTextures, "size"_a,
