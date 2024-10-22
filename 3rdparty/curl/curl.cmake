@@ -74,7 +74,7 @@ else()
         ext_curl
         PREFIX curl
         URL https://github.com/isl-org/open3d_downloads/releases/download/boringssl-bin/curl_8.10.1_linux_x86_64.tar.bz2
-        URL_HASH SHA256=511e9c7a42b2b21a57cda901e4f036a62a46c2fcd74834791f79820d6eb4a3fb
+        URL_HASH SHA256=4977fc20d00b22ab36e3bebd556f06c720b6c03316cd476487ab37fc79d44163
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/curl"
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
