@@ -8,6 +8,6 @@
 #include "open3d/core/SYCLUtils.h"
 
 int main() {
-    open3d::core::sycl::SYCLDemo();
+    open3d::core::sy::SYCLDemo();
     return 0;
 }
