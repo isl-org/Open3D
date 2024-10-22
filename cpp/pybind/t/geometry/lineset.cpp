@@ -257,12 +257,9 @@ transformation as :math:`P = R(P) + t`)");
 
 Args:
     angle (float): The rotation angle in degree.
-
     axis (open3d.core.Tensor): The rotation axis.
-
     resolution (int): The resolution defines the number of intermediate sweeps
         about the rotation axis.
-
     translation (float): The translation along the rotation axis.
 
 Returns:
@@ -270,7 +267,6 @@ Returns:
 
 
 Example:
-
     This code generates a spring from a single line::
 
         import open3d as o3d
@@ -286,9 +282,7 @@ Example:
                  R"(Sweeps the line set along a direction vector.
 
 Args:
-
     vector (open3d.core.Tensor): The direction vector.
-
     scale (float): Scalar factor which essentially scales the direction vector.
 
 Returns:
@@ -296,8 +290,8 @@ Returns:
 
 
 Example:
-
     This code generates an L-shaped mesh::
+
         import open3d as o3d
 
         lines = o3d.t.geometry.LineSet([[1.0,0.0,0.0],[0,0,0],[0,0,1]], [[0,1],[1,2]])
@@ -326,7 +320,7 @@ Args:
 
 Example:
 
-    Draw a purple camera frame with XYZ axes in RGB.
+    Draw a purple camera frame with XYZ axes in RGB::
 
         import open3d.core as o3c
         from open3d.t.geometry import LineSet
