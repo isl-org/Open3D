@@ -214,6 +214,8 @@ jobs:
 
     env:
       BUILD_CUDA_MODULE: OFF
+      # TensorFlow v2.16 does not support Python 3.8
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version == '3.8' && 'OFF' || 'ON' }}
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code

@@ -12,5 +12,5 @@ FetchContent_Declare(
     INSTALL_COMMAND ""
 )
 
-FetchContent_Populate(ext_googletest)
+FetchContent_MakeAvailable(ext_googletest)
 FetchContent_GetProperties(ext_googletest SOURCE_DIR GOOGLETEST_SOURCE_DIR)
