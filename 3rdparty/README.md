@@ -28,7 +28,7 @@ As an alternative, you can modify 3rdparty/zeromq/zeromq_build.cmake to fetch
 zeromq from our fork
 https://github.com/isl-org/libzmq
 --------------------------------------------------------------------------------
-curl                        7.88.0                                  Curl license
+curl                        8.10.1                                  Curl license
 Curl is a command-line tool for transferring data specified with URL syntax.
 https://github.com/curl/curl
 --------------------------------------------------------------------------------
