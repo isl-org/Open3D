@@ -50,6 +50,7 @@
 -   Fix tensor EstimatePointWiseNormalsWithFastEigen3x3 (PR #6980)
 -   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
 -   Fix render to depth image on Apple Retina displays (PR #7001)
+-   Update the ZLib provider to not use a patched version, instead it uses the new separate minizip provider. The WITH_MINIZIP option is now USE_SYSTEM_MINIZIP. (PR #7022)
 
 ## 0.13
 
