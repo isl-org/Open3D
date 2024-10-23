@@ -931,25 +931,6 @@ if(NOT USE_SYSTEM_CURL)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl)
 
-if(USE_SYSTEM_MINIZIP)
-    open3d_find_package_3rdparty_library(3rdparty_zlib
-        PACKAGE minizip
-        TARGETS MINIZIP::minizip
-    )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
-endif()
-if(NOT USE_SYSTEM_MINIZIP)
-    include(${Open3D_3RDPARTY_DIR}/zlib/minizip.cmake)
-    open3d_import_3rdparty_library(3rdparty_minizip
-        HIDDEN
-        INCLUDE_DIRS ${MINIZIP_INCLUDE_DIRS}
-        LIB_DIR      ${MINIZIP_LIB_DIR}
-        LIBRARIES    ${MINIZIP_LIBRARIES}
-        DEPENDS      ext_minizip
-    )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_minizip)
-endif()
-
 # PNG
 if(USE_SYSTEM_PNG)
     # ZLIB::ZLIB is automatically included by the PNG package.
@@ -1165,11 +1146,23 @@ open3d_import_3rdparty_library(3rdparty_poisson
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_poisson)
 
 # Minizip
-if(WITH_MINIZIP)
-    open3d_pkg_config_3rdparty_library(3rdparty_minizip
-        SEARCH_ARGS minizip
+if(USE_SYSTEM_MINIZIP)
+    open3d_find_package_3rdparty_library(3rdparty_zlib
+        PACKAGE minizip
+        TARGETS MINIZIP::minizip
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+endif()
+if(NOT USE_SYSTEM_MINIZIP)
+    include(${Open3D_3RDPARTY_DIR}/zlib/minizip.cmake)
+    open3d_import_3rdparty_library(3rdparty_minizip
+        HIDDEN
+        INCLUDE_DIRS ${MINIZIP_INCLUDE_DIRS}
+        LIB_DIR      ${MINIZIP_LIB_DIR}
+        LIBRARIES    ${MINIZIP_LIBRARIES}
+        DEPENDS      ext_minizip
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_minizip)
 endif()
 
 # Googletest
