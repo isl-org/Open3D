@@ -47,6 +47,9 @@
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
 -   Support lowercase types when reading PCD files (PR #6930)
 -   Fix visualization/draw ICP example and add warnings (PR #6933)
+-   Fix tensor EstimatePointWiseNormalsWithFastEigen3x3 (PR #6980)
+-   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
+-   Fix render to depth image on Apple Retina displays (PR #7001)
 
 ## 0.13
 
