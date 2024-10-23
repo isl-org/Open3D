@@ -6,6 +6,8 @@ ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
 set(ZLIB_INSTALL_DIR ${INSTALL_DIR})
 unset(INSTALL_DIR)
 
+set(lib_name minizip)
+
 ExternalProject_Add(ext_minizip
     PREFIX minizip-ng
     URL https://github.com/zlib-ng/minizip-ng/archive/refs/tags/4.0.7.tar.gz
@@ -28,9 +30,10 @@ ExternalProject_Add(ext_minizip
         -DMZ_ICONV:BOOL=OFF
         -DZLIB_ROOT:PATH=${ZLIB_INSTALL_DIR}
         ${ExternalProject_CMAKE_ARGS}
+    BUILD_BYPRODUCTS
+        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
-set(lib_name minizip)
 ExternalProject_Get_Property(ext_minizip INSTALL_DIR)
 set(MINIZIP_INCLUDE_DIRS ${INSTALL_DIR}/include/minizip/) # "/" is critical.
 set(MINIZIP_LIB_DIR ${INSTALL_DIR}/lib)
