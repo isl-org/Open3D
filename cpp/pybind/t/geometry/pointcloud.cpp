@@ -432,14 +432,18 @@ Example:
     // processing
     pointcloud.def("project_to_depth_image", &PointCloud::ProjectToDepthImage,
                    "width"_a, "height"_a, "intrinsics"_a,
-                   "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
-                                                      core::Device("CPU:0")),
+                   py::arg_v("extrinsics",
+                             core::Tensor::Eye(4, core::Float32,
+                                               core::Device("CPU:0")),
+                             "open3d.core.Tensor.eye(4)"),
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a point cloud to a depth image.");
     pointcloud.def("project_to_rgbd_image", &PointCloud::ProjectToRGBDImage,
                    "width"_a, "height"_a, "intrinsics"_a,
-                   "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
-                                                      core::Device("CPU:0")),
+                   py::arg_v("extrinsics",
+                             core::Tensor::Eye(4, core::Float32,
+                                               core::Device("CPU:0")),
+                             "open3d.core.Tensor.eye(4)"),
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a colored point cloud to a RGBD image.");
     pointcloud.def(

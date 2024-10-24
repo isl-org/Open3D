@@ -306,7 +306,10 @@ Example:
     line_set.def_static(
             "create_camera_visualization", &LineSet::CreateCameraVisualization,
             "view_width_px"_a, "view_height_px"_a, "intrinsic"_a, "extrinsic"_a,
-            "scale"_a = 1.f, "color"_a = core::Tensor({}, core::Float32),
+            "scale"_a = 1.f,
+            py::arg_v(
+                    "color", core::Tensor({}, core::Float32),
+                    "open3d.core.Tensor([], dtype=open3d.core.Dtype.Float32)"),
             R"(Factory function to create a LineSet from intrinsic and extrinsic
 matrices. Camera reference frame is shown with XYZ axes in RGB.
 
