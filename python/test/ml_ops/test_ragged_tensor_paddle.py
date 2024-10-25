@@ -9,7 +9,7 @@ import open3d as o3d
 import numpy as np
 import pytest
 import mltest
-import torch
+import paddle
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
@@ -23,7 +23,7 @@ dtypes = pytest.mark.parametrize('dtype',
 
 
 @dtypes
-@mltest.parametrize.ml_torch_only
+@mltest.parametrize.ml_paddle_only
 def test_creation(dtype, ml):
     values = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], dtype=dtype)
     row_splits = np.array([0, 2, 4, 4, 5, 12, 13], dtype=np.int64)
@@ -44,28 +44,31 @@ def test_creation(dtype, ml):
     # Incompatible tensors.
     # Non zero first element.
     row_splits = np.array([1, 2, 4, 4, 5, 12, 13], dtype=np.int64)
-    with np.testing.assert_raises(RuntimeError):
+
+    context = np.testing.assert_raises(ValueError)
+
+    with context:
         ml.classes.RaggedTensor.from_row_splits(values, row_splits)
 
     # Rank > 1.
     row_splits = np.array([[0, 2, 4, 4, 5, 12, 13]], dtype=np.int64)
-    with np.testing.assert_raises(RuntimeError):
+    with context:
         ml.classes.RaggedTensor.from_row_splits(values, row_splits)
 
     # Not increasing monotonically.
     row_splits = np.array([[0, 2, 4, 6, 5, 12, 13]], dtype=np.int64)
-    with np.testing.assert_raises(RuntimeError):
+    with context:
         ml.classes.RaggedTensor.from_row_splits(values, row_splits)
 
     # Wrong dtype.
     row_splits = np.array([0, 2, 4, 4, 5, 12, 13], dtype=np.float32)
-    with np.testing.assert_raises(RuntimeError):
+    with context:
         ml.classes.RaggedTensor.from_row_splits(values, row_splits)
 
 
 # test with more dimensions
 @dtypes
-@mltest.parametrize.ml_torch_only
+@mltest.parametrize.ml_paddle_only
 def test_creation_more_dims(dtype, ml):
     values = np.array([[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6],
                        [7, 7], [8, 8], [9, 9], [10, 10], [11, 11], [12, 12]],
@@ -86,21 +89,26 @@ def test_creation_more_dims(dtype, ml):
                                 values[row_splits[i]:row_splits[i + 1]])
 
 
-@mltest.parametrize.ml_torch_only
+@mltest.parametrize.ml_paddle_only
 def test_backprop(ml):
     # Create 3 different RaggedTensors and torch.tensor
-    t_1 = torch.randn(10, 3, requires_grad=True)
-    row_splits = torch.tensor([0, 4, 6, 6, 8, 10])
+    t_1 = paddle.randn([10, 3])
+    t_1.stop_gradient = False
+
+    t_2 = paddle.randn([10, 3])
+    t_2.stop_gradient = False
+
+    t_3 = paddle.randn([10, 3])
+    t_3.stop_gradient = False
+
+    row_splits = paddle.to_tensor([0, 4, 6, 6, 8, 10])
+
     r_1 = ml.classes.RaggedTensor.from_row_splits(t_1.detach().numpy(),
                                                   row_splits)
     r_1.requires_grad = True
-
-    t_2 = torch.randn(10, 3, requires_grad=True)
     r_2 = ml.classes.RaggedTensor.from_row_splits(t_2.detach().numpy(),
                                                   row_splits)
     r_2.requires_grad = True
-
-    t_3 = torch.randn(10, 3, requires_grad=True)
     r_3 = ml.classes.RaggedTensor.from_row_splits(t_3.detach().numpy(),
                                                   row_splits)
     r_3.requires_grad = True
@@ -120,17 +128,20 @@ def test_backprop(ml):
 
 
 @dtypes
-@mltest.parametrize.ml_torch_only
+@mltest.parametrize.ml_paddle_only
 def test_binary_ew_ops(dtype, ml):
     # Binary Ops.
-    t_1 = torch.from_numpy(
+    device = 'gpu' if ml.device == 'cuda' else 'cpu'
+
+    t_1 = paddle.to_tensor(
         np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                 dtype=dtype)).to(ml.device)
-    t_2 = torch.from_numpy(
+                 dtype=dtype)).to(device)
+    t_2 = paddle.to_tensor(
         np.array([2, 3, 6, 3, 11, 3, 43, 12, 8, 15, 12, 87, 45],
-                 dtype=dtype)).to(ml.device)
-    row_splits = torch.from_numpy(
-        np.array([0, 2, 4, 4, 5, 12, 13], dtype=np.int64)).to(ml.device)
+                 dtype=dtype)).to(device)
+
+    row_splits = paddle.to_tensor(
+        np.array([0, 2, 4, 4, 5, 12, 13], dtype=np.int64)).to(device)
 
     a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
     b = ml.classes.RaggedTensor.from_row_splits(t_2, row_splits)

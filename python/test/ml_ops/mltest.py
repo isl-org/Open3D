@@ -81,7 +81,7 @@ except ImportError:
 
 
 def is_gpu_device_name(name):
-    return name in ('GPU:0', 'cuda')
+    return name in ('GPU:0', 'cuda', 'gpu:0', 'gpu')
 
 
 def to_numpy(tensor):
@@ -111,7 +111,8 @@ def to_paddle(x, device):
     """Converts x such that it can be used as input to a paddle op."""
     if isinstance(x, np.ndarray):
         return paddle.to_tensor(
-            x).cuda() if device == 'cuda' else paddle.to_tensor(x).cpu()
+            x, place='gpu') if device == 'cuda' else paddle.to_tensor(
+                x, place='cpu')
     else:
         return x
 
@@ -322,7 +323,7 @@ class MLTensor:
             ans = self.module.empty(size=shape, dtype=dtype)
             return ans.uniform_(minval, maxval)
         elif self.module.__name__ == 'paddle':
-            ans = self.module.empty(size=shape, dtype=dtype)
+            ans = self.module.empty(shape=shape, dtype=dtype)
             return ans.uniform_(minval, maxval)
         else:
             raise Exception('Unsupported ml framework')
@@ -335,7 +336,7 @@ class MLTensor:
         elif self.module.__name__ == 'torch':
             return self.module.empty(size=shape, dtype=dtype)
         elif self.module.__name__ == 'paddle':
-            return self.module.empty(size=shape, dtype=dtype)
+            return self.module.empty(shape=shape, dtype=dtype)
         else:
             raise Exception('Unsupported ml framework')
 
@@ -347,7 +348,7 @@ class MLTensor:
         elif self.module.__name__ == 'torch':
             return self.module.zeros(size=shape, dtype=dtype)
         elif self.module.__name__ == 'paddle':
-            return self.module.zeros(size=shape, dtype=dtype)
+            return self.module.zeros(shape=shape, dtype=dtype)
         else:
             raise Exception('Unsupported ml framework')
 

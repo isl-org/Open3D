@@ -112,11 +112,12 @@ def custom_api_content(op_name):
         """
     ).lstrip()
 
-    # NOTE: hack return express to wrapper multi return value by return_types
-    RETURN_NAMEDTUPLE_TEMPLATE = textwrap.dedent("""return return_types.{op_name}(*res)""").lstrip()
+    # NOTE: Hack return express to wrapper multi return value by return_types
     if len(out_names) > 1:
-        dynamic_content = dynamic_content[:-37] + RETURN_NAMEDTUPLE_TEMPLATE.format(op_name=op_name)
-        static_content = static_content[:-37] + RETURN_NAMEDTUPLE_TEMPLATE.format(op_name=op_name)
+        RETURN_NAMEDTUPLE_TEMPLATE = textwrap.dedent("""return return_types.{op_name}(*res)""").lstrip()
+        REPLACED_RETURN_TEMPLATE = textwrap.dedent("""return res[0] if len(res)==1 else res""").lstrip()
+        dynamic_content = dynamic_content.replace(REPLACED_RETURN_TEMPLATE, RETURN_NAMEDTUPLE_TEMPLATE.format(op_name=op_name))
+        static_content = static_content.replace(REPLACED_RETURN_TEMPLATE, RETURN_NAMEDTUPLE_TEMPLATE.format(op_name=op_name))
 
     func_name = remove_op_name_prefix(op_name)
 

@@ -19,6 +19,7 @@ void BuildSpatialHashTableCUDA(const paddle::Tensor& points,
                                paddle::Tensor& hash_table_index,
                                paddle::Tensor& hash_table_cell_splits) {
     auto stream = points.stream();
+    // -1 means current global device
     auto cuda_device_props = phi::backends::gpu::GetDeviceProperties(-1);
     const int texture_alignment = cuda_device_props.textureAlignment;
 

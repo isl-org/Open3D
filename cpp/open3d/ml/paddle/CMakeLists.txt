@@ -4,6 +4,7 @@ else()
     message(STATUS "Building Paddle ops")
 endif()
 
+set(PRINT_ONCE ON)
 find_package(Paddle REQUIRED)
 
 if (Paddle_VERSION VERSION_LESS 3.0.0)

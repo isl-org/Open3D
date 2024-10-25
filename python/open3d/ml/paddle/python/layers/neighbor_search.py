@@ -25,8 +25,8 @@ class FixedRadiusSearch(paddle.nn.Layer):
         import paddle
         import open3d.ml.paddle as ml3d
 
-        points = paddle.randn([20,3])
-        queries = paddle.randn([10,3])
+        points = paddle.randn([20, 3])
+        queries = paddle.randn([10, 3])
         radius = 0.8
 
         nsearch = ml3d.layers.FixedRadiusSearch(return_distances=True)
@@ -166,9 +166,9 @@ class RadiusSearch(paddle.nn.Layer):
         import paddle
         import open3d.ml.paddle as ml3d
 
-        points = paddle.randn([20,3])
-        queries = paddle.randn([10,3])
-        radii = paddle.randn([10])+1.0
+        points = paddle.randn([20, 3])
+        queries = paddle.randn([10, 3])
+        radii = paddle.randn([10]) + 1.0
 
         nsearch = ml3d.layers.RadiusSearch(return_distances=True)
         ans = nsearch(points, queries, radii)
@@ -278,8 +278,8 @@ class KNNSearch(paddle.nn.Layer):
         import paddle
         import open3d.ml.paddle as ml3d
 
-        points = paddle.randn([20,3])
-        queries = paddle.randn([10,3])
+        points = paddle.randn([20, 3])
+        queries = paddle.randn([10, 3])
         k = 8
 
         nsearch = ml3d.layers.KNNSearch(return_distances=True)

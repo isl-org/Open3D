@@ -24,8 +24,11 @@
         PD_CHECK(x.is_gpu(), #x " must be a CUDA tensor"); \
     } while (0)
 
-// NOTE: To paddle custom operator the input tensors is always contiguous.
-// We keep this macro is for compatibility.
+// NOTE: The input Tensor will be preprocessed into a contiguous Tensor within
+// the execution function of the custom operator, so CHECK_CONTIGUOUS will be
+// always True as there is no need for an explicit conversion in Open3D. For
+// reference, please see:
+// https://github.com/PaddlePaddle/Paddle/blob/65126f558a5c0fbb0cd1aa0a42844a73632ff9e9/paddle/fluid/eager/custom_operator/custom_operator_utils.cc#L803-L810
 #define CHECK_CONTIGUOUS(x) \
     do {                    \
     } while (0)
@@ -99,7 +102,7 @@ inline bool ComparePaddleDtype(const TDtype& t) {
 inline bool SameDeviceType(std::initializer_list<paddle::Tensor> tensors) {
     if (tensors.size()) {
         auto device_type = tensors.begin()->place();
-        for (auto t : tensors) {
+        for (const auto& t : tensors) {
             if (device_type != t.place()) {
                 return false;
             }
@@ -112,7 +115,7 @@ inline bool SameDeviceType(std::initializer_list<paddle::Tensor> tensors) {
 inline bool SameDtype(std::initializer_list<paddle::Tensor> tensors) {
     if (tensors.size()) {
         auto dtype = tensors.begin()->dtype();
-        for (auto t : tensors) {
+        for (const auto& t : tensors) {
             if (dtype != t.dtype()) {
                 return false;
             }
@@ -271,7 +274,8 @@ paddle::Tensor InitializedEmptyTensor(const phi::IntArray& shape,
         PD_CHECK(false, "Not supported backend!");
     }
 
-    // NOTE: For empty tensor the stride is same as shape.
+    // NOTE: In Paddle, the stride of an empty (0-size) tensor can be the same
+    // as its shape.
     return paddle::from_blob(static_cast<void*>(ptr), shape, shape,
                              paddle::DataType(ToPaddleDtype<T>()),
                              phi::DataLayout::NCHW, place, deleter);

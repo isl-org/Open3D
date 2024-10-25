@@ -7,7 +7,7 @@
 """Paddle specific machine learning classes."""
 import paddle
 
-from .ragged_tensor import *
+from .ragged_tensor import RaggedTensor
 
 DTYPE_MAP = {
     paddle.bool: 'bool',

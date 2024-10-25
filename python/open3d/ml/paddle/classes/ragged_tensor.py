@@ -34,7 +34,7 @@ class RaggedTensor:
                 raise ValueError("row_splits must be of rank 1")
             if row_splits[0] != 0:
                 raise ValueError(
-                    "Arguments to from_row_splits do not form a valid RaggedTensor"
+                    f"Arguments to from_row_splits do not form a valid RaggedTensor. Expect row_splits[0] == 0 but received row_splits[0] == {row_splits[0]}."
                 )
             for i in range(0, row_splits.shape[0] - 1):
                 if row_splits[i] > row_splits[i + 1]:

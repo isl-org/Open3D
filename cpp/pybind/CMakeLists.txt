@@ -198,6 +198,7 @@ if (BUILD_PADDLE_OPS)
 
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/paddle/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/paddle/python/return_types.py")
     # find paddle to get some info for the _build_config.py
+    set(PRINT_ONCE OFF)
     find_package(Paddle)
 endif()
 
