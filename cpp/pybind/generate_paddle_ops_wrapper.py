@@ -86,7 +86,7 @@ def custom_api_content(op_name):
         attrs_map,
         outs_list,
         in_names,
-        attr_names,
+        _,
         out_names,
         inplace_reverse_idx,
     ) = _get_api_inputs_str(op_name)

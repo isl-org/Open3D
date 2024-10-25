@@ -19,9 +19,9 @@ void BuildSpatialHashTableCUDA(const paddle::Tensor& points,
                                paddle::Tensor& hash_table_index,
                                paddle::Tensor& hash_table_cell_splits) {
     auto stream = points.stream();
-    // -1 means current global device
-    auto cuda_device_props = phi::backends::gpu::GetDeviceProperties(-1);
-    const int texture_alignment = cuda_device_props.textureAlignment;
+    // -1 means current global place
+    auto cuda_place_props = phi::backends::gpu::GetDeviceProperties(-1);
+    const int texture_alignment = cuda_place_props.textureAlignment;
 
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
@@ -32,10 +32,10 @@ void BuildSpatialHashTableCUDA(const paddle::Tensor& points,
             points.data<T>(), T(radius), points_row_splits.shape()[0],
             points_row_splits.data<int64_t>(), hash_table_splits.data(),
             hash_table_cell_splits.shape()[0],
-            (uint32_t*)hash_table_cell_splits.data<int32_t>(),
-            (uint32_t*)hash_table_index.data<int32_t>());
-    auto device = points.place();
-    auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
+            (uint32_t*)hash_table_cell_splits.data<int32_t>(),  // NOLINT
+            (uint32_t*)hash_table_index.data<int32_t>());       // NOLINT
+    auto place = points.place();
+    auto temp_tensor = CreateTempTensor(temp_size, place, &temp_ptr);
 
     // actually build the table
     impl::BuildSpatialHashTableCUDA(
@@ -43,8 +43,8 @@ void BuildSpatialHashTableCUDA(const paddle::Tensor& points,
             points.data<T>(), T(radius), points_row_splits.shape()[0],
             points_row_splits.data<int64_t>(), hash_table_splits.data(),
             hash_table_cell_splits.shape()[0],
-            (uint32_t*)hash_table_cell_splits.data<int32_t>(),
-            (uint32_t*)hash_table_index.data<int32_t>());
+            (uint32_t*)hash_table_cell_splits.data<int32_t>(),  // NOLINT
+            (uint32_t*)hash_table_index.data<int32_t>());       // NOLINT
 }
 
 #define INSTANTIATE(T)                                            \

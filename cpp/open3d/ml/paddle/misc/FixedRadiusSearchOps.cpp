@@ -102,12 +102,12 @@ std::vector<paddle::Tensor> FixedRadiusSearch(
 
     const auto& point_type = points.dtype();
 
-    auto device = points.place();
+    auto place = points.place();
 
     paddle::Tensor neighbors_index;
     paddle::Tensor neighbors_row_splits =
             paddle::empty({queries.shape()[0] + 1},
-                          paddle::DataType(ToPaddleDtype<int64_t>()), device);
+                          paddle::DataType(ToPaddleDtype<int64_t>()), place);
     paddle::Tensor neighbors_distance;
 
 #define FN_PARAMETERS                                                      \

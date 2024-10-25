@@ -43,9 +43,8 @@ void KnnSearchCPU(const paddle::Tensor& points,
         size_t num_queries_i = queries_row_splits.data<int64_t>()[i + 1] -
                                queries_row_splits.data<int64_t>()[i];
 
-        int64_t* neighbors_row_splits_i =
-                (int64_t*)(neighbors_row_splits.data<int64_t>() +
-                           queries_row_splits.data<int64_t>()[i]);
+        int64_t* neighbors_row_splits_i = neighbors_row_splits.data<int64_t>() +
+                                          queries_row_splits.data<int64_t>()[i];
 
         std::unique_ptr<NanoFlannIndexHolderBase> holder =
                 impl::BuildKdTree<T, TIndex>(num_points_i, points_i, 3, metric);

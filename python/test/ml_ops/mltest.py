@@ -13,7 +13,6 @@ import importlib
 from types import SimpleNamespace
 import urllib.request
 import io
-import inspect
 
 # skip all tests if the ml ops were not built
 default_marks = [

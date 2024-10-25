@@ -14,26 +14,26 @@
 template <class T, class TIndex>
 class NeighborSearchAllocator {
 public:
-    NeighborSearchAllocator(paddle::Place device) : device(device) {}
+    NeighborSearchAllocator(paddle::Place place) : place(place) {}
 
     void AllocIndices(TIndex** ptr, size_t num) {
         if (num == 0) {
-            neighbors_index = InitializedEmptyTensor<TIndex>({0}, device);
+            neighbors_index = InitializedEmptyTensor<TIndex>({0}, place);
         } else {
             neighbors_index = paddle::empty(
                     {int64_t(num)}, paddle::DataType(ToPaddleDtype<TIndex>()),
-                    device);
+                    place);
         }
         *ptr = neighbors_index.data<TIndex>();
     }
 
     void AllocDistances(T** ptr, size_t num) {
         if (num == 0) {
-            neighbors_distance = InitializedEmptyTensor<T>({0}, device);
+            neighbors_distance = InitializedEmptyTensor<T>({0}, place);
         } else {
             neighbors_distance =
                     paddle::empty({int64_t(num)},
-                                  paddle::DataType(ToPaddleDtype<T>()), device);
+                                  paddle::DataType(ToPaddleDtype<T>()), place);
         }
         *ptr = neighbors_distance.data<T>();
     }
@@ -50,5 +50,5 @@ public:
 private:
     paddle::Tensor neighbors_index;
     paddle::Tensor neighbors_distance;
-    paddle::Place device;
+    paddle::Place place;
 };

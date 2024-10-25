@@ -47,10 +47,10 @@ std::vector<paddle::Tensor> RaggedToDense(paddle::Tensor& values,
         }
     }
 
-    // make sure everything is on the same device as 'values'
-    auto device = values.place();
-    row_splits = row_splits.copy_to(device, false);
-    default_value = default_value.copy_to(device, false);
+    // make sure everything is on the same place as 'values'
+    auto place = values.place();
+    row_splits = row_splits.copy_to(place, false);
+    default_value = default_value.copy_to(place, false);
 
     const auto& value_type = values.dtype();
 

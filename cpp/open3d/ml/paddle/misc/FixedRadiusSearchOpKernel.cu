@@ -29,12 +29,12 @@ void FixedRadiusSearchCUDA(const paddle::Tensor& points,
                            paddle::Tensor& neighbors_row_splits,
                            paddle::Tensor& neighbors_distance) {
     auto stream = points.stream();
-    auto cuda_device_props = phi::backends::gpu::GetDeviceProperties(-1);
-    const int texture_alignment = cuda_device_props.textureAlignment;
+    auto cuda_place_props = phi::backends::gpu::GetDeviceProperties(-1);
+    const int texture_alignment = cuda_place_props.textureAlignment;
 
-    auto device = points.place();
+    auto place = points.place();
 
-    NeighborSearchAllocator<T, TIndex> output_allocator(device);
+    NeighborSearchAllocator<T, TIndex> output_allocator(place);
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
@@ -45,11 +45,11 @@ void FixedRadiusSearchCUDA(const paddle::Tensor& points,
             points.data<T>(), queries.shape()[0], queries.data<T>(), T(radius),
             points_row_splits.shape()[0], points_row_splits.data<int64_t>(),
             queries_row_splits.shape()[0], queries_row_splits.data<int64_t>(),
-            (uint32_t*)hash_table_splits.data<int32_t>(),
+            (uint32_t*)hash_table_splits.data<int32_t>(),  // NOLINT
             hash_table_cell_splits.shape()[0],
-            (uint32_t*)hash_table_cell_splits.data<int32_t>(),
-            (uint32_t*)hash_table_index.data<int32_t>(), metric,
-            ignore_query_point, return_distances, output_allocator);
+            (uint32_t*)hash_table_cell_splits.data<int32_t>(),  // NOLINT
+            (uint32_t*)hash_table_index.data<int32_t>(),        // NOLINT
+            metric, ignore_query_point, return_distances, output_allocator);
 
     auto temp_tensor = CreateTempTensor(temp_size, points.place(), &temp_ptr);
 
@@ -60,11 +60,11 @@ void FixedRadiusSearchCUDA(const paddle::Tensor& points,
             points.data<T>(), queries.shape()[0], queries.data<T>(), T(radius),
             points_row_splits.shape()[0], points_row_splits.data<int64_t>(),
             queries_row_splits.shape()[0], queries_row_splits.data<int64_t>(),
-            (uint32_t*)hash_table_splits.data<int32_t>(),
+            (uint32_t*)hash_table_splits.data<int32_t>(),  // NOLINT
             hash_table_cell_splits.shape()[0],
-            (uint32_t*)hash_table_cell_splits.data<int32_t>(),
-            (uint32_t*)hash_table_index.data<int32_t>(), metric,
-            ignore_query_point, return_distances, output_allocator);
+            (uint32_t*)hash_table_cell_splits.data<int32_t>(),  // NOLINT
+            (uint32_t*)hash_table_index.data<int32_t>(),        // NOLINT
+            metric, ignore_query_point, return_distances, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();

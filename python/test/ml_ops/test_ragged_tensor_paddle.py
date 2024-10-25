@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
+# noqa # pylint: disable=unused-import
 import open3d as o3d
 import numpy as np
 import pytest
@@ -192,9 +193,9 @@ def test_binary_ew_ops(dtype, ml):
     b = ml.classes.RaggedTensor.from_row_splits(t_2, row_splits)
 
     with np.testing.assert_raises(ValueError):
-        a + b
+        a + b  # noqa # pylint: disable=pointless-statement
     with np.testing.assert_raises(ValueError):
-        a += b
+        a += b  # noqa # pylint: disable=pointless-statement
 
     # Different length
     row_splits = [0, 4, 5, 13]
@@ -203,6 +204,6 @@ def test_binary_ew_ops(dtype, ml):
     b = ml.classes.RaggedTensor.from_row_splits(t_2, row_splits)
 
     with np.testing.assert_raises(ValueError):
-        a + b
+        a + b  # noqa # pylint: disable=pointless-statement
     with np.testing.assert_raises(ValueError):
         a += b

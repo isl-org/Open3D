@@ -26,8 +26,8 @@ std::vector<paddle::Tensor> InvertNeighborsListCUDA(
 
     // maybe this can use torch's impl way ?
     auto stream = inp_neighbors_index.stream();
-    auto cuda_device_props = phi::backends::gpu::GetDeviceProperties(-1);
-    const int texture_alignment = cuda_device_props.textureAlignment;
+    auto cuda_place_props = phi::backends::gpu::GetDeviceProperties(-1);
+    const int texture_alignment = cuda_place_props.textureAlignment;
 
     int num_attributes;
     if (inp_neighbors_attributes.shape()[0] == 0) {
@@ -51,12 +51,12 @@ std::vector<paddle::Tensor> InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             inp_neighbors_index.data<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data<TAttr>() : nullptr,
-            num_attributes, (int64_t*)inp_neighbors_row_splits.data<int64_t>(),
+            num_attributes, inp_neighbors_row_splits.data<int64_t>(),
             inp_neighbors_row_splits.shape()[0] - 1,
             neighbors_index.data<TIndex>(),
             num_attributes ? neighbors_attributes.data<TAttr>() : nullptr,
             neighbors_index.shape()[0],
-            (int64_t*)neighbors_row_splits.data<int64_t>(),
+            neighbors_row_splits.data<int64_t>(),  // NOLINT
             neighbors_row_splits.shape()[0] - 1);
 
     auto temp_tensor = CreateTempTensor(temp_size, place, &temp_ptr);
@@ -66,12 +66,12 @@ std::vector<paddle::Tensor> InvertNeighborsListCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             inp_neighbors_index.data<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data<TAttr>() : nullptr,
-            num_attributes, (int64_t*)inp_neighbors_row_splits.data<int64_t>(),
+            num_attributes, inp_neighbors_row_splits.data<int64_t>(),
             inp_neighbors_row_splits.shape()[0] - 1,
             neighbors_index.data<TIndex>(),
             num_attributes ? neighbors_attributes.data<TAttr>() : nullptr,
             neighbors_index.shape()[0],
-            (int64_t*)neighbors_row_splits.data<int64_t>(),
+            neighbors_row_splits.data<int64_t>(),  // NOLINT
             neighbors_row_splits.shape()[0] - 1);
 
     return {neighbors_index, neighbors_row_splits, neighbors_attributes};

@@ -12,12 +12,18 @@ use high level interface.
 import os as _os
 import sys as _sys
 import types as _types
+import importlib as _importlib
 import importlib.abc as _importlib_abc
 import importlib.util as _importlib_util
 import paddle as _paddle
 from open3d import _build_config
 
-from ..python.ops import *
+_current_dir = _os.path.dirname(_os.path.abspath(__file__))
+_parent_dir = _os.path.dirname(_current_dir)
+_sys.path.append(_parent_dir)
+
+_ops_module = _importlib.import_module('python.ops')
+_sys.path.pop(-1)
 
 _lib_path = []
 # allow overriding the path to the op library with an env var.
@@ -68,4 +74,5 @@ for _op_name in _custom_ops:
     _func_name = _op_name[len(_PADDLE_OPS_PREFIX):]
 
     # remove ops.open3d_xxx
-    setattr(_mod, _func_name, eval(_func_name))
+    func = getattr(_ops_module, _func_name)
+    setattr(_mod, _func_name, func)
