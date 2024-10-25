@@ -703,14 +703,10 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
         }
 
         // Copy the initialized data to the device
-        queue_.memcpy(host_previous_geom_prim_ID_tfar.get(),
-                      previous_geom_prim_ID_tfar,
+        queue_.memcpy(previous_geom_prim_ID_tfar,
+                      host_previous_geom_prim_ID_tfar.get(),
                       num_rays * sizeof(callbacks::GeomPrimID))
                 .wait();
-
-        // cumsum
-        int* cumsum_ = sycl::malloc_device<int>(num_rays, queue_);
-        queue_.memcpy(cumsum, cumsum_, num_rays * sizeof(int)).wait();
 
         auto scene = this->scene_;
         queue_.submit([=](sycl::handler& cgh) {
@@ -726,7 +722,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                         context.primitive_ids = primitive_ids;
                         context.primitive_uvs = primitive_uvs;
                         context.t_hit = t_hit;
-                        context.cumsum = cumsum_;
+                        context.cumsum = cumsum;
                         context.track_intersections = track_intersections;
 
                         RTCIntersectArguments args;
@@ -759,7 +755,6 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
 
         // Free the allocated memory
         sycl::free(previous_geom_prim_ID_tfar, queue_);
-        sycl::free(cumsum_, queue_);
     }
 
     void ComputeClosestPoints(const float* const query_points,
