@@ -45,10 +45,13 @@ void FixedRadiusSearchCUDA(const paddle::Tensor& points,
             points.data<T>(), queries.shape()[0], queries.data<T>(), T(radius),
             points_row_splits.shape()[0], points_row_splits.data<int64_t>(),
             queries_row_splits.shape()[0], queries_row_splits.data<int64_t>(),
-            (uint32_t*)hash_table_splits.data<int32_t>(),  // NOLINT
+            reinterpret_cast<uint32_t*>(
+                    const_cast<int32_t*>(hash_table_splits.data<int32_t>())),
             hash_table_cell_splits.shape()[0],
-            (uint32_t*)hash_table_cell_splits.data<int32_t>(),  // NOLINT
-            (uint32_t*)hash_table_index.data<int32_t>(),        // NOLINT
+            reinterpret_cast<uint32_t*>(const_cast<int32_t*>(
+                    hash_table_cell_splits.data<int32_t>())),
+            reinterpret_cast<uint32_t*>(
+                    const_cast<int32_t*>(hash_table_index.data<int32_t>())),
             metric, ignore_query_point, return_distances, output_allocator);
 
     auto temp_tensor = CreateTempTensor(temp_size, points.place(), &temp_ptr);
@@ -60,10 +63,13 @@ void FixedRadiusSearchCUDA(const paddle::Tensor& points,
             points.data<T>(), queries.shape()[0], queries.data<T>(), T(radius),
             points_row_splits.shape()[0], points_row_splits.data<int64_t>(),
             queries_row_splits.shape()[0], queries_row_splits.data<int64_t>(),
-            (uint32_t*)hash_table_splits.data<int32_t>(),  // NOLINT
+            reinterpret_cast<uint32_t*>(
+                    const_cast<int32_t*>(hash_table_splits.data<int32_t>())),
             hash_table_cell_splits.shape()[0],
-            (uint32_t*)hash_table_cell_splits.data<int32_t>(),  // NOLINT
-            (uint32_t*)hash_table_index.data<int32_t>(),        // NOLINT
+            reinterpret_cast<uint32_t*>(const_cast<int32_t*>(
+                    hash_table_cell_splits.data<int32_t>())),
+            reinterpret_cast<uint32_t*>(
+                    const_cast<int32_t*>(hash_table_index.data<int32_t>())),
             metric, ignore_query_point, return_distances, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();

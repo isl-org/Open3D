@@ -20,8 +20,10 @@ void BuildSpatialHashTableCPU(const paddle::Tensor& points,
             points.shape()[0], points.data<T>(), T(radius),
             points_row_splits.shape()[0], points_row_splits.data<int64_t>(),
             hash_table_splits.data(), hash_table_cell_splits.shape()[0],
-            (uint32_t*)hash_table_cell_splits.data<int32_t>(),  // NOLINT
-            (uint32_t*)hash_table_index.data<int32_t>());       // NOLINT
+            reinterpret_cast<uint32_t*>(const_cast<int32_t*>(
+                    hash_table_cell_splits.data<int32_t>())),
+            reinterpret_cast<uint32_t*>(
+                    const_cast<int32_t*>(hash_table_index.data<int32_t>())));
 }
 #define INSTANTIATE(T)                                            \
     template void BuildSpatialHashTableCPU<T>(                    \
