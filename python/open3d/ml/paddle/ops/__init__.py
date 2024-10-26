@@ -18,12 +18,7 @@ import importlib.util as _importlib_util
 import paddle as _paddle
 from open3d import _build_config
 
-_current_dir = _os.path.dirname(_os.path.abspath(__file__))
-_parent_dir = _os.path.dirname(_current_dir)
-_sys.path.append(_parent_dir)
-
-_ops_module = _importlib.import_module('python.ops')
-_sys.path.pop(-1)
+from ..python.ops import *
 
 _lib_path = []
 # allow overriding the path to the op library with an env var.
@@ -65,14 +60,3 @@ try:
     _spec.loader.exec_module(_mod)
 except ImportError:
     _mod = _types.ModuleType(__name__)
-
-_PADDLE_OPS_PREFIX = "open3d_"
-
-for _op_name in _custom_ops:
-    assert _op_name.startswith(
-        _PADDLE_OPS_PREFIX), "Paddle operators should be start with `open3d_`."
-    _func_name = _op_name[len(_PADDLE_OPS_PREFIX):]
-
-    # remove ops.open3d_xxx
-    func = getattr(_ops_module, _func_name)
-    setattr(_mod, _func_name, func)
