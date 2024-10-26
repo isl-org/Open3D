@@ -211,15 +211,22 @@ def test_list_intersections(device):
 
 # list lots of random ray intersections to test the internal batching
 # we expect no errors for this test
-def test_list_lots_of_intersections():
+@pytest.mark.parametrize("device", list_devices())
+def test_list_lots_of_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
+    vertex_positions = cube.vertex.positions
+    vertex_positions = vertex_positions.to(device)
+    triangle_indices = cube.triangle.indices
+    triangle_indices = triangle_indices.to(o3d.core.Dtype.UInt32)
+    triangle_indices = triangle_indices.to(device)
 
-    scene = o3d.t.geometry.RaycastingScene()
-    scene.add_triangles(cube)
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene.add_triangles(vertex_positions, triangle_indices)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(rs.rand(123456, 6).astype(np.float32))
+    rays = rays.to(device)
 
     _ = scene.list_intersections(rays)
 
