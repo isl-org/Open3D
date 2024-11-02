@@ -213,15 +213,16 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
 }
 
 // Adapted from common/math/closest_point.h
-inline Vec3fa closestPointTriangle(Vec3fa const& p,
-                                   Vec3fa const& a,
-                                   Vec3fa const& b,
-                                   Vec3fa const& c,
-                                   float& tex_u,
-                                   float& tex_v) {
-    const Vec3fa ab = b - a;
-    const Vec3fa ac = c - a;
-    const Vec3fa ap = p - a;
+template <typename Vec3faType>
+inline Vec3faType closestPointTriangle(Vec3faType const& p,
+                                       Vec3faType const& a,
+                                       Vec3faType const& b,
+                                       Vec3faType const& c,
+                                       float& tex_u,
+                                       float& tex_v) {
+    const Vec3faType ab = b - a;
+    const Vec3faType ac = c - a;
+    const Vec3faType ap = p - a;
 
     const float d1 = ab.dot(ap);
     const float d2 = ac.dot(ap);
@@ -231,7 +232,7 @@ inline Vec3fa closestPointTriangle(Vec3fa const& p,
         return a;
     }
 
-    const Vec3fa bp = p - b;
+    const Vec3faType bp = p - b;
     const float d3 = ab.dot(bp);
     const float d4 = ac.dot(bp);
     if (d3 >= 0.f && d4 <= d3) {
@@ -240,7 +241,7 @@ inline Vec3fa closestPointTriangle(Vec3fa const& p,
         return b;
     }
 
-    const Vec3fa cp = p - c;
+    const Vec3faType cp = p - c;
     const float d5 = ab.dot(cp);
     const float d6 = ac.dot(cp);
     if (d6 >= 0.f && d5 <= d6) {
@@ -281,56 +282,59 @@ inline Vec3fa closestPointTriangle(Vec3fa const& p,
     return a + v * ab + w * ac;
 }
 
+struct GeometryPtr {
+    RTCGeometryType geom_type;
+    const void* ptr1;
+    const void* ptr2;
+};
+
+template <typename Vec3fType, typename Vec2fType>
 struct ClosestPointResult {
     ClosestPointResult()
         : primID(RTC_INVALID_GEOMETRY_ID),
-          geomID(RTC_INVALID_GEOMETRY_ID),
-          geometry_ptrs_ptr() {}
+          geomID(RTC_INVALID_GEOMETRY_ID) {}
 
-    Vec3f p;
+    Vec3fType p;
     unsigned int primID;
     unsigned int geomID;
-    Vec2f uv;
-    Vec3f n;
-    std::vector<std::tuple<RTCGeometryType, const void*, const void*>>*
-            geometry_ptrs_ptr;
+    Vec2fType uv;
+    Vec3fType n;
+    GeometryPtr* geometry_ptrs_ptr;
 };
 
 // Code adapted from the embree closest_point tutorial.
+template <typename Vec3fType, typename Vec3faType, typename Vec2fType>
 bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
     assert(args->userPtr);
     const unsigned int geomID = args->geomID;
     const unsigned int primID = args->primID;
 
     // query position in world space
-    Vec3fa q(args->query->x, args->query->y, args->query->z);
+    Vec3faType q(args->query->x, args->query->y, args->query->z);
 
-    ClosestPointResult* result =
-            static_cast<ClosestPointResult*>(args->userPtr);
-    const RTCGeometryType geom_type =
-            std::get<0>(result->geometry_ptrs_ptr->operator[](geomID));
-    const void* ptr1 =
-            std::get<1>(result->geometry_ptrs_ptr->operator[](geomID));
-    const void* ptr2 =
-            std::get<2>(result->geometry_ptrs_ptr->operator[](geomID));
+    ClosestPointResult<Vec3fType, Vec2fType>* result =
+            static_cast<ClosestPointResult<Vec3fType, Vec2fType>*>(args->userPtr);
+    const RTCGeometryType geom_type = result->geometry_ptrs_ptr[geomID].geom_type;
+    const void* ptr1 = result->geometry_ptrs_ptr[geomID].ptr1;
+    const void* ptr2 = result->geometry_ptrs_ptr[geomID].ptr2;
 
     if (RTC_GEOMETRY_TYPE_TRIANGLE == geom_type) {
         const float* vertex_positions = (const float*)ptr1;
         const uint32_t* triangle_indices = (const uint32_t*)ptr2;
 
-        Vec3fa v0(vertex_positions[3 * triangle_indices[3 * primID + 0] + 0],
+        Vec3faType v0(vertex_positions[3 * triangle_indices[3 * primID + 0] + 0],
                   vertex_positions[3 * triangle_indices[3 * primID + 0] + 1],
                   vertex_positions[3 * triangle_indices[3 * primID + 0] + 2]);
-        Vec3fa v1(vertex_positions[3 * triangle_indices[3 * primID + 1] + 0],
+        Vec3faType v1(vertex_positions[3 * triangle_indices[3 * primID + 1] + 0],
                   vertex_positions[3 * triangle_indices[3 * primID + 1] + 1],
                   vertex_positions[3 * triangle_indices[3 * primID + 1] + 2]);
-        Vec3fa v2(vertex_positions[3 * triangle_indices[3 * primID + 2] + 0],
+        Vec3faType v2(vertex_positions[3 * triangle_indices[3 * primID + 2] + 0],
                   vertex_positions[3 * triangle_indices[3 * primID + 2] + 1],
                   vertex_positions[3 * triangle_indices[3 * primID + 2] + 2]);
 
         // Determine distance to closest point on triangle
         float u, v;
-        const Vec3fa p = closestPointTriangle(q, v0, v1, v2, u, v);
+        const Vec3faType p = closestPointTriangle<Vec3faType>(q, v0, v1, v2, u, v);
         float d = (q - p).norm();
 
         // Store result in userPtr and update the query radius if we found a
@@ -341,9 +345,9 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
             result->p = p;
             result->primID = primID;
             result->geomID = geomID;
-            Vec3fa e1 = v1 - v0;
-            Vec3fa e2 = v2 - v0;
-            result->uv = Vec2f(u, v);
+            Vec3faType e1 = v1 - v0;
+            Vec3faType e2 = v2 - v0;
+            result->uv = Vec2fType(u, v);
             result->n = (e1.cross(e2)).normalized();
             return true;  // Return true to indicate that the query radius
                           // changed.
@@ -363,8 +367,7 @@ struct RaycastingScene::Impl {
     bool scene_committed_;  // true if the scene has been committed.
     RTCDevice device_;
     // Vector for storing some information about the added geometry.
-    std::vector<std::tuple<RTCGeometryType, const void*, const void*>>
-            geometry_ptrs_;
+    std::vector<GeometryPtr> geometry_ptrs_;
     core::Device tensor_device_;  // cpu or sycl
 
     bool devprop_join_commit;
@@ -1117,12 +1120,12 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
                 query.radius = std::numeric_limits<float>::infinity();
                 query.time = 0.f;
 
-                ClosestPointResult result;
-                result.geometry_ptrs_ptr = &geometry_ptrs_;
+                ClosestPointResult<Vec3f, Vec2f> result;
+                result.geometry_ptrs_ptr = geometry_ptrs_.data();
 
                 RTCPointQueryContext instStack;
                 rtcInitPointQueryContext(&instStack);
-                rtcPointQuery(scene_, &query, &instStack, &ClosestPointFunc,
+                rtcPointQuery(scene_, &query, &instStack, &ClosestPointFunc<Vec3f, Vec3fa, Vec2f>,
                               (void*)&result);
 
                 closest_points[3 * i + 0] = result.p.x();
@@ -1284,9 +1287,10 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
     uint32_t geom_id = rtcAttachGeometry(impl_->scene_, geom);
     rtcReleaseGeometry(geom);
 
-    impl_->geometry_ptrs_.push_back(std::make_tuple(RTC_GEOMETRY_TYPE_TRIANGLE,
-                                                    (const void*)vertex_buffer,
-                                                    (const void*)index_buffer));
+    GeometryPtr geometry_ptr = {RTC_GEOMETRY_TYPE_TRIANGLE,
+                                (const void*)vertex_buffer,
+                                (const void*)index_buffer};
+    impl_->geometry_ptrs_.push_back(geometry_ptr);
     return geom_id;
 }
 
