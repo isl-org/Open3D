@@ -51,6 +51,7 @@
 -   Fix tensor EstimatePointWiseNormalsWithFastEigen3x3 (PR #6980)
 -   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
 -   Fix render to depth image on Apple Retina displays (PR #7001)
+-   Add select_by_index method to Feature class (PR #7039)
 
 ## 0.13
 
