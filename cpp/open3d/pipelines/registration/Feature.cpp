@@ -19,7 +19,7 @@ namespace pipelines {
 namespace registration {
 
 std::shared_ptr<Feature> Feature::SelectByIndex(
-        const std::vector<size_t> &indices, bool invert) const {
+        const std::vector<size_t> &indices, bool invert /* = false */) const {
     auto output = std::make_shared<Feature>();
     output->Resize(data_.rows(), indices.size());
 

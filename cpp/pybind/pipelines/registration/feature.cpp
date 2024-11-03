@@ -33,8 +33,7 @@ void pybind_feature_definitions(py::module &m_registration) {
             .def("num", &Feature::Num, "Returns number of points.")
             .def("select_by_index", &Feature::SelectByIndex,
                  "Function to select features from input Feature group into "
-                 "output "
-                 "Feature group.",
+                 "output Feature group.",
                  "indices"_a, "invert"_a = false)
             .def_readwrite("data", &Feature::data_,
                            "``dim x n`` float64 numpy array: Data buffer "
