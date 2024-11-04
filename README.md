@@ -2,7 +2,14 @@
 <img src="https://raw.githubusercontent.com/isl-org/Open3D/main/docs/_static/open3d_logo_horizontal.png" width="320" />
 </p>
 
-# Open3D: A Modern Library for 3D Data Processing
+# Open3D: A Modern Library for 3D Data Processing (Paddle backend)
+
+![paddle_logo](docs/_static/paddle_logo.png)
+
+> [!IMPORTANT]
+> This branch(paddle) experimentally integrates [Paddle backend](https://www.paddlepaddle.org.cn/en/install/quick?docurl=/documentation/docs/en/develop/install/pip/linux-pip_en.html) to Open3D meachine learning module.
+> 
+> It has verified on version v0.18.0 of Open3D. It is recommended to install **nightly-build(develop)** Paddle before running any code in this branch.
 
 <h4>
     <a href="https://www.open3d.org">Homepage</a> |
