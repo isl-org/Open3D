@@ -16,7 +16,7 @@ from open3d_test import list_devices
 
 
 # test intersection with a single triangle
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_cast_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -45,7 +45,7 @@ def test_cast_rays(device):
 
 # cast lots of random rays to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_cast_lots_of_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -65,7 +65,7 @@ def test_cast_lots_of_rays(device):
 
 
 # test occlusion with a single triangle
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_test_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -99,7 +99,7 @@ def test_test_occlusions(device):
 
 # test lots of random rays for occlusions to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_test_lots_of_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -118,7 +118,7 @@ def test_test_lots_of_occlusions(device):
     _ = scene.test_occlusions(rays)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_add_triangle_mesh(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
@@ -140,7 +140,7 @@ def test_add_triangle_mesh(device):
     np.testing.assert_equal(ans.cpu().numpy(), [2, 1, 0])
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_count_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
@@ -164,7 +164,7 @@ def test_count_intersections(device):
 
 # count lots of random ray intersections to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_count_lots_of_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
@@ -184,7 +184,7 @@ def test_count_lots_of_intersections(device):
     _ = scene.count_intersections(rays)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_list_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
@@ -211,7 +211,7 @@ def test_list_intersections(device):
 
 # list lots of random ray intersections to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_list_lots_of_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())

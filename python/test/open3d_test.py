@@ -23,7 +23,7 @@ def torch_available():
     return True
 
 
-def list_devices():
+def list_devices(enable_sycl=False):
     """
     If Open3D is built with CUDA support:
     - If cuda device is available, returns [Device("CPU:0"), Device("CUDA:0")].
@@ -39,7 +39,7 @@ def list_devices():
     import open3d as o3d
     if o3d.core.cuda.device_count() > 0:
         return [o3d.core.Device("CPU:0"), o3d.core.Device("CUDA:0")]
-    elif o3d.core.sycl.is_available():
+    elif enable_sycl and o3d.core.sycl.is_available():
         return [o3d.core.Device("CPU:0"), o3d.core.Device("SYCL:0")]
     else:
         return [o3d.core.Device("CPU:0")]
