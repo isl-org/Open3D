@@ -157,6 +157,25 @@ if (BUILD_PYTORCH_OPS)
         OUTPUT_VARIABLE Pytorch_VERSION)
 endif()
 
+# add additional optional compiled modules
+if (BUILD_PADDLE_OPS)
+    list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_paddle_ops> )
+    add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/paddle/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/paddle/python/return_types.py" 
+            COMMAND ${Python3_EXECUTABLE} generate_paddle_ops_wrapper.py 
+                        --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/paddle/python/return_types.py.in" 
+                        --output_dir "${CMAKE_BINARY_DIR}/lib/ml/paddle/python/" 
+                        --lib $<TARGET_FILE:open3d_paddle_ops>
+                        DEPENDS open3d_paddle_ops
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        COMMENT "Generating python ops.py and return_types.py" )
+
+    list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/paddle/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/paddle/python/return_types.py")
+    # find paddle to get some info for the _build_config.py
+    set(PRINT_ONCE OFF)
+    find_package(Paddle)
+endif()
+
+
 if (BUNDLE_OPEN3D_ML)
     find_path(
         OPEN3D_ML_ROOT
@@ -202,6 +221,7 @@ add_custom_target(python-package
             -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+            -DBUILD_PADDLE_OPS=${BUILD_PADDLE_OPS}
             -DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}
             -DOPEN3D_ML_ROOT=${OPEN3D_ML_ROOT}
             -DBUILD_GUI=${BUILD_GUI}

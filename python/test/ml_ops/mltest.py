@@ -17,7 +17,8 @@ import io
 # skip all tests if the ml ops were not built
 default_marks = [
     pytest.mark.skipif(not (o3d._build_config['BUILD_TENSORFLOW_OPS'] or
-                            o3d._build_config['BUILD_PYTORCH_OPS']),
+                            o3d._build_config['BUILD_PYTORCH_OPS'] or
+                            o3d._build_config['BUILD_PADDLE_OPS']),
                        reason='ml ops not built'),
 ]
 
@@ -62,9 +63,24 @@ try:
 except ImportError:
     pass
 
+try:
+    paddle = importlib.import_module('paddle')
+    ml3d_ops = importlib.import_module('open3d.ml.paddle.ops')
+    ml3d_layers = importlib.import_module('open3d.ml.paddle.layers')
+    ml3d_classes = importlib.import_module('open3d.ml.paddle.classes')
+    _ml_modules['paddle'] = MLModules(paddle, ml3d_ops, ml3d_layers,
+                                      ml3d_classes, 'cpu', 'cpu', False)
+    if paddle.device.is_compiled_with_cuda(
+    ) and o3d._build_config['BUILD_CUDA_MODULE']:
+        _ml_modules['paddle_cuda'] = MLModules(paddle, ml3d_ops, ml3d_layers,
+                                               ml3d_classes, 'cuda', 'cpu',
+                                               True)
+except ImportError:
+    pass
+
 
 def is_gpu_device_name(name):
-    return name in ('GPU:0', 'cuda')
+    return name in ('GPU:0', 'cuda', 'gpu:0', 'gpu')
 
 
 def to_numpy(tensor):
@@ -76,6 +92,8 @@ def to_numpy(tensor):
             tensor = tensor.cpu()
 
         return tensor.numpy()
+    elif 'paddle' in _ml_modules and isinstance(tensor, paddle.Tensor):
+        return tensor.numpy()
     else:
         return tensor.numpy()
 
@@ -86,6 +104,25 @@ def to_torch(x, device):
         return torch.from_numpy(x).contiguous().to(device)
     else:
         return x
+
+
+def to_paddle(x, device):
+    """Converts x such that it can be used as input to a paddle op."""
+    if isinstance(x, np.ndarray):
+        return paddle.to_tensor(
+            x, place='gpu') if device == 'cuda' else paddle.to_tensor(
+                x, place='cpu')
+    else:
+        return x
+
+
+def paddle_cmp_device(x, device):
+    if device == 'cuda' and x.place.is_gpu_place():
+        return True
+    elif device == 'cpu' and x.place.is_cpu_place():
+        return True
+    else:
+        return False
 
 
 def run_op(ml, device_name, check_device, fn, *args, **kwargs):
@@ -126,7 +163,25 @@ def run_op(ml, device_name, check_device, fn, *args, **kwargs):
                             x, torch.Tensor) and device_name == x.device.type:
                         tensor_on_device = True
             assert tensor_on_device
+    elif ml.module.__name__ == 'paddle':
+        _args = [to_paddle(x, device_name) for x in args]
+        _kwargs = {k: to_paddle(v, device_name) for k, v in kwargs.items()}
 
+        ans = fn(*_args, **_kwargs)
+
+        if check_device:
+            # not all returned tensor have to use the device.
+            # check if there is at least one tensor using device memory
+            tensor_on_device = False
+            if isinstance(ans, paddle.Tensor):
+                if paddle_cmp_device(ans, device_name):
+                    tensor_on_device = True
+            else:
+                for x in ans:
+                    if isinstance(x, paddle.Tensor) and paddle_cmp_device(
+                            x, device_name):
+                        tensor_on_device = True
+            assert tensor_on_device
     else:
         raise ValueError('unsupported ml framework {}'.format(ml.module))
 
@@ -189,6 +244,30 @@ def run_op_grad(ml, device_name, check_device, fn, x, y_attr_name,
                           torch.Tensor) and device_name == dy_dx.device.type:
                 tensor_on_device = True
             assert tensor_on_device
+    elif ml.module.__name__ == 'paddle':
+        x_var = to_paddle(x, device_name)
+        x_var.stop_gradient = False
+        _args = [x_var if a is x else to_paddle(a, device_name) for a in args]
+        _kwargs = {
+            k: x_var if a is x else to_paddle(a, device_name)
+            for k, a in kwargs.items()
+        }
+
+        ans = fn(*_args, **_kwargs)
+        if y_attr_name:
+            y = getattr(ans, y_attr_name)
+        else:
+            y = ans
+        y.backward(to_paddle(backprop_values, device_name))
+        dy_dx = x_var.grad
+
+        if check_device:
+            # check if the gradient is using device memory
+            tensor_on_device = False
+            if isinstance(dy_dx, paddle.Tensor) and paddle_cmp_device(
+                    dy_dx, device_name):
+                tensor_on_device = True
+            assert tensor_on_device
     else:
         raise ValueError('unsupported ml framework {}'.format(ml.module))
 
@@ -213,6 +292,8 @@ class MLTensor:
             self.module.random.set_seed(seed)
         elif self.module.__name__ == 'torch':
             self.module.manual_seed(seed)
+        elif self.module.__name__ == 'paddle':
+            self.module.seed(seed)
         else:
             raise Exception('Unsupported ml framework')
 
@@ -221,19 +302,27 @@ class MLTensor:
             pass
         elif self.module.__name__ == 'torch':
             self.module.set_deterministic(deterministic)
+        elif self.module.__name__ == 'paddle':
+            paddle.set_flags({
+                "FLAGS_cudnn_deterministic": "1",
+                "FLAGS_cpu_deterministic": "1"
+            })
         else:
             raise Exception('Unsupported ml framework')
 
-    def random_uniform(self, size, dtype, minval=0, maxval=1):
+    def random_uniform(self, shape, dtype, minval=0, maxval=1):
         if isinstance(dtype, str):
             dtype = self.get_dtype(dtype)
         if self.module.__name__ == 'tensorflow':
-            return self.module.random.uniform(shape=size,
+            return self.module.random.uniform(shape=shape,
                                               dtype=dtype,
                                               minval=minval,
                                               maxval=maxval)
         elif self.module.__name__ == 'torch':
-            ans = self.module.empty(size=size, dtype=dtype)
+            ans = self.module.empty(size=shape, dtype=dtype)
+            return ans.uniform_(minval, maxval)
+        elif self.module.__name__ == 'paddle':
+            ans = self.module.empty(shape=shape, dtype=dtype)
             return ans.uniform_(minval, maxval)
         else:
             raise Exception('Unsupported ml framework')
@@ -245,6 +334,8 @@ class MLTensor:
             return self.module.zeros(shape=shape, dtype=dtype)
         elif self.module.__name__ == 'torch':
             return self.module.empty(size=shape, dtype=dtype)
+        elif self.module.__name__ == 'paddle':
+            return self.module.empty(shape=shape, dtype=dtype)
         else:
             raise Exception('Unsupported ml framework')
 
@@ -255,6 +346,8 @@ class MLTensor:
             return self.module.zeros(shape=shape, dtype=dtype)
         elif self.module.__name__ == 'torch':
             return self.module.zeros(size=shape, dtype=dtype)
+        elif self.module.__name__ == 'paddle':
+            return self.module.zeros(shape=shape, dtype=dtype)
         else:
             raise Exception('Unsupported ml framework')
 
@@ -271,6 +364,13 @@ parametrize = SimpleNamespace(
         [v for k, v in _ml_modules.items() if v.module.__name__ == 'torch']),
     ml_tf_only=pytest.mark.parametrize('ml', [
         v for k, v in _ml_modules.items() if v.module.__name__ == 'tensorflow'
+    ]),
+    ml_paddle_only=pytest.mark.parametrize(
+        'ml',
+        [v for k, v in _ml_modules.items() if v.module.__name__ == 'paddle']),
+    ml_torch_and_paddle_only=pytest.mark.parametrize('ml', [
+        v for k, v in _ml_modules.items()
+        if v.module.__name__ == 'paddle' or v.module.__name__ == 'torch'
     ]),
 )
 

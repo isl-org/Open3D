@@ -61,7 +61,7 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/../cpp/open3d/visualization/webrtc_ser
 file(COPY "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
 
-if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
+if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS OR BUILD_PADDLE_OPS)
     # copy generated files
     file(COPY "${PYTHON_PACKAGE_DST_DIR}/../ml"
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )

@@ -14,6 +14,8 @@ if o3d._build_config['BUILD_PYTORCH_OPS']:
     import torch
 if o3d._build_config['BUILD_TENSORFLOW_OPS']:
     import tensorflow as tf
+if o3d._build_config['BUILD_PADDLE_OPS']:
+    import paddle
 
 # skip all tests if the ml ops were not built
 pytestmark = mltest.default_marks
@@ -59,6 +61,11 @@ def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
         index_dtype_ = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
     elif ml.module.__name__ == 'torch':
         index_dtype_ = {'int32': torch.int32, 'int64': torch.int64}[index_dtype]
+    elif ml.module.__name__ == 'paddle':
+        index_dtype_ = {
+            'int32': paddle.int32,
+            'int64': paddle.int64
+        }[index_dtype]
     else:
         raise Exception('Unsupported ml framework')
 

@@ -134,6 +134,7 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
+option(BUILD_PADDLE_OPS           "Build ops for Paddle"                     OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
 
 # Release build options
@@ -287,6 +288,9 @@ if(BUILD_SYCL_MODULE AND BUILD_TENSORFLOW_OPS)
 endif()
 if(BUILD_SYCL_MODULE AND BUILD_PYTORCH_OPS)
     message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_PYTORCH_OPS=OFF")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_PADDLE_OPS)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_PADDLE_OPS=OFF")
 endif()
 if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
     message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
