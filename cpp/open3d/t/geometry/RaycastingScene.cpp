@@ -615,8 +615,8 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
         }
 
         // Copy the initialized data to the device
-        queue_.memcpy(host_previous_geom_prim_ID_tfar.get(),
-                      previous_geom_prim_ID_tfar,
+        queue_.memcpy(previous_geom_prim_ID_tfar,
+                      host_previous_geom_prim_ID_tfar.get(),
                       num_rays * sizeof(callbacks::GeomPrimID))
                 .wait();
 
