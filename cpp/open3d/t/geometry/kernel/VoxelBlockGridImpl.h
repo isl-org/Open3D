@@ -703,7 +703,7 @@ void RayCastCPU
                 index_t block_buf_idx = cache.Check(key[0], key[1], key[2]);
                 if (block_buf_idx < 0) {
                     auto iter = hashmap_impl.find(key);
-                    if (iter == hashmap_impl.end()) return -1;
+                    if (iter == hashmap_impl.cend()) return -1;
                     block_buf_idx = iter->second;
                     cache.Update(key[0], key[1], key[2], block_buf_idx);
                 }
@@ -730,7 +730,7 @@ void RayCastCPU
             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
             if (block_buf_idx < 0) {
                 auto iter = hashmap_impl.find(key);
-                if (iter == hashmap_impl.end()) return -1;
+                if (iter == hashmap_impl.cend()) return -1;
                 block_buf_idx = iter->second;
                 cache.Update(x_b, y_b, z_b, block_buf_idx);
             }
@@ -929,7 +929,7 @@ void RayCastCPU
             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
             if (block_buf_idx < 0) {
                 auto iter = hashmap_impl.find(key);
-                if (iter == hashmap_impl.end()) return;
+                if (iter == hashmap_impl.cend()) return;
                 block_buf_idx = iter->second;
                 cache.Update(x_b, y_b, z_b, block_buf_idx);
             }
