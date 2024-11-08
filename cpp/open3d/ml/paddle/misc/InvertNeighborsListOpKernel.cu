@@ -26,6 +26,7 @@ std::vector<paddle::Tensor> InvertNeighborsListCUDA(
 
     // maybe this can use torch's impl way ?
     auto stream = inp_neighbors_index.stream();
+    // -1 means current global place
     auto cuda_place_props = phi::backends::gpu::GetDeviceProperties(-1);
     const int texture_alignment = cuda_place_props.textureAlignment;
 

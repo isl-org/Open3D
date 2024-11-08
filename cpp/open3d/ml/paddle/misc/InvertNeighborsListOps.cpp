@@ -6,6 +6,8 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/ml/paddle/misc/InvertNeighborsListOps.h"
+
 #include <vector>
 
 #include "open3d/ml/paddle/PaddleHelper.h"

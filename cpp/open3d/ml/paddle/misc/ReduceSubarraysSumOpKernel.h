@@ -5,14 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-
-// this file seem not use
 #pragma once
 
-#include "open3d/ml/paddle/PaddleHelper.h"
+#include "paddle/extension.h"
 
-std::vector<paddle::Tensor> InvertNeighborsList(
-        paddle::Tensor& inp_neighbors_index,
-        paddle::Tensor& inp_neighbors_row_splits,
-        paddle::Tensor& inp_neighbors_attributes,
-        int64_t num_points);
+template <class T>
+paddle::Tensor ReduceSubarraysSumCPU(const paddle::Tensor& values,
+                                     const paddle::Tensor& row_splits);
+
+#ifdef BUILD_CUDA_MODULE
+template <class T>
+paddle::Tensor ReduceSubarraysSumCUDA(const paddle::Tensor& values,
+                                      const paddle::Tensor& row_splits);
+#endif

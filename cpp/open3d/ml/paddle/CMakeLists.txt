@@ -27,6 +27,18 @@ target_sources(open3d_paddle_ops PRIVATE
     misc/KnnSearchOpKernel.cpp
     misc/RaggedToDenseOpKernel.cpp
     misc/RaggedToDenseOps.cpp
+    misc/NmsOps.cpp
+    misc/VoxelizeOpKernel.cpp
+    misc/VoxelizeOps.cpp
+    misc/ReduceSubarraysSumOpKernel.cpp
+    misc/ReduceSubarraysSumOps.cpp
+    misc/VoxelPoolingOps.cpp
+    misc/VoxelPoolingOpKernel.cpp
+    misc/RoiPoolOps.cpp
+)
+
+target_sources(open3d_paddle_ops PRIVATE
+    ../contrib/Nms.cpp
 )
 
 if (BUILD_CUDA_MODULE)
@@ -35,6 +47,15 @@ if (BUILD_CUDA_MODULE)
         misc/FixedRadiusSearchOpKernel.cu
         misc/InvertNeighborsListOpKernel.cu
         misc/RaggedToDenseOpKernel.cu
+        misc/ReduceSubarraysSumOpKernel.cu
+        misc/VoxelizeOpKernel.cu
+    )
+
+    target_sources(open3d_paddle_ops PRIVATE
+        ../contrib/BallQuery.cu
+        ../contrib/InterpolatePoints.cu
+        ../contrib/Nms.cu
+        ../contrib/RoiPoolKernel.cu
     )
 
 endif()
@@ -60,7 +81,7 @@ target_include_directories(open3d_paddle_ops SYSTEM PRIVATE
 )
 
 target_link_libraries(open3d_paddle_ops PRIVATE
-    paddle 
+    paddle
     Open3D::Open3D
     Open3D::3rdparty_eigen3
     Open3D::3rdparty_fmt

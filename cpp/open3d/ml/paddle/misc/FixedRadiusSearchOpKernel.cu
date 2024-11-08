@@ -29,6 +29,7 @@ void FixedRadiusSearchCUDA(const paddle::Tensor& points,
                            paddle::Tensor& neighbors_row_splits,
                            paddle::Tensor& neighbors_distance) {
     auto stream = points.stream();
+    // -1 means current global place
     auto cuda_place_props = phi::backends::gpu::GetDeviceProperties(-1);
     const int texture_alignment = cuda_place_props.textureAlignment;
 
