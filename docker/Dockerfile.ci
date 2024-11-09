@@ -3,7 +3,7 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 # For bash-specific commands
-SHELL ["/bin/bash", "-c", "-o", "pipefail"]
+SHELL ["/bin/bash", "-c"]
 
 # Required build args, should be specified in docker_build.sh
 ARG DEVELOPER_BUILD
@@ -102,7 +102,7 @@ RUN curl https://pyenv.run | bash \
         && pyenv install $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION}; \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 RUN python --version && pip --version
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
