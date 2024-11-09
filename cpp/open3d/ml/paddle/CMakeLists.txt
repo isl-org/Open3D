@@ -38,6 +38,12 @@ target_sources(open3d_paddle_ops PRIVATE
 )
 
 target_sources(open3d_paddle_ops PRIVATE
+    pointnet/BallQueryOps.cpp
+    pointnet/InterpolateOps.cpp
+    pointnet/SamplingOps.cpp
+)
+
+target_sources(open3d_paddle_ops PRIVATE
     ../contrib/Nms.cpp
 )
 
@@ -49,6 +55,12 @@ if (BUILD_CUDA_MODULE)
         misc/RaggedToDenseOpKernel.cu
         misc/ReduceSubarraysSumOpKernel.cu
         misc/VoxelizeOpKernel.cu
+    )
+
+    target_sources(open3d_paddle_ops PRIVATE
+        pointnet/BallQueryKernel.cu
+        pointnet/InterpolateKernel.cu
+        pointnet/SamplingKernel.cu
     )
 
     target_sources(open3d_paddle_ops PRIVATE
