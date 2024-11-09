@@ -1192,13 +1192,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
     }
 };
 
-RaycastingScene::RaycastingScene(int64_t nthreads
-#ifdef BUILD_SYCL_MODULE
-                                 ,
-                                 const core::Device& device
-#endif
-) {
-
+RaycastingScene::RaycastingScene(int64_t nthreads, const core::Device& device) {
 #ifdef BUILD_SYCL_MODULE
     if (device.IsSYCL()) {
         impl_ = std::make_unique<SYCLImpl>();
