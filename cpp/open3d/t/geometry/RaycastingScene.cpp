@@ -291,8 +291,7 @@ struct GeometryPtr {
 template <typename Vec3fType, typename Vec2fType>
 struct ClosestPointResult {
     ClosestPointResult()
-        : primID(RTC_INVALID_GEOMETRY_ID),
-          geomID(RTC_INVALID_GEOMETRY_ID) {}
+        : primID(RTC_INVALID_GEOMETRY_ID), geomID(RTC_INVALID_GEOMETRY_ID) {}
 
     Vec3fType p;
     unsigned int primID;
@@ -313,8 +312,10 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
     Vec3faType q(args->query->x, args->query->y, args->query->z);
 
     ClosestPointResult<Vec3fType, Vec2fType>* result =
-            static_cast<ClosestPointResult<Vec3fType, Vec2fType>*>(args->userPtr);
-    const RTCGeometryType geom_type = result->geometry_ptrs_ptr[geomID].geom_type;
+            static_cast<ClosestPointResult<Vec3fType, Vec2fType>*>(
+                    args->userPtr);
+    const RTCGeometryType geom_type =
+            result->geometry_ptrs_ptr[geomID].geom_type;
     const void* ptr1 = result->geometry_ptrs_ptr[geomID].ptr1;
     const void* ptr2 = result->geometry_ptrs_ptr[geomID].ptr2;
 
@@ -322,19 +323,23 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
         const float* vertex_positions = (const float*)ptr1;
         const uint32_t* triangle_indices = (const uint32_t*)ptr2;
 
-        Vec3faType v0(vertex_positions[3 * triangle_indices[3 * primID + 0] + 0],
-                  vertex_positions[3 * triangle_indices[3 * primID + 0] + 1],
-                  vertex_positions[3 * triangle_indices[3 * primID + 0] + 2]);
-        Vec3faType v1(vertex_positions[3 * triangle_indices[3 * primID + 1] + 0],
-                  vertex_positions[3 * triangle_indices[3 * primID + 1] + 1],
-                  vertex_positions[3 * triangle_indices[3 * primID + 1] + 2]);
-        Vec3faType v2(vertex_positions[3 * triangle_indices[3 * primID + 2] + 0],
-                  vertex_positions[3 * triangle_indices[3 * primID + 2] + 1],
-                  vertex_positions[3 * triangle_indices[3 * primID + 2] + 2]);
+        Vec3faType v0(
+                vertex_positions[3 * triangle_indices[3 * primID + 0] + 0],
+                vertex_positions[3 * triangle_indices[3 * primID + 0] + 1],
+                vertex_positions[3 * triangle_indices[3 * primID + 0] + 2]);
+        Vec3faType v1(
+                vertex_positions[3 * triangle_indices[3 * primID + 1] + 0],
+                vertex_positions[3 * triangle_indices[3 * primID + 1] + 1],
+                vertex_positions[3 * triangle_indices[3 * primID + 1] + 2]);
+        Vec3faType v2(
+                vertex_positions[3 * triangle_indices[3 * primID + 2] + 0],
+                vertex_positions[3 * triangle_indices[3 * primID + 2] + 1],
+                vertex_positions[3 * triangle_indices[3 * primID + 2] + 2]);
 
         // Determine distance to closest point on triangle
         float u, v;
-        const Vec3faType p = closestPointTriangle<Vec3faType>(q, v0, v1, v2, u, v);
+        const Vec3faType p =
+                closestPointTriangle<Vec3faType>(q, v0, v1, v2, u, v);
         float d = (q - p).norm();
 
         // Store result in userPtr and update the query radius if we found a
@@ -427,10 +432,14 @@ struct RaycastingScene::Impl {
                                       float* primitive_uvs,
                                       float* primitive_normals,
                                       const int nthreads) = 0;
-    
-    virtual void ArraySum(int* data_ptr, size_t num_elements, size_t &result) = 0;
 
-    virtual void ArrayPartialSum(int* input, int* output, size_t num_elements) = 0;
+    virtual void ArraySum(int* data_ptr,
+                          size_t num_elements,
+                          size_t& result) = 0;
+
+    virtual void ArrayPartialSum(int* input,
+                                 int* output,
+                                 size_t num_elements) = 0;
 
     virtual void CopyArray(int* src, uint32_t* dst, size_t num_elements) = 0;
 };
@@ -771,23 +780,28 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
         throw std::logic_error("Function not yet implemented");
     }
 
-    void ArraySum(int* data_ptr, size_t num_elements, size_t &result) override {
+    void ArraySum(int* data_ptr, size_t num_elements, size_t& result) override {
         sycl::buffer<size_t, 1> result_buf(&result, sycl::range<1>(1));
 
         queue_.submit([&](sycl::handler& cgh) {
-            auto result_acc = result_buf.get_access<sycl::access::mode::read_write>(cgh);
+            auto result_acc =
+                    result_buf.get_access<sycl::access::mode::read_write>(cgh);
             cgh.parallel_for(
                     sycl::range<1>(num_elements),
                     [=](sycl::item<1> item, sycl::kernel_handler kh) {
-                const size_t i = item.get_id(0);
-                sycl::atomic_ref<size_t, sycl::memory_order::relaxed, sycl::memory_scope::device> atomic_result_data(result_acc[0]);
-                atomic_result_data.fetch_add(data_ptr[i]);
-            });
+                        const size_t i = item.get_id(0);
+                        sycl::atomic_ref<size_t, sycl::memory_order::relaxed,
+                                         sycl::memory_scope::device>
+                                atomic_result_data(result_acc[0]);
+                        atomic_result_data.fetch_add(data_ptr[i]);
+                    });
         });
         queue_.wait_and_throw();
     }
 
-    void ArrayPartialSum(int* input, int* output, size_t num_elements) override {
+    void ArrayPartialSum(int* input,
+                         int* output,
+                         size_t num_elements) override {
         queue_.submit([&](sycl::handler& cgh) {
             cgh.single_task([=]() {
                 for (size_t idx = 1; idx < num_elements; ++idx) {
@@ -1125,7 +1139,8 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
 
                 RTCPointQueryContext instStack;
                 rtcInitPointQueryContext(&instStack);
-                rtcPointQuery(scene_, &query, &instStack, &ClosestPointFunc<Vec3f, Vec3fa, Vec2f>,
+                rtcPointQuery(scene_, &query, &instStack,
+                              &ClosestPointFunc<Vec3f, Vec3fa, Vec2f>,
                               (void*)&result);
 
                 closest_points[3 * i + 0] = result.p.x();
@@ -1155,13 +1170,15 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
         }
     }
 
-    void ArraySum(int* data_ptr, size_t num_elements, size_t &result) override {
+    void ArraySum(int* data_ptr, size_t num_elements, size_t& result) override {
         for (size_t i = 0; i < num_elements; ++i) {
             result += data_ptr[i];
         }
     }
 
-    void ArrayPartialSum(int* input, int* output, size_t num_elements) override {
+    void ArrayPartialSum(int* input,
+                         int* output,
+                         size_t num_elements) override {
         output[0] = 0;
         for (size_t i = 1; i < num_elements; ++i) {
             output[i] = output[i - 1] + input[i - 1];
@@ -1405,8 +1422,8 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
     impl_->ArraySum(data_ptr, num_rays, num_intersections);
 
     // prepare ray allocations (cumsum)
-    core::Tensor cumsum_tensor_cpu = core::Tensor::Zeros(
-            shape, core::Dtype::FromType<int>());
+    core::Tensor cumsum_tensor_cpu =
+            core::Tensor::Zeros(shape, core::Dtype::FromType<int>());
     core::Tensor cumsum_tensor = cumsum_tensor_cpu.To(impl_->tensor_device_);
     int* cumsum_ptr = cumsum_tensor.GetDataPtr<int>();
     impl_->ArrayPartialSum(data_ptr, cumsum_ptr, num_rays);
@@ -1440,7 +1457,7 @@ RaycastingScene::ListIntersections(const core::Tensor& rays,
                              result["geometry_ids"].GetDataPtr<uint32_t>(),
                              result["primitive_ids"].GetDataPtr<uint32_t>(),
                              result["primitive_uvs"].GetDataPtr<float>(),
-                             result["t_hit"].GetDataPtr<float>(), nthreads);    
+                             result["t_hit"].GetDataPtr<float>(), nthreads);
 
     return result;
 }
