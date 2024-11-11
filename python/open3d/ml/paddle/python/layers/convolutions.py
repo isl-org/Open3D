@@ -12,7 +12,7 @@ import paddle
 from paddle import create_parameter
 import numpy as np
 
-__all__ = ['ContinuousConv']
+__all__ = ['ContinuousConv', 'SparseConv', 'SparseConvTranspose']
 
 
 class ContinuousConv(paddle.nn.Layer):
@@ -292,5 +292,410 @@ class ContinuousConv(paddle.nn.Layer):
             out_features += self.bias
         if not self.activation is None:
             out_features = self.activation(out_features)
+
+        return out_features
+
+
+class SparseConv(paddle.nn.Layer):
+    """Sparse Convolution.
+
+    This layer computes a convolution which is only evaluated at the specified output positions.
+    The layer assumes that input and output points lie on a regular grid.
+
+    Example:
+      This shows a minimal example of how to use the layer::
+
+        import paddle
+        import open3d.ml.paddle as ml3d
+
+        # +0.5 to move the points to the voxel center
+        inp_positions = paddle.randint(0, 10, [20,3]).to(paddle.float32) + 0.5
+        inp_features = paddle.randn([20,8])
+        out_positions = paddle.randint(0, 10, [20,3]).to(paddle.float32) + 0.5
+
+        conv = ml3d.layers.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
+        out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
+
+
+    Arguments:
+        in_channels: The number of input channels.
+
+        filters: The number of filters/output channels.
+
+        kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
+
+        activation: The activation function to use. None means no activation.
+
+        use_bias: If True adds an additive bias vector.
+
+        kernel_initializer: Initializer for the kernel weights.
+
+        bias_initializer: Initializer for the bias vector.
+
+        normalize: If true then the result is normalized by the number of input points.
+
+        offset: A single 3D vector used in the filter coordinate computation.
+          The shape is [3]. This can be used to control how the filters are
+          centered. It will be set automatically for kernels with even sizes.
+    """
+
+    def __init__(self,
+                 in_channels,
+                 filters,
+                 kernel_size,
+                 activation=None,
+                 use_bias=True,
+                 kernel_initializer=paddle.nn.initializer.Uniform(-0.05, 0.05),
+                 bias_initializer=paddle.nn.initializer.Constant(),
+                 normalize=False,
+                 offset=None,
+                 **kwargs):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.activation = activation
+        self.use_bias = use_bias
+        self.kernel_initializer = kernel_initializer
+        self.bias_initializer = bias_initializer
+        self.normalize = normalize
+
+        if not (np.asarray(kernel_size) == kernel_size[0]).all():
+            raise ValueError("Only cubic kernel sizes are supported.")
+
+        if offset is None:
+            if kernel_size[0] % 2:
+                offset = paddle.zeros(shape=(3,), dtype=paddle.float32)
+            else:
+                offset = paddle.full((3,), -0.5, dtype=paddle.float32)
+        self.register_buffer('offset', offset)
+
+        self.fixed_radius_search = FixedRadiusSearch(metric='Linf',
+                                                     ignore_query_point=False,
+                                                     return_distances=False)
+
+        kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
+        self.kernel = create_parameter(
+            kernel_shape,
+            dtype=paddle.float32,
+            default_initializer=self.kernel_initializer)
+
+        if self.use_bias:
+            self.bias = create_parameter((self.filters,),
+                                         dtype=paddle.float32,
+                                         is_bias=True,
+                                         default_initializer=bias_initializer)
+
+    def forward(self,
+                inp_features,
+                inp_positions,
+                out_positions,
+                voxel_size,
+                inp_importance=None,
+                fixed_radius_search_hash_table=None):
+        """This function computes the output features.
+
+        Arguments:
+          inp_features: A 2D tensor which stores a feature vector for each input
+            point.
+
+          inp_positions: A 2D tensor with the 3D point positions of each input
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          out_positions: A 2D tensor with the 3D point positions of each output
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          voxel_size: A scalar float that defines the edge length of a voxel.
+
+          inp_importance: Optional scalar importance value for each input point.
+
+          fixed_radius_search_hash_table: A precomputed hash table generated with
+            build_spatial_hash_table(). This input can be used to explicitly force the
+            reuse of a hash table in special cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points'
+            array. Note that this parameter is only used if 'extents' is a scalar.
+
+        Returns: A tensor of shape [num output points, filters] with the output
+          features.
+        """
+        if isinstance(inp_features, classes.RaggedTensor):
+            if not (isinstance(inp_positions, classes.RaggedTensor) and
+                    isinstance(out_positions, classes.RaggedTensor)):
+                raise ValueError(
+                    "All of inp_positions, inp_features and out_positions must be paddle.Tensor, or ml3d.classes.RaggedTensor"
+                )
+
+        offset = self.offset
+        if isinstance(voxel_size, (float, int)):
+            voxel_size = paddle.to_tensor(
+                voxel_size, dtype=inp_positions.dtype).to(self.kernel.place)
+        if len(voxel_size.shape) != 0:
+            raise Exception("voxel_size must be a scalar")
+
+        if inp_importance is None:
+            inp_importance = paddle.empty(
+                (0,), dtype=paddle.float32).to(self.kernel.place)
+
+        hash_table_size_factor = 1 / 64
+        self.nns = self.fixed_radius_search(
+            inp_positions,
+            queries=out_positions - offset * voxel_size,
+            radius=self.kernel_size[0] * voxel_size * 0.51,
+            hash_table_size_factor=hash_table_size_factor,
+            hash_table=fixed_radius_search_hash_table)
+
+        out_positions_split = None
+        if isinstance(inp_positions, classes.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
+
+        # for stats and debugging
+        num_pairs = self.nns.neighbors_index.shape[0]
+        self._avg_neighbors = num_pairs / out_positions.shape[0]
+
+        extents_rank2 = paddle.full([1, 1], voxel_size * self.kernel_size[0])
+
+        self._conv_values = {
+            'filters': self.kernel,
+            'out_positions': out_positions,
+            'extents': extents_rank2,
+            'offset': offset,
+            'inp_positions': inp_positions,
+            'inp_features': inp_features,
+            'inp_importance': inp_importance,
+            'neighbors_index': self.nns.neighbors_index,
+            'neighbors_importance': paddle.empty((0,), dtype=paddle.float32),
+            'neighbors_row_splits': self.nns.neighbors_row_splits,
+            'align_corners': False,
+            'coordinate_mapping': 'identity',
+            'interpolation': 'nearest_neighbor',
+            'normalize': self.normalize,
+            'max_temp_mem_mb': 64
+        }
+
+        out_features = ops.continuous_conv(**self._conv_values)
+
+        self._conv_output = out_features
+
+        if self.use_bias:
+            out_features += self.bias
+        if self.activation:
+            out_features = self.activation(out_features)
+
+        if out_positions_split is not None:
+            out_features = classes.RaggedTensor.from_row_splits(
+                out_features, out_positions_split, validate=False, copy=False)
+
+        return out_features
+
+
+class SparseConvTranspose(paddle.nn.Layer):
+    """Sparse Transposed Convolution.
+
+    This layer computes a transposed convolution which is only evaluated at the specified output positions.
+    The layer assumes that input and output points lie on a regular grid.
+
+    Example:
+      This shows a minimal example of how to use the layer::
+
+        import paddle
+        import open3d.ml.paddle as ml3d
+
+        # +0.5 to move the points to the voxel center
+        inp_positions = paddle.randint(0, 10, [20,3]).to(paddle.float32) + 0.5
+        inp_features = paddle.randn([20,8])
+        out_positions = paddle.randint(0, 10, [20,3]).to(paddle.float32) + 0.5
+
+        conv = ml3d.layers.SparseConv(in_channels=8, filters=16, kernel_size=[3,3,3])
+        out_features = conv(inp_features, inp_positions, out_positions, voxel_size=1.0)
+
+
+    Arguments:
+        in_channels: The number of input channels.
+
+        filters: The number of filters/output channels.
+
+        kernel_size: The spatial resolution of the filter, e.g. [3,3,3].
+
+        activation: The activation function to use. None means no activation.
+
+        use_bias: If True adds an additive bias vector.
+
+        kernel_initializer: Initializer for the kernel weights.
+
+        bias_initializer: Initializer for the bias vector.
+
+        normalize: If true then the input features will be normalized with the number of
+          output points.
+
+        offset: A single 3D vector used in the filter coordinate computation.
+          The shape is [3]. This can be used to control how the filters are
+          centered. It will be set automatically for kernels with even sizes.
+    """
+
+    def __init__(self,
+                 in_channels,
+                 filters,
+                 kernel_size,
+                 activation=None,
+                 use_bias=True,
+                 kernel_initializer=paddle.nn.initializer.Uniform(-0.05, 0.05),
+                 bias_initializer=paddle.nn.initializer.Constant(),
+                 normalize=False,
+                 offset=None,
+                 **kwargs):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.activation = activation
+        self.use_bias = use_bias
+        self.kernel_initializer = kernel_initializer
+        self.bias_initializer = bias_initializer
+        self.normalize = normalize
+
+        if not (np.asarray(kernel_size) == kernel_size[0]).all():
+            raise ValueError("Only cubic kernel sizes are supported.")
+
+        if offset is None:
+            if kernel_size[0] % 2:
+                offset = paddle.zeros(shape=(3,), dtype=paddle.float32)
+            else:
+                offset = paddle.full((3,), -0.5, dtype=paddle.float32)
+        self.register_buffer('offset', offset)
+
+        self.fixed_radius_search = FixedRadiusSearch(metric='Linf',
+                                                     ignore_query_point=False,
+                                                     return_distances=False)
+
+        kernel_shape = (*self.kernel_size, self.in_channels, self.filters)
+        self.kernel = create_parameter(
+            kernel_shape,
+            dtype=paddle.float32,
+            default_initializer=self.kernel_initializer)
+
+        if self.use_bias:
+            self.bias = create_parameter((self.filters,),
+                                         dtype=paddle.float32,
+                                         is_bias=True,
+                                         default_initializer=bias_initializer)
+
+    def forward(self,
+                inp_features,
+                inp_positions,
+                out_positions,
+                voxel_size,
+                out_importance=None,
+                fixed_radius_search_hash_table=None):
+        """This function computes the output features.
+
+        Arguments:
+          inp_features: A 2D tensor which stores a feature vector for each input
+            point.
+
+          inp_positions: A 2D tensor with the 3D point positions of each input
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          out_positions: A 2D tensor with the 3D point positions of each output
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          voxel_size: A scalar float that defines the edge length of a voxel.
+
+          out_importance: Optional scalar importance value for each output point.
+
+          fixed_radius_search_hash_table: A precomputed hash table generated with
+            build_spatial_hash_table(). This input can be used to explicitly force the
+            reuse of a hash table in special cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points'
+            array. Note that this parameter is only used if 'extents' is a scalar.
+
+        Returns: A tensor of shape [num output points, filters] with the output
+          features.
+        """
+        if isinstance(inp_features, classes.RaggedTensor):
+            if not (isinstance(inp_positions, classes.RaggedTensor) and
+                    isinstance(out_positions, classes.RaggedTensor)):
+                raise ValueError(
+                    "All of inp_positions, inp_features and out_positions must be paddle.Tensor, or ml3d.classes.RaggedTensor"
+                )
+
+        offset = self.offset
+        if isinstance(voxel_size, (float, int)):
+            voxel_size = paddle.to_tensor(
+                voxel_size, dtype=inp_positions.dtype).to(self.kernel.place)
+        if len(voxel_size.shape) != 0:
+            raise Exception("voxel_size must be a scalar")
+
+        if out_importance is None:
+            out_importance = paddle.empty(
+                (0,), dtype=paddle.float32).to(self.kernel.place)
+
+        empty_vec = paddle.empty((0,),
+                                 dtype=paddle.float32).to(self.kernel.place)
+
+        hash_table_size_factor = 1 / 64
+        self.nns_inp = self.fixed_radius_search(
+            out_positions,
+            queries=inp_positions - offset * voxel_size,
+            radius=self.kernel_size[0] * voxel_size * 0.51,
+            hash_table_size_factor=hash_table_size_factor,
+            hash_table=fixed_radius_search_hash_table)
+
+        out_positions_split = None
+        if isinstance(inp_positions, classes.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
+
+        num_out = out_positions.shape[0]
+
+        neighbors_index, neighbors_row_splits, _ = ops.invert_neighbors_list(
+            self.nns_inp.neighbors_index, self.nns_inp.neighbors_row_splits,
+            empty_vec, num_out)
+
+        # for stats and debugging
+        num_pairs = neighbors_index.shape[0]
+        self._avg_neighbors = num_pairs / out_positions.shape[0]
+
+        extents_rank2 = paddle.full([1, 1], voxel_size * self.kernel_size[0])
+
+        self._conv_values = {
+            'filters': self.kernel,
+            'out_positions': out_positions,
+            'extents': extents_rank2,
+            'offset': offset,
+            'inp_positions': inp_positions,
+            'inp_features': inp_features,
+            'out_importance': out_importance,
+            'inp_neighbors_index': self.nns_inp.neighbors_index,
+            'inp_neighbors_importance_sum': empty_vec,
+            'inp_neighbors_row_splits': self.nns_inp.neighbors_row_splits,
+            'neighbors_index': neighbors_index,
+            'neighbors_importance': empty_vec,
+            'neighbors_row_splits': neighbors_row_splits,
+            'align_corners': False,
+            'coordinate_mapping': 'identity',
+            'interpolation': 'nearest_neighbor',
+            'normalize': self.normalize,
+            'max_temp_mem_mb': 64,
+        }
+
+        out_features = ops.continuous_conv_transpose(**self._conv_values)
+
+        self._conv_output = out_features
+
+        if self.use_bias:
+            out_features += self.bias
+        if self.activation:
+            out_features = self.activation(out_features)
+
+        if out_positions_split is not None:
+            out_features = classes.RaggedTensor.from_row_splits(
+                out_features, out_positions_split, validate=False, copy=False)
 
         return out_features

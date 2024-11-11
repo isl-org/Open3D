@@ -53,6 +53,15 @@ target_sources(open3d_paddle_ops PRIVATE
 )
 
 target_sources(open3d_paddle_ops PRIVATE
+    sparse_conv/SparseConvBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvOpKernel.cpp
+    sparse_conv/SparseConvOps.cpp
+    sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvTransposeOpKernel.cpp
+    sparse_conv/SparseConvTransposeOps.cpp
+)
+
+target_sources(open3d_paddle_ops PRIVATE
     ../contrib/Nms.cpp
 )
 
@@ -79,6 +88,12 @@ if (BUILD_CUDA_MODULE)
         continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cu
     )
     target_sources(open3d_paddle_ops PRIVATE
+        sparse_conv/SparseConvBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvOpKernel.cu
+        sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvTransposeOpKernel.cu
+    )
+    target_sources(open3d_paddle_ops PRIVATE
         ../contrib/BallQuery.cu
         ../contrib/InterpolatePoints.cu
         ../contrib/Nms.cu
@@ -87,6 +102,7 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(open3d_paddle_ops PRIVATE
         ../impl/continuous_conv/ContinuousConvCUDAKernels.cu
+        ../impl/sparse_conv/SparseConvCUDAKernels.cu
     )
 endif()
 

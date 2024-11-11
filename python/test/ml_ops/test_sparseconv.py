@@ -76,6 +76,11 @@ def test_compare_to_conv3d(ml, dtype, kernel_size, out_channels, in_channels,
 
         def bias_initializer(a):
             a.data = torch.from_numpy(bias)
+    elif ml.module.__name__ == 'paddle':
+        paddle = ml.module
+
+        kernel_initializer = paddle.nn.initializer.Assign(filters)
+        bias_initializer = paddle.nn.initializer.Assign(bias)
     else:
         raise Exception('Unsupported ml framework {}'.format(
             ml.module.__name__))
@@ -88,6 +93,8 @@ def test_compare_to_conv3d(ml, dtype, kernel_size, out_channels, in_channels,
                                        bias_initializer=bias_initializer)
     if ml.module.__name__ == 'torch':
         sparse_conv.to(ml.device)
+    elif ml.module.__name__ == 'paddle':
+        sparse_conv.to('gpu' if ml.device == 'cuda' else 'cpu')
 
     y = mltest.run_op(ml, ml.device, True, sparse_conv, inp_features,
                       inp_positions * voxel_size, out_positions * voxel_size,
@@ -321,6 +328,11 @@ def test_compare_to_conv3dtranspose(ml, dtype, kernel_size, out_channels,
 
         def bias_initializer(a):
             a.data = torch.from_numpy(bias)
+    elif ml.module.__name__ == 'paddle':
+        paddle = ml.module
+
+        kernel_initializer = paddle.nn.initializer.Assign(filters)
+        bias_initializer = paddle.nn.initializer.Assign(bias)
     else:
         raise Exception('Unsupported ml framework {}'.format(
             ml.module.__name__))
@@ -335,6 +347,8 @@ def test_compare_to_conv3dtranspose(ml, dtype, kernel_size, out_channels,
 
     if ml.module.__name__ == 'torch':
         sparse_conv_transpose.to(ml.device)
+    elif ml.module.__name__ == 'paddle':
+        sparse_conv_transpose.to('gpu' if ml.device == 'cuda' else 'cpu')
 
     y = mltest.run_op(ml, ml.device, True, sparse_conv_transpose, inp_features,
                       inp_positions * voxel_size, out_positions * voxel_size,
