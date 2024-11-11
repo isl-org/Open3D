@@ -57,8 +57,16 @@ def test_voxel_pooling(ml, pos_dtype, feat_dtype, position_fn, feature_fn):
     # yapf: enable
 
     voxel_size = 1
-    ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling, points,
-                        features, voxel_size, position_fn, feature_fn)
+    ans = mltest.run_op(ml,
+                        ml.device,
+                        True,
+                        ml.ops.voxel_pooling,
+                        positions=points,
+                        features=features,
+                        voxel_size=voxel_size,
+                        position_fn=position_fn,
+                        feature_fn=feature_fn,
+                        debug=False)
 
     if position_fn == 'average':
         expected_positions = np.stack(
@@ -113,8 +121,16 @@ def test_voxel_pooling_empty_point_set(ml, pos_dtype, feat_dtype, position_fn,
     features = np.zeros(shape=[0, 5], dtype=feat_dtype)
 
     voxel_size = 1
-    ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling, points,
-                        features, voxel_size, position_fn, feature_fn)
+    ans = mltest.run_op(ml,
+                        ml.device,
+                        True,
+                        ml.ops.voxel_pooling,
+                        positions=points,
+                        features=features,
+                        voxel_size=voxel_size,
+                        position_fn=position_fn,
+                        feature_fn=feature_fn,
+                        debug=False)
 
     np.testing.assert_array_equal(points, ans.pooled_positions)
     np.testing.assert_array_equal(features, ans.pooled_features)
@@ -150,16 +166,32 @@ def test_voxel_pooling_grad(ml, pos_dtype, feat_dtype, position_fn, feature_fn,
     voxel_size = 0.25
 
     def fn(features):
-        ans = mltest.run_op(ml, ml.device, True, ml.ops.voxel_pooling,
-                            positions, features, voxel_size, position_fn,
-                            feature_fn)
+        ans = mltest.run_op(ml,
+                            ml.device,
+                            True,
+                            ml.ops.voxel_pooling,
+                            positions=positions,
+                            features=features,
+                            voxel_size=voxel_size,
+                            position_fn=position_fn,
+                            feature_fn=feature_fn,
+                            debug=False)
         return ans.pooled_features
 
     def fn_grad(features_bp, features):
-        return mltest.run_op_grad(ml, ml.device, True, ml.ops.voxel_pooling,
-                                  features, 'pooled_features', features_bp,
-                                  positions, features, voxel_size, position_fn,
-                                  feature_fn)
+        return mltest.run_op_grad(ml,
+                                  ml.device,
+                                  True,
+                                  ml.ops.voxel_pooling,
+                                  features,
+                                  'pooled_features',
+                                  features_bp,
+                                  positions=positions,
+                                  features=features,
+                                  voxel_size=voxel_size,
+                                  position_fn=position_fn,
+                                  feature_fn=feature_fn,
+                                  debug=False)
 
     gradient_OK = check_gradients(features, fn, fn_grad, epsilon=1)
     assert gradient_OK

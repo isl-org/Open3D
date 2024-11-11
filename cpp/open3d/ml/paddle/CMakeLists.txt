@@ -44,6 +44,15 @@ target_sources(open3d_paddle_ops PRIVATE
 )
 
 target_sources(open3d_paddle_ops PRIVATE
+    continuous_conv/ContinuousConvOps.cpp
+    continuous_conv/ContinuousConvOpKernel.cpp
+    continuous_conv/ContinuousConvBackpropFilterOpKernel.cpp
+    continuous_conv/ContinuousConvTransposeOps.cpp
+    continuous_conv/ContinuousConvTransposeOpKernel.cpp
+    continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cpp
+)
+
+target_sources(open3d_paddle_ops PRIVATE
     ../contrib/Nms.cpp
 )
 
@@ -64,12 +73,21 @@ if (BUILD_CUDA_MODULE)
     )
 
     target_sources(open3d_paddle_ops PRIVATE
+        continuous_conv/ContinuousConvOpKernel.cu
+        continuous_conv/ContinuousConvBackpropFilterOpKernel.cu
+        continuous_conv/ContinuousConvTransposeOpKernel.cu
+        continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cu
+    )
+    target_sources(open3d_paddle_ops PRIVATE
         ../contrib/BallQuery.cu
         ../contrib/InterpolatePoints.cu
         ../contrib/Nms.cu
         ../contrib/RoiPoolKernel.cu
     )
 
+    target_sources(open3d_paddle_ops PRIVATE
+        ../impl/continuous_conv/ContinuousConvCUDAKernels.cu
+    )
 endif()
 
 open3d_show_and_abort_on_warning(open3d_paddle_ops)

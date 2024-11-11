@@ -165,7 +165,9 @@ def run_op(ml, device_name, check_device, fn, *args, **kwargs):
             assert tensor_on_device
     elif ml.module.__name__ == 'paddle':
         _args = [to_paddle(x, device_name) for x in args]
-        _kwargs = {k: to_paddle(v, device_name) for k, v in kwargs.items()}
+        _kwargs = {
+            k.lower(): to_paddle(v, device_name) for k, v in kwargs.items()
+        }
 
         ans = fn(*_args, **_kwargs)
 
@@ -249,7 +251,7 @@ def run_op_grad(ml, device_name, check_device, fn, x, y_attr_name,
         x_var.stop_gradient = False
         _args = [x_var if a is x else to_paddle(a, device_name) for a in args]
         _kwargs = {
-            k: x_var if a is x else to_paddle(a, device_name)
+            k.lower(): x_var if a is x else to_paddle(a, device_name)
             for k, a in kwargs.items()
         }
 
@@ -310,19 +312,19 @@ class MLTensor:
         else:
             raise Exception('Unsupported ml framework')
 
-    def random_uniform(self, shape, dtype, minval=0, maxval=1):
+    def random_uniform(self, size, dtype, minval=0, maxval=1):
         if isinstance(dtype, str):
             dtype = self.get_dtype(dtype)
         if self.module.__name__ == 'tensorflow':
-            return self.module.random.uniform(shape=shape,
+            return self.module.random.uniform(shape=size,
                                               dtype=dtype,
                                               minval=minval,
                                               maxval=maxval)
         elif self.module.__name__ == 'torch':
-            ans = self.module.empty(size=shape, dtype=dtype)
+            ans = self.module.empty(size=size, dtype=dtype)
             return ans.uniform_(minval, maxval)
         elif self.module.__name__ == 'paddle':
-            ans = self.module.empty(shape=shape, dtype=dtype)
+            ans = self.module.empty(shape=size, dtype=dtype)
             return ans.uniform_(minval, maxval)
         else:
             raise Exception('Unsupported ml framework')
