@@ -29,7 +29,6 @@ public:
     explicit RandomSampler(const size_t total_size) : total_size_(total_size) {}
 
     std::vector<T> operator()(size_t sample_size) {
-        std::lock_guard<std::mutex> lock(mutex_);
         std::vector<T> samples;
         samples.reserve(sample_size);
 
@@ -48,7 +47,6 @@ public:
 
 private:
     size_t total_size_;
-    std::mutex mutex_;
 };
 
 /// \class RANSACResult
@@ -172,6 +170,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
     Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
 
     RandomSampler<size_t> sampler(num_points);
+    // Pre-generate all random samples before entering the parallel region
     std::vector<std::vector<size_t>> all_sampled_indices;
     all_sampled_indices.reserve(num_iterations);
     for (int i = 0; i < num_iterations; i++) {
