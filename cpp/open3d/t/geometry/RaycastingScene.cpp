@@ -170,18 +170,6 @@ typedef Eigen::AlignedVector3<float> Vec3fa;
 typedef Eigen::Matrix<float, 2, 1, Eigen::DontAlign> Vec2f;
 typedef Eigen::Vector3f Vec3f;
 
-#ifdef BUILD_SYCL_MODULE
-void enablePersistentJITCache() {
-#if defined(_WIN32)
-    _putenv_s("SYCL_CACHE_PERSISTENT", "1");
-    _putenv_s("SYCL_CACHE_DIR", "cache");
-#else
-    setenv("SYCL_CACHE_PERSISTENT", "1", 1);
-    setenv("SYCL_CACHE_DIR", "cache", 1);
-#endif
-}
-#endif
-
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
     open3d::utility::LogError("Embree error: {} {}", rtcGetErrorString(error),
@@ -452,8 +440,6 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
     sycl::device sycl_device_;
 
     void InitializeDevice() {
-        enablePersistentJITCache();
-
         try {
             sycl_device_ = sycl::device(rtcSYCLDeviceSelector);
         } catch (std::exception& e) {

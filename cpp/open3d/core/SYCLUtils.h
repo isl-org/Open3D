@@ -40,6 +40,9 @@ bool IsDeviceAvailable(const Device& device);
 /// Return a list of available SYCL devices.
 std::vector<Device> GetAvailableSYCLDevices();
 
+/// Enables the JIT cache for SYCL.
+void enablePersistentJITCache();
+
 }  // namespace sy
 }  // namespace core
 }  // namespace open3d
