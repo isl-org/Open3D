@@ -228,10 +228,8 @@ std::vector<Device> GetAvailableSYCLDevices() {
 void enablePersistentJITCache() {
 #if defined(_WIN32)
     _putenv_s("SYCL_CACHE_PERSISTENT", "1");
-    _putenv_s("SYCL_CACHE_DIR", "cache");
 #else
     setenv("SYCL_CACHE_PERSISTENT", "1", 1);
-    setenv("SYCL_CACHE_DIR", "cache", 1);
 #endif
 }
 
