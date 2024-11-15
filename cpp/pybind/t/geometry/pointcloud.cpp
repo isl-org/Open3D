@@ -768,6 +768,16 @@ Example:
         print(np.unique(pcd.point.partition_ids.numpy(), return_counts=True))
 
 )");
+
+    pointcloud.def(
+            "compute_distance", &PointCloud::ComputeDistance, "pcd2"_a,
+            "metrics"_a, "params"_a,
+            R"(Compute various distances / metrics between two point clouds. Currently, Chamfer distance and F-Score are supported.
+
+Args:
+    pcd2 (t.geometry.PointCloud): Other point cloud to compare with.
+    metrics (Sequence[t.geometry.Metric]): List of Metric s to compute. Multiple metrics can be computed at once for efficiency.
+    params (t.geometry.MetricParameters): This holds parameters required by different metrics.)");
 }
 
 }  // namespace geometry

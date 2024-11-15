@@ -1392,3 +1392,17 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
                                                  device=device)
     assert test_box.vertex.positions.allclose(verts)
     assert test_box.triangle.indices.allclose(box.triangle.indices)
+
+
+def test_metrics():
+
+    from open3d.t.geometry import Metric, MetricParameters
+    box1 = o3d.t.geometry.TriangleMesh.create_box()
+    box2 = o3d.t.geometry.TriangleMesh.create_box()
+    box2.vertex.positions += 0.1
+
+    metrics = box1.compute_distance(
+        box2, (Metric.ChamferDistance, Metric.FScore),
+        MetricParameters(fscore_radius=(0.05, 0.15), n_sampled_points=10))
+
+    assert metrics == (0.1, 0, 1)

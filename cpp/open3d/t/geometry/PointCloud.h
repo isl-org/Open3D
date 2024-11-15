@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -696,6 +697,18 @@ public:
     /// \param max_points The maximum allowed number of points in a partition.
     /// \return The number of partitions.
     int PCAPartition(int max_points);
+
+    /// Compute various distances / metrics between two point clouds. Currently,
+    /// Chamfer distance and F-Score are supported.
+    /// \param pcd2 Other point cloud to compare with.
+    /// \param metrics List of Metric s to compute.  Multiple metrics can be
+    /// computed at once for efficiency.
+    /// \param params MetricParameters struct holds parameters required by
+    /// different metrics.
+    std::vector<float> ComputeDistance(
+            const PointCloud &pcd2,
+            std::initializer_list<Metric> metrics = {Metric::ChamferDistance},
+            MetricParameters params = MetricParameters()) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

@@ -12,6 +12,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/LineSet.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -260,6 +261,7 @@ Returns:
     Dictionary of names to triangle meshes.
 
 Example:
+
     flight_helmet = o3d.data.FlightHelmetModel()
     model = o3d.io.read_triangle_model(flight_helmet.path)
     mesh_dict = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
@@ -1069,6 +1071,38 @@ Returns:
                       &TriangleMesh::GetNonManifoldEdges,
                       "allow_boundary_edges"_a = true,
                       R"(Returns the list consisting of non-manifold edges.)");
+
+    triangle_mesh.def(
+            "sample_points_uniformly", &TriangleMesh::SamplePointsUniformly,
+            "number_of_points"_a, "use_triangle_normal"_a = false,
+            R"(Sample points uniformly from the triangle mesh surface and return as a PointCloud. Normals and colors are interpolated from the triangle mesh. If texture_uvs and albedo are present, these are used to estimate the sampled point color, otherwise vertex colors are used, if present. During sampling, triangle areas are computed and saved in the "areas" attribute.
+
+Args:
+    number_of_points (int): The number of points to sample.
+    use_triangle_normal (bool): If true, use the triangle normal as the normal of the sampled point. By default, the vertex normals are interpolated instead.
+
+Returns:
+    Sampled point cloud, with colors and normals, if available.
+
+Example::
+
+    dataset = o3d.data.AvocadoModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+    meshes = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
+    pcd = meshes[0].sample_points_uniformly(1000)
+    o3d.visualization.draw([model, pcd])
+
+    )");
+
+    triangle_mesh.def(
+            "compute_distance", &TriangleMesh::ComputeDistance, "mesh2"_a,
+            "metrics"_a, "params"_a,
+            R"(Compute various distances / metrics between two triangle meshes.  Currently, Chamfer distance and F-Score are supported. This uses ray casting for distance computations between a triangle mesh and a sampled point cloud.
+
+Args:
+    mesh2 (t.geometry.TriangleMesh): Other point cloud to compare with.
+    metrics (Sequence[t.geometry.Metric]): List of Metric s to compute. Multiple metrics can be computed at once for efficiency.
+    params (t.geometry.MetricParameters): This holds parameters required by different metrics.)");
 }
 
 }  // namespace geometry

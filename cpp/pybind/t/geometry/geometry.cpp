@@ -7,6 +7,8 @@
 
 #include "open3d/t/geometry/Geometry.h"
 
+#include <vector>
+
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -42,6 +44,16 @@ void pybind_geometry_declarations(py::module& m) {
     py::module m_geometry = m.def_submodule(
             "geometry", "Tensor-based geometry defining module.");
 
+    py::enum_<Metric>(m_geometry, "Metric",
+                      "Metrics for comparing point clouds and triangle meshes.")
+            .value("ChamferDistance", Metric::ChamferDistance,
+                   "Chamfer Distance")
+            .value("FScore", Metric::FScore, "F-Score")
+            .export_values();
+    py::class_<MetricParameters>(
+            m_geometry, "MetricParameters",
+            "Holder for various parameters required by metrics.");
+
     pybind_geometry_class_declarations(m_geometry);
     pybind_drawable_geometry_class_declarations(m_geometry);
     pybind_tensormap_declarations(m_geometry);
@@ -56,6 +68,21 @@ void pybind_geometry_declarations(py::module& m) {
 
 void pybind_geometry_definitions(py::module& m) {
     auto m_geometry = static_cast<py::module>(m.attr("geometry"));
+
+    auto metric_params = static_cast<py::class_<MetricParameters>>(
+            m_geometry.attr("MetricParameters"));
+    metric_params.def(py::init<const std::vector<float>&, size_t>())
+            .def_readwrite("fscore_radius", &MetricParameters::fscore_radius,
+                           "Radius for computing the F-Score. A match between "
+                           "a point and its nearest neighbor is sucessful if "
+                           "it is within this radius.")
+            .def_readwrite("n_sampled_points",
+                           &MetricParameters::n_sampled_points,
+                           "Points are sampled uniformly from the surface of "
+                           "triangle meshes before distance computation. This "
+                           "specifies the number of points sampled. No "
+                           "sampling is done for point clouds.");
+
     pybind_geometry_class_definitions(m_geometry);
     pybind_drawable_geometry_class_definitions(m_geometry);
     pybind_tensormap_definitions(m_geometry);

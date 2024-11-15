@@ -24,6 +24,7 @@ namespace t {
 namespace geometry {
 
 class LineSet;
+class PointCloud;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -1006,6 +1007,31 @@ public:
     /// \return 2d integer tensor with shape {n,2} encoding ordered edges.
     /// If mesh is empty or has no triangles, returns an empty tensor.
     core::Tensor GetNonManifoldEdges(bool allow_boundary_edges = true) const;
+
+    /// Sample points uniformly from the triangle mesh surface and return as a
+    /// PointCloud. Normals and colors are interpolated from the triangle mesh.
+    /// If texture_uvs and albedo are present, these are used to estimate the
+    /// sampled point color, otherwise vertex colors are used, if present.
+    /// During sampling, triangle areas are computed and saved in the "areas"
+    /// attribute.
+    /// \param number_of_points The number of points to sample.
+    /// \param use_triangle_normal If true, use the triangle normal as the
+    /// normal of the sampled point. Otherwise, interpolate the vertex normals.
+    PointCloud SamplePointsUniformly(size_t number_of_points,
+                                     bool use_triangle_normal = false);
+
+    /// Compute various distances / metrics between two triangle meshes. This
+    /// uses ray casting for distance computations between a triangle mesh and a
+    /// sampled point cloud.
+    /// \param mesh2 Other point cloud to compare with.
+    /// \param metrics List of Metric s to compute. Multiple metrics can be
+    /// computed at once for efficiency.
+    /// \param params MetricParameters struct holds parameters required by
+    /// different metrics.
+    std::vector<float> ComputeDistance(
+            const TriangleMesh &mesh2,
+            std::initializer_list<Metric> metrics = {Metric::ChamferDistance},
+            MetricParameters params = MetricParameters()) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

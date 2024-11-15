@@ -29,6 +29,17 @@ void ComputeTriangleAreasCPU(const core::Tensor& vertices,
                              const core::Tensor& triangles,
                              core::Tensor& triangle_areas);
 
+std::array<core::Tensor, 3> SamplePointsUniformlyCPU(
+        const core::Tensor& triangles,
+        const core::Tensor& vertices,
+        const core::Tensor& triangle_areas,
+        const core::Tensor& vertex_normals,
+        const core::Tensor& vertex_colors,
+        const core::Tensor& triangle_normals,
+        const core::Tensor& texture_uvs,
+        const core::Tensor& albedo,
+        size_t number_of_points);
+
 #ifdef BUILD_CUDA_MODULE
 void NormalizeNormalsCUDA(core::Tensor& normals);
 
