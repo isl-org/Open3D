@@ -1593,7 +1593,7 @@ PointCloud TriangleMesh::SamplePointsUniformly(
 
 std::vector<float> TriangleMesh::ComputeDistance(
         const TriangleMesh &mesh2,
-        std::initializer_list<Metric> metrics,
+        std::vector<Metric> metrics,
         MetricParameters params) const {
     if (!IsCPU() || !mesh2.IsCPU()) {
         utility::LogWarning(

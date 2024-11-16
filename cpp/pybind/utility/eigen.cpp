@@ -308,6 +308,7 @@ namespace utility {
 
 void pybind_eigen_declarations(py::module &m) {
     auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
+    auto floatvector = pybind_eigen_vector_of_scalar<float>(m, "FloatVector");
     auto doublevector =
             pybind_eigen_vector_of_scalar<double>(m, "DoubleVector");
     auto vector3dvector = pybind_eigen_vector_of_vector<Eigen::Vector3d>(

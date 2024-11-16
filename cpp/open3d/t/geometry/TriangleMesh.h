@@ -1030,7 +1030,7 @@ public:
     /// different metrics.
     std::vector<float> ComputeDistance(
             const TriangleMesh &mesh2,
-            std::initializer_list<Metric> metrics = {Metric::ChamferDistance},
+            std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
 
 protected:

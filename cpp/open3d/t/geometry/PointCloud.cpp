@@ -1332,10 +1332,9 @@ int PointCloud::PCAPartition(int max_points) {
     return num_partitions;
 }
 
-std::vector<float> PointCloud::ComputeDistance(
-        const PointCloud &pcd2,
-        std::initializer_list<Metric> metrics,
-        MetricParameters params) const {
+std::vector<float> PointCloud::ComputeDistance(const PointCloud &pcd2,
+                                               std::vector<Metric> metrics,
+                                               MetricParameters params) const {
     if (!IsCPU() || !pcd2.IsCPU()) {
         utility::LogWarning(
                 "ComputeDistance is implemented only on CPU. Computing on "

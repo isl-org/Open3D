@@ -15,7 +15,7 @@ namespace geometry {
 
 std::vector<float> ComputeDistanceCommon(core::Tensor distance12,
                                          core::Tensor distance21,
-                                         std::initializer_list<Metric> metrics,
+                                         std::vector<Metric> metrics,
                                          MetricParameters params);
 }
 }  // namespace t

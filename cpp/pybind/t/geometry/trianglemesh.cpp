@@ -1086,11 +1086,10 @@ Returns:
 
 Example::
 
-    dataset = o3d.data.AvocadoModel()
-    model = o3d.io.read_triangle_model(dataset.path)
-    meshes = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
-    pcd = meshes[0].sample_points_uniformly(1000)
-    o3d.visualization.draw([model, pcd])
+    mesh = o3d.t.geometry.TriangleMesh.create_box()
+    mesh.vertex.colors = mesh.vertex.positions.clone()
+    pcd = mesh.sample_points_uniformly(100000)
+    o3d.visualization.draw([mesh, pcd], point_size=5, show_ui=True, show_skybox=False)
 
     )");
 

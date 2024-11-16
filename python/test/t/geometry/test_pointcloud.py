@@ -193,3 +193,20 @@ def test_pickle(device):
         assert pcd_load.point.positions.device == device and pcd_load.point.positions.dtype == o3c.float32
         np.testing.assert_equal(pcd.point.positions.cpu().numpy(),
                                 pcd_load.point.positions.cpu().numpy())
+
+
+def test_metrics():
+
+    from open3d.t.geometry import Metric, MetricParameters
+    pos = o3d.t.geometry.TriangleMesh.create_box().vertex.positions
+    pcd1 = o3d.t.geometry.PointCloud(pos.clone())
+    pcd2 = o3d.t.geometry.PointCloud(pos * 1.2)
+
+    metric_params = MetricParameters(
+        fscore_radius=o3d.utility.FloatVector((0.05, 0.15)))
+    metrics = pcd1.compute_distance(pcd2,
+                                    (Metric.ChamferDistance, Metric.FScore),
+                                    metric_params)
+
+    print(metrics)
+    np.testing.assert_allclose(metrics, (0.03, 200. / 3, 100), rtol=1e-6)

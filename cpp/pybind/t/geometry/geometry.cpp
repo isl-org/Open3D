@@ -7,9 +7,12 @@
 
 #include "open3d/t/geometry/Geometry.h"
 
+#include <pybind11/stl_bind.h>
+
 #include <vector>
 
 #include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
@@ -50,7 +53,8 @@ void pybind_geometry_declarations(py::module& m) {
                    "Chamfer Distance")
             .value("FScore", Metric::FScore, "F-Score")
             .export_values();
-    py::class_<MetricParameters>(
+    py::bind_vector<std::vector<Metric>>(m_geometry, "VectorMetric");
+    py::class_<MetricParameters> metric_parameters(
             m_geometry, "MetricParameters",
             "Holder for various parameters required by metrics.");
 
@@ -69,9 +73,12 @@ void pybind_geometry_declarations(py::module& m) {
 void pybind_geometry_definitions(py::module& m) {
     auto m_geometry = static_cast<py::module>(m.attr("geometry"));
 
-    auto metric_params = static_cast<py::class_<MetricParameters>>(
+    auto metric_parameters = static_cast<py::class_<MetricParameters>>(
             m_geometry.attr("MetricParameters"));
-    metric_params.def(py::init<const std::vector<float>&, size_t>())
+    metric_parameters
+            .def(py::init<const std::vector<float>&, size_t>(),
+                 "fscore_radius"_a = std::vector<float>{0.01},
+                 "n_sampled_points"_a = 1000)
             .def_readwrite("fscore_radius", &MetricParameters::fscore_radius,
                            "Radius for computing the F-Score. A match between "
                            "a point and its nearest neighbor is sucessful if "
