@@ -122,14 +122,10 @@ def test_test_lots_of_occlusions(device):
 def test_add_triangle_mesh(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
-    vertex_positions = cube.vertex.positions
-    vertex_positions = vertex_positions.to(device)
-    triangle_indices = cube.triangle.indices
-    triangle_indices = triangle_indices.to(o3d.core.Dtype.UInt32)
-    triangle_indices = triangle_indices.to(device)
+    cube = cube.to(device)
 
     scene = o3d.t.geometry.RaycastingScene(device=device)
-    scene.add_triangles(vertex_positions, triangle_indices)
+    scene.add_triangles(cube)
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
