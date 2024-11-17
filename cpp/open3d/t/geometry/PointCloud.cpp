@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -384,11 +384,37 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
 }
 
 PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
-    // We want the sampled points has the attributes of the original point
-    // cloud, so full copy is needed.
-    const open3d::geometry::PointCloud lpcd = ToLegacy();
-    return FromLegacy(*lpcd.FarthestPointDownSample(num_samples),
-                      GetPointPositions().GetDtype(), GetDevice());
+    const core::Dtype dtype = GetPointPositions().GetDtype();
+    const int64_t num_points = GetPointPositions().GetLength();
+    if (num_samples == 0) {
+        return PointCloud(GetDevice());
+    } else if (num_samples == size_t(num_points)) {
+        return Clone();
+    } else if (num_samples > size_t(num_points)) {
+        utility::LogError(
+                "Illegal number of samples: {}, must <= point size: {}",
+                num_samples, num_points);
+    }
+    core::Tensor selection_mask =
+            core::Tensor::Zeros({num_points}, core::Bool, GetDevice());
+    core::Tensor smallest_distances = core::Tensor::Full(
+            {num_points}, std::numeric_limits<double>::infinity(), dtype,
+            GetDevice());
+
+    int64_t farthest_index = 0;
+
+    for (size_t i = 0; i < num_samples; i++) {
+        selection_mask[farthest_index] = true;
+        core::Tensor selected = GetPointPositions()[farthest_index];
+
+        core::Tensor diff = GetPointPositions() - selected;
+        core::Tensor distances_to_selected = (diff * diff).Sum({1});
+        smallest_distances = open3d::core::Minimum(distances_to_selected,
+                                                   smallest_distances);
+
+        farthest_index = smallest_distances.ArgMax({0}).Item<int64_t>();
+    }
+    return SelectByMask(selection_mask);
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
@@ -983,6 +1009,12 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
                                                 const core::Tensor &extrinsics,
                                                 float depth_scale,
                                                 float depth_max) {
+    if (!HasPointPositions()) {
+        utility::LogWarning(
+                "Called ProjectToDepthImage on a point cloud with no Positions "
+                "attribute. Returning empty image.");
+        return geometry::Image();
+    }
     core::AssertTensorShape(intrinsics, {3, 3});
     core::AssertTensorShape(extrinsics, {4, 4});
 
@@ -1001,6 +1033,12 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
         const core::Tensor &extrinsics,
         float depth_scale,
         float depth_max) {
+    if (!HasPointPositions()) {
+        utility::LogWarning(
+                "Called ProjectToRGBDImage on a point cloud with no Positions "
+                "attribute. Returning empty image.");
+        return geometry::RGBDImage();
+    }
     if (!HasPointColors()) {
         utility::LogError(
                 "Unable to project to RGBD without the Color attribute in the "

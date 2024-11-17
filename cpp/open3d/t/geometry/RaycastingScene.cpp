@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@
 #include "open3d/t/geometry/RaycastingScene.h"
 
 // This header is in the embree src dir (embree/src/ext_embree/..).
-#include <embree3/rtcore.h>
+#include <embree4/rtcore.h>
 #include <tbb/parallel_for.h>
 
 #include <Eigen/Core>
@@ -33,7 +33,8 @@ typedef Eigen::Vector3f Vec3f;
 
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
-    open3d::utility::LogError("embree error: {} {}", error, str);
+    open3d::utility::LogError("Embree error: {} {}", rtcGetErrorString(error),
+                              str);
 }
 
 // Checks the last dim, ensures that the number of dims is >= min_ndim, checks
@@ -61,7 +62,7 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
 }
 
 struct CountIntersectionsContext {
-    RTCIntersectContext context;
+    RTCRayQueryContext context;
     std::vector<std::tuple<uint32_t, uint32_t, float>>*
             previous_geom_prim_ID_tfar;
     int* intersections;
@@ -111,7 +112,7 @@ void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
 }
 
 struct ListIntersectionsContext {
-    RTCIntersectContext context;
+    RTCRayQueryContext context;
     std::vector<std::tuple<uint32_t, uint32_t, float>>*
             previous_geom_prim_ID_tfar;
     unsigned int* ray_ids;
@@ -360,9 +361,6 @@ struct RaycastingScene::Impl {
                   const int nthreads) {
         CommitScene();
 
-        struct RTCIntersectContext context;
-        rtcInitIntersectContext(&context);
-
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             std::vector<RTCRayHit> rayhits(range.size());
 
@@ -387,15 +385,14 @@ struct RaycastingScene::Impl {
                 } else {
                     rh.ray.tfar = std::numeric_limits<float>::infinity();
                 }
-                rh.ray.mask = 0;
+                rh.ray.mask = -1;
                 rh.ray.id = i - range.begin();
                 rh.ray.flags = 0;
                 rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-            }
 
-            rtcIntersect1M(scene_, &context, &rayhits[0], range.size(),
-                           sizeof(RTCRayHit));
+                rtcIntersect1(scene_, &rh);
+            }
 
             for (size_t i = range.begin(); i < range.end(); ++i) {
                 RTCRayHit rh = rayhits[i - range.begin()];
@@ -446,8 +443,12 @@ struct RaycastingScene::Impl {
                         const int nthreads) {
         CommitScene();
 
-        struct RTCIntersectContext context;
-        rtcInitIntersectContext(&context);
+        struct RTCRayQueryContext context;
+        rtcInitRayQueryContext(&context);
+
+        RTCOccludedArguments args;
+        rtcInitOccludedArguments(&args);
+        args.context = &context;
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             std::vector<RTCRay> rayvec(range.size());
@@ -462,13 +463,12 @@ struct RaycastingScene::Impl {
                 ray.dir_z = r[5];
                 ray.tnear = tnear;
                 ray.tfar = tfar;
-                ray.mask = 0;
+                ray.mask = -1;
                 ray.id = i - range.begin();
                 ray.flags = 0;
-            }
 
-            rtcOccluded1M(scene_, &context, &rayvec[0], range.size(),
-                          sizeof(RTCRay));
+                rtcOccluded1(scene_, &ray, &args);
+            }
 
             for (size_t i = range.begin(); i < range.end(); ++i) {
                 RTCRay ray = rayvec[i - range.begin()];
@@ -508,10 +508,14 @@ struct RaycastingScene::Impl {
                                         0.f));
 
         CountIntersectionsContext context;
-        rtcInitIntersectContext(&context.context);
-        context.context.filter = CountIntersectionsFunc;
+        rtcInitRayQueryContext(&context.context);
         context.previous_geom_prim_ID_tfar = &previous_geom_prim_ID_tfar;
         context.intersections = intersections;
+
+        RTCIntersectArguments args;
+        rtcInitIntersectArguments(&args);
+        args.filter = CountIntersectionsFunc;
+        args.context = &context.context;
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             std::vector<RTCRayHit> rayhits(range.size());
@@ -527,14 +531,14 @@ struct RaycastingScene::Impl {
                 rh->ray.dir_z = r[5];
                 rh->ray.tnear = 0;
                 rh->ray.tfar = std::numeric_limits<float>::infinity();
-                rh->ray.mask = 0;
+                rh->ray.mask = -1;
                 rh->ray.flags = 0;
                 rh->ray.id = i;
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+                rtcIntersect1(scene_, rh, &args);
             }
-            rtcIntersect1M(scene_, &context.context, &rayhits[0], range.size(),
-                           sizeof(RTCRayHit));
         };
 
         if (nthreads > 0) {
@@ -579,8 +583,7 @@ struct RaycastingScene::Impl {
                                         0.f));
 
         ListIntersectionsContext context;
-        rtcInitIntersectContext(&context.context);
-        context.context.filter = ListIntersectionsFunc;
+        rtcInitRayQueryContext(&context.context);
         context.previous_geom_prim_ID_tfar = &previous_geom_prim_ID_tfar;
         context.ray_ids = ray_ids;
         context.geometry_ids = geometry_ids;
@@ -589,6 +592,11 @@ struct RaycastingScene::Impl {
         context.t_hit = t_hit;
         context.cumsum = cumsum;
         context.track_intersections = track_intersections;
+
+        RTCIntersectArguments args;
+        rtcInitIntersectArguments(&args);
+        args.filter = ListIntersectionsFunc;
+        args.context = &context.context;
 
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             std::vector<RTCRayHit> rayhits(range.size());
@@ -604,14 +612,14 @@ struct RaycastingScene::Impl {
                 rh->ray.dir_z = r[5];
                 rh->ray.tnear = 0;
                 rh->ray.tfar = std::numeric_limits<float>::infinity();
-                rh->ray.mask = 0;
+                rh->ray.mask = -1;
                 rh->ray.flags = 0;
                 rh->ray.id = i;
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+
+                rtcIntersect1(scene_, rh, &args);
             }
-            rtcIntersect1M(scene_, &context.context, &rayhits[0], range.size(),
-                           sizeof(RTCRayHit));
         };
 
         if (nthreads > 0) {
@@ -695,9 +703,9 @@ RaycastingScene::RaycastingScene(int64_t nthreads)
 
     impl_->scene_ = rtcNewScene(impl_->device_);
     // set flag for better accuracy
-    rtcSetSceneFlags(
-            impl_->scene_,
-            RTC_SCENE_FLAG_ROBUST | RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION);
+    rtcSetSceneFlags(impl_->scene_,
+                     RTC_SCENE_FLAG_ROBUST |
+                             RTC_SCENE_FLAG_FILTER_FUNCTION_IN_ARGUMENTS);
 
     impl_->devprop_join_commit = rtcGetDeviceProperty(
             impl_->device_, RTC_DEVICE_PROPERTY_JOIN_COMMIT_SUPPORTED);
@@ -746,6 +754,7 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
         memcpy(index_buffer, data.GetDataPtr(),
                sizeof(uint32_t) * 3 * num_triangles);
     }
+    rtcSetGeometryEnableFilterFunctionFromArguments(geom, true);
     rtcCommitGeometry(geom);
 
     uint32_t geom_id = rtcAttachGeometry(impl_->scene_, geom);
@@ -1166,3 +1175,19 @@ uint32_t RaycastingScene::INVALID_ID() { return RTC_INVALID_GEOMETRY_ID; }
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
+
+namespace fmt {
+template <>
+struct formatter<RTCError> {
+    template <typename FormatContext>
+    auto format(const RTCError& c, FormatContext& ctx) const {
+        const char* name = rtcGetErrorString(c);
+        return format_to(ctx.out(), name);
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+};
+}  // namespace fmt

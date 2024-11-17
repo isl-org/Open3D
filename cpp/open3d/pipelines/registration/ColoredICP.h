@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -50,6 +50,13 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
+
+    std::tuple<std::shared_ptr<const geometry::PointCloud>,
+               std::shared_ptr<const geometry::PointCloud>>
+    InitializePointCloudsForTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            double max_correspondence_distance) const override;
 
 public:
     double lambda_geometric_ = 0.968;

@@ -128,6 +128,12 @@ set_target_properties(open3d_torch_ops PROPERTIES
 # Do not add "lib" prefix
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
+# Set BUILD_RPATH to find tbb. We don't install through cmake.
+if (APPLE)
+    set_target_properties(open3d_torch_ops PROPERTIES BUILD_RPATH "@loader_path/..")
+elseif (UNIX)
+    set_target_properties(open3d_torch_ops PROPERTIES BUILD_RPATH "$ORIGIN/..")
+endif()
 
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
@@ -140,9 +146,18 @@ target_link_libraries(open3d_torch_ops PRIVATE
     Open3D::3rdparty_eigen3
     Open3D::3rdparty_fmt
     Open3D::3rdparty_nanoflann
-    Open3D::3rdparty_parallelstl
-    Open3D::3rdparty_tbb
+    TBB::tbb
 )
+if (TARGET Open3D::3rdparty_parallelstl)
+    target_link_libraries(open3d_torch_ops PRIVATE
+        Open3D::3rdparty_parallelstl
+    )
+endif()
+if (TARGET Open3D::3rdparty_onedpl)
+    target_link_libraries(open3d_torch_ops PRIVATE
+        Open3D::3rdparty_onedpl
+    )
+endif()
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE
@@ -176,7 +191,7 @@ URL: @PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
 Requires: Open3D = @PROJECT_VERSION@
 Cflags:
-Libs: -lopen3d_torch_ops]=]  @ONLY NEWLINE_STYLE LF)
+Libs: -lopen3d_torch_ops -ltbb]=]  @ONLY NEWLINE_STYLE LF)
     file(GENERATE OUTPUT open3d_torch_ops.pc INPUT
         "${CMAKE_CURRENT_BINARY_DIR}/open3d_torch_ops.pc.in"
         TARGET open3d_torch_ops)

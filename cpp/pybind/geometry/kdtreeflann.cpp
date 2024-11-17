@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,15 +14,9 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_kdtreeflann(py::module &m) {
-    // open3d.geometry.KDTreeSearchParam
+void pybind_kdtreeflann_declarations(py::module &m) {
     py::class_<KDTreeSearchParam> kdtreesearchparam(
             m, "KDTreeSearchParam", "Base class for KDTree search parameters.");
-    kdtreesearchparam.def("get_search_type", &KDTreeSearchParam::GetSearchType,
-                          "Get the search type (KNN, Radius, Hybrid) for the "
-                          "search parameter.");
-    docstring::ClassMethodDocInject(m, "KDTreeSearchParam", "get_search_type");
-
     // open3d.geometry.KDTreeSearchParam.Type
     py::enum_<KDTreeSearchParam::SearchType> kdtree_search_param_type(
             kdtreesearchparam, "Type", py::arithmetic());
@@ -36,11 +30,31 @@ void pybind_kdtreeflann(py::module &m) {
                 return "Enum class for Geometry types.";
             }),
             py::none(), py::none(), "");
-
-    // open3d.geometry.KDTreeSearchParamKNN
     py::class_<KDTreeSearchParamKNN> kdtreesearchparam_knn(
             m, "KDTreeSearchParamKNN", kdtreesearchparam,
             "KDTree search parameters for pure KNN search.");
+    py::class_<KDTreeSearchParamRadius> kdtreesearchparam_radius(
+            m, "KDTreeSearchParamRadius", kdtreesearchparam,
+            "KDTree search parameters for pure radius search.");
+    py::class_<KDTreeSearchParamHybrid> kdtreesearchparam_hybrid(
+            m, "KDTreeSearchParamHybrid", kdtreesearchparam,
+            "KDTree search parameters for hybrid KNN and radius search.");
+    py::class_<KDTreeFlann, std::shared_ptr<KDTreeFlann>> kdtreeflann(
+            m, "KDTreeFlann", "KDTree with FLANN for nearest neighbor search.");
+}
+
+void pybind_kdtreeflann_definitions(py::module &m) {
+    // open3d.geometry.KDTreeSearchParam
+    auto kdtreesearchparam = static_cast<py::class_<KDTreeSearchParam>>(
+            m.attr("KDTreeSearchParam"));
+    kdtreesearchparam.def("get_search_type", &KDTreeSearchParam::GetSearchType,
+                          "Get the search type (KNN, Radius, Hybrid) for the "
+                          "search parameter.");
+    docstring::ClassMethodDocInject(m, "KDTreeSearchParam", "get_search_type");
+
+    // open3d.geometry.KDTreeSearchParamKNN
+    auto kdtreesearchparam_knn = static_cast<py::class_<KDTreeSearchParamKNN>>(
+            m.attr("KDTreeSearchParamKNN"));
     kdtreesearchparam_knn.def(py::init<int>(), "knn"_a = 30)
             .def("__repr__",
                  [](const KDTreeSearchParamKNN &param) {
@@ -53,9 +67,9 @@ void pybind_kdtreeflann(py::module &m) {
                            "Number of the neighbors that will be searched.");
 
     // open3d.geometry.KDTreeSearchParamRadius
-    py::class_<KDTreeSearchParamRadius> kdtreesearchparam_radius(
-            m, "KDTreeSearchParamRadius", kdtreesearchparam,
-            "KDTree search parameters for pure radius search.");
+    auto kdtreesearchparam_radius =
+            static_cast<py::class_<KDTreeSearchParamRadius>>(
+                    m.attr("KDTreeSearchParamRadius"));
     kdtreesearchparam_radius.def(py::init<double>(), "radius"_a)
             .def("__repr__",
                  [](const KDTreeSearchParamRadius &param) {
@@ -68,9 +82,9 @@ void pybind_kdtreeflann(py::module &m) {
                            "Search radius.");
 
     // open3d.geometry.KDTreeSearchParamHybrid
-    py::class_<KDTreeSearchParamHybrid> kdtreesearchparam_hybrid(
-            m, "KDTreeSearchParamHybrid", kdtreesearchparam,
-            "KDTree search parameters for hybrid KNN and radius search.");
+    auto kdtreesearchparam_hybrid =
+            static_cast<py::class_<KDTreeSearchParamHybrid>>(
+                    m.attr("KDTreeSearchParamHybrid"));
     kdtreesearchparam_hybrid
             .def(py::init<double, int>(), "radius"_a, "max_nn"_a)
             .def("__repr__",
@@ -88,6 +102,8 @@ void pybind_kdtreeflann(py::module &m) {
                     "At maximum, ``max_nn`` neighbors will be searched.");
 
     // open3d.geometry.KDTreeFlann
+    auto kdtreeflann =
+            static_cast<py::class_<KDTreeFlann>>(m.attr("KDTreeFlann"));
     static const std::unordered_map<std::string, std::string>
             map_kd_tree_flann_method_docs = {
                     {"query", "The input query point."},
@@ -97,8 +113,6 @@ void pybind_kdtreeflann(py::module &m) {
                     {"knn", "``knn`` neighbors will be searched."},
                     {"feature", "Feature data."},
                     {"data", "Matrix data."}};
-    py::class_<KDTreeFlann, std::shared_ptr<KDTreeFlann>> kdtreeflann(
-            m, "KDTreeFlann", "KDTree with FLANN for nearest neighbor search.");
     kdtreeflann.def(py::init<>())
             .def(py::init<const Eigen::MatrixXd &>(), "data"_a)
             .def("set_matrix_data", &KDTreeFlann::SetMatrixData,

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -18,24 +18,17 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-void pybind_core_nns(py::module &m_nns) {
-    static const std::unordered_map<std::string, std::string>
-            map_nearest_neighbor_search_method_docs = {
-                    {"query_points", "The query tensor of shape {n_query, d}."},
-                    {"radii",
-                     "Tensor of shape {n_query,} containing multiple radii, "
-                     "one for each query point."},
-                    {"radius", "Radius value for radius search."},
-                    {"max_knn",
-                     "Maximum number of neighbors to search per query point."},
-                    {"knn", "Number of neighbors to search per query point."}};
-
+void pybind_core_nns_declarations(py::module &m_nns) {
     py::class_<NearestNeighborSearch, std::shared_ptr<NearestNeighborSearch>>
             nns(m_nns, "NearestNeighborSearch",
                 "NearestNeighborSearch class for nearest neighbor search. "
                 "Construct a NearestNeighborSearch object with input "
                 "dataset_points of shape {n_dataset, d}.");
-
+}
+void pybind_core_nns_definitions(py::module &m_nns) {
+    auto nns = static_cast<py::class_<NearestNeighborSearch,
+                                      std::shared_ptr<NearestNeighborSearch>>>(
+            m_nns.attr("NearestNeighborSearch"));
     // Constructors.
     nns.def(py::init<const Tensor &, const Dtype>(), "dataset_points"_a,
             "index_dtype"_a = core::Int64);
@@ -91,6 +84,16 @@ void pybind_core_nns(py::module &m_nns) {
             "Perform hybrid search.");
 
     // Docstrings.
+    static const std::unordered_map<std::string, std::string>
+            map_nearest_neighbor_search_method_docs = {
+                    {"query_points", "The query tensor of shape {n_query, d}."},
+                    {"radii",
+                     "Tensor of shape {n_query,} containing multiple radii, "
+                     "one for each query point."},
+                    {"radius", "Radius value for radius search."},
+                    {"max_knn",
+                     "Maximum number of neighbors to search per query point."},
+                    {"knn", "Number of neighbors to search per query point."}};
     docstring::ClassMethodDocInject(m_nns, "NearestNeighborSearch",
                                     "knn_search",
                                     map_nearest_neighbor_search_method_docs);

@@ -1,13 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <list>
+#include <unordered_map>
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
@@ -16,6 +17,7 @@
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/visualization/rendering/Model.h"
 
 namespace open3d {
 namespace t {
@@ -594,6 +596,20 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a mesh from a 3D scalar field (volume) by computing the
+    /// isosurface.  This method uses the Flying Edges dual contouring method
+    /// that computes the isosurface similar to Marching Cubes.  The center of
+    /// the first voxel of the volume is at the origin (0,0,0).  The center of
+    /// the voxel at index [z,y,x] will be at (x,y,z).
+    /// \param volume 3D tensor with the volume.
+    /// \param contour_values A list of contour values at which isosurfaces will
+    /// be generated. The default value is 0.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateIsosurfaces(
+            const core::Tensor &volume,
+            const std::vector<double> contour_values = {0.0},
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -669,6 +685,11 @@ public:
     /// of the individual triangle surfaces.
     double GetSurfaceArea() const;
 
+    /// \brief Function to compute triangle areas and save it as a triangle
+    /// attribute "areas". Prints a warning, if mesh is empty or has no
+    /// triangles.
+    TriangleMesh &ComputeTriangleAreas();
+
     /// \brief Clip mesh with a plane.
     /// This method clips the triangle mesh with the specified plane.
     /// Parts of the mesh on the positive side of the plane will be kept and
@@ -701,7 +722,8 @@ public:
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
     /// triangles.
-    /// \param device The device where the resulting TriangleMesh resides in.
+    /// \param device The device where the resulting TriangleMesh resides in
+    /// (default CPU:0).
     static geometry::TriangleMesh FromLegacy(
             const open3d::geometry::TriangleMesh &mesh_legacy,
             core::Dtype float_dtype = core::Float32,
@@ -710,6 +732,28 @@ public:
 
     /// Convert to a legacy Open3D TriangleMesh.
     open3d::geometry::TriangleMesh ToLegacy() const;
+
+    /// Convert a TriangleMeshModel (e.g. as read from a file with
+    /// open3d::io::ReadTriangleMeshModel) to an unordered map of mesh names to
+    /// TriangleMeshes. Only one material is supported per mesh. Materials
+    /// common to multiple meshes will be dupicated. Textures (as
+    /// t::geometry::Image) will use shared storage.
+    /// \param model TriangleMeshModel to convert.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in
+    /// (default CPU:0). Material textures use CPU storage - GPU resident
+    /// texture images are not yet supported.
+    /// \return unordered map of constituent mesh names to TriangleMeshes, with
+    /// materials.
+    static std::unordered_map<std::string, geometry::TriangleMesh>
+    FromTriangleMeshModel(
+            const open3d::visualization::rendering::TriangleMeshModel &model,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
 
     /// Compute the convex hull of the triangle mesh using qhull.
     ///
@@ -944,6 +988,24 @@ public:
     /// from the selected vertices. If the original mesh is empty, return
     /// an empty mesh.
     TriangleMesh SelectByIndex(const core::Tensor &indices) const;
+
+    /// Removes unreferenced vertices from the mesh.
+    /// \return The reference to itself.
+    TriangleMesh RemoveUnreferencedVertices();
+
+    /// Removes all non-manifold edges, by successively deleting triangles
+    /// with the smallest surface area adjacent to the
+    /// non-manifold edge until the number of adjacent triangles to the edge is
+    /// `<= 2`. If mesh is empty or has no triangles, prints a warning and
+    /// returns immediately. \return The reference to itself.
+    TriangleMesh RemoveNonManifoldEdges();
+
+    /// Returns the non-manifold edges of the triangle mesh.
+    /// If \param allow_boundary_edges is set to false, then also boundary
+    /// edges are returned.
+    /// \return 2d integer tensor with shape {n,2} encoding ordered edges.
+    /// If mesh is empty or has no triangles, returns an empty tensor.
+    core::Tensor GetNonManifoldEdges(bool allow_boundary_edges = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

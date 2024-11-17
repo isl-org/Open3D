@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -9,6 +9,7 @@
 
 #include <Eigen/Geometry>
 
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "tests/Tests.h"
@@ -117,6 +118,229 @@ TEST(TetraMesh, GetMaxBound) {
 
     ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
              tm.GetMaxBound());
+}
+
+TEST(TetraMesh, GetCenter) {
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    geometry::TetraMesh tm;
+
+    tm.vertices_.resize(size);
+    Rand(tm.vertices_, dmin, dmax, 0);
+
+    ExpectEQ(tm.GetCenter(),
+             Eigen::Vector3d(531.137254, 535.176470, 501.882352));
+
+    geometry::TetraMesh tm_empty;
+    ExpectEQ(tm_empty.GetCenter(), Eigen::Vector3d(0, 0, 0));
+}
+
+TEST(TetraMesh, GetAxisAlignedBoundingBox) {
+    geometry::TetraMesh tm;
+    geometry::AxisAlignedBoundingBox aabb;
+
+    tm = geometry::TetraMesh();
+    aabb = tm.GetAxisAlignedBoundingBox();
+    EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
+
+    tm = geometry::TetraMesh({{0, 0, 0}}, {{0, 0, 0, 0}});
+    aabb = tm.GetAxisAlignedBoundingBox();
+    EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
+
+    tm = geometry::TetraMesh({{0, 2, 0},
+                              {1, 1, 2},
+                              {1, 0, 3},
+                              {0, 1, 4},
+                              {1, 2, 5},
+                              {1, 3, 6},
+                              {0, 0, 7},
+                              {0, 3, 8},
+                              {1, 0, 9},
+                              {0, 2, 10}},
+                             {{0, 1, 2, 3},
+                              {4, 0, 1, 2},
+                              {4, 5, 2, 3},
+                              {4, 0, 2, 3},
+                              {4, 0, 5, 3},
+                              {6, 0, 5, 3},
+                              {6, 7, 8, 5},
+                              {9, 4, 7, 1},
+                              {9, 4, 0, 1},
+                              {9, 0, 1, 3},
+                              {9, 6, 7, 8},
+                              {9, 4, 7, 5},
+                              {9, 6, 7, 5},
+                              {9, 4, 0, 5},
+                              {9, 6, 0, 5}});
+    aabb = tm.GetAxisAlignedBoundingBox();
+    EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(1, 3, 10));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
+}
+
+TEST(TetraMesh, GetOrientedBoundingBox) {
+    geometry::TetraMesh tm;
+    geometry::OrientedBoundingBox obb;
+
+    // Empty (GetOrientedBoundingBox requires >=4 points)
+    tm = geometry::TetraMesh();
+    EXPECT_ANY_THROW(tm.GetOrientedBoundingBox());
+
+    // Point
+    tm = geometry::TetraMesh({{0, 0, 0}}, {{0, 0, 0, 0}});
+    EXPECT_ANY_THROW(tm.GetOrientedBoundingBox());
+    tm = geometry::TetraMesh({{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+                             {{0, 1, 2, 3}});
+    EXPECT_ANY_THROW(tm.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(tm.GetOrientedBoundingBox(true));
+
+    // Plane
+    tm = geometry::TetraMesh({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}},
+                             {{0, 1, 2, 3}});
+    EXPECT_ANY_THROW(tm.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(tm.GetOrientedBoundingBox(true));
+
+    // Valid 4 points
+    tm = geometry::TetraMesh({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 1}},
+                             {{0, 1, 2, 3}});
+    tm.GetOrientedBoundingBox();
+
+    // 8 points with known ground truth
+    tm = geometry::TetraMesh({{0, 0, 0},
+                              {0, 0, 1},
+                              {0, 2, 0},
+                              {0, 2, 1},
+                              {3, 0, 0},
+                              {3, 0, 1},
+                              {3, 2, 0},
+                              {3, 2, 1}},
+                             {{0, 1, 2, 3},
+                              {4, 5, 6, 7},
+                              {0, 1, 4, 5},
+                              {2, 3, 6, 7},
+                              {0, 2, 4, 6},
+                              {1, 3, 5, 7}});
+    obb = tm.GetOrientedBoundingBox();
+    EXPECT_EQ(obb.center_, Eigen::Vector3d(1.5, 1, 0.5));
+    EXPECT_EQ(obb.extent_, Eigen::Vector3d(3, 2, 1));
+    EXPECT_EQ(obb.color_, Eigen::Vector3d(1, 1, 1));
+    EXPECT_EQ(obb.R_, Eigen::Matrix3d::Identity());
+    ExpectEQ(Sort(obb.GetBoxPoints()),
+             Sort(std::vector<Eigen::Vector3d>({{0, 0, 0},
+                                                {0, 0, 1},
+                                                {0, 2, 0},
+                                                {0, 2, 1},
+                                                {3, 0, 0},
+                                                {3, 0, 1},
+                                                {3, 2, 0},
+                                                {3, 2, 1}})));
+
+    // Check for a bug where the OBB rotation contained a reflection for this
+    // example.
+    tm = geometry::TetraMesh({{0, 2, 4}, {7, 9, 1}, {5, 2, 0}, {3, 8, 7}},
+                             {{0, 1, 2, 3}});
+    obb = tm.GetOrientedBoundingBox();
+    EXPECT_GT(obb.R_.determinant(), 0.999);
+}
+
+TEST(TetraMesh, GetMinimalOrientedBoundingBox) {
+    geometry::TetraMesh tm;
+    geometry::OrientedBoundingBox obb;
+
+    // Empty (GetOrientedBoundingBox requires >=4 points)
+    tm = geometry::TetraMesh();
+    EXPECT_ANY_THROW(tm.GetMinimalOrientedBoundingBox());
+
+    // Point
+    tm = geometry::TetraMesh({{0, 0, 0}}, {{0, 0, 0, 0}});
+    EXPECT_ANY_THROW(tm.GetMinimalOrientedBoundingBox());
+    tm = geometry::TetraMesh({{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+                             {{0, 1, 2, 3}});
+    EXPECT_ANY_THROW(tm.GetMinimalOrientedBoundingBox());
+    EXPECT_NO_THROW(tm.GetMinimalOrientedBoundingBox(true));
+
+    // Plane
+    tm = geometry::TetraMesh({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}},
+                             {{0, 1, 2, 3}});
+    EXPECT_ANY_THROW(tm.GetMinimalOrientedBoundingBox());
+    EXPECT_NO_THROW(tm.GetMinimalOrientedBoundingBox(true));
+
+    // Valid 4 points
+    tm = geometry::TetraMesh({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 1}},
+                             {{0, 1, 2, 3}});
+    tm.GetMinimalOrientedBoundingBox();
+
+    // 8 points with known ground truth
+    tm = geometry::TetraMesh({{0, 0, 0},
+                              {0, 0, 1},
+                              {0, 2, 0},
+                              {0, 2, 1},
+                              {3, 0, 0},
+                              {3, 0, 1},
+                              {3, 2, 0},
+                              {3, 2, 1}},
+                             {{0, 1, 2, 3},
+                              {4, 5, 6, 7},
+                              {0, 1, 4, 5},
+                              {2, 3, 6, 7},
+                              {0, 2, 4, 6},
+                              {1, 3, 5, 7}});
+    obb = tm.GetMinimalOrientedBoundingBox();
+    EXPECT_EQ(obb.center_, Eigen::Vector3d(1.5, 1, 0.5));
+    EXPECT_EQ(obb.extent_, Eigen::Vector3d(3, 2, 1));
+    EXPECT_EQ(obb.color_, Eigen::Vector3d(1, 1, 1));
+    ExpectEQ(Sort(obb.GetBoxPoints()),
+             Sort(std::vector<Eigen::Vector3d>({{0, 0, 0},
+                                                {0, 0, 1},
+                                                {0, 2, 0},
+                                                {0, 2, 1},
+                                                {3, 0, 0},
+                                                {3, 0, 1},
+                                                {3, 2, 0},
+                                                {3, 2, 1}})));
+
+    // Check for a bug where the OBB rotation contained a reflection for this
+    // example.
+    tm = geometry::TetraMesh({{0, 2, 4}, {7, 9, 1}, {5, 2, 0}, {3, 8, 7}},
+                             {{0, 1, 2, 3}});
+    obb = tm.GetMinimalOrientedBoundingBox();
+    EXPECT_GT(obb.R_.determinant(), 0.999);
+
+    // should always be equal/smaller than axis aligned- & oriented bounding box
+    tm = geometry::TetraMesh({{0.866, 0.474, 0.659},
+                              {0.943, 0.025, 0.789},
+                              {0.386, 0.264, 0.691},
+                              {0.938, 0.588, 0.496},
+                              {0.221, 0.116, 0.257},
+                              {0.744, 0.182, 0.052},
+                              {0.019, 0.525, 0.699},
+                              {0.722, 0.134, 0.668}},
+                             {{0, 1, 2, 3},
+                              {4, 0, 2, 3},
+                              {4, 0, 1, 2},
+                              {5, 4, 6, 3},
+                              {5, 4, 2, 3},
+                              {5, 4, 1, 2},
+                              {7, 1, 2, 6},
+                              {7, 5, 2, 6},
+                              {7, 5, 1, 2},
+                              {7, 5, 4, 6},
+                              {7, 5, 4, 1},
+                              {7, 0, 1, 6},
+                              {7, 4, 0, 6},
+                              {7, 4, 0, 1}});
+    geometry::OrientedBoundingBox mobb = tm.GetMinimalOrientedBoundingBox();
+    obb = tm.GetOrientedBoundingBox();
+    geometry::AxisAlignedBoundingBox aabb = tm.GetAxisAlignedBoundingBox();
+    EXPECT_GT(obb.Volume(), mobb.Volume());
+    EXPECT_GT(aabb.Volume(), mobb.Volume());
 }
 
 TEST(TetraMesh, Transform) {

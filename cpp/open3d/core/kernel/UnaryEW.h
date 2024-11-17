@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -47,6 +47,10 @@ void CopyCPU(const Tensor& src, Tensor& dst);
 
 #ifdef BUILD_CUDA_MODULE
 void CopyCUDA(const Tensor& src, Tensor& dst);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+void CopySYCL(const Tensor& src, Tensor& dst);
 #endif
 
 }  // namespace kernel

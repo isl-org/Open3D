@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,12 +14,48 @@
 namespace open3d {
 namespace camera {
 
-void pybind_camera_classes(py::module &m) {
-    // open3d.camera.PinholeCameraIntrinsic
+void pybind_camera_declarations(py::module &m) {
+    py::module m_camera = m.def_submodule("camera");
     py::class_<PinholeCameraIntrinsic> pinhole_intr(
-            m, "PinholeCameraIntrinsic",
+            m_camera, "PinholeCameraIntrinsic",
             "PinholeCameraIntrinsic class stores intrinsic camera matrix, and "
             "image height and width.");
+    // open3d.camera.PinholeCameraIntrinsicParameters
+    py::enum_<PinholeCameraIntrinsicParameters> pinhole_intr_params(
+            m_camera, "PinholeCameraIntrinsicParameters", py::arithmetic(),
+            "PinholeCameraIntrinsicParameters");
+    pinhole_intr_params
+            .value("PrimeSenseDefault",
+                   PinholeCameraIntrinsicParameters::PrimeSenseDefault,
+                   "Default camera intrinsic parameter for PrimeSense.")
+            .value("Kinect2DepthCameraDefault",
+                   PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault,
+                   "Default camera intrinsic parameter for Kinect2 depth "
+                   "camera.")
+            .value("Kinect2ColorCameraDefault",
+                   PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault,
+                   "Default camera intrinsic parameter for Kinect2 color "
+                   "camera.")
+            .export_values();
+    pinhole_intr_params.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class that contains default camera intrinsic "
+                       "parameters for different sensors.";
+            }),
+            py::none(), py::none(), "");
+    py::class_<PinholeCameraParameters> pinhole_param(
+            m_camera, "PinholeCameraParameters",
+            "Contains both intrinsic and extrinsic pinhole camera parameters.");
+    py::class_<PinholeCameraTrajectory> pinhole_traj(
+            m_camera, "PinholeCameraTrajectory",
+            "Contains a list of ``PinholeCameraParameters``, useful to storing "
+            "trajectories.");
+}
+void pybind_camera_definitions(py::module &m) {
+    auto m_camera = static_cast<py::module>(m.attr("camera"));
+    // open3d.camera.PinholeCameraIntrinsic
+    auto pinhole_intr = static_cast<py::class_<PinholeCameraIntrinsic>>(
+            m_camera.attr("PinholeCameraIntrinsic"));
     py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
     py::detail::bind_copy_functions<PinholeCameraIntrinsic>(pinhole_intr);
     pinhole_intr
@@ -64,8 +100,9 @@ void pybind_camera_classes(py::module &m) {
                        std::string(
                                ".\nAccess intrinsics with intrinsic_matrix.");
             });
-    docstring::ClassMethodDocInject(m, "PinholeCameraIntrinsic", "__init__");
-    docstring::ClassMethodDocInject(m, "PinholeCameraIntrinsic",
+    docstring::ClassMethodDocInject(m_camera, "PinholeCameraIntrinsic",
+                                    "__init__");
+    docstring::ClassMethodDocInject(m_camera, "PinholeCameraIntrinsic",
                                     "set_intrinsics",
                                     {{"width", "Width of the image."},
                                      {"height", "Height of the image."},
@@ -73,41 +110,18 @@ void pybind_camera_classes(py::module &m) {
                                      {"fy", "Y-axis focal length."},
                                      {"cx", "X-axis principle point."},
                                      {"cy", "Y-axis principle point."}});
-    docstring::ClassMethodDocInject(m, "PinholeCameraIntrinsic",
+    docstring::ClassMethodDocInject(m_camera, "PinholeCameraIntrinsic",
                                     "get_focal_length");
-    docstring::ClassMethodDocInject(m, "PinholeCameraIntrinsic",
+    docstring::ClassMethodDocInject(m_camera, "PinholeCameraIntrinsic",
                                     "get_principal_point");
-    docstring::ClassMethodDocInject(m, "PinholeCameraIntrinsic", "get_skew");
-    docstring::ClassMethodDocInject(m, "PinholeCameraIntrinsic", "is_valid");
-
-    // open3d.camera.PinholeCameraIntrinsicParameters
-    py::enum_<PinholeCameraIntrinsicParameters> pinhole_intr_params(
-            m, "PinholeCameraIntrinsicParameters", py::arithmetic(),
-            "PinholeCameraIntrinsicParameters");
-    pinhole_intr_params
-            .value("PrimeSenseDefault",
-                   PinholeCameraIntrinsicParameters::PrimeSenseDefault,
-                   "Default camera intrinsic parameter for PrimeSense.")
-            .value("Kinect2DepthCameraDefault",
-                   PinholeCameraIntrinsicParameters::Kinect2DepthCameraDefault,
-                   "Default camera intrinsic parameter for Kinect2 depth "
-                   "camera.")
-            .value("Kinect2ColorCameraDefault",
-                   PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault,
-                   "Default camera intrinsic parameter for Kinect2 color "
-                   "camera.")
-            .export_values();
-    pinhole_intr_params.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class that contains default camera intrinsic "
-                       "parameters for different sensors.";
-            }),
-            py::none(), py::none(), "");
+    docstring::ClassMethodDocInject(m_camera, "PinholeCameraIntrinsic",
+                                    "get_skew");
+    docstring::ClassMethodDocInject(m_camera, "PinholeCameraIntrinsic",
+                                    "is_valid");
 
     // open3d.camera.PinholeCameraParameters
-    py::class_<PinholeCameraParameters> pinhole_param(
-            m, "PinholeCameraParameters",
-            "Contains both intrinsic and extrinsic pinhole camera parameters.");
+    auto pinhole_param = static_cast<py::class_<PinholeCameraParameters>>(
+            m_camera.attr("PinholeCameraParameters"));
     py::detail::bind_default_constructor<PinholeCameraParameters>(
             pinhole_param);
     py::detail::bind_copy_functions<PinholeCameraParameters>(pinhole_param);
@@ -125,10 +139,8 @@ void pybind_camera_classes(py::module &m) {
             });
 
     // open3d.camera.PinholeCameraTrajectory
-    py::class_<PinholeCameraTrajectory> pinhole_traj(
-            m, "PinholeCameraTrajectory",
-            "Contains a list of ``PinholeCameraParameters``, useful to storing "
-            "trajectories.");
+    auto pinhole_traj = static_cast<py::class_<PinholeCameraTrajectory>>(
+            m_camera.attr("PinholeCameraTrajectory"));
     py::detail::bind_default_constructor<PinholeCameraTrajectory>(pinhole_traj);
     py::detail::bind_copy_functions<PinholeCameraTrajectory>(pinhole_traj);
     pinhole_traj
@@ -139,11 +151,6 @@ void pybind_camera_classes(py::module &m) {
                 return std::string("PinholeCameraTrajectory class.\n") +
                        std::string("Access its data via camera.parameters.");
             });
-}
-
-void pybind_camera(py::module &m) {
-    py::module m_submodule = m.def_submodule("camera");
-    pybind_camera_classes(m_submodule);
 }
 
 }  // namespace camera

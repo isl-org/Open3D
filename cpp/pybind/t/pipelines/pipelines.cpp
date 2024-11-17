@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,13 +17,20 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 
-void pybind_pipelines(py::module& m) {
+void pybind_pipelines_declarations(py::module& m) {
     py::module m_pipelines = m.def_submodule(
             "pipelines", "Tensor-based geometry processing pipelines.");
-    odometry::pybind_odometry(m_pipelines);
-    registration::pybind_registration(m_pipelines);
-    slac::pybind_slac(m_pipelines);
-    slam::pybind_slam(m_pipelines);
+    odometry::pybind_odometry_declarations(m_pipelines);
+    registration::pybind_registration_declarations(m_pipelines);
+    slac::pybind_slac_declarations(m_pipelines);
+    slam::pybind_slam_declarations(m_pipelines);
+}
+void pybind_pipelines_definitions(py::module& m) {
+    auto m_pipelines = static_cast<py::module>(m.attr("pipelines"));
+    odometry::pybind_odometry_definitions(m_pipelines);
+    registration::pybind_registration_definitions(m_pipelines);
+    slac::pybind_slac_definitions(m_pipelines);
+    slam::pybind_slam_definitions(m_pipelines);
 }
 
 }  // namespace pipelines

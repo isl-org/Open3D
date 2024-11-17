@@ -26,12 +26,12 @@ set(VTK_LIBRARIES
     vtksys-${VTK_VERSION}${VTK_LIB_SUFFIX}
 )
 
-foreach(item IN LISTS VTK_LIBRARIES)
-    list(APPEND VTK_BUILD_BYPRODUCTS <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
-endforeach()
-
 
 if(BUILD_VTK_FROM_SOURCE)
+
+    foreach(item IN LISTS VTK_LIBRARIES)
+        list(APPEND VTK_BUILD_BYPRODUCTS <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
+    endforeach()
 
     ExternalProject_Add(
         ext_vtk
@@ -294,6 +294,10 @@ if(BUILD_VTK_FROM_SOURCE)
 
 else() #### download prebuilt vtk
 
+    foreach(item IN LISTS VTK_LIBRARIES)
+        list(APPEND VTK_BUILD_BYPRODUCTS <SOURCE_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
+    endforeach()
+
     if(LINUX_AARCH64)
         message(FATAL "No precompiled vtk for platform. Enable BUILD_VTK_FROM_SOURCE")
     elseif(APPLE_AARCH64)
@@ -334,7 +338,8 @@ else() #### download prebuilt vtk
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ""
+        BUILD_BYPRODUCTS
+            ${VTK_BUILD_BYPRODUCTS}
     )
 
     ExternalProject_Get_Property(ext_vtk SOURCE_DIR)

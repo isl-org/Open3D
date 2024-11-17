@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -36,13 +36,16 @@ FileGeometry ReadFileGeometryTypeFBX(const std::string& path) {
     return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
+// Ref:
+// https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h
 const unsigned int kPostProcessFlags_compulsory =
-        aiProcess_JoinIdenticalVertices;
+        aiProcess_JoinIdenticalVertices | aiProcess_SortByPType |
+        aiProcess_PreTransformVertices;
 
 const unsigned int kPostProcessFlags_fast =
-        aiProcessPreset_TargetRealtime_Fast |
-        aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes |
-        aiProcess_PreTransformVertices;
+        kPostProcessFlags_compulsory | aiProcess_GenNormals |
+        aiProcess_Triangulate | aiProcess_GenUVCoords |
+        aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes;
 
 struct TextureImages {
     std::shared_ptr<geometry::Image> albedo;
@@ -65,7 +68,7 @@ void LoadTextures(const std::string& filename,
     std::string base_path =
             utility::filesystem::GetFileParentDirectory(filename);
 
-    auto texture_loader = [&base_path, &scene, &mat](
+    auto texture_loader = [&base_path, &scene, &mat, &filename](
                                   aiTextureType type,
                                   std::shared_ptr<geometry::Image>& img) {
         if (mat->GetTextureCount(type) > 0) {
@@ -94,7 +97,10 @@ void LoadTextures(const std::string& filename,
                     }
                 } else {
                     utility::LogWarning(
-                            "This format of image is not supported.");
+                            "Unsupported texture format for texture {} for "
+                            "file {}: Only jpg and "
+                            "png textures are supported.",
+                            path.C_Str(), filename);
                 }
             }
             // Else, build the path to it.
@@ -170,7 +176,8 @@ bool ReadTriangleMeshUsingASSIMP(
 
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
-        utility::LogWarning("Unable to load file {} with ASSIMP", filename);
+        utility::LogWarning("Unable to load file {} with ASSIMP: {}", filename,
+                            importer.GetErrorString());
         return false;
     }
 
@@ -326,7 +333,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
     const auto* scene =
             importer.ReadFile(filename.c_str(), kPostProcessFlags_fast);
     if (!scene) {
-        utility::LogWarning("Unable to load file {} with ASSIMP", filename);
+        utility::LogWarning("Unable to load file {} with ASSIMP: {}", filename,
+                            importer.GetErrorString());
         return false;
     }
 
@@ -422,6 +430,9 @@ bool ReadModelUsingAssimp(const std::string& filename,
         mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR,
                  o3d_mat.base_clearcoat_roughness);
         mat->Get(AI_MATKEY_ANISOTROPY, o3d_mat.base_anisotropy);
+        mat->Get(AI_MATKEY_COLOR_EMISSIVE, color);
+        o3d_mat.emissive_color =
+                Eigen::Vector4f(color.r, color.g, color.b, 1.f);
         aiString alpha_mode;
         mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode);
         std::string alpha_mode_str(alpha_mode.C_Str());

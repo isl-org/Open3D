@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ core::Tensor CreateIntrisicTensor() {
 
 TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     core::Device device = GetParam();
-    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
+    if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
 
@@ -106,7 +106,7 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     core::Device device = GetParam();
-    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
+    if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
 
@@ -173,7 +173,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     core::Device device = GetParam();
-    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
+    if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
 
@@ -240,7 +240,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     core::Device device = GetParam();
-    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
+    if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
 

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -109,10 +109,124 @@ private:
     Open3DScene *scene_;
 };
 
-void pybind_rendering_classes(py::module &m) {
+void pybind_rendering_declarations(py::module &m) {
+    py::module m_rendering = m.def_submodule("rendering");
     py::class_<Renderer> renderer(
-            m, "Renderer",
+            m_rendering, "Renderer",
             "Renderer class that manages 3D resources. Get from gui.Window.");
+    // It would be nice to have this inherit from Renderer, but the problem is
+    // that Python needs to own this class and Python needs to not own Renderer,
+    // and pybind does not let us mix the two styles of ownership.
+    py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>>
+            offscreen(m_rendering, "OffscreenRenderer",
+                      "Renderer instance that can be used for rendering to an "
+                      "image");
+    py::class_<Camera, std::shared_ptr<Camera>> cam(m_rendering, "Camera",
+                                                    "Camera object");
+    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic(),
+                                        "Enum class for Camera field of view "
+                                        "types.");
+    fov_type.value("Vertical", Camera::FovType::Vertical)
+            .value("Horizontal", Camera::FovType::Horizontal)
+            .export_values();
+
+    py::enum_<Camera::Projection> proj_type(cam, "Projection", py::arithmetic(),
+                                            "Enum class for Camera projection "
+                                            "types.");
+    proj_type.value("Perspective", Camera::Projection::Perspective)
+            .value("Ortho", Camera::Projection::Ortho)
+            .export_values();
+    py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
+            m_rendering, "Gradient",
+            "Manages a gradient for the unlitGradient shader."
+            "In gradient mode, the array of points specifies points along "
+            "the gradient, from 0 to 1 (inclusive). These do need to be "
+            "evenly spaced."
+            "Simple greyscale:"
+            "    [ ( 0.0, black ),"
+            "      ( 1.0, white ) ]"
+            "Rainbow (note the gaps around green):"
+            "    [ ( 0.000, blue ),"
+            "      ( 0.125, cornflower blue ),"
+            "      ( 0.250, cyan ),"
+            "      ( 0.500, green ),"
+            "      ( 0.750, yellow ),"
+            "      ( 0.875, orange ),"
+            "      ( 1.000, red ) ]"
+            "The gradient will generate a largish texture, so it should "
+            "be fairly smooth, but the boundaries may not be exactly as "
+            "specified due to quantization imposed by the fixed size of "
+            "the texture."
+            "  The points *must* be sorted from the smallest value to the "
+            "largest. The values must be in the range [0, 1].");
+    py::enum_<Gradient::Mode> gradient_mode(gradient, "Mode", py::arithmetic());
+    gradient_mode.value("GRADIENT", Gradient::Mode::kGradient)
+            .value("LUT", Gradient::Mode::kLUT)
+            .export_values();
+    py::class_<Gradient::Point> gpt(gradient, "Point");
+    py::class_<MaterialRecord> mat(
+            m_rendering, "MaterialRecord",
+            "Describes the real-world, physically based (PBR) "
+            "material used to render a geometry");
+    py::class_<TriangleMeshModel, std::shared_ptr<TriangleMeshModel>> tri_model(
+            m_rendering, "TriangleMeshModel",
+            "A list of geometry.TriangleMesh and Material that can describe a "
+            "complex model with multiple meshes, such as might be stored in an "
+            "FBX, OBJ, or GLTF file");
+    py::class_<TriangleMeshModel::MeshInfo> tri_model_info(tri_model,
+                                                           "MeshInfo", "");
+    py::class_<ColorGradingParams> color_grading(
+            m_rendering, "ColorGrading",
+            "Parameters to control color grading options");
+    py::enum_<ColorGradingParams::Quality> cgp_quality(
+            color_grading, "Quality",
+            "Quality level of color grading operations");
+    cgp_quality.value("LOW", ColorGradingParams::Quality::kLow)
+            .value("MEDIUM", ColorGradingParams::Quality::kMedium)
+            .value("HIGH", ColorGradingParams::Quality::kHigh)
+            .value("ULTRA", ColorGradingParams::Quality::kUltra);
+    py::enum_<ColorGradingParams::ToneMapping> cgp_tone(
+            color_grading, "ToneMapping",
+            "Specifies the tone-mapping algorithm");
+    cgp_tone.value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
+            .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
+            .value("ACES", ColorGradingParams::ToneMapping::kAces)
+            .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
+            .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
+            .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
+            .value("DISPLAY_RANGE",
+                   ColorGradingParams::ToneMapping::kDisplayRange);
+    py::class_<View, UnownedPointer<View>> view(m_rendering, "View",
+                                                "Low-level view class");
+    py::enum_<View::ShadowType> shadow_type(
+            view, "ShadowType", "Available shadow mapping algorithm options");
+    shadow_type.value("PCF", View::ShadowType::kPCF)
+            .value("VSM", View::ShadowType::kVSM);
+    py::class_<Scene, UnownedPointer<Scene>> scene(m_rendering, "Scene",
+                                                   "Low-level rendering scene");
+    py::enum_<Scene::GroundPlane> ground_plane(
+            scene, "GroundPlane", py::arithmetic(),
+            "Plane on which to show ground plane: XZ, XY, or YZ");
+    ground_plane.value("XZ", Scene::GroundPlane::XZ)
+            .value("XY", Scene::GroundPlane::XY)
+            .value("YZ", Scene::GroundPlane::YZ)
+            .export_values();
+    py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
+            m_rendering, "Open3DScene", "High-level scene for rending");
+    py::enum_<Open3DScene::LightingProfile> lighting(
+            o3dscene, "LightingProfile", py::arithmetic(),
+            "Enum for conveniently setting lighting");
+    lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
+            .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
+            .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)
+            .value("SOFT_SHADOWS", Open3DScene::LightingProfile::SOFT_SHADOWS)
+            .value("NO_SHADOWS", Open3DScene::LightingProfile::NO_SHADOWS)
+            .export_values();
+}
+void pybind_rendering_definitions(py::module &m) {
+    auto m_rendering = static_cast<py::module>(m.attr("rendering"));
+    auto renderer =
+            static_cast<py::class_<Renderer>>(m_rendering.attr("Renderer"));
     renderer.def("set_clear_color", &Renderer::SetClearColor,
                  "Sets the background color for the renderer, [r, g, b, a]. "
                  "Applies to everything being rendered, so it essentially acts "
@@ -143,14 +257,10 @@ void pybind_rendering_classes(py::module &m) {
                  "Deletes the texture. This does not remove the texture from "
                  "any existing materials or GUI widgets, and must be done "
                  "prior to this call.");
-
-    // It would be nice to have this inherit from Renderer, but the problem is
-    // that Python needs to own this class and Python needs to not own Renderer,
-    // and pybind does not let us mix the two styles of ownership.
-    py::class_<PyOffscreenRenderer, std::shared_ptr<PyOffscreenRenderer>>
-            offscreen(m, "OffscreenRenderer",
-                      "Renderer instance that can be used for rendering to an "
-                      "image");
+    auto offscreen =
+            static_cast<py::class_<PyOffscreenRenderer,
+                                   std::shared_ptr<PyOffscreenRenderer>>>(
+                    m_rendering.attr("OffscreenRenderer"));
     offscreen
             .def(py::init([](int w, int h, const std::string &resource_path) {
                      return std::make_shared<PyOffscreenRenderer>(
@@ -201,22 +311,8 @@ void pybind_rendering_classes(py::module &m) {
                  "camera).");
 
     // ---- Camera ----
-    py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
-                                                    "Camera object");
-    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic(),
-                                        "Enum class for Camera field of view "
-                                        "types.");
-    fov_type.value("Vertical", Camera::FovType::Vertical)
-            .value("Horizontal", Camera::FovType::Horizontal)
-            .export_values();
-
-    py::enum_<Camera::Projection> proj_type(cam, "Projection", py::arithmetic(),
-                                            "Enum class for Camera projection "
-                                            "types.");
-    proj_type.value("Perspective", Camera::Projection::Perspective)
-            .value("Ortho", Camera::Projection::Ortho)
-            .export_values();
-
+    auto cam = static_cast<py::class_<Camera, std::shared_ptr<Camera>>>(
+            m_rendering.attr("Camera"));
     cam.def("set_projection",
             (void (Camera::*)(double, double, double, double,
                               Camera::FovType)) &
@@ -279,34 +375,10 @@ void pybind_rendering_classes(py::module &m) {
                     "Returns the model matrix of the camera");
 
     // ---- Gradient ----
-    py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
-            m, "Gradient",
-            "Manages a gradient for the unlitGradient shader."
-            "In gradient mode, the array of points specifies points along "
-            "the gradient, from 0 to 1 (inclusive). These do need to be "
-            "evenly spaced."
-            "Simple greyscale:"
-            "    [ ( 0.0, black ),"
-            "      ( 1.0, white ) ]"
-            "Rainbow (note the gaps around green):"
-            "    [ ( 0.000, blue ),"
-            "      ( 0.125, cornflower blue ),"
-            "      ( 0.250, cyan ),"
-            "      ( 0.500, green ),"
-            "      ( 0.750, yellow ),"
-            "      ( 0.875, orange ),"
-            "      ( 1.000, red ) ]"
-            "The gradient will generate a largish texture, so it should "
-            "be fairly smooth, but the boundaries may not be exactly as "
-            "specified due to quantization imposed by the fixed size of "
-            "the texture."
-            "  The points *must* be sorted from the smallest value to the "
-            "largest. The values must be in the range [0, 1].");
-    py::enum_<Gradient::Mode> gradient_mode(gradient, "Mode", py::arithmetic());
-    gradient_mode.value("GRADIENT", Gradient::Mode::kGradient)
-            .value("LUT", Gradient::Mode::kLUT)
-            .export_values();
-    py::class_<Gradient::Point> gpt(gradient, "Point");
+    auto gradient =
+            static_cast<py::class_<Gradient, std::shared_ptr<Gradient>>>(
+                    m_rendering.attr("Gradient"));
+    auto gpt = static_cast<py::class_<Gradient::Point>>(gradient.attr("Point"));
     gpt.def(py::init<float, const Eigen::Vector4f>())
             .def("__repr__",
                  [](const Gradient::Point &p) {
@@ -326,10 +398,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_property("mode", &Gradient::GetMode, &Gradient::SetMode);
 
     // ---- Material ----
-    py::class_<MaterialRecord> mat(
-            m, "MaterialRecord",
-            "Describes the real-world, physically based (PBR) "
-            "material used to render a geometry");
+    auto mat = static_cast<py::class_<MaterialRecord>>(
+            m_rendering.attr("MaterialRecord"));
     mat.def(py::init<>())
             .def_readwrite("has_alpha", &MaterialRecord::has_alpha)
             .def_readwrite("base_color", &MaterialRecord::base_color)
@@ -375,13 +445,11 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("shader", &MaterialRecord::shader);
 
     // ---- TriangleMeshModel ----
-    py::class_<TriangleMeshModel, std::shared_ptr<TriangleMeshModel>> tri_model(
-            m, "TriangleMeshModel",
-            "A list of geometry.TriangleMesh and Material that can describe a "
-            "complex model with multiple meshes, such as might be stored in an "
-            "FBX, OBJ, or GLTF file");
-    py::class_<TriangleMeshModel::MeshInfo> tri_model_info(tri_model,
-                                                           "MeshInfo", "");
+    auto tri_model = static_cast<
+            py::class_<TriangleMeshModel, std::shared_ptr<TriangleMeshModel>>>(
+            m_rendering.attr("TriangleMeshModel"));
+    auto tri_model_info = static_cast<py::class_<TriangleMeshModel::MeshInfo>>(
+            tri_model.attr("MeshInfo"));
     tri_model_info
             .def(py::init([](std::shared_ptr<geometry::TriangleMesh> mesh,
                              const std::string &name,
@@ -397,29 +465,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("materials", &TriangleMeshModel::materials_);
 
     // ---- ColorGradingParams ---
-    py::class_<ColorGradingParams> color_grading(
-            m, "ColorGrading", "Parameters to control color grading options");
-
-    py::enum_<ColorGradingParams::Quality> cgp_quality(
-            color_grading, "Quality",
-            "Quality level of color grading operations");
-    cgp_quality.value("LOW", ColorGradingParams::Quality::kLow)
-            .value("MEDIUM", ColorGradingParams::Quality::kMedium)
-            .value("HIGH", ColorGradingParams::Quality::kHigh)
-            .value("ULTRA", ColorGradingParams::Quality::kUltra);
-
-    py::enum_<ColorGradingParams::ToneMapping> cgp_tone(
-            color_grading, "ToneMapping",
-            "Specifies the tone-mapping algorithm");
-    cgp_tone.value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
-            .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
-            .value("ACES", ColorGradingParams::ToneMapping::kAces)
-            .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
-            .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
-            .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
-            .value("DISPLAY_RANGE",
-                   ColorGradingParams::ToneMapping::kDisplayRange);
-
+    auto color_grading = static_cast<py::class_<ColorGradingParams>>(
+            m_rendering.attr("ColorGrading"));
     color_grading
             .def(py::init([](ColorGradingParams::Quality q,
                              ColorGradingParams::ToneMapping algorithm) {
@@ -443,14 +490,8 @@ void pybind_rendering_classes(py::module &m) {
                     "Tint on the green/magenta axis. Ranges from -1.0 to 1.0.");
 
     // ---- View ----
-    py::class_<View, UnownedPointer<View>> view(m, "View",
-                                                "Low-level view class");
-    // ---- Shadow Types ----
-    py::enum_<View::ShadowType> shadow_type(
-            view, "ShadowType", "Available shadow mapping algorithm options");
-    shadow_type.value("PCF", View::ShadowType::kPCF)
-            .value("VSM", View::ShadowType::kVSM);
-
+    auto view = static_cast<py::class_<View, UnownedPointer<View>>>(
+            m_rendering.attr("View"));
     view.def("set_color_grading", &View::SetColorGrading,
              "Sets the parameters to be used for the color grading algorithms")
             .def("set_post_processing", &View::SetPostProcessing,
@@ -483,15 +524,8 @@ void pybind_rendering_classes(py::module &m) {
                  "Returns the Camera associated with this View.");
 
     // ---- Scene ----
-    py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
-                                                   "Low-level rendering scene");
-    py::enum_<Scene::GroundPlane> ground_plane(
-            scene, "GroundPlane", py::arithmetic(),
-            "Plane on which to show ground plane: XZ, XY, or YZ");
-    ground_plane.value("XZ", Scene::GroundPlane::XZ)
-            .value("XY", Scene::GroundPlane::XY)
-            .value("YZ", Scene::GroundPlane::YZ)
-            .export_values();
+    auto scene = static_cast<py::class_<Scene, UnownedPointer<Scene>>>(
+            m_rendering.attr("Scene"));
     scene.def("add_camera", &Scene::AddCamera, "name"_a, "camera"_a,
               "Adds a camera to the scene")
             .def("remove_camera", &Scene::RemoveCamera, "name"_a,
@@ -606,18 +640,9 @@ void pybind_rendering_classes(py::module &m) {
     scene.attr("UPDATE_UV0_FLAG") = py::int_(Scene::kUpdateUv0Flag);
 
     // ---- Open3DScene ----
-    py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
-            m, "Open3DScene", "High-level scene for rending");
-    py::enum_<Open3DScene::LightingProfile> lighting(
-            o3dscene, "LightingProfile", py::arithmetic(),
-            "Enum for conveniently setting lighting");
-    lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
-            .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
-            .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)
-            .value("SOFT_SHADOWS", Open3DScene::LightingProfile::SOFT_SHADOWS)
-            .value("NO_SHADOWS", Open3DScene::LightingProfile::NO_SHADOWS)
-            .export_values();
-
+    auto o3dscene =
+            static_cast<py::class_<Open3DScene, UnownedPointer<Open3DScene>>>(
+                    m_rendering.attr("Open3DScene"));
     o3dscene.def(py::init<Renderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox, "enable"_a,
                  "Toggles display of the skybox")
@@ -713,11 +738,6 @@ void pybind_rendering_classes(py::module &m) {
                           "Minimum number of points before downsampled point "
                           "clouds are created and used when rendering speed "
                           "is important");
-}
-
-void pybind_rendering(py::module &m) {
-    py::module m_rendering = m.def_submodule("rendering");
-    pybind_rendering_classes(m_rendering);
 }
 
 }  // namespace rendering

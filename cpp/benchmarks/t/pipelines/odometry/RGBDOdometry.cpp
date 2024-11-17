@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ static core::Tensor CreateIntrisicTensor() {
 
 static void ComputeOdometryResultPointToPlane(benchmark::State& state,
                                               const core::Device& device) {
-    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
+    if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
 
@@ -97,7 +97,7 @@ static void RGBDOdometryMultiScale(
         benchmark::State& state,
         const core::Device& device,
         const t::pipelines::odometry::Method& method) {
-    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
+    if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
 

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -41,10 +41,50 @@ public:
     }
 };
 
-void pybind_odometry_classes(py::module &m) {
-    // open3d.odometry.OdometryOption
+void pybind_odometry_declarations(py::module &m) {
+    py::module m_odometry = m.def_submodule("odometry", "Odometry pipeline.");
     py::class_<OdometryOption> odometry_option(
-            m, "OdometryOption", "Class that defines Odometry options.");
+            m_odometry, "OdometryOption",
+            "Class that defines Odometry options.");
+    py::class_<RGBDOdometryJacobian,
+               PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
+            jacobian(
+                    m_odometry, "RGBDOdometryJacobian",
+                    "Base class that computes Jacobian from two RGB-D images.");
+    py::class_<RGBDOdometryJacobianFromColorTerm,
+               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
+               RGBDOdometryJacobian>
+            jacobian_color(m_odometry, "RGBDOdometryJacobianFromColorTerm",
+                           R"(Class to Compute Jacobian using color term.
+
+Energy: :math:`(I_p-I_q)^2.`
+
+Reference:
+
+F. Steinbrucker, J. Sturm, and D. Cremers.
+
+Real-time visual odometry from dense RGB-D images.
+
+In ICCV Workshops, 2011.)");
+    py::class_<RGBDOdometryJacobianFromHybridTerm,
+               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
+               RGBDOdometryJacobian>
+            jacobian_hybrid(m_odometry, "RGBDOdometryJacobianFromHybridTerm",
+                            R"(Class to compute Jacobian using hybrid term
+
+Energy: :math:`(I_p-I_q)^2 + \lambda(D_p-D_q')^2`
+
+Reference:
+
+J. Park, Q.-Y. Zhou, and V. Koltun
+
+Anonymous submission.)");
+}
+void pybind_odometry_definitions(py::module &m) {
+    auto m_odometry = static_cast<py::module>(m.attr("odometry"));
+    // open3d.odometry.OdometryOption
+    auto odometry_option = static_cast<py::class_<OdometryOption>>(
+            m_odometry.attr("OdometryOption"));
     odometry_option
             .def(py::init(
                          [](std::vector<int> iteration_number_per_pyramid_level,
@@ -102,12 +142,10 @@ void pybind_odometry_classes(py::module &m) {
             });
 
     // open3d.odometry.RGBDOdometryJacobian
-    py::class_<RGBDOdometryJacobian,
-               PyRGBDOdometryJacobian<RGBDOdometryJacobian>>
-            jacobian(
-                    m, "RGBDOdometryJacobian",
-                    "Base class that computes Jacobian from two RGB-D images.");
-
+    auto jacobian = static_cast<
+            py::class_<RGBDOdometryJacobian,
+                       PyRGBDOdometryJacobian<RGBDOdometryJacobian>>>(
+            m_odometry.attr("RGBDOdometryJacobian"));
     jacobian.def(
             "compute_jacobian_and_residual",
             &RGBDOdometryJacobian::ComputeJacobianAndResidual,
@@ -121,21 +159,11 @@ void pybind_odometry_classes(py::module &m) {
             "corresps"_a);
 
     // open3d.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
-    py::class_<RGBDOdometryJacobianFromColorTerm,
-               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
-               RGBDOdometryJacobian>
-            jacobian_color(m, "RGBDOdometryJacobianFromColorTerm",
-                           R"(Class to Compute Jacobian using color term.
-
-Energy: :math:`(I_p-I_q)^2.`
-
-Reference:
-
-F. Steinbrucker, J. Sturm, and D. Cremers.
-
-Real-time visual odometry from dense RGB-D images.
-
-In ICCV Workshops, 2011.)");
+    auto jacobian_color = static_cast<py::class_<
+            RGBDOdometryJacobianFromColorTerm,
+            PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
+            RGBDOdometryJacobian>>(
+            m_odometry.attr("RGBDOdometryJacobianFromColorTerm"));
     py::detail::bind_default_constructor<RGBDOdometryJacobianFromColorTerm>(
             jacobian_color);
     py::detail::bind_copy_functions<RGBDOdometryJacobianFromColorTerm>(
@@ -146,19 +174,11 @@ In ICCV Workshops, 2011.)");
             });
 
     // open3d.odometry.RGBDOdometryJacobianFromHybridTerm: RGBDOdometryJacobian
-    py::class_<RGBDOdometryJacobianFromHybridTerm,
-               PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
-               RGBDOdometryJacobian>
-            jacobian_hybrid(m, "RGBDOdometryJacobianFromHybridTerm",
-                            R"(Class to compute Jacobian using hybrid term
-
-Energy: :math:`(I_p-I_q)^2 + \lambda(D_p-D_q')^2`
-
-Reference:
-
-J. Park, Q.-Y. Zhou, and V. Koltun
-
-Anonymous submission.)");
+    auto jacobian_hybrid = static_cast<py::class_<
+            RGBDOdometryJacobianFromHybridTerm,
+            PyRGBDOdometryJacobian<RGBDOdometryJacobianFromHybridTerm>,
+            RGBDOdometryJacobian>>(
+            m_odometry.attr("RGBDOdometryJacobianFromHybridTerm"));
     py::detail::bind_default_constructor<RGBDOdometryJacobianFromHybridTerm>(
             jacobian_hybrid);
     py::detail::bind_copy_functions<RGBDOdometryJacobianFromHybridTerm>(
@@ -167,20 +187,18 @@ Anonymous submission.)");
             "__repr__", [](const RGBDOdometryJacobianFromHybridTerm &te) {
                 return std::string("RGBDOdometryJacobianFromHybridTerm");
             });
-}
-
-void pybind_odometry_methods(py::module &m) {
-    m.def("compute_rgbd_odometry", &ComputeRGBDOdometry,
-          py::call_guard<py::gil_scoped_release>(),
-          "Function to estimate 6D rigid motion from two RGBD image pairs. "
-          "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
-          "rgbd_source"_a, "rgbd_target"_a,
-          "pinhole_camera_intrinsic"_a = camera::PinholeCameraIntrinsic(),
-          "odo_init"_a = Eigen::Matrix4d::Identity(),
-          "jacobian"_a = RGBDOdometryJacobianFromHybridTerm(),
-          "option"_a = OdometryOption());
+    m_odometry.def(
+            "compute_rgbd_odometry", &ComputeRGBDOdometry,
+            py::call_guard<py::gil_scoped_release>(),
+            "Function to estimate 6D rigid motion from two RGBD image pairs. "
+            "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
+            "rgbd_source"_a, "rgbd_target"_a,
+            "pinhole_camera_intrinsic"_a = camera::PinholeCameraIntrinsic(),
+            "odo_init"_a = Eigen::Matrix4d::Identity(),
+            "jacobian"_a = RGBDOdometryJacobianFromHybridTerm(),
+            "option"_a = OdometryOption());
     docstring::FunctionDocInject(
-            m, "compute_rgbd_odometry",
+            m_odometry, "compute_rgbd_odometry",
             {
                     {"rgbd_source", "Source RGBD image."},
                     {"rgbd_target", "Target RGBD image."},
@@ -195,15 +213,16 @@ void pybind_odometry_methods(py::module &m) {
                     {"option", "Odometry hyper parameters."},
             });
 
-    m.def("compute_correspondence", &ComputeCorrespondence,
-          py::call_guard<py::gil_scoped_release>(),
-          "Function to estimate point to point correspondences from two depth "
-          "images. A vector of u_s, v_s, u_t, v_t which maps the 2d "
-          "coordinates of source to target.",
-          "intrinsic_matrix"_a, "extrinsic"_a, "depth_s"_a, "depth_t"_a,
-          "option"_a = OdometryOption());
+    m_odometry.def("compute_correspondence", &ComputeCorrespondence,
+                   py::call_guard<py::gil_scoped_release>(),
+                   "Function to estimate point to point correspondences from "
+                   "two depth "
+                   "images. A vector of u_s, v_s, u_t, v_t which maps the 2d "
+                   "coordinates of source to target.",
+                   "intrinsic_matrix"_a, "extrinsic"_a, "depth_s"_a,
+                   "depth_t"_a, "option"_a = OdometryOption());
     docstring::FunctionDocInject(
-            m, "compute_correspondence",
+            m_odometry, "compute_correspondence",
             {
                     {"intrinsic_matrix", "Camera intrinsic parameters."},
                     {"extrinsic",
@@ -212,12 +231,6 @@ void pybind_odometry_methods(py::module &m) {
                     {"depth_t", "Target depth image."},
                     {"option", "Odometry hyper parameters."},
             });
-}
-
-void pybind_odometry(py::module &m) {
-    py::module m_submodule = m.def_submodule("odometry", "Odometry pipeline.");
-    pybind_odometry_classes(m_submodule);
-    pybind_odometry_methods(m_submodule);
 }
 
 }  // namespace odometry

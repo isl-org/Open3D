@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -29,10 +29,50 @@ public:
     }
 };
 
-void pybind_global_optimization(py::module &m) {
-    // open3d.registration.PoseGraphNode
+void pybind_global_optimization_declarations(py::module &m_registration) {
     py::class_<PoseGraphNode, std::shared_ptr<PoseGraphNode>> pose_graph_node(
-            m, "PoseGraphNode", "Node of ``PoseGraph``.");
+            m_registration, "PoseGraphNode", "Node of ``PoseGraph``.");
+    auto pose_graph_node_vector = py::bind_vector<std::vector<PoseGraphNode>>(
+            m_registration, "PoseGraphNodeVector");
+    py::class_<PoseGraphEdge, std::shared_ptr<PoseGraphEdge>> pose_graph_edge(
+            m_registration, "PoseGraphEdge", "Edge of ``PoseGraph``.");
+    auto pose_graph_edge_vector = py::bind_vector<std::vector<PoseGraphEdge>>(
+            m_registration, "PoseGraphEdgeVector");
+    py::class_<PoseGraph, std::shared_ptr<PoseGraph>> pose_graph(
+            m_registration, "PoseGraph",
+            "Data structure defining the pose graph.");
+    py::class_<GlobalOptimizationMethod,
+               PyGlobalOptimizationMethod<GlobalOptimizationMethod>>
+            global_optimization_method(
+                    m_registration, "GlobalOptimizationMethod",
+                    "Base class for global optimization method.");
+    py::class_<GlobalOptimizationLevenbergMarquardt,
+               PyGlobalOptimizationMethod<GlobalOptimizationLevenbergMarquardt>,
+               GlobalOptimizationMethod>
+            global_optimization_method_lm(
+                    m_registration, "GlobalOptimizationLevenbergMarquardt",
+                    "Global optimization with Levenberg-Marquardt algorithm. "
+                    "Recommended over the Gauss-Newton method since the LM has "
+                    "better convergence characteristics.");
+    py::class_<GlobalOptimizationGaussNewton,
+               PyGlobalOptimizationMethod<GlobalOptimizationGaussNewton>,
+               GlobalOptimizationMethod>
+            global_optimization_method_gn(
+                    m_registration, "GlobalOptimizationGaussNewton",
+                    "Global optimization with Gauss-Newton algorithm.");
+    py::class_<GlobalOptimizationConvergenceCriteria> criteria(
+            m_registration, "GlobalOptimizationConvergenceCriteria",
+            "Convergence criteria of GlobalOptimization.");
+    py::class_<GlobalOptimizationOption> option(
+            m_registration, "GlobalOptimizationOption",
+            "Option for GlobalOptimization.");
+}
+
+void pybind_global_optimization_definitions(py::module &m_registration) {
+    // open3d.registration.PoseGraphNode
+    auto pose_graph_node = static_cast<
+            py::class_<PoseGraphNode, std::shared_ptr<PoseGraphNode>>>(
+            m_registration.attr("PoseGraphNode"));
     py::detail::bind_default_constructor<PoseGraphNode>(pose_graph_node);
     py::detail::bind_copy_functions<PoseGraphNode>(pose_graph_node);
     pose_graph_node.def_readwrite("pose", &PoseGraphNode::pose_)
@@ -49,8 +89,10 @@ void pybind_global_optimization(py::module &m) {
             });
 
     // open3d.registration.PoseGraphNodeVector
-    auto pose_graph_node_vector = py::bind_vector<std::vector<PoseGraphNode>>(
-            m, "PoseGraphNodeVector");
+    auto pose_graph_node_vector =
+            static_cast<decltype(py::bind_vector<std::vector<PoseGraphNode>>(
+                    m_registration, "PoseGraphNodeVector"))>(
+                    m_registration.attr("PoseGraphNodeVector"));
     pose_graph_node_vector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Vector of PoseGraphNode";
@@ -58,8 +100,9 @@ void pybind_global_optimization(py::module &m) {
             py::none(), py::none(), "");
 
     // open3d.registration.PoseGraphEdge
-    py::class_<PoseGraphEdge, std::shared_ptr<PoseGraphEdge>> pose_graph_edge(
-            m, "PoseGraphEdge", "Edge of ``PoseGraph``.");
+    auto pose_graph_edge = static_cast<
+            py::class_<PoseGraphEdge, std::shared_ptr<PoseGraphEdge>>>(
+            m_registration.attr("PoseGraphEdge"));
     py::detail::bind_default_constructor<PoseGraphEdge>(pose_graph_edge);
     py::detail::bind_copy_functions<PoseGraphEdge>(pose_graph_edge);
     pose_graph_edge
@@ -109,8 +152,10 @@ void pybind_global_optimization(py::module &m) {
             });
 
     // open3d.registration.PoseGraphEdgeVector
-    auto pose_graph_edge_vector = py::bind_vector<std::vector<PoseGraphEdge>>(
-            m, "PoseGraphEdgeVector");
+    auto pose_graph_edge_vector =
+            static_cast<decltype(py::bind_vector<std::vector<PoseGraphEdge>>(
+                    m_registration, "PoseGraphEdgeVector"))>(
+                    m_registration.attr("PoseGraphEdgeVector"));
     pose_graph_edge_vector.attr("__doc__") = docstring::static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Vector of PoseGraphEdge";
@@ -118,8 +163,9 @@ void pybind_global_optimization(py::module &m) {
             py::none(), py::none(), "");
 
     // open3d.registration.PoseGraph
-    py::class_<PoseGraph, std::shared_ptr<PoseGraph>> pose_graph(
-            m, "PoseGraph", "Data structure defining the pose graph.");
+    auto pose_graph =
+            static_cast<py::class_<PoseGraph, std::shared_ptr<PoseGraph>>>(
+                    m_registration.attr("PoseGraph"));
     py::detail::bind_default_constructor<PoseGraph>(pose_graph);
     py::detail::bind_copy_functions<PoseGraph>(pose_graph);
     pose_graph
@@ -138,29 +184,25 @@ void pybind_global_optimization(py::module &m) {
             });
 
     // open3d.registration.GlobalOptimizationMethod
-    py::class_<GlobalOptimizationMethod,
-               PyGlobalOptimizationMethod<GlobalOptimizationMethod>>
-            global_optimization_method(
-                    m, "GlobalOptimizationMethod",
-                    "Base class for global optimization method.");
+    auto global_optimization_method = static_cast<
+            py::class_<GlobalOptimizationMethod,
+                       PyGlobalOptimizationMethod<GlobalOptimizationMethod>>>(
+            m_registration.attr("GlobalOptimizationMethod"));
     global_optimization_method.def("OptimizePoseGraph",
                                    &GlobalOptimizationMethod::OptimizePoseGraph,
                                    "pose_graph"_a, "criteria"_a, "option"_a,
                                    "Run pose graph optimization.");
     docstring::ClassMethodDocInject(
-            m, "GlobalOptimizationMethod", "OptimizePoseGraph",
+            m_registration, "GlobalOptimizationMethod", "OptimizePoseGraph",
             {{"pose_graph", "The pose graph to be optimized (in-place)."},
              {"criteria", "Convergence criteria."},
              {"option", "Global optimization options."}});
 
-    py::class_<GlobalOptimizationLevenbergMarquardt,
-               PyGlobalOptimizationMethod<GlobalOptimizationLevenbergMarquardt>,
-               GlobalOptimizationMethod>
-            global_optimization_method_lm(
-                    m, "GlobalOptimizationLevenbergMarquardt",
-                    "Global optimization with Levenberg-Marquardt algorithm. "
-                    "Recommended over the Gauss-Newton method since the LM has "
-                    "better convergence characteristics.");
+    auto global_optimization_method_lm = static_cast<py::class_<
+            GlobalOptimizationLevenbergMarquardt,
+            PyGlobalOptimizationMethod<GlobalOptimizationLevenbergMarquardt>,
+            GlobalOptimizationMethod>>(
+            m_registration.attr("GlobalOptimizationLevenbergMarquardt"));
     py::detail::bind_default_constructor<GlobalOptimizationLevenbergMarquardt>(
             global_optimization_method_lm);
     py::detail::bind_copy_functions<GlobalOptimizationLevenbergMarquardt>(
@@ -170,12 +212,11 @@ void pybind_global_optimization(py::module &m) {
                 return std::string("GlobalOptimizationLevenbergMarquardt");
             });
 
-    py::class_<GlobalOptimizationGaussNewton,
-               PyGlobalOptimizationMethod<GlobalOptimizationGaussNewton>,
-               GlobalOptimizationMethod>
-            global_optimization_method_gn(
-                    m, "GlobalOptimizationGaussNewton",
-                    "Global optimization with Gauss-Newton algorithm.");
+    auto global_optimization_method_gn = static_cast<py::class_<
+            GlobalOptimizationGaussNewton,
+            PyGlobalOptimizationMethod<GlobalOptimizationGaussNewton>,
+            GlobalOptimizationMethod>>(
+            m_registration.attr("GlobalOptimizationGaussNewton"));
     py::detail::bind_default_constructor<GlobalOptimizationGaussNewton>(
             global_optimization_method_gn);
     py::detail::bind_copy_functions<GlobalOptimizationGaussNewton>(
@@ -185,9 +226,10 @@ void pybind_global_optimization(py::module &m) {
                 return std::string("GlobalOptimizationGaussNewton");
             });
 
-    py::class_<GlobalOptimizationConvergenceCriteria> criteria(
-            m, "GlobalOptimizationConvergenceCriteria",
-            "Convergence criteria of GlobalOptimization.");
+    auto criteria =
+            static_cast<py::class_<GlobalOptimizationConvergenceCriteria>>(
+                    m_registration.attr(
+                            "GlobalOptimizationConvergenceCriteria"));
     py::detail::bind_default_constructor<GlobalOptimizationConvergenceCriteria>(
             criteria);
     py::detail::bind_copy_functions<GlobalOptimizationConvergenceCriteria>(
@@ -252,8 +294,8 @@ void pybind_global_optimization(py::module &m) {
                        std::to_string(cr.lower_scale_factor_);
             });
 
-    py::class_<GlobalOptimizationOption> option(
-            m, "GlobalOptimizationOption", "Option for GlobalOptimization.");
+    auto option = static_cast<py::class_<GlobalOptimizationOption>>(
+            m_registration.attr("GlobalOptimizationOption"));
     py::detail::bind_default_constructor<GlobalOptimizationOption>(option);
     py::detail::bind_copy_functions<GlobalOptimizationOption>(option);
     option.def_readwrite(
@@ -302,10 +344,7 @@ void pybind_global_optimization(py::module &m) {
                        std::string("\n> reference_node : ") +
                        std::to_string(goo.reference_node_);
             });
-}
-
-void pybind_global_optimization_methods(py::module &m) {
-    m.def(
+    m_registration.def(
             "global_optimization",
             [](PoseGraph &pose_graph, const GlobalOptimizationMethod &method,
                const GlobalOptimizationConvergenceCriteria &criteria,
@@ -315,7 +354,7 @@ void pybind_global_optimization_methods(py::module &m) {
             "Function to optimize PoseGraph", "pose_graph"_a, "method"_a,
             "criteria"_a, "option"_a);
     docstring::FunctionDocInject(
-            m, "global_optimization",
+            m_registration, "global_optimization",
             {{"pose_graph", "The pose_graph to be optimized (in-place)."},
              {"method",
               "Global optimization method. Either "

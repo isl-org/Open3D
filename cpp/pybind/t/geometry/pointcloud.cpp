@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ static const std::unordered_map<std::string, std::string>
                  "neighbors search radius parameter to use HybridSearch. "
                  "[Recommended ~1.4x voxel size]."}};
 
-void pybind_pointcloud(py::module& m) {
+void pybind_pointcloud_declarations(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
                Geometry, DrawableGeometry>
             pointcloud(m, "PointCloud",
@@ -95,7 +95,12 @@ The attributes of the point cloud have different levels::
     pcd.point.intensities = o3d.core.Tensor([0.3, 0.1, 0.4], dtype, device)
     pcd.point.labels = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
 )");
-
+}
+void pybind_pointcloud_definitions(py::module& m) {
+    auto pointcloud =
+            static_cast<py::class_<PointCloud, PyGeometry<PointCloud>,
+                                   std::shared_ptr<PointCloud>, Geometry,
+                                   DrawableGeometry>>(m.attr("PointCloud"));
     // Constructors.
     pointcloud
             .def(py::init<const core::Device&>(),
@@ -252,11 +257,10 @@ Example:
                    "by selecting the farthest point from previous selected "
                    "points iteratively",
                    "num_samples"_a);
-    pointcloud.def(
-            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
-            "nb_points"_a, "search_radius"_a,
-            R"(Remove points that have less than nb_points neighbors in a 
-sphere of a given search radius. 
+    pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+                   "nb_points"_a, "search_radius"_a,
+                   R"(Remove points that have less than nb_points neighbors in a
+sphere of a given search radius.
 
 Args:
     nb_points: Number of neighbor points required within the radius.
@@ -270,7 +274,7 @@ Return:
             &PointCloud::RemoveStatisticalOutliers, "nb_neighbors"_a,
             "std_ratio"_a,
             R"(Remove points that are further away from their \p nb_neighbor
-neighbors in average. This function is not recommended to use on GPU. 
+neighbors in average. This function is not recommended to use on GPU.
 
 Args:
     nb_neighbors: Number of neighbors around the target point.
@@ -285,9 +289,9 @@ Return:
     pointcloud.def(
             "remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
             "remove_nan"_a = true, "remove_infinite"_a = true,
-            R"(Remove all points from the point cloud that have a nan entry, or 
-infinite value. It also removes the corresponding attributes. 
-    
+            R"(Remove all points from the point cloud that have a nan entry, or
+infinite value. It also removes the corresponding attributes.
+
 Args:
     remove_nan: Remove NaN values from the PointCloud.
     remove_infinite: Remove infinite values from the PointCloud.
@@ -326,31 +330,31 @@ Return:
             "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0,
             R"(Function to consistently orient the normals of a point cloud based on tangent planes.
 
-The algorithm is described in Hoppe et al., "Surface Reconstruction from Unorganized Points", 1992. 
+The algorithm is described in Hoppe et al., "Surface Reconstruction from Unorganized Points", 1992.
 Additional information about the choice of lambda and cos_alpha_tol for complex
-point clouds can be found in Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud", 2023 
+point clouds can be found in Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud", 2023
 (https://eugeniovaretti.github.io/meshreco/Piazza_Valentini_Varetti_MeshReconstructionFromPointCloud_2023.pdf).
 
 Args:
     k (int): Number of neighbors to use for tangent plane estimation.
-    lambda (float): A non-negative real parameter that influences the distance 
-        metric used to identify the true neighbors of a point in complex 
-        geometries. It penalizes the distance between a point and the tangent 
-        plane defined by the reference point and its normal vector, helping to 
-        mitigate misclassification issues encountered with traditional 
+    lambda (float): A non-negative real parameter that influences the distance
+        metric used to identify the true neighbors of a point in complex
+        geometries. It penalizes the distance between a point and the tangent
+        plane defined by the reference point and its normal vector, helping to
+        mitigate misclassification issues encountered with traditional
         Euclidean distance metrics.
-    cos_alpha_tol (float): Cosine threshold angle used to determine the 
-        inclusion boundary of neighbors based on the direction of the normal 
+    cos_alpha_tol (float): Cosine threshold angle used to determine the
+        inclusion boundary of neighbors based on the direction of the normal
         vector.
 
 Example:
     We use Bunny point cloud to compute its normals and orient them consistently.
-    The initial reconstruction adheres to Hoppe's algorithm (raw), whereas the 
-    second reconstruction utilises the lambda and cos_alpha_tol parameters. 
+    The initial reconstruction adheres to Hoppe's algorithm (raw), whereas the
+    second reconstruction utilises the lambda and cos_alpha_tol parameters.
     Due to the high density of the Bunny point cloud available in Open3D a larger
-    value of the parameter k is employed to test the algorithm.  Usually you do 
-    not have at disposal such a refined point clouds, thus you cannot find a 
-    proper choice of k: refer to 
+    value of the parameter k is employed to test the algorithm.  Usually you do
+    not have at disposal such a refined point clouds, thus you cannot find a
+    proper choice of k: refer to
     https://eugeniovaretti.github.io/meshreco for these cases.::
 
         import open3d as o3d
@@ -690,13 +694,13 @@ Example:
 
 Args:
     angle (float): The rotation angle in degree.
-    
+
     axis (open3d.core.Tensor): The rotation axis.
-    
+
     resolution (int): The resolution defines the number of intermediate sweeps
         about the rotation axis.
 
-    translation (float): The translation along the rotation axis. 
+    translation (float): The translation along the rotation axis.
 
 Returns:
     A line set with the result of the sweep operation.
@@ -719,9 +723,9 @@ Example:
                    R"(Sweeps the point cloud along a direction vector.
 
 Args:
-    
+
     vector (open3d.core.Tensor): The direction vector.
-    
+
     scale (float): Scalar factor which essentially scales the direction vector.
 
 Returns:
@@ -731,7 +735,7 @@ Returns:
 Example:
 
     This code generates a set of straight lines from a point cloud::
-        
+
         import open3d as o3d
         import numpy as np
         pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
@@ -743,7 +747,7 @@ Example:
     pointcloud.def("pca_partition", &PointCloud::PCAPartition, "max_points"_a,
                    R"(Partition the point cloud by recursively doing PCA.
 
-This function creates a new point attribute with the name "partition_ids" storing 
+This function creates a new point attribute with the name "partition_ids" storing
 the partition id for each point.
 
 Args:

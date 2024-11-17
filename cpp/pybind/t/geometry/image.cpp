@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -53,12 +53,11 @@ static const std::unordered_map<std::string, std::string>
                 {"distance_sigma",
                  "Standard deviation for the image pixel positions."}};
 
-void pybind_image(py::module &m) {
+void pybind_image_declarations(py::module &m) {
     py::class_<Image, PyGeometry<Image>, std::shared_ptr<Image>, Geometry>
             image(m, "Image", py::buffer_protocol(),
                   "The Image class stores image with customizable rols, cols, "
                   "channels, dtype and device.");
-
     py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
             .value("Nearest", Image::InterpType::Nearest)
             .value("Linear", Image::InterpType::Linear)
@@ -66,7 +65,19 @@ void pybind_image(py::module &m) {
             .value("Lanczos", Image::InterpType::Lanczos)
             .value("Super", Image::InterpType::Super)
             .export_values();
-
+    py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
+               Geometry>
+            rgbd_image(
+                    m, "RGBDImage",
+                    "RGBDImage is a pair of color and depth images. For most "
+                    "processing, the image pair should be aligned (same "
+                    "viewpoint and  "
+                    "resolution).");
+}
+void pybind_image_definitions(py::module &m) {
+    auto image = static_cast<py::class_<Image, PyGeometry<Image>,
+                                        std::shared_ptr<Image>, Geometry>>(
+            m.attr("Image"));
     // Constructors
     image.def(py::init<int64_t, int64_t, int64_t, core::Dtype, core::Device>(),
               "Row-major storage is used, similar to OpenCV. Use (row, col, "
@@ -266,15 +277,10 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "clear");
     docstring::ClassMethodDocInject(m, "Image", "is_empty");
     docstring::ClassMethodDocInject(m, "Image", "to_legacy");
-
-    py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
-               Geometry>
-            rgbd_image(
-                    m, "RGBDImage",
-                    "RGBDImage is a pair of color and depth images. For most "
-                    "processing, the image pair should be aligned (same "
-                    "viewpoint and  "
-                    "resolution).");
+    auto rgbd_image =
+            static_cast<py::class_<RGBDImage, PyGeometry<RGBDImage>,
+                                   std::shared_ptr<RGBDImage>, Geometry>>(
+                    m.attr("RGBDImage"));
     rgbd_image
             // Constructors.
             .def(py::init<>(), "Construct an empty RGBDImage.")

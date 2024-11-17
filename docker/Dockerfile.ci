@@ -17,6 +17,7 @@ ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
 ARG BUILD_SYCL_MODULE
+ARG CI
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
@@ -66,34 +67,48 @@ RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
         rm -rf /etc/apt/sources.list.d/oneAPI.list; \
     fi
 
-# Dependencies: basic
+# Dependencies: basic and python-build
 RUN apt-get update && apt-get install -y \
     git  \
     wget \
     curl \
     build-essential \
     pkg-config \
+    zlib1g \
+    zlib1g-dev \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda or Intel conda
-# The **/open3d/bin paths are used during docker run, in this way docker run
+# pyenv or Intel Python
+# The pyenv python paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/open3d/bin:${PATH}"
 RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
-        wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh; \
-        bash Miniconda3-latest-Linux-x86_64.sh -b; \
-        rm Miniconda3-latest-Linux-x86_64.sh; \
+        curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION}; \
     fi
-RUN conda --version \
- && conda create -y -n open3d python=${PYTHON_VERSION}
+RUN python --version && pip --version
 
-# Activate open3d virtualenv
-# This works during docker build. It becomes the prefix of all RUN commands.
-# Ref: https://stackoverflow.com/a/60148365/1255535
-SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Dependencies: cmake
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
@@ -210,7 +225,9 @@ RUN \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
  && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
- && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi
+ && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi \
+ && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc; fi
+# If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \

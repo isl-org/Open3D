@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -98,7 +98,7 @@ struct REHandle : public REHandle_abstract {
             id = REHandle_abstract::kBadId + 1;
         }
 
-        return std::move(REHandle(id));
+        return REHandle(id);
     }
 
     static REHandle Concretize(const REHandle_abstract& abstract) {
@@ -164,7 +164,7 @@ struct formatter<
                          char>> {
     template <typename FormatContext>
     auto format(const open3d::visualization::rendering::REHandle_abstract& uid,
-                FormatContext& ctx) -> decltype(ctx.out()) {
+                FormatContext& ctx) const -> decltype(ctx.out()) {
         return format_to(ctx.out(), "[{}, {}, hash: {}]",
                          open3d::visualization::rendering::REHandle_abstract::
                                  TypeToString(uid.type),

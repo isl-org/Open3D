@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -34,18 +34,29 @@ public:
     }
 };
 
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_drawable_geometry_class(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_image(py::module& m);
-void pybind_pointcloud(py::module& m);
-void pybind_lineset(py::module& m);
-void pybind_trianglemesh(py::module& m);
-void pybind_image(py::module& m);
-void pybind_boundingvolume(py::module& m);
-void pybind_voxel_block_grid(py::module& m);
-void pybind_raycasting_scene(py::module& m);
+void pybind_geometry_declarations(py::module& m);
+void pybind_geometry_class_declarations(py::module& m);
+void pybind_drawable_geometry_class_declarations(py::module& m);
+void pybind_tensormap_declarations(py::module& m);
+void pybind_pointcloud_declarations(py::module& m);
+void pybind_lineset_declarations(py::module& m);
+void pybind_trianglemesh_declarations(py::module& m);
+void pybind_image_declarations(py::module& m);
+void pybind_boundingvolume_declarations(py::module& m);
+void pybind_voxel_block_grid_declarations(py::module& m);
+void pybind_raycasting_scene_declarations(py::module& m);
+
+void pybind_geometry_definitions(py::module& m);
+void pybind_geometry_class_definitions(py::module& m);
+void pybind_drawable_geometry_class_definitions(py::module& m);
+void pybind_tensormap_definitions(py::module& m);
+void pybind_pointcloud_definitions(py::module& m);
+void pybind_lineset_definitions(py::module& m);
+void pybind_trianglemesh_definitions(py::module& m);
+void pybind_image_definitions(py::module& m);
+void pybind_boundingvolume_definitions(py::module& m);
+void pybind_voxel_block_grid_definitions(py::module& m);
+void pybind_raycasting_scene_definitions(py::module& m);
 
 }  // namespace geometry
 }  // namespace t

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
@@ -39,10 +39,9 @@ using PyCauchyLoss = PyRobustKernelT<CauchyLoss>;
 using PyGMLoss = PyRobustKernelT<GMLoss>;
 using PyTukeyLoss = PyRobustKernelT<TukeyLoss>;
 
-void pybind_robust_kernels(py::module &m) {
-    // open3d.registration.RobustKernel
+void pybind_robust_kernels_declarations(py::module &m_registration) {
     py::class_<RobustKernel, std::shared_ptr<RobustKernel>, PyRobustKernel> rk(
-            m, "RobustKernel",
+            m_registration, "RobustKernel",
             R"(
 Base class that models a robust kernel for outlier rejection. The virtual
 function ``weight()`` must be implemented in derived classes.
@@ -114,16 +113,8 @@ Philippe Babin et al.
 For more information please also see: **"Adaptive Robust Kernels for
 Non-Linear Least Squares Problems"**, by Nived Chebrolu et al.
 )");
-    rk.def("weight", &RobustKernel::Weight, "residual"_a,
-           "Obtain the weight for the given residual according to the "
-           "robust kernel model.");
-    docstring::ClassMethodDocInject(
-            m, "RobustKernel", "weight",
-            {{"residual", "value obtained during the optimization problem"}});
-
-    // open3d.registration.L2Loss
     py::class_<L2Loss, std::shared_ptr<L2Loss>, PyL2Loss, RobustKernel> l2_loss(
-            m, "L2Loss",
+            m_registration, "L2Loss",
             R"(
 The loss :math:`\rho(r)` for a given residual ``r`` is given by:
 
@@ -133,16 +124,8 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
 
 .. math:: w(r) = 1
 )");
-    py::detail::bind_default_constructor<L2Loss>(l2_loss);
-    py::detail::bind_copy_functions<L2Loss>(l2_loss);
-    l2_loss.def("__repr__", [](const L2Loss &rk) {
-        (void)rk;
-        return "RobustKernel::L2Loss";
-    });
-
-    // open3d.registration.L1Loss:RobustKernel
     py::class_<L1Loss, std::shared_ptr<L1Loss>, PyL1Loss, RobustKernel> l1_loss(
-            m, "L1Loss",
+            m_registration, "L1Loss",
             R"(
 The loss :math:`\rho(r)` for a given residual ``r`` is given by:
 
@@ -152,16 +135,8 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
 
 .. math:: w(r) = \frac{1}{|r|}
 )");
-    py::detail::bind_default_constructor<L1Loss>(l1_loss);
-    py::detail::bind_copy_functions<L1Loss>(l1_loss);
-    l1_loss.def("__repr__", [](const L1Loss &rk) {
-        (void)rk;
-        return "RobustKernel::L1Loss";
-    });
-
-    // open3d.registration.HuberLoss
     py::class_<HuberLoss, std::shared_ptr<HuberLoss>, PyHuberLoss, RobustKernel>
-            h_loss(m, "HuberLoss",
+            h_loss(m_registration, "HuberLoss",
                    R"(
 The loss :math:`\rho(r)` for a given residual ``r`` is:
 
@@ -185,21 +160,9 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
     \end{cases}
   \end{equation}
 )");
-    py::detail::bind_copy_functions<HuberLoss>(h_loss);
-    h_loss.def(py::init(
-                       [](double k) { return std::make_shared<HuberLoss>(k); }),
-               "k"_a)
-            .def("__repr__",
-                 [](const HuberLoss &rk) {
-                     return std::string("RobustKernel::HuberLoss with k=") +
-                            std::to_string(rk.k_);
-                 })
-            .def_readwrite("k", &HuberLoss::k_, "Parameter of the loss");
-
-    // open3d.registration.CauchyLoss
     py::class_<CauchyLoss, std::shared_ptr<CauchyLoss>, PyCauchyLoss,
                RobustKernel>
-            c_loss(m, "CauchyLoss",
+            c_loss(m_registration, "CauchyLoss",
                    R"(
 The loss :math:`\rho(r)` for a given residual ``r`` is:
 
@@ -217,21 +180,8 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
     \frac{1}{1 + \left(\frac{r}{k}\right)^2}
   \end{equation}
 )");
-    py::detail::bind_copy_functions<CauchyLoss>(c_loss);
-    c_loss.def(py::init([](double k) {
-                   return std::make_shared<CauchyLoss>(k);
-               }),
-               "k"_a)
-            .def("__repr__",
-                 [](const CauchyLoss &rk) {
-                     return std::string("RobustKernel::CauchyLoss with k=") +
-                            std::to_string(rk.k_);
-                 })
-            .def_readwrite("k", &CauchyLoss::k_, "Parameter of the loss.");
-
-    // open3d.registration.GMLoss
     py::class_<GMLoss, std::shared_ptr<GMLoss>, PyGMLoss, RobustKernel> gm_loss(
-            m, "GMLoss",
+            m_registration, "GMLoss",
             R"(
 The loss :math:`\rho(r)` for a given residual ``r`` is:
 
@@ -249,19 +199,8 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
     \frac{k}{\left(k + r^2\right)^2}
   \end{equation}
 )");
-    py::detail::bind_copy_functions<GMLoss>(gm_loss);
-    gm_loss.def(py::init([](double k) { return std::make_shared<GMLoss>(k); }),
-                "k"_a)
-            .def("__repr__",
-                 [](const GMLoss &rk) {
-                     return std::string("RobustKernel::GMLoss with k=") +
-                            std::to_string(rk.k_);
-                 })
-            .def_readwrite("k", &GMLoss::k_, "Parameter of the loss.");
-
-    // open3d.registration.TukeyLoss:RobustKernel
     py::class_<TukeyLoss, std::shared_ptr<TukeyLoss>, PyTukeyLoss, RobustKernel>
-            t_loss(m, "TukeyLoss",
+            t_loss(m_registration, "TukeyLoss",
                    R"(
 The loss :math:`\rho(r)` for a given residual ``r`` is:
 
@@ -285,6 +224,92 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
     \end{cases}
   \end{equation}
 )");
+}
+void pybind_robust_kernels_definitions(py::module &m_registration) {
+    // open3d.registration.RobustKernel
+    auto rk =
+            static_cast<py::class_<RobustKernel, std::shared_ptr<RobustKernel>,
+                                   PyRobustKernel>>(
+                    m_registration.attr("RobustKernel"));
+    rk.def("weight", &RobustKernel::Weight, "residual"_a,
+           "Obtain the weight for the given residual according to the "
+           "robust kernel model.");
+    docstring::ClassMethodDocInject(
+            m_registration, "RobustKernel", "weight",
+            {{"residual", "value obtained during the optimization problem"}});
+
+    // open3d.registration.L2Loss
+    auto l2_loss = static_cast<py::class_<L2Loss, std::shared_ptr<L2Loss>,
+                                          PyL2Loss, RobustKernel>>(
+            m_registration.attr("L2Loss"));
+    py::detail::bind_default_constructor<L2Loss>(l2_loss);
+    py::detail::bind_copy_functions<L2Loss>(l2_loss);
+    l2_loss.def("__repr__", [](const L2Loss &rk) {
+        (void)rk;
+        return "RobustKernel::L2Loss";
+    });
+
+    // open3d.registration.L1Loss:RobustKernel
+    auto l1_loss = static_cast<py::class_<L1Loss, std::shared_ptr<L1Loss>,
+                                          PyL1Loss, RobustKernel>>(
+            m_registration.attr("L1Loss"));
+    py::detail::bind_default_constructor<L1Loss>(l1_loss);
+    py::detail::bind_copy_functions<L1Loss>(l1_loss);
+    l1_loss.def("__repr__", [](const L1Loss &rk) {
+        (void)rk;
+        return "RobustKernel::L1Loss";
+    });
+
+    // open3d.registration.HuberLoss
+    auto h_loss = static_cast<py::class_<HuberLoss, std::shared_ptr<HuberLoss>,
+                                         PyHuberLoss, RobustKernel>>(
+            m_registration.attr("HuberLoss"));
+    py::detail::bind_copy_functions<HuberLoss>(h_loss);
+    h_loss.def(py::init(
+                       [](double k) { return std::make_shared<HuberLoss>(k); }),
+               "k"_a)
+            .def("__repr__",
+                 [](const HuberLoss &rk) {
+                     return std::string("RobustKernel::HuberLoss with k=") +
+                            std::to_string(rk.k_);
+                 })
+            .def_readwrite("k", &HuberLoss::k_, "Parameter of the loss");
+
+    // open3d.registration.CauchyLoss
+    auto c_loss =
+            static_cast<py::class_<CauchyLoss, std::shared_ptr<CauchyLoss>,
+                                   PyCauchyLoss, RobustKernel>>(
+                    m_registration.attr("CauchyLoss"));
+    py::detail::bind_copy_functions<CauchyLoss>(c_loss);
+    c_loss.def(py::init([](double k) {
+                   return std::make_shared<CauchyLoss>(k);
+               }),
+               "k"_a)
+            .def("__repr__",
+                 [](const CauchyLoss &rk) {
+                     return std::string("RobustKernel::CauchyLoss with k=") +
+                            std::to_string(rk.k_);
+                 })
+            .def_readwrite("k", &CauchyLoss::k_, "Parameter of the loss.");
+
+    // open3d.registration.GMLoss
+    auto gm_loss = static_cast<py::class_<GMLoss, std::shared_ptr<GMLoss>,
+                                          PyGMLoss, RobustKernel>>(
+            m_registration.attr("GMLoss"));
+    py::detail::bind_copy_functions<GMLoss>(gm_loss);
+    gm_loss.def(py::init([](double k) { return std::make_shared<GMLoss>(k); }),
+                "k"_a)
+            .def("__repr__",
+                 [](const GMLoss &rk) {
+                     return std::string("RobustKernel::GMLoss with k=") +
+                            std::to_string(rk.k_);
+                 })
+            .def_readwrite("k", &GMLoss::k_, "Parameter of the loss.");
+
+    // open3d.registration.TukeyLoss:RobustKernel
+    auto t_loss = static_cast<py::class_<TukeyLoss, std::shared_ptr<TukeyLoss>,
+                                         PyTukeyLoss, RobustKernel>>(
+            m_registration.attr("TukeyLoss"));
     py::detail::bind_copy_functions<TukeyLoss>(t_loss);
     t_loss.def(py::init(
                        [](double k) { return std::make_shared<TukeyLoss>(k); }),

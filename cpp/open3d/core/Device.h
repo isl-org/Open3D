@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -98,6 +98,10 @@ public:
 
     inline bool IsCUDA() const {
         return GetDevice().GetType() == Device::DeviceType::CUDA;
+    }
+
+    inline bool IsSYCL() const {
+        return GetDevice().GetType() == Device::DeviceType::SYCL;
     }
 };
 

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -337,6 +337,12 @@ public:
     /// \return Rotated line set.
     LineSet &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Assigns uniform color to all lines of the LineSet.
+    ///
+    /// \param color RGB color for the LineSet. {3,} shaped Tensor.
+    /// Floating color values are clipped between 0.0 and 1.0.
+    LineSet &PaintUniformColor(const core::Tensor &color);
+
     /// \brief Returns the device attribute of this LineSet.
     core::Device GetDevice() const override { return device_; }
 
@@ -384,6 +390,22 @@ public:
     TriangleMesh ExtrudeLinear(const core::Tensor &vector,
                                double scale = 1.0,
                                bool capping = true) const;
+
+    /// Factory function to create a LineSet from intrinsic and extrinsic
+    /// matrices.
+    ///
+    /// \param view_width_px The width of the view, in pixels.
+    /// \param view_height_px The height of the view, in pixels.
+    /// \param intrinsic The intrinsic matrix {3,3} shape.
+    /// \param extrinsic The extrinsic matrix {4,4} shape.
+    /// \param scale camera scale
+    /// \param color tensor with float32 dtype and shape {3}. Default is blue.
+    static LineSet CreateCameraVisualization(int view_width_px,
+                                             int view_height_px,
+                                             const core::Tensor &intrinsic,
+                                             const core::Tensor &extrinsic,
+                                             double scale,
+                                             const core::Tensor &color = {});
 
 protected:
     core::Device device_ = core::Device("CPU:0");

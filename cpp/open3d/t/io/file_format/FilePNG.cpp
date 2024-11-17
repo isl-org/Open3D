@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -41,6 +41,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     pngimage.version = PNG_IMAGE_VERSION;
     if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
         utility::LogWarning("Read PNG failed: unable to parse header.");
+        image.Clear();
         return false;
     }
 
@@ -64,6 +65,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
         utility::LogWarning("Read PNG failed: unable to read file: {}",
                             filename);
         utility::LogWarning("PNG error: {}", pngimage.message);
+        image.Clear();
         return false;
     }
     return true;
@@ -141,7 +143,7 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
     buffer.resize(mem_bytes);
     if (png_image_write_to_memory(&pngimage, &buffer[0], &mem_bytes, 0,
                                   image.GetDataPtr(), 0, nullptr) == 0) {
-        utility::LogWarning("Unable to encode to encode to PNG in memory.");
+        utility::LogWarning("Unable to encode to PNG in memory.");
         return false;
     }
     return true;

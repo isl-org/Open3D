@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -54,10 +54,18 @@ static const std::unordered_map<std::string, std::string>
                  "--trunc_voxel_multiplier=8 with --voxel_size=0.006(m) "
                  "creates a truncation distance of 0.048(m)."}};
 
-void pybind_slam_model(py::module &m) {
-    py::class_<Model> model(m, "Model", "Volumetric model for Dense SLAM.");
+void pybind_slam_declarations(py::module &m) {
+    py::module m_slam = m.def_submodule("slam", "Tensor DenseSLAM pipeline.");
+    py::class_<Model> model(m_slam, "Model",
+                            "Volumetric model for Dense SLAM.");
+    py::class_<Frame> frame(m_slam, "Frame",
+                            "A frame container that stores a map from keys "
+                            "(color, depth) to tensor images.");
+}
+void pybind_slam_definitions(py::module &m) {
+    auto m_slam = static_cast<py::module>(m.attr("slam"));
+    auto model = static_cast<py::class_<Model>>(m_slam.attr("Model"));
     py::detail::bind_copy_functions<Model>(model);
-
     model.def(py::init<>());
     model.def(py::init<float, int, int, core::Tensor, core::Device>(),
               "Constructor of a VoxelBlockGrid", "voxel_size"_a,
@@ -65,7 +73,7 @@ void pybind_slam_model(py::module &m) {
               "transformation"_a = core::Tensor::Eye(4, core::Float64,
                                                      core::Device("CPU:0")),
               "device"_a = core::Device("CUDA:0"));
-    docstring::ClassMethodDocInject(m, "Model", "__init__",
+    docstring::ClassMethodDocInject(m_slam, "Model", "__init__",
                                     map_shared_argument_docstrings);
 
     model.def("get_current_frame_pose", &Model::GetCurrentFramePose);
@@ -77,7 +85,7 @@ void pybind_slam_model(py::module &m) {
               "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
               "depth_max"_a = 3.0, "trunc_voxel_multiplier"_a = 8.0,
               "enable_color"_a = false, "weight_threshold"_a = -1.0);
-    docstring::ClassMethodDocInject(m, "Model", "synthesize_model_frame",
+    docstring::ClassMethodDocInject(m_slam, "Model", "synthesize_model_frame",
                                     map_shared_argument_docstrings);
 
     model.def(
@@ -89,7 +97,7 @@ void pybind_slam_model(py::module &m) {
             "method"_a = odometry::Method::PointToPlane,
             "criteria"_a = (std::vector<odometry::OdometryConvergenceCriteria>){
                     6, 3, 1});
-    docstring::ClassMethodDocInject(m, "Model", "track_frame_to_model",
+    docstring::ClassMethodDocInject(m_slam, "Model", "track_frame_to_model",
                                     map_shared_argument_docstrings);
 
     model.def("integrate", &Model::Integrate,
@@ -97,21 +105,21 @@ void pybind_slam_model(py::module &m) {
               "Integrate an input frame to a volume.", "input_frame"_a,
               "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
               "trunc_voxel_multiplier"_a = 8.0);
-    docstring::ClassMethodDocInject(m, "Model", "integrate",
+    docstring::ClassMethodDocInject(m_slam, "Model", "integrate",
                                     map_shared_argument_docstrings);
 
     model.def("extract_pointcloud", &Model::ExtractPointCloud,
               py::call_guard<py::gil_scoped_release>(),
               "Extract point cloud from the volumetric model.",
               "weight_threshold"_a = 3.0, "estimated_number"_a = -1);
-    docstring::ClassMethodDocInject(m, "Model", "extract_pointcloud",
+    docstring::ClassMethodDocInject(m_slam, "Model", "extract_pointcloud",
                                     map_shared_argument_docstrings);
 
     model.def("extract_trianglemesh", &Model::ExtractTriangleMesh,
               py::call_guard<py::gil_scoped_release>(),
               "Extract triangle mesh from the volumetric model.",
               "weight_threshold"_a = 3.0, "estimated_number"_a = -1);
-    docstring::ClassMethodDocInject(m, "Model", "extract_trianglemesh",
+    docstring::ClassMethodDocInject(m_slam, "Model", "extract_trianglemesh",
                                     map_shared_argument_docstrings);
 
     model.def(
@@ -127,17 +135,12 @@ void pybind_slam_model(py::module &m) {
                         "frame to the world frame.");
     model.def_readwrite("frame_id", &Model::frame_id_,
                         "Get the current frame index in a sequence.");
-}
-
-void pybind_slam_frame(py::module &m) {
-    py::class_<Frame> frame(m, "Frame",
-                            "A frame container that stores a map from keys "
-                            "(color, depth) to tensor images.");
+    auto frame = static_cast<py::class_<Frame>>(m_slam.attr("Frame"));
     py::detail::bind_copy_functions<Frame>(frame);
 
     frame.def(py::init<int, int, core::Tensor, core::Device>(), "height"_a,
               "width"_a, "intrinsics"_a, "device"_a);
-    docstring::ClassMethodDocInject(m, "Frame", "__init__",
+    docstring::ClassMethodDocInject(m_slam, "Frame", "__init__",
                                     map_shared_argument_docstrings);
 
     frame.def("height", &Frame::GetHeight);
@@ -151,13 +154,6 @@ void pybind_slam_frame(py::module &m) {
               "Set a 2D image to the given key in the map.");
     frame.def("get_data_as_image", &Frame::GetDataAsImage,
               "Get a 2D image from from the given key in the map.");
-}
-
-void pybind_slam(py::module &m) {
-    py::module m_submodule =
-            m.def_submodule("slam", "Tensor DenseSLAM pipeline.");
-    pybind_slam_model(m_submodule);
-    pybind_slam_frame(m_submodule);
 }
 
 }  // namespace slam

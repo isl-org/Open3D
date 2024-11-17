@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -169,6 +169,25 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
     lines->lines_.push_back({3, 4});
     lines->lines_.push_back({4, 1});
     lines->PaintUniformColor({0.0f, 0.0f, 1.0f});
+
+    // Add XYZ axes
+    lines->points_.push_back(
+            mult(m, Eigen::Vector3d{intrinsic(0, 0) * scale, 0.0, 0.0}));
+    lines->points_.push_back(
+            mult(m, Eigen::Vector3d{0.0, intrinsic(1, 1) * scale, 0.0}));
+    lines->points_.push_back(
+            mult(m, Eigen::Vector3d{intrinsic(0, 2) * scale,
+                                    intrinsic(1, 2) * scale, scale}));
+
+    // Add lines for the axes
+    lines->lines_.push_back({0, 5});  // X axis (red)
+    lines->lines_.push_back({0, 6});  // Y axis (green)
+    lines->lines_.push_back({0, 7});  // Z axis (blue)
+
+    // Set colors for the axes
+    lines->colors_.push_back({1.0f, 0.0f, 0.0f});  // Red
+    lines->colors_.push_back({0.0f, 1.0f, 0.0f});  // Green
+    lines->colors_.push_back({0.0f, 0.0f, 1.0f});  // Blue
 
     return lines;
 }

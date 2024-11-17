@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -456,3 +456,45 @@ protected:
 }  // namespace webrtc_server
 }  // namespace visualization
 }  // namespace open3d
+
+namespace fmt {
+
+template <>
+struct formatter<webrtc::PeerConnectionInterface::SignalingState> {
+    template <typename FormatContext>
+    auto format(const webrtc::PeerConnectionInterface::SignalingState& state,
+                FormatContext& ctx) const -> decltype(ctx.out()) {
+        using namespace webrtc;
+        const char* text = nullptr;
+        switch (state) {
+            case PeerConnectionInterface::SignalingState::kStable:
+                text = "kStable";
+                break;
+            case PeerConnectionInterface::SignalingState::kHaveLocalOffer:
+                text = "kHaveLocalOffer";
+                break;
+            case PeerConnectionInterface::SignalingState::kHaveLocalPrAnswer:
+                text = "kHaveLocalPrAnswer";
+                break;
+            case PeerConnectionInterface::SignalingState::kHaveRemoteOffer:
+                text = "kHaveRemoteOffer";
+                break;
+            case PeerConnectionInterface::SignalingState::kHaveRemotePrAnswer:
+                text = "kHaveRemotePrAnswer";
+                break;
+            case PeerConnectionInterface::SignalingState::kClosed:
+                text = "kClosed";
+                break;
+            default:
+                text = "unknown";
+        }
+        return format_to(ctx.out(), "{}", text);
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+};
+
+}  // namespace fmt
