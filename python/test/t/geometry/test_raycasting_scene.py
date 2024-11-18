@@ -120,8 +120,7 @@ def test_test_lots_of_occlusions(device):
 
 @pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_add_triangle_mesh(device):
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = o3d.t.geometry.TriangleMesh.create_box()
     cube = cube.to(device)
 
     scene = o3d.t.geometry.RaycastingScene(device=device)
@@ -138,8 +137,7 @@ def test_add_triangle_mesh(device):
 
 @pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_count_intersections(device):
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
     vertex_positions = vertex_positions.to(device)
     triangle_indices = cube.triangle.indices
@@ -162,8 +160,7 @@ def test_count_intersections(device):
 # we expect no errors for this test
 @pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_count_lots_of_intersections(device):
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
     vertex_positions = vertex_positions.to(device)
     triangle_indices = cube.triangle.indices
@@ -182,8 +179,7 @@ def test_count_lots_of_intersections(device):
 
 @pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_list_intersections(device):
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
     vertex_positions = vertex_positions.to(device)
     triangle_indices = cube.triangle.indices
@@ -209,8 +205,7 @@ def test_list_intersections(device):
 # we expect no errors for this test
 @pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_list_lots_of_intersections(device):
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
     vertex_positions = vertex_positions.to(device)
     triangle_indices = cube.triangle.indices
@@ -264,8 +259,7 @@ def test_compute_lots_of_closest_points():
 
 
 def test_compute_distance():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = o3d.t.geometry.TriangleMesh.create_box()
 
     scene = o3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -278,8 +272,7 @@ def test_compute_distance():
 
 
 def test_compute_signed_distance():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = o3d.t.geometry.TriangleMesh.create_box()
 
     scene = o3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -292,8 +285,7 @@ def test_compute_signed_distance():
 
 
 def test_compute_occupancy():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy(
-        o3d.geometry.TriangleMesh.create_box())
+    cube = o3d.t.geometry.TriangleMesh.create_box()
 
     scene = o3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -378,8 +370,7 @@ def test_sphere_wrong_occupancy():
     # This test checks a specific scenario where the old implementation
     # without ray jitter produced wrong results for a sphere because some
     # rays miss hitting exactly a vertex or an edge.
-    mesh = o3d.geometry.TriangleMesh.create_sphere(0.8)
-    mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
+    mesh = o3d.t.geometry.TriangleMesh.create_sphere(0.8)
 
     scene = o3d.t.geometry.RaycastingScene()
     scene.add_triangles(mesh)
