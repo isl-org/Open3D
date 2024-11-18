@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@ std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
             (std::string("Open3D ") + OPEN3D_VERSION).c_str());
     auto text = std::make_shared<gui::Label>(
             "The MIT License (MIT)\n"
-            "Copyright (c) 2018-2023 www.open3d.org\n\n"
+            "Copyright (c) 2018-2024 www.open3d.org\n\n"
 
             "Permission is hereby granted, free of charge, to any person "
             "obtaining a copy of this software and associated documentation "

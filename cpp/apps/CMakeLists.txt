@@ -18,7 +18,7 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2023 www.open3d.org")
+        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2024 www.open3d.org")
     endif()
 
     # Copy the resource files. This needs to be done as a post-build step
