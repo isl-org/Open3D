@@ -103,6 +103,8 @@ class PyAPIDocsBuilder:
             import open3d.ml.tf
         if open3d._build_config['BUILD_PYTORCH_OPS']:
             import open3d.ml.torch
+        if open3d._build_config['BUILD_PADDLE_OPS']:
+            import open3d.ml.paddle
 
         try:
             # Try to import directly. This will work for pure python submodules
