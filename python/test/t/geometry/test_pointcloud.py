@@ -204,9 +204,11 @@ def test_metrics():
 
     metric_params = MetricParameters(
         fscore_radius=o3d.utility.FloatVector((0.05, 0.15)))
-    metrics = pcd1.compute_distance(pcd2,
-                                    (Metric.ChamferDistance, Metric.FScore),
-                                    metric_params)
+    metrics = pcd1.compute_metrics(
+        pcd2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
+        metric_params)
 
     print(metrics)
-    np.testing.assert_allclose(metrics, (0.03, 200. / 3, 100), rtol=1e-6)
+    np.testing.assert_allclose(metrics.cpu().numpy(),
+                               (0.06, 0.12, 200. / 3, 100),
+                               rtol=1e-6)

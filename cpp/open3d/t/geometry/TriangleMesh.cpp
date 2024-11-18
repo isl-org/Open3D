@@ -1591,10 +1591,9 @@ PointCloud TriangleMesh::SamplePointsUniformly(
     return pcd.To(GetDevice());
 }
 
-std::vector<float> TriangleMesh::ComputeDistance(
-        const TriangleMesh &mesh2,
-        std::vector<Metric> metrics,
-        MetricParameters params) const {
+core::Tensor TriangleMesh::ComputeMetrics(const TriangleMesh &mesh2,
+                                          std::vector<Metric> metrics,
+                                          MetricParameters params) const {
     if (!IsCPU() || !mesh2.IsCPU()) {
         utility::LogWarning(
                 "ComputeDistance is implemented only on CPU. Computing on "
@@ -1616,7 +1615,7 @@ std::vector<float> TriangleMesh::ComputeDistance(
     core::Tensor distance21 = scene1.ComputeDistance(points2);
     core::Tensor distance12 = scene2.ComputeDistance(points1);
 
-    return ComputeDistanceCommon(distance12, distance21, metrics, params);
+    return ComputeMetricsCommon(distance12, distance21, metrics, params);
 }
 
 }  // namespace geometry

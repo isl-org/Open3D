@@ -13,20 +13,32 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-std::vector<float> ComputeDistanceCommon(core::Tensor distance12,
-                                         core::Tensor distance21,
-                                         std::vector<Metric> metrics,
-                                         MetricParameters params) {
-    std::vector<float> metric_values;
+core::Tensor ComputeMetricsCommon(core::Tensor distance12,
+                                  core::Tensor distance21,
+                                  std::vector<Metric> metrics,
+                                  MetricParameters params) {
+    int n_metrics = metrics.size();
+    if (std::find(metrics.begin(), metrics.end(), Metric::FScore) !=
+        metrics.end()) {
+        n_metrics += params.fscore_radius.size() - 1;
+    }
+    core::Tensor metric_values({n_metrics}, core::Float32,
+                               distance12.GetDevice());
     float metric_val;
 
+    int idx = 0;
     for (Metric metric : metrics) {
         switch (metric) {
             case Metric::ChamferDistance:
-                metric_val = 0.5 *
-                             (distance21.Reshape({-1}).Mean({0}).Item<float>() +
+                metric_val = (distance21.Reshape({-1}).Mean({0}).Item<float>() +
                               distance12.Reshape({-1}).Mean({0}).Item<float>());
-                metric_values.push_back(metric_val);
+                metric_values[idx++] = metric_val;
+                break;
+            case Metric::HausdorffDistance:
+                metric_val = std::max(
+                        distance12.Reshape({-1}).Max({0}).Item<float>(),
+                        distance21.Reshape({-1}).Max({0}).Item<float>());
+                metric_values[idx++] = metric_val;
                 break;
             case Metric::FScore:
                 float *p_distance12 = distance12.GetDataPtr<float>(),
@@ -46,7 +58,7 @@ std::vector<float> ComputeDistanceCommon(core::Tensor distance12,
                     if (precision + recall > 0) {
                         fscore = 2 * precision * recall / (precision + recall);
                     }
-                    metric_values.push_back(fscore);
+                    metric_values[idx++] = fscore;
                 }
                 break;
         }

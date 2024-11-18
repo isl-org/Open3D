@@ -92,8 +92,9 @@ private:
 };
 /// Metrics for comparing point clouds and triangle meshes.
 enum class Metric {
-    ChamferDistance,  ///< Chamfer Distance
-    FScore            ///< F-Score
+    ChamferDistance,    ///< Chamfer Distance
+    HausdorffDistance,  ///< Hausdorff Distance
+    FScore              ///< F-Score
 };
 
 /// Holder for various parameters required by metrics

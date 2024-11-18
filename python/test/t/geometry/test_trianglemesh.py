@@ -1404,9 +1404,10 @@ def test_metrics():
     metric_params = MetricParameters(fscore_radius=o3d.utility.FloatVector(
         (0.05, 0.15)),
                                      n_sampled_points=100000)
-    metrics = box1.compute_distance(box2,
-                                    (Metric.ChamferDistance, Metric.FScore),
-                                    metric_params)
+    metrics = box1.compute_metrics(
+        box2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
+        metric_params)
 
     print(metrics)
-    np.testing.assert_allclose(metrics, (0.1, 45, 53.2), rtol=0.05)
+    np.testing.assert_allclose(metrics.cpu().numpy(), (0.2, 0.34, 45, 53.2),
+                               rtol=0.05)

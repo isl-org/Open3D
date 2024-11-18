@@ -323,7 +323,7 @@ Args:
         generated. The value describes the signed distance to the plane.
 
 Returns:
-    LineSet with he extracted contours.
+    LineSet with the extracted contours.
 
 
 This example shows how to create a hemisphere from a sphere::
@@ -1049,7 +1049,7 @@ Returns:
 
 Example:
 
-    This code computes the overall surface area of a box:
+    This code computes the overall surface area of a box::
 
         import open3d as o3d
         box = o3d.t.geometry.TriangleMesh.create_box()
@@ -1094,14 +1094,26 @@ Example::
     )");
 
     triangle_mesh.def(
-            "compute_distance", &TriangleMesh::ComputeDistance, "mesh2"_a,
+            "compute_metrics", &TriangleMesh::ComputeMetrics, "mesh2"_a,
             "metrics"_a, "params"_a,
-            R"(Compute various distances / metrics between two triangle meshes.  Currently, Chamfer distance and F-Score are supported. This uses ray casting for distance computations between a triangle mesh and a sampled point cloud.
+            R"(Compute various metrics between two triangle meshes. This uses ray casting for distance computations between a sampled point cloud and a triangle mesh. Currently, Chamfer distance, Hausdorff distance  and F-Score [\\[Knapitsch2017\\]](../tutorial/reference.html#Knapitsch2017) are supported. The Chamfer distance is the sum of the mean distance to the nearest neighbor from the sampled surface points of the first mesh to the second mesh and vice versa. The F-Score at the fixed threshold radius is the harmonic mean of the Precision and Recall. Recall is the percentage of surface points from the first mesh that have the second mesh within the threshold radius, while Precision is the percentage of sampled points from the second mesh that have the first mesh surface within the threhold radius.
+
+    .. math::
+        \text{Chamfer Distance: } d_{CD}(X,Y) = \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) ||\\
+        \text{Hausdorff distance: } d_H(X,Y) = \max \left{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right}\\
+        \text{Precision: } P(X,Y|d) = \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\
+        \text{Recall: } R(X,Y|d) = \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\
+        \text{F-Score: } F(X,Y|d) = \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \\
+
+As a side effect, the triangle areas are saved in the "areas" attribute.
 
 Args:
-    mesh2 (t.geometry.TriangleMesh): Other point cloud to compare with.
+    mesh2 (t.geometry.TriangleMesh): Other triangle mesh to compare with.
     metrics (Sequence[t.geometry.Metric]): List of Metric s to compute. Multiple metrics can be computed at once for efficiency.
-    params (t.geometry.MetricParameters): This holds parameters required by different metrics.)");
+    params (t.geometry.MetricParameters): This holds parameters required by different metrics.
+
+Returns:
+    Tensor containing the requested metrics.)");
 }
 
 }  // namespace geometry

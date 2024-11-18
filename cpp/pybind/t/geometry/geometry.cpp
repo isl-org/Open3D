@@ -47,10 +47,13 @@ void pybind_geometry_declarations(py::module& m) {
     py::module m_geometry = m.def_submodule(
             "geometry", "Tensor-based geometry defining module.");
 
-    py::enum_<Metric>(m_geometry, "Metric",
-                      "Metrics for comparing point clouds and triangle meshes.")
+    py::enum_<Metric>(
+            m_geometry, "Metric",
+            "Enum for metrics for comparing point clouds and triangle meshes.")
             .value("ChamferDistance", Metric::ChamferDistance,
                    "Chamfer Distance")
+            .value("HausdorffDistance", Metric::HausdorffDistance,
+                   "Hausdorff Distance")
             .value("FScore", Metric::FScore, "F-Score")
             .export_values();
     py::bind_vector<std::vector<Metric>>(m_geometry, "VectorMetric");

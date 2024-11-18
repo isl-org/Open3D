@@ -1332,9 +1332,9 @@ int PointCloud::PCAPartition(int max_points) {
     return num_partitions;
 }
 
-std::vector<float> PointCloud::ComputeDistance(const PointCloud &pcd2,
-                                               std::vector<Metric> metrics,
-                                               MetricParameters params) const {
+core::Tensor PointCloud::ComputeMetrics(const PointCloud &pcd2,
+                                        std::vector<Metric> metrics,
+                                        MetricParameters params) const {
     if (!IsCPU() || !pcd2.IsCPU()) {
         utility::LogWarning(
                 "ComputeDistance is implemented only on CPU. Computing on "
@@ -1357,7 +1357,7 @@ std::vector<float> PointCloud::ComputeDistance(const PointCloud &pcd2,
     std::tie(indices12, distance12) = tree2.KnnSearch(points1, 1);
     std::tie(indices21, distance21) = tree2.KnnSearch(points2, 1);
 
-    return ComputeDistanceCommon(distance12, distance21, metrics, params);
+    return ComputeMetricsCommon(distance12, distance21, metrics, params);
 }
 
 }  // namespace geometry

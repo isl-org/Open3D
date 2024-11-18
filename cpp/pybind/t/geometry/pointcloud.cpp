@@ -770,14 +770,24 @@ Example:
 )");
 
     pointcloud.def(
-            "compute_distance", &PointCloud::ComputeDistance, "pcd2"_a,
+            "compute_metrics", &PointCloud::ComputeMetrics, "pcd2"_a,
             "metrics"_a, "params"_a,
-            R"(Compute various distances / metrics between two point clouds. Currently, Chamfer distance and F-Score are supported.
+            R"(Compute various metrics between two point clouds. Currently, Chamfer distance, Hausdorff distance and F-Score <a href="../tutorial/reference.html#Knapitsch2017">[[Knapitsch2017]]</a> are supported. The Chamfer distance is the sum of the mean distance to the nearest neighbor from the points of the first point cloud to the second point cloud. The F-Score at a fixed threshold radius is the harmonic mean of the Precision and Recall. Recall is the percentage of surface points from the first point cloud that have the second point cloud points within the threshold radius, while Precision is the percentage of points from the second point cloud that have the first point cloud points within the threhold radius.
+
+    .. math:
+        \text{Chamfer Distance: } d_{CD}(X,Y) = \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) ||\\
+        \text{Hausdorff distance: } d_H(X,Y) = \max \left{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right}\\
+        \text{Precision: } P(X,Y|d) = \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\
+        \text{Recall: } R(X,Y|d) = \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\
+        \text{F-Score: } F(X,Y|d) = \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \\
 
 Args:
     pcd2 (t.geometry.PointCloud): Other point cloud to compare with.
     metrics (Sequence[t.geometry.Metric]): List of Metric s to compute. Multiple metrics can be computed at once for efficiency.
-    params (t.geometry.MetricParameters): This holds parameters required by different metrics.)");
+    params (t.geometry.MetricParameters): This holds parameters required by different metrics.
+
+Returns:
+    Tensor containing the requested metrics.)");
 }
 
 }  // namespace geometry
