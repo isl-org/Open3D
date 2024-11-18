@@ -200,6 +200,49 @@ class ContinuousConv(paddle.nn.Layer):
                 user_neighbors_index=None,
                 user_neighbors_row_splits=None,
                 user_neighbors_importance=None):
+        """This function computes the output features.
+
+        Arguments:
+          inp_features: A 2D tensor which stores a feature vector for each input
+            point.
+
+          inp_positions: A 2D tensor with the 3D point positions of each input
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          out_positions: A 2D tensor with the 3D point positions of each output
+            point. The coordinates for each point is a vector with format [x,y,z].
+
+          extents: The extent defines the spatial size of the filter for each
+            output point.
+            For 'ball to cube' coordinate mappings the extent defines the
+            bounding box of the ball.
+            The shape of the tensor is either [1] or [num output points].
+
+          inp_importance: Optional scalar importance value for each input point.
+
+          fixed_radius_search_hash_table: A precomputed hash table generated with
+            build_spatial_hash_table().
+            This input can be used to explicitly force the reuse of a hash table in
+            special cases and is usually not needed.
+            Note that the hash table must have been generated with the same 'points'
+            array. Note that this parameter is only used if 'extents' is a scalar.
+
+          user_neighbors_index: This parameter together with 'user_neighbors_row_splits'
+            and 'user_neighbors_importance' allows to override the automatic neighbor
+            search. This is the list of neighbor indices for each output point.
+            This is a nested list for which the start and end of each sublist is
+            defined by 'user_neighbors_row_splits'.
+
+          user_neighbors_row_splits: Defines the start and end of each neighbors
+            list in 'user_neighbors_index'.
+
+          user_neighbors_importance: Defines a scalar importance value for each
+            element in 'user_neighbors_index'.
+
+
+        Returns: A tensor of shape [num output points, filters] with the output
+          features.
+        """
         offset = self.offset
         if isinstance(extents, (float, int)):
             extents = paddle.to_tensor(extents, dtype=inp_positions.dtype)

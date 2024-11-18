@@ -141,7 +141,8 @@ class PyAPIDocsBuilder:
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
         if not (full_module_name.startswith("open3d.ml.tf") or
-                full_module_name.startswith("open3d.ml.torch")):
+                full_module_name.startswith("open3d.ml.torch") or
+                full_module_name.startswith("open3d.ml.paddle")):
             out_string += "\n    :inherited-members:"
         out_string += "\n"
 
