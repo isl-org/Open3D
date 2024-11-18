@@ -30,14 +30,14 @@ core::Tensor ComputeMetricsCommon(core::Tensor distance12,
     for (Metric metric : metrics) {
         switch (metric) {
             case Metric::ChamferDistance:
-                metric_val = (distance21.Reshape({-1}).Mean({0}).Item<float>() +
-                              distance12.Reshape({-1}).Mean({0}).Item<float>());
+                metric_val = distance21.Reshape({-1}).Mean({-1}).Item<float>() +
+                             distance12.Reshape({-1}).Mean({-1}).Item<float>();
                 metric_values[idx++] = metric_val;
                 break;
             case Metric::HausdorffDistance:
                 metric_val = std::max(
-                        distance12.Reshape({-1}).Max({0}).Item<float>(),
-                        distance21.Reshape({-1}).Max({0}).Item<float>());
+                        distance12.Reshape({-1}).Max({-1}).Item<float>(),
+                        distance21.Reshape({-1}).Max({-1}).Item<float>());
                 metric_values[idx++] = metric_val;
                 break;
             case Metric::FScore:

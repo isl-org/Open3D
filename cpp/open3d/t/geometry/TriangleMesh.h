@@ -1036,17 +1036,17 @@ public:
 
     /// \f{eqnarray*}{
     ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
-    ///   || x_i - n(x_i, Y) || +
-    ///   \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) || \\
+    ///   || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X)
+    ///   || \\{}
     ///   \text{Hausdorff distance: } d_H(X,Y) &=& \max \left\{ \max_{i \in X}
     ///   || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}
-    ///   \\
+    ///   \\{}
     ///   \text{Precision: } P(X,Y|d) &=& \frac{100}{|X|} \sum_{i \in X} || x_i
-    ///   - n(x_i, Y) || < d \\
+    ///   - n(x_i, Y) || < d \\{}
     ///   \text{Recall: } R(X,Y|d) &=& \frac{100}{|Y|} \sum_{i \in Y} || y_i -
-    ///  n(y_i, X) || < d \\
+    ///  n(y_i, X) || < d \\{}
     ///   \text{F-Score: } F(X,Y|d) &=& \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) +
-    ///  R(X,Y|d)} \\
+    ///  R(X,Y|d)}
     /// \f}
 
     /// As a side effect, the triangle areas are saved in the "areas" attribute.

@@ -787,7 +787,30 @@ Args:
     params (t.geometry.MetricParameters): This holds parameters required by different metrics.
 
 Returns:
-    Tensor containing the requested metrics.)");
+    Tensor containing the requested metrics.
+
+Example::
+
+    from open3d.t.geometry import TriangleMesh, PointCloud, Metric, MetricParameters
+    # box is a cube with one vertex at the origin and a side length 1
+    pos = TriangleMesh.create_box().vertex.positions
+    pcd1 = PointCloud(pos.clone())
+    pcd2 = PointCloud(pos * 1.1)
+
+    # (1, 3, 3, 1) vertices are shifted by (0, 0.1, 0.1*sqrt(2), 0.1*sqrt(3))
+    # respectively
+    metric_params = MetricParameters(
+        fscore_radius=o3d.utility.FloatVector((0.01, 0.11, 0.15, 0.18)))
+    metrics = pcd1.compute_metrics(
+        pcd2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
+        metric_params)
+
+    print(metrics)
+    np.testing.assert_allclose(
+        metrics.cpu().numpy(),
+        (0.22436734, np.sqrt(3) / 10, 100. / 8, 400. / 8, 700. / 8, 100.),
+        rtol=1e-6)
+    )");
 }
 
 }  // namespace geometry

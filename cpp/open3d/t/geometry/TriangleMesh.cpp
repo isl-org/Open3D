@@ -1594,6 +1594,9 @@ PointCloud TriangleMesh::SamplePointsUniformly(
 core::Tensor TriangleMesh::ComputeMetrics(const TriangleMesh &mesh2,
                                           std::vector<Metric> metrics,
                                           MetricParameters params) const {
+    if (IsEmpty() || mesh2.IsEmpty()) {
+        utility::LogError("One or both input triangle meshes are empty!");
+    }
     if (!IsCPU() || !mesh2.IsCPU()) {
         utility::LogWarning(
                 "ComputeDistance is implemented only on CPU. Computing on "

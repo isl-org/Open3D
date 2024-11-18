@@ -13,10 +13,13 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+/// Common code for computing geometry metrics from pairwise point distances.
+/// This function expects Euclidean distances as input and returns the requested
+/// metrics between point clouds / meshes.
 core::Tensor ComputeMetricsCommon(core::Tensor distance12,
                                   core::Tensor distance21,
                                   std::vector<Metric> metrics,
                                   MetricParameters params);
-}
+}  // namespace geometry
 }  // namespace t
 }  // namespace open3d

@@ -1396,18 +1396,22 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
 
 def test_metrics():
 
-    from open3d.t.geometry import Metric, MetricParameters
-    box1 = o3d.t.geometry.TriangleMesh.create_box()
-    box2 = o3d.t.geometry.TriangleMesh.create_box()
-    box2.vertex.positions *= 1.2
+    from open3d.t.geometry import TriangleMesh, Metric, MetricParameters
+    # box is a cube with one vertex at the origin and a side length 1
+    box1 = TriangleMesh.create_box()
+    box2 = TriangleMesh.create_box()
+    box2.vertex.positions *= 1.1
 
+    # 3 faces of the cube are the same, and 3 are shifted up by 0.1 - raycast
+    # distances should follow this.
     metric_params = MetricParameters(fscore_radius=o3d.utility.FloatVector(
         (0.05, 0.15)),
                                      n_sampled_points=100000)
+    # n_sampled_points=100000)
     metrics = box1.compute_metrics(
         box2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
         metric_params)
 
     print(metrics)
-    np.testing.assert_allclose(metrics.cpu().numpy(), (0.2, 0.34, 45, 53.2),
+    np.testing.assert_allclose(metrics.cpu().numpy(), (0.1, 0.17, 50, 100),
                                rtol=0.05)
