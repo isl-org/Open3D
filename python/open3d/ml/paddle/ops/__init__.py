@@ -46,28 +46,11 @@ _lib_path.extend([
     for la in _lib_arch
 ])
 
-_loaded_lib = False
-_loaded_except = None
-for _lp in _lib_path:
-    try:
-        _load_lib_path = _lp
-        # load custom op shared library with abs path
-        _custom_ops = _paddle.utils.cpp_extension.load_op_meta_info_and_register_op(
-            _load_lib_path)
-        _loaded_lib = True
-
-        break
-
-    except Exception as e:
-        _loaded_except = e
-
-        if not _os.path.isfile(_lp):
-            print('The op library at "{}" was not found. Make sure that '
-                  'BUILD_PADDLE_OPS was enabled.'.format(
-                      _os.path.realpath(_lp)))
-
-if not _loaded_lib:
-    raise _loaded_except
+# only load first lib
+_load_lib_path = _lib_path[0]
+# load custom op shared library with abs path
+_custom_ops = _paddle.utils.cpp_extension.load_op_meta_info_and_register_op(
+    _load_lib_path)
 
 try:
     _spec = _importlib_util.spec_from_file_location(__name__, _load_lib_path)

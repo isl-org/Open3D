@@ -65,16 +65,4 @@ cd docker
 ./docker_test.sh openblas-amd64-py38-dev
 ```
 
-Build Docker for Paddle backend:
-
-```bash
-cd docker
-
-# Build Docker (dev).
-BUILD_CUDA_MODULE=ON ./docker_build.sh paddle_cuda_wheel_py310_dev
-
-# Build Docker (release).
-BUILD_CUDA_MODULE=ON ./docker_build.sh paddle_cuda_wheel_py310
-```
-
 See `./docker_build.sh` and `./docker_test.sh` for all available options.

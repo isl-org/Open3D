@@ -23,57 +23,53 @@ __usage_docker_build="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py38-dev      : OpenBLAS AMD64 3.8 wheel, developer mode
-    openblas-amd64-py39-dev      : OpenBLAS AMD64 3.9 wheel, developer mode
-    openblas-amd64-py310-dev     : OpenBLAS AMD64 3.10 wheel, developer mode
-    openblas-amd64-py311-dev     : OpenBLAS AMD64 3.11 wheel, developer mode
-    openblas-amd64-py38          : OpenBLAS AMD64 3.8 wheel, release mode
-    openblas-amd64-py39          : OpenBLAS AMD64 3.9 wheel, release mode
-    openblas-amd64-py310         : OpenBLAS AMD64 3.10 wheel, release mode
-    openblas-amd64-py311         : OpenBLAS AMD64 3.11 wheel, release mode
+    openblas-amd64-py38-dev     : OpenBLAS AMD64 3.8 wheel, developer mode
+    openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
+    openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
+    openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
+    openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
+    openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
+    openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
+    openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
-    openblas-arm64-py38-dev      : OpenBLAS ARM64 3.8 wheel, developer mode
-    openblas-arm64-py39-dev      : OpenBLAS ARM64 3.9 wheel, developer mode
-    openblas-arm64-py310-dev     : OpenBLAS ARM64 3.10 wheel, developer mode
-    openblas-arm64-py311-dev     : OpenBLAS ARM64 3.11 wheel, developer mode
-    openblas-arm64-py38          : OpenBLAS ARM64 3.8 wheel, release mode
-    openblas-arm64-py39          : OpenBLAS ARM64 3.9 wheel, release mode
-    openblas-arm64-py310         : OpenBLAS ARM64 3.10 wheel, release mode
-    openblas-arm64-py311         : OpenBLAS ARM64 3.11 wheel, release mode
+    openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
+    openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
+    openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
+    openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
+    openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
+    openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
+    openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
+    openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
-    cpu-static                   : Ubuntu CPU static
-    cpu-shared                   : Ubuntu CPU shared (cxx11_abi)
-    cpu-shared-release           : Ubuntu CPU shared (cxx11_abi), release mode
-    cpu-shared-ml                : Ubuntu CPU shared with ML (pre_cxx11_abi)
-    cpu-shared-ml-release        : Ubuntu CPU shared with ML (pre_cxx11_abi), release mode
+    cpu-static                  : Ubuntu CPU static
+    cpu-shared                  : Ubuntu CPU shared (cxx11_abi)
+    cpu-shared-release          : Ubuntu CPU shared (cxx11_abi), release mode
+    cpu-shared-ml               : Ubuntu CPU shared with ML (pre_cxx11_abi)
+    cpu-shared-ml-release       : Ubuntu CPU shared with ML (pre_cxx11_abi), release mode
 
     # Sycl CPU CI (Dockerfile.ci)
-    sycl-shared                  : SYCL (oneAPI) with shared lib
-    sycl-static                  : SYCL (oneAPI) with static lib
+    sycl-shared                : SYCL (oneAPI) with shared lib
+    sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-bionic                     : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release   : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), release mode
-    3-ml-shared-bionic           : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
-    4-shared-bionic              : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
-    4-shared-bionic-release      : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
-    5-ml-focal                   : CUDA CI, 5-ml-focal, developer mode
+    2-bionic                   : CUDA CI, 2-bionic, developer mode
+    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), release mode
+    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
+    4-shared-bionic            : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
+    4-shared-bionic-release    : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
+    5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
-    cuda_wheel_py38_dev          : CUDA Python 3.8 wheel, developer mode
-    cuda_wheel_py39_dev          : CUDA Python 3.9 wheel, developer mode
-    cuda_wheel_py310_dev         : CUDA Python 3.10 wheel, developer mode
-    cuda_wheel_py311_dev         : CUDA Python 3.11 wheel, developer mode
-    cuda_wheel_py38              : CUDA Python 3.8 wheel, release mode
-    cuda_wheel_py39              : CUDA Python 3.9 wheel, release mode
-    cuda_wheel_py310             : CUDA Python 3.10 wheel, release mode
-    cuda_wheel_py311             : CUDA Python 3.11 wheel, release mode
-
-    # Paddle wheels (Dockerfile.paddle)
-    paddle_cuda_wheel_py310_dev  : Paddle CUDA Python 3.10 wheel, developer mode
-    paddle_cuda_wheel_py310      : Paddle CUDA Python 3.10 wheel, release mode
+    cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
+    cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
+    cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
+    cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
+    cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
+    cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
+    cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
+    cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -83,7 +79,6 @@ CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.20.6-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.20.6-linux-aarch64
 CUDA_VERSION=11.7.1-cudnn8
-PADDLE_CUDA_VERSION=cuda11.8-cudnn8.6-trt8.5
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -222,45 +217,6 @@ cuda_wheel_build() {
               && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
-}
-
-paddle_cuda_wheel_build() {
-    BASE_IMAGE=registry.baidubce.com/paddlepaddle/paddle:3.0.0b1-gpu-${PADDLE_CUDA_VERSION}
-    BUILD_PADDLE_OPS=ON
-
-    options="$(echo "$@" | tr ' ' '|')"
-    echo "[cuda_wheel_build()] options: ${options}"
-    if [[ "py310" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.10
-    else
-        echo "Invalid python version."
-        print_usage_and_exit_docker_build
-    fi
-    if [[ "dev" =~ ^($options)$ ]]; then
-        DEVELOPER_BUILD=ON
-    else
-        DEVELOPER_BUILD=OFF
-    fi
-    echo "[paddle_cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
-    echo "[paddle_cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
-    echo "[paddle_cuda_wheel_build()] BUILD_PADDLE_OPS=${BUILD_PADDLE_OPS:?'env var must be set.'}"
-
-    pushd "${HOST_OPEN3D_ROOT}"
-    docker build \
-        --progress plain \
-        --build-arg BASE_IMAGE="${BASE_IMAGE}" \
-        --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
-        --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-        --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
-        --build-arg BUILD_PADDLE_OPS="${BUILD_PADDLE_OPS}" \
-        -t open3d-ci:wheel \
-        -f docker/Dockerfile.paddle .
-    popd
-
-    python_package_dir=/root/Open3D/build/lib/python_package
-    docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
-        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl"
 }
 
 ci_build() {
@@ -641,14 +597,6 @@ function main() {
         ;;
     cuda_wheel_py311)
         cuda_wheel_build py311
-        ;;
-    
-    # Paddle CUDA wheels
-    paddle_cuda_wheel_py310_dev)
-        paddle_cuda_wheel_build py310 dev
-        ;;
-    paddle_cuda_wheel_py310)
-        paddle_cuda_wheel_build py310
         ;;
 
     # ML CIs

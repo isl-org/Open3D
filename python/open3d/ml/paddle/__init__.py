@@ -19,14 +19,8 @@ if _verp(_paddle.__version__).release[:2] != _o3d_paddle_version.release[:2]:
                     'version {} is installed!'.format(match_paddle_ver,
                                                       _paddle.__version__))
 
-_loaded = False
-try:
-    from . import ops
-    _loaded = True
-except Exception as e:
-    raise e
-
 from . import layers
+from . import ops
 from . import classes
 
 # put contrib at the same level
