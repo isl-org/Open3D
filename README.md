@@ -9,48 +9,47 @@
 > [!IMPORTANT]
 > This branch(paddle) experimentally integrates [Paddle backend](https://www.paddlepaddle.org.cn/en/install/quick?docurl=/documentation/docs/en/develop/install/pip/linux-pip_en.html) to Open3D meachine learning module.
 > 
-> It has verified on version v0.18.0 of Open3D. It is recommended to install **nightly-build(develop)** Paddle before running any code in this branch.
+> It was developed base version v0.18.0 of Open3D. It is recommended to install **nightly-build(develop)** Paddle before running any code in this branch.
+>
+> It was verified on Ubuntu 20.04. It may meet some problems if you are using other environment.
 
-> ## How to build
-> 
-> make sure cmake and pip have already installed
-> 
-> ### Install dependencies
-> 
-> ```bash
-> util/install_deps_ubuntu.sh
-> pip install yapf==0.30.0
-> ```
-> 
-> ### Install nightly-build paddlepaddle-gpu
-> 
-> ```bash
-> pip uninstall paddlepaddle-gpu
-> python -m pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/cu118/
-> ```
-> ### Config
-> 
-> ```bash
-> mkdir build
-> cd build
-> cmake  -DBUILD_CUDA_MODULE=ON \
->              -DBUILD_PADDLE_OPS=ON  \
->              -DGLIBCXX_USE_CXX11_ABI=ON \
->              -DBUNDLE_OPEN3D_ML=OFF \
->              ..
-> ```
-> 
-> ### Build
-> 
-> ```bash
-> make -j8
-> ```
-> 
-> ### Install
-> 
-> ```bash
-> make install-pip-package -j8
-> ```
+## **Build and Install**
+
+```bash
+# install dependencies
+util/install_deps_ubuntu.sh
+pip install yapf==0.30.0
+
+# install nightly-build paddlepaddle-gpu
+pip uninstall paddlepaddle-gpu
+python -m pip install --pre paddlepaddle-gpu -i https://www.paddlepaddle.org.cn/packages/nightly/cu118/
+
+# configure
+mkdir build
+cd build
+cmake  -DBUILD_CUDA_MODULE=ON \
+       -DBUILD_PADDLE_OPS=ON  \
+       -DGLIBCXX_USE_CXX11_ABI=ON \
+       -DBUNDLE_OPEN3D_ML=OFF \
+       ..
+
+# install
+make install-pip-package -j8
+
+```
+
+Open3D for paddle backend also provide [Dockerfile](docker/Dockerfile.paddle) to help build from docker. More details please refer to the [document](docker/README.md).
+
+## **Unit Test**
+
+Please make sure you have installed Open3D for paddle backend correctly before running unit tests 
+
+```bash
+util/run_python_unittest.sh
+```
+ 
+
+# Below is Open3D's original README
 
 <h4>
     <a href="https://www.open3d.org">Homepage</a> |
