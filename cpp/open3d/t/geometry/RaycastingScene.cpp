@@ -1173,24 +1173,18 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
     }
 
     void ArraySum(int* data_ptr, size_t num_elements, size_t& result) override {
-        for (size_t i = 0; i < num_elements; ++i) {
-            result += data_ptr[i];
-        }
+        result = std::accumulate(data_ptr, data_ptr + num_elements, result);
     }
 
     void ArrayPartialSum(int* input,
                          int* output,
                          size_t num_elements) override {
         output[0] = 0;
-        for (size_t i = 1; i < num_elements; ++i) {
-            output[i] = output[i - 1] + input[i - 1];
-        }
+        std::partial_sum(input, input + num_elements - 1, output + 1);
     }
 
     void CopyArray(int* src, uint32_t* dst, size_t num_elements) override {
-        for (size_t i = 0; i < num_elements; ++i) {
-            dst[i] = src[i];
-        }
+        std::copy(src, src + num_elements, dst);
     }
 };
 
