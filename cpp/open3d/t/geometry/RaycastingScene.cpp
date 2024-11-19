@@ -603,7 +603,8 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
 
         queue_.memset(intersections, 0, sizeof(int) * num_rays).wait();
 
-        ci_previous_geom_prim_ID_tfar = sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
+        ci_previous_geom_prim_ID_tfar =
+                sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
 
         // Check if allocation was successful
         if (!ci_previous_geom_prim_ID_tfar) {
@@ -695,7 +696,8 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                 .wait();
         queue_.memset(t_hit, 0, sizeof(float) * num_intersections).wait();
 
-        li_previous_geom_prim_ID_tfar = sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
+        li_previous_geom_prim_ID_tfar =
+                sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
 
         // Check if allocation was successful
         if (!li_previous_geom_prim_ID_tfar) {
