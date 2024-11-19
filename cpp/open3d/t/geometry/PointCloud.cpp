@@ -34,6 +34,7 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/t/geometry/kernel/Metrics.h"
 #include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
@@ -1329,6 +1330,39 @@ int PointCloud::PCAPartition(int max_points) {
             kernel::pcapartition::PCAPartition(GetPointPositions(), max_points);
     SetPointAttr("partition_ids", partition_ids.To(GetDevice()));
     return num_partitions;
+}
+
+core::Tensor PointCloud::ComputeMetrics(const PointCloud &pcd2,
+                                        std::vector<Metric> metrics,
+                                        MetricParameters params) const {
+    if (IsEmpty() || pcd2.IsEmpty()) {
+        utility::LogError("One or both input point clouds are empty!");
+    }
+    if (!IsCPU() || !pcd2.IsCPU()) {
+        utility::LogWarning(
+                "ComputeDistance is implemented only on CPU. Computing on "
+                "CPU.");
+    }
+    core::Tensor points1 = GetPointPositions().To(core::Device("CPU:0")),
+                 points2 = pcd2.GetPointPositions().To(core::Device("CPU:0"));
+    [[maybe_unused]] core::Tensor indices12, indices21;
+    core::Tensor sqr_distance12, sqr_distance21;
+
+    core::nns::NearestNeighborSearch tree1(points1);
+    core::nns::NearestNeighborSearch tree2(points2);
+
+    if (!tree2.KnnIndex()) {
+        utility::LogError("[ComputeDistance] Building KNN-Index failed!");
+    }
+    if (!tree1.KnnIndex()) {
+        utility::LogError("[ComputeDistance] Building KNN-Index failed!");
+    }
+
+    std::tie(indices12, sqr_distance12) = tree2.KnnSearch(points1, 1);
+    std::tie(indices21, sqr_distance21) = tree1.KnnSearch(points2, 1);
+
+    return ComputeMetricsCommon(sqr_distance12.Sqrt_(), sqr_distance21.Sqrt_(),
+                                metrics, params);
 }
 
 }  // namespace geometry
