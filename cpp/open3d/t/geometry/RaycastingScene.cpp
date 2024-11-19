@@ -439,6 +439,18 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
     sycl::context context_;
     sycl::device sycl_device_;
 
+    callbacks::GeomPrimID* li_previous_geom_prim_ID_tfar = nullptr;
+    callbacks::GeomPrimID* ci_previous_geom_prim_ID_tfar = nullptr;
+
+    ~SYCLImpl() {
+        if (li_previous_geom_prim_ID_tfar) {
+            sycl::free(li_previous_geom_prim_ID_tfar, queue_);
+        }
+        if (ci_previous_geom_prim_ID_tfar) {
+            sycl::free(ci_previous_geom_prim_ID_tfar, queue_);
+        }
+    }
+
     void InitializeDevice() {
         try {
             sycl_device_ = sycl::device(rtcSYCLDeviceSelector);
@@ -591,11 +603,10 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
 
         queue_.memset(intersections, 0, sizeof(int) * num_rays).wait();
 
-        callbacks::GeomPrimID* previous_geom_prim_ID_tfar =
-                sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
+        ci_previous_geom_prim_ID_tfar = sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
 
         // Check if allocation was successful
-        if (!previous_geom_prim_ID_tfar) {
+        if (!ci_previous_geom_prim_ID_tfar) {
             throw std::runtime_error("Failed to allocate device memory");
         }
 
@@ -610,12 +621,13 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
         }
 
         // Copy the initialized data to the device
-        queue_.memcpy(previous_geom_prim_ID_tfar,
+        queue_.memcpy(ci_previous_geom_prim_ID_tfar,
                       host_previous_geom_prim_ID_tfar.get(),
                       num_rays * sizeof(callbacks::GeomPrimID))
                 .wait();
 
         auto scene = this->scene_;
+        auto ci_previous_geom_prim_ID_tfar_ = ci_previous_geom_prim_ID_tfar;
         queue_.submit([=](sycl::handler& cgh) {
             cgh.parallel_for(
                     sycl::range<1>(num_rays),
@@ -623,7 +635,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                         callbacks::CountIntersectionsContext context;
                         rtcInitRayQueryContext(&context.context);
                         context.previous_geom_prim_ID_tfar =
-                                previous_geom_prim_ID_tfar;
+                                ci_previous_geom_prim_ID_tfar_;
                         context.intersections = intersections;
 
                         RTCIntersectArguments args;
@@ -655,7 +667,8 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
         queue_.wait_and_throw();
 
         // Free the allocated memory
-        sycl::free(previous_geom_prim_ID_tfar, queue_);
+        sycl::free(ci_previous_geom_prim_ID_tfar, queue_);
+        ci_previous_geom_prim_ID_tfar = nullptr;
     }
 
     void ListIntersections(const float* const rays,
@@ -682,11 +695,10 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                 .wait();
         queue_.memset(t_hit, 0, sizeof(float) * num_intersections).wait();
 
-        callbacks::GeomPrimID* previous_geom_prim_ID_tfar =
-                sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
+        li_previous_geom_prim_ID_tfar = sycl::malloc_device<callbacks::GeomPrimID>(num_rays, queue_);
 
         // Check if allocation was successful
-        if (!previous_geom_prim_ID_tfar) {
+        if (!li_previous_geom_prim_ID_tfar) {
             throw std::runtime_error("Failed to allocate device memory");
         }
 
@@ -701,12 +713,13 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
         }
 
         // Copy the initialized data to the device
-        queue_.memcpy(previous_geom_prim_ID_tfar,
+        queue_.memcpy(li_previous_geom_prim_ID_tfar,
                       host_previous_geom_prim_ID_tfar.get(),
                       num_rays * sizeof(callbacks::GeomPrimID))
                 .wait();
 
         auto scene = this->scene_;
+        auto li_previous_geom_prim_ID_tfar_ = li_previous_geom_prim_ID_tfar;
         queue_.submit([=](sycl::handler& cgh) {
             cgh.parallel_for(
                     sycl::range<1>(num_rays),
@@ -714,7 +727,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                         callbacks::ListIntersectionsContext context;
                         rtcInitRayQueryContext(&context.context);
                         context.previous_geom_prim_ID_tfar =
-                                previous_geom_prim_ID_tfar;
+                                li_previous_geom_prim_ID_tfar_;
                         context.ray_ids = ray_ids;
                         context.geometry_ids = geometry_ids;
                         context.primitive_ids = primitive_ids;
@@ -752,7 +765,8 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
         queue_.wait_and_throw();
 
         // Free the allocated memory
-        sycl::free(previous_geom_prim_ID_tfar, queue_);
+        sycl::free(li_previous_geom_prim_ID_tfar, queue_);
+        li_previous_geom_prim_ID_tfar = nullptr;
     }
 
     void ComputeClosestPoints(const float* const query_points,
