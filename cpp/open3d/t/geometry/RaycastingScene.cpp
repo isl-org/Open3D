@@ -11,10 +11,10 @@
 #endif
 #include "open3d/t/geometry/RaycastingScene.h"
 
-// This header is in the embree src dir (embree/src/ext_embree/..).
 #ifdef BUILD_SYCL_MODULE
 #include <sycl/sycl.hpp>
 #endif
+// This header is in the embree src dir (embree/src/ext_embree/..).
 #include <embree4/rtcore.h>
 #include <tbb/parallel_for.h>
 
