@@ -1404,14 +1404,11 @@ def test_metrics():
 
     # 3 faces of the cube are the same, and 3 are shifted up by 0.1 - raycast
     # distances should follow this.
-    metric_params = MetricParameters(fscore_radius=o3d.utility.FloatVector(
-        (0.05, 0.15)),
+    metric_params = MetricParameters(fscore_radius=(0.05, 0.15),
                                      n_sampled_points=100000)
-    # n_sampled_points=100000)
     metrics = box1.compute_metrics(
         box2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
         metric_params)
 
-    print(metrics)
     np.testing.assert_allclose(metrics.cpu().numpy(), (0.1, 0.17, 50, 100),
                                rtol=0.05)

@@ -205,13 +205,11 @@ def test_metrics():
 
     # (1, 3, 3, 1) vertices are shifted by (0, 0.1, 0.1*sqrt(2), 0.1*sqrt(3))
     # respectively
-    metric_params = MetricParameters(
-        fscore_radius=o3d.utility.FloatVector((0.01, 0.11, 0.15, 0.18)))
+    metric_params = MetricParameters(fscore_radius=(0.01, 0.11, 0.15, 0.18))
     metrics = pcd1.compute_metrics(
         pcd2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
         metric_params)
 
-    print(metrics)
     np.testing.assert_allclose(
         metrics.cpu().numpy(),
         (0.22436734, np.sqrt(3) / 10, 100. / 8, 400. / 8, 700. / 8, 100.),

@@ -7,8 +7,10 @@
 
 #include "open3d/t/geometry/Geometry.h"
 
+#include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include <deque>
 #include <vector>
 
 #include "pybind/docstring.h"
@@ -56,7 +58,6 @@ void pybind_geometry_declarations(py::module& m) {
                    "Hausdorff Distance")
             .value("FScore", Metric::FScore, "F-Score")
             .export_values();
-    py::bind_vector<std::vector<Metric>>(m_geometry, "VectorMetric");
     py::class_<MetricParameters> metric_parameters(
             m_geometry, "MetricParameters",
             "Holder for various parameters required by metrics.");
@@ -75,23 +76,40 @@ void pybind_geometry_declarations(py::module& m) {
 
 void pybind_geometry_definitions(py::module& m) {
     auto m_geometry = static_cast<py::module>(m.attr("geometry"));
+    py::bind_vector<std::vector<Metric>>(m_geometry, "VectorMetric");
 
     auto metric_parameters = static_cast<py::class_<MetricParameters>>(
             m_geometry.attr("MetricParameters"));
+    // Use std::deque instead of std::vector to enable automatic Python list /
+    // tuple conversion. FIXME: Ideally this should work for std::vector.
     metric_parameters
-            .def(py::init<const std::vector<float>&, size_t>(),
-                 "fscore_radius"_a = std::vector<float>{0.01},
+            .def(py::init([](const std::deque<float>& fsr, size_t nsp) {
+                     std::vector<float> fsrvec{fsr.begin(), fsr.end()};
+                     return MetricParameters{fsrvec, nsp};
+                 }),
+                 "fscore_radius"_a = std::deque<float>{0.01f},
                  "n_sampled_points"_a = 1000)
-            .def_readwrite("fscore_radius", &MetricParameters::fscore_radius,
-                           "Radius for computing the F-Score. A match between "
-                           "a point and its nearest neighbor is sucessful if "
-                           "it is within this radius.")
+            .def_property(
+                    "fscore_radius",
+                    [](const MetricParameters& self) {  // getter
+                        return std::deque<float>(self.fscore_radius.begin(),
+                                                 self.fscore_radius.end());
+                    },
+                    [](MetricParameters& self,
+                       const std::deque<float>& fsr) {  // setter
+                        self.fscore_radius =
+                                std::vector<float>(fsr.begin(), fsr.end());
+                    },
+                    "Radius for computing the F-Score. A match between "
+                    "a point and its nearest neighbor is sucessful if "
+                    "it is within this radius.")
             .def_readwrite("n_sampled_points",
                            &MetricParameters::n_sampled_points,
                            "Points are sampled uniformly from the surface of "
                            "triangle meshes before distance computation. This "
                            "specifies the number of points sampled. No "
-                           "sampling is done for point clouds.");
+                           "sampling is done for point clouds.")
+            .def("__repr__", &MetricParameters::ToString);
 
     pybind_geometry_class_definitions(m_geometry);
     pybind_drawable_geometry_class_definitions(m_geometry);

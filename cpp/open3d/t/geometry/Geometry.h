@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <string>
 
 #include "open3d/core/Device.h"
@@ -106,6 +108,11 @@ struct MetricParameters {
     /// distance computation. This specifies the number of points sampled. No
     /// sampling is done for point clouds.
     size_t n_sampled_points = 1000;
+    std::string ToString() const {
+        return fmt::format(
+                "MetricParameters: fscore_radius={}, n_sampled_points={}",
+                fscore_radius, n_sampled_points);
+    }
 };
 
 }  // namespace geometry
