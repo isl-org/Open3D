@@ -226,11 +226,16 @@ std::vector<Device> GetAvailableSYCLDevices() {
 }
 
 void enablePersistentJITCache() {
+#ifdef BUILD_SYCL_MODULE
 #if defined(_WIN32)
     _putenv_s("SYCL_CACHE_PERSISTENT", "1");
 #else
     setenv("SYCL_CACHE_PERSISTENT", "1", 1);
 #endif
+#endif
+    utility::LogInfo(
+            "enablePersistentJITCache is not compiled with "
+            "BUILD_SYCL_MODULE=ON.");
 }
 
 }  // namespace sy

@@ -11,12 +11,14 @@ import pytest
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
 
 # test intersection with a single triangle
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_cast_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -28,24 +30,27 @@ def test_cast_rays(device):
     scene = o3d.t.geometry.RaycastingScene(device=device)
     geom_id = scene.add_triangles(vertices, triangles)
 
-    rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32,
-                           device=device)
+    rays = o3d.core.Tensor(
+        [[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
     ans = scene.cast_rays(rays)
 
     # first ray hits the triangle
-    assert geom_id == ans['geometry_ids'][0].cpu()
-    assert np.isclose(ans['t_hit'][0].item(), 1.0)
+    assert geom_id == ans["geometry_ids"][0].cpu()
+    assert np.isclose(ans["t_hit"][0].item(), 1.0)
 
     # second ray misses
-    assert o3d.t.geometry.RaycastingScene.INVALID_ID == ans['geometry_ids'][
+    assert o3d.t.geometry.RaycastingScene.INVALID_ID == ans["geometry_ids"][
         1].cpu()
-    assert np.isinf(ans['t_hit'][1].item())
+    assert np.isinf(ans["t_hit"][1].item())
 
 
 # cast lots of random rays to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_cast_lots_of_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -65,7 +70,8 @@ def test_cast_lots_of_rays(device):
 
 
 # test occlusion with a single triangle
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_test_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -77,9 +83,11 @@ def test_test_occlusions(device):
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
 
-    rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32,
-                           device=device)
+    rays = o3d.core.Tensor(
+        [[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
     ans = scene.test_occlusions(rays).cpu()
 
     # first ray is occluded by the triangle
@@ -99,7 +107,8 @@ def test_test_occlusions(device):
 
 # test lots of random rays for occlusions to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_test_lots_of_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -118,7 +127,8 @@ def test_test_lots_of_occlusions(device):
     _ = scene.test_occlusions(rays)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_add_triangle_mesh(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     cube = cube.to(device)
@@ -126,16 +136,19 @@ def test_add_triangle_mesh(device):
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(cube)
 
-    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
-                            [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32,
-                           device=device)
+    rays = o3d.core.Tensor(
+        [[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+         [10, 10, 10, 1, 0, 0]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.cpu().numpy(), [2, 1, 0])
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_count_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -147,10 +160,12 @@ def test_count_intersections(device):
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertex_positions, triangle_indices)
 
-    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
-                            [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32,
-                           device=device)
+    rays = o3d.core.Tensor(
+        [[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+         [10, 10, 10, 1, 0, 0]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
     ans = scene.count_intersections(rays)
 
     np.testing.assert_equal(ans.cpu().numpy(), [2, 1, 0])
@@ -158,7 +173,8 @@ def test_count_intersections(device):
 
 # count lots of random ray intersections to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_count_lots_of_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -177,7 +193,8 @@ def test_count_lots_of_intersections(device):
     _ = scene.count_intersections(rays)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_list_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -189,13 +206,15 @@ def test_list_intersections(device):
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertex_positions, triangle_indices)
 
-    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
-                            [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.float32,
-                           device=device)
+    rays = o3d.core.Tensor(
+        [[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+         [10, 10, 10, 1, 0, 0]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
     ans = scene.list_intersections(rays)
 
-    np.testing.assert_allclose(ans['t_hit'].cpu().numpy(),
+    np.testing.assert_allclose(ans["t_hit"].cpu().numpy(),
                                np.array([1.0, 2.0, 0.5]),
                                rtol=1e-6,
                                atol=1e-6)
@@ -203,7 +222,8 @@ def test_list_intersections(device):
 
 # list lots of random ray intersections to test the internal batching
 # we expect no errors for this test
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
 def test_list_lots_of_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -234,12 +254,14 @@ def test_compute_closest_points():
                                    dtype=o3d.core.float32)
     ans = scene.compute_closest_points(query_points)
 
-    assert (geom_id == ans['geometry_ids']).all()
-    assert (0 == ans['primitive_ids']).all()
-    np.testing.assert_allclose(ans['points'].numpy(),
-                               np.array([[0.2, 0.1, 0.0], [1, 1, 0]]),
-                               rtol=1e-6,
-                               atol=1e-6)
+    assert (geom_id == ans["geometry_ids"]).all()
+    assert (0 == ans["primitive_ids"]).all()
+    np.testing.assert_allclose(
+        ans["points"].numpy(),
+        np.array([[0.2, 0.1, 0.0], [1, 1, 0]]),
+        rtol=1e-6,
+        atol=1e-6,
+    )
 
 
 # compute lots of closest points to test the internal batching
@@ -325,45 +347,42 @@ def test_output_shapes(shape):
 
     # some outputs append a specific last dim
     last_dim = {
-        't_hit': [],
-        'geometry_ids': [],
-        'primitive_ids': [],
-        'primitive_uvs': [2],
-        'primitive_normals': [3],
-        'points': [3],
-        'ray_ids': [],
-        'ray_splits': []
+        "t_hit": [],
+        "geometry_ids": [],
+        "primitive_ids": [],
+        "primitive_uvs": [2],
+        "primitive_normals": [3],
+        "points": [3],
+        "ray_ids": [],
+        "ray_splits": [],
     }
 
     ans = scene.cast_rays(rays)
     for k, v in ans.items():
         expected_shape = shape + last_dim[k]
-        assert list(
-            v.shape
-        ) == expected_shape, 'shape mismatch: expected {} but got {} for {}'.format(
-            expected_shape, list(v.shape), k)
+        assert (list(v.shape) == expected_shape
+               ), "shape mismatch: expected {} but got {} for {}".format(
+                   expected_shape, list(v.shape), k)
 
     ans = scene.compute_closest_points(query_points)
     for k, v in ans.items():
         expected_shape = shape + last_dim[k]
-        assert list(
-            v.shape
-        ) == expected_shape, 'shape mismatch: expected {} but got {} for {}'.format(
-            expected_shape, list(v.shape), k)
+        assert (list(v.shape) == expected_shape
+               ), "shape mismatch: expected {} but got {} for {}".format(
+                   expected_shape, list(v.shape), k)
 
     ans = scene.list_intersections(rays)
     nx = np.sum(scene.count_intersections(rays).numpy()).tolist()
     for k, v in ans.items():
-        if k == 'ray_splits':
+        if k == "ray_splits":
             alt_shape = [np.prod(rays.shape[:-1]) + 1]
         else:
             alt_shape = [nx]
-        #use np.append otherwise issues if alt_shape = [0] and last_dim[k] = []
+        # use np.append otherwise issues if alt_shape = [0] and last_dim[k] = []
         expected_shape = np.append(alt_shape, last_dim[k]).tolist()
-        assert list(
-            v.shape
-        ) == expected_shape, 'shape mismatch: expected {} but got {} for {}'.format(
-            expected_shape, list(v.shape), k)
+        assert (list(v.shape) == expected_shape
+               ), "shape mismatch: expected {} but got {} for {}".format(
+                   expected_shape, list(v.shape), k)
 
 
 def test_sphere_wrong_occupancy():

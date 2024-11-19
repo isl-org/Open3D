@@ -38,7 +38,8 @@ public:
     /// \brief Add a triangle mesh to the scene.
     /// \param vertex_positions Vertices as Tensor of dim {N,3} and dtype float.
     /// \param triangle_indices Triangles as Tensor of dim {M,3} and dtype
-    /// uint32_t. \return The geometry ID of the added mesh.
+    /// uint32_t.
+    /// \return The geometry ID of the added mesh.
     uint32_t AddTriangles(const core::Tensor &vertex_positions,
                           const core::Tensor &triangle_indices);
 

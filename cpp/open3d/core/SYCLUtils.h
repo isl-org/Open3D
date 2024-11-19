@@ -40,7 +40,8 @@ bool IsDeviceAvailable(const Device& device);
 /// Return a list of available SYCL devices.
 std::vector<Device> GetAvailableSYCLDevices();
 
-/// Enables the JIT cache for SYCL.
+/// Enables the JIT cache for SYCL. This sets an environment variable and will
+/// affect the entire process and any child processes.
 void enablePersistentJITCache();
 
 }  // namespace sy
