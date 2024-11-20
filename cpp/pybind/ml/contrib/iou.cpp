@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -117,7 +117,7 @@ py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
 }
 #endif
 
-void pybind_contrib_iou(py::module& m_contrib) {
+void pybind_contrib_iou_definitions(py::module& m_contrib) {
     m_contrib.def("iou_bev_cpu", &IouBevCPU, "boxes_a"_a, "boxes_b"_a);
     m_contrib.def("iou_3d_cpu", &Iou3dCPU, "boxes_a"_a, "boxes_b"_a);
 

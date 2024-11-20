@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,12 +16,20 @@
 namespace open3d {
 namespace pipelines {
 
-void pybind_pipelines(py::module& m) {
+void pybind_pipelines_declarations(py::module& m) {
     py::module m_pipelines = m.def_submodule("pipelines");
-    color_map::pybind_color_map(m_pipelines);
-    integration::pybind_integration(m_pipelines);
-    registration::pybind_registration(m_pipelines);
-    odometry::pybind_odometry(m_pipelines);
+    color_map::pybind_color_map_declarations(m_pipelines);
+    integration::pybind_integration_declarations(m_pipelines);
+    registration::pybind_registration_declarations(m_pipelines);
+    odometry::pybind_odometry_declarations(m_pipelines);
+}
+
+void pybind_pipelines_definitions(py::module& m) {
+    auto m_pipelines = static_cast<py::module>(m.attr("pipelines"));
+    color_map::pybind_color_map_definitions(m_pipelines);
+    integration::pybind_integration_definitions(m_pipelines);
+    registration::pybind_registration_definitions(m_pipelines);
+    odometry::pybind_odometry_definitions(m_pipelines);
 }
 
 }  // namespace pipelines

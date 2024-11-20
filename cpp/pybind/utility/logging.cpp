@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 namespace open3d {
 namespace utility {
 
-void pybind_logging(py::module& m) {
+void pybind_logging_declarations(py::module& m) {
     py::enum_<VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
                                  "VerbosityLevel");
     vl.value("Error", VerbosityLevel::Error)
@@ -27,7 +27,13 @@ void pybind_logging(py::module& m) {
                 return "Enum class for VerbosityLevel.";
             }),
             py::none(), py::none(), "");
-
+    py::class_<VerbosityContextManager> verbosity_context_manager(
+            m, "VerbosityContextManager",
+            "A context manager to "
+            "temporally change the "
+            "verbosity level of Open3D");
+}
+void pybind_logging_definitions(py::module& m) {
     m.def("set_verbosity_level", &SetVerbosityLevel,
           "Set global verbosity level of Open3D", py::arg("verbosity_level"));
     docstring::FunctionDocInject(
@@ -44,11 +50,10 @@ void pybind_logging(py::module& m) {
         utility::LogInfo("Resetting default logger to print to terminal.");
         utility::Logger::GetInstance().ResetPrintFunction();
     });
-
-    py::class_<VerbosityContextManager>(m, "VerbosityContextManager",
-                                        "A context manager to "
-                                        "temporally change the "
-                                        "verbosity level of Open3D")
+    auto verbosity_context_manager =
+            static_cast<py::class_<VerbosityContextManager>>(
+                    m.attr("VerbosityContextManager"));
+    verbosity_context_manager
             .def(py::init<VerbosityLevel>(),
                  "Create a VerbosityContextManager with a given VerbosityLevel",
                  "level"_a)

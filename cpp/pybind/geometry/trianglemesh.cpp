@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_trianglemesh(py::module &m) {
+void pybind_trianglemesh_declarations(py::module &m) {
     py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
                std::shared_ptr<TriangleMesh>, MeshBase>
             trianglemesh(m, "TriangleMesh",
@@ -24,6 +24,12 @@ void pybind_trianglemesh(py::module &m) {
                          "and triangles represented by the indices to the "
                          "vertices. Optionally, the mesh may also contain "
                          "triangle normals, vertex normals and vertex colors.");
+}
+void pybind_trianglemesh_definitions(py::module &m) {
+    auto trianglemesh =
+            static_cast<py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
+                                   std::shared_ptr<TriangleMesh>, MeshBase>>(
+                    m.attr("TriangleMesh"));
     py::detail::bind_default_constructor<TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<TriangleMesh>(trianglemesh);
     trianglemesh
@@ -778,8 +784,6 @@ void pybind_trianglemesh(py::module &m) {
              {"width", "Width of the Mobius strip."},
              {"scale", "Scale the complete Mobius strip."}});
 }
-
-void pybind_trianglemesh_methods(py::module &m) {}
 
 }  // namespace geometry
 }  // namespace open3d

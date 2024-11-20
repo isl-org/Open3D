@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -386,10 +386,7 @@ CollapsableVert::CollapsableVert(const char* text,
                                  int spacing,
                                  const Margins& margins /*= Margins()*/)
     : Vert(spacing, margins), impl_(new CollapsableVert::Impl()) {
-    static int g_next_id = 1;
-
-    impl_->text_ = text;
-    impl_->id_ = impl_->text_ + "##collapsing_" + std::to_string(g_next_id++);
+    SetText(text);
 }
 
 CollapsableVert::~CollapsableVert() {}
@@ -397,6 +394,15 @@ CollapsableVert::~CollapsableVert() {}
 void CollapsableVert::SetIsOpen(bool is_open) { impl_->is_open_ = is_open; }
 
 bool CollapsableVert::GetIsOpen() { return impl_->is_open_; }
+
+void CollapsableVert::SetText(const char* text) {
+    static int g_next_id = 1;
+
+    impl_->text_ = text;
+    impl_->id_ = impl_->text_ + "##collapsing_" + std::to_string(g_next_id++);
+}
+
+std::string CollapsableVert::GetText() const { return impl_->text_; };
 
 FontId CollapsableVert::GetFontId() const { return impl_->font_id_; }
 

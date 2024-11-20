@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -77,8 +77,8 @@ using ResourcesContainer =
 template <class ResourceType>
 std::shared_ptr<ResourceType> MakeShared(ResourceType* pointer,
                                          filament::Engine& engine) {
-    return std::move(std::shared_ptr<ResourceType>(
-            pointer, [&engine](ResourceType* p) { engine.destroy(p); }));
+    return std::shared_ptr<ResourceType>(
+            pointer, [&engine](ResourceType* p) { engine.destroy(p); });
 }
 
 template <class ResourceType>

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -38,17 +38,26 @@ PYBIND11_MODULE(pybind, m) {
     // The binding order matters: if a class haven't been binded, binding the
     // user of this class will result in "could not convert default argument
     // into a Python object" error.
-    utility::pybind_utility(m);
-
-    camera::pybind_camera(m);
-    core::pybind_core(m);
+    utility::pybind_utility_declarations(m);
+    camera::pybind_camera_declarations(m);
+    core::pybind_core_declarations(m);
     data::pybind_data(m);
-    geometry::pybind_geometry(m);
-    t::pybind_t(m);
-    ml::pybind_ml(m);
-    io::pybind_io(m);
-    pipelines::pybind_pipelines(m);
-    visualization::pybind_visualization(m);
+    geometry::pybind_geometry_declarations(m);
+    t::pybind_t_declarations(m);
+    ml::pybind_ml_declarations(m);
+    io::pybind_io_declarations(m);
+    pipelines::pybind_pipelines_declarations(m);
+    visualization::pybind_visualization_declarations(m);
+
+    utility::pybind_utility_definitions(m);
+    camera::pybind_camera_definitions(m);
+    core::pybind_core_definitions(m);
+    geometry::pybind_geometry_definitions(m);
+    t::pybind_t_definitions(m);
+    ml::pybind_ml_definitions(m);
+    io::pybind_io_definitions(m);
+    pipelines::pybind_pipelines_definitions(m);
+    visualization::pybind_visualization_definitions(m);
 
     // pybind11 will internally manage the lifetime of default arguments for
     // function bindings. Since these objects will live longer than the memory

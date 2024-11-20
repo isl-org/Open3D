@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -38,10 +38,12 @@ public:
     }
 };
 
-void pybind_integration_classes(py::module &m) {
+void pybind_integration_declarations(py::module &m) {
+    py::module m_integration =
+            m.def_submodule("integration", "Integration pipeline.");
     // open3d.integration.TSDFVolumeColorType
     py::enum_<TSDFVolumeColorType> tsdf_volume_color_type(
-            m, "TSDFVolumeColorType", py::arithmetic());
+            m_integration, "TSDFVolumeColorType", py::arithmetic());
     tsdf_volume_color_type.value("NoColor", TSDFVolumeColorType::NoColor)
             .value("RGB8", TSDFVolumeColorType::RGB8)
             .value("Gray32", TSDFVolumeColorType::Gray32)
@@ -52,10 +54,8 @@ void pybind_integration_classes(py::module &m) {
                 return "Enum class for TSDFVolumeColorType.";
             }),
             py::none(), py::none(), "");
-
-    // open3d.integration.TSDFVolume
     py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>> tsdfvolume(
-            m, "TSDFVolume", R"(Base class of the Truncated
+            m_integration, "TSDFVolume", R"(Base class of the Truncated
 Signed Distance Function (TSDF) volume This volume is usually used to integrate
 surface data (e.g., a series of RGB-D images) into a Mesh or PointCloud. The
 basic technique is presented in the following paper:
@@ -65,6 +65,40 @@ A volumetric method for building complex models from range images
 B. Curless and M. Levoy
 
 In SIGGRAPH, 1996)");
+    py::class_<UniformTSDFVolume, PyTSDFVolume<UniformTSDFVolume>, TSDFVolume>
+            uniform_tsdfvolume(
+                    m_integration, "UniformTSDFVolume",
+                    "UniformTSDFVolume implements the classic TSDF "
+                    "volume with uniform voxel grid (Curless and Levoy 1996).");
+    py::class_<ScalableTSDFVolume, PyTSDFVolume<ScalableTSDFVolume>, TSDFVolume>
+            scalable_tsdfvolume(m_integration, "ScalableTSDFVolume", R"(The
+ScalableTSDFVolume implements a more memory efficient data structure for
+volumetric integration.
+
+This implementation is based on the following repository:
+https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate
+
+An observed depth pixel gives two types of information: (a) an approximation
+of the nearby surface, and (b) empty space from the camera to the surface.
+They induce two core concepts of volumetric integration: weighted average of
+a truncated signed distance function (TSDF), and carving. The weighted
+average of TSDF is great in addressing the Gaussian noise along surface
+normal and producing a smooth surface output. The carving is great in
+removing outlier structures like floating noise pixels and bumps along
+structure edges.
+
+Ref: Dense Scene Reconstruction with Points of Interest
+
+Q.-Y. Zhou and V. Koltun
+
+In SIGGRAPH, 2013)");
+}
+void pybind_integration_definitions(py::module &m) {
+    auto m_integration = static_cast<py::module>(m.attr("integration"));
+    // open3d.integration.TSDFVolume
+    auto tsdfvolume =
+            static_cast<py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>>>(
+                    m_integration.attr("TSDFVolume"));
     tsdfvolume
             .def("reset", &TSDFVolume::Reset,
                  "Function to reset the TSDFVolume")
@@ -83,21 +117,21 @@ In SIGGRAPH, 1996)");
             .def_readwrite("color_type", &TSDFVolume::color_type_,
                            "integration.TSDFVolumeColorType: Color type of the "
                            "TSDF volume.");
-    docstring::ClassMethodDocInject(m, "TSDFVolume", "extract_point_cloud");
-    docstring::ClassMethodDocInject(m, "TSDFVolume", "extract_triangle_mesh");
+    docstring::ClassMethodDocInject(m_integration, "TSDFVolume",
+                                    "extract_point_cloud");
+    docstring::ClassMethodDocInject(m_integration, "TSDFVolume",
+                                    "extract_triangle_mesh");
     docstring::ClassMethodDocInject(
-            m, "TSDFVolume", "integrate",
+            m_integration, "TSDFVolume", "integrate",
             {{"image", "RGBD image."},
              {"intrinsic", "Pinhole camera intrinsic parameters."},
              {"extrinsic", "Extrinsic parameters."}});
-    docstring::ClassMethodDocInject(m, "TSDFVolume", "reset");
+    docstring::ClassMethodDocInject(m_integration, "TSDFVolume", "reset");
 
     // open3d.integration.UniformTSDFVolume: open3d.integration.TSDFVolume
-    py::class_<UniformTSDFVolume, PyTSDFVolume<UniformTSDFVolume>, TSDFVolume>
-            uniform_tsdfvolume(
-                    m, "UniformTSDFVolume",
-                    "UniformTSDFVolume implements the classic TSDF "
-                    "volume with uniform voxel grid (Curless and Levoy 1996).");
+    auto uniform_tsdfvolume = static_cast<py::class_<
+            UniformTSDFVolume, PyTSDFVolume<UniformTSDFVolume>, TSDFVolume>>(
+            m_integration.attr("UniformTSDFVolume"));
     py::detail::bind_copy_functions<UniformTSDFVolume>(uniform_tsdfvolume);
     uniform_tsdfvolume
             .def(py::init([](double length, int resolution, double sdf_trunc,
@@ -142,32 +176,13 @@ In SIGGRAPH, 1996)");
             .def_readwrite("resolution", &UniformTSDFVolume::resolution_,
                            "Resolution over the total length, where "
                            "``voxel_length = length / resolution``");
-    docstring::ClassMethodDocInject(m, "UniformTSDFVolume",
+    docstring::ClassMethodDocInject(m_integration, "UniformTSDFVolume",
                                     "extract_voxel_point_cloud");
 
     // open3d.integration.ScalableTSDFVolume: open3d.integration.TSDFVolume
-    py::class_<ScalableTSDFVolume, PyTSDFVolume<ScalableTSDFVolume>, TSDFVolume>
-            scalable_tsdfvolume(m, "ScalableTSDFVolume", R"(The
-ScalableTSDFVolume implements a more memory efficient data structure for
-volumetric integration.
-
-This implementation is based on the following repository:
-https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate
-
-An observed depth pixel gives two types of information: (a) an approximation
-of the nearby surface, and (b) empty space from the camera to the surface.
-They induce two core concepts of volumetric integration: weighted average of
-a truncated signed distance function (TSDF), and carving. The weighted
-average of TSDF is great in addressing the Gaussian noise along surface
-normal and producing a smooth surface output. The carving is great in
-removing outlier structures like floating noise pixels and bumps along
-structure edges.
-
-Ref: Dense Scene Reconstruction with Points of Interest
-
-Q.-Y. Zhou and V. Koltun
-
-In SIGGRAPH, 2013)");
+    auto scalable_tsdfvolume = static_cast<py::class_<
+            ScalableTSDFVolume, PyTSDFVolume<ScalableTSDFVolume>, TSDFVolume>>(
+            m_integration.attr("ScalableTSDFVolume"));
     py::detail::bind_copy_functions<ScalableTSDFVolume>(scalable_tsdfvolume);
     scalable_tsdfvolume
             .def(py::init([](double voxel_length, double sdf_trunc,
@@ -193,19 +208,8 @@ In SIGGRAPH, 2013)");
                  &ScalableTSDFVolume::ExtractVoxelPointCloud,
                  "Debug function to extract the voxel data into a point "
                  "cloud.");
-    docstring::ClassMethodDocInject(m, "ScalableTSDFVolume",
+    docstring::ClassMethodDocInject(m_integration, "ScalableTSDFVolume",
                                     "extract_voxel_point_cloud");
-}
-
-void pybind_integration_methods(py::module &m) {
-    // Currently empty
-}
-
-void pybind_integration(py::module &m) {
-    py::module m_submodule =
-            m.def_submodule("integration", "Integration pipeline.");
-    pybind_integration_classes(m_submodule);
-    pybind_integration_methods(m_submodule);
 }
 
 }  // namespace integration

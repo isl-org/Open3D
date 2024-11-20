@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,7 +12,9 @@
 #include "core/CoreTest.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -1341,6 +1343,182 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
     EXPECT_TRUE(torus.GetVertexAttr("labels").AllClose(expected_vert_labels));
     EXPECT_TRUE(torus.GetTriangleIndices().AllClose(expected_tris));
     EXPECT_TRUE(torus.GetTriangleNormals().AllClose(expected_tri_normals));
+}
+
+TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
+    core::Device device = GetParam();
+    t::geometry::TriangleMesh mesh_empty;
+    EXPECT_NO_THROW(mesh_empty.ComputeTriangleAreas());
+
+    t::geometry::TriangleMesh t_mesh =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 3).To(device);
+    core::Tensor ref_areas = core::Tensor::Init<float>(
+            {0.39031237489989984, 0.39031237489989995, 0.39031237489989973,
+             0.39031237489989995, 0.39031237489989984, 0.3903123748999,
+             0.3903123748998997,  0.3903123748998999,  0.39031237489989973,
+             0.39031237489989995, 0.3903123748999,     0.3903123748999002,
+             0.4330127018922192,  0.43301270189221924, 0.43301270189221924,
+             0.43301270189221924, 0.43301270189221924, 0.4330127018922193,
+             0.4330127018922191,  0.43301270189221913, 0.4330127018922192,
+             0.43301270189221924, 0.4330127018922195,  0.43301270189221963},
+            device);
+    t_mesh.ComputeTriangleAreas();
+    EXPECT_TRUE(t_mesh.GetTriangleAttr("areas").AllClose(ref_areas));
+}
+
+TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
+    using ::testing::UnorderedElementsAreArray;
+    core::Device device = GetParam();
+    t::geometry::TriangleMesh mesh_empty(device);
+    EXPECT_TRUE(mesh_empty.RemoveNonManifoldEdges().IsEmpty());
+
+    core::Tensor verts = core::Tensor::Init<float>(
+            {
+                    {0.0, 0.0, 0.0},
+                    {1.0, 0.0, 0.0},
+                    {0.0, 0.0, 1.0},
+                    {1.0, 0.0, 1.0},
+                    {0.0, 1.0, 0.0},
+                    {1.0, 1.0, 0.0},
+                    {0.0, 1.0, 1.0},
+                    {1.0, 1.0, 1.0},
+                    {0.0, -0.2, 0.0},
+            },
+            device);
+
+    mesh_empty.SetVertexPositions(verts);
+    EXPECT_TRUE(mesh_empty.GetVertexPositions().AllClose(verts));
+
+    core::Tensor tris = core::Tensor::Init<int64_t>(
+            {{4, 7, 5}, {8, 0, 1}, {8, 0, 1}, {8, 0, 1}, {4, 6, 7}, {0, 2, 4},
+             {2, 6, 4}, {0, 1, 2}, {1, 3, 2}, {1, 5, 7}, {8, 0, 2}, {8, 0, 2},
+             {8, 0, 1}, {1, 7, 3}, {2, 3, 7}, {2, 7, 6}, {8, 0, 2}, {6, 6, 7},
+             {0, 4, 1}, {8, 0, 4}, {1, 4, 5}},
+            device);
+
+    core::Tensor tri_labels = tris * 10;
+
+    t::geometry::TriangleMesh mesh(verts, tris);
+    mesh.SetTriangleAttr("labels", tri_labels);
+
+    geometry::TriangleMesh legacy_mesh = mesh.ToLegacy();
+    core::Tensor expected_edges =
+            core::eigen_converter::EigenVector2iVectorToTensor(
+                    legacy_mesh.GetNonManifoldEdges(), core::Int64, device);
+    EXPECT_TRUE(mesh.GetNonManifoldEdges().AllClose(expected_edges));
+
+    expected_edges = core::eigen_converter::EigenVector2iVectorToTensor(
+            legacy_mesh.GetNonManifoldEdges(true), core::Int64, device);
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(expected_edges));
+    EXPECT_THAT(
+            core::eigen_converter::TensorToEigenVector2iVector(
+                    mesh.GetNonManifoldEdges(false)),
+            UnorderedElementsAreArray(std::vector<Eigen::Vector2i>{{0, 8},
+                                                                   {1, 8},
+                                                                   {0, 1},
+                                                                   {6, 7},
+                                                                   {0, 2},
+                                                                   {0, 4},
+                                                                   {6, 6},
+                                                                   {4, 8},
+                                                                   {2, 8}}));
+
+    mesh.RemoveNonManifoldEdges();
+
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(true).AllClose(
+            core::Tensor({0, 2}, core::Int64, device)));
+
+    EXPECT_TRUE(mesh.GetNonManifoldEdges(false).AllClose(
+            core::Tensor({0, 2}, core::Int64, device)));
+
+    t::geometry::TriangleMesh box =
+            t::geometry::TriangleMesh::CreateBox().To(device);
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(verts));
+    EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(box.GetTriangleIndices()));
+    core::Tensor expected_labels = tri_labels.IndexGet(
+            {core::Tensor::Init<bool>({1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0,
+                                       0, 0, 1, 1, 1, 0, 0, 1, 0, 1},
+                                      device)});
+    EXPECT_TRUE(mesh.GetTriangleAttr("labels").AllClose(expected_labels));
+}
+
+TEST_P(TriangleMeshPermuteDevices, SamplePointsUniformly) {
+    auto mesh_empty = t::geometry::TriangleMesh();
+    EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);
+
+    core::Tensor vertices =
+            core::Tensor::Init<float>({{0, 0, 0}, {1, 0, 0}, {0, 1, 0}});
+    core::Tensor triangles = core::Tensor::Init<int32_t>({{0, 1, 2}});
+
+    auto mesh_simple = t::geometry::TriangleMesh(vertices, triangles);
+
+    int64_t n_points = 2;
+    auto pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_FALSE(pcd_simple.HasPointColors());
+    EXPECT_FALSE(pcd_simple.HasPointNormals());
+
+    core::Tensor colors =
+            core::Tensor::Init<float>({{1, 0, 0}, {1, 0, 0}, {1, 0, 0}});
+    core::Tensor normals =
+            core::Tensor::Init<float>({{0, 1, 0}, {0, 1, 0}, {0, 1, 0}});
+    mesh_simple.SetVertexColors(colors);
+    mesh_simple.SetVertexNormals(normals);
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    core::Tensor ref_point_colors = core::Tensor::Init<float>({1, 0, 0});
+    core::Tensor ref_point_normals = core::Tensor::Init<float>({0, 1, 0});
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
+
+    // use triangle normal instead of the vertex normals
+    EXPECT_FALSE(mesh_simple.HasTriangleNormals());
+    // Use Float64 positions and normals and uint8_t colors
+    mesh_simple.SetVertexNormals(normals.To(core::Float64));
+    mesh_simple.SetVertexPositions(vertices.To(core::Float64));
+    // new triangle normals
+    ref_point_normals = core::Tensor::Init<double>({0, 0, 1});
+    colors = core::Tensor::Init<uint8_t>(
+            {{255, 0, 0}, {255, 0, 0}, {255, 0, 0}});
+    mesh_simple.SetVertexColors(colors);
+    pcd_simple = mesh_simple.SamplePointsUniformly(
+            n_points, /*use_triangle_normal=*/true);
+    // the mesh now has triangle normals as a side effect.
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals());
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        // colors are still the same (Float32)
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
+
+    // use triangle normal, this time the mesh has no vertex normals
+    mesh_simple.RemoveVertexAttr("normals");
+    pcd_simple = mesh_simple.SamplePointsUniformly(
+            n_points, /*use_triangle_normal=*/true);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
 }
 
 }  // namespace tests

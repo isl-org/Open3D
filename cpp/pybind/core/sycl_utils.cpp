@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,7 +12,9 @@
 namespace open3d {
 namespace core {
 
-void pybind_sycl_utils(py::module& m) { m.def("sycl_demo", &sycl::SYCLDemo); }
+void pybind_sycl_utils_definitions(py::module& m) {
+    m.def("sycl_demo", &sycl::SYCLDemo);
+}
 
 }  // namespace core
 }  // namespace open3d

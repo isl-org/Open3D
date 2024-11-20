@@ -1,16 +1,9 @@
-cmake_minimum_required(VERSION 3.20)
-# If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
+cmake_minimum_required(VERSION 3.24)
+# If you're using Ubuntu 20.04, we suggest you install the latest CMake from the
 # official repository https://apt.kitware.com/.
-#
-# CMake 3.19+ is required to:
-# - allow linking with OBJECT libraries
-# - prevent erroneous -gencode option deduplication with CUDA
-# - simplify generator expressions for selecting compile flags and setting
-#   global hardened link flags
-# - use first-class language support for ISPC (3.19.2 patch release required)
-#
-# CMake 3.20+ is required to:
-# - detect IntelLLVM compiler for SYCL
+# CMake 3.24+ is required for CUDA native arch selection
+# CMake 3.22+ is required by Assimp v5.4.2
+# CMake 3.20+ is required to detect IntelLLVM compiler for SYCL
 
 # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
 # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
@@ -47,6 +40,7 @@ option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
+option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"         ON )
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
 if (WIN32)   # Causes CUDA runtime error on Windows (See issue #6555)
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    OFF)
@@ -61,7 +55,7 @@ endif()
 option(BUILD_COMMON_ISPC_ISAS     "Build for common ISPC ISAs (for release)" OFF)
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
-option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
+option(WITH_IPP                "Use Intel Integrated Performance Primitives" ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
 if(BUILD_SHARED_LIBS)
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
@@ -259,6 +253,8 @@ string(CONCAT OPEN3D_VERSION
 )
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}" CACHE
     STRING "Open3D full version.")
+set(OPEN3D_ABI_VERSION "${OPEN3D_VERSION_MAJOR}.${OPEN3D_VERSION_MINOR}" CACHE
+    STRING "Open3D ABI version / SOVERSION (for releases only).")
 # Set additional info
 set(PROJECT_EMAIL       "open3d@intel.com")
 set(PROJECT_DOCS        "https://www.open3d.org/docs")
@@ -298,28 +294,11 @@ endif()
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
-# Tensorflow 2.9+ requires cxx_17, but MSVC 19.29 throws errors with C++17
-# enabled.
-if (BUILD_SYCL_MODULE OR BUILD_TENSORFLOW_OPS)
-    set(CMAKE_CXX_STANDARD 17)
-else()
-    set(CMAKE_CXX_STANDARD 14)
-endif()
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)   # Improved compatibility
 
-# FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
-if (BUILD_CUDA_MODULE
-    AND CMAKE_CXX_COMPILER MATCHES "MSVC"
-    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
-)
-    # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CUDA_STANDARD 17)
-    # Suppress warnings for deprecated C++17 functions.
-    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
-    message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
-        "Workaround this bug by setting the CUDA standard to C++17.")
-endif()
-
+# Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
+add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake")
 
@@ -408,17 +387,53 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_mod
 
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
-    include(Open3DMakeCudaArchitectures)
-    open3d_make_cuda_architectures(CUDA_ARCHS)
-    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
-
-    message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+    # Suppress nvcc unsupported compiler error for MSVC 2022 with CUDA 11.7 to 12.4
+    # https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12
+    if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
+        # Set this before any CUDA checks
+        set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
+        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
+        "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+    endif()
+    if (CMAKE_CUDA_ARCHITECTURES)
+        message(STATUS "Building with user-provided CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+    else()
+        if(BUILD_COMMON_CUDA_ARCHS)
+            # Build with all supported architectures for previous 2 generations and
+            # M0 (minor=0) architectures for previous generations (including
+            # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
+            # This is a tradeoff between binary size / build time and runtime on
+            # older architectures. See:
+            # https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility
+            # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
+            # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
+            find_package(CUDAToolkit REQUIRED)
+            if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
+                set(CMAKE_CUDA_ARCHITECTURES 75-real 80-real 86-real 89-real 90)    # Turing, Ampere, Ada Lovelace, Hopper
+            elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
+                set(CMAKE_CUDA_ARCHITECTURES 70-real 75-real 80-real 86)            # Volta, Turing, Ampere
+            elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
+                set(CMAKE_CUDA_ARCHITECTURES 60-real 70-real 72-real 75-real 80)    # Pascal, Volta, Turing, Ampere
+            else()
+                set(CMAKE_CUDA_ARCHITECTURES 30-real 50-real 60-real 70-real 75)    # Kepler, Maxwell, Pascal, Turing
+            endif()
+            message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+        else()
+            execute_process(COMMAND nvidia-smi RESULT_VARIABLE NVIDIA_CHECK OUTPUT_QUIET)
+            if (NVIDIA_CHECK EQUAL 0)
+                message(STATUS "Building with native CUDA architecture.")
+                set(CMAKE_CUDA_ARCHITECTURES native)
+            else()
+                message(WARNING "No CUDA GPU detected. Building with CMake default CUDA architecture.")
+            endif()
+        endif()
+    endif()
     enable_language(CUDA)
-
+    set(CMAKE_CUDA_STANDARD 17)
     if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
         message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
     endif()
-endif ()
+endif()
 
 # ISPC language emulation support
 include(Open3DISPC)
@@ -494,6 +509,12 @@ macro(add_source_group module_name)
     file(GLOB MODULE_MATERIAL_FILES "${module_name}/*.mat")
     source_group("Source Files\\Material" FILES ${MODULE_MATERIAL_FILES})
 endmacro()
+
+if (LINUX_AARCH64)
+# Fix for ImportError: ... /pybind.cpython-310-aarch64-linux-gnu.so: cannot allocate memory in static TLS block
+# https://bugs.launchpad.net/ubuntu/+source/mysql-8.0/+bug/1889851
+    add_compile_options("-ftls-model=global-dynamic")
+endif()
 
 # Include convenience functions
 include(Open3DLink3rdpartyLibraries)

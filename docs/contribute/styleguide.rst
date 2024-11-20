@@ -58,7 +58,7 @@ We generally follow the `Google C++ Style Guide <https://google.github.io/styleg
 * Use ``#pragma once`` for header guard.
 * All Open3D classes and functions are nested in namespace ``open3d``.
 * Avoid using naked pointers. Use ``std::shared_ptr`` and ``std::unique_ptr`` instead.
-* C++11 features are recommended, but C++14 and C++17 are also accepted.
+* C++17 features are acceptable. Do not use C++20 or later features.
 
 We also recommend reading the `C++ Core Guidelines <https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md>`_.
 

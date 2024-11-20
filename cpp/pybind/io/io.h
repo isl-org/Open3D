@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,14 +12,18 @@
 namespace open3d {
 namespace io {
 
-void pybind_io(py::module& m);
-
-void pybind_class_io(py::module& m);
-
-void pybind_rpc(py::module& m);
-
+void pybind_io_declarations(py::module& m);
+void pybind_class_io_declarations(py::module& m);
+void pybind_rpc_declarations(py::module& m);
 #ifdef BUILD_AZURE_KINECT
-void pybind_sensor(py::module& m);
+void pybind_sensor_declarations(py::module& m);
+#endif
+
+void pybind_io_definitions(py::module& m);
+void pybind_class_io_definitions(py::module& m);
+void pybind_rpc_definitions(py::module& m);
+#ifdef BUILD_AZURE_KINECT
+void pybind_sensor_definitions(py::module& m);
 #endif
 
 }  // namespace io

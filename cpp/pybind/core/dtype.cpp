@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -15,10 +15,14 @@
 namespace open3d {
 namespace core {
 
-void pybind_core_dtype(py::module &m) {
-    // open3d.core.Dtype class
+void pybind_core_dtype_declarations(py::module &m) {
     py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
                                                     "Open3D data types.");
+}
+void pybind_core_dtype_definitions(py::module &m) {
+    // open3d.core.Dtype class
+    auto dtype = static_cast<py::class_<Dtype, std::shared_ptr<Dtype>>>(
+            m.attr("Dtype"));
     dtype.def(py::init<Dtype::DtypeCode, int64_t, const std::string &>());
     dtype.def_readonly_static("Undefined", &core::Undefined);
     dtype.def_readonly_static("Float32", &core::Float32);

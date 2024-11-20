@@ -1,7 +1,5 @@
 name: MacOS
-permissions:
-  contents: write
-  actions: write
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -28,6 +26,8 @@ env:
 
 jobs:
   MacOS:
+    permissions:
+      contents: write  # upload
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -62,7 +62,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
@@ -139,6 +139,8 @@ jobs:
           if-no-files-found: error
 
   fuse-viewer:
+    permissions:
+      contents: write  # Release upload
     name: Fuse x64 and ARM64 viewer app
     runs-on: [macos-12]
     needs: [MacOS]
@@ -182,6 +184,8 @@ jobs:
 
   build-wheel:
     name: Build wheel
+    permissions:
+      contents: write  # upload
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -190,7 +194,7 @@ jobs:
         # macos-12 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
         os: [macos-12, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -205,9 +209,13 @@ jobs:
             python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
 
     env:
       BUILD_CUDA_MODULE: OFF
+      # TensorFlow v2.16 does not support Python 3.8
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version == '3.8' && 'OFF' || 'ON' }}
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
@@ -287,20 +295,33 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
+      - name: Update devel release (x86_64 only wheels)
+        if: ${{ github.ref == 'refs/heads/main' && (matrix.python_version == '3.8' || matrix.python_version == '3.9') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload main-devel build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
+          gh release view main-devel
+
+
   fuse-wheel:
     name: Fuse universal2 wheel
+    permissions:
+      contents: write  # Release upload
     runs-on: [macos-12]
     needs: [build-wheel]
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.10', '3.11']
+        python_version: ['3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
     steps:
       - name: Checkout source code  # for gh release upload
         uses: actions/checkout@v4
@@ -330,11 +351,8 @@ jobs:
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           mkdir universal_wheels
           pip install delocate
-          delocate-fuse -v x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
-          # Normalize file name as delocate-fuse doesn't update it
-          OLD_WHL_NAME=$(basename x64_wheels/open3d-*${PYTAG}*.whl)
-          NEW_WHL_NAME=${OLD_WHL_NAME/x86_64/universal2}
-          mv x64_wheels/${OLD_WHL_NAME} universal_wheels/${NEW_WHL_NAME}
+          delocate-merge -v -w universal_wheels x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
+          NEW_WHL_NAME=$(basename universal_wheels/open3d-*${PYTAG}*.whl)
           echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
 
       - name: Upload merged wheels
@@ -354,13 +372,15 @@ jobs:
 
   test-wheel:
     name: Test wheel
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
         os: [macos-12, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -374,6 +394,8 @@ jobs:
             python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
@@ -385,6 +407,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels
