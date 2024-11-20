@@ -21,7 +21,7 @@ public:
     enum class DeviceType {
         CPU = 0,
         CUDA = 1,
-        SYCL = 2,  // SYCL gpu_selector().
+        SYCL = 2,  // SYCL gpu_selector_v.
     };
 
     /// Default constructor -> "CPU:0".

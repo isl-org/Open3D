@@ -30,14 +30,16 @@ namespace geometry {
 class RaycastingScene {
 public:
     /// \brief Default Constructor.
-    RaycastingScene(int64_t nthreads = 0);
+    RaycastingScene(int64_t nthreads = 0,
+                    const core::Device &device = core::Device("CPU:0"));
 
     ~RaycastingScene();
 
     /// \brief Add a triangle mesh to the scene.
     /// \param vertex_positions Vertices as Tensor of dim {N,3} and dtype float.
     /// \param triangle_indices Triangles as Tensor of dim {M,3} and dtype
-    /// uint32_t. \return The geometry ID of the added mesh.
+    /// uint32_t.
+    /// \return The geometry ID of the added mesh.
     uint32_t AddTriangles(const core::Tensor &vertex_positions,
                           const core::Tensor &triangle_indices);
 
@@ -250,6 +252,10 @@ public:
 
 private:
     struct Impl;
+    struct CPUImpl;
+#ifdef BUILD_SYCL_MODULE
+    struct SYCLImpl;
+#endif
     std::unique_ptr<Impl> impl_;
 };
 
