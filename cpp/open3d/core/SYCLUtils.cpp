@@ -35,7 +35,7 @@ int SYCLDemo() {
 #ifdef BUILD_SYCL_MODULE
     // Ref: https://intel.github.io/llvm-docs/GetStartedGuide.html
     // Creating buffer of 4 ints to be used inside the kernel code.
-    sycl::buffer<sycl::cl_int, 1> buffer(4);
+    sycl::buffer<int, 1> buffer(4);
 
     // Creating SYCL queue.
     sycl::queue q;
@@ -51,13 +51,13 @@ int SYCLDemo() {
         cgh.parallel_for<class FillBuffer>(
                 num_workloads, [=](sycl::id<1> WIid) {
                     // Fill buffer with indexes.
-                    accessor[WIid] = (sycl::cl_int)WIid.get(0);
+                    accessor[WIid] = (int)WIid.get(0);
                 });
     });
 
-    // Getting read only access to the buffer on the host.
+    // Getting access to the buffer on the host.
     // Implicit barrier waiting for q to complete the work.
-    const auto host_accessor = buffer.get_access<sycl::access::mode::read>();
+    const auto host_accessor = buffer.get_host_access();
 
     // Check the results.
     bool mismatch_found = false;
@@ -140,45 +140,38 @@ void PrintSYCLDevices(bool print_all) {
 
         utility::LogInfo("# Default SYCL selectors");
         try {
-            const sycl::device &device = sycl::device(sycl::default_selector());
-            utility::LogInfo("- sycl::default_selector()    : {}",
+            const sycl::device &device = sycl::device(sycl::default_selector_v);
+            utility::LogInfo("- sycl::default_selector_v    : {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
-            utility::LogInfo("- sycl::default_selector()    : N/A");
+            utility::LogInfo("- sycl::default_selector_v    : N/A");
         }
         try {
-            const sycl::device &device = sycl::device(sycl::host_selector());
-            utility::LogInfo("- sycl::host_selector()       : {}",
+            const sycl::device &device = sycl::device(sycl::cpu_selector_v);
+            utility::LogInfo("- sycl::cpu_selector_v        : {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
-            utility::LogInfo("- sycl::host_selector()       : N/A");
+            utility::LogInfo("- sycl::cpu_selector_v        : N/A");
         }
         try {
-            const sycl::device &device = sycl::device(sycl::cpu_selector());
-            utility::LogInfo("- sycl::cpu_selector()        : {}",
+            const sycl::device &device = sycl::device(sycl::gpu_selector_v);
+            utility::LogInfo("- sycl::gpu_selector_v        : {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
-            utility::LogInfo("- sycl::cpu_selector()        : N/A");
-        }
-        try {
-            const sycl::device &device = sycl::device(sycl::gpu_selector());
-            utility::LogInfo("- sycl::gpu_selector()        : {}",
-                             SYCLDeviceToString(device));
-        } catch (const sycl::exception &e) {
-            utility::LogInfo("- sycl::gpu_selector()        : N/A");
+            utility::LogInfo("- sycl::gpu_selector_v        : N/A");
         }
         try {
             const sycl::device &device =
-                    sycl::device(sycl::accelerator_selector());
-            utility::LogInfo("- sycl::accelerator_selector(): {}",
+                    sycl::device(sycl::accelerator_selector_v);
+            utility::LogInfo("- sycl::accelerator_selector_v: {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
-            utility::LogInfo("- sycl::accelerator_selector(): N/A");
+            utility::LogInfo("- sycl::accelerator_selector_v: N/A");
         }
 
         utility::LogInfo("# Open3D SYCL device");
         try {
-            const sycl::device &device = sycl::device(sycl::gpu_selector());
+            const sycl::device &device = sycl::device(sycl::gpu_selector_v);
             utility::LogInfo("- Device(\"SYCL:0\"): {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
@@ -187,7 +180,7 @@ void PrintSYCLDevices(bool print_all) {
     } else {
         utility::LogInfo("# Open3D SYCL device");
         try {
-            const sycl::device &device = sycl::device(sycl::gpu_selector());
+            const sycl::device &device = sycl::device(sycl::gpu_selector_v);
             utility::LogInfo("- Device(\"SYCL:0\"): {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {

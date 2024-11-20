@@ -46,7 +46,7 @@ SYCLContext::SYCLContext() {
     // SYCL GPU.
     // TODO: Currently we only support one GPU device.
     try {
-        const sycl::device &sycl_device = sycl::device(sycl::gpu_selector());
+        const sycl::device &sycl_device = sycl::device(sycl::gpu_selector_v);
         const Device open3d_device = Device("SYCL:0");
         devices_.push_back(open3d_device);
         device_to_sycl_device_[open3d_device] = sycl_device;
@@ -60,7 +60,7 @@ SYCLContext::SYCLContext() {
         // your CPU does not have integrated GPU.
         try {
             const sycl::device &sycl_device =
-                    sycl::device(sycl::host_selector());
+                    sycl::device(sycl::cpu_selector_v);
             const Device open3d_device = Device("SYCL:0");
             utility::LogWarning(
                     "SYCL GPU device is not available, falling back to SYCL "

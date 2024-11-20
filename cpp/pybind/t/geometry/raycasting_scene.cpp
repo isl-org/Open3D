@@ -22,7 +22,7 @@ or compute the closest point on the surface of a mesh with respect to one
 or more query points.
 It builds an internal acceleration structure to speed up those queries.
 
-This class supports only the CPU device.
+This class supports the CPU device and SYCL GPU device.
 
 The following shows how to create a scene and compute ray intersections::
 
@@ -64,7 +64,7 @@ Create a RaycastingScene.
 
 Args:
     nthreads (int): The number of threads to use for building the scene. Set to 0 for automatic.
-    device (open3d.core.Device): The device to use.
+    device (open3d.core.Device): The device to use. Currently CPU and SYCL devices are supported.
 )doc");
 
     raycasting_scene.def(
