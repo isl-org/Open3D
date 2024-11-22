@@ -140,9 +140,10 @@ def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
     images = list(o3d.t.io.read_image(imfile) for imfile in calib["images"])
     calib.close()
     start = time.time()
-    albedo = tmeshes[0].project_images_to_albedo(
-        images, Ks, Rts, 1024, True, o3d.t.geometry.BlendingMethod.MAX |
-        o3d.t.geometry.BlendingMethod.COLOR_CORRECTION)
+    with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug):
+        albedo = tmeshes[0].project_images_to_albedo(
+            images, Ks, Rts, 1024, True, o3d.t.geometry.BlendingMethod.AVERAGE)
+        #| o3d.t.geometry.BlendingMethod.COLOR_CORRECTION)
     albedo = albedo.linear_transform(scale=albedo_contrast)  # brighten albedo
     tmeshes[0].material.texture_maps["albedo"] = albedo
     print(f"project_images_to_albedo ran in {time.time()-start:.2f}s")
