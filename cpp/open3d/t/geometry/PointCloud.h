@@ -357,6 +357,16 @@ public:
     /// \param num_samples Number of points to be sampled.
     PointCloud FarthestPointDownSample(size_t num_samples) const;
 
+    /// \brief Downsample a pointcloud into output pointcloud with a set of
+    /// points has farthest distance.
+    ///
+    /// The sampling is performed by selecting the farthest point from previous
+    /// selected points iteratively, starting from `start_index`.
+    ///
+    /// \param num_samples Number of points to be sampled.
+    /// \param start_index Index to start downsampling from.
+    PointCloud FarthestPointDownSample(size_t num_samples, const size_t start_index) const;
+
     /// \brief Remove points that have less than \p nb_points neighbors in a
     /// sphere of a given radius.
     ///
