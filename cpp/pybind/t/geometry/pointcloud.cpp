@@ -667,7 +667,8 @@ Example:
               "in the pointcloud."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "farthest_point_down_sample",
-            {{"num_samples", "Number of points to be sampled."}});
+            {{"num_samples", "Number of points to be sampled."},
+             {"start_index", "Index of point to start downsampling from."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outliers",
             {{"nb_points",
