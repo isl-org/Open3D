@@ -365,7 +365,8 @@ public:
     ///
     /// \param num_samples Number of points to be sampled.
     /// \param start_index Index to start downsampling from.
-    PointCloud FarthestPointDownSample(const size_t num_samples, const size_t start_index) const;
+    PointCloud FarthestPointDownSample(const size_t num_samples,
+                                       const size_t start_index) const;
 
     /// \brief Remove points that have less than \p nb_points neighbors in a
     /// sphere of a given radius.

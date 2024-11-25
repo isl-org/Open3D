@@ -956,8 +956,7 @@ TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
                                       device));
 
     auto expected = core::Tensor::Init<float>(
-                    {{0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}},
-                    device);
+            {{0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}}, device);
     auto pcd_small_down = pcd_small.FarthestPointDownSample(4);
     auto pcd_small_down_2 = pcd_small.FarthestPointDownSample(4, 0);
     EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(expected));

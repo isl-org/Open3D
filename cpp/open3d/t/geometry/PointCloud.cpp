@@ -389,8 +389,8 @@ PointCloud PointCloud::FarthestPointDownSample(const size_t num_samples) const {
     return FarthestPointDownSample(num_samples, start_index);
 }
 
-PointCloud PointCloud::FarthestPointDownSample(
-        const size_t num_samples, const size_t start_index) const {
+PointCloud PointCloud::FarthestPointDownSample(const size_t num_samples,
+                                               const size_t start_index) const {
     const core::Dtype dtype = GetPointPositions().GetDtype();
     const int64_t num_points = GetPointPositions().GetLength();
     if (num_samples == 0) {
@@ -402,13 +402,12 @@ PointCloud PointCloud::FarthestPointDownSample(
                 "Illegal number of samples: {}, must <= point size: {}",
                 num_samples, num_points);
     } else if (start_index >= size_t(num_points)) {
-        utility::LogError(
-                "Illegal start index: {}, must <= point size: {}",
-                start_index, num_points);
-    } else if (start_index > static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
-        utility::LogError(
-                "Illegal start index: {}, must <= int64_t max: {}",
-                start_index, std::numeric_limits<int64_t>::max());
+        utility::LogError("Illegal start index: {}, must <= point size: {}",
+                          start_index, num_points);
+    } else if (start_index >
+               static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
+        utility::LogError("Illegal start index: {}, must <= int64_t max: {}",
+                          start_index, std::numeric_limits<int64_t>::max());
     }
     core::Tensor selection_mask =
             core::Tensor::Zeros({num_points}, core::Bool, GetDevice());

@@ -251,14 +251,16 @@ Example:
                    "and its attributes.",
                    "sampling_ratio"_a);
     pointcloud.def("farthest_point_down_sample",
-                   py::overload_cast<size_t>(&PointCloud::FarthestPointDownSample, py::const_),
+                   py::overload_cast<size_t>(
+                           &PointCloud::FarthestPointDownSample, py::const_),
                    "Downsample a pointcloud into output pointcloud with a set "
                    "of points has farthest distance.The sampling is performed "
                    "by selecting the farthest point from previous selected "
                    "points iteratively",
                    "num_samples"_a);
     pointcloud.def("farthest_point_down_sample",
-                   py::overload_cast<size_t, size_t>(&PointCloud::FarthestPointDownSample, py::const_),
+                   py::overload_cast<size_t, size_t>(
+                           &PointCloud::FarthestPointDownSample, py::const_),
                    "Downsample a pointcloud into output pointcloud with a set "
                    "of points has farthest distance.The sampling is performed "
                    "by selecting the farthest point from previous selected "

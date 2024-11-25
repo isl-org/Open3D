@@ -876,10 +876,8 @@ TEST(PointCloud, FarthestPointDownSample) {
                               {1.0, 0, 1.0},
                               {0, 1.0, 1.0},
                               {1.0, 1.0, 1.5}});
-    std::vector<Eigen::Vector3d> expected = {{0, 2.0, 0},
-                                             {1.0, 1.0, 0},
-                                             {1.0, 0, 1.0},
-                                             {0, 1.0, 1.0}};
+    std::vector<Eigen::Vector3d> expected = {
+            {0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}};
     std::shared_ptr<geometry::PointCloud> pcd_down =
             pcd.FarthestPointDownSample(4);
     std::shared_ptr<geometry::PointCloud> pcd_down_2 =

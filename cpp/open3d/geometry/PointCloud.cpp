@@ -523,9 +523,8 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
                 "Illegal number of samples: {}, must <= point size: {}",
                 num_samples, points_.size());
     } else if (start_index >= points_.size()) {
-        utility::LogError(
-                "Illegal start index: {}, must < point size: {}",
-                start_index, points_.size());
+        utility::LogError("Illegal start index: {}, must < point size: {}",
+                          start_index, points_.size());
     }
     // We can also keep track of the non-selected indices with unordered_set,
     // but since typically num_samples << num_points, it may not be worth it.
