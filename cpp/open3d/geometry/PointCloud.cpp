@@ -507,13 +507,13 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
 }
 
 std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
-        size_t num_samples) const {
+        const size_t num_samples) const {
     constexpr size_t start_index = 0;
     return FarthestPointDownSample(num_samples, start_index);
 }
 
 std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
-        size_t num_samples, const size_t start_index) const {
+        const size_t num_samples, const size_t start_index) const {
     if (num_samples == 0) {
         return std::make_shared<PointCloud>();
     } else if (num_samples == points_.size()) {
