@@ -954,11 +954,14 @@ TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
                                        {0, 1.0, 1.0},
                                        {1.0, 1.0, 1.5}},
                                       device));
-    auto pcd_small_down = pcd_small.FarthestPointDownSample(4);
-    EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(
-            core::Tensor::Init<float>(
+
+    auto expected = core::Tensor::Init<float>(
                     {{0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}},
-                    device)));
+                    device);
+    auto pcd_small_down = pcd_small.FarthestPointDownSample(4);
+    auto pcd_small_down_2 = pcd_small.FarthestPointDownSample(4, 0);
+    EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(expected));
+    EXPECT_TRUE(pcd_small_down_2.GetPointPositions().AllClose(expected));
 }
 
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
