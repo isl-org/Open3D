@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <string>
 
 #include "open3d/visualization/gui/Widget.h"
 
@@ -147,6 +149,9 @@ public:
 
     /// Returns true if open and false if collapsed.
     bool GetIsOpen();
+
+    void SetText(const char* text);
+    std::string GetText() const;
 
     FontId GetFontId() const;
     void SetFontId(FontId font_id);

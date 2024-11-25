@@ -16,14 +16,11 @@
 # happens, run this workflow manually to clean up the login profiles.
 
 name: Clean GCloud Profiles
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
-  # pull_request:
-  #   types: [opened, reopened, synchronize]
 
 env:
   GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}

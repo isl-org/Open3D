@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -50,11 +50,13 @@ const std::unordered_map<std::string, std::string> argument_docs = {
         {"values_buffer_id", "Index of the value buffer tensor."},
         {"device_id", "Target CUDA device ID."}};
 
-void pybind_core_hashmap(py::module& m) {
+void pybind_core_hashmap_declarations(py::module& m) {
     py::class_<HashMap> hashmap(m, "HashMap",
                                 "A HashMap is an unordered map from key to "
                                 "value wrapped by Tensors.");
-
+}
+void pybind_core_hashmap_definitions(py::module& m) {
+    auto hashmap = static_cast<py::class_<HashMap>>(m.attr("HashMap"));
     hashmap.def(py::init<int64_t, const Dtype&, const SizeVector&, const Dtype&,
                          const SizeVector&, const Device&>(),
                 "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
@@ -193,11 +195,13 @@ void pybind_core_hashmap(py::module& m) {
     hashmap.def_property_readonly("is_cuda", &HashMap::IsCUDA);
 }
 
-void pybind_core_hashset(py::module& m) {
+void pybind_core_hashset_declarations(py::module& m) {
     py::class_<HashSet> hashset(
             m, "HashSet",
             "A HashSet is an unordered set of keys wrapped by Tensors.");
-
+}
+void pybind_core_hashset_definitions(py::module& m) {
+    auto hashset = static_cast<py::class_<HashSet>>(m.attr("HashSet"));
     hashset.def(
             py::init<int64_t, const Dtype&, const SizeVector&, const Device&>(),
             "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,

@@ -1,23 +1,23 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/SYCLContext.h"
 
-#include <CL/sycl.hpp>
 #include <array>
 #include <cstdlib>
 #include <sstream>
+#include <sycl/sycl.hpp>
 
 #include "open3d/core/SYCLUtils.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
-namespace sycl {
+namespace sy {
 
 SYCLContext &SYCLContext::GetInstance() {
     static thread_local SYCLContext instance;
@@ -38,7 +38,7 @@ bool SYCLContext::IsDeviceAvailable(const Device &device) {
 }
 std::vector<Device> SYCLContext::GetAvailableSYCLDevices() { return devices_; }
 
-sy::queue SYCLContext::GetDefaultQueue(const Device &device) {
+sycl::queue SYCLContext::GetDefaultQueue(const Device &device) {
     return device_to_default_queue_.at(device);
 }
 
@@ -46,12 +46,12 @@ SYCLContext::SYCLContext() {
     // SYCL GPU.
     // TODO: Currently we only support one GPU device.
     try {
-        const sy::device &sycl_device = sy::device(sy::gpu_selector());
+        const sycl::device &sycl_device = sycl::device(sycl::gpu_selector_v);
         const Device open3d_device = Device("SYCL:0");
         devices_.push_back(open3d_device);
         device_to_sycl_device_[open3d_device] = sycl_device;
-        device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
-    } catch (const sy::exception &e) {
+        device_to_default_queue_[open3d_device] = sycl::queue(sycl_device);
+    } catch (const sycl::exception &e) {
     }
 
     if (devices_.size() == 0) {
@@ -59,15 +59,16 @@ SYCLContext::SYCLContext() {
         // This could happen if the Intel GPGPU driver is not installed or if
         // your CPU does not have integrated GPU.
         try {
-            const sy::device &sycl_device = sy::device(sy::host_selector());
+            const sycl::device &sycl_device =
+                    sycl::device(sycl::cpu_selector_v);
             const Device open3d_device = Device("SYCL:0");
             utility::LogWarning(
                     "SYCL GPU device is not available, falling back to SYCL "
                     "host device.");
             devices_.push_back(open3d_device);
             device_to_sycl_device_[open3d_device] = sycl_device;
-            device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
-        } catch (const sy::exception &e) {
+            device_to_default_queue_[open3d_device] = sycl::queue(sycl_device);
+        } catch (const sycl::exception &e) {
         }
     }
 
@@ -76,6 +77,6 @@ SYCLContext::SYCLContext() {
     }
 }
 
-}  // namespace sycl
+}  // namespace sy
 }  // namespace core
 }  // namespace open3d

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -78,8 +78,8 @@ void VisualizerWithCustomAnimation::Play(
     is_redraw_required_ = true;
     UpdateWindowTitle();
     recording_file_index_ = 0;
-    utility::ProgressBar progress_bar(view_control.NumOfFrames(),
-                                      "Play animation: ");
+    auto progress_bar_ptr = std::make_shared<utility::ProgressBar>(
+            view_control.NumOfFrames(), "Play animation: ");
     auto trajectory_ptr = std::make_shared<camera::PinholeCameraTrajectory>();
     bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
     if (recording) {
@@ -94,7 +94,7 @@ void VisualizerWithCustomAnimation::Play(
     RegisterAnimationCallback([this, recording, recording_depth,
                                close_window_when_animation_ends,
                                recording_trajectory, trajectory_ptr,
-                               &progress_bar](Visualizer *vis) {
+                               progress_bar_ptr](Visualizer *vis) {
         // The lambda function captures no references to avoid dangling
         // references
         auto &view_control =
@@ -121,7 +121,7 @@ void VisualizerWithCustomAnimation::Play(
             }
         }
         view_control.Step(1.0);
-        ++progress_bar;
+        ++(*progress_bar_ptr);
         if (view_control.IsPlayingEnd(recording_file_index_)) {
             view_control.SetAnimationMode(
                     ViewControlWithCustomAnimation::AnimationMode::FreeMode);

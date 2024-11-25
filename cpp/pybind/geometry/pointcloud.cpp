@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,13 +19,20 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_pointcloud(py::module &m) {
+void pybind_pointcloud_declarations(py::module &m) {
     py::class_<PointCloud, PyGeometry3D<PointCloud>,
                std::shared_ptr<PointCloud>, Geometry3D>
             pointcloud(m, "PointCloud",
                        "PointCloud class. A point cloud consists of point "
                        "coordinates, and optionally point colors and point "
                        "normals.");
+}
+
+void pybind_pointcloud_definitions(py::module &m) {
+    auto pointcloud =
+            static_cast<py::class_<PointCloud, PyGeometry3D<PointCloud>,
+                                   std::shared_ptr<PointCloud>, Geometry3D>>(
+                    m.attr("PointCloud"));
     py::detail::bind_default_constructor<PointCloud>(pointcloud);
     py::detail::bind_copy_functions<PointCloud>(pointcloud);
     pointcloud
@@ -412,8 +419,6 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
              {"intrinsic", "Intrinsic parameters of the camera."},
              {"extrnsic", "Extrinsic parameters of the camera."}});
 }
-
-void pybind_pointcloud_methods(py::module &m) {}
 
 }  // namespace geometry
 }  // namespace open3d

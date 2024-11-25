@@ -6,6 +6,7 @@ target_sources(tgeometry_kernel PRIVATE
     PCAPartition.cpp
     PointCloud.cpp
     PointCloudCPU.cpp
+    Metrics.cpp
     TriangleMesh.cpp
     TriangleMeshCPU.cpp
     Transform.cpp
@@ -26,7 +27,7 @@ if (BUILD_CUDA_MODULE)
     )
 endif()
 
-if (WITH_IPPICV)
+if (WITH_IPP)
     target_sources(tgeometry_kernel PRIVATE
         IPPImage.cpp
     )

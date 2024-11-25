@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -250,11 +250,13 @@ static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
             "device"_a = py::none());
 }
 
-void pybind_core_tensor(py::module& m) {
+void pybind_core_tensor_declarations(py::module& m) {
     py::class_<Tensor> tensor(
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
-
+}
+void pybind_core_tensor_definitions(py::module& m) {
+    auto tensor = static_cast<py::class_<Tensor>>(m.attr("Tensor"));
     // o3c.Tensor(np.array([[0, 1, 2], [3, 4, 5]]), dtype=None, device=None).
     tensor.def(py::init([](const py::array& np_array,
                            utility::optional<Dtype> dtype,

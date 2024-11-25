@@ -1,5 +1,5 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
-ARG BASE_IMAGE=nvidia/cuda:11.7.1-cudnn8-devel-ubuntu18.04
+ARG BASE_IMAGE=nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04
 FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
@@ -98,7 +98,7 @@ RUN which python \
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
 
 # Open3D C++ dependencies
 # Done before copying the full Open3D directory for better Docker caching
@@ -112,7 +112,7 @@ COPY ./python/requirements.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter_build.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter_install.txt /root/Open3D/python/
 RUN source /root/Open3D/util/ci_utils.sh \
- && install_python_dependencies with-cuda with-jupyter
+ && install_python_dependencies with-jupyter
 
 # Open3D Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \

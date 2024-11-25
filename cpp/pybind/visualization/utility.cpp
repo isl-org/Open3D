@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -18,10 +18,15 @@
 namespace open3d {
 namespace visualization {
 
-void pybind_visualization_utility(py::module &m) {
+void pybind_visualization_utility_declarations(py::module &m) {
     py::class_<SelectionPolygonVolume> selection_volume(
             m, "SelectionPolygonVolume",
             "Select a polygon volume for cropping.");
+}
+
+void pybind_visualization_utility_definitions(py::module &m) {
+    auto selection_volume = static_cast<py::class_<SelectionPolygonVolume>>(
+            m.attr("SelectionPolygonVolume"));
     py::detail::bind_default_constructor<SelectionPolygonVolume>(
             selection_volume);
     py::detail::bind_copy_functions<SelectionPolygonVolume>(selection_volume);
@@ -75,36 +80,34 @@ void pybind_visualization_utility(py::module &m) {
     docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
                                     "crop_in_polygon",
                                     {{"input", "The input point cloud xyz."}});
-}
-
-// Visualization util functions have similar arguments, sharing arg docstrings
-static const std::unordered_map<std::string, std::string>
-        map_shared_argument_docstrings = {
-                {"callback_function",
-                 "Call back function to be triggered at a key press event."},
-                {"filename", "The file path."},
-                {"geometry_list", "List of geometries to be visualized."},
-                {"height", "The height of the visualization window."},
-                {"key_to_callback", "Map of key to call back functions."},
-                {"left", "The left margin of the visualization window."},
-                {"optional_view_trajectory_json_file",
-                 "Camera trajectory json file path for custom animation."},
-                {"top", "The top margin of the visualization window."},
-                {"width", "The width of the visualization window."},
-                {"point_show_normal",
-                 "Visualize point normals if set to true."},
-                {"mesh_show_wireframe",
-                 "Visualize mesh wireframe if set to true."},
-                {"mesh_show_back_face",
-                 "Visualize also the back face of the mesh triangles."},
-                {"window_name",
-                 "The displayed title of the visualization window."},
-                {"lookat", "The lookat vector of the camera."},
-                {"up", "The up vector of the camera."},
-                {"front", "The front vector of the camera."},
-                {"zoom", "The zoom of the camera."}};
-
-void pybind_visualization_utility_methods(py::module &m) {
+    // Visualization util functions have similar arguments, sharing arg
+    // docstrings
+    static const std::unordered_map<std::string, std::string>
+            map_shared_argument_docstrings = {
+                    {"callback_function",
+                     "Call back function to be triggered at a key press "
+                     "event."},
+                    {"filename", "The file path."},
+                    {"geometry_list", "List of geometries to be visualized."},
+                    {"height", "The height of the visualization window."},
+                    {"key_to_callback", "Map of key to call back functions."},
+                    {"left", "The left margin of the visualization window."},
+                    {"optional_view_trajectory_json_file",
+                     "Camera trajectory json file path for custom animation."},
+                    {"top", "The top margin of the visualization window."},
+                    {"width", "The width of the visualization window."},
+                    {"point_show_normal",
+                     "Visualize point normals if set to true."},
+                    {"mesh_show_wireframe",
+                     "Visualize mesh wireframe if set to true."},
+                    {"mesh_show_back_face",
+                     "Visualize also the back face of the mesh triangles."},
+                    {"window_name",
+                     "The displayed title of the visualization window."},
+                    {"lookat", "The lookat vector of the camera."},
+                    {"up", "The up vector of the camera."},
+                    {"front", "The front vector of the camera."},
+                    {"zoom", "The zoom of the camera."}};
     m.def(
             "draw_geometries",
             [](const std::vector<std::shared_ptr<const geometry::Geometry>>

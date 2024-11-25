@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -33,14 +33,52 @@ static const std::unordered_map<std::string, std::string>
                  "bigger than the original point cloud bounds to accommodate "
                  "all points."}};
 
-void pybind_octree(py::module &m) {
-    // OctreeNodeInfo
+void pybind_octree_declarations(py::module &m) {
     // Binds std::shared_ptr<...> to avoid non-allocated free in python code
     py::class_<OctreeNodeInfo, std::shared_ptr<OctreeNodeInfo>>
             octree_node_info(m, "OctreeNodeInfo",
                              "OctreeNode's information. OctreeNodeInfo is "
                              "computed on the fly, "
                              "not stored with the Node.");
+    py::class_<OctreeNode, PyOctreeNode<OctreeNode>,
+               std::shared_ptr<OctreeNode>>
+            octree_node(m, "OctreeNode", "The base class for octree node.");
+    py::class_<OctreeInternalNode, PyOctreeNode<OctreeInternalNode>,
+               std::shared_ptr<OctreeInternalNode>, OctreeNode>
+            octree_internal_node(m, "OctreeInternalNode",
+                                 "OctreeInternalNode class, containing "
+                                 "OctreeNode children.");
+    py::class_<OctreeInternalPointNode, PyOctreeNode<OctreeInternalPointNode>,
+               std::shared_ptr<OctreeInternalPointNode>, OctreeInternalNode>
+            octree_internal_point_node(
+                    m, "OctreeInternalPointNode",
+                    "OctreeInternalPointNode class is an "
+                    "OctreeInternalNode with a list of point "
+                    "indices (from point cloud) belonging to "
+                    "children of this node.");
+    py::class_<OctreeLeafNode, PyOctreeLeafNode<OctreeLeafNode>,
+               std::shared_ptr<OctreeLeafNode>, OctreeNode>
+            octree_leaf_node(m, "OctreeLeafNode", "OctreeLeafNode base class.");
+    py::class_<OctreeColorLeafNode, PyOctreeLeafNode<OctreeColorLeafNode>,
+               std::shared_ptr<OctreeColorLeafNode>, OctreeLeafNode>
+            octree_color_leaf_node(m, "OctreeColorLeafNode",
+                                   "OctreeColorLeafNode class is an "
+                                   "OctreeLeafNode containing color.");
+    py::class_<OctreePointColorLeafNode,
+               PyOctreeLeafNode<OctreePointColorLeafNode>,
+               std::shared_ptr<OctreePointColorLeafNode>, OctreeLeafNode>
+            octree_point_color_leaf_node(m, "OctreePointColorLeafNode",
+                                         "OctreePointColorLeafNode class is an "
+                                         "OctreeLeafNode containing color.");
+    py::class_<Octree, PyGeometry3D<Octree>, std::shared_ptr<Octree>,
+               Geometry3D>
+            octree(m, "Octree", "Octree datastructure.");
+}
+void pybind_octree_definitions(py::module &m) {
+    // OctreeNodeInfo
+    auto octree_node_info = static_cast<
+            py::class_<OctreeNodeInfo, std::shared_ptr<OctreeNodeInfo>>>(
+            m.attr("OctreeNodeInfo"));
     octree_node_info.def(py::init([](const Eigen::Vector3d &origin, double size,
                                      size_t depth, size_t child_index) {
                              return new OctreeNodeInfo(origin, size, depth,
@@ -75,20 +113,20 @@ void pybind_octree(py::module &m) {
     docstring::ClassMethodDocInject(m, "OctreeNodeInfo", "__init__");
 
     // OctreeNode
-    py::class_<OctreeNode, PyOctreeNode<OctreeNode>,
-               std::shared_ptr<OctreeNode>>
-            octree_node(m, "OctreeNode", "The base class for octree node.");
+    auto octree_node =
+            static_cast<py::class_<OctreeNode, PyOctreeNode<OctreeNode>,
+                                   std::shared_ptr<OctreeNode>>>(
+                    m.attr("OctreeNode"));
     octree_node.def("__repr__", [](const OctreeNode &octree_node) {
         return "OctreeNode instance.";
     });
     docstring::ClassMethodDocInject(m, "OctreeNode", "__init__");
 
     // OctreeInternalNode
-    py::class_<OctreeInternalNode, PyOctreeNode<OctreeInternalNode>,
-               std::shared_ptr<OctreeInternalNode>, OctreeNode>
-            octree_internal_node(m, "OctreeInternalNode",
-                                 "OctreeInternalNode class, containing "
-                                 "OctreeNode children.");
+    auto octree_internal_node = static_cast<
+            py::class_<OctreeInternalNode, PyOctreeNode<OctreeInternalNode>,
+                       std::shared_ptr<OctreeInternalNode>, OctreeNode>>(
+            m.attr("OctreeInternalNode"));
     octree_internal_node
             .def("__repr__",
                  [](const OctreeInternalNode &internal_node) {
@@ -122,14 +160,10 @@ void pybind_octree(py::module &m) {
     docstring::ClassMethodDocInject(m, "OctreeInternalNode", "__init__");
 
     // OctreeInternalPointNode
-    py::class_<OctreeInternalPointNode, PyOctreeNode<OctreeInternalPointNode>,
-               std::shared_ptr<OctreeInternalPointNode>, OctreeInternalNode>
-            octree_internal_point_node(
-                    m, "OctreeInternalPointNode",
-                    "OctreeInternalPointNode class is an "
-                    "OctreeInternalNode with a list of point "
-                    "indices (from point cloud) belonging to "
-                    "children of this node.");
+    auto octree_internal_point_node = static_cast<py::class_<
+            OctreeInternalPointNode, PyOctreeNode<OctreeInternalPointNode>,
+            std::shared_ptr<OctreeInternalPointNode>, OctreeInternalNode>>(
+            m.attr("OctreeInternalPointNode"));
     octree_internal_point_node
             .def("__repr__",
                  [](const OctreeInternalPointNode &internal_point_node) {
@@ -172,9 +206,10 @@ void pybind_octree(py::module &m) {
     docstring::ClassMethodDocInject(m, "OctreeInternalPointNode", "__init__");
 
     // OctreeLeafNode
-    py::class_<OctreeLeafNode, PyOctreeLeafNode<OctreeLeafNode>,
-               std::shared_ptr<OctreeLeafNode>, OctreeNode>
-            octree_leaf_node(m, "OctreeLeafNode", "OctreeLeafNode base class.");
+    auto octree_leaf_node = static_cast<
+            py::class_<OctreeLeafNode, PyOctreeLeafNode<OctreeLeafNode>,
+                       std::shared_ptr<OctreeLeafNode>, OctreeNode>>(
+            m.attr("OctreeLeafNode"));
     octree_leaf_node
             .def("__repr__",
                  [](const OctreeLeafNode &leaf_node) {
@@ -189,11 +224,10 @@ void pybind_octree(py::module &m) {
     docstring::ClassMethodDocInject(m, "OctreeLeafNode", "__init__");
 
     // OctreeColorLeafNode
-    py::class_<OctreeColorLeafNode, PyOctreeLeafNode<OctreeColorLeafNode>,
-               std::shared_ptr<OctreeColorLeafNode>, OctreeLeafNode>
-            octree_color_leaf_node(m, "OctreeColorLeafNode",
-                                   "OctreeColorLeafNode class is an "
-                                   "OctreeLeafNode containing color.");
+    auto octree_color_leaf_node = static_cast<py::class_<
+            OctreeColorLeafNode, PyOctreeLeafNode<OctreeColorLeafNode>,
+            std::shared_ptr<OctreeColorLeafNode>, OctreeLeafNode>>(
+            m.attr("OctreeColorLeafNode"));
     octree_color_leaf_node
             .def("__repr__",
                  [](const OctreeColorLeafNode &color_leaf_node) {
@@ -223,12 +257,12 @@ void pybind_octree(py::module &m) {
             octree_color_leaf_node);
 
     // OctreePointColorLeafNode
-    py::class_<OctreePointColorLeafNode,
-               PyOctreeLeafNode<OctreePointColorLeafNode>,
-               std::shared_ptr<OctreePointColorLeafNode>, OctreeLeafNode>
-            octree_point_color_leaf_node(m, "OctreePointColorLeafNode",
-                                         "OctreePointColorLeafNode class is an "
-                                         "OctreeLeafNode containing color.");
+    auto octree_point_color_leaf_node =
+            static_cast<py::class_<OctreePointColorLeafNode,
+                                   PyOctreeLeafNode<OctreePointColorLeafNode>,
+                                   std::shared_ptr<OctreePointColorLeafNode>,
+                                   OctreeLeafNode>>(
+                    m.attr("OctreePointColorLeafNode"));
     octree_point_color_leaf_node
             .def("__repr__",
                  [](const OctreePointColorLeafNode &color_leaf_node) {
@@ -264,9 +298,9 @@ void pybind_octree(py::module &m) {
             octree_point_color_leaf_node);
 
     // Octree
-    py::class_<Octree, PyGeometry3D<Octree>, std::shared_ptr<Octree>,
-               Geometry3D>
-            octree(m, "Octree", "Octree datastructure.");
+    auto octree = static_cast<py::class_<Octree, PyGeometry3D<Octree>,
+                                         std::shared_ptr<Octree>, Geometry3D>>(
+            m.attr("Octree"));
     py::detail::bind_default_constructor<Octree>(octree);
     py::detail::bind_copy_functions<Octree>(octree);
     octree.def(py::init([](size_t max_depth) { return new Octree(max_depth); }),
@@ -343,8 +377,6 @@ void pybind_octree(py::module &m) {
             m, "Octree", "create_from_voxel_grid",
             {{"voxel_grid", "geometry.VoxelGrid: The source voxel grid."}});
 }
-
-void pybind_octree_methods(py::module &m) {}
 
 }  // namespace geometry
 }  // namespace open3d

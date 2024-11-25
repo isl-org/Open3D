@@ -1,38 +1,20 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Demo scene demonstrating models, built-in shapes, and materials"""
 
-import math
 import numpy as np
-import os
 import open3d as o3d
 import open3d.visualization as vis
 
 
-def convert_material_record(mat_record):
-    mat = vis.Material('defaultLit')
-    # Convert scalar parameters
-    mat.vector_properties['base_color'] = mat_record.base_color
-    mat.scalar_properties['metallic'] = mat_record.base_metallic
-    mat.scalar_properties['roughness'] = mat_record.base_roughness
-    mat.scalar_properties['reflectance'] = mat_record.base_reflectance
-    mat.texture_maps['albedo'] = o3d.t.geometry.Image.from_legacy(
-        mat_record.albedo_img)
-    mat.texture_maps['normal'] = o3d.t.geometry.Image.from_legacy(
-        mat_record.normal_img)
-    mat.texture_maps['ao_rough_metal'] = o3d.t.geometry.Image.from_legacy(
-        mat_record.ao_rough_metal_img)
-    return mat
-
-
 def create_scene():
-    '''
-    Creates the geometry and materials for the demo scene and returns a dictionary suitable for draw call
-    '''
+    """Creates the geometry and materials for the demo scene and returns a
+    dictionary suitable for draw call
+    """
     # Create some shapes for our scene
     a_cube = o3d.geometry.TriangleMesh.create_box(2,
                                                   4,
@@ -47,7 +29,7 @@ def create_scene():
                                                        resolution=40,
                                                        create_uv_map=True)
     a_sphere.compute_vertex_normals()
-    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
+    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-np.pi / 2, 0, 0))
     a_sphere.rotate(rotate_90)
     a_sphere.translate((5, 2.4, 0))
     a_sphere = o3d.t.geometry.TriangleMesh.from_legacy(a_sphere)
@@ -68,17 +50,13 @@ def create_scene():
     # Load an OBJ model for our scene
     helmet_data = o3d.data.FlightHelmetModel()
     helmet = o3d.io.read_triangle_model(helmet_data.path)
-    helmet_parts = []
-    for m in helmet.meshes:
-        # m.mesh.paint_uniform_color((1.0, 0.75, 0.3))
-        m.mesh.scale(10.0, (0.0, 0.0, 0.0))
-        helmet_parts.append(m)
+    helmet_parts = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(helmet)
 
     # Create a ground plane
     ground_plane = o3d.geometry.TriangleMesh.create_box(
         50.0, 0.1, 50.0, create_uv_map=True, map_texture_to_each_face=True)
     ground_plane.compute_triangle_normals()
-    rotate_180 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi, 0, 0))
+    rotate_180 = o3d.geometry.get_rotation_matrix_from_xyz((-np.pi, 0, 0))
     ground_plane.rotate(rotate_180)
     ground_plane.translate((-25.0, -0.1, -25.0))
     ground_plane.paint_uniform_color((1, 1, 1))
@@ -157,12 +135,11 @@ def create_scene():
         "geometry": a_sphere
     }]
     # Load the helmet
-    for part in helmet_parts:
-        name = part.mesh_name
-        tgeom = o3d.t.geometry.TriangleMesh.from_legacy(part.mesh)
-        tgeom.material = convert_material_record(
-            helmet.materials[part.material_idx])
-        geoms.append({"name": name, "geometry": tgeom})
+    for name, tmesh in helmet_parts.items():
+        geoms.append({
+            "name": name,
+            "geometry": tmesh.scale(10.0, (0.0, 0.0, 0.0))
+        })
     return geoms
 
 

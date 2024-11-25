@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -15,16 +15,22 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_tetramesh(py::module &m) {
+void pybind_tetramesh_declarations(py::module &m) {
     py::class_<TetraMesh, PyGeometry3D<TetraMesh>, std::shared_ptr<TetraMesh>,
                MeshBase>
             trianglemesh(m, "TetraMesh",
                          "TetraMesh class. Tetra mesh contains vertices "
                          "and tetrahedra represented by the indices to the "
                          "vertices.");
-    py::detail::bind_default_constructor<TetraMesh>(trianglemesh);
-    py::detail::bind_copy_functions<TetraMesh>(trianglemesh);
-    trianglemesh
+}
+void pybind_tetramesh_definitions(py::module &m) {
+    auto tetramesh =
+            static_cast<py::class_<TetraMesh, PyGeometry3D<TetraMesh>,
+                                   std::shared_ptr<TetraMesh>, MeshBase>>(
+                    m.attr("TetraMesh"));
+    py::detail::bind_default_constructor<TetraMesh>(tetramesh);
+    py::detail::bind_copy_functions<TetraMesh>(tetramesh);
+    tetramesh
             .def(py::init<const std::vector<Eigen::Vector3d> &,
                           const std::vector<Eigen::Vector4i,
                                             utility::Vector4i_allocator> &>(),
@@ -94,8 +100,6 @@ void pybind_tetramesh(py::module &m) {
     docstring::ClassMethodDocInject(m, "TetraMesh", "create_from_point_cloud",
                                     {{"point_cloud", "A PointCloud."}});
 }
-
-void pybind_tetramesh_methods(py::module &m) {}
 
 }  // namespace geometry
 }  // namespace open3d

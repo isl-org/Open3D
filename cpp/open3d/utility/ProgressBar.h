@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -23,6 +23,7 @@ public:
     virtual ProgressBar &operator++();
     void SetCurrentCount(size_t n);
     size_t GetCurrentCount() const;
+    virtual ~ProgressBar() = default;
 
 protected:
     const size_t resolution_ = 40;

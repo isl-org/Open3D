@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -29,9 +29,14 @@ static const std::unordered_map<std::string, std::string>
                 {"z_far", "The depth of the far z-plane of the visualizer."},
 };
 
-void pybind_viewcontrol(py::module &m) {
+void pybind_viewcontrol_declarations(py::module &m) {
     py::class_<ViewControl, PyViewControl<>, std::shared_ptr<ViewControl>>
             viewcontrol(m, "ViewControl", "View controller for visualizer.");
+}
+void pybind_viewcontrol_definitions(py::module &m) {
+    auto viewcontrol = static_cast<py::class_<ViewControl, PyViewControl<>,
+                                              std::shared_ptr<ViewControl>>>(
+            m.attr("ViewControl"));
     py::detail::bind_default_constructor<ViewControl>(viewcontrol);
     viewcontrol
             .def("__repr__",
@@ -122,8 +127,6 @@ void pybind_viewcontrol(py::module &m) {
     docstring::ClassMethodDocInject(m, "ViewControl", "unset_constant_z_far",
                                     map_view_control_docstrings);
 }
-
-void pybind_viewcontrol_method(py::module &m) {}
 
 }  // namespace visualization
 }  // namespace open3d

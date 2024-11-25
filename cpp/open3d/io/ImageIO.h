@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -69,11 +69,18 @@ bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
                      int quality = kOpen3DImageIODefaultQuality);
 
-/// The general entrance for reading an Image from memory
+/// Read a PNG image from memory.
+/// \param image_data_ptr the pointer to image data in memory.
+/// \param image_data_size the size of image data in memory.
+/// \return return true if the read function is successful, false otherwise.
 bool ReadPNGFromMemory(const unsigned char *image_data_ptr,
                        size_t image_data_size,
                        geometry::Image &image);
 
+/// Read a JPG image from memory.
+/// \param image_data_ptr the pointer to image data in memory.
+/// \param image_data_size the size of image data in memory.
+/// \return return true if the read function is successful, false otherwise.
 bool ReadJPGFromMemory(const unsigned char *image_data_ptr,
                        size_t image_data_size,
                        geometry::Image &image);
