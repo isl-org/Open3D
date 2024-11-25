@@ -882,7 +882,7 @@ TEST(PointCloud, FarthestPointDownSample) {
                                                               {1.0, 1.0, 0},
                                                               {1.0, 0, 1.0},
                                                               {0, 1.0, 1.0}}));
-}  // namespace tests
+}
 
 TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
     geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
