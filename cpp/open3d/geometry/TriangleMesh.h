@@ -149,6 +149,14 @@ public:
     /// This function might help to close triangle soups.
     TriangleMesh &MergeCloseVertices(double eps);
 
+    /// \brief Function to interpolate UVs from input mesh to this mesh.
+    /// UVs are interpolated from the UVs of the closest vertices
+    /// in the input mesh.
+    ///
+    /// \param input_mesh The input mesh from which UVs are interpolated.
+    TriangleMesh InterpolateTextureCoordinatesFrom(
+            const TriangleMesh &input_mesh);
+
     /// \brief Function to sharpen triangle mesh.
     ///
     /// The output value (\f$v_o\f$) is the input value (\f$v_i\f$) plus

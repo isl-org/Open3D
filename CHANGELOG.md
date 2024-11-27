@@ -52,6 +52,7 @@
 -   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
 -   Fix render to depth image on Apple Retina displays (PR #7001)
 -   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
+-   Copy UV coordinates from a reference mesh #6740
 
 ## 0.13
 
