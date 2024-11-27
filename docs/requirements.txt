@@ -7,4 +7,4 @@ nbsphinx==0.9.3
 sphinx==7.1.2
 nbconvert==6.5.4
 lxml==5.2.1
-lxml_html_clean==0.2.2
+lxml_html_clean==0.4.0

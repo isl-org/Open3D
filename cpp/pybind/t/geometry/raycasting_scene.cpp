@@ -22,7 +22,7 @@ or compute the closest point on the surface of a mesh with respect to one
 or more query points.
 It builds an internal acceleration structure to speed up those queries.
 
-This class supports only the CPU device.
+This class supports the CPU device and SYCL GPU device.
 
 The following shows how to create a scene and compute ray intersections::
 
@@ -58,11 +58,13 @@ void pybind_raycasting_scene_definitions(py::module& m) {
     auto raycasting_scene =
             static_cast<py::class_<RaycastingScene>>(m.attr("RaycastingScene"));
     // Constructors.
-    raycasting_scene.def(py::init<int64_t>(), "nthreads"_a = 0, R"doc(
+    raycasting_scene.def(py::init<int64_t, core::Device>(), "nthreads"_a = 0,
+                         "device"_a = core::Device("CPU:0"), R"doc(
 Create a RaycastingScene.
 
 Args:
     nthreads (int): The number of threads to use for building the scene. Set to 0 for automatic.
+    device (open3d.core.Device): The device to use. Currently CPU and SYCL devices are supported.
 )doc");
 
     raycasting_scene.def(

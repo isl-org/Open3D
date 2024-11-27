@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -696,6 +697,44 @@ public:
     /// \param max_points The maximum allowed number of points in a partition.
     /// \return The number of partitions.
     int PCAPartition(int max_points);
+
+    /// Compute various metrics between two point clouds. Currently, Chamfer
+    /// distance, Hausdorff distance and F-Score
+    /// <a href="../tutorial/reference.html#Knapitsch2017">[[Knapitsch2017]]</a>
+    /// are supported. The Chamfer distance is the sum of the mean distance to
+    /// the nearest neighbor from the points of the first point cloud to the
+    /// second point cloud. The F-Score at a fixed threshold radius is the
+    /// harmonic mean of the Precision and Recall. Recall is the percentage of
+    /// surface points from the first point cloud that have the second point
+    /// cloud points within the threshold radius, while Precision is the
+    /// percentage of points from the second point cloud that have the first
+    /// point cloud points within the threhold radius.
+
+    /// \f{eqnarray*}{
+    ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
+    ///   || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X)
+    ///   || \\{}
+    ///   \text{Hausdorff distance: } d_H(X,Y) &=& \max \left\{ \max_{i \in X}
+    ///   || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}
+    ///   \\{}
+    ///   \text{Precision: } P(X,Y|d) &=& \frac{100}{|X|} \sum_{i \in X} || x_i
+    ///   - n(x_i, Y) || < d \\{}
+    ///   \text{Recall: } R(X,Y|d) &=& \frac{100}{|Y|} \sum_{i \in Y} || y_i -
+    ///   n(y_i, X) || < d \\{}
+    ///   \text{F-Score: } F(X,Y|d) &=& \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) +
+    ///   R(X,Y|d)}
+    /// \f}
+
+    /// \param pcd2 Other point cloud to compare with.
+    /// \param metrics List of Metric s to compute.  Multiple metrics can be
+    /// computed at once for efficiency.
+    /// \param params MetricParameters struct holds parameters required by
+    /// different metrics.
+    /// \returns Tensor containing the requested metrics.
+    core::Tensor ComputeMetrics(
+            const PointCloud &pcd2,
+            std::vector<Metric> metrics = {Metric::ChamferDistance},
+            MetricParameters params = MetricParameters()) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

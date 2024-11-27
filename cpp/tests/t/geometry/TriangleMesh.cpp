@@ -12,7 +12,9 @@
 #include "core/CoreTest.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -1439,5 +1441,85 @@ TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
                                       device)});
     EXPECT_TRUE(mesh.GetTriangleAttr("labels").AllClose(expected_labels));
 }
+
+TEST_P(TriangleMeshPermuteDevices, SamplePointsUniformly) {
+    auto mesh_empty = t::geometry::TriangleMesh();
+    EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);
+
+    core::Tensor vertices =
+            core::Tensor::Init<float>({{0, 0, 0}, {1, 0, 0}, {0, 1, 0}});
+    core::Tensor triangles = core::Tensor::Init<int32_t>({{0, 1, 2}});
+
+    auto mesh_simple = t::geometry::TriangleMesh(vertices, triangles);
+
+    int64_t n_points = 2;
+    auto pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_FALSE(pcd_simple.HasPointColors());
+    EXPECT_FALSE(pcd_simple.HasPointNormals());
+
+    core::Tensor colors =
+            core::Tensor::Init<float>({{1, 0, 0}, {1, 0, 0}, {1, 0, 0}});
+    core::Tensor normals =
+            core::Tensor::Init<float>({{0, 1, 0}, {0, 1, 0}, {0, 1, 0}});
+    mesh_simple.SetVertexColors(colors);
+    mesh_simple.SetVertexNormals(normals);
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    core::Tensor ref_point_colors = core::Tensor::Init<float>({1, 0, 0});
+    core::Tensor ref_point_normals = core::Tensor::Init<float>({0, 1, 0});
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
+
+    // use triangle normal instead of the vertex normals
+    EXPECT_FALSE(mesh_simple.HasTriangleNormals());
+    // Use Float64 positions and normals and uint8_t colors
+    mesh_simple.SetVertexNormals(normals.To(core::Float64));
+    mesh_simple.SetVertexPositions(vertices.To(core::Float64));
+    // new triangle normals
+    ref_point_normals = core::Tensor::Init<double>({0, 0, 1});
+    colors = core::Tensor::Init<uint8_t>(
+            {{255, 0, 0}, {255, 0, 0}, {255, 0, 0}});
+    mesh_simple.SetVertexColors(colors);
+    pcd_simple = mesh_simple.SamplePointsUniformly(
+            n_points, /*use_triangle_normal=*/true);
+    // the mesh now has triangle normals as a side effect.
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals());
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        // colors are still the same (Float32)
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
+
+    // use triangle normal, this time the mesh has no vertex normals
+    mesh_simple.RemoveVertexAttr("normals");
+    pcd_simple = mesh_simple.SamplePointsUniformly(
+            n_points, /*use_triangle_normal=*/true);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
+}
+
 }  // namespace tests
 }  // namespace open3d

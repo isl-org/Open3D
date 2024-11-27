@@ -89,7 +89,7 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# pyenv or Intel Python
+# pyenv
 # The pyenv python paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
 # The soft link from the python patch level version to the python mino version
@@ -97,15 +97,12 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
-        curl https://pyenv.run | bash \
+RUN curl https://pyenv.run | bash \
         && pyenv update \
         && pyenv install $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION}; \
-    fi
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 RUN python --version && pip --version
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -191,9 +188,11 @@ RUN \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
         export GLIBCXX_USE_CXX11_ABI=ON; \
+        export BUILD_ISPC_MODULE=OFF; \
     else \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
+        export BUILD_ISPC_MODULE=ON; \
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
         if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
             export GLIBCXX_USE_CXX11_ABI=OFF; \
@@ -208,11 +207,12 @@ RUN \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
           -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
+          -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
-          -DBUILD_COMMON_ISPC_ISAS=ON \
+          -DBUILD_COMMON_ISPC_ISAS=${BUILD_ISPC_MODULE} \
           -DGLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI} \
           -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
           -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
