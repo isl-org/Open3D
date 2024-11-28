@@ -770,7 +770,7 @@ endif()
 if(USE_SYSTEM_JSONCPP)
     open3d_find_package_3rdparty_library(3rdparty_jsoncpp
         PACKAGE jsoncpp
-        TARGETS jsoncpp_lib
+        TARGETS jsoncpp::jsoncpp_lib
     )
     if(NOT 3rdparty_jsoncpp_FOUND)
         set(USE_SYSTEM_JSONCPP OFF)
