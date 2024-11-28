@@ -31,6 +31,10 @@ void pybind_feature_definitions(py::module &m_registration) {
             .def("dimension", &Feature::Dimension,
                  "Returns feature dimensions per point.")
             .def("num", &Feature::Num, "Returns number of points.")
+            .def("select_by_index", &Feature::SelectByIndex,
+                 "Function to select features from input Feature group into "
+                 "output Feature group.",
+                 "indices"_a, "invert"_a = false)
             .def_readwrite("data", &Feature::data_,
                            "``dim x n`` float64 numpy array: Data buffer "
                            "storing features.")
@@ -48,6 +52,11 @@ void pybind_feature_definitions(py::module &m_registration) {
     docstring::ClassMethodDocInject(m_registration, "Feature", "resize",
                                     {{"dim", "Feature dimension per point."},
                                      {"n", "Number of points."}});
+    docstring::ClassMethodDocInject(
+            m_registration, "Feature", "select_by_index",
+            {{"indices", "Indices of features to be selected."},
+             {"invert",
+              "Set to ``True`` to invert the selection of indices."}});
     m_registration.def("compute_fpfh_feature", &ComputeFPFHFeature,
                        "Function to compute FPFH feature for a point cloud",
                        "input"_a, "search_param"_a);

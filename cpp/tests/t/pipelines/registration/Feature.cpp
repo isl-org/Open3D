@@ -25,6 +25,38 @@ INSTANTIATE_TEST_SUITE_P(Feature,
                          FeaturePermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
+TEST_P(FeaturePermuteDevices, SelectByIndex) {
+    core::Device device = GetParam();
+
+    open3d::geometry::PointCloud pcd_legacy;
+    data::BunnyMesh bunny;
+    open3d::io::ReadPointCloud(bunny.GetPath(), pcd_legacy);
+
+    pcd_legacy.EstimateNormals();
+    // Convert to float64 to avoid precision loss.
+    const auto pcd = t::geometry::PointCloud::FromLegacy(pcd_legacy,
+                                                         core::Float64, device);
+
+    const auto fpfh = pipelines::registration::ComputeFPFHFeature(
+            pcd_legacy, geometry::KDTreeSearchParamHybrid(0.01, 100));
+    const auto fpfh_t =
+            t::pipelines::registration::ComputeFPFHFeature(pcd, 100, 0.01);
+
+    const auto selected_fpfh =
+            fpfh->SelectByIndex({53, 194, 839, 2543, 6391, 29483}, false);
+    const auto selected_indeces_t =
+            core::TensorKey::IndexTensor(core::Tensor::Init<int64_t>(
+                    {53, 194, 839, 2543, 6391, 29483}, device));
+    const auto selected_fpfh_t = fpfh_t.GetItem(selected_indeces_t);
+
+    EXPECT_TRUE(selected_fpfh_t.AllClose(
+            core::eigen_converter::EigenMatrixToTensor(selected_fpfh->data_)
+                    .T()
+                    .To(selected_fpfh_t.GetDevice(),
+                        selected_fpfh_t.GetDtype()),
+            1e-4, 1e-4));
+}
+
 TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
     core::Device device = GetParam();
 
