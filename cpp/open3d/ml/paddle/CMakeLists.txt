@@ -7,10 +7,6 @@ endif()
 set(PRINT_ONCE ON)
 find_package(Paddle REQUIRED)
 
-if (Paddle_VERSION VERSION_LESS 3.0.0)
-    message(FATAL_ERROR "Please update to Paddle 3.0.0+ to build Paddle Ops.")
-endif()
-
 add_library(open3d_paddle_ops SHARED)
 
 target_sources(open3d_paddle_ops PRIVATE
