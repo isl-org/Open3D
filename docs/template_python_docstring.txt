@@ -6,9 +6,9 @@ Giving a code example showing how to use a class or function in the ``Example``
 section is highly recommended.
 
 To explain what a method does you can use code and math.
-This is a literal block to show code::
+This is a literal block started with ``::`` followed by a blank line to show code::
     
-    import open3d as o3d
+    pip install open3d 
 
 This is an inline equation :math:`e^{i\pi} + 1 = 0` and this is a display equation
 (don't forget the blank line before the ``..math::`` directive):
@@ -20,7 +20,7 @@ This is an inline equation :math:`e^{i\pi} + 1 = 0` and this is a display equati
 The default alignment for multiple equations is right-align, which is often not 
 desired. 
 To align multiple equations manually use the ``align`` environment with ``:nowrap:``
-**Don't forget to add a blank line after ``:nowrap:`` to make this work!**
+**(don't forget to add a blank line after :nowrap: to make this work!)**
 
 .. math::
     :nowrap:
@@ -34,9 +34,10 @@ To align multiple equations manually use the ``align`` environment with ``:nowra
 
 Note:
     You can use inline markup to format your documentation.
-        - *italics* for emphasis
-        - **boldface** for strong emphasis
-        - ``code`` for inline code
+
+    - *italics* for emphasis
+    - **boldface** for strong emphasis
+    - ``code`` for inline code
 
     A list must be separated with blank lines to work.
         
@@ -80,6 +81,6 @@ Returns:
 
 
 Example:
-    This is a code example showing how to install Open3D::
+    This is a code example showing how Open3D is imported::
 
-        pip install open3d
+        import open3d as o3d
