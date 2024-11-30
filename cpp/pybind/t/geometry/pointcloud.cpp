@@ -251,16 +251,7 @@ Example:
                    "and its attributes.",
                    "sampling_ratio"_a);
     pointcloud.def("farthest_point_down_sample",
-                   py::overload_cast<size_t>(
-                           &PointCloud::FarthestPointDownSample, py::const_),
-                   "Downsample a pointcloud into output pointcloud with a set "
-                   "of points has farthest distance.The sampling is performed "
-                   "by selecting the farthest point from previous selected "
-                   "points iteratively",
-                   "num_samples"_a);
-    pointcloud.def("farthest_point_down_sample",
-                   py::overload_cast<size_t, size_t>(
-                           &PointCloud::FarthestPointDownSample, py::const_),
+                   &PointCloud::FarthestPointDownSample,
                    "Downsample a pointcloud into output pointcloud with a set "
                    "of points has farthest distance.The sampling is performed "
                    "by selecting the farthest point from previous selected "
@@ -269,7 +260,7 @@ Example:
                    "Index to start downsampling from. Valid index is a "
                    "non-negative number less than number of points in the "
                    "input pointcloud.",
-                   "start_index"_a);
+                   "start_index"_a = 0);
     pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                    "nb_points"_a, "search_radius"_a,
                    R"(Remove points that have less than nb_points neighbors in a

@@ -85,16 +85,7 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "sampling the indexes from the point cloud.",
                  "sampling_ratio"_a)
             .def("farthest_point_down_sample",
-                 py::overload_cast<size_t>(&PointCloud::FarthestPointDownSample,
-                                           py::const_),
-                 "Downsamples input pointcloud into output pointcloud with a "
-                 "set of points has farthest distance. The sample is performed "
-                 "by selecting the farthest point from previous selected "
-                 "points iteratively.",
-                 "num_samples"_a)
-            .def("farthest_point_down_sample",
-                 py::overload_cast<size_t, size_t>(
-                         &PointCloud::FarthestPointDownSample, py::const_),
+                 &PointCloud::FarthestPointDownSample,
                  "Downsamples input pointcloud into output pointcloud with a "
                  "set of points has farthest distance. The sample is performed "
                  "by selecting the farthest point from previous selected "
@@ -103,7 +94,7 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "Index to start downsampling from. Valid index is a "
                  "non-negative number less than number of points in the "
                  "input pointcloud.",
-                 "start_index"_a)
+                 "start_index"_a = 0)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
                          const AxisAlignedBoundingBox &, bool) const) &

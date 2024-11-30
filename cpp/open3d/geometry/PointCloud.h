@@ -173,22 +173,12 @@ public:
     /// with a set of points has farthest distance.
     ///
     /// The sample is performed by selecting the farthest point from previous
-    /// selected points iteratively.
-    ///
-    /// \param num_samples Number of points to be sampled.
-    std::shared_ptr<PointCloud> FarthestPointDownSample(
-            const size_t num_samples) const;
-
-    /// \brief Function to downsample input pointcloud into output pointcloud
-    /// with a set of points has farthest distance.
-    ///
-    /// The sample is performed by selecting the farthest point from previous
     /// selected points iteratively, starting from `start_index`.
     ///
     /// \param num_samples Number of points to be sampled.
     /// \param start_index Index to start downsampling from.
     std::shared_ptr<PointCloud> FarthestPointDownSample(
-            const size_t num_samples, const size_t start_index) const;
+            const size_t num_samples, const size_t start_index = 0) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
     ///
