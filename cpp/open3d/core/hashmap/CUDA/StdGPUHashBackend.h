@@ -8,6 +8,7 @@
 #pragma once
 
 #include <stdgpu/memory.h>
+#include <stdgpu/utility.h>
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 
@@ -90,7 +91,7 @@ private:
 // accessible in raw CUDA kernels.
 template <typename Key>
 using InternalStdGPUHashBackendAllocator =
-        StdGPUAllocator<thrust::pair<const Key, buf_index_t>>;
+        StdGPUAllocator<stdgpu::pair<const Key, buf_index_t>>;
 
 template <typename Key, typename Hash, typename Eq>
 using InternalStdGPUHashBackend =
@@ -252,7 +253,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
 template <typename Key>
 struct ValueExtractor {
     OPEN3D_HOST_DEVICE buf_index_t
-    operator()(const thrust::pair<Key, buf_index_t>& x) const {
+    operator()(const stdgpu::pair<Key, buf_index_t>& x) const {
         return x.second;
     }
 };

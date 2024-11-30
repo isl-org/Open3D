@@ -7,9 +7,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
-    # Jun 20 2024. Later versions need CUDA 11.5 and an API update (stdgpu::pair)
-    URL https://github.com/stotko/stdgpu/archive/1b6a3319f1fbf180166e1bbc1d75f69ab622a0a0.tar.gz
-    URL_HASH SHA256=faa3bf9cbe49ef9cc09e2e07e60d10bbf3b896edb6089c920bebe0f850fd95e4
+    URL https://github.com/stotko/stdgpu/archive/2588168d226bd17229dbf58d821549580791089d.tar.gz
+    URL_HASH SHA256=86e50789bbe21c57f64358c6acbd4481d56c1e45ce9ba1fb5c5c8482c3973215
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/stdgpu"
     UPDATE_COMMAND ""
     CMAKE_ARGS
