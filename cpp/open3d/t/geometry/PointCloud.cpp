@@ -399,10 +399,6 @@ PointCloud PointCloud::FarthestPointDownSample(const size_t num_samples,
     } else if (start_index >= size_t(num_points)) {
         utility::LogError("Illegal start index: {}, must <= point size: {}",
                           start_index, num_points);
-    } else if (start_index >
-               static_cast<size_t>(std::numeric_limits<int64_t>::max())) {
-        utility::LogError("Illegal start index: {}, must <= int64_t max: {}",
-                          start_index, std::numeric_limits<int64_t>::max());
     }
     core::Tensor selection_mask =
             core::Tensor::Zeros({num_points}, core::Bool, GetDevice());
