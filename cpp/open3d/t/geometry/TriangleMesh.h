@@ -598,7 +598,7 @@ public:
             const core::Device &device = core::Device("CPU:0"));
 
     /// Create a mesh from a 3D scalar field (volume) by computing the
-    /// isosurface.  This method uses the Flying Edges dual contouring method
+    /// isosurface. This method uses the Flying Edges dual contouring method
     /// that computes the isosurface similar to Marching Cubes.  The center of
     /// the first voxel of the volume is at the origin (0,0,0).  The center of
     /// the voxel at index [z,y,x] will be at (x,y,z).

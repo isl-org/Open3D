@@ -52,6 +52,7 @@
 -   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
 -   Fix render to depth image on Apple Retina displays (PR #7001)
 -   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
+-   Add select_by_index method to Feature class (PR #7039)
 -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
 
 ## 0.13
