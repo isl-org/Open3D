@@ -225,10 +225,11 @@ void enablePersistentJITCache() {
 #else
     setenv("SYCL_CACHE_PERSISTENT", "1", 1);
 #endif
-#endif
+#else
     utility::LogInfo(
             "enablePersistentJITCache is not compiled with "
             "BUILD_SYCL_MODULE=ON.");
+#endif
 }
 
 }  // namespace sy

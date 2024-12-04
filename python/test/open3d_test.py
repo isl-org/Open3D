@@ -28,7 +28,7 @@ def list_devices(enable_cuda=True, enable_sycl=False):
     if enable_cuda and o3d.core.cuda.device_count() > 0:
         devices.append(o3d.core.Device("CUDA:0"))
     if enable_sycl and o3d.core.sycl.is_available():
-        return devices.append(o3d.core.Device("SYCL:0"))
+        devices.append(o3d.core.Device("SYCL:0"))
     return devices
 
 
