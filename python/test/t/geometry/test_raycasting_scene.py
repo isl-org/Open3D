@@ -15,10 +15,17 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
+# RayCastingScene SYCL tests require a GPU with HW raytracing support. We don't
+# detect this automatically.
+# Do not enable SYCL devices on GIthub - GPU is not available and we don't
+# distinguish between SYCL CPU and SYCL GPU.
+enable_sycl = os.environ.get("CI", "") == ""
+
 
 # test intersection with a single triangle
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_cast_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -50,7 +57,8 @@ def test_cast_rays(device):
 # cast lots of random rays to test the internal batching
 # we expect no errors for this test
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_cast_lots_of_rays(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -71,7 +79,8 @@ def test_cast_lots_of_rays(device):
 
 # test occlusion with a single triangle
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_test_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -108,7 +117,8 @@ def test_test_occlusions(device):
 # test lots of random rays for occlusions to test the internal batching
 # we expect no errors for this test
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_test_lots_of_occlusions(device):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -128,7 +138,8 @@ def test_test_lots_of_occlusions(device):
 
 
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_add_triangle_mesh(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     cube = cube.to(device)
@@ -148,7 +159,8 @@ def test_add_triangle_mesh(device):
 
 
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_count_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -174,7 +186,8 @@ def test_count_intersections(device):
 # count lots of random ray intersections to test the internal batching
 # we expect no errors for this test
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_count_lots_of_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -194,7 +207,8 @@ def test_count_lots_of_intersections(device):
 
 
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_list_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
@@ -223,7 +237,8 @@ def test_list_intersections(device):
 # list lots of random ray intersections to test the internal batching
 # we expect no errors for this test
 @pytest.mark.parametrize("device",
-                         list_devices(enable_cuda=False, enable_sycl=True))
+                         list_devices(enable_cuda=False,
+                                      enable_sycl=enable_sycl))
 def test_list_lots_of_intersections(device):
     cube = o3d.t.geometry.TriangleMesh.create_box()
     vertex_positions = cube.vertex.positions
