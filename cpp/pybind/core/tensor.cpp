@@ -254,6 +254,7 @@ void pybind_core_tensor_declarations(py::module& m) {
     py::class_<Tensor> tensor(
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
+    m.attr("capsule") = py::module_::import("typing").attr("Any");
 }
 void pybind_core_tensor_definitions(py::module& m) {
     auto tensor = static_cast<py::class_<Tensor>>(m.attr("Tensor"));
