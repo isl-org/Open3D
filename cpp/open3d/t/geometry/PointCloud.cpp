@@ -384,7 +384,8 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
             false, false);
 }
 
-PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
+PointCloud PointCloud::FarthestPointDownSample(const size_t num_samples,
+                                               const size_t start_index) const {
     const core::Dtype dtype = GetPointPositions().GetDtype();
     const int64_t num_points = GetPointPositions().GetLength();
     if (num_samples == 0) {
@@ -395,6 +396,9 @@ PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
         utility::LogError(
                 "Illegal number of samples: {}, must <= point size: {}",
                 num_samples, num_points);
+    } else if (start_index >= size_t(num_points)) {
+        utility::LogError("Illegal start index: {}, must <= point size: {}",
+                          start_index, num_points);
     }
     core::Tensor selection_mask =
             core::Tensor::Zeros({num_points}, core::Bool, GetDevice());
@@ -402,7 +406,7 @@ PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
             {num_points}, std::numeric_limits<double>::infinity(), dtype,
             GetDevice());
 
-    int64_t farthest_index = 0;
+    int64_t farthest_index = static_cast<int64_t>(start_index);
 
     for (size_t i = 0; i < num_samples; i++) {
         selection_mask[farthest_index] = true;
