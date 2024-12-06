@@ -32,9 +32,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-12 is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-12, macos-14]
+        os: [macos-13, macos-14]
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
@@ -68,15 +68,9 @@ jobs:
         run: |
           brew install ccache pkg-config
 
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
+          if [[ ${{ runner.arch }} == "ARM64"  ]]; then
             # Fix gfortran not found issue
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
-
-            # Default macos-14 image Xcode (version 15.0.1) linker causes build issues.
-            # Newer Xcode versions work, but embree recommends Apple clang <= 14 on
-            # arm64 to avoid possible "EXEC_BAD_INSTRUCTION" runtime exceptions:
-            # https://github.com/embree/embree/releases/tag/v4.3.1
-            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
           fi
 
           # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
@@ -84,7 +78,6 @@ jobs:
           # install for the current OS.
           # https://github.com/microsoft/LightGBM/issues/4229
           if [[ ${{ runner.arch}} == "X64"  ]]; then
-            brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
@@ -142,7 +135,7 @@ jobs:
     permissions:
       contents: write  # Release upload
     name: Fuse x64 and ARM64 viewer app
-    runs-on: [macos-12]
+    runs-on: [macos-13]
     needs: [MacOS]
     steps:
       - name: Checkout source code  # for gh release upload
@@ -191,9 +184,9 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        # macos-12 is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-12, macos-14]
+        os: [macos-13, macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -260,12 +253,10 @@ jobs:
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
-            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
           fi
 
           # Install libomp 11.1.0. See comment above.
           if [[ ${{ runner.arch}} == "X64"  ]]; then
-            brew unlink libomp
             # x64 catalina (10.15) bottle
             export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
           else # ARM64
@@ -308,7 +299,7 @@ jobs:
     name: Fuse universal2 wheel
     permissions:
       contents: write  # Release upload
-    runs-on: [macos-12]
+    runs-on: [macos-13]
     needs: [build-wheel]
     strategy:
       fail-fast: false
@@ -379,7 +370,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, macos-14]
+        os: [macos-13, macos-14]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}

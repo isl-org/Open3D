@@ -180,7 +180,7 @@ jobs:
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
             --command="ls -alh \
-                    && gsutil cp ${CCACHE_TAR_NAME}.tar.gz gs://open3d-ci-cache/"
+                    && gsutil cp ${CCACHE_TAR_NAME}.tar.xz gs://open3d-ci-cache/"
 
       - name: VM delete
         if: always()

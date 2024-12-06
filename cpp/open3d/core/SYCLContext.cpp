@@ -54,22 +54,22 @@ SYCLContext::SYCLContext() {
     } catch (const sycl::exception &e) {
     }
 
-    if (devices_.size() == 0) {
-        // SYCL CPU fallback.
-        // This could happen if the Intel GPGPU driver is not installed or if
-        // your CPU does not have integrated GPU.
-        try {
-            const sycl::device &sycl_device =
-                    sycl::device(sycl::cpu_selector_v);
-            const Device open3d_device = Device("SYCL:0");
+    // SYCL CPU fallback.
+    // This could happen if the Intel GPGPU driver is not installed or if
+    // your CPU does not have integrated GPU.
+    try {
+        if (devices_.size() == 0) {
             utility::LogWarning(
                     "SYCL GPU device is not available, falling back to SYCL "
                     "host device.");
-            devices_.push_back(open3d_device);
-            device_to_sycl_device_[open3d_device] = sycl_device;
-            device_to_default_queue_[open3d_device] = sycl::queue(sycl_device);
-        } catch (const sycl::exception &e) {
         }
+        const sycl::device &sycl_device = sycl::device(sycl::cpu_selector_v);
+        const Device open3d_device =
+                Device("SYCL:" + std::to_string(devices_.size()));
+        devices_.push_back(open3d_device);
+        device_to_sycl_device_[open3d_device] = sycl_device;
+        device_to_default_queue_[open3d_device] = sycl::queue(sycl_device);
+    } catch (const sycl::exception &e) {
     }
 
     if (devices_.size() == 0) {
