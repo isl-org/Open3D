@@ -19,7 +19,7 @@ from open3d_test import list_devices
 # detect this automatically.
 # Do not enable SYCL devices on GIthub - GPU is not available and we don't
 # distinguish between SYCL CPU and SYCL GPU.
-enable_sycl = os.environ.get("CI", "") == ""
+enable_sycl = os.environ.get("GITHUB_ACTION", "") == ""
 
 
 # test intersection with a single triangle
