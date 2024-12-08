@@ -79,6 +79,12 @@ jobs:
           name: open3d-devel-linux-x86_64-ML_${{ matrix.MLOPS }}
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
+      - name: Upload Debian package to GitHub artifacts (if exist)
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-debian
+          path: open3d-devel*.deb
+          if-no-files-found: ignore
       - name: Upload viewer to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/upload-artifact@v4

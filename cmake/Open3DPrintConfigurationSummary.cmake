@@ -47,6 +47,7 @@ function(open3d_print_configuration_summary)
     else()
         open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "0")
     endif()
+    open3d_aligned_print("Build debian package" "${BUILD_DEBIAN_PACKAGE}")
 
     message(STATUS "================================================================================")
     message(STATUS "Third-Party Dependencies:")
