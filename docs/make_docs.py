@@ -88,7 +88,7 @@ class PyAPIDocsBuilder:
         with open("documented_modules.txt", "r") as f:
             for line in f:
                 print(line, end="")
-                m = re.match("^(open3d\..*)\s*$", line)
+                m = re.match(r"^(open3d\..*)\s*$", line)
                 if m:
                     module_names.append(m.group(1))
         print("Documented modules:")
