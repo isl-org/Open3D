@@ -55,22 +55,23 @@ Note:
 
 
 Args:
-    param1 (o3d.core.Tensor): Specify the shape with curly braces, {N,3}, and 
+    param1 (o3d.core.Tensor): Specify the shape with round brackets, (N,3), and 
         the dtype, Float32, as necessary for Tensor parameters
+
     param2 (str): Another parameter
 
 Returns:
     Returned values can be tuples, lists or dictionaries sometimes.
     Describing every item can be done with lists
 
-    - o3d.core.Tensor: vertices with shape {N,3} and type Float32.
+    - o3d.core.Tensor: vertices with shape (N,3) and type Float32.
     - int: the number of vertices. This is N.
 
     or definition lists, which is recommended if the returned value is a dictionary
 
     vertices (o3d.core.Tensor) [term must be a single line]
         Description, first paragraph.
-        A tensor with the vertices of shape {N,3} and type Float32.
+        A tensor with the vertices of shape (N,3) and type Float32.
 
         Description, second paragraph.
         The tensor has the same shape as param1.        
