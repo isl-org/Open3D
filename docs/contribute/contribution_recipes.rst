@@ -234,7 +234,7 @@ Case 2: When documenting Python bindings
 
    .. tab:: Rendered result
 
-      .. image:: ../../_static/contribute/template_python_docstring.webp
+      .. image:: ../../_static/contribute/example_python_docstring.webp
          :width: 800
          :alt: Rendered docstring
       
