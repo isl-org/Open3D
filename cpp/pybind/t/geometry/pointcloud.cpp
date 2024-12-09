@@ -256,7 +256,11 @@ Example:
                    "of points has farthest distance.The sampling is performed "
                    "by selecting the farthest point from previous selected "
                    "points iteratively",
-                   "num_samples"_a);
+                   "num_samples"_a,
+                   "Index to start downsampling from. Valid index is a "
+                   "non-negative number less than number of points in the "
+                   "input pointcloud.",
+                   "start_index"_a = 0);
     pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                    "nb_points"_a, "search_radius"_a,
                    R"(Remove points that have less than nb_points neighbors in a
@@ -656,7 +660,8 @@ Example:
               "in the pointcloud."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "farthest_point_down_sample",
-            {{"num_samples", "Number of points to be sampled."}});
+            {{"num_samples", "Number of points to be sampled."},
+             {"start_index", "Index of point to start downsampling from."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outliers",
             {{"nb_points",
