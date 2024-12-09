@@ -575,6 +575,7 @@ def add_3d(name,
         data (dict): A dictionary of tensors representing 3D data. Tensorflow,
             PyTorch, Numpy and Open3D tensors are supported. The following keys
             are supported:
+
             - ``vertex_positions``: shape `(B, N, 3)` where B is the number of point
               clouds and must be same for each key. N is the number of 3D points.
               Will be cast to ``float32``.
