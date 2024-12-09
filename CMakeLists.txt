@@ -142,6 +142,18 @@ if (NOT DEVELOPER_BUILD)
     endif()
 endif()
 
+option(BUILD_DEBIAN_PACKAGE "Build debian package" ON)
+# will work with cmake 3.22 and newer
+# https://cmake.org/cmake/help/latest/command/cmake_host_system_information.html
+if (BUILD_DEBIAN_PACKAGE)
+    cmake_host_system_information(RESULT ID_LIKE QUERY DISTRIB_ID_LIKE)
+    message(STATUS "Current Distrib ID_LIKE=${ID_LIKE}")
+    if(NOT ID_LIKE OR NOT ID_LIKE STREQUAL "debian")
+        message(WARNING "ID_LIKE is either blank or not 'debian'. Skipping debian package building.")
+        set(BUILD_DEBIAN_PACKAGE OFF)
+    endif()
+endif()
+
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
 # will be set, and we don't specify a default CMAKE_BUILD_TYPE.

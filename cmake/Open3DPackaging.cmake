@@ -33,4 +33,8 @@ set(CPACK_PACKAGE_FILE_NAME
     "open3d-devel-${_sys}-${OPEN3D_VERSION_FULL}")
 set(CPACK_THREADS 0)  # Use all cores for compressing package
 
+if (BUILD_DEBIAN_PACKAGE)
+    list(APPEND CPACK_GENERATOR DEB)
+endif()
+
 include(CPack)
