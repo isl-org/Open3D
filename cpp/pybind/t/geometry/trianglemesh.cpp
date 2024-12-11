@@ -261,13 +261,14 @@ Returns:
     Dictionary of names to triangle meshes.
 
 Example:
+    Converting the FlightHelmetModel to a dictionary of triangle meshes::
 
-    flight_helmet = o3d.data.FlightHelmetModel()
-    model = o3d.io.read_triangle_model(flight_helmet.path)
-    mesh_dict = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
-    o3d.visualization.draw(list({"name": name, "geometry": tmesh} for
-        (name, tmesh) in mesh_dict.items()))
-            )");
+        flight_helmet = o3d.data.FlightHelmetModel()
+        model = o3d.io.read_triangle_model(flight_helmet.path)
+        mesh_dict = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
+        o3d.visualization.draw(list({"name": name, "geometry": tmesh} for
+            (name, tmesh) in mesh_dict.items()))
+)");
     // conversion
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
@@ -773,8 +774,7 @@ Example:
 
 Input meshes must be manifold for this method to work.
 The algorithm is based on:
-Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral
-             Analysis", Eurographics Symposium on Geometry Processing (2004)
+Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral Analysis", Eurographics Symposium on Geometry Processing (2004)
 Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
 This function always uses the CPU device.
 
@@ -1112,23 +1112,37 @@ Example::
 
     )");
 
-    triangle_mesh.def(
-            "compute_metrics", &TriangleMesh::ComputeMetrics, "mesh2"_a,
-            "metrics"_a, "params"_a,
-            R"(Compute various metrics between two triangle meshes. This uses ray casting for distance computations between a sampled point cloud and a triangle mesh. Currently, Chamfer distance, Hausdorff distance  and F-Score [\\[Knapitsch2017\\]](../tutorial/reference.html#Knapitsch2017) are supported. The Chamfer distance is the sum of the mean distance to the nearest neighbor from the sampled surface points of the first mesh to the second mesh and vice versa. The F-Score at the fixed threshold radius is the harmonic mean of the Precision and Recall. Recall is the percentage of surface points from the first mesh that have the second mesh within the threshold radius, while Precision is the percentage of sampled points from the second mesh that have the first mesh surface within the threhold radius.
+    triangle_mesh.def("compute_metrics", &TriangleMesh::ComputeMetrics,
+                      "mesh2"_a, "metrics"_a, "params"_a,
+                      R"(Compute various metrics between two triangle meshes. 
+            
+This uses ray casting for distance computations between a sampled point cloud 
+and a triangle mesh.  Currently, Chamfer distance, Hausdorff distance  and 
+F-Score `[Knapitsch2017] <../tutorial/reference.html#Knapitsch2017>`_ are supported. 
+The Chamfer distance is the sum of the mean distance to the nearest neighbor from
+the sampled surface points of the first mesh to the second mesh and vice versa. 
+The F-Score at the fixed threshold radius is the harmonic mean of the Precision 
+and Recall. Recall is the percentage of surface points from the first mesh that 
+have the second mesh within the threshold radius, while Precision is the 
+percentage of sampled points from the second mesh that have the first mesh 
+surface within the threhold radius.
 
-    .. math::
-        \text{Chamfer Distance: } d_{CD}(X,Y) = \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) ||\\
-        \text{Hausdorff distance: } d_H(X,Y) = \max \left{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right}\\
-        \text{Precision: } P(X,Y|d) = \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\
-        \text{Recall: } R(X,Y|d) = \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\
-        \text{F-Score: } F(X,Y|d) = \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \\
+.. math::
+    :nowrap:
+
+    \begin{align}
+        \text{Chamfer Distance: } d_{CD}(X,Y) &= \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) ||\\
+        \text{Hausdorff distance: } d_H(X,Y) &= \max \left\{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}\\
+        \text{Precision: } P(X,Y|d) &= \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\
+        \text{Recall: } R(X,Y|d) &= \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\
+        \text{F-Score: } F(X,Y|d) &= \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \\
+    \end{align}
 
 As a side effect, the triangle areas are saved in the "areas" attribute.
 
 Args:
     mesh2 (t.geometry.TriangleMesh): Other triangle mesh to compare with.
-    metrics (Sequence[t.geometry.Metric]): List of Metric s to compute. Multiple metrics can be computed at once for efficiency.
+    metrics (Sequence[t.geometry.Metric]): List of Metrics to compute. Multiple metrics can be computed at once for efficiency.
     params (t.geometry.MetricParameters): This holds parameters required by different metrics.
 
 Returns:
