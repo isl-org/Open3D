@@ -89,6 +89,7 @@ target_sources(Open3D PRIVATE
 open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
     camera
     core
+    core_impl
     data
     geometry
     tgeometry
@@ -101,6 +102,7 @@ open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
     tpipelines_kernel
     utility
     visualization
+    visualization_impl
 )
 
 if (BUILD_GUI)

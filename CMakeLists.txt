@@ -476,6 +476,7 @@ if(WIN32)
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
+        add_compile_options("/permissive-")   # MSVC standards-compliant mode
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members
