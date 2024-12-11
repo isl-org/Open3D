@@ -106,7 +106,10 @@ PermuteDevicePairsWithSYCL::TestCases() {
     devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
     devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
     // Skip the last SYCL device - this is the CPU fallback
-    devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end() - 1);
+    if (sycl_devices.size() > 1) {
+        devices.insert(devices.end(), sycl_devices.begin(),
+                       sycl_devices.end() - 1);
+    }
 
     // Self-pairs and cross pairs (bidirectional).
     std::vector<std::pair<core::Device, core::Device>> device_pairs;
