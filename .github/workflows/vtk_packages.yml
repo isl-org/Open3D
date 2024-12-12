@@ -1,19 +1,20 @@
 name: VTK Packages
+permissions: {}
 
 on:
-  # pull_request:
-    # branches: [ main ]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
 
   Linux:
+    permissions:
+      contents: write
     # TODO: Convert to docker
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: CMake configure
         run: |
           mkdir build
@@ -25,7 +26,7 @@ jobs:
           make -j$(nproc)
           cmake -E sha256sum vtk*.tar.gz > checksum_linux.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vtk_linux
           path: |
@@ -34,6 +35,8 @@ jobs:
           if-no-files-found: error
 
   Windows:
+    permissions:
+      contents: write
     runs-on: windows-2019
     env:
       SRC_DIR: "D:\\a\\open3d\\open3d"
@@ -53,7 +56,7 @@ jobs:
       - name: Disk space used
         run: Get-PSDrive
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -75,7 +78,7 @@ jobs:
           ls
           cmake -E sha256sum (get-item vtk*.tar.gz).Name > checksum_win_${{matrix.configuration}}.txt
       - name: Upload package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vtk_windows_${{matrix.configuration}}
           path: |
@@ -84,13 +87,15 @@ jobs:
           if-no-files-found: error
 
   MacOS:
+    permissions:
+      contents: write
     runs-on: macos-12
     strategy:
       fail-fast: false
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: CMake configure
         run: |
           mkdir build
@@ -102,7 +107,7 @@ jobs:
           make -j2
           cmake -E sha256sum vtk*.tar.gz > checksum_macos.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vtk_macos
           path: |

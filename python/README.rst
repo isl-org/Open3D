@@ -38,7 +38,7 @@ Supported platforms
 
 The package has been tested on:
 
-* Ubuntu 18.04 and 20.04
+* Ubuntu 20.04 and 22.04
 * Windows 10 64-bit
 * macOS High Sierra and above
 
@@ -48,11 +48,12 @@ With Python versions:
 * 3.9
 * 3.10
 * 3.11
+* 3.12
 
 Resources
 ======================
 
-* Website: `www.open3d.org <http://www.open3d.org>`_
+* Website: `www.open3d.org <https://www.open3d.org>`_
 * Code: `github.com/isl-org/Open3D <https://github.com/isl-org/Open3D>`_
-* Documentation: `www.open3d.org/docs <http://www.open3d.org/docs>`_
+* Documentation: `www.open3d.org/docs <https://www.open3d.org/docs>`_
 * License: `The MIT license <https://opensource.org/licenses/MIT>`_

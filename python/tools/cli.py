@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -227,7 +227,7 @@ def main():
           f"* Open3D: A Modern Library for 3D Data Processing *\n"
           f"*                                                 *\n"
           f"* Version {o3d.__version__: <22}                  *\n"
-          f"* Docs    http://www.open3d.org/docs              *\n"
+          f"* Docs    https://www.open3d.org/docs             *\n"
           f"* Code    https://github.com/isl-org/Open3D       *\n"
           f"***************************************************")
 

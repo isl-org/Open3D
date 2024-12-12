@@ -1,10 +1,11 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <vtkImageData.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 
@@ -21,6 +22,14 @@ namespace vtkutils {
 /// Returns the corresponding vtk data type for core::Dtype
 /// Logs an error if no conversion exists.
 int DtypeToVtkType(const core::Dtype& dtype);
+
+/// Creates a vtkImageData object from a Tensor.
+/// The returned object may directly use the memory of the tensor and the tensor
+/// must be kept alive until the returned vtkImageData is deleted.
+/// \param tensor The source tensor.
+/// \param copy If true always create a copy of the data.
+vtkSmartPointer<vtkImageData> CreateVtkImageDataFromTensor(core::Tensor& tensor,
+                                                           bool copy = false);
 
 /// Creates a vtkPolyData object from a point cloud or triangle mesh.
 /// The returned vtkPolyData object may directly use the memory of the tensors

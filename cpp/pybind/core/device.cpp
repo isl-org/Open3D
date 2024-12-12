@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,10 +14,17 @@
 namespace open3d {
 namespace core {
 
-void pybind_core_device(py::module &m) {
+void pybind_core_device_declarations(py::module &m) {
     py::class_<Device> device(
             m, "Device",
             "Device context specifying device type and device id.");
+    py::enum_<Device::DeviceType>(device, "DeviceType")
+            .value("CPU", Device::DeviceType::CPU)
+            .value("CUDA", Device::DeviceType::CUDA)
+            .export_values();
+}
+void pybind_core_device_definitions(py::module &m) {
+    auto device = static_cast<py::class_<Device>>(m.attr("Device"));
     device.def(py::init<>());
     device.def(py::init<Device::DeviceType, int>());
     device.def(py::init<const std::string &, int>());
@@ -41,11 +48,6 @@ void pybind_core_device(py::module &m) {
                 return Device(t[0].cast<Device::DeviceType>(),
                               t[1].cast<int>());
             }));
-
-    py::enum_<Device::DeviceType>(device, "DeviceType")
-            .value("CPU", Device::DeviceType::CPU)
-            .value("CUDA", Device::DeviceType::CUDA)
-            .export_values();
 }
 
 }  // namespace core

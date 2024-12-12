@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -46,14 +46,101 @@ public:
     }
 };
 
-void pybind_registration_classes(py::module &m) {
-    // open3d.t.pipelines.registration.ICPConvergenceCriteria
+// Registration functions have similar arguments, sharing arg docstrings.
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"correspondences",
+                 "Tensor of type Int64 containing indices of corresponding "
+                 "target points, where the value is the target index and the "
+                 "index of the value itself is the source index. It contains "
+                 "-1 as value at index with no correspondence."},
+                {"criteria", "Convergence criteria"},
+                {"criteria_list",
+                 "List of Convergence criteria for each scale of multi-scale "
+                 "icp."},
+                {"estimation_method",
+                 "Estimation method. One of "
+                 "(``TransformationEstimationPointToPoint``, "
+                 "``TransformationEstimationPointToPlane``, "
+                 "``TransformationEstimationForColoredICP``, "
+                 "``TransformationEstimationForGeneralizedICP``)"},
+                {"init_source_to_target", "Initial transformation estimation"},
+                {"max_correspondence_distance",
+                 "Maximum correspondence points-pair distance."},
+                {"max_correspondence_distances",
+                 "o3d.utility.DoubleVector of maximum correspondence "
+                 "points-pair distances for multi-scale icp."},
+                {"option", "Registration option"},
+                {"source", "The source point cloud."},
+                {"target", "The target point cloud."},
+                {"transformation",
+                 "The 4x4 transformation matrix of type Float64 "
+                 "to transform ``source`` to ``target``"},
+                {"voxel_size",
+                 "The input pointclouds will be down-sampled to this "
+                 "`voxel_size` scale. If `voxel_size` < 0, original scale will "
+                 "be used. However it is highly recommended to down-sample the "
+                 "point-cloud for performance. By default original scale of "
+                 "the point-cloud will be used."},
+                {"voxel_sizes",
+                 "o3d.utility.DoubleVector of voxel sizes in strictly "
+                 "decreasing order, for multi-scale icp."},
+                {"callback_after_iteration",
+                 "Optional lambda function, saves string to tensor map of "
+                 "attributes such as iteration_index, scale_index, "
+                 "scale_iteration_index, inlier_rmse, fitness, transformation, "
+                 "on CPU device, updated after each iteration."}};
+
+void pybind_registration_declarations(py::module &m) {
+    py::module m_registration = m.def_submodule(
+            "registration", "Tensor-based registration pipeline.");
     py::class_<ICPConvergenceCriteria> convergence_criteria(
-            m, "ICPConvergenceCriteria",
+            m_registration, "ICPConvergenceCriteria",
             "Convergence criteria of ICP. "
             "ICP algorithm stops if the relative change of fitness and rmse "
             "hit ``relative_fitness`` and ``relative_rmse`` individually, "
             "or the iteration number exceeds ``max_iteration``.");
+    py::class_<RegistrationResult> registration_result(
+            m_registration, "RegistrationResult", "Registration results.");
+    py::class_<TransformationEstimation,
+               PyTransformationEstimation<TransformationEstimation>>
+            te(m_registration, "TransformationEstimation",
+               "Base class that estimates a transformation between two "
+               "point clouds. The virtual function ComputeTransformation() "
+               "must be implemented in subclasses.");
+    py::class_<TransformationEstimationPointToPoint,
+               PyTransformationEstimation<TransformationEstimationPointToPoint>,
+               TransformationEstimation>
+            te_p2p(m_registration, "TransformationEstimationPointToPoint",
+                   "Class to estimate a transformation for point to "
+                   "point distance.");
+    py::class_<TransformationEstimationPointToPlane,
+               PyTransformationEstimation<TransformationEstimationPointToPlane>,
+               TransformationEstimation>
+            te_p2l(m_registration, "TransformationEstimationPointToPlane",
+                   "Class to estimate a transformation for point to "
+                   "plane distance.");
+    py::class_<
+            TransformationEstimationForColoredICP,
+            PyTransformationEstimation<TransformationEstimationForColoredICP>,
+            TransformationEstimation>
+            te_col(m_registration, "TransformationEstimationForColoredICP",
+                   "Class to estimate a transformation between two point "
+                   "clouds using color information");
+    py::class_<
+            TransformationEstimationForDopplerICP,
+            PyTransformationEstimation<TransformationEstimationForDopplerICP>,
+            TransformationEstimation>
+            te_dop(m_registration, "TransformationEstimationForDopplerICP",
+                   "Class to estimate a transformation between two point "
+                   "clouds using color information");
+    pybind_robust_kernel_declarations(m_registration);
+}
+void pybind_registration_definitions(py::module &m) {
+    auto m_registration = static_cast<py::module>(m.attr("registration"));
+    // open3d.t.pipelines.registration.ICPConvergenceCriteria
+    auto convergence_criteria = static_cast<py::class_<ICPConvergenceCriteria>>(
+            m_registration.attr("ICPConvergenceCriteria"));
     py::detail::bind_copy_functions<ICPConvergenceCriteria>(
             convergence_criteria);
     convergence_criteria
@@ -80,8 +167,8 @@ void pybind_registration_classes(py::module &m) {
             });
 
     // open3d.t.pipelines.registration.RegistrationResult
-    py::class_<RegistrationResult> registration_result(m, "RegistrationResult",
-                                                       "Registration results.");
+    auto registration_result = static_cast<py::class_<RegistrationResult>>(
+            m_registration.attr("RegistrationResult"));
     py::detail::bind_default_constructor<RegistrationResult>(
             registration_result);
     py::detail::bind_copy_functions<RegistrationResult>(registration_result);
@@ -124,12 +211,10 @@ void pybind_registration_classes(py::module &m) {
             });
 
     // open3d.t.pipelines.registration.TransformationEstimation
-    py::class_<TransformationEstimation,
-               PyTransformationEstimation<TransformationEstimation>>
-            te(m, "TransformationEstimation",
-               "Base class that estimates a transformation between two "
-               "point clouds. The virtual function ComputeTransformation() "
-               "must be implemented in subclasses.");
+    auto te = static_cast<
+            py::class_<TransformationEstimation,
+                       PyTransformationEstimation<TransformationEstimation>>>(
+            m_registration.attr("TransformationEstimation"));
     te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
            "target"_a, "correspondences"_a,
            "Compute RMSE between source and target points cloud given "
@@ -142,7 +227,7 @@ void pybind_registration_classes(py::module &m) {
            "iteration"_a = 0,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
-    docstring::ClassMethodDocInject(m, "TransformationEstimation",
+    docstring::ClassMethodDocInject(m_registration, "TransformationEstimation",
                                     "compute_rmse",
                                     {{"source", "Source point cloud."},
                                      {"target", "Target point cloud."},
@@ -155,7 +240,8 @@ void pybind_registration_classes(py::module &m) {
                                       "index. It contains -1 as value "
                                       "at index with no correspondence."}});
     docstring::ClassMethodDocInject(
-            m, "TransformationEstimation", "compute_transformation",
+            m_registration, "TransformationEstimation",
+            "compute_transformation",
             {{"source", "Source point cloud."},
              {"target", "Target point cloud."},
              {"correspondences",
@@ -169,12 +255,11 @@ void pybind_registration_classes(py::module &m) {
 
     // open3d.t.pipelines.registration.TransformationEstimationPointToPoint
     // TransformationEstimation
-    py::class_<TransformationEstimationPointToPoint,
-               PyTransformationEstimation<TransformationEstimationPointToPoint>,
-               TransformationEstimation>
-            te_p2p(m, "TransformationEstimationPointToPoint",
-                   "Class to estimate a transformation for point to "
-                   "point distance.");
+    auto te_p2p = static_cast<py::class_<
+            TransformationEstimationPointToPoint,
+            PyTransformationEstimation<TransformationEstimationPointToPoint>,
+            TransformationEstimation>>(
+            m_registration.attr("TransformationEstimationPointToPoint"));
     py::detail::bind_copy_functions<TransformationEstimationPointToPoint>(
             te_p2p);
     te_p2p.def(py::init())
@@ -185,12 +270,11 @@ void pybind_registration_classes(py::module &m) {
 
     // open3d.t.pipelines.registration.TransformationEstimationPointToPlane
     // TransformationEstimation
-    py::class_<TransformationEstimationPointToPlane,
-               PyTransformationEstimation<TransformationEstimationPointToPlane>,
-               TransformationEstimation>
-            te_p2l(m, "TransformationEstimationPointToPlane",
-                   "Class to estimate a transformation for point to "
-                   "plane distance.");
+    auto te_p2l = static_cast<py::class_<
+            TransformationEstimationPointToPlane,
+            PyTransformationEstimation<TransformationEstimationPointToPlane>,
+            TransformationEstimation>>(
+            m_registration.attr("TransformationEstimationPointToPlane"));
     py::detail::bind_default_constructor<TransformationEstimationPointToPlane>(
             te_p2l);
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
@@ -209,13 +293,11 @@ void pybind_registration_classes(py::module &m) {
 
     // open3d.t.pipelines.registration.TransformationEstimationForColoredICP
     // TransformationEstimation
-    py::class_<
+    auto te_col = static_cast<py::class_<
             TransformationEstimationForColoredICP,
             PyTransformationEstimation<TransformationEstimationForColoredICP>,
-            TransformationEstimation>
-            te_col(m, "TransformationEstimationForColoredICP",
-                   "Class to estimate a transformation between two point "
-                   "clouds using color information");
+            TransformationEstimation>>(
+            m_registration.attr("TransformationEstimationForColoredICP"));
     py::detail::bind_default_constructor<TransformationEstimationForColoredICP>(
             te_col);
     py::detail::bind_copy_functions<TransformationEstimationForColoredICP>(
@@ -253,13 +335,11 @@ void pybind_registration_classes(py::module &m) {
 
     // open3d.t.pipelines.registration.TransformationEstimationForDopplerICP
     // TransformationEstimation
-    py::class_<
+    auto te_dop = static_cast<py::class_<
             TransformationEstimationForDopplerICP,
             PyTransformationEstimation<TransformationEstimationForDopplerICP>,
-            TransformationEstimation>
-            te_dop(m, "TransformationEstimationForDopplerICP",
-                   "Class to estimate a transformation between two point "
-                   "clouds using color information");
+            TransformationEstimation>>(
+            m_registration.attr("TransformationEstimationForDopplerICP"));
     py::detail::bind_default_constructor<TransformationEstimationForDopplerICP>(
             te_dop);
     py::detail::bind_copy_functions<TransformationEstimationForDopplerICP>(
@@ -356,102 +436,53 @@ void pybind_registration_classes(py::module &m) {
                                    transform_vehicle_to_sensor_,
                            "The 4x4 extrinsic transformation matrix between "
                            "the vehicle and the sensor frames.");
-}
-
-// Registration functions have similar arguments, sharing arg docstrings.
-static const std::unordered_map<std::string, std::string>
-        map_shared_argument_docstrings = {
-                {"correspondences",
-                 "Tensor of type Int64 containing indices of corresponding "
-                 "target points, where the value is the target index and the "
-                 "index of the value itself is the source index. It contains "
-                 "-1 as value at index with no correspondence."},
-                {"criteria", "Convergence criteria"},
-                {"criteria_list",
-                 "List of Convergence criteria for each scale of multi-scale "
-                 "icp."},
-                {"estimation_method",
-                 "Estimation method. One of "
-                 "(``TransformationEstimationPointToPoint``, "
-                 "``TransformationEstimationPointToPlane``, "
-                 "``TransformationEstimationForColoredICP``, "
-                 "``TransformationEstimationForGeneralizedICP``)"},
-                {"init_source_to_target", "Initial transformation estimation"},
-                {"max_correspondence_distance",
-                 "Maximum correspondence points-pair distance."},
-                {"max_correspondence_distances",
-                 "o3d.utility.DoubleVector of maximum correspondence "
-                 "points-pair distances for multi-scale icp."},
-                {"option", "Registration option"},
-                {"source", "The source point cloud."},
-                {"target", "The target point cloud."},
-                {"transformation",
-                 "The 4x4 transformation matrix of type Float64 "
-                 "to transform ``source`` to ``target``"},
-                {"voxel_size",
-                 "The input pointclouds will be down-sampled to this "
-                 "`voxel_size` scale. If `voxel_size` < 0, original scale will "
-                 "be used. However it is highly recommended to down-sample the "
-                 "point-cloud for performance. By default original scale of "
-                 "the point-cloud will be used."},
-                {"voxel_sizes",
-                 "o3d.utility.DoubleVector of voxel sizes in strictly "
-                 "decreasing order, for multi-scale icp."},
-                {"callback_after_iteration",
-                 "Optional lambda function, saves string to tensor map of "
-                 "attributes such as iteration_index, scale_index, "
-                 "scale_iteration_index, inlier_rmse, fitness, transformation, "
-                 "on CPU device, updated after each iteration."}};
-
-void pybind_registration_methods(py::module &m) {
-    m.def("evaluate_registration", &EvaluateRegistration,
-          py::call_guard<py::gil_scoped_release>(),
-          "Function for evaluating registration between point clouds",
-          "source"_a, "target"_a, "max_correspondence_distance"_a,
-          "transformation"_a =
-                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")));
-    docstring::FunctionDocInject(m, "evaluate_registration",
+    m_registration.def(
+            "evaluate_registration", &EvaluateRegistration,
+            py::call_guard<py::gil_scoped_release>(),
+            "Function for evaluating registration between point clouds",
+            "source"_a, "target"_a, "max_correspondence_distance"_a,
+            "transformation"_a =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")));
+    docstring::FunctionDocInject(m_registration, "evaluate_registration",
                                  map_shared_argument_docstrings);
-    m.def("icp", &ICP, py::call_guard<py::gil_scoped_release>(),
-          "Function for ICP registration", "source"_a, "target"_a,
-          "max_correspondence_distance"_a,
-          "init_source_to_target"_a =
-                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-          "estimation_method"_a = TransformationEstimationPointToPoint(),
-          "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
-          "callback_after_iteration"_a = py::none());
-    docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
-
-    m.def("multi_scale_icp", &MultiScaleICP,
-          py::call_guard<py::gil_scoped_release>(),
-          "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
-          "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
-          "init_source_to_target"_a =
-                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-          "estimation_method"_a = TransformationEstimationPointToPoint(),
-          "callback_after_iteration"_a = py::none());
-    docstring::FunctionDocInject(m, "multi_scale_icp",
+    m_registration.def(
+            "icp", &ICP, py::call_guard<py::gil_scoped_release>(),
+            "Function for ICP registration", "source"_a, "target"_a,
+            "max_correspondence_distance"_a,
+            "init_source_to_target"_a =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            "estimation_method"_a = TransformationEstimationPointToPoint(),
+            "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
+            "callback_after_iteration"_a = py::none());
+    docstring::FunctionDocInject(m_registration, "icp",
                                  map_shared_argument_docstrings);
 
-    m.def("get_information_matrix", &GetInformationMatrix,
-          py::call_guard<py::gil_scoped_release>(),
-          "Function for computing information matrix from transformation "
-          "matrix. Information matrix is tensor of shape {6, 6}, dtype Float64 "
-          "on CPU device.",
-          "source"_a, "target"_a, "max_correspondence_distance"_a,
-          "transformation"_a);
-    docstring::FunctionDocInject(m, "get_information_matrix",
+    m_registration.def(
+            "multi_scale_icp", &MultiScaleICP,
+            py::call_guard<py::gil_scoped_release>(),
+            "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
+            "voxel_sizes"_a, "criteria_list"_a,
+            "max_correspondence_distances"_a,
+            "init_source_to_target"_a =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            "estimation_method"_a = TransformationEstimationPointToPoint(),
+            "callback_after_iteration"_a = py::none());
+    docstring::FunctionDocInject(m_registration, "multi_scale_icp",
                                  map_shared_argument_docstrings);
-}
 
-void pybind_registration(py::module &m) {
-    py::module m_submodule = m.def_submodule(
-            "registration", "Tensor-based registration pipeline.");
-    pybind_registration_classes(m_submodule);
-    pybind_registration_methods(m_submodule);
-    pybind_feature(m_submodule);
-
-    pybind_robust_kernels(m_submodule);
+    m_registration.def(
+            "get_information_matrix", &GetInformationMatrix,
+            py::call_guard<py::gil_scoped_release>(),
+            "Function for computing information matrix from transformation "
+            "matrix. Information matrix is tensor of shape {6, 6}, dtype "
+            "Float64 "
+            "on CPU device.",
+            "source"_a, "target"_a, "max_correspondence_distance"_a,
+            "transformation"_a);
+    docstring::FunctionDocInject(m_registration, "get_information_matrix",
+                                 map_shared_argument_docstrings);
+    pybind_feature_definitions(m_registration);
+    pybind_robust_kernel_definitions(m_registration);
 }
 
 }  // namespace registration

@@ -1,14 +1,16 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/io/ImageIO.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <fstream>
 #include <unordered_map>
 #include <vector>
 
@@ -23,14 +25,14 @@ namespace open3d {
 namespace t {
 namespace io {
 
-static const std::unordered_map<
-        std::string,
-        std::function<bool(const std::string &, geometry::Image &)>>
-        file_extension_to_image_read_function{
-                {"png", ReadImageFromPNG},
-                {"jpg", ReadImageFromJPG},
-                {"jpeg", ReadImageFromJPG},
-        };
+namespace {
+using signature_decoder_t =
+        std::pair<std::string,
+                  std::function<bool(const std::string &, geometry::Image &)>>;
+static const std::array<signature_decoder_t, 2> signature_decoder_list{
+        {{"\x89\x50\x4e\x47\xd\xa\x1a\xa", ReadImageFromPNG},
+         {"\xFF\xD8\xFF", ReadImageFromJPG}}};
+static constexpr uint8_t MAX_SIGNATURE_LEN = 8;
 
 static const std::unordered_map<
         std::string,
@@ -40,6 +42,7 @@ static const std::unordered_map<
                 {"jpg", WriteImageToJPG},
                 {"jpeg", WriteImageToJPG},
         };
+}  // namespace
 
 std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename) {
@@ -49,21 +52,27 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
 }
 
 bool ReadImage(const std::string &filename, geometry::Image &image) {
-    std::string filename_ext =
-            utility::filesystem::GetFileExtensionInLowerCase(filename);
-    if (filename_ext.empty()) {
-        utility::LogWarning(
-                "Read geometry::Image failed: missing file extension.");
-        return false;
+    std::string signature_buffer(MAX_SIGNATURE_LEN, 0);
+    std::ifstream file(filename, std::ios::binary);
+    file.read(&signature_buffer[0], MAX_SIGNATURE_LEN);
+    std::string err_msg;
+    if (!file) {
+        err_msg = "Read geometry::Image failed for file {}. I/O error.";
+    } else {
+        file.close();
+        for (const auto &signature_decoder : signature_decoder_list) {
+            if (signature_buffer.compare(0, signature_decoder.first.size(),
+                                         signature_decoder.first) == 0) {
+                return signature_decoder.second(filename, image);
+            }
+        }
+        err_msg =
+                "Read geometry::Image failed for file {}. Unknown file "
+                "signature, only PNG and JPG are supported.";
     }
-    auto map_itr = file_extension_to_image_read_function.find(filename_ext);
-    if (map_itr == file_extension_to_image_read_function.end()) {
-        utility::LogWarning(
-                "Read geometry::Image failed: file extension {} unknown",
-                filename_ext);
-        return false;
-    }
-    return map_itr->second(filename, image);
+    image.Clear();
+    utility::LogWarning(err_msg.c_str(), filename);
+    return false;
 }
 
 bool WriteImage(const std::string &filename,
@@ -99,7 +108,8 @@ DepthNoiseSimulator::DepthNoiseSimulator(const std::string &noise_model_path) {
     for (int i = 0; i < skip_first_n_lines; ++i) {
         if (!(line_buffer = file.ReadLine())) {
             utility::LogError(
-                    "Read depth model failed: file {} is less than {} lines.",
+                    "Read depth model failed: file {} is less than {} "
+                    "lines.",
                     noise_model_path, skip_first_n_lines);
         }
     }
@@ -182,11 +192,11 @@ geometry::Image DepthNoiseSimulator::Simulate(const geometry::Image &im_src,
     geometry::kernel::TArrayIndexer<int> dst_indexer(im_dst_tensor, 2);
     geometry::kernel::TArrayIndexer<int> model_indexer(model_, 3);
 
-    // To match the original implementation, we try to keep the same variable
-    // names with reference to the original code. Compared to the original
-    // implementation, parallelization is done in im_dst_tensor per-pixel level,
-    // instead of per-image level. Check out the original code at:
-    // http://redwood-data.org/indoor/data/simdepth.py.
+    // To match the original implementation, we try to keep the same
+    // variable names with reference to the original code. Compared to the
+    // original implementation, parallelization is done in im_dst_tensor
+    // per-pixel level, instead of per-image level. Check out the original
+    // code at: http://redwood-data.org/indoor/data/simdepth.py.
     core::ParallelFor(
             core::Device("CPU:0"), width * height,
             [&] OPEN3D_DEVICE(int workload_idx) {

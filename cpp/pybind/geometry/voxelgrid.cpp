@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -20,9 +20,18 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_voxelgrid(py::module &m) {
+void pybind_voxelgrid_declarations(py::module &m) {
     py::class_<Voxel, std::shared_ptr<Voxel>> voxel(
             m, "Voxel", "Base Voxel class, containing grid id and color");
+    py::class_<VoxelGrid, PyGeometry3D<VoxelGrid>, std::shared_ptr<VoxelGrid>,
+               Geometry3D>
+            voxelgrid(m, "VoxelGrid",
+                      "VoxelGrid is a collection of voxels which are aligned "
+                      "in grid.");
+}
+void pybind_voxelgrid_definitions(py::module &m) {
+    auto voxel = static_cast<py::class_<Voxel, std::shared_ptr<Voxel>>>(
+            m.attr("Voxel"));
     py::detail::bind_default_constructor<Voxel>(voxel);
     py::detail::bind_copy_functions<Voxel>(voxel);
     voxel.def("__repr__",
@@ -50,12 +59,10 @@ void pybind_voxelgrid(py::module &m) {
             .def_readwrite(
                     "color", &Voxel::color_,
                     "Float64 numpy array of shape (3,): Color of the voxel.");
-
-    py::class_<VoxelGrid, PyGeometry3D<VoxelGrid>, std::shared_ptr<VoxelGrid>,
-               Geometry3D>
-            voxelgrid(m, "VoxelGrid",
-                      "VoxelGrid is a collection of voxels which are aligned "
-                      "in grid.");
+    auto voxelgrid =
+            static_cast<py::class_<VoxelGrid, PyGeometry3D<VoxelGrid>,
+                                   std::shared_ptr<VoxelGrid>, Geometry3D>>(
+                    m.attr("VoxelGrid"));
     py::detail::bind_default_constructor<VoxelGrid>(voxelgrid);
     py::detail::bind_copy_functions<VoxelGrid>(voxelgrid);
     voxelgrid
@@ -151,7 +158,7 @@ void pybind_voxelgrid(py::module &m) {
                     "parameters",
                     "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_readwrite("origin", &VoxelGrid::origin_,
-                           "``float64`` vector of length 3: Coorindate of the "
+                           "``float64`` vector of length 3: Coordinate of the "
                            "origin point.")
             .def_readwrite("voxel_size", &VoxelGrid::voxel_size_,
                            "``float64`` Size of the voxel.");
@@ -229,8 +236,6 @@ void pybind_voxelgrid(py::module &m) {
              {"max_bound",
               "Maximum boundary point for the VoxelGrid to create."}});
 }
-
-void pybind_voxelgrid_methods(py::module &m) {}
 
 }  // namespace geometry
 }  // namespace open3d

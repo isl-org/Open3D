@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_raycasting_scene(py::module& m) {
+void pybind_raycasting_scene_declarations(py::module& m) {
     py::class_<RaycastingScene> raycasting_scene(m, "RaycastingScene", R"doc(
 A scene class with basic ray casting and closest point queries.
 
@@ -22,7 +22,7 @@ or compute the closest point on the surface of a mesh with respect to one
 or more query points.
 It builds an internal acceleration structure to speed up those queries.
 
-This class supports only the CPU device.
+This class supports the CPU device and SYCL GPU device.
 
 The following shows how to create a scene and compute ray intersections::
 
@@ -52,13 +52,19 @@ The following shows how to create a scene and compute ray intersections::
     plt.imshow(ans['t_hit'].numpy())
 
 )doc");
+}
 
+void pybind_raycasting_scene_definitions(py::module& m) {
+    auto raycasting_scene =
+            static_cast<py::class_<RaycastingScene>>(m.attr("RaycastingScene"));
     // Constructors.
-    raycasting_scene.def(py::init<int64_t>(), "nthreads"_a = 0, R"doc(
+    raycasting_scene.def(py::init<int64_t, core::Device>(), "nthreads"_a = 0,
+                         "device"_a = core::Device("CPU:0"), R"doc(
 Create a RaycastingScene.
 
 Args:
     nthreads (int): The number of threads to use for building the scene. Set to 0 for automatic.
+    device (open3d.core.Device): The device to use. Currently CPU and SYCL devices are supported.
 )doc");
 
     raycasting_scene.def(
@@ -219,7 +225,7 @@ Lists the intersections of the rays with the scene::
 
     # Calculate intersection coordinates using ray_ids
     c = rays[lx['ray_ids']][:,:3] + rays[lx['ray_ids']][:,3:]*lx['t_hit'][...,None]
-                                    
+
     # Visualize the rays and intersections.
     lines = o3d.t.geometry.LineSet()
     lines.point.positions = np.hstack([orig,dest]).reshape(-1,3)
@@ -234,35 +240,35 @@ Args:
         Float32 describing the rays; {..} can be any number of dimensions.
         The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
         with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
-        necessary to normalize the direction although it should be normalised if 
+        necessary to normalize the direction although it should be normalised if
         t_hit is to be calculated in coordinate units.
 
     nthreads (int): The number of threads to use. Set to 0 for automatic.
 
 Returns:
     The returned dictionary contains
-    
+
     ray_splits
         A tensor with ray intersection splits. Can be used to iterate over all intersections for each ray. The shape is {num_rays + 1}.
-    
+
     ray_ids
         A tensor with ray IDs. The shape is {num_intersections}.
-        
+
     t_hit
-        A tensor with the distance to the hit. The shape is {num_intersections}. 
-        
+        A tensor with the distance to the hit. The shape is {num_intersections}.
+
     geometry_ids
         A tensor with the geometry IDs. The shape is {num_intersections}.
 
     primitive_ids
         A tensor with the primitive IDs, which corresponds to the triangle
         index. The shape is {num_intersections}.
-        
-    primitive_uvs 
-        A tensor with the barycentric coordinates of the intersection points within 
+
+    primitive_uvs
+        A tensor with the barycentric coordinates of the intersection points within
         the triangles. The shape is {num_intersections, 2}.
-    
-        
+
+
 An example of using ray_splits::
 
     ray_splits: [0, 2, 3, 6, 6, 8] # note that the length of this is num_rays+1
@@ -271,8 +277,8 @@ An example of using ray_splits::
     for ray_id, (start, end) in enumerate(zip(ray_splits[:-1], ray_splits[1:])):
         for i,t in enumerate(t_hit[start:end]):
             print(f'ray {ray_id}, intersection {i} at {t}')
-            
-        
+
+
 )doc");
 
     raycasting_scene.def("compute_closest_points",
@@ -302,12 +308,12 @@ Returns:
         A tensor with the primitive IDs, which corresponds to the triangle
         index. The shape is {..}.
 
-    primitive_uvs 
-        A tensor with the barycentric coordinates of the closest points within 
+    primitive_uvs
+        A tensor with the barycentric coordinates of the closest points within
         the triangles. The shape is {.., 2}.
 
-    primitive_normals 
-        A tensor with the normals of the closest triangle . The shape is 
+    primitive_normals
+        A tensor with the normals of the closest triangle . The shape is
         {.., 3}.
 
 )doc");
@@ -353,7 +359,7 @@ Args:
 
     nsamples (int): The number of rays used for determining the inside.
         This must be an odd number. The default is 1. Use a higher value if you
-        notice sign flipping, which can occur when rays hit exactly an edge or 
+        notice sign flipping, which can occur when rays hit exactly an edge or
         vertex in the scene.
 
 Returns:

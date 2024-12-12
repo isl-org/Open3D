@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -10,6 +10,9 @@
 #include <cassert>
 
 // https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
+// In Open3D, we set symbol visibility based on folder / cmake target through
+// cmake. e.g. all symbols in kernel folders are hidden. These macros allow fine
+// grained control over symbol visibility.
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define OPEN3D_DLL_IMPORT __declspec(dllimport)
 #define OPEN3D_DLL_EXPORT __declspec(dllexport)

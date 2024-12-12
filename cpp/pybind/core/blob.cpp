@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,7 +14,9 @@
 namespace open3d {
 namespace core {
 
-void pybind_core_blob(py::module &m) { py::class_<Blob> blob(m, "Blob"); }
+void pybind_core_blob_declarations(py::module &m) {
+    py::class_<Blob> blob(m, "Blob");
+}
 
 }  // namespace core
 }  // namespace open3d

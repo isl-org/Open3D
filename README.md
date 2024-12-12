@@ -5,15 +5,15 @@
 # Open3D: A Modern Library for 3D Data Processing
 
 <h4>
-    <a href="http://www.open3d.org">Homepage</a> |
-    <a href="http://www.open3d.org/docs">Docs</a> |
-    <a href="http://www.open3d.org/docs/release/getting_started.html">Quick Start</a> |
-    <a href="http://www.open3d.org/docs/release/compilation.html">Compile</a> |
-    <a href="http://www.open3d.org/docs/release/index.html#python-api-index">Python</a> |
-    <a href="http://www.open3d.org/docs/release/cpp_api.html">C++</a> |
+    <a href="https://www.open3d.org">Homepage</a> |
+    <a href="https://www.open3d.org/docs">Docs</a> |
+    <a href="https://www.open3d.org/docs/release/getting_started.html">Quick Start</a> |
+    <a href="https://www.open3d.org/docs/release/compilation.html">Compile</a> |
+    <a href="https://www.open3d.org/docs/release/index.html#python-api-index">Python</a> |
+    <a href="https://www.open3d.org/docs/release/cpp_api.html">C++</a> |
     <a href="https://github.com/isl-org/Open3D-ML">Open3D-ML</a> |
     <a href="https://github.com/isl-org/Open3D/releases">Viewer</a> |
-    <a href="http://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
+    <a href="https://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
     <a href="https://github.com/isl-org/Open3D/discussions">Forum</a>
 </h4>
@@ -45,11 +45,11 @@ together to enable full end to end pipelines:
 
 ![Open3D_layers](https://github.com/isl-org/Open3D/assets/41028320/e9b8645a-a823-4d78-8310-e85207bbc3e4)
 
-For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
+For more, please visit the [Open3D documentation](https://www.open3d.org/docs).
 
 ## Python quick start
 
-Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
+Pre-built pip packages support Ubuntu 20.04+, macOS 10.15+ and Windows 10+
 (64-bit) with Python 3.8-3.11.
 
 ```bash
@@ -71,17 +71,17 @@ open3d example visualization/draw
 ```
 
 To get the latest features in Open3D, install the
-[development pip package](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
+[development pip package](https://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
 To compile Open3D from source, refer to
-[compiling from source](http://www.open3d.org/docs/release/compilation.html).
+[compiling from source](https://www.open3d.org/docs/release/compilation.html).
 
 ## C++ quick start
 
 Checkout the following links to get started with Open3D C++ API
 
--   Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](http://www.open3d.org/docs/latest/getting_started.html#c)
--   [Compiling Open3D from source](http://www.open3d.org/docs/release/compilation.html)
--   [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
+-   Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](https://www.open3d.org/docs/latest/getting_started.html#c)
+-   [Compiling Open3D from source](https://www.open3d.org/docs/release/compilation.html)
+-   [Open3D C++ API](https://www.open3d.org/docs/release/cpp_api.html)
 
 To use Open3D in your C++ project, checkout the following examples
 

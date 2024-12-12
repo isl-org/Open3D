@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -21,6 +21,9 @@
 #include <fmt/core.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
+#if FMT_VERSION >= 100000
+#include <fmt/std.h>
+#endif
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 

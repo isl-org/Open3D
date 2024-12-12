@@ -17,8 +17,8 @@ endif()
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
-    URL https://github.com/assimp/assimp/archive/cfed74516b46a7c2bdf19c1643c448363bd90ad7.tar.gz
-    URL_HASH SHA256=b2f1c9450609f3bf201aa63b0b16023073d0ebb1c6e9ae5a832441f1e43c634c
+    URL https://github.com/assimp/assimp/archive/refs/tags/v5.4.2.zip
+    URL_HASH SHA256=03e38d123f6bf19a48658d197fd09c9a69db88c076b56a476ab2da9f5eb87dcc
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -30,7 +30,9 @@ ExternalProject_Add(
         -DASSIMP_BUILD_TESTS=OFF
         -DASSIMP_INSTALL_PDB=OFF
         -DASSIMP_BUILD_ZLIB=ON
+        -DASSIMP_NO_EXPORT=OFF
         -DHUNTER_ENABLED=OFF # Renamed to "ASSIMP_HUNTER_ENABLED" in newer assimp.
+        -DASSIMP_WARNINGS_AS_ERRORS=OFF
         -DCMAKE_DEBUG_POSTFIX=
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}

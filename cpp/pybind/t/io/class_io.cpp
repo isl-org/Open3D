@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -67,136 +67,7 @@ static const std::unordered_map<std::string, std::string>
                  "If set to true a progress bar is visualized in the console."},
 };
 
-void pybind_class_io(py::module &m_io) {
-    // open3d::t::geometry::Image
-    m_io.def(
-            "read_image",
-            [](const std::string &filename) {
-                py::gil_scoped_release release;
-                geometry::Image image;
-                ReadImage(filename, image);
-                return image;
-            },
-            "Function to read image from file.", "filename"_a);
-    docstring::FunctionDocInject(m_io, "read_image",
-                                 map_shared_argument_docstrings);
-
-    m_io.def(
-            "write_image",
-            [](const std::string &filename, const geometry::Image &image,
-               int quality) {
-                py::gil_scoped_release release;
-                return WriteImage(filename, image, quality);
-            },
-            "Function to write Image to file.", "filename"_a, "image"_a,
-            "quality"_a = kOpen3DImageIODefaultQuality);
-    docstring::FunctionDocInject(m_io, "write_image",
-                                 map_shared_argument_docstrings);
-
-    // open3d::t::geometry::PointCloud
-    m_io.def(
-            "read_point_cloud",
-            [](const std::string &filename, const std::string &format,
-               bool remove_nan_points, bool remove_infinite_points,
-               bool print_progress) {
-                py::gil_scoped_release release;
-                t::geometry::PointCloud pcd;
-                ReadPointCloud(filename, pcd,
-                               {format, remove_nan_points,
-                                remove_infinite_points, print_progress});
-                return pcd;
-            },
-            "Function to read PointCloud with tensor attributes from file.",
-            "filename"_a, "format"_a = "auto", "remove_nan_points"_a = false,
-            "remove_infinite_points"_a = false, "print_progress"_a = false);
-    docstring::FunctionDocInject(m_io, "read_point_cloud",
-                                 map_shared_argument_docstrings);
-
-    m_io.def(
-            "write_point_cloud",
-            [](const std::string &filename,
-               const t::geometry::PointCloud &pointcloud, bool write_ascii,
-               bool compressed, bool print_progress) {
-                py::gil_scoped_release release;
-                return WritePointCloud(
-                        filename, pointcloud,
-                        {write_ascii, compressed, print_progress});
-            },
-            "Function to write PointCloud with tensor attributes to file.",
-            "filename"_a, "pointcloud"_a, "write_ascii"_a = false,
-            "compressed"_a = false, "print_progress"_a = false);
-    docstring::FunctionDocInject(m_io, "write_point_cloud",
-                                 map_shared_argument_docstrings);
-
-    // open3d::geometry::TriangleMesh
-    m_io.def(
-            "read_triangle_mesh",
-            [](const std::string &filename, bool enable_post_processing,
-               bool print_progress) {
-                py::gil_scoped_release release;
-                t::geometry::TriangleMesh mesh;
-                open3d::io::ReadTriangleMeshOptions opt;
-                opt.enable_post_processing = enable_post_processing;
-                opt.print_progress = print_progress;
-                ReadTriangleMesh(filename, mesh, opt);
-                return mesh;
-            },
-            "Function to read TriangleMesh from file", "filename"_a,
-            "enable_post_processing"_a = false, "print_progress"_a = false,
-            R"doc(The general entrance for reading a TriangleMesh from a file.
-The function calls read functions based on the extension name of filename.
-Supported formats are `obj, ply, stl, off, gltf, glb, fbx`.
-
-The following example reads a triangle mesh with the .ply extension::
-    import open3d as o3d
-    mesh = o3d.t.io.read_triangle_mesh('mesh.ply')
-
-Args:
-    filename (str): Path to the mesh file.
-    enable_post_processing (bool): If True enables post-processing. 
-        Post-processing will 
-          - triangulate meshes with polygonal faces
-          - remove redundant materials
-          - pretransform vertices
-          - generate face normals if needed
-        
-        For more information see ASSIMPs documentation on the flags
-        `aiProcessPreset_TargetRealtime_Fast, aiProcess_RemoveRedundantMaterials, 
-        aiProcess_OptimizeMeshes, aiProcess_PreTransformVertices`.
-        
-        Note that identical vertices will always be joined regardless of whether
-        post-processing is enabled or not, which changes the number of vertices 
-        in the mesh.
-
-        The `ply`-format is not affected by the post-processing.
-
-    print_progress (bool): If True print the reading progress to the terminal.
-    
-Returns:
-    Returns the mesh object. On failure an empty mesh is returned.
-)doc");
-
-    m_io.def(
-            "write_triangle_mesh",
-            [](const std::string &filename,
-               const t::geometry::TriangleMesh &mesh, bool write_ascii,
-               bool compressed, bool write_vertex_normals,
-               bool write_vertex_colors, bool write_triangle_uvs,
-               bool print_progress) {
-                py::gil_scoped_release release;
-                return WriteTriangleMesh(filename, mesh, write_ascii,
-                                         compressed, write_vertex_normals,
-                                         write_vertex_colors,
-                                         write_triangle_uvs, print_progress);
-            },
-            "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
-            "write_ascii"_a = false, "compressed"_a = false,
-            "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
-            "write_triangle_uvs"_a = true, "print_progress"_a = false);
-    docstring::FunctionDocInject(m_io, "write_triangle_mesh",
-                                 map_shared_argument_docstrings);
-
-    // DepthNoiseSimulator
+void pybind_class_io_declarations(py::module &m_io) {
     py::class_<DepthNoiseSimulator> depth_noise_simulator(
             m_io, "DepthNoiseSimulator",
             R"(Simulate depth image noise from a given noise distortion model. The distortion model is based on *Teichman et. al. "Unsupervised intrinsic calibration of depth sensors via SLAM" RSS 2009*. Also see <http://redwood-data.org/indoor/dataset.html>__
@@ -222,7 +93,142 @@ Example::
     # Save noisy depth image (uint16)
     o3d.t.io.write_image("noisy_depth.png", im_dst)
             )");
-    depth_noise_simulator.def(py::init<const std::string &>(),
+}
+
+void pybind_class_io_definitions(py::module &m_io) {
+    // open3d::t::geometry::Image
+    m_io.def(
+            "read_image",
+            [](const fs::path &filename) {
+                py::gil_scoped_release release;
+                geometry::Image image;
+                ReadImage(filename.string(), image);
+                return image;
+            },
+            "Function to read image from file.", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_image",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_image",
+            [](const fs::path &filename, const geometry::Image &image,
+               int quality) {
+                py::gil_scoped_release release;
+                return WriteImage(filename.string(), image, quality);
+            },
+            "Function to write Image to file.", "filename"_a, "image"_a,
+            "quality"_a = kOpen3DImageIODefaultQuality);
+    docstring::FunctionDocInject(m_io, "write_image",
+                                 map_shared_argument_docstrings);
+
+    // open3d::t::geometry::PointCloud
+    m_io.def(
+            "read_point_cloud",
+            [](const fs::path &filename, const std::string &format,
+               bool remove_nan_points, bool remove_infinite_points,
+               bool print_progress) {
+                py::gil_scoped_release release;
+                t::geometry::PointCloud pcd;
+                ReadPointCloud(filename.string(), pcd,
+                               {format, remove_nan_points,
+                                remove_infinite_points, print_progress});
+                return pcd;
+            },
+            "Function to read PointCloud with tensor attributes from file.",
+            "filename"_a, "format"_a = "auto", "remove_nan_points"_a = false,
+            "remove_infinite_points"_a = false, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_point_cloud",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_point_cloud",
+            [](const fs::path &filename,
+               const t::geometry::PointCloud &pointcloud, bool write_ascii,
+               bool compressed, bool print_progress) {
+                py::gil_scoped_release release;
+                return WritePointCloud(
+                        filename.string(), pointcloud,
+                        {write_ascii, compressed, print_progress});
+            },
+            "Function to write PointCloud with tensor attributes to file.",
+            "filename"_a, "pointcloud"_a, "write_ascii"_a = false,
+            "compressed"_a = false, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "write_point_cloud",
+                                 map_shared_argument_docstrings);
+
+    // open3d::geometry::TriangleMesh
+    m_io.def(
+            "read_triangle_mesh",
+            [](const fs::path &filename, bool enable_post_processing,
+               bool print_progress) {
+                py::gil_scoped_release release;
+                t::geometry::TriangleMesh mesh;
+                open3d::io::ReadTriangleMeshOptions opt;
+                opt.enable_post_processing = enable_post_processing;
+                opt.print_progress = print_progress;
+                ReadTriangleMesh(filename.string(), mesh, opt);
+                return mesh;
+            },
+            "Function to read TriangleMesh from file", "filename"_a,
+            "enable_post_processing"_a = false, "print_progress"_a = false,
+            R"doc(The general entrance for reading a TriangleMesh from a file.
+The function calls read functions based on the extension name of filename.
+Supported formats are `obj, ply, stl, off, gltf, glb, fbx`.
+
+The following example reads a triangle mesh with the .ply extension::
+    import open3d as o3d
+    mesh = o3d.t.io.read_triangle_mesh('mesh.ply')
+
+Args:
+    filename (str): Path to the mesh file.
+    enable_post_processing (bool): If True enables post-processing.
+        Post-processing will
+          - triangulate meshes with polygonal faces
+          - remove redundant materials
+          - pretransform vertices
+          - generate face normals if needed
+
+        For more information see ASSIMPs documentation on the flags
+        `aiProcessPreset_TargetRealtime_Fast, aiProcess_RemoveRedundantMaterials,
+        aiProcess_OptimizeMeshes, aiProcess_PreTransformVertices`.
+
+        Note that identical vertices will always be joined regardless of whether
+        post-processing is enabled or not, which changes the number of vertices
+        in the mesh.
+
+        The `ply`-format is not affected by the post-processing.
+
+    print_progress (bool): If True print the reading progress to the terminal.
+
+Returns:
+    Returns the mesh object. On failure an empty mesh is returned.
+)doc");
+
+    m_io.def(
+            "write_triangle_mesh",
+            [](const fs::path &filename, const t::geometry::TriangleMesh &mesh,
+               bool write_ascii, bool compressed, bool write_vertex_normals,
+               bool write_vertex_colors, bool write_triangle_uvs,
+               bool print_progress) {
+                py::gil_scoped_release release;
+                return WriteTriangleMesh(filename.string(), mesh, write_ascii,
+                                         compressed, write_vertex_normals,
+                                         write_vertex_colors,
+                                         write_triangle_uvs, print_progress);
+            },
+            "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
+            "write_ascii"_a = false, "compressed"_a = false,
+            "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
+            "write_triangle_uvs"_a = true, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "write_triangle_mesh",
+                                 map_shared_argument_docstrings);
+
+    // DepthNoiseSimulator
+    auto depth_noise_simulator = static_cast<py::class_<DepthNoiseSimulator>>(
+            m_io.attr("DepthNoiseSimulator"));
+    depth_noise_simulator.def(py::init([](const fs::path &fielname) {
+                                  return DepthNoiseSimulator(fielname.string());
+                              }),
                               "noise_model_path"_a);
     depth_noise_simulator.def("simulate", &DepthNoiseSimulator::Simulate,
                               "im_src"_a, "depth_scale"_a = 1000.0f,

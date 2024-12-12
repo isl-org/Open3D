@@ -73,5 +73,6 @@ ExternalProject_Add(
         -DFILAMENT_SKIP_SDL2=ON
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
+        -DSPIRV_WERROR=OFF
     BUILD_BYPRODUCTS ${lib_byproducts}
 )

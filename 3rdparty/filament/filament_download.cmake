@@ -33,7 +33,7 @@ else()
             message(STATUS "GLIBC version ${glibc_version} found: Using "
                 "Open3D built Filament binary for Ubuntu 20.04.")
         else()
-            set(FILAMENT_URL 
+            set(FILAMENT_URL
                 https://github.com/google/filament/releases/download/v1.49.1/filament-v1.49.1-linux.tgz)
             set(FILAMENT_SHA256 ddd086310d1ee650831e21f6a11f489cb385826fbeea446e7803bec8d6e7442b)
             message(STATUS "GLIBC version ${glibc_version} found: Using "

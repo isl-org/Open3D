@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -220,7 +220,8 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
 double UnpackBinaryPCDElement(const char *data_ptr,
                               const char type,
                               const int size) {
-    if (type == 'I') {
+    const char type_uppercase = std::toupper(type, std::locale());
+    if (type_uppercase == 'I') {
         if (size == 1) {
             std::int8_t data;
             memcpy(&data, data_ptr, sizeof(data));
@@ -236,7 +237,7 @@ double UnpackBinaryPCDElement(const char *data_ptr,
         } else {
             return 0.0;
         }
-    } else if (type == 'U') {
+    } else if (type_uppercase == 'U') {
         if (size == 1) {
             std::uint8_t data;
             memcpy(&data, data_ptr, sizeof(data));
@@ -252,7 +253,7 @@ double UnpackBinaryPCDElement(const char *data_ptr,
         } else {
             return 0.0;
         }
-    } else if (type == 'F') {
+    } else if (type_uppercase == 'F') {
         if (size == 4) {
             float data;
             memcpy(&data, data_ptr, sizeof(data));
@@ -281,11 +282,12 @@ double UnpackASCIIPCDElement(const char *data_ptr,
                              const char type,
                              const int size) {
     char *end;
-    if (type == 'I') {
+    const char type_uppercase = std::toupper(type, std::locale());
+    if (type_uppercase == 'I') {
         return (double)std::strtol(data_ptr, &end, 0);
-    } else if (type == 'U') {
+    } else if (type_uppercase == 'U') {
         return (double)std::strtoul(data_ptr, &end, 0);
-    } else if (type == 'F') {
+    } else if (type_uppercase == 'F') {
         return std::strtod(data_ptr, &end);
     }
     return 0.0;
@@ -297,13 +299,14 @@ Eigen::Vector3d UnpackASCIIPCDColor(const char *data_ptr,
     if (size == 4) {
         std::uint8_t data[4] = {0, 0, 0, 0};
         char *end;
-        if (type == 'I') {
+        const char type_uppercase = std::toupper(type, std::locale());
+        if (type_uppercase == 'I') {
             std::int32_t value = std::strtol(data_ptr, &end, 0);
             memcpy(data, &value, 4);
-        } else if (type == 'U') {
+        } else if (type_uppercase == 'U') {
             std::uint32_t value = std::strtoul(data_ptr, &end, 0);
             memcpy(data, &value, 4);
-        } else if (type == 'F') {
+        } else if (type_uppercase == 'F') {
             float value = std::strtof(data_ptr, &end);
             memcpy(data, &value, 4);
         }

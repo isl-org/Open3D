@@ -1,4 +1,5 @@
 name: Ubuntu CUDA
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -26,6 +27,8 @@ jobs:
   skip-check:
     runs-on: ubuntu-latest
     name: Skip job for forks
+    permissions:
+      contents: read
     outputs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
@@ -42,6 +45,8 @@ jobs:
 
   build-and-run-docker:
     name: Build and run
+    permissions:
+      contents: write   # upload
     runs-on: ubuntu-latest
     needs: [skip-check]
     if: needs.skip-check.outputs.skip == 'no'
@@ -49,21 +54,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - CI_CONFIG: 2-bionic
-          - CI_CONFIG: 3-ml-shared-bionic
-          - CI_CONFIG: 4-shared-bionic
-          - CI_CONFIG: 5-ml-focal
+          - CI_CONFIG: 2-focal
+          - CI_CONFIG: 3-ml-shared-focal
+          - CI_CONFIG: 4-shared-focal
+          - CI_CONFIG: 5-ml-jammy
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : ${{ matrix.CI_CONFIG }}
-      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-bionic", "4-shared-bionic"]'), matrix.CI_CONFIG) }}
+      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-focal", "4-shared-focal"]'), matrix.CI_CONFIG) }}
       GCE_INSTANCE_PREFIX: open3d-ci-${{ matrix.CI_CONFIG }}
       DOCKER_TAG         : open3d-ci:${{ matrix.CI_CONFIG }}
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'false'
       - name: Package code
@@ -73,12 +78,12 @@ jobs:
           tar -czvf Open3D.tar.gz Open3D
           ls -alh
       - name: GCloud CLI auth
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           project_id: ${{ secrets.GCE_PROJECT }}
@@ -149,20 +154,19 @@ jobs:
 
       - name: Upload package
         if: ${{ env.BUILD_PACKAGE == 'true' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: open3d-devel-linux-x86_64-cuda
+          name: open3d-devel-linux-x86_64-cuda-${{ matrix.CI_CONFIG }}
           path: open3d-devel-linux*.tar.xz
           if-no-files-found: error
 
-      - name: Upload package to GCS bucket
+      - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          gcloud compute ssh "${INSTANCE_NAME}" \
-            --zone="${GCE_ZONE}" \
-            --command="ls -alh \
-                       && gsutil cp open3d-devel-linux-*.tar.xz \
-                       gs://open3d-releases/devel/"
+          gh release upload main-devel open3d-devel-linux-*.tar.xz --clobber
+          gh release view main-devel
 
       - name: VM run docker
         run: |

@@ -1,0 +1,38 @@
+name: Clean release
+permissions: {}
+on:
+  workflow_run:  # Triggered when long running macos workflow ends
+    workflows: [macos]
+    types: [completed]
+    # branches: [main]
+
+jobs:
+ clean-release:
+    permissions:
+      contents: write  # Release upload
+    env:
+      GH_TOKEN: ${{ github.token }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clean old release assets
+        run: |
+          # Total assets from each main branch commmit:
+          # Python wheels (4x4) + Viewer (3) + C++ libs (4+2+2) = 27,
+          release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
+          last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
+          echo "Removing release assets except from last 3 commits: ${last_shas[@]}"
+          for relass in "${release_assets[@]}"; do
+              found=false
+              for last_sha in "${last_shas[@]}"; do
+                  if [[ $relass == *${last_sha}* ]]; then
+                      found=true
+                  fi
+              done
+              if [ $found == false ]; then
+                  set -x
+                  gh release delete-asset main-devel $relass
+                  set +x
+              fi
+          done
+          gh release view main-devel

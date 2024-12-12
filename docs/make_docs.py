@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -77,9 +77,9 @@ class PyAPIDocsBuilder:
             try:
                 module = self._try_import_module(module_name)
                 self._generate_module_class_function_docs(module_name, module)
-            except:
-                print("[Warning] Module {} cannot be imported.".format(
-                    module_name))
+            except Exception as _e:
+                print(f"[Warning] Module {module_name} cannot be imported: "
+                      f"{_e}.")
 
     @staticmethod
     def _get_documented_module_names():
@@ -88,7 +88,7 @@ class PyAPIDocsBuilder:
         with open("documented_modules.txt", "r") as f:
             for line in f:
                 print(line, end="")
-                m = re.match("^(open3d\..*)\s*$", line)
+                m = re.match(r"^(open3d\..*)\s*$", line)
                 if m:
                     module_names.append(m.group(1))
         print("Documented modules:")

@@ -78,6 +78,7 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
                 COMMAND cp -a "${CMAKE_BINARY_DIR}/${APP_NAME}" .
                 COMMAND cp "${SOURCE_DIR}/icon.svg" "${APP_NAME}/${APP_NAME}.svg"
                 COMMAND cp "${SOURCE_DIR}/${TARGET_NAME}.xml" "${APP_NAME}/"
+                COMMAND cp "${SOURCE_DIR}/${TARGET_NAME}Launcher.sh" "${APP_NAME}/"
                 COMMAND "${CMAKE_COMMAND}" -S .
                 COMMAND "${CMAKE_COMMAND}" --build . -t package
                 WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/package-${TARGET_NAME}-deb/"
@@ -115,7 +116,7 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
                               MACOSX_BUNDLE_INFO_PLIST "${INFO_PLIST}"
                               XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "" # disable
                               OUTPUT_NAME ${APP_NAME}
-                             )
+                              INSTALL_RPATH "@loader_path;@loader_path/../lib/")
     elseif (WIN32)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -124,10 +125,10 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
         set_target_properties(${TARGET_NAME} PROPERTIES
                             OUTPUT_NAME ${APP_NAME}
-                            )
+                            INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib/")
     endif()
 
-    target_link_libraries(${TARGET_NAME} PRIVATE Open3D::Open3D ${ARGN})
+    target_link_libraries(${TARGET_NAME} PRIVATE Open3D::Open3D TBB::tbb ${ARGN})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
 
     open3d_link_3rdparty_libraries(${TARGET_NAME})

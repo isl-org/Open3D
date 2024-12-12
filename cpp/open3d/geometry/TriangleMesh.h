@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -337,8 +337,7 @@ public:
     /// mesh.
     std::shared_ptr<PointCloud> SamplePointsUniformlyImpl(
             size_t number_of_points,
-            std::vector<double> &triangle_areas,
-            double surface_area,
+            const std::vector<double> &triangle_areas,
             bool use_triangle_normal);
 
     /// Function to sample points uniformly from the mesh.

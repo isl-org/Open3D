@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -83,9 +83,10 @@ def draw(geometry=None,
         animation_time_step (float): Duration in seconds for each animation
             frame.
         animation_duration (float): Total animation duration in seconds.
-        rpc_interface (bool): Start an RPC interface at http://localhost:51454 and
-            listen for drawing requests. The requests can be made with
-            :class:`open3d.visualization.ExternalVisualizer`.
+        rpc_interface (bool or str): Start an RPC interface at this local
+            address and listen for drawing requests. If rpc_interface is True, the
+            default address "tcp://localhost:51454" is used. The requests can be
+            made with :class:`open3d.visualization.ExternalVisualizer`.
         on_init (Callable): Extra initialization procedure for the underlying
             GUI window. The procedure receives a single argument of type
             :class:`open3d.visualization.O3DVisualizer`.
@@ -202,7 +203,9 @@ def draw(geometry=None,
         w.show_skybox(show_skybox)
 
     if rpc_interface:
-        w.start_rpc_interface(address="tcp://127.0.0.1:51454", timeout=10000)
+        if not isinstance(rpc_interface, str):
+            rpc_interface = "tcp://127.0.0.1:51454"
+        w.start_rpc_interface(address=rpc_interface, timeout=10000)
 
         def stop_rpc():
             w.stop_rpc_interface()

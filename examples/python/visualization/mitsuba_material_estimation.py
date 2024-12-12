@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -118,7 +118,7 @@ def run_estimation(mesh, cam_info, ref_image, env_width, iterations, tv_alpha):
 
 
 def load_input_mesh(model_path, tex_dim):
-    mesh = o3d.t.io.read_triangle_mesh(str(model_path))
+    mesh = o3d.t.io.read_triangle_mesh(model_path)
     mesh.material.set_default_properties()
     mesh.material.material_name = 'defaultLit'  # note: ignored by Mitsuba, just used to visualize in Open3D
     mesh.material.texture_maps['albedo'] = o3d.t.geometry.Image(0.5 + np.zeros(

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -39,6 +39,9 @@
 // We include the type caster for tensor here because it must be included in
 // every compilation unit.
 #include "pybind/core/tensor_type_caster.h"
+
+// Replace with <pybind11/stl/filesystem.h> when we require C++17.
+#include "pybind_filesystem.h"
 
 namespace py = pybind11;
 using namespace py::literals;

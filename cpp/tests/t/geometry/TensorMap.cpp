@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -31,6 +31,13 @@ TEST_P(TensorMapPermuteDevices, Constructor) {
 
     // Primary key is required.
     EXPECT_ANY_THROW(t::geometry::TensorMap());
+
+    // Delete primary key.
+    EXPECT_ANY_THROW(tm0.Erase("positions"));
+
+    // Reserved keys.
+    EXPECT_ANY_THROW(tm0.insert(
+            {"primary_key", core::Tensor::Zeros({2, 3}, dtype, device)}));
 
     // Iterators.
     std::map<std::string, core::Tensor> tensor_map(

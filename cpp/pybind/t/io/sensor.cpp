@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,7 +22,98 @@ namespace open3d {
 namespace t {
 namespace io {
 
-void pybind_sensor(py::module &m) {
+// RGBD video reader trampoline
+class PyRGBDVideoReader : public RGBDVideoReader {
+public:
+    using RGBDVideoReader::RGBDVideoReader;
+    bool IsOpened() const override {
+        PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, );
+    }
+
+    bool IsEOF() const override {
+        PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, );
+    }
+
+    bool Open(const std::string &filename) override {
+        PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, Open, filename);
+    }
+
+    void Close() override { PYBIND11_OVERLOAD_PURE(void, RGBDVideoReader, ); }
+
+    RGBDVideoMetadata &GetMetadata() override {
+        PYBIND11_OVERLOAD_PURE(RGBDVideoMetadata &, RGBDVideoReader, );
+    }
+
+    const RGBDVideoMetadata &GetMetadata() const override {
+        PYBIND11_OVERLOAD_PURE(const RGBDVideoMetadata &, RGBDVideoReader, );
+    }
+
+    bool SeekTimestamp(uint64_t timestamp) override {
+        PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, SeekTimestamp, timestamp);
+    }
+
+    uint64_t GetTimestamp() const override {
+        PYBIND11_OVERLOAD_PURE(uint64_t, RGBDVideoReader, );
+    }
+
+    t::geometry::RGBDImage NextFrame() override {
+        PYBIND11_OVERLOAD_PURE(t::geometry::RGBDImage, RGBDVideoReader, );
+    }
+
+    std::string GetFilename() const override {
+        PYBIND11_OVERLOAD_PURE(std::string, RGBDVideoReader, );
+    }
+};
+
+void pybind_sensor_declarations(py::module &m) {
+    py::enum_<SensorType>(m, "SensorType", "Sensor type")
+            .value("AZURE_KINECT", SensorType::AZURE_KINECT)
+            .value("REAL_SENSE", SensorType::REAL_SENSE);
+    py::class_<RGBDVideoMetadata> rgbd_video_metadata(m, "RGBDVideoMetadata",
+                                                      "RGBD Video metadata.");
+    py::class_<RGBDVideoReader, PyRGBDVideoReader,
+               std::unique_ptr<RGBDVideoReader>>
+            rgbd_video_reader(m, "RGBDVideoReader", "RGBD Video file reader.");
+    py::class_<RGBDSensor> rgbd_sensor(
+            m, "RGBDSensor", "Interface class for control of RGBD cameras.");
+#ifdef BUILD_LIBREALSENSE
+    py::class_<RSBagReader, std::unique_ptr<RSBagReader>, RGBDVideoReader>
+            rs_bag_reader(
+                    m, "RSBagReader",
+                    "RealSense Bag file reader.\n"
+                    "\tOnly the first color and depth streams from the bag "
+                    "file will be read.\n"
+                    " - The streams must have the same frame rate.\n"
+                    " - The color stream must have RGB 8 bit (RGB8/BGR8) pixel "
+                    "format\n"
+                    " - The depth stream must have 16 bit unsigned int (Z16) "
+                    "pixel format\n"
+                    "The output is synchronized color and depth frame pairs "
+                    "with the depth frame aligned to the color frame. "
+                    "Unsynchronized frames will be dropped. With alignment, "
+                    "the depth and color frames have the same  viewpoint and "
+                    "resolution. See format documentation `here "
+                    "<https://intelrealsense.github.io/librealsense/doxygen/"
+                    "rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7>`__"
+                    "\n\n"
+                    ".. warning:: A few frames may be dropped if user code "
+                    "takes a long time (>10 frame intervals) to process a "
+                    "frame.");
+    py::class_<RealSenseSensorConfig> realsense_sensor_config(
+            m, "RealSenseSensorConfig", "Configuration for a RealSense camera");
+    py::class_<RealSenseValidConfigs> realsense_valid_configs(
+            m, "RealSenseValidConfigs",
+            "Store set of valid configuration options for a connected "
+            "RealSense device.  From this structure, a user can construct a "
+            "RealSenseSensorConfig object meeting their specifications.");
+    py::class_<RealSenseSensor, RGBDSensor> realsense_sensor(
+            m, "RealSenseSensor",
+            "RealSense camera discovery, configuration, streaming and "
+            "recording");
+#endif
+}
+
+void pybind_sensor_definitions(py::module &m) {
     static const std::unordered_map<std::string, std::string>
             map_shared_argument_docstrings = {
                     {"timestamp", "Timestamp in the video (usec)."},
@@ -39,13 +130,9 @@ void pybind_sensor(py::module &m) {
                      "Size of internal frame buffer, increase this if you "
                      "experience frame drops."}};
 
-    py::enum_<SensorType>(m, "SensorType", "Sensor type")
-            .value("AZURE_KINECT", SensorType::AZURE_KINECT)
-            .value("REAL_SENSE", SensorType::REAL_SENSE);
-
     // Class RGBD video metadata
-    py::class_<RGBDVideoMetadata> rgbd_video_metadata(m, "RGBDVideoMetadata",
-                                                      "RGBD Video metadata.");
+    auto rgbd_video_metadata = static_cast<py::class_<RGBDVideoMetadata>>(
+            m.attr("RGBDVideoMetadata"));
     rgbd_video_metadata.def(py::init<>())
             .def_readwrite("intrinsics", &RGBDVideoMetadata::intrinsics_,
                            "Shared intrinsics between RGB & depth")
@@ -78,60 +165,18 @@ void pybind_sensor(py::module &m) {
                            "Number of color channels.")
             .def("__repr__", &RGBDVideoMetadata::ToString);
 
-    // RGBD video reader trampoline
-    class PyRGBDVideoReader : public RGBDVideoReader {
-    public:
-        using RGBDVideoReader::RGBDVideoReader;
-        bool IsOpened() const override {
-            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, );
-        }
-
-        bool IsEOF() const override {
-            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, );
-        }
-
-        bool Open(const std::string &filename) override {
-            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, Open, filename);
-        }
-
-        void Close() override {
-            PYBIND11_OVERLOAD_PURE(void, RGBDVideoReader, );
-        }
-
-        RGBDVideoMetadata &GetMetadata() override {
-            PYBIND11_OVERLOAD_PURE(RGBDVideoMetadata &, RGBDVideoReader, );
-        }
-
-        const RGBDVideoMetadata &GetMetadata() const override {
-            PYBIND11_OVERLOAD_PURE(const RGBDVideoMetadata &,
-                                   RGBDVideoReader, );
-        }
-
-        bool SeekTimestamp(uint64_t timestamp) override {
-            PYBIND11_OVERLOAD_PURE(bool, RGBDVideoReader, SeekTimestamp,
-                                   timestamp);
-        }
-
-        uint64_t GetTimestamp() const override {
-            PYBIND11_OVERLOAD_PURE(uint64_t, RGBDVideoReader, );
-        }
-
-        t::geometry::RGBDImage NextFrame() override {
-            PYBIND11_OVERLOAD_PURE(t::geometry::RGBDImage, RGBDVideoReader, );
-        }
-
-        std::string GetFilename() const override {
-            PYBIND11_OVERLOAD_PURE(std::string, RGBDVideoReader, );
-        }
-    };
-
     // Class RGBD video reader
-    py::class_<RGBDVideoReader, PyRGBDVideoReader,
-               std::unique_ptr<RGBDVideoReader>>
-            rgbd_video_reader(m, "RGBDVideoReader", "RGBD Video file reader.");
+    auto rgbd_video_reader =
+            static_cast<py::class_<RGBDVideoReader, PyRGBDVideoReader,
+                                   std::unique_ptr<RGBDVideoReader>>>(
+                    m.attr("RGBDVideoReader"));
     rgbd_video_reader.def(py::init<>())
-            .def_static("create", &RGBDVideoReader::Create, "filename"_a,
-                        "Create RGBD video reader based on filename")
+            .def_static(
+                    "create",
+                    [](const fs::path &filename) {
+                        return RGBDVideoReader::Create(filename.string());
+                    },
+                    "filename"_a, "Create RGBD video reader based on filename")
             .def("save_frames", &RGBDVideoReader::SaveFrames, "frame_path"_a,
                  "start_time_us"_a = 0, "end_time_us"_a = UINT64_MAX,
                  "Save synchronized and aligned individual frames to "
@@ -143,34 +188,15 @@ void pybind_sensor(py::module &m) {
                                     map_shared_argument_docstrings);
 
     // Class RGBD sensor
-    py::class_<RGBDSensor> rgbd_sensor(
-            m, "RGBDSensor", "Interface class for control of RGBD cameras.");
+    auto rgbd_sensor =
+            static_cast<py::class_<RGBDSensor>>(m.attr("RGBDSensor"));
     rgbd_sensor.def("__repr__", &RGBDSensor::ToString);
 
 #ifdef BUILD_LIBREALSENSE
     // Class RS bag reader
-    py::class_<RSBagReader, std::unique_ptr<RSBagReader>, RGBDVideoReader>
-            rs_bag_reader(
-                    m, "RSBagReader",
-                    "RealSense Bag file reader.\n"
-                    "\tOnly the first color and depth streams from the bag "
-                    "file will be read.\n"
-                    " - The streams must have the same frame rate.\n"
-                    " - The color stream must have RGB 8 bit (RGB8/BGR8) pixel "
-                    "format\n"
-                    " - The depth stream must have 16 bit unsigned int (Z16) "
-                    "pixel format\n"
-                    "The output is synchronized color and depth frame pairs "
-                    "with the depth frame aligned to the color frame. "
-                    "Unsynchronized frames will be dropped. With alignment, "
-                    "the depth and color frames have the same  viewpoint and "
-                    "resolution. See format documentation `here "
-                    "<https://intelrealsense.github.io/librealsense/doxygen/"
-                    "rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7>`__"
-                    "\n\n"
-                    ".. warning:: A few frames may be dropped if user code "
-                    "takes a long time (>10 frame intervals) to process a "
-                    "frame.");
+    auto rs_bag_reader =
+            static_cast<py::class_<RSBagReader, std::unique_ptr<RSBagReader>,
+                                   RGBDVideoReader>>(m.attr("RSBagReader"));
     rs_bag_reader.def(py::init<>())
             .def(py::init<size_t>(),
                  "buffer_size"_a = RSBagReader::DEFAULT_BUFFER_SIZE)
@@ -214,19 +240,16 @@ void pybind_sensor(py::module &m) {
                                     map_shared_argument_docstrings);
 
     // Class RealSenseSensorConfig
-    py::class_<RealSenseSensorConfig> realsense_sensor_config(
-            m, "RealSenseSensorConfig", "Configuration for a RealSense camera");
-
+    auto realsense_sensor_config =
+            static_cast<py::class_<RealSenseSensorConfig>>(
+                    m.attr("RealSenseSensorConfig"));
     realsense_sensor_config.def(py::init<>(), "Default config will be used")
             .def(py::init<const std::unordered_map<std::string, std::string>
                                   &>(),
                  "config"_a, "Initialize config with a map");
-
-    py::class_<RealSenseValidConfigs> realsense_valid_configs(
-            m, "RealSenseValidConfigs",
-            "Store set of valid configuration options for a connected "
-            "RealSense device.  From this structure, a user can construct a "
-            "RealSenseSensorConfig object meeting their specifications.");
+    auto realsense_valid_configs =
+            static_cast<py::class_<RealSenseValidConfigs>>(
+                    m.attr("RealSenseValidConfigs"));
     realsense_valid_configs
             .def_readwrite("serial", &RealSenseValidConfigs::serial,
                            "Device serial number.")
@@ -237,10 +260,9 @@ void pybind_sensor(py::module &m) {
                            "list of valid values.");
 
     // Class RealSenseSensor
-    py::class_<RealSenseSensor, RGBDSensor> realsense_sensor(
-            m, "RealSenseSensor",
-            "RealSense camera discovery, configuration, streaming and "
-            "recording");
+    auto realsense_sensor =
+            static_cast<py::class_<RealSenseSensor, RGBDSensor>>(
+                    m.attr("RealSenseSensor"));
     realsense_sensor.def(py::init<>(), "Initialize with default settings.")
             .def_static("list_devices", &RealSenseSensor::ListDevices,
                         py::call_guard<py::gil_scoped_release>(),

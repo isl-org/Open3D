@@ -1,5 +1,6 @@
 ## Main
-
+-   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
+-   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
 -   Use GLIBCXX_USE_CXX11_ABI=ON by default
 -   Python 3.9 support. Tensorflow bump 2.4.1 -> 2.5.0. PyTorch bump 1.7.1 -> 1.8.1 (LTS)
@@ -28,6 +29,30 @@
 -   Rename master branch to main.
 -   Support in memory loading of XYZ files
 -   Fix geometry picker Error when LineSet objects are presented (PR #6499)
+-   Fix mis-configured application .desktop link for the Open3D viewer when installing to a custom path (PR #6599)
+-   Fix regression in printing cuda tensor from PR #6444 🐛
+-   Add Python pathlib support for file IO (PR #6619)
+-   Fix log error message for `probability` argument validation in `PointCloud::SegmentPlane` (PR #6622)
+-   Fix macOS arm64 builds, add CI runner for macOS arm64 (PR #6695)
+-   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
+-   Fix RANSAC early stop if no inliers in a specific iteration (PR #6789)
+-   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
+-   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
+-   Fix build with fmt v10.2.0 (#6783)
+-   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
+-   Python 3.12 support
+-   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
+-   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
+-   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
+-   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
+-   Support lowercase types when reading PCD files (PR #6930)
+-   Fix visualization/draw ICP example and add warnings (PR #6933)
+-   Unified cloud initializer pipeline for ICP (fixes segfault colored ICP) (PR #6942)
+-   Fix tensor EstimatePointWiseNormalsWithFastEigen3x3 (PR #6980)
+-   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
+-   Fix render to depth image on Apple Retina displays (PR #7001)
+-   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
+-   Add select_by_index method to Feature class (PR #7039)
 
 ## 0.13
 
@@ -61,7 +86,7 @@
 -   Added an RPC interface for external visualizers running in a separate process
 -   Added `maximum_error` and `boundary_weight` parameter to `simplify_quadric_decimation`
 -   Remove support for Python 3.5
--   Development wheels are available for user testing. See [Getting Started](http://www.open3d.org/docs/latest/getting_started.html) page for installation.
+-   Development wheels are available for user testing. See [Getting Started](https://www.open3d.org/docs/latest/getting_started.html) page for installation.
 -   PointCloud File IO support for new tensor data types.
 -   New PointCloud format support: XYZI (ASCII).
 -   Fast compression mode for PNG writing. (Issue #846)

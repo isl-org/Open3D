@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -9,6 +9,7 @@
 
 #include <string>
 
+#include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
@@ -209,6 +210,81 @@ TriangleMesh LineSet::ExtrudeLinear(const core::Tensor &vector,
 
 OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
+LineSet &LineSet::PaintUniformColor(const core::Tensor &color) {
+    core::AssertTensorShape(color, {3});
+    core::Tensor clipped_color = color.To(GetDevice());
+    if (color.GetDtype() == core::Float32 ||
+        color.GetDtype() == core::Float64) {
+        clipped_color = clipped_color.Clip(0.0f, 1.0f);
+    }
+    core::Tensor ls_colors =
+            core::Tensor::Empty({GetLineIndices().GetLength(), 3},
+                                clipped_color.GetDtype(), GetDevice());
+    ls_colors.AsRvalue() = clipped_color;
+    SetLineColors(ls_colors);
+
+    return *this;
+}
+
+LineSet LineSet::CreateCameraVisualization(int view_width_px,
+                                           int view_height_px,
+                                           const core::Tensor &intrinsic_in,
+                                           const core::Tensor &extrinsic_in,
+                                           double scale,
+                                           const core::Tensor &color) {
+    core::AssertTensorShape(intrinsic_in, {3, 3});
+    core::AssertTensorShape(extrinsic_in, {4, 4});
+    core::Tensor intrinsic = intrinsic_in.To(core::Float32, "CPU:0");
+    core::Tensor extrinsic = extrinsic_in.To(core::Float32, "CPU:0");
+
+    // Calculate points for camera visualization
+    float w(view_width_px), h(view_height_px), s(scale);
+    float fx = intrinsic[0][0].Item<float>(),
+          fy = intrinsic[1][1].Item<float>(),
+          cx = intrinsic[0][2].Item<float>(),
+          cy = intrinsic[1][2].Item<float>();
+    core::Tensor points = core::Tensor::Init<float>({{0.f, 0.f, 0.f},  // origin
+                                                     {0.f, 0.f, s},
+                                                     {w * s, 0.f, s},
+                                                     {w * s, h * s, s},
+                                                     {0.f, h * s, s},
+                                                     // Add XYZ axes
+                                                     {fx * s, 0.f, 0.f},
+                                                     {0.f, fy * s, 0.f},
+                                                     {cx * s, cy * s, s}});
+    points = (intrinsic.Inverse().Matmul(points.T()) -
+              extrinsic.Slice(0, 0, 3).Slice(1, 3, 4))
+                     .T()
+                     .Matmul(extrinsic.Slice(0, 0, 3).Slice(1, 0, 3));
+
+    // Add lines for camera frame and XYZ axes
+    core::Tensor lines = core::Tensor::Init<int>({{0, 1},
+                                                  {0, 2},
+                                                  {0, 3},
+                                                  {0, 4},
+                                                  {1, 2},
+                                                  {2, 3},
+                                                  {3, 4},
+                                                  {4, 1},
+                                                  // Add XYZ axes
+                                                  {0, 5},
+                                                  {0, 6},
+                                                  {0, 7}});
+
+    LineSet lineset(points, lines);
+    if (color.NumElements() == 3) {
+        lineset.PaintUniformColor(color);
+    } else {
+        lineset.PaintUniformColor(core::Tensor::Init<float>({0.f, 0.f, 1.f}));
+    }
+    auto &lscolors = lineset.GetLineColors();
+    lscolors[8] = core::Tensor::Init<float>({1.f, 0.f, 0.f});   // Red
+    lscolors[9] = core::Tensor::Init<float>({0.f, 1.f, 0.f});   // Green
+    lscolors[10] = core::Tensor::Init<float>({0.f, 0.f, 1.f});  // Blue
+
+    return lineset;
 }
 
 }  // namespace geometry

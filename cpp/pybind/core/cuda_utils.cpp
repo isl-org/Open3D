@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,9 +12,11 @@
 namespace open3d {
 namespace core {
 
-void pybind_cuda_utils(py::module& m) {
+void pybind_cuda_utils_declarations(py::module& m) {
     py::module m_cuda = m.def_submodule("cuda");
-
+}
+void pybind_cuda_utils_definitions(py::module& m) {
+    auto m_cuda = static_cast<py::module>(m.attr("cuda"));
     m_cuda.def("device_count", cuda::DeviceCount,
                "Returns the number of available CUDA devices. Returns 0 if "
                "Open3D is not compiled with CUDA support.");

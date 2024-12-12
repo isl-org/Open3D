@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -38,9 +38,32 @@ static const std::unordered_map<std::string, std::string>
                 {"reset_bounding_box",
                  "Set to ``False`` to keep current viewpoint"}};
 
-void pybind_visualizer(py::module &m) {
+void pybind_visualizer_declarations(py::module &m) {
     py::class_<Visualizer, PyVisualizer<>, std::shared_ptr<Visualizer>>
             visualizer(m, "Visualizer", "The main Visualizer class.");
+    py::class_<VisualizerWithKeyCallback,
+               PyVisualizer<VisualizerWithKeyCallback>,
+               std::shared_ptr<VisualizerWithKeyCallback>>
+            visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
+                           "Visualizer with custom key callback capabilities.");
+    py::class_<VisualizerWithEditing, PyVisualizer<VisualizerWithEditing>,
+               std::shared_ptr<VisualizerWithEditing>>
+            visualizer_edit(m, "VisualizerWithEditing", visualizer,
+                            "Visualizer with editing capabilities.");
+    py::class_<VisualizerWithVertexSelection,
+               PyVisualizer<VisualizerWithVertexSelection>,
+               std::shared_ptr<VisualizerWithVertexSelection>>
+            visualizer_vselect(
+                    m, "VisualizerWithVertexSelection", visualizer,
+                    "Visualizer with vertex selection capabilities.");
+    py::class_<VisualizerWithVertexSelection::PickedPoint>
+            visualizer_vselect_pickedpoint(m, "PickedPoint");
+}
+
+void pybind_visualizer_definitions(py::module &m) {
+    auto visualizer = static_cast<py::class_<Visualizer, PyVisualizer<>,
+                                             std::shared_ptr<Visualizer>>>(
+            m.attr("Visualizer"));
     py::detail::bind_default_constructor<Visualizer>(visualizer);
     visualizer
             .def("__repr__",
@@ -104,20 +127,39 @@ void pybind_visualizer(py::module &m) {
                  &Visualizer::CaptureScreenFloatBuffer,
                  "Function to capture screen and store RGB in a float buffer",
                  "do_render"_a = false)
-            .def("capture_screen_image", &Visualizer::CaptureScreenImage,
-                 "Function to capture and save a screen image", "filename"_a,
-                 "do_render"_a = false)
+            .def(
+                    "capture_screen_image",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render) {
+                        return self.CaptureScreenImage(filename.string(),
+                                                       do_render);
+                    },
+                    "Function to capture and save a screen image", "filename"_a,
+                    "do_render"_a = false)
             .def("capture_depth_float_buffer",
                  &Visualizer::CaptureDepthFloatBuffer,
                  "Function to capture depth in a float buffer",
                  "do_render"_a = false)
-            .def("capture_depth_image", &Visualizer::CaptureDepthImage,
-                 "Function to capture and save a depth image", "filename"_a,
-                 "do_render"_a = false, "depth_scale"_a = 1000.0)
-            .def("capture_depth_point_cloud",
-                 &Visualizer::CaptureDepthPointCloud,
-                 "Function to capture and save local point cloud", "filename"_a,
-                 "do_render"_a = false, "convert_to_world_coordinate"_a = false)
+            .def(
+                    "capture_depth_image",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render, double depth_scale) {
+                        self.CaptureDepthImage(filename.string(), do_render,
+                                               depth_scale);
+                    },
+                    "Function to capture and save a depth image", "filename"_a,
+                    "do_render"_a = false, "depth_scale"_a = 1000.0)
+            .def(
+                    "capture_depth_point_cloud",
+                    [](Visualizer &self, const fs::path &filename,
+                       bool do_render, bool convert_to_world_coordinate) {
+                        self.CaptureDepthPointCloud(
+                                filename.string(), do_render,
+                                convert_to_world_coordinate);
+                    },
+                    "Function to capture and save local point cloud",
+                    "filename"_a, "do_render"_a = false,
+                    "convert_to_world_coordinate"_a = false)
             .def("get_window_name", &Visualizer::GetWindowName)
             .def("get_view_status", &Visualizer::GetViewStatus,
                  "Get the current view status as a json string of "
@@ -126,12 +168,11 @@ void pybind_visualizer(py::module &m) {
                  "Set the current view status from a json string of "
                  "ViewTrajectory.",
                  "view_status_str"_a);
-
-    py::class_<VisualizerWithKeyCallback,
-               PyVisualizer<VisualizerWithKeyCallback>,
-               std::shared_ptr<VisualizerWithKeyCallback>>
-            visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
-                           "Visualizer with custom key callback capabilities.");
+    auto visualizer_key =
+            static_cast<py::class_<VisualizerWithKeyCallback,
+                                   PyVisualizer<VisualizerWithKeyCallback>,
+                                   std::shared_ptr<VisualizerWithKeyCallback>>>(
+                    m.attr("VisualizerWithKeyCallback"));
     py::detail::bind_default_constructor<VisualizerWithKeyCallback>(
             visualizer_key);
     visualizer_key
@@ -150,15 +191,54 @@ void pybind_visualizer(py::module &m) {
             .def("register_key_action_callback",
                  &VisualizerWithKeyCallback::RegisterKeyActionCallback,
                  "Function to register a callback function for a key action "
-                 "event. The callback function takes Visualizer, action and "
-                 "mods as input and returns a boolean indicating if "
-                 "UpdateGeometry() needs to be run.",
-                 "key"_a, "callback_func"_a);
+                 "event. The callback function takes `Visualizer`, `action` "
+                 "and `mods` as input and returns a boolean indicating if "
+                 "`UpdateGeometry()` needs to be run.  The `action` can be one "
+                 "of `GLFW_RELEASE` (0), `GLFW_PRESS` (1) or `GLFW_REPEAT` "
+                 "(2), see `GLFW input interface "
+                 "<https://www.glfw.org/docs/latest/group__input.html>`__. The "
+                 "`mods` specifies the modifier key, see `GLFW modifier key "
+                 "<https://www.glfw.org/docs/latest/group__mods.html>`__",
+                 "key"_a, "callback_func"_a)
 
-    py::class_<VisualizerWithEditing, PyVisualizer<VisualizerWithEditing>,
-               std::shared_ptr<VisualizerWithEditing>>
-            visualizer_edit(m, "VisualizerWithEditing", visualizer,
-                            "Visualizer with editing capabilities.");
+            .def("register_mouse_move_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseMoveCallback,
+                 "Function to register a callback function for a mouse move "
+                 "event. The callback function takes Visualizer, x and y mouse "
+                 "position inside the window as input and returns a boolean "
+                 "indicating if UpdateGeometry() needs to be run. `GLFW mouse "
+                 "position <https://www.glfw.org/docs/latest/"
+                 "input_guide.html#input_mouse>`__ for more details.",
+                 "callback_func"_a)
+
+            .def("register_mouse_scroll_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseScrollCallback,
+                 "Function to register a callback function for a mouse scroll "
+                 "event. The callback function takes Visualizer, x and y mouse "
+                 "scroll offset as input and returns a boolean "
+                 "indicating if UpdateGeometry() needs to be run. `GLFW mouse "
+                 "scrolling <https://www.glfw.org/docs/latest/"
+                 "input_guide.html#scrolling>`__ for more details.",
+                 "callback_func"_a)
+
+            .def("register_mouse_button_callback",
+                 &VisualizerWithKeyCallback::RegisterMouseButtonCallback,
+                 "Function to register a callback function for a mouse button "
+                 "event. The callback function takes `Visualizer`, `button`, "
+                 "`action` and `mods` as input and returns a boolean "
+                 "indicating `UpdateGeometry()` needs to be run. The `action` "
+                 "can be one of GLFW_RELEASE (0), GLFW_PRESS (1) or "
+                 "GLFW_REPEAT (2), see `GLFW input interface "
+                 "<https://www.glfw.org/docs/latest/group__input.html>`__.  "
+                 "The `mods` specifies the modifier key, see `GLFW modifier "
+                 "key <https://www.glfw.org/docs/latest/group__mods.html>`__.",
+                 "callback_func"_a);
+
+    auto visualizer_edit =
+            static_cast<py::class_<VisualizerWithEditing,
+                                   PyVisualizer<VisualizerWithEditing>,
+                                   std::shared_ptr<VisualizerWithEditing>>>(
+                    m.attr("VisualizerWithEditing"));
     py::detail::bind_default_constructor<VisualizerWithEditing>(
             visualizer_edit);
     visualizer_edit
@@ -175,12 +255,11 @@ void pybind_visualizer(py::module &m) {
                  &VisualizerWithEditing::GetCroppedGeometry,
                  "Function to get cropped geometry");
 
-    py::class_<VisualizerWithVertexSelection,
-               PyVisualizer<VisualizerWithVertexSelection>,
-               std::shared_ptr<VisualizerWithVertexSelection>>
-            visualizer_vselect(
-                    m, "VisualizerWithVertexSelection", visualizer,
-                    "Visualizer with vertex selection capabilities.");
+    auto visualizer_vselect = static_cast<
+            py::class_<VisualizerWithVertexSelection,
+                       PyVisualizer<VisualizerWithVertexSelection>,
+                       std::shared_ptr<VisualizerWithVertexSelection>>>(
+            m.attr("VisualizerWithVertexSelection"));
     py::detail::bind_default_constructor<VisualizerWithVertexSelection>(
             visualizer_vselect);
     visualizer_vselect.def(py::init<>())
@@ -222,8 +301,9 @@ void pybind_visualizer(py::module &m) {
                  "Registers a function to be called after selection moves",
                  "f"_a);
 
-    py::class_<VisualizerWithVertexSelection::PickedPoint>
-            visualizer_vselect_pickedpoint(m, "PickedPoint");
+    auto visualizer_vselect_pickedpoint =
+            static_cast<py::class_<VisualizerWithVertexSelection::PickedPoint>>(
+                    m.attr("PickedPoint"));
     visualizer_vselect_pickedpoint.def(py::init<>())
             .def_readwrite("index",
                            &VisualizerWithVertexSelection::PickedPoint::index)
@@ -279,8 +359,6 @@ void pybind_visualizer(py::module &m) {
     docstring::ClassMethodDocInject(m, "Visualizer", "is_full_screen",
                                     map_visualizer_docstrings);
 }
-
-void pybind_visualizer_method(py::module &m) {}
 
 }  // namespace visualization
 }  // namespace open3d

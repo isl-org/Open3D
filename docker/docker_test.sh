@@ -20,20 +20,24 @@ OPTION:
     openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
     openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
+    openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
     openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
     openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
+    openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
     openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
     openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
+    openblas-arm64-py312-dev    : OpenBLAS ARM64 3.12 wheel, developer mode
     openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
     openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
     openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
+    openblas-arm64-py312        : OpenBLAS ARM64 3.12 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
@@ -47,12 +51,12 @@ OPTION:
     sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-bionic                   : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic, release mode
-    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic, developer mode
-    4-shared-bionic            : CUDA CI, 4-shared-bionic, developer mode
-    4-shared-bionic-release    : CUDA CI, 4-shared-bionic, release mode
-    5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
+    2-focal                   : CUDA CI, 2-focal, developer mode
+    3-ml-shared-focal-release : CUDA CI, 3-ml-shared-focal, release mode
+    3-ml-shared-focal         : CUDA CI, 3-ml-shared-focal, developer mode
+    4-shared-focal            : CUDA CI, 4-shared-focal, developer mode
+    4-shared-focal-release    : CUDA CI, 4-shared-focal, release mode
+    5-ml-jammy                : CUDA CI, 5-ml-jammy, developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -106,18 +110,20 @@ cpp_python_linking_uninstall_test() {
     # - BUILD_PYTORCH_OPS
     # - BUILD_TENSORFLOW_OPS
     # - BUILD_SYCL_MODULE
+    # - NPROC (optional)
     echo "[cpp_python_linking_uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
+    echo "[cpp_python_linking_uninstall_test()] NPROC=${NPROC:=$(nproc)}"
 
     # Config-dependent argument: gpu_run_args
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
-        docker_run="docker run --gpus all"
+        docker_run="docker run --cpus ${NPROC} --gpus all"
     else
-        docker_run="docker run"
+        docker_run="docker run --cpus ${NPROC}"
     fi
 
     # Config-dependent argument: pytest_args
@@ -139,7 +145,7 @@ cpp_python_linking_uninstall_test() {
     # Python test
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
-        python -m pytest python/test ${pytest_args} -s"
+        python  -W default -m pytest python/test ${pytest_args} -s"
     restart_docker_daemon_if_on_gcloud
 
     # Command-line tools test
@@ -168,8 +174,7 @@ cpp_python_linking_uninstall_test() {
     fi
 
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        git clone https://github.com/isl-org/open3d-cmake-find-package.git \
-     && cd open3d-cmake-find-package \
+        cd examples/cmake/open3d-cmake-find-package \
      && mkdir build \
      && pushd build \
      && echo Testing build with cmake \
@@ -180,8 +185,7 @@ cpp_python_linking_uninstall_test() {
 
     if [ "${BUILD_SHARED_LIBS}" == "ON" ] && [ "${BUILD_SYCL_MODULE}" == "OFF" ]; then
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-            git clone https://github.com/isl-org/open3d-cmake-find-package.git \
-         && cd open3d-cmake-find-package \
+            cd examples/cmake/open3d-cmake-find-package \
          && mkdir build \
          && pushd build \
          && echo Testing build with pkg-config \
@@ -228,6 +232,11 @@ openblas-amd64-py311-dev)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-amd64-py312-dev)
+    openblas_export_env amd64 py312 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 openblas-amd64-py38)
     openblas_export_env amd64 py38
     openblas_print_env
@@ -245,6 +254,11 @@ openblas-amd64-py310)
     ;;
 openblas-amd64-py311)
     openblas_export_env amd64 py311
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py312)
+    openblas_export_env amd64 py312
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -270,6 +284,11 @@ openblas-arm64-py311-dev)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-arm64-py312-dev)
+    openblas_export_env arm64 py312 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 openblas-arm64-py38)
     openblas_export_env arm64 py38
     openblas_print_env
@@ -287,6 +306,11 @@ openblas-arm64-py310)
     ;;
 openblas-arm64-py311)
     openblas_export_env arm64 py311
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py312)
+    openblas_export_env arm64 py312
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -331,33 +355,33 @@ sycl-static)
     ;;
 
 # ML CIs
-2-bionic)
-    2-bionic_export_env
+2-focal)
+    2-focal_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-3-ml-shared-bionic)
-    3-ml-shared-bionic_export_env
+3-ml-shared-focal)
+    3-ml-shared-focal_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-3-ml-shared-bionic-release)
-    3-ml-shared-bionic-release_export_env
+3-ml-shared-focal-release)
+    3-ml-shared-focal-release_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-4-shared-bionic)
-    4-shared-bionic_export_env
+4-shared-focal)
+    4-shared-focal_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-4-shared-bionic-release)
-    4-shared-bionic-release_export_env
+4-shared-focal-release)
+    4-shared-focal-release_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-5-ml-focal)
-    5-ml-focal_export_env
+5-ml-jammy)
+    5-ml-jammy_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;

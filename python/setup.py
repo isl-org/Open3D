@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -70,6 +70,11 @@ class bdist_wheel(_bdist_wheel):
             libc.gnu_get_libc_version.restype = ctypes.c_char_p
             GLIBC_VER = libc.gnu_get_libc_version().decode("utf8").split(".")
             plat = f"manylinux_{GLIBC_VER[0]}_{GLIBC_VER[1]}{plat[5:]}"
+        elif plat[:6] == "macosx":
+            # If the Python interpreter is an universal2 app the resulting wheel is tagged as
+            # universal2 instead of the current architecture. This is a workaround to fix it.
+            plat = plat.replace("universal2", platform.machine())
+
         return python, abi, plat
 
 
@@ -131,6 +136,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Education",
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Multimedia :: Graphics :: 3D Rendering",

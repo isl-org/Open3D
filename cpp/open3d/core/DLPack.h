@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -188,4 +188,56 @@ typedef struct DLManagedTensor {
 #ifdef __cplusplus
 }  // DLPACK_EXTERN_C
 #endif
+
+#include <fmt/core.h>
+#include <fmt/format.h>
+
+namespace fmt {
+
+template <>
+struct formatter<DLDeviceType> {
+    template <typename FormatContext>
+    auto format(const DLDeviceType& c, FormatContext& ctx) const
+            -> decltype(ctx.out()) {
+        const char* text = nullptr;
+        switch (c) {
+            case kDLCPU:
+                text = "kDLCPU";
+                break;
+            case kDLGPU:
+                text = "kDLGPU";
+                break;
+            case kDLCPUPinned:
+                text = "kDLCPUPinned";
+                break;
+            case kDLOpenCL:
+                text = "kDLOpenCL";
+                break;
+            case kDLVulkan:
+                text = "kDLVulkan";
+                break;
+            case kDLMetal:
+                text = "kDLMetal";
+                break;
+            case kDLVPI:
+                text = "kDLVPI";
+                break;
+            case kDLROCM:
+                text = "kDLROCM";
+                break;
+            case kDLExtDev:
+                text = "kDLExtDev";
+                break;
+        }
+        return format_to(ctx.out(), text);
+    }
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+};
+
+}  // namespace fmt
+
 #endif  // DLPACK_DLPACK_H_

@@ -8,13 +8,11 @@ include(ExternalProject)
 # select ISAs
 if(APPLE)
     if(APPLE_AARCH64)
-        # Turn off ISA optimizations for Apple ARM64 for now.
-        set(ISA_ARGS -DEMBREE_ISA_AVX=OFF
-                     -DEMBREE_ISA_AVX2=OFF
-                     -DEMBREE_ISA_AVX512=OFF
-                     -DEMBREE_ISA_SSE2=OFF
-                     -DEMBREE_ISA_SSE42=OFF
+        set(ISA_ARGS -DEMBREE_ISA_NEON=OFF
+                     -DEMBREE_ISA_NEON2X=ON
         )
+        set(ISA_LIBS embree_avx2)
+        set(ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx2${CMAKE_STATIC_LIBRARY_SUFFIX}")
     else()
         # With AppleClang we can select only 1 ISA.
         set(ISA_ARGS -DEMBREE_ISA_AVX=OFF
@@ -66,11 +64,21 @@ else()
 endif()
 
 
+if(BUILD_SYCL_MODULE)
+    set(ISA_ARGS ${ISA_ARGS} -DCMAKE_CXX_COMPILER=icpx)
+    set(ISA_ARGS ${ISA_ARGS} -DCMAKE_C_COMPILER=icx)
+    set(ISA_ARGS ${ISA_ARGS} -DEMBREE_SYCL_SUPPORT=ON)
+    list(APPEND ISA_LIBS embree4_sycl ze_wrapper)
+    list(APPEND ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree4_sycl${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                                    "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ze_wrapper${CMAKE_STATIC_LIBRARY_SUFFIX}")
+endif()
+
+
 ExternalProject_Add(
     ext_embree
     PREFIX embree
-    URL https://github.com/embree/embree/archive/refs/tags/v3.13.3.tar.gz
-    URL_HASH SHA256=74ec785afb8f14d28ea5e0773544572c8df2e899caccdfc88509f1bfff58716f
+    URL https://github.com/embree/embree/archive/refs/tags/v4.3.3.tar.gz
+    URL_HASH SHA256=8a3bc3c3e21aa209d9861a28f8ba93b2f82ed0dc93341dddac09f1f03c36ef2d
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/embree"
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -88,16 +96,17 @@ ExternalProject_Add(
         -DEMBREE_TASKING_SYSTEM=INTERNAL
         ${WIN_CMAKE_ARGS}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree3${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree4${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}simd${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}lexers${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}sys${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}math${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}tasking${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ze_wrapper${CMAKE_STATIC_LIBRARY_SUFFIX}
         ${ISA_BUILD_BYPRODUCTS}
 )
 
 ExternalProject_Get_Property(ext_embree INSTALL_DIR)
 set(EMBREE_INCLUDE_DIRS ${INSTALL_DIR}/include/ ${INSTALL_DIR}/src/ext_embree/) # "/" is critical.
 set(EMBREE_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(EMBREE_LIBRARIES embree3 ${ISA_LIBS} simd lexers sys math tasking)
+set(EMBREE_LIBRARIES embree4 simd lexers sys math tasking ${ISA_LIBS})
