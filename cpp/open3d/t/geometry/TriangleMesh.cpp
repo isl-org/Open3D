@@ -18,6 +18,7 @@
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>
+#include <set>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
@@ -64,6 +65,54 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertex_positions,
       }()) {
     SetVertexPositions(vertex_positions);
     SetTriangleIndices(triangle_indices);
+}
+    
+std::pair<core::Tensor, core::Tensor> TriangleMesh::ComputeAdjacencyList() {
+    
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty. No attributes computed!");
+        return std::make_pair(core::Tensor(), core::Tensor());
+    }
+
+    if(!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no Indices. No attributes computed!");
+        return std::make_pair(core::Tensor(), core::Tensor());
+    }
+
+    core::Tensor tris_cpu =
+            GetTriangleIndices().To(core::Device()).Contiguous();
+
+    std::unordered_map< size_t, std::set<size_t> > adjacencyList;
+    auto insertEdge = [&adjacencyList](size_t s, size_t t){
+        adjacencyList[s].insert(t);
+    };
+    
+    for(int idx = 0; idx < tris_cpu.GetLength(); idx++){
+        auto triangle_tensor = tris_cpu[idx];
+        auto *triangle = triangle_tensor.GetDataPtr<int>();
+        insertEdge(triangle[0], triangle[1]);
+        insertEdge(triangle[1], triangle[2]);
+        insertEdge(triangle[2], triangle[0]);
+    }
+
+    int num_vertices = GetVertexPositions().GetLength();
+    core::Tensor adjst = core::Tensor::Zeros({num_vertices+1}, core::Dtype::Int64);
+
+    int num_edges = tris_cpu.GetLength() * 3;
+    core::Tensor adjv = core::Tensor::Zeros({num_edges}, core::Dtype::Int64);
+
+    long prev_nnz = 0;
+    for(int idx = 1; idx <= num_vertices; idx++){
+        adjst[idx] = adjst[idx-1] + static_cast<long>(adjacencyList[idx-1].size());
+        
+        int i = 0;
+        for(auto x : adjacencyList[idx-1]){
+            adjv[ prev_nnz + i] = x;
+            i++;
+        }
+        prev_nnz += static_cast<long>(adjacencyList[idx-1].size());
+    }
+    return std::make_pair(adjv, adjst);
 }
 
 std::string TriangleMesh::ToString() const {

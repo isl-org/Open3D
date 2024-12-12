@@ -828,6 +828,8 @@ public:
     TriangleMesh BooleanDifference(const TriangleMesh &mesh,
                                    double tolerance = 1e-6) const;
 
+    std::pair<core::Tensor, core::Tensor> ComputeAdjacencyList();
+
     /// Create an axis-aligned bounding box from vertex attribute "positions".
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
