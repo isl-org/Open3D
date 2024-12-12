@@ -7,8 +7,9 @@
 #pragma once
 
 #ifdef WITH_IPP
+// Not available for Remap
 // Auto-enable multi-threaded implementations
-#define IPP_ENABLED_THREADING_LAYER_REDEFINITIONS 1
+// #define IPP_ENABLED_THREADING_LAYER_REDEFINITIONS 1
 #define IPP_CALL(ipp_function, ...) ipp_function(__VA_ARGS__);
 
 #if IPP_VERSION_INT < \

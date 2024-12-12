@@ -9,12 +9,17 @@
 
 #include <unordered_map>
 
-#ifdef APPLE  // macOS IPP <=v2021.9 uses old directory layout
+#if IPP_VERSION_INT < \
+        20211000  // macOS IPP v2021.9.11 uses old directory layout
+#include <ippi.h>
+
 #include <iw++/iw_image_color.hpp>
 #include <iw++/iw_image_filter.hpp>
 #include <iw++/iw_image_op.hpp>
 #include <iw++/iw_image_transform.hpp>
 #else  // Linux and Windows IPP >=v2021.10 uses new directory layout
+#include <ipp/ippi.h>
+
 #include <ipp/iw++/iw_image_color.hpp>
 #include <ipp/iw++/iw_image_filter.hpp>
 #include <ipp/iw++/iw_image_op.hpp>
@@ -301,6 +306,8 @@ void FilterSobel(const core::Tensor &src_im,
     }
 }
 
+// Plain IPP functions
+
 void Remap(const core::Tensor &src_im,       /*{Ws, Hs, C}*/
            const core::Tensor &dst2src_xmap, /*{Wd, Hd}, float*/
            const core::Tensor &dst2src_ymap, /*{Wd, Hd}, float*/
@@ -372,7 +379,7 @@ void Remap(const core::Tensor &src_im,       /*{Ws, Hs, C}*/
     }
     if (sts != ippStsNoErr) {
         // See comments in icv/include/ippicv_types.h for meaning
-        utility::LogError("IPP remap error {}", sts);
+        utility::LogError("IPP remap error {}", ippGetStatusString(sts));
     }
 }
 }  // namespace ipp
