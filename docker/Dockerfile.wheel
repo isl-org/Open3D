@@ -76,11 +76,11 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.?z ]; then tar -xf ${CCACHE_TAR_NAME}.tar.?z; fi
 # We need to set ccache size explicitly with -M, otherwise the default size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
-RUN ccache -M 5G \
+RUN ccache -M 4G \
  && ccache -s
 
 # Miniconda
@@ -141,6 +141,6 @@ RUN ccache -s \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
- && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
+ && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME}
 
 RUN echo "Docker build done."

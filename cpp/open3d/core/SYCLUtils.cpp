@@ -118,14 +118,32 @@ static std::string SYCLDeviceToString(const sycl::device &device) {
 
 void PrintSYCLDevices(bool print_all) {
 #ifdef BUILD_SYCL_MODULE
-    const char *filter = std::getenv("SYCL_DEVICE_FILTER");
+    const char *filter = std::getenv("ONEAPI_DEVICE_SELECTOR");
     if (filter) {
         utility::LogWarning(
-                "SYCL_DEVICE_FILTER environment variable is set to {}. To see "
-                "the correct device id, please unset SYCL_DEVICE_FILTER.",
+                "ONEAPI_DEVICE_SELECTOR environment variable is set to {}. To "
+                "see the correct device id, please unset "
+                "ONEAPI_DEVICE_SELECTOR.",
                 filter);
     }
 
+    int nd = 0;
+    utility::LogInfo("# Open3D SYCL device");
+    try {
+        utility::LogInfo(
+                "- Device(\"SYCL:{}\"): {}", nd,
+                SYCLDeviceToString(sycl::device(sycl::gpu_selector_v)));
+        ++nd;
+    } catch (const sycl::exception &e) {
+    }
+    try {
+        utility::LogInfo("# Open3D SYCL device (CPU fallback)");
+        utility::LogInfo(
+                "- Device(\"SYCL:{}\"): {}", nd,
+                SYCLDeviceToString(sycl::device(sycl::cpu_selector_v)));
+    } catch (const sycl::exception &e) {
+        if (nd == 0) utility::LogInfo("- Device(\"SYCL:0\"): N/A");
+    }
     if (print_all) {
         utility::LogInfo("# All SYCL devices");
         const std::vector<sycl::platform> &platforms =
@@ -167,24 +185,6 @@ void PrintSYCLDevices(bool print_all) {
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
             utility::LogInfo("- sycl::accelerator_selector_v: N/A");
-        }
-
-        utility::LogInfo("# Open3D SYCL device");
-        try {
-            const sycl::device &device = sycl::device(sycl::gpu_selector_v);
-            utility::LogInfo("- Device(\"SYCL:0\"): {}",
-                             SYCLDeviceToString(device));
-        } catch (const sycl::exception &e) {
-            utility::LogInfo("- Device(\"SYCL:0\"): N/A");
-        }
-    } else {
-        utility::LogInfo("# Open3D SYCL device");
-        try {
-            const sycl::device &device = sycl::device(sycl::gpu_selector_v);
-            utility::LogInfo("- Device(\"SYCL:0\"): {}",
-                             SYCLDeviceToString(device));
-        } catch (const sycl::exception &e) {
-            utility::LogInfo("- Device(\"SYCL:0\"): N/A");
         }
     }
 
