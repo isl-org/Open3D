@@ -1428,12 +1428,8 @@ core::Tensor Project(const core::Tensor &t_xyz,  // contiguous {...,3}
 std::tuple<std::array<float, 3>, std::array<float, 3>> get_color_correction(
         const core::Tensor &albedo,
         const core::Tensor &this_albedo,
-        bool weighted,
-        int image_id,
-        float softmax_scale,
-        float softmax_shift) {
-    const float EPS = 1e-6;
-    const float MIN_PIXEL_WEIGHT = 0.1;
+        int image_id) {
+    const float MIN_PIXEL_WEIGHT = 0.001;
     const float MIN_COLOR_VAR = 0.001;  // stddev of 8 out of 255
     const float shift = 0.5f;  // compute shifted sum / sumsqr for stability.
     const unsigned MIN_OVERLAP_PIXELS = 1024;
@@ -1453,14 +1449,12 @@ std::tuple<std::array<float, 3>, std::array<float, 3>> get_color_correction(
                *pq_this_albedo = q_this_albedo.GetDataPtr<float>();
          pq_albedo < q_albedo.GetDataPtr<float>() + q_albedo.NumElements();
          pq_albedo += 4, pq_this_albedo += 4) {
-        if (pq_albedo[3] <= EPS + exp(softmax_scale * MIN_PIXEL_WEIGHT -
-                                      softmax_shift) ||
+        if (pq_albedo[3] <= MIN_PIXEL_WEIGHT ||
             pq_this_albedo[3] <= MIN_PIXEL_WEIGHT)
             continue;
         ++count;
-        double inv_weight = weighted ? 1. / pq_albedo[3] : 1.;
         for (int c = 0; c < 3; ++c) {
-            float update = pq_albedo[c] * inv_weight - shift;
+            float update = pq_albedo[c] - shift;
             sum[c] += update;
             sumsqr[c] += update * update;
             update = pq_this_albedo[c] - shift;
@@ -1560,7 +1554,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         utility::LogError("Select one of MAX and AVERAGE BlendingMethod s.");
     }
     core::Tensor texture_uvs =
-            triangle_attr_.at("texture_uvs").To(core::Device()).Contiguous();
+            GetTriangleAttr("texture_uvs").To(core::Device()).Contiguous();
     core::AssertTensorShape(texture_uvs, {core::None, 3, 2});
     core::AssertTensorDtype(texture_uvs, {core::Float32});
 
@@ -1580,10 +1574,14 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     /*                    Image(((position_map + 1) * 127.5).To(core::UInt8)));
      */
     /* } */
-    core::Tensor albedo =
-            core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
+    core::Tensor albedo = core::Tensor::Zeros({tex_size, tex_size, 4},
+                                              core::Float32),
+                 albedo_max = albedo;  // same data
+    albedo.Slice(2, 3, 4).Fill(EPS);   // regularize
+    if (blending_method &
+        (BlendingMethod::MAX | BlendingMethod::COLOR_CORRECTION))
+        albedo_max = albedo.Clone();  // Copy
     std::mutex albedo_mutex;
-    albedo.Slice(2, 3, 4).Fill(EPS);  // regularize
 
     RaycastingScene rcs;
     rcs.AddTriangles(*this);
@@ -1743,15 +1741,14 @@ Image TriangleMesh::ProjectImagesToAlbedo(
             cv_next_blend_image.wait(albedo_lock, [&i, &next_blend_image]() {
                 return next_blend_image == i;
             });
-            io::WriteImage(
-                    fmt::format("this_albedo_overlap_{}.png", i),
-                    Image((this_albedo[widx].Slice(2, 3, 4).Ge(1e-3) &&
-                           albedo.Slice(2, 3, 4).Ge(exp(softmax_scale * 1e-3 -
-                                                        softmax_shift)))));
-            std::tie(this_contrast, this_brightness) = get_color_correction(
-                    albedo, this_albedo[widx],
-                    /* weighted= */ blending_method & BlendingMethod::AVERAGE,
-                    i, softmax_scale, softmax_shift);
+            io::WriteImage(fmt::format("this_albedo_overlap_{}.png", i),
+                           Image((this_albedo[widx].Slice(2, 3, 4).Ge(1e-3) &&
+                                  albedo_max.Slice(2, 3, 4).Ge(1e-3))));
+            // Use unweighted albedo_max to estimate COLOR_CORRECTION. softmax
+            // weighted albedo does not give correct results due to under / over
+            // saturation of low weight regions.
+            std::tie(this_contrast, this_brightness) =
+                    get_color_correction(albedo_max, this_albedo[widx], i);
             utility::LogDebug(
                     "[ProjectImagesToAlbedo] Image {}, wtmin {}, wtmax {}, "
                     "contrast: {}, "
@@ -1775,9 +1772,10 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         } else if (blending_method & BlendingMethod::AVERAGE) {
             utility::LogInfo("Blending image {} with method AVERAGE", i);
             for (auto p_albedo = albedo.GetDataPtr<float>(),
+                      p_albedo_max = albedo_max.GetDataPtr<float>(),
                       p_this_albedo = this_albedo[widx].GetDataPtr<float>();
                  p_albedo < albedo.GetDataPtr<float>() + albedo.NumElements();
-                 p_albedo += 4, p_this_albedo += 4) {
+                 p_albedo += 4, p_albedo_max += 4, p_this_albedo += 4) {
                 float softmax_weight =
                         exp(softmax_scale * p_this_albedo[3] - softmax_shift);
                 for (auto k = 0; k < 3; ++k)
@@ -1785,6 +1783,14 @@ Image TriangleMesh::ProjectImagesToAlbedo(
                                     this_brightness[k]) *
                                    softmax_weight;
                 p_albedo[3] += softmax_weight;
+                // Update albedo_max with MAX blending
+                if (blending_method & BlendingMethod::COLOR_CORRECTION &&
+                    p_albedo_max[3] < p_this_albedo[3]) {
+                    for (auto k = 0; k < 3; ++k)
+                        p_albedo_max[k] = this_contrast[k] * p_this_albedo[k] +
+                                          this_brightness[k];
+                    p_albedo_max[3] = p_this_albedo[3];
+                }
             }
         }
         if (DEBUG) {
