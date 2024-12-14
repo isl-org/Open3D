@@ -44,7 +44,7 @@ for lib in $libs; do
     if [[ ${lib:0:1} != "@" ]]; then # external library with a regular path
         libname=$(basename $lib)
         # copy the external library, resolve symlink chain
-        cp -aRL "$lib" "$exeDir/$lib"
+        cp -aRL "$lib" "$exeDir"
         # change its path in the executable
         newpath="@executable_path/$libname"
         echo "$lib -> $newpath"
