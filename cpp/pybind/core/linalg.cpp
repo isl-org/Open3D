@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@
 namespace open3d {
 namespace core {
 
-void pybind_core_linalg(py::module &m) {
+void pybind_core_linalg_definitions(py::module &m) {
     m.def(
             "matmul",
             [](const Tensor &A, const Tensor &B) {

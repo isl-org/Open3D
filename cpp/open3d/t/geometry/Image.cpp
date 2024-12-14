@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ Image Image::To(core::Dtype dtype,
         dst_im.data_ = core::Tensor::Empty(
                 {GetRows(), GetCols(), GetChannels()}, dtype, GetDevice());
     }
-    if (HAVE_IPPICV &&  // Check for IPP fast implementation.
+    if (HAVE_IPP &&  // Check for IPP fast implementation.
         data_.IsCPU() &&
         std::count(ipp_supported.begin(), ipp_supported.end(), GetDtype()) >
                 0 &&
@@ -140,7 +140,7 @@ Image Image::RGBToGray() const {
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::RGBToGray, data_, dst_im.data_);
-    } else if (HAVE_IPPICV && data_.IsCPU() &&
+    } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::RGBToGray, data_, dst_im.data_);
@@ -180,7 +180,7 @@ Image Image::Resize(float sampling_rate, InterpType interp_type) const {
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Resize, data_, dst_im.data_, interp_type);
-    } else if (HAVE_IPPICV && data_.IsCPU() &&
+    } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Resize, data_, dst_im.data_, interp_type);
@@ -217,7 +217,7 @@ Image Image::Dilate(int kernel_size) const {
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Dilate, data_, dst_im.data_, kernel_size);
-    } else if (HAVE_IPPICV && data_.IsCPU() &&
+    } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Dilate, data_, dst_im.data_, kernel_size);
@@ -254,7 +254,7 @@ Image Image::FilterBilateral(int kernel_size,
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterBilateral, data_, dst_im.data_, kernel_size,
                   value_sigma, dist_sigma);
-    } else if (HAVE_IPPICV && data_.IsCPU() &&
+    } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterBilateral, data_, dst_im.data_, kernel_size,
@@ -286,7 +286,7 @@ Image Image::Filter(const core::Tensor &kernel) const {
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Filter, data_, dst_im.data_, kernel);
-    } else if (HAVE_IPPICV && data_.IsCPU() &&
+    } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Filter, data_, dst_im.data_, kernel);
@@ -322,7 +322,7 @@ Image Image::FilterGaussian(int kernel_size, float sigma) const {
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterGaussian, data_, dst_im.data_, kernel_size, sigma);
-    } else if (HAVE_IPPICV && data_.IsCPU() &&
+    } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterGaussian, data_, dst_im.data_, kernel_size, sigma);
@@ -371,7 +371,7 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,
                   kernel_size);
-    } else if (HAVE_IPPICV && data_.IsCPU() &&
+    } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,

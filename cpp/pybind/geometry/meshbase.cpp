@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -15,16 +15,13 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_meshbase(py::module &m) {
+void pybind_meshbase_declarations(py::module &m) {
     py::class_<MeshBase, PyGeometry3D<MeshBase>, std::shared_ptr<MeshBase>,
                Geometry3D>
             meshbase(m, "MeshBase",
                      "MeshBase class. Triangle mesh contains vertices. "
                      "Optionally, the mesh "
                      "may also contain vertex normals and vertex colors.");
-    py::detail::bind_default_constructor<MeshBase>(meshbase);
-    py::detail::bind_copy_functions<MeshBase>(meshbase);
-
     py::enum_<MeshBase::SimplificationContraction>(m,
                                                    "SimplificationContraction")
             .value("Average", MeshBase::SimplificationContraction::Average,
@@ -33,7 +30,6 @@ void pybind_meshbase(py::module &m) {
                    "The vertex positions are computed by minimizing the "
                    "distance to the adjacent triangle planes.")
             .export_values();
-
     py::enum_<MeshBase::FilterScope>(m, "FilterScope")
             .value("All", MeshBase::FilterScope::All,
                    "All properties (color, normal, vertex position) are "
@@ -45,7 +41,6 @@ void pybind_meshbase(py::module &m) {
             .value("Vertex", MeshBase::FilterScope::Vertex,
                    "Only the vertex positions are filtered.")
             .export_values();
-
     py::enum_<MeshBase::DeformAsRigidAsPossibleEnergy>(
             m, "DeformAsRigidAsPossibleEnergy")
             .value("Spokes", MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
@@ -55,6 +50,15 @@ void pybind_meshbase(py::module &m) {
                    MeshBase::DeformAsRigidAsPossibleEnergy::Smoothed,
                    "adds a rotation smoothing term to the rotations.")
             .export_values();
+}
+
+void pybind_meshbase_definitions(py::module &m) {
+    auto meshbase =
+            static_cast<py::class_<MeshBase, PyGeometry3D<MeshBase>,
+                                   std::shared_ptr<MeshBase>, Geometry3D>>(
+                    m.attr("MeshBase"));
+    py::detail::bind_default_constructor<MeshBase>(meshbase);
+    py::detail::bind_copy_functions<MeshBase>(meshbase);
 
     meshbase.def("__repr__",
                  [](const MeshBase &mesh) {
@@ -100,8 +104,6 @@ void pybind_meshbase(py::module &m) {
                                     {{"color", "RGB colors of vertices."}});
     docstring::ClassMethodDocInject(m, "MeshBase", "compute_convex_hull");
 }
-
-void pybind_meshbase_methods(py::module &m) {}
 
 }  // namespace geometry
 }  // namespace open3d

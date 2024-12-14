@@ -168,6 +168,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+    -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
     -DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}
     -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
     # Always build 3rd party code in Release mode. Ignored by multi-config
@@ -265,9 +266,15 @@ endfunction()
 #    LIBRARIES
 #        the expected library variable names to be found in <pkg>.
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
+#    PATHS
+#        Paths with hardcoded guesses. Same as in find_package.
+#    DEPENDS
+#        Adds targets that should be build before "name" as dependency.
 #
 function(open3d_find_package_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;VERSION;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET"
+        "PACKAGE;VERSION;PACKAGE_VERSION_VAR"
+        "TARGETS;INCLUDE_DIRS;LIBRARIES;PATHS;DEPENDS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_find_package_3rdparty_library(${name} ${ARGN})")
@@ -287,6 +294,9 @@ function(open3d_find_package_3rdparty_library name)
     endif()
     if(arg_QUIET)
         list(APPEND find_package_args "QUIET")
+    endif()
+    if (arg_PATHS)
+        list(APPEND find_package_args PATHS ${arg_PATHS} NO_DEFAULT_PATH)
     endif()
     find_package(${arg_PACKAGE} ${find_package_args})
     if(${arg_PACKAGE}_FOUND)
@@ -318,6 +328,9 @@ function(open3d_find_package_3rdparty_library name)
                 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES ${arg_PACKAGE})
                 set(Open3D_3RDPARTY_EXTERNAL_MODULES ${Open3D_3RDPARTY_EXTERNAL_MODULES} PARENT_SCOPE)
             endif()
+        endif()
+        if(arg_DEPENDS)
+            add_dependencies(${name} ${arg_DEPENDS})
         endif()
         set(${name}_FOUND TRUE PARENT_SCOPE)
         set(${name}_VERSION ${${arg_PACKAGE_VERSION_VAR}} PARENT_SCOPE)
@@ -424,7 +437,7 @@ function(open3d_import_3rdparty_library name)
         else()
             set(HIDDEN 0)
         endif()
-        if(arg_GROUPED)
+        if(arg_GROUPED AND UNIX AND NOT APPLE)
             target_link_libraries(${name} INTERFACE "-Wl,--start-group")
         endif()
         foreach(arg_LIBRARY IN LISTS arg_LIBRARIES)
@@ -453,7 +466,7 @@ function(open3d_import_3rdparty_library name)
                     ${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS} PARENT_SCOPE)
             endif()
         endforeach()
-        if(arg_GROUPED)
+        if(arg_GROUPED AND UNIX AND NOT APPLE)
             target_link_libraries(${name} INTERFACE "-Wl,--end-group")
         endif()
     endif()
@@ -1232,6 +1245,10 @@ if(BUILD_GUI)
                 # If the default version is not sufficient, look for some specific versions
                 if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
                     find_program(CLANG_VERSIONED_CC NAMES
+                                 clang-19
+                                 clang-18
+                                 clang-17
+                                 clang-16
                                  clang-15
                                  clang-14
                                  clang-13
@@ -1243,6 +1260,10 @@ if(BUILD_GUI)
                                  clang-7
                     )
                     find_program(CLANG_VERSIONED_CXX NAMES
+                                 clang++-19
+                                 clang++-18
+                                 clang++-17
+                                 clang++-16
                                  clang++-15
                                  clang++-14
                                  clang++-13
@@ -1270,7 +1291,7 @@ if(BUILD_GUI)
                 #
                 # On aarch64, the symbolic link path may not work for CMake's
                 # find_library. Therefore, when compiling Filament from source,
-                # we explicitly find the corresponidng path based on the clang
+                # we explicitly find the corresponding path based on the clang
                 # version.
                 execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
                 if(clang_version MATCHES "clang version ([0-9]+)")
@@ -1312,28 +1333,15 @@ if(BUILD_GUI)
             # We first search for these paths, and then search CMake's default
             # search path. LLVM version must be >= 7 to compile Filament.
             if (NOT CLANG_LIBDIR)
-                set(ubuntu_default_llvm_lib_dirs
-                    /usr/lib/llvm-19/lib
-                    /usr/lib/llvm-18/lib
-                    /usr/lib/llvm-17/lib
-                    /usr/lib/llvm-16/lib
-                    /usr/lib/llvm-15/lib
-                    /usr/lib/llvm-14/lib
-                    /usr/lib/llvm-13/lib
-                    /usr/lib/llvm-12/lib
-                    /usr/lib/llvm-11/lib
-                    /usr/lib/llvm-10/lib
-                    /usr/lib/llvm-9/lib
-                    /usr/lib/llvm-8/lib
-                    /usr/lib/llvm-7/lib
-                )
-                foreach(llvm_lib_dir in ${ubuntu_default_llvm_lib_dirs})
-                    message(STATUS "Searching ${llvm_lib_dir} for libc++ and libc++abi")
-                    find_library(CPP_LIBRARY    c++    PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
+                message(STATUS "Searching /usr/lib/llvm-[7..19]/lib/ for libc++ and libc++abi")
+                foreach(llvm_ver RANGE 7 19)
+                    set(llvm_lib_dir "/usr/lib/llvm-${llvm_ver}/lib")
+                    find_library(CPP_LIBRARY    c++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
                     find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
                     if (CPP_LIBRARY AND CPPABI_LIBRARY)
                         set(CLANG_LIBDIR ${llvm_lib_dir})
                         message(STATUS "CLANG_LIBDIR found in ubuntu-default: ${CLANG_LIBDIR}")
+                        set(LIBCPP_VERSION ${llvm_ver})
                         break()
                     endif()
                 endforeach()
@@ -1342,6 +1350,7 @@ if(BUILD_GUI)
             # Fallback to non-ubuntu-default paths. Note that the PATH_SUFFIXES
             # is not enforced by CMake.
             if (NOT CLANG_LIBDIR)
+                message(STATUS "Clang C++ libraries not found. Searching other paths...")
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
                              llvm-19/lib
                              llvm-18/lib
@@ -1357,7 +1366,10 @@ if(BUILD_GUI)
                              llvm-8/lib
                              llvm-7/lib
                 )
+                file(REAL_PATH ${CPPABI_LIBRARY} CPPABI_LIBRARY)
                 get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
+                string(REGEX MATCH "llvm-([0-9]+)/lib" _ ${CLANG_LIBDIR})
+                set(LIBCPP_VERSION ${CMAKE_MATCH_1})
             endif()
 
             # Find clang libraries at the exact path ${CLANG_LIBDIR}.
@@ -1372,8 +1384,12 @@ if(BUILD_GUI)
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
                                   ${CPP_LIBRARY} ${CPPABI_LIBRARY})
-            message(STATUS "CPP_LIBRARY: ${CPP_LIBRARY}")
-            message(STATUS "CPPABI_LIBRARY: ${CPPABI_LIBRARY}")
+            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY} ${CPPABI_LIBRARY}")
+            if (LIBCPP_VERSION GREATER 11)
+                message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that "
+                "interferes with the system libunwind.so.8 and may crash Python code when exceptions "
+                "are used. Please consider using libc++ (LLVM) v11.")
+            endif()
         endif()
         if (APPLE)
             find_library(CORE_VIDEO CoreVideo)
@@ -1532,34 +1548,14 @@ if(BUILD_SYCL_MODULE)
 endif()
 
 if(BUILD_SYCL_MODULE)
-    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." ON)
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." ON)
 else()
-    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." OFF)
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." OFF)
 endif()
 mark_as_advanced(OPEN3D_USE_ONEAPI_PACKAGES)
 
 if(OPEN3D_USE_ONEAPI_PACKAGES)
-    # 1. oneTBB
-    # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
-    open3d_find_package_3rdparty_library(3rdparty_tbb
-        PACKAGE TBB
-        TARGETS TBB::tbb
-    )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
-    target_compile_definitions(3rdparty_tbb INTERFACE OPEN3D_USE_ONEAPI_PACKAGES=1)
-    target_compile_definitions(3rdparty_tbb INTERFACE _PSTL_UDR_PRESENT=0)
-    target_compile_definitions(3rdparty_tbb INTERFACE _PSTL_UDS_PRESENT=0)
-    # 2. oneDPL
-    # /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL
-    open3d_find_package_3rdparty_library(3rdparty_onedpl
-        PACKAGE oneDPL
-        TARGETS oneDPL
-    )
-    target_compile_definitions(3rdparty_onedpl INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
-    target_compile_definitions(3rdparty_onedpl INTERFACE PSTL_USE_PARALLEL_POLICIES=0)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_onedpl)
-
-    # 3. oneMKL
+    # 1. oneMKL
     # /opt/intel/oneapi/mkl/latest/lib/cmake/mkl
     set(MKL_THREADING tbb_thread)
     set(MKL_LINK static)
@@ -1578,40 +1574,15 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     target_compile_definitions(3rdparty_mkl INTERFACE OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_mkl)
 
-else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
-    # TBB
-    if(USE_SYSTEM_TBB)
-        open3d_find_package_3rdparty_library(3rdparty_tbb
-            PACKAGE TBB
-            TARGETS TBB::tbb
-        )
-        if(NOT 3rdparty_tbb_FOUND)
-            set(USE_SYSTEM_TBB OFF)
-        endif()
-    endif()
-    if(NOT USE_SYSTEM_TBB)
-        include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-        open3d_import_3rdparty_library(3rdparty_tbb
-            INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
-            LIB_DIR      ${STATIC_TBB_LIB_DIR}
-            LIBRARIES    ${STATIC_TBB_LIBRARIES}
-            DEPENDS      ext_tbb
-        )
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
-    else()
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
-    endif()
-
-    # parallelstl
-    include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
-    open3d_import_3rdparty_library(3rdparty_parallelstl
-    PUBLIC
-    INCLUDE_DIRS ${PARALLELSTL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    DEPENDS      ext_parallelstl
+    # 2. oneTBB
+    # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
+    open3d_find_package_3rdparty_library(3rdparty_tbb
+        PACKAGE TBB
+        TARGETS TBB::tbb
     )
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_parallelstl)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
 
+else(OPEN3D_USE_ONEAPI_PACKAGES)
     # MKL/BLAS
     if(USE_BLAS)
         if (USE_SYSTEM_BLAS)
@@ -1723,11 +1694,12 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
         # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
         message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
         open3d_import_3rdparty_library(3rdparty_blas
+            GROUPED
             HIDDEN
             INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
             LIB_DIR      ${STATIC_MKL_LIB_DIR}
             LIBRARIES    ${STATIC_MKL_LIBRARIES}
-            DEPENDS      ext_tbb ext_mkl_include ext_mkl
+            DEPENDS      Open3D::3rdparty_tbb ext_mkl_include ext_mkl
         )
         if(UNIX)
             target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
@@ -1736,7 +1708,25 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
         target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_blas)
     endif()
-endif() # if(OPEN3D_USE_ONEAPI_PACKAGES)
+
+    # TBB
+    if(USE_SYSTEM_TBB)
+        open3d_find_package_3rdparty_library(3rdparty_tbb
+            PACKAGE TBB
+            TARGETS TBB::tbb
+        )
+        if(NOT 3rdparty_tbb_FOUND)
+            set(USE_SYSTEM_TBB OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_TBB)
+        include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
+    else()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
+    endif()
+
+endif(OPEN3D_USE_ONEAPI_PACKAGES)
 
 # cuBLAS
 if(BUILD_CUDA_MODULE)
@@ -1849,26 +1839,26 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # IPP
-if (WITH_IPPICV)
+if (WITH_IPP)
     # Ref: https://stackoverflow.com/a/45125525
-    set(IPPICV_SUPPORTED_HW AMD64 x86_64 x64 x86 X86 i386 i686)
+    set(IPP_SUPPORTED_HW AMD64 x86_64 x64)  # 32 bit deprecated: x86 X86 i386 i686
     # Unsupported: ARM64 aarch64 armv7l armv8b armv8l ...
-    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPPICV_SUPPORTED_HW)
-        set(WITH_IPPICV OFF)
-        message(WARNING "IPP-ICV disabled: Unsupported Platform.")
+    if (NOT CMAKE_HOST_SYSTEM_PROCESSOR IN_LIST IPP_SUPPORTED_HW)
+        set(WITH_IPP OFF)
+        message(WARNING "Intel IPP disabled: Unsupported Platform.")
     else ()
-        include(${Open3D_3RDPARTY_DIR}/ippicv/ippicv.cmake)
-        if (WITH_IPPICV)
-            message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
-            open3d_import_3rdparty_library(3rdparty_ippicv
+        include(${Open3D_3RDPARTY_DIR}/ipp/ipp.cmake)
+        if (WITH_IPP)
+            message(STATUS "Using Intel IPP ${IPP_VERSION_STRING}.")
+            open3d_import_3rdparty_library(3rdparty_ipp
                 HIDDEN
-                INCLUDE_DIRS ${IPPICV_INCLUDE_DIR}
-                LIBRARIES    ${IPPICV_LIBRARIES}
-                LIB_DIR      ${IPPICV_LIB_DIR}
-                DEPENDS      ext_ippicv
+                INCLUDE_DIRS ${IPP_INCLUDE_DIR}
+                LIBRARIES    ${IPP_LIBRARIES}
+                LIB_DIR      ${IPP_LIB_DIR}
+                DEPENDS      ext_ipp
             )
-            target_compile_definitions(3rdparty_ippicv INTERFACE ${IPPICV_DEFINITIONS})
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_ippicv)
+            target_compile_definitions(3rdparty_ipp INTERFACE IPP_VERSION_INT=${IPP_VERSION_INT})
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_ipp)
         endif()
     endif()
 endif ()

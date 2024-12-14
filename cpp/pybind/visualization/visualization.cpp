@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,27 +19,41 @@
 namespace open3d {
 namespace visualization {
 
-void pybind_visualization(py::module &m) {
+void pybind_visualization_declarations(py::module &m) {
     py::module m_visualization = m.def_submodule("visualization");
-    pybind_renderoption(m_visualization);
-    pybind_viewcontrol(m_visualization);
-    pybind_visualizer(m_visualization);
-    pybind_visualization_utility(m_visualization);
-    pybind_renderoption_method(m_visualization);
-    pybind_viewcontrol_method(m_visualization);
-    pybind_visualizer_method(m_visualization);
-    pybind_visualization_utility_methods(m_visualization);
-    rendering::pybind_material(m_visualization);  // For RPC serialization
-
+    pybind_renderoption_declarations(m_visualization);
+    pybind_viewcontrol_declarations(m_visualization);
+    pybind_visualizer_declarations(m_visualization);
+    pybind_visualization_utility_declarations(m_visualization);
+    // For RPC serialization
+    rendering::pybind_material_declarations(m_visualization);
 #ifdef BUILD_GUI
-    rendering::pybind_rendering(m_visualization);
-    gui::pybind_gui(m_visualization);
-    pybind_o3dvisualizer(m_visualization);
-    app::pybind_app(m_visualization);
+    rendering::pybind_rendering_declarations(m_visualization);
+    gui::pybind_gui_declarations(m_visualization);
+    pybind_o3dvisualizer_declarations(m_visualization);
+    app::pybind_app_declarations(m_visualization);
 #endif
-
 #ifdef BUILD_WEBRTC
-    webrtc_server::pybind_webrtc_server(m_visualization);
+    webrtc_server::pybind_webrtc_server_declarations(m_visualization);
+#endif
+}
+
+void pybind_visualization_definitions(py::module &m) {
+    auto m_visualization = static_cast<py::module>(m.attr("visualization"));
+    pybind_renderoption_definitions(m_visualization);
+    pybind_viewcontrol_definitions(m_visualization);
+    pybind_visualizer_definitions(m_visualization);
+    pybind_visualization_utility_definitions(m_visualization);
+    // For RPC serialization
+    rendering::pybind_material_definitions(m_visualization);
+#ifdef BUILD_GUI
+    rendering::pybind_rendering_definitions(m_visualization);
+    gui::pybind_gui_definitions(m_visualization);
+    pybind_o3dvisualizer_definitions(m_visualization);
+    app::pybind_app_definitions(m_visualization);
+#endif
+#ifdef BUILD_WEBRTC
+    webrtc_server::pybind_webrtc_server_definitions(m_visualization);
 #endif
 }
 

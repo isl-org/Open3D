@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -201,14 +201,24 @@ std::string FunctionDoc::ToGoogleDocString() const {
         for (size_t i = 0; i < overload.argument_docs_.size(); ++i) {
             const ArgumentDoc& argument_doc = overload.argument_docs_[i];
             rc << argument_doc.name_;
+            if (argument_doc.type_ != "") {
+                rc << ": " << argument_doc.type_;
+            }
             if (argument_doc.default_ != "") {
-                rc << "=" << argument_doc.default_;
+                rc << " = " << argument_doc.default_;
             }
             if (i != overload.argument_docs_.size() - 1) {
                 rc << ", ";
             }
         }
-        rc << ")" << std::endl;
+        rc << ")";
+
+        // Return type
+        if (overload.return_doc_.type_ != "") {
+            rc << " -> " << overload.return_doc_.type_;
+        }
+
+        rc << std::endl;
 
         // Summary line, strictly speaking this shall be at the very front.
         // However from a compiled Python module we need the function signature
@@ -347,6 +357,12 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
         str.replace(parenthesis_pos + 1, 0, ", ");
     }
 
+    // Ignore everything after last argument (right before ") ->")
+    // Otherwise false argument matches might be found in docstrings
+    std::size_t arrow_pos = str.rfind(") -> ");
+    if (arrow_pos == std::string::npos) return {};
+    str.resize(arrow_pos);
+
     // Get start positions
     std::regex pattern("(, [A-Za-z_][A-Za-z\\d_]*:)");
     std::smatch res;
@@ -366,12 +382,7 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
     for (size_t i = 0; i + 1 < argument_start_positions.size(); ++i) {
         argument_end_positions.push_back(argument_start_positions[i + 1] - 2);
     }
-    std::size_t arrow_pos = str.rfind(") -> ");
-    if (arrow_pos == std::string::npos) {
-        return {};
-    } else {
-        argument_end_positions.push_back(arrow_pos);
-    }
+    argument_end_positions.push_back(arrow_pos);
 
     std::vector<std::string> argument_tokens;
     for (size_t i = 0; i < argument_start_positions.size(); ++i) {

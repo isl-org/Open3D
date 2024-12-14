@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/LineSet.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -19,7 +20,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_trianglemesh(py::module& m) {
+void pybind_trianglemesh_declarations(py::module& m) {
     py::class_<TriangleMesh, PyGeometry<TriangleMesh>,
                std::shared_ptr<TriangleMesh>, Geometry, DrawableGeometry>
             triangle_mesh(m, "TriangleMesh",
@@ -77,7 +78,13 @@ The attributes of the triangle mesh have different levels::
     pcd.vertex.labels = o3d.core.Tensor(...)
     pcd.triangle.features = o3d.core.Tensor(...)
 )");
+}
 
+void pybind_trianglemesh_definitions(py::module& m) {
+    auto triangle_mesh =
+            static_cast<py::class_<TriangleMesh, PyGeometry<TriangleMesh>,
+                                   std::shared_ptr<TriangleMesh>, Geometry,
+                                   DrawableGeometry>>(m.attr("TriangleMesh"));
     // Constructors.
     triangle_mesh
             .def(py::init<const core::Device&>(),
@@ -254,12 +261,14 @@ Returns:
     Dictionary of names to triangle meshes.
 
 Example:
-    flight_helmet = o3d.data.FlightHelmetModel()
-    model = o3d.io.read_triangle_model(flight_helmet.path)
-    mesh_dict = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
-    o3d.visualization.draw(list({"name": name, "geometry": tmesh} for
-        (name, tmesh) in mesh_dict.items()))
-            )");
+    Converting the FlightHelmetModel to a dictionary of triangle meshes::
+
+        flight_helmet = o3d.data.FlightHelmetModel()
+        model = o3d.io.read_triangle_model(flight_helmet.path)
+        mesh_dict = o3d.t.geometry.TriangleMesh.from_triangle_mesh_model(model)
+        o3d.visualization.draw(list({"name": name, "geometry": tmesh} for
+            (name, tmesh) in mesh_dict.items()))
+)");
     // conversion
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
@@ -315,7 +324,7 @@ Args:
         generated. The value describes the signed distance to the plane.
 
 Returns:
-    LineSet with he extracted contours.
+    LineSet with the extracted contours.
 
 
 This example shows how to create a hemisphere from a sphere::
@@ -578,10 +587,29 @@ This example shows how to create a sphere from a volume::
     import open3d as o3d
     import numpy as np
 
-    coords = np.stack(np.meshgrid(*3*[np.linspace(-1,1,num=64)], indexing='ij'), axis=-1)
-    vol = np.linalg.norm(coords, axis=-1) - 0.5
+    grid_coords = np.stack(np.meshgrid(*3*[np.linspace(-1,1,num=64)], indexing='ij'), axis=-1)
+    vol = 0.5 - np.linalg.norm(grid_coords, axis=-1)
     mesh = o3d.t.geometry.TriangleMesh.create_isosurfaces(vol)
     o3d.visualization.draw(mesh)
+
+
+This example shows how to convert a mesh to a signed distance field (SDF) and back to a mesh::
+
+    import open3d as o3d
+    import numpy as np
+
+    mesh1 = o3d.t.geometry.TriangleMesh.create_torus()
+    grid_coords = np.stack(np.meshgrid(*3*[np.linspace(-2,2,num=64, dtype=np.float32)], indexing='ij'), axis=-1)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(mesh1)
+    sdf = scene.compute_signed_distance(grid_coords)
+    mesh2 = o3d.t.geometry.TriangleMesh.create_isosurfaces(sdf)
+
+    # Flip the triangle orientation for SDFs with negative values as "inside" and positive values as "outside"
+    mesh2.triangle.indices = mesh2.triangle.indices[:,[2,1,0]]
+
+    o3d.visualization.draw(mesh2)
 
 )");
 
@@ -746,8 +774,7 @@ Example:
 
 Input meshes must be manifold for this method to work.
 The algorithm is based on:
-Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral
-             Analysis", Eurographics Symposium on Geometry Processing (2004)
+Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral Analysis", Eurographics Symposium on Geometry Processing (2004)
 Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
 This function always uses the CPU device.
 
@@ -1041,7 +1068,7 @@ Returns:
 
 Example:
 
-    This code computes the overall surface area of a box:
+    This code computes the overall surface area of a box::
 
         import open3d as o3d
         box = o3d.t.geometry.TriangleMesh.create_box()
@@ -1063,6 +1090,83 @@ Returns:
                       &TriangleMesh::GetNonManifoldEdges,
                       "allow_boundary_edges"_a = true,
                       R"(Returns the list consisting of non-manifold edges.)");
+
+    triangle_mesh.def(
+            "sample_points_uniformly", &TriangleMesh::SamplePointsUniformly,
+            "number_of_points"_a, "use_triangle_normal"_a = false,
+            R"(Sample points uniformly from the triangle mesh surface and return as a PointCloud. Normals and colors are interpolated from the triangle mesh. If texture_uvs and albedo are present, these are used to estimate the sampled point color, otherwise vertex colors are used, if present. During sampling, triangle areas are computed and saved in the "areas" attribute.
+
+Args:
+    number_of_points (int): The number of points to sample.
+    use_triangle_normal (bool): If true, use the triangle normal as the normal of the sampled point. By default, the vertex normals are interpolated instead.
+
+Returns:
+    Sampled point cloud, with colors and normals, if available.
+
+Example::
+
+    mesh = o3d.t.geometry.TriangleMesh.create_box()
+    mesh.vertex.colors = mesh.vertex.positions.clone()
+    pcd = mesh.sample_points_uniformly(100000)
+    o3d.visualization.draw([mesh, pcd], point_size=5, show_ui=True, show_skybox=False)
+
+    )");
+
+    triangle_mesh.def("compute_metrics", &TriangleMesh::ComputeMetrics,
+                      "mesh2"_a, "metrics"_a, "params"_a,
+                      R"(Compute various metrics between two triangle meshes. 
+            
+This uses ray casting for distance computations between a sampled point cloud 
+and a triangle mesh.  Currently, Chamfer distance, Hausdorff distance  and 
+F-Score `[Knapitsch2017] <../tutorial/reference.html#Knapitsch2017>`_ are supported. 
+The Chamfer distance is the sum of the mean distance to the nearest neighbor from
+the sampled surface points of the first mesh to the second mesh and vice versa. 
+The F-Score at the fixed threshold radius is the harmonic mean of the Precision 
+and Recall. Recall is the percentage of surface points from the first mesh that 
+have the second mesh within the threshold radius, while Precision is the 
+percentage of sampled points from the second mesh that have the first mesh 
+surface within the threhold radius.
+
+.. math::
+    :nowrap:
+
+    \begin{align}
+        \text{Chamfer Distance: } d_{CD}(X,Y) &= \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) ||\\
+        \text{Hausdorff distance: } d_H(X,Y) &= \max \left\{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}\\
+        \text{Precision: } P(X,Y|d) &= \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\
+        \text{Recall: } R(X,Y|d) &= \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\
+        \text{F-Score: } F(X,Y|d) &= \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \\
+    \end{align}
+
+As a side effect, the triangle areas are saved in the "areas" attribute.
+
+Args:
+    mesh2 (t.geometry.TriangleMesh): Other triangle mesh to compare with.
+    metrics (Sequence[t.geometry.Metric]): List of Metrics to compute. Multiple metrics can be computed at once for efficiency.
+    params (t.geometry.MetricParameters): This holds parameters required by different metrics.
+
+Returns:
+    Tensor containing the requested metrics.
+
+Example::
+
+    from open3d.t.geometry import TriangleMesh, Metric, MetricParameters
+    # box is a cube with one vertex at the origin and a side length 1
+    box1 = TriangleMesh.create_box()
+    box2 = TriangleMesh.create_box()
+    box2.vertex.positions *= 1.1
+
+    # 3 faces of the cube are the same, and 3 are shifted up by 0.1
+    metric_params = MetricParameters(fscore_radius=o3d.utility.FloatVector(
+        (0.05, 0.15)), n_sampled_points=100000)
+    metrics = box1.compute_metrics(
+        box2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
+        metric_params)
+
+    print(metrics)
+    np.testing.assert_allclose(metrics.cpu().numpy(), (0.1, 0.17, 50, 100),
+                               rtol=0.05)
+    )");
 }
 
 }  // namespace geometry

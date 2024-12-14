@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_trianglemesh(py::module &m) {
+void pybind_trianglemesh_declarations(py::module &m) {
     py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
                std::shared_ptr<TriangleMesh>, MeshBase>
             trianglemesh(m, "TriangleMesh",
@@ -24,6 +24,12 @@ void pybind_trianglemesh(py::module &m) {
                          "and triangles represented by the indices to the "
                          "vertices. Optionally, the mesh may also contain "
                          "triangle normals, vertex normals and vertex colors.");
+}
+void pybind_trianglemesh_definitions(py::module &m) {
+    auto trianglemesh =
+            static_cast<py::class_<TriangleMesh, PyGeometry3D<TriangleMesh>,
+                                   std::shared_ptr<TriangleMesh>, MeshBase>>(
+                    m.attr("TriangleMesh"));
     py::detail::bind_default_constructor<TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<TriangleMesh>(trianglemesh);
     trianglemesh
@@ -104,7 +110,8 @@ void pybind_trianglemesh(py::module &m) {
                  ":math:`v_o = v_i x strength (v_i * |N| - \\sum_{n \\in N} "
                  "v_n)`",
                  "number_of_iterations"_a = 1, "strength"_a = 1,
-                 "filter_scope"_a = MeshBase::FilterScope::All)
+                 py::arg_v("filter_scope", MeshBase::FilterScope::All,
+                           "FilterScope.All"))
             .def("filter_smooth_simple", &TriangleMesh::FilterSmoothSimple,
                  "Function to smooth triangle mesh with simple neighbour "
                  "average. :math:`v_o = \\frac{v_i + \\sum_{n \\in N} "
@@ -112,7 +119,8 @@ void pybind_trianglemesh(py::module &m) {
                  ":math:`v_o` the output value, and :math:`N` is the set of "
                  "adjacent neighbours.",
                  "number_of_iterations"_a = 1,
-                 "filter_scope"_a = MeshBase::FilterScope::All)
+                 py::arg_v("filter_scope", MeshBase::FilterScope::All,
+                           "FilterScope.All"))
             .def("filter_smooth_laplacian",
                  &TriangleMesh::FilterSmoothLaplacian,
                  "Function to smooth triangle mesh using Laplacian. :math:`v_o "
@@ -123,7 +131,8 @@ void pybind_trianglemesh(py::module &m) {
                  "inverse distance (closer neighbours have higher weight), and "
                  "lambda_filter is the smoothing parameter.",
                  "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
-                 "filter_scope"_a = MeshBase::FilterScope::All)
+                 py::arg_v("filter_scope", MeshBase::FilterScope::All,
+                           "FilterScope.All"))
             .def("filter_smooth_taubin", &TriangleMesh::FilterSmoothTaubin,
                  "Function to smooth triangle mesh using method of Taubin, "
                  "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
@@ -133,7 +142,9 @@ void pybind_trianglemesh(py::module &m) {
                  "parameter mu as smoothing parameter. This method avoids "
                  "shrinkage of the triangle mesh.",
                  "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
-                 "mu"_a = -0.53, "filter_scope"_a = MeshBase::FilterScope::All)
+                 "mu"_a = -0.53,
+                 py::arg_v("filter_scope", MeshBase::FilterScope::All,
+                           "FilterScope.All"))
             .def("has_vertices", &TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &TriangleMesh::HasTriangles,
@@ -244,7 +255,9 @@ void pybind_trianglemesh(py::module &m) {
                  &TriangleMesh::SimplifyVertexClustering,
                  "Function to simplify mesh using vertex clustering.",
                  "voxel_size"_a,
-                 "contraction"_a = MeshBase::SimplificationContraction::Average)
+                 py::arg_v("contraction",
+                           MeshBase::SimplificationContraction::Average,
+                           "SimplificationContraction.Average"))
             .def("simplify_quadric_decimation",
                  &TriangleMesh::SimplifyQuadricDecimation,
                  "Function to simplify mesh using Quadric Error Metric "
@@ -292,7 +305,9 @@ void pybind_trianglemesh(py::module &m) {
                  "'As-Rigid-As-Possible Surface Modeling', 2007",
                  "constraint_vertex_indices"_a, "constraint_vertex_positions"_a,
                  "max_iter"_a,
-                 "energy"_a = MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
+                 py::arg_v("energy",
+                           MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
+                           "DeformAsRigidAsPossibleEnergy.Spokes"),
                  "smoothed_alpha"_a = 0.01)
             .def_static(
                     "create_from_point_cloud_alpha_shape",
@@ -778,8 +793,6 @@ void pybind_trianglemesh(py::module &m) {
              {"width", "Width of the Mobius strip."},
              {"scale", "Scale the complete Mobius strip."}});
 }
-
-void pybind_trianglemesh_methods(py::module &m) {}
 
 }  // namespace geometry
 }  // namespace open3d

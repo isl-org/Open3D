@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <fmt/format.h>
 
 #include <string>
 
@@ -89,6 +91,28 @@ private:
     /// Number of dimensions of the geometry.
     int dimension_;
     std::string name_;
+};
+/// Metrics for comparing point clouds and triangle meshes.
+enum class Metric {
+    ChamferDistance,    ///< Chamfer Distance
+    HausdorffDistance,  ///< Hausdorff Distance
+    FScore              ///< F-Score
+};
+
+/// Holder for various parameters required by metrics
+struct MetricParameters {
+    /// Radius for computing the F Score. A match between a point and its
+    /// nearest neighbor is sucessful if it is within this radius.
+    std::vector<float> fscore_radius = {0.01};
+    /// Points are sampled uniformly from the surface of triangle meshes before
+    /// distance computation. This specifies the number of points sampled. No
+    /// sampling is done for point clouds.
+    size_t n_sampled_points = 1000;
+    std::string ToString() const {
+        return fmt::format(
+                "MetricParameters: fscore_radius={}, n_sampled_points={}",
+                fscore_radius, n_sampled_points);
+    }
 };
 
 }  // namespace geometry

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,13 +16,19 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_lineset(py::module &m) {
+void pybind_lineset_declarations(py::module &m) {
     py::class_<LineSet, PyGeometry3D<LineSet>, std::shared_ptr<LineSet>,
                Geometry3D>
             lineset(m, "LineSet",
                     "LineSet define a sets of lines in 3D. A typical "
                     "application is to display the point cloud correspondence "
                     "pairs.");
+}
+void pybind_lineset_definitions(py::module &m) {
+    auto lineset =
+            static_cast<py::class_<LineSet, PyGeometry3D<LineSet>,
+                                   std::shared_ptr<LineSet>, Geometry3D>>(
+                    m.attr("LineSet"));
     py::detail::bind_default_constructor<LineSet>(lineset);
     py::detail::bind_copy_functions<LineSet>(lineset);
     lineset.def(py::init<const std::vector<Eigen::Vector3d> &,
@@ -124,8 +130,6 @@ void pybind_lineset(py::module &m) {
     docstring::ClassMethodDocInject(m, "LineSet", "create_from_tetra_mesh",
                                     {{"mesh", "The input tetra mesh."}});
 }
-
-void pybind_lineset_methods(py::module &m) {}
 
 }  // namespace geometry
 }  // namespace open3d
