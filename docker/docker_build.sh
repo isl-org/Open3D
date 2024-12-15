@@ -225,9 +225,9 @@ cuda_wheel_build() {
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
         bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
-              && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
+              && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
-              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
+              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
 }
 
 ci_build() {
@@ -417,7 +417,7 @@ cpu-shared-release_export_env() {
     export BASE_IMAGE=ubuntu:20.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.12   # no TF versions after 2.13.2 for Python 3.8
+    export PYTHON_VERSION=3.12 # no TF versions after 2.13.2 for Python 3.8
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi

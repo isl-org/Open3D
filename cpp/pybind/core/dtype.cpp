@@ -18,6 +18,13 @@ namespace core {
 void pybind_core_dtype_declarations(py::module &m) {
     py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
                                                     "Open3D data types.");
+    py::enum_<Dtype::DtypeCode>(dtype, "DtypeCode")
+            .value("Undefined", Dtype::DtypeCode::Undefined)
+            .value("Bool", Dtype::DtypeCode::Bool)
+            .value("Int", Dtype::DtypeCode::Int)
+            .value("UInt", Dtype::DtypeCode::UInt)
+            .value("Float", Dtype::DtypeCode::Float)
+            .value("Object", Dtype::DtypeCode::Object);
 }
 void pybind_core_dtype_definitions(py::module &m) {
     // open3d.core.Dtype class

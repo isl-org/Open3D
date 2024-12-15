@@ -67,6 +67,8 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
+    "sphinx_tabs.tabs",
+    "sphinx_copybutton",
     "nbsphinx",
     "m2r2",
 ]

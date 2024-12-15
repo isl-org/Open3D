@@ -18,6 +18,31 @@ namespace open3d {
 namespace pipelines {
 namespace registration {
 
+std::shared_ptr<Feature> Feature::SelectByIndex(
+        const std::vector<size_t> &indices, bool invert /* = false */) const {
+    auto output = std::make_shared<Feature>();
+    output->Resize(data_.rows(), indices.size());
+
+    std::vector<bool> mask = std::vector<bool>(data_.cols(), invert);
+    for (size_t i : indices) {
+        mask[i] = !invert;
+    }
+
+    size_t current_col_feature = 0;
+    for (size_t i = 0; i < static_cast<size_t>(data_.cols()); i++) {
+        if (mask[i]) {
+            output->data_.col(current_col_feature) = data_.col(i);
+            current_col_feature++;
+        }
+    }
+
+    utility::LogDebug(
+            "Feature group down sampled from {:d} features to {:d} features.",
+            (int)data_.cols(), (int)output->data_.cols());
+
+    return output;
+}
+
 static Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
                                            const Eigen::Vector3d &n1,
                                            const Eigen::Vector3d &p2,

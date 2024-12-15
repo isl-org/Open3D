@@ -42,6 +42,14 @@ public:
     /// Returns number of points.
     size_t Num() const { return data_.cols(); }
 
+    /// \brief Selects features from \p input Feature group, with indices in \p
+    /// indices, and returns a new Feature group with selected features.
+    ///
+    /// \param indices Indices of features to be selected.
+    /// \param invert Set to `True` to invert the selection of indices.
+    std::shared_ptr<Feature> SelectByIndex(const std::vector<size_t> &indices,
+                                           bool invert = false) const;
+
 public:
     /// Data buffer storing features.
     Eigen::MatrixXd data_;

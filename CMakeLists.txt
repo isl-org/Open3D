@@ -430,8 +430,8 @@ if(BUILD_CUDA_MODULE)
     endif()
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
-    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
-        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
+        message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
     endif()
 endif()
 
@@ -476,6 +476,8 @@ if(WIN32)
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
+        # MSVC standards-compliant mode: Error in PoissonRecon 3rd party header
+        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)   
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members

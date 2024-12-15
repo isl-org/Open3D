@@ -256,7 +256,11 @@ Example:
                    "of points has farthest distance.The sampling is performed "
                    "by selecting the farthest point from previous selected "
                    "points iteratively",
-                   "num_samples"_a);
+                   "num_samples"_a,
+                   "Index to start downsampling from. Valid index is a "
+                   "non-negative number less than number of points in the "
+                   "input pointcloud.",
+                   "start_index"_a = 0);
     pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                    "nb_points"_a, "search_radius"_a,
                    R"(Remove points that have less than nb_points neighbors in a
@@ -432,14 +436,18 @@ Example:
     // processing
     pointcloud.def("project_to_depth_image", &PointCloud::ProjectToDepthImage,
                    "width"_a, "height"_a, "intrinsics"_a,
-                   "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
-                                                      core::Device("CPU:0")),
+                   py::arg_v("extrinsics",
+                             core::Tensor::Eye(4, core::Float32,
+                                               core::Device("CPU:0")),
+                             "open3d.core.Tensor.eye(4)"),
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a point cloud to a depth image.");
     pointcloud.def("project_to_rgbd_image", &PointCloud::ProjectToRGBDImage,
                    "width"_a, "height"_a, "intrinsics"_a,
-                   "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
-                                                      core::Device("CPU:0")),
+                   py::arg_v("extrinsics",
+                             core::Tensor::Eye(4, core::Float32,
+                                               core::Device("CPU:0")),
+                             "open3d.core.Tensor.eye(4)"),
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a colored point cloud to a RGBD image.");
     pointcloud.def(
@@ -656,7 +664,8 @@ Example:
               "in the pointcloud."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "farthest_point_down_sample",
-            {{"num_samples", "Number of points to be sampled."}});
+            {{"num_samples", "Number of points to be sampled."},
+             {"start_index", "Index of point to start downsampling from."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outliers",
             {{"nb_points",
@@ -769,17 +778,29 @@ Example:
 
 )");
 
-    pointcloud.def(
-            "compute_metrics", &PointCloud::ComputeMetrics, "pcd2"_a,
-            "metrics"_a, "params"_a,
-            R"(Compute various metrics between two point clouds. Currently, Chamfer distance, Hausdorff distance and F-Score <a href="../tutorial/reference.html#Knapitsch2017">[[Knapitsch2017]]</a> are supported. The Chamfer distance is the sum of the mean distance to the nearest neighbor from the points of the first point cloud to the second point cloud. The F-Score at a fixed threshold radius is the harmonic mean of the Precision and Recall. Recall is the percentage of surface points from the first point cloud that have the second point cloud points within the threshold radius, while Precision is the percentage of points from the second point cloud that have the first point cloud points within the threhold radius.
+    pointcloud.def("compute_metrics", &PointCloud::ComputeMetrics, "pcd2"_a,
+                   "metrics"_a, "params"_a,
+                   R"(Compute various metrics between two point clouds. 
+            
+Currently, Chamfer distance, Hausdorff distance and F-Score `[Knapitsch2017] <../tutorial/reference.html#Knapitsch2017>`_ are supported. 
+The Chamfer distance is the sum of the mean distance to the nearest neighbor 
+from the points of the first point cloud to the second point cloud. The F-Score
+at a fixed threshold radius is the harmonic mean of the Precision and Recall. 
+Recall is the percentage of surface points from the first point cloud that have 
+the second point cloud points within the threshold radius, while Precision is 
+the percentage of points from the second point cloud that have the first point 
+cloud points within the threhold radius.
 
-    .. math:
-        \text{Chamfer Distance: } d_{CD}(X,Y) = \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) ||\\
-        \text{Hausdorff distance: } d_H(X,Y) = \max \left{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right}\\
-        \text{Precision: } P(X,Y|d) = \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\
-        \text{Recall: } R(X,Y|d) = \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\
-        \text{F-Score: } F(X,Y|d) = \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \\
+.. math::
+    :nowrap:
+
+    \begin{align}
+        \text{Chamfer Distance: } d_{CD}(X,Y) &= \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) ||\\
+        \text{Hausdorff distance: } d_H(X,Y) &= \max \left\{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}\\
+        \text{Precision: } P(X,Y|d) &= \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\
+        \text{Recall: } R(X,Y|d) &= \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\
+        \text{F-Score: } F(X,Y|d) &= \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \\
+    \end{align}
 
 Args:
     pcd2 (t.geometry.PointCloud): Other point cloud to compare with.
