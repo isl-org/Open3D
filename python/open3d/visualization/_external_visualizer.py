@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -37,17 +37,23 @@ class ExternalVisualizer:
 
         Example:
             To quickly send a single object just write::
+
                 ev.set(point_cloud)
 
             To place the object at a specific location in the scene tree do::
+
                 ev.set(point_cloud, path='group/mypoints', time=42, layer='')
+
             Note that depending on the visualizer some arguments like time or
             layer may not be supported and will be ignored.
 
             To set multiple objects use a list to pass multiple objects::
+
                 ev.set([point_cloud, mesh, camera])
+
             Each entry in the list can be a tuple specifying all or some of the
             location parameters::
+
                 ev.set(objs=[(point_cloud,'group/mypoints', 1, 'layer1'),
                              (mesh, 'group/mymesh'),
                              camera
@@ -147,6 +153,7 @@ class ExternalVisualizer:
 
         Example:
             Here we use draw with the default external visualizer::
+
                 import open3d as o3d
 
                 torus = o3d.geometry.TriangleMesh.create_torus()

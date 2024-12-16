@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,11 +16,24 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_half_edge(py::module &m) {
+void pybind_half_edge(py::module &m) {}
+
+void pybind_halfedgetrianglemesh_declarations(py::module &m) {
     py::class_<HalfEdgeTriangleMesh::HalfEdge> half_edge(
             m, "HalfEdge",
             "HalfEdge class contains vertex, triangle info about a half edge, "
             "as well as relations of next and twin half edge.");
+    py::class_<HalfEdgeTriangleMesh, PyGeometry3D<HalfEdgeTriangleMesh>,
+               std::shared_ptr<HalfEdgeTriangleMesh>, MeshBase>
+            half_edge_triangle_mesh(
+                    m, "HalfEdgeTriangleMesh",
+                    "HalfEdgeTriangleMesh inherits TriangleMesh class with the "
+                    "addition of HalfEdge data structure for each half edge in "
+                    "the mesh as well as related functions.");
+}
+void pybind_halfedgetrianglemesh_definitions(py::module &m) {
+    auto half_edge = static_cast<py::class_<HalfEdgeTriangleMesh::HalfEdge>>(
+            m.attr("HalfEdge"));
     py::detail::bind_default_constructor<HalfEdgeTriangleMesh::HalfEdge>(
             half_edge);
     py::detail::bind_copy_functions<HalfEdgeTriangleMesh::HalfEdge>(half_edge);
@@ -52,19 +65,12 @@ void pybind_half_edge(py::module &m) {
                     "triangle_index",
                     &HalfEdgeTriangleMesh::HalfEdge::triangle_index_,
                     "int: Index of the triangle containing this half edge");
-}
-
-void pybind_halfedgetrianglemesh(py::module &m) {
-    pybind_half_edge(m);
 
     // open3d.geometry.HalfEdgeTriangleMesh
-    py::class_<HalfEdgeTriangleMesh, PyGeometry3D<HalfEdgeTriangleMesh>,
-               std::shared_ptr<HalfEdgeTriangleMesh>, MeshBase>
-            half_edge_triangle_mesh(
-                    m, "HalfEdgeTriangleMesh",
-                    "HalfEdgeTriangleMesh inherits TriangleMesh class with the "
-                    "addition of HalfEdge data structure for each half edge in "
-                    "the mesh as well as related functions.");
+    auto half_edge_triangle_mesh = static_cast<
+            py::class_<HalfEdgeTriangleMesh, PyGeometry3D<HalfEdgeTriangleMesh>,
+                       std::shared_ptr<HalfEdgeTriangleMesh>, MeshBase>>(
+            m.attr("HalfEdgeTriangleMesh"));
     py::detail::bind_default_constructor<HalfEdgeTriangleMesh>(
             half_edge_triangle_mesh);
     py::detail::bind_copy_functions<HalfEdgeTriangleMesh>(

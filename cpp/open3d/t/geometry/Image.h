@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -326,11 +326,11 @@ public:
     /// \brief Text description.
     std::string ToString() const;
 
-    /// Do we use IPP ICV for accelerating image processing operations?
-#ifdef WITH_IPPICV
-    static constexpr bool HAVE_IPPICV = true;
+    /// Do we use IPP for accelerating image processing operations?
+#ifdef WITH_IPP
+    static constexpr bool HAVE_IPP = true;
 #else
-    static constexpr bool HAVE_IPPICV = false;
+    static constexpr bool HAVE_IPP = false;
 #endif
 
 protected:

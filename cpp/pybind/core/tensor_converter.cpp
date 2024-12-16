@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -106,10 +106,10 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
     Dtype dtype = pybind_utils::ArrayFormatToDtype(info.format, info.itemsize);
     Device device("CPU:0");
 
-    array.inc_ref();
-    std::function<void(void*)> deleter = [array](void*) -> void {
+    auto shared_array = std::make_shared<py::array>(array);
+    std::function<void(void*)> deleter = [shared_array](void*) mutable -> void {
         py::gil_scoped_acquire acquire;
-        array.dec_ref();
+        shared_array.reset();
     };
     auto blob = std::make_shared<Blob>(device, info.ptr, deleter);
     Tensor t_inplace(shape, strides, info.ptr, dtype, blob);

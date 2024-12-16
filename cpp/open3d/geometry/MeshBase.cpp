@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ OrientedBoundingBox MeshBase::GetOrientedBoundingBox(bool robust) const {
 }
 
 OrientedBoundingBox MeshBase::GetMinimalOrientedBoundingBox(bool robust) const {
-    return OrientedBoundingBox::CreateFromPoints(vertices_, robust);
+    return OrientedBoundingBox::CreateFromPointsMinimal(vertices_, robust);
 }
 
 MeshBase &MeshBase::Transform(const Eigen::Matrix4d &transformation) {

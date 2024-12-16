@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
 #include <vtkFloatArray.h>
+#include <vtkImageData.h>
 #include <vtkLinearExtrusionFilter.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
@@ -182,6 +183,34 @@ static vtkSmartPointer<vtkPoints> CreateVtkPointsFromTensor(
     return pts;
 }
 
+OPEN3D_LOCAL vtkSmartPointer<vtkImageData> CreateVtkImageDataFromTensor(
+        core::Tensor& tensor, bool copy) {
+    core::AssertTensorDtypes(tensor,
+                             {core::UInt8, core::Float32, core::Float64});
+    if (tensor.NumDims() != 2 && tensor.NumDims() != 3) {
+        utility::LogError(
+                "Cannot convert Tensor to vtkImageData. The number of "
+                "dimensions must be 2 or 3 but is {}",
+                tensor.NumDims());
+    }
+
+    // Create a flat tensor that can be converted to a vtkDataArray
+    auto tensor_flat = tensor.Reshape({tensor.NumElements(), 1});
+    if (tensor.GetDataPtr() != tensor_flat.GetDataPtr()) {
+        copy = true;
+    }
+    auto data_array = CreateVtkDataArrayFromTensor(tensor_flat, copy);
+
+    vtkSmartPointer<vtkImageData> im = vtkSmartPointer<vtkImageData>::New();
+    im->GetPointData()->SetScalars(data_array);
+    std::array<int, 3> size{1, 1, 1};
+    for (int i = 0; i < tensor.NumDims(); ++i) {
+        size[i] = tensor.GetShape(tensor.NumDims() - i - 1);
+    }
+    im->SetDimensions(size.data());
+    return im;
+}
+
 namespace {
 // Helper for creating the offset array from Common/DataModel/vtkCellArray.cxx
 struct GenerateOffsetsImpl {
@@ -213,7 +242,9 @@ static vtkSmartPointer<vtkCellArray> CreateVtkCellArrayFromTensor(
     const int cell_size = tensor.GetShape()[1];
 
     auto tensor_flat = tensor.Reshape({tensor.NumElements(), 1}).Contiguous();
-    copy = copy && tensor.GetDataPtr() == tensor_flat.GetDataPtr();
+    if (tensor.GetDataPtr() != tensor_flat.GetDataPtr()) {
+        copy = true;
+    }
     auto connectivity = CreateVtkDataArrayFromTensor(tensor_flat, copy);
 
     // vtk nightly build (9.1.20220520) has a function cells->SetData(cell_size,

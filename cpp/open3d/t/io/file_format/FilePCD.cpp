@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -89,30 +89,34 @@ struct WriteAttributePtr {
 };
 
 static core::Dtype GetDtypeFromPCDHeaderField(char type, int size) {
-    if (type == 'I') {
+    char type_uppercase = std::toupper(type, std::locale());
+    if (type_uppercase == 'I') {
         if (size == 1) return core::Dtype::Int8;
         if (size == 2) return core::Dtype::Int16;
         if (size == 4) return core::Dtype::Int32;
         if (size == 8)
             return core::Dtype::Int64;
         else
-            utility::LogError("Unsupported data type.");
-    } else if (type == 'U') {
+            utility::LogError("Unsupported size {} for data type {}.", size,
+                              type);
+    } else if (type_uppercase == 'U') {
         if (size == 1) return core::Dtype::UInt8;
         if (size == 2) return core::Dtype::UInt16;
         if (size == 4) return core::Dtype::UInt32;
         if (size == 8)
             return core::Dtype::UInt64;
         else
-            utility::LogError("Unsupported data type.");
-    } else if (type == 'F') {
+            utility::LogError("Unsupported size {} for data type {}.", size,
+                              type);
+    } else if (type_uppercase == 'F') {
         if (size == 4) return core::Dtype::Float32;
         if (size == 8)
             return core::Dtype::Float64;
         else
-            utility::LogError("Unsupported data type.");
+            utility::LogError("Unsupported size {} for data type {}.", size,
+                              type);
     } else {
-        utility::LogError("Unsupported data type.");
+        utility::LogError("Unsupported data type {}.", type);
     }
 }
 
@@ -305,13 +309,14 @@ static void ReadASCIIPCDColorsFromField(ReadAttributePtr &attr,
     if (field.size == 4) {
         std::uint8_t data[4] = {0};
         char *end;
-        if (field.type == 'I') {
+        char type_uppercase = std::toupper(field.type, std::locale());
+        if (type_uppercase == 'I') {
             std::int32_t value = std::strtol(data_ptr, &end, 0);
             std::memcpy(data, &value, sizeof(std::int32_t));
-        } else if (field.type == 'U') {
+        } else if (type_uppercase == 'U') {
             std::uint32_t value = std::strtoul(data_ptr, &end, 0);
             std::memcpy(data, &value, sizeof(std::uint32_t));
-        } else if (field.type == 'F') {
+        } else if (type_uppercase == 'F') {
             float value = std::strtof(data_ptr, &end);
             std::memcpy(data, &value, sizeof(float));
         }

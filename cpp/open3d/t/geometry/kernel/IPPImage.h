@@ -1,18 +1,22 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 #pragma once
 
-#ifdef WITH_IPPICV
+#ifdef WITH_IPP
+// Auto-enable multi-threaded implementations
+#define IPP_ENABLED_THREADING_LAYER_REDEFINITIONS 1
 #define IPP_CALL(ipp_function, ...) ipp_function(__VA_ARGS__);
 
-// Required by IPPICV headers, defined here to keep other compile commands clean
-#define ICV_BASE
-#define IW_BUILD
+#if IPP_VERSION_INT < \
+        20211000  // macOS IPP v2021.9.11 uses old directory layout
 #include <iw++/iw_core.hpp>
+#else  // Linux and Windows IPP v2021.10+ uses new directory layout
+#include <ipp/iw++/iw_core.hpp>
+#endif
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
@@ -85,4 +89,4 @@ void FilterSobel(const open3d::core::Tensor &srcim,
 #else
 #define IPP_CALL(ipp_function, ...) \
     utility::LogError("Not built with IPP-IW, cannot call " #ipp_function);
-#endif  // WITH_IPPICV
+#endif  // WITH_IPP

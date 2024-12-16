@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,8 +22,8 @@ namespace tests {
 /// \param eq_triangle_vertex_order If true then triangles are only equal if the
 /// order of the vertices is the same. If false any permutation of the triangle
 /// indices is allowed.
-void ExpectMeshEQ(const open3d::geometry::TriangleMesh& mesh0,
-                  const open3d::geometry::TriangleMesh& mesh1,
+void ExpectMeshEQ(const open3d::geometry::TriangleMesh &mesh0,
+                  const open3d::geometry::TriangleMesh &mesh1,
                   double threshold = 1e-6,
                   bool eq_triangle_vertex_order = true) {
     ExpectEQ(mesh0.vertices_, mesh1.vertices_, threshold);
@@ -166,6 +166,232 @@ TEST(TriangleMesh, GetMaxBound) {
 
     ExpectEQ(Eigen::Vector3d(996.078431, 996.078431, 996.078431),
              tm.GetMaxBound());
+}
+
+TEST(TriangleMesh, GetCenter) {
+    int size = 100;
+
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+
+    geometry::TriangleMesh tm;
+
+    tm.vertices_.resize(size);
+    Rand(tm.vertices_, dmin, dmax, 0);
+
+    ExpectEQ(tm.GetCenter(),
+             Eigen::Vector3d(531.137254, 535.176470, 501.882352));
+
+    geometry::TriangleMesh tm_empty;
+    ExpectEQ(tm_empty.GetCenter(), Eigen::Vector3d(0, 0, 0));
+}
+
+TEST(TriangleMesh, GetAxisAlignedBoundingBox) {
+    geometry::TriangleMesh tm;
+    geometry::AxisAlignedBoundingBox aabb;
+
+    tm = geometry::TriangleMesh();
+    aabb = tm.GetAxisAlignedBoundingBox();
+    EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
+
+    tm = geometry::TriangleMesh({{0, 0, 0}}, {{0, 0, 0}});
+    aabb = tm.GetAxisAlignedBoundingBox();
+    EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
+
+    tm = geometry::TriangleMesh({{0, 2, 0},
+                                 {1, 1, 2},
+                                 {1, 0, 3},
+                                 {0, 1, 4},
+                                 {1, 2, 5},
+                                 {1, 3, 6},
+                                 {0, 0, 7},
+                                 {0, 3, 8},
+                                 {1, 0, 9},
+                                 {0, 2, 10}},
+                                {{3, 1, 0},
+                                 {3, 2, 1},
+                                 {1, 2, 4},
+                                 {5, 4, 2},
+                                 {2, 3, 5},
+                                 {6, 3, 0},
+                                 {6, 5, 3},
+                                 {5, 6, 8},
+                                 {8, 7, 5},
+                                 {1, 7, 9},
+                                 {1, 4, 7},
+                                 {0, 1, 9},
+                                 {9, 8, 6},
+                                 {7, 8, 9},
+                                 {4, 5, 7},
+                                 {9, 6, 0}});
+    aabb = tm.GetAxisAlignedBoundingBox();
+    EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(1, 3, 10));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
+}
+
+TEST(TriangleMesh, GetOrientedBoundingBox) {
+    geometry::TriangleMesh tm;
+    geometry::OrientedBoundingBox obb;
+
+    // Empty (GetOrientedBoundingBox requires >=4 points)
+    tm = geometry::TriangleMesh();
+    EXPECT_ANY_THROW(tm.GetOrientedBoundingBox());
+
+    // Point
+    tm = geometry::TriangleMesh({{0, 0, 0}}, {{0, 0, 0}});
+    EXPECT_ANY_THROW(tm.GetOrientedBoundingBox());
+    tm = geometry::TriangleMesh({{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+                                {{0, 1, 2}, {1, 2, 3}});
+    EXPECT_ANY_THROW(tm.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(tm.GetOrientedBoundingBox(true));
+
+    // Plane
+    tm = geometry::TriangleMesh({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}},
+                                {{0, 1, 2}, {1, 2, 3}});
+    EXPECT_ANY_THROW(tm.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(tm.GetOrientedBoundingBox(true));
+
+    // Valid 4 points
+    tm = geometry::TriangleMesh({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 1}},
+                                {{0, 1, 2}, {1, 2, 3}});
+    tm.GetOrientedBoundingBox();
+
+    // 8 points with known ground truth
+    tm = geometry::TriangleMesh({{0, 0, 0},
+                                 {0, 0, 1},
+                                 {0, 2, 0},
+                                 {0, 2, 1},
+                                 {3, 0, 0},
+                                 {3, 0, 1},
+                                 {3, 2, 0},
+                                 {3, 2, 1}},
+                                {{0, 1, 2},
+                                 {1, 2, 3},
+                                 {4, 5, 6},
+                                 {5, 6, 7},
+                                 {0, 1, 4},
+                                 {1, 4, 5},
+                                 {2, 3, 6},
+                                 {3, 6, 7}});
+    obb = tm.GetOrientedBoundingBox();
+    EXPECT_EQ(obb.center_, Eigen::Vector3d(1.5, 1, 0.5));
+    EXPECT_EQ(obb.extent_, Eigen::Vector3d(3, 2, 1));
+    EXPECT_EQ(obb.color_, Eigen::Vector3d(1, 1, 1));
+    EXPECT_EQ(obb.R_, Eigen::Matrix3d::Identity());
+    ExpectEQ(Sort(obb.GetBoxPoints()),
+             Sort(std::vector<Eigen::Vector3d>({{0, 0, 0},
+                                                {0, 0, 1},
+                                                {0, 2, 0},
+                                                {0, 2, 1},
+                                                {3, 0, 0},
+                                                {3, 0, 1},
+                                                {3, 2, 0},
+                                                {3, 2, 1}})));
+
+    // Check for a bug where the OBB rotation contained a reflection for this
+    // example.
+    tm = geometry::TriangleMesh({{0, 2, 4}, {7, 9, 1}, {5, 2, 0}, {3, 8, 7}},
+                                {{0, 1, 2}, {1, 2, 3}});
+    obb = tm.GetOrientedBoundingBox();
+    EXPECT_GT(obb.R_.determinant(), 0.999);
+}
+
+TEST(TriangleMesh, GetMinimalOrientedBoundingBox) {
+    geometry::TriangleMesh tm;
+    geometry::OrientedBoundingBox obb;
+
+    // Empty (GetOrientedBoundingBox requires >=4 points)
+    tm = geometry::TriangleMesh();
+    EXPECT_ANY_THROW(tm.GetMinimalOrientedBoundingBox());
+
+    // Point
+    tm = geometry::TriangleMesh({{0, 0, 0}}, {{0, 0, 0}});
+    EXPECT_ANY_THROW(tm.GetMinimalOrientedBoundingBox());
+    tm = geometry::TriangleMesh({{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+                                {{0, 1, 2}, {1, 2, 3}});
+    EXPECT_ANY_THROW(tm.GetMinimalOrientedBoundingBox());
+    EXPECT_NO_THROW(tm.GetMinimalOrientedBoundingBox(true));
+
+    // Plane
+    tm = geometry::TriangleMesh({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}},
+                                {{0, 1, 2}, {1, 2, 3}});
+    EXPECT_ANY_THROW(tm.GetMinimalOrientedBoundingBox());
+    EXPECT_NO_THROW(tm.GetMinimalOrientedBoundingBox(true));
+
+    // Valid 4 points
+    tm = geometry::TriangleMesh({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 1}},
+                                {{0, 1, 2}, {1, 2, 3}});
+    tm.GetMinimalOrientedBoundingBox();
+
+    // 8 points with known ground truth
+    tm = geometry::TriangleMesh({{0, 0, 0},
+                                 {0, 0, 1},
+                                 {0, 2, 0},
+                                 {0, 2, 1},
+                                 {3, 0, 0},
+                                 {3, 0, 1},
+                                 {3, 2, 0},
+                                 {3, 2, 1}},
+                                {{0, 1, 2},
+                                 {1, 2, 3},
+                                 {4, 5, 6},
+                                 {5, 6, 7},
+                                 {0, 1, 4},
+                                 {1, 4, 5},
+                                 {2, 3, 6},
+                                 {3, 6, 7}});
+    obb = tm.GetMinimalOrientedBoundingBox();
+    EXPECT_EQ(obb.center_, Eigen::Vector3d(1.5, 1, 0.5));
+    EXPECT_EQ(obb.extent_, Eigen::Vector3d(3, 2, 1));
+    EXPECT_EQ(obb.color_, Eigen::Vector3d(1, 1, 1));
+    ExpectEQ(Sort(obb.GetBoxPoints()),
+             Sort(std::vector<Eigen::Vector3d>({{0, 0, 0},
+                                                {0, 0, 1},
+                                                {0, 2, 0},
+                                                {0, 2, 1},
+                                                {3, 0, 0},
+                                                {3, 0, 1},
+                                                {3, 2, 0},
+                                                {3, 2, 1}})));
+
+    // Check for a bug where the OBB rotation contained a reflection for this
+    // example.
+    tm = geometry::TriangleMesh({{0, 2, 4}, {7, 9, 1}, {5, 2, 0}, {3, 8, 7}},
+                                {{0, 1, 2}, {1, 2, 3}});
+    obb = tm.GetMinimalOrientedBoundingBox();
+    EXPECT_GT(obb.R_.determinant(), 0.999);
+
+    // should always be equal/smaller than axis aligned- & oriented bounding box
+    tm = geometry::TriangleMesh({{0.866, 0.474, 0.659},
+                                 {0.943, 0.025, 0.789},
+                                 {0.386, 0.264, 0.691},
+                                 {0.938, 0.588, 0.496},
+                                 {0.221, 0.116, 0.257},
+                                 {0.744, 0.182, 0.052},
+                                 {0.019, 0.525, 0.699},
+                                 {0.722, 0.134, 0.668}},
+                                {{6, 5, 4},
+                                 {6, 3, 5},
+                                 {2, 6, 4},
+                                 {6, 2, 0},
+                                 {3, 6, 0},
+                                 {5, 3, 1},
+                                 {3, 0, 1},
+                                 {7, 1, 2},
+                                 {1, 0, 2},
+                                 {4, 1, 7},
+                                 {4, 5, 1},
+                                 {7, 2, 4}});
+    geometry::OrientedBoundingBox mobb = tm.GetMinimalOrientedBoundingBox();
+    obb = tm.GetOrientedBoundingBox();
+    geometry::AxisAlignedBoundingBox aabb = tm.GetAxisAlignedBoundingBox();
+    EXPECT_GT(obb.Volume(), mobb.Volume());
+    EXPECT_GT(aabb.Volume(), mobb.Volume());
 }
 
 TEST(TriangleMesh, Transform) {
@@ -371,6 +597,125 @@ TEST(TriangleMesh, OperatorADD) {
         ExpectEQ(tm0.triangle_normals_[i], tm.triangle_normals_[i + 0]);
         ExpectEQ(tm1.triangle_normals_[i], tm.triangle_normals_[i + size]);
     }
+}
+
+TEST(TriangleMesh, OperatorAdditionAssignment) {
+    const size_t size = 100;
+    const size_t texture_size = 10;
+
+    // Define the minimum and maximum bounds for random data generation
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector2d uvmin(0.0, 0.0);
+    Eigen::Vector2d uvmax(1.0, 1.0);
+
+    // Mesh 0 contains only UVs but no textures and material ids
+    geometry::TriangleMesh tm0;
+    tm0.vertices_.resize(size);
+    tm0.triangles_.resize(size);
+    tm0.triangle_uvs_.resize(3 * size);
+
+    // Mesh 1 contains all of UVS, textures and material ids
+    geometry::TriangleMesh tm1;
+    tm1.vertices_.resize(size);
+    tm1.triangles_.resize(size);
+    tm1.triangle_uvs_.resize(3 * size);
+    tm1.triangle_material_ids_.resize(size);
+    tm1.textures_.resize(texture_size);
+
+    // Mesh 2 does not contains any of UVs, textures or material ids
+    geometry::TriangleMesh tm2;
+    tm2.vertices_.resize(size);
+    tm2.triangles_.resize(size);
+
+    // Randomly generate data for tm0, tm1 and tm2
+    Rand(tm0.vertices_, dmin, dmax, 0);
+    Rand(tm0.triangles_, imin, imax, 0);
+    std::vector<Eigen::Vector2d, open3d::utility::Vector2d_allocator>
+            tm0_triangle_uvs(3 * size);
+    Rand(tm0_triangle_uvs, uvmin, uvmax, 0);
+    tm0.triangle_uvs_ = std::vector<Eigen::Vector2d>(tm0_triangle_uvs.begin(),
+                                                     tm0_triangle_uvs.end());
+
+    Rand(tm1.vertices_, dmin, dmax, 0);
+    Rand(tm1.triangles_, imin, imax, 0);
+    std::vector<Eigen::Vector2d, open3d::utility::Vector2d_allocator>
+            tm1_triangle_uvs(3 * size);
+    Rand(tm1_triangle_uvs, uvmin, uvmax, 0);
+    tm1.triangle_uvs_ = std::vector<Eigen::Vector2d>(tm1_triangle_uvs.begin(),
+                                                     tm1_triangle_uvs.end());
+    for (size_t i = 0; i < texture_size; i++) {
+        geometry::Image texture_image;
+        texture_image.Prepare(100, 100, 3, 1);
+        Rand(texture_image.data_, 0, 255, 0);
+        tm1.textures_[i] = texture_image;
+    }
+    Rand(tm1.triangle_material_ids_, 0, texture_size, 0);
+
+    Rand(tm2.vertices_, dmin, dmax, 0);
+    Rand(tm2.triangles_, imin, imax, 0);
+
+    geometry::TriangleMesh temp_tm0 = tm0;
+    geometry::TriangleMesh temp_tm1 = tm1;
+    geometry::TriangleMesh temp_tm2 = tm2;
+    // Function to reset values of temp_tm0, temp_tm1 and temp_tm2
+    auto reset_values = [&tm0, &tm1, &tm2](geometry::TriangleMesh &temp_tm0,
+                                           geometry::TriangleMesh &temp_tm1,
+                                           geometry::TriangleMesh &temp_tm2) {
+        temp_tm0 = tm0;
+        temp_tm1 = tm1;
+        temp_tm2 = tm2;
+    };
+
+    // Test addition of tm1 with itself
+    temp_tm1 += tm1;
+    EXPECT_EQ(temp_tm1.triangles_.size(), 2 * size);
+    EXPECT_EQ(temp_tm1.triangle_uvs_.size(), 6 * size);
+    EXPECT_EQ(temp_tm1.vertices_.size(), 2 * size);
+    EXPECT_EQ(temp_tm1.textures_.size(), 2 * texture_size);
+    EXPECT_EQ(temp_tm1.triangle_material_ids_.size(), 2 * size);
+    for (size_t i = 0; i < size; i++) {
+        ExpectEQ(temp_tm1.vertices_[i], temp_tm1.vertices_[i + size]);
+        ExpectEQ(temp_tm1.triangles_[i],
+                 (Eigen::Vector3i)(temp_tm1.triangles_[i + size] -
+                                   Eigen::Vector3i(size, size, size)));
+        EXPECT_EQ(temp_tm1.triangle_material_ids_[i],
+                  temp_tm1.triangle_material_ids_[i + size] - texture_size);
+    }
+    for (size_t i = 0; i < 3 * size; i++) {
+        ExpectEQ(temp_tm1.triangle_uvs_[i],
+                 temp_tm1.triangle_uvs_[i + 3 * size]);
+    }
+    for (size_t i = 0; i < texture_size; i++) {
+        ExpectEQ(temp_tm1.textures_[i].data_,
+                 temp_tm1.textures_[i + texture_size].data_);
+    }
+
+    // Test addition of tm0 and tm1
+    reset_values(temp_tm0, temp_tm1, temp_tm2);
+    temp_tm0 += tm1;
+    temp_tm1 += tm0;
+    ExpectMeshEQ(temp_tm0, temp_tm1);
+    EXPECT_EQ(temp_tm0.textures_.size(), 0);
+    EXPECT_EQ(temp_tm0.triangle_material_ids_.size(), 0);
+
+    // Test addition of tm1 and tm2
+    reset_values(temp_tm0, temp_tm1, temp_tm2);
+    temp_tm1 += tm2;
+    temp_tm2 += tm1;
+    ExpectMeshEQ(temp_tm1, temp_tm2);
+    EXPECT_EQ(temp_tm0.textures_.size(), 0);
+    EXPECT_EQ(temp_tm0.triangle_material_ids_.size(), 0);
+
+    // Test addition of tm2 and tm0
+    reset_values(temp_tm0, temp_tm1, temp_tm2);
+    temp_tm2 += tm0;
+    temp_tm0 += tm2;
+    ExpectMeshEQ(temp_tm2, temp_tm0);
+    EXPECT_EQ(temp_tm0.textures_.size(), 0);
+    EXPECT_EQ(temp_tm0.triangle_material_ids_.size(), 0);
 }
 
 TEST(TriangleMesh, ComputeTriangleNormals) {

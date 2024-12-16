@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -590,7 +590,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             const size_t color_array_size = n_vertices * 3 * sizeof(float);
             if (pcloud_is_gpu) {
                 auto color_data = static_cast<float*>(malloc(color_array_size));
-                memcpy(color_data, cpu_pcloud.GetPointPositions().GetDataPtr(),
+                memcpy(color_data, cpu_pcloud.GetPointColors().GetDataPtr(),
                        color_array_size);
                 filament::VertexBuffer::BufferDescriptor color_descriptor(
                         color_data, color_array_size, DeallocateBuffer);

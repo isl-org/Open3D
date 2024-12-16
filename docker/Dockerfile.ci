@@ -67,34 +67,45 @@ RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
         rm -rf /etc/apt/sources.list.d/oneAPI.list; \
     fi
 
-# Dependencies: basic
+# Dependencies: basic and python-build
 RUN apt-get update && apt-get install -y \
     git  \
     wget \
     curl \
     build-essential \
     pkg-config \
+    zlib1g \
+    zlib1g-dev \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda or Intel conda
-# The **/open3d/bin paths are used during docker run, in this way docker run
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/open3d/bin:${PATH}"
-RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
-        wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh; \
-        bash Miniconda3-latest-Linux-x86_64.sh -b; \
-        rm Miniconda3-latest-Linux-x86_64.sh; \
-    fi
-RUN conda --version \
- && conda create -y -n open3d python=${PYTHON_VERSION}
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
 
-# Activate open3d virtualenv
-# This works during docker build. It becomes the prefix of all RUN commands.
-# Ref: https://stackoverflow.com/a/60148365/1255535
-SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Dependencies: cmake
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
@@ -130,10 +141,10 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.?z ]; then tar -xf ${CCACHE_TAR_NAME}.tar.?z; fi \
  && mkdir -p ${CCACHE_DIR} \
- && ccache -M 5G \
+ && ccache -M 4G \
  && ccache -s
 
 # Checkout Open3D-ML main branch
@@ -177,9 +188,11 @@ RUN \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
         export GLIBCXX_USE_CXX11_ABI=ON; \
+        export BUILD_ISPC_MODULE=OFF; \
     else \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
+        export BUILD_ISPC_MODULE=ON; \
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
         if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
             export GLIBCXX_USE_CXX11_ABI=OFF; \
@@ -194,11 +207,12 @@ RUN \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
           -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
+          -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
-          -DBUILD_COMMON_ISPC_ISAS=ON \
+          -DBUILD_COMMON_ISPC_ISAS=${BUILD_ISPC_MODULE} \
           -DGLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI} \
           -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
           -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
@@ -212,7 +226,7 @@ RUN \
  && make install -j$(nproc) \
  && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
  && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi \
- && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ippicv mkl mkl_install webrtc; fi
+ && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc; fi
 # If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
@@ -221,7 +235,7 @@ RUN ccache -s \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
- && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
+ && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
  && if [ "${PACKAGE}" = "ON" ]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && if [ "${PACKAGE}" = "VIEWER" ]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
  && ls -alh /

@@ -8,15 +8,15 @@ Build from source
 System requirements
 -------------------
 
-* C++14 compiler:
+* C++17 compiler:
 
-  * Ubuntu 18.04+: GCC 5+, Clang 7+
+  * Ubuntu 20.04+: GCC 5+, Clang 7+
   * macOS 10.15+: XCode 8.0+
   * Windows 10 (64-bit): Visual Studio 2019+
 
-* CMake: 3.19+
+* CMake: 3.24+
 
-  * Ubuntu (18.04 / 20.04):
+  * Ubuntu (20.04+):
 
     * Install with ``apt-get``: see `official APT repository <https://apt.kitware.com/>`_
     * Install with ``snap``: ``sudo snap install cmake --classic``
@@ -25,8 +25,8 @@ System requirements
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA 10.1+ (optional): Open3D supports GPU acceleration of an increasing number
-  of operations through CUDA on Linux. We recommend using CUDA 11.0 for the
+* CUDA 11.5+ (optional): Open3D supports GPU acceleration of an increasing number
+  of operations through CUDA on Linux. We recommend using CUDA 12+ for the
   best compatibility with recent GPUs and optional external dependencies such
   as Tensorflow or PyTorch. Please see the `official documentation
   <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
@@ -238,12 +238,6 @@ The visualization module depends on the Filament rendering engine and, by defaul
 Open3D uses a prebuilt version of it. You can also build Filament from source
 by setting ``BUILD_FILAMENT_FROM_SOURCE=ON``.
 
-.. note::
-    Whereas Open3D only requires a C++14 compiler, Filament needs a C++17 compiler
-    and only supports Clang 7+, the most recent version of Xcode, and Visual Studio 2019,
-    see `their building instructions <https://github.com/google/filament/blob/main/BUILDING.md>`_.
-    Make sure to use one of these compiler if you build Open3D with ``BUILD_FILAMENT_FROM_SOURCE=ON``.
-
 ML Module
 `````````
 
@@ -256,7 +250,7 @@ pipelines from Open3D-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
 Open3D-ML from GitHub during the build with
 ``OPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git``.
 
-.. warning:: Compiling PyTorch ops with CUDA 11 and PyTorch < 1.9 may have
+.. warning:: Compiling PyTorch ops with PyTorch < 1.9 may have
     stability issues. See `Open3D issue #3324 <https://github.com/isl-org/Open3D/issues/3324>`_
     and `PyTorch issue #52663 <https://github.com/pytorch/pytorch/issues/52663>`_
     for more information on this problem. Official PyTorch wheels 1.9 and later
@@ -390,8 +384,8 @@ After installing ``ccache``, simply reconfigure and recompile the Open3D
 library. Open3D's CMake script can detect and use it automatically. You don't
 need to setup additional paths except for the ``ccache`` program itself.
 
-Ubuntu 18.04, 20.04
-```````````````````
+Ubuntu 20.04+
+`````````````
 
 If you install ``ccache`` via ``sudo apt install ccache``, the 3.x version will
 be installed. To cache CUDA compilations, you'll need the 4.0+ version. Here, we

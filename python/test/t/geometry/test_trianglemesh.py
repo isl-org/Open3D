@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -614,6 +614,19 @@ def test_create_text():
     mesh = o3d.t.geometry.TriangleMesh.create_text("Open3D", depth=1)
     assert mesh.vertex.positions.shape == (624, 3)
     assert mesh.triangle.indices.shape == (936, 3)
+
+
+def test_create_isosurfaces():
+    """Create signed distance field for sphere of radius 0.5 and extract sphere
+    from it.
+    """
+    coords = np.stack(np.meshgrid(*3 * [np.linspace(-1, 1, num=64)],
+                                  indexing='ij'),
+                      axis=-1)
+    vol = np.linalg.norm(coords, axis=-1) - 0.5
+    mesh = o3d.t.geometry.TriangleMesh.create_isosurfaces(vol)
+    assert mesh.vertex.positions.shape[0] == 4728
+    assert mesh.triangle.indices.shape[0] == 9452
 
 
 def test_simplify_quadric_decimation():
@@ -1385,3 +1398,23 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
                                                  device=device)
     assert test_box.vertex.positions.allclose(verts)
     assert test_box.triangle.indices.allclose(box.triangle.indices)
+
+
+def test_metrics():
+
+    from open3d.t.geometry import TriangleMesh, Metric, MetricParameters
+    # box is a cube with one vertex at the origin and a side length 1
+    box1 = TriangleMesh.create_box()
+    box2 = TriangleMesh.create_box()
+    box2.vertex.positions *= 1.1
+
+    # 3 faces of the cube are the same, and 3 are shifted up by 0.1 - raycast
+    # distances should follow this.
+    metric_params = MetricParameters(fscore_radius=(0.05, 0.15),
+                                     n_sampled_points=100000)
+    metrics = box1.compute_metrics(
+        box2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
+        metric_params)
+
+    np.testing.assert_allclose(metrics.cpu().numpy(), (0.1, 0.17, 50, 100),
+                               rtol=0.05)

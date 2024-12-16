@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,14 +17,17 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_voxel_block_grid(py::module& m) {
+void pybind_voxel_block_grid_declarations(py::module& m) {
     py::class_<VoxelBlockGrid> vbg(
             m, "VoxelBlockGrid",
             "A voxel block grid is a sparse grid of voxel blocks. Each voxel "
             "block is a dense 3D array, preserving local data distribution. If "
             "the block_resolution is set to 1, then the VoxelBlockGrid "
             "degenerates to a sparse voxel grid.");
-
+}
+void pybind_voxel_block_grid_definitions(py::module& m) {
+    auto vbg =
+            static_cast<py::class_<VoxelBlockGrid>>(m.attr("VoxelBlockGrid"));
     vbg.def(py::init<const std::vector<std::string>&,
                      const std::vector<core::Dtype>&,
                      const std::vector<core::SizeVector>&, float, int64_t,

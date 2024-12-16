@@ -1,5 +1,5 @@
 ## Main
-
+-   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
 -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
 -   Use GLIBCXX_USE_CXX11_ABI=ON by default
@@ -37,8 +37,22 @@
 -   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
 -   Fix RANSAC early stop if no inliers in a specific iteration (PR #6789)
 -   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
+-   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)
 -   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
+-   Python 3.12 support
+-   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
+-   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
+-   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
+-   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
+-   Support lowercase types when reading PCD files (PR #6930)
+-   Fix visualization/draw ICP example and add warnings (PR #6933)
+-   Unified cloud initializer pipeline for ICP (fixes segfault colored ICP) (PR #6942)
+-   Fix tensor EstimatePointWiseNormalsWithFastEigen3x3 (PR #6980)
+-   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
+-   Fix render to depth image on Apple Retina displays (PR #7001)
+-   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
+-   Add select_by_index method to Feature class (PR #7039)
 
 ## 0.13
 

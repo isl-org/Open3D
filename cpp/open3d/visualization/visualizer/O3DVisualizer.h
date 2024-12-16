@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -175,6 +175,7 @@ public:
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);
     void SetMouseMode(gui::SceneWidget::Controls mode);
+    void SetPanelOpen(const std::string& name, bool open);
 
     std::vector<O3DVisualizerSelections::SelectionSet> GetSelectionSets() const;
 

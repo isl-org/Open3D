@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -1706,6 +1706,18 @@ Ctrl-alt-click to polygon select)";
         }
     }
 
+    void SetPanelOpen(const std::string &name, bool open) {
+        if (name == settings.mouse_panel->GetText()) {
+            settings.mouse_panel->SetIsOpen(open);
+        } else if (name == settings.scene_panel->GetText()) {
+            settings.scene_panel->SetIsOpen(open);
+        } else if (name == settings.light_panel->GetText()) {
+            settings.light_panel->SetIsOpen(open);
+        } else if (name == settings.geometries_panel->GetText()) {
+            settings.geometries_panel->SetIsOpen(open);
+        }
+    }
+
     void SetPicking() {
         if (selections_->GetNumberOfSets() == 0) {
             NewSelectionSet();
@@ -2444,6 +2456,10 @@ void O3DVisualizer::SetLineWidth(int line_width) {
 
 void O3DVisualizer::SetMouseMode(SceneWidget::Controls mode) {
     impl_->SetMouseMode(mode);
+}
+
+void O3DVisualizer::SetPanelOpen(const std::string &name, bool open) {
+    impl_->SetPanelOpen(name, open);
 }
 
 void O3DVisualizer::EnableGroup(const std::string &group, bool enable) {

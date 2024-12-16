@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -86,7 +86,7 @@ namespace fmt {
 template <>
 struct formatter<Json::Value> {
     template <typename FormatContext>
-    auto format(const Json::Value &value, FormatContext &ctx)
+    auto format(const Json::Value &value, FormatContext &ctx) const
             -> decltype(ctx.out()) {
         return format_to(ctx.out(), "{}", open3d::utility::JsonToString(value));
     }

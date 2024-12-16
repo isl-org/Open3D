@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,9 +14,11 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-void pybind_feature(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_robust_kernels(py::module &m);
+void pybind_registration_declarations(py::module &m);
+void pybind_robust_kernel_declarations(py::module &m_registration);
+void pybind_registration_definitions(py::module &m);
+void pybind_feature_definitions(py::module &m_registration);
+void pybind_robust_kernel_definitions(py::module &m_registration);
 
 }  // namespace registration
 }  // namespace pipelines

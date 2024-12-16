@@ -26,7 +26,7 @@ to install Nvidia Docker to run the CUDA container.
 To verify that the Nvidia Docker is working, run:
 
 ```bash
-docker run --rm --gpus all nvidia/cuda:11.7-base nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.1-base nvidia-smi
 ```
 
 ### ARM64 Docker
@@ -48,7 +48,7 @@ To verify that the ARM64 environment is working, run:
 # The following warning message is expected: "WARNING: The requested image's
 # platform (linux/arm64/v8) does not match the detected host platform
 # (linux/amd64) and no specific platform was requested aarch64."
-docker run --rm arm64v8/ubuntu:18.04 uname -p
+docker run --rm arm64v8/ubuntu:24.04 uname -p
 ```
 
 ## Build and test Docker

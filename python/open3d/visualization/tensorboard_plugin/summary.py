@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Summary writer for the TensorBoard Open3D plugin"""
@@ -424,7 +424,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                 raise ValueError(
                     f"Property {prop} tensor should have shape[{k}]"
                     f"={s} for all elements but is "
-                    f"{tensor.shape[k-1] for tensor in tensor_tuple}.")
+                    f"{[tensor.shape[k-1] for tensor in tensor_tuple]}.")
 
         return shape[:2]
 
@@ -575,6 +575,7 @@ def add_3d(name,
         data (dict): A dictionary of tensors representing 3D data. Tensorflow,
             PyTorch, Numpy and Open3D tensors are supported. The following keys
             are supported:
+
             - ``vertex_positions``: shape `(B, N, 3)` where B is the number of point
               clouds and must be same for each key. N is the number of 3D points.
               Will be cast to ``float32``.

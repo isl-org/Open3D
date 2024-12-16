@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -24,6 +24,7 @@ namespace t {
 namespace geometry {
 
 class LineSet;
+class PointCloud;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -596,6 +597,20 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a mesh from a 3D scalar field (volume) by computing the
+    /// isosurface. This method uses the Flying Edges dual contouring method
+    /// that computes the isosurface similar to Marching Cubes.  The center of
+    /// the first voxel of the volume is at the origin (0,0,0).  The center of
+    /// the voxel at index [z,y,x] will be at (x,y,z).
+    /// \param volume 3D tensor with the volume.
+    /// \param contour_values A list of contour values at which isosurfaces will
+    /// be generated. The default value is 0.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateIsosurfaces(
+            const core::Tensor &volume,
+            const std::vector<double> contour_values = {0.0},
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -993,6 +1008,59 @@ public:
     /// \return 2d integer tensor with shape {n,2} encoding ordered edges.
     /// If mesh is empty or has no triangles, returns an empty tensor.
     core::Tensor GetNonManifoldEdges(bool allow_boundary_edges = true) const;
+
+    /// Sample points uniformly from the triangle mesh surface and return as a
+    /// PointCloud. Normals and colors are interpolated from the triangle mesh.
+    /// If texture_uvs and albedo are present, these are used to estimate the
+    /// sampled point color, otherwise vertex colors are used, if present.
+    /// During sampling, triangle areas are computed and saved in the "areas"
+    /// attribute.
+    /// \param number_of_points The number of points to sample.
+    /// \param use_triangle_normal If true, use the triangle normal as the
+    /// normal of the sampled point. Otherwise, interpolate the vertex normals.
+    PointCloud SamplePointsUniformly(size_t number_of_points,
+                                     bool use_triangle_normal = false);
+
+    /// Compute various metrics between two triangle meshes. This uses ray
+    /// casting for distance computations between a sampled point cloud and a
+    /// triangle mesh. Currently, Chamfer distance, Hausdorff distance  and
+    /// F-Score <a
+    /// href="../tutorial/reference.html#Knapitsch2017">[[Knapitsch2017]]</a>
+    /// are supported. The Chamfer distance is the sum of the mean distance to
+    /// the nearest neighbor from the sampled surface points of the first mesh
+    /// to the second mesh and vice versa. The F-Score at a fixed threshold
+    /// radius is the harmonic mean of the Precision and Recall. Recall is the
+    /// percentage of surface points from the first mesh that have the second
+    /// mesh within the threshold radius, while Precision is the percentage of
+    /// sampled points from the second mesh that have the first mesh surface
+    /// within the threhold radius.
+
+    /// \f{eqnarray*}{
+    ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
+    ///   || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X)
+    ///   || \\{}
+    ///   \text{Hausdorff distance: } d_H(X,Y) &=& \max \left\{ \max_{i \in X}
+    ///   || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}
+    ///   \\{}
+    ///   \text{Precision: } P(X,Y|d) &=& \frac{100}{|X|} \sum_{i \in X} || x_i
+    ///   - n(x_i, Y) || < d \\{}
+    ///   \text{Recall: } R(X,Y|d) &=& \frac{100}{|Y|} \sum_{i \in Y} || y_i -
+    ///  n(y_i, X) || < d \\{}
+    ///   \text{F-Score: } F(X,Y|d) &=& \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) +
+    ///  R(X,Y|d)}
+    /// \f}
+
+    /// As a side effect, the triangle areas are saved in the "areas" attribute.
+    /// \param mesh2 Other point cloud to compare with.
+    /// \param metrics List of Metric s to compute. Multiple metrics can be
+    /// computed at once for efficiency.
+    /// \param params MetricParameters struct holds parameters required by
+    /// different metrics.
+    /// \returns Tensor containing the requested metrics.
+    core::Tensor ComputeMetrics(
+            const TriangleMesh &mesh2,
+            std::vector<Metric> metrics = {Metric::ChamferDistance},
+            MetricParameters params = MetricParameters()) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

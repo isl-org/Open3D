@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_lineset(py::module& m) {
+void pybind_lineset_declarations(py::module& m) {
     py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry,
                DrawableGeometry>
             line_set(m, "LineSet", R"(
@@ -72,7 +72,12 @@ The attributes of the line set have different levels::
     lineset.point.labels = o3d.core.Tensor(...)
     lineset.line.features = o3d.core.Tensor(...)
 )");
+}
 
+void pybind_lineset_definitions(py::module& m) {
+    auto line_set = static_cast<
+            py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>,
+                       Geometry, DrawableGeometry>>(m.attr("LineSet"));
     // Constructors.
     line_set.def(py::init<const core::Device&>(),
                  "device"_a = core::Device("CPU:0"),
@@ -252,12 +257,9 @@ transformation as :math:`P = R(P) + t`)");
 
 Args:
     angle (float): The rotation angle in degree.
-
     axis (open3d.core.Tensor): The rotation axis.
-
     resolution (int): The resolution defines the number of intermediate sweeps
         about the rotation axis.
-
     translation (float): The translation along the rotation axis.
 
 Returns:
@@ -265,7 +267,6 @@ Returns:
 
 
 Example:
-
     This code generates a spring from a single line::
 
         import open3d as o3d
@@ -281,9 +282,7 @@ Example:
                  R"(Sweeps the line set along a direction vector.
 
 Args:
-
     vector (open3d.core.Tensor): The direction vector.
-
     scale (float): Scalar factor which essentially scales the direction vector.
 
 Returns:
@@ -291,8 +290,8 @@ Returns:
 
 
 Example:
-
     This code generates an L-shaped mesh::
+
         import open3d as o3d
 
         lines = o3d.t.geometry.LineSet([[1.0,0.0,0.0],[0,0,0],[0,0,1]], [[0,1],[1,2]])
@@ -307,7 +306,10 @@ Example:
     line_set.def_static(
             "create_camera_visualization", &LineSet::CreateCameraVisualization,
             "view_width_px"_a, "view_height_px"_a, "intrinsic"_a, "extrinsic"_a,
-            "scale"_a = 1.f, "color"_a = core::Tensor({}, core::Float32),
+            "scale"_a = 1.f,
+            py::arg_v(
+                    "color", core::Tensor({}, core::Float32),
+                    "open3d.core.Tensor([], dtype=open3d.core.Dtype.Float32)"),
             R"(Factory function to create a LineSet from intrinsic and extrinsic
 matrices. Camera reference frame is shown with XYZ axes in RGB.
 
@@ -321,7 +323,7 @@ Args:
 
 Example:
 
-    Draw a purple camera frame with XYZ axes in RGB.
+    Draw a purple camera frame with XYZ axes in RGB::
 
         import open3d.core as o3c
         from open3d.t.geometry import LineSet

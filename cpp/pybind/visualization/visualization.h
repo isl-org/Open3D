@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -53,19 +53,19 @@ std::shared_ptr<T> TakeOwnership(UnownedPointer<T> x) {
 // Please update docs/python_api_in/open3d.visualization.rst when adding /
 // reorganizing submodules to open3d.visualization.
 
-void pybind_visualization(py::module &m);
+void pybind_visualization_declarations(py::module &m);
+void pybind_renderoption_declarations(py::module &m);
+void pybind_viewcontrol_declarations(py::module &m);
+void pybind_visualizer_declarations(py::module &m);
+void pybind_visualization_utility_declarations(py::module &m);
+void pybind_o3dvisualizer_declarations(py::module &m);
 
-void pybind_renderoption(py::module &m);
-void pybind_viewcontrol(py::module &m);
-void pybind_visualizer(py::module &m);
-void pybind_visualization_utility(py::module &m);
-
-void pybind_renderoption_method(py::module &m);
-void pybind_viewcontrol_method(py::module &m);
-void pybind_visualizer_method(py::module &m);
-void pybind_visualization_utility_methods(py::module &m);
-
-void pybind_o3dvisualizer(py::module &m);
+void pybind_visualization_definitions(py::module &m);
+void pybind_renderoption_definitions(py::module &m);
+void pybind_viewcontrol_definitions(py::module &m);
+void pybind_visualizer_definitions(py::module &m);
+void pybind_visualization_utility_definitions(py::module &m);
+void pybind_o3dvisualizer_definitions(py::module &m);
 
 }  // namespace visualization
 }  // namespace open3d

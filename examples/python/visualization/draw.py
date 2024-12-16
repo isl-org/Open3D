@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -11,6 +11,7 @@ import open3d as o3d
 import open3d.visualization as vis
 import os
 import random
+import warnings
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
@@ -142,30 +143,46 @@ def selections():
     source_name = "Source (yellow)"
     target_name = "Target (blue)"
 
-    def do_icp_one_set(o3dvis):
+    def _prep_correspondences(o3dvis, two_set=False):
         # sets: [name: [{ "index": int, "order": int, "point": (x, y, z)}, ...],
         #        ...]
         sets = o3dvis.get_selection_sets()
-        source_picked = sorted(list(sets[0][source_name]),
-                               key=lambda x: x.order)
-        target_picked = sorted(list(sets[0][target_name]),
-                               key=lambda x: x.order)
-        source_indices = [idx.index for idx in source_picked]
-        target_indices = [idx.index for idx in target_picked]
+        if not sets:
+            warnings.warn(
+                "Empty selection sets. Select point correspondences for initial rough transform.",
+                RuntimeWarning)
+            return [], []
+        if source_name not in sets[0]:
+            warnings.warn(
+                "First selection set should contain Source (yellow) points.",
+                RuntimeWarning)
+            return [], []
 
-        t = get_icp_transform(source, target, source_indices, target_indices)
-        source.transform(t)
-
-        # Update the source geometry
-        o3dvis.remove_geometry(source_name)
-        o3dvis.add_geometry({"name": source_name, "geometry": source})
-
-    def do_icp_two_sets(o3dvis):
-        sets = o3dvis.get_selection_sets()
         source_set = sets[0][source_name]
-        target_set = sets[1][target_name]
+        if two_set:
+            if not len(sets) == 2:
+                warnings.warn(
+                    "Two set registration requires exactly two selection sets of corresponding points.",
+                    RuntimeWarning)
+                return [], []
+            target_set = sets[1][target_name]
+        else:
+            if target_name not in sets[0]:
+                warnings.warn(
+                    "Selection set should contain Target (blue) points.",
+                    RuntimeWarning)
+                return [], []
+            target_set = sets[0][target_name]
         source_picked = sorted(list(source_set), key=lambda x: x.order)
         target_picked = sorted(list(target_set), key=lambda x: x.order)
+        if len(source_picked) != len(target_picked):
+            warnings.warn(
+                f"Registration requires equal number of corresponding points (current selection: {len(source_picked)} source, {len(target_picked)} target).",
+                RuntimeWarning)
+            return [], []
+        return source_picked, target_picked
+
+    def _do_icp(o3dvis, source_picked, target_picked):
         source_indices = [idx.index for idx in source_picked]
         target_indices = [idx.index for idx in target_picked]
 
@@ -175,6 +192,12 @@ def selections():
         # Update the source geometry
         o3dvis.remove_geometry(source_name)
         o3dvis.add_geometry({"name": source_name, "geometry": source})
+
+    def do_icp_one_set(o3dvis):
+        _do_icp(o3dvis, *_prep_correspondences(o3dvis))
+
+    def do_icp_two_sets(o3dvis):
+        _do_icp(o3dvis, *_prep_correspondences(o3dvis, two_set=True))
 
     vis.draw([{
         "name": source_name,
