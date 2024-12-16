@@ -7,8 +7,13 @@
 
 #pragma once
 
-#include <list>
+#include <map>
+#include <string>
+#include <tuple>
 #include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
@@ -241,6 +246,33 @@ public:
     /// Convenience function.
     const core::Tensor &GetTriangleColors() const {
         return GetTriangleAttr("colors");
+    }
+
+    /// Getter for mesh_attr_ TensorMap.
+    std::map<std::string, core::Tensor> &GetMeshAttr() { return mesh_attr_; }
+
+    /// Get mesh attributes in mesh_attr_. Throws exception if the
+    /// attribute does not exist.
+    ///
+    /// \param key Attribute name.
+    core::Tensor &GetMeshAttr(const std::string &key) {
+        return mesh_attr_.at(key);
+    }
+
+    /// Removes mesh attribute by key value. Throws warning if attribute key
+    /// does not exists.
+    ///
+    /// \param key Attribute name.
+    void RemoveMeshAttr(const std::string &key) { mesh_attr_.erase(key); }
+
+    /// Set mesh attributes. If the attribute key already exists, its value
+    /// will be overwritten, otherwise, the new key will be created.
+    ///
+    /// \param key Attribute name.
+    /// \param value A tensor.
+    void SetMeshAttr(const std::string &key, const core::Tensor &value) {
+        core::AssertTensorDevice(value, device_);
+        mesh_attr_[key] = value;
     }
 
     /// Set vertex attributes. If the attribute key already exists, its value
@@ -1067,6 +1099,9 @@ protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
     TensorMap triangle_attr_;
+    /// Extra mesh attributes. There are no constraints (size synchronization or
+    /// primary key), so TensorMap is not appropriate.
+    std::map<std::string, core::Tensor> mesh_attr_;
 };
 
 }  // namespace geometry
