@@ -156,6 +156,12 @@ Image Image::Resize(float sampling_rate, InterpType interp_type) const {
     if (sampling_rate == 1.0f) {
         return *this;
     }
+    if (GetDtype() == core::Bool) {  // Resize via UInt8
+        return Image(Image(data_.ReinterpretCast(core::UInt8))
+                             .Resize(sampling_rate, interp_type)
+                             .AsTensor()
+                             .ReinterpretCast(core::Bool));
+    }
 
     static const dtype_channels_pairs npp_supported{
             {core::UInt8, 1}, {core::UInt16, 1}, {core::Float32, 1},

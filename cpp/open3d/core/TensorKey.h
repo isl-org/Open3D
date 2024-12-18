@@ -82,11 +82,11 @@ public:
     /// For TensorKeyMode::Slice only.
     int64_t GetStart() const;
 
-    /// Get stop index. Throws exception if start is None.
+    /// Get stop index. Throws exception if stop is None.
     /// For TensorKeyMode::Slice only.
     int64_t GetStop() const;
 
-    /// Get step index. Throws exception if start is None.
+    /// Get step index. Throws exception if step is None.
     /// For TensorKeyMode::Slice only.
     int64_t GetStep() const;
 

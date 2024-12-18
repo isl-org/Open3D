@@ -7,6 +7,8 @@
 
 #include "open3d/t/geometry/TriangleMesh.h"
 
+#include <stdint.h>
+
 #include <string>
 #include <unordered_map>
 
@@ -1032,6 +1034,7 @@ Example:
 
     triangle_mesh.def(
             "select_by_index", &TriangleMesh::SelectByIndex, "indices"_a,
+            "copy_attributes"_a = true,
             R"(Returns a new mesh with the vertices selected according to the indices list.
 If an item from the indices list exceeds the max vertex number of the mesh
 or has a negative value, it is ignored.
@@ -1039,6 +1042,9 @@ or has a negative value, it is ignored.
 Args:
     indices (open3d.core.Tensor): An integer list of indices. Duplicates are
     allowed, but ignored. Signed and unsigned integral types are accepted.
+    copy_attributes (bool): Indicates if vertex attributes (other than
+    positions) and triangle attributes (other than indices) should be copied to
+    the returned mesh.
 
 Returns:
     A new mesh with the selected vertices and faces built from these vertices.
@@ -1054,6 +1060,63 @@ Example:
         top_face = box.select_by_index([2, 3, 6, 7])
 )");
 
+    py::enum_<BlendingMethod>(m, "BlendingMethod", py::arithmetic())
+            .value("MAX", BlendingMethod::MAX,
+                   "For each texel, pick the input pixel with the max weight "
+                   "from all overlapping images. This creates sharp textures "
+                   "but may have visible seams.")
+            .value("AVERAGE", BlendingMethod::AVERAGE,
+                   "The output texel value is the weighted sum of input "
+                   "pixels. This creates smooth blending without seams, but "
+                   "the results may be blurry.")
+            .value("COLOR_CORRECTION", BlendingMethod::COLOR_CORRECTION,
+                   "Try to match white balance and exposure settings for the "
+                   "images with a linear 3 channel contrast + brightness "
+                   "correction for each image. Also detects and masks specular "
+                   "highlights and saturated regions. This can be combined "
+                   "with either the `MAX` or `AVERAGE` blending methods.")
+            .def("__or__",
+                 py::overload_cast<BlendingMethod, BlendingMethod>(&operator|));
+    triangle_mesh.def("project_images_to_albedo",
+                      &TriangleMesh::ProjectImagesToAlbedo, "images"_a,
+                      "intrinsic_matrices"_a, "extrinsic_matrices"_a,
+                      "tex_size"_a = 1024, "update_material"_a = true,
+                      "blending_method"_a = BlendingMethod::MAX,
+                      py::call_guard<py::gil_scoped_release>(), R"(
+Create an albedo for the triangle mesh using calibrated images. The triangle
+mesh must have texture coordinates ("texture_uvs" triangle attribute). This works
+by back projecting the images onto the texture surface. Overlapping images are
+blended together in the resulting albedo. For best results, use images captured
+with exposure and white balance lock to reduce the chance of seams in the output
+texture.
+
+Args:
+    images (List[open3d.t.geometry.Image]): List of images.
+    intrinsic_matrices (List[open3d.core.Tensor]): List of (3,3) intrinsic matrices describing
+        the pinhole camera.
+    extrinsic_matrices (List[open3d.core.Tensor]): List of (4,4) extrinsic matrices describing
+        the position and orientation of the camera.
+    tex_size (int): Output albedo texture size. This is a square image, so
+        only one side is needed.
+    update_material (bool): Whether to update the material of the triangle
+        mesh, possibly overwriting an existing albedo texture.
+    blending_method (BlendingMethod) enum specifying the blending
+        method for overlapping images::
+
+        - `MAX`: For each texel, pick the input pixel with the max weight from
+        all overlapping images. This creates sharp textures but may have
+        visible seams.
+        - `AVERAGE`: The output texel value is the weighted sum of input
+        pixels. This creates smooth blending without seams, but the results
+        may be blurry.
+        - `COLOR_CORRECTION`: Try to match white balance and exposure
+        settings for the images with a linear 3 channel contrast +
+        brightness correction for each image. Also detects and masks
+        specular highlights and saturated regions. This can be combined with
+        either the MAX or AVERAGE blending methods.
+
+Returns:
+    Image with albedo texture.)");
     triangle_mesh.def(
             "remove_unreferenced_vertices",
             &TriangleMesh::RemoveUnreferencedVertices,
