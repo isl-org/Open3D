@@ -269,6 +269,11 @@ jobs:
           brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
+      - name: Install Open3D-ML Python dependencies
+        working-directory: ${{ env.OPEN3D_ML_ROOT }}
+        run: |
+          python -m pip install -r requirements.txt
+
       - name: Config and build wheel
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
