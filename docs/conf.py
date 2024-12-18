@@ -267,7 +267,7 @@ def skip(app, what, name, obj, would_skip, options):
 def fix_namespace(text):
     """Fixes namespace in a string by removing .[cpu|cuda].pybind."""
     return (text.replace("open3d.cpu.pybind.", "open3d.").replace(
-        "open3d.cuda.pybind.cuda.", "open3d.") if text is not None else None)
+        "open3d.cuda.pybind.", "open3d.") if text is not None else None)
 
 
 def process_signature(app, what, name, obj, options, signature,
