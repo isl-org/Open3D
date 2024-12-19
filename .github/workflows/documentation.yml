@@ -22,6 +22,8 @@ jobs:
   headless-docs:   # Build headless and docs
     permissions:
       contents: write  # Artifact upload and release upload
+    # Pinning to 22.04 instead of ubuntu-latest until 24.04 is supported
+    # (see https://github.com/isl-org/Open3D/pull/7105)
     runs-on: ubuntu-22.04
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
