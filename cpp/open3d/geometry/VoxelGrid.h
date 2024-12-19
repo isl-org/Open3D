@@ -189,13 +189,13 @@ public:
                                                   double height,
                                                   double depth);
 
-    /// \enum VoxelColorMode
+    /// \enum VoxelPoolingMode
     ///
     /// \brief Possible ways of determining voxel color from PointCloud.
-    enum class VoxelColorMode { AVG, MIN, MAX, SUM };
+    enum class VoxelPoolingMode { AVG, MIN, MAX, SUM };
 
     /// Creates a VoxelGrid from a given PointCloud. The color value of a given
-    /// voxel is determined by the VoxelColorMode, e.g. by default the average
+    /// voxel is determined by the VoxelPoolingMode, e.g. by default the average
     /// color value of the points that fall into it (if the
     /// PointCloud has colors).
     /// The bounds of the created VoxelGrid are computed from the PointCloud.
@@ -206,10 +206,10 @@ public:
     static std::shared_ptr<VoxelGrid> CreateFromPointCloud(
             const PointCloud &input,
             double voxel_size,
-            VoxelColorMode color_mode = VoxelColorMode::AVG);
+            VoxelPoolingMode color_mode = VoxelPoolingMode::AVG);
 
     /// Creates a VoxelGrid from a given PointCloud. The color value of a given
-    /// voxel is determined by the VoxelColorMode, e.g. by default the average
+    /// voxel is determined by the VoxelPoolingMode, e.g. by default the average
     /// color value of the points that fall into it (if the
     /// PointCloud has colors).
     /// The bounds of the created VoxelGrid are defined by the given parameters.
@@ -224,7 +224,7 @@ public:
             double voxel_size,
             const Eigen::Vector3d &min_bound,
             const Eigen::Vector3d &max_bound,
-            VoxelColorMode color_mode = VoxelColorMode::AVG);
+            VoxelPoolingMode color_mode = VoxelPoolingMode::AVG);
 
     /// Creates a VoxelGrid from a given TriangleMesh. No color information is
     /// converted. The bounds of the created VoxelGrid are computed from the

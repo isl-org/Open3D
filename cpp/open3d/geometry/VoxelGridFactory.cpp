@@ -46,7 +46,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         double voxel_size,
         const Eigen::Vector3d &min_bound,
         const Eigen::Vector3d &max_bound,
-        VoxelGrid::VoxelColorMode color_mode) {
+        VoxelGrid::VoxelPoolingMode pooling_mode) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
         utility::LogError("voxel_size <= 0.");
@@ -79,10 +79,10 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         const Eigen::Vector3i &grid_index = accpoint.second.GetVoxelIndex();
         // clang-format off
         const Eigen::Vector3d &color = has_colors ?
-            (color_mode == VoxelColorMode::AVG ? accpoint.second.GetAverageColor()
-            : color_mode == VoxelColorMode::MIN ? accpoint.second.GetMinColor()
-            : color_mode == VoxelColorMode::MAX ? accpoint.second.GetMaxColor()
-            : color_mode == VoxelColorMode::SUM ? accpoint.second.GetSumColor()
+            (pooling_mode == VoxelPoolingMode::AVG ? accpoint.second.GetAverageColor()
+            : pooling_mode == VoxelPoolingMode::MIN ? accpoint.second.GetMinColor()
+            : pooling_mode == VoxelPoolingMode::MAX ? accpoint.second.GetMaxColor()
+            : pooling_mode == VoxelPoolingMode::SUM ? accpoint.second.GetSumColor()
             : Eigen::Vector3d::Zero())
             : Eigen::Vector3d::Zero();
         // clang-format on
@@ -97,12 +97,12 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
         const PointCloud &input,
         double voxel_size,
-        VoxelGrid::VoxelColorMode color_mode) {
+        VoxelGrid::VoxelPoolingMode pooling_mode) {
     Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
     Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
     Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     return CreateFromPointCloudWithinBounds(input, voxel_size, min_bound,
-                                            max_bound, color_mode);
+                                            max_bound, pooling_mode);
 }
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(

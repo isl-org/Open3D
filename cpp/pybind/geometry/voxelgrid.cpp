@@ -64,13 +64,13 @@ void pybind_voxelgrid_definitions(py::module &m) {
                                    std::shared_ptr<VoxelGrid>, Geometry3D>>(
                     m.attr("VoxelGrid"));
 
-    py::enum_<VoxelGrid::VoxelColorMode> color_mode(
-            voxelgrid, "VoxelColorMode",
+    py::enum_<VoxelGrid::VoxelPoolingMode> pooling_mode(
+            voxelgrid, "VoxelPoolingMode",
             "Mode of determining color for each voxel.");
-    color_mode.value("AVG", VoxelGrid::VoxelColorMode::AVG)
-            .value("MIN", VoxelGrid::VoxelColorMode::MIN)
-            .value("MAX", VoxelGrid::VoxelColorMode::MAX)
-            .value("SUM", VoxelGrid::VoxelColorMode::SUM);
+    pooling_mode.value("AVG", VoxelGrid::VoxelPoolingMode::AVG)
+            .value("MIN", VoxelGrid::VoxelPoolingMode::MIN)
+            .value("MAX", VoxelGrid::VoxelPoolingMode::MAX)
+            .value("SUM", VoxelGrid::VoxelPoolingMode::SUM);
 
     py::detail::bind_default_constructor<VoxelGrid>(voxelgrid);
     py::detail::bind_copy_functions<VoxelGrid>(voxelgrid);
@@ -139,22 +139,22 @@ void pybind_voxelgrid_definitions(py::module &m) {
                         &VoxelGrid::CreateFromPointCloud,
                         "Creates a VoxelGrid from a given PointCloud. The "
                         "color value of a given  voxel is determined by the "
-                        "VoxelColorMode, e.g. by default the average color "
+                        "VoxelPoolingMode, e.g. by default the average color "
                         "value of the points that fall into it (if the "
                         "PointCloud has colors). The bounds of the created "
                         "VoxelGrid are computed from the PointCloud.",
                         "input"_a, "voxel_size"_a,
-                        "color_mode"_a = VoxelGrid::VoxelColorMode::AVG)
+                        "pooling_mode"_a = VoxelGrid::VoxelPoolingMode::AVG)
             .def_static("create_from_point_cloud_within_bounds",
                         &VoxelGrid::CreateFromPointCloudWithinBounds,
                         "Creates a VoxelGrid from a given PointCloud. The "
                         "color value of a given voxel is determined by the "
-                        "VoxelColorMode, e.g. by default the average color "
+                        "VoxelPoolingMode, e.g. by default the average color "
                         "value of the points that fall into it (if the "
                         "PointCloud has colors). The bounds of the created "
                         "VoxelGrid are defined by the given parameters.",
                         "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a,
-                        "color_mode"_a = VoxelGrid::VoxelColorMode::AVG)
+                        "pooling_mode"_a = VoxelGrid::VoxelPoolingMode::AVG)
             .def_static("create_from_triangle_mesh",
                         &VoxelGrid::CreateFromTriangleMesh,
                         "Creates a VoxelGrid from a given TriangleMesh. No "
@@ -229,7 +229,7 @@ void pybind_voxelgrid_definitions(py::module &m) {
             m, "VoxelGrid", "create_from_point_cloud",
             {{"input", "The input PointCloud"},
              {"voxel_size", "Voxel size of of the VoxelGrid construction."},
-             {"color_mode", "VoxelColorMode for determining voxel color."}});
+             {"pooling_mode", "VoxelPoolingMode for determining voxel color."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud_within_bounds",
             {{"input", "The input PointCloud"},
@@ -238,7 +238,7 @@ void pybind_voxelgrid_definitions(py::module &m) {
               "Minimum boundary point for the VoxelGrid to create."},
              {"max_bound",
               "Maximum boundary point for the VoxelGrid to create."},
-             {"color_mode", "VoxelColorMode for determining voxel color."}});
+             {"pooling_mode", "VoxelPoolingMode that determines how to compute the voxel color."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_triangle_mesh",
             {{"input", "The input TriangleMesh"},
