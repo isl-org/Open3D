@@ -22,7 +22,7 @@ jobs:
   headless-docs:   # Build headless and docs
     permissions:
       contents: write  # Artifact upload and release upload
-    runs-on: ubuntu-latest  # Warn about build issues in new versions
+    runs-on: ubuntu-22.04
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
