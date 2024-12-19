@@ -229,7 +229,8 @@ void pybind_voxelgrid_definitions(py::module &m) {
             m, "VoxelGrid", "create_from_point_cloud",
             {{"input", "The input PointCloud"},
              {"voxel_size", "Voxel size of of the VoxelGrid construction."},
-             {"pooling_mode", "VoxelPoolingMode for determining voxel color."}});
+             {"pooling_mode",
+              "VoxelPoolingMode for determining voxel color."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud_within_bounds",
             {{"input", "The input PointCloud"},
@@ -238,7 +239,9 @@ void pybind_voxelgrid_definitions(py::module &m) {
               "Minimum boundary point for the VoxelGrid to create."},
              {"max_bound",
               "Maximum boundary point for the VoxelGrid to create."},
-             {"pooling_mode", "VoxelPoolingMode that determines how to compute the voxel color."}});
+             {"pooling_mode",
+              "VoxelPoolingMode that determines how to compute the voxel "
+              "color."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_triangle_mesh",
             {{"input", "The input TriangleMesh"},
