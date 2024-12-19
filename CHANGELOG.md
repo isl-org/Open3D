@@ -46,7 +46,7 @@
 -   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
 -   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
--   Add choice of voxel color mode when creating VoxelGrid from PointCloud (PR #6937)
+-   Add choice of voxel pooling mode when creating VoxelGrid from PointCloud (PR #6937)
 -   Support lowercase types when reading PCD files (PR #6930)
 -   Fix visualization/draw ICP example and add warnings (PR #6933)
 -   Unified cloud initializer pipeline for ICP (fixes segfault colored ICP) (PR #6942)
