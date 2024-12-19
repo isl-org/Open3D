@@ -55,9 +55,9 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
                     USE_SOURCE_PERMISSIONS)
             if (CMAKE_INSTALL_PREFIX MATCHES "^(/usr/local|/opt)")
-                set(DESKTOP_INSTALL_DIR "/usr/share" CACHE PATH)
+                set(DESKTOP_INSTALL_DIR "/usr/share" CACHE PATH "The install directory for the desktop apps")
             else()
-                set(DESKTOP_INSTALL_DIR "$ENV{HOME}/.local/share" CACHE PATH)
+                set(DESKTOP_INSTALL_DIR "$ENV{HOME}/.local/share" CACHE PATH "The install directory for the desktop apps")
             endif()
             configure_file("${SOURCE_DIR}/${TARGET_NAME}.desktop.in"
                            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${APP_NAME}.desktop")
