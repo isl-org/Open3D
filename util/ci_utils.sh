@@ -331,12 +331,13 @@ test_cpp_example() {
     # Now I am in Open3D/build/
 }
 
-# Install dependencies needed for building documentation (on Ubuntu 20.04)
+# Install dependencies needed for building documentation
 # Usage: install_docs_dependencies "${OPEN3D_ML_ROOT}"
 install_docs_dependencies() {
     echo
     echo Install ubuntu dependencies
     ./util/install_deps_ubuntu.sh assume-yes
+    sudo apt-get install --yes cmake
     sudo apt-get install --yes libxml2-dev libxslt-dev python3-dev
     sudo apt-get install --yes doxygen
     sudo apt-get install --yes texlive
