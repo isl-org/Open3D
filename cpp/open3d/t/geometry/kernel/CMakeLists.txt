@@ -11,14 +11,10 @@ target_sources(tgeometry_kernel PRIVATE
     TriangleMeshCPU.cpp
     Transform.cpp
     TransformCPU.cpp
+    UVUnwrapping.cpp
     VoxelBlockGrid.cpp
     VoxelBlockGridCPU.cpp
 )
-if (WITH_UV_ATLAS)
-  target_sources(tgeometry_kernel PRIVATE
-    UVUnwrapping.cpp
-  )
-endif()
 
 if (BUILD_CUDA_MODULE)
     target_sources(tgeometry_kernel PRIVATE
