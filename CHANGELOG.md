@@ -55,6 +55,7 @@
 -   Fix render to depth image on Apple Retina displays (PR #7001)
 -   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
 -   Add select_by_index method to Feature class (PR #7039)
+-   Include typing stubs in python package (PR #6917)
 
 
 ## 0.13
