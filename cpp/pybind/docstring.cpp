@@ -289,17 +289,9 @@ std::string FunctionDoc::ToGoogleDocString() const {
     return rc.str();
 }
 
-std::string FunctionDoc::NamespaceFix(const std::string& s) {
-    std::string rc = std::regex_replace(s, std::regex("::(\\S)"), ".$1");
-    rc = std::regex_replace(rc, std::regex("open3d\\.(cpu|cuda)\\.pybind\\."),
-                            "open3d.");
-    return rc;
-}
-
 std::string FunctionDoc::StringCleanAll(std::string& s,
                                         const std::string& white_space) {
     std::string rc = utility::StripString(s, white_space);
-    rc = NamespaceFix(rc);
     return rc;
 }
 
@@ -313,7 +305,7 @@ ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
     std::smatch matches;
     if (std::regex_search(argument_token, matches, rgx_with_default)) {
         argument_doc.name_ = matches[1].str();
-        argument_doc.type_ = NamespaceFix(matches[2].str());
+        argument_doc.type_ = matches[2].str();
         argument_doc.default_ = matches[3].str();
 
         // Handle long default value. Long default has multiple lines and thus
@@ -335,7 +327,7 @@ ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
                 "([A-Za-z_][A-Za-z\\d_:\\.\\[\\]\\(\\) ,]*)");
         if (std::regex_search(argument_token, matches, rgx_without_default)) {
             argument_doc.name_ = matches[1].str();
-            argument_doc.type_ = NamespaceFix(matches[2].str());
+            argument_doc.type_ = matches[2].str();
         }
     }
 
