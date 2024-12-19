@@ -42,7 +42,7 @@ install_python_dependencies() {
     python -m pip install -U pip=="$PIP_VER"
     python -m pip install -U -c "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt" wheel setuptools
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}python/requirements_test.txt"
+        python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}/python/requirements_test.txt"
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow
