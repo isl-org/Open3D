@@ -241,6 +241,66 @@ def test_create_octahedron(device):
     assert octahedron_custom.vertex.positions.allclose(vertex_positions_custom)
     assert octahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
+@pytest.mark.parametrize("device", list_devices())
+def test_compute_adjacency_list(device):
+    # Test with custom parameters.
+    mesh = o3d.t.geometry.TriangleMesh.create_icosahedron(
+        2, o3c.float64, o3c.int32, device)
+    adjv, adjst = mesh.compute_adjacency_list()
+
+    # Check the number of edges at the end of row_index as per CRS format
+    assert adjst[-1] == len(adjv)
+
+    num_vertices = len(adjst)-1
+    # Create a adjacency matrix 
+    adjacencyMatrix = np.zeros((num_vertices, num_vertices))
+
+    for s in range(num_vertices):
+        start = adjst[s].item()
+        end = adjst[s+1].item()
+        for v in range(start, end):
+            t = adjv[v].item()
+            adjacencyMatrix[s,t] = 1
+    
+    # Number of edges
+    assert len(adjv) == adjacencyMatrix.sum()
+
+    # Adjacency Matrix should be symmetric
+    assert np.array_equal(adjacencyMatrix, adjacencyMatrix.T)
+    
+    #Triangle faces from computed adjacency matrix should match
+    actual_indices = [
+            [0, 1, 4],
+            [0, 1, 5],
+            [0, 4, 8],
+            [0, 5, 11],
+            [0, 8, 11],
+            [1, 4, 9],
+            [1, 5, 10],
+            [1, 9, 10],
+            [2, 3, 6],
+            [2, 3, 7],
+            [2, 6, 10],
+            [2, 7, 9],
+            [2, 9, 10],
+            [3, 6, 11],
+            [3, 7, 8],
+            [3, 8, 11],
+            [4, 7, 8],
+            [4, 7, 9],
+            [5, 6, 10],
+            [5, 6, 11]
+        ]
+    
+    computed_triangles = []
+    for i in range(num_vertices):
+        for j in range(i+1, num_vertices):
+            for k in range(j+1, num_vertices):
+                if (adjacencyMatrix[i,j] + adjacencyMatrix[j,k] + adjacencyMatrix[k,i] == 3):
+                    computed_triangles.append([i,j,k])
+
+    assert len(computed_triangles) == len(actual_indices)
+    assert np.array_equal(np.array(actual_indices,int), np.array(computed_triangles,int))
 
 @pytest.mark.parametrize("device", list_devices())
 def test_create_icosahedron(device):

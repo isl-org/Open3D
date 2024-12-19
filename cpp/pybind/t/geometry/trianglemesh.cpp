@@ -734,11 +734,14 @@ Example:
 
         o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
 )");
-
+    triangle_mesh.def("compute_adjacency_list", &TriangleMesh::ComputeAdjacencyList,
+    "Return Mesh Adjacency Matrix in CSR format using Triangle indices attribute.");
+    
     triangle_mesh.def("get_axis_aligned_bounding_box",
                       &TriangleMesh::GetAxisAlignedBoundingBox,
                       "Create an axis-aligned bounding box from vertex "
                       "attribute 'positions'.");
+                      
     triangle_mesh.def("get_oriented_bounding_box",
                       &TriangleMesh::GetOrientedBoundingBox,
                       "Create an oriented bounding box from vertex attribute "
