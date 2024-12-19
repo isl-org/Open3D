@@ -48,7 +48,9 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
-    BUILD_BYPRODUCTS ""
+    BUILD_BYPRODUCTS
+        <SOURCE_DIR>/$<$<BOOL:${WIN32}>:$<IF:$<CONFIG:Debug>,Debug,Release>/>lib/${CMAKE_STATIC_LIBRARY_PREFIX}ssl${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <SOURCE_DIR>/$<$<BOOL:${WIN32}>:$<IF:$<CONFIG:Debug>,Debug,Release>/>lib/${CMAKE_STATIC_LIBRARY_PREFIX}crypto${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_boringssl SOURCE_DIR)

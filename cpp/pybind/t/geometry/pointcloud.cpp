@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -256,7 +256,11 @@ Example:
                    "of points has farthest distance.The sampling is performed "
                    "by selecting the farthest point from previous selected "
                    "points iteratively",
-                   "num_samples"_a);
+                   "num_samples"_a,
+                   "Index to start downsampling from. Valid index is a "
+                   "non-negative number less than number of points in the "
+                   "input pointcloud.",
+                   "start_index"_a = 0);
     pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                    "nb_points"_a, "search_radius"_a,
                    R"(Remove points that have less than nb_points neighbors in a
@@ -327,17 +331,17 @@ Return:
     pointcloud.def(
             "orient_normals_consistent_tangent_plane",
             &PointCloud::OrientNormalsConsistentTangentPlane, "k"_a,
-            "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0,
+            "lambda_penalty"_a = 0.0, "cos_alpha_tol"_a = 1.0,
             R"(Function to consistently orient the normals of a point cloud based on tangent planes.
 
 The algorithm is described in Hoppe et al., "Surface Reconstruction from Unorganized Points", 1992.
-Additional information about the choice of lambda and cos_alpha_tol for complex
+Additional information about the choice of lambda_penalty and cos_alpha_tol for complex
 point clouds can be found in Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud", 2023
 (https://eugeniovaretti.github.io/meshreco/Piazza_Valentini_Varetti_MeshReconstructionFromPointCloud_2023.pdf).
 
 Args:
     k (int): Number of neighbors to use for tangent plane estimation.
-    lambda (float): A non-negative real parameter that influences the distance
+    lambda_penalty (float): A non-negative real parameter that influences the distance
         metric used to identify the true neighbors of a point in complex
         geometries. It penalizes the distance between a point and the tangent
         plane defined by the reference point and its normal vector, helping to
@@ -350,7 +354,7 @@ Args:
 Example:
     We use Bunny point cloud to compute its normals and orient them consistently.
     The initial reconstruction adheres to Hoppe's algorithm (raw), whereas the
-    second reconstruction utilises the lambda and cos_alpha_tol parameters.
+    second reconstruction utilises the lambda_penalty and cos_alpha_tol parameters.
     Due to the high density of the Bunny point cloud available in Open3D a larger
     value of the parameter k is employed to test the algorithm.  Usually you do
     not have at disposal such a refined point clouds, thus you cannot find a
@@ -375,7 +379,7 @@ Example:
         poisson_mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([poisson_mesh])
 
-        # Case 2, reconstruction using lambda and cos_alpha_tol parameters:
+        # Case 2, reconstruction using lambda_penalty and cos_alpha_tol parameters:
         pcd_robust = o3d.io.read_point_cloud(data.path)
 
         # Compute normals and orient them consistently, using k=100 neighbours
@@ -432,14 +436,18 @@ Example:
     // processing
     pointcloud.def("project_to_depth_image", &PointCloud::ProjectToDepthImage,
                    "width"_a, "height"_a, "intrinsics"_a,
-                   "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
-                                                      core::Device("CPU:0")),
+                   py::arg_v("extrinsics",
+                             core::Tensor::Eye(4, core::Float32,
+                                               core::Device("CPU:0")),
+                             "open3d.core.Tensor.eye(4)"),
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a point cloud to a depth image.");
     pointcloud.def("project_to_rgbd_image", &PointCloud::ProjectToRGBDImage,
                    "width"_a, "height"_a, "intrinsics"_a,
-                   "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
-                                                      core::Device("CPU:0")),
+                   py::arg_v("extrinsics",
+                             core::Tensor::Eye(4, core::Float32,
+                                               core::Device("CPU:0")),
+                             "open3d.core.Tensor.eye(4)"),
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a colored point cloud to a RGBD image.");
     pointcloud.def(
@@ -656,7 +664,8 @@ Example:
               "in the pointcloud."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "farthest_point_down_sample",
-            {{"num_samples", "Number of points to be sampled."}});
+            {{"num_samples", "Number of points to be sampled."},
+             {"start_index", "Index of point to start downsampling from."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outliers",
             {{"nb_points",
@@ -768,6 +777,61 @@ Example:
         print(np.unique(pcd.point.partition_ids.numpy(), return_counts=True))
 
 )");
+
+    pointcloud.def("compute_metrics", &PointCloud::ComputeMetrics, "pcd2"_a,
+                   "metrics"_a, "params"_a,
+                   R"(Compute various metrics between two point clouds. 
+            
+Currently, Chamfer distance, Hausdorff distance and F-Score `[Knapitsch2017] <../tutorial/reference.html#Knapitsch2017>`_ are supported. 
+The Chamfer distance is the sum of the mean distance to the nearest neighbor 
+from the points of the first point cloud to the second point cloud. The F-Score
+at a fixed threshold radius is the harmonic mean of the Precision and Recall. 
+Recall is the percentage of surface points from the first point cloud that have 
+the second point cloud points within the threshold radius, while Precision is 
+the percentage of points from the second point cloud that have the first point 
+cloud points within the threhold radius.
+
+.. math::
+    :nowrap:
+
+    \begin{align}
+        \text{Chamfer Distance: } d_{CD}(X,Y) &= \frac{1}{|X|}\sum_{i \in X} || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X) ||\\
+        \text{Hausdorff distance: } d_H(X,Y) &= \max \left\{ \max_{i \in X} || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}\\
+        \text{Precision: } P(X,Y|d) &= \frac{100}{|X|} \sum_{i \in X} || x_i - n(x_i, Y) || < d \\
+        \text{Recall: } R(X,Y|d) &= \frac{100}{|Y|} \sum_{i \in Y} || y_i - n(y_i, X) || < d \\
+        \text{F-Score: } F(X,Y|d) &= \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) + R(X,Y|d)} \\
+    \end{align}
+
+Args:
+    pcd2 (t.geometry.PointCloud): Other point cloud to compare with.
+    metrics (Sequence[t.geometry.Metric]): List of Metric s to compute. Multiple metrics can be computed at once for efficiency.
+    params (t.geometry.MetricParameters): This holds parameters required by different metrics.
+
+Returns:
+    Tensor containing the requested metrics.
+
+Example::
+
+    from open3d.t.geometry import TriangleMesh, PointCloud, Metric, MetricParameters
+    # box is a cube with one vertex at the origin and a side length 1
+    pos = TriangleMesh.create_box().vertex.positions
+    pcd1 = PointCloud(pos.clone())
+    pcd2 = PointCloud(pos * 1.1)
+
+    # (1, 3, 3, 1) vertices are shifted by (0, 0.1, 0.1*sqrt(2), 0.1*sqrt(3))
+    # respectively
+    metric_params = MetricParameters(
+        fscore_radius=o3d.utility.FloatVector((0.01, 0.11, 0.15, 0.18)))
+    metrics = pcd1.compute_metrics(
+        pcd2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
+        metric_params)
+
+    print(metrics)
+    np.testing.assert_allclose(
+        metrics.cpu().numpy(),
+        (0.22436734, np.sqrt(3) / 10, 100. / 8, 400. / 8, 700. / 8, 100.),
+        rtol=1e-6)
+    )");
 }
 
 }  // namespace geometry

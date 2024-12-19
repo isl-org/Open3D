@@ -387,10 +387,18 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_mod
 
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
-    if(BUILD_COMMON_CUDA_ARCHS)
-        if (CMAKE_CUDA_ARCHITECTURES)
-            message(STATUS "Building with user-provided architectures: ${CMAKE_CUDA_ARCHITECTURES}")
-        else()
+    # Suppress nvcc unsupported compiler error for MSVC 2022 with CUDA 11.7 to 12.4
+    # https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12
+    if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
+        # Set this before any CUDA checks
+        set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
+        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
+        "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+    endif()
+    if (CMAKE_CUDA_ARCHITECTURES)
+        message(STATUS "Building with user-provided CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+    else()
+        if(BUILD_COMMON_CUDA_ARCHS)
             # Build with all supported architectures for previous 2 generations and
             # M0 (minor=0) architectures for previous generations (including
             # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
@@ -410,20 +418,20 @@ if(BUILD_CUDA_MODULE)
                 set(CMAKE_CUDA_ARCHITECTURES 30-real 50-real 60-real 70-real 75)    # Kepler, Maxwell, Pascal, Turing
             endif()
             message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
-        endif()
-    else()
-        execute_process(COMMAND nvidia-smi RESULT_VARIABLE NVIDIA_CHECK OUTPUT_QUIET)
-        if (NVIDIA_CHECK EQUAL 0)
-            message(STATUS "Building with native CUDA architecture.")
-            set(CMAKE_CUDA_ARCHITECTURES native)
         else()
-            message(WARNING "No CUDA GPU detected. Building with CMake default CUDA architecture.")
+            execute_process(COMMAND nvidia-smi RESULT_VARIABLE NVIDIA_CHECK OUTPUT_QUIET)
+            if (NVIDIA_CHECK EQUAL 0)
+                message(STATUS "Building with native CUDA architecture.")
+                set(CMAKE_CUDA_ARCHITECTURES native)
+            else()
+                message(WARNING "No CUDA GPU detected. Building with CMake default CUDA architecture.")
+            endif()
         endif()
     endif()
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
-    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
-        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
+        message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
     endif()
 endif()
 
@@ -468,6 +476,8 @@ if(WIN32)
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
+        # MSVC standards-compliant mode: Error in PoissonRecon 3rd party header
+        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)   
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members

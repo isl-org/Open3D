@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -115,7 +115,9 @@ void pybind_robust_kernel_definitions(py::module& m) {
                      return new RobustKernel(type, scaling_parameter,
                                              shape_parameter);
                  }),
-                 "type"_a = RobustKernelMethod::L2Loss,
+                 py::arg_v("type", RobustKernelMethod::L2Loss,
+                           "open3d.t.pipelines.registration.RobustKernelMethod."
+                           "L2Loss"),
                  "scaling_parameter"_a = 1.0, "shape_parameter"_a = 1.0)
             .def_readwrite("type", &RobustKernel::type_, "Loss type.")
             .def_readwrite("scaling_parameter",

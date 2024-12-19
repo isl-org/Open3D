@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -44,14 +44,6 @@ def load_cdll(path):
 
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
-
-if _build_config["BUILD_GUI"] and not (find_library("c++abi") or
-                                       find_library("c++")):
-    try:  # Preload libc++.so and libc++abi.so (required by filament)
-        load_cdll(str(next((Path(__file__).parent).glob("*c++abi.*"))))
-        load_cdll(str(next((Path(__file__).parent).glob("*c++.*"))))
-    except StopIteration:  # Not found: check system paths while loading
-        pass
 
 __DEVICE_API__ = "cpu"
 if _build_config["BUILD_CUDA_MODULE"]:

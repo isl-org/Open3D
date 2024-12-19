@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -111,6 +111,8 @@ private:
 
 void pybind_rendering_declarations(py::module &m) {
     py::module m_rendering = m.def_submodule("rendering");
+    py::class_<TextureHandle> texture_handle(m_rendering, "TextureHandle",
+                                             "Handle to a texture");
     py::class_<Renderer> renderer(
             m_rendering, "Renderer",
             "Renderer class that manages 3D resources. Get from gui.Window.");
@@ -514,7 +516,9 @@ void pybind_rendering_definitions(py::module &m) {
                  "Typical values are 2, 4 or 8. The maximum possible value "
                  "depends on the underlying GPU and OpenGL driver.")
             .def("set_shadowing", &View::SetShadowing, "enabled"_a,
-                 "type"_a = View::ShadowType::kPCF,
+                 py::arg_v(
+                         "type", View::ShadowType::kPCF,
+                         "open3d.visualization.rendering.View.ShadowType.PCF"),
                  "True to enable, false to enable all shadow mapping when "
                  "rendering this View. When enabling shadow mapping you may "
                  "also specify one of two shadow mapping algorithms: PCF "

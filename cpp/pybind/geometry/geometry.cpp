@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -45,6 +45,9 @@ void pybind_geometry_classes_declarations(py::module &m) {
                std::shared_ptr<Geometry2D>, Geometry>
             geometry2d(m, "Geometry2D",
                        "The base geometry class for 2D geometries.");
+
+    m.attr("m") = py::module_::import("typing").attr("TypeVar")("m");
+    m.attr("n") = py::module_::import("typing").attr("TypeVar")("n");
 }
 void pybind_geometry_classes_definitions(py::module &m) {
     // open3d.geometry functions

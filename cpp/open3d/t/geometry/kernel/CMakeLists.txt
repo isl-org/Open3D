@@ -6,6 +6,7 @@ target_sources(tgeometry_kernel PRIVATE
     PCAPartition.cpp
     PointCloud.cpp
     PointCloudCPU.cpp
+    Metrics.cpp
     TriangleMesh.cpp
     TriangleMeshCPU.cpp
     Transform.cpp

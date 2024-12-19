@@ -25,8 +25,8 @@ System requirements
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA 10.1+ (optional): Open3D supports GPU acceleration of an increasing number
-  of operations through CUDA on Linux. We recommend using CUDA 11.0 for the
+* CUDA 11.5+ (optional): Open3D supports GPU acceleration of an increasing number
+  of operations through CUDA on Linux. We recommend using CUDA 12+ for the
   best compatibility with recent GPUs and optional external dependencies such
   as Tensorflow or PyTorch. Please see the `official documentation
   <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
@@ -250,7 +250,7 @@ pipelines from Open3D-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
 Open3D-ML from GitHub during the build with
 ``OPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git``.
 
-.. warning:: Compiling PyTorch ops with CUDA 11 and PyTorch < 1.9 may have
+.. warning:: Compiling PyTorch ops with PyTorch < 1.9 may have
     stability issues. See `Open3D issue #3324 <https://github.com/isl-org/Open3D/issues/3324>`_
     and `PyTorch issue #52663 <https://github.com/pytorch/pytorch/issues/52663>`_
     for more information on this problem. Official PyTorch wheels 1.9 and later

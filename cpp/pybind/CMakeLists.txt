@@ -80,6 +80,9 @@ set(PYTHON_COMPILED_MODULE_DIR
 if (APPLE)
     set_target_properties(pybind PROPERTIES BUILD_RPATH "@loader_path;@loader_path/..")
 elseif (UNIX)
+    # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
+    # https://stackoverflow.com/questions/69662319/managing-secondary-dependencies-of-shared-libraries
+    target_link_options(pybind PRIVATE "LINKER:--disable-new-dtags")
     set_target_properties(pybind PROPERTIES BUILD_RPATH "$ORIGIN;$ORIGIN/..")
 endif()
 set_target_properties(pybind PROPERTIES
@@ -103,7 +106,7 @@ endif()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so, libc++abi.so (needed by filament) for Linux.
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
-set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:tbb>)
+set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
 endif()

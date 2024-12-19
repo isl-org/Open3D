@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -144,6 +144,10 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
         // overhead and the depth buffer is discarded when post-processing is
         // enabled so the returned image is all 0s.
         view_->ConfigureForColorPicking();
+        // Set shadowing to true as there is a pixel coordinate scaling
+        // issue on Apple Retina displays that results in quarter size depth
+        // images if shadowing is disabled.
+        view_->SetShadowing(true, View::ShadowType::kPCF);
     }
 }
 

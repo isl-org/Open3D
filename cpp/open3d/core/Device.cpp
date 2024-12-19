@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ std::vector<Device> Device::GetAvailableCUDADevices() {
 }
 
 std::vector<Device> Device::GetAvailableSYCLDevices() {
-    return sycl::GetAvailableSYCLDevices();
+    return sy::GetAvailableSYCLDevices();
 }
 
 void Device::PrintAvailableDevices() {

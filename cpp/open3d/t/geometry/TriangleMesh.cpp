@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -20,6 +20,8 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
@@ -28,6 +30,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/RaycastingScene.h"
 #include "open3d/t/geometry/VtkUtils.h"
+#include "open3d/t/geometry/kernel/Metrics.h"
 #include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
@@ -313,6 +316,12 @@ TriangleMesh &TriangleMesh::ComputeTriangleAreas() {
                                          {0}, GetVertexPositions().GetDtype(),
                                          GetDevice()));
         utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+    if (HasTriangleAttr("areas")) {
+        utility::LogWarning(
+                "TriangleMesh already has triangle areas: remove "
+                "'areas' triangle attribute if you'd like to update.");
         return *this;
     }
 
@@ -1404,7 +1413,9 @@ TriangleMesh TriangleMesh::RemoveNonManifoldEdges() {
     core::Tensor tris_cpu =
             GetTriangleIndices().To(core::Device()).Contiguous();
 
-    ComputeTriangleAreas();
+    if (!HasTriangleAttr("areas")) {
+        ComputeTriangleAreas();
+    }
     core::Tensor tri_areas_cpu =
             GetTriangleAttr("areas").To(core::Device()).Contiguous();
 
@@ -1505,6 +1516,109 @@ core::Tensor TriangleMesh::GetNonManifoldEdges(
     });
 
     return result;
+}
+
+PointCloud TriangleMesh::SamplePointsUniformly(
+        size_t number_of_points, bool use_triangle_normal /*=false*/) {
+    if (number_of_points <= 0) {
+        utility::LogError("number_of_points <= 0");
+    }
+    if (IsEmpty()) {
+        utility::LogError("Input mesh is empty. Cannot sample points.");
+    }
+    if (!HasTriangleIndices()) {
+        utility::LogError("Input mesh has no triangles. Cannot sample points.");
+    }
+    if (use_triangle_normal && !HasTriangleNormals()) {
+        ComputeTriangleNormals(true);
+    }
+    if (!HasTriangleAttr("areas")) {
+        ComputeTriangleAreas();  // Compute area of each triangle
+    }
+    if (!IsCPU()) {
+        utility::LogWarning(
+                "SamplePointsUniformly is implemented only on CPU. Computing "
+                "on CPU.");
+    }
+    bool use_vert_normals = HasVertexNormals() && !use_triangle_normal;
+    bool use_albedo =
+            HasTriangleAttr("texture_uvs") && GetMaterial().HasAlbedoMap();
+    bool use_vert_colors = HasVertexColors() && !use_albedo;
+
+    auto cpu = core::Device();
+    core::Tensor null_tensor({0}, core::Float32);  // zero size tensor
+    auto triangles = GetTriangleIndices().To(cpu).Contiguous(),
+         vertices = GetVertexPositions().To(cpu).Contiguous();
+    auto float_dt = vertices.GetDtype();
+    auto areas = GetTriangleAttr("areas").To(cpu, float_dt).Contiguous(),
+         vertex_normals =
+                 use_vert_normals
+                         ? GetVertexNormals().To(cpu, float_dt).Contiguous()
+                         : null_tensor,
+         triangle_normals =
+                 use_triangle_normal
+                         ? GetTriangleNormals().To(cpu, float_dt).Contiguous()
+                         : null_tensor,
+         vertex_colors =
+                 use_vert_colors
+                         ? GetVertexColors().To(cpu, core::Float32).Contiguous()
+                         : null_tensor,
+         texture_uvs = use_albedo ? GetTriangleAttr("texture_uvs")
+                                            .To(cpu, float_dt)
+                                            .Contiguous()
+                                  : null_tensor,
+         // With correct range conversion [0,255] -> [0,1]
+            albedo = use_albedo ? GetMaterial()
+                                          .GetAlbedoMap()
+                                          .To(core::Float32)
+                                          .To(cpu)
+                                          .AsTensor()
+                                : null_tensor;
+    if (use_vert_colors) {
+        if (GetVertexColors().GetDtype() == core::UInt8) vertex_colors /= 255;
+        if (GetVertexColors().GetDtype() == core::UInt16)
+            vertex_colors /= 65535;
+    }
+
+    std::array<core::Tensor, 3> result =
+            kernel::trianglemesh::SamplePointsUniformlyCPU(
+                    triangles, vertices, areas, vertex_normals, vertex_colors,
+                    triangle_normals, texture_uvs, albedo, number_of_points);
+
+    PointCloud pcd(result[0]);
+    if (use_vert_normals || use_triangle_normal) pcd.SetPointNormals(result[1]);
+    if (use_albedo || use_vert_colors) pcd.SetPointColors(result[2]);
+    return pcd.To(GetDevice());
+}
+
+core::Tensor TriangleMesh::ComputeMetrics(const TriangleMesh &mesh2,
+                                          std::vector<Metric> metrics,
+                                          MetricParameters params) const {
+    if (IsEmpty() || mesh2.IsEmpty()) {
+        utility::LogError("One or both input triangle meshes are empty!");
+    }
+    if (!IsCPU() || !mesh2.IsCPU()) {
+        utility::LogWarning(
+                "ComputeDistance is implemented only on CPU. Computing on "
+                "CPU.");
+    }
+    auto cpu_mesh1 = To(core::Device("CPU:0")),
+         cpu_mesh2 = mesh2.To(core::Device("CPU:0"));
+    core::Tensor points1 =
+            cpu_mesh1.SamplePointsUniformly(params.n_sampled_points)
+                    .GetPointPositions();
+    core::Tensor points2 =
+            cpu_mesh2.SamplePointsUniformly(params.n_sampled_points)
+                    .GetPointPositions();
+
+    RaycastingScene scene1, scene2;
+    scene1.AddTriangles(cpu_mesh1);
+    scene2.AddTriangles(cpu_mesh2);
+
+    core::Tensor distance21 = scene1.ComputeDistance(points2);
+    core::Tensor distance12 = scene2.ComputeDistance(points1);
+
+    return ComputeMetricsCommon(distance12, distance21, metrics, params);
 }
 
 }  // namespace geometry

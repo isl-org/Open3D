@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -94,7 +94,8 @@ void pybind_slam_definitions(py::module &m) {
             "Track input frame against raycasted frame from model.",
             "input_frame"_a, "model_frame"_a, "depth_scale"_a = 1000.0,
             "depth_max"_a = 3.0, "depth_diff"_a = 0.07,
-            "method"_a = odometry::Method::PointToPlane,
+            py::arg_v("method", odometry::Method::PointToPlane,
+                      "Method.PointToPlane"),
             "criteria"_a = (std::vector<odometry::OdometryConvergenceCriteria>){
                     6, 3, 1});
     docstring::ClassMethodDocInject(m_slam, "Model", "track_frame_to_model",

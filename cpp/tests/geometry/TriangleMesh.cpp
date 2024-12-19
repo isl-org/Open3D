@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,8 +22,8 @@ namespace tests {
 /// \param eq_triangle_vertex_order If true then triangles are only equal if the
 /// order of the vertices is the same. If false any permutation of the triangle
 /// indices is allowed.
-void ExpectMeshEQ(const open3d::geometry::TriangleMesh& mesh0,
-                  const open3d::geometry::TriangleMesh& mesh1,
+void ExpectMeshEQ(const open3d::geometry::TriangleMesh &mesh0,
+                  const open3d::geometry::TriangleMesh &mesh1,
                   double threshold = 1e-6,
                   bool eq_triangle_vertex_order = true) {
     ExpectEQ(mesh0.vertices_, mesh1.vertices_, threshold);
@@ -597,6 +597,125 @@ TEST(TriangleMesh, OperatorADD) {
         ExpectEQ(tm0.triangle_normals_[i], tm.triangle_normals_[i + 0]);
         ExpectEQ(tm1.triangle_normals_[i], tm.triangle_normals_[i + size]);
     }
+}
+
+TEST(TriangleMesh, OperatorAdditionAssignment) {
+    const size_t size = 100;
+    const size_t texture_size = 10;
+
+    // Define the minimum and maximum bounds for random data generation
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1000.0, 1000.0, 1000.0);
+    Eigen::Vector3i imin(0, 0, 0);
+    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
+    Eigen::Vector2d uvmin(0.0, 0.0);
+    Eigen::Vector2d uvmax(1.0, 1.0);
+
+    // Mesh 0 contains only UVs but no textures and material ids
+    geometry::TriangleMesh tm0;
+    tm0.vertices_.resize(size);
+    tm0.triangles_.resize(size);
+    tm0.triangle_uvs_.resize(3 * size);
+
+    // Mesh 1 contains all of UVS, textures and material ids
+    geometry::TriangleMesh tm1;
+    tm1.vertices_.resize(size);
+    tm1.triangles_.resize(size);
+    tm1.triangle_uvs_.resize(3 * size);
+    tm1.triangle_material_ids_.resize(size);
+    tm1.textures_.resize(texture_size);
+
+    // Mesh 2 does not contains any of UVs, textures or material ids
+    geometry::TriangleMesh tm2;
+    tm2.vertices_.resize(size);
+    tm2.triangles_.resize(size);
+
+    // Randomly generate data for tm0, tm1 and tm2
+    Rand(tm0.vertices_, dmin, dmax, 0);
+    Rand(tm0.triangles_, imin, imax, 0);
+    std::vector<Eigen::Vector2d, open3d::utility::Vector2d_allocator>
+            tm0_triangle_uvs(3 * size);
+    Rand(tm0_triangle_uvs, uvmin, uvmax, 0);
+    tm0.triangle_uvs_ = std::vector<Eigen::Vector2d>(tm0_triangle_uvs.begin(),
+                                                     tm0_triangle_uvs.end());
+
+    Rand(tm1.vertices_, dmin, dmax, 0);
+    Rand(tm1.triangles_, imin, imax, 0);
+    std::vector<Eigen::Vector2d, open3d::utility::Vector2d_allocator>
+            tm1_triangle_uvs(3 * size);
+    Rand(tm1_triangle_uvs, uvmin, uvmax, 0);
+    tm1.triangle_uvs_ = std::vector<Eigen::Vector2d>(tm1_triangle_uvs.begin(),
+                                                     tm1_triangle_uvs.end());
+    for (size_t i = 0; i < texture_size; i++) {
+        geometry::Image texture_image;
+        texture_image.Prepare(100, 100, 3, 1);
+        Rand(texture_image.data_, 0, 255, 0);
+        tm1.textures_[i] = texture_image;
+    }
+    Rand(tm1.triangle_material_ids_, 0, texture_size, 0);
+
+    Rand(tm2.vertices_, dmin, dmax, 0);
+    Rand(tm2.triangles_, imin, imax, 0);
+
+    geometry::TriangleMesh temp_tm0 = tm0;
+    geometry::TriangleMesh temp_tm1 = tm1;
+    geometry::TriangleMesh temp_tm2 = tm2;
+    // Function to reset values of temp_tm0, temp_tm1 and temp_tm2
+    auto reset_values = [&tm0, &tm1, &tm2](geometry::TriangleMesh &temp_tm0,
+                                           geometry::TriangleMesh &temp_tm1,
+                                           geometry::TriangleMesh &temp_tm2) {
+        temp_tm0 = tm0;
+        temp_tm1 = tm1;
+        temp_tm2 = tm2;
+    };
+
+    // Test addition of tm1 with itself
+    temp_tm1 += tm1;
+    EXPECT_EQ(temp_tm1.triangles_.size(), 2 * size);
+    EXPECT_EQ(temp_tm1.triangle_uvs_.size(), 6 * size);
+    EXPECT_EQ(temp_tm1.vertices_.size(), 2 * size);
+    EXPECT_EQ(temp_tm1.textures_.size(), 2 * texture_size);
+    EXPECT_EQ(temp_tm1.triangle_material_ids_.size(), 2 * size);
+    for (size_t i = 0; i < size; i++) {
+        ExpectEQ(temp_tm1.vertices_[i], temp_tm1.vertices_[i + size]);
+        ExpectEQ(temp_tm1.triangles_[i],
+                 (Eigen::Vector3i)(temp_tm1.triangles_[i + size] -
+                                   Eigen::Vector3i(size, size, size)));
+        EXPECT_EQ(temp_tm1.triangle_material_ids_[i],
+                  temp_tm1.triangle_material_ids_[i + size] - texture_size);
+    }
+    for (size_t i = 0; i < 3 * size; i++) {
+        ExpectEQ(temp_tm1.triangle_uvs_[i],
+                 temp_tm1.triangle_uvs_[i + 3 * size]);
+    }
+    for (size_t i = 0; i < texture_size; i++) {
+        ExpectEQ(temp_tm1.textures_[i].data_,
+                 temp_tm1.textures_[i + texture_size].data_);
+    }
+
+    // Test addition of tm0 and tm1
+    reset_values(temp_tm0, temp_tm1, temp_tm2);
+    temp_tm0 += tm1;
+    temp_tm1 += tm0;
+    ExpectMeshEQ(temp_tm0, temp_tm1);
+    EXPECT_EQ(temp_tm0.textures_.size(), 0);
+    EXPECT_EQ(temp_tm0.triangle_material_ids_.size(), 0);
+
+    // Test addition of tm1 and tm2
+    reset_values(temp_tm0, temp_tm1, temp_tm2);
+    temp_tm1 += tm2;
+    temp_tm2 += tm1;
+    ExpectMeshEQ(temp_tm1, temp_tm2);
+    EXPECT_EQ(temp_tm0.textures_.size(), 0);
+    EXPECT_EQ(temp_tm0.triangle_material_ids_.size(), 0);
+
+    // Test addition of tm2 and tm0
+    reset_values(temp_tm0, temp_tm1, temp_tm2);
+    temp_tm2 += tm0;
+    temp_tm0 += tm2;
+    ExpectMeshEQ(temp_tm2, temp_tm0);
+    EXPECT_EQ(temp_tm0.textures_.size(), 0);
+    EXPECT_EQ(temp_tm0.triangle_material_ids_.size(), 0);
 }
 
 TEST(TriangleMesh, ComputeTriangleNormals) {

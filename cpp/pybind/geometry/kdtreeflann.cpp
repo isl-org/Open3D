@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -58,10 +58,10 @@ void pybind_kdtreeflann_definitions(py::module &m) {
     kdtreesearchparam_knn.def(py::init<int>(), "knn"_a = 30)
             .def("__repr__",
                  [](const KDTreeSearchParamKNN &param) {
-                     return std::string(
-                                    "KDTreeSearchParamKNN with knn "
-                                    "= ") +
-                            std::to_string(param.knn_);
+                     return fmt::format(
+                             "KDTreeSearchParamKNN("
+                             "knn={})",
+                             param.knn_);
                  })
             .def_readwrite("knn", &KDTreeSearchParamKNN::knn_,
                            "Number of the neighbors that will be searched.");
@@ -73,10 +73,10 @@ void pybind_kdtreeflann_definitions(py::module &m) {
     kdtreesearchparam_radius.def(py::init<double>(), "radius"_a)
             .def("__repr__",
                  [](const KDTreeSearchParamRadius &param) {
-                     return std::string(
-                                    "KDTreeSearchParamRadius with "
-                                    "radius = ") +
-                            std::to_string(param.radius_);
+                     return fmt::format(
+                             "KDTreeSearchParamRadius("
+                             "radius={})",
+                             param.radius_);
                  })
             .def_readwrite("radius", &KDTreeSearchParamRadius::radius_,
                            "Search radius.");
@@ -89,11 +89,11 @@ void pybind_kdtreeflann_definitions(py::module &m) {
             .def(py::init<double, int>(), "radius"_a, "max_nn"_a)
             .def("__repr__",
                  [](const KDTreeSearchParamHybrid &param) {
-                     return std::string(
-                                    "KDTreeSearchParamHybrid with "
-                                    "radius = ") +
-                            std::to_string(param.radius_) +
-                            " and max_nn = " + std::to_string(param.max_nn_);
+                     return fmt::format(
+                             "KDTreeSearchParamHybrid("
+                             "radius={}, "
+                             "max_nn={})",
+                             param.radius_, param.max_nn_);
                  })
             .def_readwrite("radius", &KDTreeSearchParamHybrid::radius_,
                            "Search radius.")
