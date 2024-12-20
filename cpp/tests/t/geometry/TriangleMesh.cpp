@@ -25,6 +25,70 @@ INSTANTIATE_TEST_SUITE_P(TriangleMesh,
                          TriangleMeshPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
+TEST_P(TriangleMeshPermuteDevices, ComputeAdjacencyList_emptyMesh) {
+//Test the interface and the case when mesh is empty
+
+    t::geometry::TriangleMesh empty_mesh;
+    
+    auto listCSR = empty_mesh.ComputeAdjacencyList();
+
+    core::Tensor adjacent_vertex = listCSR.first;
+    core::Tensor adjacent_index_start = listCSR.second;
+    EXPECT_TRUE(adjacent_vertex.GetLength() == 0);
+    EXPECT_TRUE(adjacent_index_start.GetLength() == 0);
+}
+
+TEST_P(TriangleMeshPermuteDevices, ComputeAdjacencyList_matchValues) {
+//Test the actual values computed in the function
+
+    core::Device device = GetParam();
+    core::Dtype float_dtype_custom = core::Float64;
+    core::Dtype int_dtype_custom = core::Int32;
+
+    t::geometry::TriangleMesh mesh =
+            t::geometry::TriangleMesh::CreateTetrahedron(
+                    2, float_dtype_custom, int_dtype_custom, device);
+
+    auto listCSR = mesh.ComputeAdjacencyList();
+    core::Tensor adjv = listCSR.first;
+    core::Tensor adjst = listCSR.second;
+    
+    EXPECT_TRUE( adjv.GetLength() > 0);
+    EXPECT_TRUE( adjst.GetLength() > 0);
+
+    core::Tensor csr_col = core::Tensor::Init<int64_t>(
+            {1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 1, 2}, device);
+    
+    core::Tensor csr_row_idx = core::Tensor::Init<int64_t>(
+            {0, 3, 6, 9, 12}, device);
+    
+    EXPECT_EQ(adjv.GetLength(), csr_col.GetLength());
+    EXPECT_EQ(adjst.GetLength(), csr_row_idx.GetLength());
+    EXPECT_TRUE(adjv.AllEqual(csr_col));
+    EXPECT_TRUE(adjst.AllEqual(csr_row_idx));
+}
+
+TEST_P(TriangleMeshPermuteDevices, ComputeAdjacencyList_expectedBehaviour) {
+//On a larger mesh, test the interface and few expected properties
+
+    core::Device device = GetParam();
+    core::Dtype float_dtype_custom = core::Float64;
+    core::Dtype int_dtype_custom = core::Int32;
+
+    t::geometry::TriangleMesh mesh =
+            t::geometry::TriangleMesh::CreateIcosahedron(
+                    2, float_dtype_custom, int_dtype_custom, device);
+    
+
+    auto listCSR = mesh.ComputeAdjacencyList();
+    core::Tensor adjv = listCSR.first;
+    core::Tensor adjst = listCSR.second;
+    
+    EXPECT_TRUE( adjv.GetLength() > 0);
+    EXPECT_TRUE( adjst.GetLength() > 0);
+    EXPECT_EQ(adjst.ToFlatVector<int64_t>()[adjst.GetLength()-1], adjv.GetLength());
+}
+
 TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     t::geometry::TriangleMesh mesh;
 
