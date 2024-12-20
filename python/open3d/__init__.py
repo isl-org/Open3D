@@ -44,10 +44,12 @@ if _build_config["BUILD_CUDA_MODULE"]:
             ImportWarning,
         )
     try:
-        if sys.platform == "win32" and sys.version_info >= (3, 8):
+        if sys.platform == "win32" and sys.version_info >= (3, 8) and not _build_config["BUNDLE_CUDA_SHARED_LIBS"]:
             # Since Python 3.8, the PATH environment variable is not used to find DLLs anymore.
             # To allow Windows users to use Open3D with CUDA without running into dependency-problems,
             # look for the CUDA bin directory in PATH and explicitly add it to the DLL search path.
+            # Only do this if the CUDA shared libraries are not bundled with Open3D to prevent conflicts
+            # beteween bundled and system libraries.
             cuda_bin_path = None
             for path in os.environ['PATH'].split(';'):
                 # search heuristic: look for a path containing "cuda" and "bin" in this order.

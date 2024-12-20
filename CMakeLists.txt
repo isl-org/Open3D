@@ -146,6 +146,7 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
+option(BUNDLE_CUDA_SHARED_LIBS    "Includes CUDA-DLLs in the wheel (win only)" OFF)
 
 # Release build options
 option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )

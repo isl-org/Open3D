@@ -1,4 +1,5 @@
 ## Main
+-   Allow bundling CUDA-DLLs into the pip-package on Windows with BUNDLE_CUDA_SHARED_LIBS.
 -   Corrected documentation for Link Open3D in C++ projects (broken links).
 -   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
 -   Fix MSAA sample count not being copied when FilamentView is copied

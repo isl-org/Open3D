@@ -127,6 +127,15 @@ install_name_tool -change $libomp_library @rpath/$(basename $libomp_library) \
         COMMAND bash update_pybind_libomp.sh
         COMMENT "Updating pybind to use packaged libomp")
 endif()
+if (WIN32 AND BUILD_CUDA_MODULE AND BUNDLE_CUDA_SHARED_LIBS)
+	# Just bundle all DLLs from CUDA to avoid having to update
+	# an explicit listing of required DLLs.
+	# Only bundling required DLLs would decrease the package size,
+	# but not by much, as cublas, cusparse and cusolver alone
+	# need about 1GB.
+	file(GLOB CUDA_DLLS "${CUDAToolkit_BIN_DIR}/*.dll")
+	list(APPEND PYTHON_EXTRA_LIBRARIES ${CUDA_DLLS})
+endif()
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DST_DIR. It contains:
