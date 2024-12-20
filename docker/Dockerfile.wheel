@@ -111,6 +111,7 @@ COPY ./util/ci_utils.sh /root/Open3D/util/
 COPY ./python/requirements.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter_build.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter_install.txt /root/Open3D/python/
+COPY ./python/requirements_build.txt /root/Open3D/python/
 RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-jupyter
 
