@@ -109,10 +109,14 @@ RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
 # Open3D Python dependencies
 COPY ./util/ci_utils.sh /root/Open3D/util/
 COPY ./python/requirements.txt /root/Open3D/python/
+COPY ./python/requirements_build.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter_build.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter_install.txt /root/Open3D/python/
 RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-jupyter
+
+# Open3D-ML Python dependencies
+RUN python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
 
 # Open3D Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
