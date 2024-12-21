@@ -906,7 +906,7 @@ if(NOT USE_SYSTEM_CURL)
         #     _Curl_resolv in libcurl.a(hostip.c.o)
         # ```
         # The "Foundation" framework is already linked by GLFW.
-        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration icucore iconv")
+        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
     elseif(UNIX)
         find_library(LIBIDN2 NAMES idn2 libidn2 libidn2.so.0  )
         target_link_libraries(3rdparty_curl INTERFACE ${LIBIDN2})
