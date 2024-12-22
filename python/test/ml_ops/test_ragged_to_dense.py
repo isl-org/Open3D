@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
+# noqa # pylint: disable=unused-import
 import open3d as o3d
 import numpy as np
 import pytest
@@ -22,7 +23,7 @@ dtypes = pytest.mark.parametrize('dtype',
 
 
 @dtypes
-@mltest.parametrize.ml_torch_only
+@mltest.parametrize.ml_torch_and_paddle_only
 def test_ragged_to_dense(dtype, ml):
 
     values = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], dtype=dtype)
@@ -30,8 +31,14 @@ def test_ragged_to_dense(dtype, ml):
     out_col_size = 4
     default_value = np.array(-1, dtype=dtype)
 
-    ans = mltest.run_op(ml, ml.device, True, ml.ops.ragged_to_dense, values,
-                        row_splits, out_col_size, default_value)
+    ans = mltest.run_op(ml,
+                        ml.device,
+                        True,
+                        ml.ops.ragged_to_dense,
+                        values=values,
+                        row_splits=row_splits,
+                        out_col_size=out_col_size,
+                        default_value=default_value)
 
     expected = np.full((row_splits.shape[0] - 1, out_col_size), default_value)
     for i in range(row_splits.shape[0] - 1):
@@ -44,7 +51,7 @@ def test_ragged_to_dense(dtype, ml):
 
 # test with more dimensions
 @dtypes
-@mltest.parametrize.ml_torch_only
+@mltest.parametrize.ml_torch_and_paddle_only
 def test_ragged_to_dense_more_dims(dtype, ml):
 
     values = np.array([[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6],
@@ -54,8 +61,14 @@ def test_ragged_to_dense_more_dims(dtype, ml):
     out_col_size = 4
     default_value = np.array([-1, -1], dtype=dtype)
 
-    ans = mltest.run_op(ml, ml.device, True, ml.ops.ragged_to_dense, values,
-                        row_splits, out_col_size, default_value)
+    ans = mltest.run_op(ml,
+                        ml.device,
+                        True,
+                        ml.ops.ragged_to_dense,
+                        values=values,
+                        row_splits=row_splits,
+                        out_col_size=out_col_size,
+                        default_value=default_value)
 
     expected = np.full((
         row_splits.shape[0] - 1,
@@ -71,7 +84,7 @@ def test_ragged_to_dense_more_dims(dtype, ml):
 
 # test with larger random data
 @dtypes
-@mltest.parametrize.ml_torch_only
+@mltest.parametrize.ml_torch_and_paddle_only
 @pytest.mark.parametrize('seed', [123, 456])
 def test_ragged_to_dense_random(dtype, ml, seed):
 
@@ -87,8 +100,14 @@ def test_ragged_to_dense_random(dtype, ml, seed):
 
     default_value = np.array(-1, dtype=dtype)
 
-    ans = mltest.run_op(ml, ml.device, True, ml.ops.ragged_to_dense, values,
-                        row_splits, out_col_size, default_value)
+    ans = mltest.run_op(ml,
+                        ml.device,
+                        True,
+                        ml.ops.ragged_to_dense,
+                        values=values,
+                        row_splits=row_splits,
+                        out_col_size=out_col_size,
+                        default_value=default_value)
 
     expected = np.full((row_splits.shape[0] - 1, out_col_size), default_value)
     for i in range(row_splits.shape[0] - 1):
