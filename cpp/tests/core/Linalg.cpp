@@ -24,10 +24,9 @@ namespace open3d {
 namespace tests {
 
 class LinalgPermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(
-        Linalg,
-        LinalgPermuteDevices,
-        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+INSTANTIATE_TEST_SUITE_P(Linalg,
+                         LinalgPermuteDevices,
+                         testing::ValuesIn(LinalgPermuteDevices::TestCases()));
 
 TEST_P(LinalgPermuteDevices, Matmul) {
     const float EPSILON = 1e-8;

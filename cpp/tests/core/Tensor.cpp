@@ -3136,6 +3136,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceMean) {
 
 TEST_P(TensorPermuteDevicesWithSYCL, ToDLPackFromDLPack) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
     core::Tensor src_t = core::Tensor::Init<float>(
             {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
              {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},

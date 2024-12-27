@@ -15,12 +15,13 @@
 namespace open3d {
 namespace tests {
 
-class TensorFunctionPermuteDevicesWithSYCL : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Tensor,
-                         TensorFunctionPermuteDevicesWithSYCL,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorFunctionPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorFunctionPermuteDevices,
+        testing::ValuesIn(TensorFunctionPermuteDevices::TestCases()));
 
-TEST_P(TensorFunctionPermuteDevicesWithSYCL, Concatenate) {
+TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     core::Device device = GetParam();
 
     core::Tensor a, b, c, output_tensor;
@@ -111,7 +112,7 @@ TEST_P(TensorFunctionPermuteDevicesWithSYCL, Concatenate) {
     }
 }
 
-TEST_P(TensorFunctionPermuteDevicesWithSYCL, Append) {
+TEST_P(TensorFunctionPermuteDevices, Append) {
     core::Device device = GetParam();
 
     core::Tensor self, other, output;
@@ -215,7 +216,7 @@ TEST_P(TensorFunctionPermuteDevicesWithSYCL, Append) {
     EXPECT_TRUE(core::Append(self, other).AllClose(self.Append(other)));
 }
 
-TEST_P(TensorFunctionPermuteDevicesWithSYCL, Maximum) {
+TEST_P(TensorFunctionPermuteDevices, Maximum) {
     core::Device device = GetParam();
 
     core::Tensor input, other, output;
@@ -268,7 +269,7 @@ TEST_P(TensorFunctionPermuteDevicesWithSYCL, Maximum) {
             core::Tensor::Init<bool>({true, true, true, true}, device)));
 }
 
-TEST_P(TensorFunctionPermuteDevicesWithSYCL, Minimum) {
+TEST_P(TensorFunctionPermuteDevices, Minimum) {
     core::Device device = GetParam();
 
     core::Tensor input, other, output;

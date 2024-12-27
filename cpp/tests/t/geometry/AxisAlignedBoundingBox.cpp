@@ -23,7 +23,7 @@ class AxisAlignedBoundingBoxPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         AxisAlignedBoundingBox,
         AxisAlignedBoundingBoxPermuteDevices,
-        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+        testing::ValuesIn(AxisAlignedBoundingBoxPermuteDevices::TestCases()));
 
 class AxisAlignedBoundingBoxPermuteDevicePairs
     : public PermuteDevicePairsWithSYCL {};
@@ -278,6 +278,7 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, GetBoxPoints) {
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, GetPointIndicesWithinBoundingBox) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
     core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);

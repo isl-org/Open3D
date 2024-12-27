@@ -144,7 +144,7 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
                                   src.GetDataPtr(), src.GetDevice(),
                                   src_dtype.ByteSize() * shape.NumElements());
         } else if (dst.NumElements() > 1 && dst.IsContiguous() &&
-                   src.NumElements() == 1 /*&& !src_dtype.IsObject()*/) {
+                   src.NumElements() == 1 && !src_dtype.IsObject()) {
             int64_t num_elements = dst.NumElements();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                 scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
@@ -201,14 +201,6 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     Dtype dst_dtype = dst.GetDtype();
     Device device = src.GetDevice();  // == dst.GetDevice()
 
-    auto assert_dtype_is_float = [](Dtype dtype) -> void {
-        if (dtype != Float32 && dtype != Float64) {
-            utility::LogError(
-                    "Only supports Float32 and Float64, but {} is used.",
-                    dtype.ToString());
-        }
-    };
-
     if (op_code == UnaryEWOpCode::LogicalNot) {
         if (dst_dtype == src_dtype) {
             Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
@@ -230,7 +222,6 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     } else if (op_code == UnaryEWOpCode::IsNan ||
                op_code == UnaryEWOpCode::IsInf ||
                op_code == UnaryEWOpCode::IsFinite) {
-        assert_dtype_is_float(src_dtype);
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             if (op_code == UnaryEWOpCode::IsNan) {

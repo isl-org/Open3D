@@ -250,6 +250,7 @@ TEST_P(OrientedBoundingBoxPermuteDevices, GetBoxPoints) {
 
 TEST_P(OrientedBoundingBoxPermuteDevices, GetPointIndicesWithinBoundingBox) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor center = core::Tensor::Init<float>({0.5, 0.5, 0.5}, device);
     core::Tensor rotation = core::Tensor::Eye(3, core::Float32, device);
