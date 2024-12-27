@@ -14,14 +14,26 @@
 
 #pragma once
 
+#include <map>
 #include <sycl/sycl.hpp>
-#include <unordered_map>
 
 #include "open3d/core/Device.h"
 
 namespace open3d {
 namespace core {
 namespace sy {
+
+/// @brief SYCL device properties.
+struct SYCLDevice {
+    SYCLDevice(const sycl::device& sycl_device);
+    std::string name;            ///< Fiendlly / descriptive name of the device.
+    sycl::device device;         ///< SYCL device.
+    sycl::queue queue;           ///< Default queue for this device.
+    size_t max_work_group_size;  ///< Preferred work group size
+    bool fp64;  ///< Double precision support, else need to emulate.
+    bool usm_device_allocations;  ///< USM device allocations required for
+                                  ///< Open3D.
+};
 
 /// Singleton SYCL context manager. It maintains:
 /// - A default queue for each SYCL device
@@ -45,17 +57,16 @@ public:
     /// Get the default SYCL queue given an Open3D device.
     sycl::queue GetDefaultQueue(const Device& device);
 
+    /// Get SYCL device properties given an Open3D device.
+    SYCLDevice GetDeviceProperties(const Device& device) {
+        return devices_.at(device);
+    };
+
 private:
     SYCLContext();
 
-    /// List of available Open3D SYCL devices.
-    std::vector<Device> devices_;
-
-    /// Maps core::Device to the corresponding default SYCL queue.
-    std::unordered_map<Device, sycl::queue> device_to_default_queue_;
-
-    /// Maps core::Device to sycl::device. Internal use only for now.
-    std::unordered_map<Device, sycl::device> device_to_sycl_device_;
+    /// Map from available Open3D SYCL devices to their properties.
+    std::map<Device, SYCLDevice> devices_;
 };
 
 }  // namespace sy

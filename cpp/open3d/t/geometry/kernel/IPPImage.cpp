@@ -20,7 +20,6 @@
 #endif
 
 #include "open3d/core/Dtype.h"
-#include "open3d/core/ParallelFor.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Image.h"

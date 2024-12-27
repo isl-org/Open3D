@@ -14,12 +14,13 @@
 namespace open3d {
 namespace tests {
 
-class TensorCheckPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Tensor,
-                         TensorCheckPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorCheckPermuteDevicesWithSYCL : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorCheckPermuteDevicesWithSYCL,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
+TEST_P(TensorCheckPermuteDevicesWithSYCL, AssertTensorDtype) {
     core::Device device = GetParam();
     core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
 
@@ -58,7 +59,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
     }
 }
 
-TEST_P(TensorCheckPermuteDevices, AssertTensorDtypes) {
+TEST_P(TensorCheckPermuteDevicesWithSYCL, AssertTensorDtypes) {
     core::Device device = GetParam();
     core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
 
@@ -87,7 +88,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDtypes) {
             t, std::vector<core::Dtype>({core::Int32, core::Int64})));
 }
 
-TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
+TEST_P(TensorCheckPermuteDevicesWithSYCL, AssertTensorDevice) {
     core::Device device = GetParam();
     core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
 
@@ -105,7 +106,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
     }
 }
 
-TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
+TEST_P(TensorCheckPermuteDevicesWithSYCL, AssertTensorShape) {
     core::Device device = GetParam();
     core::Tensor t;
 

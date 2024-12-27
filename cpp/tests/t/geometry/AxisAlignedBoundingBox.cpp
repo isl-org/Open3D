@@ -19,12 +19,14 @@
 namespace open3d {
 namespace tests {
 
-class AxisAlignedBoundingBoxPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(AxisAlignedBoundingBox,
-                         AxisAlignedBoundingBoxPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class AxisAlignedBoundingBoxPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        AxisAlignedBoundingBox,
+        AxisAlignedBoundingBoxPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-class AxisAlignedBoundingBoxPermuteDevicePairs : public PermuteDevicePairs {};
+class AxisAlignedBoundingBoxPermuteDevicePairs
+    : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         AxisAlignedBoundingBox,
         AxisAlignedBoundingBoxPermuteDevicePairs,

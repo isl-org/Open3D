@@ -15,12 +15,12 @@
 namespace open3d {
 namespace tests {
 
-class TensorFunctionPermuteDevices : public PermuteDevices {};
+class TensorFunctionPermuteDevicesWithSYCL : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
-                         TensorFunctionPermuteDevices,
+                         TensorFunctionPermuteDevicesWithSYCL,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(TensorFunctionPermuteDevices, Concatenate) {
+TEST_P(TensorFunctionPermuteDevicesWithSYCL, Concatenate) {
     core::Device device = GetParam();
 
     core::Tensor a, b, c, output_tensor;
@@ -105,13 +105,13 @@ TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(core::Concatenate({a, b.To(core::Float64), c}));
-    if (device.IsCUDA()) {
+    if (!device.IsCPU()) {
         EXPECT_ANY_THROW(
                 core::Concatenate({a, b.To(core::Device("CPU:0")), c}));
     }
 }
 
-TEST_P(TensorFunctionPermuteDevices, Append) {
+TEST_P(TensorFunctionPermuteDevicesWithSYCL, Append) {
     core::Device device = GetParam();
 
     core::Tensor self, other, output;
@@ -205,7 +205,7 @@ TEST_P(TensorFunctionPermuteDevices, Append) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(core::Append(self, other.To(core::Float64)));
-    if (device.IsCUDA()) {
+    if (!device.IsCPU()) {
         EXPECT_ANY_THROW(core::Append(self, other.To(core::Device("CPU:0"))));
     }
 
@@ -215,7 +215,7 @@ TEST_P(TensorFunctionPermuteDevices, Append) {
     EXPECT_TRUE(core::Append(self, other).AllClose(self.Append(other)));
 }
 
-TEST_P(TensorFunctionPermuteDevices, Maximum) {
+TEST_P(TensorFunctionPermuteDevicesWithSYCL, Maximum) {
     core::Device device = GetParam();
 
     core::Tensor input, other, output;
@@ -268,7 +268,7 @@ TEST_P(TensorFunctionPermuteDevices, Maximum) {
             core::Tensor::Init<bool>({true, true, true, true}, device)));
 }
 
-TEST_P(TensorFunctionPermuteDevices, Minimum) {
+TEST_P(TensorFunctionPermuteDevicesWithSYCL, Minimum) {
     core::Device device = GetParam();
 
     core::Tensor input, other, output;

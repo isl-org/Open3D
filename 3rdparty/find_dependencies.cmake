@@ -1532,12 +1532,14 @@ open3d_import_3rdparty_library(3rdparty_uvatlas
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_uvatlas)
 
 
+# SYCL link options are specified here. Compile options are only applied to SYCL source files and are specified in cmake/Open3DSYCLTargetSources.cmake
 if(BUILD_SYCL_MODULE)
     add_library(3rdparty_sycl INTERFACE)
     target_link_libraries(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl>)
     target_link_options(3rdparty_sycl INTERFACE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64_x86_64>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=intel_gpu_acm_g10>)
+        # $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64,spir64_gen>)
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS 3rdparty_sycl EXPORT Open3DTargets)
     endif()
@@ -1563,8 +1565,12 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
         LIB_DIR      ${MKL_ROOT}/lib/intel64
-        LIBRARIES    mkl_intel_ilp64 mkl_tbb_thread mkl_core
+        LIBRARIES    $<$<BOOL:${BUILD_SYCL_MODULE}>:mkl_sycl> mkl_intel_ilp64 mkl_tbb_thread mkl_core
     )
+    if (BUILD_SYCL_MODULE)
+    # target_link_options(3rdparty_mkl INTERFACE "-Wl,-export-dynamic")
+        target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+    endif()
     # MKL definitions
     target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")

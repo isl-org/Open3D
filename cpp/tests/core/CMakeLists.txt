@@ -36,3 +36,11 @@ if (BUILD_ISPC_MODULE)
         ParallelFor.ispc
     )
 endif()
+
+# if (BUILD_SYCL_MODULE)
+#     target_sources(tests PRIVATE
+#         ParallelForSYCL.cpp
+#     )
+#     set_source_files_properties(ParallelForSYCL.cpp PROPERTIES
+#         COMPILE_OPTIONS "-fsycl;-fsycl-targets=spir64_gen")
+# endif()

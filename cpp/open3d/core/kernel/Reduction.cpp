@@ -71,6 +71,18 @@ void Reduction(const Tensor& src,
 
     if (src.IsCPU()) {
         ReductionCPU(src, dst, dims, keepdim, op_code);
+    } else if (src.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        // Tensor dst_cpu =
+        //         Tensor::Empty(dst.GetShape(), dst.GetDtype(),
+        //         Device("SYCL:1"));
+        // ReductionSYCL(src.To(Device("SYCL:1")), dst_cpu, dims, keepdim,
+        //               op_code);
+        // dst.CopyFrom(dst_cpu);
+        ReductionSYCL(src, dst, dims, keepdim, op_code);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else if (src.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         ReductionCUDA(src, dst, dims, keepdim, op_code);

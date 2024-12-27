@@ -16,6 +16,12 @@
 #include "open3d/core/SizeVector.h"
 
 namespace open3d {
+namespace core {
+void PrintTo(const Device &device, std::ostream *os) {
+    *os << device.ToString();
+}
+void PrintTo(const Dtype &dtype, std::ostream *os) { *os << dtype.ToString(); }
+}  // namespace core
 namespace tests {
 
 std::vector<core::Dtype> PermuteDtypesWithBool::TestCases() {
@@ -46,6 +52,7 @@ std::vector<core::Device> PermuteDevices::TestCases() {
         devices.push_back(cuda_devices[1]);
     }
 
+    utility::LogWarning("Total {} devices.", devices.size());
     return devices;
 }
 
@@ -54,7 +61,7 @@ std::vector<core::Device> PermuteDevicesWithSYCL::TestCases() {
     std::vector<core::Device> sycl_devices =
             core::Device::GetAvailableSYCLDevices();
     if (!sycl_devices.empty()) {
-        devices.push_back(sycl_devices[0]);
+        devices.push_back(sycl_devices[0]);  // only the first SYCL device
     }
     return devices;
 }

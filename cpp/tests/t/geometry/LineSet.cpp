@@ -16,12 +16,13 @@
 namespace open3d {
 namespace tests {
 
-class LineSetPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(LineSet,
-                         LineSetPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class LineSetPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        LineSet,
+        LineSetPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-class LineSetPermuteDevicePairs : public PermuteDevicePairs {};
+class LineSetPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         LineSet,
         LineSetPermuteDevicePairs,

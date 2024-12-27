@@ -1,4 +1,6 @@
 open3d_ispc_add_library(tgeometry_kernel OBJECT)
+set_target_properties(tgeometry_kernel PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+
 
 target_sources(tgeometry_kernel PRIVATE
     Image.cpp

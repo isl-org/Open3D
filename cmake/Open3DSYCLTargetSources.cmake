@@ -2,7 +2,8 @@
 #
 # When BUILD_SYCL_MODULE=ON, set SYCL-specific compile flags for the listed
 # source files and call target_sources(). If BUILD_SYCL_MODULE=OFF, this
-# function directly calls target_sources().
+# function directly calls target_sources(). For SYCL link options, see 
+# 3rdparty/find_dependencies.cmake
 #
 # Note: this is not a perfect forwarding to target_sources(), as it only support
 # limited set of arguments. See the example usage below.
@@ -31,7 +32,8 @@ function(open3d_sycl_target_sources target)
         if(BUILD_SYCL_MODULE)
             foreach(sycl_file IN LISTS arg_UNPARSED_ARGUMENTS)
                 set_source_files_properties(${sycl_file} PROPERTIES
-                    COMPILE_OPTIONS -fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_x86_64)
+                    COMPILE_OPTIONS "-fsycl;-fsycl-targets=intel_gpu_acm_g10")
+                    #COMPILE_OPTIONS "-fsycl;-fsycl-targets=spir64,spir64_gen")
                 if(arg_VERBOSE)
                     message(STATUS "open3d_sycl_target_sources(${target}): marked ${sycl_file} as SYCL code")
                 endif()

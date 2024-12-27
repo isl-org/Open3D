@@ -24,12 +24,13 @@
 namespace open3d {
 namespace tests {
 
-class PointCloudPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(PointCloud,
-                         PointCloudPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class PointCloudPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        PointCloud,
+        PointCloudPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-class PointCloudPermuteDevicePairs : public PermuteDevicePairs {};
+class PointCloudPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         PointCloud,
         PointCloudPermuteDevicePairs,

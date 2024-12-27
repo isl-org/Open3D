@@ -20,10 +20,11 @@
 namespace open3d {
 namespace tests {
 
-class TriangleMeshPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(TriangleMesh,
-                         TriangleMeshPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TriangleMeshPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        TriangleMesh,
+        TriangleMeshPermuteDevices,
+        testing::ValuesIn(TriangleMeshPermuteDevices::TestCases()));
 
 TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     t::geometry::TriangleMesh mesh;

@@ -22,10 +22,11 @@
 namespace open3d {
 namespace tests {
 
-class TensorObjectPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(TensorObject,
-                         TensorObjectPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorObjectPermuteDevicesWithSYCL : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        TensorObject,
+        TensorObjectPermuteDevicesWithSYCL,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 class TensorObjectPermuteDevicePairs : public PermuteDevicePairs {};
 INSTANTIATE_TEST_SUITE_P(
@@ -51,7 +52,7 @@ static_assert(std::is_pod<TestObject>(), "TestObject must be a POD.");
 static const int64_t byte_size = sizeof(TestObject);
 static const std::string class_name = "TestObject";
 
-TEST_P(TensorObjectPermuteDevices, Constructor) {
+TEST_P(TensorObjectPermuteDevicesWithSYCL, Constructor) {
     core::Device device = GetParam();
     core::Dtype dtype(core::Dtype::DtypeCode::Object, byte_size, class_name);
 
@@ -70,7 +71,7 @@ TEST_P(TensorObjectPermuteDevices, Constructor) {
     EXPECT_ANY_THROW(core::Tensor({-1, -1}, dtype, device));
 }
 
-TEST_P(TensorObjectPermuteDevices, WithInitValueObject) {
+TEST_P(TensorObjectPermuteDevicesWithSYCL, WithInitValueObject) {
     core::Device device = GetParam();
     core::Dtype dtype =
             core::Dtype(core::Dtype::DtypeCode::Object, byte_size, class_name);
@@ -81,7 +82,7 @@ TEST_P(TensorObjectPermuteDevices, WithInitValueObject) {
     EXPECT_EQ(t.ToFlatVector<TestObject>(), vals);
 }
 
-TEST_P(TensorObjectPermuteDevices, FillObject) {
+TEST_P(TensorObjectPermuteDevicesWithSYCL, FillObject) {
     core::Device device = GetParam();
     core::Dtype dtype(core::Dtype::DtypeCode::Object, byte_size, class_name);
 
@@ -156,7 +157,7 @@ TEST_P(TensorObjectPermuteDevicePairs, CopyBroadcastObject) {
     EXPECT_EQ(dst_t.ToFlatVector<TestObject>(), dst_vals);
 }
 
-TEST_P(TensorObjectPermuteDevices, ItemObject) {
+TEST_P(TensorObjectPermuteDevicesWithSYCL, ItemObject) {
     core::Device device = GetParam();
     core::Dtype dtype(core::Dtype::DtypeCode::Object, byte_size, class_name);
 
@@ -172,7 +173,7 @@ TEST_P(TensorObjectPermuteDevices, ItemObject) {
     EXPECT_EQ(t[2].Item<TestObject>(), TestObject(4));
 }
 
-TEST_P(TensorObjectPermuteDevices, ItemAssignObject) {
+TEST_P(TensorObjectPermuteDevicesWithSYCL, ItemAssignObject) {
     core::Device device = GetParam();
     core::Dtype dtype(core::Dtype::DtypeCode::Object, byte_size, class_name);
 
@@ -187,7 +188,7 @@ TEST_P(TensorObjectPermuteDevices, ItemAssignObject) {
     EXPECT_EQ(t[1][2][3].Item<TestObject>(), TestObject(100));
 }
 
-TEST_P(TensorObjectPermuteDevices, IsSameObject) {
+TEST_P(TensorObjectPermuteDevicesWithSYCL, IsSameObject) {
     core::Device device = GetParam();
     core::Dtype dtype(core::Dtype::DtypeCode::Object, byte_size, class_name);
 
@@ -230,7 +231,7 @@ TEST_P(TensorObjectPermuteDevices, IsSameObject) {
     EXPECT_TRUE(vec[0].IsSame(vec[1]));
 }
 
-TEST_P(TensorObjectPermuteDevices, ConstructFromObjectTensorVector) {
+TEST_P(TensorObjectPermuteDevicesWithSYCL, ConstructFromObjectTensorVector) {
     core::Device device = GetParam();
     core::Dtype dtype(core::Dtype::DtypeCode::Object, byte_size, class_name);
 
@@ -255,7 +256,7 @@ TEST_P(TensorObjectPermuteDevices, ConstructFromObjectTensorVector) {
     EXPECT_FALSE(tl[2].IsSame(t2));
 }
 
-TEST_P(TensorObjectPermuteDevices, TensorListFromObjectTensor) {
+TEST_P(TensorObjectPermuteDevicesWithSYCL, TensorListFromObjectTensor) {
     core::Device device = GetParam();
     core::Dtype dtype(core::Dtype::DtypeCode::Object, byte_size, class_name);
 
