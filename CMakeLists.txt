@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
-# If you're using Ubuntu 20.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.
+# If you're not using the latest Ubuntu / distro LTS release, we suggest you
+# install the latest CMake from the official repository https://apt.kitware.com/.
 # CMake 3.24+ is required for CUDA native arch selection
 # CMake 3.22+ is required by Assimp v5.4.2
 # CMake 3.20+ is required to detect IntelLLVM compiler for SYCL
