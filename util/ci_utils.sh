@@ -340,6 +340,9 @@ test_cpp_example() {
 install_docs_dependencies() {
     echo
     echo Install ubuntu dependencies
+    echo "Update cmake needed in Ubuntu < 24.04"
+    $SUDO apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
+    (source /etc/os-release && $SUDO apt-add-repository --yes "deb https://apt.kitware.com/ubuntu/ $VERSION_CODENAME main")
     ./util/install_deps_ubuntu.sh assume-yes
     $SUDO apt-get install --yes ccache \
         cmake \
