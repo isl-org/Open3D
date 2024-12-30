@@ -21,6 +21,7 @@ fi
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
+BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
 
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
@@ -28,6 +29,7 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 TENSORFLOW_VER="2.16.2"
 TORCH_VER="2.2.2"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
+TORCH_CXX11_URL="https://download.pytorch.org/whl/"
 # Python
 PIP_VER="23.2.1"
 WHEEL_VER="0.38.4"
@@ -77,9 +79,11 @@ install_python_dependencies() {
         python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" # ML/requirements-tensorflow.txt
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "OFF" ]]; then
             python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard
-
+        elif [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "ON" ]]; then
+            python -m pip install -U "${TORCH_GLNX}+cpu.cxx11.abi" -i "$TORCH_CXX11_URL"
+            python -m pip install -U tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard
         else
