@@ -123,7 +123,7 @@ void ComputeFPFHFeatureCPU
     const int64_t n_points = points.GetLength();
 
     const bool filter_fpfh =
-            mask.has_value() & map_batch_info_idx_to_point_idx.has_value();
+            mask.has_value() && map_batch_info_idx_to_point_idx.has_value();
     if (mask.has_value() ^ map_batch_info_idx_to_point_idx.has_value()) {
         utility::LogError(
                 "Parameters mask and map_batch_info_idx_to_point_idx must be "

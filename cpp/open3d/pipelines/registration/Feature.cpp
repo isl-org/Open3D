@@ -185,9 +185,9 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     std::vector<std::vector<double>> map_fpfh_idx_to_distance2;
     if (filter_fpfh) {
         // compute neighbors of the selected points
-        // using vector<u_int8_t> as a boolean mask for the parallel loop
+        // using vector<uint8_t> as a boolean mask for the parallel loop
         // since vector<bool> is not thread safe in writing.
-        std::vector<u_int8_t> mask_spfh(input.points_.size(), 0);
+        std::vector<uint8_t> mask_spfh(input.points_.size(), 0);
         map_fpfh_idx_to_indices = std::vector<std::vector<int>>(n_fpfh);
         map_fpfh_idx_to_distance2 = std::vector<std::vector<double>>(n_fpfh);
 #pragma omp parallel for schedule(static) \
