@@ -87,7 +87,11 @@ RUN apt-get update && apt-get install -y \
     libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
+ && if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+        apt-get install g++-11; \
+    fi \
  && rm -rf /var/lib/apt/lists/*
+# OneDPL TBB backend requires libstdc++ >= v11
 
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run
