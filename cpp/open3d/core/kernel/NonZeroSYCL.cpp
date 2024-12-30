@@ -16,10 +16,6 @@
 
 namespace open3d {
 namespace core {
-/// Maximum number of dimensions of TensorRef, rounded up to the power of 2 for
-/// sycl::vec support.
-static constexpr int64_t MAX_DIMS_POW2 = 4;
-static_assert(MAX_DIMS_POW2 >= MAX_DIMS, "MAX_DIMS_POW2 too small.");
 namespace kernel {
 
 Tensor NonZeroSYCL(const Tensor& src) {
@@ -48,8 +44,13 @@ Tensor NonZeroSYCL(const Tensor& src) {
     // Transform flattened indices to indices in each dimension.
     const auto num_dims = src.NumDims();
     SizeVector shape = src.GetShape();
-    sycl::vec<int64_t, MAX_DIMS_POW2> shape_vec;  // device copyable
-    OPEN3D_ASSERT(shape.size() <= MAX_DIMS_POW2 && "Too many dimensions.");
+    // MAX_DIMS: Maximum number of dimensions of TensorRef, defined in
+    // Indexer.h.
+    sycl::marray<int64_t, MAX_DIMS> shape_vec;  // device copyable
+    if (shape.size() <= MAX_DIMS) {
+        utility::LogError("Too many dimensions: {} > MAX_DIMS={}.",
+                          shape.size(), MAX_DIMS);
+    }
     for (auto k = 0; k < num_dims; ++k) shape_vec[k] = shape[k];
     Tensor result({num_dims, static_cast<int64_t>(num_non_zeros)}, Int64,
                   device);

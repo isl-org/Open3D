@@ -82,7 +82,7 @@ install_python_dependencies() {
         if [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "OFF" ]]; then
             python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" tensorboard
         elif [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "ON" ]]; then
-            python -m pip install -U "${TORCH_GLNX}+cpu.cxx11.abi" -i "$TORCH_CXX11_URL"
+            python -m pip install -U "${TORCH_GLNX}.cxx11.abi" -i "$TORCH_CXX11_URL"
             python -m pip install -U tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard
