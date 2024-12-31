@@ -28,13 +28,13 @@ namespace tests {
 class TensorPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
                          TensorPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+                         testing::ValuesIn(TensorPermuteDevices::TestCases()));
 
-class TensorPermuteDevicesWithSYCL : public PermuteDevices {};
+class TensorPermuteDevicesWithSYCL : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         Tensor,
         TensorPermuteDevicesWithSYCL,
-        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+        testing::ValuesIn(TensorPermuteDevicesWithSYCL::TestCases()));
 
 class TensorPermuteDevicePairs : public PermuteDevicePairs {};
 INSTANTIATE_TEST_SUITE_P(
@@ -1533,7 +1533,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, T) {
     EXPECT_THROW(t_3d.T(), std::runtime_error);
 }
 
-TEST_P(TensorPermuteDevices, Det) {
+TEST_P(TensorPermuteDevicesWithSYCL, Det) {
     core::Device device = GetParam();
     // Det supports both Float32 and Float64.
     core::Dtype dtype = core::Float32;
@@ -2230,7 +2230,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceMax) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({23.f}));
 }
 
-TEST_P(TensorPermuteDevices, ReduceMaxFloatLimit) {
+TEST_P(TensorPermuteDevicesWithSYCL, ReduceMaxFloatLimit) {
     // std::numeric_limits<scalar_t> should use lowest() instead of min().
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init<float>({-2.f, -1.f}, device);
@@ -2242,7 +2242,7 @@ TEST_P(TensorPermuteDevices, ReduceMaxFloatLimit) {
     EXPECT_EQ(dst.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
 }
 
-TEST_P(TensorPermuteDevices, ReduceArgMin) {
+TEST_P(TensorPermuteDevicesWithSYCL, ReduceArgMin) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init<float>(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
@@ -2270,7 +2270,7 @@ TEST_P(TensorPermuteDevices, ReduceArgMin) {
               std::vector<int64_t>({3, 0, 3, 3, 1, 0}));
 }
 
-TEST_P(TensorPermuteDevices, ReduceArgMax) {
+TEST_P(TensorPermuteDevicesWithSYCL, ReduceArgMax) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init<float>(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},

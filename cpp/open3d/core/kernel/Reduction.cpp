@@ -37,6 +37,10 @@ void Reduction(const Tensor& src,
                         dims);
             }
         }
+        if (src.NumElements() == 0) {
+            utility::LogError(
+                    "Zero-size Tensor does not support Arg Reductions.");
+        }
     }
 
     SizeVector keepdim_shape =

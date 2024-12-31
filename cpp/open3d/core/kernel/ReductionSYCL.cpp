@@ -20,14 +20,29 @@ namespace core {
 namespace kernel {
 
 namespace {
-// Based on OneAPI GPU optimization guide code sample (Blocked access to input
-// data + SYCL builtin reduction ops for final reduction)
+
+template <typename scalar_t>
+struct ArgMinReduction {
+    using basic_reduction = sycl::minimum<scalar_t>;
+    std::pair<int64_t, scalar_t> operator()(
+            std::pair<int64_t, scalar_t> a,
+            std::pair<int64_t, scalar_t> b) const {
+        return a.second < b.second ? a : b;
+    }
+};
+
+template <typename scalar_t>
+struct ArgMaxReduction {
+    using basic_reduction = sycl::maximum<scalar_t>;
+    std::pair<int64_t, scalar_t> operator()(
+            std::pair<int64_t, scalar_t> a,
+            std::pair<int64_t, scalar_t> b) const {
+        return a.second > b.second ? a : b;
+    }
+};
+
 template <class ReductionOp, typename scalar_t>
-void SYCLReductionEngine(
-        Device device,
-        Indexer indexer,
-        scalar_t identity =
-                sycl::known_identity<ReductionOp, scalar_t>::value) {
+void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
             sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     auto queue = device_props.queue;
@@ -37,9 +52,10 @@ void SYCLReductionEngine(
     size_t log2workitems_per_group = 8;
     auto workitems_per_group = (1 << log2workitems_per_group);  // 256
     auto elements_per_work_item =
-            elements_per_group / workitems_per_group;  // 32 (= max SIMD sizse)
+            elements_per_group / workitems_per_group;  // 32 (= max SIMD size)
     auto mask = ~(~0 << log2workitems_per_group);
     ReductionOp red_op;
+
     for (int64_t output_idx = 0; output_idx < indexer.NumOutputElements();
          output_idx++) {
         // sub_indexer.NumWorkloads() == ipo.
@@ -51,12 +67,16 @@ void SYCLReductionEngine(
             ++num_work_groups;
         // ensure each work group has work_group_size work items
         auto num_work_items = num_work_groups * work_group_size;
-        auto output =
-                reinterpret_cast<scalar_t*>(scalar_out_indexer.GetOutputPtr(0));
-        auto e = queue.submit([&](auto& cgh) {
+
+        auto red_cg = [&](auto& cgh) {
+            auto output = reinterpret_cast<scalar_t*>(
+                    scalar_out_indexer.GetOutputPtr(0));
+            // Setting this still doesn't initialize to identity -
+            // output buffer must be initialized separately.
             auto sycl_reducer = sycl::reduction(
                     output, identity, red_op,
                     {sycl::property::reduction::initialize_to_identity()});
+            sycl::stream out_stream(10240, 128, cgh);
             cgh.parallel_for(
                     sycl::nd_range<1>{num_work_items, work_group_size},
                     sycl_reducer, [=](sycl::nd_item<1> item, auto& red_arg) {
@@ -69,13 +89,110 @@ void SYCLReductionEngine(
                             size_t idx =
                                     (i << log2workitems_per_group) + offset;
                             if (idx >= num_elements) break;
-                            scalar_t* val = reinterpret_cast<scalar_t*>(
+                            auto val = *reinterpret_cast<scalar_t*>(
                                     scalar_out_indexer.GetInputPtr(0, idx));
-                            item_out = red_op(item_out, *val);
+                            item_out = red_op(item_out, val);
                         }
+                        out_stream << glob_id << ',' << item_out << '\t';
                         red_arg.combine(item_out);
                     });
-        });
+        };
+
+        auto e = queue.submit(red_cg);
+    }
+    queue.wait_and_throw();
+}
+
+// Based on OneAPI GPU optimization guide code sample (Blocked access to
+// input data + SYCL builtin reduction ops for final reduction)
+template <class ReductionOp, typename scalar_t>
+void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
+    auto device_props =
+            sy::SYCLContext::GetInstance().GetDeviceProperties(device);
+    auto queue = device_props.queue;
+    auto work_group_size = device_props.max_work_group_size;
+    size_t log2elements_per_group = 13;
+    auto elements_per_group = (1 << log2elements_per_group);  // 8192
+    size_t log2workitems_per_group = 8;
+    auto workitems_per_group = (1 << log2workitems_per_group);  // 256
+    auto elements_per_work_item =
+            elements_per_group / workitems_per_group;  // 32 (= max SIMD size)
+    auto mask = ~(~0 << log2workitems_per_group);
+    ReductionOp red_op;
+
+    // atomic flag. Must be 4 bytes.
+    sycl::buffer<int32_t, 1> output_in_use{indexer.NumOutputElements()};
+    auto e_fill = queue.submit([&](auto& cgh) {
+        auto acc_output_in_use =
+                output_in_use.get_access<sycl::access_mode::write>(cgh);
+        cgh.fill(acc_output_in_use, 0);
+    });
+
+    for (int64_t output_idx = 0; output_idx < indexer.NumOutputElements();
+         output_idx++) {
+        // sub_indexer.NumWorkloads() == ipo.
+        // sub_indexer's workload_idx is indexer's ipo_idx.
+        Indexer scalar_out_indexer = indexer.GetPerOutputIndexer(output_idx);
+        auto num_elements = scalar_out_indexer.NumWorkloads();
+        auto num_work_groups = num_elements / elements_per_group;
+        if (num_elements > elements_per_group * num_work_groups)
+            ++num_work_groups;
+        // ensure each work group has work_group_size work items
+        auto num_work_items = num_work_groups * work_group_size;
+
+        sycl::buffer<int32_t, 1> this_output_in_use{output_in_use, output_idx,
+                                                    1};
+        auto arg_red_cg = [&](auto& cgh) {
+            auto acc_in_use =
+                    this_output_in_use
+                            .get_access<sycl::access_mode::read_write>(cgh);
+            sycl::stream out_stream(10240, 1024, cgh);
+            cgh.parallel_for(
+                    sycl::nd_range<1>{num_work_items, work_group_size},
+                    [=](sycl::nd_item<1> item) {
+                        auto glob_id = item.get_global_id(0);
+                        auto this_group = item.get_group();
+                        auto offset = ((glob_id >> log2workitems_per_group)
+                                       << log2elements_per_group) +
+                                      (glob_id & mask);
+                        std::pair<int64_t, scalar_t> item_out{0, identity};
+                        for (size_t i = 0; i < elements_per_work_item; i++) {
+                            size_t idx =
+                                    (i << log2workitems_per_group) + offset;
+                            if (idx >= num_elements) break;
+                            auto val = *reinterpret_cast<scalar_t*>(
+                                    scalar_out_indexer.GetInputPtr(0, idx));
+                            item_out = red_op(item_out, {idx, val});
+                        }
+                        auto group_output_val = sycl::reduce_over_group(
+                                this_group, item_out.second, identity,
+                                typename ReductionOp::basic_reduction());
+                        // atomic (serial) reduction over all groups. SYCL does
+                        // not have a barrier over groups. Work item(s) with min
+                        // / max value update the output. (non-deterministic)
+                        if (item_out.second == group_output_val) {
+                            out_stream << "group_output: " << group_output_val
+                                       << item_out.first << sycl::endl;
+                            auto& out_idx = *reinterpret_cast<int64_t*>(
+                                    scalar_out_indexer.GetOutputPtr(0));
+                            auto& out_val = *reinterpret_cast<scalar_t*>(
+                                    scalar_out_indexer.GetOutputPtr(1));
+                            // TODO: Look for a better option to a spinlock
+                            // mutex.
+                            auto in_use = sycl::atomic_ref<
+                                    int32_t, sycl::memory_order::acq_rel,
+                                    sycl::memory_scope::device>(acc_in_use[0]);
+                            while (in_use.exchange(1) == 1) {
+                            }
+                            std::tie(out_idx, out_val) =
+                                    red_op({out_idx, out_val},
+                                           {item_out.first, group_output_val});
+                            in_use.store(0);
+                        }
+                    });
+        };
+
+        auto e = queue.submit(arg_red_cg);
     }
     queue.wait_and_throw();
 }
@@ -90,24 +207,27 @@ void ReductionSYCL(const Tensor& src,
     if (s_regular_reduce_ops.find(op_code) != s_regular_reduce_ops.end()) {
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
+            scalar_t identity;
             switch (op_code) {
                 case ReductionOpCode::Sum:
                     dst.Fill(0);
                     SYCLReductionEngine<sycl::plus<scalar_t>, scalar_t>(
-                            device, indexer);
+                            device, indexer, 0);
                     break;
                 case ReductionOpCode::Prod:
                     dst.Fill(1);
                     SYCLReductionEngine<sycl::multiplies<scalar_t>, scalar_t>(
-                            device, indexer);
+                            device, indexer, 1);
                     break;
                 case ReductionOpCode::Min:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
                                 "Zero-size Tensor does not support Min.");
                     } else {
+                        identity = std::numeric_limits<scalar_t>::max();
+                        dst.Fill(identity);
                         SYCLReductionEngine<sycl::minimum<scalar_t>, scalar_t>(
-                                device, indexer);
+                                device, indexer, identity);
                     }
                     break;
                 case ReductionOpCode::Max:
@@ -115,8 +235,10 @@ void ReductionSYCL(const Tensor& src,
                         utility::LogError(
                                 "Zero-size Tensor does not support Max.");
                     } else {
+                        identity = std::numeric_limits<scalar_t>::lowest();
+                        dst.Fill(identity);
                         SYCLReductionEngine<sycl::maximum<scalar_t>, scalar_t>(
-                                device, indexer);
+                                device, indexer, identity);
                     }
                     break;
                 default:
@@ -125,7 +247,33 @@ void ReductionSYCL(const Tensor& src,
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
-        utility::LogError("SYCL Arg-reduction is not implemented.");
+        if (dst.GetDtype() != core::Int64) {
+            utility::LogError("Arg-reduction must have int64 output dtype.");
+        }
+        // Accumulation buffer to store temporary min/max values.
+        Tensor dst_acc(dst.GetShape(), src.GetDtype(), src.GetDevice());
+        Indexer indexer({src}, {dst, dst_acc}, DtypePolicy::INPUT_SAME, dims);
+        DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
+            scalar_t identity;
+            switch (op_code) {
+                case ReductionOpCode::ArgMin:
+                    identity = std::numeric_limits<scalar_t>::max();
+                    dst_acc.Fill(identity);
+                    SYCLArgReductionEngine<ArgMinReduction<scalar_t>, scalar_t>(
+                            device, indexer, identity);
+                    break;
+                case ReductionOpCode::ArgMax:
+                    identity = std::numeric_limits<scalar_t>::lowest();
+                    dst_acc.Fill(identity);
+                    SYCLArgReductionEngine<ArgMaxReduction<scalar_t>, scalar_t>(
+                            device, indexer, identity);
+                    break;
+                default:
+                    utility::LogError("Unsupported op code.");
+                    break;
+            }
+        });
+        utility::LogInfo("dst_acc: {}", dst_acc.ToString());
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
         if (src.GetDtype() != core::Bool) {
@@ -141,14 +289,14 @@ void ReductionSYCL(const Tensor& src,
             case ReductionOpCode::All:
                 // Identity == true. 0-sized tensor, returns true.
                 dst.Fill(true);
-                SYCLReductionEngine<sycl::logical_and<bool>, bool>(device,
-                                                                   indexer);
+                SYCLReductionEngine<sycl::logical_and<bool>, bool>(
+                        device, indexer, true);
                 break;
             case ReductionOpCode::Any:
                 // Identity == false. 0-sized tensor, returns false.
                 dst.Fill(false);
-                SYCLReductionEngine<sycl::logical_or<bool>, bool>(device,
-                                                                  indexer);
+                SYCLReductionEngine<sycl::logical_or<bool>, bool>(
+                        device, indexer, false);
                 break;
             default:
                 utility::LogError("Unsupported op code.");
