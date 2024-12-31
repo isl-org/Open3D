@@ -49,6 +49,23 @@ jobs:
             docker/docker_test.sh sycl-static
           fi
 
+      - name: Upload wheel to GitHub artifacts
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-sycl-linux-python-wheel
+          path: open3d-*.whl
+          if-no-files-found: error
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ${{ matrix.BUILD_SHARED_LIBS }} == 'ON' ] ; then
+            gh release upload main-devel open3d-*.whl --clobber
+          fi
+          gh release view main-devel
+
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: 'google-github-actions/auth@v2'

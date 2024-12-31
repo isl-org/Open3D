@@ -34,11 +34,11 @@ class Indexer;
 class IndexerIterator;
 
 // Maximum number of dimensions of TensorRef.
-static constexpr int64_t MAX_DIMS = 4;
+static constexpr int64_t MAX_DIMS = 5;
 
 // Maximum number of inputs of an op.
 // MAX_INPUTS shall be >= MAX_DIMS to support advanced indexing.
-static constexpr int64_t MAX_INPUTS = 4;
+static constexpr int64_t MAX_INPUTS = 5;
 
 // Maximum number of outputs of an op. This number can be increased when
 // necessary.
@@ -638,7 +638,7 @@ protected:
 class IndexerIterator {
 public:
     struct Iterator {
-        Iterator(){};
+        Iterator() {};
         Iterator(const Indexer& indexer);
         Iterator(Iterator&& other) = default;
 
