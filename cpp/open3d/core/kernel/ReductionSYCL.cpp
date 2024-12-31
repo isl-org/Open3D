@@ -24,23 +24,31 @@ namespace {
 template <typename scalar_t>
 struct ArgMinReduction {
     using basic_reduction = sycl::minimum<scalar_t>;
-    std::pair<int64_t, scalar_t> operator()(
-            std::pair<int64_t, scalar_t> a,
-            std::pair<int64_t, scalar_t> b) const {
-        return a.second < b.second ? a : b;
+    std::pair<int64_t, scalar_t> operator()(int64_t a_idx,
+                                            scalar_t a_val,
+                                            int64_t b_idx,
+                                            scalar_t b_val) const {
+        return a_val < b_val ? std::make_pair(a_idx, a_val)
+                             : std::make_pair(b_idx, b_val);
     }
 };
 
 template <typename scalar_t>
 struct ArgMaxReduction {
     using basic_reduction = sycl::maximum<scalar_t>;
-    std::pair<int64_t, scalar_t> operator()(
-            std::pair<int64_t, scalar_t> a,
-            std::pair<int64_t, scalar_t> b) const {
-        return a.second > b.second ? a : b;
+    std::pair<int64_t, scalar_t> operator()(int64_t a_idx,
+                                            scalar_t a_val,
+                                            int64_t b_idx,
+                                            scalar_t b_val) const {
+        return a_val > b_val ? std::make_pair(a_idx, a_val)
+                             : std::make_pair(b_idx, b_val);
     }
 };
 
+// TODO: This launches one kernel per output element, which can be inefficient
+// in cases where the reduction dim is small but the non-reduced dim is large.
+// Unit tests for a large number of outputs are disabled.
+// Speed-up by launching one kernel for the entire reduction.
 template <class ReductionOp, typename scalar_t>
 void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
@@ -69,14 +77,12 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
         auto num_work_items = num_work_groups * work_group_size;
 
         auto red_cg = [&](auto& cgh) {
-            auto output = reinterpret_cast<scalar_t*>(
-                    scalar_out_indexer.GetOutputPtr(0));
+            auto output = scalar_out_indexer.GetOutputPtr<scalar_t>(0);
             // Setting this still doesn't initialize to identity -
             // output buffer must be initialized separately.
             auto sycl_reducer = sycl::reduction(
                     output, identity, red_op,
                     {sycl::property::reduction::initialize_to_identity()});
-            sycl::stream out_stream(10240, 128, cgh);
             cgh.parallel_for(
                     sycl::nd_range<1>{num_work_items, work_group_size},
                     sycl_reducer, [=](sycl::nd_item<1> item, auto& red_arg) {
@@ -89,11 +95,11 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                             size_t idx =
                                     (i << log2workitems_per_group) + offset;
                             if (idx >= num_elements) break;
-                            auto val = *reinterpret_cast<scalar_t*>(
-                                    scalar_out_indexer.GetInputPtr(0, idx));
+                            auto val =
+                                    *scalar_out_indexer.GetInputPtr<scalar_t>(
+                                            0, idx);
                             item_out = red_op(item_out, val);
                         }
-                        out_stream << glob_id << ',' << item_out << '\t';
                         red_arg.combine(item_out);
                     });
         };
@@ -105,6 +111,9 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
 
 // Based on OneAPI GPU optimization guide code sample (Blocked access to
 // input data + SYCL builtin reduction ops for final reduction)
+// TODO: This launches one kernel per output element, which can be inefficient
+// in cases where the reduction dim is small but the non-reduced dim is large.
+// Speed-up by launching one kernel for the entire reduction.
 template <class ReductionOp, typename scalar_t>
 void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
@@ -146,37 +155,38 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
             auto acc_in_use =
                     this_output_in_use
                             .get_access<sycl::access_mode::read_write>(cgh);
-            sycl::stream out_stream(10240, 1024, cgh);
             cgh.parallel_for(
                     sycl::nd_range<1>{num_work_items, work_group_size},
                     [=](sycl::nd_item<1> item) {
+                        auto& out_idx =
+                                *scalar_out_indexer.GetOutputPtr<int64_t>(0, 0);
+                        auto& out_val =
+                                *scalar_out_indexer.GetOutputPtr<scalar_t>(1,
+                                                                           0);
                         auto glob_id = item.get_global_id(0);
                         auto this_group = item.get_group();
                         auto offset = ((glob_id >> log2workitems_per_group)
                                        << log2elements_per_group) +
                                       (glob_id & mask);
-                        std::pair<int64_t, scalar_t> item_out{0, identity};
+                        int64_t it_idx = 0;
+                        scalar_t it_val = identity;
                         for (size_t i = 0; i < elements_per_work_item; i++) {
                             size_t idx =
                                     (i << log2workitems_per_group) + offset;
                             if (idx >= num_elements) break;
-                            auto val = *reinterpret_cast<scalar_t*>(
-                                    scalar_out_indexer.GetInputPtr(0, idx));
-                            item_out = red_op(item_out, {idx, val});
+                            auto val =
+                                    *scalar_out_indexer.GetInputPtr<scalar_t>(
+                                            0, idx);
+                            std::tie(it_idx, it_val) =
+                                    red_op(it_idx, it_val, idx, val);
                         }
-                        auto group_output_val = sycl::reduce_over_group(
-                                this_group, item_out.second, identity,
+                        auto group_out_val = sycl::reduce_over_group(
+                                this_group, it_val, identity,
                                 typename ReductionOp::basic_reduction());
                         // atomic (serial) reduction over all groups. SYCL does
                         // not have a barrier over groups. Work item(s) with min
                         // / max value update the output. (non-deterministic)
-                        if (item_out.second == group_output_val) {
-                            out_stream << "group_output: " << group_output_val
-                                       << item_out.first << sycl::endl;
-                            auto& out_idx = *reinterpret_cast<int64_t*>(
-                                    scalar_out_indexer.GetOutputPtr(0));
-                            auto& out_val = *reinterpret_cast<scalar_t*>(
-                                    scalar_out_indexer.GetOutputPtr(1));
+                        if (it_val == group_out_val) {
                             // TODO: Look for a better option to a spinlock
                             // mutex.
                             auto in_use = sycl::atomic_ref<
@@ -184,9 +194,8 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                                     sycl::memory_scope::device>(acc_in_use[0]);
                             while (in_use.exchange(1) == 1) {
                             }
-                            std::tie(out_idx, out_val) =
-                                    red_op({out_idx, out_val},
-                                           {item_out.first, group_output_val});
+                            std::tie(out_idx, out_val) = red_op(
+                                    out_idx, out_val, it_idx, group_out_val);
                             in_use.store(0);
                         }
                     });
@@ -273,7 +282,6 @@ void ReductionSYCL(const Tensor& src,
                     break;
             }
         });
-        utility::LogInfo("dst_acc: {}", dst_acc.ToString());
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
         if (src.GetDtype() != core::Bool) {

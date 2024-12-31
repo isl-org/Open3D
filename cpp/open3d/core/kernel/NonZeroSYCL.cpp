@@ -47,7 +47,7 @@ Tensor NonZeroSYCL(const Tensor& src) {
     // MAX_DIMS: Maximum number of dimensions of TensorRef, defined in
     // Indexer.h.
     sycl::marray<int64_t, MAX_DIMS> shape_vec;  // device copyable
-    if (shape.size() <= MAX_DIMS) {
+    if (shape.size() > MAX_DIMS) {
         utility::LogError("Too many dimensions: {} > MAX_DIMS={}.",
                           shape.size(), MAX_DIMS);
     }

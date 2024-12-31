@@ -1913,21 +1913,22 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceSumSpecialShapes) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0}));
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, ReduceMultipleOutputsSumLargeArray) {
+TEST_P(TensorPermuteDevices, ReduceMultipleOutputsSumLargeArray) {
     core::Device device = GetParam();
-    core::SizeVector shape{3, 7, 8234719};
+    constexpr int64_t large = 8234719;
+    core::SizeVector shape{3, 7, large};
     int64_t size = shape.NumElements();
     std::vector<int> vals(size, 1);
     core::Tensor src(vals, shape, core::Int32, device);
     core::Tensor dst;
 
     dst = src.Sum({}, false);
-    EXPECT_EQ(dst.GetShape(), core::SizeVector({3, 7, 8234719}));
-    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(3 * 7 * 8234719, 1));
+    EXPECT_EQ(dst.GetShape(), core::SizeVector({3, 7, large}));
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(3 * 7 * large, 1));
 
     dst = src.Sum({0}, false);
-    EXPECT_EQ(dst.GetShape(), core::SizeVector({7, 8234719}));
-    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(7 * 8234719, 3));
+    EXPECT_EQ(dst.GetShape(), core::SizeVector({7, large}));
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(7 * large, 3));
 }
 
 TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit1D) {
@@ -1948,7 +1949,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit1D) {
 }
 
 // np.sum(np.ones((2, large_dim)), dim=0)
-TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit2DCase0) {
+TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase0) {
     core::Device device = GetParam();
     int64_t large_dim = (1ULL << 27) + 10;
     core::SizeVector shape{2, large_dim};
@@ -1972,7 +1973,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit2DCase0) {
 }
 
 // np.sum(np.ones((2, large_dim)), dim=1)
-TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit2DCase1) {
+TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase1) {
     core::Device device = GetParam();
     int64_t large_dim = (1ULL << 27) + 10;
     core::SizeVector shape{2, large_dim};
@@ -1996,7 +1997,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit2DCase1) {
 }
 
 // np.sum(np.ones((large_dim, 2)), dim=0)
-TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit2DCase2) {
+TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase2) {
     core::Device device = GetParam();
     int64_t large_dim = (1ULL << 27) + 10;
     core::SizeVector shape{large_dim, 2};
@@ -2020,7 +2021,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit2DCase2) {
 }
 
 // np.sum(np.ones((large_dim, 2)), dim=1)
-TEST_P(TensorPermuteDevicesWithSYCL, ReduceSum64bit2DCase3) {
+TEST_P(TensorPermuteDevices, ReduceSum64bit2DCase3) {
     core::Device device = GetParam();
     int64_t large_dim = (1ULL << 27) + 10;
     core::SizeVector shape{large_dim, 2};
