@@ -1041,28 +1041,10 @@ Example:
         top_face = box.select_by_index([2, 3, 6, 7])
 )");
 
-    py::enum_<BlendingMethod>(m, "BlendingMethod", py::arithmetic())
-            .value("MAX", BlendingMethod::MAX,
-                   "For each texel, pick the input pixel with the max weight "
-                   "from all overlapping images. This creates sharp textures "
-                   "but may have visible seams.")
-            .value("AVERAGE", BlendingMethod::AVERAGE,
-                   "The output texel value is the weighted sum of input "
-                   "pixels. This creates smooth blending without seams, but "
-                   "the results may be blurry.")
-            .value("COLOR_CORRECTION", BlendingMethod::COLOR_CORRECTION,
-                   "Try to match white balance and exposure settings for the "
-                   "images with a linear 3 channel contrast + brightness "
-                   "correction for each image. Also detects and masks specular "
-                   "highlights and saturated regions. This can be combined "
-                   "with either the `MAX` or `AVERAGE` blending methods.")
-            .def("__or__",
-                 py::overload_cast<BlendingMethod, BlendingMethod>(&operator|));
     triangle_mesh.def("project_images_to_albedo",
                       &TriangleMesh::ProjectImagesToAlbedo, "images"_a,
                       "intrinsic_matrices"_a, "extrinsic_matrices"_a,
                       "tex_size"_a = 1024, "update_material"_a = true,
-                      "blending_method"_a = BlendingMethod::MAX,
                       py::call_guard<py::gil_scoped_release>(), R"(
 Create an albedo for the triangle mesh using calibrated images. The triangle
 mesh must have texture coordinates ("texture_uvs" triangle attribute). This works
@@ -1081,20 +1063,6 @@ Args:
         only one side is needed.
     update_material (bool): Whether to update the material of the triangle
         mesh, possibly overwriting an existing albedo texture.
-    blending_method (BlendingMethod) enum specifying the blending
-        method for overlapping images::
-
-        - `MAX`: For each texel, pick the input pixel with the max weight from
-        all overlapping images. This creates sharp textures but may have
-        visible seams.
-        - `AVERAGE`: The output texel value is the weighted sum of input
-        pixels. This creates smooth blending without seams, but the results
-        may be blurry.
-        - `COLOR_CORRECTION`: Try to match white balance and exposure
-        settings for the images with a linear 3 channel contrast +
-        brightness correction for each image. Also detects and masks
-        specular highlights and saturated regions. This can be combined with
-        either the MAX or AVERAGE blending methods.
 
 Returns:
     Image with albedo texture.)");

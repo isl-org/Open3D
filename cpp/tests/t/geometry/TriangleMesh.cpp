@@ -1383,41 +1383,15 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
                                       device),
     };
 
-    auto blend = BlendingMethod::MAX;  // | BlendingMethod::COLOR_CORRECTION;
-
     Image albedo = sphere.ProjectImagesToAlbedo(
             {Image(view[0]), Image(view[1]), Image(view[2])},
             {intrinsic_matrix, intrinsic_matrix, intrinsic_matrix},
             {extrinsic_matrix[0], extrinsic_matrix[1], extrinsic_matrix[2]},
-            256, true, blend);
-    /* visualization::Draw( */
-    /*         {std::shared_ptr<TriangleMesh>(&sphere, [](TriangleMesh*) {})},
-     */
-    /*         "MAX blending", 1024, 768); */
+            256, true);
 
-    EXPECT_TRUE(sphere.HasMaterial());
-    EXPECT_TRUE(sphere.GetMaterial().HasAlbedoMap());
-    EXPECT_TRUE(albedo.AsTensor().GetShape().IsCompatible({256, 256, 3}));
-    EXPECT_TRUE(albedo.GetDtype() == core::UInt8);
-    EXPECT_THAT(albedo.AsTensor()
-                        .To(core::Float32)
-                        .Mean({0, 1})
-                        .ToFlatVector<float>(),
-                ElementsAre(FloatEq(92.465515), FloatEq(71.62926),
-                            FloatEq(67.55928)));
-
-    blend = BlendingMethod::AVERAGE;  // | BlendingMethod::COLOR_CORRECTION;
-
-    albedo = sphere.ProjectImagesToAlbedo(
-            {Image(view[0]), Image(view[1]), Image(view[2])},
-            {intrinsic_matrix, intrinsic_matrix, intrinsic_matrix},
-            {extrinsic_matrix[0], extrinsic_matrix[1], extrinsic_matrix[2]},
-            256, true, blend);
-
-    /* visualization::Draw( */
-    /*         {std::shared_ptr<TriangleMesh>(&sphere, [](TriangleMesh*) {})},
-     */
-    /*         "AVERAGE blending", 1024, 768); */
+    // visualization::Draw(
+    //         {std::shared_ptr<TriangleMesh>(&sphere, [](TriangleMesh*) {})},
+    //         "ProjectImagesToAlbedo", 1024, 768);
 
     EXPECT_THAT(albedo.AsTensor()
                         .To(core::Float32)

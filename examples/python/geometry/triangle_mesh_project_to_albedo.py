@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """This example demonstrates project_image_to_albedo. Use create_dataset mode to
@@ -141,9 +141,8 @@ def albedo_from_images(meshfile, calib_data_file, albedo_contrast=1.25):
     calib.close()
     start = time.time()
     with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug):
-        albedo = tmeshes[0].project_images_to_albedo(
-            images, Ks, Rts, 1024, True, o3d.t.geometry.BlendingMethod.AVERAGE)
-        #| o3d.t.geometry.BlendingMethod.COLOR_CORRECTION)
+        albedo = tmeshes[0].project_images_to_albedo(images, Ks, Rts, 1024,
+                                                     True)
     albedo = albedo.linear_transform(scale=albedo_contrast)  # brighten albedo
     tmeshes[0].material.texture_maps["albedo"] = albedo
     print(f"project_images_to_albedo ran in {time.time()-start:.2f}s")

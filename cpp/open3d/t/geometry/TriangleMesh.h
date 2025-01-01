@@ -25,37 +25,6 @@ namespace t {
 namespace geometry {
 
 class LineSet;
-/* class RaycastingScene; */
-
-/// Texture Blending method for ProjectImagesToAlbedo() from overlapping images.
-enum class BlendingMethod : uint8_t {
-    ///  For each texel, pick the input pixel with the max weight from all
-    ///  overlapping images. This creates sharp textures but may have visible
-    ///  seams.
-    MAX = 1 << 0,
-    ///   The output texel value is the weighted sum of input pixels. This
-    ///   creates smooth blending without seams, but the results may be blurry.
-    AVERAGE = 1 << 1,
-    ///  Try to match white balance and exposure settings for the images with a
-    ///  linear 3 channel contrast + brightness correction for each image. Also
-    ///  detects and masks specular highlights and saturated regions. This can
-    ///  be combined with either the MAX or AVERAGE blending methods.
-    COLOR_CORRECTION = 1 << 2
-};
-
-/// Set a flag
-inline BlendingMethod operator|(BlendingMethod a, BlendingMethod b) {
-    return static_cast<BlendingMethod>(
-            static_cast<std::underlying_type_t<BlendingMethod>>(a) |
-            static_cast<std::underlying_type_t<BlendingMethod>>(b));
-}
-
-/// Test a flag
-inline std::underlying_type_t<BlendingMethod> operator&(BlendingMethod a,
-                                                        BlendingMethod b) {
-    return static_cast<std::underlying_type_t<BlendingMethod>>(a) &
-           static_cast<std::underlying_type_t<BlendingMethod>>(b);
-}
 class PointCloud;
 
 /// \class TriangleMesh
@@ -1046,27 +1015,13 @@ public:
     /// only one side is needed.
     /// \param update_material Whether to update the material of the triangle
     /// mesh, possibly overwriting an existing albedo texture.
-    /// \param blending_method BlendingMethod enum specifying the blending
-    /// method for overlapping images:
-    ///     - MAX: For each texel, pick the input pixel with the max weight from
-    ///     all overlapping images. This creates sharp textures but may have
-    ///     visible seams.
-    ///     - AVERAGE: The output texel value is the weighted sum of input
-    ///     pixels. This creates smooth blending without seams, but the results
-    ///     may be blurry.
-    ///     - COLOR_CORRECTION: Try to match white balance and exposure
-    ///     settings for the images with a linear 3 channel contrast +
-    ///     brightness correction for each image. Also detects and masks
-    ///     specular highlights and saturated regions. This can be combined with
-    ///     either the MAX or AVERAGE blending methods.
     /// \return Image with albedo texture
     Image ProjectImagesToAlbedo(
             const std::vector<Image> &images,
             const std::vector<core::Tensor> &intrinsic_matrices,
             const std::vector<core::Tensor> &extrinsic_matrices,
             int tex_size = 1024,
-            bool update_material = true,
-            BlendingMethod blending_method = BlendingMethod::MAX);
+            bool update_material = true);
 
     /// Removes all non-manifold edges, by successively deleting triangles
     /// with the smallest surface area adjacent to the
