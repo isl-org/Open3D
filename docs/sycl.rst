@@ -23,10 +23,11 @@ Current status:
 ---------------
 
 Most Tensor API operations and tensor geometry operations without custom kernels
-can now be offloaded to SYCL devices. You will get an error if an operation is
-not supported. We are working on adding more custom kernels and improving
-performance. The implementation  is only tested on Linux on Intel integrated and
-discrete GPUs. Currently, only a single GPU (`SYCL:0`, if available) and the CPU
+can now be offloaded to SYCL devices. In addition, HW accelerated raycasting
+queries in :ref:`RayCastingScene` are also supported. You will get an error if
+an operation is not supported. We are working on adding more custom kernels and
+improving performance. The implementation is tested on Linux on Intel integrated
+and discrete GPUs. Currently, a single GPU (`SYCL:0`, if available) and the CPU
 (`SYCL:1` if a GPU is available, else `SYCL:0`) are supported.
 
 Installation:
@@ -39,9 +40,12 @@ and (optionally) SYCL runtime for your `Nvidia
 <https://developer.codeplay.com/products/oneapi/nvidia/download>`_ or `AMD
 <https://developer.codeplay.com/products/oneapi/amd/download>`_ GPU.
 
-For Python, the wheels will automatically install the DPC++ runtime package (`dpcpp-cpp-rt`).
-
-You will also need `libomp5` installed: `apt-get install libomp5-11`.
+For Python, the wheels will automatically install the DPC++ runtime package
+(`dpcpp-cpp-rt`).  You will also need `libomp5` installed: `apt-get install
+libomp5-11`. Make sure to have the `correct drivers installed 
+<https://dgpu-docs.intel.com/driver/client/overview.html>`_ for your GPU. For
+raycasting on Intel GPUs, you will also need the
+`intel-level-zero-gpu-raytracing` package.
 
 Building from source:
 ---------------------

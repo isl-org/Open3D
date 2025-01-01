@@ -37,6 +37,7 @@ if (BUILD_ISPC_MODULE)
     )
 endif()
 
+# TODO: cmake does not currently build this test!
 # if (BUILD_SYCL_MODULE)
 #     target_sources(tests PRIVATE
 #         ParallelForSYCL.cpp
