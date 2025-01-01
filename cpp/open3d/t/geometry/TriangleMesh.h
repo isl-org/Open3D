@@ -8,6 +8,7 @@
 #pragma once
 
 #include <list>
+#include <type_traits>
 #include <unordered_map>
 
 #include "open3d/core/Tensor.h"
@@ -985,14 +986,42 @@ public:
     /// the mesh or has a negative value, it is ignored.
     /// \param indices An integer list of indices. Duplicates are
     /// allowed, but ignored. Signed and unsigned integral types are allowed.
+    /// \param copy_attributes Indicates if vertex attributes (other than
+    /// positions) and triangle attributes (other than indices) should be copied
+    /// to the returned mesh.
     /// \return A new mesh with the selected vertices and faces built
     /// from the selected vertices. If the original mesh is empty, return
     /// an empty mesh.
-    TriangleMesh SelectByIndex(const core::Tensor &indices) const;
+    TriangleMesh SelectByIndex(const core::Tensor &indices,
+                               bool copy_attributes = true) const;
 
     /// Removes unreferenced vertices from the mesh.
     /// \return The reference to itself.
     TriangleMesh RemoveUnreferencedVertices();
+
+    /// Create an albedo for the triangle mesh using calibrated images. The
+    /// triangle mesh must have texture coordinates ("texture_uvs" triangle
+    /// attribute). This works by back projecting the images onto the texture
+    /// surface. Overlapping images are blended together in the resulting
+    /// albedo. For best results, use images captured with exposure and white
+    /// balance lock to reduce the chance of seams in the output texture.
+    ///
+    /// \param images vector of images.
+    /// \param intrinsic_matrices vector of {3,3} intrinsic matrices describing
+    /// the pinhole camera.
+    /// \param extrinsic_matrices vector of {4,4} extrinsic matrices describing
+    /// the position and orientation of the camera.
+    /// \param tex_size Output albedo texture size. This is a square image, so
+    /// only one side is needed.
+    /// \param update_material Whether to update the material of the triangle
+    /// mesh, possibly overwriting an existing albedo texture.
+    /// \return Image with albedo texture
+    Image ProjectImagesToAlbedo(
+            const std::vector<Image> &images,
+            const std::vector<core::Tensor> &intrinsic_matrices,
+            const std::vector<core::Tensor> &extrinsic_matrices,
+            int tex_size = 1024,
+            bool update_material = true);
 
     /// Removes all non-manifold edges, by successively deleting triangles
     /// with the smallest surface area adjacent to the
