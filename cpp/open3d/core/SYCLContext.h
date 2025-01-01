@@ -27,6 +27,7 @@ namespace sy {
 struct SYCLDevice {
     SYCLDevice(const sycl::device& sycl_device);
     std::string name;            ///< Fiendlly / descriptive name of the device.
+    std::string device_type;     ///< cpu, gpu, host, acc, custom, unknown.
     sycl::device device;         ///< SYCL device.
     sycl::queue queue;           ///< Default queue for this device.
     size_t max_work_group_size;  ///< Preferred work group size

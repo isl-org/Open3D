@@ -154,7 +154,8 @@ with open("README.rst") as readme:
     long_description = readme.read()
 # open3d-cpu wheel for Linux x86_64
 if sys.platform.startswith("linux") and platform.machine() in (
-        'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
+        'i386', 'x86_64', 'AMD64'
+) and "@BUILD_CUDA_MODULE@" == "OFF" and "@BUILD_SYCL_MODULE@" == "OFF":
     name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "
                          "Use the open3d wheel for full functionality.")

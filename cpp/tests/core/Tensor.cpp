@@ -15,6 +15,7 @@
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/FileSystem.h"
@@ -2245,6 +2246,11 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceMaxFloatLimit) {
 
 TEST_P(TensorPermuteDevicesWithSYCL, ReduceArgMin) {
     core::Device device = GetParam();
+    if (core::sy::GetDeviceType(device) == "cpu") {
+        GTEST_SKIP() << "allocateMemSubBuffer() API failed with unknown error "
+                        "on CPU.";
+    }
+
     core::Tensor src = core::Tensor::Init<float>(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
              {{7, 21, 11, 1}, {4, 2, 10, 19}, {5, 8, 16, 12}}},
@@ -2273,6 +2279,10 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceArgMin) {
 
 TEST_P(TensorPermuteDevicesWithSYCL, ReduceArgMax) {
     core::Device device = GetParam();
+    if (core::sy::GetDeviceType(device) == "cpu") {
+        GTEST_SKIP() << "allocateMemSubBuffer() API failed with unknown error "
+                        "on CPU.";
+    }
     core::Tensor src = core::Tensor::Init<float>(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
              {{7, 21, 11, 1}, {4, 2, 10, 19}, {5, 8, 16, 12}}},

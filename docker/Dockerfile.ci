@@ -88,10 +88,14 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev \
  && if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
-        apt-get install -y g++-11; \
+         add-apt-repository -y ppa:ubuntu-toolchain-r/test \
+        && apt-get install -y g++-11 \
+        && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11 \
+        && update-alternatives --set g++ /usr/bin/g++-11 \
+        && c++ -v; \
     fi \
  && rm -rf /var/lib/apt/lists/*
-# OneDPL TBB backend requires libstdc++ >= v11
+# OneDPL TBB backend requires libstdc++ >= v11. This makes the created wheel UBuntu 22.04+ only.
 
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run

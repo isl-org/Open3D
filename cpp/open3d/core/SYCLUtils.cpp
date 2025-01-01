@@ -84,7 +84,7 @@ int SYCLDemo() {
 
 #ifdef BUILD_SYCL_MODULE
 
-static std::string GetDeviceTypeName(const sycl::device &device) {
+OPEN3D_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device) {
     auto device_type = device.get_info<sycl::info::device::device_type>();
     switch (device_type) {
         case sycl::info::device_type::cpu:
@@ -95,6 +95,8 @@ static std::string GetDeviceTypeName(const sycl::device &device) {
             return "host";
         case sycl::info::device_type::accelerator:
             return "acc";
+        case sycl::info::device_type::custom:
+            return "custom";
         default:
             return "unknown";
     }
@@ -207,6 +209,20 @@ bool IsDeviceAvailable(const Device &device) {
     return SYCLContext::GetInstance().IsDeviceAvailable(device);
 #else
     return false;
+#endif
+}
+
+std::string GetDeviceType(const Device &device) {
+#ifdef BUILD_SYCL_MODULE
+    if (IsDeviceAvailable(device)) {
+        return SYCLContext::GetInstance()
+                .GetDeviceProperties(device)
+                .device_type;
+    } else {
+        return "";
+    }
+#else
+    return "";
 #endif
 }
 

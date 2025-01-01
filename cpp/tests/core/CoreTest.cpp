@@ -59,9 +59,12 @@ std::vector<core::Device> PermuteDevicesWithSYCL::TestCases() {
     std::vector<core::Device> devices = PermuteDevices::TestCases();
     std::vector<core::Device> sycl_devices =
             core::Device::GetAvailableSYCLDevices();
-    if (!sycl_devices.empty()) {
-        // devices.push_back(sycl_devices[0]);  // only the first SYCL device
-        devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end());
+    // Skip the last SYCL device - this is the CPU fallback and support is
+    // untested.
+    if (sycl_devices.size() > 1) {
+        devices.push_back(sycl_devices[0]);
+        // devices.insert(devices.end(), sycl_devices.begin(),
+        // sycl_devices.end());
     }
     return devices;
 }

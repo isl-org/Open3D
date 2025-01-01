@@ -456,12 +456,12 @@ sycl-shared_export_env() {
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=OFF
+    export PACKAGE=ON
     export BUILD_SYCL_MODULE=ON
 
-    export IGC_EnableDPEmulation=1          # Enable float64 emulation during compilation
-    export SYCL_CACHE_PERSISTENT=1          # Cache SYCL kernel binaries.
-    export OverrideDefaultFP64Settings=1    # Enable double precision emulation at runtime.
+    export IGC_EnableDPEmulation=1       # Enable float64 emulation during compilation
+    export SYCL_CACHE_PERSISTENT=1       # Cache SYCL kernel binaries.
+    export OverrideDefaultFP64Settings=1 # Enable double precision emulation at runtime.
 }
 
 sycl-static_export_env() {
@@ -480,9 +480,9 @@ sycl-static_export_env() {
     export PACKAGE=OFF
     export BUILD_SYCL_MODULE=ON
 
-    export IGC_EnableDPEmulation=1          # Enable float64 emulation during compilation
-    export SYCL_CACHE_PERSISTENT=1          # Cache SYCL kernel binaries.
-    export OverrideDefaultFP64Settings=1    # Enable double precision emulation at runtime.
+    export IGC_EnableDPEmulation=1       # Enable float64 emulation during compilation
+    export SYCL_CACHE_PERSISTENT=1       # Cache SYCL kernel binaries.
+    export OverrideDefaultFP64Settings=1 # Enable double precision emulation at runtime.
 }
 
 function main() {

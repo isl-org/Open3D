@@ -19,6 +19,8 @@ namespace open3d {
 namespace core {
 namespace sy {
 
+OPEN3D_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device);
+
 SYCLContext &SYCLContext::GetInstance() {
     static thread_local SYCLContext instance;
     return instance;
@@ -46,6 +48,7 @@ SYCLDevice::SYCLDevice(const sycl::device &sycl_device) {
     device = sycl_device;
     queue = sycl::queue(device);
     name = device.get_info<sid::name>();
+    device_type = GetDeviceTypeName(device);
     max_work_group_size = device.get_info<sid::max_work_group_size>();
     auto aspects = device.get_info<sid::aspects>();
     fp64 = std::find(aspects.begin(), aspects.end(), sycl::aspect::fp64) !=

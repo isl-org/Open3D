@@ -25,15 +25,16 @@ function(open3d_enable_strip target)
     endif()
 endfunction()
 
-# RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
+# RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder. 
+# Also check the Python virtual env /lib folder for 3rd party dependency libraries installed with `pip install`
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 if (APPLE)
-# Add options to cover the various ways in which open3d shaed lib or apps can be installed wrt TBB DSO
-    set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
+# Add options to cover the various ways in which open3d shared lib or apps can be installed wrt TBB DSO
+    set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/;@loader_path/../../../../")
 # pybind with open3d shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
     set(CMAKE_BUILD_RPATH "@loader_path/../")   
 elseif(UNIX)
-    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
+    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../")
     set(CMAKE_BUILD_RPATH "$ORIGIN/../")
 endif()
 
