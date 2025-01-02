@@ -19,16 +19,15 @@ compiler option) CMake variables. See the `compiler documentation
 <https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md>`_ for
 information about building for specific hardware.
 
-Current status:
----------------
+Enabled features:
+-----------------
 
-Most Tensor API operations and tensor geometry operations without custom kernels
+Many Tensor API operations and Tensor Geometry operations without custom kernels
 can now be offloaded to SYCL devices. In addition, HW accelerated raycasting
 queries in :ref:`RayCastingScene` are also supported. You will get an error if
-an operation is not supported. We are working on adding more custom kernels and
-improving performance. The implementation is tested on Linux on Intel integrated
-and discrete GPUs. Currently, a single GPU (`SYCL:0`, if available) and the CPU
-(`SYCL:1` if a GPU is available, else `SYCL:0`) are supported.
+an operation is not supported. The implementation is tested on Linux on Intel
+integrated and discrete GPUs. Currently, a single GPU (`SYCL:0`, if available)
+and the CPU (`SYCL:1` if a GPU is available, else `SYCL:0`) are supported.
 
 Installation:
 -------------
