@@ -324,8 +324,8 @@ void pybind_o3dvisualizer_definitions(py::module& m) {
                  "redraw is required.",
                  "callback"_a)
             .def("export_current_image", &O3DVisualizer::ExportCurrentImage,
-                 "Exports a PNG image of what is currently displayed to the "
-                 "given path.",
+                 "Exports a PNG or JPEG image of what is currently displayed "
+                 "to the given path.",
                  "path"_a)
             .def("start_rpc_interface", &O3DVisualizer::StartRPCInterface,
                  "address"_a, "timeout"_a,

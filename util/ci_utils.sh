@@ -31,10 +31,7 @@ TORCH_VER="2.2.2"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 TORCH_CXX11_URL="https://download.pytorch.org/whl/"
 # Python
-PIP_VER="23.2.1"
-WHEEL_VER="0.38.4"
-STOOLS_VER="67.3.2"
-YAPF_VER="0.30.0"
+PIP_VER="24.3.1"
 PROTOBUF_VER="4.24.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
@@ -44,10 +41,10 @@ install_python_dependencies() {
 
     echo "Installing Python dependencies"
     options="$(echo "$@" | tr ' ' '|')"
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
-        setuptools=="$STOOLS_VER"
+    python -m pip install -U pip=="$PIP_VER"
+    python -m pip install -U -c "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt" wheel setuptools
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U -r python/requirements_test.txt
+        python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}/python/requirements_test.txt"
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow
@@ -66,7 +63,6 @@ install_python_dependencies() {
         TORCH_GLNX="torch==${TORCH_VER}+cpu"
     fi
 
-    # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
         python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
@@ -93,7 +89,7 @@ install_python_dependencies() {
         fi
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-        python -m pip install -U yapf=="$YAPF_VER"
+        python -m pip install -U -c "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt" yapf
         # Fix Protobuf compatibility issue
         # https://stackoverflow.com/a/72493690/1255535
         # https://github.com/protocolbuffers/protobuf/issues/10051
@@ -246,8 +242,8 @@ test_wheel() {
     python -m venv open3d_test.venv
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
-        setuptools=="$STOOLS_VER"
+    python -m pip install -U pip=="$PIP_VER"
+    python -m pip install -U -c "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt" wheel setuptools
     echo -n "Using python: $(command -v python)"
     python --version
     echo -n "Using pip: "
@@ -290,7 +286,7 @@ test_wheel() {
 run_python_tests() {
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install -U -r python/requirements_test.txt
+    python -m pip install -U -r "$OPEN3D_SOURCE_ROOT/python/requirements_test.txt"
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
@@ -340,14 +336,11 @@ test_cpp_example() {
     # Now I am in Open3D/build/
 }
 
-# Install dependencies needed for building documentation (on Ubuntu 20.04)
+# Install dependencies needed for building documentation
 # Usage: install_docs_dependencies "${OPEN3D_ML_ROOT}"
 install_docs_dependencies() {
     echo
     echo Install ubuntu dependencies
-    echo Update cmake needed in Ubuntu 20.04
-    sudo apt-key adv --fetch-keys https://apt.kitware.com/keys/kitware-archive-latest.asc
-    sudo apt-add-repository --yes 'deb https://apt.kitware.com/ubuntu/ focal main'
     ./util/install_deps_ubuntu.sh assume-yes
     sudo apt-get install --yes cmake
     sudo apt-get install --yes libxml2-dev libxslt-dev python3-dev
@@ -361,9 +354,8 @@ install_docs_dependencies() {
     echo Install Python dependencies for building docs
     command -v python
     python -V
-    python -m pip install -U -q "wheel==$WHEEL_VER" \
-        "pip==$PIP_VER"
-    python -m pip install -U -q "yapf==$YAPF_VER"
+    python -m pip install -U -q "pip==$PIP_VER"
+    python -m pip install -U -q -c "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt" wheel yapf
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
