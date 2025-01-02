@@ -1361,9 +1361,11 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
 
 TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
     using namespace t::geometry;
+    using ::testing::AnyOf;
     using ::testing::ElementsAre;
     using ::testing::FloatEq;
     core::Device device = GetParam();
+    if (!device.IsCPU()) GTEST_SKIP() << "Not Implemented!";
     TriangleMesh sphere =
             TriangleMesh::FromLegacy(*geometry::TriangleMesh::CreateSphere(
                     1.0, 20, /*create_uv_map=*/true));
@@ -1405,7 +1407,13 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
                         .To(core::Float32)
                         .Mean({0, 1})
                         .ToFlatVector<float>(),
-                ElementsAre(FloatEq(87.8693), FloatEq(67.538), FloatEq(64.31)));
+                AnyOf(ElementsAre(FloatEq(87.8693), FloatEq(67.538),
+                                  FloatEq(64.31)),  // macOS
+                      ElementsAre(FloatEq(87.8758),
+                                  FloatEq(67.5518),  // Linux / Windows
+                                  FloatEq(64.3254)))
+
+    );
 }  // namespace tests
 
 TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {

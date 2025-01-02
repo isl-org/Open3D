@@ -1006,6 +1006,8 @@ public:
     /// albedo. For best results, use images captured with exposure and white
     /// balance lock to reduce the chance of seams in the output texture.
     ///
+    /// This function is only supported on the CPU device.
+    ///
     /// \param images vector of images.
     /// \param intrinsic_matrices vector of {3,3} intrinsic matrices describing
     /// the pinhole camera.

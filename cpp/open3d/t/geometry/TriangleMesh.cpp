@@ -1447,6 +1447,10 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         const std::vector<core::Tensor> &extrinsic_matrices,
         int tex_size /*=1024*/,
         bool update_material /*=true*/) {
+    if (!GetDevice().IsCPU()) {
+        utility::LogError(
+                "ProjectImagesToAlbedo is only supported on CPU device.");
+    }
     using core::None;
     using tk = core::TensorKey;
     constexpr float EPS = 1e-6;
@@ -1480,7 +1484,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
             tex_size, {"positions"}, 1, 0, false)["positions"];
     core::Tensor albedo =
             core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
-    albedo.Slice(2, 3, 4).Fill(EPS);  // regularize
+    albedo.Slice(2, 3, 4).Fill(EPS);  // regularize weight
     std::mutex albedo_mutex;
 
     RaycastingScene rcs;
