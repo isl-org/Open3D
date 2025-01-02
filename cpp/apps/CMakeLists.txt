@@ -131,6 +131,11 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
     target_link_libraries(${TARGET_NAME} PRIVATE Open3D::Open3D TBB::tbb ${ARGN})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
 
+    if (BUILD_SYCL_MODULE)
+        find_package(IntelSYCL REQUIRED)   # requires cmake>=3.25 on Windows
+        add_sycl_to_target(TARGET ${TARGET_NAME})
+    endif()
+
     open3d_link_3rdparty_libraries(${TARGET_NAME})
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
@@ -141,8 +146,4 @@ if (BUILD_GUI)
     open3d_add_app_gui(Open3DViewer Open3D Open3DViewer)
 endif()
 
-if (BUILD_SYCL_MODULE)
-    open3d_add_app_common(OfflineReconstruction OfflineReconstruction OfflineReconstruction Open3D::3rdparty_sycl)
-else()
-    open3d_add_app_common(OfflineReconstruction OfflineReconstruction OfflineReconstruction)
-endif()
+open3d_add_app_common(OfflineReconstruction OfflineReconstruction OfflineReconstruction)

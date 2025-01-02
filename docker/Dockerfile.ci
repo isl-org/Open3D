@@ -234,7 +234,7 @@ RUN \
  && make install -j$(nproc) \
  && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
  && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi \
- && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc; fi
+ && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc librealsense; fi
 # If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
@@ -246,7 +246,7 @@ RUN ccache -s \
  && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
  && if [ "${PACKAGE}" = "ON" ]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && if [ "${PACKAGE}" = "VIEWER" ]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
- && if [ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON"]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d-*.whl /; fi \
+ && if [ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d-*.whl /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."
