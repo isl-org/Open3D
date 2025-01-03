@@ -49,20 +49,23 @@ jobs:
             docker/docker_test.sh sycl-static
           fi
 
-      - name: Upload wheel to GitHub artifacts
+      - name: Upload Python wheel and C++ binary package to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
         with:
-          name: open3d-sycl-linux-python-wheel
-          path: open3d-*.whl
+          name: open3d-sycl-linux-wheel-and-binary
+          path: |
+            open3d-*.whl
+            open3d-*.tar.xz
           if-no-files-found: error
       - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ ${{ matrix.BUILD_SHARED_LIBS }} == 'ON' ] ; then
             gh release upload main-devel open3d-*.whl --clobber
+            gh release upload main-devel open3d-*.tar.xz --clobber
           fi
           gh release view main-devel
 
