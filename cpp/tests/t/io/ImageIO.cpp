@@ -166,7 +166,7 @@ TEST(ImageIO, WriteImageToJPG) {
     EXPECT_TRUE(img.AsTensor().AllClose(read_img.AsTensor()));
 }
 
-// JPG supports only UInt8, and PNG supports both UInt8 and UInt16.
+// JPG supports only UInt8, and PNG supports Bool, UInt8 and UInt16.
 // All other data types are expected to fail.
 TEST(ImageIO, DifferentDtype) {
     const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
@@ -210,9 +210,8 @@ TEST(ImageIO, DifferentDtype) {
     EXPECT_FALSE(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
                               t::geometry::Image(100, 200, 3, core::Int64)));
-    EXPECT_FALSE(
-            t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
-                              t::geometry::Image(100, 200, 3, core::Bool)));
+    EXPECT_TRUE(t::io::WriteImage(tmp_path + "/test_imageio_dtype.png",
+                                  t::geometry::Image(100, 200, 3, core::Bool)));
 }
 
 TEST(ImageIO, CornerCases) {

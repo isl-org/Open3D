@@ -1365,7 +1365,7 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
     using ::testing::ElementsAre;
     using ::testing::FloatEq;
     core::Device device = GetParam();
-    if (!device.IsCPU()) GTEST_SKIP() << "Not Implemented!";
+    if (!device.IsCPU() || !Image::HAVE_IPP) GTEST_SKIP() << "Not Implemented!";
     TriangleMesh sphere =
             TriangleMesh::FromLegacy(*geometry::TriangleMesh::CreateSphere(
                     1.0, 20, /*create_uv_map=*/true));
