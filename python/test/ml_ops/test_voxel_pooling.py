@@ -80,7 +80,9 @@ def test_voxel_pooling(ml, pos_dtype, feat_dtype, position_fn, feature_fn):
     else:
         index = [1, 0]
 
-    np.testing.assert_allclose(ans.pooled_positions, expected_positions[index], rtol=1.1e-7)
+    np.testing.assert_allclose(ans.pooled_positions,
+                               expected_positions[index],
+                               rtol=1.1e-7)
 
     if feature_fn == 'average':
         if np.issubdtype(feat_dtype, np.integer):
@@ -99,7 +101,9 @@ def test_voxel_pooling(ml, pos_dtype, feat_dtype, position_fn, feature_fn):
     elif feature_fn == 'nearest_neighbor':
         expected_features = np.array([features[0], features[3]])
 
-    np.testing.assert_allclose(ans.pooled_features, expected_features[index], rtol=1.1e-7)
+    np.testing.assert_allclose(ans.pooled_features,
+                               expected_features[index],
+                               rtol=1.1e-7)
 
 
 @mltest.parametrize.ml_cpu_only

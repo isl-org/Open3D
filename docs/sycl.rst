@@ -8,32 +8,22 @@ support. This backend allows Open3D operations to run on many different GPUs,
 including integrated GPUs and discrete GPUs from Intel, Nvidia and AMD. We
 provide pre-built C++ binaries and Python 3.10 wheels for Linux (Ubuntu 22.04+).
 
-Note that the binaries only contain kernels compiled to SPIRV IR. At runtime,
-they will be JIT compiled to the target device's native ISA. This means that the
-first run of a kernel on a new device may be slower than subsequent runs. You
-can cache the compiled kernels by setting the environment variable
-`SYCL_CACHE_PERSISTENT=1` for subsequent runs. In addition, you can directly
-compile for a specific target device using the OPEN3D_SYCL_TARGETS
-(`-fsycl-target` compiler option) and OPEN3D_SYCL_TARGET_BACKEND_OPTIONS (`-Xs`
-compiler option) CMake variables. See the `compiler documentation
-<https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md>`_ for
-information about building for specific hardware.
-
-Enabled features:
+Enabled features
 -----------------
 
 Many Tensor API operations and Tensor Geometry operations without custom kernels
 can now be offloaded to SYCL devices. In addition, HW accelerated raycasting
-queries in :ref:`RayCastingScene` are also supported. You will get an error if
-an operation is not supported. The implementation is tested on Linux on Intel
-integrated and discrete GPUs. Currently, a single GPU (`SYCL:0`, if available)
-and the CPU (`SYCL:1` if a GPU is available, else `SYCL:0`) are supported.
+queries in :py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
+will get an error if an operation is not supported. The implementation is tested
+on Linux on Intel integrated and discrete GPUs. Currently, a single GPU
+(`SYCL:0`, if available) and the CPU (`SYCL:1` if a GPU is available, else
+`SYCL:0`) are supported.
 
-Installation:
+Installation
 -------------
 
-Both C++ binaries and Python wheels can be downloaded from the Open3D GitHub
-releases page. For C++, install the `OneAPI runtime
+Both C++ binaries and Python wheels (Python 3.10 only for now) can be downloaded
+from the Open3D GitHub releases page. For C++, install the `OneAPI runtime
 <https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html>`_
 and (optionally) SYCL runtime for your `Nvidia
 <https://developer.codeplay.com/products/oneapi/nvidia/download>`_ or `AMD
@@ -46,26 +36,12 @@ libomp5-11`. Make sure to have the `correct drivers installed
 raycasting on Intel GPUs, you will also need the
 `intel-level-zero-gpu-raytracing` package.
 
-Building from source:
----------------------
-
-You can build the binaries from source as shown below. To build for a different
-Python version, set the `PYTHON_VERSION` variable in `docker/docker_build.sh`.
-
-.. code-block:: shell
-
-    cd docker 
-    ./docker_build.sh sycl-shared
-
-This will create the Python wheel and C++ binary archive in the current
-directory.
-
-
-Usage:
+Usage
 ------
 
 The SYCL backend requires the new CXX11 ABI (Linux, gcc, libstdc++ only). If you
-need to use Open3D PyTorch extension, you should use cxx11_abi wheels for PyTorch:
+need to use the Open3D PyTorch extension, you should use cxx11_abi wheels for
+PyTorch:
 
 .. code-block:: shell
 
@@ -79,8 +55,10 @@ emulate support with these environment variables:
     export IGC_EnableDPEmulation=1          # Enable float64 emulation during compilation 
     export OverrideDefaultFP64Settings=1    # Enable double precision emulation at runtime.
 
-Use this environment variable to cache the JIT compiled kernels to your home
-directory:
+The binaries only contain kernels compiled to SPIR-V IR. At runtime, they will
+be JIT compiled to your target GPU's native ISA. This means that the first run
+of a kernel on a new device will be slower than subsequent runs.  Use this
+environment variable to cache the JIT compiled kernels to your home directory:
 
 .. code-block:: shell
 
@@ -118,3 +96,31 @@ SYCL runtime are installed. You can select a specific device with the
 
     # Check if a device is available
     o3d.core.sycl.is_available(o3d.core.Device("SYCL:0"))  
+
+
+Building from source
+---------------------
+
+You can build the binaries from source as shown below. To build for a different
+Python version, set the `PYTHON_VERSION` variable in `docker/docker_build.sh`.
+
+.. code-block:: shell
+
+    cd docker 
+    ./docker_build.sh sycl-shared
+
+This will create the Python wheel and C++ binary archive in the current
+directory.
+
+You can directly compile for a specific target device (i.e. ahead of time or AOT
+compilation) using the OPEN3D_SYCL_TARGETS (`-fsycl-target` compiler option) and
+OPEN3D_SYCL_TARGET_BACKEND_OPTIONS (`-Xs` compiler option) CMake variables in
+Open3D. See the `compiler documentation
+<https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md>`_ for
+information about building for specific hardware.
+
+if you want to use different settings (e.g. AOT compilation for a specific
+device, or build a wheel for a different Python version), you can update the
+``docker_build.sh`` script, or build directly on host after installing the
+``intel-basekit`` or ``intel-cpp-essentials`` Debian packages from the Intel
+OneAPI repository.

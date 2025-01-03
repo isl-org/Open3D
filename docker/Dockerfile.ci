@@ -19,17 +19,17 @@ ARG PACKAGE
 ARG BUILD_SYCL_MODULE
 ARG CI
 
-RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
- && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
- && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
- && if [ -z "${CCACHE_VERSION}"       ]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
- && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
- && if [ -z "${BUILD_SHARED_LIBS}"               ]; then echo "Error: ARG BUILD_SHARED_LIBS               not specified."; exit 1; fi \
- && if [ -z "${BUILD_CUDA_MODULE}"    ]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
- && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
- && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
- && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi \
- && if [ -z "${BUILD_SYCL_MODULE}"    ]; then echo "Error: ARG BUILD_SYCL_MODULE    not specified."; exit 1; fi
+RUN if [[ -z "${DEVELOPER_BUILD}"      ]]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
+ && if [[ -z "${CCACHE_TAR_NAME}"      ]]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
+ && if [[ -z "${CMAKE_VERSION}"        ]]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
+ && if [[ -z "${CCACHE_VERSION}"       ]]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
+ && if [[ -z "${PYTHON_VERSION}"       ]]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_SHARED_LIBS}"    ]]; then echo "Error: ARG BUILD_SHARED_LIBS    not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_CUDA_MODULE}"    ]]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_TENSORFLOW_OPS}" ]]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_PYTORCH_OPS}"    ]]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
+ && if [[ -z "${PACKAGE}"              ]]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_SYCL_MODULE}"    ]]; then echo "Error: ARG BUILD_SYCL_MODULE    not specified."; exit 1; fi
 
 # Fix Nvidia repo key rotation issue
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
@@ -232,9 +232,9 @@ RUN \
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
- && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
- && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi \
- && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc librealsense; fi
+ && if [[ "${PACKAGE}" = "ON" ]]; then make package; fi \
+ && if [[ "${PACKAGE}" = "VIEWER" ]]; then make package-Open3DViewer-deb; fi \
+ && if [[ "${CI:-}a" != "a" ]]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc librealsense; fi
 # If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
@@ -244,9 +244,9 @@ RUN ccache -s \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
- && if [ "${PACKAGE}" = "ON" ]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
- && if [ "${PACKAGE}" = "VIEWER" ]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
- && if [ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d-*.whl /; fi \
+ && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
+ && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
+ && if [[ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d-*.whl /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."
