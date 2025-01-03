@@ -1447,6 +1447,11 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         const std::vector<core::Tensor> &extrinsic_matrices,
         int tex_size /*=1024*/,
         bool update_material /*=true*/) {
+    if (!GetDevice().IsCPU() || !Image::HAVE_IPP) {
+        utility::LogError(
+                "ProjectImagesToAlbedo is only supported on x86_64 CPU "
+                "devices.");
+    }
     using core::None;
     using tk = core::TensorKey;
     constexpr float EPS = 1e-6;
@@ -1480,7 +1485,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
             tex_size, {"positions"}, 1, 0, false)["positions"];
     core::Tensor albedo =
             core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
-    albedo.Slice(2, 3, 4).Fill(EPS);  // regularize
+    albedo.Slice(2, 3, 4).Fill(EPS);  // regularize weight
     std::mutex albedo_mutex;
 
     RaycastingScene rcs;
@@ -1581,11 +1586,11 @@ Image TriangleMesh::ProjectImagesToAlbedo(
         // C. Interpolate weighted image to weighted texture
         // albedo[u,v] = image[ i[u,v], j[u,v] ]
         this_albedo[widx].Fill(0.f);
-        ipp::Remap(weighted_image[widx], /*{height, width, 4} f32*/
-                   uv2xy2[0],            /* {texsz, texsz} f32*/
-                   uv2xy2[1],            /* {texsz, texsz} f32*/
-                   this_albedo[widx],    /*{texsz, texsz, 4} f32*/
-                   t::geometry::Image::InterpType::Linear);
+        IPP_CALL(ipp::Remap, weighted_image[widx], /*{height, width, 4} f32*/
+                 uv2xy2[0],                        /* {texsz, texsz} f32*/
+                 uv2xy2[1],                        /* {texsz, texsz} f32*/
+                 this_albedo[widx],                /*{texsz, texsz, 4} f32*/
+                 t::geometry::Image::InterpType::Linear);
         // Weights can become negative with higher order interpolation
 
         std::unique_lock<std::mutex> albedo_lock{albedo_mutex};

@@ -26,10 +26,11 @@
 namespace open3d {
 namespace tests {
 
-class TriangleMeshPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(TriangleMesh,
-                         TriangleMeshPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TriangleMeshPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        TriangleMesh,
+        TriangleMeshPermuteDevices,
+        testing::ValuesIn(TriangleMeshPermuteDevices::TestCases()));
 
 TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     t::geometry::TriangleMesh mesh;
@@ -252,6 +253,7 @@ TEST_P(TriangleMeshPermuteDevices, Has) {
 
 TEST_P(TriangleMeshPermuteDevices, Transform) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::TriangleMesh mesh(device);
     core::Tensor transformation = core::Tensor::Init<float>(
@@ -318,6 +320,7 @@ TEST_P(TriangleMeshPermuteDevices, Scale) {
 
 TEST_P(TriangleMeshPermuteDevices, Rotate) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::TriangleMesh mesh(device);
     core::Tensor rotation = core::Tensor::Init<float>(
@@ -338,6 +341,7 @@ TEST_P(TriangleMeshPermuteDevices, Rotate) {
 
 TEST_P(TriangleMeshPermuteDevices, NormalizeNormals) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
             open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
@@ -356,6 +360,7 @@ TEST_P(TriangleMeshPermuteDevices, NormalizeNormals) {
 
 TEST_P(TriangleMeshPermuteDevices, ComputeTriangleNormals) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
             open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
@@ -371,6 +376,7 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleNormals) {
 
 TEST_P(TriangleMeshPermuteDevices, ComputeVertexNormals) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
             open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
@@ -1223,6 +1229,8 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex) {
 
 TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+
     t::geometry::TriangleMesh mesh_empty{device};
 
     // check completely empty mesh
@@ -1353,9 +1361,11 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
 
 TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
     using namespace t::geometry;
+    using ::testing::AnyOf;
     using ::testing::ElementsAre;
     using ::testing::FloatEq;
     core::Device device = GetParam();
+    if (!device.IsCPU() || !Image::HAVE_IPP) GTEST_SKIP() << "Not Implemented!";
     TriangleMesh sphere =
             TriangleMesh::FromLegacy(*geometry::TriangleMesh::CreateSphere(
                     1.0, 20, /*create_uv_map=*/true));
@@ -1397,11 +1407,19 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
                         .To(core::Float32)
                         .Mean({0, 1})
                         .ToFlatVector<float>(),
-                ElementsAre(FloatEq(87.8693), FloatEq(67.538), FloatEq(64.31)));
+                AnyOf(ElementsAre(FloatEq(87.8693), FloatEq(67.538),
+                                  FloatEq(64.31)),  // macOS
+                      ElementsAre(FloatEq(87.8758),
+                                  FloatEq(67.5518),  // Linux / Windows
+                                  FloatEq(64.3254)))
+
+    );
 }  // namespace tests
 
 TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+
     t::geometry::TriangleMesh mesh_empty;
     EXPECT_NO_THROW(mesh_empty.ComputeTriangleAreas());
 
@@ -1424,6 +1442,8 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
 TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
     using ::testing::UnorderedElementsAreArray;
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+
     t::geometry::TriangleMesh mesh_empty(device);
     EXPECT_TRUE(mesh_empty.RemoveNonManifoldEdges().IsEmpty());
 

@@ -19,12 +19,14 @@
 namespace open3d {
 namespace tests {
 
-class OrientedBoundingBoxPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(OrientedBoundingBox,
-                         OrientedBoundingBoxPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class OrientedBoundingBoxPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        OrientedBoundingBox,
+        OrientedBoundingBoxPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-class OrientedBoundingBoxPermuteDevicePairs : public PermuteDevicePairs {};
+class OrientedBoundingBoxPermuteDevicePairs
+    : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         OrientedBoundingBox,
         OrientedBoundingBoxPermuteDevicePairs,
@@ -248,6 +250,7 @@ TEST_P(OrientedBoundingBoxPermuteDevices, GetBoxPoints) {
 
 TEST_P(OrientedBoundingBoxPermuteDevices, GetPointIndicesWithinBoundingBox) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor center = core::Tensor::Init<float>({0.5, 0.5, 0.5}, device);
     core::Tensor rotation = core::Tensor::Eye(3, core::Float32, device);

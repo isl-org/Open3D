@@ -24,6 +24,13 @@ void IndexAddCPU_(int64_t dim,
                   const Tensor& src,
                   Tensor& dst);
 
+#ifdef BUILD_SYCL_MODULE
+void IndexAddSYCL_(int64_t dim,
+                   const Tensor& index,
+                   const Tensor& src,
+                   Tensor& dst);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void IndexAddCUDA_(int64_t dim,
                    const Tensor& index,

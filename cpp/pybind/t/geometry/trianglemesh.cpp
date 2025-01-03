@@ -1072,6 +1072,8 @@ blended together in the resulting albedo. For best results, use images captured
 with exposure and white balance lock to reduce the chance of seams in the output
 texture.
 
+This function is only supported on the CPU.
+
 Args:
     images (List[open3d.t.geometry.Image]): List of images.
     intrinsic_matrices (List[open3d.core.Tensor]): List of (3,3) intrinsic matrices describing

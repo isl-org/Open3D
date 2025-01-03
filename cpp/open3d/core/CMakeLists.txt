@@ -5,7 +5,6 @@ target_sources(core PRIVATE
     CUDAUtils.cpp
     Device.cpp
     Dtype.cpp
-    EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCached.cpp
@@ -23,6 +22,7 @@ target_sources(core PRIVATE
 
 # Compile regardless BUILD_SYCL_MODULE == ON or OFF.
 open3d_sycl_target_sources(core PRIVATE
+    EigenConverter.cpp
     SYCLUtils.cpp
 )
 
@@ -43,22 +43,14 @@ target_sources(core PRIVATE
     hashmap/HashSet.cpp
     kernel/Kernel.cpp
     linalg/AddMM.cpp
-    linalg/AddMMCPU.cpp
     linalg/Det.cpp
     linalg/Inverse.cpp
-    linalg/InverseCPU.cpp
     linalg/LeastSquares.cpp
-    linalg/LeastSquaresCPU.cpp
     linalg/LU.cpp
-    linalg/LUCPU.cpp
     linalg/Matmul.cpp
-    linalg/MatmulCPU.cpp
     linalg/Solve.cpp
-    linalg/SolveCPU.cpp
     linalg/SVD.cpp
-    linalg/SVDCPU.cpp
     linalg/Tri.cpp
-    linalg/TriCPU.cpp
     nns/FixedRadiusIndex.cpp
     nns/FixedRadiusSearchOps.cpp
     nns/KnnIndex.cpp
@@ -73,21 +65,48 @@ set_target_properties(core_impl PROPERTIES CXX_VISIBILITY_PRESET "hidden")
 
 target_sources(core_impl PRIVATE
     kernel/Arange.cpp
-    kernel/ArangeCPU.cpp
     kernel/BinaryEW.cpp
-    kernel/BinaryEWCPU.cpp
     kernel/IndexGetSet.cpp
-    kernel/IndexGetSetCPU.cpp
     kernel/IndexReduction.cpp
-    kernel/IndexReductionCPU.cpp
     kernel/NonZero.cpp
-    kernel/NonZeroCPU.cpp
     kernel/Reduction.cpp
-    kernel/ReductionCPU.cpp
     kernel/UnaryEW.cpp
+    kernel/ArangeCPU.cpp
+    kernel/BinaryEWCPU.cpp
+    kernel/IndexGetSetCPU.cpp
+    kernel/IndexReductionCPU.cpp
+    kernel/NonZeroCPU.cpp
+    kernel/ReductionCPU.cpp
     kernel/UnaryEWCPU.cpp
-    kernel/UnaryEWSYCL.cpp
+    linalg/AddMMCPU.cpp
+    linalg/InverseCPU.cpp
+    linalg/LeastSquaresCPU.cpp
+    linalg/LUCPU.cpp
+    linalg/MatmulCPU.cpp
+    linalg/SolveCPU.cpp
+    linalg/SVDCPU.cpp
+    linalg/TriCPU.cpp
 )
+
+if (BUILD_SYCL_MODULE)
+open3d_sycl_target_sources(core_impl PRIVATE
+    kernel/UnaryEWSYCL.cpp
+    kernel/BinaryEWSYCL.cpp
+    kernel/ArangeSYCL.cpp
+    kernel/IndexGetSetSYCL.cpp
+    kernel/NonZeroSYCL.cpp
+    kernel/IndexReductionSYCL.cpp
+    kernel/ReductionSYCL.cpp
+    linalg/AddMMSYCL.cpp
+    linalg/InverseSYCL.cpp
+    linalg/LeastSquaresSYCL.cpp
+    linalg/LUSYCL.cpp
+    linalg/MatmulSYCL.cpp
+    linalg/SolveSYCL.cpp
+    linalg/SVDSYCL.cpp
+    linalg/TriSYCL.cpp
+)
+endif()
 
 if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE

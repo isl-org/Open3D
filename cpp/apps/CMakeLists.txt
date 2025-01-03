@@ -130,6 +130,11 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
     target_link_libraries(${TARGET_NAME} PRIVATE Open3D::Open3D TBB::tbb ${ARGN})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
 
+    if (BUILD_SYCL_MODULE)
+        find_package(IntelSYCL REQUIRED)   # requires cmake>=3.25 on Windows
+        add_sycl_to_target(TARGET ${TARGET_NAME})
+    endif()
+
     open3d_link_3rdparty_libraries(${TARGET_NAME})
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
