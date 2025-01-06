@@ -62,7 +62,7 @@ jobs:
           name: open3d-sycl-linux-wheel-and-binary
           path: |
             open3d-*.whl
-            open3d-*.tar.xz
+            open3d-devel-*.tar.xz
           if-no-files-found: error
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
@@ -71,7 +71,7 @@ jobs:
         run: |
           if [ ${{ matrix.BUILD_SHARED_LIBS }} == 'ON' ] ; then
             gh release upload main-devel open3d-*.whl --clobber
-            gh release upload main-devel open3d-*.tar.xz --clobber
+            gh release upload main-devel open3d-devel-*.tar.xz --clobber
           fi
           gh release view main-devel
 
