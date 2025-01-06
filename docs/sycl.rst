@@ -30,8 +30,7 @@ and (optionally) SYCL runtime for your `Nvidia
 <https://developer.codeplay.com/products/oneapi/amd/download>`_ GPU.
 
 For Python, the wheels will automatically install the DPC++ runtime package
-(`dpcpp-cpp-rt`).  You will also need `libomp5` installed: `apt-get install
-libomp5-11`. Make sure to have the `correct drivers installed 
+(`dpcpp-cpp-rt`).  Make sure to have the `correct drivers installed 
 <https://dgpu-docs.intel.com/driver/client/overview.html>`_ for your GPU. For
 raycasting on Intel GPUs, you will also need the
 `intel-level-zero-gpu-raytracing` package.

@@ -3,6 +3,11 @@ permissions: {}
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release wheels'
+        required: false
+        default: 'ON'
   push:
     branches:
       - main
@@ -16,11 +21,12 @@ concurrency:
 env:
   NPROC: 2
   GCE_CLI_GHA_VERSION: "416.0.0"
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
   ubuntu-sycl:
     permissions:
-      contents: read
+      contents: write  # Release upload
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

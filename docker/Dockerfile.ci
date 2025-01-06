@@ -95,7 +95,7 @@ RUN apt-get update && apt-get install -y \
         && c++ -v; \
     fi \
  && rm -rf /var/lib/apt/lists/*
-# OneDPL TBB backend requires libstdc++ >= v11. This makes the created wheel UBuntu 22.04+ only.
+# OneDPL TBB backend requires libstdc++ >= v11. This makes the created wheel Ubuntu 22.04+ only.
 
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run
@@ -166,7 +166,12 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Open3D C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
+# If BUILD_SYCL_MODULE=ON, do not install clang - this installs libomp5-dev which gets linked into the shared library.
+RUN if [[ "$(uname -m)" = "x86_64" ]] ; then \
+        ./util/install_deps_ubuntu.sh assume-yes no-filament-deps ; \
+    else \
+        ./util/install_deps_ubuntu.sh assume-yes ; \
+    fi
 
 # Open3D Python dependencies
 RUN source util/ci_utils.sh \
