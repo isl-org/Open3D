@@ -187,6 +187,8 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
     if (do_render) {
         Render(true);
         is_redraw_required_ = false;
+    } else {
+        glfwMakeContextCurrent(window_);
     }
     glFinish();
     glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(),

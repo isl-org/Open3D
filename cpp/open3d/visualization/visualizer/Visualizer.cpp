@@ -39,7 +39,7 @@ private:
             init_status_ = glfwInit();
             if (init_status_ == GLFW_TRUE) {
                 init_status_ = GLFW_PLATFORM_NULL;
-                utility::LogWarning("GLFW initilized with NULL platform.");
+                utility::LogWarning("GLFW initialized for headless rendering.");
             }
         }
     }
