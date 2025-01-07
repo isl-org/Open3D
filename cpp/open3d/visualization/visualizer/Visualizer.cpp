@@ -34,13 +34,14 @@ private:
         // framework build version of Python.
         glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
-        if (!(init_status_ = glfwInit())) {
+        init_status_ = glfwInit();
+        if (init_status_ != GLFW_TRUE) {
             glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
             init_status_ = glfwInit();
-            if (init_status_ == GLFW_TRUE) {
-                init_status_ = GLFW_PLATFORM_NULL;
-                utility::LogWarning("GLFW initialized for headless rendering.");
-            }
+        }
+        if (init_status_ == GLFW_TRUE) init_status_ = glfwGetPlatform();
+        if (init_status_ == GLFW_PLATFORM_NULL) {
+            utility::LogWarning("GLFW initialized for headless rendering.");
         }
     }
 
@@ -51,11 +52,12 @@ public:
     ~GLFWContext() {
         if (init_status_ != GLFW_FALSE) {
             glfwTerminate();
+            init_status_ = GLFW_FALSE;
             utility::LogDebug("GLFW destruct.");
         }
     }
 
-    /// \brief Get the glfwInit status.
+    /// \brief Get the glfwInit status / GLFW_PLATFORM initialized.
     inline int InitStatus() const { return init_status_; }
 
     /// \brief Get a shared instance of the GLFW context.
