@@ -104,22 +104,25 @@ if "@BUNDLE_OPEN3D_ML@" == "ON":
         install_requires += [line.strip() for line in f.readlines() if line]
 
 entry_points = {
-    "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
+    "console_scripts": [
+        "open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",
+    ]
 }
 if sys.platform != "darwin":  # Remove check when off main thread GUI works
-    entry_points.update({
-        "tensorboard_plugins": [
-            "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
-            ".plugin:Open3DPlugin",
-        ]
-    })
+    entry_points.update(
+        {
+            "tensorboard_plugins": [
+                "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
+                ".plugin:Open3DPlugin",
+            ]
+        }
+    )
 classifiers = [
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     "Development Status :: 3 - Alpha",
     "Environment :: MacOS X",
     "Environment :: Win32 (MS Windows)",
     "Environment :: X11 Applications",
-    "Environment :: GPU :: NVIDIA CUDA",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: Other Audience",
@@ -153,13 +156,24 @@ name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
 # open3d-cpu wheel for Linux x86_64
-if sys.platform.startswith("linux") and platform.machine() in (
-        'i386', 'x86_64', 'AMD64'
-) and "@BUILD_CUDA_MODULE@" == "OFF" and "@BUILD_SYCL_MODULE@" == "OFF":
+if "@BUILD_CUDA_MODULE@" == "ON":
+    classifiers.append("Environment :: GPU :: NVIDIA CUDA")
+elif (
+    sys.platform.startswith("linux")
+    and platform.machine() in ("i386", "x86_64", "AMD64")
+    and "@BUILD_SYCL_MODULE@" == "OFF"
+):
     name += "-cpu"
-    long_description += ("\n\nThis wheel only contains CPU functionality. "
-                         "Use the open3d wheel for full functionality.")
-    classifiers.remove("Environment :: GPU :: NVIDIA CUDA")
+    long_description += (
+        "\n\nThis wheel only contains CPU functionality. "
+        "Use the open3d wheel for full functionality."
+    )
+elif "@BUILD_SYCL_MODULE@" == "ON":
+    name += "-xpu"
+    long_description += (
+        "\n\nThis wheel contains cross-platform GPU support through SYCL."
+    )
+    classifiers.append("Environment :: GPU")
 
 setup_args = dict(
     name=name,
@@ -187,7 +201,7 @@ setup_args = dict(
     long_description_content_type="text/x-rst",
     # Metadata below is valid but currently ignored by pip (<=v23)
     obsoletes=["open3d_python"],
-    provides=["open3d", "open3d_cpu"],  # For open3d-cpu
+    provides=["open3d", "open3d_cpu", "open3d_xpu"],  # For open3d-cpu
 )
 
 setup(**setup_args)
