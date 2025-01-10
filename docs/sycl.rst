@@ -22,7 +22,7 @@ on Linux on Intel integrated and discrete GPUs. Currently, a single GPU
 Installation
 -------------
 
-Both C++ binaries and Python wheels (Python 3.10 only for now) can be downloaded
+Both C++ binaries and Python wheels can be downloaded
 from the Open3D GitHub releases page. For C++, install the `OneAPI runtime
 <https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html>`_
 and (optionally) SYCL runtime for your `Nvidia
@@ -30,11 +30,22 @@ and (optionally) SYCL runtime for your `Nvidia
 <https://developer.codeplay.com/products/oneapi/amd/download>`_ GPU.
 
 For Python, the wheels will automatically install the DPC++ runtime package
-(`dpcpp-cpp-rt`).  You will also need `libomp5` installed: `apt-get install
-libomp5-11`. Make sure to have the `correct drivers installed 
+(`dpcpp-cpp-rt`).  Make sure to have the `correct drivers installed 
 <https://dgpu-docs.intel.com/driver/client/overview.html>`_ for your GPU. For
 raycasting on Intel GPUs, you will also need the
 `intel-level-zero-gpu-raytracing` package.
+
+
+.. list-table::
+    :stub-columns: 1
+    :widths: auto
+
+    * - Linux SYCL (Ubuntu 22.04+)
+      - `Python 3.9 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp39-cp39-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp310-cp310-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp311-cp311-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-manylinux_2_31_x86_64.whl>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/v0.19.0/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
 
 Usage
 ------
@@ -89,10 +100,10 @@ SYCL runtime are installed. You can select a specific device with the
     # Print all available devices (Python):
     import os os.environ["SYCL_DEVICE_ALLOWLIST"] = "BackendName:cuda"  # Select CUDA GPU
     import open3d as o3d
-    o3d.core.sycl.print_sycl_devices(print_all=true)
+    o3d.core.sycl.print_sycl_devices(print_all=True)
 
     # Return a list of available devices.
-    o3d.core.sycl.get_available_device() 
+    o3d.core.sycl.get_available_devices() 
 
     # Check if a device is available
     o3d.core.sycl.is_available(o3d.core.Device("SYCL:0"))  

@@ -467,7 +467,7 @@ sycl-shared_export_env() {
     export BASE_IMAGE=intel/oneapi-basekit:2024.1.1-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=3.10
+    export PYTHON_VERSION=${PYTHON_VERSION:-3.10}
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
