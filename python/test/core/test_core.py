@@ -595,7 +595,8 @@ def test_binary_ew_ops(dtype, device):
     np.testing.assert_equal((a * b).cpu().numpy(),
                             np.array([8, 18, 32, 50, 72, 98]))
     # SYCL FP64 emulation may have precision issue.
-    np.testing.assert_allclose((a / b).cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
+    np.testing.assert_allclose((a / b).cpu().numpy(),
+                               np.array([2, 2, 2, 2, 2, 2]))
 
     a = o3c.Tensor(np.array([4, 6, 8, 10, 12, 14]), dtype=dtype, device=device)
     a += b

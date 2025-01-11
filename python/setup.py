@@ -104,19 +104,15 @@ if "@BUNDLE_OPEN3D_ML@" == "ON":
         install_requires += [line.strip() for line in f.readlines() if line]
 
 entry_points = {
-    "console_scripts": [
-        "open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",
-    ]
+    "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
 }
 if sys.platform != "darwin":  # Remove check when off main thread GUI works
-    entry_points.update(
-        {
-            "tensorboard_plugins": [
-                "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
-                ".plugin:Open3DPlugin",
-            ]
-        }
-    )
+    entry_points.update({
+        "tensorboard_plugins": [
+            "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
+            ".plugin:Open3DPlugin",
+        ]
+    })
 classifiers = [
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     "Development Status :: 3 - Alpha",
@@ -158,21 +154,16 @@ with open("README.rst") as readme:
 # open3d-cpu wheel for Linux x86_64
 if "@BUILD_CUDA_MODULE@" == "ON":
     classifiers.append("Environment :: GPU :: NVIDIA CUDA")
-elif (
-    sys.platform.startswith("linux")
-    and platform.machine() in ("i386", "x86_64", "AMD64")
-    and "@BUILD_SYCL_MODULE@" == "OFF"
-):
+elif (sys.platform.startswith("linux") and
+      platform.machine() in ("i386", "x86_64", "AMD64") and
+      "@BUILD_SYCL_MODULE@" == "OFF"):
     name += "-cpu"
-    long_description += (
-        "\n\nThis wheel only contains CPU functionality. "
-        "Use the open3d wheel for full functionality."
-    )
+    long_description += ("\n\nThis wheel only contains CPU functionality. "
+                         "Use the open3d wheel for full functionality.")
 elif "@BUILD_SYCL_MODULE@" == "ON":
     name += "-xpu"
     long_description += (
-        "\n\nThis wheel contains cross-platform GPU support through SYCL."
-    )
+        "\n\nThis wheel contains cross-platform GPU support through SYCL.")
     classifiers.append("Environment :: GPU")
 
 setup_args = dict(

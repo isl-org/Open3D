@@ -48,9 +48,9 @@ jobs:
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
         run: |
-          if   [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON" ]; then
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON" ]; then
             docker/docker_build.sh cpu-static
-          if   [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+          elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cpu-static-release
           elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cpu-shared
@@ -63,9 +63,9 @@ jobs:
           fi
       - name: Docker test
         run: |
-          if   [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON" ]; then
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON" ]; then
             docker/docker_test.sh cpu-static
-          if   [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+          elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_test.sh cpu-static-release
           elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_test.sh cpu-shared
