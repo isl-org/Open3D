@@ -21,32 +21,35 @@ Usage:
     example JackJackL515Bag dataset.
 """
 
-import sys
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
+
 import open3d as o3d
 import open3d.t.io as io3d
-from open3d.t.geometry import PointCloud
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
+from open3d.t.geometry import PointCloud
 
 DEPTH_MAX = 3
+fid = 0
 
 
 def point_cloud_video(executor, rgbd_frame, mdata, timestamp, o3dvis):
     """Update window to display the next point cloud frame."""
+    global fid
     app = gui.Application.instance
     update_flag = rendering.Scene.UPDATE_POINTS_FLAG | rendering.Scene.UPDATE_COLORS_FLAG
 
     executor.submit(io3d.write_image,
-                    f"capture/color/{point_cloud_video.fid:05d}.jpg",
+                    f"capture/color/{fid:05d}.jpg",
                     rgbd_frame.color)
     executor.submit(io3d.write_image,
-                    f"capture/depth/{point_cloud_video.fid:05d}.png",
+                    f"capture/depth/{fid:05d}.png",
                     rgbd_frame.depth)
-    print(f"Frame: {point_cloud_video.fid}, timestamp: {timestamp * 1e-6:.3f}s",
+    print(f"Frame: {fid}, timestamp: {timestamp * 1e-6:.3f}s",
           end="\r")
-    if point_cloud_video.fid == 0:
+    if fid == 0:
         # Start with a dummy max sized point cloud to allocate GPU buffers
         # for update_geometry()
         max_pts = rgbd_frame.color.rows * rgbd_frame.color.columns
@@ -63,10 +66,7 @@ def point_cloud_video(executor, rgbd_frame, mdata, timestamp, o3dvis):
     # GUI operations MUST run in the main thread.
     app.post_to_main_thread(
         o3dvis, lambda: o3dvis.update_geometry("Point Cloud", pcd, update_flag))
-    point_cloud_video.fid += 1
-
-
-point_cloud_video.fid = 0
+    fid += 1
 
 
 def pcd_video_from_camera(executor, o3dvis):

@@ -9,25 +9,20 @@
 
 # pyrealsense2 is required.
 # Please see instructions in https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python
-import pyrealsense2 as rs
-import numpy as np
-import cv2
 import argparse
-from os import makedirs
-from os.path import exists, join, abspath
-import shutil
 import json
-from enum import IntEnum
-
+import shutil
 import sys
+from enum import IntEnum
+from os import makedirs
+from os.path import abspath, exists, join
+
+import cv2
+import numpy as np
+import pyrealsense2 as rs
+
 sys.path.append(abspath(__file__))
 from realsense_helper import get_profiles
-
-try:
-    # Python 2 compatible
-    input = raw_input
-except NameError:
-    pass
 
 
 class Preset(IntEnum):
