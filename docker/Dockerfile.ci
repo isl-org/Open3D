@@ -159,7 +159,12 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Open3D C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
+# If BUILD_SYCL_MODULE=ON, do not install clang - this installs libomp5-dev which gets linked into the shared library.
+RUN if [[ "$(uname -m)" = "x86_64" ]] ; then \
+        ./util/install_deps_ubuntu.sh assume-yes no-filament-deps ; \
+    else \
+        ./util/install_deps_ubuntu.sh assume-yes ; \
+    fi
 
 # Open3D Python dependencies
 RUN source util/ci_utils.sh \

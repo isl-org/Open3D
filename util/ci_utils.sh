@@ -340,27 +340,29 @@ test_cpp_example() {
 # Usage: install_docs_dependencies "${OPEN3D_ML_ROOT}"
 install_docs_dependencies() {
     echo
-    echo Install ubuntu dependencies
-    ./util/install_deps_ubuntu.sh assume-yes
-    sudo apt-get install --yes cmake
-    sudo apt-get install --yes libxml2-dev libxslt-dev python3-dev
-    sudo apt-get install --yes doxygen
-    sudo apt-get install --yes texlive
-    sudo apt-get install --yes texlive-latex-extra
-    sudo apt-get install --yes ghostscript
-    sudo apt-get install --yes pandoc
-    sudo apt-get install --yes ccache
+    echo Install ubuntu dependencies from $(pwd)
+    util/install_deps_ubuntu.sh assume-yes
+    $SUDO apt-get install --yes \
+        libxml2-dev libxslt-dev \
+        python3-dev python-is-python3 python3-pip \
+        doxygen \
+        texlive \
+        texlive-latex-extra \
+        ghostscript \
+        pandoc \
+        ccache
     echo
     echo Install Python dependencies for building docs
     command -v python
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
-    python -m pip install -U -q -c "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt" wheel yapf
+    which cmake || python -m pip install -U -q cmake
+    python -m pip install -U -q -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch-cxx11-abi.txt"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt"
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
@@ -396,9 +398,8 @@ build_docs() {
         "-DWITH_OPENMP=ON"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
-        "-DGLIBCXX_USE_CXX11_ABI=OFF"
-        # TODO: PyTorch still use old CXX ABI, re-enable Tensorflow when PyTorch is updated to use new ABI
-        "-DBUILD_TENSORFLOW_OPS=OFF"
+        "-DGLIBCXX_USE_CXX11_ABI=ON"
+        "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_EXAMPLES=OFF"
     )

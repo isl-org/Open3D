@@ -1,6 +1,6 @@
 /*
 ** The OpenGL Extension Wrangler Library
-** Copyright (C) 2008-2017, Nigel Stewart <nigels[]users sourceforge net>
+** Copyright (C) 2008-2019, Nigel Stewart <nigels[]users sourceforge net>
 ** Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
 ** Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
 ** Copyright (C) 2002, Lev Povalahev
@@ -72,6 +72,9 @@ struct createParams
   /* https://www.opengl.org/registry/specs/ARB/glx_create_context.txt */
   int         profile;       /* core = 1, compatibility = 2 */
   int         flags;         /* debug = 1, forward compatible = 2 */
+
+  /* GLEW experimental mode */
+  int         experimental;
 };
 
 GLboolean glewCreateContext (struct createParams *params);
@@ -82,7 +85,7 @@ void glewDestroyContext ();
 
 /* ------------------------------------------------------------------------- */
 
-static void glewPrintExt (const char* name, GLboolean def1, GLboolean def2, GLboolean def3)
+static GLboolean glewPrintExt (const char* name, GLboolean def1, GLboolean def2, GLboolean def3)
 {
   unsigned int i;
   fprintf(f, "\n%s:", name);
@@ -97,15 +100,19 @@ static void glewPrintExt (const char* name, GLboolean def1, GLboolean def2, GLbo
   for (i=0; i<strlen(name)+1; i++) fprintf(f, "-");
   fprintf(f, "\n");
   fflush(f);
+  return def1 || def2 || def3 || glewExperimental; /* Enable per-function info too? */
 }
 
-static void glewInfoFunc (const char* name, GLint undefined)
+static void glewInfoFunc (GLboolean fi, const char* name, GLint undefined)
 {
   unsigned int i;
-  fprintf(f, "  %s:", name);
-  for (i=0; i<60-strlen(name); i++) fprintf(f, " ");
-  fprintf(f, "%s\n", undefined ? "MISSING" : "OK");
-  fflush(f);
+  if (fi)
+  {
+    fprintf(f, "  %s:", name);
+    for (i=0; i<60-strlen(name); i++) fprintf(f, " ");
+    fprintf(f, "%s\n", undefined ? "MISSING" : "OK");
+    fflush(f);
+  }
 }
 
 /* ----------------------------- GL_VERSION_1_1 ---------------------------- */
@@ -123,12 +130,12 @@ static void _glewInfo_GL_VERSION_1_1 (void)
 
 static void _glewInfo_GL_VERSION_1_2 (void)
 {
-  glewPrintExt("GL_VERSION_1_2", GLEW_VERSION_1_2, GLEW_VERSION_1_2, GLEW_VERSION_1_2);
+  GLboolean fi = glewPrintExt("GL_VERSION_1_2", GLEW_VERSION_1_2, GLEW_VERSION_1_2, GLEW_VERSION_1_2);
 
-  glewInfoFunc("glCopyTexSubImage3D", glCopyTexSubImage3D == NULL);
-  glewInfoFunc("glDrawRangeElements", glDrawRangeElements == NULL);
-  glewInfoFunc("glTexImage3D", glTexImage3D == NULL);
-  glewInfoFunc("glTexSubImage3D", glTexSubImage3D == NULL);
+  glewInfoFunc(fi, "glCopyTexSubImage3D", glCopyTexSubImage3D == NULL);
+  glewInfoFunc(fi, "glDrawRangeElements", glDrawRangeElements == NULL);
+  glewInfoFunc(fi, "glTexImage3D", glTexImage3D == NULL);
+  glewInfoFunc(fi, "glTexSubImage3D", glTexSubImage3D == NULL);
 }
 
 #endif /* GL_VERSION_1_2 */
@@ -146,54 +153,54 @@ static void _glewInfo_GL_VERSION_1_2_1 (void)
 
 static void _glewInfo_GL_VERSION_1_3 (void)
 {
-  glewPrintExt("GL_VERSION_1_3", GLEW_VERSION_1_3, GLEW_VERSION_1_3, GLEW_VERSION_1_3);
+  GLboolean fi = glewPrintExt("GL_VERSION_1_3", GLEW_VERSION_1_3, GLEW_VERSION_1_3, GLEW_VERSION_1_3);
 
-  glewInfoFunc("glActiveTexture", glActiveTexture == NULL);
-  glewInfoFunc("glClientActiveTexture", glClientActiveTexture == NULL);
-  glewInfoFunc("glCompressedTexImage1D", glCompressedTexImage1D == NULL);
-  glewInfoFunc("glCompressedTexImage2D", glCompressedTexImage2D == NULL);
-  glewInfoFunc("glCompressedTexImage3D", glCompressedTexImage3D == NULL);
-  glewInfoFunc("glCompressedTexSubImage1D", glCompressedTexSubImage1D == NULL);
-  glewInfoFunc("glCompressedTexSubImage2D", glCompressedTexSubImage2D == NULL);
-  glewInfoFunc("glCompressedTexSubImage3D", glCompressedTexSubImage3D == NULL);
-  glewInfoFunc("glGetCompressedTexImage", glGetCompressedTexImage == NULL);
-  glewInfoFunc("glLoadTransposeMatrixd", glLoadTransposeMatrixd == NULL);
-  glewInfoFunc("glLoadTransposeMatrixf", glLoadTransposeMatrixf == NULL);
-  glewInfoFunc("glMultTransposeMatrixd", glMultTransposeMatrixd == NULL);
-  glewInfoFunc("glMultTransposeMatrixf", glMultTransposeMatrixf == NULL);
-  glewInfoFunc("glMultiTexCoord1d", glMultiTexCoord1d == NULL);
-  glewInfoFunc("glMultiTexCoord1dv", glMultiTexCoord1dv == NULL);
-  glewInfoFunc("glMultiTexCoord1f", glMultiTexCoord1f == NULL);
-  glewInfoFunc("glMultiTexCoord1fv", glMultiTexCoord1fv == NULL);
-  glewInfoFunc("glMultiTexCoord1i", glMultiTexCoord1i == NULL);
-  glewInfoFunc("glMultiTexCoord1iv", glMultiTexCoord1iv == NULL);
-  glewInfoFunc("glMultiTexCoord1s", glMultiTexCoord1s == NULL);
-  glewInfoFunc("glMultiTexCoord1sv", glMultiTexCoord1sv == NULL);
-  glewInfoFunc("glMultiTexCoord2d", glMultiTexCoord2d == NULL);
-  glewInfoFunc("glMultiTexCoord2dv", glMultiTexCoord2dv == NULL);
-  glewInfoFunc("glMultiTexCoord2f", glMultiTexCoord2f == NULL);
-  glewInfoFunc("glMultiTexCoord2fv", glMultiTexCoord2fv == NULL);
-  glewInfoFunc("glMultiTexCoord2i", glMultiTexCoord2i == NULL);
-  glewInfoFunc("glMultiTexCoord2iv", glMultiTexCoord2iv == NULL);
-  glewInfoFunc("glMultiTexCoord2s", glMultiTexCoord2s == NULL);
-  glewInfoFunc("glMultiTexCoord2sv", glMultiTexCoord2sv == NULL);
-  glewInfoFunc("glMultiTexCoord3d", glMultiTexCoord3d == NULL);
-  glewInfoFunc("glMultiTexCoord3dv", glMultiTexCoord3dv == NULL);
-  glewInfoFunc("glMultiTexCoord3f", glMultiTexCoord3f == NULL);
-  glewInfoFunc("glMultiTexCoord3fv", glMultiTexCoord3fv == NULL);
-  glewInfoFunc("glMultiTexCoord3i", glMultiTexCoord3i == NULL);
-  glewInfoFunc("glMultiTexCoord3iv", glMultiTexCoord3iv == NULL);
-  glewInfoFunc("glMultiTexCoord3s", glMultiTexCoord3s == NULL);
-  glewInfoFunc("glMultiTexCoord3sv", glMultiTexCoord3sv == NULL);
-  glewInfoFunc("glMultiTexCoord4d", glMultiTexCoord4d == NULL);
-  glewInfoFunc("glMultiTexCoord4dv", glMultiTexCoord4dv == NULL);
-  glewInfoFunc("glMultiTexCoord4f", glMultiTexCoord4f == NULL);
-  glewInfoFunc("glMultiTexCoord4fv", glMultiTexCoord4fv == NULL);
-  glewInfoFunc("glMultiTexCoord4i", glMultiTexCoord4i == NULL);
-  glewInfoFunc("glMultiTexCoord4iv", glMultiTexCoord4iv == NULL);
-  glewInfoFunc("glMultiTexCoord4s", glMultiTexCoord4s == NULL);
-  glewInfoFunc("glMultiTexCoord4sv", glMultiTexCoord4sv == NULL);
-  glewInfoFunc("glSampleCoverage", glSampleCoverage == NULL);
+  glewInfoFunc(fi, "glActiveTexture", glActiveTexture == NULL);
+  glewInfoFunc(fi, "glClientActiveTexture", glClientActiveTexture == NULL);
+  glewInfoFunc(fi, "glCompressedTexImage1D", glCompressedTexImage1D == NULL);
+  glewInfoFunc(fi, "glCompressedTexImage2D", glCompressedTexImage2D == NULL);
+  glewInfoFunc(fi, "glCompressedTexImage3D", glCompressedTexImage3D == NULL);
+  glewInfoFunc(fi, "glCompressedTexSubImage1D", glCompressedTexSubImage1D == NULL);
+  glewInfoFunc(fi, "glCompressedTexSubImage2D", glCompressedTexSubImage2D == NULL);
+  glewInfoFunc(fi, "glCompressedTexSubImage3D", glCompressedTexSubImage3D == NULL);
+  glewInfoFunc(fi, "glGetCompressedTexImage", glGetCompressedTexImage == NULL);
+  glewInfoFunc(fi, "glLoadTransposeMatrixd", glLoadTransposeMatrixd == NULL);
+  glewInfoFunc(fi, "glLoadTransposeMatrixf", glLoadTransposeMatrixf == NULL);
+  glewInfoFunc(fi, "glMultTransposeMatrixd", glMultTransposeMatrixd == NULL);
+  glewInfoFunc(fi, "glMultTransposeMatrixf", glMultTransposeMatrixf == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1d", glMultiTexCoord1d == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1dv", glMultiTexCoord1dv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1f", glMultiTexCoord1f == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1fv", glMultiTexCoord1fv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1i", glMultiTexCoord1i == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1iv", glMultiTexCoord1iv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1s", glMultiTexCoord1s == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1sv", glMultiTexCoord1sv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2d", glMultiTexCoord2d == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2dv", glMultiTexCoord2dv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2f", glMultiTexCoord2f == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2fv", glMultiTexCoord2fv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2i", glMultiTexCoord2i == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2iv", glMultiTexCoord2iv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2s", glMultiTexCoord2s == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2sv", glMultiTexCoord2sv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3d", glMultiTexCoord3d == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3dv", glMultiTexCoord3dv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3f", glMultiTexCoord3f == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3fv", glMultiTexCoord3fv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3i", glMultiTexCoord3i == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3iv", glMultiTexCoord3iv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3s", glMultiTexCoord3s == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3sv", glMultiTexCoord3sv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4d", glMultiTexCoord4d == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4dv", glMultiTexCoord4dv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4f", glMultiTexCoord4f == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4fv", glMultiTexCoord4fv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4i", glMultiTexCoord4i == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4iv", glMultiTexCoord4iv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4s", glMultiTexCoord4s == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4sv", glMultiTexCoord4sv == NULL);
+  glewInfoFunc(fi, "glSampleCoverage", glSampleCoverage == NULL);
 }
 
 #endif /* GL_VERSION_1_3 */
@@ -202,55 +209,55 @@ static void _glewInfo_GL_VERSION_1_3 (void)
 
 static void _glewInfo_GL_VERSION_1_4 (void)
 {
-  glewPrintExt("GL_VERSION_1_4", GLEW_VERSION_1_4, GLEW_VERSION_1_4, GLEW_VERSION_1_4);
+  GLboolean fi = glewPrintExt("GL_VERSION_1_4", GLEW_VERSION_1_4, GLEW_VERSION_1_4, GLEW_VERSION_1_4);
 
-  glewInfoFunc("glBlendColor", glBlendColor == NULL);
-  glewInfoFunc("glBlendEquation", glBlendEquation == NULL);
-  glewInfoFunc("glBlendFuncSeparate", glBlendFuncSeparate == NULL);
-  glewInfoFunc("glFogCoordPointer", glFogCoordPointer == NULL);
-  glewInfoFunc("glFogCoordd", glFogCoordd == NULL);
-  glewInfoFunc("glFogCoorddv", glFogCoorddv == NULL);
-  glewInfoFunc("glFogCoordf", glFogCoordf == NULL);
-  glewInfoFunc("glFogCoordfv", glFogCoordfv == NULL);
-  glewInfoFunc("glMultiDrawArrays", glMultiDrawArrays == NULL);
-  glewInfoFunc("glMultiDrawElements", glMultiDrawElements == NULL);
-  glewInfoFunc("glPointParameterf", glPointParameterf == NULL);
-  glewInfoFunc("glPointParameterfv", glPointParameterfv == NULL);
-  glewInfoFunc("glPointParameteri", glPointParameteri == NULL);
-  glewInfoFunc("glPointParameteriv", glPointParameteriv == NULL);
-  glewInfoFunc("glSecondaryColor3b", glSecondaryColor3b == NULL);
-  glewInfoFunc("glSecondaryColor3bv", glSecondaryColor3bv == NULL);
-  glewInfoFunc("glSecondaryColor3d", glSecondaryColor3d == NULL);
-  glewInfoFunc("glSecondaryColor3dv", glSecondaryColor3dv == NULL);
-  glewInfoFunc("glSecondaryColor3f", glSecondaryColor3f == NULL);
-  glewInfoFunc("glSecondaryColor3fv", glSecondaryColor3fv == NULL);
-  glewInfoFunc("glSecondaryColor3i", glSecondaryColor3i == NULL);
-  glewInfoFunc("glSecondaryColor3iv", glSecondaryColor3iv == NULL);
-  glewInfoFunc("glSecondaryColor3s", glSecondaryColor3s == NULL);
-  glewInfoFunc("glSecondaryColor3sv", glSecondaryColor3sv == NULL);
-  glewInfoFunc("glSecondaryColor3ub", glSecondaryColor3ub == NULL);
-  glewInfoFunc("glSecondaryColor3ubv", glSecondaryColor3ubv == NULL);
-  glewInfoFunc("glSecondaryColor3ui", glSecondaryColor3ui == NULL);
-  glewInfoFunc("glSecondaryColor3uiv", glSecondaryColor3uiv == NULL);
-  glewInfoFunc("glSecondaryColor3us", glSecondaryColor3us == NULL);
-  glewInfoFunc("glSecondaryColor3usv", glSecondaryColor3usv == NULL);
-  glewInfoFunc("glSecondaryColorPointer", glSecondaryColorPointer == NULL);
-  glewInfoFunc("glWindowPos2d", glWindowPos2d == NULL);
-  glewInfoFunc("glWindowPos2dv", glWindowPos2dv == NULL);
-  glewInfoFunc("glWindowPos2f", glWindowPos2f == NULL);
-  glewInfoFunc("glWindowPos2fv", glWindowPos2fv == NULL);
-  glewInfoFunc("glWindowPos2i", glWindowPos2i == NULL);
-  glewInfoFunc("glWindowPos2iv", glWindowPos2iv == NULL);
-  glewInfoFunc("glWindowPos2s", glWindowPos2s == NULL);
-  glewInfoFunc("glWindowPos2sv", glWindowPos2sv == NULL);
-  glewInfoFunc("glWindowPos3d", glWindowPos3d == NULL);
-  glewInfoFunc("glWindowPos3dv", glWindowPos3dv == NULL);
-  glewInfoFunc("glWindowPos3f", glWindowPos3f == NULL);
-  glewInfoFunc("glWindowPos3fv", glWindowPos3fv == NULL);
-  glewInfoFunc("glWindowPos3i", glWindowPos3i == NULL);
-  glewInfoFunc("glWindowPos3iv", glWindowPos3iv == NULL);
-  glewInfoFunc("glWindowPos3s", glWindowPos3s == NULL);
-  glewInfoFunc("glWindowPos3sv", glWindowPos3sv == NULL);
+  glewInfoFunc(fi, "glBlendColor", glBlendColor == NULL);
+  glewInfoFunc(fi, "glBlendEquation", glBlendEquation == NULL);
+  glewInfoFunc(fi, "glBlendFuncSeparate", glBlendFuncSeparate == NULL);
+  glewInfoFunc(fi, "glFogCoordPointer", glFogCoordPointer == NULL);
+  glewInfoFunc(fi, "glFogCoordd", glFogCoordd == NULL);
+  glewInfoFunc(fi, "glFogCoorddv", glFogCoorddv == NULL);
+  glewInfoFunc(fi, "glFogCoordf", glFogCoordf == NULL);
+  glewInfoFunc(fi, "glFogCoordfv", glFogCoordfv == NULL);
+  glewInfoFunc(fi, "glMultiDrawArrays", glMultiDrawArrays == NULL);
+  glewInfoFunc(fi, "glMultiDrawElements", glMultiDrawElements == NULL);
+  glewInfoFunc(fi, "glPointParameterf", glPointParameterf == NULL);
+  glewInfoFunc(fi, "glPointParameterfv", glPointParameterfv == NULL);
+  glewInfoFunc(fi, "glPointParameteri", glPointParameteri == NULL);
+  glewInfoFunc(fi, "glPointParameteriv", glPointParameteriv == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3b", glSecondaryColor3b == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3bv", glSecondaryColor3bv == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3d", glSecondaryColor3d == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3dv", glSecondaryColor3dv == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3f", glSecondaryColor3f == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3fv", glSecondaryColor3fv == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3i", glSecondaryColor3i == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3iv", glSecondaryColor3iv == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3s", glSecondaryColor3s == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3sv", glSecondaryColor3sv == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3ub", glSecondaryColor3ub == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3ubv", glSecondaryColor3ubv == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3ui", glSecondaryColor3ui == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3uiv", glSecondaryColor3uiv == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3us", glSecondaryColor3us == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3usv", glSecondaryColor3usv == NULL);
+  glewInfoFunc(fi, "glSecondaryColorPointer", glSecondaryColorPointer == NULL);
+  glewInfoFunc(fi, "glWindowPos2d", glWindowPos2d == NULL);
+  glewInfoFunc(fi, "glWindowPos2dv", glWindowPos2dv == NULL);
+  glewInfoFunc(fi, "glWindowPos2f", glWindowPos2f == NULL);
+  glewInfoFunc(fi, "glWindowPos2fv", glWindowPos2fv == NULL);
+  glewInfoFunc(fi, "glWindowPos2i", glWindowPos2i == NULL);
+  glewInfoFunc(fi, "glWindowPos2iv", glWindowPos2iv == NULL);
+  glewInfoFunc(fi, "glWindowPos2s", glWindowPos2s == NULL);
+  glewInfoFunc(fi, "glWindowPos2sv", glWindowPos2sv == NULL);
+  glewInfoFunc(fi, "glWindowPos3d", glWindowPos3d == NULL);
+  glewInfoFunc(fi, "glWindowPos3dv", glWindowPos3dv == NULL);
+  glewInfoFunc(fi, "glWindowPos3f", glWindowPos3f == NULL);
+  glewInfoFunc(fi, "glWindowPos3fv", glWindowPos3fv == NULL);
+  glewInfoFunc(fi, "glWindowPos3i", glWindowPos3i == NULL);
+  glewInfoFunc(fi, "glWindowPos3iv", glWindowPos3iv == NULL);
+  glewInfoFunc(fi, "glWindowPos3s", glWindowPos3s == NULL);
+  glewInfoFunc(fi, "glWindowPos3sv", glWindowPos3sv == NULL);
 }
 
 #endif /* GL_VERSION_1_4 */
@@ -259,27 +266,27 @@ static void _glewInfo_GL_VERSION_1_4 (void)
 
 static void _glewInfo_GL_VERSION_1_5 (void)
 {
-  glewPrintExt("GL_VERSION_1_5", GLEW_VERSION_1_5, GLEW_VERSION_1_5, GLEW_VERSION_1_5);
+  GLboolean fi = glewPrintExt("GL_VERSION_1_5", GLEW_VERSION_1_5, GLEW_VERSION_1_5, GLEW_VERSION_1_5);
 
-  glewInfoFunc("glBeginQuery", glBeginQuery == NULL);
-  glewInfoFunc("glBindBuffer", glBindBuffer == NULL);
-  glewInfoFunc("glBufferData", glBufferData == NULL);
-  glewInfoFunc("glBufferSubData", glBufferSubData == NULL);
-  glewInfoFunc("glDeleteBuffers", glDeleteBuffers == NULL);
-  glewInfoFunc("glDeleteQueries", glDeleteQueries == NULL);
-  glewInfoFunc("glEndQuery", glEndQuery == NULL);
-  glewInfoFunc("glGenBuffers", glGenBuffers == NULL);
-  glewInfoFunc("glGenQueries", glGenQueries == NULL);
-  glewInfoFunc("glGetBufferParameteriv", glGetBufferParameteriv == NULL);
-  glewInfoFunc("glGetBufferPointerv", glGetBufferPointerv == NULL);
-  glewInfoFunc("glGetBufferSubData", glGetBufferSubData == NULL);
-  glewInfoFunc("glGetQueryObjectiv", glGetQueryObjectiv == NULL);
-  glewInfoFunc("glGetQueryObjectuiv", glGetQueryObjectuiv == NULL);
-  glewInfoFunc("glGetQueryiv", glGetQueryiv == NULL);
-  glewInfoFunc("glIsBuffer", glIsBuffer == NULL);
-  glewInfoFunc("glIsQuery", glIsQuery == NULL);
-  glewInfoFunc("glMapBuffer", glMapBuffer == NULL);
-  glewInfoFunc("glUnmapBuffer", glUnmapBuffer == NULL);
+  glewInfoFunc(fi, "glBeginQuery", glBeginQuery == NULL);
+  glewInfoFunc(fi, "glBindBuffer", glBindBuffer == NULL);
+  glewInfoFunc(fi, "glBufferData", glBufferData == NULL);
+  glewInfoFunc(fi, "glBufferSubData", glBufferSubData == NULL);
+  glewInfoFunc(fi, "glDeleteBuffers", glDeleteBuffers == NULL);
+  glewInfoFunc(fi, "glDeleteQueries", glDeleteQueries == NULL);
+  glewInfoFunc(fi, "glEndQuery", glEndQuery == NULL);
+  glewInfoFunc(fi, "glGenBuffers", glGenBuffers == NULL);
+  glewInfoFunc(fi, "glGenQueries", glGenQueries == NULL);
+  glewInfoFunc(fi, "glGetBufferParameteriv", glGetBufferParameteriv == NULL);
+  glewInfoFunc(fi, "glGetBufferPointerv", glGetBufferPointerv == NULL);
+  glewInfoFunc(fi, "glGetBufferSubData", glGetBufferSubData == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectiv", glGetQueryObjectiv == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectuiv", glGetQueryObjectuiv == NULL);
+  glewInfoFunc(fi, "glGetQueryiv", glGetQueryiv == NULL);
+  glewInfoFunc(fi, "glIsBuffer", glIsBuffer == NULL);
+  glewInfoFunc(fi, "glIsQuery", glIsQuery == NULL);
+  glewInfoFunc(fi, "glMapBuffer", glMapBuffer == NULL);
+  glewInfoFunc(fi, "glUnmapBuffer", glUnmapBuffer == NULL);
 }
 
 #endif /* GL_VERSION_1_5 */
@@ -288,101 +295,101 @@ static void _glewInfo_GL_VERSION_1_5 (void)
 
 static void _glewInfo_GL_VERSION_2_0 (void)
 {
-  glewPrintExt("GL_VERSION_2_0", GLEW_VERSION_2_0, GLEW_VERSION_2_0, GLEW_VERSION_2_0);
+  GLboolean fi = glewPrintExt("GL_VERSION_2_0", GLEW_VERSION_2_0, GLEW_VERSION_2_0, GLEW_VERSION_2_0);
 
-  glewInfoFunc("glAttachShader", glAttachShader == NULL);
-  glewInfoFunc("glBindAttribLocation", glBindAttribLocation == NULL);
-  glewInfoFunc("glBlendEquationSeparate", glBlendEquationSeparate == NULL);
-  glewInfoFunc("glCompileShader", glCompileShader == NULL);
-  glewInfoFunc("glCreateProgram", glCreateProgram == NULL);
-  glewInfoFunc("glCreateShader", glCreateShader == NULL);
-  glewInfoFunc("glDeleteProgram", glDeleteProgram == NULL);
-  glewInfoFunc("glDeleteShader", glDeleteShader == NULL);
-  glewInfoFunc("glDetachShader", glDetachShader == NULL);
-  glewInfoFunc("glDisableVertexAttribArray", glDisableVertexAttribArray == NULL);
-  glewInfoFunc("glDrawBuffers", glDrawBuffers == NULL);
-  glewInfoFunc("glEnableVertexAttribArray", glEnableVertexAttribArray == NULL);
-  glewInfoFunc("glGetActiveAttrib", glGetActiveAttrib == NULL);
-  glewInfoFunc("glGetActiveUniform", glGetActiveUniform == NULL);
-  glewInfoFunc("glGetAttachedShaders", glGetAttachedShaders == NULL);
-  glewInfoFunc("glGetAttribLocation", glGetAttribLocation == NULL);
-  glewInfoFunc("glGetProgramInfoLog", glGetProgramInfoLog == NULL);
-  glewInfoFunc("glGetProgramiv", glGetProgramiv == NULL);
-  glewInfoFunc("glGetShaderInfoLog", glGetShaderInfoLog == NULL);
-  glewInfoFunc("glGetShaderSource", glGetShaderSource == NULL);
-  glewInfoFunc("glGetShaderiv", glGetShaderiv == NULL);
-  glewInfoFunc("glGetUniformLocation", glGetUniformLocation == NULL);
-  glewInfoFunc("glGetUniformfv", glGetUniformfv == NULL);
-  glewInfoFunc("glGetUniformiv", glGetUniformiv == NULL);
-  glewInfoFunc("glGetVertexAttribPointerv", glGetVertexAttribPointerv == NULL);
-  glewInfoFunc("glGetVertexAttribdv", glGetVertexAttribdv == NULL);
-  glewInfoFunc("glGetVertexAttribfv", glGetVertexAttribfv == NULL);
-  glewInfoFunc("glGetVertexAttribiv", glGetVertexAttribiv == NULL);
-  glewInfoFunc("glIsProgram", glIsProgram == NULL);
-  glewInfoFunc("glIsShader", glIsShader == NULL);
-  glewInfoFunc("glLinkProgram", glLinkProgram == NULL);
-  glewInfoFunc("glShaderSource", glShaderSource == NULL);
-  glewInfoFunc("glStencilFuncSeparate", glStencilFuncSeparate == NULL);
-  glewInfoFunc("glStencilMaskSeparate", glStencilMaskSeparate == NULL);
-  glewInfoFunc("glStencilOpSeparate", glStencilOpSeparate == NULL);
-  glewInfoFunc("glUniform1f", glUniform1f == NULL);
-  glewInfoFunc("glUniform1fv", glUniform1fv == NULL);
-  glewInfoFunc("glUniform1i", glUniform1i == NULL);
-  glewInfoFunc("glUniform1iv", glUniform1iv == NULL);
-  glewInfoFunc("glUniform2f", glUniform2f == NULL);
-  glewInfoFunc("glUniform2fv", glUniform2fv == NULL);
-  glewInfoFunc("glUniform2i", glUniform2i == NULL);
-  glewInfoFunc("glUniform2iv", glUniform2iv == NULL);
-  glewInfoFunc("glUniform3f", glUniform3f == NULL);
-  glewInfoFunc("glUniform3fv", glUniform3fv == NULL);
-  glewInfoFunc("glUniform3i", glUniform3i == NULL);
-  glewInfoFunc("glUniform3iv", glUniform3iv == NULL);
-  glewInfoFunc("glUniform4f", glUniform4f == NULL);
-  glewInfoFunc("glUniform4fv", glUniform4fv == NULL);
-  glewInfoFunc("glUniform4i", glUniform4i == NULL);
-  glewInfoFunc("glUniform4iv", glUniform4iv == NULL);
-  glewInfoFunc("glUniformMatrix2fv", glUniformMatrix2fv == NULL);
-  glewInfoFunc("glUniformMatrix3fv", glUniformMatrix3fv == NULL);
-  glewInfoFunc("glUniformMatrix4fv", glUniformMatrix4fv == NULL);
-  glewInfoFunc("glUseProgram", glUseProgram == NULL);
-  glewInfoFunc("glValidateProgram", glValidateProgram == NULL);
-  glewInfoFunc("glVertexAttrib1d", glVertexAttrib1d == NULL);
-  glewInfoFunc("glVertexAttrib1dv", glVertexAttrib1dv == NULL);
-  glewInfoFunc("glVertexAttrib1f", glVertexAttrib1f == NULL);
-  glewInfoFunc("glVertexAttrib1fv", glVertexAttrib1fv == NULL);
-  glewInfoFunc("glVertexAttrib1s", glVertexAttrib1s == NULL);
-  glewInfoFunc("glVertexAttrib1sv", glVertexAttrib1sv == NULL);
-  glewInfoFunc("glVertexAttrib2d", glVertexAttrib2d == NULL);
-  glewInfoFunc("glVertexAttrib2dv", glVertexAttrib2dv == NULL);
-  glewInfoFunc("glVertexAttrib2f", glVertexAttrib2f == NULL);
-  glewInfoFunc("glVertexAttrib2fv", glVertexAttrib2fv == NULL);
-  glewInfoFunc("glVertexAttrib2s", glVertexAttrib2s == NULL);
-  glewInfoFunc("glVertexAttrib2sv", glVertexAttrib2sv == NULL);
-  glewInfoFunc("glVertexAttrib3d", glVertexAttrib3d == NULL);
-  glewInfoFunc("glVertexAttrib3dv", glVertexAttrib3dv == NULL);
-  glewInfoFunc("glVertexAttrib3f", glVertexAttrib3f == NULL);
-  glewInfoFunc("glVertexAttrib3fv", glVertexAttrib3fv == NULL);
-  glewInfoFunc("glVertexAttrib3s", glVertexAttrib3s == NULL);
-  glewInfoFunc("glVertexAttrib3sv", glVertexAttrib3sv == NULL);
-  glewInfoFunc("glVertexAttrib4Nbv", glVertexAttrib4Nbv == NULL);
-  glewInfoFunc("glVertexAttrib4Niv", glVertexAttrib4Niv == NULL);
-  glewInfoFunc("glVertexAttrib4Nsv", glVertexAttrib4Nsv == NULL);
-  glewInfoFunc("glVertexAttrib4Nub", glVertexAttrib4Nub == NULL);
-  glewInfoFunc("glVertexAttrib4Nubv", glVertexAttrib4Nubv == NULL);
-  glewInfoFunc("glVertexAttrib4Nuiv", glVertexAttrib4Nuiv == NULL);
-  glewInfoFunc("glVertexAttrib4Nusv", glVertexAttrib4Nusv == NULL);
-  glewInfoFunc("glVertexAttrib4bv", glVertexAttrib4bv == NULL);
-  glewInfoFunc("glVertexAttrib4d", glVertexAttrib4d == NULL);
-  glewInfoFunc("glVertexAttrib4dv", glVertexAttrib4dv == NULL);
-  glewInfoFunc("glVertexAttrib4f", glVertexAttrib4f == NULL);
-  glewInfoFunc("glVertexAttrib4fv", glVertexAttrib4fv == NULL);
-  glewInfoFunc("glVertexAttrib4iv", glVertexAttrib4iv == NULL);
-  glewInfoFunc("glVertexAttrib4s", glVertexAttrib4s == NULL);
-  glewInfoFunc("glVertexAttrib4sv", glVertexAttrib4sv == NULL);
-  glewInfoFunc("glVertexAttrib4ubv", glVertexAttrib4ubv == NULL);
-  glewInfoFunc("glVertexAttrib4uiv", glVertexAttrib4uiv == NULL);
-  glewInfoFunc("glVertexAttrib4usv", glVertexAttrib4usv == NULL);
-  glewInfoFunc("glVertexAttribPointer", glVertexAttribPointer == NULL);
+  glewInfoFunc(fi, "glAttachShader", glAttachShader == NULL);
+  glewInfoFunc(fi, "glBindAttribLocation", glBindAttribLocation == NULL);
+  glewInfoFunc(fi, "glBlendEquationSeparate", glBlendEquationSeparate == NULL);
+  glewInfoFunc(fi, "glCompileShader", glCompileShader == NULL);
+  glewInfoFunc(fi, "glCreateProgram", glCreateProgram == NULL);
+  glewInfoFunc(fi, "glCreateShader", glCreateShader == NULL);
+  glewInfoFunc(fi, "glDeleteProgram", glDeleteProgram == NULL);
+  glewInfoFunc(fi, "glDeleteShader", glDeleteShader == NULL);
+  glewInfoFunc(fi, "glDetachShader", glDetachShader == NULL);
+  glewInfoFunc(fi, "glDisableVertexAttribArray", glDisableVertexAttribArray == NULL);
+  glewInfoFunc(fi, "glDrawBuffers", glDrawBuffers == NULL);
+  glewInfoFunc(fi, "glEnableVertexAttribArray", glEnableVertexAttribArray == NULL);
+  glewInfoFunc(fi, "glGetActiveAttrib", glGetActiveAttrib == NULL);
+  glewInfoFunc(fi, "glGetActiveUniform", glGetActiveUniform == NULL);
+  glewInfoFunc(fi, "glGetAttachedShaders", glGetAttachedShaders == NULL);
+  glewInfoFunc(fi, "glGetAttribLocation", glGetAttribLocation == NULL);
+  glewInfoFunc(fi, "glGetProgramInfoLog", glGetProgramInfoLog == NULL);
+  glewInfoFunc(fi, "glGetProgramiv", glGetProgramiv == NULL);
+  glewInfoFunc(fi, "glGetShaderInfoLog", glGetShaderInfoLog == NULL);
+  glewInfoFunc(fi, "glGetShaderSource", glGetShaderSource == NULL);
+  glewInfoFunc(fi, "glGetShaderiv", glGetShaderiv == NULL);
+  glewInfoFunc(fi, "glGetUniformLocation", glGetUniformLocation == NULL);
+  glewInfoFunc(fi, "glGetUniformfv", glGetUniformfv == NULL);
+  glewInfoFunc(fi, "glGetUniformiv", glGetUniformiv == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribPointerv", glGetVertexAttribPointerv == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribdv", glGetVertexAttribdv == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribfv", glGetVertexAttribfv == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribiv", glGetVertexAttribiv == NULL);
+  glewInfoFunc(fi, "glIsProgram", glIsProgram == NULL);
+  glewInfoFunc(fi, "glIsShader", glIsShader == NULL);
+  glewInfoFunc(fi, "glLinkProgram", glLinkProgram == NULL);
+  glewInfoFunc(fi, "glShaderSource", glShaderSource == NULL);
+  glewInfoFunc(fi, "glStencilFuncSeparate", glStencilFuncSeparate == NULL);
+  glewInfoFunc(fi, "glStencilMaskSeparate", glStencilMaskSeparate == NULL);
+  glewInfoFunc(fi, "glStencilOpSeparate", glStencilOpSeparate == NULL);
+  glewInfoFunc(fi, "glUniform1f", glUniform1f == NULL);
+  glewInfoFunc(fi, "glUniform1fv", glUniform1fv == NULL);
+  glewInfoFunc(fi, "glUniform1i", glUniform1i == NULL);
+  glewInfoFunc(fi, "glUniform1iv", glUniform1iv == NULL);
+  glewInfoFunc(fi, "glUniform2f", glUniform2f == NULL);
+  glewInfoFunc(fi, "glUniform2fv", glUniform2fv == NULL);
+  glewInfoFunc(fi, "glUniform2i", glUniform2i == NULL);
+  glewInfoFunc(fi, "glUniform2iv", glUniform2iv == NULL);
+  glewInfoFunc(fi, "glUniform3f", glUniform3f == NULL);
+  glewInfoFunc(fi, "glUniform3fv", glUniform3fv == NULL);
+  glewInfoFunc(fi, "glUniform3i", glUniform3i == NULL);
+  glewInfoFunc(fi, "glUniform3iv", glUniform3iv == NULL);
+  glewInfoFunc(fi, "glUniform4f", glUniform4f == NULL);
+  glewInfoFunc(fi, "glUniform4fv", glUniform4fv == NULL);
+  glewInfoFunc(fi, "glUniform4i", glUniform4i == NULL);
+  glewInfoFunc(fi, "glUniform4iv", glUniform4iv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2fv", glUniformMatrix2fv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3fv", glUniformMatrix3fv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4fv", glUniformMatrix4fv == NULL);
+  glewInfoFunc(fi, "glUseProgram", glUseProgram == NULL);
+  glewInfoFunc(fi, "glValidateProgram", glValidateProgram == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1d", glVertexAttrib1d == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1dv", glVertexAttrib1dv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1f", glVertexAttrib1f == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1fv", glVertexAttrib1fv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1s", glVertexAttrib1s == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1sv", glVertexAttrib1sv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2d", glVertexAttrib2d == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2dv", glVertexAttrib2dv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2f", glVertexAttrib2f == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2fv", glVertexAttrib2fv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2s", glVertexAttrib2s == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2sv", glVertexAttrib2sv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3d", glVertexAttrib3d == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3dv", glVertexAttrib3dv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3f", glVertexAttrib3f == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3fv", glVertexAttrib3fv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3s", glVertexAttrib3s == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3sv", glVertexAttrib3sv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4Nbv", glVertexAttrib4Nbv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4Niv", glVertexAttrib4Niv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4Nsv", glVertexAttrib4Nsv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4Nub", glVertexAttrib4Nub == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4Nubv", glVertexAttrib4Nubv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4Nuiv", glVertexAttrib4Nuiv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4Nusv", glVertexAttrib4Nusv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4bv", glVertexAttrib4bv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4d", glVertexAttrib4d == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4dv", glVertexAttrib4dv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4f", glVertexAttrib4f == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4fv", glVertexAttrib4fv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4iv", glVertexAttrib4iv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4s", glVertexAttrib4s == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4sv", glVertexAttrib4sv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4ubv", glVertexAttrib4ubv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4uiv", glVertexAttrib4uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4usv", glVertexAttrib4usv == NULL);
+  glewInfoFunc(fi, "glVertexAttribPointer", glVertexAttribPointer == NULL);
 }
 
 #endif /* GL_VERSION_2_0 */
@@ -391,14 +398,14 @@ static void _glewInfo_GL_VERSION_2_0 (void)
 
 static void _glewInfo_GL_VERSION_2_1 (void)
 {
-  glewPrintExt("GL_VERSION_2_1", GLEW_VERSION_2_1, GLEW_VERSION_2_1, GLEW_VERSION_2_1);
+  GLboolean fi = glewPrintExt("GL_VERSION_2_1", GLEW_VERSION_2_1, GLEW_VERSION_2_1, GLEW_VERSION_2_1);
 
-  glewInfoFunc("glUniformMatrix2x3fv", glUniformMatrix2x3fv == NULL);
-  glewInfoFunc("glUniformMatrix2x4fv", glUniformMatrix2x4fv == NULL);
-  glewInfoFunc("glUniformMatrix3x2fv", glUniformMatrix3x2fv == NULL);
-  glewInfoFunc("glUniformMatrix3x4fv", glUniformMatrix3x4fv == NULL);
-  glewInfoFunc("glUniformMatrix4x2fv", glUniformMatrix4x2fv == NULL);
-  glewInfoFunc("glUniformMatrix4x3fv", glUniformMatrix4x3fv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2x3fv", glUniformMatrix2x3fv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2x4fv", glUniformMatrix2x4fv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3x2fv", glUniformMatrix3x2fv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3x4fv", glUniformMatrix3x4fv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4x2fv", glUniformMatrix4x2fv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4x3fv", glUniformMatrix4x3fv == NULL);
 }
 
 #endif /* GL_VERSION_2_1 */
@@ -407,63 +414,63 @@ static void _glewInfo_GL_VERSION_2_1 (void)
 
 static void _glewInfo_GL_VERSION_3_0 (void)
 {
-  glewPrintExt("GL_VERSION_3_0", GLEW_VERSION_3_0, GLEW_VERSION_3_0, GLEW_VERSION_3_0);
+  GLboolean fi = glewPrintExt("GL_VERSION_3_0", GLEW_VERSION_3_0, GLEW_VERSION_3_0, GLEW_VERSION_3_0);
 
-  glewInfoFunc("glBeginConditionalRender", glBeginConditionalRender == NULL);
-  glewInfoFunc("glBeginTransformFeedback", glBeginTransformFeedback == NULL);
-  glewInfoFunc("glBindFragDataLocation", glBindFragDataLocation == NULL);
-  glewInfoFunc("glClampColor", glClampColor == NULL);
-  glewInfoFunc("glClearBufferfi", glClearBufferfi == NULL);
-  glewInfoFunc("glClearBufferfv", glClearBufferfv == NULL);
-  glewInfoFunc("glClearBufferiv", glClearBufferiv == NULL);
-  glewInfoFunc("glClearBufferuiv", glClearBufferuiv == NULL);
-  glewInfoFunc("glColorMaski", glColorMaski == NULL);
-  glewInfoFunc("glDisablei", glDisablei == NULL);
-  glewInfoFunc("glEnablei", glEnablei == NULL);
-  glewInfoFunc("glEndConditionalRender", glEndConditionalRender == NULL);
-  glewInfoFunc("glEndTransformFeedback", glEndTransformFeedback == NULL);
-  glewInfoFunc("glGetBooleani_v", glGetBooleani_v == NULL);
-  glewInfoFunc("glGetFragDataLocation", glGetFragDataLocation == NULL);
-  glewInfoFunc("glGetStringi", glGetStringi == NULL);
-  glewInfoFunc("glGetTexParameterIiv", glGetTexParameterIiv == NULL);
-  glewInfoFunc("glGetTexParameterIuiv", glGetTexParameterIuiv == NULL);
-  glewInfoFunc("glGetTransformFeedbackVarying", glGetTransformFeedbackVarying == NULL);
-  glewInfoFunc("glGetUniformuiv", glGetUniformuiv == NULL);
-  glewInfoFunc("glGetVertexAttribIiv", glGetVertexAttribIiv == NULL);
-  glewInfoFunc("glGetVertexAttribIuiv", glGetVertexAttribIuiv == NULL);
-  glewInfoFunc("glIsEnabledi", glIsEnabledi == NULL);
-  glewInfoFunc("glTexParameterIiv", glTexParameterIiv == NULL);
-  glewInfoFunc("glTexParameterIuiv", glTexParameterIuiv == NULL);
-  glewInfoFunc("glTransformFeedbackVaryings", glTransformFeedbackVaryings == NULL);
-  glewInfoFunc("glUniform1ui", glUniform1ui == NULL);
-  glewInfoFunc("glUniform1uiv", glUniform1uiv == NULL);
-  glewInfoFunc("glUniform2ui", glUniform2ui == NULL);
-  glewInfoFunc("glUniform2uiv", glUniform2uiv == NULL);
-  glewInfoFunc("glUniform3ui", glUniform3ui == NULL);
-  glewInfoFunc("glUniform3uiv", glUniform3uiv == NULL);
-  glewInfoFunc("glUniform4ui", glUniform4ui == NULL);
-  glewInfoFunc("glUniform4uiv", glUniform4uiv == NULL);
-  glewInfoFunc("glVertexAttribI1i", glVertexAttribI1i == NULL);
-  glewInfoFunc("glVertexAttribI1iv", glVertexAttribI1iv == NULL);
-  glewInfoFunc("glVertexAttribI1ui", glVertexAttribI1ui == NULL);
-  glewInfoFunc("glVertexAttribI1uiv", glVertexAttribI1uiv == NULL);
-  glewInfoFunc("glVertexAttribI2i", glVertexAttribI2i == NULL);
-  glewInfoFunc("glVertexAttribI2iv", glVertexAttribI2iv == NULL);
-  glewInfoFunc("glVertexAttribI2ui", glVertexAttribI2ui == NULL);
-  glewInfoFunc("glVertexAttribI2uiv", glVertexAttribI2uiv == NULL);
-  glewInfoFunc("glVertexAttribI3i", glVertexAttribI3i == NULL);
-  glewInfoFunc("glVertexAttribI3iv", glVertexAttribI3iv == NULL);
-  glewInfoFunc("glVertexAttribI3ui", glVertexAttribI3ui == NULL);
-  glewInfoFunc("glVertexAttribI3uiv", glVertexAttribI3uiv == NULL);
-  glewInfoFunc("glVertexAttribI4bv", glVertexAttribI4bv == NULL);
-  glewInfoFunc("glVertexAttribI4i", glVertexAttribI4i == NULL);
-  glewInfoFunc("glVertexAttribI4iv", glVertexAttribI4iv == NULL);
-  glewInfoFunc("glVertexAttribI4sv", glVertexAttribI4sv == NULL);
-  glewInfoFunc("glVertexAttribI4ubv", glVertexAttribI4ubv == NULL);
-  glewInfoFunc("glVertexAttribI4ui", glVertexAttribI4ui == NULL);
-  glewInfoFunc("glVertexAttribI4uiv", glVertexAttribI4uiv == NULL);
-  glewInfoFunc("glVertexAttribI4usv", glVertexAttribI4usv == NULL);
-  glewInfoFunc("glVertexAttribIPointer", glVertexAttribIPointer == NULL);
+  glewInfoFunc(fi, "glBeginConditionalRender", glBeginConditionalRender == NULL);
+  glewInfoFunc(fi, "glBeginTransformFeedback", glBeginTransformFeedback == NULL);
+  glewInfoFunc(fi, "glBindFragDataLocation", glBindFragDataLocation == NULL);
+  glewInfoFunc(fi, "glClampColor", glClampColor == NULL);
+  glewInfoFunc(fi, "glClearBufferfi", glClearBufferfi == NULL);
+  glewInfoFunc(fi, "glClearBufferfv", glClearBufferfv == NULL);
+  glewInfoFunc(fi, "glClearBufferiv", glClearBufferiv == NULL);
+  glewInfoFunc(fi, "glClearBufferuiv", glClearBufferuiv == NULL);
+  glewInfoFunc(fi, "glColorMaski", glColorMaski == NULL);
+  glewInfoFunc(fi, "glDisablei", glDisablei == NULL);
+  glewInfoFunc(fi, "glEnablei", glEnablei == NULL);
+  glewInfoFunc(fi, "glEndConditionalRender", glEndConditionalRender == NULL);
+  glewInfoFunc(fi, "glEndTransformFeedback", glEndTransformFeedback == NULL);
+  glewInfoFunc(fi, "glGetBooleani_v", glGetBooleani_v == NULL);
+  glewInfoFunc(fi, "glGetFragDataLocation", glGetFragDataLocation == NULL);
+  glewInfoFunc(fi, "glGetStringi", glGetStringi == NULL);
+  glewInfoFunc(fi, "glGetTexParameterIiv", glGetTexParameterIiv == NULL);
+  glewInfoFunc(fi, "glGetTexParameterIuiv", glGetTexParameterIuiv == NULL);
+  glewInfoFunc(fi, "glGetTransformFeedbackVarying", glGetTransformFeedbackVarying == NULL);
+  glewInfoFunc(fi, "glGetUniformuiv", glGetUniformuiv == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribIiv", glGetVertexAttribIiv == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribIuiv", glGetVertexAttribIuiv == NULL);
+  glewInfoFunc(fi, "glIsEnabledi", glIsEnabledi == NULL);
+  glewInfoFunc(fi, "glTexParameterIiv", glTexParameterIiv == NULL);
+  glewInfoFunc(fi, "glTexParameterIuiv", glTexParameterIuiv == NULL);
+  glewInfoFunc(fi, "glTransformFeedbackVaryings", glTransformFeedbackVaryings == NULL);
+  glewInfoFunc(fi, "glUniform1ui", glUniform1ui == NULL);
+  glewInfoFunc(fi, "glUniform1uiv", glUniform1uiv == NULL);
+  glewInfoFunc(fi, "glUniform2ui", glUniform2ui == NULL);
+  glewInfoFunc(fi, "glUniform2uiv", glUniform2uiv == NULL);
+  glewInfoFunc(fi, "glUniform3ui", glUniform3ui == NULL);
+  glewInfoFunc(fi, "glUniform3uiv", glUniform3uiv == NULL);
+  glewInfoFunc(fi, "glUniform4ui", glUniform4ui == NULL);
+  glewInfoFunc(fi, "glUniform4uiv", glUniform4uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI1i", glVertexAttribI1i == NULL);
+  glewInfoFunc(fi, "glVertexAttribI1iv", glVertexAttribI1iv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI1ui", glVertexAttribI1ui == NULL);
+  glewInfoFunc(fi, "glVertexAttribI1uiv", glVertexAttribI1uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI2i", glVertexAttribI2i == NULL);
+  glewInfoFunc(fi, "glVertexAttribI2iv", glVertexAttribI2iv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI2ui", glVertexAttribI2ui == NULL);
+  glewInfoFunc(fi, "glVertexAttribI2uiv", glVertexAttribI2uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI3i", glVertexAttribI3i == NULL);
+  glewInfoFunc(fi, "glVertexAttribI3iv", glVertexAttribI3iv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI3ui", glVertexAttribI3ui == NULL);
+  glewInfoFunc(fi, "glVertexAttribI3uiv", glVertexAttribI3uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4bv", glVertexAttribI4bv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4i", glVertexAttribI4i == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4iv", glVertexAttribI4iv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4sv", glVertexAttribI4sv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4ubv", glVertexAttribI4ubv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4ui", glVertexAttribI4ui == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4uiv", glVertexAttribI4uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4usv", glVertexAttribI4usv == NULL);
+  glewInfoFunc(fi, "glVertexAttribIPointer", glVertexAttribIPointer == NULL);
 }
 
 #endif /* GL_VERSION_3_0 */
@@ -472,12 +479,12 @@ static void _glewInfo_GL_VERSION_3_0 (void)
 
 static void _glewInfo_GL_VERSION_3_1 (void)
 {
-  glewPrintExt("GL_VERSION_3_1", GLEW_VERSION_3_1, GLEW_VERSION_3_1, GLEW_VERSION_3_1);
+  GLboolean fi = glewPrintExt("GL_VERSION_3_1", GLEW_VERSION_3_1, GLEW_VERSION_3_1, GLEW_VERSION_3_1);
 
-  glewInfoFunc("glDrawArraysInstanced", glDrawArraysInstanced == NULL);
-  glewInfoFunc("glDrawElementsInstanced", glDrawElementsInstanced == NULL);
-  glewInfoFunc("glPrimitiveRestartIndex", glPrimitiveRestartIndex == NULL);
-  glewInfoFunc("glTexBuffer", glTexBuffer == NULL);
+  glewInfoFunc(fi, "glDrawArraysInstanced", glDrawArraysInstanced == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstanced", glDrawElementsInstanced == NULL);
+  glewInfoFunc(fi, "glPrimitiveRestartIndex", glPrimitiveRestartIndex == NULL);
+  glewInfoFunc(fi, "glTexBuffer", glTexBuffer == NULL);
 }
 
 #endif /* GL_VERSION_3_1 */
@@ -486,11 +493,11 @@ static void _glewInfo_GL_VERSION_3_1 (void)
 
 static void _glewInfo_GL_VERSION_3_2 (void)
 {
-  glewPrintExt("GL_VERSION_3_2", GLEW_VERSION_3_2, GLEW_VERSION_3_2, GLEW_VERSION_3_2);
+  GLboolean fi = glewPrintExt("GL_VERSION_3_2", GLEW_VERSION_3_2, GLEW_VERSION_3_2, GLEW_VERSION_3_2);
 
-  glewInfoFunc("glFramebufferTexture", glFramebufferTexture == NULL);
-  glewInfoFunc("glGetBufferParameteri64v", glGetBufferParameteri64v == NULL);
-  glewInfoFunc("glGetInteger64i_v", glGetInteger64i_v == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture", glFramebufferTexture == NULL);
+  glewInfoFunc(fi, "glGetBufferParameteri64v", glGetBufferParameteri64v == NULL);
+  glewInfoFunc(fi, "glGetInteger64i_v", glGetInteger64i_v == NULL);
 }
 
 #endif /* GL_VERSION_3_2 */
@@ -499,9 +506,9 @@ static void _glewInfo_GL_VERSION_3_2 (void)
 
 static void _glewInfo_GL_VERSION_3_3 (void)
 {
-  glewPrintExt("GL_VERSION_3_3", GLEW_VERSION_3_3, GLEW_VERSION_3_3, GLEW_VERSION_3_3);
+  GLboolean fi = glewPrintExt("GL_VERSION_3_3", GLEW_VERSION_3_3, GLEW_VERSION_3_3, GLEW_VERSION_3_3);
 
-  glewInfoFunc("glVertexAttribDivisor", glVertexAttribDivisor == NULL);
+  glewInfoFunc(fi, "glVertexAttribDivisor", glVertexAttribDivisor == NULL);
 }
 
 #endif /* GL_VERSION_3_3 */
@@ -510,13 +517,13 @@ static void _glewInfo_GL_VERSION_3_3 (void)
 
 static void _glewInfo_GL_VERSION_4_0 (void)
 {
-  glewPrintExt("GL_VERSION_4_0", GLEW_VERSION_4_0, GLEW_VERSION_4_0, GLEW_VERSION_4_0);
+  GLboolean fi = glewPrintExt("GL_VERSION_4_0", GLEW_VERSION_4_0, GLEW_VERSION_4_0, GLEW_VERSION_4_0);
 
-  glewInfoFunc("glBlendEquationSeparatei", glBlendEquationSeparatei == NULL);
-  glewInfoFunc("glBlendEquationi", glBlendEquationi == NULL);
-  glewInfoFunc("glBlendFuncSeparatei", glBlendFuncSeparatei == NULL);
-  glewInfoFunc("glBlendFunci", glBlendFunci == NULL);
-  glewInfoFunc("glMinSampleShading", glMinSampleShading == NULL);
+  glewInfoFunc(fi, "glBlendEquationSeparatei", glBlendEquationSeparatei == NULL);
+  glewInfoFunc(fi, "glBlendEquationi", glBlendEquationi == NULL);
+  glewInfoFunc(fi, "glBlendFuncSeparatei", glBlendFuncSeparatei == NULL);
+  glewInfoFunc(fi, "glBlendFunci", glBlendFunci == NULL);
+  glewInfoFunc(fi, "glMinSampleShading", glMinSampleShading == NULL);
 }
 
 #endif /* GL_VERSION_4_0 */
@@ -561,12 +568,12 @@ static void _glewInfo_GL_VERSION_4_4 (void)
 
 static void _glewInfo_GL_VERSION_4_5 (void)
 {
-  glewPrintExt("GL_VERSION_4_5", GLEW_VERSION_4_5, GLEW_VERSION_4_5, GLEW_VERSION_4_5);
+  GLboolean fi = glewPrintExt("GL_VERSION_4_5", GLEW_VERSION_4_5, GLEW_VERSION_4_5, GLEW_VERSION_4_5);
 
-  glewInfoFunc("glGetGraphicsResetStatus", glGetGraphicsResetStatus == NULL);
-  glewInfoFunc("glGetnCompressedTexImage", glGetnCompressedTexImage == NULL);
-  glewInfoFunc("glGetnTexImage", glGetnTexImage == NULL);
-  glewInfoFunc("glGetnUniformdv", glGetnUniformdv == NULL);
+  glewInfoFunc(fi, "glGetGraphicsResetStatus", glGetGraphicsResetStatus == NULL);
+  glewInfoFunc(fi, "glGetnCompressedTexImage", glGetnCompressedTexImage == NULL);
+  glewInfoFunc(fi, "glGetnTexImage", glGetnTexImage == NULL);
+  glewInfoFunc(fi, "glGetnUniformdv", glGetnUniformdv == NULL);
 }
 
 #endif /* GL_VERSION_4_5 */
@@ -575,11 +582,11 @@ static void _glewInfo_GL_VERSION_4_5 (void)
 
 static void _glewInfo_GL_VERSION_4_6 (void)
 {
-  glewPrintExt("GL_VERSION_4_6", GLEW_VERSION_4_6, GLEW_VERSION_4_6, GLEW_VERSION_4_6);
+  GLboolean fi = glewPrintExt("GL_VERSION_4_6", GLEW_VERSION_4_6, GLEW_VERSION_4_6, GLEW_VERSION_4_6);
 
-  glewInfoFunc("glMultiDrawArraysIndirectCount", glMultiDrawArraysIndirectCount == NULL);
-  glewInfoFunc("glMultiDrawElementsIndirectCount", glMultiDrawElementsIndirectCount == NULL);
-  glewInfoFunc("glSpecializeShader", glSpecializeShader == NULL);
+  glewInfoFunc(fi, "glMultiDrawArraysIndirectCount", glMultiDrawArraysIndirectCount == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsIndirectCount", glMultiDrawElementsIndirectCount == NULL);
+  glewInfoFunc(fi, "glSpecializeShader", glSpecializeShader == NULL);
 }
 
 #endif /* GL_VERSION_4_6 */
@@ -597,9 +604,9 @@ static void _glewInfo_GL_3DFX_multisample (void)
 
 static void _glewInfo_GL_3DFX_tbuffer (void)
 {
-  glewPrintExt("GL_3DFX_tbuffer", GLEW_3DFX_tbuffer, glewIsSupported("GL_3DFX_tbuffer"), glewGetExtension("GL_3DFX_tbuffer"));
+  GLboolean fi = glewPrintExt("GL_3DFX_tbuffer", GLEW_3DFX_tbuffer, glewIsSupported("GL_3DFX_tbuffer"), glewGetExtension("GL_3DFX_tbuffer"));
 
-  glewInfoFunc("glTbufferMask3DFX", glTbufferMask3DFX == NULL);
+  glewInfoFunc(fi, "glTbufferMask3DFX", glTbufferMask3DFX == NULL);
 }
 
 #endif /* GL_3DFX_tbuffer */
@@ -653,12 +660,12 @@ static void _glewInfo_GL_AMD_conservative_depth (void)
 
 static void _glewInfo_GL_AMD_debug_output (void)
 {
-  glewPrintExt("GL_AMD_debug_output", GLEW_AMD_debug_output, glewIsSupported("GL_AMD_debug_output"), glewGetExtension("GL_AMD_debug_output"));
+  GLboolean fi = glewPrintExt("GL_AMD_debug_output", GLEW_AMD_debug_output, glewIsSupported("GL_AMD_debug_output"), glewGetExtension("GL_AMD_debug_output"));
 
-  glewInfoFunc("glDebugMessageCallbackAMD", glDebugMessageCallbackAMD == NULL);
-  glewInfoFunc("glDebugMessageEnableAMD", glDebugMessageEnableAMD == NULL);
-  glewInfoFunc("glDebugMessageInsertAMD", glDebugMessageInsertAMD == NULL);
-  glewInfoFunc("glGetDebugMessageLogAMD", glGetDebugMessageLogAMD == NULL);
+  glewInfoFunc(fi, "glDebugMessageCallbackAMD", glDebugMessageCallbackAMD == NULL);
+  glewInfoFunc(fi, "glDebugMessageEnableAMD", glDebugMessageEnableAMD == NULL);
+  glewInfoFunc(fi, "glDebugMessageInsertAMD", glDebugMessageInsertAMD == NULL);
+  glewInfoFunc(fi, "glGetDebugMessageLogAMD", glGetDebugMessageLogAMD == NULL);
 }
 
 #endif /* GL_AMD_debug_output */
@@ -676,26 +683,38 @@ static void _glewInfo_GL_AMD_depth_clamp_separate (void)
 
 static void _glewInfo_GL_AMD_draw_buffers_blend (void)
 {
-  glewPrintExt("GL_AMD_draw_buffers_blend", GLEW_AMD_draw_buffers_blend, glewIsSupported("GL_AMD_draw_buffers_blend"), glewGetExtension("GL_AMD_draw_buffers_blend"));
+  GLboolean fi = glewPrintExt("GL_AMD_draw_buffers_blend", GLEW_AMD_draw_buffers_blend, glewIsSupported("GL_AMD_draw_buffers_blend"), glewGetExtension("GL_AMD_draw_buffers_blend"));
 
-  glewInfoFunc("glBlendEquationIndexedAMD", glBlendEquationIndexedAMD == NULL);
-  glewInfoFunc("glBlendEquationSeparateIndexedAMD", glBlendEquationSeparateIndexedAMD == NULL);
-  glewInfoFunc("glBlendFuncIndexedAMD", glBlendFuncIndexedAMD == NULL);
-  glewInfoFunc("glBlendFuncSeparateIndexedAMD", glBlendFuncSeparateIndexedAMD == NULL);
+  glewInfoFunc(fi, "glBlendEquationIndexedAMD", glBlendEquationIndexedAMD == NULL);
+  glewInfoFunc(fi, "glBlendEquationSeparateIndexedAMD", glBlendEquationSeparateIndexedAMD == NULL);
+  glewInfoFunc(fi, "glBlendFuncIndexedAMD", glBlendFuncIndexedAMD == NULL);
+  glewInfoFunc(fi, "glBlendFuncSeparateIndexedAMD", glBlendFuncSeparateIndexedAMD == NULL);
 }
 
 #endif /* GL_AMD_draw_buffers_blend */
+
+#ifdef GL_AMD_framebuffer_multisample_advanced
+
+static void _glewInfo_GL_AMD_framebuffer_multisample_advanced (void)
+{
+  GLboolean fi = glewPrintExt("GL_AMD_framebuffer_multisample_advanced", GLEW_AMD_framebuffer_multisample_advanced, glewIsSupported("GL_AMD_framebuffer_multisample_advanced"), glewGetExtension("GL_AMD_framebuffer_multisample_advanced"));
+
+  glewInfoFunc(fi, "glNamedRenderbufferStorageMultisampleAdvancedAMD", glNamedRenderbufferStorageMultisampleAdvancedAMD == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageMultisampleAdvancedAMD", glRenderbufferStorageMultisampleAdvancedAMD == NULL);
+}
+
+#endif /* GL_AMD_framebuffer_multisample_advanced */
 
 #ifdef GL_AMD_framebuffer_sample_positions
 
 static void _glewInfo_GL_AMD_framebuffer_sample_positions (void)
 {
-  glewPrintExt("GL_AMD_framebuffer_sample_positions", GLEW_AMD_framebuffer_sample_positions, glewIsSupported("GL_AMD_framebuffer_sample_positions"), glewGetExtension("GL_AMD_framebuffer_sample_positions"));
+  GLboolean fi = glewPrintExt("GL_AMD_framebuffer_sample_positions", GLEW_AMD_framebuffer_sample_positions, glewIsSupported("GL_AMD_framebuffer_sample_positions"), glewGetExtension("GL_AMD_framebuffer_sample_positions"));
 
-  glewInfoFunc("glFramebufferSamplePositionsfvAMD", glFramebufferSamplePositionsfvAMD == NULL);
-  glewInfoFunc("glGetFramebufferParameterfvAMD", glGetFramebufferParameterfvAMD == NULL);
-  glewInfoFunc("glGetNamedFramebufferParameterfvAMD", glGetNamedFramebufferParameterfvAMD == NULL);
-  glewInfoFunc("glNamedFramebufferSamplePositionsfvAMD", glNamedFramebufferSamplePositionsfvAMD == NULL);
+  glewInfoFunc(fi, "glFramebufferSamplePositionsfvAMD", glFramebufferSamplePositionsfvAMD == NULL);
+  glewInfoFunc(fi, "glGetFramebufferParameterfvAMD", glGetFramebufferParameterfvAMD == NULL);
+  glewInfoFunc(fi, "glGetNamedFramebufferParameterfvAMD", glGetNamedFramebufferParameterfvAMD == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferSamplePositionsfvAMD", glNamedFramebufferSamplePositionsfvAMD == NULL);
 }
 
 #endif /* GL_AMD_framebuffer_sample_positions */
@@ -717,6 +736,15 @@ static void _glewInfo_GL_AMD_gpu_shader_half_float (void)
 }
 
 #endif /* GL_AMD_gpu_shader_half_float */
+
+#ifdef GL_AMD_gpu_shader_half_float_fetch
+
+static void _glewInfo_GL_AMD_gpu_shader_half_float_fetch (void)
+{
+  glewPrintExt("GL_AMD_gpu_shader_half_float_fetch", GLEW_AMD_gpu_shader_half_float_fetch, glewIsSupported("GL_AMD_gpu_shader_half_float_fetch"), glewGetExtension("GL_AMD_gpu_shader_half_float_fetch"));
+}
+
+#endif /* GL_AMD_gpu_shader_half_float_fetch */
 
 #ifdef GL_AMD_gpu_shader_int16
 
@@ -740,9 +768,9 @@ static void _glewInfo_GL_AMD_gpu_shader_int64 (void)
 
 static void _glewInfo_GL_AMD_interleaved_elements (void)
 {
-  glewPrintExt("GL_AMD_interleaved_elements", GLEW_AMD_interleaved_elements, glewIsSupported("GL_AMD_interleaved_elements"), glewGetExtension("GL_AMD_interleaved_elements"));
+  GLboolean fi = glewPrintExt("GL_AMD_interleaved_elements", GLEW_AMD_interleaved_elements, glewIsSupported("GL_AMD_interleaved_elements"), glewGetExtension("GL_AMD_interleaved_elements"));
 
-  glewInfoFunc("glVertexAttribParameteriAMD", glVertexAttribParameteriAMD == NULL);
+  glewInfoFunc(fi, "glVertexAttribParameteriAMD", glVertexAttribParameteriAMD == NULL);
 }
 
 #endif /* GL_AMD_interleaved_elements */
@@ -751,10 +779,10 @@ static void _glewInfo_GL_AMD_interleaved_elements (void)
 
 static void _glewInfo_GL_AMD_multi_draw_indirect (void)
 {
-  glewPrintExt("GL_AMD_multi_draw_indirect", GLEW_AMD_multi_draw_indirect, glewIsSupported("GL_AMD_multi_draw_indirect"), glewGetExtension("GL_AMD_multi_draw_indirect"));
+  GLboolean fi = glewPrintExt("GL_AMD_multi_draw_indirect", GLEW_AMD_multi_draw_indirect, glewIsSupported("GL_AMD_multi_draw_indirect"), glewGetExtension("GL_AMD_multi_draw_indirect"));
 
-  glewInfoFunc("glMultiDrawArraysIndirectAMD", glMultiDrawArraysIndirectAMD == NULL);
-  glewInfoFunc("glMultiDrawElementsIndirectAMD", glMultiDrawElementsIndirectAMD == NULL);
+  glewInfoFunc(fi, "glMultiDrawArraysIndirectAMD", glMultiDrawArraysIndirectAMD == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsIndirectAMD", glMultiDrawElementsIndirectAMD == NULL);
 }
 
 #endif /* GL_AMD_multi_draw_indirect */
@@ -763,11 +791,11 @@ static void _glewInfo_GL_AMD_multi_draw_indirect (void)
 
 static void _glewInfo_GL_AMD_name_gen_delete (void)
 {
-  glewPrintExt("GL_AMD_name_gen_delete", GLEW_AMD_name_gen_delete, glewIsSupported("GL_AMD_name_gen_delete"), glewGetExtension("GL_AMD_name_gen_delete"));
+  GLboolean fi = glewPrintExt("GL_AMD_name_gen_delete", GLEW_AMD_name_gen_delete, glewIsSupported("GL_AMD_name_gen_delete"), glewGetExtension("GL_AMD_name_gen_delete"));
 
-  glewInfoFunc("glDeleteNamesAMD", glDeleteNamesAMD == NULL);
-  glewInfoFunc("glGenNamesAMD", glGenNamesAMD == NULL);
-  glewInfoFunc("glIsNameAMD", glIsNameAMD == NULL);
+  glewInfoFunc(fi, "glDeleteNamesAMD", glDeleteNamesAMD == NULL);
+  glewInfoFunc(fi, "glGenNamesAMD", glGenNamesAMD == NULL);
+  glewInfoFunc(fi, "glIsNameAMD", glIsNameAMD == NULL);
 }
 
 #endif /* GL_AMD_name_gen_delete */
@@ -776,9 +804,9 @@ static void _glewInfo_GL_AMD_name_gen_delete (void)
 
 static void _glewInfo_GL_AMD_occlusion_query_event (void)
 {
-  glewPrintExt("GL_AMD_occlusion_query_event", GLEW_AMD_occlusion_query_event, glewIsSupported("GL_AMD_occlusion_query_event"), glewGetExtension("GL_AMD_occlusion_query_event"));
+  GLboolean fi = glewPrintExt("GL_AMD_occlusion_query_event", GLEW_AMD_occlusion_query_event, glewIsSupported("GL_AMD_occlusion_query_event"), glewGetExtension("GL_AMD_occlusion_query_event"));
 
-  glewInfoFunc("glQueryObjectParameteruiAMD", glQueryObjectParameteruiAMD == NULL);
+  glewInfoFunc(fi, "glQueryObjectParameteruiAMD", glQueryObjectParameteruiAMD == NULL);
 }
 
 #endif /* GL_AMD_occlusion_query_event */
@@ -787,19 +815,19 @@ static void _glewInfo_GL_AMD_occlusion_query_event (void)
 
 static void _glewInfo_GL_AMD_performance_monitor (void)
 {
-  glewPrintExt("GL_AMD_performance_monitor", GLEW_AMD_performance_monitor, glewIsSupported("GL_AMD_performance_monitor"), glewGetExtension("GL_AMD_performance_monitor"));
+  GLboolean fi = glewPrintExt("GL_AMD_performance_monitor", GLEW_AMD_performance_monitor, glewIsSupported("GL_AMD_performance_monitor"), glewGetExtension("GL_AMD_performance_monitor"));
 
-  glewInfoFunc("glBeginPerfMonitorAMD", glBeginPerfMonitorAMD == NULL);
-  glewInfoFunc("glDeletePerfMonitorsAMD", glDeletePerfMonitorsAMD == NULL);
-  glewInfoFunc("glEndPerfMonitorAMD", glEndPerfMonitorAMD == NULL);
-  glewInfoFunc("glGenPerfMonitorsAMD", glGenPerfMonitorsAMD == NULL);
-  glewInfoFunc("glGetPerfMonitorCounterDataAMD", glGetPerfMonitorCounterDataAMD == NULL);
-  glewInfoFunc("glGetPerfMonitorCounterInfoAMD", glGetPerfMonitorCounterInfoAMD == NULL);
-  glewInfoFunc("glGetPerfMonitorCounterStringAMD", glGetPerfMonitorCounterStringAMD == NULL);
-  glewInfoFunc("glGetPerfMonitorCountersAMD", glGetPerfMonitorCountersAMD == NULL);
-  glewInfoFunc("glGetPerfMonitorGroupStringAMD", glGetPerfMonitorGroupStringAMD == NULL);
-  glewInfoFunc("glGetPerfMonitorGroupsAMD", glGetPerfMonitorGroupsAMD == NULL);
-  glewInfoFunc("glSelectPerfMonitorCountersAMD", glSelectPerfMonitorCountersAMD == NULL);
+  glewInfoFunc(fi, "glBeginPerfMonitorAMD", glBeginPerfMonitorAMD == NULL);
+  glewInfoFunc(fi, "glDeletePerfMonitorsAMD", glDeletePerfMonitorsAMD == NULL);
+  glewInfoFunc(fi, "glEndPerfMonitorAMD", glEndPerfMonitorAMD == NULL);
+  glewInfoFunc(fi, "glGenPerfMonitorsAMD", glGenPerfMonitorsAMD == NULL);
+  glewInfoFunc(fi, "glGetPerfMonitorCounterDataAMD", glGetPerfMonitorCounterDataAMD == NULL);
+  glewInfoFunc(fi, "glGetPerfMonitorCounterInfoAMD", glGetPerfMonitorCounterInfoAMD == NULL);
+  glewInfoFunc(fi, "glGetPerfMonitorCounterStringAMD", glGetPerfMonitorCounterStringAMD == NULL);
+  glewInfoFunc(fi, "glGetPerfMonitorCountersAMD", glGetPerfMonitorCountersAMD == NULL);
+  glewInfoFunc(fi, "glGetPerfMonitorGroupStringAMD", glGetPerfMonitorGroupStringAMD == NULL);
+  glewInfoFunc(fi, "glGetPerfMonitorGroupsAMD", glGetPerfMonitorGroupsAMD == NULL);
+  glewInfoFunc(fi, "glSelectPerfMonitorCountersAMD", glSelectPerfMonitorCountersAMD == NULL);
 }
 
 #endif /* GL_AMD_performance_monitor */
@@ -835,9 +863,9 @@ static void _glewInfo_GL_AMD_query_buffer_object (void)
 
 static void _glewInfo_GL_AMD_sample_positions (void)
 {
-  glewPrintExt("GL_AMD_sample_positions", GLEW_AMD_sample_positions, glewIsSupported("GL_AMD_sample_positions"), glewGetExtension("GL_AMD_sample_positions"));
+  GLboolean fi = glewPrintExt("GL_AMD_sample_positions", GLEW_AMD_sample_positions, glewIsSupported("GL_AMD_sample_positions"), glewGetExtension("GL_AMD_sample_positions"));
 
-  glewInfoFunc("glSetMultisamplefvAMD", glSetMultisamplefvAMD == NULL);
+  glewInfoFunc(fi, "glSetMultisamplefvAMD", glSetMultisamplefvAMD == NULL);
 }
 
 #endif /* GL_AMD_sample_positions */
@@ -878,6 +906,15 @@ static void _glewInfo_GL_AMD_shader_explicit_vertex_parameter (void)
 
 #endif /* GL_AMD_shader_explicit_vertex_parameter */
 
+#ifdef GL_AMD_shader_image_load_store_lod
+
+static void _glewInfo_GL_AMD_shader_image_load_store_lod (void)
+{
+  glewPrintExt("GL_AMD_shader_image_load_store_lod", GLEW_AMD_shader_image_load_store_lod, glewIsSupported("GL_AMD_shader_image_load_store_lod"), glewGetExtension("GL_AMD_shader_image_load_store_lod"));
+}
+
+#endif /* GL_AMD_shader_image_load_store_lod */
+
 #ifdef GL_AMD_shader_stencil_export
 
 static void _glewInfo_GL_AMD_shader_stencil_export (void)
@@ -909,10 +946,10 @@ static void _glewInfo_GL_AMD_shader_trinary_minmax (void)
 
 static void _glewInfo_GL_AMD_sparse_texture (void)
 {
-  glewPrintExt("GL_AMD_sparse_texture", GLEW_AMD_sparse_texture, glewIsSupported("GL_AMD_sparse_texture"), glewGetExtension("GL_AMD_sparse_texture"));
+  GLboolean fi = glewPrintExt("GL_AMD_sparse_texture", GLEW_AMD_sparse_texture, glewIsSupported("GL_AMD_sparse_texture"), glewGetExtension("GL_AMD_sparse_texture"));
 
-  glewInfoFunc("glTexStorageSparseAMD", glTexStorageSparseAMD == NULL);
-  glewInfoFunc("glTextureStorageSparseAMD", glTextureStorageSparseAMD == NULL);
+  glewInfoFunc(fi, "glTexStorageSparseAMD", glTexStorageSparseAMD == NULL);
+  glewInfoFunc(fi, "glTextureStorageSparseAMD", glTextureStorageSparseAMD == NULL);
 }
 
 #endif /* GL_AMD_sparse_texture */
@@ -921,9 +958,9 @@ static void _glewInfo_GL_AMD_sparse_texture (void)
 
 static void _glewInfo_GL_AMD_stencil_operation_extended (void)
 {
-  glewPrintExt("GL_AMD_stencil_operation_extended", GLEW_AMD_stencil_operation_extended, glewIsSupported("GL_AMD_stencil_operation_extended"), glewGetExtension("GL_AMD_stencil_operation_extended"));
+  GLboolean fi = glewPrintExt("GL_AMD_stencil_operation_extended", GLEW_AMD_stencil_operation_extended, glewIsSupported("GL_AMD_stencil_operation_extended"), glewGetExtension("GL_AMD_stencil_operation_extended"));
 
-  glewInfoFunc("glStencilOpValueAMD", glStencilOpValueAMD == NULL);
+  glewInfoFunc(fi, "glStencilOpValueAMD", glStencilOpValueAMD == NULL);
 }
 
 #endif /* GL_AMD_stencil_operation_extended */
@@ -977,10 +1014,10 @@ static void _glewInfo_GL_AMD_vertex_shader_layer (void)
 
 static void _glewInfo_GL_AMD_vertex_shader_tessellator (void)
 {
-  glewPrintExt("GL_AMD_vertex_shader_tessellator", GLEW_AMD_vertex_shader_tessellator, glewIsSupported("GL_AMD_vertex_shader_tessellator"), glewGetExtension("GL_AMD_vertex_shader_tessellator"));
+  GLboolean fi = glewPrintExt("GL_AMD_vertex_shader_tessellator", GLEW_AMD_vertex_shader_tessellator, glewIsSupported("GL_AMD_vertex_shader_tessellator"), glewGetExtension("GL_AMD_vertex_shader_tessellator"));
 
-  glewInfoFunc("glTessellationFactorAMD", glTessellationFactorAMD == NULL);
-  glewInfoFunc("glTessellationModeAMD", glTessellationModeAMD == NULL);
+  glewInfoFunc(fi, "glTessellationFactorAMD", glTessellationFactorAMD == NULL);
+  glewInfoFunc(fi, "glTessellationModeAMD", glTessellationModeAMD == NULL);
 }
 
 #endif /* GL_AMD_vertex_shader_tessellator */
@@ -1016,9 +1053,9 @@ static void _glewInfo_GL_ANGLE_depth_texture (void)
 
 static void _glewInfo_GL_ANGLE_framebuffer_blit (void)
 {
-  glewPrintExt("GL_ANGLE_framebuffer_blit", GLEW_ANGLE_framebuffer_blit, glewIsSupported("GL_ANGLE_framebuffer_blit"), glewGetExtension("GL_ANGLE_framebuffer_blit"));
+  GLboolean fi = glewPrintExt("GL_ANGLE_framebuffer_blit", GLEW_ANGLE_framebuffer_blit, glewIsSupported("GL_ANGLE_framebuffer_blit"), glewGetExtension("GL_ANGLE_framebuffer_blit"));
 
-  glewInfoFunc("glBlitFramebufferANGLE", glBlitFramebufferANGLE == NULL);
+  glewInfoFunc(fi, "glBlitFramebufferANGLE", glBlitFramebufferANGLE == NULL);
 }
 
 #endif /* GL_ANGLE_framebuffer_blit */
@@ -1027,9 +1064,9 @@ static void _glewInfo_GL_ANGLE_framebuffer_blit (void)
 
 static void _glewInfo_GL_ANGLE_framebuffer_multisample (void)
 {
-  glewPrintExt("GL_ANGLE_framebuffer_multisample", GLEW_ANGLE_framebuffer_multisample, glewIsSupported("GL_ANGLE_framebuffer_multisample"), glewGetExtension("GL_ANGLE_framebuffer_multisample"));
+  GLboolean fi = glewPrintExt("GL_ANGLE_framebuffer_multisample", GLEW_ANGLE_framebuffer_multisample, glewIsSupported("GL_ANGLE_framebuffer_multisample"), glewGetExtension("GL_ANGLE_framebuffer_multisample"));
 
-  glewInfoFunc("glRenderbufferStorageMultisampleANGLE", glRenderbufferStorageMultisampleANGLE == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageMultisampleANGLE", glRenderbufferStorageMultisampleANGLE == NULL);
 }
 
 #endif /* GL_ANGLE_framebuffer_multisample */
@@ -1038,11 +1075,11 @@ static void _glewInfo_GL_ANGLE_framebuffer_multisample (void)
 
 static void _glewInfo_GL_ANGLE_instanced_arrays (void)
 {
-  glewPrintExt("GL_ANGLE_instanced_arrays", GLEW_ANGLE_instanced_arrays, glewIsSupported("GL_ANGLE_instanced_arrays"), glewGetExtension("GL_ANGLE_instanced_arrays"));
+  GLboolean fi = glewPrintExt("GL_ANGLE_instanced_arrays", GLEW_ANGLE_instanced_arrays, glewIsSupported("GL_ANGLE_instanced_arrays"), glewGetExtension("GL_ANGLE_instanced_arrays"));
 
-  glewInfoFunc("glDrawArraysInstancedANGLE", glDrawArraysInstancedANGLE == NULL);
-  glewInfoFunc("glDrawElementsInstancedANGLE", glDrawElementsInstancedANGLE == NULL);
-  glewInfoFunc("glVertexAttribDivisorANGLE", glVertexAttribDivisorANGLE == NULL);
+  glewInfoFunc(fi, "glDrawArraysInstancedANGLE", glDrawArraysInstancedANGLE == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedANGLE", glDrawElementsInstancedANGLE == NULL);
+  glewInfoFunc(fi, "glVertexAttribDivisorANGLE", glVertexAttribDivisorANGLE == NULL);
 }
 
 #endif /* GL_ANGLE_instanced_arrays */
@@ -1105,19 +1142,19 @@ static void _glewInfo_GL_ANGLE_texture_usage (void)
 
 static void _glewInfo_GL_ANGLE_timer_query (void)
 {
-  glewPrintExt("GL_ANGLE_timer_query", GLEW_ANGLE_timer_query, glewIsSupported("GL_ANGLE_timer_query"), glewGetExtension("GL_ANGLE_timer_query"));
+  GLboolean fi = glewPrintExt("GL_ANGLE_timer_query", GLEW_ANGLE_timer_query, glewIsSupported("GL_ANGLE_timer_query"), glewGetExtension("GL_ANGLE_timer_query"));
 
-  glewInfoFunc("glBeginQueryANGLE", glBeginQueryANGLE == NULL);
-  glewInfoFunc("glDeleteQueriesANGLE", glDeleteQueriesANGLE == NULL);
-  glewInfoFunc("glEndQueryANGLE", glEndQueryANGLE == NULL);
-  glewInfoFunc("glGenQueriesANGLE", glGenQueriesANGLE == NULL);
-  glewInfoFunc("glGetQueryObjecti64vANGLE", glGetQueryObjecti64vANGLE == NULL);
-  glewInfoFunc("glGetQueryObjectivANGLE", glGetQueryObjectivANGLE == NULL);
-  glewInfoFunc("glGetQueryObjectui64vANGLE", glGetQueryObjectui64vANGLE == NULL);
-  glewInfoFunc("glGetQueryObjectuivANGLE", glGetQueryObjectuivANGLE == NULL);
-  glewInfoFunc("glGetQueryivANGLE", glGetQueryivANGLE == NULL);
-  glewInfoFunc("glIsQueryANGLE", glIsQueryANGLE == NULL);
-  glewInfoFunc("glQueryCounterANGLE", glQueryCounterANGLE == NULL);
+  glewInfoFunc(fi, "glBeginQueryANGLE", glBeginQueryANGLE == NULL);
+  glewInfoFunc(fi, "glDeleteQueriesANGLE", glDeleteQueriesANGLE == NULL);
+  glewInfoFunc(fi, "glEndQueryANGLE", glEndQueryANGLE == NULL);
+  glewInfoFunc(fi, "glGenQueriesANGLE", glGenQueriesANGLE == NULL);
+  glewInfoFunc(fi, "glGetQueryObjecti64vANGLE", glGetQueryObjecti64vANGLE == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectivANGLE", glGetQueryObjectivANGLE == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectui64vANGLE", glGetQueryObjectui64vANGLE == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectuivANGLE", glGetQueryObjectuivANGLE == NULL);
+  glewInfoFunc(fi, "glGetQueryivANGLE", glGetQueryivANGLE == NULL);
+  glewInfoFunc(fi, "glIsQueryANGLE", glIsQueryANGLE == NULL);
+  glewInfoFunc(fi, "glQueryCounterANGLE", glQueryCounterANGLE == NULL);
 }
 
 #endif /* GL_ANGLE_timer_query */
@@ -1126,9 +1163,9 @@ static void _glewInfo_GL_ANGLE_timer_query (void)
 
 static void _glewInfo_GL_ANGLE_translated_shader_source (void)
 {
-  glewPrintExt("GL_ANGLE_translated_shader_source", GLEW_ANGLE_translated_shader_source, glewIsSupported("GL_ANGLE_translated_shader_source"), glewGetExtension("GL_ANGLE_translated_shader_source"));
+  GLboolean fi = glewPrintExt("GL_ANGLE_translated_shader_source", GLEW_ANGLE_translated_shader_source, glewIsSupported("GL_ANGLE_translated_shader_source"), glewGetExtension("GL_ANGLE_translated_shader_source"));
 
-  glewInfoFunc("glGetTranslatedShaderSourceANGLE", glGetTranslatedShaderSourceANGLE == NULL);
+  glewInfoFunc(fi, "glGetTranslatedShaderSourceANGLE", glGetTranslatedShaderSourceANGLE == NULL);
 }
 
 #endif /* GL_ANGLE_translated_shader_source */
@@ -1173,9 +1210,9 @@ static void _glewInfo_GL_APPLE_color_buffer_packed_float (void)
 
 static void _glewInfo_GL_APPLE_copy_texture_levels (void)
 {
-  glewPrintExt("GL_APPLE_copy_texture_levels", GLEW_APPLE_copy_texture_levels, glewIsSupported("GL_APPLE_copy_texture_levels"), glewGetExtension("GL_APPLE_copy_texture_levels"));
+  GLboolean fi = glewPrintExt("GL_APPLE_copy_texture_levels", GLEW_APPLE_copy_texture_levels, glewIsSupported("GL_APPLE_copy_texture_levels"), glewGetExtension("GL_APPLE_copy_texture_levels"));
 
-  glewInfoFunc("glCopyTextureLevelsAPPLE", glCopyTextureLevelsAPPLE == NULL);
+  glewInfoFunc(fi, "glCopyTextureLevelsAPPLE", glCopyTextureLevelsAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_copy_texture_levels */
@@ -1184,13 +1221,13 @@ static void _glewInfo_GL_APPLE_copy_texture_levels (void)
 
 static void _glewInfo_GL_APPLE_element_array (void)
 {
-  glewPrintExt("GL_APPLE_element_array", GLEW_APPLE_element_array, glewIsSupported("GL_APPLE_element_array"), glewGetExtension("GL_APPLE_element_array"));
+  GLboolean fi = glewPrintExt("GL_APPLE_element_array", GLEW_APPLE_element_array, glewIsSupported("GL_APPLE_element_array"), glewGetExtension("GL_APPLE_element_array"));
 
-  glewInfoFunc("glDrawElementArrayAPPLE", glDrawElementArrayAPPLE == NULL);
-  glewInfoFunc("glDrawRangeElementArrayAPPLE", glDrawRangeElementArrayAPPLE == NULL);
-  glewInfoFunc("glElementPointerAPPLE", glElementPointerAPPLE == NULL);
-  glewInfoFunc("glMultiDrawElementArrayAPPLE", glMultiDrawElementArrayAPPLE == NULL);
-  glewInfoFunc("glMultiDrawRangeElementArrayAPPLE", glMultiDrawRangeElementArrayAPPLE == NULL);
+  glewInfoFunc(fi, "glDrawElementArrayAPPLE", glDrawElementArrayAPPLE == NULL);
+  glewInfoFunc(fi, "glDrawRangeElementArrayAPPLE", glDrawRangeElementArrayAPPLE == NULL);
+  glewInfoFunc(fi, "glElementPointerAPPLE", glElementPointerAPPLE == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementArrayAPPLE", glMultiDrawElementArrayAPPLE == NULL);
+  glewInfoFunc(fi, "glMultiDrawRangeElementArrayAPPLE", glMultiDrawRangeElementArrayAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_element_array */
@@ -1199,16 +1236,16 @@ static void _glewInfo_GL_APPLE_element_array (void)
 
 static void _glewInfo_GL_APPLE_fence (void)
 {
-  glewPrintExt("GL_APPLE_fence", GLEW_APPLE_fence, glewIsSupported("GL_APPLE_fence"), glewGetExtension("GL_APPLE_fence"));
+  GLboolean fi = glewPrintExt("GL_APPLE_fence", GLEW_APPLE_fence, glewIsSupported("GL_APPLE_fence"), glewGetExtension("GL_APPLE_fence"));
 
-  glewInfoFunc("glDeleteFencesAPPLE", glDeleteFencesAPPLE == NULL);
-  glewInfoFunc("glFinishFenceAPPLE", glFinishFenceAPPLE == NULL);
-  glewInfoFunc("glFinishObjectAPPLE", glFinishObjectAPPLE == NULL);
-  glewInfoFunc("glGenFencesAPPLE", glGenFencesAPPLE == NULL);
-  glewInfoFunc("glIsFenceAPPLE", glIsFenceAPPLE == NULL);
-  glewInfoFunc("glSetFenceAPPLE", glSetFenceAPPLE == NULL);
-  glewInfoFunc("glTestFenceAPPLE", glTestFenceAPPLE == NULL);
-  glewInfoFunc("glTestObjectAPPLE", glTestObjectAPPLE == NULL);
+  glewInfoFunc(fi, "glDeleteFencesAPPLE", glDeleteFencesAPPLE == NULL);
+  glewInfoFunc(fi, "glFinishFenceAPPLE", glFinishFenceAPPLE == NULL);
+  glewInfoFunc(fi, "glFinishObjectAPPLE", glFinishObjectAPPLE == NULL);
+  glewInfoFunc(fi, "glGenFencesAPPLE", glGenFencesAPPLE == NULL);
+  glewInfoFunc(fi, "glIsFenceAPPLE", glIsFenceAPPLE == NULL);
+  glewInfoFunc(fi, "glSetFenceAPPLE", glSetFenceAPPLE == NULL);
+  glewInfoFunc(fi, "glTestFenceAPPLE", glTestFenceAPPLE == NULL);
+  glewInfoFunc(fi, "glTestObjectAPPLE", glTestObjectAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_fence */
@@ -1226,10 +1263,10 @@ static void _glewInfo_GL_APPLE_float_pixels (void)
 
 static void _glewInfo_GL_APPLE_flush_buffer_range (void)
 {
-  glewPrintExt("GL_APPLE_flush_buffer_range", GLEW_APPLE_flush_buffer_range, glewIsSupported("GL_APPLE_flush_buffer_range"), glewGetExtension("GL_APPLE_flush_buffer_range"));
+  GLboolean fi = glewPrintExt("GL_APPLE_flush_buffer_range", GLEW_APPLE_flush_buffer_range, glewIsSupported("GL_APPLE_flush_buffer_range"), glewGetExtension("GL_APPLE_flush_buffer_range"));
 
-  glewInfoFunc("glBufferParameteriAPPLE", glBufferParameteriAPPLE == NULL);
-  glewInfoFunc("glFlushMappedBufferRangeAPPLE", glFlushMappedBufferRangeAPPLE == NULL);
+  glewInfoFunc(fi, "glBufferParameteriAPPLE", glBufferParameteriAPPLE == NULL);
+  glewInfoFunc(fi, "glFlushMappedBufferRangeAPPLE", glFlushMappedBufferRangeAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_flush_buffer_range */
@@ -1238,10 +1275,10 @@ static void _glewInfo_GL_APPLE_flush_buffer_range (void)
 
 static void _glewInfo_GL_APPLE_framebuffer_multisample (void)
 {
-  glewPrintExt("GL_APPLE_framebuffer_multisample", GLEW_APPLE_framebuffer_multisample, glewIsSupported("GL_APPLE_framebuffer_multisample"), glewGetExtension("GL_APPLE_framebuffer_multisample"));
+  GLboolean fi = glewPrintExt("GL_APPLE_framebuffer_multisample", GLEW_APPLE_framebuffer_multisample, glewIsSupported("GL_APPLE_framebuffer_multisample"), glewGetExtension("GL_APPLE_framebuffer_multisample"));
 
-  glewInfoFunc("glRenderbufferStorageMultisampleAPPLE", glRenderbufferStorageMultisampleAPPLE == NULL);
-  glewInfoFunc("glResolveMultisampleFramebufferAPPLE", glResolveMultisampleFramebufferAPPLE == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageMultisampleAPPLE", glRenderbufferStorageMultisampleAPPLE == NULL);
+  glewInfoFunc(fi, "glResolveMultisampleFramebufferAPPLE", glResolveMultisampleFramebufferAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_framebuffer_multisample */
@@ -1250,11 +1287,11 @@ static void _glewInfo_GL_APPLE_framebuffer_multisample (void)
 
 static void _glewInfo_GL_APPLE_object_purgeable (void)
 {
-  glewPrintExt("GL_APPLE_object_purgeable", GLEW_APPLE_object_purgeable, glewIsSupported("GL_APPLE_object_purgeable"), glewGetExtension("GL_APPLE_object_purgeable"));
+  GLboolean fi = glewPrintExt("GL_APPLE_object_purgeable", GLEW_APPLE_object_purgeable, glewIsSupported("GL_APPLE_object_purgeable"), glewGetExtension("GL_APPLE_object_purgeable"));
 
-  glewInfoFunc("glGetObjectParameterivAPPLE", glGetObjectParameterivAPPLE == NULL);
-  glewInfoFunc("glObjectPurgeableAPPLE", glObjectPurgeableAPPLE == NULL);
-  glewInfoFunc("glObjectUnpurgeableAPPLE", glObjectUnpurgeableAPPLE == NULL);
+  glewInfoFunc(fi, "glGetObjectParameterivAPPLE", glGetObjectParameterivAPPLE == NULL);
+  glewInfoFunc(fi, "glObjectPurgeableAPPLE", glObjectPurgeableAPPLE == NULL);
+  glewInfoFunc(fi, "glObjectUnpurgeableAPPLE", glObjectUnpurgeableAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_object_purgeable */
@@ -1299,15 +1336,15 @@ static void _glewInfo_GL_APPLE_specular_vector (void)
 
 static void _glewInfo_GL_APPLE_sync (void)
 {
-  glewPrintExt("GL_APPLE_sync", GLEW_APPLE_sync, glewIsSupported("GL_APPLE_sync"), glewGetExtension("GL_APPLE_sync"));
+  GLboolean fi = glewPrintExt("GL_APPLE_sync", GLEW_APPLE_sync, glewIsSupported("GL_APPLE_sync"), glewGetExtension("GL_APPLE_sync"));
 
-  glewInfoFunc("glClientWaitSyncAPPLE", glClientWaitSyncAPPLE == NULL);
-  glewInfoFunc("glDeleteSyncAPPLE", glDeleteSyncAPPLE == NULL);
-  glewInfoFunc("glFenceSyncAPPLE", glFenceSyncAPPLE == NULL);
-  glewInfoFunc("glGetInteger64vAPPLE", glGetInteger64vAPPLE == NULL);
-  glewInfoFunc("glGetSyncivAPPLE", glGetSyncivAPPLE == NULL);
-  glewInfoFunc("glIsSyncAPPLE", glIsSyncAPPLE == NULL);
-  glewInfoFunc("glWaitSyncAPPLE", glWaitSyncAPPLE == NULL);
+  glewInfoFunc(fi, "glClientWaitSyncAPPLE", glClientWaitSyncAPPLE == NULL);
+  glewInfoFunc(fi, "glDeleteSyncAPPLE", glDeleteSyncAPPLE == NULL);
+  glewInfoFunc(fi, "glFenceSyncAPPLE", glFenceSyncAPPLE == NULL);
+  glewInfoFunc(fi, "glGetInteger64vAPPLE", glGetInteger64vAPPLE == NULL);
+  glewInfoFunc(fi, "glGetSyncivAPPLE", glGetSyncivAPPLE == NULL);
+  glewInfoFunc(fi, "glIsSyncAPPLE", glIsSyncAPPLE == NULL);
+  glewInfoFunc(fi, "glWaitSyncAPPLE", glWaitSyncAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_sync */
@@ -1352,10 +1389,10 @@ static void _glewInfo_GL_APPLE_texture_packed_float (void)
 
 static void _glewInfo_GL_APPLE_texture_range (void)
 {
-  glewPrintExt("GL_APPLE_texture_range", GLEW_APPLE_texture_range, glewIsSupported("GL_APPLE_texture_range"), glewGetExtension("GL_APPLE_texture_range"));
+  GLboolean fi = glewPrintExt("GL_APPLE_texture_range", GLEW_APPLE_texture_range, glewIsSupported("GL_APPLE_texture_range"), glewGetExtension("GL_APPLE_texture_range"));
 
-  glewInfoFunc("glGetTexParameterPointervAPPLE", glGetTexParameterPointervAPPLE == NULL);
-  glewInfoFunc("glTextureRangeAPPLE", glTextureRangeAPPLE == NULL);
+  glewInfoFunc(fi, "glGetTexParameterPointervAPPLE", glGetTexParameterPointervAPPLE == NULL);
+  glewInfoFunc(fi, "glTextureRangeAPPLE", glTextureRangeAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_texture_range */
@@ -1373,12 +1410,12 @@ static void _glewInfo_GL_APPLE_transform_hint (void)
 
 static void _glewInfo_GL_APPLE_vertex_array_object (void)
 {
-  glewPrintExt("GL_APPLE_vertex_array_object", GLEW_APPLE_vertex_array_object, glewIsSupported("GL_APPLE_vertex_array_object"), glewGetExtension("GL_APPLE_vertex_array_object"));
+  GLboolean fi = glewPrintExt("GL_APPLE_vertex_array_object", GLEW_APPLE_vertex_array_object, glewIsSupported("GL_APPLE_vertex_array_object"), glewGetExtension("GL_APPLE_vertex_array_object"));
 
-  glewInfoFunc("glBindVertexArrayAPPLE", glBindVertexArrayAPPLE == NULL);
-  glewInfoFunc("glDeleteVertexArraysAPPLE", glDeleteVertexArraysAPPLE == NULL);
-  glewInfoFunc("glGenVertexArraysAPPLE", glGenVertexArraysAPPLE == NULL);
-  glewInfoFunc("glIsVertexArrayAPPLE", glIsVertexArrayAPPLE == NULL);
+  glewInfoFunc(fi, "glBindVertexArrayAPPLE", glBindVertexArrayAPPLE == NULL);
+  glewInfoFunc(fi, "glDeleteVertexArraysAPPLE", glDeleteVertexArraysAPPLE == NULL);
+  glewInfoFunc(fi, "glGenVertexArraysAPPLE", glGenVertexArraysAPPLE == NULL);
+  glewInfoFunc(fi, "glIsVertexArrayAPPLE", glIsVertexArrayAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_vertex_array_object */
@@ -1387,11 +1424,11 @@ static void _glewInfo_GL_APPLE_vertex_array_object (void)
 
 static void _glewInfo_GL_APPLE_vertex_array_range (void)
 {
-  glewPrintExt("GL_APPLE_vertex_array_range", GLEW_APPLE_vertex_array_range, glewIsSupported("GL_APPLE_vertex_array_range"), glewGetExtension("GL_APPLE_vertex_array_range"));
+  GLboolean fi = glewPrintExt("GL_APPLE_vertex_array_range", GLEW_APPLE_vertex_array_range, glewIsSupported("GL_APPLE_vertex_array_range"), glewGetExtension("GL_APPLE_vertex_array_range"));
 
-  glewInfoFunc("glFlushVertexArrayRangeAPPLE", glFlushVertexArrayRangeAPPLE == NULL);
-  glewInfoFunc("glVertexArrayParameteriAPPLE", glVertexArrayParameteriAPPLE == NULL);
-  glewInfoFunc("glVertexArrayRangeAPPLE", glVertexArrayRangeAPPLE == NULL);
+  glewInfoFunc(fi, "glFlushVertexArrayRangeAPPLE", glFlushVertexArrayRangeAPPLE == NULL);
+  glewInfoFunc(fi, "glVertexArrayParameteriAPPLE", glVertexArrayParameteriAPPLE == NULL);
+  glewInfoFunc(fi, "glVertexArrayRangeAPPLE", glVertexArrayRangeAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_vertex_array_range */
@@ -1400,15 +1437,15 @@ static void _glewInfo_GL_APPLE_vertex_array_range (void)
 
 static void _glewInfo_GL_APPLE_vertex_program_evaluators (void)
 {
-  glewPrintExt("GL_APPLE_vertex_program_evaluators", GLEW_APPLE_vertex_program_evaluators, glewIsSupported("GL_APPLE_vertex_program_evaluators"), glewGetExtension("GL_APPLE_vertex_program_evaluators"));
+  GLboolean fi = glewPrintExt("GL_APPLE_vertex_program_evaluators", GLEW_APPLE_vertex_program_evaluators, glewIsSupported("GL_APPLE_vertex_program_evaluators"), glewGetExtension("GL_APPLE_vertex_program_evaluators"));
 
-  glewInfoFunc("glDisableVertexAttribAPPLE", glDisableVertexAttribAPPLE == NULL);
-  glewInfoFunc("glEnableVertexAttribAPPLE", glEnableVertexAttribAPPLE == NULL);
-  glewInfoFunc("glIsVertexAttribEnabledAPPLE", glIsVertexAttribEnabledAPPLE == NULL);
-  glewInfoFunc("glMapVertexAttrib1dAPPLE", glMapVertexAttrib1dAPPLE == NULL);
-  glewInfoFunc("glMapVertexAttrib1fAPPLE", glMapVertexAttrib1fAPPLE == NULL);
-  glewInfoFunc("glMapVertexAttrib2dAPPLE", glMapVertexAttrib2dAPPLE == NULL);
-  glewInfoFunc("glMapVertexAttrib2fAPPLE", glMapVertexAttrib2fAPPLE == NULL);
+  glewInfoFunc(fi, "glDisableVertexAttribAPPLE", glDisableVertexAttribAPPLE == NULL);
+  glewInfoFunc(fi, "glEnableVertexAttribAPPLE", glEnableVertexAttribAPPLE == NULL);
+  glewInfoFunc(fi, "glIsVertexAttribEnabledAPPLE", glIsVertexAttribEnabledAPPLE == NULL);
+  glewInfoFunc(fi, "glMapVertexAttrib1dAPPLE", glMapVertexAttrib1dAPPLE == NULL);
+  glewInfoFunc(fi, "glMapVertexAttrib1fAPPLE", glMapVertexAttrib1fAPPLE == NULL);
+  glewInfoFunc(fi, "glMapVertexAttrib2dAPPLE", glMapVertexAttrib2dAPPLE == NULL);
+  glewInfoFunc(fi, "glMapVertexAttrib2fAPPLE", glMapVertexAttrib2fAPPLE == NULL);
 }
 
 #endif /* GL_APPLE_vertex_program_evaluators */
@@ -1426,13 +1463,13 @@ static void _glewInfo_GL_APPLE_ycbcr_422 (void)
 
 static void _glewInfo_GL_ARB_ES2_compatibility (void)
 {
-  glewPrintExt("GL_ARB_ES2_compatibility", GLEW_ARB_ES2_compatibility, glewIsSupported("GL_ARB_ES2_compatibility"), glewGetExtension("GL_ARB_ES2_compatibility"));
+  GLboolean fi = glewPrintExt("GL_ARB_ES2_compatibility", GLEW_ARB_ES2_compatibility, glewIsSupported("GL_ARB_ES2_compatibility"), glewGetExtension("GL_ARB_ES2_compatibility"));
 
-  glewInfoFunc("glClearDepthf", glClearDepthf == NULL);
-  glewInfoFunc("glDepthRangef", glDepthRangef == NULL);
-  glewInfoFunc("glGetShaderPrecisionFormat", glGetShaderPrecisionFormat == NULL);
-  glewInfoFunc("glReleaseShaderCompiler", glReleaseShaderCompiler == NULL);
-  glewInfoFunc("glShaderBinary", glShaderBinary == NULL);
+  glewInfoFunc(fi, "glClearDepthf", glClearDepthf == NULL);
+  glewInfoFunc(fi, "glDepthRangef", glDepthRangef == NULL);
+  glewInfoFunc(fi, "glGetShaderPrecisionFormat", glGetShaderPrecisionFormat == NULL);
+  glewInfoFunc(fi, "glReleaseShaderCompiler", glReleaseShaderCompiler == NULL);
+  glewInfoFunc(fi, "glShaderBinary", glShaderBinary == NULL);
 }
 
 #endif /* GL_ARB_ES2_compatibility */
@@ -1441,9 +1478,9 @@ static void _glewInfo_GL_ARB_ES2_compatibility (void)
 
 static void _glewInfo_GL_ARB_ES3_1_compatibility (void)
 {
-  glewPrintExt("GL_ARB_ES3_1_compatibility", GLEW_ARB_ES3_1_compatibility, glewIsSupported("GL_ARB_ES3_1_compatibility"), glewGetExtension("GL_ARB_ES3_1_compatibility"));
+  GLboolean fi = glewPrintExt("GL_ARB_ES3_1_compatibility", GLEW_ARB_ES3_1_compatibility, glewIsSupported("GL_ARB_ES3_1_compatibility"), glewGetExtension("GL_ARB_ES3_1_compatibility"));
 
-  glewInfoFunc("glMemoryBarrierByRegion", glMemoryBarrierByRegion == NULL);
+  glewInfoFunc(fi, "glMemoryBarrierByRegion", glMemoryBarrierByRegion == NULL);
 }
 
 #endif /* GL_ARB_ES3_1_compatibility */
@@ -1452,9 +1489,9 @@ static void _glewInfo_GL_ARB_ES3_1_compatibility (void)
 
 static void _glewInfo_GL_ARB_ES3_2_compatibility (void)
 {
-  glewPrintExt("GL_ARB_ES3_2_compatibility", GLEW_ARB_ES3_2_compatibility, glewIsSupported("GL_ARB_ES3_2_compatibility"), glewGetExtension("GL_ARB_ES3_2_compatibility"));
+  GLboolean fi = glewPrintExt("GL_ARB_ES3_2_compatibility", GLEW_ARB_ES3_2_compatibility, glewIsSupported("GL_ARB_ES3_2_compatibility"), glewGetExtension("GL_ARB_ES3_2_compatibility"));
 
-  glewInfoFunc("glPrimitiveBoundingBoxARB", glPrimitiveBoundingBoxARB == NULL);
+  glewInfoFunc(fi, "glPrimitiveBoundingBoxARB", glPrimitiveBoundingBoxARB == NULL);
 }
 
 #endif /* GL_ARB_ES3_2_compatibility */
@@ -1481,11 +1518,11 @@ static void _glewInfo_GL_ARB_arrays_of_arrays (void)
 
 static void _glewInfo_GL_ARB_base_instance (void)
 {
-  glewPrintExt("GL_ARB_base_instance", GLEW_ARB_base_instance, glewIsSupported("GL_ARB_base_instance"), glewGetExtension("GL_ARB_base_instance"));
+  GLboolean fi = glewPrintExt("GL_ARB_base_instance", GLEW_ARB_base_instance, glewIsSupported("GL_ARB_base_instance"), glewGetExtension("GL_ARB_base_instance"));
 
-  glewInfoFunc("glDrawArraysInstancedBaseInstance", glDrawArraysInstancedBaseInstance == NULL);
-  glewInfoFunc("glDrawElementsInstancedBaseInstance", glDrawElementsInstancedBaseInstance == NULL);
-  glewInfoFunc("glDrawElementsInstancedBaseVertexBaseInstance", glDrawElementsInstancedBaseVertexBaseInstance == NULL);
+  glewInfoFunc(fi, "glDrawArraysInstancedBaseInstance", glDrawArraysInstancedBaseInstance == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedBaseInstance", glDrawElementsInstancedBaseInstance == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedBaseVertexBaseInstance", glDrawElementsInstancedBaseVertexBaseInstance == NULL);
 }
 
 #endif /* GL_ARB_base_instance */
@@ -1494,24 +1531,24 @@ static void _glewInfo_GL_ARB_base_instance (void)
 
 static void _glewInfo_GL_ARB_bindless_texture (void)
 {
-  glewPrintExt("GL_ARB_bindless_texture", GLEW_ARB_bindless_texture, glewIsSupported("GL_ARB_bindless_texture"), glewGetExtension("GL_ARB_bindless_texture"));
+  GLboolean fi = glewPrintExt("GL_ARB_bindless_texture", GLEW_ARB_bindless_texture, glewIsSupported("GL_ARB_bindless_texture"), glewGetExtension("GL_ARB_bindless_texture"));
 
-  glewInfoFunc("glGetImageHandleARB", glGetImageHandleARB == NULL);
-  glewInfoFunc("glGetTextureHandleARB", glGetTextureHandleARB == NULL);
-  glewInfoFunc("glGetTextureSamplerHandleARB", glGetTextureSamplerHandleARB == NULL);
-  glewInfoFunc("glGetVertexAttribLui64vARB", glGetVertexAttribLui64vARB == NULL);
-  glewInfoFunc("glIsImageHandleResidentARB", glIsImageHandleResidentARB == NULL);
-  glewInfoFunc("glIsTextureHandleResidentARB", glIsTextureHandleResidentARB == NULL);
-  glewInfoFunc("glMakeImageHandleNonResidentARB", glMakeImageHandleNonResidentARB == NULL);
-  glewInfoFunc("glMakeImageHandleResidentARB", glMakeImageHandleResidentARB == NULL);
-  glewInfoFunc("glMakeTextureHandleNonResidentARB", glMakeTextureHandleNonResidentARB == NULL);
-  glewInfoFunc("glMakeTextureHandleResidentARB", glMakeTextureHandleResidentARB == NULL);
-  glewInfoFunc("glProgramUniformHandleui64ARB", glProgramUniformHandleui64ARB == NULL);
-  glewInfoFunc("glProgramUniformHandleui64vARB", glProgramUniformHandleui64vARB == NULL);
-  glewInfoFunc("glUniformHandleui64ARB", glUniformHandleui64ARB == NULL);
-  glewInfoFunc("glUniformHandleui64vARB", glUniformHandleui64vARB == NULL);
-  glewInfoFunc("glVertexAttribL1ui64ARB", glVertexAttribL1ui64ARB == NULL);
-  glewInfoFunc("glVertexAttribL1ui64vARB", glVertexAttribL1ui64vARB == NULL);
+  glewInfoFunc(fi, "glGetImageHandleARB", glGetImageHandleARB == NULL);
+  glewInfoFunc(fi, "glGetTextureHandleARB", glGetTextureHandleARB == NULL);
+  glewInfoFunc(fi, "glGetTextureSamplerHandleARB", glGetTextureSamplerHandleARB == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribLui64vARB", glGetVertexAttribLui64vARB == NULL);
+  glewInfoFunc(fi, "glIsImageHandleResidentARB", glIsImageHandleResidentARB == NULL);
+  glewInfoFunc(fi, "glIsTextureHandleResidentARB", glIsTextureHandleResidentARB == NULL);
+  glewInfoFunc(fi, "glMakeImageHandleNonResidentARB", glMakeImageHandleNonResidentARB == NULL);
+  glewInfoFunc(fi, "glMakeImageHandleResidentARB", glMakeImageHandleResidentARB == NULL);
+  glewInfoFunc(fi, "glMakeTextureHandleNonResidentARB", glMakeTextureHandleNonResidentARB == NULL);
+  glewInfoFunc(fi, "glMakeTextureHandleResidentARB", glMakeTextureHandleResidentARB == NULL);
+  glewInfoFunc(fi, "glProgramUniformHandleui64ARB", glProgramUniformHandleui64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniformHandleui64vARB", glProgramUniformHandleui64vARB == NULL);
+  glewInfoFunc(fi, "glUniformHandleui64ARB", glUniformHandleui64ARB == NULL);
+  glewInfoFunc(fi, "glUniformHandleui64vARB", glUniformHandleui64vARB == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1ui64ARB", glVertexAttribL1ui64ARB == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1ui64vARB", glVertexAttribL1ui64vARB == NULL);
 }
 
 #endif /* GL_ARB_bindless_texture */
@@ -1520,10 +1557,10 @@ static void _glewInfo_GL_ARB_bindless_texture (void)
 
 static void _glewInfo_GL_ARB_blend_func_extended (void)
 {
-  glewPrintExt("GL_ARB_blend_func_extended", GLEW_ARB_blend_func_extended, glewIsSupported("GL_ARB_blend_func_extended"), glewGetExtension("GL_ARB_blend_func_extended"));
+  GLboolean fi = glewPrintExt("GL_ARB_blend_func_extended", GLEW_ARB_blend_func_extended, glewIsSupported("GL_ARB_blend_func_extended"), glewGetExtension("GL_ARB_blend_func_extended"));
 
-  glewInfoFunc("glBindFragDataLocationIndexed", glBindFragDataLocationIndexed == NULL);
-  glewInfoFunc("glGetFragDataIndex", glGetFragDataIndex == NULL);
+  glewInfoFunc(fi, "glBindFragDataLocationIndexed", glBindFragDataLocationIndexed == NULL);
+  glewInfoFunc(fi, "glGetFragDataIndex", glGetFragDataIndex == NULL);
 }
 
 #endif /* GL_ARB_blend_func_extended */
@@ -1532,9 +1569,9 @@ static void _glewInfo_GL_ARB_blend_func_extended (void)
 
 static void _glewInfo_GL_ARB_buffer_storage (void)
 {
-  glewPrintExt("GL_ARB_buffer_storage", GLEW_ARB_buffer_storage, glewIsSupported("GL_ARB_buffer_storage"), glewGetExtension("GL_ARB_buffer_storage"));
+  GLboolean fi = glewPrintExt("GL_ARB_buffer_storage", GLEW_ARB_buffer_storage, glewIsSupported("GL_ARB_buffer_storage"), glewGetExtension("GL_ARB_buffer_storage"));
 
-  glewInfoFunc("glBufferStorage", glBufferStorage == NULL);
+  glewInfoFunc(fi, "glBufferStorage", glBufferStorage == NULL);
 }
 
 #endif /* GL_ARB_buffer_storage */
@@ -1543,9 +1580,9 @@ static void _glewInfo_GL_ARB_buffer_storage (void)
 
 static void _glewInfo_GL_ARB_cl_event (void)
 {
-  glewPrintExt("GL_ARB_cl_event", GLEW_ARB_cl_event, glewIsSupported("GL_ARB_cl_event"), glewGetExtension("GL_ARB_cl_event"));
+  GLboolean fi = glewPrintExt("GL_ARB_cl_event", GLEW_ARB_cl_event, glewIsSupported("GL_ARB_cl_event"), glewGetExtension("GL_ARB_cl_event"));
 
-  glewInfoFunc("glCreateSyncFromCLeventARB", glCreateSyncFromCLeventARB == NULL);
+  glewInfoFunc(fi, "glCreateSyncFromCLeventARB", glCreateSyncFromCLeventARB == NULL);
 }
 
 #endif /* GL_ARB_cl_event */
@@ -1554,12 +1591,12 @@ static void _glewInfo_GL_ARB_cl_event (void)
 
 static void _glewInfo_GL_ARB_clear_buffer_object (void)
 {
-  glewPrintExt("GL_ARB_clear_buffer_object", GLEW_ARB_clear_buffer_object, glewIsSupported("GL_ARB_clear_buffer_object"), glewGetExtension("GL_ARB_clear_buffer_object"));
+  GLboolean fi = glewPrintExt("GL_ARB_clear_buffer_object", GLEW_ARB_clear_buffer_object, glewIsSupported("GL_ARB_clear_buffer_object"), glewGetExtension("GL_ARB_clear_buffer_object"));
 
-  glewInfoFunc("glClearBufferData", glClearBufferData == NULL);
-  glewInfoFunc("glClearBufferSubData", glClearBufferSubData == NULL);
-  glewInfoFunc("glClearNamedBufferDataEXT", glClearNamedBufferDataEXT == NULL);
-  glewInfoFunc("glClearNamedBufferSubDataEXT", glClearNamedBufferSubDataEXT == NULL);
+  glewInfoFunc(fi, "glClearBufferData", glClearBufferData == NULL);
+  glewInfoFunc(fi, "glClearBufferSubData", glClearBufferSubData == NULL);
+  glewInfoFunc(fi, "glClearNamedBufferDataEXT", glClearNamedBufferDataEXT == NULL);
+  glewInfoFunc(fi, "glClearNamedBufferSubDataEXT", glClearNamedBufferSubDataEXT == NULL);
 }
 
 #endif /* GL_ARB_clear_buffer_object */
@@ -1568,10 +1605,10 @@ static void _glewInfo_GL_ARB_clear_buffer_object (void)
 
 static void _glewInfo_GL_ARB_clear_texture (void)
 {
-  glewPrintExt("GL_ARB_clear_texture", GLEW_ARB_clear_texture, glewIsSupported("GL_ARB_clear_texture"), glewGetExtension("GL_ARB_clear_texture"));
+  GLboolean fi = glewPrintExt("GL_ARB_clear_texture", GLEW_ARB_clear_texture, glewIsSupported("GL_ARB_clear_texture"), glewGetExtension("GL_ARB_clear_texture"));
 
-  glewInfoFunc("glClearTexImage", glClearTexImage == NULL);
-  glewInfoFunc("glClearTexSubImage", glClearTexSubImage == NULL);
+  glewInfoFunc(fi, "glClearTexImage", glClearTexImage == NULL);
+  glewInfoFunc(fi, "glClearTexSubImage", glClearTexSubImage == NULL);
 }
 
 #endif /* GL_ARB_clear_texture */
@@ -1580,9 +1617,9 @@ static void _glewInfo_GL_ARB_clear_texture (void)
 
 static void _glewInfo_GL_ARB_clip_control (void)
 {
-  glewPrintExt("GL_ARB_clip_control", GLEW_ARB_clip_control, glewIsSupported("GL_ARB_clip_control"), glewGetExtension("GL_ARB_clip_control"));
+  GLboolean fi = glewPrintExt("GL_ARB_clip_control", GLEW_ARB_clip_control, glewIsSupported("GL_ARB_clip_control"), glewGetExtension("GL_ARB_clip_control"));
 
-  glewInfoFunc("glClipControl", glClipControl == NULL);
+  glewInfoFunc(fi, "glClipControl", glClipControl == NULL);
 }
 
 #endif /* GL_ARB_clip_control */
@@ -1591,9 +1628,9 @@ static void _glewInfo_GL_ARB_clip_control (void)
 
 static void _glewInfo_GL_ARB_color_buffer_float (void)
 {
-  glewPrintExt("GL_ARB_color_buffer_float", GLEW_ARB_color_buffer_float, glewIsSupported("GL_ARB_color_buffer_float"), glewGetExtension("GL_ARB_color_buffer_float"));
+  GLboolean fi = glewPrintExt("GL_ARB_color_buffer_float", GLEW_ARB_color_buffer_float, glewIsSupported("GL_ARB_color_buffer_float"), glewGetExtension("GL_ARB_color_buffer_float"));
 
-  glewInfoFunc("glClampColorARB", glClampColorARB == NULL);
+  glewInfoFunc(fi, "glClampColorARB", glClampColorARB == NULL);
 }
 
 #endif /* GL_ARB_color_buffer_float */
@@ -1620,10 +1657,10 @@ static void _glewInfo_GL_ARB_compressed_texture_pixel_storage (void)
 
 static void _glewInfo_GL_ARB_compute_shader (void)
 {
-  glewPrintExt("GL_ARB_compute_shader", GLEW_ARB_compute_shader, glewIsSupported("GL_ARB_compute_shader"), glewGetExtension("GL_ARB_compute_shader"));
+  GLboolean fi = glewPrintExt("GL_ARB_compute_shader", GLEW_ARB_compute_shader, glewIsSupported("GL_ARB_compute_shader"), glewGetExtension("GL_ARB_compute_shader"));
 
-  glewInfoFunc("glDispatchCompute", glDispatchCompute == NULL);
-  glewInfoFunc("glDispatchComputeIndirect", glDispatchComputeIndirect == NULL);
+  glewInfoFunc(fi, "glDispatchCompute", glDispatchCompute == NULL);
+  glewInfoFunc(fi, "glDispatchComputeIndirect", glDispatchComputeIndirect == NULL);
 }
 
 #endif /* GL_ARB_compute_shader */
@@ -1632,9 +1669,9 @@ static void _glewInfo_GL_ARB_compute_shader (void)
 
 static void _glewInfo_GL_ARB_compute_variable_group_size (void)
 {
-  glewPrintExt("GL_ARB_compute_variable_group_size", GLEW_ARB_compute_variable_group_size, glewIsSupported("GL_ARB_compute_variable_group_size"), glewGetExtension("GL_ARB_compute_variable_group_size"));
+  GLboolean fi = glewPrintExt("GL_ARB_compute_variable_group_size", GLEW_ARB_compute_variable_group_size, glewIsSupported("GL_ARB_compute_variable_group_size"), glewGetExtension("GL_ARB_compute_variable_group_size"));
 
-  glewInfoFunc("glDispatchComputeGroupSizeARB", glDispatchComputeGroupSizeARB == NULL);
+  glewInfoFunc(fi, "glDispatchComputeGroupSizeARB", glDispatchComputeGroupSizeARB == NULL);
 }
 
 #endif /* GL_ARB_compute_variable_group_size */
@@ -1661,9 +1698,9 @@ static void _glewInfo_GL_ARB_conservative_depth (void)
 
 static void _glewInfo_GL_ARB_copy_buffer (void)
 {
-  glewPrintExt("GL_ARB_copy_buffer", GLEW_ARB_copy_buffer, glewIsSupported("GL_ARB_copy_buffer"), glewGetExtension("GL_ARB_copy_buffer"));
+  GLboolean fi = glewPrintExt("GL_ARB_copy_buffer", GLEW_ARB_copy_buffer, glewIsSupported("GL_ARB_copy_buffer"), glewGetExtension("GL_ARB_copy_buffer"));
 
-  glewInfoFunc("glCopyBufferSubData", glCopyBufferSubData == NULL);
+  glewInfoFunc(fi, "glCopyBufferSubData", glCopyBufferSubData == NULL);
 }
 
 #endif /* GL_ARB_copy_buffer */
@@ -1672,9 +1709,9 @@ static void _glewInfo_GL_ARB_copy_buffer (void)
 
 static void _glewInfo_GL_ARB_copy_image (void)
 {
-  glewPrintExt("GL_ARB_copy_image", GLEW_ARB_copy_image, glewIsSupported("GL_ARB_copy_image"), glewGetExtension("GL_ARB_copy_image"));
+  GLboolean fi = glewPrintExt("GL_ARB_copy_image", GLEW_ARB_copy_image, glewIsSupported("GL_ARB_copy_image"), glewGetExtension("GL_ARB_copy_image"));
 
-  glewInfoFunc("glCopyImageSubData", glCopyImageSubData == NULL);
+  glewInfoFunc(fi, "glCopyImageSubData", glCopyImageSubData == NULL);
 }
 
 #endif /* GL_ARB_copy_image */
@@ -1692,12 +1729,12 @@ static void _glewInfo_GL_ARB_cull_distance (void)
 
 static void _glewInfo_GL_ARB_debug_output (void)
 {
-  glewPrintExt("GL_ARB_debug_output", GLEW_ARB_debug_output, glewIsSupported("GL_ARB_debug_output"), glewGetExtension("GL_ARB_debug_output"));
+  GLboolean fi = glewPrintExt("GL_ARB_debug_output", GLEW_ARB_debug_output, glewIsSupported("GL_ARB_debug_output"), glewGetExtension("GL_ARB_debug_output"));
 
-  glewInfoFunc("glDebugMessageCallbackARB", glDebugMessageCallbackARB == NULL);
-  glewInfoFunc("glDebugMessageControlARB", glDebugMessageControlARB == NULL);
-  glewInfoFunc("glDebugMessageInsertARB", glDebugMessageInsertARB == NULL);
-  glewInfoFunc("glGetDebugMessageLogARB", glGetDebugMessageLogARB == NULL);
+  glewInfoFunc(fi, "glDebugMessageCallbackARB", glDebugMessageCallbackARB == NULL);
+  glewInfoFunc(fi, "glDebugMessageControlARB", glDebugMessageControlARB == NULL);
+  glewInfoFunc(fi, "glDebugMessageInsertARB", glDebugMessageInsertARB == NULL);
+  glewInfoFunc(fi, "glGetDebugMessageLogARB", glGetDebugMessageLogARB == NULL);
 }
 
 #endif /* GL_ARB_debug_output */
@@ -1742,105 +1779,105 @@ static void _glewInfo_GL_ARB_derivative_control (void)
 
 static void _glewInfo_GL_ARB_direct_state_access (void)
 {
-  glewPrintExt("GL_ARB_direct_state_access", GLEW_ARB_direct_state_access, glewIsSupported("GL_ARB_direct_state_access"), glewGetExtension("GL_ARB_direct_state_access"));
+  GLboolean fi = glewPrintExt("GL_ARB_direct_state_access", GLEW_ARB_direct_state_access, glewIsSupported("GL_ARB_direct_state_access"), glewGetExtension("GL_ARB_direct_state_access"));
 
-  glewInfoFunc("glBindTextureUnit", glBindTextureUnit == NULL);
-  glewInfoFunc("glBlitNamedFramebuffer", glBlitNamedFramebuffer == NULL);
-  glewInfoFunc("glCheckNamedFramebufferStatus", glCheckNamedFramebufferStatus == NULL);
-  glewInfoFunc("glClearNamedBufferData", glClearNamedBufferData == NULL);
-  glewInfoFunc("glClearNamedBufferSubData", glClearNamedBufferSubData == NULL);
-  glewInfoFunc("glClearNamedFramebufferfi", glClearNamedFramebufferfi == NULL);
-  glewInfoFunc("glClearNamedFramebufferfv", glClearNamedFramebufferfv == NULL);
-  glewInfoFunc("glClearNamedFramebufferiv", glClearNamedFramebufferiv == NULL);
-  glewInfoFunc("glClearNamedFramebufferuiv", glClearNamedFramebufferuiv == NULL);
-  glewInfoFunc("glCompressedTextureSubImage1D", glCompressedTextureSubImage1D == NULL);
-  glewInfoFunc("glCompressedTextureSubImage2D", glCompressedTextureSubImage2D == NULL);
-  glewInfoFunc("glCompressedTextureSubImage3D", glCompressedTextureSubImage3D == NULL);
-  glewInfoFunc("glCopyNamedBufferSubData", glCopyNamedBufferSubData == NULL);
-  glewInfoFunc("glCopyTextureSubImage1D", glCopyTextureSubImage1D == NULL);
-  glewInfoFunc("glCopyTextureSubImage2D", glCopyTextureSubImage2D == NULL);
-  glewInfoFunc("glCopyTextureSubImage3D", glCopyTextureSubImage3D == NULL);
-  glewInfoFunc("glCreateBuffers", glCreateBuffers == NULL);
-  glewInfoFunc("glCreateFramebuffers", glCreateFramebuffers == NULL);
-  glewInfoFunc("glCreateProgramPipelines", glCreateProgramPipelines == NULL);
-  glewInfoFunc("glCreateQueries", glCreateQueries == NULL);
-  glewInfoFunc("glCreateRenderbuffers", glCreateRenderbuffers == NULL);
-  glewInfoFunc("glCreateSamplers", glCreateSamplers == NULL);
-  glewInfoFunc("glCreateTextures", glCreateTextures == NULL);
-  glewInfoFunc("glCreateTransformFeedbacks", glCreateTransformFeedbacks == NULL);
-  glewInfoFunc("glCreateVertexArrays", glCreateVertexArrays == NULL);
-  glewInfoFunc("glDisableVertexArrayAttrib", glDisableVertexArrayAttrib == NULL);
-  glewInfoFunc("glEnableVertexArrayAttrib", glEnableVertexArrayAttrib == NULL);
-  glewInfoFunc("glFlushMappedNamedBufferRange", glFlushMappedNamedBufferRange == NULL);
-  glewInfoFunc("glGenerateTextureMipmap", glGenerateTextureMipmap == NULL);
-  glewInfoFunc("glGetCompressedTextureImage", glGetCompressedTextureImage == NULL);
-  glewInfoFunc("glGetNamedBufferParameteri64v", glGetNamedBufferParameteri64v == NULL);
-  glewInfoFunc("glGetNamedBufferParameteriv", glGetNamedBufferParameteriv == NULL);
-  glewInfoFunc("glGetNamedBufferPointerv", glGetNamedBufferPointerv == NULL);
-  glewInfoFunc("glGetNamedBufferSubData", glGetNamedBufferSubData == NULL);
-  glewInfoFunc("glGetNamedFramebufferAttachmentParameteriv", glGetNamedFramebufferAttachmentParameteriv == NULL);
-  glewInfoFunc("glGetNamedFramebufferParameteriv", glGetNamedFramebufferParameteriv == NULL);
-  glewInfoFunc("glGetNamedRenderbufferParameteriv", glGetNamedRenderbufferParameteriv == NULL);
-  glewInfoFunc("glGetQueryBufferObjecti64v", glGetQueryBufferObjecti64v == NULL);
-  glewInfoFunc("glGetQueryBufferObjectiv", glGetQueryBufferObjectiv == NULL);
-  glewInfoFunc("glGetQueryBufferObjectui64v", glGetQueryBufferObjectui64v == NULL);
-  glewInfoFunc("glGetQueryBufferObjectuiv", glGetQueryBufferObjectuiv == NULL);
-  glewInfoFunc("glGetTextureImage", glGetTextureImage == NULL);
-  glewInfoFunc("glGetTextureLevelParameterfv", glGetTextureLevelParameterfv == NULL);
-  glewInfoFunc("glGetTextureLevelParameteriv", glGetTextureLevelParameteriv == NULL);
-  glewInfoFunc("glGetTextureParameterIiv", glGetTextureParameterIiv == NULL);
-  glewInfoFunc("glGetTextureParameterIuiv", glGetTextureParameterIuiv == NULL);
-  glewInfoFunc("glGetTextureParameterfv", glGetTextureParameterfv == NULL);
-  glewInfoFunc("glGetTextureParameteriv", glGetTextureParameteriv == NULL);
-  glewInfoFunc("glGetTransformFeedbacki64_v", glGetTransformFeedbacki64_v == NULL);
-  glewInfoFunc("glGetTransformFeedbacki_v", glGetTransformFeedbacki_v == NULL);
-  glewInfoFunc("glGetTransformFeedbackiv", glGetTransformFeedbackiv == NULL);
-  glewInfoFunc("glGetVertexArrayIndexed64iv", glGetVertexArrayIndexed64iv == NULL);
-  glewInfoFunc("glGetVertexArrayIndexediv", glGetVertexArrayIndexediv == NULL);
-  glewInfoFunc("glGetVertexArrayiv", glGetVertexArrayiv == NULL);
-  glewInfoFunc("glInvalidateNamedFramebufferData", glInvalidateNamedFramebufferData == NULL);
-  glewInfoFunc("glInvalidateNamedFramebufferSubData", glInvalidateNamedFramebufferSubData == NULL);
-  glewInfoFunc("glMapNamedBuffer", glMapNamedBuffer == NULL);
-  glewInfoFunc("glMapNamedBufferRange", glMapNamedBufferRange == NULL);
-  glewInfoFunc("glNamedBufferData", glNamedBufferData == NULL);
-  glewInfoFunc("glNamedBufferStorage", glNamedBufferStorage == NULL);
-  glewInfoFunc("glNamedBufferSubData", glNamedBufferSubData == NULL);
-  glewInfoFunc("glNamedFramebufferDrawBuffer", glNamedFramebufferDrawBuffer == NULL);
-  glewInfoFunc("glNamedFramebufferDrawBuffers", glNamedFramebufferDrawBuffers == NULL);
-  glewInfoFunc("glNamedFramebufferParameteri", glNamedFramebufferParameteri == NULL);
-  glewInfoFunc("glNamedFramebufferReadBuffer", glNamedFramebufferReadBuffer == NULL);
-  glewInfoFunc("glNamedFramebufferRenderbuffer", glNamedFramebufferRenderbuffer == NULL);
-  glewInfoFunc("glNamedFramebufferTexture", glNamedFramebufferTexture == NULL);
-  glewInfoFunc("glNamedFramebufferTextureLayer", glNamedFramebufferTextureLayer == NULL);
-  glewInfoFunc("glNamedRenderbufferStorage", glNamedRenderbufferStorage == NULL);
-  glewInfoFunc("glNamedRenderbufferStorageMultisample", glNamedRenderbufferStorageMultisample == NULL);
-  glewInfoFunc("glTextureBuffer", glTextureBuffer == NULL);
-  glewInfoFunc("glTextureBufferRange", glTextureBufferRange == NULL);
-  glewInfoFunc("glTextureParameterIiv", glTextureParameterIiv == NULL);
-  glewInfoFunc("glTextureParameterIuiv", glTextureParameterIuiv == NULL);
-  glewInfoFunc("glTextureParameterf", glTextureParameterf == NULL);
-  glewInfoFunc("glTextureParameterfv", glTextureParameterfv == NULL);
-  glewInfoFunc("glTextureParameteri", glTextureParameteri == NULL);
-  glewInfoFunc("glTextureParameteriv", glTextureParameteriv == NULL);
-  glewInfoFunc("glTextureStorage1D", glTextureStorage1D == NULL);
-  glewInfoFunc("glTextureStorage2D", glTextureStorage2D == NULL);
-  glewInfoFunc("glTextureStorage2DMultisample", glTextureStorage2DMultisample == NULL);
-  glewInfoFunc("glTextureStorage3D", glTextureStorage3D == NULL);
-  glewInfoFunc("glTextureStorage3DMultisample", glTextureStorage3DMultisample == NULL);
-  glewInfoFunc("glTextureSubImage1D", glTextureSubImage1D == NULL);
-  glewInfoFunc("glTextureSubImage2D", glTextureSubImage2D == NULL);
-  glewInfoFunc("glTextureSubImage3D", glTextureSubImage3D == NULL);
-  glewInfoFunc("glTransformFeedbackBufferBase", glTransformFeedbackBufferBase == NULL);
-  glewInfoFunc("glTransformFeedbackBufferRange", glTransformFeedbackBufferRange == NULL);
-  glewInfoFunc("glUnmapNamedBuffer", glUnmapNamedBuffer == NULL);
-  glewInfoFunc("glVertexArrayAttribBinding", glVertexArrayAttribBinding == NULL);
-  glewInfoFunc("glVertexArrayAttribFormat", glVertexArrayAttribFormat == NULL);
-  glewInfoFunc("glVertexArrayAttribIFormat", glVertexArrayAttribIFormat == NULL);
-  glewInfoFunc("glVertexArrayAttribLFormat", glVertexArrayAttribLFormat == NULL);
-  glewInfoFunc("glVertexArrayBindingDivisor", glVertexArrayBindingDivisor == NULL);
-  glewInfoFunc("glVertexArrayElementBuffer", glVertexArrayElementBuffer == NULL);
-  glewInfoFunc("glVertexArrayVertexBuffer", glVertexArrayVertexBuffer == NULL);
-  glewInfoFunc("glVertexArrayVertexBuffers", glVertexArrayVertexBuffers == NULL);
+  glewInfoFunc(fi, "glBindTextureUnit", glBindTextureUnit == NULL);
+  glewInfoFunc(fi, "glBlitNamedFramebuffer", glBlitNamedFramebuffer == NULL);
+  glewInfoFunc(fi, "glCheckNamedFramebufferStatus", glCheckNamedFramebufferStatus == NULL);
+  glewInfoFunc(fi, "glClearNamedBufferData", glClearNamedBufferData == NULL);
+  glewInfoFunc(fi, "glClearNamedBufferSubData", glClearNamedBufferSubData == NULL);
+  glewInfoFunc(fi, "glClearNamedFramebufferfi", glClearNamedFramebufferfi == NULL);
+  glewInfoFunc(fi, "glClearNamedFramebufferfv", glClearNamedFramebufferfv == NULL);
+  glewInfoFunc(fi, "glClearNamedFramebufferiv", glClearNamedFramebufferiv == NULL);
+  glewInfoFunc(fi, "glClearNamedFramebufferuiv", glClearNamedFramebufferuiv == NULL);
+  glewInfoFunc(fi, "glCompressedTextureSubImage1D", glCompressedTextureSubImage1D == NULL);
+  glewInfoFunc(fi, "glCompressedTextureSubImage2D", glCompressedTextureSubImage2D == NULL);
+  glewInfoFunc(fi, "glCompressedTextureSubImage3D", glCompressedTextureSubImage3D == NULL);
+  glewInfoFunc(fi, "glCopyNamedBufferSubData", glCopyNamedBufferSubData == NULL);
+  glewInfoFunc(fi, "glCopyTextureSubImage1D", glCopyTextureSubImage1D == NULL);
+  glewInfoFunc(fi, "glCopyTextureSubImage2D", glCopyTextureSubImage2D == NULL);
+  glewInfoFunc(fi, "glCopyTextureSubImage3D", glCopyTextureSubImage3D == NULL);
+  glewInfoFunc(fi, "glCreateBuffers", glCreateBuffers == NULL);
+  glewInfoFunc(fi, "glCreateFramebuffers", glCreateFramebuffers == NULL);
+  glewInfoFunc(fi, "glCreateProgramPipelines", glCreateProgramPipelines == NULL);
+  glewInfoFunc(fi, "glCreateQueries", glCreateQueries == NULL);
+  glewInfoFunc(fi, "glCreateRenderbuffers", glCreateRenderbuffers == NULL);
+  glewInfoFunc(fi, "glCreateSamplers", glCreateSamplers == NULL);
+  glewInfoFunc(fi, "glCreateTextures", glCreateTextures == NULL);
+  glewInfoFunc(fi, "glCreateTransformFeedbacks", glCreateTransformFeedbacks == NULL);
+  glewInfoFunc(fi, "glCreateVertexArrays", glCreateVertexArrays == NULL);
+  glewInfoFunc(fi, "glDisableVertexArrayAttrib", glDisableVertexArrayAttrib == NULL);
+  glewInfoFunc(fi, "glEnableVertexArrayAttrib", glEnableVertexArrayAttrib == NULL);
+  glewInfoFunc(fi, "glFlushMappedNamedBufferRange", glFlushMappedNamedBufferRange == NULL);
+  glewInfoFunc(fi, "glGenerateTextureMipmap", glGenerateTextureMipmap == NULL);
+  glewInfoFunc(fi, "glGetCompressedTextureImage", glGetCompressedTextureImage == NULL);
+  glewInfoFunc(fi, "glGetNamedBufferParameteri64v", glGetNamedBufferParameteri64v == NULL);
+  glewInfoFunc(fi, "glGetNamedBufferParameteriv", glGetNamedBufferParameteriv == NULL);
+  glewInfoFunc(fi, "glGetNamedBufferPointerv", glGetNamedBufferPointerv == NULL);
+  glewInfoFunc(fi, "glGetNamedBufferSubData", glGetNamedBufferSubData == NULL);
+  glewInfoFunc(fi, "glGetNamedFramebufferAttachmentParameteriv", glGetNamedFramebufferAttachmentParameteriv == NULL);
+  glewInfoFunc(fi, "glGetNamedFramebufferParameteriv", glGetNamedFramebufferParameteriv == NULL);
+  glewInfoFunc(fi, "glGetNamedRenderbufferParameteriv", glGetNamedRenderbufferParameteriv == NULL);
+  glewInfoFunc(fi, "glGetQueryBufferObjecti64v", glGetQueryBufferObjecti64v == NULL);
+  glewInfoFunc(fi, "glGetQueryBufferObjectiv", glGetQueryBufferObjectiv == NULL);
+  glewInfoFunc(fi, "glGetQueryBufferObjectui64v", glGetQueryBufferObjectui64v == NULL);
+  glewInfoFunc(fi, "glGetQueryBufferObjectuiv", glGetQueryBufferObjectuiv == NULL);
+  glewInfoFunc(fi, "glGetTextureImage", glGetTextureImage == NULL);
+  glewInfoFunc(fi, "glGetTextureLevelParameterfv", glGetTextureLevelParameterfv == NULL);
+  glewInfoFunc(fi, "glGetTextureLevelParameteriv", glGetTextureLevelParameteriv == NULL);
+  glewInfoFunc(fi, "glGetTextureParameterIiv", glGetTextureParameterIiv == NULL);
+  glewInfoFunc(fi, "glGetTextureParameterIuiv", glGetTextureParameterIuiv == NULL);
+  glewInfoFunc(fi, "glGetTextureParameterfv", glGetTextureParameterfv == NULL);
+  glewInfoFunc(fi, "glGetTextureParameteriv", glGetTextureParameteriv == NULL);
+  glewInfoFunc(fi, "glGetTransformFeedbacki64_v", glGetTransformFeedbacki64_v == NULL);
+  glewInfoFunc(fi, "glGetTransformFeedbacki_v", glGetTransformFeedbacki_v == NULL);
+  glewInfoFunc(fi, "glGetTransformFeedbackiv", glGetTransformFeedbackiv == NULL);
+  glewInfoFunc(fi, "glGetVertexArrayIndexed64iv", glGetVertexArrayIndexed64iv == NULL);
+  glewInfoFunc(fi, "glGetVertexArrayIndexediv", glGetVertexArrayIndexediv == NULL);
+  glewInfoFunc(fi, "glGetVertexArrayiv", glGetVertexArrayiv == NULL);
+  glewInfoFunc(fi, "glInvalidateNamedFramebufferData", glInvalidateNamedFramebufferData == NULL);
+  glewInfoFunc(fi, "glInvalidateNamedFramebufferSubData", glInvalidateNamedFramebufferSubData == NULL);
+  glewInfoFunc(fi, "glMapNamedBuffer", glMapNamedBuffer == NULL);
+  glewInfoFunc(fi, "glMapNamedBufferRange", glMapNamedBufferRange == NULL);
+  glewInfoFunc(fi, "glNamedBufferData", glNamedBufferData == NULL);
+  glewInfoFunc(fi, "glNamedBufferStorage", glNamedBufferStorage == NULL);
+  glewInfoFunc(fi, "glNamedBufferSubData", glNamedBufferSubData == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferDrawBuffer", glNamedFramebufferDrawBuffer == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferDrawBuffers", glNamedFramebufferDrawBuffers == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferParameteri", glNamedFramebufferParameteri == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferReadBuffer", glNamedFramebufferReadBuffer == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferRenderbuffer", glNamedFramebufferRenderbuffer == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTexture", glNamedFramebufferTexture == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTextureLayer", glNamedFramebufferTextureLayer == NULL);
+  glewInfoFunc(fi, "glNamedRenderbufferStorage", glNamedRenderbufferStorage == NULL);
+  glewInfoFunc(fi, "glNamedRenderbufferStorageMultisample", glNamedRenderbufferStorageMultisample == NULL);
+  glewInfoFunc(fi, "glTextureBuffer", glTextureBuffer == NULL);
+  glewInfoFunc(fi, "glTextureBufferRange", glTextureBufferRange == NULL);
+  glewInfoFunc(fi, "glTextureParameterIiv", glTextureParameterIiv == NULL);
+  glewInfoFunc(fi, "glTextureParameterIuiv", glTextureParameterIuiv == NULL);
+  glewInfoFunc(fi, "glTextureParameterf", glTextureParameterf == NULL);
+  glewInfoFunc(fi, "glTextureParameterfv", glTextureParameterfv == NULL);
+  glewInfoFunc(fi, "glTextureParameteri", glTextureParameteri == NULL);
+  glewInfoFunc(fi, "glTextureParameteriv", glTextureParameteriv == NULL);
+  glewInfoFunc(fi, "glTextureStorage1D", glTextureStorage1D == NULL);
+  glewInfoFunc(fi, "glTextureStorage2D", glTextureStorage2D == NULL);
+  glewInfoFunc(fi, "glTextureStorage2DMultisample", glTextureStorage2DMultisample == NULL);
+  glewInfoFunc(fi, "glTextureStorage3D", glTextureStorage3D == NULL);
+  glewInfoFunc(fi, "glTextureStorage3DMultisample", glTextureStorage3DMultisample == NULL);
+  glewInfoFunc(fi, "glTextureSubImage1D", glTextureSubImage1D == NULL);
+  glewInfoFunc(fi, "glTextureSubImage2D", glTextureSubImage2D == NULL);
+  glewInfoFunc(fi, "glTextureSubImage3D", glTextureSubImage3D == NULL);
+  glewInfoFunc(fi, "glTransformFeedbackBufferBase", glTransformFeedbackBufferBase == NULL);
+  glewInfoFunc(fi, "glTransformFeedbackBufferRange", glTransformFeedbackBufferRange == NULL);
+  glewInfoFunc(fi, "glUnmapNamedBuffer", glUnmapNamedBuffer == NULL);
+  glewInfoFunc(fi, "glVertexArrayAttribBinding", glVertexArrayAttribBinding == NULL);
+  glewInfoFunc(fi, "glVertexArrayAttribFormat", glVertexArrayAttribFormat == NULL);
+  glewInfoFunc(fi, "glVertexArrayAttribIFormat", glVertexArrayAttribIFormat == NULL);
+  glewInfoFunc(fi, "glVertexArrayAttribLFormat", glVertexArrayAttribLFormat == NULL);
+  glewInfoFunc(fi, "glVertexArrayBindingDivisor", glVertexArrayBindingDivisor == NULL);
+  glewInfoFunc(fi, "glVertexArrayElementBuffer", glVertexArrayElementBuffer == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexBuffer", glVertexArrayVertexBuffer == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexBuffers", glVertexArrayVertexBuffers == NULL);
 }
 
 #endif /* GL_ARB_direct_state_access */
@@ -1849,9 +1886,9 @@ static void _glewInfo_GL_ARB_direct_state_access (void)
 
 static void _glewInfo_GL_ARB_draw_buffers (void)
 {
-  glewPrintExt("GL_ARB_draw_buffers", GLEW_ARB_draw_buffers, glewIsSupported("GL_ARB_draw_buffers"), glewGetExtension("GL_ARB_draw_buffers"));
+  GLboolean fi = glewPrintExt("GL_ARB_draw_buffers", GLEW_ARB_draw_buffers, glewIsSupported("GL_ARB_draw_buffers"), glewGetExtension("GL_ARB_draw_buffers"));
 
-  glewInfoFunc("glDrawBuffersARB", glDrawBuffersARB == NULL);
+  glewInfoFunc(fi, "glDrawBuffersARB", glDrawBuffersARB == NULL);
 }
 
 #endif /* GL_ARB_draw_buffers */
@@ -1860,12 +1897,12 @@ static void _glewInfo_GL_ARB_draw_buffers (void)
 
 static void _glewInfo_GL_ARB_draw_buffers_blend (void)
 {
-  glewPrintExt("GL_ARB_draw_buffers_blend", GLEW_ARB_draw_buffers_blend, glewIsSupported("GL_ARB_draw_buffers_blend"), glewGetExtension("GL_ARB_draw_buffers_blend"));
+  GLboolean fi = glewPrintExt("GL_ARB_draw_buffers_blend", GLEW_ARB_draw_buffers_blend, glewIsSupported("GL_ARB_draw_buffers_blend"), glewGetExtension("GL_ARB_draw_buffers_blend"));
 
-  glewInfoFunc("glBlendEquationSeparateiARB", glBlendEquationSeparateiARB == NULL);
-  glewInfoFunc("glBlendEquationiARB", glBlendEquationiARB == NULL);
-  glewInfoFunc("glBlendFuncSeparateiARB", glBlendFuncSeparateiARB == NULL);
-  glewInfoFunc("glBlendFunciARB", glBlendFunciARB == NULL);
+  glewInfoFunc(fi, "glBlendEquationSeparateiARB", glBlendEquationSeparateiARB == NULL);
+  glewInfoFunc(fi, "glBlendEquationiARB", glBlendEquationiARB == NULL);
+  glewInfoFunc(fi, "glBlendFuncSeparateiARB", glBlendFuncSeparateiARB == NULL);
+  glewInfoFunc(fi, "glBlendFunciARB", glBlendFunciARB == NULL);
 }
 
 #endif /* GL_ARB_draw_buffers_blend */
@@ -1874,12 +1911,12 @@ static void _glewInfo_GL_ARB_draw_buffers_blend (void)
 
 static void _glewInfo_GL_ARB_draw_elements_base_vertex (void)
 {
-  glewPrintExt("GL_ARB_draw_elements_base_vertex", GLEW_ARB_draw_elements_base_vertex, glewIsSupported("GL_ARB_draw_elements_base_vertex"), glewGetExtension("GL_ARB_draw_elements_base_vertex"));
+  GLboolean fi = glewPrintExt("GL_ARB_draw_elements_base_vertex", GLEW_ARB_draw_elements_base_vertex, glewIsSupported("GL_ARB_draw_elements_base_vertex"), glewGetExtension("GL_ARB_draw_elements_base_vertex"));
 
-  glewInfoFunc("glDrawElementsBaseVertex", glDrawElementsBaseVertex == NULL);
-  glewInfoFunc("glDrawElementsInstancedBaseVertex", glDrawElementsInstancedBaseVertex == NULL);
-  glewInfoFunc("glDrawRangeElementsBaseVertex", glDrawRangeElementsBaseVertex == NULL);
-  glewInfoFunc("glMultiDrawElementsBaseVertex", glMultiDrawElementsBaseVertex == NULL);
+  glewInfoFunc(fi, "glDrawElementsBaseVertex", glDrawElementsBaseVertex == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedBaseVertex", glDrawElementsInstancedBaseVertex == NULL);
+  glewInfoFunc(fi, "glDrawRangeElementsBaseVertex", glDrawRangeElementsBaseVertex == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsBaseVertex", glMultiDrawElementsBaseVertex == NULL);
 }
 
 #endif /* GL_ARB_draw_elements_base_vertex */
@@ -1888,10 +1925,10 @@ static void _glewInfo_GL_ARB_draw_elements_base_vertex (void)
 
 static void _glewInfo_GL_ARB_draw_indirect (void)
 {
-  glewPrintExt("GL_ARB_draw_indirect", GLEW_ARB_draw_indirect, glewIsSupported("GL_ARB_draw_indirect"), glewGetExtension("GL_ARB_draw_indirect"));
+  GLboolean fi = glewPrintExt("GL_ARB_draw_indirect", GLEW_ARB_draw_indirect, glewIsSupported("GL_ARB_draw_indirect"), glewGetExtension("GL_ARB_draw_indirect"));
 
-  glewInfoFunc("glDrawArraysIndirect", glDrawArraysIndirect == NULL);
-  glewInfoFunc("glDrawElementsIndirect", glDrawElementsIndirect == NULL);
+  glewInfoFunc(fi, "glDrawArraysIndirect", glDrawArraysIndirect == NULL);
+  glewInfoFunc(fi, "glDrawElementsIndirect", glDrawElementsIndirect == NULL);
 }
 
 #endif /* GL_ARB_draw_indirect */
@@ -1990,12 +2027,12 @@ static void _glewInfo_GL_ARB_fragment_shader_interlock (void)
 
 static void _glewInfo_GL_ARB_framebuffer_no_attachments (void)
 {
-  glewPrintExt("GL_ARB_framebuffer_no_attachments", GLEW_ARB_framebuffer_no_attachments, glewIsSupported("GL_ARB_framebuffer_no_attachments"), glewGetExtension("GL_ARB_framebuffer_no_attachments"));
+  GLboolean fi = glewPrintExt("GL_ARB_framebuffer_no_attachments", GLEW_ARB_framebuffer_no_attachments, glewIsSupported("GL_ARB_framebuffer_no_attachments"), glewGetExtension("GL_ARB_framebuffer_no_attachments"));
 
-  glewInfoFunc("glFramebufferParameteri", glFramebufferParameteri == NULL);
-  glewInfoFunc("glGetFramebufferParameteriv", glGetFramebufferParameteriv == NULL);
-  glewInfoFunc("glGetNamedFramebufferParameterivEXT", glGetNamedFramebufferParameterivEXT == NULL);
-  glewInfoFunc("glNamedFramebufferParameteriEXT", glNamedFramebufferParameteriEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferParameteri", glFramebufferParameteri == NULL);
+  glewInfoFunc(fi, "glGetFramebufferParameteriv", glGetFramebufferParameteriv == NULL);
+  glewInfoFunc(fi, "glGetNamedFramebufferParameterivEXT", glGetNamedFramebufferParameterivEXT == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferParameteriEXT", glNamedFramebufferParameteriEXT == NULL);
 }
 
 #endif /* GL_ARB_framebuffer_no_attachments */
@@ -2004,28 +2041,28 @@ static void _glewInfo_GL_ARB_framebuffer_no_attachments (void)
 
 static void _glewInfo_GL_ARB_framebuffer_object (void)
 {
-  glewPrintExt("GL_ARB_framebuffer_object", GLEW_ARB_framebuffer_object, glewIsSupported("GL_ARB_framebuffer_object"), glewGetExtension("GL_ARB_framebuffer_object"));
+  GLboolean fi = glewPrintExt("GL_ARB_framebuffer_object", GLEW_ARB_framebuffer_object, glewIsSupported("GL_ARB_framebuffer_object"), glewGetExtension("GL_ARB_framebuffer_object"));
 
-  glewInfoFunc("glBindFramebuffer", glBindFramebuffer == NULL);
-  glewInfoFunc("glBindRenderbuffer", glBindRenderbuffer == NULL);
-  glewInfoFunc("glBlitFramebuffer", glBlitFramebuffer == NULL);
-  glewInfoFunc("glCheckFramebufferStatus", glCheckFramebufferStatus == NULL);
-  glewInfoFunc("glDeleteFramebuffers", glDeleteFramebuffers == NULL);
-  glewInfoFunc("glDeleteRenderbuffers", glDeleteRenderbuffers == NULL);
-  glewInfoFunc("glFramebufferRenderbuffer", glFramebufferRenderbuffer == NULL);
-  glewInfoFunc("glFramebufferTexture1D", glFramebufferTexture1D == NULL);
-  glewInfoFunc("glFramebufferTexture2D", glFramebufferTexture2D == NULL);
-  glewInfoFunc("glFramebufferTexture3D", glFramebufferTexture3D == NULL);
-  glewInfoFunc("glFramebufferTextureLayer", glFramebufferTextureLayer == NULL);
-  glewInfoFunc("glGenFramebuffers", glGenFramebuffers == NULL);
-  glewInfoFunc("glGenRenderbuffers", glGenRenderbuffers == NULL);
-  glewInfoFunc("glGenerateMipmap", glGenerateMipmap == NULL);
-  glewInfoFunc("glGetFramebufferAttachmentParameteriv", glGetFramebufferAttachmentParameteriv == NULL);
-  glewInfoFunc("glGetRenderbufferParameteriv", glGetRenderbufferParameteriv == NULL);
-  glewInfoFunc("glIsFramebuffer", glIsFramebuffer == NULL);
-  glewInfoFunc("glIsRenderbuffer", glIsRenderbuffer == NULL);
-  glewInfoFunc("glRenderbufferStorage", glRenderbufferStorage == NULL);
-  glewInfoFunc("glRenderbufferStorageMultisample", glRenderbufferStorageMultisample == NULL);
+  glewInfoFunc(fi, "glBindFramebuffer", glBindFramebuffer == NULL);
+  glewInfoFunc(fi, "glBindRenderbuffer", glBindRenderbuffer == NULL);
+  glewInfoFunc(fi, "glBlitFramebuffer", glBlitFramebuffer == NULL);
+  glewInfoFunc(fi, "glCheckFramebufferStatus", glCheckFramebufferStatus == NULL);
+  glewInfoFunc(fi, "glDeleteFramebuffers", glDeleteFramebuffers == NULL);
+  glewInfoFunc(fi, "glDeleteRenderbuffers", glDeleteRenderbuffers == NULL);
+  glewInfoFunc(fi, "glFramebufferRenderbuffer", glFramebufferRenderbuffer == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture1D", glFramebufferTexture1D == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture2D", glFramebufferTexture2D == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture3D", glFramebufferTexture3D == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureLayer", glFramebufferTextureLayer == NULL);
+  glewInfoFunc(fi, "glGenFramebuffers", glGenFramebuffers == NULL);
+  glewInfoFunc(fi, "glGenRenderbuffers", glGenRenderbuffers == NULL);
+  glewInfoFunc(fi, "glGenerateMipmap", glGenerateMipmap == NULL);
+  glewInfoFunc(fi, "glGetFramebufferAttachmentParameteriv", glGetFramebufferAttachmentParameteriv == NULL);
+  glewInfoFunc(fi, "glGetRenderbufferParameteriv", glGetRenderbufferParameteriv == NULL);
+  glewInfoFunc(fi, "glIsFramebuffer", glIsFramebuffer == NULL);
+  glewInfoFunc(fi, "glIsRenderbuffer", glIsRenderbuffer == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorage", glRenderbufferStorage == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageMultisample", glRenderbufferStorageMultisample == NULL);
 }
 
 #endif /* GL_ARB_framebuffer_object */
@@ -2043,12 +2080,12 @@ static void _glewInfo_GL_ARB_framebuffer_sRGB (void)
 
 static void _glewInfo_GL_ARB_geometry_shader4 (void)
 {
-  glewPrintExt("GL_ARB_geometry_shader4", GLEW_ARB_geometry_shader4, glewIsSupported("GL_ARB_geometry_shader4"), glewGetExtension("GL_ARB_geometry_shader4"));
+  GLboolean fi = glewPrintExt("GL_ARB_geometry_shader4", GLEW_ARB_geometry_shader4, glewIsSupported("GL_ARB_geometry_shader4"), glewGetExtension("GL_ARB_geometry_shader4"));
 
-  glewInfoFunc("glFramebufferTextureARB", glFramebufferTextureARB == NULL);
-  glewInfoFunc("glFramebufferTextureFaceARB", glFramebufferTextureFaceARB == NULL);
-  glewInfoFunc("glFramebufferTextureLayerARB", glFramebufferTextureLayerARB == NULL);
-  glewInfoFunc("glProgramParameteriARB", glProgramParameteriARB == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureARB", glFramebufferTextureARB == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureFaceARB", glFramebufferTextureFaceARB == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureLayerARB", glFramebufferTextureLayerARB == NULL);
+  glewInfoFunc(fi, "glProgramParameteriARB", glProgramParameteriARB == NULL);
 }
 
 #endif /* GL_ARB_geometry_shader4 */
@@ -2057,11 +2094,11 @@ static void _glewInfo_GL_ARB_geometry_shader4 (void)
 
 static void _glewInfo_GL_ARB_get_program_binary (void)
 {
-  glewPrintExt("GL_ARB_get_program_binary", GLEW_ARB_get_program_binary, glewIsSupported("GL_ARB_get_program_binary"), glewGetExtension("GL_ARB_get_program_binary"));
+  GLboolean fi = glewPrintExt("GL_ARB_get_program_binary", GLEW_ARB_get_program_binary, glewIsSupported("GL_ARB_get_program_binary"), glewGetExtension("GL_ARB_get_program_binary"));
 
-  glewInfoFunc("glGetProgramBinary", glGetProgramBinary == NULL);
-  glewInfoFunc("glProgramBinary", glProgramBinary == NULL);
-  glewInfoFunc("glProgramParameteri", glProgramParameteri == NULL);
+  glewInfoFunc(fi, "glGetProgramBinary", glGetProgramBinary == NULL);
+  glewInfoFunc(fi, "glProgramBinary", glProgramBinary == NULL);
+  glewInfoFunc(fi, "glProgramParameteri", glProgramParameteri == NULL);
 }
 
 #endif /* GL_ARB_get_program_binary */
@@ -2070,10 +2107,10 @@ static void _glewInfo_GL_ARB_get_program_binary (void)
 
 static void _glewInfo_GL_ARB_get_texture_sub_image (void)
 {
-  glewPrintExt("GL_ARB_get_texture_sub_image", GLEW_ARB_get_texture_sub_image, glewIsSupported("GL_ARB_get_texture_sub_image"), glewGetExtension("GL_ARB_get_texture_sub_image"));
+  GLboolean fi = glewPrintExt("GL_ARB_get_texture_sub_image", GLEW_ARB_get_texture_sub_image, glewIsSupported("GL_ARB_get_texture_sub_image"), glewGetExtension("GL_ARB_get_texture_sub_image"));
 
-  glewInfoFunc("glGetCompressedTextureSubImage", glGetCompressedTextureSubImage == NULL);
-  glewInfoFunc("glGetTextureSubImage", glGetTextureSubImage == NULL);
+  glewInfoFunc(fi, "glGetCompressedTextureSubImage", glGetCompressedTextureSubImage == NULL);
+  glewInfoFunc(fi, "glGetTextureSubImage", glGetTextureSubImage == NULL);
 }
 
 #endif /* GL_ARB_get_texture_sub_image */
@@ -2082,9 +2119,9 @@ static void _glewInfo_GL_ARB_get_texture_sub_image (void)
 
 static void _glewInfo_GL_ARB_gl_spirv (void)
 {
-  glewPrintExt("GL_ARB_gl_spirv", GLEW_ARB_gl_spirv, glewIsSupported("GL_ARB_gl_spirv"), glewGetExtension("GL_ARB_gl_spirv"));
+  GLboolean fi = glewPrintExt("GL_ARB_gl_spirv", GLEW_ARB_gl_spirv, glewIsSupported("GL_ARB_gl_spirv"), glewGetExtension("GL_ARB_gl_spirv"));
 
-  glewInfoFunc("glSpecializeShaderARB", glSpecializeShaderARB == NULL);
+  glewInfoFunc(fi, "glSpecializeShaderARB", glSpecializeShaderARB == NULL);
 }
 
 #endif /* GL_ARB_gl_spirv */
@@ -2102,26 +2139,26 @@ static void _glewInfo_GL_ARB_gpu_shader5 (void)
 
 static void _glewInfo_GL_ARB_gpu_shader_fp64 (void)
 {
-  glewPrintExt("GL_ARB_gpu_shader_fp64", GLEW_ARB_gpu_shader_fp64, glewIsSupported("GL_ARB_gpu_shader_fp64"), glewGetExtension("GL_ARB_gpu_shader_fp64"));
+  GLboolean fi = glewPrintExt("GL_ARB_gpu_shader_fp64", GLEW_ARB_gpu_shader_fp64, glewIsSupported("GL_ARB_gpu_shader_fp64"), glewGetExtension("GL_ARB_gpu_shader_fp64"));
 
-  glewInfoFunc("glGetUniformdv", glGetUniformdv == NULL);
-  glewInfoFunc("glUniform1d", glUniform1d == NULL);
-  glewInfoFunc("glUniform1dv", glUniform1dv == NULL);
-  glewInfoFunc("glUniform2d", glUniform2d == NULL);
-  glewInfoFunc("glUniform2dv", glUniform2dv == NULL);
-  glewInfoFunc("glUniform3d", glUniform3d == NULL);
-  glewInfoFunc("glUniform3dv", glUniform3dv == NULL);
-  glewInfoFunc("glUniform4d", glUniform4d == NULL);
-  glewInfoFunc("glUniform4dv", glUniform4dv == NULL);
-  glewInfoFunc("glUniformMatrix2dv", glUniformMatrix2dv == NULL);
-  glewInfoFunc("glUniformMatrix2x3dv", glUniformMatrix2x3dv == NULL);
-  glewInfoFunc("glUniformMatrix2x4dv", glUniformMatrix2x4dv == NULL);
-  glewInfoFunc("glUniformMatrix3dv", glUniformMatrix3dv == NULL);
-  glewInfoFunc("glUniformMatrix3x2dv", glUniformMatrix3x2dv == NULL);
-  glewInfoFunc("glUniformMatrix3x4dv", glUniformMatrix3x4dv == NULL);
-  glewInfoFunc("glUniformMatrix4dv", glUniformMatrix4dv == NULL);
-  glewInfoFunc("glUniformMatrix4x2dv", glUniformMatrix4x2dv == NULL);
-  glewInfoFunc("glUniformMatrix4x3dv", glUniformMatrix4x3dv == NULL);
+  glewInfoFunc(fi, "glGetUniformdv", glGetUniformdv == NULL);
+  glewInfoFunc(fi, "glUniform1d", glUniform1d == NULL);
+  glewInfoFunc(fi, "glUniform1dv", glUniform1dv == NULL);
+  glewInfoFunc(fi, "glUniform2d", glUniform2d == NULL);
+  glewInfoFunc(fi, "glUniform2dv", glUniform2dv == NULL);
+  glewInfoFunc(fi, "glUniform3d", glUniform3d == NULL);
+  glewInfoFunc(fi, "glUniform3dv", glUniform3dv == NULL);
+  glewInfoFunc(fi, "glUniform4d", glUniform4d == NULL);
+  glewInfoFunc(fi, "glUniform4dv", glUniform4dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2dv", glUniformMatrix2dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2x3dv", glUniformMatrix2x3dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2x4dv", glUniformMatrix2x4dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3dv", glUniformMatrix3dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3x2dv", glUniformMatrix3x2dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3x4dv", glUniformMatrix3x4dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4dv", glUniformMatrix4dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4x2dv", glUniformMatrix4x2dv == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4x3dv", glUniformMatrix4x3dv == NULL);
 }
 
 #endif /* GL_ARB_gpu_shader_fp64 */
@@ -2130,44 +2167,44 @@ static void _glewInfo_GL_ARB_gpu_shader_fp64 (void)
 
 static void _glewInfo_GL_ARB_gpu_shader_int64 (void)
 {
-  glewPrintExt("GL_ARB_gpu_shader_int64", GLEW_ARB_gpu_shader_int64, glewIsSupported("GL_ARB_gpu_shader_int64"), glewGetExtension("GL_ARB_gpu_shader_int64"));
+  GLboolean fi = glewPrintExt("GL_ARB_gpu_shader_int64", GLEW_ARB_gpu_shader_int64, glewIsSupported("GL_ARB_gpu_shader_int64"), glewGetExtension("GL_ARB_gpu_shader_int64"));
 
-  glewInfoFunc("glGetUniformi64vARB", glGetUniformi64vARB == NULL);
-  glewInfoFunc("glGetUniformui64vARB", glGetUniformui64vARB == NULL);
-  glewInfoFunc("glGetnUniformi64vARB", glGetnUniformi64vARB == NULL);
-  glewInfoFunc("glGetnUniformui64vARB", glGetnUniformui64vARB == NULL);
-  glewInfoFunc("glProgramUniform1i64ARB", glProgramUniform1i64ARB == NULL);
-  glewInfoFunc("glProgramUniform1i64vARB", glProgramUniform1i64vARB == NULL);
-  glewInfoFunc("glProgramUniform1ui64ARB", glProgramUniform1ui64ARB == NULL);
-  glewInfoFunc("glProgramUniform1ui64vARB", glProgramUniform1ui64vARB == NULL);
-  glewInfoFunc("glProgramUniform2i64ARB", glProgramUniform2i64ARB == NULL);
-  glewInfoFunc("glProgramUniform2i64vARB", glProgramUniform2i64vARB == NULL);
-  glewInfoFunc("glProgramUniform2ui64ARB", glProgramUniform2ui64ARB == NULL);
-  glewInfoFunc("glProgramUniform2ui64vARB", glProgramUniform2ui64vARB == NULL);
-  glewInfoFunc("glProgramUniform3i64ARB", glProgramUniform3i64ARB == NULL);
-  glewInfoFunc("glProgramUniform3i64vARB", glProgramUniform3i64vARB == NULL);
-  glewInfoFunc("glProgramUniform3ui64ARB", glProgramUniform3ui64ARB == NULL);
-  glewInfoFunc("glProgramUniform3ui64vARB", glProgramUniform3ui64vARB == NULL);
-  glewInfoFunc("glProgramUniform4i64ARB", glProgramUniform4i64ARB == NULL);
-  glewInfoFunc("glProgramUniform4i64vARB", glProgramUniform4i64vARB == NULL);
-  glewInfoFunc("glProgramUniform4ui64ARB", glProgramUniform4ui64ARB == NULL);
-  glewInfoFunc("glProgramUniform4ui64vARB", glProgramUniform4ui64vARB == NULL);
-  glewInfoFunc("glUniform1i64ARB", glUniform1i64ARB == NULL);
-  glewInfoFunc("glUniform1i64vARB", glUniform1i64vARB == NULL);
-  glewInfoFunc("glUniform1ui64ARB", glUniform1ui64ARB == NULL);
-  glewInfoFunc("glUniform1ui64vARB", glUniform1ui64vARB == NULL);
-  glewInfoFunc("glUniform2i64ARB", glUniform2i64ARB == NULL);
-  glewInfoFunc("glUniform2i64vARB", glUniform2i64vARB == NULL);
-  glewInfoFunc("glUniform2ui64ARB", glUniform2ui64ARB == NULL);
-  glewInfoFunc("glUniform2ui64vARB", glUniform2ui64vARB == NULL);
-  glewInfoFunc("glUniform3i64ARB", glUniform3i64ARB == NULL);
-  glewInfoFunc("glUniform3i64vARB", glUniform3i64vARB == NULL);
-  glewInfoFunc("glUniform3ui64ARB", glUniform3ui64ARB == NULL);
-  glewInfoFunc("glUniform3ui64vARB", glUniform3ui64vARB == NULL);
-  glewInfoFunc("glUniform4i64ARB", glUniform4i64ARB == NULL);
-  glewInfoFunc("glUniform4i64vARB", glUniform4i64vARB == NULL);
-  glewInfoFunc("glUniform4ui64ARB", glUniform4ui64ARB == NULL);
-  glewInfoFunc("glUniform4ui64vARB", glUniform4ui64vARB == NULL);
+  glewInfoFunc(fi, "glGetUniformi64vARB", glGetUniformi64vARB == NULL);
+  glewInfoFunc(fi, "glGetUniformui64vARB", glGetUniformui64vARB == NULL);
+  glewInfoFunc(fi, "glGetnUniformi64vARB", glGetnUniformi64vARB == NULL);
+  glewInfoFunc(fi, "glGetnUniformui64vARB", glGetnUniformui64vARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform1i64ARB", glProgramUniform1i64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform1i64vARB", glProgramUniform1i64vARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform1ui64ARB", glProgramUniform1ui64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform1ui64vARB", glProgramUniform1ui64vARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform2i64ARB", glProgramUniform2i64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform2i64vARB", glProgramUniform2i64vARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform2ui64ARB", glProgramUniform2ui64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform2ui64vARB", glProgramUniform2ui64vARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform3i64ARB", glProgramUniform3i64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform3i64vARB", glProgramUniform3i64vARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform3ui64ARB", glProgramUniform3ui64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform3ui64vARB", glProgramUniform3ui64vARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform4i64ARB", glProgramUniform4i64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform4i64vARB", glProgramUniform4i64vARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform4ui64ARB", glProgramUniform4ui64ARB == NULL);
+  glewInfoFunc(fi, "glProgramUniform4ui64vARB", glProgramUniform4ui64vARB == NULL);
+  glewInfoFunc(fi, "glUniform1i64ARB", glUniform1i64ARB == NULL);
+  glewInfoFunc(fi, "glUniform1i64vARB", glUniform1i64vARB == NULL);
+  glewInfoFunc(fi, "glUniform1ui64ARB", glUniform1ui64ARB == NULL);
+  glewInfoFunc(fi, "glUniform1ui64vARB", glUniform1ui64vARB == NULL);
+  glewInfoFunc(fi, "glUniform2i64ARB", glUniform2i64ARB == NULL);
+  glewInfoFunc(fi, "glUniform2i64vARB", glUniform2i64vARB == NULL);
+  glewInfoFunc(fi, "glUniform2ui64ARB", glUniform2ui64ARB == NULL);
+  glewInfoFunc(fi, "glUniform2ui64vARB", glUniform2ui64vARB == NULL);
+  glewInfoFunc(fi, "glUniform3i64ARB", glUniform3i64ARB == NULL);
+  glewInfoFunc(fi, "glUniform3i64vARB", glUniform3i64vARB == NULL);
+  glewInfoFunc(fi, "glUniform3ui64ARB", glUniform3ui64ARB == NULL);
+  glewInfoFunc(fi, "glUniform3ui64vARB", glUniform3ui64vARB == NULL);
+  glewInfoFunc(fi, "glUniform4i64ARB", glUniform4i64ARB == NULL);
+  glewInfoFunc(fi, "glUniform4i64vARB", glUniform4i64vARB == NULL);
+  glewInfoFunc(fi, "glUniform4ui64ARB", glUniform4ui64ARB == NULL);
+  glewInfoFunc(fi, "glUniform4ui64vARB", glUniform4ui64vARB == NULL);
 }
 
 #endif /* GL_ARB_gpu_shader_int64 */
@@ -2194,41 +2231,41 @@ static void _glewInfo_GL_ARB_half_float_vertex (void)
 
 static void _glewInfo_GL_ARB_imaging (void)
 {
-  glewPrintExt("GL_ARB_imaging", GLEW_ARB_imaging, glewIsSupported("GL_ARB_imaging"), glewGetExtension("GL_ARB_imaging"));
+  GLboolean fi = glewPrintExt("GL_ARB_imaging", GLEW_ARB_imaging, glewIsSupported("GL_ARB_imaging"), glewGetExtension("GL_ARB_imaging"));
 
-  glewInfoFunc("glBlendEquation", glBlendEquation == NULL);
-  glewInfoFunc("glColorSubTable", glColorSubTable == NULL);
-  glewInfoFunc("glColorTable", glColorTable == NULL);
-  glewInfoFunc("glColorTableParameterfv", glColorTableParameterfv == NULL);
-  glewInfoFunc("glColorTableParameteriv", glColorTableParameteriv == NULL);
-  glewInfoFunc("glConvolutionFilter1D", glConvolutionFilter1D == NULL);
-  glewInfoFunc("glConvolutionFilter2D", glConvolutionFilter2D == NULL);
-  glewInfoFunc("glConvolutionParameterf", glConvolutionParameterf == NULL);
-  glewInfoFunc("glConvolutionParameterfv", glConvolutionParameterfv == NULL);
-  glewInfoFunc("glConvolutionParameteri", glConvolutionParameteri == NULL);
-  glewInfoFunc("glConvolutionParameteriv", glConvolutionParameteriv == NULL);
-  glewInfoFunc("glCopyColorSubTable", glCopyColorSubTable == NULL);
-  glewInfoFunc("glCopyColorTable", glCopyColorTable == NULL);
-  glewInfoFunc("glCopyConvolutionFilter1D", glCopyConvolutionFilter1D == NULL);
-  glewInfoFunc("glCopyConvolutionFilter2D", glCopyConvolutionFilter2D == NULL);
-  glewInfoFunc("glGetColorTable", glGetColorTable == NULL);
-  glewInfoFunc("glGetColorTableParameterfv", glGetColorTableParameterfv == NULL);
-  glewInfoFunc("glGetColorTableParameteriv", glGetColorTableParameteriv == NULL);
-  glewInfoFunc("glGetConvolutionFilter", glGetConvolutionFilter == NULL);
-  glewInfoFunc("glGetConvolutionParameterfv", glGetConvolutionParameterfv == NULL);
-  glewInfoFunc("glGetConvolutionParameteriv", glGetConvolutionParameteriv == NULL);
-  glewInfoFunc("glGetHistogram", glGetHistogram == NULL);
-  glewInfoFunc("glGetHistogramParameterfv", glGetHistogramParameterfv == NULL);
-  glewInfoFunc("glGetHistogramParameteriv", glGetHistogramParameteriv == NULL);
-  glewInfoFunc("glGetMinmax", glGetMinmax == NULL);
-  glewInfoFunc("glGetMinmaxParameterfv", glGetMinmaxParameterfv == NULL);
-  glewInfoFunc("glGetMinmaxParameteriv", glGetMinmaxParameteriv == NULL);
-  glewInfoFunc("glGetSeparableFilter", glGetSeparableFilter == NULL);
-  glewInfoFunc("glHistogram", glHistogram == NULL);
-  glewInfoFunc("glMinmax", glMinmax == NULL);
-  glewInfoFunc("glResetHistogram", glResetHistogram == NULL);
-  glewInfoFunc("glResetMinmax", glResetMinmax == NULL);
-  glewInfoFunc("glSeparableFilter2D", glSeparableFilter2D == NULL);
+  glewInfoFunc(fi, "glBlendEquation", glBlendEquation == NULL);
+  glewInfoFunc(fi, "glColorSubTable", glColorSubTable == NULL);
+  glewInfoFunc(fi, "glColorTable", glColorTable == NULL);
+  glewInfoFunc(fi, "glColorTableParameterfv", glColorTableParameterfv == NULL);
+  glewInfoFunc(fi, "glColorTableParameteriv", glColorTableParameteriv == NULL);
+  glewInfoFunc(fi, "glConvolutionFilter1D", glConvolutionFilter1D == NULL);
+  glewInfoFunc(fi, "glConvolutionFilter2D", glConvolutionFilter2D == NULL);
+  glewInfoFunc(fi, "glConvolutionParameterf", glConvolutionParameterf == NULL);
+  glewInfoFunc(fi, "glConvolutionParameterfv", glConvolutionParameterfv == NULL);
+  glewInfoFunc(fi, "glConvolutionParameteri", glConvolutionParameteri == NULL);
+  glewInfoFunc(fi, "glConvolutionParameteriv", glConvolutionParameteriv == NULL);
+  glewInfoFunc(fi, "glCopyColorSubTable", glCopyColorSubTable == NULL);
+  glewInfoFunc(fi, "glCopyColorTable", glCopyColorTable == NULL);
+  glewInfoFunc(fi, "glCopyConvolutionFilter1D", glCopyConvolutionFilter1D == NULL);
+  glewInfoFunc(fi, "glCopyConvolutionFilter2D", glCopyConvolutionFilter2D == NULL);
+  glewInfoFunc(fi, "glGetColorTable", glGetColorTable == NULL);
+  glewInfoFunc(fi, "glGetColorTableParameterfv", glGetColorTableParameterfv == NULL);
+  glewInfoFunc(fi, "glGetColorTableParameteriv", glGetColorTableParameteriv == NULL);
+  glewInfoFunc(fi, "glGetConvolutionFilter", glGetConvolutionFilter == NULL);
+  glewInfoFunc(fi, "glGetConvolutionParameterfv", glGetConvolutionParameterfv == NULL);
+  glewInfoFunc(fi, "glGetConvolutionParameteriv", glGetConvolutionParameteriv == NULL);
+  glewInfoFunc(fi, "glGetHistogram", glGetHistogram == NULL);
+  glewInfoFunc(fi, "glGetHistogramParameterfv", glGetHistogramParameterfv == NULL);
+  glewInfoFunc(fi, "glGetHistogramParameteriv", glGetHistogramParameteriv == NULL);
+  glewInfoFunc(fi, "glGetMinmax", glGetMinmax == NULL);
+  glewInfoFunc(fi, "glGetMinmaxParameterfv", glGetMinmaxParameterfv == NULL);
+  glewInfoFunc(fi, "glGetMinmaxParameteriv", glGetMinmaxParameteriv == NULL);
+  glewInfoFunc(fi, "glGetSeparableFilter", glGetSeparableFilter == NULL);
+  glewInfoFunc(fi, "glHistogram", glHistogram == NULL);
+  glewInfoFunc(fi, "glMinmax", glMinmax == NULL);
+  glewInfoFunc(fi, "glResetHistogram", glResetHistogram == NULL);
+  glewInfoFunc(fi, "glResetMinmax", glResetMinmax == NULL);
+  glewInfoFunc(fi, "glSeparableFilter2D", glSeparableFilter2D == NULL);
 }
 
 #endif /* GL_ARB_imaging */
@@ -2237,10 +2274,10 @@ static void _glewInfo_GL_ARB_imaging (void)
 
 static void _glewInfo_GL_ARB_indirect_parameters (void)
 {
-  glewPrintExt("GL_ARB_indirect_parameters", GLEW_ARB_indirect_parameters, glewIsSupported("GL_ARB_indirect_parameters"), glewGetExtension("GL_ARB_indirect_parameters"));
+  GLboolean fi = glewPrintExt("GL_ARB_indirect_parameters", GLEW_ARB_indirect_parameters, glewIsSupported("GL_ARB_indirect_parameters"), glewGetExtension("GL_ARB_indirect_parameters"));
 
-  glewInfoFunc("glMultiDrawArraysIndirectCountARB", glMultiDrawArraysIndirectCountARB == NULL);
-  glewInfoFunc("glMultiDrawElementsIndirectCountARB", glMultiDrawElementsIndirectCountARB == NULL);
+  glewInfoFunc(fi, "glMultiDrawArraysIndirectCountARB", glMultiDrawArraysIndirectCountARB == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsIndirectCountARB", glMultiDrawElementsIndirectCountARB == NULL);
 }
 
 #endif /* GL_ARB_indirect_parameters */
@@ -2249,11 +2286,11 @@ static void _glewInfo_GL_ARB_indirect_parameters (void)
 
 static void _glewInfo_GL_ARB_instanced_arrays (void)
 {
-  glewPrintExt("GL_ARB_instanced_arrays", GLEW_ARB_instanced_arrays, glewIsSupported("GL_ARB_instanced_arrays"), glewGetExtension("GL_ARB_instanced_arrays"));
+  GLboolean fi = glewPrintExt("GL_ARB_instanced_arrays", GLEW_ARB_instanced_arrays, glewIsSupported("GL_ARB_instanced_arrays"), glewGetExtension("GL_ARB_instanced_arrays"));
 
-  glewInfoFunc("glDrawArraysInstancedARB", glDrawArraysInstancedARB == NULL);
-  glewInfoFunc("glDrawElementsInstancedARB", glDrawElementsInstancedARB == NULL);
-  glewInfoFunc("glVertexAttribDivisorARB", glVertexAttribDivisorARB == NULL);
+  glewInfoFunc(fi, "glDrawArraysInstancedARB", glDrawArraysInstancedARB == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedARB", glDrawElementsInstancedARB == NULL);
+  glewInfoFunc(fi, "glVertexAttribDivisorARB", glVertexAttribDivisorARB == NULL);
 }
 
 #endif /* GL_ARB_instanced_arrays */
@@ -2262,9 +2299,9 @@ static void _glewInfo_GL_ARB_instanced_arrays (void)
 
 static void _glewInfo_GL_ARB_internalformat_query (void)
 {
-  glewPrintExt("GL_ARB_internalformat_query", GLEW_ARB_internalformat_query, glewIsSupported("GL_ARB_internalformat_query"), glewGetExtension("GL_ARB_internalformat_query"));
+  GLboolean fi = glewPrintExt("GL_ARB_internalformat_query", GLEW_ARB_internalformat_query, glewIsSupported("GL_ARB_internalformat_query"), glewGetExtension("GL_ARB_internalformat_query"));
 
-  glewInfoFunc("glGetInternalformativ", glGetInternalformativ == NULL);
+  glewInfoFunc(fi, "glGetInternalformativ", glGetInternalformativ == NULL);
 }
 
 #endif /* GL_ARB_internalformat_query */
@@ -2273,9 +2310,9 @@ static void _glewInfo_GL_ARB_internalformat_query (void)
 
 static void _glewInfo_GL_ARB_internalformat_query2 (void)
 {
-  glewPrintExt("GL_ARB_internalformat_query2", GLEW_ARB_internalformat_query2, glewIsSupported("GL_ARB_internalformat_query2"), glewGetExtension("GL_ARB_internalformat_query2"));
+  GLboolean fi = glewPrintExt("GL_ARB_internalformat_query2", GLEW_ARB_internalformat_query2, glewIsSupported("GL_ARB_internalformat_query2"), glewGetExtension("GL_ARB_internalformat_query2"));
 
-  glewInfoFunc("glGetInternalformati64v", glGetInternalformati64v == NULL);
+  glewInfoFunc(fi, "glGetInternalformati64v", glGetInternalformati64v == NULL);
 }
 
 #endif /* GL_ARB_internalformat_query2 */
@@ -2284,14 +2321,14 @@ static void _glewInfo_GL_ARB_internalformat_query2 (void)
 
 static void _glewInfo_GL_ARB_invalidate_subdata (void)
 {
-  glewPrintExt("GL_ARB_invalidate_subdata", GLEW_ARB_invalidate_subdata, glewIsSupported("GL_ARB_invalidate_subdata"), glewGetExtension("GL_ARB_invalidate_subdata"));
+  GLboolean fi = glewPrintExt("GL_ARB_invalidate_subdata", GLEW_ARB_invalidate_subdata, glewIsSupported("GL_ARB_invalidate_subdata"), glewGetExtension("GL_ARB_invalidate_subdata"));
 
-  glewInfoFunc("glInvalidateBufferData", glInvalidateBufferData == NULL);
-  glewInfoFunc("glInvalidateBufferSubData", glInvalidateBufferSubData == NULL);
-  glewInfoFunc("glInvalidateFramebuffer", glInvalidateFramebuffer == NULL);
-  glewInfoFunc("glInvalidateSubFramebuffer", glInvalidateSubFramebuffer == NULL);
-  glewInfoFunc("glInvalidateTexImage", glInvalidateTexImage == NULL);
-  glewInfoFunc("glInvalidateTexSubImage", glInvalidateTexSubImage == NULL);
+  glewInfoFunc(fi, "glInvalidateBufferData", glInvalidateBufferData == NULL);
+  glewInfoFunc(fi, "glInvalidateBufferSubData", glInvalidateBufferSubData == NULL);
+  glewInfoFunc(fi, "glInvalidateFramebuffer", glInvalidateFramebuffer == NULL);
+  glewInfoFunc(fi, "glInvalidateSubFramebuffer", glInvalidateSubFramebuffer == NULL);
+  glewInfoFunc(fi, "glInvalidateTexImage", glInvalidateTexImage == NULL);
+  glewInfoFunc(fi, "glInvalidateTexSubImage", glInvalidateTexSubImage == NULL);
 }
 
 #endif /* GL_ARB_invalidate_subdata */
@@ -2309,10 +2346,10 @@ static void _glewInfo_GL_ARB_map_buffer_alignment (void)
 
 static void _glewInfo_GL_ARB_map_buffer_range (void)
 {
-  glewPrintExt("GL_ARB_map_buffer_range", GLEW_ARB_map_buffer_range, glewIsSupported("GL_ARB_map_buffer_range"), glewGetExtension("GL_ARB_map_buffer_range"));
+  GLboolean fi = glewPrintExt("GL_ARB_map_buffer_range", GLEW_ARB_map_buffer_range, glewIsSupported("GL_ARB_map_buffer_range"), glewGetExtension("GL_ARB_map_buffer_range"));
 
-  glewInfoFunc("glFlushMappedBufferRange", glFlushMappedBufferRange == NULL);
-  glewInfoFunc("glMapBufferRange", glMapBufferRange == NULL);
+  glewInfoFunc(fi, "glFlushMappedBufferRange", glFlushMappedBufferRange == NULL);
+  glewInfoFunc(fi, "glMapBufferRange", glMapBufferRange == NULL);
 }
 
 #endif /* GL_ARB_map_buffer_range */
@@ -2321,13 +2358,13 @@ static void _glewInfo_GL_ARB_map_buffer_range (void)
 
 static void _glewInfo_GL_ARB_matrix_palette (void)
 {
-  glewPrintExt("GL_ARB_matrix_palette", GLEW_ARB_matrix_palette, glewIsSupported("GL_ARB_matrix_palette"), glewGetExtension("GL_ARB_matrix_palette"));
+  GLboolean fi = glewPrintExt("GL_ARB_matrix_palette", GLEW_ARB_matrix_palette, glewIsSupported("GL_ARB_matrix_palette"), glewGetExtension("GL_ARB_matrix_palette"));
 
-  glewInfoFunc("glCurrentPaletteMatrixARB", glCurrentPaletteMatrixARB == NULL);
-  glewInfoFunc("glMatrixIndexPointerARB", glMatrixIndexPointerARB == NULL);
-  glewInfoFunc("glMatrixIndexubvARB", glMatrixIndexubvARB == NULL);
-  glewInfoFunc("glMatrixIndexuivARB", glMatrixIndexuivARB == NULL);
-  glewInfoFunc("glMatrixIndexusvARB", glMatrixIndexusvARB == NULL);
+  glewInfoFunc(fi, "glCurrentPaletteMatrixARB", glCurrentPaletteMatrixARB == NULL);
+  glewInfoFunc(fi, "glMatrixIndexPointerARB", glMatrixIndexPointerARB == NULL);
+  glewInfoFunc(fi, "glMatrixIndexubvARB", glMatrixIndexubvARB == NULL);
+  glewInfoFunc(fi, "glMatrixIndexuivARB", glMatrixIndexuivARB == NULL);
+  glewInfoFunc(fi, "glMatrixIndexusvARB", glMatrixIndexusvARB == NULL);
 }
 
 #endif /* GL_ARB_matrix_palette */
@@ -2336,14 +2373,14 @@ static void _glewInfo_GL_ARB_matrix_palette (void)
 
 static void _glewInfo_GL_ARB_multi_bind (void)
 {
-  glewPrintExt("GL_ARB_multi_bind", GLEW_ARB_multi_bind, glewIsSupported("GL_ARB_multi_bind"), glewGetExtension("GL_ARB_multi_bind"));
+  GLboolean fi = glewPrintExt("GL_ARB_multi_bind", GLEW_ARB_multi_bind, glewIsSupported("GL_ARB_multi_bind"), glewGetExtension("GL_ARB_multi_bind"));
 
-  glewInfoFunc("glBindBuffersBase", glBindBuffersBase == NULL);
-  glewInfoFunc("glBindBuffersRange", glBindBuffersRange == NULL);
-  glewInfoFunc("glBindImageTextures", glBindImageTextures == NULL);
-  glewInfoFunc("glBindSamplers", glBindSamplers == NULL);
-  glewInfoFunc("glBindTextures", glBindTextures == NULL);
-  glewInfoFunc("glBindVertexBuffers", glBindVertexBuffers == NULL);
+  glewInfoFunc(fi, "glBindBuffersBase", glBindBuffersBase == NULL);
+  glewInfoFunc(fi, "glBindBuffersRange", glBindBuffersRange == NULL);
+  glewInfoFunc(fi, "glBindImageTextures", glBindImageTextures == NULL);
+  glewInfoFunc(fi, "glBindSamplers", glBindSamplers == NULL);
+  glewInfoFunc(fi, "glBindTextures", glBindTextures == NULL);
+  glewInfoFunc(fi, "glBindVertexBuffers", glBindVertexBuffers == NULL);
 }
 
 #endif /* GL_ARB_multi_bind */
@@ -2352,10 +2389,10 @@ static void _glewInfo_GL_ARB_multi_bind (void)
 
 static void _glewInfo_GL_ARB_multi_draw_indirect (void)
 {
-  glewPrintExt("GL_ARB_multi_draw_indirect", GLEW_ARB_multi_draw_indirect, glewIsSupported("GL_ARB_multi_draw_indirect"), glewGetExtension("GL_ARB_multi_draw_indirect"));
+  GLboolean fi = glewPrintExt("GL_ARB_multi_draw_indirect", GLEW_ARB_multi_draw_indirect, glewIsSupported("GL_ARB_multi_draw_indirect"), glewGetExtension("GL_ARB_multi_draw_indirect"));
 
-  glewInfoFunc("glMultiDrawArraysIndirect", glMultiDrawArraysIndirect == NULL);
-  glewInfoFunc("glMultiDrawElementsIndirect", glMultiDrawElementsIndirect == NULL);
+  glewInfoFunc(fi, "glMultiDrawArraysIndirect", glMultiDrawArraysIndirect == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsIndirect", glMultiDrawElementsIndirect == NULL);
 }
 
 #endif /* GL_ARB_multi_draw_indirect */
@@ -2364,9 +2401,9 @@ static void _glewInfo_GL_ARB_multi_draw_indirect (void)
 
 static void _glewInfo_GL_ARB_multisample (void)
 {
-  glewPrintExt("GL_ARB_multisample", GLEW_ARB_multisample, glewIsSupported("GL_ARB_multisample"), glewGetExtension("GL_ARB_multisample"));
+  GLboolean fi = glewPrintExt("GL_ARB_multisample", GLEW_ARB_multisample, glewIsSupported("GL_ARB_multisample"), glewGetExtension("GL_ARB_multisample"));
 
-  glewInfoFunc("glSampleCoverageARB", glSampleCoverageARB == NULL);
+  glewInfoFunc(fi, "glSampleCoverageARB", glSampleCoverageARB == NULL);
 }
 
 #endif /* GL_ARB_multisample */
@@ -2375,42 +2412,42 @@ static void _glewInfo_GL_ARB_multisample (void)
 
 static void _glewInfo_GL_ARB_multitexture (void)
 {
-  glewPrintExt("GL_ARB_multitexture", GLEW_ARB_multitexture, glewIsSupported("GL_ARB_multitexture"), glewGetExtension("GL_ARB_multitexture"));
+  GLboolean fi = glewPrintExt("GL_ARB_multitexture", GLEW_ARB_multitexture, glewIsSupported("GL_ARB_multitexture"), glewGetExtension("GL_ARB_multitexture"));
 
-  glewInfoFunc("glActiveTextureARB", glActiveTextureARB == NULL);
-  glewInfoFunc("glClientActiveTextureARB", glClientActiveTextureARB == NULL);
-  glewInfoFunc("glMultiTexCoord1dARB", glMultiTexCoord1dARB == NULL);
-  glewInfoFunc("glMultiTexCoord1dvARB", glMultiTexCoord1dvARB == NULL);
-  glewInfoFunc("glMultiTexCoord1fARB", glMultiTexCoord1fARB == NULL);
-  glewInfoFunc("glMultiTexCoord1fvARB", glMultiTexCoord1fvARB == NULL);
-  glewInfoFunc("glMultiTexCoord1iARB", glMultiTexCoord1iARB == NULL);
-  glewInfoFunc("glMultiTexCoord1ivARB", glMultiTexCoord1ivARB == NULL);
-  glewInfoFunc("glMultiTexCoord1sARB", glMultiTexCoord1sARB == NULL);
-  glewInfoFunc("glMultiTexCoord1svARB", glMultiTexCoord1svARB == NULL);
-  glewInfoFunc("glMultiTexCoord2dARB", glMultiTexCoord2dARB == NULL);
-  glewInfoFunc("glMultiTexCoord2dvARB", glMultiTexCoord2dvARB == NULL);
-  glewInfoFunc("glMultiTexCoord2fARB", glMultiTexCoord2fARB == NULL);
-  glewInfoFunc("glMultiTexCoord2fvARB", glMultiTexCoord2fvARB == NULL);
-  glewInfoFunc("glMultiTexCoord2iARB", glMultiTexCoord2iARB == NULL);
-  glewInfoFunc("glMultiTexCoord2ivARB", glMultiTexCoord2ivARB == NULL);
-  glewInfoFunc("glMultiTexCoord2sARB", glMultiTexCoord2sARB == NULL);
-  glewInfoFunc("glMultiTexCoord2svARB", glMultiTexCoord2svARB == NULL);
-  glewInfoFunc("glMultiTexCoord3dARB", glMultiTexCoord3dARB == NULL);
-  glewInfoFunc("glMultiTexCoord3dvARB", glMultiTexCoord3dvARB == NULL);
-  glewInfoFunc("glMultiTexCoord3fARB", glMultiTexCoord3fARB == NULL);
-  glewInfoFunc("glMultiTexCoord3fvARB", glMultiTexCoord3fvARB == NULL);
-  glewInfoFunc("glMultiTexCoord3iARB", glMultiTexCoord3iARB == NULL);
-  glewInfoFunc("glMultiTexCoord3ivARB", glMultiTexCoord3ivARB == NULL);
-  glewInfoFunc("glMultiTexCoord3sARB", glMultiTexCoord3sARB == NULL);
-  glewInfoFunc("glMultiTexCoord3svARB", glMultiTexCoord3svARB == NULL);
-  glewInfoFunc("glMultiTexCoord4dARB", glMultiTexCoord4dARB == NULL);
-  glewInfoFunc("glMultiTexCoord4dvARB", glMultiTexCoord4dvARB == NULL);
-  glewInfoFunc("glMultiTexCoord4fARB", glMultiTexCoord4fARB == NULL);
-  glewInfoFunc("glMultiTexCoord4fvARB", glMultiTexCoord4fvARB == NULL);
-  glewInfoFunc("glMultiTexCoord4iARB", glMultiTexCoord4iARB == NULL);
-  glewInfoFunc("glMultiTexCoord4ivARB", glMultiTexCoord4ivARB == NULL);
-  glewInfoFunc("glMultiTexCoord4sARB", glMultiTexCoord4sARB == NULL);
-  glewInfoFunc("glMultiTexCoord4svARB", glMultiTexCoord4svARB == NULL);
+  glewInfoFunc(fi, "glActiveTextureARB", glActiveTextureARB == NULL);
+  glewInfoFunc(fi, "glClientActiveTextureARB", glClientActiveTextureARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1dARB", glMultiTexCoord1dARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1dvARB", glMultiTexCoord1dvARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1fARB", glMultiTexCoord1fARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1fvARB", glMultiTexCoord1fvARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1iARB", glMultiTexCoord1iARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1ivARB", glMultiTexCoord1ivARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1sARB", glMultiTexCoord1sARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1svARB", glMultiTexCoord1svARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2dARB", glMultiTexCoord2dARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2dvARB", glMultiTexCoord2dvARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2fARB", glMultiTexCoord2fARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2fvARB", glMultiTexCoord2fvARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2iARB", glMultiTexCoord2iARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2ivARB", glMultiTexCoord2ivARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2sARB", glMultiTexCoord2sARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2svARB", glMultiTexCoord2svARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3dARB", glMultiTexCoord3dARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3dvARB", glMultiTexCoord3dvARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3fARB", glMultiTexCoord3fARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3fvARB", glMultiTexCoord3fvARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3iARB", glMultiTexCoord3iARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3ivARB", glMultiTexCoord3ivARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3sARB", glMultiTexCoord3sARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3svARB", glMultiTexCoord3svARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4dARB", glMultiTexCoord4dARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4dvARB", glMultiTexCoord4dvARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4fARB", glMultiTexCoord4fARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4fvARB", glMultiTexCoord4fvARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4iARB", glMultiTexCoord4iARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4ivARB", glMultiTexCoord4ivARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4sARB", glMultiTexCoord4sARB == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4svARB", glMultiTexCoord4svARB == NULL);
 }
 
 #endif /* GL_ARB_multitexture */
@@ -2419,16 +2456,16 @@ static void _glewInfo_GL_ARB_multitexture (void)
 
 static void _glewInfo_GL_ARB_occlusion_query (void)
 {
-  glewPrintExt("GL_ARB_occlusion_query", GLEW_ARB_occlusion_query, glewIsSupported("GL_ARB_occlusion_query"), glewGetExtension("GL_ARB_occlusion_query"));
+  GLboolean fi = glewPrintExt("GL_ARB_occlusion_query", GLEW_ARB_occlusion_query, glewIsSupported("GL_ARB_occlusion_query"), glewGetExtension("GL_ARB_occlusion_query"));
 
-  glewInfoFunc("glBeginQueryARB", glBeginQueryARB == NULL);
-  glewInfoFunc("glDeleteQueriesARB", glDeleteQueriesARB == NULL);
-  glewInfoFunc("glEndQueryARB", glEndQueryARB == NULL);
-  glewInfoFunc("glGenQueriesARB", glGenQueriesARB == NULL);
-  glewInfoFunc("glGetQueryObjectivARB", glGetQueryObjectivARB == NULL);
-  glewInfoFunc("glGetQueryObjectuivARB", glGetQueryObjectuivARB == NULL);
-  glewInfoFunc("glGetQueryivARB", glGetQueryivARB == NULL);
-  glewInfoFunc("glIsQueryARB", glIsQueryARB == NULL);
+  glewInfoFunc(fi, "glBeginQueryARB", glBeginQueryARB == NULL);
+  glewInfoFunc(fi, "glDeleteQueriesARB", glDeleteQueriesARB == NULL);
+  glewInfoFunc(fi, "glEndQueryARB", glEndQueryARB == NULL);
+  glewInfoFunc(fi, "glGenQueriesARB", glGenQueriesARB == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectivARB", glGetQueryObjectivARB == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectuivARB", glGetQueryObjectuivARB == NULL);
+  glewInfoFunc(fi, "glGetQueryivARB", glGetQueryivARB == NULL);
+  glewInfoFunc(fi, "glIsQueryARB", glIsQueryARB == NULL);
 }
 
 #endif /* GL_ARB_occlusion_query */
@@ -2446,9 +2483,9 @@ static void _glewInfo_GL_ARB_occlusion_query2 (void)
 
 static void _glewInfo_GL_ARB_parallel_shader_compile (void)
 {
-  glewPrintExt("GL_ARB_parallel_shader_compile", GLEW_ARB_parallel_shader_compile, glewIsSupported("GL_ARB_parallel_shader_compile"), glewGetExtension("GL_ARB_parallel_shader_compile"));
+  GLboolean fi = glewPrintExt("GL_ARB_parallel_shader_compile", GLEW_ARB_parallel_shader_compile, glewIsSupported("GL_ARB_parallel_shader_compile"), glewGetExtension("GL_ARB_parallel_shader_compile"));
 
-  glewInfoFunc("glMaxShaderCompilerThreadsARB", glMaxShaderCompilerThreadsARB == NULL);
+  glewInfoFunc(fi, "glMaxShaderCompilerThreadsARB", glMaxShaderCompilerThreadsARB == NULL);
 }
 
 #endif /* GL_ARB_parallel_shader_compile */
@@ -2475,10 +2512,10 @@ static void _glewInfo_GL_ARB_pixel_buffer_object (void)
 
 static void _glewInfo_GL_ARB_point_parameters (void)
 {
-  glewPrintExt("GL_ARB_point_parameters", GLEW_ARB_point_parameters, glewIsSupported("GL_ARB_point_parameters"), glewGetExtension("GL_ARB_point_parameters"));
+  GLboolean fi = glewPrintExt("GL_ARB_point_parameters", GLEW_ARB_point_parameters, glewIsSupported("GL_ARB_point_parameters"), glewGetExtension("GL_ARB_point_parameters"));
 
-  glewInfoFunc("glPointParameterfARB", glPointParameterfARB == NULL);
-  glewInfoFunc("glPointParameterfvARB", glPointParameterfvARB == NULL);
+  glewInfoFunc(fi, "glPointParameterfARB", glPointParameterfARB == NULL);
+  glewInfoFunc(fi, "glPointParameterfvARB", glPointParameterfvARB == NULL);
 }
 
 #endif /* GL_ARB_point_parameters */
@@ -2496,9 +2533,9 @@ static void _glewInfo_GL_ARB_point_sprite (void)
 
 static void _glewInfo_GL_ARB_polygon_offset_clamp (void)
 {
-  glewPrintExt("GL_ARB_polygon_offset_clamp", GLEW_ARB_polygon_offset_clamp, glewIsSupported("GL_ARB_polygon_offset_clamp"), glewGetExtension("GL_ARB_polygon_offset_clamp"));
+  GLboolean fi = glewPrintExt("GL_ARB_polygon_offset_clamp", GLEW_ARB_polygon_offset_clamp, glewIsSupported("GL_ARB_polygon_offset_clamp"), glewGetExtension("GL_ARB_polygon_offset_clamp"));
 
-  glewInfoFunc("glPolygonOffsetClamp", glPolygonOffsetClamp == NULL);
+  glewInfoFunc(fi, "glPolygonOffsetClamp", glPolygonOffsetClamp == NULL);
 }
 
 #endif /* GL_ARB_polygon_offset_clamp */
@@ -2516,14 +2553,14 @@ static void _glewInfo_GL_ARB_post_depth_coverage (void)
 
 static void _glewInfo_GL_ARB_program_interface_query (void)
 {
-  glewPrintExt("GL_ARB_program_interface_query", GLEW_ARB_program_interface_query, glewIsSupported("GL_ARB_program_interface_query"), glewGetExtension("GL_ARB_program_interface_query"));
+  GLboolean fi = glewPrintExt("GL_ARB_program_interface_query", GLEW_ARB_program_interface_query, glewIsSupported("GL_ARB_program_interface_query"), glewGetExtension("GL_ARB_program_interface_query"));
 
-  glewInfoFunc("glGetProgramInterfaceiv", glGetProgramInterfaceiv == NULL);
-  glewInfoFunc("glGetProgramResourceIndex", glGetProgramResourceIndex == NULL);
-  glewInfoFunc("glGetProgramResourceLocation", glGetProgramResourceLocation == NULL);
-  glewInfoFunc("glGetProgramResourceLocationIndex", glGetProgramResourceLocationIndex == NULL);
-  glewInfoFunc("glGetProgramResourceName", glGetProgramResourceName == NULL);
-  glewInfoFunc("glGetProgramResourceiv", glGetProgramResourceiv == NULL);
+  glewInfoFunc(fi, "glGetProgramInterfaceiv", glGetProgramInterfaceiv == NULL);
+  glewInfoFunc(fi, "glGetProgramResourceIndex", glGetProgramResourceIndex == NULL);
+  glewInfoFunc(fi, "glGetProgramResourceLocation", glGetProgramResourceLocation == NULL);
+  glewInfoFunc(fi, "glGetProgramResourceLocationIndex", glGetProgramResourceLocationIndex == NULL);
+  glewInfoFunc(fi, "glGetProgramResourceName", glGetProgramResourceName == NULL);
+  glewInfoFunc(fi, "glGetProgramResourceiv", glGetProgramResourceiv == NULL);
 }
 
 #endif /* GL_ARB_program_interface_query */
@@ -2532,9 +2569,9 @@ static void _glewInfo_GL_ARB_program_interface_query (void)
 
 static void _glewInfo_GL_ARB_provoking_vertex (void)
 {
-  glewPrintExt("GL_ARB_provoking_vertex", GLEW_ARB_provoking_vertex, glewIsSupported("GL_ARB_provoking_vertex"), glewGetExtension("GL_ARB_provoking_vertex"));
+  GLboolean fi = glewPrintExt("GL_ARB_provoking_vertex", GLEW_ARB_provoking_vertex, glewIsSupported("GL_ARB_provoking_vertex"), glewGetExtension("GL_ARB_provoking_vertex"));
 
-  glewInfoFunc("glProvokingVertex", glProvokingVertex == NULL);
+  glewInfoFunc(fi, "glProvokingVertex", glProvokingVertex == NULL);
 }
 
 #endif /* GL_ARB_provoking_vertex */
@@ -2561,28 +2598,28 @@ static void _glewInfo_GL_ARB_robust_buffer_access_behavior (void)
 
 static void _glewInfo_GL_ARB_robustness (void)
 {
-  glewPrintExt("GL_ARB_robustness", GLEW_ARB_robustness, glewIsSupported("GL_ARB_robustness"), glewGetExtension("GL_ARB_robustness"));
+  GLboolean fi = glewPrintExt("GL_ARB_robustness", GLEW_ARB_robustness, glewIsSupported("GL_ARB_robustness"), glewGetExtension("GL_ARB_robustness"));
 
-  glewInfoFunc("glGetGraphicsResetStatusARB", glGetGraphicsResetStatusARB == NULL);
-  glewInfoFunc("glGetnColorTableARB", glGetnColorTableARB == NULL);
-  glewInfoFunc("glGetnCompressedTexImageARB", glGetnCompressedTexImageARB == NULL);
-  glewInfoFunc("glGetnConvolutionFilterARB", glGetnConvolutionFilterARB == NULL);
-  glewInfoFunc("glGetnHistogramARB", glGetnHistogramARB == NULL);
-  glewInfoFunc("glGetnMapdvARB", glGetnMapdvARB == NULL);
-  glewInfoFunc("glGetnMapfvARB", glGetnMapfvARB == NULL);
-  glewInfoFunc("glGetnMapivARB", glGetnMapivARB == NULL);
-  glewInfoFunc("glGetnMinmaxARB", glGetnMinmaxARB == NULL);
-  glewInfoFunc("glGetnPixelMapfvARB", glGetnPixelMapfvARB == NULL);
-  glewInfoFunc("glGetnPixelMapuivARB", glGetnPixelMapuivARB == NULL);
-  glewInfoFunc("glGetnPixelMapusvARB", glGetnPixelMapusvARB == NULL);
-  glewInfoFunc("glGetnPolygonStippleARB", glGetnPolygonStippleARB == NULL);
-  glewInfoFunc("glGetnSeparableFilterARB", glGetnSeparableFilterARB == NULL);
-  glewInfoFunc("glGetnTexImageARB", glGetnTexImageARB == NULL);
-  glewInfoFunc("glGetnUniformdvARB", glGetnUniformdvARB == NULL);
-  glewInfoFunc("glGetnUniformfvARB", glGetnUniformfvARB == NULL);
-  glewInfoFunc("glGetnUniformivARB", glGetnUniformivARB == NULL);
-  glewInfoFunc("glGetnUniformuivARB", glGetnUniformuivARB == NULL);
-  glewInfoFunc("glReadnPixelsARB", glReadnPixelsARB == NULL);
+  glewInfoFunc(fi, "glGetGraphicsResetStatusARB", glGetGraphicsResetStatusARB == NULL);
+  glewInfoFunc(fi, "glGetnColorTableARB", glGetnColorTableARB == NULL);
+  glewInfoFunc(fi, "glGetnCompressedTexImageARB", glGetnCompressedTexImageARB == NULL);
+  glewInfoFunc(fi, "glGetnConvolutionFilterARB", glGetnConvolutionFilterARB == NULL);
+  glewInfoFunc(fi, "glGetnHistogramARB", glGetnHistogramARB == NULL);
+  glewInfoFunc(fi, "glGetnMapdvARB", glGetnMapdvARB == NULL);
+  glewInfoFunc(fi, "glGetnMapfvARB", glGetnMapfvARB == NULL);
+  glewInfoFunc(fi, "glGetnMapivARB", glGetnMapivARB == NULL);
+  glewInfoFunc(fi, "glGetnMinmaxARB", glGetnMinmaxARB == NULL);
+  glewInfoFunc(fi, "glGetnPixelMapfvARB", glGetnPixelMapfvARB == NULL);
+  glewInfoFunc(fi, "glGetnPixelMapuivARB", glGetnPixelMapuivARB == NULL);
+  glewInfoFunc(fi, "glGetnPixelMapusvARB", glGetnPixelMapusvARB == NULL);
+  glewInfoFunc(fi, "glGetnPolygonStippleARB", glGetnPolygonStippleARB == NULL);
+  glewInfoFunc(fi, "glGetnSeparableFilterARB", glGetnSeparableFilterARB == NULL);
+  glewInfoFunc(fi, "glGetnTexImageARB", glGetnTexImageARB == NULL);
+  glewInfoFunc(fi, "glGetnUniformdvARB", glGetnUniformdvARB == NULL);
+  glewInfoFunc(fi, "glGetnUniformfvARB", glGetnUniformfvARB == NULL);
+  glewInfoFunc(fi, "glGetnUniformivARB", glGetnUniformivARB == NULL);
+  glewInfoFunc(fi, "glGetnUniformuivARB", glGetnUniformuivARB == NULL);
+  glewInfoFunc(fi, "glReadnPixelsARB", glReadnPixelsARB == NULL);
 }
 
 #endif /* GL_ARB_robustness */
@@ -2609,10 +2646,10 @@ static void _glewInfo_GL_ARB_robustness_share_group_isolation (void)
 
 static void _glewInfo_GL_ARB_sample_locations (void)
 {
-  glewPrintExt("GL_ARB_sample_locations", GLEW_ARB_sample_locations, glewIsSupported("GL_ARB_sample_locations"), glewGetExtension("GL_ARB_sample_locations"));
+  GLboolean fi = glewPrintExt("GL_ARB_sample_locations", GLEW_ARB_sample_locations, glewIsSupported("GL_ARB_sample_locations"), glewGetExtension("GL_ARB_sample_locations"));
 
-  glewInfoFunc("glFramebufferSampleLocationsfvARB", glFramebufferSampleLocationsfvARB == NULL);
-  glewInfoFunc("glNamedFramebufferSampleLocationsfvARB", glNamedFramebufferSampleLocationsfvARB == NULL);
+  glewInfoFunc(fi, "glFramebufferSampleLocationsfvARB", glFramebufferSampleLocationsfvARB == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferSampleLocationsfvARB", glNamedFramebufferSampleLocationsfvARB == NULL);
 }
 
 #endif /* GL_ARB_sample_locations */
@@ -2621,9 +2658,9 @@ static void _glewInfo_GL_ARB_sample_locations (void)
 
 static void _glewInfo_GL_ARB_sample_shading (void)
 {
-  glewPrintExt("GL_ARB_sample_shading", GLEW_ARB_sample_shading, glewIsSupported("GL_ARB_sample_shading"), glewGetExtension("GL_ARB_sample_shading"));
+  GLboolean fi = glewPrintExt("GL_ARB_sample_shading", GLEW_ARB_sample_shading, glewIsSupported("GL_ARB_sample_shading"), glewGetExtension("GL_ARB_sample_shading"));
 
-  glewInfoFunc("glMinSampleShadingARB", glMinSampleShadingARB == NULL);
+  glewInfoFunc(fi, "glMinSampleShadingARB", glMinSampleShadingARB == NULL);
 }
 
 #endif /* GL_ARB_sample_shading */
@@ -2632,22 +2669,22 @@ static void _glewInfo_GL_ARB_sample_shading (void)
 
 static void _glewInfo_GL_ARB_sampler_objects (void)
 {
-  glewPrintExt("GL_ARB_sampler_objects", GLEW_ARB_sampler_objects, glewIsSupported("GL_ARB_sampler_objects"), glewGetExtension("GL_ARB_sampler_objects"));
+  GLboolean fi = glewPrintExt("GL_ARB_sampler_objects", GLEW_ARB_sampler_objects, glewIsSupported("GL_ARB_sampler_objects"), glewGetExtension("GL_ARB_sampler_objects"));
 
-  glewInfoFunc("glBindSampler", glBindSampler == NULL);
-  glewInfoFunc("glDeleteSamplers", glDeleteSamplers == NULL);
-  glewInfoFunc("glGenSamplers", glGenSamplers == NULL);
-  glewInfoFunc("glGetSamplerParameterIiv", glGetSamplerParameterIiv == NULL);
-  glewInfoFunc("glGetSamplerParameterIuiv", glGetSamplerParameterIuiv == NULL);
-  glewInfoFunc("glGetSamplerParameterfv", glGetSamplerParameterfv == NULL);
-  glewInfoFunc("glGetSamplerParameteriv", glGetSamplerParameteriv == NULL);
-  glewInfoFunc("glIsSampler", glIsSampler == NULL);
-  glewInfoFunc("glSamplerParameterIiv", glSamplerParameterIiv == NULL);
-  glewInfoFunc("glSamplerParameterIuiv", glSamplerParameterIuiv == NULL);
-  glewInfoFunc("glSamplerParameterf", glSamplerParameterf == NULL);
-  glewInfoFunc("glSamplerParameterfv", glSamplerParameterfv == NULL);
-  glewInfoFunc("glSamplerParameteri", glSamplerParameteri == NULL);
-  glewInfoFunc("glSamplerParameteriv", glSamplerParameteriv == NULL);
+  glewInfoFunc(fi, "glBindSampler", glBindSampler == NULL);
+  glewInfoFunc(fi, "glDeleteSamplers", glDeleteSamplers == NULL);
+  glewInfoFunc(fi, "glGenSamplers", glGenSamplers == NULL);
+  glewInfoFunc(fi, "glGetSamplerParameterIiv", glGetSamplerParameterIiv == NULL);
+  glewInfoFunc(fi, "glGetSamplerParameterIuiv", glGetSamplerParameterIuiv == NULL);
+  glewInfoFunc(fi, "glGetSamplerParameterfv", glGetSamplerParameterfv == NULL);
+  glewInfoFunc(fi, "glGetSamplerParameteriv", glGetSamplerParameteriv == NULL);
+  glewInfoFunc(fi, "glIsSampler", glIsSampler == NULL);
+  glewInfoFunc(fi, "glSamplerParameterIiv", glSamplerParameterIiv == NULL);
+  glewInfoFunc(fi, "glSamplerParameterIuiv", glSamplerParameterIuiv == NULL);
+  glewInfoFunc(fi, "glSamplerParameterf", glSamplerParameterf == NULL);
+  glewInfoFunc(fi, "glSamplerParameterfv", glSamplerParameterfv == NULL);
+  glewInfoFunc(fi, "glSamplerParameteri", glSamplerParameteri == NULL);
+  glewInfoFunc(fi, "glSamplerParameteriv", glSamplerParameteriv == NULL);
 }
 
 #endif /* GL_ARB_sampler_objects */
@@ -2674,68 +2711,68 @@ static void _glewInfo_GL_ARB_seamless_cubemap_per_texture (void)
 
 static void _glewInfo_GL_ARB_separate_shader_objects (void)
 {
-  glewPrintExt("GL_ARB_separate_shader_objects", GLEW_ARB_separate_shader_objects, glewIsSupported("GL_ARB_separate_shader_objects"), glewGetExtension("GL_ARB_separate_shader_objects"));
+  GLboolean fi = glewPrintExt("GL_ARB_separate_shader_objects", GLEW_ARB_separate_shader_objects, glewIsSupported("GL_ARB_separate_shader_objects"), glewGetExtension("GL_ARB_separate_shader_objects"));
 
-  glewInfoFunc("glActiveShaderProgram", glActiveShaderProgram == NULL);
-  glewInfoFunc("glBindProgramPipeline", glBindProgramPipeline == NULL);
-  glewInfoFunc("glCreateShaderProgramv", glCreateShaderProgramv == NULL);
-  glewInfoFunc("glDeleteProgramPipelines", glDeleteProgramPipelines == NULL);
-  glewInfoFunc("glGenProgramPipelines", glGenProgramPipelines == NULL);
-  glewInfoFunc("glGetProgramPipelineInfoLog", glGetProgramPipelineInfoLog == NULL);
-  glewInfoFunc("glGetProgramPipelineiv", glGetProgramPipelineiv == NULL);
-  glewInfoFunc("glIsProgramPipeline", glIsProgramPipeline == NULL);
-  glewInfoFunc("glProgramUniform1d", glProgramUniform1d == NULL);
-  glewInfoFunc("glProgramUniform1dv", glProgramUniform1dv == NULL);
-  glewInfoFunc("glProgramUniform1f", glProgramUniform1f == NULL);
-  glewInfoFunc("glProgramUniform1fv", glProgramUniform1fv == NULL);
-  glewInfoFunc("glProgramUniform1i", glProgramUniform1i == NULL);
-  glewInfoFunc("glProgramUniform1iv", glProgramUniform1iv == NULL);
-  glewInfoFunc("glProgramUniform1ui", glProgramUniform1ui == NULL);
-  glewInfoFunc("glProgramUniform1uiv", glProgramUniform1uiv == NULL);
-  glewInfoFunc("glProgramUniform2d", glProgramUniform2d == NULL);
-  glewInfoFunc("glProgramUniform2dv", glProgramUniform2dv == NULL);
-  glewInfoFunc("glProgramUniform2f", glProgramUniform2f == NULL);
-  glewInfoFunc("glProgramUniform2fv", glProgramUniform2fv == NULL);
-  glewInfoFunc("glProgramUniform2i", glProgramUniform2i == NULL);
-  glewInfoFunc("glProgramUniform2iv", glProgramUniform2iv == NULL);
-  glewInfoFunc("glProgramUniform2ui", glProgramUniform2ui == NULL);
-  glewInfoFunc("glProgramUniform2uiv", glProgramUniform2uiv == NULL);
-  glewInfoFunc("glProgramUniform3d", glProgramUniform3d == NULL);
-  glewInfoFunc("glProgramUniform3dv", glProgramUniform3dv == NULL);
-  glewInfoFunc("glProgramUniform3f", glProgramUniform3f == NULL);
-  glewInfoFunc("glProgramUniform3fv", glProgramUniform3fv == NULL);
-  glewInfoFunc("glProgramUniform3i", glProgramUniform3i == NULL);
-  glewInfoFunc("glProgramUniform3iv", glProgramUniform3iv == NULL);
-  glewInfoFunc("glProgramUniform3ui", glProgramUniform3ui == NULL);
-  glewInfoFunc("glProgramUniform3uiv", glProgramUniform3uiv == NULL);
-  glewInfoFunc("glProgramUniform4d", glProgramUniform4d == NULL);
-  glewInfoFunc("glProgramUniform4dv", glProgramUniform4dv == NULL);
-  glewInfoFunc("glProgramUniform4f", glProgramUniform4f == NULL);
-  glewInfoFunc("glProgramUniform4fv", glProgramUniform4fv == NULL);
-  glewInfoFunc("glProgramUniform4i", glProgramUniform4i == NULL);
-  glewInfoFunc("glProgramUniform4iv", glProgramUniform4iv == NULL);
-  glewInfoFunc("glProgramUniform4ui", glProgramUniform4ui == NULL);
-  glewInfoFunc("glProgramUniform4uiv", glProgramUniform4uiv == NULL);
-  glewInfoFunc("glProgramUniformMatrix2dv", glProgramUniformMatrix2dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix2fv", glProgramUniformMatrix2fv == NULL);
-  glewInfoFunc("glProgramUniformMatrix2x3dv", glProgramUniformMatrix2x3dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix2x3fv", glProgramUniformMatrix2x3fv == NULL);
-  glewInfoFunc("glProgramUniformMatrix2x4dv", glProgramUniformMatrix2x4dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix2x4fv", glProgramUniformMatrix2x4fv == NULL);
-  glewInfoFunc("glProgramUniformMatrix3dv", glProgramUniformMatrix3dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix3fv", glProgramUniformMatrix3fv == NULL);
-  glewInfoFunc("glProgramUniformMatrix3x2dv", glProgramUniformMatrix3x2dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix3x2fv", glProgramUniformMatrix3x2fv == NULL);
-  glewInfoFunc("glProgramUniformMatrix3x4dv", glProgramUniformMatrix3x4dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix3x4fv", glProgramUniformMatrix3x4fv == NULL);
-  glewInfoFunc("glProgramUniformMatrix4dv", glProgramUniformMatrix4dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix4fv", glProgramUniformMatrix4fv == NULL);
-  glewInfoFunc("glProgramUniformMatrix4x2dv", glProgramUniformMatrix4x2dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix4x2fv", glProgramUniformMatrix4x2fv == NULL);
-  glewInfoFunc("glProgramUniformMatrix4x3dv", glProgramUniformMatrix4x3dv == NULL);
-  glewInfoFunc("glProgramUniformMatrix4x3fv", glProgramUniformMatrix4x3fv == NULL);
-  glewInfoFunc("glUseProgramStages", glUseProgramStages == NULL);
-  glewInfoFunc("glValidateProgramPipeline", glValidateProgramPipeline == NULL);
+  glewInfoFunc(fi, "glActiveShaderProgram", glActiveShaderProgram == NULL);
+  glewInfoFunc(fi, "glBindProgramPipeline", glBindProgramPipeline == NULL);
+  glewInfoFunc(fi, "glCreateShaderProgramv", glCreateShaderProgramv == NULL);
+  glewInfoFunc(fi, "glDeleteProgramPipelines", glDeleteProgramPipelines == NULL);
+  glewInfoFunc(fi, "glGenProgramPipelines", glGenProgramPipelines == NULL);
+  glewInfoFunc(fi, "glGetProgramPipelineInfoLog", glGetProgramPipelineInfoLog == NULL);
+  glewInfoFunc(fi, "glGetProgramPipelineiv", glGetProgramPipelineiv == NULL);
+  glewInfoFunc(fi, "glIsProgramPipeline", glIsProgramPipeline == NULL);
+  glewInfoFunc(fi, "glProgramUniform1d", glProgramUniform1d == NULL);
+  glewInfoFunc(fi, "glProgramUniform1dv", glProgramUniform1dv == NULL);
+  glewInfoFunc(fi, "glProgramUniform1f", glProgramUniform1f == NULL);
+  glewInfoFunc(fi, "glProgramUniform1fv", glProgramUniform1fv == NULL);
+  glewInfoFunc(fi, "glProgramUniform1i", glProgramUniform1i == NULL);
+  glewInfoFunc(fi, "glProgramUniform1iv", glProgramUniform1iv == NULL);
+  glewInfoFunc(fi, "glProgramUniform1ui", glProgramUniform1ui == NULL);
+  glewInfoFunc(fi, "glProgramUniform1uiv", glProgramUniform1uiv == NULL);
+  glewInfoFunc(fi, "glProgramUniform2d", glProgramUniform2d == NULL);
+  glewInfoFunc(fi, "glProgramUniform2dv", glProgramUniform2dv == NULL);
+  glewInfoFunc(fi, "glProgramUniform2f", glProgramUniform2f == NULL);
+  glewInfoFunc(fi, "glProgramUniform2fv", glProgramUniform2fv == NULL);
+  glewInfoFunc(fi, "glProgramUniform2i", glProgramUniform2i == NULL);
+  glewInfoFunc(fi, "glProgramUniform2iv", glProgramUniform2iv == NULL);
+  glewInfoFunc(fi, "glProgramUniform2ui", glProgramUniform2ui == NULL);
+  glewInfoFunc(fi, "glProgramUniform2uiv", glProgramUniform2uiv == NULL);
+  glewInfoFunc(fi, "glProgramUniform3d", glProgramUniform3d == NULL);
+  glewInfoFunc(fi, "glProgramUniform3dv", glProgramUniform3dv == NULL);
+  glewInfoFunc(fi, "glProgramUniform3f", glProgramUniform3f == NULL);
+  glewInfoFunc(fi, "glProgramUniform3fv", glProgramUniform3fv == NULL);
+  glewInfoFunc(fi, "glProgramUniform3i", glProgramUniform3i == NULL);
+  glewInfoFunc(fi, "glProgramUniform3iv", glProgramUniform3iv == NULL);
+  glewInfoFunc(fi, "glProgramUniform3ui", glProgramUniform3ui == NULL);
+  glewInfoFunc(fi, "glProgramUniform3uiv", glProgramUniform3uiv == NULL);
+  glewInfoFunc(fi, "glProgramUniform4d", glProgramUniform4d == NULL);
+  glewInfoFunc(fi, "glProgramUniform4dv", glProgramUniform4dv == NULL);
+  glewInfoFunc(fi, "glProgramUniform4f", glProgramUniform4f == NULL);
+  glewInfoFunc(fi, "glProgramUniform4fv", glProgramUniform4fv == NULL);
+  glewInfoFunc(fi, "glProgramUniform4i", glProgramUniform4i == NULL);
+  glewInfoFunc(fi, "glProgramUniform4iv", glProgramUniform4iv == NULL);
+  glewInfoFunc(fi, "glProgramUniform4ui", glProgramUniform4ui == NULL);
+  glewInfoFunc(fi, "glProgramUniform4uiv", glProgramUniform4uiv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2dv", glProgramUniformMatrix2dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2fv", glProgramUniformMatrix2fv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2x3dv", glProgramUniformMatrix2x3dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2x3fv", glProgramUniformMatrix2x3fv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2x4dv", glProgramUniformMatrix2x4dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2x4fv", glProgramUniformMatrix2x4fv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3dv", glProgramUniformMatrix3dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3fv", glProgramUniformMatrix3fv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3x2dv", glProgramUniformMatrix3x2dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3x2fv", glProgramUniformMatrix3x2fv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3x4dv", glProgramUniformMatrix3x4dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3x4fv", glProgramUniformMatrix3x4fv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4dv", glProgramUniformMatrix4dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4fv", glProgramUniformMatrix4fv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4x2dv", glProgramUniformMatrix4x2dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4x2fv", glProgramUniformMatrix4x2fv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4x3dv", glProgramUniformMatrix4x3dv == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4x3fv", glProgramUniformMatrix4x3fv == NULL);
+  glewInfoFunc(fi, "glUseProgramStages", glUseProgramStages == NULL);
+  glewInfoFunc(fi, "glValidateProgramPipeline", glValidateProgramPipeline == NULL);
 }
 
 #endif /* GL_ARB_separate_shader_objects */
@@ -2753,9 +2790,9 @@ static void _glewInfo_GL_ARB_shader_atomic_counter_ops (void)
 
 static void _glewInfo_GL_ARB_shader_atomic_counters (void)
 {
-  glewPrintExt("GL_ARB_shader_atomic_counters", GLEW_ARB_shader_atomic_counters, glewIsSupported("GL_ARB_shader_atomic_counters"), glewGetExtension("GL_ARB_shader_atomic_counters"));
+  GLboolean fi = glewPrintExt("GL_ARB_shader_atomic_counters", GLEW_ARB_shader_atomic_counters, glewIsSupported("GL_ARB_shader_atomic_counters"), glewGetExtension("GL_ARB_shader_atomic_counters"));
 
-  glewInfoFunc("glGetActiveAtomicCounterBufferiv", glGetActiveAtomicCounterBufferiv == NULL);
+  glewInfoFunc(fi, "glGetActiveAtomicCounterBufferiv", glGetActiveAtomicCounterBufferiv == NULL);
 }
 
 #endif /* GL_ARB_shader_atomic_counters */
@@ -2809,10 +2846,10 @@ static void _glewInfo_GL_ARB_shader_group_vote (void)
 
 static void _glewInfo_GL_ARB_shader_image_load_store (void)
 {
-  glewPrintExt("GL_ARB_shader_image_load_store", GLEW_ARB_shader_image_load_store, glewIsSupported("GL_ARB_shader_image_load_store"), glewGetExtension("GL_ARB_shader_image_load_store"));
+  GLboolean fi = glewPrintExt("GL_ARB_shader_image_load_store", GLEW_ARB_shader_image_load_store, glewIsSupported("GL_ARB_shader_image_load_store"), glewGetExtension("GL_ARB_shader_image_load_store"));
 
-  glewInfoFunc("glBindImageTexture", glBindImageTexture == NULL);
-  glewInfoFunc("glMemoryBarrier", glMemoryBarrier == NULL);
+  glewInfoFunc(fi, "glBindImageTexture", glBindImageTexture == NULL);
+  glewInfoFunc(fi, "glMemoryBarrier", glMemoryBarrier == NULL);
 }
 
 #endif /* GL_ARB_shader_image_load_store */
@@ -2830,47 +2867,47 @@ static void _glewInfo_GL_ARB_shader_image_size (void)
 
 static void _glewInfo_GL_ARB_shader_objects (void)
 {
-  glewPrintExt("GL_ARB_shader_objects", GLEW_ARB_shader_objects, glewIsSupported("GL_ARB_shader_objects"), glewGetExtension("GL_ARB_shader_objects"));
+  GLboolean fi = glewPrintExt("GL_ARB_shader_objects", GLEW_ARB_shader_objects, glewIsSupported("GL_ARB_shader_objects"), glewGetExtension("GL_ARB_shader_objects"));
 
-  glewInfoFunc("glAttachObjectARB", glAttachObjectARB == NULL);
-  glewInfoFunc("glCompileShaderARB", glCompileShaderARB == NULL);
-  glewInfoFunc("glCreateProgramObjectARB", glCreateProgramObjectARB == NULL);
-  glewInfoFunc("glCreateShaderObjectARB", glCreateShaderObjectARB == NULL);
-  glewInfoFunc("glDeleteObjectARB", glDeleteObjectARB == NULL);
-  glewInfoFunc("glDetachObjectARB", glDetachObjectARB == NULL);
-  glewInfoFunc("glGetActiveUniformARB", glGetActiveUniformARB == NULL);
-  glewInfoFunc("glGetAttachedObjectsARB", glGetAttachedObjectsARB == NULL);
-  glewInfoFunc("glGetHandleARB", glGetHandleARB == NULL);
-  glewInfoFunc("glGetInfoLogARB", glGetInfoLogARB == NULL);
-  glewInfoFunc("glGetObjectParameterfvARB", glGetObjectParameterfvARB == NULL);
-  glewInfoFunc("glGetObjectParameterivARB", glGetObjectParameterivARB == NULL);
-  glewInfoFunc("glGetShaderSourceARB", glGetShaderSourceARB == NULL);
-  glewInfoFunc("glGetUniformLocationARB", glGetUniformLocationARB == NULL);
-  glewInfoFunc("glGetUniformfvARB", glGetUniformfvARB == NULL);
-  glewInfoFunc("glGetUniformivARB", glGetUniformivARB == NULL);
-  glewInfoFunc("glLinkProgramARB", glLinkProgramARB == NULL);
-  glewInfoFunc("glShaderSourceARB", glShaderSourceARB == NULL);
-  glewInfoFunc("glUniform1fARB", glUniform1fARB == NULL);
-  glewInfoFunc("glUniform1fvARB", glUniform1fvARB == NULL);
-  glewInfoFunc("glUniform1iARB", glUniform1iARB == NULL);
-  glewInfoFunc("glUniform1ivARB", glUniform1ivARB == NULL);
-  glewInfoFunc("glUniform2fARB", glUniform2fARB == NULL);
-  glewInfoFunc("glUniform2fvARB", glUniform2fvARB == NULL);
-  glewInfoFunc("glUniform2iARB", glUniform2iARB == NULL);
-  glewInfoFunc("glUniform2ivARB", glUniform2ivARB == NULL);
-  glewInfoFunc("glUniform3fARB", glUniform3fARB == NULL);
-  glewInfoFunc("glUniform3fvARB", glUniform3fvARB == NULL);
-  glewInfoFunc("glUniform3iARB", glUniform3iARB == NULL);
-  glewInfoFunc("glUniform3ivARB", glUniform3ivARB == NULL);
-  glewInfoFunc("glUniform4fARB", glUniform4fARB == NULL);
-  glewInfoFunc("glUniform4fvARB", glUniform4fvARB == NULL);
-  glewInfoFunc("glUniform4iARB", glUniform4iARB == NULL);
-  glewInfoFunc("glUniform4ivARB", glUniform4ivARB == NULL);
-  glewInfoFunc("glUniformMatrix2fvARB", glUniformMatrix2fvARB == NULL);
-  glewInfoFunc("glUniformMatrix3fvARB", glUniformMatrix3fvARB == NULL);
-  glewInfoFunc("glUniformMatrix4fvARB", glUniformMatrix4fvARB == NULL);
-  glewInfoFunc("glUseProgramObjectARB", glUseProgramObjectARB == NULL);
-  glewInfoFunc("glValidateProgramARB", glValidateProgramARB == NULL);
+  glewInfoFunc(fi, "glAttachObjectARB", glAttachObjectARB == NULL);
+  glewInfoFunc(fi, "glCompileShaderARB", glCompileShaderARB == NULL);
+  glewInfoFunc(fi, "glCreateProgramObjectARB", glCreateProgramObjectARB == NULL);
+  glewInfoFunc(fi, "glCreateShaderObjectARB", glCreateShaderObjectARB == NULL);
+  glewInfoFunc(fi, "glDeleteObjectARB", glDeleteObjectARB == NULL);
+  glewInfoFunc(fi, "glDetachObjectARB", glDetachObjectARB == NULL);
+  glewInfoFunc(fi, "glGetActiveUniformARB", glGetActiveUniformARB == NULL);
+  glewInfoFunc(fi, "glGetAttachedObjectsARB", glGetAttachedObjectsARB == NULL);
+  glewInfoFunc(fi, "glGetHandleARB", glGetHandleARB == NULL);
+  glewInfoFunc(fi, "glGetInfoLogARB", glGetInfoLogARB == NULL);
+  glewInfoFunc(fi, "glGetObjectParameterfvARB", glGetObjectParameterfvARB == NULL);
+  glewInfoFunc(fi, "glGetObjectParameterivARB", glGetObjectParameterivARB == NULL);
+  glewInfoFunc(fi, "glGetShaderSourceARB", glGetShaderSourceARB == NULL);
+  glewInfoFunc(fi, "glGetUniformLocationARB", glGetUniformLocationARB == NULL);
+  glewInfoFunc(fi, "glGetUniformfvARB", glGetUniformfvARB == NULL);
+  glewInfoFunc(fi, "glGetUniformivARB", glGetUniformivARB == NULL);
+  glewInfoFunc(fi, "glLinkProgramARB", glLinkProgramARB == NULL);
+  glewInfoFunc(fi, "glShaderSourceARB", glShaderSourceARB == NULL);
+  glewInfoFunc(fi, "glUniform1fARB", glUniform1fARB == NULL);
+  glewInfoFunc(fi, "glUniform1fvARB", glUniform1fvARB == NULL);
+  glewInfoFunc(fi, "glUniform1iARB", glUniform1iARB == NULL);
+  glewInfoFunc(fi, "glUniform1ivARB", glUniform1ivARB == NULL);
+  glewInfoFunc(fi, "glUniform2fARB", glUniform2fARB == NULL);
+  glewInfoFunc(fi, "glUniform2fvARB", glUniform2fvARB == NULL);
+  glewInfoFunc(fi, "glUniform2iARB", glUniform2iARB == NULL);
+  glewInfoFunc(fi, "glUniform2ivARB", glUniform2ivARB == NULL);
+  glewInfoFunc(fi, "glUniform3fARB", glUniform3fARB == NULL);
+  glewInfoFunc(fi, "glUniform3fvARB", glUniform3fvARB == NULL);
+  glewInfoFunc(fi, "glUniform3iARB", glUniform3iARB == NULL);
+  glewInfoFunc(fi, "glUniform3ivARB", glUniform3ivARB == NULL);
+  glewInfoFunc(fi, "glUniform4fARB", glUniform4fARB == NULL);
+  glewInfoFunc(fi, "glUniform4fvARB", glUniform4fvARB == NULL);
+  glewInfoFunc(fi, "glUniform4iARB", glUniform4iARB == NULL);
+  glewInfoFunc(fi, "glUniform4ivARB", glUniform4ivARB == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2fvARB", glUniformMatrix2fvARB == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3fvARB", glUniformMatrix3fvARB == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4fvARB", glUniformMatrix4fvARB == NULL);
+  glewInfoFunc(fi, "glUseProgramObjectARB", glUseProgramObjectARB == NULL);
+  glewInfoFunc(fi, "glValidateProgramARB", glValidateProgramARB == NULL);
 }
 
 #endif /* GL_ARB_shader_objects */
@@ -2897,9 +2934,9 @@ static void _glewInfo_GL_ARB_shader_stencil_export (void)
 
 static void _glewInfo_GL_ARB_shader_storage_buffer_object (void)
 {
-  glewPrintExt("GL_ARB_shader_storage_buffer_object", GLEW_ARB_shader_storage_buffer_object, glewIsSupported("GL_ARB_shader_storage_buffer_object"), glewGetExtension("GL_ARB_shader_storage_buffer_object"));
+  GLboolean fi = glewPrintExt("GL_ARB_shader_storage_buffer_object", GLEW_ARB_shader_storage_buffer_object, glewIsSupported("GL_ARB_shader_storage_buffer_object"), glewGetExtension("GL_ARB_shader_storage_buffer_object"));
 
-  glewInfoFunc("glShaderStorageBlockBinding", glShaderStorageBlockBinding == NULL);
+  glewInfoFunc(fi, "glShaderStorageBlockBinding", glShaderStorageBlockBinding == NULL);
 }
 
 #endif /* GL_ARB_shader_storage_buffer_object */
@@ -2908,16 +2945,16 @@ static void _glewInfo_GL_ARB_shader_storage_buffer_object (void)
 
 static void _glewInfo_GL_ARB_shader_subroutine (void)
 {
-  glewPrintExt("GL_ARB_shader_subroutine", GLEW_ARB_shader_subroutine, glewIsSupported("GL_ARB_shader_subroutine"), glewGetExtension("GL_ARB_shader_subroutine"));
+  GLboolean fi = glewPrintExt("GL_ARB_shader_subroutine", GLEW_ARB_shader_subroutine, glewIsSupported("GL_ARB_shader_subroutine"), glewGetExtension("GL_ARB_shader_subroutine"));
 
-  glewInfoFunc("glGetActiveSubroutineName", glGetActiveSubroutineName == NULL);
-  glewInfoFunc("glGetActiveSubroutineUniformName", glGetActiveSubroutineUniformName == NULL);
-  glewInfoFunc("glGetActiveSubroutineUniformiv", glGetActiveSubroutineUniformiv == NULL);
-  glewInfoFunc("glGetProgramStageiv", glGetProgramStageiv == NULL);
-  glewInfoFunc("glGetSubroutineIndex", glGetSubroutineIndex == NULL);
-  glewInfoFunc("glGetSubroutineUniformLocation", glGetSubroutineUniformLocation == NULL);
-  glewInfoFunc("glGetUniformSubroutineuiv", glGetUniformSubroutineuiv == NULL);
-  glewInfoFunc("glUniformSubroutinesuiv", glUniformSubroutinesuiv == NULL);
+  glewInfoFunc(fi, "glGetActiveSubroutineName", glGetActiveSubroutineName == NULL);
+  glewInfoFunc(fi, "glGetActiveSubroutineUniformName", glGetActiveSubroutineUniformName == NULL);
+  glewInfoFunc(fi, "glGetActiveSubroutineUniformiv", glGetActiveSubroutineUniformiv == NULL);
+  glewInfoFunc(fi, "glGetProgramStageiv", glGetProgramStageiv == NULL);
+  glewInfoFunc(fi, "glGetSubroutineIndex", glGetSubroutineIndex == NULL);
+  glewInfoFunc(fi, "glGetSubroutineUniformLocation", glGetSubroutineUniformLocation == NULL);
+  glewInfoFunc(fi, "glGetUniformSubroutineuiv", glGetUniformSubroutineuiv == NULL);
+  glewInfoFunc(fi, "glUniformSubroutinesuiv", glUniformSubroutinesuiv == NULL);
 }
 
 #endif /* GL_ARB_shader_subroutine */
@@ -2971,14 +3008,14 @@ static void _glewInfo_GL_ARB_shading_language_420pack (void)
 
 static void _glewInfo_GL_ARB_shading_language_include (void)
 {
-  glewPrintExt("GL_ARB_shading_language_include", GLEW_ARB_shading_language_include, glewIsSupported("GL_ARB_shading_language_include"), glewGetExtension("GL_ARB_shading_language_include"));
+  GLboolean fi = glewPrintExt("GL_ARB_shading_language_include", GLEW_ARB_shading_language_include, glewIsSupported("GL_ARB_shading_language_include"), glewGetExtension("GL_ARB_shading_language_include"));
 
-  glewInfoFunc("glCompileShaderIncludeARB", glCompileShaderIncludeARB == NULL);
-  glewInfoFunc("glDeleteNamedStringARB", glDeleteNamedStringARB == NULL);
-  glewInfoFunc("glGetNamedStringARB", glGetNamedStringARB == NULL);
-  glewInfoFunc("glGetNamedStringivARB", glGetNamedStringivARB == NULL);
-  glewInfoFunc("glIsNamedStringARB", glIsNamedStringARB == NULL);
-  glewInfoFunc("glNamedStringARB", glNamedStringARB == NULL);
+  glewInfoFunc(fi, "glCompileShaderIncludeARB", glCompileShaderIncludeARB == NULL);
+  glewInfoFunc(fi, "glDeleteNamedStringARB", glDeleteNamedStringARB == NULL);
+  glewInfoFunc(fi, "glGetNamedStringARB", glGetNamedStringARB == NULL);
+  glewInfoFunc(fi, "glGetNamedStringivARB", glGetNamedStringivARB == NULL);
+  glewInfoFunc(fi, "glIsNamedStringARB", glIsNamedStringARB == NULL);
+  glewInfoFunc(fi, "glNamedStringARB", glNamedStringARB == NULL);
 }
 
 #endif /* GL_ARB_shading_language_include */
@@ -3014,9 +3051,9 @@ static void _glewInfo_GL_ARB_shadow_ambient (void)
 
 static void _glewInfo_GL_ARB_sparse_buffer (void)
 {
-  glewPrintExt("GL_ARB_sparse_buffer", GLEW_ARB_sparse_buffer, glewIsSupported("GL_ARB_sparse_buffer"), glewGetExtension("GL_ARB_sparse_buffer"));
+  GLboolean fi = glewPrintExt("GL_ARB_sparse_buffer", GLEW_ARB_sparse_buffer, glewIsSupported("GL_ARB_sparse_buffer"), glewGetExtension("GL_ARB_sparse_buffer"));
 
-  glewInfoFunc("glBufferPageCommitmentARB", glBufferPageCommitmentARB == NULL);
+  glewInfoFunc(fi, "glBufferPageCommitmentARB", glBufferPageCommitmentARB == NULL);
 }
 
 #endif /* GL_ARB_sparse_buffer */
@@ -3025,9 +3062,9 @@ static void _glewInfo_GL_ARB_sparse_buffer (void)
 
 static void _glewInfo_GL_ARB_sparse_texture (void)
 {
-  glewPrintExt("GL_ARB_sparse_texture", GLEW_ARB_sparse_texture, glewIsSupported("GL_ARB_sparse_texture"), glewGetExtension("GL_ARB_sparse_texture"));
+  GLboolean fi = glewPrintExt("GL_ARB_sparse_texture", GLEW_ARB_sparse_texture, glewIsSupported("GL_ARB_sparse_texture"), glewGetExtension("GL_ARB_sparse_texture"));
 
-  glewInfoFunc("glTexPageCommitmentARB", glTexPageCommitmentARB == NULL);
+  glewInfoFunc(fi, "glTexPageCommitmentARB", glTexPageCommitmentARB == NULL);
 }
 
 #endif /* GL_ARB_sparse_texture */
@@ -3072,15 +3109,15 @@ static void _glewInfo_GL_ARB_stencil_texturing (void)
 
 static void _glewInfo_GL_ARB_sync (void)
 {
-  glewPrintExt("GL_ARB_sync", GLEW_ARB_sync, glewIsSupported("GL_ARB_sync"), glewGetExtension("GL_ARB_sync"));
+  GLboolean fi = glewPrintExt("GL_ARB_sync", GLEW_ARB_sync, glewIsSupported("GL_ARB_sync"), glewGetExtension("GL_ARB_sync"));
 
-  glewInfoFunc("glClientWaitSync", glClientWaitSync == NULL);
-  glewInfoFunc("glDeleteSync", glDeleteSync == NULL);
-  glewInfoFunc("glFenceSync", glFenceSync == NULL);
-  glewInfoFunc("glGetInteger64v", glGetInteger64v == NULL);
-  glewInfoFunc("glGetSynciv", glGetSynciv == NULL);
-  glewInfoFunc("glIsSync", glIsSync == NULL);
-  glewInfoFunc("glWaitSync", glWaitSync == NULL);
+  glewInfoFunc(fi, "glClientWaitSync", glClientWaitSync == NULL);
+  glewInfoFunc(fi, "glDeleteSync", glDeleteSync == NULL);
+  glewInfoFunc(fi, "glFenceSync", glFenceSync == NULL);
+  glewInfoFunc(fi, "glGetInteger64v", glGetInteger64v == NULL);
+  glewInfoFunc(fi, "glGetSynciv", glGetSynciv == NULL);
+  glewInfoFunc(fi, "glIsSync", glIsSync == NULL);
+  glewInfoFunc(fi, "glWaitSync", glWaitSync == NULL);
 }
 
 #endif /* GL_ARB_sync */
@@ -3089,10 +3126,10 @@ static void _glewInfo_GL_ARB_sync (void)
 
 static void _glewInfo_GL_ARB_tessellation_shader (void)
 {
-  glewPrintExt("GL_ARB_tessellation_shader", GLEW_ARB_tessellation_shader, glewIsSupported("GL_ARB_tessellation_shader"), glewGetExtension("GL_ARB_tessellation_shader"));
+  GLboolean fi = glewPrintExt("GL_ARB_tessellation_shader", GLEW_ARB_tessellation_shader, glewIsSupported("GL_ARB_tessellation_shader"), glewGetExtension("GL_ARB_tessellation_shader"));
 
-  glewInfoFunc("glPatchParameterfv", glPatchParameterfv == NULL);
-  glewInfoFunc("glPatchParameteri", glPatchParameteri == NULL);
+  glewInfoFunc(fi, "glPatchParameterfv", glPatchParameterfv == NULL);
+  glewInfoFunc(fi, "glPatchParameteri", glPatchParameteri == NULL);
 }
 
 #endif /* GL_ARB_tessellation_shader */
@@ -3101,9 +3138,9 @@ static void _glewInfo_GL_ARB_tessellation_shader (void)
 
 static void _glewInfo_GL_ARB_texture_barrier (void)
 {
-  glewPrintExt("GL_ARB_texture_barrier", GLEW_ARB_texture_barrier, glewIsSupported("GL_ARB_texture_barrier"), glewGetExtension("GL_ARB_texture_barrier"));
+  GLboolean fi = glewPrintExt("GL_ARB_texture_barrier", GLEW_ARB_texture_barrier, glewIsSupported("GL_ARB_texture_barrier"), glewGetExtension("GL_ARB_texture_barrier"));
 
-  glewInfoFunc("glTextureBarrier", glTextureBarrier == NULL);
+  glewInfoFunc(fi, "glTextureBarrier", glTextureBarrier == NULL);
 }
 
 #endif /* GL_ARB_texture_barrier */
@@ -3121,9 +3158,9 @@ static void _glewInfo_GL_ARB_texture_border_clamp (void)
 
 static void _glewInfo_GL_ARB_texture_buffer_object (void)
 {
-  glewPrintExt("GL_ARB_texture_buffer_object", GLEW_ARB_texture_buffer_object, glewIsSupported("GL_ARB_texture_buffer_object"), glewGetExtension("GL_ARB_texture_buffer_object"));
+  GLboolean fi = glewPrintExt("GL_ARB_texture_buffer_object", GLEW_ARB_texture_buffer_object, glewIsSupported("GL_ARB_texture_buffer_object"), glewGetExtension("GL_ARB_texture_buffer_object"));
 
-  glewInfoFunc("glTexBufferARB", glTexBufferARB == NULL);
+  glewInfoFunc(fi, "glTexBufferARB", glTexBufferARB == NULL);
 }
 
 #endif /* GL_ARB_texture_buffer_object */
@@ -3141,10 +3178,10 @@ static void _glewInfo_GL_ARB_texture_buffer_object_rgb32 (void)
 
 static void _glewInfo_GL_ARB_texture_buffer_range (void)
 {
-  glewPrintExt("GL_ARB_texture_buffer_range", GLEW_ARB_texture_buffer_range, glewIsSupported("GL_ARB_texture_buffer_range"), glewGetExtension("GL_ARB_texture_buffer_range"));
+  GLboolean fi = glewPrintExt("GL_ARB_texture_buffer_range", GLEW_ARB_texture_buffer_range, glewIsSupported("GL_ARB_texture_buffer_range"), glewGetExtension("GL_ARB_texture_buffer_range"));
 
-  glewInfoFunc("glTexBufferRange", glTexBufferRange == NULL);
-  glewInfoFunc("glTextureBufferRangeEXT", glTextureBufferRangeEXT == NULL);
+  glewInfoFunc(fi, "glTexBufferRange", glTexBufferRange == NULL);
+  glewInfoFunc(fi, "glTextureBufferRangeEXT", glTextureBufferRangeEXT == NULL);
 }
 
 #endif /* GL_ARB_texture_buffer_range */
@@ -3153,15 +3190,15 @@ static void _glewInfo_GL_ARB_texture_buffer_range (void)
 
 static void _glewInfo_GL_ARB_texture_compression (void)
 {
-  glewPrintExt("GL_ARB_texture_compression", GLEW_ARB_texture_compression, glewIsSupported("GL_ARB_texture_compression"), glewGetExtension("GL_ARB_texture_compression"));
+  GLboolean fi = glewPrintExt("GL_ARB_texture_compression", GLEW_ARB_texture_compression, glewIsSupported("GL_ARB_texture_compression"), glewGetExtension("GL_ARB_texture_compression"));
 
-  glewInfoFunc("glCompressedTexImage1DARB", glCompressedTexImage1DARB == NULL);
-  glewInfoFunc("glCompressedTexImage2DARB", glCompressedTexImage2DARB == NULL);
-  glewInfoFunc("glCompressedTexImage3DARB", glCompressedTexImage3DARB == NULL);
-  glewInfoFunc("glCompressedTexSubImage1DARB", glCompressedTexSubImage1DARB == NULL);
-  glewInfoFunc("glCompressedTexSubImage2DARB", glCompressedTexSubImage2DARB == NULL);
-  glewInfoFunc("glCompressedTexSubImage3DARB", glCompressedTexSubImage3DARB == NULL);
-  glewInfoFunc("glGetCompressedTexImageARB", glGetCompressedTexImageARB == NULL);
+  glewInfoFunc(fi, "glCompressedTexImage1DARB", glCompressedTexImage1DARB == NULL);
+  glewInfoFunc(fi, "glCompressedTexImage2DARB", glCompressedTexImage2DARB == NULL);
+  glewInfoFunc(fi, "glCompressedTexImage3DARB", glCompressedTexImage3DARB == NULL);
+  glewInfoFunc(fi, "glCompressedTexSubImage1DARB", glCompressedTexSubImage1DARB == NULL);
+  glewInfoFunc(fi, "glCompressedTexSubImage2DARB", glCompressedTexSubImage2DARB == NULL);
+  glewInfoFunc(fi, "glCompressedTexSubImage3DARB", glCompressedTexSubImage3DARB == NULL);
+  glewInfoFunc(fi, "glGetCompressedTexImageARB", glGetCompressedTexImageARB == NULL);
 }
 
 #endif /* GL_ARB_texture_compression */
@@ -3296,12 +3333,12 @@ static void _glewInfo_GL_ARB_texture_mirrored_repeat (void)
 
 static void _glewInfo_GL_ARB_texture_multisample (void)
 {
-  glewPrintExt("GL_ARB_texture_multisample", GLEW_ARB_texture_multisample, glewIsSupported("GL_ARB_texture_multisample"), glewGetExtension("GL_ARB_texture_multisample"));
+  GLboolean fi = glewPrintExt("GL_ARB_texture_multisample", GLEW_ARB_texture_multisample, glewIsSupported("GL_ARB_texture_multisample"), glewGetExtension("GL_ARB_texture_multisample"));
 
-  glewInfoFunc("glGetMultisamplefv", glGetMultisamplefv == NULL);
-  glewInfoFunc("glSampleMaski", glSampleMaski == NULL);
-  glewInfoFunc("glTexImage2DMultisample", glTexImage2DMultisample == NULL);
-  glewInfoFunc("glTexImage3DMultisample", glTexImage3DMultisample == NULL);
+  glewInfoFunc(fi, "glGetMultisamplefv", glGetMultisamplefv == NULL);
+  glewInfoFunc(fi, "glSampleMaski", glSampleMaski == NULL);
+  glewInfoFunc(fi, "glTexImage2DMultisample", glTexImage2DMultisample == NULL);
+  glewInfoFunc(fi, "glTexImage3DMultisample", glTexImage3DMultisample == NULL);
 }
 
 #endif /* GL_ARB_texture_multisample */
@@ -3373,11 +3410,11 @@ static void _glewInfo_GL_ARB_texture_stencil8 (void)
 
 static void _glewInfo_GL_ARB_texture_storage (void)
 {
-  glewPrintExt("GL_ARB_texture_storage", GLEW_ARB_texture_storage, glewIsSupported("GL_ARB_texture_storage"), glewGetExtension("GL_ARB_texture_storage"));
+  GLboolean fi = glewPrintExt("GL_ARB_texture_storage", GLEW_ARB_texture_storage, glewIsSupported("GL_ARB_texture_storage"), glewGetExtension("GL_ARB_texture_storage"));
 
-  glewInfoFunc("glTexStorage1D", glTexStorage1D == NULL);
-  glewInfoFunc("glTexStorage2D", glTexStorage2D == NULL);
-  glewInfoFunc("glTexStorage3D", glTexStorage3D == NULL);
+  glewInfoFunc(fi, "glTexStorage1D", glTexStorage1D == NULL);
+  glewInfoFunc(fi, "glTexStorage2D", glTexStorage2D == NULL);
+  glewInfoFunc(fi, "glTexStorage3D", glTexStorage3D == NULL);
 }
 
 #endif /* GL_ARB_texture_storage */
@@ -3386,12 +3423,12 @@ static void _glewInfo_GL_ARB_texture_storage (void)
 
 static void _glewInfo_GL_ARB_texture_storage_multisample (void)
 {
-  glewPrintExt("GL_ARB_texture_storage_multisample", GLEW_ARB_texture_storage_multisample, glewIsSupported("GL_ARB_texture_storage_multisample"), glewGetExtension("GL_ARB_texture_storage_multisample"));
+  GLboolean fi = glewPrintExt("GL_ARB_texture_storage_multisample", GLEW_ARB_texture_storage_multisample, glewIsSupported("GL_ARB_texture_storage_multisample"), glewGetExtension("GL_ARB_texture_storage_multisample"));
 
-  glewInfoFunc("glTexStorage2DMultisample", glTexStorage2DMultisample == NULL);
-  glewInfoFunc("glTexStorage3DMultisample", glTexStorage3DMultisample == NULL);
-  glewInfoFunc("glTextureStorage2DMultisampleEXT", glTextureStorage2DMultisampleEXT == NULL);
-  glewInfoFunc("glTextureStorage3DMultisampleEXT", glTextureStorage3DMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glTexStorage2DMultisample", glTexStorage2DMultisample == NULL);
+  glewInfoFunc(fi, "glTexStorage3DMultisample", glTexStorage3DMultisample == NULL);
+  glewInfoFunc(fi, "glTextureStorage2DMultisampleEXT", glTextureStorage2DMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorage3DMultisampleEXT", glTextureStorage3DMultisampleEXT == NULL);
 }
 
 #endif /* GL_ARB_texture_storage_multisample */
@@ -3409,9 +3446,9 @@ static void _glewInfo_GL_ARB_texture_swizzle (void)
 
 static void _glewInfo_GL_ARB_texture_view (void)
 {
-  glewPrintExt("GL_ARB_texture_view", GLEW_ARB_texture_view, glewIsSupported("GL_ARB_texture_view"), glewGetExtension("GL_ARB_texture_view"));
+  GLboolean fi = glewPrintExt("GL_ARB_texture_view", GLEW_ARB_texture_view, glewIsSupported("GL_ARB_texture_view"), glewGetExtension("GL_ARB_texture_view"));
 
-  glewInfoFunc("glTextureView", glTextureView == NULL);
+  glewInfoFunc(fi, "glTextureView", glTextureView == NULL);
 }
 
 #endif /* GL_ARB_texture_view */
@@ -3420,11 +3457,11 @@ static void _glewInfo_GL_ARB_texture_view (void)
 
 static void _glewInfo_GL_ARB_timer_query (void)
 {
-  glewPrintExt("GL_ARB_timer_query", GLEW_ARB_timer_query, glewIsSupported("GL_ARB_timer_query"), glewGetExtension("GL_ARB_timer_query"));
+  GLboolean fi = glewPrintExt("GL_ARB_timer_query", GLEW_ARB_timer_query, glewIsSupported("GL_ARB_timer_query"), glewGetExtension("GL_ARB_timer_query"));
 
-  glewInfoFunc("glGetQueryObjecti64v", glGetQueryObjecti64v == NULL);
-  glewInfoFunc("glGetQueryObjectui64v", glGetQueryObjectui64v == NULL);
-  glewInfoFunc("glQueryCounter", glQueryCounter == NULL);
+  glewInfoFunc(fi, "glGetQueryObjecti64v", glGetQueryObjecti64v == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectui64v", glGetQueryObjectui64v == NULL);
+  glewInfoFunc(fi, "glQueryCounter", glQueryCounter == NULL);
 }
 
 #endif /* GL_ARB_timer_query */
@@ -3433,15 +3470,15 @@ static void _glewInfo_GL_ARB_timer_query (void)
 
 static void _glewInfo_GL_ARB_transform_feedback2 (void)
 {
-  glewPrintExt("GL_ARB_transform_feedback2", GLEW_ARB_transform_feedback2, glewIsSupported("GL_ARB_transform_feedback2"), glewGetExtension("GL_ARB_transform_feedback2"));
+  GLboolean fi = glewPrintExt("GL_ARB_transform_feedback2", GLEW_ARB_transform_feedback2, glewIsSupported("GL_ARB_transform_feedback2"), glewGetExtension("GL_ARB_transform_feedback2"));
 
-  glewInfoFunc("glBindTransformFeedback", glBindTransformFeedback == NULL);
-  glewInfoFunc("glDeleteTransformFeedbacks", glDeleteTransformFeedbacks == NULL);
-  glewInfoFunc("glDrawTransformFeedback", glDrawTransformFeedback == NULL);
-  glewInfoFunc("glGenTransformFeedbacks", glGenTransformFeedbacks == NULL);
-  glewInfoFunc("glIsTransformFeedback", glIsTransformFeedback == NULL);
-  glewInfoFunc("glPauseTransformFeedback", glPauseTransformFeedback == NULL);
-  glewInfoFunc("glResumeTransformFeedback", glResumeTransformFeedback == NULL);
+  glewInfoFunc(fi, "glBindTransformFeedback", glBindTransformFeedback == NULL);
+  glewInfoFunc(fi, "glDeleteTransformFeedbacks", glDeleteTransformFeedbacks == NULL);
+  glewInfoFunc(fi, "glDrawTransformFeedback", glDrawTransformFeedback == NULL);
+  glewInfoFunc(fi, "glGenTransformFeedbacks", glGenTransformFeedbacks == NULL);
+  glewInfoFunc(fi, "glIsTransformFeedback", glIsTransformFeedback == NULL);
+  glewInfoFunc(fi, "glPauseTransformFeedback", glPauseTransformFeedback == NULL);
+  glewInfoFunc(fi, "glResumeTransformFeedback", glResumeTransformFeedback == NULL);
 }
 
 #endif /* GL_ARB_transform_feedback2 */
@@ -3450,12 +3487,12 @@ static void _glewInfo_GL_ARB_transform_feedback2 (void)
 
 static void _glewInfo_GL_ARB_transform_feedback3 (void)
 {
-  glewPrintExt("GL_ARB_transform_feedback3", GLEW_ARB_transform_feedback3, glewIsSupported("GL_ARB_transform_feedback3"), glewGetExtension("GL_ARB_transform_feedback3"));
+  GLboolean fi = glewPrintExt("GL_ARB_transform_feedback3", GLEW_ARB_transform_feedback3, glewIsSupported("GL_ARB_transform_feedback3"), glewGetExtension("GL_ARB_transform_feedback3"));
 
-  glewInfoFunc("glBeginQueryIndexed", glBeginQueryIndexed == NULL);
-  glewInfoFunc("glDrawTransformFeedbackStream", glDrawTransformFeedbackStream == NULL);
-  glewInfoFunc("glEndQueryIndexed", glEndQueryIndexed == NULL);
-  glewInfoFunc("glGetQueryIndexediv", glGetQueryIndexediv == NULL);
+  glewInfoFunc(fi, "glBeginQueryIndexed", glBeginQueryIndexed == NULL);
+  glewInfoFunc(fi, "glDrawTransformFeedbackStream", glDrawTransformFeedbackStream == NULL);
+  glewInfoFunc(fi, "glEndQueryIndexed", glEndQueryIndexed == NULL);
+  glewInfoFunc(fi, "glGetQueryIndexediv", glGetQueryIndexediv == NULL);
 }
 
 #endif /* GL_ARB_transform_feedback3 */
@@ -3464,10 +3501,10 @@ static void _glewInfo_GL_ARB_transform_feedback3 (void)
 
 static void _glewInfo_GL_ARB_transform_feedback_instanced (void)
 {
-  glewPrintExt("GL_ARB_transform_feedback_instanced", GLEW_ARB_transform_feedback_instanced, glewIsSupported("GL_ARB_transform_feedback_instanced"), glewGetExtension("GL_ARB_transform_feedback_instanced"));
+  GLboolean fi = glewPrintExt("GL_ARB_transform_feedback_instanced", GLEW_ARB_transform_feedback_instanced, glewIsSupported("GL_ARB_transform_feedback_instanced"), glewGetExtension("GL_ARB_transform_feedback_instanced"));
 
-  glewInfoFunc("glDrawTransformFeedbackInstanced", glDrawTransformFeedbackInstanced == NULL);
-  glewInfoFunc("glDrawTransformFeedbackStreamInstanced", glDrawTransformFeedbackStreamInstanced == NULL);
+  glewInfoFunc(fi, "glDrawTransformFeedbackInstanced", glDrawTransformFeedbackInstanced == NULL);
+  glewInfoFunc(fi, "glDrawTransformFeedbackStreamInstanced", glDrawTransformFeedbackStreamInstanced == NULL);
 }
 
 #endif /* GL_ARB_transform_feedback_instanced */
@@ -3485,12 +3522,12 @@ static void _glewInfo_GL_ARB_transform_feedback_overflow_query (void)
 
 static void _glewInfo_GL_ARB_transpose_matrix (void)
 {
-  glewPrintExt("GL_ARB_transpose_matrix", GLEW_ARB_transpose_matrix, glewIsSupported("GL_ARB_transpose_matrix"), glewGetExtension("GL_ARB_transpose_matrix"));
+  GLboolean fi = glewPrintExt("GL_ARB_transpose_matrix", GLEW_ARB_transpose_matrix, glewIsSupported("GL_ARB_transpose_matrix"), glewGetExtension("GL_ARB_transpose_matrix"));
 
-  glewInfoFunc("glLoadTransposeMatrixdARB", glLoadTransposeMatrixdARB == NULL);
-  glewInfoFunc("glLoadTransposeMatrixfARB", glLoadTransposeMatrixfARB == NULL);
-  glewInfoFunc("glMultTransposeMatrixdARB", glMultTransposeMatrixdARB == NULL);
-  glewInfoFunc("glMultTransposeMatrixfARB", glMultTransposeMatrixfARB == NULL);
+  glewInfoFunc(fi, "glLoadTransposeMatrixdARB", glLoadTransposeMatrixdARB == NULL);
+  glewInfoFunc(fi, "glLoadTransposeMatrixfARB", glLoadTransposeMatrixfARB == NULL);
+  glewInfoFunc(fi, "glMultTransposeMatrixdARB", glMultTransposeMatrixdARB == NULL);
+  glewInfoFunc(fi, "glMultTransposeMatrixfARB", glMultTransposeMatrixfARB == NULL);
 }
 
 #endif /* GL_ARB_transpose_matrix */
@@ -3499,18 +3536,18 @@ static void _glewInfo_GL_ARB_transpose_matrix (void)
 
 static void _glewInfo_GL_ARB_uniform_buffer_object (void)
 {
-  glewPrintExt("GL_ARB_uniform_buffer_object", GLEW_ARB_uniform_buffer_object, glewIsSupported("GL_ARB_uniform_buffer_object"), glewGetExtension("GL_ARB_uniform_buffer_object"));
+  GLboolean fi = glewPrintExt("GL_ARB_uniform_buffer_object", GLEW_ARB_uniform_buffer_object, glewIsSupported("GL_ARB_uniform_buffer_object"), glewGetExtension("GL_ARB_uniform_buffer_object"));
 
-  glewInfoFunc("glBindBufferBase", glBindBufferBase == NULL);
-  glewInfoFunc("glBindBufferRange", glBindBufferRange == NULL);
-  glewInfoFunc("glGetActiveUniformBlockName", glGetActiveUniformBlockName == NULL);
-  glewInfoFunc("glGetActiveUniformBlockiv", glGetActiveUniformBlockiv == NULL);
-  glewInfoFunc("glGetActiveUniformName", glGetActiveUniformName == NULL);
-  glewInfoFunc("glGetActiveUniformsiv", glGetActiveUniformsiv == NULL);
-  glewInfoFunc("glGetIntegeri_v", glGetIntegeri_v == NULL);
-  glewInfoFunc("glGetUniformBlockIndex", glGetUniformBlockIndex == NULL);
-  glewInfoFunc("glGetUniformIndices", glGetUniformIndices == NULL);
-  glewInfoFunc("glUniformBlockBinding", glUniformBlockBinding == NULL);
+  glewInfoFunc(fi, "glBindBufferBase", glBindBufferBase == NULL);
+  glewInfoFunc(fi, "glBindBufferRange", glBindBufferRange == NULL);
+  glewInfoFunc(fi, "glGetActiveUniformBlockName", glGetActiveUniformBlockName == NULL);
+  glewInfoFunc(fi, "glGetActiveUniformBlockiv", glGetActiveUniformBlockiv == NULL);
+  glewInfoFunc(fi, "glGetActiveUniformName", glGetActiveUniformName == NULL);
+  glewInfoFunc(fi, "glGetActiveUniformsiv", glGetActiveUniformsiv == NULL);
+  glewInfoFunc(fi, "glGetIntegeri_v", glGetIntegeri_v == NULL);
+  glewInfoFunc(fi, "glGetUniformBlockIndex", glGetUniformBlockIndex == NULL);
+  glewInfoFunc(fi, "glGetUniformIndices", glGetUniformIndices == NULL);
+  glewInfoFunc(fi, "glUniformBlockBinding", glUniformBlockBinding == NULL);
 }
 
 #endif /* GL_ARB_uniform_buffer_object */
@@ -3528,12 +3565,12 @@ static void _glewInfo_GL_ARB_vertex_array_bgra (void)
 
 static void _glewInfo_GL_ARB_vertex_array_object (void)
 {
-  glewPrintExt("GL_ARB_vertex_array_object", GLEW_ARB_vertex_array_object, glewIsSupported("GL_ARB_vertex_array_object"), glewGetExtension("GL_ARB_vertex_array_object"));
+  GLboolean fi = glewPrintExt("GL_ARB_vertex_array_object", GLEW_ARB_vertex_array_object, glewIsSupported("GL_ARB_vertex_array_object"), glewGetExtension("GL_ARB_vertex_array_object"));
 
-  glewInfoFunc("glBindVertexArray", glBindVertexArray == NULL);
-  glewInfoFunc("glDeleteVertexArrays", glDeleteVertexArrays == NULL);
-  glewInfoFunc("glGenVertexArrays", glGenVertexArrays == NULL);
-  glewInfoFunc("glIsVertexArray", glIsVertexArray == NULL);
+  glewInfoFunc(fi, "glBindVertexArray", glBindVertexArray == NULL);
+  glewInfoFunc(fi, "glDeleteVertexArrays", glDeleteVertexArrays == NULL);
+  glewInfoFunc(fi, "glGenVertexArrays", glGenVertexArrays == NULL);
+  glewInfoFunc(fi, "glIsVertexArray", glIsVertexArray == NULL);
 }
 
 #endif /* GL_ARB_vertex_array_object */
@@ -3542,18 +3579,18 @@ static void _glewInfo_GL_ARB_vertex_array_object (void)
 
 static void _glewInfo_GL_ARB_vertex_attrib_64bit (void)
 {
-  glewPrintExt("GL_ARB_vertex_attrib_64bit", GLEW_ARB_vertex_attrib_64bit, glewIsSupported("GL_ARB_vertex_attrib_64bit"), glewGetExtension("GL_ARB_vertex_attrib_64bit"));
+  GLboolean fi = glewPrintExt("GL_ARB_vertex_attrib_64bit", GLEW_ARB_vertex_attrib_64bit, glewIsSupported("GL_ARB_vertex_attrib_64bit"), glewGetExtension("GL_ARB_vertex_attrib_64bit"));
 
-  glewInfoFunc("glGetVertexAttribLdv", glGetVertexAttribLdv == NULL);
-  glewInfoFunc("glVertexAttribL1d", glVertexAttribL1d == NULL);
-  glewInfoFunc("glVertexAttribL1dv", glVertexAttribL1dv == NULL);
-  glewInfoFunc("glVertexAttribL2d", glVertexAttribL2d == NULL);
-  glewInfoFunc("glVertexAttribL2dv", glVertexAttribL2dv == NULL);
-  glewInfoFunc("glVertexAttribL3d", glVertexAttribL3d == NULL);
-  glewInfoFunc("glVertexAttribL3dv", glVertexAttribL3dv == NULL);
-  glewInfoFunc("glVertexAttribL4d", glVertexAttribL4d == NULL);
-  glewInfoFunc("glVertexAttribL4dv", glVertexAttribL4dv == NULL);
-  glewInfoFunc("glVertexAttribLPointer", glVertexAttribLPointer == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribLdv", glGetVertexAttribLdv == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1d", glVertexAttribL1d == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1dv", glVertexAttribL1dv == NULL);
+  glewInfoFunc(fi, "glVertexAttribL2d", glVertexAttribL2d == NULL);
+  glewInfoFunc(fi, "glVertexAttribL2dv", glVertexAttribL2dv == NULL);
+  glewInfoFunc(fi, "glVertexAttribL3d", glVertexAttribL3d == NULL);
+  glewInfoFunc(fi, "glVertexAttribL3dv", glVertexAttribL3dv == NULL);
+  glewInfoFunc(fi, "glVertexAttribL4d", glVertexAttribL4d == NULL);
+  glewInfoFunc(fi, "glVertexAttribL4dv", glVertexAttribL4dv == NULL);
+  glewInfoFunc(fi, "glVertexAttribLPointer", glVertexAttribLPointer == NULL);
 }
 
 #endif /* GL_ARB_vertex_attrib_64bit */
@@ -3562,20 +3599,20 @@ static void _glewInfo_GL_ARB_vertex_attrib_64bit (void)
 
 static void _glewInfo_GL_ARB_vertex_attrib_binding (void)
 {
-  glewPrintExt("GL_ARB_vertex_attrib_binding", GLEW_ARB_vertex_attrib_binding, glewIsSupported("GL_ARB_vertex_attrib_binding"), glewGetExtension("GL_ARB_vertex_attrib_binding"));
+  GLboolean fi = glewPrintExt("GL_ARB_vertex_attrib_binding", GLEW_ARB_vertex_attrib_binding, glewIsSupported("GL_ARB_vertex_attrib_binding"), glewGetExtension("GL_ARB_vertex_attrib_binding"));
 
-  glewInfoFunc("glBindVertexBuffer", glBindVertexBuffer == NULL);
-  glewInfoFunc("glVertexArrayBindVertexBufferEXT", glVertexArrayBindVertexBufferEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexAttribBindingEXT", glVertexArrayVertexAttribBindingEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexAttribFormatEXT", glVertexArrayVertexAttribFormatEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexAttribIFormatEXT", glVertexArrayVertexAttribIFormatEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexAttribLFormatEXT", glVertexArrayVertexAttribLFormatEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexBindingDivisorEXT", glVertexArrayVertexBindingDivisorEXT == NULL);
-  glewInfoFunc("glVertexAttribBinding", glVertexAttribBinding == NULL);
-  glewInfoFunc("glVertexAttribFormat", glVertexAttribFormat == NULL);
-  glewInfoFunc("glVertexAttribIFormat", glVertexAttribIFormat == NULL);
-  glewInfoFunc("glVertexAttribLFormat", glVertexAttribLFormat == NULL);
-  glewInfoFunc("glVertexBindingDivisor", glVertexBindingDivisor == NULL);
+  glewInfoFunc(fi, "glBindVertexBuffer", glBindVertexBuffer == NULL);
+  glewInfoFunc(fi, "glVertexArrayBindVertexBufferEXT", glVertexArrayBindVertexBufferEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexAttribBindingEXT", glVertexArrayVertexAttribBindingEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexAttribFormatEXT", glVertexArrayVertexAttribFormatEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexAttribIFormatEXT", glVertexArrayVertexAttribIFormatEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexAttribLFormatEXT", glVertexArrayVertexAttribLFormatEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexBindingDivisorEXT", glVertexArrayVertexBindingDivisorEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribBinding", glVertexAttribBinding == NULL);
+  glewInfoFunc(fi, "glVertexAttribFormat", glVertexAttribFormat == NULL);
+  glewInfoFunc(fi, "glVertexAttribIFormat", glVertexAttribIFormat == NULL);
+  glewInfoFunc(fi, "glVertexAttribLFormat", glVertexAttribLFormat == NULL);
+  glewInfoFunc(fi, "glVertexBindingDivisor", glVertexBindingDivisor == NULL);
 }
 
 #endif /* GL_ARB_vertex_attrib_binding */
@@ -3584,18 +3621,18 @@ static void _glewInfo_GL_ARB_vertex_attrib_binding (void)
 
 static void _glewInfo_GL_ARB_vertex_blend (void)
 {
-  glewPrintExt("GL_ARB_vertex_blend", GLEW_ARB_vertex_blend, glewIsSupported("GL_ARB_vertex_blend"), glewGetExtension("GL_ARB_vertex_blend"));
+  GLboolean fi = glewPrintExt("GL_ARB_vertex_blend", GLEW_ARB_vertex_blend, glewIsSupported("GL_ARB_vertex_blend"), glewGetExtension("GL_ARB_vertex_blend"));
 
-  glewInfoFunc("glVertexBlendARB", glVertexBlendARB == NULL);
-  glewInfoFunc("glWeightPointerARB", glWeightPointerARB == NULL);
-  glewInfoFunc("glWeightbvARB", glWeightbvARB == NULL);
-  glewInfoFunc("glWeightdvARB", glWeightdvARB == NULL);
-  glewInfoFunc("glWeightfvARB", glWeightfvARB == NULL);
-  glewInfoFunc("glWeightivARB", glWeightivARB == NULL);
-  glewInfoFunc("glWeightsvARB", glWeightsvARB == NULL);
-  glewInfoFunc("glWeightubvARB", glWeightubvARB == NULL);
-  glewInfoFunc("glWeightuivARB", glWeightuivARB == NULL);
-  glewInfoFunc("glWeightusvARB", glWeightusvARB == NULL);
+  glewInfoFunc(fi, "glVertexBlendARB", glVertexBlendARB == NULL);
+  glewInfoFunc(fi, "glWeightPointerARB", glWeightPointerARB == NULL);
+  glewInfoFunc(fi, "glWeightbvARB", glWeightbvARB == NULL);
+  glewInfoFunc(fi, "glWeightdvARB", glWeightdvARB == NULL);
+  glewInfoFunc(fi, "glWeightfvARB", glWeightfvARB == NULL);
+  glewInfoFunc(fi, "glWeightivARB", glWeightivARB == NULL);
+  glewInfoFunc(fi, "glWeightsvARB", glWeightsvARB == NULL);
+  glewInfoFunc(fi, "glWeightubvARB", glWeightubvARB == NULL);
+  glewInfoFunc(fi, "glWeightuivARB", glWeightuivARB == NULL);
+  glewInfoFunc(fi, "glWeightusvARB", glWeightusvARB == NULL);
 }
 
 #endif /* GL_ARB_vertex_blend */
@@ -3604,19 +3641,19 @@ static void _glewInfo_GL_ARB_vertex_blend (void)
 
 static void _glewInfo_GL_ARB_vertex_buffer_object (void)
 {
-  glewPrintExt("GL_ARB_vertex_buffer_object", GLEW_ARB_vertex_buffer_object, glewIsSupported("GL_ARB_vertex_buffer_object"), glewGetExtension("GL_ARB_vertex_buffer_object"));
+  GLboolean fi = glewPrintExt("GL_ARB_vertex_buffer_object", GLEW_ARB_vertex_buffer_object, glewIsSupported("GL_ARB_vertex_buffer_object"), glewGetExtension("GL_ARB_vertex_buffer_object"));
 
-  glewInfoFunc("glBindBufferARB", glBindBufferARB == NULL);
-  glewInfoFunc("glBufferDataARB", glBufferDataARB == NULL);
-  glewInfoFunc("glBufferSubDataARB", glBufferSubDataARB == NULL);
-  glewInfoFunc("glDeleteBuffersARB", glDeleteBuffersARB == NULL);
-  glewInfoFunc("glGenBuffersARB", glGenBuffersARB == NULL);
-  glewInfoFunc("glGetBufferParameterivARB", glGetBufferParameterivARB == NULL);
-  glewInfoFunc("glGetBufferPointervARB", glGetBufferPointervARB == NULL);
-  glewInfoFunc("glGetBufferSubDataARB", glGetBufferSubDataARB == NULL);
-  glewInfoFunc("glIsBufferARB", glIsBufferARB == NULL);
-  glewInfoFunc("glMapBufferARB", glMapBufferARB == NULL);
-  glewInfoFunc("glUnmapBufferARB", glUnmapBufferARB == NULL);
+  glewInfoFunc(fi, "glBindBufferARB", glBindBufferARB == NULL);
+  glewInfoFunc(fi, "glBufferDataARB", glBufferDataARB == NULL);
+  glewInfoFunc(fi, "glBufferSubDataARB", glBufferSubDataARB == NULL);
+  glewInfoFunc(fi, "glDeleteBuffersARB", glDeleteBuffersARB == NULL);
+  glewInfoFunc(fi, "glGenBuffersARB", glGenBuffersARB == NULL);
+  glewInfoFunc(fi, "glGetBufferParameterivARB", glGetBufferParameterivARB == NULL);
+  glewInfoFunc(fi, "glGetBufferPointervARB", glGetBufferPointervARB == NULL);
+  glewInfoFunc(fi, "glGetBufferSubDataARB", glGetBufferSubDataARB == NULL);
+  glewInfoFunc(fi, "glIsBufferARB", glIsBufferARB == NULL);
+  glewInfoFunc(fi, "glMapBufferARB", glMapBufferARB == NULL);
+  glewInfoFunc(fi, "glUnmapBufferARB", glUnmapBufferARB == NULL);
 }
 
 #endif /* GL_ARB_vertex_buffer_object */
@@ -3625,70 +3662,70 @@ static void _glewInfo_GL_ARB_vertex_buffer_object (void)
 
 static void _glewInfo_GL_ARB_vertex_program (void)
 {
-  glewPrintExt("GL_ARB_vertex_program", GLEW_ARB_vertex_program, glewIsSupported("GL_ARB_vertex_program"), glewGetExtension("GL_ARB_vertex_program"));
+  GLboolean fi = glewPrintExt("GL_ARB_vertex_program", GLEW_ARB_vertex_program, glewIsSupported("GL_ARB_vertex_program"), glewGetExtension("GL_ARB_vertex_program"));
 
-  glewInfoFunc("glBindProgramARB", glBindProgramARB == NULL);
-  glewInfoFunc("glDeleteProgramsARB", glDeleteProgramsARB == NULL);
-  glewInfoFunc("glDisableVertexAttribArrayARB", glDisableVertexAttribArrayARB == NULL);
-  glewInfoFunc("glEnableVertexAttribArrayARB", glEnableVertexAttribArrayARB == NULL);
-  glewInfoFunc("glGenProgramsARB", glGenProgramsARB == NULL);
-  glewInfoFunc("glGetProgramEnvParameterdvARB", glGetProgramEnvParameterdvARB == NULL);
-  glewInfoFunc("glGetProgramEnvParameterfvARB", glGetProgramEnvParameterfvARB == NULL);
-  glewInfoFunc("glGetProgramLocalParameterdvARB", glGetProgramLocalParameterdvARB == NULL);
-  glewInfoFunc("glGetProgramLocalParameterfvARB", glGetProgramLocalParameterfvARB == NULL);
-  glewInfoFunc("glGetProgramStringARB", glGetProgramStringARB == NULL);
-  glewInfoFunc("glGetProgramivARB", glGetProgramivARB == NULL);
-  glewInfoFunc("glGetVertexAttribPointervARB", glGetVertexAttribPointervARB == NULL);
-  glewInfoFunc("glGetVertexAttribdvARB", glGetVertexAttribdvARB == NULL);
-  glewInfoFunc("glGetVertexAttribfvARB", glGetVertexAttribfvARB == NULL);
-  glewInfoFunc("glGetVertexAttribivARB", glGetVertexAttribivARB == NULL);
-  glewInfoFunc("glIsProgramARB", glIsProgramARB == NULL);
-  glewInfoFunc("glProgramEnvParameter4dARB", glProgramEnvParameter4dARB == NULL);
-  glewInfoFunc("glProgramEnvParameter4dvARB", glProgramEnvParameter4dvARB == NULL);
-  glewInfoFunc("glProgramEnvParameter4fARB", glProgramEnvParameter4fARB == NULL);
-  glewInfoFunc("glProgramEnvParameter4fvARB", glProgramEnvParameter4fvARB == NULL);
-  glewInfoFunc("glProgramLocalParameter4dARB", glProgramLocalParameter4dARB == NULL);
-  glewInfoFunc("glProgramLocalParameter4dvARB", glProgramLocalParameter4dvARB == NULL);
-  glewInfoFunc("glProgramLocalParameter4fARB", glProgramLocalParameter4fARB == NULL);
-  glewInfoFunc("glProgramLocalParameter4fvARB", glProgramLocalParameter4fvARB == NULL);
-  glewInfoFunc("glProgramStringARB", glProgramStringARB == NULL);
-  glewInfoFunc("glVertexAttrib1dARB", glVertexAttrib1dARB == NULL);
-  glewInfoFunc("glVertexAttrib1dvARB", glVertexAttrib1dvARB == NULL);
-  glewInfoFunc("glVertexAttrib1fARB", glVertexAttrib1fARB == NULL);
-  glewInfoFunc("glVertexAttrib1fvARB", glVertexAttrib1fvARB == NULL);
-  glewInfoFunc("glVertexAttrib1sARB", glVertexAttrib1sARB == NULL);
-  glewInfoFunc("glVertexAttrib1svARB", glVertexAttrib1svARB == NULL);
-  glewInfoFunc("glVertexAttrib2dARB", glVertexAttrib2dARB == NULL);
-  glewInfoFunc("glVertexAttrib2dvARB", glVertexAttrib2dvARB == NULL);
-  glewInfoFunc("glVertexAttrib2fARB", glVertexAttrib2fARB == NULL);
-  glewInfoFunc("glVertexAttrib2fvARB", glVertexAttrib2fvARB == NULL);
-  glewInfoFunc("glVertexAttrib2sARB", glVertexAttrib2sARB == NULL);
-  glewInfoFunc("glVertexAttrib2svARB", glVertexAttrib2svARB == NULL);
-  glewInfoFunc("glVertexAttrib3dARB", glVertexAttrib3dARB == NULL);
-  glewInfoFunc("glVertexAttrib3dvARB", glVertexAttrib3dvARB == NULL);
-  glewInfoFunc("glVertexAttrib3fARB", glVertexAttrib3fARB == NULL);
-  glewInfoFunc("glVertexAttrib3fvARB", glVertexAttrib3fvARB == NULL);
-  glewInfoFunc("glVertexAttrib3sARB", glVertexAttrib3sARB == NULL);
-  glewInfoFunc("glVertexAttrib3svARB", glVertexAttrib3svARB == NULL);
-  glewInfoFunc("glVertexAttrib4NbvARB", glVertexAttrib4NbvARB == NULL);
-  glewInfoFunc("glVertexAttrib4NivARB", glVertexAttrib4NivARB == NULL);
-  glewInfoFunc("glVertexAttrib4NsvARB", glVertexAttrib4NsvARB == NULL);
-  glewInfoFunc("glVertexAttrib4NubARB", glVertexAttrib4NubARB == NULL);
-  glewInfoFunc("glVertexAttrib4NubvARB", glVertexAttrib4NubvARB == NULL);
-  glewInfoFunc("glVertexAttrib4NuivARB", glVertexAttrib4NuivARB == NULL);
-  glewInfoFunc("glVertexAttrib4NusvARB", glVertexAttrib4NusvARB == NULL);
-  glewInfoFunc("glVertexAttrib4bvARB", glVertexAttrib4bvARB == NULL);
-  glewInfoFunc("glVertexAttrib4dARB", glVertexAttrib4dARB == NULL);
-  glewInfoFunc("glVertexAttrib4dvARB", glVertexAttrib4dvARB == NULL);
-  glewInfoFunc("glVertexAttrib4fARB", glVertexAttrib4fARB == NULL);
-  glewInfoFunc("glVertexAttrib4fvARB", glVertexAttrib4fvARB == NULL);
-  glewInfoFunc("glVertexAttrib4ivARB", glVertexAttrib4ivARB == NULL);
-  glewInfoFunc("glVertexAttrib4sARB", glVertexAttrib4sARB == NULL);
-  glewInfoFunc("glVertexAttrib4svARB", glVertexAttrib4svARB == NULL);
-  glewInfoFunc("glVertexAttrib4ubvARB", glVertexAttrib4ubvARB == NULL);
-  glewInfoFunc("glVertexAttrib4uivARB", glVertexAttrib4uivARB == NULL);
-  glewInfoFunc("glVertexAttrib4usvARB", glVertexAttrib4usvARB == NULL);
-  glewInfoFunc("glVertexAttribPointerARB", glVertexAttribPointerARB == NULL);
+  glewInfoFunc(fi, "glBindProgramARB", glBindProgramARB == NULL);
+  glewInfoFunc(fi, "glDeleteProgramsARB", glDeleteProgramsARB == NULL);
+  glewInfoFunc(fi, "glDisableVertexAttribArrayARB", glDisableVertexAttribArrayARB == NULL);
+  glewInfoFunc(fi, "glEnableVertexAttribArrayARB", glEnableVertexAttribArrayARB == NULL);
+  glewInfoFunc(fi, "glGenProgramsARB", glGenProgramsARB == NULL);
+  glewInfoFunc(fi, "glGetProgramEnvParameterdvARB", glGetProgramEnvParameterdvARB == NULL);
+  glewInfoFunc(fi, "glGetProgramEnvParameterfvARB", glGetProgramEnvParameterfvARB == NULL);
+  glewInfoFunc(fi, "glGetProgramLocalParameterdvARB", glGetProgramLocalParameterdvARB == NULL);
+  glewInfoFunc(fi, "glGetProgramLocalParameterfvARB", glGetProgramLocalParameterfvARB == NULL);
+  glewInfoFunc(fi, "glGetProgramStringARB", glGetProgramStringARB == NULL);
+  glewInfoFunc(fi, "glGetProgramivARB", glGetProgramivARB == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribPointervARB", glGetVertexAttribPointervARB == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribdvARB", glGetVertexAttribdvARB == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribfvARB", glGetVertexAttribfvARB == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribivARB", glGetVertexAttribivARB == NULL);
+  glewInfoFunc(fi, "glIsProgramARB", glIsProgramARB == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameter4dARB", glProgramEnvParameter4dARB == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameter4dvARB", glProgramEnvParameter4dvARB == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameter4fARB", glProgramEnvParameter4fARB == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameter4fvARB", glProgramEnvParameter4fvARB == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameter4dARB", glProgramLocalParameter4dARB == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameter4dvARB", glProgramLocalParameter4dvARB == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameter4fARB", glProgramLocalParameter4fARB == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameter4fvARB", glProgramLocalParameter4fvARB == NULL);
+  glewInfoFunc(fi, "glProgramStringARB", glProgramStringARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1dARB", glVertexAttrib1dARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1dvARB", glVertexAttrib1dvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1fARB", glVertexAttrib1fARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1fvARB", glVertexAttrib1fvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1sARB", glVertexAttrib1sARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1svARB", glVertexAttrib1svARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2dARB", glVertexAttrib2dARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2dvARB", glVertexAttrib2dvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2fARB", glVertexAttrib2fARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2fvARB", glVertexAttrib2fvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2sARB", glVertexAttrib2sARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2svARB", glVertexAttrib2svARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3dARB", glVertexAttrib3dARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3dvARB", glVertexAttrib3dvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3fARB", glVertexAttrib3fARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3fvARB", glVertexAttrib3fvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3sARB", glVertexAttrib3sARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3svARB", glVertexAttrib3svARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4NbvARB", glVertexAttrib4NbvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4NivARB", glVertexAttrib4NivARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4NsvARB", glVertexAttrib4NsvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4NubARB", glVertexAttrib4NubARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4NubvARB", glVertexAttrib4NubvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4NuivARB", glVertexAttrib4NuivARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4NusvARB", glVertexAttrib4NusvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4bvARB", glVertexAttrib4bvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4dARB", glVertexAttrib4dARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4dvARB", glVertexAttrib4dvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4fARB", glVertexAttrib4fARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4fvARB", glVertexAttrib4fvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4ivARB", glVertexAttrib4ivARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4sARB", glVertexAttrib4sARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4svARB", glVertexAttrib4svARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4ubvARB", glVertexAttrib4ubvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4uivARB", glVertexAttrib4uivARB == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4usvARB", glVertexAttrib4usvARB == NULL);
+  glewInfoFunc(fi, "glVertexAttribPointerARB", glVertexAttribPointerARB == NULL);
 }
 
 #endif /* GL_ARB_vertex_program */
@@ -3697,11 +3734,11 @@ static void _glewInfo_GL_ARB_vertex_program (void)
 
 static void _glewInfo_GL_ARB_vertex_shader (void)
 {
-  glewPrintExt("GL_ARB_vertex_shader", GLEW_ARB_vertex_shader, glewIsSupported("GL_ARB_vertex_shader"), glewGetExtension("GL_ARB_vertex_shader"));
+  GLboolean fi = glewPrintExt("GL_ARB_vertex_shader", GLEW_ARB_vertex_shader, glewIsSupported("GL_ARB_vertex_shader"), glewGetExtension("GL_ARB_vertex_shader"));
 
-  glewInfoFunc("glBindAttribLocationARB", glBindAttribLocationARB == NULL);
-  glewInfoFunc("glGetActiveAttribARB", glGetActiveAttribARB == NULL);
-  glewInfoFunc("glGetAttribLocationARB", glGetAttribLocationARB == NULL);
+  glewInfoFunc(fi, "glBindAttribLocationARB", glBindAttribLocationARB == NULL);
+  glewInfoFunc(fi, "glGetActiveAttribARB", glGetActiveAttribARB == NULL);
+  glewInfoFunc(fi, "glGetAttribLocationARB", glGetAttribLocationARB == NULL);
 }
 
 #endif /* GL_ARB_vertex_shader */
@@ -3719,46 +3756,46 @@ static void _glewInfo_GL_ARB_vertex_type_10f_11f_11f_rev (void)
 
 static void _glewInfo_GL_ARB_vertex_type_2_10_10_10_rev (void)
 {
-  glewPrintExt("GL_ARB_vertex_type_2_10_10_10_rev", GLEW_ARB_vertex_type_2_10_10_10_rev, glewIsSupported("GL_ARB_vertex_type_2_10_10_10_rev"), glewGetExtension("GL_ARB_vertex_type_2_10_10_10_rev"));
+  GLboolean fi = glewPrintExt("GL_ARB_vertex_type_2_10_10_10_rev", GLEW_ARB_vertex_type_2_10_10_10_rev, glewIsSupported("GL_ARB_vertex_type_2_10_10_10_rev"), glewGetExtension("GL_ARB_vertex_type_2_10_10_10_rev"));
 
-  glewInfoFunc("glColorP3ui", glColorP3ui == NULL);
-  glewInfoFunc("glColorP3uiv", glColorP3uiv == NULL);
-  glewInfoFunc("glColorP4ui", glColorP4ui == NULL);
-  glewInfoFunc("glColorP4uiv", glColorP4uiv == NULL);
-  glewInfoFunc("glMultiTexCoordP1ui", glMultiTexCoordP1ui == NULL);
-  glewInfoFunc("glMultiTexCoordP1uiv", glMultiTexCoordP1uiv == NULL);
-  glewInfoFunc("glMultiTexCoordP2ui", glMultiTexCoordP2ui == NULL);
-  glewInfoFunc("glMultiTexCoordP2uiv", glMultiTexCoordP2uiv == NULL);
-  glewInfoFunc("glMultiTexCoordP3ui", glMultiTexCoordP3ui == NULL);
-  glewInfoFunc("glMultiTexCoordP3uiv", glMultiTexCoordP3uiv == NULL);
-  glewInfoFunc("glMultiTexCoordP4ui", glMultiTexCoordP4ui == NULL);
-  glewInfoFunc("glMultiTexCoordP4uiv", glMultiTexCoordP4uiv == NULL);
-  glewInfoFunc("glNormalP3ui", glNormalP3ui == NULL);
-  glewInfoFunc("glNormalP3uiv", glNormalP3uiv == NULL);
-  glewInfoFunc("glSecondaryColorP3ui", glSecondaryColorP3ui == NULL);
-  glewInfoFunc("glSecondaryColorP3uiv", glSecondaryColorP3uiv == NULL);
-  glewInfoFunc("glTexCoordP1ui", glTexCoordP1ui == NULL);
-  glewInfoFunc("glTexCoordP1uiv", glTexCoordP1uiv == NULL);
-  glewInfoFunc("glTexCoordP2ui", glTexCoordP2ui == NULL);
-  glewInfoFunc("glTexCoordP2uiv", glTexCoordP2uiv == NULL);
-  glewInfoFunc("glTexCoordP3ui", glTexCoordP3ui == NULL);
-  glewInfoFunc("glTexCoordP3uiv", glTexCoordP3uiv == NULL);
-  glewInfoFunc("glTexCoordP4ui", glTexCoordP4ui == NULL);
-  glewInfoFunc("glTexCoordP4uiv", glTexCoordP4uiv == NULL);
-  glewInfoFunc("glVertexAttribP1ui", glVertexAttribP1ui == NULL);
-  glewInfoFunc("glVertexAttribP1uiv", glVertexAttribP1uiv == NULL);
-  glewInfoFunc("glVertexAttribP2ui", glVertexAttribP2ui == NULL);
-  glewInfoFunc("glVertexAttribP2uiv", glVertexAttribP2uiv == NULL);
-  glewInfoFunc("glVertexAttribP3ui", glVertexAttribP3ui == NULL);
-  glewInfoFunc("glVertexAttribP3uiv", glVertexAttribP3uiv == NULL);
-  glewInfoFunc("glVertexAttribP4ui", glVertexAttribP4ui == NULL);
-  glewInfoFunc("glVertexAttribP4uiv", glVertexAttribP4uiv == NULL);
-  glewInfoFunc("glVertexP2ui", glVertexP2ui == NULL);
-  glewInfoFunc("glVertexP2uiv", glVertexP2uiv == NULL);
-  glewInfoFunc("glVertexP3ui", glVertexP3ui == NULL);
-  glewInfoFunc("glVertexP3uiv", glVertexP3uiv == NULL);
-  glewInfoFunc("glVertexP4ui", glVertexP4ui == NULL);
-  glewInfoFunc("glVertexP4uiv", glVertexP4uiv == NULL);
+  glewInfoFunc(fi, "glColorP3ui", glColorP3ui == NULL);
+  glewInfoFunc(fi, "glColorP3uiv", glColorP3uiv == NULL);
+  glewInfoFunc(fi, "glColorP4ui", glColorP4ui == NULL);
+  glewInfoFunc(fi, "glColorP4uiv", glColorP4uiv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordP1ui", glMultiTexCoordP1ui == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordP1uiv", glMultiTexCoordP1uiv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordP2ui", glMultiTexCoordP2ui == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordP2uiv", glMultiTexCoordP2uiv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordP3ui", glMultiTexCoordP3ui == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordP3uiv", glMultiTexCoordP3uiv == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordP4ui", glMultiTexCoordP4ui == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordP4uiv", glMultiTexCoordP4uiv == NULL);
+  glewInfoFunc(fi, "glNormalP3ui", glNormalP3ui == NULL);
+  glewInfoFunc(fi, "glNormalP3uiv", glNormalP3uiv == NULL);
+  glewInfoFunc(fi, "glSecondaryColorP3ui", glSecondaryColorP3ui == NULL);
+  glewInfoFunc(fi, "glSecondaryColorP3uiv", glSecondaryColorP3uiv == NULL);
+  glewInfoFunc(fi, "glTexCoordP1ui", glTexCoordP1ui == NULL);
+  glewInfoFunc(fi, "glTexCoordP1uiv", glTexCoordP1uiv == NULL);
+  glewInfoFunc(fi, "glTexCoordP2ui", glTexCoordP2ui == NULL);
+  glewInfoFunc(fi, "glTexCoordP2uiv", glTexCoordP2uiv == NULL);
+  glewInfoFunc(fi, "glTexCoordP3ui", glTexCoordP3ui == NULL);
+  glewInfoFunc(fi, "glTexCoordP3uiv", glTexCoordP3uiv == NULL);
+  glewInfoFunc(fi, "glTexCoordP4ui", glTexCoordP4ui == NULL);
+  glewInfoFunc(fi, "glTexCoordP4uiv", glTexCoordP4uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribP1ui", glVertexAttribP1ui == NULL);
+  glewInfoFunc(fi, "glVertexAttribP1uiv", glVertexAttribP1uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribP2ui", glVertexAttribP2ui == NULL);
+  glewInfoFunc(fi, "glVertexAttribP2uiv", glVertexAttribP2uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribP3ui", glVertexAttribP3ui == NULL);
+  glewInfoFunc(fi, "glVertexAttribP3uiv", glVertexAttribP3uiv == NULL);
+  glewInfoFunc(fi, "glVertexAttribP4ui", glVertexAttribP4ui == NULL);
+  glewInfoFunc(fi, "glVertexAttribP4uiv", glVertexAttribP4uiv == NULL);
+  glewInfoFunc(fi, "glVertexP2ui", glVertexP2ui == NULL);
+  glewInfoFunc(fi, "glVertexP2uiv", glVertexP2uiv == NULL);
+  glewInfoFunc(fi, "glVertexP3ui", glVertexP3ui == NULL);
+  glewInfoFunc(fi, "glVertexP3uiv", glVertexP3uiv == NULL);
+  glewInfoFunc(fi, "glVertexP4ui", glVertexP4ui == NULL);
+  glewInfoFunc(fi, "glVertexP4uiv", glVertexP4uiv == NULL);
 }
 
 #endif /* GL_ARB_vertex_type_2_10_10_10_rev */
@@ -3767,18 +3804,18 @@ static void _glewInfo_GL_ARB_vertex_type_2_10_10_10_rev (void)
 
 static void _glewInfo_GL_ARB_viewport_array (void)
 {
-  glewPrintExt("GL_ARB_viewport_array", GLEW_ARB_viewport_array, glewIsSupported("GL_ARB_viewport_array"), glewGetExtension("GL_ARB_viewport_array"));
+  GLboolean fi = glewPrintExt("GL_ARB_viewport_array", GLEW_ARB_viewport_array, glewIsSupported("GL_ARB_viewport_array"), glewGetExtension("GL_ARB_viewport_array"));
 
-  glewInfoFunc("glDepthRangeArrayv", glDepthRangeArrayv == NULL);
-  glewInfoFunc("glDepthRangeIndexed", glDepthRangeIndexed == NULL);
-  glewInfoFunc("glGetDoublei_v", glGetDoublei_v == NULL);
-  glewInfoFunc("glGetFloati_v", glGetFloati_v == NULL);
-  glewInfoFunc("glScissorArrayv", glScissorArrayv == NULL);
-  glewInfoFunc("glScissorIndexed", glScissorIndexed == NULL);
-  glewInfoFunc("glScissorIndexedv", glScissorIndexedv == NULL);
-  glewInfoFunc("glViewportArrayv", glViewportArrayv == NULL);
-  glewInfoFunc("glViewportIndexedf", glViewportIndexedf == NULL);
-  glewInfoFunc("glViewportIndexedfv", glViewportIndexedfv == NULL);
+  glewInfoFunc(fi, "glDepthRangeArrayv", glDepthRangeArrayv == NULL);
+  glewInfoFunc(fi, "glDepthRangeIndexed", glDepthRangeIndexed == NULL);
+  glewInfoFunc(fi, "glGetDoublei_v", glGetDoublei_v == NULL);
+  glewInfoFunc(fi, "glGetFloati_v", glGetFloati_v == NULL);
+  glewInfoFunc(fi, "glScissorArrayv", glScissorArrayv == NULL);
+  glewInfoFunc(fi, "glScissorIndexed", glScissorIndexed == NULL);
+  glewInfoFunc(fi, "glScissorIndexedv", glScissorIndexedv == NULL);
+  glewInfoFunc(fi, "glViewportArrayv", glViewportArrayv == NULL);
+  glewInfoFunc(fi, "glViewportIndexedf", glViewportIndexedf == NULL);
+  glewInfoFunc(fi, "glViewportIndexedfv", glViewportIndexedfv == NULL);
 }
 
 #endif /* GL_ARB_viewport_array */
@@ -3787,24 +3824,24 @@ static void _glewInfo_GL_ARB_viewport_array (void)
 
 static void _glewInfo_GL_ARB_window_pos (void)
 {
-  glewPrintExt("GL_ARB_window_pos", GLEW_ARB_window_pos, glewIsSupported("GL_ARB_window_pos"), glewGetExtension("GL_ARB_window_pos"));
+  GLboolean fi = glewPrintExt("GL_ARB_window_pos", GLEW_ARB_window_pos, glewIsSupported("GL_ARB_window_pos"), glewGetExtension("GL_ARB_window_pos"));
 
-  glewInfoFunc("glWindowPos2dARB", glWindowPos2dARB == NULL);
-  glewInfoFunc("glWindowPos2dvARB", glWindowPos2dvARB == NULL);
-  glewInfoFunc("glWindowPos2fARB", glWindowPos2fARB == NULL);
-  glewInfoFunc("glWindowPos2fvARB", glWindowPos2fvARB == NULL);
-  glewInfoFunc("glWindowPos2iARB", glWindowPos2iARB == NULL);
-  glewInfoFunc("glWindowPos2ivARB", glWindowPos2ivARB == NULL);
-  glewInfoFunc("glWindowPos2sARB", glWindowPos2sARB == NULL);
-  glewInfoFunc("glWindowPos2svARB", glWindowPos2svARB == NULL);
-  glewInfoFunc("glWindowPos3dARB", glWindowPos3dARB == NULL);
-  glewInfoFunc("glWindowPos3dvARB", glWindowPos3dvARB == NULL);
-  glewInfoFunc("glWindowPos3fARB", glWindowPos3fARB == NULL);
-  glewInfoFunc("glWindowPos3fvARB", glWindowPos3fvARB == NULL);
-  glewInfoFunc("glWindowPos3iARB", glWindowPos3iARB == NULL);
-  glewInfoFunc("glWindowPos3ivARB", glWindowPos3ivARB == NULL);
-  glewInfoFunc("glWindowPos3sARB", glWindowPos3sARB == NULL);
-  glewInfoFunc("glWindowPos3svARB", glWindowPos3svARB == NULL);
+  glewInfoFunc(fi, "glWindowPos2dARB", glWindowPos2dARB == NULL);
+  glewInfoFunc(fi, "glWindowPos2dvARB", glWindowPos2dvARB == NULL);
+  glewInfoFunc(fi, "glWindowPos2fARB", glWindowPos2fARB == NULL);
+  glewInfoFunc(fi, "glWindowPos2fvARB", glWindowPos2fvARB == NULL);
+  glewInfoFunc(fi, "glWindowPos2iARB", glWindowPos2iARB == NULL);
+  glewInfoFunc(fi, "glWindowPos2ivARB", glWindowPos2ivARB == NULL);
+  glewInfoFunc(fi, "glWindowPos2sARB", glWindowPos2sARB == NULL);
+  glewInfoFunc(fi, "glWindowPos2svARB", glWindowPos2svARB == NULL);
+  glewInfoFunc(fi, "glWindowPos3dARB", glWindowPos3dARB == NULL);
+  glewInfoFunc(fi, "glWindowPos3dvARB", glWindowPos3dvARB == NULL);
+  glewInfoFunc(fi, "glWindowPos3fARB", glWindowPos3fARB == NULL);
+  glewInfoFunc(fi, "glWindowPos3fvARB", glWindowPos3fvARB == NULL);
+  glewInfoFunc(fi, "glWindowPos3iARB", glWindowPos3iARB == NULL);
+  glewInfoFunc(fi, "glWindowPos3ivARB", glWindowPos3ivARB == NULL);
+  glewInfoFunc(fi, "glWindowPos3sARB", glWindowPos3sARB == NULL);
+  glewInfoFunc(fi, "glWindowPos3svARB", glWindowPos3svARB == NULL);
 }
 
 #endif /* GL_ARB_window_pos */
@@ -3854,6 +3891,15 @@ static void _glewInfo_GL_ARM_shader_framebuffer_fetch_depth_stencil (void)
 
 #endif /* GL_ARM_shader_framebuffer_fetch_depth_stencil */
 
+#ifdef GL_ARM_texture_unnormalized_coordinates
+
+static void _glewInfo_GL_ARM_texture_unnormalized_coordinates (void)
+{
+  glewPrintExt("GL_ARM_texture_unnormalized_coordinates", GLEW_ARM_texture_unnormalized_coordinates, glewIsSupported("GL_ARM_texture_unnormalized_coordinates"), glewGetExtension("GL_ARM_texture_unnormalized_coordinates"));
+}
+
+#endif /* GL_ARM_texture_unnormalized_coordinates */
+
 #ifdef GL_ATIX_point_sprites
 
 static void _glewInfo_GL_ATIX_point_sprites (void)
@@ -3894,9 +3940,9 @@ static void _glewInfo_GL_ATIX_vertex_shader_output_point_size (void)
 
 static void _glewInfo_GL_ATI_draw_buffers (void)
 {
-  glewPrintExt("GL_ATI_draw_buffers", GLEW_ATI_draw_buffers, glewIsSupported("GL_ATI_draw_buffers"), glewGetExtension("GL_ATI_draw_buffers"));
+  GLboolean fi = glewPrintExt("GL_ATI_draw_buffers", GLEW_ATI_draw_buffers, glewIsSupported("GL_ATI_draw_buffers"), glewGetExtension("GL_ATI_draw_buffers"));
 
-  glewInfoFunc("glDrawBuffersATI", glDrawBuffersATI == NULL);
+  glewInfoFunc(fi, "glDrawBuffersATI", glDrawBuffersATI == NULL);
 }
 
 #endif /* GL_ATI_draw_buffers */
@@ -3905,11 +3951,11 @@ static void _glewInfo_GL_ATI_draw_buffers (void)
 
 static void _glewInfo_GL_ATI_element_array (void)
 {
-  glewPrintExt("GL_ATI_element_array", GLEW_ATI_element_array, glewIsSupported("GL_ATI_element_array"), glewGetExtension("GL_ATI_element_array"));
+  GLboolean fi = glewPrintExt("GL_ATI_element_array", GLEW_ATI_element_array, glewIsSupported("GL_ATI_element_array"), glewGetExtension("GL_ATI_element_array"));
 
-  glewInfoFunc("glDrawElementArrayATI", glDrawElementArrayATI == NULL);
-  glewInfoFunc("glDrawRangeElementArrayATI", glDrawRangeElementArrayATI == NULL);
-  glewInfoFunc("glElementPointerATI", glElementPointerATI == NULL);
+  glewInfoFunc(fi, "glDrawElementArrayATI", glDrawElementArrayATI == NULL);
+  glewInfoFunc(fi, "glDrawRangeElementArrayATI", glDrawRangeElementArrayATI == NULL);
+  glewInfoFunc(fi, "glElementPointerATI", glElementPointerATI == NULL);
 }
 
 #endif /* GL_ATI_element_array */
@@ -3918,12 +3964,12 @@ static void _glewInfo_GL_ATI_element_array (void)
 
 static void _glewInfo_GL_ATI_envmap_bumpmap (void)
 {
-  glewPrintExt("GL_ATI_envmap_bumpmap", GLEW_ATI_envmap_bumpmap, glewIsSupported("GL_ATI_envmap_bumpmap"), glewGetExtension("GL_ATI_envmap_bumpmap"));
+  GLboolean fi = glewPrintExt("GL_ATI_envmap_bumpmap", GLEW_ATI_envmap_bumpmap, glewIsSupported("GL_ATI_envmap_bumpmap"), glewGetExtension("GL_ATI_envmap_bumpmap"));
 
-  glewInfoFunc("glGetTexBumpParameterfvATI", glGetTexBumpParameterfvATI == NULL);
-  glewInfoFunc("glGetTexBumpParameterivATI", glGetTexBumpParameterivATI == NULL);
-  glewInfoFunc("glTexBumpParameterfvATI", glTexBumpParameterfvATI == NULL);
-  glewInfoFunc("glTexBumpParameterivATI", glTexBumpParameterivATI == NULL);
+  glewInfoFunc(fi, "glGetTexBumpParameterfvATI", glGetTexBumpParameterfvATI == NULL);
+  glewInfoFunc(fi, "glGetTexBumpParameterivATI", glGetTexBumpParameterivATI == NULL);
+  glewInfoFunc(fi, "glTexBumpParameterfvATI", glTexBumpParameterfvATI == NULL);
+  glewInfoFunc(fi, "glTexBumpParameterivATI", glTexBumpParameterivATI == NULL);
 }
 
 #endif /* GL_ATI_envmap_bumpmap */
@@ -3932,22 +3978,22 @@ static void _glewInfo_GL_ATI_envmap_bumpmap (void)
 
 static void _glewInfo_GL_ATI_fragment_shader (void)
 {
-  glewPrintExt("GL_ATI_fragment_shader", GLEW_ATI_fragment_shader, glewIsSupported("GL_ATI_fragment_shader"), glewGetExtension("GL_ATI_fragment_shader"));
+  GLboolean fi = glewPrintExt("GL_ATI_fragment_shader", GLEW_ATI_fragment_shader, glewIsSupported("GL_ATI_fragment_shader"), glewGetExtension("GL_ATI_fragment_shader"));
 
-  glewInfoFunc("glAlphaFragmentOp1ATI", glAlphaFragmentOp1ATI == NULL);
-  glewInfoFunc("glAlphaFragmentOp2ATI", glAlphaFragmentOp2ATI == NULL);
-  glewInfoFunc("glAlphaFragmentOp3ATI", glAlphaFragmentOp3ATI == NULL);
-  glewInfoFunc("glBeginFragmentShaderATI", glBeginFragmentShaderATI == NULL);
-  glewInfoFunc("glBindFragmentShaderATI", glBindFragmentShaderATI == NULL);
-  glewInfoFunc("glColorFragmentOp1ATI", glColorFragmentOp1ATI == NULL);
-  glewInfoFunc("glColorFragmentOp2ATI", glColorFragmentOp2ATI == NULL);
-  glewInfoFunc("glColorFragmentOp3ATI", glColorFragmentOp3ATI == NULL);
-  glewInfoFunc("glDeleteFragmentShaderATI", glDeleteFragmentShaderATI == NULL);
-  glewInfoFunc("glEndFragmentShaderATI", glEndFragmentShaderATI == NULL);
-  glewInfoFunc("glGenFragmentShadersATI", glGenFragmentShadersATI == NULL);
-  glewInfoFunc("glPassTexCoordATI", glPassTexCoordATI == NULL);
-  glewInfoFunc("glSampleMapATI", glSampleMapATI == NULL);
-  glewInfoFunc("glSetFragmentShaderConstantATI", glSetFragmentShaderConstantATI == NULL);
+  glewInfoFunc(fi, "glAlphaFragmentOp1ATI", glAlphaFragmentOp1ATI == NULL);
+  glewInfoFunc(fi, "glAlphaFragmentOp2ATI", glAlphaFragmentOp2ATI == NULL);
+  glewInfoFunc(fi, "glAlphaFragmentOp3ATI", glAlphaFragmentOp3ATI == NULL);
+  glewInfoFunc(fi, "glBeginFragmentShaderATI", glBeginFragmentShaderATI == NULL);
+  glewInfoFunc(fi, "glBindFragmentShaderATI", glBindFragmentShaderATI == NULL);
+  glewInfoFunc(fi, "glColorFragmentOp1ATI", glColorFragmentOp1ATI == NULL);
+  glewInfoFunc(fi, "glColorFragmentOp2ATI", glColorFragmentOp2ATI == NULL);
+  glewInfoFunc(fi, "glColorFragmentOp3ATI", glColorFragmentOp3ATI == NULL);
+  glewInfoFunc(fi, "glDeleteFragmentShaderATI", glDeleteFragmentShaderATI == NULL);
+  glewInfoFunc(fi, "glEndFragmentShaderATI", glEndFragmentShaderATI == NULL);
+  glewInfoFunc(fi, "glGenFragmentShadersATI", glGenFragmentShadersATI == NULL);
+  glewInfoFunc(fi, "glPassTexCoordATI", glPassTexCoordATI == NULL);
+  glewInfoFunc(fi, "glSampleMapATI", glSampleMapATI == NULL);
+  glewInfoFunc(fi, "glSetFragmentShaderConstantATI", glSetFragmentShaderConstantATI == NULL);
 }
 
 #endif /* GL_ATI_fragment_shader */
@@ -3956,10 +4002,10 @@ static void _glewInfo_GL_ATI_fragment_shader (void)
 
 static void _glewInfo_GL_ATI_map_object_buffer (void)
 {
-  glewPrintExt("GL_ATI_map_object_buffer", GLEW_ATI_map_object_buffer, glewIsSupported("GL_ATI_map_object_buffer"), glewGetExtension("GL_ATI_map_object_buffer"));
+  GLboolean fi = glewPrintExt("GL_ATI_map_object_buffer", GLEW_ATI_map_object_buffer, glewIsSupported("GL_ATI_map_object_buffer"), glewGetExtension("GL_ATI_map_object_buffer"));
 
-  glewInfoFunc("glMapObjectBufferATI", glMapObjectBufferATI == NULL);
-  glewInfoFunc("glUnmapObjectBufferATI", glUnmapObjectBufferATI == NULL);
+  glewInfoFunc(fi, "glMapObjectBufferATI", glMapObjectBufferATI == NULL);
+  glewInfoFunc(fi, "glUnmapObjectBufferATI", glUnmapObjectBufferATI == NULL);
 }
 
 #endif /* GL_ATI_map_object_buffer */
@@ -3977,10 +4023,10 @@ static void _glewInfo_GL_ATI_meminfo (void)
 
 static void _glewInfo_GL_ATI_pn_triangles (void)
 {
-  glewPrintExt("GL_ATI_pn_triangles", GLEW_ATI_pn_triangles, glewIsSupported("GL_ATI_pn_triangles"), glewGetExtension("GL_ATI_pn_triangles"));
+  GLboolean fi = glewPrintExt("GL_ATI_pn_triangles", GLEW_ATI_pn_triangles, glewIsSupported("GL_ATI_pn_triangles"), glewGetExtension("GL_ATI_pn_triangles"));
 
-  glewInfoFunc("glPNTrianglesfATI", glPNTrianglesfATI == NULL);
-  glewInfoFunc("glPNTrianglesiATI", glPNTrianglesiATI == NULL);
+  glewInfoFunc(fi, "glPNTrianglesfATI", glPNTrianglesfATI == NULL);
+  glewInfoFunc(fi, "glPNTrianglesiATI", glPNTrianglesiATI == NULL);
 }
 
 #endif /* GL_ATI_pn_triangles */
@@ -3989,10 +4035,10 @@ static void _glewInfo_GL_ATI_pn_triangles (void)
 
 static void _glewInfo_GL_ATI_separate_stencil (void)
 {
-  glewPrintExt("GL_ATI_separate_stencil", GLEW_ATI_separate_stencil, glewIsSupported("GL_ATI_separate_stencil"), glewGetExtension("GL_ATI_separate_stencil"));
+  GLboolean fi = glewPrintExt("GL_ATI_separate_stencil", GLEW_ATI_separate_stencil, glewIsSupported("GL_ATI_separate_stencil"), glewGetExtension("GL_ATI_separate_stencil"));
 
-  glewInfoFunc("glStencilFuncSeparateATI", glStencilFuncSeparateATI == NULL);
-  glewInfoFunc("glStencilOpSeparateATI", glStencilOpSeparateATI == NULL);
+  glewInfoFunc(fi, "glStencilFuncSeparateATI", glStencilFuncSeparateATI == NULL);
+  glewInfoFunc(fi, "glStencilOpSeparateATI", glStencilOpSeparateATI == NULL);
 }
 
 #endif /* GL_ATI_separate_stencil */
@@ -4055,20 +4101,20 @@ static void _glewInfo_GL_ATI_texture_mirror_once (void)
 
 static void _glewInfo_GL_ATI_vertex_array_object (void)
 {
-  glewPrintExt("GL_ATI_vertex_array_object", GLEW_ATI_vertex_array_object, glewIsSupported("GL_ATI_vertex_array_object"), glewGetExtension("GL_ATI_vertex_array_object"));
+  GLboolean fi = glewPrintExt("GL_ATI_vertex_array_object", GLEW_ATI_vertex_array_object, glewIsSupported("GL_ATI_vertex_array_object"), glewGetExtension("GL_ATI_vertex_array_object"));
 
-  glewInfoFunc("glArrayObjectATI", glArrayObjectATI == NULL);
-  glewInfoFunc("glFreeObjectBufferATI", glFreeObjectBufferATI == NULL);
-  glewInfoFunc("glGetArrayObjectfvATI", glGetArrayObjectfvATI == NULL);
-  glewInfoFunc("glGetArrayObjectivATI", glGetArrayObjectivATI == NULL);
-  glewInfoFunc("glGetObjectBufferfvATI", glGetObjectBufferfvATI == NULL);
-  glewInfoFunc("glGetObjectBufferivATI", glGetObjectBufferivATI == NULL);
-  glewInfoFunc("glGetVariantArrayObjectfvATI", glGetVariantArrayObjectfvATI == NULL);
-  glewInfoFunc("glGetVariantArrayObjectivATI", glGetVariantArrayObjectivATI == NULL);
-  glewInfoFunc("glIsObjectBufferATI", glIsObjectBufferATI == NULL);
-  glewInfoFunc("glNewObjectBufferATI", glNewObjectBufferATI == NULL);
-  glewInfoFunc("glUpdateObjectBufferATI", glUpdateObjectBufferATI == NULL);
-  glewInfoFunc("glVariantArrayObjectATI", glVariantArrayObjectATI == NULL);
+  glewInfoFunc(fi, "glArrayObjectATI", glArrayObjectATI == NULL);
+  glewInfoFunc(fi, "glFreeObjectBufferATI", glFreeObjectBufferATI == NULL);
+  glewInfoFunc(fi, "glGetArrayObjectfvATI", glGetArrayObjectfvATI == NULL);
+  glewInfoFunc(fi, "glGetArrayObjectivATI", glGetArrayObjectivATI == NULL);
+  glewInfoFunc(fi, "glGetObjectBufferfvATI", glGetObjectBufferfvATI == NULL);
+  glewInfoFunc(fi, "glGetObjectBufferivATI", glGetObjectBufferivATI == NULL);
+  glewInfoFunc(fi, "glGetVariantArrayObjectfvATI", glGetVariantArrayObjectfvATI == NULL);
+  glewInfoFunc(fi, "glGetVariantArrayObjectivATI", glGetVariantArrayObjectivATI == NULL);
+  glewInfoFunc(fi, "glIsObjectBufferATI", glIsObjectBufferATI == NULL);
+  glewInfoFunc(fi, "glNewObjectBufferATI", glNewObjectBufferATI == NULL);
+  glewInfoFunc(fi, "glUpdateObjectBufferATI", glUpdateObjectBufferATI == NULL);
+  glewInfoFunc(fi, "glVariantArrayObjectATI", glVariantArrayObjectATI == NULL);
 }
 
 #endif /* GL_ATI_vertex_array_object */
@@ -4077,11 +4123,11 @@ static void _glewInfo_GL_ATI_vertex_array_object (void)
 
 static void _glewInfo_GL_ATI_vertex_attrib_array_object (void)
 {
-  glewPrintExt("GL_ATI_vertex_attrib_array_object", GLEW_ATI_vertex_attrib_array_object, glewIsSupported("GL_ATI_vertex_attrib_array_object"), glewGetExtension("GL_ATI_vertex_attrib_array_object"));
+  GLboolean fi = glewPrintExt("GL_ATI_vertex_attrib_array_object", GLEW_ATI_vertex_attrib_array_object, glewIsSupported("GL_ATI_vertex_attrib_array_object"), glewGetExtension("GL_ATI_vertex_attrib_array_object"));
 
-  glewInfoFunc("glGetVertexAttribArrayObjectfvATI", glGetVertexAttribArrayObjectfvATI == NULL);
-  glewInfoFunc("glGetVertexAttribArrayObjectivATI", glGetVertexAttribArrayObjectivATI == NULL);
-  glewInfoFunc("glVertexAttribArrayObjectATI", glVertexAttribArrayObjectATI == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribArrayObjectfvATI", glGetVertexAttribArrayObjectfvATI == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribArrayObjectivATI", glGetVertexAttribArrayObjectivATI == NULL);
+  glewInfoFunc(fi, "glVertexAttribArrayObjectATI", glVertexAttribArrayObjectATI == NULL);
 }
 
 #endif /* GL_ATI_vertex_attrib_array_object */
@@ -4090,74 +4136,74 @@ static void _glewInfo_GL_ATI_vertex_attrib_array_object (void)
 
 static void _glewInfo_GL_ATI_vertex_streams (void)
 {
-  glewPrintExt("GL_ATI_vertex_streams", GLEW_ATI_vertex_streams, glewIsSupported("GL_ATI_vertex_streams"), glewGetExtension("GL_ATI_vertex_streams"));
+  GLboolean fi = glewPrintExt("GL_ATI_vertex_streams", GLEW_ATI_vertex_streams, glewIsSupported("GL_ATI_vertex_streams"), glewGetExtension("GL_ATI_vertex_streams"));
 
-  glewInfoFunc("glClientActiveVertexStreamATI", glClientActiveVertexStreamATI == NULL);
-  glewInfoFunc("glNormalStream3bATI", glNormalStream3bATI == NULL);
-  glewInfoFunc("glNormalStream3bvATI", glNormalStream3bvATI == NULL);
-  glewInfoFunc("glNormalStream3dATI", glNormalStream3dATI == NULL);
-  glewInfoFunc("glNormalStream3dvATI", glNormalStream3dvATI == NULL);
-  glewInfoFunc("glNormalStream3fATI", glNormalStream3fATI == NULL);
-  glewInfoFunc("glNormalStream3fvATI", glNormalStream3fvATI == NULL);
-  glewInfoFunc("glNormalStream3iATI", glNormalStream3iATI == NULL);
-  glewInfoFunc("glNormalStream3ivATI", glNormalStream3ivATI == NULL);
-  glewInfoFunc("glNormalStream3sATI", glNormalStream3sATI == NULL);
-  glewInfoFunc("glNormalStream3svATI", glNormalStream3svATI == NULL);
-  glewInfoFunc("glVertexBlendEnvfATI", glVertexBlendEnvfATI == NULL);
-  glewInfoFunc("glVertexBlendEnviATI", glVertexBlendEnviATI == NULL);
-  glewInfoFunc("glVertexStream1dATI", glVertexStream1dATI == NULL);
-  glewInfoFunc("glVertexStream1dvATI", glVertexStream1dvATI == NULL);
-  glewInfoFunc("glVertexStream1fATI", glVertexStream1fATI == NULL);
-  glewInfoFunc("glVertexStream1fvATI", glVertexStream1fvATI == NULL);
-  glewInfoFunc("glVertexStream1iATI", glVertexStream1iATI == NULL);
-  glewInfoFunc("glVertexStream1ivATI", glVertexStream1ivATI == NULL);
-  glewInfoFunc("glVertexStream1sATI", glVertexStream1sATI == NULL);
-  glewInfoFunc("glVertexStream1svATI", glVertexStream1svATI == NULL);
-  glewInfoFunc("glVertexStream2dATI", glVertexStream2dATI == NULL);
-  glewInfoFunc("glVertexStream2dvATI", glVertexStream2dvATI == NULL);
-  glewInfoFunc("glVertexStream2fATI", glVertexStream2fATI == NULL);
-  glewInfoFunc("glVertexStream2fvATI", glVertexStream2fvATI == NULL);
-  glewInfoFunc("glVertexStream2iATI", glVertexStream2iATI == NULL);
-  glewInfoFunc("glVertexStream2ivATI", glVertexStream2ivATI == NULL);
-  glewInfoFunc("glVertexStream2sATI", glVertexStream2sATI == NULL);
-  glewInfoFunc("glVertexStream2svATI", glVertexStream2svATI == NULL);
-  glewInfoFunc("glVertexStream3dATI", glVertexStream3dATI == NULL);
-  glewInfoFunc("glVertexStream3dvATI", glVertexStream3dvATI == NULL);
-  glewInfoFunc("glVertexStream3fATI", glVertexStream3fATI == NULL);
-  glewInfoFunc("glVertexStream3fvATI", glVertexStream3fvATI == NULL);
-  glewInfoFunc("glVertexStream3iATI", glVertexStream3iATI == NULL);
-  glewInfoFunc("glVertexStream3ivATI", glVertexStream3ivATI == NULL);
-  glewInfoFunc("glVertexStream3sATI", glVertexStream3sATI == NULL);
-  glewInfoFunc("glVertexStream3svATI", glVertexStream3svATI == NULL);
-  glewInfoFunc("glVertexStream4dATI", glVertexStream4dATI == NULL);
-  glewInfoFunc("glVertexStream4dvATI", glVertexStream4dvATI == NULL);
-  glewInfoFunc("glVertexStream4fATI", glVertexStream4fATI == NULL);
-  glewInfoFunc("glVertexStream4fvATI", glVertexStream4fvATI == NULL);
-  glewInfoFunc("glVertexStream4iATI", glVertexStream4iATI == NULL);
-  glewInfoFunc("glVertexStream4ivATI", glVertexStream4ivATI == NULL);
-  glewInfoFunc("glVertexStream4sATI", glVertexStream4sATI == NULL);
-  glewInfoFunc("glVertexStream4svATI", glVertexStream4svATI == NULL);
+  glewInfoFunc(fi, "glClientActiveVertexStreamATI", glClientActiveVertexStreamATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3bATI", glNormalStream3bATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3bvATI", glNormalStream3bvATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3dATI", glNormalStream3dATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3dvATI", glNormalStream3dvATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3fATI", glNormalStream3fATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3fvATI", glNormalStream3fvATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3iATI", glNormalStream3iATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3ivATI", glNormalStream3ivATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3sATI", glNormalStream3sATI == NULL);
+  glewInfoFunc(fi, "glNormalStream3svATI", glNormalStream3svATI == NULL);
+  glewInfoFunc(fi, "glVertexBlendEnvfATI", glVertexBlendEnvfATI == NULL);
+  glewInfoFunc(fi, "glVertexBlendEnviATI", glVertexBlendEnviATI == NULL);
+  glewInfoFunc(fi, "glVertexStream1dATI", glVertexStream1dATI == NULL);
+  glewInfoFunc(fi, "glVertexStream1dvATI", glVertexStream1dvATI == NULL);
+  glewInfoFunc(fi, "glVertexStream1fATI", glVertexStream1fATI == NULL);
+  glewInfoFunc(fi, "glVertexStream1fvATI", glVertexStream1fvATI == NULL);
+  glewInfoFunc(fi, "glVertexStream1iATI", glVertexStream1iATI == NULL);
+  glewInfoFunc(fi, "glVertexStream1ivATI", glVertexStream1ivATI == NULL);
+  glewInfoFunc(fi, "glVertexStream1sATI", glVertexStream1sATI == NULL);
+  glewInfoFunc(fi, "glVertexStream1svATI", glVertexStream1svATI == NULL);
+  glewInfoFunc(fi, "glVertexStream2dATI", glVertexStream2dATI == NULL);
+  glewInfoFunc(fi, "glVertexStream2dvATI", glVertexStream2dvATI == NULL);
+  glewInfoFunc(fi, "glVertexStream2fATI", glVertexStream2fATI == NULL);
+  glewInfoFunc(fi, "glVertexStream2fvATI", glVertexStream2fvATI == NULL);
+  glewInfoFunc(fi, "glVertexStream2iATI", glVertexStream2iATI == NULL);
+  glewInfoFunc(fi, "glVertexStream2ivATI", glVertexStream2ivATI == NULL);
+  glewInfoFunc(fi, "glVertexStream2sATI", glVertexStream2sATI == NULL);
+  glewInfoFunc(fi, "glVertexStream2svATI", glVertexStream2svATI == NULL);
+  glewInfoFunc(fi, "glVertexStream3dATI", glVertexStream3dATI == NULL);
+  glewInfoFunc(fi, "glVertexStream3dvATI", glVertexStream3dvATI == NULL);
+  glewInfoFunc(fi, "glVertexStream3fATI", glVertexStream3fATI == NULL);
+  glewInfoFunc(fi, "glVertexStream3fvATI", glVertexStream3fvATI == NULL);
+  glewInfoFunc(fi, "glVertexStream3iATI", glVertexStream3iATI == NULL);
+  glewInfoFunc(fi, "glVertexStream3ivATI", glVertexStream3ivATI == NULL);
+  glewInfoFunc(fi, "glVertexStream3sATI", glVertexStream3sATI == NULL);
+  glewInfoFunc(fi, "glVertexStream3svATI", glVertexStream3svATI == NULL);
+  glewInfoFunc(fi, "glVertexStream4dATI", glVertexStream4dATI == NULL);
+  glewInfoFunc(fi, "glVertexStream4dvATI", glVertexStream4dvATI == NULL);
+  glewInfoFunc(fi, "glVertexStream4fATI", glVertexStream4fATI == NULL);
+  glewInfoFunc(fi, "glVertexStream4fvATI", glVertexStream4fvATI == NULL);
+  glewInfoFunc(fi, "glVertexStream4iATI", glVertexStream4iATI == NULL);
+  glewInfoFunc(fi, "glVertexStream4ivATI", glVertexStream4ivATI == NULL);
+  glewInfoFunc(fi, "glVertexStream4sATI", glVertexStream4sATI == NULL);
+  glewInfoFunc(fi, "glVertexStream4svATI", glVertexStream4svATI == NULL);
 }
 
 #endif /* GL_ATI_vertex_streams */
 
-#ifdef GL_EGL_KHR_context_flush_control
+#ifdef GL_DMP_program_binary
 
-static void _glewInfo_GL_EGL_KHR_context_flush_control (void)
+static void _glewInfo_GL_DMP_program_binary (void)
 {
-  glewPrintExt("GL_EGL_KHR_context_flush_control", GLEW_EGL_KHR_context_flush_control, glewIsSupported("GL_EGL_KHR_context_flush_control"), glewGetExtension("GL_EGL_KHR_context_flush_control"));
+  glewPrintExt("GL_DMP_program_binary", GLEW_DMP_program_binary, glewIsSupported("GL_DMP_program_binary"), glewGetExtension("GL_DMP_program_binary"));
 }
 
-#endif /* GL_EGL_KHR_context_flush_control */
+#endif /* GL_DMP_program_binary */
 
-#ifdef GL_EGL_NV_robustness_video_memory_purge
+#ifdef GL_DMP_shader_binary
 
-static void _glewInfo_GL_EGL_NV_robustness_video_memory_purge (void)
+static void _glewInfo_GL_DMP_shader_binary (void)
 {
-  glewPrintExt("GL_EGL_NV_robustness_video_memory_purge", GLEW_EGL_NV_robustness_video_memory_purge, glewIsSupported("GL_EGL_NV_robustness_video_memory_purge"), glewGetExtension("GL_EGL_NV_robustness_video_memory_purge"));
+  glewPrintExt("GL_DMP_shader_binary", GLEW_DMP_shader_binary, glewIsSupported("GL_DMP_shader_binary"), glewGetExtension("GL_DMP_shader_binary"));
 }
 
-#endif /* GL_EGL_NV_robustness_video_memory_purge */
+#endif /* GL_DMP_shader_binary */
 
 #ifdef GL_EXT_422_pixels
 
@@ -4186,6 +4232,36 @@ static void _glewInfo_GL_EXT_EGL_image_array (void)
 
 #endif /* GL_EXT_EGL_image_array */
 
+#ifdef GL_EXT_EGL_image_external_wrap_modes
+
+static void _glewInfo_GL_EXT_EGL_image_external_wrap_modes (void)
+{
+  glewPrintExt("GL_EXT_EGL_image_external_wrap_modes", GLEW_EXT_EGL_image_external_wrap_modes, glewIsSupported("GL_EXT_EGL_image_external_wrap_modes"), glewGetExtension("GL_EXT_EGL_image_external_wrap_modes"));
+}
+
+#endif /* GL_EXT_EGL_image_external_wrap_modes */
+
+#ifdef GL_EXT_EGL_image_storage
+
+static void _glewInfo_GL_EXT_EGL_image_storage (void)
+{
+  GLboolean fi = glewPrintExt("GL_EXT_EGL_image_storage", GLEW_EXT_EGL_image_storage, glewIsSupported("GL_EXT_EGL_image_storage"), glewGetExtension("GL_EXT_EGL_image_storage"));
+
+  glewInfoFunc(fi, "glEGLImageTargetTexStorageEXT", glEGLImageTargetTexStorageEXT == NULL);
+  glewInfoFunc(fi, "glEGLImageTargetTextureStorageEXT", glEGLImageTargetTextureStorageEXT == NULL);
+}
+
+#endif /* GL_EXT_EGL_image_storage */
+
+#ifdef GL_EXT_EGL_sync
+
+static void _glewInfo_GL_EXT_EGL_sync (void)
+{
+  glewPrintExt("GL_EXT_EGL_sync", GLEW_EXT_EGL_sync, glewIsSupported("GL_EXT_EGL_sync"), glewGetExtension("GL_EXT_EGL_sync"));
+}
+
+#endif /* GL_EXT_EGL_sync */
+
 #ifdef GL_EXT_YUV_target
 
 static void _glewInfo_GL_EXT_YUV_target (void)
@@ -4208,11 +4284,11 @@ static void _glewInfo_GL_EXT_abgr (void)
 
 static void _glewInfo_GL_EXT_base_instance (void)
 {
-  glewPrintExt("GL_EXT_base_instance", GLEW_EXT_base_instance, glewIsSupported("GL_EXT_base_instance"), glewGetExtension("GL_EXT_base_instance"));
+  GLboolean fi = glewPrintExt("GL_EXT_base_instance", GLEW_EXT_base_instance, glewIsSupported("GL_EXT_base_instance"), glewGetExtension("GL_EXT_base_instance"));
 
-  glewInfoFunc("glDrawArraysInstancedBaseInstanceEXT", glDrawArraysInstancedBaseInstanceEXT == NULL);
-  glewInfoFunc("glDrawElementsInstancedBaseInstanceEXT", glDrawElementsInstancedBaseInstanceEXT == NULL);
-  glewInfoFunc("glDrawElementsInstancedBaseVertexBaseInstanceEXT", glDrawElementsInstancedBaseVertexBaseInstanceEXT == NULL);
+  glewInfoFunc(fi, "glDrawArraysInstancedBaseInstanceEXT", glDrawArraysInstancedBaseInstanceEXT == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedBaseInstanceEXT", glDrawElementsInstancedBaseInstanceEXT == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedBaseVertexBaseInstanceEXT", glDrawElementsInstancedBaseVertexBaseInstanceEXT == NULL);
 }
 
 #endif /* GL_EXT_base_instance */
@@ -4230,11 +4306,11 @@ static void _glewInfo_GL_EXT_bgra (void)
 
 static void _glewInfo_GL_EXT_bindable_uniform (void)
 {
-  glewPrintExt("GL_EXT_bindable_uniform", GLEW_EXT_bindable_uniform, glewIsSupported("GL_EXT_bindable_uniform"), glewGetExtension("GL_EXT_bindable_uniform"));
+  GLboolean fi = glewPrintExt("GL_EXT_bindable_uniform", GLEW_EXT_bindable_uniform, glewIsSupported("GL_EXT_bindable_uniform"), glewGetExtension("GL_EXT_bindable_uniform"));
 
-  glewInfoFunc("glGetUniformBufferSizeEXT", glGetUniformBufferSizeEXT == NULL);
-  glewInfoFunc("glGetUniformOffsetEXT", glGetUniformOffsetEXT == NULL);
-  glewInfoFunc("glUniformBufferEXT", glUniformBufferEXT == NULL);
+  glewInfoFunc(fi, "glGetUniformBufferSizeEXT", glGetUniformBufferSizeEXT == NULL);
+  glewInfoFunc(fi, "glGetUniformOffsetEXT", glGetUniformOffsetEXT == NULL);
+  glewInfoFunc(fi, "glUniformBufferEXT", glUniformBufferEXT == NULL);
 }
 
 #endif /* GL_EXT_bindable_uniform */
@@ -4243,9 +4319,9 @@ static void _glewInfo_GL_EXT_bindable_uniform (void)
 
 static void _glewInfo_GL_EXT_blend_color (void)
 {
-  glewPrintExt("GL_EXT_blend_color", GLEW_EXT_blend_color, glewIsSupported("GL_EXT_blend_color"), glewGetExtension("GL_EXT_blend_color"));
+  GLboolean fi = glewPrintExt("GL_EXT_blend_color", GLEW_EXT_blend_color, glewIsSupported("GL_EXT_blend_color"), glewGetExtension("GL_EXT_blend_color"));
 
-  glewInfoFunc("glBlendColorEXT", glBlendColorEXT == NULL);
+  glewInfoFunc(fi, "glBlendColorEXT", glBlendColorEXT == NULL);
 }
 
 #endif /* GL_EXT_blend_color */
@@ -4254,9 +4330,9 @@ static void _glewInfo_GL_EXT_blend_color (void)
 
 static void _glewInfo_GL_EXT_blend_equation_separate (void)
 {
-  glewPrintExt("GL_EXT_blend_equation_separate", GLEW_EXT_blend_equation_separate, glewIsSupported("GL_EXT_blend_equation_separate"), glewGetExtension("GL_EXT_blend_equation_separate"));
+  GLboolean fi = glewPrintExt("GL_EXT_blend_equation_separate", GLEW_EXT_blend_equation_separate, glewIsSupported("GL_EXT_blend_equation_separate"), glewGetExtension("GL_EXT_blend_equation_separate"));
 
-  glewInfoFunc("glBlendEquationSeparateEXT", glBlendEquationSeparateEXT == NULL);
+  glewInfoFunc(fi, "glBlendEquationSeparateEXT", glBlendEquationSeparateEXT == NULL);
 }
 
 #endif /* GL_EXT_blend_equation_separate */
@@ -4265,11 +4341,11 @@ static void _glewInfo_GL_EXT_blend_equation_separate (void)
 
 static void _glewInfo_GL_EXT_blend_func_extended (void)
 {
-  glewPrintExt("GL_EXT_blend_func_extended", GLEW_EXT_blend_func_extended, glewIsSupported("GL_EXT_blend_func_extended"), glewGetExtension("GL_EXT_blend_func_extended"));
+  GLboolean fi = glewPrintExt("GL_EXT_blend_func_extended", GLEW_EXT_blend_func_extended, glewIsSupported("GL_EXT_blend_func_extended"), glewGetExtension("GL_EXT_blend_func_extended"));
 
-  glewInfoFunc("glBindFragDataLocationIndexedEXT", glBindFragDataLocationIndexedEXT == NULL);
-  glewInfoFunc("glGetFragDataIndexEXT", glGetFragDataIndexEXT == NULL);
-  glewInfoFunc("glGetProgramResourceLocationIndexEXT", glGetProgramResourceLocationIndexEXT == NULL);
+  glewInfoFunc(fi, "glBindFragDataLocationIndexedEXT", glBindFragDataLocationIndexedEXT == NULL);
+  glewInfoFunc(fi, "glGetFragDataIndexEXT", glGetFragDataIndexEXT == NULL);
+  glewInfoFunc(fi, "glGetProgramResourceLocationIndexEXT", glGetProgramResourceLocationIndexEXT == NULL);
 }
 
 #endif /* GL_EXT_blend_func_extended */
@@ -4278,9 +4354,9 @@ static void _glewInfo_GL_EXT_blend_func_extended (void)
 
 static void _glewInfo_GL_EXT_blend_func_separate (void)
 {
-  glewPrintExt("GL_EXT_blend_func_separate", GLEW_EXT_blend_func_separate, glewIsSupported("GL_EXT_blend_func_separate"), glewGetExtension("GL_EXT_blend_func_separate"));
+  GLboolean fi = glewPrintExt("GL_EXT_blend_func_separate", GLEW_EXT_blend_func_separate, glewIsSupported("GL_EXT_blend_func_separate"), glewGetExtension("GL_EXT_blend_func_separate"));
 
-  glewInfoFunc("glBlendFuncSeparateEXT", glBlendFuncSeparateEXT == NULL);
+  glewInfoFunc(fi, "glBlendFuncSeparateEXT", glBlendFuncSeparateEXT == NULL);
 }
 
 #endif /* GL_EXT_blend_func_separate */
@@ -4298,9 +4374,9 @@ static void _glewInfo_GL_EXT_blend_logic_op (void)
 
 static void _glewInfo_GL_EXT_blend_minmax (void)
 {
-  glewPrintExt("GL_EXT_blend_minmax", GLEW_EXT_blend_minmax, glewIsSupported("GL_EXT_blend_minmax"), glewGetExtension("GL_EXT_blend_minmax"));
+  GLboolean fi = glewPrintExt("GL_EXT_blend_minmax", GLEW_EXT_blend_minmax, glewIsSupported("GL_EXT_blend_minmax"), glewGetExtension("GL_EXT_blend_minmax"));
 
-  glewInfoFunc("glBlendEquationEXT", glBlendEquationEXT == NULL);
+  glewInfoFunc(fi, "glBlendEquationEXT", glBlendEquationEXT == NULL);
 }
 
 #endif /* GL_EXT_blend_minmax */
@@ -4318,10 +4394,10 @@ static void _glewInfo_GL_EXT_blend_subtract (void)
 
 static void _glewInfo_GL_EXT_buffer_storage (void)
 {
-  glewPrintExt("GL_EXT_buffer_storage", GLEW_EXT_buffer_storage, glewIsSupported("GL_EXT_buffer_storage"), glewGetExtension("GL_EXT_buffer_storage"));
+  GLboolean fi = glewPrintExt("GL_EXT_buffer_storage", GLEW_EXT_buffer_storage, glewIsSupported("GL_EXT_buffer_storage"), glewGetExtension("GL_EXT_buffer_storage"));
 
-  glewInfoFunc("glBufferStorageEXT", glBufferStorageEXT == NULL);
-  glewInfoFunc("glNamedBufferStorageEXT", glNamedBufferStorageEXT == NULL);
+  glewInfoFunc(fi, "glBufferStorageEXT", glBufferStorageEXT == NULL);
+  glewInfoFunc(fi, "glNamedBufferStorageEXT", glNamedBufferStorageEXT == NULL);
 }
 
 #endif /* GL_EXT_buffer_storage */
@@ -4330,13 +4406,24 @@ static void _glewInfo_GL_EXT_buffer_storage (void)
 
 static void _glewInfo_GL_EXT_clear_texture (void)
 {
-  glewPrintExt("GL_EXT_clear_texture", GLEW_EXT_clear_texture, glewIsSupported("GL_EXT_clear_texture"), glewGetExtension("GL_EXT_clear_texture"));
+  GLboolean fi = glewPrintExt("GL_EXT_clear_texture", GLEW_EXT_clear_texture, glewIsSupported("GL_EXT_clear_texture"), glewGetExtension("GL_EXT_clear_texture"));
 
-  glewInfoFunc("glClearTexImageEXT", glClearTexImageEXT == NULL);
-  glewInfoFunc("glClearTexSubImageEXT", glClearTexSubImageEXT == NULL);
+  glewInfoFunc(fi, "glClearTexImageEXT", glClearTexImageEXT == NULL);
+  glewInfoFunc(fi, "glClearTexSubImageEXT", glClearTexSubImageEXT == NULL);
 }
 
 #endif /* GL_EXT_clear_texture */
+
+#ifdef GL_EXT_clip_control
+
+static void _glewInfo_GL_EXT_clip_control (void)
+{
+  GLboolean fi = glewPrintExt("GL_EXT_clip_control", GLEW_EXT_clip_control, glewIsSupported("GL_EXT_clip_control"), glewGetExtension("GL_EXT_clip_control"));
+
+  glewInfoFunc(fi, "glClipControlEXT", glClipControlEXT == NULL);
+}
+
+#endif /* GL_EXT_clip_control */
 
 #ifdef GL_EXT_clip_cull_distance
 
@@ -4387,10 +4474,10 @@ static void _glewInfo_GL_EXT_color_buffer_half_float (void)
 
 static void _glewInfo_GL_EXT_color_subtable (void)
 {
-  glewPrintExt("GL_EXT_color_subtable", GLEW_EXT_color_subtable, glewIsSupported("GL_EXT_color_subtable"), glewGetExtension("GL_EXT_color_subtable"));
+  GLboolean fi = glewPrintExt("GL_EXT_color_subtable", GLEW_EXT_color_subtable, glewIsSupported("GL_EXT_color_subtable"), glewGetExtension("GL_EXT_color_subtable"));
 
-  glewInfoFunc("glColorSubTableEXT", glColorSubTableEXT == NULL);
-  glewInfoFunc("glCopyColorSubTableEXT", glCopyColorSubTableEXT == NULL);
+  glewInfoFunc(fi, "glColorSubTableEXT", glColorSubTableEXT == NULL);
+  glewInfoFunc(fi, "glCopyColorSubTableEXT", glCopyColorSubTableEXT == NULL);
 }
 
 #endif /* GL_EXT_color_subtable */
@@ -4399,10 +4486,10 @@ static void _glewInfo_GL_EXT_color_subtable (void)
 
 static void _glewInfo_GL_EXT_compiled_vertex_array (void)
 {
-  glewPrintExt("GL_EXT_compiled_vertex_array", GLEW_EXT_compiled_vertex_array, glewIsSupported("GL_EXT_compiled_vertex_array"), glewGetExtension("GL_EXT_compiled_vertex_array"));
+  GLboolean fi = glewPrintExt("GL_EXT_compiled_vertex_array", GLEW_EXT_compiled_vertex_array, glewIsSupported("GL_EXT_compiled_vertex_array"), glewGetExtension("GL_EXT_compiled_vertex_array"));
 
-  glewInfoFunc("glLockArraysEXT", glLockArraysEXT == NULL);
-  glewInfoFunc("glUnlockArraysEXT", glUnlockArraysEXT == NULL);
+  glewInfoFunc(fi, "glLockArraysEXT", glLockArraysEXT == NULL);
+  glewInfoFunc(fi, "glUnlockArraysEXT", glUnlockArraysEXT == NULL);
 }
 
 #endif /* GL_EXT_compiled_vertex_array */
@@ -4429,21 +4516,21 @@ static void _glewInfo_GL_EXT_conservative_depth (void)
 
 static void _glewInfo_GL_EXT_convolution (void)
 {
-  glewPrintExt("GL_EXT_convolution", GLEW_EXT_convolution, glewIsSupported("GL_EXT_convolution"), glewGetExtension("GL_EXT_convolution"));
+  GLboolean fi = glewPrintExt("GL_EXT_convolution", GLEW_EXT_convolution, glewIsSupported("GL_EXT_convolution"), glewGetExtension("GL_EXT_convolution"));
 
-  glewInfoFunc("glConvolutionFilter1DEXT", glConvolutionFilter1DEXT == NULL);
-  glewInfoFunc("glConvolutionFilter2DEXT", glConvolutionFilter2DEXT == NULL);
-  glewInfoFunc("glConvolutionParameterfEXT", glConvolutionParameterfEXT == NULL);
-  glewInfoFunc("glConvolutionParameterfvEXT", glConvolutionParameterfvEXT == NULL);
-  glewInfoFunc("glConvolutionParameteriEXT", glConvolutionParameteriEXT == NULL);
-  glewInfoFunc("glConvolutionParameterivEXT", glConvolutionParameterivEXT == NULL);
-  glewInfoFunc("glCopyConvolutionFilter1DEXT", glCopyConvolutionFilter1DEXT == NULL);
-  glewInfoFunc("glCopyConvolutionFilter2DEXT", glCopyConvolutionFilter2DEXT == NULL);
-  glewInfoFunc("glGetConvolutionFilterEXT", glGetConvolutionFilterEXT == NULL);
-  glewInfoFunc("glGetConvolutionParameterfvEXT", glGetConvolutionParameterfvEXT == NULL);
-  glewInfoFunc("glGetConvolutionParameterivEXT", glGetConvolutionParameterivEXT == NULL);
-  glewInfoFunc("glGetSeparableFilterEXT", glGetSeparableFilterEXT == NULL);
-  glewInfoFunc("glSeparableFilter2DEXT", glSeparableFilter2DEXT == NULL);
+  glewInfoFunc(fi, "glConvolutionFilter1DEXT", glConvolutionFilter1DEXT == NULL);
+  glewInfoFunc(fi, "glConvolutionFilter2DEXT", glConvolutionFilter2DEXT == NULL);
+  glewInfoFunc(fi, "glConvolutionParameterfEXT", glConvolutionParameterfEXT == NULL);
+  glewInfoFunc(fi, "glConvolutionParameterfvEXT", glConvolutionParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glConvolutionParameteriEXT", glConvolutionParameteriEXT == NULL);
+  glewInfoFunc(fi, "glConvolutionParameterivEXT", glConvolutionParameterivEXT == NULL);
+  glewInfoFunc(fi, "glCopyConvolutionFilter1DEXT", glCopyConvolutionFilter1DEXT == NULL);
+  glewInfoFunc(fi, "glCopyConvolutionFilter2DEXT", glCopyConvolutionFilter2DEXT == NULL);
+  glewInfoFunc(fi, "glGetConvolutionFilterEXT", glGetConvolutionFilterEXT == NULL);
+  glewInfoFunc(fi, "glGetConvolutionParameterfvEXT", glGetConvolutionParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetConvolutionParameterivEXT", glGetConvolutionParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetSeparableFilterEXT", glGetSeparableFilterEXT == NULL);
+  glewInfoFunc(fi, "glSeparableFilter2DEXT", glSeparableFilter2DEXT == NULL);
 }
 
 #endif /* GL_EXT_convolution */
@@ -4452,10 +4539,10 @@ static void _glewInfo_GL_EXT_convolution (void)
 
 static void _glewInfo_GL_EXT_coordinate_frame (void)
 {
-  glewPrintExt("GL_EXT_coordinate_frame", GLEW_EXT_coordinate_frame, glewIsSupported("GL_EXT_coordinate_frame"), glewGetExtension("GL_EXT_coordinate_frame"));
+  GLboolean fi = glewPrintExt("GL_EXT_coordinate_frame", GLEW_EXT_coordinate_frame, glewIsSupported("GL_EXT_coordinate_frame"), glewGetExtension("GL_EXT_coordinate_frame"));
 
-  glewInfoFunc("glBinormalPointerEXT", glBinormalPointerEXT == NULL);
-  glewInfoFunc("glTangentPointerEXT", glTangentPointerEXT == NULL);
+  glewInfoFunc(fi, "glBinormalPointerEXT", glBinormalPointerEXT == NULL);
+  glewInfoFunc(fi, "glTangentPointerEXT", glTangentPointerEXT == NULL);
 }
 
 #endif /* GL_EXT_coordinate_frame */
@@ -4464,9 +4551,9 @@ static void _glewInfo_GL_EXT_coordinate_frame (void)
 
 static void _glewInfo_GL_EXT_copy_image (void)
 {
-  glewPrintExt("GL_EXT_copy_image", GLEW_EXT_copy_image, glewIsSupported("GL_EXT_copy_image"), glewGetExtension("GL_EXT_copy_image"));
+  GLboolean fi = glewPrintExt("GL_EXT_copy_image", GLEW_EXT_copy_image, glewIsSupported("GL_EXT_copy_image"), glewGetExtension("GL_EXT_copy_image"));
 
-  glewInfoFunc("glCopyImageSubDataEXT", glCopyImageSubDataEXT == NULL);
+  glewInfoFunc(fi, "glCopyImageSubDataEXT", glCopyImageSubDataEXT == NULL);
 }
 
 #endif /* GL_EXT_copy_image */
@@ -4475,13 +4562,13 @@ static void _glewInfo_GL_EXT_copy_image (void)
 
 static void _glewInfo_GL_EXT_copy_texture (void)
 {
-  glewPrintExt("GL_EXT_copy_texture", GLEW_EXT_copy_texture, glewIsSupported("GL_EXT_copy_texture"), glewGetExtension("GL_EXT_copy_texture"));
+  GLboolean fi = glewPrintExt("GL_EXT_copy_texture", GLEW_EXT_copy_texture, glewIsSupported("GL_EXT_copy_texture"), glewGetExtension("GL_EXT_copy_texture"));
 
-  glewInfoFunc("glCopyTexImage1DEXT", glCopyTexImage1DEXT == NULL);
-  glewInfoFunc("glCopyTexImage2DEXT", glCopyTexImage2DEXT == NULL);
-  glewInfoFunc("glCopyTexSubImage1DEXT", glCopyTexSubImage1DEXT == NULL);
-  glewInfoFunc("glCopyTexSubImage2DEXT", glCopyTexSubImage2DEXT == NULL);
-  glewInfoFunc("glCopyTexSubImage3DEXT", glCopyTexSubImage3DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTexImage1DEXT", glCopyTexImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTexImage2DEXT", glCopyTexImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTexSubImage1DEXT", glCopyTexSubImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTexSubImage2DEXT", glCopyTexSubImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTexSubImage3DEXT", glCopyTexSubImage3DEXT == NULL);
 }
 
 #endif /* GL_EXT_copy_texture */
@@ -4490,10 +4577,10 @@ static void _glewInfo_GL_EXT_copy_texture (void)
 
 static void _glewInfo_GL_EXT_cull_vertex (void)
 {
-  glewPrintExt("GL_EXT_cull_vertex", GLEW_EXT_cull_vertex, glewIsSupported("GL_EXT_cull_vertex"), glewGetExtension("GL_EXT_cull_vertex"));
+  GLboolean fi = glewPrintExt("GL_EXT_cull_vertex", GLEW_EXT_cull_vertex, glewIsSupported("GL_EXT_cull_vertex"), glewGetExtension("GL_EXT_cull_vertex"));
 
-  glewInfoFunc("glCullParameterdvEXT", glCullParameterdvEXT == NULL);
-  glewInfoFunc("glCullParameterfvEXT", glCullParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glCullParameterdvEXT", glCullParameterdvEXT == NULL);
+  glewInfoFunc(fi, "glCullParameterfvEXT", glCullParameterfvEXT == NULL);
 }
 
 #endif /* GL_EXT_cull_vertex */
@@ -4502,10 +4589,10 @@ static void _glewInfo_GL_EXT_cull_vertex (void)
 
 static void _glewInfo_GL_EXT_debug_label (void)
 {
-  glewPrintExt("GL_EXT_debug_label", GLEW_EXT_debug_label, glewIsSupported("GL_EXT_debug_label"), glewGetExtension("GL_EXT_debug_label"));
+  GLboolean fi = glewPrintExt("GL_EXT_debug_label", GLEW_EXT_debug_label, glewIsSupported("GL_EXT_debug_label"), glewGetExtension("GL_EXT_debug_label"));
 
-  glewInfoFunc("glGetObjectLabelEXT", glGetObjectLabelEXT == NULL);
-  glewInfoFunc("glLabelObjectEXT", glLabelObjectEXT == NULL);
+  glewInfoFunc(fi, "glGetObjectLabelEXT", glGetObjectLabelEXT == NULL);
+  glewInfoFunc(fi, "glLabelObjectEXT", glLabelObjectEXT == NULL);
 }
 
 #endif /* GL_EXT_debug_label */
@@ -4514,11 +4601,11 @@ static void _glewInfo_GL_EXT_debug_label (void)
 
 static void _glewInfo_GL_EXT_debug_marker (void)
 {
-  glewPrintExt("GL_EXT_debug_marker", GLEW_EXT_debug_marker, glewIsSupported("GL_EXT_debug_marker"), glewGetExtension("GL_EXT_debug_marker"));
+  GLboolean fi = glewPrintExt("GL_EXT_debug_marker", GLEW_EXT_debug_marker, glewIsSupported("GL_EXT_debug_marker"), glewGetExtension("GL_EXT_debug_marker"));
 
-  glewInfoFunc("glInsertEventMarkerEXT", glInsertEventMarkerEXT == NULL);
-  glewInfoFunc("glPopGroupMarkerEXT", glPopGroupMarkerEXT == NULL);
-  glewInfoFunc("glPushGroupMarkerEXT", glPushGroupMarkerEXT == NULL);
+  glewInfoFunc(fi, "glInsertEventMarkerEXT", glInsertEventMarkerEXT == NULL);
+  glewInfoFunc(fi, "glPopGroupMarkerEXT", glPopGroupMarkerEXT == NULL);
+  glewInfoFunc(fi, "glPushGroupMarkerEXT", glPushGroupMarkerEXT == NULL);
 }
 
 #endif /* GL_EXT_debug_marker */
@@ -4527,233 +4614,242 @@ static void _glewInfo_GL_EXT_debug_marker (void)
 
 static void _glewInfo_GL_EXT_depth_bounds_test (void)
 {
-  glewPrintExt("GL_EXT_depth_bounds_test", GLEW_EXT_depth_bounds_test, glewIsSupported("GL_EXT_depth_bounds_test"), glewGetExtension("GL_EXT_depth_bounds_test"));
+  GLboolean fi = glewPrintExt("GL_EXT_depth_bounds_test", GLEW_EXT_depth_bounds_test, glewIsSupported("GL_EXT_depth_bounds_test"), glewGetExtension("GL_EXT_depth_bounds_test"));
 
-  glewInfoFunc("glDepthBoundsEXT", glDepthBoundsEXT == NULL);
+  glewInfoFunc(fi, "glDepthBoundsEXT", glDepthBoundsEXT == NULL);
 }
 
 #endif /* GL_EXT_depth_bounds_test */
+
+#ifdef GL_EXT_depth_clamp
+
+static void _glewInfo_GL_EXT_depth_clamp (void)
+{
+  glewPrintExt("GL_EXT_depth_clamp", GLEW_EXT_depth_clamp, glewIsSupported("GL_EXT_depth_clamp"), glewGetExtension("GL_EXT_depth_clamp"));
+}
+
+#endif /* GL_EXT_depth_clamp */
 
 #ifdef GL_EXT_direct_state_access
 
 static void _glewInfo_GL_EXT_direct_state_access (void)
 {
-  glewPrintExt("GL_EXT_direct_state_access", GLEW_EXT_direct_state_access, glewIsSupported("GL_EXT_direct_state_access"), glewGetExtension("GL_EXT_direct_state_access"));
+  GLboolean fi = glewPrintExt("GL_EXT_direct_state_access", GLEW_EXT_direct_state_access, glewIsSupported("GL_EXT_direct_state_access"), glewGetExtension("GL_EXT_direct_state_access"));
 
-  glewInfoFunc("glBindMultiTextureEXT", glBindMultiTextureEXT == NULL);
-  glewInfoFunc("glCheckNamedFramebufferStatusEXT", glCheckNamedFramebufferStatusEXT == NULL);
-  glewInfoFunc("glClientAttribDefaultEXT", glClientAttribDefaultEXT == NULL);
-  glewInfoFunc("glCompressedMultiTexImage1DEXT", glCompressedMultiTexImage1DEXT == NULL);
-  glewInfoFunc("glCompressedMultiTexImage2DEXT", glCompressedMultiTexImage2DEXT == NULL);
-  glewInfoFunc("glCompressedMultiTexImage3DEXT", glCompressedMultiTexImage3DEXT == NULL);
-  glewInfoFunc("glCompressedMultiTexSubImage1DEXT", glCompressedMultiTexSubImage1DEXT == NULL);
-  glewInfoFunc("glCompressedMultiTexSubImage2DEXT", glCompressedMultiTexSubImage2DEXT == NULL);
-  glewInfoFunc("glCompressedMultiTexSubImage3DEXT", glCompressedMultiTexSubImage3DEXT == NULL);
-  glewInfoFunc("glCompressedTextureImage1DEXT", glCompressedTextureImage1DEXT == NULL);
-  glewInfoFunc("glCompressedTextureImage2DEXT", glCompressedTextureImage2DEXT == NULL);
-  glewInfoFunc("glCompressedTextureImage3DEXT", glCompressedTextureImage3DEXT == NULL);
-  glewInfoFunc("glCompressedTextureSubImage1DEXT", glCompressedTextureSubImage1DEXT == NULL);
-  glewInfoFunc("glCompressedTextureSubImage2DEXT", glCompressedTextureSubImage2DEXT == NULL);
-  glewInfoFunc("glCompressedTextureSubImage3DEXT", glCompressedTextureSubImage3DEXT == NULL);
-  glewInfoFunc("glCopyMultiTexImage1DEXT", glCopyMultiTexImage1DEXT == NULL);
-  glewInfoFunc("glCopyMultiTexImage2DEXT", glCopyMultiTexImage2DEXT == NULL);
-  glewInfoFunc("glCopyMultiTexSubImage1DEXT", glCopyMultiTexSubImage1DEXT == NULL);
-  glewInfoFunc("glCopyMultiTexSubImage2DEXT", glCopyMultiTexSubImage2DEXT == NULL);
-  glewInfoFunc("glCopyMultiTexSubImage3DEXT", glCopyMultiTexSubImage3DEXT == NULL);
-  glewInfoFunc("glCopyTextureImage1DEXT", glCopyTextureImage1DEXT == NULL);
-  glewInfoFunc("glCopyTextureImage2DEXT", glCopyTextureImage2DEXT == NULL);
-  glewInfoFunc("glCopyTextureSubImage1DEXT", glCopyTextureSubImage1DEXT == NULL);
-  glewInfoFunc("glCopyTextureSubImage2DEXT", glCopyTextureSubImage2DEXT == NULL);
-  glewInfoFunc("glCopyTextureSubImage3DEXT", glCopyTextureSubImage3DEXT == NULL);
-  glewInfoFunc("glDisableClientStateIndexedEXT", glDisableClientStateIndexedEXT == NULL);
-  glewInfoFunc("glDisableClientStateiEXT", glDisableClientStateiEXT == NULL);
-  glewInfoFunc("glDisableVertexArrayAttribEXT", glDisableVertexArrayAttribEXT == NULL);
-  glewInfoFunc("glDisableVertexArrayEXT", glDisableVertexArrayEXT == NULL);
-  glewInfoFunc("glEnableClientStateIndexedEXT", glEnableClientStateIndexedEXT == NULL);
-  glewInfoFunc("glEnableClientStateiEXT", glEnableClientStateiEXT == NULL);
-  glewInfoFunc("glEnableVertexArrayAttribEXT", glEnableVertexArrayAttribEXT == NULL);
-  glewInfoFunc("glEnableVertexArrayEXT", glEnableVertexArrayEXT == NULL);
-  glewInfoFunc("glFlushMappedNamedBufferRangeEXT", glFlushMappedNamedBufferRangeEXT == NULL);
-  glewInfoFunc("glFramebufferDrawBufferEXT", glFramebufferDrawBufferEXT == NULL);
-  glewInfoFunc("glFramebufferDrawBuffersEXT", glFramebufferDrawBuffersEXT == NULL);
-  glewInfoFunc("glFramebufferReadBufferEXT", glFramebufferReadBufferEXT == NULL);
-  glewInfoFunc("glGenerateMultiTexMipmapEXT", glGenerateMultiTexMipmapEXT == NULL);
-  glewInfoFunc("glGenerateTextureMipmapEXT", glGenerateTextureMipmapEXT == NULL);
-  glewInfoFunc("glGetCompressedMultiTexImageEXT", glGetCompressedMultiTexImageEXT == NULL);
-  glewInfoFunc("glGetCompressedTextureImageEXT", glGetCompressedTextureImageEXT == NULL);
-  glewInfoFunc("glGetDoubleIndexedvEXT", glGetDoubleIndexedvEXT == NULL);
-  glewInfoFunc("glGetDoublei_vEXT", glGetDoublei_vEXT == NULL);
-  glewInfoFunc("glGetFloatIndexedvEXT", glGetFloatIndexedvEXT == NULL);
-  glewInfoFunc("glGetFloati_vEXT", glGetFloati_vEXT == NULL);
-  glewInfoFunc("glGetFramebufferParameterivEXT", glGetFramebufferParameterivEXT == NULL);
-  glewInfoFunc("glGetMultiTexEnvfvEXT", glGetMultiTexEnvfvEXT == NULL);
-  glewInfoFunc("glGetMultiTexEnvivEXT", glGetMultiTexEnvivEXT == NULL);
-  glewInfoFunc("glGetMultiTexGendvEXT", glGetMultiTexGendvEXT == NULL);
-  glewInfoFunc("glGetMultiTexGenfvEXT", glGetMultiTexGenfvEXT == NULL);
-  glewInfoFunc("glGetMultiTexGenivEXT", glGetMultiTexGenivEXT == NULL);
-  glewInfoFunc("glGetMultiTexImageEXT", glGetMultiTexImageEXT == NULL);
-  glewInfoFunc("glGetMultiTexLevelParameterfvEXT", glGetMultiTexLevelParameterfvEXT == NULL);
-  glewInfoFunc("glGetMultiTexLevelParameterivEXT", glGetMultiTexLevelParameterivEXT == NULL);
-  glewInfoFunc("glGetMultiTexParameterIivEXT", glGetMultiTexParameterIivEXT == NULL);
-  glewInfoFunc("glGetMultiTexParameterIuivEXT", glGetMultiTexParameterIuivEXT == NULL);
-  glewInfoFunc("glGetMultiTexParameterfvEXT", glGetMultiTexParameterfvEXT == NULL);
-  glewInfoFunc("glGetMultiTexParameterivEXT", glGetMultiTexParameterivEXT == NULL);
-  glewInfoFunc("glGetNamedBufferParameterivEXT", glGetNamedBufferParameterivEXT == NULL);
-  glewInfoFunc("glGetNamedBufferPointervEXT", glGetNamedBufferPointervEXT == NULL);
-  glewInfoFunc("glGetNamedBufferSubDataEXT", glGetNamedBufferSubDataEXT == NULL);
-  glewInfoFunc("glGetNamedFramebufferAttachmentParameterivEXT", glGetNamedFramebufferAttachmentParameterivEXT == NULL);
-  glewInfoFunc("glGetNamedProgramLocalParameterIivEXT", glGetNamedProgramLocalParameterIivEXT == NULL);
-  glewInfoFunc("glGetNamedProgramLocalParameterIuivEXT", glGetNamedProgramLocalParameterIuivEXT == NULL);
-  glewInfoFunc("glGetNamedProgramLocalParameterdvEXT", glGetNamedProgramLocalParameterdvEXT == NULL);
-  glewInfoFunc("glGetNamedProgramLocalParameterfvEXT", glGetNamedProgramLocalParameterfvEXT == NULL);
-  glewInfoFunc("glGetNamedProgramStringEXT", glGetNamedProgramStringEXT == NULL);
-  glewInfoFunc("glGetNamedProgramivEXT", glGetNamedProgramivEXT == NULL);
-  glewInfoFunc("glGetNamedRenderbufferParameterivEXT", glGetNamedRenderbufferParameterivEXT == NULL);
-  glewInfoFunc("glGetPointerIndexedvEXT", glGetPointerIndexedvEXT == NULL);
-  glewInfoFunc("glGetPointeri_vEXT", glGetPointeri_vEXT == NULL);
-  glewInfoFunc("glGetTextureImageEXT", glGetTextureImageEXT == NULL);
-  glewInfoFunc("glGetTextureLevelParameterfvEXT", glGetTextureLevelParameterfvEXT == NULL);
-  glewInfoFunc("glGetTextureLevelParameterivEXT", glGetTextureLevelParameterivEXT == NULL);
-  glewInfoFunc("glGetTextureParameterIivEXT", glGetTextureParameterIivEXT == NULL);
-  glewInfoFunc("glGetTextureParameterIuivEXT", glGetTextureParameterIuivEXT == NULL);
-  glewInfoFunc("glGetTextureParameterfvEXT", glGetTextureParameterfvEXT == NULL);
-  glewInfoFunc("glGetTextureParameterivEXT", glGetTextureParameterivEXT == NULL);
-  glewInfoFunc("glGetVertexArrayIntegeri_vEXT", glGetVertexArrayIntegeri_vEXT == NULL);
-  glewInfoFunc("glGetVertexArrayIntegervEXT", glGetVertexArrayIntegervEXT == NULL);
-  glewInfoFunc("glGetVertexArrayPointeri_vEXT", glGetVertexArrayPointeri_vEXT == NULL);
-  glewInfoFunc("glGetVertexArrayPointervEXT", glGetVertexArrayPointervEXT == NULL);
-  glewInfoFunc("glMapNamedBufferEXT", glMapNamedBufferEXT == NULL);
-  glewInfoFunc("glMapNamedBufferRangeEXT", glMapNamedBufferRangeEXT == NULL);
-  glewInfoFunc("glMatrixFrustumEXT", glMatrixFrustumEXT == NULL);
-  glewInfoFunc("glMatrixLoadIdentityEXT", glMatrixLoadIdentityEXT == NULL);
-  glewInfoFunc("glMatrixLoadTransposedEXT", glMatrixLoadTransposedEXT == NULL);
-  glewInfoFunc("glMatrixLoadTransposefEXT", glMatrixLoadTransposefEXT == NULL);
-  glewInfoFunc("glMatrixLoaddEXT", glMatrixLoaddEXT == NULL);
-  glewInfoFunc("glMatrixLoadfEXT", glMatrixLoadfEXT == NULL);
-  glewInfoFunc("glMatrixMultTransposedEXT", glMatrixMultTransposedEXT == NULL);
-  glewInfoFunc("glMatrixMultTransposefEXT", glMatrixMultTransposefEXT == NULL);
-  glewInfoFunc("glMatrixMultdEXT", glMatrixMultdEXT == NULL);
-  glewInfoFunc("glMatrixMultfEXT", glMatrixMultfEXT == NULL);
-  glewInfoFunc("glMatrixOrthoEXT", glMatrixOrthoEXT == NULL);
-  glewInfoFunc("glMatrixPopEXT", glMatrixPopEXT == NULL);
-  glewInfoFunc("glMatrixPushEXT", glMatrixPushEXT == NULL);
-  glewInfoFunc("glMatrixRotatedEXT", glMatrixRotatedEXT == NULL);
-  glewInfoFunc("glMatrixRotatefEXT", glMatrixRotatefEXT == NULL);
-  glewInfoFunc("glMatrixScaledEXT", glMatrixScaledEXT == NULL);
-  glewInfoFunc("glMatrixScalefEXT", glMatrixScalefEXT == NULL);
-  glewInfoFunc("glMatrixTranslatedEXT", glMatrixTranslatedEXT == NULL);
-  glewInfoFunc("glMatrixTranslatefEXT", glMatrixTranslatefEXT == NULL);
-  glewInfoFunc("glMultiTexBufferEXT", glMultiTexBufferEXT == NULL);
-  glewInfoFunc("glMultiTexCoordPointerEXT", glMultiTexCoordPointerEXT == NULL);
-  glewInfoFunc("glMultiTexEnvfEXT", glMultiTexEnvfEXT == NULL);
-  glewInfoFunc("glMultiTexEnvfvEXT", glMultiTexEnvfvEXT == NULL);
-  glewInfoFunc("glMultiTexEnviEXT", glMultiTexEnviEXT == NULL);
-  glewInfoFunc("glMultiTexEnvivEXT", glMultiTexEnvivEXT == NULL);
-  glewInfoFunc("glMultiTexGendEXT", glMultiTexGendEXT == NULL);
-  glewInfoFunc("glMultiTexGendvEXT", glMultiTexGendvEXT == NULL);
-  glewInfoFunc("glMultiTexGenfEXT", glMultiTexGenfEXT == NULL);
-  glewInfoFunc("glMultiTexGenfvEXT", glMultiTexGenfvEXT == NULL);
-  glewInfoFunc("glMultiTexGeniEXT", glMultiTexGeniEXT == NULL);
-  glewInfoFunc("glMultiTexGenivEXT", glMultiTexGenivEXT == NULL);
-  glewInfoFunc("glMultiTexImage1DEXT", glMultiTexImage1DEXT == NULL);
-  glewInfoFunc("glMultiTexImage2DEXT", glMultiTexImage2DEXT == NULL);
-  glewInfoFunc("glMultiTexImage3DEXT", glMultiTexImage3DEXT == NULL);
-  glewInfoFunc("glMultiTexParameterIivEXT", glMultiTexParameterIivEXT == NULL);
-  glewInfoFunc("glMultiTexParameterIuivEXT", glMultiTexParameterIuivEXT == NULL);
-  glewInfoFunc("glMultiTexParameterfEXT", glMultiTexParameterfEXT == NULL);
-  glewInfoFunc("glMultiTexParameterfvEXT", glMultiTexParameterfvEXT == NULL);
-  glewInfoFunc("glMultiTexParameteriEXT", glMultiTexParameteriEXT == NULL);
-  glewInfoFunc("glMultiTexParameterivEXT", glMultiTexParameterivEXT == NULL);
-  glewInfoFunc("glMultiTexRenderbufferEXT", glMultiTexRenderbufferEXT == NULL);
-  glewInfoFunc("glMultiTexSubImage1DEXT", glMultiTexSubImage1DEXT == NULL);
-  glewInfoFunc("glMultiTexSubImage2DEXT", glMultiTexSubImage2DEXT == NULL);
-  glewInfoFunc("glMultiTexSubImage3DEXT", glMultiTexSubImage3DEXT == NULL);
-  glewInfoFunc("glNamedBufferDataEXT", glNamedBufferDataEXT == NULL);
-  glewInfoFunc("glNamedBufferSubDataEXT", glNamedBufferSubDataEXT == NULL);
-  glewInfoFunc("glNamedCopyBufferSubDataEXT", glNamedCopyBufferSubDataEXT == NULL);
-  glewInfoFunc("glNamedFramebufferRenderbufferEXT", glNamedFramebufferRenderbufferEXT == NULL);
-  glewInfoFunc("glNamedFramebufferTexture1DEXT", glNamedFramebufferTexture1DEXT == NULL);
-  glewInfoFunc("glNamedFramebufferTexture2DEXT", glNamedFramebufferTexture2DEXT == NULL);
-  glewInfoFunc("glNamedFramebufferTexture3DEXT", glNamedFramebufferTexture3DEXT == NULL);
-  glewInfoFunc("glNamedFramebufferTextureEXT", glNamedFramebufferTextureEXT == NULL);
-  glewInfoFunc("glNamedFramebufferTextureFaceEXT", glNamedFramebufferTextureFaceEXT == NULL);
-  glewInfoFunc("glNamedFramebufferTextureLayerEXT", glNamedFramebufferTextureLayerEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameter4dEXT", glNamedProgramLocalParameter4dEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameter4dvEXT", glNamedProgramLocalParameter4dvEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameter4fEXT", glNamedProgramLocalParameter4fEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameter4fvEXT", glNamedProgramLocalParameter4fvEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameterI4iEXT", glNamedProgramLocalParameterI4iEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameterI4ivEXT", glNamedProgramLocalParameterI4ivEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameterI4uiEXT", glNamedProgramLocalParameterI4uiEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameterI4uivEXT", glNamedProgramLocalParameterI4uivEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParameters4fvEXT", glNamedProgramLocalParameters4fvEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParametersI4ivEXT", glNamedProgramLocalParametersI4ivEXT == NULL);
-  glewInfoFunc("glNamedProgramLocalParametersI4uivEXT", glNamedProgramLocalParametersI4uivEXT == NULL);
-  glewInfoFunc("glNamedProgramStringEXT", glNamedProgramStringEXT == NULL);
-  glewInfoFunc("glNamedRenderbufferStorageEXT", glNamedRenderbufferStorageEXT == NULL);
-  glewInfoFunc("glNamedRenderbufferStorageMultisampleCoverageEXT", glNamedRenderbufferStorageMultisampleCoverageEXT == NULL);
-  glewInfoFunc("glNamedRenderbufferStorageMultisampleEXT", glNamedRenderbufferStorageMultisampleEXT == NULL);
-  glewInfoFunc("glProgramUniform1fEXT", glProgramUniform1fEXT == NULL);
-  glewInfoFunc("glProgramUniform1fvEXT", glProgramUniform1fvEXT == NULL);
-  glewInfoFunc("glProgramUniform1iEXT", glProgramUniform1iEXT == NULL);
-  glewInfoFunc("glProgramUniform1ivEXT", glProgramUniform1ivEXT == NULL);
-  glewInfoFunc("glProgramUniform1uiEXT", glProgramUniform1uiEXT == NULL);
-  glewInfoFunc("glProgramUniform1uivEXT", glProgramUniform1uivEXT == NULL);
-  glewInfoFunc("glProgramUniform2fEXT", glProgramUniform2fEXT == NULL);
-  glewInfoFunc("glProgramUniform2fvEXT", glProgramUniform2fvEXT == NULL);
-  glewInfoFunc("glProgramUniform2iEXT", glProgramUniform2iEXT == NULL);
-  glewInfoFunc("glProgramUniform2ivEXT", glProgramUniform2ivEXT == NULL);
-  glewInfoFunc("glProgramUniform2uiEXT", glProgramUniform2uiEXT == NULL);
-  glewInfoFunc("glProgramUniform2uivEXT", glProgramUniform2uivEXT == NULL);
-  glewInfoFunc("glProgramUniform3fEXT", glProgramUniform3fEXT == NULL);
-  glewInfoFunc("glProgramUniform3fvEXT", glProgramUniform3fvEXT == NULL);
-  glewInfoFunc("glProgramUniform3iEXT", glProgramUniform3iEXT == NULL);
-  glewInfoFunc("glProgramUniform3ivEXT", glProgramUniform3ivEXT == NULL);
-  glewInfoFunc("glProgramUniform3uiEXT", glProgramUniform3uiEXT == NULL);
-  glewInfoFunc("glProgramUniform3uivEXT", glProgramUniform3uivEXT == NULL);
-  glewInfoFunc("glProgramUniform4fEXT", glProgramUniform4fEXT == NULL);
-  glewInfoFunc("glProgramUniform4fvEXT", glProgramUniform4fvEXT == NULL);
-  glewInfoFunc("glProgramUniform4iEXT", glProgramUniform4iEXT == NULL);
-  glewInfoFunc("glProgramUniform4ivEXT", glProgramUniform4ivEXT == NULL);
-  glewInfoFunc("glProgramUniform4uiEXT", glProgramUniform4uiEXT == NULL);
-  glewInfoFunc("glProgramUniform4uivEXT", glProgramUniform4uivEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix2fvEXT", glProgramUniformMatrix2fvEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix2x3fvEXT", glProgramUniformMatrix2x3fvEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix2x4fvEXT", glProgramUniformMatrix2x4fvEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix3fvEXT", glProgramUniformMatrix3fvEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix3x2fvEXT", glProgramUniformMatrix3x2fvEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix3x4fvEXT", glProgramUniformMatrix3x4fvEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix4fvEXT", glProgramUniformMatrix4fvEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix4x2fvEXT", glProgramUniformMatrix4x2fvEXT == NULL);
-  glewInfoFunc("glProgramUniformMatrix4x3fvEXT", glProgramUniformMatrix4x3fvEXT == NULL);
-  glewInfoFunc("glPushClientAttribDefaultEXT", glPushClientAttribDefaultEXT == NULL);
-  glewInfoFunc("glTextureBufferEXT", glTextureBufferEXT == NULL);
-  glewInfoFunc("glTextureImage1DEXT", glTextureImage1DEXT == NULL);
-  glewInfoFunc("glTextureImage2DEXT", glTextureImage2DEXT == NULL);
-  glewInfoFunc("glTextureImage3DEXT", glTextureImage3DEXT == NULL);
-  glewInfoFunc("glTextureParameterIivEXT", glTextureParameterIivEXT == NULL);
-  glewInfoFunc("glTextureParameterIuivEXT", glTextureParameterIuivEXT == NULL);
-  glewInfoFunc("glTextureParameterfEXT", glTextureParameterfEXT == NULL);
-  glewInfoFunc("glTextureParameterfvEXT", glTextureParameterfvEXT == NULL);
-  glewInfoFunc("glTextureParameteriEXT", glTextureParameteriEXT == NULL);
-  glewInfoFunc("glTextureParameterivEXT", glTextureParameterivEXT == NULL);
-  glewInfoFunc("glTextureRenderbufferEXT", glTextureRenderbufferEXT == NULL);
-  glewInfoFunc("glTextureSubImage1DEXT", glTextureSubImage1DEXT == NULL);
-  glewInfoFunc("glTextureSubImage2DEXT", glTextureSubImage2DEXT == NULL);
-  glewInfoFunc("glTextureSubImage3DEXT", glTextureSubImage3DEXT == NULL);
-  glewInfoFunc("glUnmapNamedBufferEXT", glUnmapNamedBufferEXT == NULL);
-  glewInfoFunc("glVertexArrayColorOffsetEXT", glVertexArrayColorOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayEdgeFlagOffsetEXT", glVertexArrayEdgeFlagOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayFogCoordOffsetEXT", glVertexArrayFogCoordOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayIndexOffsetEXT", glVertexArrayIndexOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayMultiTexCoordOffsetEXT", glVertexArrayMultiTexCoordOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayNormalOffsetEXT", glVertexArrayNormalOffsetEXT == NULL);
-  glewInfoFunc("glVertexArraySecondaryColorOffsetEXT", glVertexArraySecondaryColorOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayTexCoordOffsetEXT", glVertexArrayTexCoordOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexAttribDivisorEXT", glVertexArrayVertexAttribDivisorEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexAttribIOffsetEXT", glVertexArrayVertexAttribIOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexAttribOffsetEXT", glVertexArrayVertexAttribOffsetEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexOffsetEXT", glVertexArrayVertexOffsetEXT == NULL);
+  glewInfoFunc(fi, "glBindMultiTextureEXT", glBindMultiTextureEXT == NULL);
+  glewInfoFunc(fi, "glCheckNamedFramebufferStatusEXT", glCheckNamedFramebufferStatusEXT == NULL);
+  glewInfoFunc(fi, "glClientAttribDefaultEXT", glClientAttribDefaultEXT == NULL);
+  glewInfoFunc(fi, "glCompressedMultiTexImage1DEXT", glCompressedMultiTexImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedMultiTexImage2DEXT", glCompressedMultiTexImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedMultiTexImage3DEXT", glCompressedMultiTexImage3DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedMultiTexSubImage1DEXT", glCompressedMultiTexSubImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedMultiTexSubImage2DEXT", glCompressedMultiTexSubImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedMultiTexSubImage3DEXT", glCompressedMultiTexSubImage3DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedTextureImage1DEXT", glCompressedTextureImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedTextureImage2DEXT", glCompressedTextureImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedTextureImage3DEXT", glCompressedTextureImage3DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedTextureSubImage1DEXT", glCompressedTextureSubImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedTextureSubImage2DEXT", glCompressedTextureSubImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCompressedTextureSubImage3DEXT", glCompressedTextureSubImage3DEXT == NULL);
+  glewInfoFunc(fi, "glCopyMultiTexImage1DEXT", glCopyMultiTexImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCopyMultiTexImage2DEXT", glCopyMultiTexImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCopyMultiTexSubImage1DEXT", glCopyMultiTexSubImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCopyMultiTexSubImage2DEXT", glCopyMultiTexSubImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCopyMultiTexSubImage3DEXT", glCopyMultiTexSubImage3DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTextureImage1DEXT", glCopyTextureImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTextureImage2DEXT", glCopyTextureImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTextureSubImage1DEXT", glCopyTextureSubImage1DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTextureSubImage2DEXT", glCopyTextureSubImage2DEXT == NULL);
+  glewInfoFunc(fi, "glCopyTextureSubImage3DEXT", glCopyTextureSubImage3DEXT == NULL);
+  glewInfoFunc(fi, "glDisableClientStateIndexedEXT", glDisableClientStateIndexedEXT == NULL);
+  glewInfoFunc(fi, "glDisableClientStateiEXT", glDisableClientStateiEXT == NULL);
+  glewInfoFunc(fi, "glDisableVertexArrayAttribEXT", glDisableVertexArrayAttribEXT == NULL);
+  glewInfoFunc(fi, "glDisableVertexArrayEXT", glDisableVertexArrayEXT == NULL);
+  glewInfoFunc(fi, "glEnableClientStateIndexedEXT", glEnableClientStateIndexedEXT == NULL);
+  glewInfoFunc(fi, "glEnableClientStateiEXT", glEnableClientStateiEXT == NULL);
+  glewInfoFunc(fi, "glEnableVertexArrayAttribEXT", glEnableVertexArrayAttribEXT == NULL);
+  glewInfoFunc(fi, "glEnableVertexArrayEXT", glEnableVertexArrayEXT == NULL);
+  glewInfoFunc(fi, "glFlushMappedNamedBufferRangeEXT", glFlushMappedNamedBufferRangeEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferDrawBufferEXT", glFramebufferDrawBufferEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferDrawBuffersEXT", glFramebufferDrawBuffersEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferReadBufferEXT", glFramebufferReadBufferEXT == NULL);
+  glewInfoFunc(fi, "glGenerateMultiTexMipmapEXT", glGenerateMultiTexMipmapEXT == NULL);
+  glewInfoFunc(fi, "glGenerateTextureMipmapEXT", glGenerateTextureMipmapEXT == NULL);
+  glewInfoFunc(fi, "glGetCompressedMultiTexImageEXT", glGetCompressedMultiTexImageEXT == NULL);
+  glewInfoFunc(fi, "glGetCompressedTextureImageEXT", glGetCompressedTextureImageEXT == NULL);
+  glewInfoFunc(fi, "glGetDoubleIndexedvEXT", glGetDoubleIndexedvEXT == NULL);
+  glewInfoFunc(fi, "glGetDoublei_vEXT", glGetDoublei_vEXT == NULL);
+  glewInfoFunc(fi, "glGetFloatIndexedvEXT", glGetFloatIndexedvEXT == NULL);
+  glewInfoFunc(fi, "glGetFloati_vEXT", glGetFloati_vEXT == NULL);
+  glewInfoFunc(fi, "glGetFramebufferParameterivEXT", glGetFramebufferParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexEnvfvEXT", glGetMultiTexEnvfvEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexEnvivEXT", glGetMultiTexEnvivEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexGendvEXT", glGetMultiTexGendvEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexGenfvEXT", glGetMultiTexGenfvEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexGenivEXT", glGetMultiTexGenivEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexImageEXT", glGetMultiTexImageEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexLevelParameterfvEXT", glGetMultiTexLevelParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexLevelParameterivEXT", glGetMultiTexLevelParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexParameterIivEXT", glGetMultiTexParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexParameterIuivEXT", glGetMultiTexParameterIuivEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexParameterfvEXT", glGetMultiTexParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetMultiTexParameterivEXT", glGetMultiTexParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedBufferParameterivEXT", glGetNamedBufferParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedBufferPointervEXT", glGetNamedBufferPointervEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedBufferSubDataEXT", glGetNamedBufferSubDataEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedFramebufferAttachmentParameterivEXT", glGetNamedFramebufferAttachmentParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedProgramLocalParameterIivEXT", glGetNamedProgramLocalParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedProgramLocalParameterIuivEXT", glGetNamedProgramLocalParameterIuivEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedProgramLocalParameterdvEXT", glGetNamedProgramLocalParameterdvEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedProgramLocalParameterfvEXT", glGetNamedProgramLocalParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedProgramStringEXT", glGetNamedProgramStringEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedProgramivEXT", glGetNamedProgramivEXT == NULL);
+  glewInfoFunc(fi, "glGetNamedRenderbufferParameterivEXT", glGetNamedRenderbufferParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetPointerIndexedvEXT", glGetPointerIndexedvEXT == NULL);
+  glewInfoFunc(fi, "glGetPointeri_vEXT", glGetPointeri_vEXT == NULL);
+  glewInfoFunc(fi, "glGetTextureImageEXT", glGetTextureImageEXT == NULL);
+  glewInfoFunc(fi, "glGetTextureLevelParameterfvEXT", glGetTextureLevelParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetTextureLevelParameterivEXT", glGetTextureLevelParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetTextureParameterIivEXT", glGetTextureParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glGetTextureParameterIuivEXT", glGetTextureParameterIuivEXT == NULL);
+  glewInfoFunc(fi, "glGetTextureParameterfvEXT", glGetTextureParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetTextureParameterivEXT", glGetTextureParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetVertexArrayIntegeri_vEXT", glGetVertexArrayIntegeri_vEXT == NULL);
+  glewInfoFunc(fi, "glGetVertexArrayIntegervEXT", glGetVertexArrayIntegervEXT == NULL);
+  glewInfoFunc(fi, "glGetVertexArrayPointeri_vEXT", glGetVertexArrayPointeri_vEXT == NULL);
+  glewInfoFunc(fi, "glGetVertexArrayPointervEXT", glGetVertexArrayPointervEXT == NULL);
+  glewInfoFunc(fi, "glMapNamedBufferEXT", glMapNamedBufferEXT == NULL);
+  glewInfoFunc(fi, "glMapNamedBufferRangeEXT", glMapNamedBufferRangeEXT == NULL);
+  glewInfoFunc(fi, "glMatrixFrustumEXT", glMatrixFrustumEXT == NULL);
+  glewInfoFunc(fi, "glMatrixLoadIdentityEXT", glMatrixLoadIdentityEXT == NULL);
+  glewInfoFunc(fi, "glMatrixLoadTransposedEXT", glMatrixLoadTransposedEXT == NULL);
+  glewInfoFunc(fi, "glMatrixLoadTransposefEXT", glMatrixLoadTransposefEXT == NULL);
+  glewInfoFunc(fi, "glMatrixLoaddEXT", glMatrixLoaddEXT == NULL);
+  glewInfoFunc(fi, "glMatrixLoadfEXT", glMatrixLoadfEXT == NULL);
+  glewInfoFunc(fi, "glMatrixMultTransposedEXT", glMatrixMultTransposedEXT == NULL);
+  glewInfoFunc(fi, "glMatrixMultTransposefEXT", glMatrixMultTransposefEXT == NULL);
+  glewInfoFunc(fi, "glMatrixMultdEXT", glMatrixMultdEXT == NULL);
+  glewInfoFunc(fi, "glMatrixMultfEXT", glMatrixMultfEXT == NULL);
+  glewInfoFunc(fi, "glMatrixOrthoEXT", glMatrixOrthoEXT == NULL);
+  glewInfoFunc(fi, "glMatrixPopEXT", glMatrixPopEXT == NULL);
+  glewInfoFunc(fi, "glMatrixPushEXT", glMatrixPushEXT == NULL);
+  glewInfoFunc(fi, "glMatrixRotatedEXT", glMatrixRotatedEXT == NULL);
+  glewInfoFunc(fi, "glMatrixRotatefEXT", glMatrixRotatefEXT == NULL);
+  glewInfoFunc(fi, "glMatrixScaledEXT", glMatrixScaledEXT == NULL);
+  glewInfoFunc(fi, "glMatrixScalefEXT", glMatrixScalefEXT == NULL);
+  glewInfoFunc(fi, "glMatrixTranslatedEXT", glMatrixTranslatedEXT == NULL);
+  glewInfoFunc(fi, "glMatrixTranslatefEXT", glMatrixTranslatefEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexBufferEXT", glMultiTexBufferEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexCoordPointerEXT", glMultiTexCoordPointerEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexEnvfEXT", glMultiTexEnvfEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexEnvfvEXT", glMultiTexEnvfvEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexEnviEXT", glMultiTexEnviEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexEnvivEXT", glMultiTexEnvivEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexGendEXT", glMultiTexGendEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexGendvEXT", glMultiTexGendvEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexGenfEXT", glMultiTexGenfEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexGenfvEXT", glMultiTexGenfvEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexGeniEXT", glMultiTexGeniEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexGenivEXT", glMultiTexGenivEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexImage1DEXT", glMultiTexImage1DEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexImage2DEXT", glMultiTexImage2DEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexImage3DEXT", glMultiTexImage3DEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexParameterIivEXT", glMultiTexParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexParameterIuivEXT", glMultiTexParameterIuivEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexParameterfEXT", glMultiTexParameterfEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexParameterfvEXT", glMultiTexParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexParameteriEXT", glMultiTexParameteriEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexParameterivEXT", glMultiTexParameterivEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexRenderbufferEXT", glMultiTexRenderbufferEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexSubImage1DEXT", glMultiTexSubImage1DEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexSubImage2DEXT", glMultiTexSubImage2DEXT == NULL);
+  glewInfoFunc(fi, "glMultiTexSubImage3DEXT", glMultiTexSubImage3DEXT == NULL);
+  glewInfoFunc(fi, "glNamedBufferDataEXT", glNamedBufferDataEXT == NULL);
+  glewInfoFunc(fi, "glNamedBufferSubDataEXT", glNamedBufferSubDataEXT == NULL);
+  glewInfoFunc(fi, "glNamedCopyBufferSubDataEXT", glNamedCopyBufferSubDataEXT == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferRenderbufferEXT", glNamedFramebufferRenderbufferEXT == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTexture1DEXT", glNamedFramebufferTexture1DEXT == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTexture2DEXT", glNamedFramebufferTexture2DEXT == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTexture3DEXT", glNamedFramebufferTexture3DEXT == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTextureEXT", glNamedFramebufferTextureEXT == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTextureFaceEXT", glNamedFramebufferTextureFaceEXT == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTextureLayerEXT", glNamedFramebufferTextureLayerEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameter4dEXT", glNamedProgramLocalParameter4dEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameter4dvEXT", glNamedProgramLocalParameter4dvEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameter4fEXT", glNamedProgramLocalParameter4fEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameter4fvEXT", glNamedProgramLocalParameter4fvEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameterI4iEXT", glNamedProgramLocalParameterI4iEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameterI4ivEXT", glNamedProgramLocalParameterI4ivEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameterI4uiEXT", glNamedProgramLocalParameterI4uiEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameterI4uivEXT", glNamedProgramLocalParameterI4uivEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParameters4fvEXT", glNamedProgramLocalParameters4fvEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParametersI4ivEXT", glNamedProgramLocalParametersI4ivEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramLocalParametersI4uivEXT", glNamedProgramLocalParametersI4uivEXT == NULL);
+  glewInfoFunc(fi, "glNamedProgramStringEXT", glNamedProgramStringEXT == NULL);
+  glewInfoFunc(fi, "glNamedRenderbufferStorageEXT", glNamedRenderbufferStorageEXT == NULL);
+  glewInfoFunc(fi, "glNamedRenderbufferStorageMultisampleCoverageEXT", glNamedRenderbufferStorageMultisampleCoverageEXT == NULL);
+  glewInfoFunc(fi, "glNamedRenderbufferStorageMultisampleEXT", glNamedRenderbufferStorageMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform1fEXT", glProgramUniform1fEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform1fvEXT", glProgramUniform1fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform1iEXT", glProgramUniform1iEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform1ivEXT", glProgramUniform1ivEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform1uiEXT", glProgramUniform1uiEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform1uivEXT", glProgramUniform1uivEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform2fEXT", glProgramUniform2fEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform2fvEXT", glProgramUniform2fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform2iEXT", glProgramUniform2iEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform2ivEXT", glProgramUniform2ivEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform2uiEXT", glProgramUniform2uiEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform2uivEXT", glProgramUniform2uivEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform3fEXT", glProgramUniform3fEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform3fvEXT", glProgramUniform3fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform3iEXT", glProgramUniform3iEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform3ivEXT", glProgramUniform3ivEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform3uiEXT", glProgramUniform3uiEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform3uivEXT", glProgramUniform3uivEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform4fEXT", glProgramUniform4fEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform4fvEXT", glProgramUniform4fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform4iEXT", glProgramUniform4iEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform4ivEXT", glProgramUniform4ivEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform4uiEXT", glProgramUniform4uiEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniform4uivEXT", glProgramUniform4uivEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2fvEXT", glProgramUniformMatrix2fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2x3fvEXT", glProgramUniformMatrix2x3fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix2x4fvEXT", glProgramUniformMatrix2x4fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3fvEXT", glProgramUniformMatrix3fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3x2fvEXT", glProgramUniformMatrix3x2fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix3x4fvEXT", glProgramUniformMatrix3x4fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4fvEXT", glProgramUniformMatrix4fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4x2fvEXT", glProgramUniformMatrix4x2fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramUniformMatrix4x3fvEXT", glProgramUniformMatrix4x3fvEXT == NULL);
+  glewInfoFunc(fi, "glPushClientAttribDefaultEXT", glPushClientAttribDefaultEXT == NULL);
+  glewInfoFunc(fi, "glTextureBufferEXT", glTextureBufferEXT == NULL);
+  glewInfoFunc(fi, "glTextureImage1DEXT", glTextureImage1DEXT == NULL);
+  glewInfoFunc(fi, "glTextureImage2DEXT", glTextureImage2DEXT == NULL);
+  glewInfoFunc(fi, "glTextureImage3DEXT", glTextureImage3DEXT == NULL);
+  glewInfoFunc(fi, "glTextureParameterIivEXT", glTextureParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glTextureParameterIuivEXT", glTextureParameterIuivEXT == NULL);
+  glewInfoFunc(fi, "glTextureParameterfEXT", glTextureParameterfEXT == NULL);
+  glewInfoFunc(fi, "glTextureParameterfvEXT", glTextureParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glTextureParameteriEXT", glTextureParameteriEXT == NULL);
+  glewInfoFunc(fi, "glTextureParameterivEXT", glTextureParameterivEXT == NULL);
+  glewInfoFunc(fi, "glTextureRenderbufferEXT", glTextureRenderbufferEXT == NULL);
+  glewInfoFunc(fi, "glTextureSubImage1DEXT", glTextureSubImage1DEXT == NULL);
+  glewInfoFunc(fi, "glTextureSubImage2DEXT", glTextureSubImage2DEXT == NULL);
+  glewInfoFunc(fi, "glTextureSubImage3DEXT", glTextureSubImage3DEXT == NULL);
+  glewInfoFunc(fi, "glUnmapNamedBufferEXT", glUnmapNamedBufferEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayColorOffsetEXT", glVertexArrayColorOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayEdgeFlagOffsetEXT", glVertexArrayEdgeFlagOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayFogCoordOffsetEXT", glVertexArrayFogCoordOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayIndexOffsetEXT", glVertexArrayIndexOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayMultiTexCoordOffsetEXT", glVertexArrayMultiTexCoordOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayNormalOffsetEXT", glVertexArrayNormalOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArraySecondaryColorOffsetEXT", glVertexArraySecondaryColorOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayTexCoordOffsetEXT", glVertexArrayTexCoordOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexAttribDivisorEXT", glVertexArrayVertexAttribDivisorEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexAttribIOffsetEXT", glVertexArrayVertexAttribIOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexAttribOffsetEXT", glVertexArrayVertexAttribOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexOffsetEXT", glVertexArrayVertexOffsetEXT == NULL);
 }
 
 #endif /* GL_EXT_direct_state_access */
@@ -4762,20 +4858,40 @@ static void _glewInfo_GL_EXT_direct_state_access (void)
 
 static void _glewInfo_GL_EXT_discard_framebuffer (void)
 {
-  glewPrintExt("GL_EXT_discard_framebuffer", GLEW_EXT_discard_framebuffer, glewIsSupported("GL_EXT_discard_framebuffer"), glewGetExtension("GL_EXT_discard_framebuffer"));
+  GLboolean fi = glewPrintExt("GL_EXT_discard_framebuffer", GLEW_EXT_discard_framebuffer, glewIsSupported("GL_EXT_discard_framebuffer"), glewGetExtension("GL_EXT_discard_framebuffer"));
 
-  glewInfoFunc("glDiscardFramebufferEXT", glDiscardFramebufferEXT == NULL);
+  glewInfoFunc(fi, "glDiscardFramebufferEXT", glDiscardFramebufferEXT == NULL);
 }
 
 #endif /* GL_EXT_discard_framebuffer */
+
+#ifdef GL_EXT_disjoint_timer_query
+
+static void _glewInfo_GL_EXT_disjoint_timer_query (void)
+{
+  GLboolean fi = glewPrintExt("GL_EXT_disjoint_timer_query", GLEW_EXT_disjoint_timer_query, glewIsSupported("GL_EXT_disjoint_timer_query"), glewGetExtension("GL_EXT_disjoint_timer_query"));
+
+  glewInfoFunc(fi, "glBeginQueryEXT", glBeginQueryEXT == NULL);
+  glewInfoFunc(fi, "glDeleteQueriesEXT", glDeleteQueriesEXT == NULL);
+  glewInfoFunc(fi, "glEndQueryEXT", glEndQueryEXT == NULL);
+  glewInfoFunc(fi, "glGenQueriesEXT", glGenQueriesEXT == NULL);
+  glewInfoFunc(fi, "glGetInteger64vEXT", glGetInteger64vEXT == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectivEXT", glGetQueryObjectivEXT == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectuivEXT", glGetQueryObjectuivEXT == NULL);
+  glewInfoFunc(fi, "glGetQueryivEXT", glGetQueryivEXT == NULL);
+  glewInfoFunc(fi, "glIsQueryEXT", glIsQueryEXT == NULL);
+  glewInfoFunc(fi, "glQueryCounterEXT", glQueryCounterEXT == NULL);
+}
+
+#endif /* GL_EXT_disjoint_timer_query */
 
 #ifdef GL_EXT_draw_buffers
 
 static void _glewInfo_GL_EXT_draw_buffers (void)
 {
-  glewPrintExt("GL_EXT_draw_buffers", GLEW_EXT_draw_buffers, glewIsSupported("GL_EXT_draw_buffers"), glewGetExtension("GL_EXT_draw_buffers"));
+  GLboolean fi = glewPrintExt("GL_EXT_draw_buffers", GLEW_EXT_draw_buffers, glewIsSupported("GL_EXT_draw_buffers"), glewGetExtension("GL_EXT_draw_buffers"));
 
-  glewInfoFunc("glDrawBuffersEXT", glDrawBuffersEXT == NULL);
+  glewInfoFunc(fi, "glDrawBuffersEXT", glDrawBuffersEXT == NULL);
 }
 
 #endif /* GL_EXT_draw_buffers */
@@ -4784,14 +4900,14 @@ static void _glewInfo_GL_EXT_draw_buffers (void)
 
 static void _glewInfo_GL_EXT_draw_buffers2 (void)
 {
-  glewPrintExt("GL_EXT_draw_buffers2", GLEW_EXT_draw_buffers2, glewIsSupported("GL_EXT_draw_buffers2"), glewGetExtension("GL_EXT_draw_buffers2"));
+  GLboolean fi = glewPrintExt("GL_EXT_draw_buffers2", GLEW_EXT_draw_buffers2, glewIsSupported("GL_EXT_draw_buffers2"), glewGetExtension("GL_EXT_draw_buffers2"));
 
-  glewInfoFunc("glColorMaskIndexedEXT", glColorMaskIndexedEXT == NULL);
-  glewInfoFunc("glDisableIndexedEXT", glDisableIndexedEXT == NULL);
-  glewInfoFunc("glEnableIndexedEXT", glEnableIndexedEXT == NULL);
-  glewInfoFunc("glGetBooleanIndexedvEXT", glGetBooleanIndexedvEXT == NULL);
-  glewInfoFunc("glGetIntegerIndexedvEXT", glGetIntegerIndexedvEXT == NULL);
-  glewInfoFunc("glIsEnabledIndexedEXT", glIsEnabledIndexedEXT == NULL);
+  glewInfoFunc(fi, "glColorMaskIndexedEXT", glColorMaskIndexedEXT == NULL);
+  glewInfoFunc(fi, "glDisableIndexedEXT", glDisableIndexedEXT == NULL);
+  glewInfoFunc(fi, "glEnableIndexedEXT", glEnableIndexedEXT == NULL);
+  glewInfoFunc(fi, "glGetBooleanIndexedvEXT", glGetBooleanIndexedvEXT == NULL);
+  glewInfoFunc(fi, "glGetIntegerIndexedvEXT", glGetIntegerIndexedvEXT == NULL);
+  glewInfoFunc(fi, "glIsEnabledIndexedEXT", glIsEnabledIndexedEXT == NULL);
 }
 
 #endif /* GL_EXT_draw_buffers2 */
@@ -4800,16 +4916,16 @@ static void _glewInfo_GL_EXT_draw_buffers2 (void)
 
 static void _glewInfo_GL_EXT_draw_buffers_indexed (void)
 {
-  glewPrintExt("GL_EXT_draw_buffers_indexed", GLEW_EXT_draw_buffers_indexed, glewIsSupported("GL_EXT_draw_buffers_indexed"), glewGetExtension("GL_EXT_draw_buffers_indexed"));
+  GLboolean fi = glewPrintExt("GL_EXT_draw_buffers_indexed", GLEW_EXT_draw_buffers_indexed, glewIsSupported("GL_EXT_draw_buffers_indexed"), glewGetExtension("GL_EXT_draw_buffers_indexed"));
 
-  glewInfoFunc("glBlendEquationSeparateiEXT", glBlendEquationSeparateiEXT == NULL);
-  glewInfoFunc("glBlendEquationiEXT", glBlendEquationiEXT == NULL);
-  glewInfoFunc("glBlendFuncSeparateiEXT", glBlendFuncSeparateiEXT == NULL);
-  glewInfoFunc("glBlendFunciEXT", glBlendFunciEXT == NULL);
-  glewInfoFunc("glColorMaskiEXT", glColorMaskiEXT == NULL);
-  glewInfoFunc("glDisableiEXT", glDisableiEXT == NULL);
-  glewInfoFunc("glEnableiEXT", glEnableiEXT == NULL);
-  glewInfoFunc("glIsEnablediEXT", glIsEnablediEXT == NULL);
+  glewInfoFunc(fi, "glBlendEquationSeparateiEXT", glBlendEquationSeparateiEXT == NULL);
+  glewInfoFunc(fi, "glBlendEquationiEXT", glBlendEquationiEXT == NULL);
+  glewInfoFunc(fi, "glBlendFuncSeparateiEXT", glBlendFuncSeparateiEXT == NULL);
+  glewInfoFunc(fi, "glBlendFunciEXT", glBlendFunciEXT == NULL);
+  glewInfoFunc(fi, "glColorMaskiEXT", glColorMaskiEXT == NULL);
+  glewInfoFunc(fi, "glDisableiEXT", glDisableiEXT == NULL);
+  glewInfoFunc(fi, "glEnableiEXT", glEnableiEXT == NULL);
+  glewInfoFunc(fi, "glIsEnablediEXT", glIsEnablediEXT == NULL);
 }
 
 #endif /* GL_EXT_draw_buffers_indexed */
@@ -4818,12 +4934,12 @@ static void _glewInfo_GL_EXT_draw_buffers_indexed (void)
 
 static void _glewInfo_GL_EXT_draw_elements_base_vertex (void)
 {
-  glewPrintExt("GL_EXT_draw_elements_base_vertex", GLEW_EXT_draw_elements_base_vertex, glewIsSupported("GL_EXT_draw_elements_base_vertex"), glewGetExtension("GL_EXT_draw_elements_base_vertex"));
+  GLboolean fi = glewPrintExt("GL_EXT_draw_elements_base_vertex", GLEW_EXT_draw_elements_base_vertex, glewIsSupported("GL_EXT_draw_elements_base_vertex"), glewGetExtension("GL_EXT_draw_elements_base_vertex"));
 
-  glewInfoFunc("glDrawElementsBaseVertexEXT", glDrawElementsBaseVertexEXT == NULL);
-  glewInfoFunc("glDrawElementsInstancedBaseVertexEXT", glDrawElementsInstancedBaseVertexEXT == NULL);
-  glewInfoFunc("glDrawRangeElementsBaseVertexEXT", glDrawRangeElementsBaseVertexEXT == NULL);
-  glewInfoFunc("glMultiDrawElementsBaseVertexEXT", glMultiDrawElementsBaseVertexEXT == NULL);
+  glewInfoFunc(fi, "glDrawElementsBaseVertexEXT", glDrawElementsBaseVertexEXT == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedBaseVertexEXT", glDrawElementsInstancedBaseVertexEXT == NULL);
+  glewInfoFunc(fi, "glDrawRangeElementsBaseVertexEXT", glDrawRangeElementsBaseVertexEXT == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsBaseVertexEXT", glMultiDrawElementsBaseVertexEXT == NULL);
 }
 
 #endif /* GL_EXT_draw_elements_base_vertex */
@@ -4832,10 +4948,10 @@ static void _glewInfo_GL_EXT_draw_elements_base_vertex (void)
 
 static void _glewInfo_GL_EXT_draw_instanced (void)
 {
-  glewPrintExt("GL_EXT_draw_instanced", GLEW_EXT_draw_instanced, glewIsSupported("GL_EXT_draw_instanced"), glewGetExtension("GL_EXT_draw_instanced"));
+  GLboolean fi = glewPrintExt("GL_EXT_draw_instanced", GLEW_EXT_draw_instanced, glewIsSupported("GL_EXT_draw_instanced"), glewGetExtension("GL_EXT_draw_instanced"));
 
-  glewInfoFunc("glDrawArraysInstancedEXT", glDrawArraysInstancedEXT == NULL);
-  glewInfoFunc("glDrawElementsInstancedEXT", glDrawElementsInstancedEXT == NULL);
+  glewInfoFunc(fi, "glDrawArraysInstancedEXT", glDrawArraysInstancedEXT == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedEXT", glDrawElementsInstancedEXT == NULL);
 }
 
 #endif /* GL_EXT_draw_instanced */
@@ -4844,21 +4960,33 @@ static void _glewInfo_GL_EXT_draw_instanced (void)
 
 static void _glewInfo_GL_EXT_draw_range_elements (void)
 {
-  glewPrintExt("GL_EXT_draw_range_elements", GLEW_EXT_draw_range_elements, glewIsSupported("GL_EXT_draw_range_elements"), glewGetExtension("GL_EXT_draw_range_elements"));
+  GLboolean fi = glewPrintExt("GL_EXT_draw_range_elements", GLEW_EXT_draw_range_elements, glewIsSupported("GL_EXT_draw_range_elements"), glewGetExtension("GL_EXT_draw_range_elements"));
 
-  glewInfoFunc("glDrawRangeElementsEXT", glDrawRangeElementsEXT == NULL);
+  glewInfoFunc(fi, "glDrawRangeElementsEXT", glDrawRangeElementsEXT == NULL);
 }
 
 #endif /* GL_EXT_draw_range_elements */
+
+#ifdef GL_EXT_draw_transform_feedback
+
+static void _glewInfo_GL_EXT_draw_transform_feedback (void)
+{
+  GLboolean fi = glewPrintExt("GL_EXT_draw_transform_feedback", GLEW_EXT_draw_transform_feedback, glewIsSupported("GL_EXT_draw_transform_feedback"), glewGetExtension("GL_EXT_draw_transform_feedback"));
+
+  glewInfoFunc(fi, "glDrawTransformFeedbackEXT", glDrawTransformFeedbackEXT == NULL);
+  glewInfoFunc(fi, "glDrawTransformFeedbackInstancedEXT", glDrawTransformFeedbackInstancedEXT == NULL);
+}
+
+#endif /* GL_EXT_draw_transform_feedback */
 
 #ifdef GL_EXT_external_buffer
 
 static void _glewInfo_GL_EXT_external_buffer (void)
 {
-  glewPrintExt("GL_EXT_external_buffer", GLEW_EXT_external_buffer, glewIsSupported("GL_EXT_external_buffer"), glewGetExtension("GL_EXT_external_buffer"));
+  GLboolean fi = glewPrintExt("GL_EXT_external_buffer", GLEW_EXT_external_buffer, glewIsSupported("GL_EXT_external_buffer"), glewGetExtension("GL_EXT_external_buffer"));
 
-  glewInfoFunc("glBufferStorageExternalEXT", glBufferStorageExternalEXT == NULL);
-  glewInfoFunc("glNamedBufferStorageExternalEXT", glNamedBufferStorageExternalEXT == NULL);
+  glewInfoFunc(fi, "glBufferStorageExternalEXT", glBufferStorageExternalEXT == NULL);
+  glewInfoFunc(fi, "glNamedBufferStorageExternalEXT", glNamedBufferStorageExternalEXT == NULL);
 }
 
 #endif /* GL_EXT_external_buffer */
@@ -4876,13 +5004,13 @@ static void _glewInfo_GL_EXT_float_blend (void)
 
 static void _glewInfo_GL_EXT_fog_coord (void)
 {
-  glewPrintExt("GL_EXT_fog_coord", GLEW_EXT_fog_coord, glewIsSupported("GL_EXT_fog_coord"), glewGetExtension("GL_EXT_fog_coord"));
+  GLboolean fi = glewPrintExt("GL_EXT_fog_coord", GLEW_EXT_fog_coord, glewIsSupported("GL_EXT_fog_coord"), glewGetExtension("GL_EXT_fog_coord"));
 
-  glewInfoFunc("glFogCoordPointerEXT", glFogCoordPointerEXT == NULL);
-  glewInfoFunc("glFogCoorddEXT", glFogCoorddEXT == NULL);
-  glewInfoFunc("glFogCoorddvEXT", glFogCoorddvEXT == NULL);
-  glewInfoFunc("glFogCoordfEXT", glFogCoordfEXT == NULL);
-  glewInfoFunc("glFogCoordfvEXT", glFogCoordfvEXT == NULL);
+  glewInfoFunc(fi, "glFogCoordPointerEXT", glFogCoordPointerEXT == NULL);
+  glewInfoFunc(fi, "glFogCoorddEXT", glFogCoorddEXT == NULL);
+  glewInfoFunc(fi, "glFogCoorddvEXT", glFogCoorddvEXT == NULL);
+  glewInfoFunc(fi, "glFogCoordfEXT", glFogCoordfEXT == NULL);
+  glewInfoFunc(fi, "glFogCoordfvEXT", glFogCoordfvEXT == NULL);
 }
 
 #endif /* GL_EXT_fog_coord */
@@ -4900,26 +5028,26 @@ static void _glewInfo_GL_EXT_frag_depth (void)
 
 static void _glewInfo_GL_EXT_fragment_lighting (void)
 {
-  glewPrintExt("GL_EXT_fragment_lighting", GLEW_EXT_fragment_lighting, glewIsSupported("GL_EXT_fragment_lighting"), glewGetExtension("GL_EXT_fragment_lighting"));
+  GLboolean fi = glewPrintExt("GL_EXT_fragment_lighting", GLEW_EXT_fragment_lighting, glewIsSupported("GL_EXT_fragment_lighting"), glewGetExtension("GL_EXT_fragment_lighting"));
 
-  glewInfoFunc("glFragmentColorMaterialEXT", glFragmentColorMaterialEXT == NULL);
-  glewInfoFunc("glFragmentLightModelfEXT", glFragmentLightModelfEXT == NULL);
-  glewInfoFunc("glFragmentLightModelfvEXT", glFragmentLightModelfvEXT == NULL);
-  glewInfoFunc("glFragmentLightModeliEXT", glFragmentLightModeliEXT == NULL);
-  glewInfoFunc("glFragmentLightModelivEXT", glFragmentLightModelivEXT == NULL);
-  glewInfoFunc("glFragmentLightfEXT", glFragmentLightfEXT == NULL);
-  glewInfoFunc("glFragmentLightfvEXT", glFragmentLightfvEXT == NULL);
-  glewInfoFunc("glFragmentLightiEXT", glFragmentLightiEXT == NULL);
-  glewInfoFunc("glFragmentLightivEXT", glFragmentLightivEXT == NULL);
-  glewInfoFunc("glFragmentMaterialfEXT", glFragmentMaterialfEXT == NULL);
-  glewInfoFunc("glFragmentMaterialfvEXT", glFragmentMaterialfvEXT == NULL);
-  glewInfoFunc("glFragmentMaterialiEXT", glFragmentMaterialiEXT == NULL);
-  glewInfoFunc("glFragmentMaterialivEXT", glFragmentMaterialivEXT == NULL);
-  glewInfoFunc("glGetFragmentLightfvEXT", glGetFragmentLightfvEXT == NULL);
-  glewInfoFunc("glGetFragmentLightivEXT", glGetFragmentLightivEXT == NULL);
-  glewInfoFunc("glGetFragmentMaterialfvEXT", glGetFragmentMaterialfvEXT == NULL);
-  glewInfoFunc("glGetFragmentMaterialivEXT", glGetFragmentMaterialivEXT == NULL);
-  glewInfoFunc("glLightEnviEXT", glLightEnviEXT == NULL);
+  glewInfoFunc(fi, "glFragmentColorMaterialEXT", glFragmentColorMaterialEXT == NULL);
+  glewInfoFunc(fi, "glFragmentLightModelfEXT", glFragmentLightModelfEXT == NULL);
+  glewInfoFunc(fi, "glFragmentLightModelfvEXT", glFragmentLightModelfvEXT == NULL);
+  glewInfoFunc(fi, "glFragmentLightModeliEXT", glFragmentLightModeliEXT == NULL);
+  glewInfoFunc(fi, "glFragmentLightModelivEXT", glFragmentLightModelivEXT == NULL);
+  glewInfoFunc(fi, "glFragmentLightfEXT", glFragmentLightfEXT == NULL);
+  glewInfoFunc(fi, "glFragmentLightfvEXT", glFragmentLightfvEXT == NULL);
+  glewInfoFunc(fi, "glFragmentLightiEXT", glFragmentLightiEXT == NULL);
+  glewInfoFunc(fi, "glFragmentLightivEXT", glFragmentLightivEXT == NULL);
+  glewInfoFunc(fi, "glFragmentMaterialfEXT", glFragmentMaterialfEXT == NULL);
+  glewInfoFunc(fi, "glFragmentMaterialfvEXT", glFragmentMaterialfvEXT == NULL);
+  glewInfoFunc(fi, "glFragmentMaterialiEXT", glFragmentMaterialiEXT == NULL);
+  glewInfoFunc(fi, "glFragmentMaterialivEXT", glFragmentMaterialivEXT == NULL);
+  glewInfoFunc(fi, "glGetFragmentLightfvEXT", glGetFragmentLightfvEXT == NULL);
+  glewInfoFunc(fi, "glGetFragmentLightivEXT", glGetFragmentLightivEXT == NULL);
+  glewInfoFunc(fi, "glGetFragmentMaterialfvEXT", glGetFragmentMaterialfvEXT == NULL);
+  glewInfoFunc(fi, "glGetFragmentMaterialivEXT", glGetFragmentMaterialivEXT == NULL);
+  glewInfoFunc(fi, "glLightEnviEXT", glLightEnviEXT == NULL);
 }
 
 #endif /* GL_EXT_fragment_lighting */
@@ -4928,9 +5056,9 @@ static void _glewInfo_GL_EXT_fragment_lighting (void)
 
 static void _glewInfo_GL_EXT_framebuffer_blit (void)
 {
-  glewPrintExt("GL_EXT_framebuffer_blit", GLEW_EXT_framebuffer_blit, glewIsSupported("GL_EXT_framebuffer_blit"), glewGetExtension("GL_EXT_framebuffer_blit"));
+  GLboolean fi = glewPrintExt("GL_EXT_framebuffer_blit", GLEW_EXT_framebuffer_blit, glewIsSupported("GL_EXT_framebuffer_blit"), glewGetExtension("GL_EXT_framebuffer_blit"));
 
-  glewInfoFunc("glBlitFramebufferEXT", glBlitFramebufferEXT == NULL);
+  glewInfoFunc(fi, "glBlitFramebufferEXT", glBlitFramebufferEXT == NULL);
 }
 
 #endif /* GL_EXT_framebuffer_blit */
@@ -4939,9 +5067,9 @@ static void _glewInfo_GL_EXT_framebuffer_blit (void)
 
 static void _glewInfo_GL_EXT_framebuffer_multisample (void)
 {
-  glewPrintExt("GL_EXT_framebuffer_multisample", GLEW_EXT_framebuffer_multisample, glewIsSupported("GL_EXT_framebuffer_multisample"), glewGetExtension("GL_EXT_framebuffer_multisample"));
+  GLboolean fi = glewPrintExt("GL_EXT_framebuffer_multisample", GLEW_EXT_framebuffer_multisample, glewIsSupported("GL_EXT_framebuffer_multisample"), glewGetExtension("GL_EXT_framebuffer_multisample"));
 
-  glewInfoFunc("glRenderbufferStorageMultisampleEXT", glRenderbufferStorageMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageMultisampleEXT", glRenderbufferStorageMultisampleEXT == NULL);
 }
 
 #endif /* GL_EXT_framebuffer_multisample */
@@ -4959,25 +5087,25 @@ static void _glewInfo_GL_EXT_framebuffer_multisample_blit_scaled (void)
 
 static void _glewInfo_GL_EXT_framebuffer_object (void)
 {
-  glewPrintExt("GL_EXT_framebuffer_object", GLEW_EXT_framebuffer_object, glewIsSupported("GL_EXT_framebuffer_object"), glewGetExtension("GL_EXT_framebuffer_object"));
+  GLboolean fi = glewPrintExt("GL_EXT_framebuffer_object", GLEW_EXT_framebuffer_object, glewIsSupported("GL_EXT_framebuffer_object"), glewGetExtension("GL_EXT_framebuffer_object"));
 
-  glewInfoFunc("glBindFramebufferEXT", glBindFramebufferEXT == NULL);
-  glewInfoFunc("glBindRenderbufferEXT", glBindRenderbufferEXT == NULL);
-  glewInfoFunc("glCheckFramebufferStatusEXT", glCheckFramebufferStatusEXT == NULL);
-  glewInfoFunc("glDeleteFramebuffersEXT", glDeleteFramebuffersEXT == NULL);
-  glewInfoFunc("glDeleteRenderbuffersEXT", glDeleteRenderbuffersEXT == NULL);
-  glewInfoFunc("glFramebufferRenderbufferEXT", glFramebufferRenderbufferEXT == NULL);
-  glewInfoFunc("glFramebufferTexture1DEXT", glFramebufferTexture1DEXT == NULL);
-  glewInfoFunc("glFramebufferTexture2DEXT", glFramebufferTexture2DEXT == NULL);
-  glewInfoFunc("glFramebufferTexture3DEXT", glFramebufferTexture3DEXT == NULL);
-  glewInfoFunc("glGenFramebuffersEXT", glGenFramebuffersEXT == NULL);
-  glewInfoFunc("glGenRenderbuffersEXT", glGenRenderbuffersEXT == NULL);
-  glewInfoFunc("glGenerateMipmapEXT", glGenerateMipmapEXT == NULL);
-  glewInfoFunc("glGetFramebufferAttachmentParameterivEXT", glGetFramebufferAttachmentParameterivEXT == NULL);
-  glewInfoFunc("glGetRenderbufferParameterivEXT", glGetRenderbufferParameterivEXT == NULL);
-  glewInfoFunc("glIsFramebufferEXT", glIsFramebufferEXT == NULL);
-  glewInfoFunc("glIsRenderbufferEXT", glIsRenderbufferEXT == NULL);
-  glewInfoFunc("glRenderbufferStorageEXT", glRenderbufferStorageEXT == NULL);
+  glewInfoFunc(fi, "glBindFramebufferEXT", glBindFramebufferEXT == NULL);
+  glewInfoFunc(fi, "glBindRenderbufferEXT", glBindRenderbufferEXT == NULL);
+  glewInfoFunc(fi, "glCheckFramebufferStatusEXT", glCheckFramebufferStatusEXT == NULL);
+  glewInfoFunc(fi, "glDeleteFramebuffersEXT", glDeleteFramebuffersEXT == NULL);
+  glewInfoFunc(fi, "glDeleteRenderbuffersEXT", glDeleteRenderbuffersEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferRenderbufferEXT", glFramebufferRenderbufferEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture1DEXT", glFramebufferTexture1DEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture2DEXT", glFramebufferTexture2DEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture3DEXT", glFramebufferTexture3DEXT == NULL);
+  glewInfoFunc(fi, "glGenFramebuffersEXT", glGenFramebuffersEXT == NULL);
+  glewInfoFunc(fi, "glGenRenderbuffersEXT", glGenRenderbuffersEXT == NULL);
+  glewInfoFunc(fi, "glGenerateMipmapEXT", glGenerateMipmapEXT == NULL);
+  glewInfoFunc(fi, "glGetFramebufferAttachmentParameterivEXT", glGetFramebufferAttachmentParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetRenderbufferParameterivEXT", glGetRenderbufferParameterivEXT == NULL);
+  glewInfoFunc(fi, "glIsFramebufferEXT", glIsFramebufferEXT == NULL);
+  glewInfoFunc(fi, "glIsRenderbufferEXT", glIsRenderbufferEXT == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageEXT", glRenderbufferStorageEXT == NULL);
 }
 
 #endif /* GL_EXT_framebuffer_object */
@@ -5013,11 +5141,11 @@ static void _glewInfo_GL_EXT_geometry_shader (void)
 
 static void _glewInfo_GL_EXT_geometry_shader4 (void)
 {
-  glewPrintExt("GL_EXT_geometry_shader4", GLEW_EXT_geometry_shader4, glewIsSupported("GL_EXT_geometry_shader4"), glewGetExtension("GL_EXT_geometry_shader4"));
+  GLboolean fi = glewPrintExt("GL_EXT_geometry_shader4", GLEW_EXT_geometry_shader4, glewIsSupported("GL_EXT_geometry_shader4"), glewGetExtension("GL_EXT_geometry_shader4"));
 
-  glewInfoFunc("glFramebufferTextureEXT", glFramebufferTextureEXT == NULL);
-  glewInfoFunc("glFramebufferTextureFaceEXT", glFramebufferTextureFaceEXT == NULL);
-  glewInfoFunc("glProgramParameteriEXT", glProgramParameteriEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureEXT", glFramebufferTextureEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureFaceEXT", glFramebufferTextureFaceEXT == NULL);
+  glewInfoFunc(fi, "glProgramParameteriEXT", glProgramParameteriEXT == NULL);
 }
 
 #endif /* GL_EXT_geometry_shader4 */
@@ -5026,10 +5154,10 @@ static void _glewInfo_GL_EXT_geometry_shader4 (void)
 
 static void _glewInfo_GL_EXT_gpu_program_parameters (void)
 {
-  glewPrintExt("GL_EXT_gpu_program_parameters", GLEW_EXT_gpu_program_parameters, glewIsSupported("GL_EXT_gpu_program_parameters"), glewGetExtension("GL_EXT_gpu_program_parameters"));
+  GLboolean fi = glewPrintExt("GL_EXT_gpu_program_parameters", GLEW_EXT_gpu_program_parameters, glewIsSupported("GL_EXT_gpu_program_parameters"), glewGetExtension("GL_EXT_gpu_program_parameters"));
 
-  glewInfoFunc("glProgramEnvParameters4fvEXT", glProgramEnvParameters4fvEXT == NULL);
-  glewInfoFunc("glProgramLocalParameters4fvEXT", glProgramLocalParameters4fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameters4fvEXT", glProgramEnvParameters4fvEXT == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameters4fvEXT", glProgramLocalParameters4fvEXT == NULL);
 }
 
 #endif /* GL_EXT_gpu_program_parameters */
@@ -5038,42 +5166,42 @@ static void _glewInfo_GL_EXT_gpu_program_parameters (void)
 
 static void _glewInfo_GL_EXT_gpu_shader4 (void)
 {
-  glewPrintExt("GL_EXT_gpu_shader4", GLEW_EXT_gpu_shader4, glewIsSupported("GL_EXT_gpu_shader4"), glewGetExtension("GL_EXT_gpu_shader4"));
+  GLboolean fi = glewPrintExt("GL_EXT_gpu_shader4", GLEW_EXT_gpu_shader4, glewIsSupported("GL_EXT_gpu_shader4"), glewGetExtension("GL_EXT_gpu_shader4"));
 
-  glewInfoFunc("glBindFragDataLocationEXT", glBindFragDataLocationEXT == NULL);
-  glewInfoFunc("glGetFragDataLocationEXT", glGetFragDataLocationEXT == NULL);
-  glewInfoFunc("glGetUniformuivEXT", glGetUniformuivEXT == NULL);
-  glewInfoFunc("glGetVertexAttribIivEXT", glGetVertexAttribIivEXT == NULL);
-  glewInfoFunc("glGetVertexAttribIuivEXT", glGetVertexAttribIuivEXT == NULL);
-  glewInfoFunc("glUniform1uiEXT", glUniform1uiEXT == NULL);
-  glewInfoFunc("glUniform1uivEXT", glUniform1uivEXT == NULL);
-  glewInfoFunc("glUniform2uiEXT", glUniform2uiEXT == NULL);
-  glewInfoFunc("glUniform2uivEXT", glUniform2uivEXT == NULL);
-  glewInfoFunc("glUniform3uiEXT", glUniform3uiEXT == NULL);
-  glewInfoFunc("glUniform3uivEXT", glUniform3uivEXT == NULL);
-  glewInfoFunc("glUniform4uiEXT", glUniform4uiEXT == NULL);
-  glewInfoFunc("glUniform4uivEXT", glUniform4uivEXT == NULL);
-  glewInfoFunc("glVertexAttribI1iEXT", glVertexAttribI1iEXT == NULL);
-  glewInfoFunc("glVertexAttribI1ivEXT", glVertexAttribI1ivEXT == NULL);
-  glewInfoFunc("glVertexAttribI1uiEXT", glVertexAttribI1uiEXT == NULL);
-  glewInfoFunc("glVertexAttribI1uivEXT", glVertexAttribI1uivEXT == NULL);
-  glewInfoFunc("glVertexAttribI2iEXT", glVertexAttribI2iEXT == NULL);
-  glewInfoFunc("glVertexAttribI2ivEXT", glVertexAttribI2ivEXT == NULL);
-  glewInfoFunc("glVertexAttribI2uiEXT", glVertexAttribI2uiEXT == NULL);
-  glewInfoFunc("glVertexAttribI2uivEXT", glVertexAttribI2uivEXT == NULL);
-  glewInfoFunc("glVertexAttribI3iEXT", glVertexAttribI3iEXT == NULL);
-  glewInfoFunc("glVertexAttribI3ivEXT", glVertexAttribI3ivEXT == NULL);
-  glewInfoFunc("glVertexAttribI3uiEXT", glVertexAttribI3uiEXT == NULL);
-  glewInfoFunc("glVertexAttribI3uivEXT", glVertexAttribI3uivEXT == NULL);
-  glewInfoFunc("glVertexAttribI4bvEXT", glVertexAttribI4bvEXT == NULL);
-  glewInfoFunc("glVertexAttribI4iEXT", glVertexAttribI4iEXT == NULL);
-  glewInfoFunc("glVertexAttribI4ivEXT", glVertexAttribI4ivEXT == NULL);
-  glewInfoFunc("glVertexAttribI4svEXT", glVertexAttribI4svEXT == NULL);
-  glewInfoFunc("glVertexAttribI4ubvEXT", glVertexAttribI4ubvEXT == NULL);
-  glewInfoFunc("glVertexAttribI4uiEXT", glVertexAttribI4uiEXT == NULL);
-  glewInfoFunc("glVertexAttribI4uivEXT", glVertexAttribI4uivEXT == NULL);
-  glewInfoFunc("glVertexAttribI4usvEXT", glVertexAttribI4usvEXT == NULL);
-  glewInfoFunc("glVertexAttribIPointerEXT", glVertexAttribIPointerEXT == NULL);
+  glewInfoFunc(fi, "glBindFragDataLocationEXT", glBindFragDataLocationEXT == NULL);
+  glewInfoFunc(fi, "glGetFragDataLocationEXT", glGetFragDataLocationEXT == NULL);
+  glewInfoFunc(fi, "glGetUniformuivEXT", glGetUniformuivEXT == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribIivEXT", glGetVertexAttribIivEXT == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribIuivEXT", glGetVertexAttribIuivEXT == NULL);
+  glewInfoFunc(fi, "glUniform1uiEXT", glUniform1uiEXT == NULL);
+  glewInfoFunc(fi, "glUniform1uivEXT", glUniform1uivEXT == NULL);
+  glewInfoFunc(fi, "glUniform2uiEXT", glUniform2uiEXT == NULL);
+  glewInfoFunc(fi, "glUniform2uivEXT", glUniform2uivEXT == NULL);
+  glewInfoFunc(fi, "glUniform3uiEXT", glUniform3uiEXT == NULL);
+  glewInfoFunc(fi, "glUniform3uivEXT", glUniform3uivEXT == NULL);
+  glewInfoFunc(fi, "glUniform4uiEXT", glUniform4uiEXT == NULL);
+  glewInfoFunc(fi, "glUniform4uivEXT", glUniform4uivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI1iEXT", glVertexAttribI1iEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI1ivEXT", glVertexAttribI1ivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI1uiEXT", glVertexAttribI1uiEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI1uivEXT", glVertexAttribI1uivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI2iEXT", glVertexAttribI2iEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI2ivEXT", glVertexAttribI2ivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI2uiEXT", glVertexAttribI2uiEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI2uivEXT", glVertexAttribI2uivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI3iEXT", glVertexAttribI3iEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI3ivEXT", glVertexAttribI3ivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI3uiEXT", glVertexAttribI3uiEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI3uivEXT", glVertexAttribI3uivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4bvEXT", glVertexAttribI4bvEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4iEXT", glVertexAttribI4iEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4ivEXT", glVertexAttribI4ivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4svEXT", glVertexAttribI4svEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4ubvEXT", glVertexAttribI4ubvEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4uiEXT", glVertexAttribI4uiEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4uivEXT", glVertexAttribI4uivEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribI4usvEXT", glVertexAttribI4usvEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribIPointerEXT", glVertexAttribIPointerEXT == NULL);
 }
 
 #endif /* GL_EXT_gpu_shader4 */
@@ -5091,18 +5219,18 @@ static void _glewInfo_GL_EXT_gpu_shader5 (void)
 
 static void _glewInfo_GL_EXT_histogram (void)
 {
-  glewPrintExt("GL_EXT_histogram", GLEW_EXT_histogram, glewIsSupported("GL_EXT_histogram"), glewGetExtension("GL_EXT_histogram"));
+  GLboolean fi = glewPrintExt("GL_EXT_histogram", GLEW_EXT_histogram, glewIsSupported("GL_EXT_histogram"), glewGetExtension("GL_EXT_histogram"));
 
-  glewInfoFunc("glGetHistogramEXT", glGetHistogramEXT == NULL);
-  glewInfoFunc("glGetHistogramParameterfvEXT", glGetHistogramParameterfvEXT == NULL);
-  glewInfoFunc("glGetHistogramParameterivEXT", glGetHistogramParameterivEXT == NULL);
-  glewInfoFunc("glGetMinmaxEXT", glGetMinmaxEXT == NULL);
-  glewInfoFunc("glGetMinmaxParameterfvEXT", glGetMinmaxParameterfvEXT == NULL);
-  glewInfoFunc("glGetMinmaxParameterivEXT", glGetMinmaxParameterivEXT == NULL);
-  glewInfoFunc("glHistogramEXT", glHistogramEXT == NULL);
-  glewInfoFunc("glMinmaxEXT", glMinmaxEXT == NULL);
-  glewInfoFunc("glResetHistogramEXT", glResetHistogramEXT == NULL);
-  glewInfoFunc("glResetMinmaxEXT", glResetMinmaxEXT == NULL);
+  glewInfoFunc(fi, "glGetHistogramEXT", glGetHistogramEXT == NULL);
+  glewInfoFunc(fi, "glGetHistogramParameterfvEXT", glGetHistogramParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetHistogramParameterivEXT", glGetHistogramParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetMinmaxEXT", glGetMinmaxEXT == NULL);
+  glewInfoFunc(fi, "glGetMinmaxParameterfvEXT", glGetMinmaxParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetMinmaxParameterivEXT", glGetMinmaxParameterivEXT == NULL);
+  glewInfoFunc(fi, "glHistogramEXT", glHistogramEXT == NULL);
+  glewInfoFunc(fi, "glMinmaxEXT", glMinmaxEXT == NULL);
+  glewInfoFunc(fi, "glResetHistogramEXT", glResetHistogramEXT == NULL);
+  glewInfoFunc(fi, "glResetMinmaxEXT", glResetMinmaxEXT == NULL);
 }
 
 #endif /* GL_EXT_histogram */
@@ -5120,9 +5248,9 @@ static void _glewInfo_GL_EXT_index_array_formats (void)
 
 static void _glewInfo_GL_EXT_index_func (void)
 {
-  glewPrintExt("GL_EXT_index_func", GLEW_EXT_index_func, glewIsSupported("GL_EXT_index_func"), glewGetExtension("GL_EXT_index_func"));
+  GLboolean fi = glewPrintExt("GL_EXT_index_func", GLEW_EXT_index_func, glewIsSupported("GL_EXT_index_func"), glewGetExtension("GL_EXT_index_func"));
 
-  glewInfoFunc("glIndexFuncEXT", glIndexFuncEXT == NULL);
+  glewInfoFunc(fi, "glIndexFuncEXT", glIndexFuncEXT == NULL);
 }
 
 #endif /* GL_EXT_index_func */
@@ -5131,9 +5259,9 @@ static void _glewInfo_GL_EXT_index_func (void)
 
 static void _glewInfo_GL_EXT_index_material (void)
 {
-  glewPrintExt("GL_EXT_index_material", GLEW_EXT_index_material, glewIsSupported("GL_EXT_index_material"), glewGetExtension("GL_EXT_index_material"));
+  GLboolean fi = glewPrintExt("GL_EXT_index_material", GLEW_EXT_index_material, glewIsSupported("GL_EXT_index_material"), glewGetExtension("GL_EXT_index_material"));
 
-  glewInfoFunc("glIndexMaterialEXT", glIndexMaterialEXT == NULL);
+  glewInfoFunc(fi, "glIndexMaterialEXT", glIndexMaterialEXT == NULL);
 }
 
 #endif /* GL_EXT_index_material */
@@ -5151,9 +5279,9 @@ static void _glewInfo_GL_EXT_index_texture (void)
 
 static void _glewInfo_GL_EXT_instanced_arrays (void)
 {
-  glewPrintExt("GL_EXT_instanced_arrays", GLEW_EXT_instanced_arrays, glewIsSupported("GL_EXT_instanced_arrays"), glewGetExtension("GL_EXT_instanced_arrays"));
+  GLboolean fi = glewPrintExt("GL_EXT_instanced_arrays", GLEW_EXT_instanced_arrays, glewIsSupported("GL_EXT_instanced_arrays"), glewGetExtension("GL_EXT_instanced_arrays"));
 
-  glewInfoFunc("glVertexAttribDivisorEXT", glVertexAttribDivisorEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribDivisorEXT", glVertexAttribDivisorEXT == NULL);
 }
 
 #endif /* GL_EXT_instanced_arrays */
@@ -5162,11 +5290,11 @@ static void _glewInfo_GL_EXT_instanced_arrays (void)
 
 static void _glewInfo_GL_EXT_light_texture (void)
 {
-  glewPrintExt("GL_EXT_light_texture", GLEW_EXT_light_texture, glewIsSupported("GL_EXT_light_texture"), glewGetExtension("GL_EXT_light_texture"));
+  GLboolean fi = glewPrintExt("GL_EXT_light_texture", GLEW_EXT_light_texture, glewIsSupported("GL_EXT_light_texture"), glewGetExtension("GL_EXT_light_texture"));
 
-  glewInfoFunc("glApplyTextureEXT", glApplyTextureEXT == NULL);
-  glewInfoFunc("glTextureLightEXT", glTextureLightEXT == NULL);
-  glewInfoFunc("glTextureMaterialEXT", glTextureMaterialEXT == NULL);
+  glewInfoFunc(fi, "glApplyTextureEXT", glApplyTextureEXT == NULL);
+  glewInfoFunc(fi, "glTextureLightEXT", glTextureLightEXT == NULL);
+  glewInfoFunc(fi, "glTextureMaterialEXT", glTextureMaterialEXT == NULL);
 }
 
 #endif /* GL_EXT_light_texture */
@@ -5175,10 +5303,10 @@ static void _glewInfo_GL_EXT_light_texture (void)
 
 static void _glewInfo_GL_EXT_map_buffer_range (void)
 {
-  glewPrintExt("GL_EXT_map_buffer_range", GLEW_EXT_map_buffer_range, glewIsSupported("GL_EXT_map_buffer_range"), glewGetExtension("GL_EXT_map_buffer_range"));
+  GLboolean fi = glewPrintExt("GL_EXT_map_buffer_range", GLEW_EXT_map_buffer_range, glewIsSupported("GL_EXT_map_buffer_range"), glewGetExtension("GL_EXT_map_buffer_range"));
 
-  glewInfoFunc("glFlushMappedBufferRangeEXT", glFlushMappedBufferRangeEXT == NULL);
-  glewInfoFunc("glMapBufferRangeEXT", glMapBufferRangeEXT == NULL);
+  glewInfoFunc(fi, "glFlushMappedBufferRangeEXT", glFlushMappedBufferRangeEXT == NULL);
+  glewInfoFunc(fi, "glMapBufferRangeEXT", glMapBufferRangeEXT == NULL);
 }
 
 #endif /* GL_EXT_map_buffer_range */
@@ -5187,27 +5315,27 @@ static void _glewInfo_GL_EXT_map_buffer_range (void)
 
 static void _glewInfo_GL_EXT_memory_object (void)
 {
-  glewPrintExt("GL_EXT_memory_object", GLEW_EXT_memory_object, glewIsSupported("GL_EXT_memory_object"), glewGetExtension("GL_EXT_memory_object"));
+  GLboolean fi = glewPrintExt("GL_EXT_memory_object", GLEW_EXT_memory_object, glewIsSupported("GL_EXT_memory_object"), glewGetExtension("GL_EXT_memory_object"));
 
-  glewInfoFunc("glBufferStorageMemEXT", glBufferStorageMemEXT == NULL);
-  glewInfoFunc("glCreateMemoryObjectsEXT", glCreateMemoryObjectsEXT == NULL);
-  glewInfoFunc("glDeleteMemoryObjectsEXT", glDeleteMemoryObjectsEXT == NULL);
-  glewInfoFunc("glGetMemoryObjectParameterivEXT", glGetMemoryObjectParameterivEXT == NULL);
-  glewInfoFunc("glGetUnsignedBytei_vEXT", glGetUnsignedBytei_vEXT == NULL);
-  glewInfoFunc("glGetUnsignedBytevEXT", glGetUnsignedBytevEXT == NULL);
-  glewInfoFunc("glIsMemoryObjectEXT", glIsMemoryObjectEXT == NULL);
-  glewInfoFunc("glMemoryObjectParameterivEXT", glMemoryObjectParameterivEXT == NULL);
-  glewInfoFunc("glNamedBufferStorageMemEXT", glNamedBufferStorageMemEXT == NULL);
-  glewInfoFunc("glTexStorageMem1DEXT", glTexStorageMem1DEXT == NULL);
-  glewInfoFunc("glTexStorageMem2DEXT", glTexStorageMem2DEXT == NULL);
-  glewInfoFunc("glTexStorageMem2DMultisampleEXT", glTexStorageMem2DMultisampleEXT == NULL);
-  glewInfoFunc("glTexStorageMem3DEXT", glTexStorageMem3DEXT == NULL);
-  glewInfoFunc("glTexStorageMem3DMultisampleEXT", glTexStorageMem3DMultisampleEXT == NULL);
-  glewInfoFunc("glTextureStorageMem1DEXT", glTextureStorageMem1DEXT == NULL);
-  glewInfoFunc("glTextureStorageMem2DEXT", glTextureStorageMem2DEXT == NULL);
-  glewInfoFunc("glTextureStorageMem2DMultisampleEXT", glTextureStorageMem2DMultisampleEXT == NULL);
-  glewInfoFunc("glTextureStorageMem3DEXT", glTextureStorageMem3DEXT == NULL);
-  glewInfoFunc("glTextureStorageMem3DMultisampleEXT", glTextureStorageMem3DMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glBufferStorageMemEXT", glBufferStorageMemEXT == NULL);
+  glewInfoFunc(fi, "glCreateMemoryObjectsEXT", glCreateMemoryObjectsEXT == NULL);
+  glewInfoFunc(fi, "glDeleteMemoryObjectsEXT", glDeleteMemoryObjectsEXT == NULL);
+  glewInfoFunc(fi, "glGetMemoryObjectParameterivEXT", glGetMemoryObjectParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetUnsignedBytei_vEXT", glGetUnsignedBytei_vEXT == NULL);
+  glewInfoFunc(fi, "glGetUnsignedBytevEXT", glGetUnsignedBytevEXT == NULL);
+  glewInfoFunc(fi, "glIsMemoryObjectEXT", glIsMemoryObjectEXT == NULL);
+  glewInfoFunc(fi, "glMemoryObjectParameterivEXT", glMemoryObjectParameterivEXT == NULL);
+  glewInfoFunc(fi, "glNamedBufferStorageMemEXT", glNamedBufferStorageMemEXT == NULL);
+  glewInfoFunc(fi, "glTexStorageMem1DEXT", glTexStorageMem1DEXT == NULL);
+  glewInfoFunc(fi, "glTexStorageMem2DEXT", glTexStorageMem2DEXT == NULL);
+  glewInfoFunc(fi, "glTexStorageMem2DMultisampleEXT", glTexStorageMem2DMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glTexStorageMem3DEXT", glTexStorageMem3DEXT == NULL);
+  glewInfoFunc(fi, "glTexStorageMem3DMultisampleEXT", glTexStorageMem3DMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorageMem1DEXT", glTextureStorageMem1DEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorageMem2DEXT", glTextureStorageMem2DEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorageMem2DMultisampleEXT", glTextureStorageMem2DMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorageMem3DEXT", glTextureStorageMem3DEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorageMem3DMultisampleEXT", glTextureStorageMem3DMultisampleEXT == NULL);
 }
 
 #endif /* GL_EXT_memory_object */
@@ -5216,9 +5344,9 @@ static void _glewInfo_GL_EXT_memory_object (void)
 
 static void _glewInfo_GL_EXT_memory_object_fd (void)
 {
-  glewPrintExt("GL_EXT_memory_object_fd", GLEW_EXT_memory_object_fd, glewIsSupported("GL_EXT_memory_object_fd"), glewGetExtension("GL_EXT_memory_object_fd"));
+  GLboolean fi = glewPrintExt("GL_EXT_memory_object_fd", GLEW_EXT_memory_object_fd, glewIsSupported("GL_EXT_memory_object_fd"), glewGetExtension("GL_EXT_memory_object_fd"));
 
-  glewInfoFunc("glImportMemoryFdEXT", glImportMemoryFdEXT == NULL);
+  glewInfoFunc(fi, "glImportMemoryFdEXT", glImportMemoryFdEXT == NULL);
 }
 
 #endif /* GL_EXT_memory_object_fd */
@@ -5227,10 +5355,10 @@ static void _glewInfo_GL_EXT_memory_object_fd (void)
 
 static void _glewInfo_GL_EXT_memory_object_win32 (void)
 {
-  glewPrintExt("GL_EXT_memory_object_win32", GLEW_EXT_memory_object_win32, glewIsSupported("GL_EXT_memory_object_win32"), glewGetExtension("GL_EXT_memory_object_win32"));
+  GLboolean fi = glewPrintExt("GL_EXT_memory_object_win32", GLEW_EXT_memory_object_win32, glewIsSupported("GL_EXT_memory_object_win32"), glewGetExtension("GL_EXT_memory_object_win32"));
 
-  glewInfoFunc("glImportMemoryWin32HandleEXT", glImportMemoryWin32HandleEXT == NULL);
-  glewInfoFunc("glImportMemoryWin32NameEXT", glImportMemoryWin32NameEXT == NULL);
+  glewInfoFunc(fi, "glImportMemoryWin32HandleEXT", glImportMemoryWin32HandleEXT == NULL);
+  glewInfoFunc(fi, "glImportMemoryWin32NameEXT", glImportMemoryWin32NameEXT == NULL);
 }
 
 #endif /* GL_EXT_memory_object_win32 */
@@ -5248,10 +5376,10 @@ static void _glewInfo_GL_EXT_misc_attribute (void)
 
 static void _glewInfo_GL_EXT_multi_draw_arrays (void)
 {
-  glewPrintExt("GL_EXT_multi_draw_arrays", GLEW_EXT_multi_draw_arrays, glewIsSupported("GL_EXT_multi_draw_arrays"), glewGetExtension("GL_EXT_multi_draw_arrays"));
+  GLboolean fi = glewPrintExt("GL_EXT_multi_draw_arrays", GLEW_EXT_multi_draw_arrays, glewIsSupported("GL_EXT_multi_draw_arrays"), glewGetExtension("GL_EXT_multi_draw_arrays"));
 
-  glewInfoFunc("glMultiDrawArraysEXT", glMultiDrawArraysEXT == NULL);
-  glewInfoFunc("glMultiDrawElementsEXT", glMultiDrawElementsEXT == NULL);
+  glewInfoFunc(fi, "glMultiDrawArraysEXT", glMultiDrawArraysEXT == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsEXT", glMultiDrawElementsEXT == NULL);
 }
 
 #endif /* GL_EXT_multi_draw_arrays */
@@ -5260,10 +5388,10 @@ static void _glewInfo_GL_EXT_multi_draw_arrays (void)
 
 static void _glewInfo_GL_EXT_multi_draw_indirect (void)
 {
-  glewPrintExt("GL_EXT_multi_draw_indirect", GLEW_EXT_multi_draw_indirect, glewIsSupported("GL_EXT_multi_draw_indirect"), glewGetExtension("GL_EXT_multi_draw_indirect"));
+  GLboolean fi = glewPrintExt("GL_EXT_multi_draw_indirect", GLEW_EXT_multi_draw_indirect, glewIsSupported("GL_EXT_multi_draw_indirect"), glewGetExtension("GL_EXT_multi_draw_indirect"));
 
-  glewInfoFunc("glMultiDrawArraysIndirectEXT", glMultiDrawArraysIndirectEXT == NULL);
-  glewInfoFunc("glMultiDrawElementsIndirectEXT", glMultiDrawElementsIndirectEXT == NULL);
+  glewInfoFunc(fi, "glMultiDrawArraysIndirectEXT", glMultiDrawArraysIndirectEXT == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsIndirectEXT", glMultiDrawElementsIndirectEXT == NULL);
 }
 
 #endif /* GL_EXT_multi_draw_indirect */
@@ -5281,10 +5409,10 @@ static void _glewInfo_GL_EXT_multiple_textures (void)
 
 static void _glewInfo_GL_EXT_multisample (void)
 {
-  glewPrintExt("GL_EXT_multisample", GLEW_EXT_multisample, glewIsSupported("GL_EXT_multisample"), glewGetExtension("GL_EXT_multisample"));
+  GLboolean fi = glewPrintExt("GL_EXT_multisample", GLEW_EXT_multisample, glewIsSupported("GL_EXT_multisample"), glewGetExtension("GL_EXT_multisample"));
 
-  glewInfoFunc("glSampleMaskEXT", glSampleMaskEXT == NULL);
-  glewInfoFunc("glSamplePatternEXT", glSamplePatternEXT == NULL);
+  glewInfoFunc(fi, "glSampleMaskEXT", glSampleMaskEXT == NULL);
+  glewInfoFunc(fi, "glSamplePatternEXT", glSamplePatternEXT == NULL);
 }
 
 #endif /* GL_EXT_multisample */
@@ -5302,9 +5430,9 @@ static void _glewInfo_GL_EXT_multisample_compatibility (void)
 
 static void _glewInfo_GL_EXT_multisampled_render_to_texture (void)
 {
-  glewPrintExt("GL_EXT_multisampled_render_to_texture", GLEW_EXT_multisampled_render_to_texture, glewIsSupported("GL_EXT_multisampled_render_to_texture"), glewGetExtension("GL_EXT_multisampled_render_to_texture"));
+  GLboolean fi = glewPrintExt("GL_EXT_multisampled_render_to_texture", GLEW_EXT_multisampled_render_to_texture, glewIsSupported("GL_EXT_multisampled_render_to_texture"), glewGetExtension("GL_EXT_multisampled_render_to_texture"));
 
-  glewInfoFunc("glFramebufferTexture2DMultisampleEXT", glFramebufferTexture2DMultisampleEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture2DMultisampleEXT", glFramebufferTexture2DMultisampleEXT == NULL);
 }
 
 #endif /* GL_EXT_multisampled_render_to_texture */
@@ -5322,14 +5450,50 @@ static void _glewInfo_GL_EXT_multisampled_render_to_texture2 (void)
 
 static void _glewInfo_GL_EXT_multiview_draw_buffers (void)
 {
-  glewPrintExt("GL_EXT_multiview_draw_buffers", GLEW_EXT_multiview_draw_buffers, glewIsSupported("GL_EXT_multiview_draw_buffers"), glewGetExtension("GL_EXT_multiview_draw_buffers"));
+  GLboolean fi = glewPrintExt("GL_EXT_multiview_draw_buffers", GLEW_EXT_multiview_draw_buffers, glewIsSupported("GL_EXT_multiview_draw_buffers"), glewGetExtension("GL_EXT_multiview_draw_buffers"));
 
-  glewInfoFunc("glDrawBuffersIndexedEXT", glDrawBuffersIndexedEXT == NULL);
-  glewInfoFunc("glGetIntegeri_vEXT", glGetIntegeri_vEXT == NULL);
-  glewInfoFunc("glReadBufferIndexedEXT", glReadBufferIndexedEXT == NULL);
+  glewInfoFunc(fi, "glDrawBuffersIndexedEXT", glDrawBuffersIndexedEXT == NULL);
+  glewInfoFunc(fi, "glGetIntegeri_vEXT", glGetIntegeri_vEXT == NULL);
+  glewInfoFunc(fi, "glReadBufferIndexedEXT", glReadBufferIndexedEXT == NULL);
 }
 
 #endif /* GL_EXT_multiview_draw_buffers */
+
+#ifdef GL_EXT_multiview_tessellation_geometry_shader
+
+static void _glewInfo_GL_EXT_multiview_tessellation_geometry_shader (void)
+{
+  glewPrintExt("GL_EXT_multiview_tessellation_geometry_shader", GLEW_EXT_multiview_tessellation_geometry_shader, glewIsSupported("GL_EXT_multiview_tessellation_geometry_shader"), glewGetExtension("GL_EXT_multiview_tessellation_geometry_shader"));
+}
+
+#endif /* GL_EXT_multiview_tessellation_geometry_shader */
+
+#ifdef GL_EXT_multiview_texture_multisample
+
+static void _glewInfo_GL_EXT_multiview_texture_multisample (void)
+{
+  glewPrintExt("GL_EXT_multiview_texture_multisample", GLEW_EXT_multiview_texture_multisample, glewIsSupported("GL_EXT_multiview_texture_multisample"), glewGetExtension("GL_EXT_multiview_texture_multisample"));
+}
+
+#endif /* GL_EXT_multiview_texture_multisample */
+
+#ifdef GL_EXT_multiview_timer_query
+
+static void _glewInfo_GL_EXT_multiview_timer_query (void)
+{
+  glewPrintExt("GL_EXT_multiview_timer_query", GLEW_EXT_multiview_timer_query, glewIsSupported("GL_EXT_multiview_timer_query"), glewGetExtension("GL_EXT_multiview_timer_query"));
+}
+
+#endif /* GL_EXT_multiview_timer_query */
+
+#ifdef GL_EXT_occlusion_query_boolean
+
+static void _glewInfo_GL_EXT_occlusion_query_boolean (void)
+{
+  glewPrintExt("GL_EXT_occlusion_query_boolean", GLEW_EXT_occlusion_query_boolean, glewIsSupported("GL_EXT_occlusion_query_boolean"), glewGetExtension("GL_EXT_occlusion_query_boolean"));
+}
+
+#endif /* GL_EXT_occlusion_query_boolean */
 
 #ifdef GL_EXT_packed_depth_stencil
 
@@ -5362,12 +5526,12 @@ static void _glewInfo_GL_EXT_packed_pixels (void)
 
 static void _glewInfo_GL_EXT_paletted_texture (void)
 {
-  glewPrintExt("GL_EXT_paletted_texture", GLEW_EXT_paletted_texture, glewIsSupported("GL_EXT_paletted_texture"), glewGetExtension("GL_EXT_paletted_texture"));
+  GLboolean fi = glewPrintExt("GL_EXT_paletted_texture", GLEW_EXT_paletted_texture, glewIsSupported("GL_EXT_paletted_texture"), glewGetExtension("GL_EXT_paletted_texture"));
 
-  glewInfoFunc("glColorTableEXT", glColorTableEXT == NULL);
-  glewInfoFunc("glGetColorTableEXT", glGetColorTableEXT == NULL);
-  glewInfoFunc("glGetColorTableParameterfvEXT", glGetColorTableParameterfvEXT == NULL);
-  glewInfoFunc("glGetColorTableParameterivEXT", glGetColorTableParameterivEXT == NULL);
+  glewInfoFunc(fi, "glColorTableEXT", glColorTableEXT == NULL);
+  glewInfoFunc(fi, "glGetColorTableEXT", glGetColorTableEXT == NULL);
+  glewInfoFunc(fi, "glGetColorTableParameterfvEXT", glGetColorTableParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetColorTableParameterivEXT", glGetColorTableParameterivEXT == NULL);
 }
 
 #endif /* GL_EXT_paletted_texture */
@@ -5385,14 +5549,14 @@ static void _glewInfo_GL_EXT_pixel_buffer_object (void)
 
 static void _glewInfo_GL_EXT_pixel_transform (void)
 {
-  glewPrintExt("GL_EXT_pixel_transform", GLEW_EXT_pixel_transform, glewIsSupported("GL_EXT_pixel_transform"), glewGetExtension("GL_EXT_pixel_transform"));
+  GLboolean fi = glewPrintExt("GL_EXT_pixel_transform", GLEW_EXT_pixel_transform, glewIsSupported("GL_EXT_pixel_transform"), glewGetExtension("GL_EXT_pixel_transform"));
 
-  glewInfoFunc("glGetPixelTransformParameterfvEXT", glGetPixelTransformParameterfvEXT == NULL);
-  glewInfoFunc("glGetPixelTransformParameterivEXT", glGetPixelTransformParameterivEXT == NULL);
-  glewInfoFunc("glPixelTransformParameterfEXT", glPixelTransformParameterfEXT == NULL);
-  glewInfoFunc("glPixelTransformParameterfvEXT", glPixelTransformParameterfvEXT == NULL);
-  glewInfoFunc("glPixelTransformParameteriEXT", glPixelTransformParameteriEXT == NULL);
-  glewInfoFunc("glPixelTransformParameterivEXT", glPixelTransformParameterivEXT == NULL);
+  glewInfoFunc(fi, "glGetPixelTransformParameterfvEXT", glGetPixelTransformParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glGetPixelTransformParameterivEXT", glGetPixelTransformParameterivEXT == NULL);
+  glewInfoFunc(fi, "glPixelTransformParameterfEXT", glPixelTransformParameterfEXT == NULL);
+  glewInfoFunc(fi, "glPixelTransformParameterfvEXT", glPixelTransformParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glPixelTransformParameteriEXT", glPixelTransformParameteriEXT == NULL);
+  glewInfoFunc(fi, "glPixelTransformParameterivEXT", glPixelTransformParameterivEXT == NULL);
 }
 
 #endif /* GL_EXT_pixel_transform */
@@ -5410,10 +5574,10 @@ static void _glewInfo_GL_EXT_pixel_transform_color_table (void)
 
 static void _glewInfo_GL_EXT_point_parameters (void)
 {
-  glewPrintExt("GL_EXT_point_parameters", GLEW_EXT_point_parameters, glewIsSupported("GL_EXT_point_parameters"), glewGetExtension("GL_EXT_point_parameters"));
+  GLboolean fi = glewPrintExt("GL_EXT_point_parameters", GLEW_EXT_point_parameters, glewIsSupported("GL_EXT_point_parameters"), glewGetExtension("GL_EXT_point_parameters"));
 
-  glewInfoFunc("glPointParameterfEXT", glPointParameterfEXT == NULL);
-  glewInfoFunc("glPointParameterfvEXT", glPointParameterfvEXT == NULL);
+  glewInfoFunc(fi, "glPointParameterfEXT", glPointParameterfEXT == NULL);
+  glewInfoFunc(fi, "glPointParameterfvEXT", glPointParameterfvEXT == NULL);
 }
 
 #endif /* GL_EXT_point_parameters */
@@ -5422,9 +5586,9 @@ static void _glewInfo_GL_EXT_point_parameters (void)
 
 static void _glewInfo_GL_EXT_polygon_offset (void)
 {
-  glewPrintExt("GL_EXT_polygon_offset", GLEW_EXT_polygon_offset, glewIsSupported("GL_EXT_polygon_offset"), glewGetExtension("GL_EXT_polygon_offset"));
+  GLboolean fi = glewPrintExt("GL_EXT_polygon_offset", GLEW_EXT_polygon_offset, glewIsSupported("GL_EXT_polygon_offset"), glewGetExtension("GL_EXT_polygon_offset"));
 
-  glewInfoFunc("glPolygonOffsetEXT", glPolygonOffsetEXT == NULL);
+  glewInfoFunc(fi, "glPolygonOffsetEXT", glPolygonOffsetEXT == NULL);
 }
 
 #endif /* GL_EXT_polygon_offset */
@@ -5433,9 +5597,9 @@ static void _glewInfo_GL_EXT_polygon_offset (void)
 
 static void _glewInfo_GL_EXT_polygon_offset_clamp (void)
 {
-  glewPrintExt("GL_EXT_polygon_offset_clamp", GLEW_EXT_polygon_offset_clamp, glewIsSupported("GL_EXT_polygon_offset_clamp"), glewGetExtension("GL_EXT_polygon_offset_clamp"));
+  GLboolean fi = glewPrintExt("GL_EXT_polygon_offset_clamp", GLEW_EXT_polygon_offset_clamp, glewIsSupported("GL_EXT_polygon_offset_clamp"), glewGetExtension("GL_EXT_polygon_offset_clamp"));
 
-  glewInfoFunc("glPolygonOffsetClampEXT", glPolygonOffsetClampEXT == NULL);
+  glewInfoFunc(fi, "glPolygonOffsetClampEXT", glPolygonOffsetClampEXT == NULL);
 }
 
 #endif /* GL_EXT_polygon_offset_clamp */
@@ -5449,13 +5613,33 @@ static void _glewInfo_GL_EXT_post_depth_coverage (void)
 
 #endif /* GL_EXT_post_depth_coverage */
 
+#ifdef GL_EXT_primitive_bounding_box
+
+static void _glewInfo_GL_EXT_primitive_bounding_box (void)
+{
+  GLboolean fi = glewPrintExt("GL_EXT_primitive_bounding_box", GLEW_EXT_primitive_bounding_box, glewIsSupported("GL_EXT_primitive_bounding_box"), glewGetExtension("GL_EXT_primitive_bounding_box"));
+
+  glewInfoFunc(fi, "glPrimitiveBoundingBoxEXT", glPrimitiveBoundingBoxEXT == NULL);
+}
+
+#endif /* GL_EXT_primitive_bounding_box */
+
+#ifdef GL_EXT_protected_textures
+
+static void _glewInfo_GL_EXT_protected_textures (void)
+{
+  glewPrintExt("GL_EXT_protected_textures", GLEW_EXT_protected_textures, glewIsSupported("GL_EXT_protected_textures"), glewGetExtension("GL_EXT_protected_textures"));
+}
+
+#endif /* GL_EXT_protected_textures */
+
 #ifdef GL_EXT_provoking_vertex
 
 static void _glewInfo_GL_EXT_provoking_vertex (void)
 {
-  glewPrintExt("GL_EXT_provoking_vertex", GLEW_EXT_provoking_vertex, glewIsSupported("GL_EXT_provoking_vertex"), glewGetExtension("GL_EXT_provoking_vertex"));
+  GLboolean fi = glewPrintExt("GL_EXT_provoking_vertex", GLEW_EXT_provoking_vertex, glewIsSupported("GL_EXT_provoking_vertex"), glewGetExtension("GL_EXT_provoking_vertex"));
 
-  glewInfoFunc("glProvokingVertexEXT", glProvokingVertexEXT == NULL);
+  glewInfoFunc(fi, "glProvokingVertexEXT", glProvokingVertexEXT == NULL);
 }
 
 #endif /* GL_EXT_provoking_vertex */
@@ -5473,12 +5657,12 @@ static void _glewInfo_GL_EXT_pvrtc_sRGB (void)
 
 static void _glewInfo_GL_EXT_raster_multisample (void)
 {
-  glewPrintExt("GL_EXT_raster_multisample", GLEW_EXT_raster_multisample, glewIsSupported("GL_EXT_raster_multisample"), glewGetExtension("GL_EXT_raster_multisample"));
+  GLboolean fi = glewPrintExt("GL_EXT_raster_multisample", GLEW_EXT_raster_multisample, glewIsSupported("GL_EXT_raster_multisample"), glewGetExtension("GL_EXT_raster_multisample"));
 
-  glewInfoFunc("glCoverageModulationNV", glCoverageModulationNV == NULL);
-  glewInfoFunc("glCoverageModulationTableNV", glCoverageModulationTableNV == NULL);
-  glewInfoFunc("glGetCoverageModulationTableNV", glGetCoverageModulationTableNV == NULL);
-  glewInfoFunc("glRasterSamplesEXT", glRasterSamplesEXT == NULL);
+  glewInfoFunc(fi, "glCoverageModulationNV", glCoverageModulationNV == NULL);
+  glewInfoFunc(fi, "glCoverageModulationTableNV", glCoverageModulationTableNV == NULL);
+  glewInfoFunc(fi, "glGetCoverageModulationTableNV", glGetCoverageModulationTableNV == NULL);
+  glewInfoFunc(fi, "glRasterSamplesEXT", glRasterSamplesEXT == NULL);
 }
 
 #endif /* GL_EXT_raster_multisample */
@@ -5510,6 +5694,19 @@ static void _glewInfo_GL_EXT_rescale_normal (void)
 
 #endif /* GL_EXT_rescale_normal */
 
+#ifdef GL_EXT_robustness
+
+static void _glewInfo_GL_EXT_robustness (void)
+{
+  GLboolean fi = glewPrintExt("GL_EXT_robustness", GLEW_EXT_robustness, glewIsSupported("GL_EXT_robustness"), glewGetExtension("GL_EXT_robustness"));
+
+  glewInfoFunc(fi, "glGetnUniformfvEXT", glGetnUniformfvEXT == NULL);
+  glewInfoFunc(fi, "glGetnUniformivEXT", glGetnUniformivEXT == NULL);
+  glewInfoFunc(fi, "glReadnPixelsEXT", glReadnPixelsEXT == NULL);
+}
+
+#endif /* GL_EXT_robustness */
+
 #ifdef GL_EXT_sRGB
 
 static void _glewInfo_GL_EXT_sRGB (void)
@@ -5532,10 +5729,10 @@ static void _glewInfo_GL_EXT_sRGB_write_control (void)
 
 static void _glewInfo_GL_EXT_scene_marker (void)
 {
-  glewPrintExt("GL_EXT_scene_marker", GLEW_EXT_scene_marker, glewIsSupported("GL_EXT_scene_marker"), glewGetExtension("GL_EXT_scene_marker"));
+  GLboolean fi = glewPrintExt("GL_EXT_scene_marker", GLEW_EXT_scene_marker, glewIsSupported("GL_EXT_scene_marker"), glewGetExtension("GL_EXT_scene_marker"));
 
-  glewInfoFunc("glBeginSceneEXT", glBeginSceneEXT == NULL);
-  glewInfoFunc("glEndSceneEXT", glEndSceneEXT == NULL);
+  glewInfoFunc(fi, "glBeginSceneEXT", glBeginSceneEXT == NULL);
+  glewInfoFunc(fi, "glEndSceneEXT", glEndSceneEXT == NULL);
 }
 
 #endif /* GL_EXT_scene_marker */
@@ -5544,25 +5741,25 @@ static void _glewInfo_GL_EXT_scene_marker (void)
 
 static void _glewInfo_GL_EXT_secondary_color (void)
 {
-  glewPrintExt("GL_EXT_secondary_color", GLEW_EXT_secondary_color, glewIsSupported("GL_EXT_secondary_color"), glewGetExtension("GL_EXT_secondary_color"));
+  GLboolean fi = glewPrintExt("GL_EXT_secondary_color", GLEW_EXT_secondary_color, glewIsSupported("GL_EXT_secondary_color"), glewGetExtension("GL_EXT_secondary_color"));
 
-  glewInfoFunc("glSecondaryColor3bEXT", glSecondaryColor3bEXT == NULL);
-  glewInfoFunc("glSecondaryColor3bvEXT", glSecondaryColor3bvEXT == NULL);
-  glewInfoFunc("glSecondaryColor3dEXT", glSecondaryColor3dEXT == NULL);
-  glewInfoFunc("glSecondaryColor3dvEXT", glSecondaryColor3dvEXT == NULL);
-  glewInfoFunc("glSecondaryColor3fEXT", glSecondaryColor3fEXT == NULL);
-  glewInfoFunc("glSecondaryColor3fvEXT", glSecondaryColor3fvEXT == NULL);
-  glewInfoFunc("glSecondaryColor3iEXT", glSecondaryColor3iEXT == NULL);
-  glewInfoFunc("glSecondaryColor3ivEXT", glSecondaryColor3ivEXT == NULL);
-  glewInfoFunc("glSecondaryColor3sEXT", glSecondaryColor3sEXT == NULL);
-  glewInfoFunc("glSecondaryColor3svEXT", glSecondaryColor3svEXT == NULL);
-  glewInfoFunc("glSecondaryColor3ubEXT", glSecondaryColor3ubEXT == NULL);
-  glewInfoFunc("glSecondaryColor3ubvEXT", glSecondaryColor3ubvEXT == NULL);
-  glewInfoFunc("glSecondaryColor3uiEXT", glSecondaryColor3uiEXT == NULL);
-  glewInfoFunc("glSecondaryColor3uivEXT", glSecondaryColor3uivEXT == NULL);
-  glewInfoFunc("glSecondaryColor3usEXT", glSecondaryColor3usEXT == NULL);
-  glewInfoFunc("glSecondaryColor3usvEXT", glSecondaryColor3usvEXT == NULL);
-  glewInfoFunc("glSecondaryColorPointerEXT", glSecondaryColorPointerEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3bEXT", glSecondaryColor3bEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3bvEXT", glSecondaryColor3bvEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3dEXT", glSecondaryColor3dEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3dvEXT", glSecondaryColor3dvEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3fEXT", glSecondaryColor3fEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3fvEXT", glSecondaryColor3fvEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3iEXT", glSecondaryColor3iEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3ivEXT", glSecondaryColor3ivEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3sEXT", glSecondaryColor3sEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3svEXT", glSecondaryColor3svEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3ubEXT", glSecondaryColor3ubEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3ubvEXT", glSecondaryColor3ubvEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3uiEXT", glSecondaryColor3uiEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3uivEXT", glSecondaryColor3uivEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3usEXT", glSecondaryColor3usEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3usvEXT", glSecondaryColor3usvEXT == NULL);
+  glewInfoFunc(fi, "glSecondaryColorPointerEXT", glSecondaryColorPointerEXT == NULL);
 }
 
 #endif /* GL_EXT_secondary_color */
@@ -5571,15 +5768,15 @@ static void _glewInfo_GL_EXT_secondary_color (void)
 
 static void _glewInfo_GL_EXT_semaphore (void)
 {
-  glewPrintExt("GL_EXT_semaphore", GLEW_EXT_semaphore, glewIsSupported("GL_EXT_semaphore"), glewGetExtension("GL_EXT_semaphore"));
+  GLboolean fi = glewPrintExt("GL_EXT_semaphore", GLEW_EXT_semaphore, glewIsSupported("GL_EXT_semaphore"), glewGetExtension("GL_EXT_semaphore"));
 
-  glewInfoFunc("glDeleteSemaphoresEXT", glDeleteSemaphoresEXT == NULL);
-  glewInfoFunc("glGenSemaphoresEXT", glGenSemaphoresEXT == NULL);
-  glewInfoFunc("glGetSemaphoreParameterui64vEXT", glGetSemaphoreParameterui64vEXT == NULL);
-  glewInfoFunc("glIsSemaphoreEXT", glIsSemaphoreEXT == NULL);
-  glewInfoFunc("glSemaphoreParameterui64vEXT", glSemaphoreParameterui64vEXT == NULL);
-  glewInfoFunc("glSignalSemaphoreEXT", glSignalSemaphoreEXT == NULL);
-  glewInfoFunc("glWaitSemaphoreEXT", glWaitSemaphoreEXT == NULL);
+  glewInfoFunc(fi, "glDeleteSemaphoresEXT", glDeleteSemaphoresEXT == NULL);
+  glewInfoFunc(fi, "glGenSemaphoresEXT", glGenSemaphoresEXT == NULL);
+  glewInfoFunc(fi, "glGetSemaphoreParameterui64vEXT", glGetSemaphoreParameterui64vEXT == NULL);
+  glewInfoFunc(fi, "glIsSemaphoreEXT", glIsSemaphoreEXT == NULL);
+  glewInfoFunc(fi, "glSemaphoreParameterui64vEXT", glSemaphoreParameterui64vEXT == NULL);
+  glewInfoFunc(fi, "glSignalSemaphoreEXT", glSignalSemaphoreEXT == NULL);
+  glewInfoFunc(fi, "glWaitSemaphoreEXT", glWaitSemaphoreEXT == NULL);
 }
 
 #endif /* GL_EXT_semaphore */
@@ -5588,9 +5785,9 @@ static void _glewInfo_GL_EXT_semaphore (void)
 
 static void _glewInfo_GL_EXT_semaphore_fd (void)
 {
-  glewPrintExt("GL_EXT_semaphore_fd", GLEW_EXT_semaphore_fd, glewIsSupported("GL_EXT_semaphore_fd"), glewGetExtension("GL_EXT_semaphore_fd"));
+  GLboolean fi = glewPrintExt("GL_EXT_semaphore_fd", GLEW_EXT_semaphore_fd, glewIsSupported("GL_EXT_semaphore_fd"), glewGetExtension("GL_EXT_semaphore_fd"));
 
-  glewInfoFunc("glImportSemaphoreFdEXT", glImportSemaphoreFdEXT == NULL);
+  glewInfoFunc(fi, "glImportSemaphoreFdEXT", glImportSemaphoreFdEXT == NULL);
 }
 
 #endif /* GL_EXT_semaphore_fd */
@@ -5599,10 +5796,10 @@ static void _glewInfo_GL_EXT_semaphore_fd (void)
 
 static void _glewInfo_GL_EXT_semaphore_win32 (void)
 {
-  glewPrintExt("GL_EXT_semaphore_win32", GLEW_EXT_semaphore_win32, glewIsSupported("GL_EXT_semaphore_win32"), glewGetExtension("GL_EXT_semaphore_win32"));
+  GLboolean fi = glewPrintExt("GL_EXT_semaphore_win32", GLEW_EXT_semaphore_win32, glewIsSupported("GL_EXT_semaphore_win32"), glewGetExtension("GL_EXT_semaphore_win32"));
 
-  glewInfoFunc("glImportSemaphoreWin32HandleEXT", glImportSemaphoreWin32HandleEXT == NULL);
-  glewInfoFunc("glImportSemaphoreWin32NameEXT", glImportSemaphoreWin32NameEXT == NULL);
+  glewInfoFunc(fi, "glImportSemaphoreWin32HandleEXT", glImportSemaphoreWin32HandleEXT == NULL);
+  glewInfoFunc(fi, "glImportSemaphoreWin32NameEXT", glImportSemaphoreWin32NameEXT == NULL);
 }
 
 #endif /* GL_EXT_semaphore_win32 */
@@ -5611,11 +5808,11 @@ static void _glewInfo_GL_EXT_semaphore_win32 (void)
 
 static void _glewInfo_GL_EXT_separate_shader_objects (void)
 {
-  glewPrintExt("GL_EXT_separate_shader_objects", GLEW_EXT_separate_shader_objects, glewIsSupported("GL_EXT_separate_shader_objects"), glewGetExtension("GL_EXT_separate_shader_objects"));
+  GLboolean fi = glewPrintExt("GL_EXT_separate_shader_objects", GLEW_EXT_separate_shader_objects, glewIsSupported("GL_EXT_separate_shader_objects"), glewGetExtension("GL_EXT_separate_shader_objects"));
 
-  glewInfoFunc("glActiveProgramEXT", glActiveProgramEXT == NULL);
-  glewInfoFunc("glCreateShaderProgramEXT", glCreateShaderProgramEXT == NULL);
-  glewInfoFunc("glUseShaderProgramEXT", glUseShaderProgramEXT == NULL);
+  glewInfoFunc(fi, "glActiveProgramEXT", glActiveProgramEXT == NULL);
+  glewInfoFunc(fi, "glCreateShaderProgramEXT", glCreateShaderProgramEXT == NULL);
+  glewInfoFunc(fi, "glUseShaderProgramEXT", glUseShaderProgramEXT == NULL);
 }
 
 #endif /* GL_EXT_separate_shader_objects */
@@ -5633,10 +5830,21 @@ static void _glewInfo_GL_EXT_separate_specular_color (void)
 
 static void _glewInfo_GL_EXT_shader_framebuffer_fetch (void)
 {
-  glewPrintExt("GL_EXT_shader_framebuffer_fetch", GLEW_EXT_shader_framebuffer_fetch, glewIsSupported("GL_EXT_shader_framebuffer_fetch"), glewGetExtension("GL_EXT_shader_framebuffer_fetch"));
+  GLboolean fi = glewPrintExt("GL_EXT_shader_framebuffer_fetch", GLEW_EXT_shader_framebuffer_fetch, glewIsSupported("GL_EXT_shader_framebuffer_fetch"), glewGetExtension("GL_EXT_shader_framebuffer_fetch"));
+
+  glewInfoFunc(fi, "glFramebufferFetchBarrierEXT", glFramebufferFetchBarrierEXT == NULL);
 }
 
 #endif /* GL_EXT_shader_framebuffer_fetch */
+
+#ifdef GL_EXT_shader_framebuffer_fetch_non_coherent
+
+static void _glewInfo_GL_EXT_shader_framebuffer_fetch_non_coherent (void)
+{
+  glewPrintExt("GL_EXT_shader_framebuffer_fetch_non_coherent", GLEW_EXT_shader_framebuffer_fetch_non_coherent, glewIsSupported("GL_EXT_shader_framebuffer_fetch_non_coherent"), glewGetExtension("GL_EXT_shader_framebuffer_fetch_non_coherent"));
+}
+
+#endif /* GL_EXT_shader_framebuffer_fetch_non_coherent */
 
 #ifdef GL_EXT_shader_group_vote
 
@@ -5660,10 +5868,10 @@ static void _glewInfo_GL_EXT_shader_image_load_formatted (void)
 
 static void _glewInfo_GL_EXT_shader_image_load_store (void)
 {
-  glewPrintExt("GL_EXT_shader_image_load_store", GLEW_EXT_shader_image_load_store, glewIsSupported("GL_EXT_shader_image_load_store"), glewGetExtension("GL_EXT_shader_image_load_store"));
+  GLboolean fi = glewPrintExt("GL_EXT_shader_image_load_store", GLEW_EXT_shader_image_load_store, glewIsSupported("GL_EXT_shader_image_load_store"), glewGetExtension("GL_EXT_shader_image_load_store"));
 
-  glewInfoFunc("glBindImageTextureEXT", glBindImageTextureEXT == NULL);
-  glewInfoFunc("glMemoryBarrierEXT", glMemoryBarrierEXT == NULL);
+  glewInfoFunc(fi, "glBindImageTextureEXT", glBindImageTextureEXT == NULL);
+  glewInfoFunc(fi, "glMemoryBarrierEXT", glMemoryBarrierEXT == NULL);
 }
 
 #endif /* GL_EXT_shader_image_load_store */
@@ -5717,11 +5925,11 @@ static void _glewInfo_GL_EXT_shader_pixel_local_storage (void)
 
 static void _glewInfo_GL_EXT_shader_pixel_local_storage2 (void)
 {
-  glewPrintExt("GL_EXT_shader_pixel_local_storage2", GLEW_EXT_shader_pixel_local_storage2, glewIsSupported("GL_EXT_shader_pixel_local_storage2"), glewGetExtension("GL_EXT_shader_pixel_local_storage2"));
+  GLboolean fi = glewPrintExt("GL_EXT_shader_pixel_local_storage2", GLEW_EXT_shader_pixel_local_storage2, glewIsSupported("GL_EXT_shader_pixel_local_storage2"), glewGetExtension("GL_EXT_shader_pixel_local_storage2"));
 
-  glewInfoFunc("glClearPixelLocalStorageuiEXT", glClearPixelLocalStorageuiEXT == NULL);
-  glewInfoFunc("glFramebufferPixelLocalStorageSizeEXT", glFramebufferPixelLocalStorageSizeEXT == NULL);
-  glewInfoFunc("glGetFramebufferPixelLocalStorageSizeEXT", glGetFramebufferPixelLocalStorageSizeEXT == NULL);
+  glewInfoFunc(fi, "glClearPixelLocalStorageuiEXT", glClearPixelLocalStorageuiEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferPixelLocalStorageSizeEXT", glFramebufferPixelLocalStorageSizeEXT == NULL);
+  glewInfoFunc(fi, "glGetFramebufferPixelLocalStorageSizeEXT", glGetFramebufferPixelLocalStorageSizeEXT == NULL);
 }
 
 #endif /* GL_EXT_shader_pixel_local_storage2 */
@@ -5766,10 +5974,10 @@ static void _glewInfo_GL_EXT_shared_texture_palette (void)
 
 static void _glewInfo_GL_EXT_sparse_texture (void)
 {
-  glewPrintExt("GL_EXT_sparse_texture", GLEW_EXT_sparse_texture, glewIsSupported("GL_EXT_sparse_texture"), glewGetExtension("GL_EXT_sparse_texture"));
+  GLboolean fi = glewPrintExt("GL_EXT_sparse_texture", GLEW_EXT_sparse_texture, glewIsSupported("GL_EXT_sparse_texture"), glewGetExtension("GL_EXT_sparse_texture"));
 
-  glewInfoFunc("glTexPageCommitmentEXT", glTexPageCommitmentEXT == NULL);
-  glewInfoFunc("glTexturePageCommitmentEXT", glTexturePageCommitmentEXT == NULL);
+  glewInfoFunc(fi, "glTexPageCommitmentEXT", glTexPageCommitmentEXT == NULL);
+  glewInfoFunc(fi, "glTexturePageCommitmentEXT", glTexturePageCommitmentEXT == NULL);
 }
 
 #endif /* GL_EXT_sparse_texture */
@@ -5782,6 +5990,15 @@ static void _glewInfo_GL_EXT_sparse_texture2 (void)
 }
 
 #endif /* GL_EXT_sparse_texture2 */
+
+#ifdef GL_EXT_static_vertex_array
+
+static void _glewInfo_GL_EXT_static_vertex_array (void)
+{
+  glewPrintExt("GL_EXT_static_vertex_array", GLEW_EXT_static_vertex_array, glewIsSupported("GL_EXT_static_vertex_array"), glewGetExtension("GL_EXT_static_vertex_array"));
+}
+
+#endif /* GL_EXT_static_vertex_array */
 
 #ifdef GL_EXT_stencil_clear_tag
 
@@ -5796,9 +6013,9 @@ static void _glewInfo_GL_EXT_stencil_clear_tag (void)
 
 static void _glewInfo_GL_EXT_stencil_two_side (void)
 {
-  glewPrintExt("GL_EXT_stencil_two_side", GLEW_EXT_stencil_two_side, glewIsSupported("GL_EXT_stencil_two_side"), glewGetExtension("GL_EXT_stencil_two_side"));
+  GLboolean fi = glewPrintExt("GL_EXT_stencil_two_side", GLEW_EXT_stencil_two_side, glewIsSupported("GL_EXT_stencil_two_side"), glewGetExtension("GL_EXT_stencil_two_side"));
 
-  glewInfoFunc("glActiveStencilFaceEXT", glActiveStencilFaceEXT == NULL);
+  glewInfoFunc(fi, "glActiveStencilFaceEXT", glActiveStencilFaceEXT == NULL);
 }
 
 #endif /* GL_EXT_stencil_two_side */
@@ -5816,14 +6033,34 @@ static void _glewInfo_GL_EXT_stencil_wrap (void)
 
 static void _glewInfo_GL_EXT_subtexture (void)
 {
-  glewPrintExt("GL_EXT_subtexture", GLEW_EXT_subtexture, glewIsSupported("GL_EXT_subtexture"), glewGetExtension("GL_EXT_subtexture"));
+  GLboolean fi = glewPrintExt("GL_EXT_subtexture", GLEW_EXT_subtexture, glewIsSupported("GL_EXT_subtexture"), glewGetExtension("GL_EXT_subtexture"));
 
-  glewInfoFunc("glTexSubImage1DEXT", glTexSubImage1DEXT == NULL);
-  glewInfoFunc("glTexSubImage2DEXT", glTexSubImage2DEXT == NULL);
-  glewInfoFunc("glTexSubImage3DEXT", glTexSubImage3DEXT == NULL);
+  glewInfoFunc(fi, "glTexSubImage1DEXT", glTexSubImage1DEXT == NULL);
+  glewInfoFunc(fi, "glTexSubImage2DEXT", glTexSubImage2DEXT == NULL);
+  glewInfoFunc(fi, "glTexSubImage3DEXT", glTexSubImage3DEXT == NULL);
 }
 
 #endif /* GL_EXT_subtexture */
+
+#ifdef GL_EXT_tessellation_point_size
+
+static void _glewInfo_GL_EXT_tessellation_point_size (void)
+{
+  GLboolean fi = glewPrintExt("GL_EXT_tessellation_point_size", GLEW_EXT_tessellation_point_size, glewIsSupported("GL_EXT_tessellation_point_size"), glewGetExtension("GL_EXT_tessellation_point_size"));
+
+  glewInfoFunc(fi, "glPatchParameteriEXT", glPatchParameteriEXT == NULL);
+}
+
+#endif /* GL_EXT_tessellation_point_size */
+
+#ifdef GL_EXT_tessellation_shader
+
+static void _glewInfo_GL_EXT_tessellation_shader (void)
+{
+  glewPrintExt("GL_EXT_tessellation_shader", GLEW_EXT_tessellation_shader, glewIsSupported("GL_EXT_tessellation_shader"), glewGetExtension("GL_EXT_tessellation_shader"));
+}
+
+#endif /* GL_EXT_tessellation_shader */
 
 #ifdef GL_EXT_texture
 
@@ -5838,9 +6075,9 @@ static void _glewInfo_GL_EXT_texture (void)
 
 static void _glewInfo_GL_EXT_texture3D (void)
 {
-  glewPrintExt("GL_EXT_texture3D", GLEW_EXT_texture3D, glewIsSupported("GL_EXT_texture3D"), glewGetExtension("GL_EXT_texture3D"));
+  GLboolean fi = glewPrintExt("GL_EXT_texture3D", GLEW_EXT_texture3D, glewIsSupported("GL_EXT_texture3D"), glewGetExtension("GL_EXT_texture3D"));
 
-  glewInfoFunc("glTexImage3DEXT", glTexImage3DEXT == NULL);
+  glewInfoFunc(fi, "glTexImage3DEXT", glTexImage3DEXT == NULL);
 }
 
 #endif /* GL_EXT_texture3D */
@@ -5849,20 +6086,43 @@ static void _glewInfo_GL_EXT_texture3D (void)
 
 static void _glewInfo_GL_EXT_texture_array (void)
 {
-  glewPrintExt("GL_EXT_texture_array", GLEW_EXT_texture_array, glewIsSupported("GL_EXT_texture_array"), glewGetExtension("GL_EXT_texture_array"));
+  GLboolean fi = glewPrintExt("GL_EXT_texture_array", GLEW_EXT_texture_array, glewIsSupported("GL_EXT_texture_array"), glewGetExtension("GL_EXT_texture_array"));
 
-  glewInfoFunc("glFramebufferTextureLayerEXT", glFramebufferTextureLayerEXT == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureLayerEXT", glFramebufferTextureLayerEXT == NULL);
 }
 
 #endif /* GL_EXT_texture_array */
+
+#ifdef GL_EXT_texture_border_clamp
+
+static void _glewInfo_GL_EXT_texture_border_clamp (void)
+{
+  GLboolean fi = glewPrintExt("GL_EXT_texture_border_clamp", GLEW_EXT_texture_border_clamp, glewIsSupported("GL_EXT_texture_border_clamp"), glewGetExtension("GL_EXT_texture_border_clamp"));
+
+  glewInfoFunc(fi, "glGetSamplerParameterIivEXT", glGetSamplerParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glGetSamplerParameterIuivEXT", glGetSamplerParameterIuivEXT == NULL);
+  glewInfoFunc(fi, "glSamplerParameterIivEXT", glSamplerParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glSamplerParameterIuivEXT", glSamplerParameterIuivEXT == NULL);
+}
+
+#endif /* GL_EXT_texture_border_clamp */
+
+#ifdef GL_EXT_texture_buffer
+
+static void _glewInfo_GL_EXT_texture_buffer (void)
+{
+  glewPrintExt("GL_EXT_texture_buffer", GLEW_EXT_texture_buffer, glewIsSupported("GL_EXT_texture_buffer"), glewGetExtension("GL_EXT_texture_buffer"));
+}
+
+#endif /* GL_EXT_texture_buffer */
 
 #ifdef GL_EXT_texture_buffer_object
 
 static void _glewInfo_GL_EXT_texture_buffer_object (void)
 {
-  glewPrintExt("GL_EXT_texture_buffer_object", GLEW_EXT_texture_buffer_object, glewIsSupported("GL_EXT_texture_buffer_object"), glewGetExtension("GL_EXT_texture_buffer_object"));
+  GLboolean fi = glewPrintExt("GL_EXT_texture_buffer_object", GLEW_EXT_texture_buffer_object, glewIsSupported("GL_EXT_texture_buffer_object"), glewGetExtension("GL_EXT_texture_buffer_object"));
 
-  glewInfoFunc("glTexBufferEXT", glTexBufferEXT == NULL);
+  glewInfoFunc(fi, "glTexBufferEXT", glTexBufferEXT == NULL);
 }
 
 #endif /* GL_EXT_texture_buffer_object */
@@ -5929,6 +6189,15 @@ static void _glewInfo_GL_EXT_texture_compression_s3tc (void)
 }
 
 #endif /* GL_EXT_texture_compression_s3tc */
+
+#ifdef GL_EXT_texture_compression_s3tc_srgb
+
+static void _glewInfo_GL_EXT_texture_compression_s3tc_srgb (void)
+{
+  glewPrintExt("GL_EXT_texture_compression_s3tc_srgb", GLEW_EXT_texture_compression_s3tc_srgb, glewIsSupported("GL_EXT_texture_compression_s3tc_srgb"), glewGetExtension("GL_EXT_texture_compression_s3tc_srgb"));
+}
+
+#endif /* GL_EXT_texture_compression_s3tc_srgb */
 
 #ifdef GL_EXT_texture_cube_map
 
@@ -6020,18 +6289,27 @@ static void _glewInfo_GL_EXT_texture_format_BGRA8888 (void)
 
 #endif /* GL_EXT_texture_format_BGRA8888 */
 
+#ifdef GL_EXT_texture_format_sRGB_override
+
+static void _glewInfo_GL_EXT_texture_format_sRGB_override (void)
+{
+  glewPrintExt("GL_EXT_texture_format_sRGB_override", GLEW_EXT_texture_format_sRGB_override, glewIsSupported("GL_EXT_texture_format_sRGB_override"), glewGetExtension("GL_EXT_texture_format_sRGB_override"));
+}
+
+#endif /* GL_EXT_texture_format_sRGB_override */
+
 #ifdef GL_EXT_texture_integer
 
 static void _glewInfo_GL_EXT_texture_integer (void)
 {
-  glewPrintExt("GL_EXT_texture_integer", GLEW_EXT_texture_integer, glewIsSupported("GL_EXT_texture_integer"), glewGetExtension("GL_EXT_texture_integer"));
+  GLboolean fi = glewPrintExt("GL_EXT_texture_integer", GLEW_EXT_texture_integer, glewIsSupported("GL_EXT_texture_integer"), glewGetExtension("GL_EXT_texture_integer"));
 
-  glewInfoFunc("glClearColorIiEXT", glClearColorIiEXT == NULL);
-  glewInfoFunc("glClearColorIuiEXT", glClearColorIuiEXT == NULL);
-  glewInfoFunc("glGetTexParameterIivEXT", glGetTexParameterIivEXT == NULL);
-  glewInfoFunc("glGetTexParameterIuivEXT", glGetTexParameterIuivEXT == NULL);
-  glewInfoFunc("glTexParameterIivEXT", glTexParameterIivEXT == NULL);
-  glewInfoFunc("glTexParameterIuivEXT", glTexParameterIuivEXT == NULL);
+  glewInfoFunc(fi, "glClearColorIiEXT", glClearColorIiEXT == NULL);
+  glewInfoFunc(fi, "glClearColorIuiEXT", glClearColorIuiEXT == NULL);
+  glewInfoFunc(fi, "glGetTexParameterIivEXT", glGetTexParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glGetTexParameterIuivEXT", glGetTexParameterIuivEXT == NULL);
+  glewInfoFunc(fi, "glTexParameterIivEXT", glTexParameterIivEXT == NULL);
+  glewInfoFunc(fi, "glTexParameterIuivEXT", glTexParameterIuivEXT == NULL);
 }
 
 #endif /* GL_EXT_texture_integer */
@@ -6054,6 +6332,15 @@ static void _glewInfo_GL_EXT_texture_mirror_clamp (void)
 
 #endif /* GL_EXT_texture_mirror_clamp */
 
+#ifdef GL_EXT_texture_mirror_clamp_to_edge
+
+static void _glewInfo_GL_EXT_texture_mirror_clamp_to_edge (void)
+{
+  glewPrintExt("GL_EXT_texture_mirror_clamp_to_edge", GLEW_EXT_texture_mirror_clamp_to_edge, glewIsSupported("GL_EXT_texture_mirror_clamp_to_edge"), glewGetExtension("GL_EXT_texture_mirror_clamp_to_edge"));
+}
+
+#endif /* GL_EXT_texture_mirror_clamp_to_edge */
+
 #ifdef GL_EXT_texture_norm16
 
 static void _glewInfo_GL_EXT_texture_norm16 (void)
@@ -6067,14 +6354,14 @@ static void _glewInfo_GL_EXT_texture_norm16 (void)
 
 static void _glewInfo_GL_EXT_texture_object (void)
 {
-  glewPrintExt("GL_EXT_texture_object", GLEW_EXT_texture_object, glewIsSupported("GL_EXT_texture_object"), glewGetExtension("GL_EXT_texture_object"));
+  GLboolean fi = glewPrintExt("GL_EXT_texture_object", GLEW_EXT_texture_object, glewIsSupported("GL_EXT_texture_object"), glewGetExtension("GL_EXT_texture_object"));
 
-  glewInfoFunc("glAreTexturesResidentEXT", glAreTexturesResidentEXT == NULL);
-  glewInfoFunc("glBindTextureEXT", glBindTextureEXT == NULL);
-  glewInfoFunc("glDeleteTexturesEXT", glDeleteTexturesEXT == NULL);
-  glewInfoFunc("glGenTexturesEXT", glGenTexturesEXT == NULL);
-  glewInfoFunc("glIsTextureEXT", glIsTextureEXT == NULL);
-  glewInfoFunc("glPrioritizeTexturesEXT", glPrioritizeTexturesEXT == NULL);
+  glewInfoFunc(fi, "glAreTexturesResidentEXT", glAreTexturesResidentEXT == NULL);
+  glewInfoFunc(fi, "glBindTextureEXT", glBindTextureEXT == NULL);
+  glewInfoFunc(fi, "glDeleteTexturesEXT", glDeleteTexturesEXT == NULL);
+  glewInfoFunc(fi, "glGenTexturesEXT", glGenTexturesEXT == NULL);
+  glewInfoFunc(fi, "glIsTextureEXT", glIsTextureEXT == NULL);
+  glewInfoFunc(fi, "glPrioritizeTexturesEXT", glPrioritizeTexturesEXT == NULL);
 }
 
 #endif /* GL_EXT_texture_object */
@@ -6083,12 +6370,21 @@ static void _glewInfo_GL_EXT_texture_object (void)
 
 static void _glewInfo_GL_EXT_texture_perturb_normal (void)
 {
-  glewPrintExt("GL_EXT_texture_perturb_normal", GLEW_EXT_texture_perturb_normal, glewIsSupported("GL_EXT_texture_perturb_normal"), glewGetExtension("GL_EXT_texture_perturb_normal"));
+  GLboolean fi = glewPrintExt("GL_EXT_texture_perturb_normal", GLEW_EXT_texture_perturb_normal, glewIsSupported("GL_EXT_texture_perturb_normal"), glewGetExtension("GL_EXT_texture_perturb_normal"));
 
-  glewInfoFunc("glTextureNormalEXT", glTextureNormalEXT == NULL);
+  glewInfoFunc(fi, "glTextureNormalEXT", glTextureNormalEXT == NULL);
 }
 
 #endif /* GL_EXT_texture_perturb_normal */
+
+#ifdef GL_EXT_texture_query_lod
+
+static void _glewInfo_GL_EXT_texture_query_lod (void)
+{
+  glewPrintExt("GL_EXT_texture_query_lod", GLEW_EXT_texture_query_lod, glewIsSupported("GL_EXT_texture_query_lod"), glewGetExtension("GL_EXT_texture_query_lod"));
+}
+
+#endif /* GL_EXT_texture_query_lod */
 
 #ifdef GL_EXT_texture_rectangle
 
@@ -6144,6 +6440,15 @@ static void _glewInfo_GL_EXT_texture_sRGB_decode (void)
 
 #endif /* GL_EXT_texture_sRGB_decode */
 
+#ifdef GL_EXT_texture_shadow_lod
+
+static void _glewInfo_GL_EXT_texture_shadow_lod (void)
+{
+  glewPrintExt("GL_EXT_texture_shadow_lod", GLEW_EXT_texture_shadow_lod, glewIsSupported("GL_EXT_texture_shadow_lod"), glewGetExtension("GL_EXT_texture_shadow_lod"));
+}
+
+#endif /* GL_EXT_texture_shadow_lod */
+
 #ifdef GL_EXT_texture_shared_exponent
 
 static void _glewInfo_GL_EXT_texture_shared_exponent (void)
@@ -6166,14 +6471,14 @@ static void _glewInfo_GL_EXT_texture_snorm (void)
 
 static void _glewInfo_GL_EXT_texture_storage (void)
 {
-  glewPrintExt("GL_EXT_texture_storage", GLEW_EXT_texture_storage, glewIsSupported("GL_EXT_texture_storage"), glewGetExtension("GL_EXT_texture_storage"));
+  GLboolean fi = glewPrintExt("GL_EXT_texture_storage", GLEW_EXT_texture_storage, glewIsSupported("GL_EXT_texture_storage"), glewGetExtension("GL_EXT_texture_storage"));
 
-  glewInfoFunc("glTexStorage1DEXT", glTexStorage1DEXT == NULL);
-  glewInfoFunc("glTexStorage2DEXT", glTexStorage2DEXT == NULL);
-  glewInfoFunc("glTexStorage3DEXT", glTexStorage3DEXT == NULL);
-  glewInfoFunc("glTextureStorage1DEXT", glTextureStorage1DEXT == NULL);
-  glewInfoFunc("glTextureStorage2DEXT", glTextureStorage2DEXT == NULL);
-  glewInfoFunc("glTextureStorage3DEXT", glTextureStorage3DEXT == NULL);
+  glewInfoFunc(fi, "glTexStorage1DEXT", glTexStorage1DEXT == NULL);
+  glewInfoFunc(fi, "glTexStorage2DEXT", glTexStorage2DEXT == NULL);
+  glewInfoFunc(fi, "glTexStorage3DEXT", glTexStorage3DEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorage1DEXT", glTextureStorage1DEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorage2DEXT", glTextureStorage2DEXT == NULL);
+  glewInfoFunc(fi, "glTextureStorage3DEXT", glTextureStorage3DEXT == NULL);
 }
 
 #endif /* GL_EXT_texture_storage */
@@ -6200,9 +6505,9 @@ static void _glewInfo_GL_EXT_texture_type_2_10_10_10_REV (void)
 
 static void _glewInfo_GL_EXT_texture_view (void)
 {
-  glewPrintExt("GL_EXT_texture_view", GLEW_EXT_texture_view, glewIsSupported("GL_EXT_texture_view"), glewGetExtension("GL_EXT_texture_view"));
+  GLboolean fi = glewPrintExt("GL_EXT_texture_view", GLEW_EXT_texture_view, glewIsSupported("GL_EXT_texture_view"), glewGetExtension("GL_EXT_texture_view"));
 
-  glewInfoFunc("glTextureViewEXT", glTextureViewEXT == NULL);
+  glewInfoFunc(fi, "glTextureViewEXT", glTextureViewEXT == NULL);
 }
 
 #endif /* GL_EXT_texture_view */
@@ -6211,10 +6516,10 @@ static void _glewInfo_GL_EXT_texture_view (void)
 
 static void _glewInfo_GL_EXT_timer_query (void)
 {
-  glewPrintExt("GL_EXT_timer_query", GLEW_EXT_timer_query, glewIsSupported("GL_EXT_timer_query"), glewGetExtension("GL_EXT_timer_query"));
+  GLboolean fi = glewPrintExt("GL_EXT_timer_query", GLEW_EXT_timer_query, glewIsSupported("GL_EXT_timer_query"), glewGetExtension("GL_EXT_timer_query"));
 
-  glewInfoFunc("glGetQueryObjecti64vEXT", glGetQueryObjecti64vEXT == NULL);
-  glewInfoFunc("glGetQueryObjectui64vEXT", glGetQueryObjectui64vEXT == NULL);
+  glewInfoFunc(fi, "glGetQueryObjecti64vEXT", glGetQueryObjecti64vEXT == NULL);
+  glewInfoFunc(fi, "glGetQueryObjectui64vEXT", glGetQueryObjectui64vEXT == NULL);
 }
 
 #endif /* GL_EXT_timer_query */
@@ -6223,15 +6528,15 @@ static void _glewInfo_GL_EXT_timer_query (void)
 
 static void _glewInfo_GL_EXT_transform_feedback (void)
 {
-  glewPrintExt("GL_EXT_transform_feedback", GLEW_EXT_transform_feedback, glewIsSupported("GL_EXT_transform_feedback"), glewGetExtension("GL_EXT_transform_feedback"));
+  GLboolean fi = glewPrintExt("GL_EXT_transform_feedback", GLEW_EXT_transform_feedback, glewIsSupported("GL_EXT_transform_feedback"), glewGetExtension("GL_EXT_transform_feedback"));
 
-  glewInfoFunc("glBeginTransformFeedbackEXT", glBeginTransformFeedbackEXT == NULL);
-  glewInfoFunc("glBindBufferBaseEXT", glBindBufferBaseEXT == NULL);
-  glewInfoFunc("glBindBufferOffsetEXT", glBindBufferOffsetEXT == NULL);
-  glewInfoFunc("glBindBufferRangeEXT", glBindBufferRangeEXT == NULL);
-  glewInfoFunc("glEndTransformFeedbackEXT", glEndTransformFeedbackEXT == NULL);
-  glewInfoFunc("glGetTransformFeedbackVaryingEXT", glGetTransformFeedbackVaryingEXT == NULL);
-  glewInfoFunc("glTransformFeedbackVaryingsEXT", glTransformFeedbackVaryingsEXT == NULL);
+  glewInfoFunc(fi, "glBeginTransformFeedbackEXT", glBeginTransformFeedbackEXT == NULL);
+  glewInfoFunc(fi, "glBindBufferBaseEXT", glBindBufferBaseEXT == NULL);
+  glewInfoFunc(fi, "glBindBufferOffsetEXT", glBindBufferOffsetEXT == NULL);
+  glewInfoFunc(fi, "glBindBufferRangeEXT", glBindBufferRangeEXT == NULL);
+  glewInfoFunc(fi, "glEndTransformFeedbackEXT", glEndTransformFeedbackEXT == NULL);
+  glewInfoFunc(fi, "glGetTransformFeedbackVaryingEXT", glGetTransformFeedbackVaryingEXT == NULL);
+  glewInfoFunc(fi, "glTransformFeedbackVaryingsEXT", glTransformFeedbackVaryingsEXT == NULL);
 }
 
 #endif /* GL_EXT_transform_feedback */
@@ -6249,16 +6554,16 @@ static void _glewInfo_GL_EXT_unpack_subimage (void)
 
 static void _glewInfo_GL_EXT_vertex_array (void)
 {
-  glewPrintExt("GL_EXT_vertex_array", GLEW_EXT_vertex_array, glewIsSupported("GL_EXT_vertex_array"), glewGetExtension("GL_EXT_vertex_array"));
+  GLboolean fi = glewPrintExt("GL_EXT_vertex_array", GLEW_EXT_vertex_array, glewIsSupported("GL_EXT_vertex_array"), glewGetExtension("GL_EXT_vertex_array"));
 
-  glewInfoFunc("glArrayElementEXT", glArrayElementEXT == NULL);
-  glewInfoFunc("glColorPointerEXT", glColorPointerEXT == NULL);
-  glewInfoFunc("glDrawArraysEXT", glDrawArraysEXT == NULL);
-  glewInfoFunc("glEdgeFlagPointerEXT", glEdgeFlagPointerEXT == NULL);
-  glewInfoFunc("glIndexPointerEXT", glIndexPointerEXT == NULL);
-  glewInfoFunc("glNormalPointerEXT", glNormalPointerEXT == NULL);
-  glewInfoFunc("glTexCoordPointerEXT", glTexCoordPointerEXT == NULL);
-  glewInfoFunc("glVertexPointerEXT", glVertexPointerEXT == NULL);
+  glewInfoFunc(fi, "glArrayElementEXT", glArrayElementEXT == NULL);
+  glewInfoFunc(fi, "glColorPointerEXT", glColorPointerEXT == NULL);
+  glewInfoFunc(fi, "glDrawArraysEXT", glDrawArraysEXT == NULL);
+  glewInfoFunc(fi, "glEdgeFlagPointerEXT", glEdgeFlagPointerEXT == NULL);
+  glewInfoFunc(fi, "glIndexPointerEXT", glIndexPointerEXT == NULL);
+  glewInfoFunc(fi, "glNormalPointerEXT", glNormalPointerEXT == NULL);
+  glewInfoFunc(fi, "glTexCoordPointerEXT", glTexCoordPointerEXT == NULL);
+  glewInfoFunc(fi, "glVertexPointerEXT", glVertexPointerEXT == NULL);
 }
 
 #endif /* GL_EXT_vertex_array */
@@ -6276,11 +6581,11 @@ static void _glewInfo_GL_EXT_vertex_array_bgra (void)
 
 static void _glewInfo_GL_EXT_vertex_array_setXXX (void)
 {
-  glewPrintExt("GL_EXT_vertex_array_setXXX", GLEW_EXT_vertex_array_setXXX, glewIsSupported("GL_EXT_vertex_array_setXXX"), glewGetExtension("GL_EXT_vertex_array_setXXX"));
+  GLboolean fi = glewPrintExt("GL_EXT_vertex_array_setXXX", GLEW_EXT_vertex_array_setXXX, glewIsSupported("GL_EXT_vertex_array_setXXX"), glewGetExtension("GL_EXT_vertex_array_setXXX"));
 
-  glewInfoFunc("glBindArraySetEXT", glBindArraySetEXT == NULL);
-  glewInfoFunc("glCreateArraySetExt", glCreateArraySetExt == NULL);
-  glewInfoFunc("glDeleteArraySetsEXT", glDeleteArraySetsEXT == NULL);
+  glewInfoFunc(fi, "glBindArraySetEXT", glBindArraySetEXT == NULL);
+  glewInfoFunc(fi, "glCreateArraySetExt", glCreateArraySetExt == NULL);
+  glewInfoFunc(fi, "glDeleteArraySetsEXT", glDeleteArraySetsEXT == NULL);
 }
 
 #endif /* GL_EXT_vertex_array_setXXX */
@@ -6289,19 +6594,19 @@ static void _glewInfo_GL_EXT_vertex_array_setXXX (void)
 
 static void _glewInfo_GL_EXT_vertex_attrib_64bit (void)
 {
-  glewPrintExt("GL_EXT_vertex_attrib_64bit", GLEW_EXT_vertex_attrib_64bit, glewIsSupported("GL_EXT_vertex_attrib_64bit"), glewGetExtension("GL_EXT_vertex_attrib_64bit"));
+  GLboolean fi = glewPrintExt("GL_EXT_vertex_attrib_64bit", GLEW_EXT_vertex_attrib_64bit, glewIsSupported("GL_EXT_vertex_attrib_64bit"), glewGetExtension("GL_EXT_vertex_attrib_64bit"));
 
-  glewInfoFunc("glGetVertexAttribLdvEXT", glGetVertexAttribLdvEXT == NULL);
-  glewInfoFunc("glVertexArrayVertexAttribLOffsetEXT", glVertexArrayVertexAttribLOffsetEXT == NULL);
-  glewInfoFunc("glVertexAttribL1dEXT", glVertexAttribL1dEXT == NULL);
-  glewInfoFunc("glVertexAttribL1dvEXT", glVertexAttribL1dvEXT == NULL);
-  glewInfoFunc("glVertexAttribL2dEXT", glVertexAttribL2dEXT == NULL);
-  glewInfoFunc("glVertexAttribL2dvEXT", glVertexAttribL2dvEXT == NULL);
-  glewInfoFunc("glVertexAttribL3dEXT", glVertexAttribL3dEXT == NULL);
-  glewInfoFunc("glVertexAttribL3dvEXT", glVertexAttribL3dvEXT == NULL);
-  glewInfoFunc("glVertexAttribL4dEXT", glVertexAttribL4dEXT == NULL);
-  glewInfoFunc("glVertexAttribL4dvEXT", glVertexAttribL4dvEXT == NULL);
-  glewInfoFunc("glVertexAttribLPointerEXT", glVertexAttribLPointerEXT == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribLdvEXT", glGetVertexAttribLdvEXT == NULL);
+  glewInfoFunc(fi, "glVertexArrayVertexAttribLOffsetEXT", glVertexArrayVertexAttribLOffsetEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1dEXT", glVertexAttribL1dEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1dvEXT", glVertexAttribL1dvEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribL2dEXT", glVertexAttribL2dEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribL2dvEXT", glVertexAttribL2dvEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribL3dEXT", glVertexAttribL3dEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribL3dvEXT", glVertexAttribL3dvEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribL4dEXT", glVertexAttribL4dEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribL4dvEXT", glVertexAttribL4dvEXT == NULL);
+  glewInfoFunc(fi, "glVertexAttribLPointerEXT", glVertexAttribLPointerEXT == NULL);
 }
 
 #endif /* GL_EXT_vertex_attrib_64bit */
@@ -6310,50 +6615,50 @@ static void _glewInfo_GL_EXT_vertex_attrib_64bit (void)
 
 static void _glewInfo_GL_EXT_vertex_shader (void)
 {
-  glewPrintExt("GL_EXT_vertex_shader", GLEW_EXT_vertex_shader, glewIsSupported("GL_EXT_vertex_shader"), glewGetExtension("GL_EXT_vertex_shader"));
+  GLboolean fi = glewPrintExt("GL_EXT_vertex_shader", GLEW_EXT_vertex_shader, glewIsSupported("GL_EXT_vertex_shader"), glewGetExtension("GL_EXT_vertex_shader"));
 
-  glewInfoFunc("glBeginVertexShaderEXT", glBeginVertexShaderEXT == NULL);
-  glewInfoFunc("glBindLightParameterEXT", glBindLightParameterEXT == NULL);
-  glewInfoFunc("glBindMaterialParameterEXT", glBindMaterialParameterEXT == NULL);
-  glewInfoFunc("glBindParameterEXT", glBindParameterEXT == NULL);
-  glewInfoFunc("glBindTexGenParameterEXT", glBindTexGenParameterEXT == NULL);
-  glewInfoFunc("glBindTextureUnitParameterEXT", glBindTextureUnitParameterEXT == NULL);
-  glewInfoFunc("glBindVertexShaderEXT", glBindVertexShaderEXT == NULL);
-  glewInfoFunc("glDeleteVertexShaderEXT", glDeleteVertexShaderEXT == NULL);
-  glewInfoFunc("glDisableVariantClientStateEXT", glDisableVariantClientStateEXT == NULL);
-  glewInfoFunc("glEnableVariantClientStateEXT", glEnableVariantClientStateEXT == NULL);
-  glewInfoFunc("glEndVertexShaderEXT", glEndVertexShaderEXT == NULL);
-  glewInfoFunc("glExtractComponentEXT", glExtractComponentEXT == NULL);
-  glewInfoFunc("glGenSymbolsEXT", glGenSymbolsEXT == NULL);
-  glewInfoFunc("glGenVertexShadersEXT", glGenVertexShadersEXT == NULL);
-  glewInfoFunc("glGetInvariantBooleanvEXT", glGetInvariantBooleanvEXT == NULL);
-  glewInfoFunc("glGetInvariantFloatvEXT", glGetInvariantFloatvEXT == NULL);
-  glewInfoFunc("glGetInvariantIntegervEXT", glGetInvariantIntegervEXT == NULL);
-  glewInfoFunc("glGetLocalConstantBooleanvEXT", glGetLocalConstantBooleanvEXT == NULL);
-  glewInfoFunc("glGetLocalConstantFloatvEXT", glGetLocalConstantFloatvEXT == NULL);
-  glewInfoFunc("glGetLocalConstantIntegervEXT", glGetLocalConstantIntegervEXT == NULL);
-  glewInfoFunc("glGetVariantBooleanvEXT", glGetVariantBooleanvEXT == NULL);
-  glewInfoFunc("glGetVariantFloatvEXT", glGetVariantFloatvEXT == NULL);
-  glewInfoFunc("glGetVariantIntegervEXT", glGetVariantIntegervEXT == NULL);
-  glewInfoFunc("glGetVariantPointervEXT", glGetVariantPointervEXT == NULL);
-  glewInfoFunc("glInsertComponentEXT", glInsertComponentEXT == NULL);
-  glewInfoFunc("glIsVariantEnabledEXT", glIsVariantEnabledEXT == NULL);
-  glewInfoFunc("glSetInvariantEXT", glSetInvariantEXT == NULL);
-  glewInfoFunc("glSetLocalConstantEXT", glSetLocalConstantEXT == NULL);
-  glewInfoFunc("glShaderOp1EXT", glShaderOp1EXT == NULL);
-  glewInfoFunc("glShaderOp2EXT", glShaderOp2EXT == NULL);
-  glewInfoFunc("glShaderOp3EXT", glShaderOp3EXT == NULL);
-  glewInfoFunc("glSwizzleEXT", glSwizzleEXT == NULL);
-  glewInfoFunc("glVariantPointerEXT", glVariantPointerEXT == NULL);
-  glewInfoFunc("glVariantbvEXT", glVariantbvEXT == NULL);
-  glewInfoFunc("glVariantdvEXT", glVariantdvEXT == NULL);
-  glewInfoFunc("glVariantfvEXT", glVariantfvEXT == NULL);
-  glewInfoFunc("glVariantivEXT", glVariantivEXT == NULL);
-  glewInfoFunc("glVariantsvEXT", glVariantsvEXT == NULL);
-  glewInfoFunc("glVariantubvEXT", glVariantubvEXT == NULL);
-  glewInfoFunc("glVariantuivEXT", glVariantuivEXT == NULL);
-  glewInfoFunc("glVariantusvEXT", glVariantusvEXT == NULL);
-  glewInfoFunc("glWriteMaskEXT", glWriteMaskEXT == NULL);
+  glewInfoFunc(fi, "glBeginVertexShaderEXT", glBeginVertexShaderEXT == NULL);
+  glewInfoFunc(fi, "glBindLightParameterEXT", glBindLightParameterEXT == NULL);
+  glewInfoFunc(fi, "glBindMaterialParameterEXT", glBindMaterialParameterEXT == NULL);
+  glewInfoFunc(fi, "glBindParameterEXT", glBindParameterEXT == NULL);
+  glewInfoFunc(fi, "glBindTexGenParameterEXT", glBindTexGenParameterEXT == NULL);
+  glewInfoFunc(fi, "glBindTextureUnitParameterEXT", glBindTextureUnitParameterEXT == NULL);
+  glewInfoFunc(fi, "glBindVertexShaderEXT", glBindVertexShaderEXT == NULL);
+  glewInfoFunc(fi, "glDeleteVertexShaderEXT", glDeleteVertexShaderEXT == NULL);
+  glewInfoFunc(fi, "glDisableVariantClientStateEXT", glDisableVariantClientStateEXT == NULL);
+  glewInfoFunc(fi, "glEnableVariantClientStateEXT", glEnableVariantClientStateEXT == NULL);
+  glewInfoFunc(fi, "glEndVertexShaderEXT", glEndVertexShaderEXT == NULL);
+  glewInfoFunc(fi, "glExtractComponentEXT", glExtractComponentEXT == NULL);
+  glewInfoFunc(fi, "glGenSymbolsEXT", glGenSymbolsEXT == NULL);
+  glewInfoFunc(fi, "glGenVertexShadersEXT", glGenVertexShadersEXT == NULL);
+  glewInfoFunc(fi, "glGetInvariantBooleanvEXT", glGetInvariantBooleanvEXT == NULL);
+  glewInfoFunc(fi, "glGetInvariantFloatvEXT", glGetInvariantFloatvEXT == NULL);
+  glewInfoFunc(fi, "glGetInvariantIntegervEXT", glGetInvariantIntegervEXT == NULL);
+  glewInfoFunc(fi, "glGetLocalConstantBooleanvEXT", glGetLocalConstantBooleanvEXT == NULL);
+  glewInfoFunc(fi, "glGetLocalConstantFloatvEXT", glGetLocalConstantFloatvEXT == NULL);
+  glewInfoFunc(fi, "glGetLocalConstantIntegervEXT", glGetLocalConstantIntegervEXT == NULL);
+  glewInfoFunc(fi, "glGetVariantBooleanvEXT", glGetVariantBooleanvEXT == NULL);
+  glewInfoFunc(fi, "glGetVariantFloatvEXT", glGetVariantFloatvEXT == NULL);
+  glewInfoFunc(fi, "glGetVariantIntegervEXT", glGetVariantIntegervEXT == NULL);
+  glewInfoFunc(fi, "glGetVariantPointervEXT", glGetVariantPointervEXT == NULL);
+  glewInfoFunc(fi, "glInsertComponentEXT", glInsertComponentEXT == NULL);
+  glewInfoFunc(fi, "glIsVariantEnabledEXT", glIsVariantEnabledEXT == NULL);
+  glewInfoFunc(fi, "glSetInvariantEXT", glSetInvariantEXT == NULL);
+  glewInfoFunc(fi, "glSetLocalConstantEXT", glSetLocalConstantEXT == NULL);
+  glewInfoFunc(fi, "glShaderOp1EXT", glShaderOp1EXT == NULL);
+  glewInfoFunc(fi, "glShaderOp2EXT", glShaderOp2EXT == NULL);
+  glewInfoFunc(fi, "glShaderOp3EXT", glShaderOp3EXT == NULL);
+  glewInfoFunc(fi, "glSwizzleEXT", glSwizzleEXT == NULL);
+  glewInfoFunc(fi, "glVariantPointerEXT", glVariantPointerEXT == NULL);
+  glewInfoFunc(fi, "glVariantbvEXT", glVariantbvEXT == NULL);
+  glewInfoFunc(fi, "glVariantdvEXT", glVariantdvEXT == NULL);
+  glewInfoFunc(fi, "glVariantfvEXT", glVariantfvEXT == NULL);
+  glewInfoFunc(fi, "glVariantivEXT", glVariantivEXT == NULL);
+  glewInfoFunc(fi, "glVariantsvEXT", glVariantsvEXT == NULL);
+  glewInfoFunc(fi, "glVariantubvEXT", glVariantubvEXT == NULL);
+  glewInfoFunc(fi, "glVariantuivEXT", glVariantuivEXT == NULL);
+  glewInfoFunc(fi, "glVariantusvEXT", glVariantusvEXT == NULL);
+  glewInfoFunc(fi, "glWriteMaskEXT", glWriteMaskEXT == NULL);
 }
 
 #endif /* GL_EXT_vertex_shader */
@@ -6362,11 +6667,11 @@ static void _glewInfo_GL_EXT_vertex_shader (void)
 
 static void _glewInfo_GL_EXT_vertex_weighting (void)
 {
-  glewPrintExt("GL_EXT_vertex_weighting", GLEW_EXT_vertex_weighting, glewIsSupported("GL_EXT_vertex_weighting"), glewGetExtension("GL_EXT_vertex_weighting"));
+  GLboolean fi = glewPrintExt("GL_EXT_vertex_weighting", GLEW_EXT_vertex_weighting, glewIsSupported("GL_EXT_vertex_weighting"), glewGetExtension("GL_EXT_vertex_weighting"));
 
-  glewInfoFunc("glVertexWeightPointerEXT", glVertexWeightPointerEXT == NULL);
-  glewInfoFunc("glVertexWeightfEXT", glVertexWeightfEXT == NULL);
-  glewInfoFunc("glVertexWeightfvEXT", glVertexWeightfvEXT == NULL);
+  glewInfoFunc(fi, "glVertexWeightPointerEXT", glVertexWeightPointerEXT == NULL);
+  glewInfoFunc(fi, "glVertexWeightfEXT", glVertexWeightfEXT == NULL);
+  glewInfoFunc(fi, "glVertexWeightfvEXT", glVertexWeightfvEXT == NULL);
 }
 
 #endif /* GL_EXT_vertex_weighting */
@@ -6375,10 +6680,10 @@ static void _glewInfo_GL_EXT_vertex_weighting (void)
 
 static void _glewInfo_GL_EXT_win32_keyed_mutex (void)
 {
-  glewPrintExt("GL_EXT_win32_keyed_mutex", GLEW_EXT_win32_keyed_mutex, glewIsSupported("GL_EXT_win32_keyed_mutex"), glewGetExtension("GL_EXT_win32_keyed_mutex"));
+  GLboolean fi = glewPrintExt("GL_EXT_win32_keyed_mutex", GLEW_EXT_win32_keyed_mutex, glewIsSupported("GL_EXT_win32_keyed_mutex"), glewGetExtension("GL_EXT_win32_keyed_mutex"));
 
-  glewInfoFunc("glAcquireKeyedMutexWin32EXT", glAcquireKeyedMutexWin32EXT == NULL);
-  glewInfoFunc("glReleaseKeyedMutexWin32EXT", glReleaseKeyedMutexWin32EXT == NULL);
+  glewInfoFunc(fi, "glAcquireKeyedMutexWin32EXT", glAcquireKeyedMutexWin32EXT == NULL);
+  glewInfoFunc(fi, "glReleaseKeyedMutexWin32EXT", glReleaseKeyedMutexWin32EXT == NULL);
 }
 
 #endif /* GL_EXT_win32_keyed_mutex */
@@ -6387,9 +6692,9 @@ static void _glewInfo_GL_EXT_win32_keyed_mutex (void)
 
 static void _glewInfo_GL_EXT_window_rectangles (void)
 {
-  glewPrintExt("GL_EXT_window_rectangles", GLEW_EXT_window_rectangles, glewIsSupported("GL_EXT_window_rectangles"), glewGetExtension("GL_EXT_window_rectangles"));
+  GLboolean fi = glewPrintExt("GL_EXT_window_rectangles", GLEW_EXT_window_rectangles, glewIsSupported("GL_EXT_window_rectangles"), glewGetExtension("GL_EXT_window_rectangles"));
 
-  glewInfoFunc("glWindowRectanglesEXT", glWindowRectanglesEXT == NULL);
+  glewInfoFunc(fi, "glWindowRectanglesEXT", glWindowRectanglesEXT == NULL);
 }
 
 #endif /* GL_EXT_window_rectangles */
@@ -6398,20 +6703,29 @@ static void _glewInfo_GL_EXT_window_rectangles (void)
 
 static void _glewInfo_GL_EXT_x11_sync_object (void)
 {
-  glewPrintExt("GL_EXT_x11_sync_object", GLEW_EXT_x11_sync_object, glewIsSupported("GL_EXT_x11_sync_object"), glewGetExtension("GL_EXT_x11_sync_object"));
+  GLboolean fi = glewPrintExt("GL_EXT_x11_sync_object", GLEW_EXT_x11_sync_object, glewIsSupported("GL_EXT_x11_sync_object"), glewGetExtension("GL_EXT_x11_sync_object"));
 
-  glewInfoFunc("glImportSyncEXT", glImportSyncEXT == NULL);
+  glewInfoFunc(fi, "glImportSyncEXT", glImportSyncEXT == NULL);
 }
 
 #endif /* GL_EXT_x11_sync_object */
+
+#ifdef GL_FJ_shader_binary_GCCSO
+
+static void _glewInfo_GL_FJ_shader_binary_GCCSO (void)
+{
+  glewPrintExt("GL_FJ_shader_binary_GCCSO", GLEW_FJ_shader_binary_GCCSO, glewIsSupported("GL_FJ_shader_binary_GCCSO"), glewGetExtension("GL_FJ_shader_binary_GCCSO"));
+}
+
+#endif /* GL_FJ_shader_binary_GCCSO */
 
 #ifdef GL_GREMEDY_frame_terminator
 
 static void _glewInfo_GL_GREMEDY_frame_terminator (void)
 {
-  glewPrintExt("GL_GREMEDY_frame_terminator", GLEW_GREMEDY_frame_terminator, glewIsSupported("GL_GREMEDY_frame_terminator"), glewGetExtension("GL_GREMEDY_frame_terminator"));
+  GLboolean fi = glewPrintExt("GL_GREMEDY_frame_terminator", GLEW_GREMEDY_frame_terminator, glewIsSupported("GL_GREMEDY_frame_terminator"), glewGetExtension("GL_GREMEDY_frame_terminator"));
 
-  glewInfoFunc("glFrameTerminatorGREMEDY", glFrameTerminatorGREMEDY == NULL);
+  glewInfoFunc(fi, "glFrameTerminatorGREMEDY", glFrameTerminatorGREMEDY == NULL);
 }
 
 #endif /* GL_GREMEDY_frame_terminator */
@@ -6420,9 +6734,9 @@ static void _glewInfo_GL_GREMEDY_frame_terminator (void)
 
 static void _glewInfo_GL_GREMEDY_string_marker (void)
 {
-  glewPrintExt("GL_GREMEDY_string_marker", GLEW_GREMEDY_string_marker, glewIsSupported("GL_GREMEDY_string_marker"), glewGetExtension("GL_GREMEDY_string_marker"));
+  GLboolean fi = glewPrintExt("GL_GREMEDY_string_marker", GLEW_GREMEDY_string_marker, glewIsSupported("GL_GREMEDY_string_marker"), glewGetExtension("GL_GREMEDY_string_marker"));
 
-  glewInfoFunc("glStringMarkerGREMEDY", glStringMarkerGREMEDY == NULL);
+  glewInfoFunc(fi, "glStringMarkerGREMEDY", glStringMarkerGREMEDY == NULL);
 }
 
 #endif /* GL_GREMEDY_string_marker */
@@ -6440,14 +6754,14 @@ static void _glewInfo_GL_HP_convolution_border_modes (void)
 
 static void _glewInfo_GL_HP_image_transform (void)
 {
-  glewPrintExt("GL_HP_image_transform", GLEW_HP_image_transform, glewIsSupported("GL_HP_image_transform"), glewGetExtension("GL_HP_image_transform"));
+  GLboolean fi = glewPrintExt("GL_HP_image_transform", GLEW_HP_image_transform, glewIsSupported("GL_HP_image_transform"), glewGetExtension("GL_HP_image_transform"));
 
-  glewInfoFunc("glGetImageTransformParameterfvHP", glGetImageTransformParameterfvHP == NULL);
-  glewInfoFunc("glGetImageTransformParameterivHP", glGetImageTransformParameterivHP == NULL);
-  glewInfoFunc("glImageTransformParameterfHP", glImageTransformParameterfHP == NULL);
-  glewInfoFunc("glImageTransformParameterfvHP", glImageTransformParameterfvHP == NULL);
-  glewInfoFunc("glImageTransformParameteriHP", glImageTransformParameteriHP == NULL);
-  glewInfoFunc("glImageTransformParameterivHP", glImageTransformParameterivHP == NULL);
+  glewInfoFunc(fi, "glGetImageTransformParameterfvHP", glGetImageTransformParameterfvHP == NULL);
+  glewInfoFunc(fi, "glGetImageTransformParameterivHP", glGetImageTransformParameterivHP == NULL);
+  glewInfoFunc(fi, "glImageTransformParameterfHP", glImageTransformParameterfHP == NULL);
+  glewInfoFunc(fi, "glImageTransformParameterfvHP", glImageTransformParameterfvHP == NULL);
+  glewInfoFunc(fi, "glImageTransformParameteriHP", glImageTransformParameteriHP == NULL);
+  glewInfoFunc(fi, "glImageTransformParameterivHP", glImageTransformParameterivHP == NULL);
 }
 
 #endif /* GL_HP_image_transform */
@@ -6483,10 +6797,10 @@ static void _glewInfo_GL_IBM_cull_vertex (void)
 
 static void _glewInfo_GL_IBM_multimode_draw_arrays (void)
 {
-  glewPrintExt("GL_IBM_multimode_draw_arrays", GLEW_IBM_multimode_draw_arrays, glewIsSupported("GL_IBM_multimode_draw_arrays"), glewGetExtension("GL_IBM_multimode_draw_arrays"));
+  GLboolean fi = glewPrintExt("GL_IBM_multimode_draw_arrays", GLEW_IBM_multimode_draw_arrays, glewIsSupported("GL_IBM_multimode_draw_arrays"), glewGetExtension("GL_IBM_multimode_draw_arrays"));
 
-  glewInfoFunc("glMultiModeDrawArraysIBM", glMultiModeDrawArraysIBM == NULL);
-  glewInfoFunc("glMultiModeDrawElementsIBM", glMultiModeDrawElementsIBM == NULL);
+  glewInfoFunc(fi, "glMultiModeDrawArraysIBM", glMultiModeDrawArraysIBM == NULL);
+  glewInfoFunc(fi, "glMultiModeDrawElementsIBM", glMultiModeDrawElementsIBM == NULL);
 }
 
 #endif /* GL_IBM_multimode_draw_arrays */
@@ -6522,19 +6836,122 @@ static void _glewInfo_GL_IBM_texture_mirrored_repeat (void)
 
 static void _glewInfo_GL_IBM_vertex_array_lists (void)
 {
-  glewPrintExt("GL_IBM_vertex_array_lists", GLEW_IBM_vertex_array_lists, glewIsSupported("GL_IBM_vertex_array_lists"), glewGetExtension("GL_IBM_vertex_array_lists"));
+  GLboolean fi = glewPrintExt("GL_IBM_vertex_array_lists", GLEW_IBM_vertex_array_lists, glewIsSupported("GL_IBM_vertex_array_lists"), glewGetExtension("GL_IBM_vertex_array_lists"));
 
-  glewInfoFunc("glColorPointerListIBM", glColorPointerListIBM == NULL);
-  glewInfoFunc("glEdgeFlagPointerListIBM", glEdgeFlagPointerListIBM == NULL);
-  glewInfoFunc("glFogCoordPointerListIBM", glFogCoordPointerListIBM == NULL);
-  glewInfoFunc("glIndexPointerListIBM", glIndexPointerListIBM == NULL);
-  glewInfoFunc("glNormalPointerListIBM", glNormalPointerListIBM == NULL);
-  glewInfoFunc("glSecondaryColorPointerListIBM", glSecondaryColorPointerListIBM == NULL);
-  glewInfoFunc("glTexCoordPointerListIBM", glTexCoordPointerListIBM == NULL);
-  glewInfoFunc("glVertexPointerListIBM", glVertexPointerListIBM == NULL);
+  glewInfoFunc(fi, "glColorPointerListIBM", glColorPointerListIBM == NULL);
+  glewInfoFunc(fi, "glEdgeFlagPointerListIBM", glEdgeFlagPointerListIBM == NULL);
+  glewInfoFunc(fi, "glFogCoordPointerListIBM", glFogCoordPointerListIBM == NULL);
+  glewInfoFunc(fi, "glIndexPointerListIBM", glIndexPointerListIBM == NULL);
+  glewInfoFunc(fi, "glNormalPointerListIBM", glNormalPointerListIBM == NULL);
+  glewInfoFunc(fi, "glSecondaryColorPointerListIBM", glSecondaryColorPointerListIBM == NULL);
+  glewInfoFunc(fi, "glTexCoordPointerListIBM", glTexCoordPointerListIBM == NULL);
+  glewInfoFunc(fi, "glVertexPointerListIBM", glVertexPointerListIBM == NULL);
 }
 
 #endif /* GL_IBM_vertex_array_lists */
+
+#ifdef GL_IMG_bindless_texture
+
+static void _glewInfo_GL_IMG_bindless_texture (void)
+{
+  GLboolean fi = glewPrintExt("GL_IMG_bindless_texture", GLEW_IMG_bindless_texture, glewIsSupported("GL_IMG_bindless_texture"), glewGetExtension("GL_IMG_bindless_texture"));
+
+  glewInfoFunc(fi, "glGetTextureHandleIMG", glGetTextureHandleIMG == NULL);
+  glewInfoFunc(fi, "glGetTextureSamplerHandleIMG", glGetTextureSamplerHandleIMG == NULL);
+  glewInfoFunc(fi, "glProgramUniformHandleui64IMG", glProgramUniformHandleui64IMG == NULL);
+  glewInfoFunc(fi, "glProgramUniformHandleui64vIMG", glProgramUniformHandleui64vIMG == NULL);
+  glewInfoFunc(fi, "glUniformHandleui64IMG", glUniformHandleui64IMG == NULL);
+  glewInfoFunc(fi, "glUniformHandleui64vIMG", glUniformHandleui64vIMG == NULL);
+}
+
+#endif /* GL_IMG_bindless_texture */
+
+#ifdef GL_IMG_framebuffer_downsample
+
+static void _glewInfo_GL_IMG_framebuffer_downsample (void)
+{
+  GLboolean fi = glewPrintExt("GL_IMG_framebuffer_downsample", GLEW_IMG_framebuffer_downsample, glewIsSupported("GL_IMG_framebuffer_downsample"), glewGetExtension("GL_IMG_framebuffer_downsample"));
+
+  glewInfoFunc(fi, "glFramebufferTexture2DDownsampleIMG", glFramebufferTexture2DDownsampleIMG == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureLayerDownsampleIMG", glFramebufferTextureLayerDownsampleIMG == NULL);
+}
+
+#endif /* GL_IMG_framebuffer_downsample */
+
+#ifdef GL_IMG_multisampled_render_to_texture
+
+static void _glewInfo_GL_IMG_multisampled_render_to_texture (void)
+{
+  GLboolean fi = glewPrintExt("GL_IMG_multisampled_render_to_texture", GLEW_IMG_multisampled_render_to_texture, glewIsSupported("GL_IMG_multisampled_render_to_texture"), glewGetExtension("GL_IMG_multisampled_render_to_texture"));
+
+  glewInfoFunc(fi, "glFramebufferTexture2DMultisampleIMG", glFramebufferTexture2DMultisampleIMG == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageMultisampleIMG", glRenderbufferStorageMultisampleIMG == NULL);
+}
+
+#endif /* GL_IMG_multisampled_render_to_texture */
+
+#ifdef GL_IMG_program_binary
+
+static void _glewInfo_GL_IMG_program_binary (void)
+{
+  glewPrintExt("GL_IMG_program_binary", GLEW_IMG_program_binary, glewIsSupported("GL_IMG_program_binary"), glewGetExtension("GL_IMG_program_binary"));
+}
+
+#endif /* GL_IMG_program_binary */
+
+#ifdef GL_IMG_read_format
+
+static void _glewInfo_GL_IMG_read_format (void)
+{
+  glewPrintExt("GL_IMG_read_format", GLEW_IMG_read_format, glewIsSupported("GL_IMG_read_format"), glewGetExtension("GL_IMG_read_format"));
+}
+
+#endif /* GL_IMG_read_format */
+
+#ifdef GL_IMG_shader_binary
+
+static void _glewInfo_GL_IMG_shader_binary (void)
+{
+  glewPrintExt("GL_IMG_shader_binary", GLEW_IMG_shader_binary, glewIsSupported("GL_IMG_shader_binary"), glewGetExtension("GL_IMG_shader_binary"));
+}
+
+#endif /* GL_IMG_shader_binary */
+
+#ifdef GL_IMG_texture_compression_pvrtc
+
+static void _glewInfo_GL_IMG_texture_compression_pvrtc (void)
+{
+  glewPrintExt("GL_IMG_texture_compression_pvrtc", GLEW_IMG_texture_compression_pvrtc, glewIsSupported("GL_IMG_texture_compression_pvrtc"), glewGetExtension("GL_IMG_texture_compression_pvrtc"));
+}
+
+#endif /* GL_IMG_texture_compression_pvrtc */
+
+#ifdef GL_IMG_texture_compression_pvrtc2
+
+static void _glewInfo_GL_IMG_texture_compression_pvrtc2 (void)
+{
+  glewPrintExt("GL_IMG_texture_compression_pvrtc2", GLEW_IMG_texture_compression_pvrtc2, glewIsSupported("GL_IMG_texture_compression_pvrtc2"), glewGetExtension("GL_IMG_texture_compression_pvrtc2"));
+}
+
+#endif /* GL_IMG_texture_compression_pvrtc2 */
+
+#ifdef GL_IMG_texture_env_enhanced_fixed_function
+
+static void _glewInfo_GL_IMG_texture_env_enhanced_fixed_function (void)
+{
+  glewPrintExt("GL_IMG_texture_env_enhanced_fixed_function", GLEW_IMG_texture_env_enhanced_fixed_function, glewIsSupported("GL_IMG_texture_env_enhanced_fixed_function"), glewGetExtension("GL_IMG_texture_env_enhanced_fixed_function"));
+}
+
+#endif /* GL_IMG_texture_env_enhanced_fixed_function */
+
+#ifdef GL_IMG_texture_filter_cubic
+
+static void _glewInfo_GL_IMG_texture_filter_cubic (void)
+{
+  glewPrintExt("GL_IMG_texture_filter_cubic", GLEW_IMG_texture_filter_cubic, glewIsSupported("GL_IMG_texture_filter_cubic"), glewGetExtension("GL_IMG_texture_filter_cubic"));
+}
+
+#endif /* GL_IMG_texture_filter_cubic */
 
 #ifdef GL_INGR_color_clamp
 
@@ -6553,6 +6970,15 @@ static void _glewInfo_GL_INGR_interlace_read (void)
 }
 
 #endif /* GL_INGR_interlace_read */
+
+#ifdef GL_INTEL_blackhole_render
+
+static void _glewInfo_GL_INTEL_blackhole_render (void)
+{
+  glewPrintExt("GL_INTEL_blackhole_render", GLEW_INTEL_blackhole_render, glewIsSupported("GL_INTEL_blackhole_render"), glewGetExtension("GL_INTEL_blackhole_render"));
+}
+
+#endif /* GL_INTEL_blackhole_render */
 
 #ifdef GL_INTEL_conservative_rasterization
 
@@ -6585,11 +7011,11 @@ static void _glewInfo_GL_INTEL_framebuffer_CMAA (void)
 
 static void _glewInfo_GL_INTEL_map_texture (void)
 {
-  glewPrintExt("GL_INTEL_map_texture", GLEW_INTEL_map_texture, glewIsSupported("GL_INTEL_map_texture"), glewGetExtension("GL_INTEL_map_texture"));
+  GLboolean fi = glewPrintExt("GL_INTEL_map_texture", GLEW_INTEL_map_texture, glewIsSupported("GL_INTEL_map_texture"), glewGetExtension("GL_INTEL_map_texture"));
 
-  glewInfoFunc("glMapTexture2DINTEL", glMapTexture2DINTEL == NULL);
-  glewInfoFunc("glSyncTextureINTEL", glSyncTextureINTEL == NULL);
-  glewInfoFunc("glUnmapTexture2DINTEL", glUnmapTexture2DINTEL == NULL);
+  glewInfoFunc(fi, "glMapTexture2DINTEL", glMapTexture2DINTEL == NULL);
+  glewInfoFunc(fi, "glSyncTextureINTEL", glSyncTextureINTEL == NULL);
+  glewInfoFunc(fi, "glUnmapTexture2DINTEL", glUnmapTexture2DINTEL == NULL);
 }
 
 #endif /* GL_INTEL_map_texture */
@@ -6598,12 +7024,12 @@ static void _glewInfo_GL_INTEL_map_texture (void)
 
 static void _glewInfo_GL_INTEL_parallel_arrays (void)
 {
-  glewPrintExt("GL_INTEL_parallel_arrays", GLEW_INTEL_parallel_arrays, glewIsSupported("GL_INTEL_parallel_arrays"), glewGetExtension("GL_INTEL_parallel_arrays"));
+  GLboolean fi = glewPrintExt("GL_INTEL_parallel_arrays", GLEW_INTEL_parallel_arrays, glewIsSupported("GL_INTEL_parallel_arrays"), glewGetExtension("GL_INTEL_parallel_arrays"));
 
-  glewInfoFunc("glColorPointervINTEL", glColorPointervINTEL == NULL);
-  glewInfoFunc("glNormalPointervINTEL", glNormalPointervINTEL == NULL);
-  glewInfoFunc("glTexCoordPointervINTEL", glTexCoordPointervINTEL == NULL);
-  glewInfoFunc("glVertexPointervINTEL", glVertexPointervINTEL == NULL);
+  glewInfoFunc(fi, "glColorPointervINTEL", glColorPointervINTEL == NULL);
+  glewInfoFunc(fi, "glNormalPointervINTEL", glNormalPointervINTEL == NULL);
+  glewInfoFunc(fi, "glTexCoordPointervINTEL", glTexCoordPointervINTEL == NULL);
+  glewInfoFunc(fi, "glVertexPointervINTEL", glVertexPointervINTEL == NULL);
 }
 
 #endif /* GL_INTEL_parallel_arrays */
@@ -6612,30 +7038,39 @@ static void _glewInfo_GL_INTEL_parallel_arrays (void)
 
 static void _glewInfo_GL_INTEL_performance_query (void)
 {
-  glewPrintExt("GL_INTEL_performance_query", GLEW_INTEL_performance_query, glewIsSupported("GL_INTEL_performance_query"), glewGetExtension("GL_INTEL_performance_query"));
+  GLboolean fi = glewPrintExt("GL_INTEL_performance_query", GLEW_INTEL_performance_query, glewIsSupported("GL_INTEL_performance_query"), glewGetExtension("GL_INTEL_performance_query"));
 
-  glewInfoFunc("glBeginPerfQueryINTEL", glBeginPerfQueryINTEL == NULL);
-  glewInfoFunc("glCreatePerfQueryINTEL", glCreatePerfQueryINTEL == NULL);
-  glewInfoFunc("glDeletePerfQueryINTEL", glDeletePerfQueryINTEL == NULL);
-  glewInfoFunc("glEndPerfQueryINTEL", glEndPerfQueryINTEL == NULL);
-  glewInfoFunc("glGetFirstPerfQueryIdINTEL", glGetFirstPerfQueryIdINTEL == NULL);
-  glewInfoFunc("glGetNextPerfQueryIdINTEL", glGetNextPerfQueryIdINTEL == NULL);
-  glewInfoFunc("glGetPerfCounterInfoINTEL", glGetPerfCounterInfoINTEL == NULL);
-  glewInfoFunc("glGetPerfQueryDataINTEL", glGetPerfQueryDataINTEL == NULL);
-  glewInfoFunc("glGetPerfQueryIdByNameINTEL", glGetPerfQueryIdByNameINTEL == NULL);
-  glewInfoFunc("glGetPerfQueryInfoINTEL", glGetPerfQueryInfoINTEL == NULL);
+  glewInfoFunc(fi, "glBeginPerfQueryINTEL", glBeginPerfQueryINTEL == NULL);
+  glewInfoFunc(fi, "glCreatePerfQueryINTEL", glCreatePerfQueryINTEL == NULL);
+  glewInfoFunc(fi, "glDeletePerfQueryINTEL", glDeletePerfQueryINTEL == NULL);
+  glewInfoFunc(fi, "glEndPerfQueryINTEL", glEndPerfQueryINTEL == NULL);
+  glewInfoFunc(fi, "glGetFirstPerfQueryIdINTEL", glGetFirstPerfQueryIdINTEL == NULL);
+  glewInfoFunc(fi, "glGetNextPerfQueryIdINTEL", glGetNextPerfQueryIdINTEL == NULL);
+  glewInfoFunc(fi, "glGetPerfCounterInfoINTEL", glGetPerfCounterInfoINTEL == NULL);
+  glewInfoFunc(fi, "glGetPerfQueryDataINTEL", glGetPerfQueryDataINTEL == NULL);
+  glewInfoFunc(fi, "glGetPerfQueryIdByNameINTEL", glGetPerfQueryIdByNameINTEL == NULL);
+  glewInfoFunc(fi, "glGetPerfQueryInfoINTEL", glGetPerfQueryInfoINTEL == NULL);
 }
 
 #endif /* GL_INTEL_performance_query */
+
+#ifdef GL_INTEL_shader_integer_functions2
+
+static void _glewInfo_GL_INTEL_shader_integer_functions2 (void)
+{
+  glewPrintExt("GL_INTEL_shader_integer_functions2", GLEW_INTEL_shader_integer_functions2, glewIsSupported("GL_INTEL_shader_integer_functions2"), glewGetExtension("GL_INTEL_shader_integer_functions2"));
+}
+
+#endif /* GL_INTEL_shader_integer_functions2 */
 
 #ifdef GL_INTEL_texture_scissor
 
 static void _glewInfo_GL_INTEL_texture_scissor (void)
 {
-  glewPrintExt("GL_INTEL_texture_scissor", GLEW_INTEL_texture_scissor, glewIsSupported("GL_INTEL_texture_scissor"), glewGetExtension("GL_INTEL_texture_scissor"));
+  GLboolean fi = glewPrintExt("GL_INTEL_texture_scissor", GLEW_INTEL_texture_scissor, glewIsSupported("GL_INTEL_texture_scissor"), glewGetExtension("GL_INTEL_texture_scissor"));
 
-  glewInfoFunc("glTexScissorFuncINTEL", glTexScissorFuncINTEL == NULL);
-  glewInfoFunc("glTexScissorINTEL", glTexScissorINTEL == NULL);
+  glewInfoFunc(fi, "glTexScissorFuncINTEL", glTexScissorFuncINTEL == NULL);
+  glewInfoFunc(fi, "glTexScissorINTEL", glTexScissorINTEL == NULL);
 }
 
 #endif /* GL_INTEL_texture_scissor */
@@ -6644,9 +7079,9 @@ static void _glewInfo_GL_INTEL_texture_scissor (void)
 
 static void _glewInfo_GL_KHR_blend_equation_advanced (void)
 {
-  glewPrintExt("GL_KHR_blend_equation_advanced", GLEW_KHR_blend_equation_advanced, glewIsSupported("GL_KHR_blend_equation_advanced"), glewGetExtension("GL_KHR_blend_equation_advanced"));
+  GLboolean fi = glewPrintExt("GL_KHR_blend_equation_advanced", GLEW_KHR_blend_equation_advanced, glewIsSupported("GL_KHR_blend_equation_advanced"), glewGetExtension("GL_KHR_blend_equation_advanced"));
 
-  glewInfoFunc("glBlendBarrierKHR", glBlendBarrierKHR == NULL);
+  glewInfoFunc(fi, "glBlendBarrierKHR", glBlendBarrierKHR == NULL);
 }
 
 #endif /* GL_KHR_blend_equation_advanced */
@@ -6673,18 +7108,18 @@ static void _glewInfo_GL_KHR_context_flush_control (void)
 
 static void _glewInfo_GL_KHR_debug (void)
 {
-  glewPrintExt("GL_KHR_debug", GLEW_KHR_debug, glewIsSupported("GL_KHR_debug"), glewGetExtension("GL_KHR_debug"));
+  GLboolean fi = glewPrintExt("GL_KHR_debug", GLEW_KHR_debug, glewIsSupported("GL_KHR_debug"), glewGetExtension("GL_KHR_debug"));
 
-  glewInfoFunc("glDebugMessageCallback", glDebugMessageCallback == NULL);
-  glewInfoFunc("glDebugMessageControl", glDebugMessageControl == NULL);
-  glewInfoFunc("glDebugMessageInsert", glDebugMessageInsert == NULL);
-  glewInfoFunc("glGetDebugMessageLog", glGetDebugMessageLog == NULL);
-  glewInfoFunc("glGetObjectLabel", glGetObjectLabel == NULL);
-  glewInfoFunc("glGetObjectPtrLabel", glGetObjectPtrLabel == NULL);
-  glewInfoFunc("glObjectLabel", glObjectLabel == NULL);
-  glewInfoFunc("glObjectPtrLabel", glObjectPtrLabel == NULL);
-  glewInfoFunc("glPopDebugGroup", glPopDebugGroup == NULL);
-  glewInfoFunc("glPushDebugGroup", glPushDebugGroup == NULL);
+  glewInfoFunc(fi, "glDebugMessageCallback", glDebugMessageCallback == NULL);
+  glewInfoFunc(fi, "glDebugMessageControl", glDebugMessageControl == NULL);
+  glewInfoFunc(fi, "glDebugMessageInsert", glDebugMessageInsert == NULL);
+  glewInfoFunc(fi, "glGetDebugMessageLog", glGetDebugMessageLog == NULL);
+  glewInfoFunc(fi, "glGetObjectLabel", glGetObjectLabel == NULL);
+  glewInfoFunc(fi, "glGetObjectPtrLabel", glGetObjectPtrLabel == NULL);
+  glewInfoFunc(fi, "glObjectLabel", glObjectLabel == NULL);
+  glewInfoFunc(fi, "glObjectPtrLabel", glObjectPtrLabel == NULL);
+  glewInfoFunc(fi, "glPopDebugGroup", glPopDebugGroup == NULL);
+  glewInfoFunc(fi, "glPushDebugGroup", glPushDebugGroup == NULL);
 }
 
 #endif /* GL_KHR_debug */
@@ -6702,9 +7137,9 @@ static void _glewInfo_GL_KHR_no_error (void)
 
 static void _glewInfo_GL_KHR_parallel_shader_compile (void)
 {
-  glewPrintExt("GL_KHR_parallel_shader_compile", GLEW_KHR_parallel_shader_compile, glewIsSupported("GL_KHR_parallel_shader_compile"), glewGetExtension("GL_KHR_parallel_shader_compile"));
+  GLboolean fi = glewPrintExt("GL_KHR_parallel_shader_compile", GLEW_KHR_parallel_shader_compile, glewIsSupported("GL_KHR_parallel_shader_compile"), glewGetExtension("GL_KHR_parallel_shader_compile"));
 
-  glewInfoFunc("glMaxShaderCompilerThreadsKHR", glMaxShaderCompilerThreadsKHR == NULL);
+  glewInfoFunc(fi, "glMaxShaderCompilerThreadsKHR", glMaxShaderCompilerThreadsKHR == NULL);
 }
 
 #endif /* GL_KHR_parallel_shader_compile */
@@ -6722,15 +7157,24 @@ static void _glewInfo_GL_KHR_robust_buffer_access_behavior (void)
 
 static void _glewInfo_GL_KHR_robustness (void)
 {
-  glewPrintExt("GL_KHR_robustness", GLEW_KHR_robustness, glewIsSupported("GL_KHR_robustness"), glewGetExtension("GL_KHR_robustness"));
+  GLboolean fi = glewPrintExt("GL_KHR_robustness", GLEW_KHR_robustness, glewIsSupported("GL_KHR_robustness"), glewGetExtension("GL_KHR_robustness"));
 
-  glewInfoFunc("glGetnUniformfv", glGetnUniformfv == NULL);
-  glewInfoFunc("glGetnUniformiv", glGetnUniformiv == NULL);
-  glewInfoFunc("glGetnUniformuiv", glGetnUniformuiv == NULL);
-  glewInfoFunc("glReadnPixels", glReadnPixels == NULL);
+  glewInfoFunc(fi, "glGetnUniformfv", glGetnUniformfv == NULL);
+  glewInfoFunc(fi, "glGetnUniformiv", glGetnUniformiv == NULL);
+  glewInfoFunc(fi, "glGetnUniformuiv", glGetnUniformuiv == NULL);
+  glewInfoFunc(fi, "glReadnPixels", glReadnPixels == NULL);
 }
 
 #endif /* GL_KHR_robustness */
+
+#ifdef GL_KHR_shader_subgroup
+
+static void _glewInfo_GL_KHR_shader_subgroup (void)
+{
+  glewPrintExt("GL_KHR_shader_subgroup", GLEW_KHR_shader_subgroup, glewIsSupported("GL_KHR_shader_subgroup"), glewGetExtension("GL_KHR_shader_subgroup"));
+}
+
+#endif /* GL_KHR_shader_subgroup */
 
 #ifdef GL_KHR_texture_compression_astc_hdr
 
@@ -6763,13 +7207,13 @@ static void _glewInfo_GL_KHR_texture_compression_astc_sliced_3d (void)
 
 static void _glewInfo_GL_KTX_buffer_region (void)
 {
-  glewPrintExt("GL_KTX_buffer_region", GLEW_KTX_buffer_region, glewIsSupported("GL_KTX_buffer_region"), glewGetExtension("GL_KTX_buffer_region"));
+  GLboolean fi = glewPrintExt("GL_KTX_buffer_region", GLEW_KTX_buffer_region, glewIsSupported("GL_KTX_buffer_region"), glewGetExtension("GL_KTX_buffer_region"));
 
-  glewInfoFunc("glBufferRegionEnabled", glBufferRegionEnabled == NULL);
-  glewInfoFunc("glDeleteBufferRegion", glDeleteBufferRegion == NULL);
-  glewInfoFunc("glDrawBufferRegion", glDrawBufferRegion == NULL);
-  glewInfoFunc("glNewBufferRegion", glNewBufferRegion == NULL);
-  glewInfoFunc("glReadBufferRegion", glReadBufferRegion == NULL);
+  glewInfoFunc(fi, "glBufferRegionEnabled", glBufferRegionEnabled == NULL);
+  glewInfoFunc(fi, "glDeleteBufferRegion", glDeleteBufferRegion == NULL);
+  glewInfoFunc(fi, "glDrawBufferRegion", glDrawBufferRegion == NULL);
+  glewInfoFunc(fi, "glNewBufferRegion", glNewBufferRegion == NULL);
+  glewInfoFunc(fi, "glReadBufferRegion", glReadBufferRegion == NULL);
 }
 
 #endif /* GL_KTX_buffer_region */
@@ -6783,6 +7227,18 @@ static void _glewInfo_GL_MESAX_texture_stack (void)
 
 #endif /* GL_MESAX_texture_stack */
 
+#ifdef GL_MESA_framebuffer_flip_y
+
+static void _glewInfo_GL_MESA_framebuffer_flip_y (void)
+{
+  GLboolean fi = glewPrintExt("GL_MESA_framebuffer_flip_y", GLEW_MESA_framebuffer_flip_y, glewIsSupported("GL_MESA_framebuffer_flip_y"), glewGetExtension("GL_MESA_framebuffer_flip_y"));
+
+  glewInfoFunc(fi, "glFramebufferParameteriMESA", glFramebufferParameteriMESA == NULL);
+  glewInfoFunc(fi, "glGetFramebufferParameterivMESA", glGetFramebufferParameterivMESA == NULL);
+}
+
+#endif /* GL_MESA_framebuffer_flip_y */
+
 #ifdef GL_MESA_pack_invert
 
 static void _glewInfo_GL_MESA_pack_invert (void)
@@ -6792,13 +7248,22 @@ static void _glewInfo_GL_MESA_pack_invert (void)
 
 #endif /* GL_MESA_pack_invert */
 
+#ifdef GL_MESA_program_binary_formats
+
+static void _glewInfo_GL_MESA_program_binary_formats (void)
+{
+  glewPrintExt("GL_MESA_program_binary_formats", GLEW_MESA_program_binary_formats, glewIsSupported("GL_MESA_program_binary_formats"), glewGetExtension("GL_MESA_program_binary_formats"));
+}
+
+#endif /* GL_MESA_program_binary_formats */
+
 #ifdef GL_MESA_resize_buffers
 
 static void _glewInfo_GL_MESA_resize_buffers (void)
 {
-  glewPrintExt("GL_MESA_resize_buffers", GLEW_MESA_resize_buffers, glewIsSupported("GL_MESA_resize_buffers"), glewGetExtension("GL_MESA_resize_buffers"));
+  GLboolean fi = glewPrintExt("GL_MESA_resize_buffers", GLEW_MESA_resize_buffers, glewIsSupported("GL_MESA_resize_buffers"), glewGetExtension("GL_MESA_resize_buffers"));
 
-  glewInfoFunc("glResizeBuffersMESA", glResizeBuffersMESA == NULL);
+  glewInfoFunc(fi, "glResizeBuffersMESA", glResizeBuffersMESA == NULL);
 }
 
 #endif /* GL_MESA_resize_buffers */
@@ -6812,36 +7277,45 @@ static void _glewInfo_GL_MESA_shader_integer_functions (void)
 
 #endif /* GL_MESA_shader_integer_functions */
 
+#ifdef GL_MESA_tile_raster_order
+
+static void _glewInfo_GL_MESA_tile_raster_order (void)
+{
+  glewPrintExt("GL_MESA_tile_raster_order", GLEW_MESA_tile_raster_order, glewIsSupported("GL_MESA_tile_raster_order"), glewGetExtension("GL_MESA_tile_raster_order"));
+}
+
+#endif /* GL_MESA_tile_raster_order */
+
 #ifdef GL_MESA_window_pos
 
 static void _glewInfo_GL_MESA_window_pos (void)
 {
-  glewPrintExt("GL_MESA_window_pos", GLEW_MESA_window_pos, glewIsSupported("GL_MESA_window_pos"), glewGetExtension("GL_MESA_window_pos"));
+  GLboolean fi = glewPrintExt("GL_MESA_window_pos", GLEW_MESA_window_pos, glewIsSupported("GL_MESA_window_pos"), glewGetExtension("GL_MESA_window_pos"));
 
-  glewInfoFunc("glWindowPos2dMESA", glWindowPos2dMESA == NULL);
-  glewInfoFunc("glWindowPos2dvMESA", glWindowPos2dvMESA == NULL);
-  glewInfoFunc("glWindowPos2fMESA", glWindowPos2fMESA == NULL);
-  glewInfoFunc("glWindowPos2fvMESA", glWindowPos2fvMESA == NULL);
-  glewInfoFunc("glWindowPos2iMESA", glWindowPos2iMESA == NULL);
-  glewInfoFunc("glWindowPos2ivMESA", glWindowPos2ivMESA == NULL);
-  glewInfoFunc("glWindowPos2sMESA", glWindowPos2sMESA == NULL);
-  glewInfoFunc("glWindowPos2svMESA", glWindowPos2svMESA == NULL);
-  glewInfoFunc("glWindowPos3dMESA", glWindowPos3dMESA == NULL);
-  glewInfoFunc("glWindowPos3dvMESA", glWindowPos3dvMESA == NULL);
-  glewInfoFunc("glWindowPos3fMESA", glWindowPos3fMESA == NULL);
-  glewInfoFunc("glWindowPos3fvMESA", glWindowPos3fvMESA == NULL);
-  glewInfoFunc("glWindowPos3iMESA", glWindowPos3iMESA == NULL);
-  glewInfoFunc("glWindowPos3ivMESA", glWindowPos3ivMESA == NULL);
-  glewInfoFunc("glWindowPos3sMESA", glWindowPos3sMESA == NULL);
-  glewInfoFunc("glWindowPos3svMESA", glWindowPos3svMESA == NULL);
-  glewInfoFunc("glWindowPos4dMESA", glWindowPos4dMESA == NULL);
-  glewInfoFunc("glWindowPos4dvMESA", glWindowPos4dvMESA == NULL);
-  glewInfoFunc("glWindowPos4fMESA", glWindowPos4fMESA == NULL);
-  glewInfoFunc("glWindowPos4fvMESA", glWindowPos4fvMESA == NULL);
-  glewInfoFunc("glWindowPos4iMESA", glWindowPos4iMESA == NULL);
-  glewInfoFunc("glWindowPos4ivMESA", glWindowPos4ivMESA == NULL);
-  glewInfoFunc("glWindowPos4sMESA", glWindowPos4sMESA == NULL);
-  glewInfoFunc("glWindowPos4svMESA", glWindowPos4svMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos2dMESA", glWindowPos2dMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos2dvMESA", glWindowPos2dvMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos2fMESA", glWindowPos2fMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos2fvMESA", glWindowPos2fvMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos2iMESA", glWindowPos2iMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos2ivMESA", glWindowPos2ivMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos2sMESA", glWindowPos2sMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos2svMESA", glWindowPos2svMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos3dMESA", glWindowPos3dMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos3dvMESA", glWindowPos3dvMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos3fMESA", glWindowPos3fMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos3fvMESA", glWindowPos3fvMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos3iMESA", glWindowPos3iMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos3ivMESA", glWindowPos3ivMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos3sMESA", glWindowPos3sMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos3svMESA", glWindowPos3svMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos4dMESA", glWindowPos4dMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos4dvMESA", glWindowPos4dvMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos4fMESA", glWindowPos4fMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos4fvMESA", glWindowPos4fvMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos4iMESA", glWindowPos4iMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos4ivMESA", glWindowPos4ivMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos4sMESA", glWindowPos4sMESA == NULL);
+  glewInfoFunc(fi, "glWindowPos4svMESA", glWindowPos4svMESA == NULL);
 }
 
 #endif /* GL_MESA_window_pos */
@@ -6868,10 +7342,10 @@ static void _glewInfo_GL_NVX_blend_equation_advanced_multi_draw_buffers (void)
 
 static void _glewInfo_GL_NVX_conditional_render (void)
 {
-  glewPrintExt("GL_NVX_conditional_render", GLEW_NVX_conditional_render, glewIsSupported("GL_NVX_conditional_render"), glewGetExtension("GL_NVX_conditional_render"));
+  GLboolean fi = glewPrintExt("GL_NVX_conditional_render", GLEW_NVX_conditional_render, glewIsSupported("GL_NVX_conditional_render"), glewGetExtension("GL_NVX_conditional_render"));
 
-  glewInfoFunc("glBeginConditionalRenderNVX", glBeginConditionalRenderNVX == NULL);
-  glewInfoFunc("glEndConditionalRenderNVX", glEndConditionalRenderNVX == NULL);
+  glewInfoFunc(fi, "glBeginConditionalRenderNVX", glBeginConditionalRenderNVX == NULL);
+  glewInfoFunc(fi, "glEndConditionalRenderNVX", glEndConditionalRenderNVX == NULL);
 }
 
 #endif /* GL_NVX_conditional_render */
@@ -6885,27 +7359,56 @@ static void _glewInfo_GL_NVX_gpu_memory_info (void)
 
 #endif /* GL_NVX_gpu_memory_info */
 
+#ifdef GL_NVX_gpu_multicast2
+
+static void _glewInfo_GL_NVX_gpu_multicast2 (void)
+{
+  GLboolean fi = glewPrintExt("GL_NVX_gpu_multicast2", GLEW_NVX_gpu_multicast2, glewIsSupported("GL_NVX_gpu_multicast2"), glewGetExtension("GL_NVX_gpu_multicast2"));
+
+  glewInfoFunc(fi, "glAsyncCopyBufferSubDataNVX", glAsyncCopyBufferSubDataNVX == NULL);
+  glewInfoFunc(fi, "glAsyncCopyImageSubDataNVX", glAsyncCopyImageSubDataNVX == NULL);
+  glewInfoFunc(fi, "glMulticastScissorArrayvNVX", glMulticastScissorArrayvNVX == NULL);
+  glewInfoFunc(fi, "glMulticastViewportArrayvNVX", glMulticastViewportArrayvNVX == NULL);
+  glewInfoFunc(fi, "glMulticastViewportPositionWScaleNVX", glMulticastViewportPositionWScaleNVX == NULL);
+  glewInfoFunc(fi, "glUploadGpuMaskNVX", glUploadGpuMaskNVX == NULL);
+}
+
+#endif /* GL_NVX_gpu_multicast2 */
+
 #ifdef GL_NVX_linked_gpu_multicast
 
 static void _glewInfo_GL_NVX_linked_gpu_multicast (void)
 {
-  glewPrintExt("GL_NVX_linked_gpu_multicast", GLEW_NVX_linked_gpu_multicast, glewIsSupported("GL_NVX_linked_gpu_multicast"), glewGetExtension("GL_NVX_linked_gpu_multicast"));
+  GLboolean fi = glewPrintExt("GL_NVX_linked_gpu_multicast", GLEW_NVX_linked_gpu_multicast, glewIsSupported("GL_NVX_linked_gpu_multicast"), glewGetExtension("GL_NVX_linked_gpu_multicast"));
 
-  glewInfoFunc("glLGPUCopyImageSubDataNVX", glLGPUCopyImageSubDataNVX == NULL);
-  glewInfoFunc("glLGPUInterlockNVX", glLGPUInterlockNVX == NULL);
-  glewInfoFunc("glLGPUNamedBufferSubDataNVX", glLGPUNamedBufferSubDataNVX == NULL);
+  glewInfoFunc(fi, "glLGPUCopyImageSubDataNVX", glLGPUCopyImageSubDataNVX == NULL);
+  glewInfoFunc(fi, "glLGPUInterlockNVX", glLGPUInterlockNVX == NULL);
+  glewInfoFunc(fi, "glLGPUNamedBufferSubDataNVX", glLGPUNamedBufferSubDataNVX == NULL);
 }
 
 #endif /* GL_NVX_linked_gpu_multicast */
+
+#ifdef GL_NVX_progress_fence
+
+static void _glewInfo_GL_NVX_progress_fence (void)
+{
+  GLboolean fi = glewPrintExt("GL_NVX_progress_fence", GLEW_NVX_progress_fence, glewIsSupported("GL_NVX_progress_fence"), glewGetExtension("GL_NVX_progress_fence"));
+
+  glewInfoFunc(fi, "glClientWaitSemaphoreui64NVX", glClientWaitSemaphoreui64NVX == NULL);
+  glewInfoFunc(fi, "glSignalSemaphoreui64NVX", glSignalSemaphoreui64NVX == NULL);
+  glewInfoFunc(fi, "glWaitSemaphoreui64NVX", glWaitSemaphoreui64NVX == NULL);
+}
+
+#endif /* GL_NVX_progress_fence */
 
 #ifdef GL_NV_3dvision_settings
 
 static void _glewInfo_GL_NV_3dvision_settings (void)
 {
-  glewPrintExt("GL_NV_3dvision_settings", GLEW_NV_3dvision_settings, glewIsSupported("GL_NV_3dvision_settings"), glewGetExtension("GL_NV_3dvision_settings"));
+  GLboolean fi = glewPrintExt("GL_NV_3dvision_settings", GLEW_NV_3dvision_settings, glewIsSupported("GL_NV_3dvision_settings"), glewGetExtension("GL_NV_3dvision_settings"));
 
-  glewInfoFunc("glStereoParameterfNV", glStereoParameterfNV == NULL);
-  glewInfoFunc("glStereoParameteriNV", glStereoParameteriNV == NULL);
+  glewInfoFunc(fi, "glStereoParameterfNV", glStereoParameterfNV == NULL);
+  glewInfoFunc(fi, "glStereoParameteriNV", glStereoParameteriNV == NULL);
 }
 
 #endif /* GL_NV_3dvision_settings */
@@ -6923,7 +7426,9 @@ static void _glewInfo_GL_NV_EGL_stream_consumer_external (void)
 
 static void _glewInfo_GL_NV_alpha_to_coverage_dither_control (void)
 {
-  glewPrintExt("GL_NV_alpha_to_coverage_dither_control", GLEW_NV_alpha_to_coverage_dither_control, glewIsSupported("GL_NV_alpha_to_coverage_dither_control"), glewGetExtension("GL_NV_alpha_to_coverage_dither_control"));
+  GLboolean fi = glewPrintExt("GL_NV_alpha_to_coverage_dither_control", GLEW_NV_alpha_to_coverage_dither_control, glewIsSupported("GL_NV_alpha_to_coverage_dither_control"), glewGetExtension("GL_NV_alpha_to_coverage_dither_control"));
+
+  glewInfoFunc(fi, "glAlphaToCoverageDitherControlNV", glAlphaToCoverageDitherControlNV == NULL);
 }
 
 #endif /* GL_NV_alpha_to_coverage_dither_control */
@@ -6941,10 +7446,10 @@ static void _glewInfo_GL_NV_bgr (void)
 
 static void _glewInfo_GL_NV_bindless_multi_draw_indirect (void)
 {
-  glewPrintExt("GL_NV_bindless_multi_draw_indirect", GLEW_NV_bindless_multi_draw_indirect, glewIsSupported("GL_NV_bindless_multi_draw_indirect"), glewGetExtension("GL_NV_bindless_multi_draw_indirect"));
+  GLboolean fi = glewPrintExt("GL_NV_bindless_multi_draw_indirect", GLEW_NV_bindless_multi_draw_indirect, glewIsSupported("GL_NV_bindless_multi_draw_indirect"), glewGetExtension("GL_NV_bindless_multi_draw_indirect"));
 
-  glewInfoFunc("glMultiDrawArraysIndirectBindlessNV", glMultiDrawArraysIndirectBindlessNV == NULL);
-  glewInfoFunc("glMultiDrawElementsIndirectBindlessNV", glMultiDrawElementsIndirectBindlessNV == NULL);
+  glewInfoFunc(fi, "glMultiDrawArraysIndirectBindlessNV", glMultiDrawArraysIndirectBindlessNV == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsIndirectBindlessNV", glMultiDrawElementsIndirectBindlessNV == NULL);
 }
 
 #endif /* GL_NV_bindless_multi_draw_indirect */
@@ -6953,10 +7458,10 @@ static void _glewInfo_GL_NV_bindless_multi_draw_indirect (void)
 
 static void _glewInfo_GL_NV_bindless_multi_draw_indirect_count (void)
 {
-  glewPrintExt("GL_NV_bindless_multi_draw_indirect_count", GLEW_NV_bindless_multi_draw_indirect_count, glewIsSupported("GL_NV_bindless_multi_draw_indirect_count"), glewGetExtension("GL_NV_bindless_multi_draw_indirect_count"));
+  GLboolean fi = glewPrintExt("GL_NV_bindless_multi_draw_indirect_count", GLEW_NV_bindless_multi_draw_indirect_count, glewIsSupported("GL_NV_bindless_multi_draw_indirect_count"), glewGetExtension("GL_NV_bindless_multi_draw_indirect_count"));
 
-  glewInfoFunc("glMultiDrawArraysIndirectBindlessCountNV", glMultiDrawArraysIndirectBindlessCountNV == NULL);
-  glewInfoFunc("glMultiDrawElementsIndirectBindlessCountNV", glMultiDrawElementsIndirectBindlessCountNV == NULL);
+  glewInfoFunc(fi, "glMultiDrawArraysIndirectBindlessCountNV", glMultiDrawArraysIndirectBindlessCountNV == NULL);
+  glewInfoFunc(fi, "glMultiDrawElementsIndirectBindlessCountNV", glMultiDrawElementsIndirectBindlessCountNV == NULL);
 }
 
 #endif /* GL_NV_bindless_multi_draw_indirect_count */
@@ -6965,21 +7470,21 @@ static void _glewInfo_GL_NV_bindless_multi_draw_indirect_count (void)
 
 static void _glewInfo_GL_NV_bindless_texture (void)
 {
-  glewPrintExt("GL_NV_bindless_texture", GLEW_NV_bindless_texture, glewIsSupported("GL_NV_bindless_texture"), glewGetExtension("GL_NV_bindless_texture"));
+  GLboolean fi = glewPrintExt("GL_NV_bindless_texture", GLEW_NV_bindless_texture, glewIsSupported("GL_NV_bindless_texture"), glewGetExtension("GL_NV_bindless_texture"));
 
-  glewInfoFunc("glGetImageHandleNV", glGetImageHandleNV == NULL);
-  glewInfoFunc("glGetTextureHandleNV", glGetTextureHandleNV == NULL);
-  glewInfoFunc("glGetTextureSamplerHandleNV", glGetTextureSamplerHandleNV == NULL);
-  glewInfoFunc("glIsImageHandleResidentNV", glIsImageHandleResidentNV == NULL);
-  glewInfoFunc("glIsTextureHandleResidentNV", glIsTextureHandleResidentNV == NULL);
-  glewInfoFunc("glMakeImageHandleNonResidentNV", glMakeImageHandleNonResidentNV == NULL);
-  glewInfoFunc("glMakeImageHandleResidentNV", glMakeImageHandleResidentNV == NULL);
-  glewInfoFunc("glMakeTextureHandleNonResidentNV", glMakeTextureHandleNonResidentNV == NULL);
-  glewInfoFunc("glMakeTextureHandleResidentNV", glMakeTextureHandleResidentNV == NULL);
-  glewInfoFunc("glProgramUniformHandleui64NV", glProgramUniformHandleui64NV == NULL);
-  glewInfoFunc("glProgramUniformHandleui64vNV", glProgramUniformHandleui64vNV == NULL);
-  glewInfoFunc("glUniformHandleui64NV", glUniformHandleui64NV == NULL);
-  glewInfoFunc("glUniformHandleui64vNV", glUniformHandleui64vNV == NULL);
+  glewInfoFunc(fi, "glGetImageHandleNV", glGetImageHandleNV == NULL);
+  glewInfoFunc(fi, "glGetTextureHandleNV", glGetTextureHandleNV == NULL);
+  glewInfoFunc(fi, "glGetTextureSamplerHandleNV", glGetTextureSamplerHandleNV == NULL);
+  glewInfoFunc(fi, "glIsImageHandleResidentNV", glIsImageHandleResidentNV == NULL);
+  glewInfoFunc(fi, "glIsTextureHandleResidentNV", glIsTextureHandleResidentNV == NULL);
+  glewInfoFunc(fi, "glMakeImageHandleNonResidentNV", glMakeImageHandleNonResidentNV == NULL);
+  glewInfoFunc(fi, "glMakeImageHandleResidentNV", glMakeImageHandleResidentNV == NULL);
+  glewInfoFunc(fi, "glMakeTextureHandleNonResidentNV", glMakeTextureHandleNonResidentNV == NULL);
+  glewInfoFunc(fi, "glMakeTextureHandleResidentNV", glMakeTextureHandleResidentNV == NULL);
+  glewInfoFunc(fi, "glProgramUniformHandleui64NV", glProgramUniformHandleui64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniformHandleui64vNV", glProgramUniformHandleui64vNV == NULL);
+  glewInfoFunc(fi, "glUniformHandleui64NV", glUniformHandleui64NV == NULL);
+  glewInfoFunc(fi, "glUniformHandleui64vNV", glUniformHandleui64vNV == NULL);
 }
 
 #endif /* GL_NV_bindless_texture */
@@ -6988,10 +7493,10 @@ static void _glewInfo_GL_NV_bindless_texture (void)
 
 static void _glewInfo_GL_NV_blend_equation_advanced (void)
 {
-  glewPrintExt("GL_NV_blend_equation_advanced", GLEW_NV_blend_equation_advanced, glewIsSupported("GL_NV_blend_equation_advanced"), glewGetExtension("GL_NV_blend_equation_advanced"));
+  GLboolean fi = glewPrintExt("GL_NV_blend_equation_advanced", GLEW_NV_blend_equation_advanced, glewIsSupported("GL_NV_blend_equation_advanced"), glewGetExtension("GL_NV_blend_equation_advanced"));
 
-  glewInfoFunc("glBlendBarrierNV", glBlendBarrierNV == NULL);
-  glewInfoFunc("glBlendParameteriNV", glBlendParameteriNV == NULL);
+  glewInfoFunc(fi, "glBlendBarrierNV", glBlendBarrierNV == NULL);
+  glewInfoFunc(fi, "glBlendParameteriNV", glBlendParameteriNV == NULL);
 }
 
 #endif /* GL_NV_blend_equation_advanced */
@@ -7027,9 +7532,9 @@ static void _glewInfo_GL_NV_blend_square (void)
 
 static void _glewInfo_GL_NV_clip_space_w_scaling (void)
 {
-  glewPrintExt("GL_NV_clip_space_w_scaling", GLEW_NV_clip_space_w_scaling, glewIsSupported("GL_NV_clip_space_w_scaling"), glewGetExtension("GL_NV_clip_space_w_scaling"));
+  GLboolean fi = glewPrintExt("GL_NV_clip_space_w_scaling", GLEW_NV_clip_space_w_scaling, glewIsSupported("GL_NV_clip_space_w_scaling"), glewGetExtension("GL_NV_clip_space_w_scaling"));
 
-  glewInfoFunc("glViewportPositionWScaleNV", glViewportPositionWScaleNV == NULL);
+  glewInfoFunc(fi, "glViewportPositionWScaleNV", glViewportPositionWScaleNV == NULL);
 }
 
 #endif /* GL_NV_clip_space_w_scaling */
@@ -7038,25 +7543,25 @@ static void _glewInfo_GL_NV_clip_space_w_scaling (void)
 
 static void _glewInfo_GL_NV_command_list (void)
 {
-  glewPrintExt("GL_NV_command_list", GLEW_NV_command_list, glewIsSupported("GL_NV_command_list"), glewGetExtension("GL_NV_command_list"));
+  GLboolean fi = glewPrintExt("GL_NV_command_list", GLEW_NV_command_list, glewIsSupported("GL_NV_command_list"), glewGetExtension("GL_NV_command_list"));
 
-  glewInfoFunc("glCallCommandListNV", glCallCommandListNV == NULL);
-  glewInfoFunc("glCommandListSegmentsNV", glCommandListSegmentsNV == NULL);
-  glewInfoFunc("glCompileCommandListNV", glCompileCommandListNV == NULL);
-  glewInfoFunc("glCreateCommandListsNV", glCreateCommandListsNV == NULL);
-  glewInfoFunc("glCreateStatesNV", glCreateStatesNV == NULL);
-  glewInfoFunc("glDeleteCommandListsNV", glDeleteCommandListsNV == NULL);
-  glewInfoFunc("glDeleteStatesNV", glDeleteStatesNV == NULL);
-  glewInfoFunc("glDrawCommandsAddressNV", glDrawCommandsAddressNV == NULL);
-  glewInfoFunc("glDrawCommandsNV", glDrawCommandsNV == NULL);
-  glewInfoFunc("glDrawCommandsStatesAddressNV", glDrawCommandsStatesAddressNV == NULL);
-  glewInfoFunc("glDrawCommandsStatesNV", glDrawCommandsStatesNV == NULL);
-  glewInfoFunc("glGetCommandHeaderNV", glGetCommandHeaderNV == NULL);
-  glewInfoFunc("glGetStageIndexNV", glGetStageIndexNV == NULL);
-  glewInfoFunc("glIsCommandListNV", glIsCommandListNV == NULL);
-  glewInfoFunc("glIsStateNV", glIsStateNV == NULL);
-  glewInfoFunc("glListDrawCommandsStatesClientNV", glListDrawCommandsStatesClientNV == NULL);
-  glewInfoFunc("glStateCaptureNV", glStateCaptureNV == NULL);
+  glewInfoFunc(fi, "glCallCommandListNV", glCallCommandListNV == NULL);
+  glewInfoFunc(fi, "glCommandListSegmentsNV", glCommandListSegmentsNV == NULL);
+  glewInfoFunc(fi, "glCompileCommandListNV", glCompileCommandListNV == NULL);
+  glewInfoFunc(fi, "glCreateCommandListsNV", glCreateCommandListsNV == NULL);
+  glewInfoFunc(fi, "glCreateStatesNV", glCreateStatesNV == NULL);
+  glewInfoFunc(fi, "glDeleteCommandListsNV", glDeleteCommandListsNV == NULL);
+  glewInfoFunc(fi, "glDeleteStatesNV", glDeleteStatesNV == NULL);
+  glewInfoFunc(fi, "glDrawCommandsAddressNV", glDrawCommandsAddressNV == NULL);
+  glewInfoFunc(fi, "glDrawCommandsNV", glDrawCommandsNV == NULL);
+  glewInfoFunc(fi, "glDrawCommandsStatesAddressNV", glDrawCommandsStatesAddressNV == NULL);
+  glewInfoFunc(fi, "glDrawCommandsStatesNV", glDrawCommandsStatesNV == NULL);
+  glewInfoFunc(fi, "glGetCommandHeaderNV", glGetCommandHeaderNV == NULL);
+  glewInfoFunc(fi, "glGetStageIndexNV", glGetStageIndexNV == NULL);
+  glewInfoFunc(fi, "glIsCommandListNV", glIsCommandListNV == NULL);
+  glewInfoFunc(fi, "glIsStateNV", glIsStateNV == NULL);
+  glewInfoFunc(fi, "glListDrawCommandsStatesClientNV", glListDrawCommandsStatesClientNV == NULL);
+  glewInfoFunc(fi, "glStateCaptureNV", glStateCaptureNV == NULL);
 }
 
 #endif /* GL_NV_command_list */
@@ -7070,14 +7575,23 @@ static void _glewInfo_GL_NV_compute_program5 (void)
 
 #endif /* GL_NV_compute_program5 */
 
+#ifdef GL_NV_compute_shader_derivatives
+
+static void _glewInfo_GL_NV_compute_shader_derivatives (void)
+{
+  glewPrintExt("GL_NV_compute_shader_derivatives", GLEW_NV_compute_shader_derivatives, glewIsSupported("GL_NV_compute_shader_derivatives"), glewGetExtension("GL_NV_compute_shader_derivatives"));
+}
+
+#endif /* GL_NV_compute_shader_derivatives */
+
 #ifdef GL_NV_conditional_render
 
 static void _glewInfo_GL_NV_conditional_render (void)
 {
-  glewPrintExt("GL_NV_conditional_render", GLEW_NV_conditional_render, glewIsSupported("GL_NV_conditional_render"), glewGetExtension("GL_NV_conditional_render"));
+  GLboolean fi = glewPrintExt("GL_NV_conditional_render", GLEW_NV_conditional_render, glewIsSupported("GL_NV_conditional_render"), glewGetExtension("GL_NV_conditional_render"));
 
-  glewInfoFunc("glBeginConditionalRenderNV", glBeginConditionalRenderNV == NULL);
-  glewInfoFunc("glEndConditionalRenderNV", glEndConditionalRenderNV == NULL);
+  glewInfoFunc(fi, "glBeginConditionalRenderNV", glBeginConditionalRenderNV == NULL);
+  glewInfoFunc(fi, "glEndConditionalRenderNV", glEndConditionalRenderNV == NULL);
 }
 
 #endif /* GL_NV_conditional_render */
@@ -7086,9 +7600,9 @@ static void _glewInfo_GL_NV_conditional_render (void)
 
 static void _glewInfo_GL_NV_conservative_raster (void)
 {
-  glewPrintExt("GL_NV_conservative_raster", GLEW_NV_conservative_raster, glewIsSupported("GL_NV_conservative_raster"), glewGetExtension("GL_NV_conservative_raster"));
+  GLboolean fi = glewPrintExt("GL_NV_conservative_raster", GLEW_NV_conservative_raster, glewIsSupported("GL_NV_conservative_raster"), glewGetExtension("GL_NV_conservative_raster"));
 
-  glewInfoFunc("glSubpixelPrecisionBiasNV", glSubpixelPrecisionBiasNV == NULL);
+  glewInfoFunc(fi, "glSubpixelPrecisionBiasNV", glSubpixelPrecisionBiasNV == NULL);
 }
 
 #endif /* GL_NV_conservative_raster */
@@ -7097,31 +7611,49 @@ static void _glewInfo_GL_NV_conservative_raster (void)
 
 static void _glewInfo_GL_NV_conservative_raster_dilate (void)
 {
-  glewPrintExt("GL_NV_conservative_raster_dilate", GLEW_NV_conservative_raster_dilate, glewIsSupported("GL_NV_conservative_raster_dilate"), glewGetExtension("GL_NV_conservative_raster_dilate"));
+  GLboolean fi = glewPrintExt("GL_NV_conservative_raster_dilate", GLEW_NV_conservative_raster_dilate, glewIsSupported("GL_NV_conservative_raster_dilate"), glewGetExtension("GL_NV_conservative_raster_dilate"));
 
-  glewInfoFunc("glConservativeRasterParameterfNV", glConservativeRasterParameterfNV == NULL);
+  glewInfoFunc(fi, "glConservativeRasterParameterfNV", glConservativeRasterParameterfNV == NULL);
 }
 
 #endif /* GL_NV_conservative_raster_dilate */
+
+#ifdef GL_NV_conservative_raster_pre_snap
+
+static void _glewInfo_GL_NV_conservative_raster_pre_snap (void)
+{
+  glewPrintExt("GL_NV_conservative_raster_pre_snap", GLEW_NV_conservative_raster_pre_snap, glewIsSupported("GL_NV_conservative_raster_pre_snap"), glewGetExtension("GL_NV_conservative_raster_pre_snap"));
+}
+
+#endif /* GL_NV_conservative_raster_pre_snap */
 
 #ifdef GL_NV_conservative_raster_pre_snap_triangles
 
 static void _glewInfo_GL_NV_conservative_raster_pre_snap_triangles (void)
 {
-  glewPrintExt("GL_NV_conservative_raster_pre_snap_triangles", GLEW_NV_conservative_raster_pre_snap_triangles, glewIsSupported("GL_NV_conservative_raster_pre_snap_triangles"), glewGetExtension("GL_NV_conservative_raster_pre_snap_triangles"));
+  GLboolean fi = glewPrintExt("GL_NV_conservative_raster_pre_snap_triangles", GLEW_NV_conservative_raster_pre_snap_triangles, glewIsSupported("GL_NV_conservative_raster_pre_snap_triangles"), glewGetExtension("GL_NV_conservative_raster_pre_snap_triangles"));
 
-  glewInfoFunc("glConservativeRasterParameteriNV", glConservativeRasterParameteriNV == NULL);
+  glewInfoFunc(fi, "glConservativeRasterParameteriNV", glConservativeRasterParameteriNV == NULL);
 }
 
 #endif /* GL_NV_conservative_raster_pre_snap_triangles */
+
+#ifdef GL_NV_conservative_raster_underestimation
+
+static void _glewInfo_GL_NV_conservative_raster_underestimation (void)
+{
+  glewPrintExt("GL_NV_conservative_raster_underestimation", GLEW_NV_conservative_raster_underestimation, glewIsSupported("GL_NV_conservative_raster_underestimation"), glewGetExtension("GL_NV_conservative_raster_underestimation"));
+}
+
+#endif /* GL_NV_conservative_raster_underestimation */
 
 #ifdef GL_NV_copy_buffer
 
 static void _glewInfo_GL_NV_copy_buffer (void)
 {
-  glewPrintExt("GL_NV_copy_buffer", GLEW_NV_copy_buffer, glewIsSupported("GL_NV_copy_buffer"), glewGetExtension("GL_NV_copy_buffer"));
+  GLboolean fi = glewPrintExt("GL_NV_copy_buffer", GLEW_NV_copy_buffer, glewIsSupported("GL_NV_copy_buffer"), glewGetExtension("GL_NV_copy_buffer"));
 
-  glewInfoFunc("glCopyBufferSubDataNV", glCopyBufferSubDataNV == NULL);
+  glewInfoFunc(fi, "glCopyBufferSubDataNV", glCopyBufferSubDataNV == NULL);
 }
 
 #endif /* GL_NV_copy_buffer */
@@ -7139,9 +7671,9 @@ static void _glewInfo_GL_NV_copy_depth_to_color (void)
 
 static void _glewInfo_GL_NV_copy_image (void)
 {
-  glewPrintExt("GL_NV_copy_image", GLEW_NV_copy_image, glewIsSupported("GL_NV_copy_image"), glewGetExtension("GL_NV_copy_image"));
+  GLboolean fi = glewPrintExt("GL_NV_copy_image", GLEW_NV_copy_image, glewIsSupported("GL_NV_copy_image"), glewGetExtension("GL_NV_copy_image"));
 
-  glewInfoFunc("glCopyImageSubDataNV", glCopyImageSubDataNV == NULL);
+  glewInfoFunc(fi, "glCopyImageSubDataNV", glCopyImageSubDataNV == NULL);
 }
 
 #endif /* GL_NV_copy_image */
@@ -7159,11 +7691,11 @@ static void _glewInfo_GL_NV_deep_texture3D (void)
 
 static void _glewInfo_GL_NV_depth_buffer_float (void)
 {
-  glewPrintExt("GL_NV_depth_buffer_float", GLEW_NV_depth_buffer_float, glewIsSupported("GL_NV_depth_buffer_float"), glewGetExtension("GL_NV_depth_buffer_float"));
+  GLboolean fi = glewPrintExt("GL_NV_depth_buffer_float", GLEW_NV_depth_buffer_float, glewIsSupported("GL_NV_depth_buffer_float"), glewGetExtension("GL_NV_depth_buffer_float"));
 
-  glewInfoFunc("glClearDepthdNV", glClearDepthdNV == NULL);
-  glewInfoFunc("glDepthBoundsdNV", glDepthBoundsdNV == NULL);
-  glewInfoFunc("glDepthRangedNV", glDepthRangedNV == NULL);
+  glewInfoFunc(fi, "glClearDepthdNV", glClearDepthdNV == NULL);
+  glewInfoFunc(fi, "glDepthBoundsdNV", glDepthBoundsdNV == NULL);
+  glewInfoFunc(fi, "glDepthRangedNV", glDepthRangedNV == NULL);
 }
 
 #endif /* GL_NV_depth_buffer_float */
@@ -7176,6 +7708,15 @@ static void _glewInfo_GL_NV_depth_clamp (void)
 }
 
 #endif /* GL_NV_depth_clamp */
+
+#ifdef GL_NV_depth_nonlinear
+
+static void _glewInfo_GL_NV_depth_nonlinear (void)
+{
+  glewPrintExt("GL_NV_depth_nonlinear", GLEW_NV_depth_nonlinear, glewIsSupported("GL_NV_depth_nonlinear"), glewGetExtension("GL_NV_depth_nonlinear"));
+}
+
+#endif /* GL_NV_depth_nonlinear */
 
 #ifdef GL_NV_depth_range_unclamped
 
@@ -7190,9 +7731,9 @@ static void _glewInfo_GL_NV_depth_range_unclamped (void)
 
 static void _glewInfo_GL_NV_draw_buffers (void)
 {
-  glewPrintExt("GL_NV_draw_buffers", GLEW_NV_draw_buffers, glewIsSupported("GL_NV_draw_buffers"), glewGetExtension("GL_NV_draw_buffers"));
+  GLboolean fi = glewPrintExt("GL_NV_draw_buffers", GLEW_NV_draw_buffers, glewIsSupported("GL_NV_draw_buffers"), glewGetExtension("GL_NV_draw_buffers"));
 
-  glewInfoFunc("glDrawBuffersNV", glDrawBuffersNV == NULL);
+  glewInfoFunc(fi, "glDrawBuffersNV", glDrawBuffersNV == NULL);
 }
 
 #endif /* GL_NV_draw_buffers */
@@ -7201,10 +7742,10 @@ static void _glewInfo_GL_NV_draw_buffers (void)
 
 static void _glewInfo_GL_NV_draw_instanced (void)
 {
-  glewPrintExt("GL_NV_draw_instanced", GLEW_NV_draw_instanced, glewIsSupported("GL_NV_draw_instanced"), glewGetExtension("GL_NV_draw_instanced"));
+  GLboolean fi = glewPrintExt("GL_NV_draw_instanced", GLEW_NV_draw_instanced, glewIsSupported("GL_NV_draw_instanced"), glewGetExtension("GL_NV_draw_instanced"));
 
-  glewInfoFunc("glDrawArraysInstancedNV", glDrawArraysInstancedNV == NULL);
-  glewInfoFunc("glDrawElementsInstancedNV", glDrawElementsInstancedNV == NULL);
+  glewInfoFunc(fi, "glDrawArraysInstancedNV", glDrawArraysInstancedNV == NULL);
+  glewInfoFunc(fi, "glDrawElementsInstancedNV", glDrawElementsInstancedNV == NULL);
 }
 
 #endif /* GL_NV_draw_instanced */
@@ -7213,9 +7754,9 @@ static void _glewInfo_GL_NV_draw_instanced (void)
 
 static void _glewInfo_GL_NV_draw_texture (void)
 {
-  glewPrintExt("GL_NV_draw_texture", GLEW_NV_draw_texture, glewIsSupported("GL_NV_draw_texture"), glewGetExtension("GL_NV_draw_texture"));
+  GLboolean fi = glewPrintExt("GL_NV_draw_texture", GLEW_NV_draw_texture, glewIsSupported("GL_NV_draw_texture"), glewGetExtension("GL_NV_draw_texture"));
 
-  glewInfoFunc("glDrawTextureNV", glDrawTextureNV == NULL);
+  glewInfoFunc(fi, "glDrawTextureNV", glDrawTextureNV == NULL);
 }
 
 #endif /* GL_NV_draw_texture */
@@ -7224,13 +7765,13 @@ static void _glewInfo_GL_NV_draw_texture (void)
 
 static void _glewInfo_GL_NV_draw_vulkan_image (void)
 {
-  glewPrintExt("GL_NV_draw_vulkan_image", GLEW_NV_draw_vulkan_image, glewIsSupported("GL_NV_draw_vulkan_image"), glewGetExtension("GL_NV_draw_vulkan_image"));
+  GLboolean fi = glewPrintExt("GL_NV_draw_vulkan_image", GLEW_NV_draw_vulkan_image, glewIsSupported("GL_NV_draw_vulkan_image"), glewGetExtension("GL_NV_draw_vulkan_image"));
 
-  glewInfoFunc("glDrawVkImageNV", glDrawVkImageNV == NULL);
-  glewInfoFunc("glGetVkProcAddrNV", glGetVkProcAddrNV == NULL);
-  glewInfoFunc("glSignalVkFenceNV", glSignalVkFenceNV == NULL);
-  glewInfoFunc("glSignalVkSemaphoreNV", glSignalVkSemaphoreNV == NULL);
-  glewInfoFunc("glWaitVkSemaphoreNV", glWaitVkSemaphoreNV == NULL);
+  glewInfoFunc(fi, "glDrawVkImageNV", glDrawVkImageNV == NULL);
+  glewInfoFunc(fi, "glGetVkProcAddrNV", glGetVkProcAddrNV == NULL);
+  glewInfoFunc(fi, "glSignalVkFenceNV", glSignalVkFenceNV == NULL);
+  glewInfoFunc(fi, "glSignalVkSemaphoreNV", glSignalVkSemaphoreNV == NULL);
+  glewInfoFunc(fi, "glWaitVkSemaphoreNV", glWaitVkSemaphoreNV == NULL);
 }
 
 #endif /* GL_NV_draw_vulkan_image */
@@ -7239,17 +7780,17 @@ static void _glewInfo_GL_NV_draw_vulkan_image (void)
 
 static void _glewInfo_GL_NV_evaluators (void)
 {
-  glewPrintExt("GL_NV_evaluators", GLEW_NV_evaluators, glewIsSupported("GL_NV_evaluators"), glewGetExtension("GL_NV_evaluators"));
+  GLboolean fi = glewPrintExt("GL_NV_evaluators", GLEW_NV_evaluators, glewIsSupported("GL_NV_evaluators"), glewGetExtension("GL_NV_evaluators"));
 
-  glewInfoFunc("glEvalMapsNV", glEvalMapsNV == NULL);
-  glewInfoFunc("glGetMapAttribParameterfvNV", glGetMapAttribParameterfvNV == NULL);
-  glewInfoFunc("glGetMapAttribParameterivNV", glGetMapAttribParameterivNV == NULL);
-  glewInfoFunc("glGetMapControlPointsNV", glGetMapControlPointsNV == NULL);
-  glewInfoFunc("glGetMapParameterfvNV", glGetMapParameterfvNV == NULL);
-  glewInfoFunc("glGetMapParameterivNV", glGetMapParameterivNV == NULL);
-  glewInfoFunc("glMapControlPointsNV", glMapControlPointsNV == NULL);
-  glewInfoFunc("glMapParameterfvNV", glMapParameterfvNV == NULL);
-  glewInfoFunc("glMapParameterivNV", glMapParameterivNV == NULL);
+  glewInfoFunc(fi, "glEvalMapsNV", glEvalMapsNV == NULL);
+  glewInfoFunc(fi, "glGetMapAttribParameterfvNV", glGetMapAttribParameterfvNV == NULL);
+  glewInfoFunc(fi, "glGetMapAttribParameterivNV", glGetMapAttribParameterivNV == NULL);
+  glewInfoFunc(fi, "glGetMapControlPointsNV", glGetMapControlPointsNV == NULL);
+  glewInfoFunc(fi, "glGetMapParameterfvNV", glGetMapParameterfvNV == NULL);
+  glewInfoFunc(fi, "glGetMapParameterivNV", glGetMapParameterivNV == NULL);
+  glewInfoFunc(fi, "glMapControlPointsNV", glMapControlPointsNV == NULL);
+  glewInfoFunc(fi, "glMapParameterfvNV", glMapParameterfvNV == NULL);
+  glewInfoFunc(fi, "glMapParameterivNV", glMapParameterivNV == NULL);
 }
 
 #endif /* GL_NV_evaluators */
@@ -7267,11 +7808,11 @@ static void _glewInfo_GL_NV_explicit_attrib_location (void)
 
 static void _glewInfo_GL_NV_explicit_multisample (void)
 {
-  glewPrintExt("GL_NV_explicit_multisample", GLEW_NV_explicit_multisample, glewIsSupported("GL_NV_explicit_multisample"), glewGetExtension("GL_NV_explicit_multisample"));
+  GLboolean fi = glewPrintExt("GL_NV_explicit_multisample", GLEW_NV_explicit_multisample, glewIsSupported("GL_NV_explicit_multisample"), glewGetExtension("GL_NV_explicit_multisample"));
 
-  glewInfoFunc("glGetMultisamplefvNV", glGetMultisamplefvNV == NULL);
-  glewInfoFunc("glSampleMaskIndexedNV", glSampleMaskIndexedNV == NULL);
-  glewInfoFunc("glTexRenderbufferNV", glTexRenderbufferNV == NULL);
+  glewInfoFunc(fi, "glGetMultisamplefvNV", glGetMultisamplefvNV == NULL);
+  glewInfoFunc(fi, "glSampleMaskIndexedNV", glSampleMaskIndexedNV == NULL);
+  glewInfoFunc(fi, "glTexRenderbufferNV", glTexRenderbufferNV == NULL);
 }
 
 #endif /* GL_NV_explicit_multisample */
@@ -7289,15 +7830,15 @@ static void _glewInfo_GL_NV_fbo_color_attachments (void)
 
 static void _glewInfo_GL_NV_fence (void)
 {
-  glewPrintExt("GL_NV_fence", GLEW_NV_fence, glewIsSupported("GL_NV_fence"), glewGetExtension("GL_NV_fence"));
+  GLboolean fi = glewPrintExt("GL_NV_fence", GLEW_NV_fence, glewIsSupported("GL_NV_fence"), glewGetExtension("GL_NV_fence"));
 
-  glewInfoFunc("glDeleteFencesNV", glDeleteFencesNV == NULL);
-  glewInfoFunc("glFinishFenceNV", glFinishFenceNV == NULL);
-  glewInfoFunc("glGenFencesNV", glGenFencesNV == NULL);
-  glewInfoFunc("glGetFenceivNV", glGetFenceivNV == NULL);
-  glewInfoFunc("glIsFenceNV", glIsFenceNV == NULL);
-  glewInfoFunc("glSetFenceNV", glSetFenceNV == NULL);
-  glewInfoFunc("glTestFenceNV", glTestFenceNV == NULL);
+  glewInfoFunc(fi, "glDeleteFencesNV", glDeleteFencesNV == NULL);
+  glewInfoFunc(fi, "glFinishFenceNV", glFinishFenceNV == NULL);
+  glewInfoFunc(fi, "glGenFencesNV", glGenFencesNV == NULL);
+  glewInfoFunc(fi, "glGetFenceivNV", glGetFenceivNV == NULL);
+  glewInfoFunc(fi, "glIsFenceNV", glIsFenceNV == NULL);
+  glewInfoFunc(fi, "glSetFenceNV", glSetFenceNV == NULL);
+  glewInfoFunc(fi, "glTestFenceNV", glTestFenceNV == NULL);
 }
 
 #endif /* GL_NV_fence */
@@ -7333,9 +7874,9 @@ static void _glewInfo_GL_NV_fog_distance (void)
 
 static void _glewInfo_GL_NV_fragment_coverage_to_color (void)
 {
-  glewPrintExt("GL_NV_fragment_coverage_to_color", GLEW_NV_fragment_coverage_to_color, glewIsSupported("GL_NV_fragment_coverage_to_color"), glewGetExtension("GL_NV_fragment_coverage_to_color"));
+  GLboolean fi = glewPrintExt("GL_NV_fragment_coverage_to_color", GLEW_NV_fragment_coverage_to_color, glewIsSupported("GL_NV_fragment_coverage_to_color"), glewGetExtension("GL_NV_fragment_coverage_to_color"));
 
-  glewInfoFunc("glFragmentCoverageColorNV", glFragmentCoverageColorNV == NULL);
+  glewInfoFunc(fi, "glFragmentCoverageColorNV", glFragmentCoverageColorNV == NULL);
 }
 
 #endif /* GL_NV_fragment_coverage_to_color */
@@ -7344,14 +7885,14 @@ static void _glewInfo_GL_NV_fragment_coverage_to_color (void)
 
 static void _glewInfo_GL_NV_fragment_program (void)
 {
-  glewPrintExt("GL_NV_fragment_program", GLEW_NV_fragment_program, glewIsSupported("GL_NV_fragment_program"), glewGetExtension("GL_NV_fragment_program"));
+  GLboolean fi = glewPrintExt("GL_NV_fragment_program", GLEW_NV_fragment_program, glewIsSupported("GL_NV_fragment_program"), glewGetExtension("GL_NV_fragment_program"));
 
-  glewInfoFunc("glGetProgramNamedParameterdvNV", glGetProgramNamedParameterdvNV == NULL);
-  glewInfoFunc("glGetProgramNamedParameterfvNV", glGetProgramNamedParameterfvNV == NULL);
-  glewInfoFunc("glProgramNamedParameter4dNV", glProgramNamedParameter4dNV == NULL);
-  glewInfoFunc("glProgramNamedParameter4dvNV", glProgramNamedParameter4dvNV == NULL);
-  glewInfoFunc("glProgramNamedParameter4fNV", glProgramNamedParameter4fNV == NULL);
-  glewInfoFunc("glProgramNamedParameter4fvNV", glProgramNamedParameter4fvNV == NULL);
+  glewInfoFunc(fi, "glGetProgramNamedParameterdvNV", glGetProgramNamedParameterdvNV == NULL);
+  glewInfoFunc(fi, "glGetProgramNamedParameterfvNV", glGetProgramNamedParameterfvNV == NULL);
+  glewInfoFunc(fi, "glProgramNamedParameter4dNV", glProgramNamedParameter4dNV == NULL);
+  glewInfoFunc(fi, "glProgramNamedParameter4dvNV", glProgramNamedParameter4dvNV == NULL);
+  glewInfoFunc(fi, "glProgramNamedParameter4fNV", glProgramNamedParameter4fNV == NULL);
+  glewInfoFunc(fi, "glProgramNamedParameter4fvNV", glProgramNamedParameter4fvNV == NULL);
 }
 
 #endif /* GL_NV_fragment_program */
@@ -7383,6 +7924,15 @@ static void _glewInfo_GL_NV_fragment_program_option (void)
 
 #endif /* GL_NV_fragment_program_option */
 
+#ifdef GL_NV_fragment_shader_barycentric
+
+static void _glewInfo_GL_NV_fragment_shader_barycentric (void)
+{
+  glewPrintExt("GL_NV_fragment_shader_barycentric", GLEW_NV_fragment_shader_barycentric, glewIsSupported("GL_NV_fragment_shader_barycentric"), glewGetExtension("GL_NV_fragment_shader_barycentric"));
+}
+
+#endif /* GL_NV_fragment_shader_barycentric */
+
 #ifdef GL_NV_fragment_shader_interlock
 
 static void _glewInfo_GL_NV_fragment_shader_interlock (void)
@@ -7396,9 +7946,9 @@ static void _glewInfo_GL_NV_fragment_shader_interlock (void)
 
 static void _glewInfo_GL_NV_framebuffer_blit (void)
 {
-  glewPrintExt("GL_NV_framebuffer_blit", GLEW_NV_framebuffer_blit, glewIsSupported("GL_NV_framebuffer_blit"), glewGetExtension("GL_NV_framebuffer_blit"));
+  GLboolean fi = glewPrintExt("GL_NV_framebuffer_blit", GLEW_NV_framebuffer_blit, glewIsSupported("GL_NV_framebuffer_blit"), glewGetExtension("GL_NV_framebuffer_blit"));
 
-  glewInfoFunc("glBlitFramebufferNV", glBlitFramebufferNV == NULL);
+  glewInfoFunc(fi, "glBlitFramebufferNV", glBlitFramebufferNV == NULL);
 }
 
 #endif /* GL_NV_framebuffer_blit */
@@ -7416,9 +7966,9 @@ static void _glewInfo_GL_NV_framebuffer_mixed_samples (void)
 
 static void _glewInfo_GL_NV_framebuffer_multisample (void)
 {
-  glewPrintExt("GL_NV_framebuffer_multisample", GLEW_NV_framebuffer_multisample, glewIsSupported("GL_NV_framebuffer_multisample"), glewGetExtension("GL_NV_framebuffer_multisample"));
+  GLboolean fi = glewPrintExt("GL_NV_framebuffer_multisample", GLEW_NV_framebuffer_multisample, glewIsSupported("GL_NV_framebuffer_multisample"), glewGetExtension("GL_NV_framebuffer_multisample"));
 
-  glewInfoFunc("glRenderbufferStorageMultisampleNV", glRenderbufferStorageMultisampleNV == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageMultisampleNV", glRenderbufferStorageMultisampleNV == NULL);
 }
 
 #endif /* GL_NV_framebuffer_multisample */
@@ -7427,9 +7977,9 @@ static void _glewInfo_GL_NV_framebuffer_multisample (void)
 
 static void _glewInfo_GL_NV_framebuffer_multisample_coverage (void)
 {
-  glewPrintExt("GL_NV_framebuffer_multisample_coverage", GLEW_NV_framebuffer_multisample_coverage, glewIsSupported("GL_NV_framebuffer_multisample_coverage"), glewGetExtension("GL_NV_framebuffer_multisample_coverage"));
+  GLboolean fi = glewPrintExt("GL_NV_framebuffer_multisample_coverage", GLEW_NV_framebuffer_multisample_coverage, glewIsSupported("GL_NV_framebuffer_multisample_coverage"), glewGetExtension("GL_NV_framebuffer_multisample_coverage"));
 
-  glewInfoFunc("glRenderbufferStorageMultisampleCoverageNV", glRenderbufferStorageMultisampleCoverageNV == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageMultisampleCoverageNV", glRenderbufferStorageMultisampleCoverageNV == NULL);
 }
 
 #endif /* GL_NV_framebuffer_multisample_coverage */
@@ -7447,9 +7997,9 @@ static void _glewInfo_GL_NV_generate_mipmap_sRGB (void)
 
 static void _glewInfo_GL_NV_geometry_program4 (void)
 {
-  glewPrintExt("GL_NV_geometry_program4", GLEW_NV_geometry_program4, glewIsSupported("GL_NV_geometry_program4"), glewGetExtension("GL_NV_gpu_program4"));
+  GLboolean fi = glewPrintExt("GL_NV_geometry_program4", GLEW_NV_geometry_program4, glewIsSupported("GL_NV_geometry_program4"), glewGetExtension("GL_NV_gpu_program4"));
 
-  glewInfoFunc("glProgramVertexLimitNV", glProgramVertexLimitNV == NULL);
+  glewInfoFunc(fi, "glProgramVertexLimitNV", glProgramVertexLimitNV == NULL);
 }
 
 #endif /* GL_NV_geometry_program4 */
@@ -7476,20 +8026,20 @@ static void _glewInfo_GL_NV_geometry_shader_passthrough (void)
 
 static void _glewInfo_GL_NV_gpu_multicast (void)
 {
-  glewPrintExt("GL_NV_gpu_multicast", GLEW_NV_gpu_multicast, glewIsSupported("GL_NV_gpu_multicast"), glewGetExtension("GL_NV_gpu_multicast"));
+  GLboolean fi = glewPrintExt("GL_NV_gpu_multicast", GLEW_NV_gpu_multicast, glewIsSupported("GL_NV_gpu_multicast"), glewGetExtension("GL_NV_gpu_multicast"));
 
-  glewInfoFunc("glMulticastBarrierNV", glMulticastBarrierNV == NULL);
-  glewInfoFunc("glMulticastBlitFramebufferNV", glMulticastBlitFramebufferNV == NULL);
-  glewInfoFunc("glMulticastBufferSubDataNV", glMulticastBufferSubDataNV == NULL);
-  glewInfoFunc("glMulticastCopyBufferSubDataNV", glMulticastCopyBufferSubDataNV == NULL);
-  glewInfoFunc("glMulticastCopyImageSubDataNV", glMulticastCopyImageSubDataNV == NULL);
-  glewInfoFunc("glMulticastFramebufferSampleLocationsfvNV", glMulticastFramebufferSampleLocationsfvNV == NULL);
-  glewInfoFunc("glMulticastGetQueryObjecti64vNV", glMulticastGetQueryObjecti64vNV == NULL);
-  glewInfoFunc("glMulticastGetQueryObjectivNV", glMulticastGetQueryObjectivNV == NULL);
-  glewInfoFunc("glMulticastGetQueryObjectui64vNV", glMulticastGetQueryObjectui64vNV == NULL);
-  glewInfoFunc("glMulticastGetQueryObjectuivNV", glMulticastGetQueryObjectuivNV == NULL);
-  glewInfoFunc("glMulticastWaitSyncNV", glMulticastWaitSyncNV == NULL);
-  glewInfoFunc("glRenderGpuMaskNV", glRenderGpuMaskNV == NULL);
+  glewInfoFunc(fi, "glMulticastBarrierNV", glMulticastBarrierNV == NULL);
+  glewInfoFunc(fi, "glMulticastBlitFramebufferNV", glMulticastBlitFramebufferNV == NULL);
+  glewInfoFunc(fi, "glMulticastBufferSubDataNV", glMulticastBufferSubDataNV == NULL);
+  glewInfoFunc(fi, "glMulticastCopyBufferSubDataNV", glMulticastCopyBufferSubDataNV == NULL);
+  glewInfoFunc(fi, "glMulticastCopyImageSubDataNV", glMulticastCopyImageSubDataNV == NULL);
+  glewInfoFunc(fi, "glMulticastFramebufferSampleLocationsfvNV", glMulticastFramebufferSampleLocationsfvNV == NULL);
+  glewInfoFunc(fi, "glMulticastGetQueryObjecti64vNV", glMulticastGetQueryObjecti64vNV == NULL);
+  glewInfoFunc(fi, "glMulticastGetQueryObjectivNV", glMulticastGetQueryObjectivNV == NULL);
+  glewInfoFunc(fi, "glMulticastGetQueryObjectui64vNV", glMulticastGetQueryObjectui64vNV == NULL);
+  glewInfoFunc(fi, "glMulticastGetQueryObjectuivNV", glMulticastGetQueryObjectuivNV == NULL);
+  glewInfoFunc(fi, "glMulticastWaitSyncNV", glMulticastWaitSyncNV == NULL);
+  glewInfoFunc(fi, "glRenderGpuMaskNV", glRenderGpuMaskNV == NULL);
 }
 
 #endif /* GL_NV_gpu_multicast */
@@ -7498,20 +8048,20 @@ static void _glewInfo_GL_NV_gpu_multicast (void)
 
 static void _glewInfo_GL_NV_gpu_program4 (void)
 {
-  glewPrintExt("GL_NV_gpu_program4", GLEW_NV_gpu_program4, glewIsSupported("GL_NV_gpu_program4"), glewGetExtension("GL_NV_gpu_program4"));
+  GLboolean fi = glewPrintExt("GL_NV_gpu_program4", GLEW_NV_gpu_program4, glewIsSupported("GL_NV_gpu_program4"), glewGetExtension("GL_NV_gpu_program4"));
 
-  glewInfoFunc("glProgramEnvParameterI4iNV", glProgramEnvParameterI4iNV == NULL);
-  glewInfoFunc("glProgramEnvParameterI4ivNV", glProgramEnvParameterI4ivNV == NULL);
-  glewInfoFunc("glProgramEnvParameterI4uiNV", glProgramEnvParameterI4uiNV == NULL);
-  glewInfoFunc("glProgramEnvParameterI4uivNV", glProgramEnvParameterI4uivNV == NULL);
-  glewInfoFunc("glProgramEnvParametersI4ivNV", glProgramEnvParametersI4ivNV == NULL);
-  glewInfoFunc("glProgramEnvParametersI4uivNV", glProgramEnvParametersI4uivNV == NULL);
-  glewInfoFunc("glProgramLocalParameterI4iNV", glProgramLocalParameterI4iNV == NULL);
-  glewInfoFunc("glProgramLocalParameterI4ivNV", glProgramLocalParameterI4ivNV == NULL);
-  glewInfoFunc("glProgramLocalParameterI4uiNV", glProgramLocalParameterI4uiNV == NULL);
-  glewInfoFunc("glProgramLocalParameterI4uivNV", glProgramLocalParameterI4uivNV == NULL);
-  glewInfoFunc("glProgramLocalParametersI4ivNV", glProgramLocalParametersI4ivNV == NULL);
-  glewInfoFunc("glProgramLocalParametersI4uivNV", glProgramLocalParametersI4uivNV == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameterI4iNV", glProgramEnvParameterI4iNV == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameterI4ivNV", glProgramEnvParameterI4ivNV == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameterI4uiNV", glProgramEnvParameterI4uiNV == NULL);
+  glewInfoFunc(fi, "glProgramEnvParameterI4uivNV", glProgramEnvParameterI4uivNV == NULL);
+  glewInfoFunc(fi, "glProgramEnvParametersI4ivNV", glProgramEnvParametersI4ivNV == NULL);
+  glewInfoFunc(fi, "glProgramEnvParametersI4uivNV", glProgramEnvParametersI4uivNV == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameterI4iNV", glProgramLocalParameterI4iNV == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameterI4ivNV", glProgramLocalParameterI4ivNV == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameterI4uiNV", glProgramLocalParameterI4uiNV == NULL);
+  glewInfoFunc(fi, "glProgramLocalParameterI4uivNV", glProgramLocalParameterI4uivNV == NULL);
+  glewInfoFunc(fi, "glProgramLocalParametersI4ivNV", glProgramLocalParametersI4ivNV == NULL);
+  glewInfoFunc(fi, "glProgramLocalParametersI4uivNV", glProgramLocalParametersI4uivNV == NULL);
 }
 
 #endif /* GL_NV_gpu_program4 */
@@ -7547,42 +8097,42 @@ static void _glewInfo_GL_NV_gpu_program_fp64 (void)
 
 static void _glewInfo_GL_NV_gpu_shader5 (void)
 {
-  glewPrintExt("GL_NV_gpu_shader5", GLEW_NV_gpu_shader5, glewIsSupported("GL_NV_gpu_shader5"), glewGetExtension("GL_NV_gpu_shader5"));
+  GLboolean fi = glewPrintExt("GL_NV_gpu_shader5", GLEW_NV_gpu_shader5, glewIsSupported("GL_NV_gpu_shader5"), glewGetExtension("GL_NV_gpu_shader5"));
 
-  glewInfoFunc("glGetUniformi64vNV", glGetUniformi64vNV == NULL);
-  glewInfoFunc("glGetUniformui64vNV", glGetUniformui64vNV == NULL);
-  glewInfoFunc("glProgramUniform1i64NV", glProgramUniform1i64NV == NULL);
-  glewInfoFunc("glProgramUniform1i64vNV", glProgramUniform1i64vNV == NULL);
-  glewInfoFunc("glProgramUniform1ui64NV", glProgramUniform1ui64NV == NULL);
-  glewInfoFunc("glProgramUniform1ui64vNV", glProgramUniform1ui64vNV == NULL);
-  glewInfoFunc("glProgramUniform2i64NV", glProgramUniform2i64NV == NULL);
-  glewInfoFunc("glProgramUniform2i64vNV", glProgramUniform2i64vNV == NULL);
-  glewInfoFunc("glProgramUniform2ui64NV", glProgramUniform2ui64NV == NULL);
-  glewInfoFunc("glProgramUniform2ui64vNV", glProgramUniform2ui64vNV == NULL);
-  glewInfoFunc("glProgramUniform3i64NV", glProgramUniform3i64NV == NULL);
-  glewInfoFunc("glProgramUniform3i64vNV", glProgramUniform3i64vNV == NULL);
-  glewInfoFunc("glProgramUniform3ui64NV", glProgramUniform3ui64NV == NULL);
-  glewInfoFunc("glProgramUniform3ui64vNV", glProgramUniform3ui64vNV == NULL);
-  glewInfoFunc("glProgramUniform4i64NV", glProgramUniform4i64NV == NULL);
-  glewInfoFunc("glProgramUniform4i64vNV", glProgramUniform4i64vNV == NULL);
-  glewInfoFunc("glProgramUniform4ui64NV", glProgramUniform4ui64NV == NULL);
-  glewInfoFunc("glProgramUniform4ui64vNV", glProgramUniform4ui64vNV == NULL);
-  glewInfoFunc("glUniform1i64NV", glUniform1i64NV == NULL);
-  glewInfoFunc("glUniform1i64vNV", glUniform1i64vNV == NULL);
-  glewInfoFunc("glUniform1ui64NV", glUniform1ui64NV == NULL);
-  glewInfoFunc("glUniform1ui64vNV", glUniform1ui64vNV == NULL);
-  glewInfoFunc("glUniform2i64NV", glUniform2i64NV == NULL);
-  glewInfoFunc("glUniform2i64vNV", glUniform2i64vNV == NULL);
-  glewInfoFunc("glUniform2ui64NV", glUniform2ui64NV == NULL);
-  glewInfoFunc("glUniform2ui64vNV", glUniform2ui64vNV == NULL);
-  glewInfoFunc("glUniform3i64NV", glUniform3i64NV == NULL);
-  glewInfoFunc("glUniform3i64vNV", glUniform3i64vNV == NULL);
-  glewInfoFunc("glUniform3ui64NV", glUniform3ui64NV == NULL);
-  glewInfoFunc("glUniform3ui64vNV", glUniform3ui64vNV == NULL);
-  glewInfoFunc("glUniform4i64NV", glUniform4i64NV == NULL);
-  glewInfoFunc("glUniform4i64vNV", glUniform4i64vNV == NULL);
-  glewInfoFunc("glUniform4ui64NV", glUniform4ui64NV == NULL);
-  glewInfoFunc("glUniform4ui64vNV", glUniform4ui64vNV == NULL);
+  glewInfoFunc(fi, "glGetUniformi64vNV", glGetUniformi64vNV == NULL);
+  glewInfoFunc(fi, "glGetUniformui64vNV", glGetUniformui64vNV == NULL);
+  glewInfoFunc(fi, "glProgramUniform1i64NV", glProgramUniform1i64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniform1i64vNV", glProgramUniform1i64vNV == NULL);
+  glewInfoFunc(fi, "glProgramUniform1ui64NV", glProgramUniform1ui64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniform1ui64vNV", glProgramUniform1ui64vNV == NULL);
+  glewInfoFunc(fi, "glProgramUniform2i64NV", glProgramUniform2i64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniform2i64vNV", glProgramUniform2i64vNV == NULL);
+  glewInfoFunc(fi, "glProgramUniform2ui64NV", glProgramUniform2ui64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniform2ui64vNV", glProgramUniform2ui64vNV == NULL);
+  glewInfoFunc(fi, "glProgramUniform3i64NV", glProgramUniform3i64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniform3i64vNV", glProgramUniform3i64vNV == NULL);
+  glewInfoFunc(fi, "glProgramUniform3ui64NV", glProgramUniform3ui64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniform3ui64vNV", glProgramUniform3ui64vNV == NULL);
+  glewInfoFunc(fi, "glProgramUniform4i64NV", glProgramUniform4i64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniform4i64vNV", glProgramUniform4i64vNV == NULL);
+  glewInfoFunc(fi, "glProgramUniform4ui64NV", glProgramUniform4ui64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniform4ui64vNV", glProgramUniform4ui64vNV == NULL);
+  glewInfoFunc(fi, "glUniform1i64NV", glUniform1i64NV == NULL);
+  glewInfoFunc(fi, "glUniform1i64vNV", glUniform1i64vNV == NULL);
+  glewInfoFunc(fi, "glUniform1ui64NV", glUniform1ui64NV == NULL);
+  glewInfoFunc(fi, "glUniform1ui64vNV", glUniform1ui64vNV == NULL);
+  glewInfoFunc(fi, "glUniform2i64NV", glUniform2i64NV == NULL);
+  glewInfoFunc(fi, "glUniform2i64vNV", glUniform2i64vNV == NULL);
+  glewInfoFunc(fi, "glUniform2ui64NV", glUniform2ui64NV == NULL);
+  glewInfoFunc(fi, "glUniform2ui64vNV", glUniform2ui64vNV == NULL);
+  glewInfoFunc(fi, "glUniform3i64NV", glUniform3i64NV == NULL);
+  glewInfoFunc(fi, "glUniform3i64vNV", glUniform3i64vNV == NULL);
+  glewInfoFunc(fi, "glUniform3ui64NV", glUniform3ui64NV == NULL);
+  glewInfoFunc(fi, "glUniform3ui64vNV", glUniform3ui64vNV == NULL);
+  glewInfoFunc(fi, "glUniform4i64NV", glUniform4i64NV == NULL);
+  glewInfoFunc(fi, "glUniform4i64vNV", glUniform4i64vNV == NULL);
+  glewInfoFunc(fi, "glUniform4ui64NV", glUniform4ui64NV == NULL);
+  glewInfoFunc(fi, "glUniform4ui64vNV", glUniform4ui64vNV == NULL);
 }
 
 #endif /* GL_NV_gpu_shader5 */
@@ -7591,54 +8141,54 @@ static void _glewInfo_GL_NV_gpu_shader5 (void)
 
 static void _glewInfo_GL_NV_half_float (void)
 {
-  glewPrintExt("GL_NV_half_float", GLEW_NV_half_float, glewIsSupported("GL_NV_half_float"), glewGetExtension("GL_NV_half_float"));
+  GLboolean fi = glewPrintExt("GL_NV_half_float", GLEW_NV_half_float, glewIsSupported("GL_NV_half_float"), glewGetExtension("GL_NV_half_float"));
 
-  glewInfoFunc("glColor3hNV", glColor3hNV == NULL);
-  glewInfoFunc("glColor3hvNV", glColor3hvNV == NULL);
-  glewInfoFunc("glColor4hNV", glColor4hNV == NULL);
-  glewInfoFunc("glColor4hvNV", glColor4hvNV == NULL);
-  glewInfoFunc("glFogCoordhNV", glFogCoordhNV == NULL);
-  glewInfoFunc("glFogCoordhvNV", glFogCoordhvNV == NULL);
-  glewInfoFunc("glMultiTexCoord1hNV", glMultiTexCoord1hNV == NULL);
-  glewInfoFunc("glMultiTexCoord1hvNV", glMultiTexCoord1hvNV == NULL);
-  glewInfoFunc("glMultiTexCoord2hNV", glMultiTexCoord2hNV == NULL);
-  glewInfoFunc("glMultiTexCoord2hvNV", glMultiTexCoord2hvNV == NULL);
-  glewInfoFunc("glMultiTexCoord3hNV", glMultiTexCoord3hNV == NULL);
-  glewInfoFunc("glMultiTexCoord3hvNV", glMultiTexCoord3hvNV == NULL);
-  glewInfoFunc("glMultiTexCoord4hNV", glMultiTexCoord4hNV == NULL);
-  glewInfoFunc("glMultiTexCoord4hvNV", glMultiTexCoord4hvNV == NULL);
-  glewInfoFunc("glNormal3hNV", glNormal3hNV == NULL);
-  glewInfoFunc("glNormal3hvNV", glNormal3hvNV == NULL);
-  glewInfoFunc("glSecondaryColor3hNV", glSecondaryColor3hNV == NULL);
-  glewInfoFunc("glSecondaryColor3hvNV", glSecondaryColor3hvNV == NULL);
-  glewInfoFunc("glTexCoord1hNV", glTexCoord1hNV == NULL);
-  glewInfoFunc("glTexCoord1hvNV", glTexCoord1hvNV == NULL);
-  glewInfoFunc("glTexCoord2hNV", glTexCoord2hNV == NULL);
-  glewInfoFunc("glTexCoord2hvNV", glTexCoord2hvNV == NULL);
-  glewInfoFunc("glTexCoord3hNV", glTexCoord3hNV == NULL);
-  glewInfoFunc("glTexCoord3hvNV", glTexCoord3hvNV == NULL);
-  glewInfoFunc("glTexCoord4hNV", glTexCoord4hNV == NULL);
-  glewInfoFunc("glTexCoord4hvNV", glTexCoord4hvNV == NULL);
-  glewInfoFunc("glVertex2hNV", glVertex2hNV == NULL);
-  glewInfoFunc("glVertex2hvNV", glVertex2hvNV == NULL);
-  glewInfoFunc("glVertex3hNV", glVertex3hNV == NULL);
-  glewInfoFunc("glVertex3hvNV", glVertex3hvNV == NULL);
-  glewInfoFunc("glVertex4hNV", glVertex4hNV == NULL);
-  glewInfoFunc("glVertex4hvNV", glVertex4hvNV == NULL);
-  glewInfoFunc("glVertexAttrib1hNV", glVertexAttrib1hNV == NULL);
-  glewInfoFunc("glVertexAttrib1hvNV", glVertexAttrib1hvNV == NULL);
-  glewInfoFunc("glVertexAttrib2hNV", glVertexAttrib2hNV == NULL);
-  glewInfoFunc("glVertexAttrib2hvNV", glVertexAttrib2hvNV == NULL);
-  glewInfoFunc("glVertexAttrib3hNV", glVertexAttrib3hNV == NULL);
-  glewInfoFunc("glVertexAttrib3hvNV", glVertexAttrib3hvNV == NULL);
-  glewInfoFunc("glVertexAttrib4hNV", glVertexAttrib4hNV == NULL);
-  glewInfoFunc("glVertexAttrib4hvNV", glVertexAttrib4hvNV == NULL);
-  glewInfoFunc("glVertexAttribs1hvNV", glVertexAttribs1hvNV == NULL);
-  glewInfoFunc("glVertexAttribs2hvNV", glVertexAttribs2hvNV == NULL);
-  glewInfoFunc("glVertexAttribs3hvNV", glVertexAttribs3hvNV == NULL);
-  glewInfoFunc("glVertexAttribs4hvNV", glVertexAttribs4hvNV == NULL);
-  glewInfoFunc("glVertexWeighthNV", glVertexWeighthNV == NULL);
-  glewInfoFunc("glVertexWeighthvNV", glVertexWeighthvNV == NULL);
+  glewInfoFunc(fi, "glColor3hNV", glColor3hNV == NULL);
+  glewInfoFunc(fi, "glColor3hvNV", glColor3hvNV == NULL);
+  glewInfoFunc(fi, "glColor4hNV", glColor4hNV == NULL);
+  glewInfoFunc(fi, "glColor4hvNV", glColor4hvNV == NULL);
+  glewInfoFunc(fi, "glFogCoordhNV", glFogCoordhNV == NULL);
+  glewInfoFunc(fi, "glFogCoordhvNV", glFogCoordhvNV == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1hNV", glMultiTexCoord1hNV == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord1hvNV", glMultiTexCoord1hvNV == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2hNV", glMultiTexCoord2hNV == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord2hvNV", glMultiTexCoord2hvNV == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3hNV", glMultiTexCoord3hNV == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord3hvNV", glMultiTexCoord3hvNV == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4hNV", glMultiTexCoord4hNV == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4hvNV", glMultiTexCoord4hvNV == NULL);
+  glewInfoFunc(fi, "glNormal3hNV", glNormal3hNV == NULL);
+  glewInfoFunc(fi, "glNormal3hvNV", glNormal3hvNV == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3hNV", glSecondaryColor3hNV == NULL);
+  glewInfoFunc(fi, "glSecondaryColor3hvNV", glSecondaryColor3hvNV == NULL);
+  glewInfoFunc(fi, "glTexCoord1hNV", glTexCoord1hNV == NULL);
+  glewInfoFunc(fi, "glTexCoord1hvNV", glTexCoord1hvNV == NULL);
+  glewInfoFunc(fi, "glTexCoord2hNV", glTexCoord2hNV == NULL);
+  glewInfoFunc(fi, "glTexCoord2hvNV", glTexCoord2hvNV == NULL);
+  glewInfoFunc(fi, "glTexCoord3hNV", glTexCoord3hNV == NULL);
+  glewInfoFunc(fi, "glTexCoord3hvNV", glTexCoord3hvNV == NULL);
+  glewInfoFunc(fi, "glTexCoord4hNV", glTexCoord4hNV == NULL);
+  glewInfoFunc(fi, "glTexCoord4hvNV", glTexCoord4hvNV == NULL);
+  glewInfoFunc(fi, "glVertex2hNV", glVertex2hNV == NULL);
+  glewInfoFunc(fi, "glVertex2hvNV", glVertex2hvNV == NULL);
+  glewInfoFunc(fi, "glVertex3hNV", glVertex3hNV == NULL);
+  glewInfoFunc(fi, "glVertex3hvNV", glVertex3hvNV == NULL);
+  glewInfoFunc(fi, "glVertex4hNV", glVertex4hNV == NULL);
+  glewInfoFunc(fi, "glVertex4hvNV", glVertex4hvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1hNV", glVertexAttrib1hNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1hvNV", glVertexAttrib1hvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2hNV", glVertexAttrib2hNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2hvNV", glVertexAttrib2hvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3hNV", glVertexAttrib3hNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3hvNV", glVertexAttrib3hvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4hNV", glVertexAttrib4hNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4hvNV", glVertexAttrib4hvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs1hvNV", glVertexAttribs1hvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs2hvNV", glVertexAttribs2hvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs3hvNV", glVertexAttribs3hvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs4hvNV", glVertexAttribs4hvNV == NULL);
+  glewInfoFunc(fi, "glVertexWeighthNV", glVertexWeighthNV == NULL);
+  glewInfoFunc(fi, "glVertexWeighthvNV", glVertexWeighthvNV == NULL);
 }
 
 #endif /* GL_NV_half_float */
@@ -7656,9 +8206,9 @@ static void _glewInfo_GL_NV_image_formats (void)
 
 static void _glewInfo_GL_NV_instanced_arrays (void)
 {
-  glewPrintExt("GL_NV_instanced_arrays", GLEW_NV_instanced_arrays, glewIsSupported("GL_NV_instanced_arrays"), glewGetExtension("GL_NV_instanced_arrays"));
+  GLboolean fi = glewPrintExt("GL_NV_instanced_arrays", GLEW_NV_instanced_arrays, glewIsSupported("GL_NV_instanced_arrays"), glewGetExtension("GL_NV_instanced_arrays"));
 
-  glewInfoFunc("glVertexAttribDivisorNV", glVertexAttribDivisorNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribDivisorNV", glVertexAttribDivisorNV == NULL);
 }
 
 #endif /* GL_NV_instanced_arrays */
@@ -7667,9 +8217,9 @@ static void _glewInfo_GL_NV_instanced_arrays (void)
 
 static void _glewInfo_GL_NV_internalformat_sample_query (void)
 {
-  glewPrintExt("GL_NV_internalformat_sample_query", GLEW_NV_internalformat_sample_query, glewIsSupported("GL_NV_internalformat_sample_query"), glewGetExtension("GL_NV_internalformat_sample_query"));
+  GLboolean fi = glewPrintExt("GL_NV_internalformat_sample_query", GLEW_NV_internalformat_sample_query, glewIsSupported("GL_NV_internalformat_sample_query"), glewGetExtension("GL_NV_internalformat_sample_query"));
 
-  glewInfoFunc("glGetInternalformatSampleivNV", glGetInternalformatSampleivNV == NULL);
+  glewInfoFunc(fi, "glGetInternalformatSampleivNV", glGetInternalformatSampleivNV == NULL);
 }
 
 #endif /* GL_NV_internalformat_sample_query */
@@ -7682,6 +8232,36 @@ static void _glewInfo_GL_NV_light_max_exponent (void)
 }
 
 #endif /* GL_NV_light_max_exponent */
+
+#ifdef GL_NV_memory_attachment
+
+static void _glewInfo_GL_NV_memory_attachment (void)
+{
+  GLboolean fi = glewPrintExt("GL_NV_memory_attachment", GLEW_NV_memory_attachment, glewIsSupported("GL_NV_memory_attachment"), glewGetExtension("GL_NV_memory_attachment"));
+
+  glewInfoFunc(fi, "glBufferAttachMemoryNV", glBufferAttachMemoryNV == NULL);
+  glewInfoFunc(fi, "glGetMemoryObjectDetachedResourcesuivNV", glGetMemoryObjectDetachedResourcesuivNV == NULL);
+  glewInfoFunc(fi, "glNamedBufferAttachMemoryNV", glNamedBufferAttachMemoryNV == NULL);
+  glewInfoFunc(fi, "glResetMemoryObjectParameterNV", glResetMemoryObjectParameterNV == NULL);
+  glewInfoFunc(fi, "glTexAttachMemoryNV", glTexAttachMemoryNV == NULL);
+  glewInfoFunc(fi, "glTextureAttachMemoryNV", glTextureAttachMemoryNV == NULL);
+}
+
+#endif /* GL_NV_memory_attachment */
+
+#ifdef GL_NV_mesh_shader
+
+static void _glewInfo_GL_NV_mesh_shader (void)
+{
+  GLboolean fi = glewPrintExt("GL_NV_mesh_shader", GLEW_NV_mesh_shader, glewIsSupported("GL_NV_mesh_shader"), glewGetExtension("GL_NV_mesh_shader"));
+
+  glewInfoFunc(fi, "glDrawMeshTasksIndirectNV", glDrawMeshTasksIndirectNV == NULL);
+  glewInfoFunc(fi, "glDrawMeshTasksNV", glDrawMeshTasksNV == NULL);
+  glewInfoFunc(fi, "glMultiDrawMeshTasksIndirectCountNV", glMultiDrawMeshTasksIndirectCountNV == NULL);
+  glewInfoFunc(fi, "glMultiDrawMeshTasksIndirectNV", glMultiDrawMeshTasksIndirectNV == NULL);
+}
+
+#endif /* GL_NV_mesh_shader */
 
 #ifdef GL_NV_multisample_coverage
 
@@ -7705,14 +8285,14 @@ static void _glewInfo_GL_NV_multisample_filter_hint (void)
 
 static void _glewInfo_GL_NV_non_square_matrices (void)
 {
-  glewPrintExt("GL_NV_non_square_matrices", GLEW_NV_non_square_matrices, glewIsSupported("GL_NV_non_square_matrices"), glewGetExtension("GL_NV_non_square_matrices"));
+  GLboolean fi = glewPrintExt("GL_NV_non_square_matrices", GLEW_NV_non_square_matrices, glewIsSupported("GL_NV_non_square_matrices"), glewGetExtension("GL_NV_non_square_matrices"));
 
-  glewInfoFunc("glUniformMatrix2x3fvNV", glUniformMatrix2x3fvNV == NULL);
-  glewInfoFunc("glUniformMatrix2x4fvNV", glUniformMatrix2x4fvNV == NULL);
-  glewInfoFunc("glUniformMatrix3x2fvNV", glUniformMatrix3x2fvNV == NULL);
-  glewInfoFunc("glUniformMatrix3x4fvNV", glUniformMatrix3x4fvNV == NULL);
-  glewInfoFunc("glUniformMatrix4x2fvNV", glUniformMatrix4x2fvNV == NULL);
-  glewInfoFunc("glUniformMatrix4x3fvNV", glUniformMatrix4x3fvNV == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2x3fvNV", glUniformMatrix2x3fvNV == NULL);
+  glewInfoFunc(fi, "glUniformMatrix2x4fvNV", glUniformMatrix2x4fvNV == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3x2fvNV", glUniformMatrix3x2fvNV == NULL);
+  glewInfoFunc(fi, "glUniformMatrix3x4fvNV", glUniformMatrix3x4fvNV == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4x2fvNV", glUniformMatrix4x2fvNV == NULL);
+  glewInfoFunc(fi, "glUniformMatrix4x3fvNV", glUniformMatrix4x3fvNV == NULL);
 }
 
 #endif /* GL_NV_non_square_matrices */
@@ -7721,15 +8301,15 @@ static void _glewInfo_GL_NV_non_square_matrices (void)
 
 static void _glewInfo_GL_NV_occlusion_query (void)
 {
-  glewPrintExt("GL_NV_occlusion_query", GLEW_NV_occlusion_query, glewIsSupported("GL_NV_occlusion_query"), glewGetExtension("GL_NV_occlusion_query"));
+  GLboolean fi = glewPrintExt("GL_NV_occlusion_query", GLEW_NV_occlusion_query, glewIsSupported("GL_NV_occlusion_query"), glewGetExtension("GL_NV_occlusion_query"));
 
-  glewInfoFunc("glBeginOcclusionQueryNV", glBeginOcclusionQueryNV == NULL);
-  glewInfoFunc("glDeleteOcclusionQueriesNV", glDeleteOcclusionQueriesNV == NULL);
-  glewInfoFunc("glEndOcclusionQueryNV", glEndOcclusionQueryNV == NULL);
-  glewInfoFunc("glGenOcclusionQueriesNV", glGenOcclusionQueriesNV == NULL);
-  glewInfoFunc("glGetOcclusionQueryivNV", glGetOcclusionQueryivNV == NULL);
-  glewInfoFunc("glGetOcclusionQueryuivNV", glGetOcclusionQueryuivNV == NULL);
-  glewInfoFunc("glIsOcclusionQueryNV", glIsOcclusionQueryNV == NULL);
+  glewInfoFunc(fi, "glBeginOcclusionQueryNV", glBeginOcclusionQueryNV == NULL);
+  glewInfoFunc(fi, "glDeleteOcclusionQueriesNV", glDeleteOcclusionQueriesNV == NULL);
+  glewInfoFunc(fi, "glEndOcclusionQueryNV", glEndOcclusionQueryNV == NULL);
+  glewInfoFunc(fi, "glGenOcclusionQueriesNV", glGenOcclusionQueriesNV == NULL);
+  glewInfoFunc(fi, "glGetOcclusionQueryivNV", glGetOcclusionQueryivNV == NULL);
+  glewInfoFunc(fi, "glGetOcclusionQueryuivNV", glGetOcclusionQueryuivNV == NULL);
+  glewInfoFunc(fi, "glIsOcclusionQueryNV", glIsOcclusionQueryNV == NULL);
 }
 
 #endif /* GL_NV_occlusion_query */
@@ -7774,11 +8354,11 @@ static void _glewInfo_GL_NV_packed_float_linear (void)
 
 static void _glewInfo_GL_NV_parameter_buffer_object (void)
 {
-  glewPrintExt("GL_NV_parameter_buffer_object", GLEW_NV_parameter_buffer_object, glewIsSupported("GL_NV_parameter_buffer_object"), glewGetExtension("GL_NV_parameter_buffer_object"));
+  GLboolean fi = glewPrintExt("GL_NV_parameter_buffer_object", GLEW_NV_parameter_buffer_object, glewIsSupported("GL_NV_parameter_buffer_object"), glewGetExtension("GL_NV_parameter_buffer_object"));
 
-  glewInfoFunc("glProgramBufferParametersIivNV", glProgramBufferParametersIivNV == NULL);
-  glewInfoFunc("glProgramBufferParametersIuivNV", glProgramBufferParametersIuivNV == NULL);
-  glewInfoFunc("glProgramBufferParametersfvNV", glProgramBufferParametersfvNV == NULL);
+  glewInfoFunc(fi, "glProgramBufferParametersIivNV", glProgramBufferParametersIivNV == NULL);
+  glewInfoFunc(fi, "glProgramBufferParametersIuivNV", glProgramBufferParametersIuivNV == NULL);
+  glewInfoFunc(fi, "glProgramBufferParametersfvNV", glProgramBufferParametersfvNV == NULL);
 }
 
 #endif /* GL_NV_parameter_buffer_object */
@@ -7796,72 +8376,72 @@ static void _glewInfo_GL_NV_parameter_buffer_object2 (void)
 
 static void _glewInfo_GL_NV_path_rendering (void)
 {
-  glewPrintExt("GL_NV_path_rendering", GLEW_NV_path_rendering, glewIsSupported("GL_NV_path_rendering"), glewGetExtension("GL_NV_path_rendering"));
+  GLboolean fi = glewPrintExt("GL_NV_path_rendering", GLEW_NV_path_rendering, glewIsSupported("GL_NV_path_rendering"), glewGetExtension("GL_NV_path_rendering"));
 
-  glewInfoFunc("glCopyPathNV", glCopyPathNV == NULL);
-  glewInfoFunc("glCoverFillPathInstancedNV", glCoverFillPathInstancedNV == NULL);
-  glewInfoFunc("glCoverFillPathNV", glCoverFillPathNV == NULL);
-  glewInfoFunc("glCoverStrokePathInstancedNV", glCoverStrokePathInstancedNV == NULL);
-  glewInfoFunc("glCoverStrokePathNV", glCoverStrokePathNV == NULL);
-  glewInfoFunc("glDeletePathsNV", glDeletePathsNV == NULL);
-  glewInfoFunc("glGenPathsNV", glGenPathsNV == NULL);
-  glewInfoFunc("glGetPathColorGenfvNV", glGetPathColorGenfvNV == NULL);
-  glewInfoFunc("glGetPathColorGenivNV", glGetPathColorGenivNV == NULL);
-  glewInfoFunc("glGetPathCommandsNV", glGetPathCommandsNV == NULL);
-  glewInfoFunc("glGetPathCoordsNV", glGetPathCoordsNV == NULL);
-  glewInfoFunc("glGetPathDashArrayNV", glGetPathDashArrayNV == NULL);
-  glewInfoFunc("glGetPathLengthNV", glGetPathLengthNV == NULL);
-  glewInfoFunc("glGetPathMetricRangeNV", glGetPathMetricRangeNV == NULL);
-  glewInfoFunc("glGetPathMetricsNV", glGetPathMetricsNV == NULL);
-  glewInfoFunc("glGetPathParameterfvNV", glGetPathParameterfvNV == NULL);
-  glewInfoFunc("glGetPathParameterivNV", glGetPathParameterivNV == NULL);
-  glewInfoFunc("glGetPathSpacingNV", glGetPathSpacingNV == NULL);
-  glewInfoFunc("glGetPathTexGenfvNV", glGetPathTexGenfvNV == NULL);
-  glewInfoFunc("glGetPathTexGenivNV", glGetPathTexGenivNV == NULL);
-  glewInfoFunc("glGetProgramResourcefvNV", glGetProgramResourcefvNV == NULL);
-  glewInfoFunc("glInterpolatePathsNV", glInterpolatePathsNV == NULL);
-  glewInfoFunc("glIsPathNV", glIsPathNV == NULL);
-  glewInfoFunc("glIsPointInFillPathNV", glIsPointInFillPathNV == NULL);
-  glewInfoFunc("glIsPointInStrokePathNV", glIsPointInStrokePathNV == NULL);
-  glewInfoFunc("glMatrixLoad3x2fNV", glMatrixLoad3x2fNV == NULL);
-  glewInfoFunc("glMatrixLoad3x3fNV", glMatrixLoad3x3fNV == NULL);
-  glewInfoFunc("glMatrixLoadTranspose3x3fNV", glMatrixLoadTranspose3x3fNV == NULL);
-  glewInfoFunc("glMatrixMult3x2fNV", glMatrixMult3x2fNV == NULL);
-  glewInfoFunc("glMatrixMult3x3fNV", glMatrixMult3x3fNV == NULL);
-  glewInfoFunc("glMatrixMultTranspose3x3fNV", glMatrixMultTranspose3x3fNV == NULL);
-  glewInfoFunc("glPathColorGenNV", glPathColorGenNV == NULL);
-  glewInfoFunc("glPathCommandsNV", glPathCommandsNV == NULL);
-  glewInfoFunc("glPathCoordsNV", glPathCoordsNV == NULL);
-  glewInfoFunc("glPathCoverDepthFuncNV", glPathCoverDepthFuncNV == NULL);
-  glewInfoFunc("glPathDashArrayNV", glPathDashArrayNV == NULL);
-  glewInfoFunc("glPathFogGenNV", glPathFogGenNV == NULL);
-  glewInfoFunc("glPathGlyphIndexArrayNV", glPathGlyphIndexArrayNV == NULL);
-  glewInfoFunc("glPathGlyphIndexRangeNV", glPathGlyphIndexRangeNV == NULL);
-  glewInfoFunc("glPathGlyphRangeNV", glPathGlyphRangeNV == NULL);
-  glewInfoFunc("glPathGlyphsNV", glPathGlyphsNV == NULL);
-  glewInfoFunc("glPathMemoryGlyphIndexArrayNV", glPathMemoryGlyphIndexArrayNV == NULL);
-  glewInfoFunc("glPathParameterfNV", glPathParameterfNV == NULL);
-  glewInfoFunc("glPathParameterfvNV", glPathParameterfvNV == NULL);
-  glewInfoFunc("glPathParameteriNV", glPathParameteriNV == NULL);
-  glewInfoFunc("glPathParameterivNV", glPathParameterivNV == NULL);
-  glewInfoFunc("glPathStencilDepthOffsetNV", glPathStencilDepthOffsetNV == NULL);
-  glewInfoFunc("glPathStencilFuncNV", glPathStencilFuncNV == NULL);
-  glewInfoFunc("glPathStringNV", glPathStringNV == NULL);
-  glewInfoFunc("glPathSubCommandsNV", glPathSubCommandsNV == NULL);
-  glewInfoFunc("glPathSubCoordsNV", glPathSubCoordsNV == NULL);
-  glewInfoFunc("glPathTexGenNV", glPathTexGenNV == NULL);
-  glewInfoFunc("glPointAlongPathNV", glPointAlongPathNV == NULL);
-  glewInfoFunc("glProgramPathFragmentInputGenNV", glProgramPathFragmentInputGenNV == NULL);
-  glewInfoFunc("glStencilFillPathInstancedNV", glStencilFillPathInstancedNV == NULL);
-  glewInfoFunc("glStencilFillPathNV", glStencilFillPathNV == NULL);
-  glewInfoFunc("glStencilStrokePathInstancedNV", glStencilStrokePathInstancedNV == NULL);
-  glewInfoFunc("glStencilStrokePathNV", glStencilStrokePathNV == NULL);
-  glewInfoFunc("glStencilThenCoverFillPathInstancedNV", glStencilThenCoverFillPathInstancedNV == NULL);
-  glewInfoFunc("glStencilThenCoverFillPathNV", glStencilThenCoverFillPathNV == NULL);
-  glewInfoFunc("glStencilThenCoverStrokePathInstancedNV", glStencilThenCoverStrokePathInstancedNV == NULL);
-  glewInfoFunc("glStencilThenCoverStrokePathNV", glStencilThenCoverStrokePathNV == NULL);
-  glewInfoFunc("glTransformPathNV", glTransformPathNV == NULL);
-  glewInfoFunc("glWeightPathsNV", glWeightPathsNV == NULL);
+  glewInfoFunc(fi, "glCopyPathNV", glCopyPathNV == NULL);
+  glewInfoFunc(fi, "glCoverFillPathInstancedNV", glCoverFillPathInstancedNV == NULL);
+  glewInfoFunc(fi, "glCoverFillPathNV", glCoverFillPathNV == NULL);
+  glewInfoFunc(fi, "glCoverStrokePathInstancedNV", glCoverStrokePathInstancedNV == NULL);
+  glewInfoFunc(fi, "glCoverStrokePathNV", glCoverStrokePathNV == NULL);
+  glewInfoFunc(fi, "glDeletePathsNV", glDeletePathsNV == NULL);
+  glewInfoFunc(fi, "glGenPathsNV", glGenPathsNV == NULL);
+  glewInfoFunc(fi, "glGetPathColorGenfvNV", glGetPathColorGenfvNV == NULL);
+  glewInfoFunc(fi, "glGetPathColorGenivNV", glGetPathColorGenivNV == NULL);
+  glewInfoFunc(fi, "glGetPathCommandsNV", glGetPathCommandsNV == NULL);
+  glewInfoFunc(fi, "glGetPathCoordsNV", glGetPathCoordsNV == NULL);
+  glewInfoFunc(fi, "glGetPathDashArrayNV", glGetPathDashArrayNV == NULL);
+  glewInfoFunc(fi, "glGetPathLengthNV", glGetPathLengthNV == NULL);
+  glewInfoFunc(fi, "glGetPathMetricRangeNV", glGetPathMetricRangeNV == NULL);
+  glewInfoFunc(fi, "glGetPathMetricsNV", glGetPathMetricsNV == NULL);
+  glewInfoFunc(fi, "glGetPathParameterfvNV", glGetPathParameterfvNV == NULL);
+  glewInfoFunc(fi, "glGetPathParameterivNV", glGetPathParameterivNV == NULL);
+  glewInfoFunc(fi, "glGetPathSpacingNV", glGetPathSpacingNV == NULL);
+  glewInfoFunc(fi, "glGetPathTexGenfvNV", glGetPathTexGenfvNV == NULL);
+  glewInfoFunc(fi, "glGetPathTexGenivNV", glGetPathTexGenivNV == NULL);
+  glewInfoFunc(fi, "glGetProgramResourcefvNV", glGetProgramResourcefvNV == NULL);
+  glewInfoFunc(fi, "glInterpolatePathsNV", glInterpolatePathsNV == NULL);
+  glewInfoFunc(fi, "glIsPathNV", glIsPathNV == NULL);
+  glewInfoFunc(fi, "glIsPointInFillPathNV", glIsPointInFillPathNV == NULL);
+  glewInfoFunc(fi, "glIsPointInStrokePathNV", glIsPointInStrokePathNV == NULL);
+  glewInfoFunc(fi, "glMatrixLoad3x2fNV", glMatrixLoad3x2fNV == NULL);
+  glewInfoFunc(fi, "glMatrixLoad3x3fNV", glMatrixLoad3x3fNV == NULL);
+  glewInfoFunc(fi, "glMatrixLoadTranspose3x3fNV", glMatrixLoadTranspose3x3fNV == NULL);
+  glewInfoFunc(fi, "glMatrixMult3x2fNV", glMatrixMult3x2fNV == NULL);
+  glewInfoFunc(fi, "glMatrixMult3x3fNV", glMatrixMult3x3fNV == NULL);
+  glewInfoFunc(fi, "glMatrixMultTranspose3x3fNV", glMatrixMultTranspose3x3fNV == NULL);
+  glewInfoFunc(fi, "glPathColorGenNV", glPathColorGenNV == NULL);
+  glewInfoFunc(fi, "glPathCommandsNV", glPathCommandsNV == NULL);
+  glewInfoFunc(fi, "glPathCoordsNV", glPathCoordsNV == NULL);
+  glewInfoFunc(fi, "glPathCoverDepthFuncNV", glPathCoverDepthFuncNV == NULL);
+  glewInfoFunc(fi, "glPathDashArrayNV", glPathDashArrayNV == NULL);
+  glewInfoFunc(fi, "glPathFogGenNV", glPathFogGenNV == NULL);
+  glewInfoFunc(fi, "glPathGlyphIndexArrayNV", glPathGlyphIndexArrayNV == NULL);
+  glewInfoFunc(fi, "glPathGlyphIndexRangeNV", glPathGlyphIndexRangeNV == NULL);
+  glewInfoFunc(fi, "glPathGlyphRangeNV", glPathGlyphRangeNV == NULL);
+  glewInfoFunc(fi, "glPathGlyphsNV", glPathGlyphsNV == NULL);
+  glewInfoFunc(fi, "glPathMemoryGlyphIndexArrayNV", glPathMemoryGlyphIndexArrayNV == NULL);
+  glewInfoFunc(fi, "glPathParameterfNV", glPathParameterfNV == NULL);
+  glewInfoFunc(fi, "glPathParameterfvNV", glPathParameterfvNV == NULL);
+  glewInfoFunc(fi, "glPathParameteriNV", glPathParameteriNV == NULL);
+  glewInfoFunc(fi, "glPathParameterivNV", glPathParameterivNV == NULL);
+  glewInfoFunc(fi, "glPathStencilDepthOffsetNV", glPathStencilDepthOffsetNV == NULL);
+  glewInfoFunc(fi, "glPathStencilFuncNV", glPathStencilFuncNV == NULL);
+  glewInfoFunc(fi, "glPathStringNV", glPathStringNV == NULL);
+  glewInfoFunc(fi, "glPathSubCommandsNV", glPathSubCommandsNV == NULL);
+  glewInfoFunc(fi, "glPathSubCoordsNV", glPathSubCoordsNV == NULL);
+  glewInfoFunc(fi, "glPathTexGenNV", glPathTexGenNV == NULL);
+  glewInfoFunc(fi, "glPointAlongPathNV", glPointAlongPathNV == NULL);
+  glewInfoFunc(fi, "glProgramPathFragmentInputGenNV", glProgramPathFragmentInputGenNV == NULL);
+  glewInfoFunc(fi, "glStencilFillPathInstancedNV", glStencilFillPathInstancedNV == NULL);
+  glewInfoFunc(fi, "glStencilFillPathNV", glStencilFillPathNV == NULL);
+  glewInfoFunc(fi, "glStencilStrokePathInstancedNV", glStencilStrokePathInstancedNV == NULL);
+  glewInfoFunc(fi, "glStencilStrokePathNV", glStencilStrokePathNV == NULL);
+  glewInfoFunc(fi, "glStencilThenCoverFillPathInstancedNV", glStencilThenCoverFillPathInstancedNV == NULL);
+  glewInfoFunc(fi, "glStencilThenCoverFillPathNV", glStencilThenCoverFillPathNV == NULL);
+  glewInfoFunc(fi, "glStencilThenCoverStrokePathInstancedNV", glStencilThenCoverStrokePathInstancedNV == NULL);
+  glewInfoFunc(fi, "glStencilThenCoverStrokePathNV", glStencilThenCoverStrokePathNV == NULL);
+  glewInfoFunc(fi, "glTransformPathNV", glTransformPathNV == NULL);
+  glewInfoFunc(fi, "glWeightPathsNV", glWeightPathsNV == NULL);
 }
 
 #endif /* GL_NV_path_rendering */
@@ -7888,10 +8468,10 @@ static void _glewInfo_GL_NV_pixel_buffer_object (void)
 
 static void _glewInfo_GL_NV_pixel_data_range (void)
 {
-  glewPrintExt("GL_NV_pixel_data_range", GLEW_NV_pixel_data_range, glewIsSupported("GL_NV_pixel_data_range"), glewGetExtension("GL_NV_pixel_data_range"));
+  GLboolean fi = glewPrintExt("GL_NV_pixel_data_range", GLEW_NV_pixel_data_range, glewIsSupported("GL_NV_pixel_data_range"), glewGetExtension("GL_NV_pixel_data_range"));
 
-  glewInfoFunc("glFlushPixelDataRangeNV", glFlushPixelDataRangeNV == NULL);
-  glewInfoFunc("glPixelDataRangeNV", glPixelDataRangeNV == NULL);
+  glewInfoFunc(fi, "glFlushPixelDataRangeNV", glFlushPixelDataRangeNV == NULL);
+  glewInfoFunc(fi, "glPixelDataRangeNV", glPixelDataRangeNV == NULL);
 }
 
 #endif /* GL_NV_pixel_data_range */
@@ -7909,10 +8489,10 @@ static void _glewInfo_GL_NV_platform_binary (void)
 
 static void _glewInfo_GL_NV_point_sprite (void)
 {
-  glewPrintExt("GL_NV_point_sprite", GLEW_NV_point_sprite, glewIsSupported("GL_NV_point_sprite"), glewGetExtension("GL_NV_point_sprite"));
+  GLboolean fi = glewPrintExt("GL_NV_point_sprite", GLEW_NV_point_sprite, glewIsSupported("GL_NV_point_sprite"), glewGetExtension("GL_NV_point_sprite"));
 
-  glewInfoFunc("glPointParameteriNV", glPointParameteriNV == NULL);
-  glewInfoFunc("glPointParameterivNV", glPointParameterivNV == NULL);
+  glewInfoFunc(fi, "glPointParameteriNV", glPointParameteriNV == NULL);
+  glewInfoFunc(fi, "glPointParameterivNV", glPointParameterivNV == NULL);
 }
 
 #endif /* GL_NV_point_sprite */
@@ -7921,9 +8501,9 @@ static void _glewInfo_GL_NV_point_sprite (void)
 
 static void _glewInfo_GL_NV_polygon_mode (void)
 {
-  glewPrintExt("GL_NV_polygon_mode", GLEW_NV_polygon_mode, glewIsSupported("GL_NV_polygon_mode"), glewGetExtension("GL_NV_polygon_mode"));
+  GLboolean fi = glewPrintExt("GL_NV_polygon_mode", GLEW_NV_polygon_mode, glewIsSupported("GL_NV_polygon_mode"), glewGetExtension("GL_NV_polygon_mode"));
 
-  glewInfoFunc("glPolygonModeNV", glPolygonModeNV == NULL);
+  glewInfoFunc(fi, "glPolygonModeNV", glPolygonModeNV == NULL);
 }
 
 #endif /* GL_NV_polygon_mode */
@@ -7932,14 +8512,14 @@ static void _glewInfo_GL_NV_polygon_mode (void)
 
 static void _glewInfo_GL_NV_present_video (void)
 {
-  glewPrintExt("GL_NV_present_video", GLEW_NV_present_video, glewIsSupported("GL_NV_present_video"), glewGetExtension("GL_NV_present_video"));
+  GLboolean fi = glewPrintExt("GL_NV_present_video", GLEW_NV_present_video, glewIsSupported("GL_NV_present_video"), glewGetExtension("GL_NV_present_video"));
 
-  glewInfoFunc("glGetVideoi64vNV", glGetVideoi64vNV == NULL);
-  glewInfoFunc("glGetVideoivNV", glGetVideoivNV == NULL);
-  glewInfoFunc("glGetVideoui64vNV", glGetVideoui64vNV == NULL);
-  glewInfoFunc("glGetVideouivNV", glGetVideouivNV == NULL);
-  glewInfoFunc("glPresentFrameDualFillNV", glPresentFrameDualFillNV == NULL);
-  glewInfoFunc("glPresentFrameKeyedNV", glPresentFrameKeyedNV == NULL);
+  glewInfoFunc(fi, "glGetVideoi64vNV", glGetVideoi64vNV == NULL);
+  glewInfoFunc(fi, "glGetVideoivNV", glGetVideoivNV == NULL);
+  glewInfoFunc(fi, "glGetVideoui64vNV", glGetVideoui64vNV == NULL);
+  glewInfoFunc(fi, "glGetVideouivNV", glGetVideouivNV == NULL);
+  glewInfoFunc(fi, "glPresentFrameDualFillNV", glPresentFrameDualFillNV == NULL);
+  glewInfoFunc(fi, "glPresentFrameKeyedNV", glPresentFrameKeyedNV == NULL);
 }
 
 #endif /* GL_NV_present_video */
@@ -7948,13 +8528,42 @@ static void _glewInfo_GL_NV_present_video (void)
 
 static void _glewInfo_GL_NV_primitive_restart (void)
 {
-  glewPrintExt("GL_NV_primitive_restart", GLEW_NV_primitive_restart, glewIsSupported("GL_NV_primitive_restart"), glewGetExtension("GL_NV_primitive_restart"));
+  GLboolean fi = glewPrintExt("GL_NV_primitive_restart", GLEW_NV_primitive_restart, glewIsSupported("GL_NV_primitive_restart"), glewGetExtension("GL_NV_primitive_restart"));
 
-  glewInfoFunc("glPrimitiveRestartIndexNV", glPrimitiveRestartIndexNV == NULL);
-  glewInfoFunc("glPrimitiveRestartNV", glPrimitiveRestartNV == NULL);
+  glewInfoFunc(fi, "glPrimitiveRestartIndexNV", glPrimitiveRestartIndexNV == NULL);
+  glewInfoFunc(fi, "glPrimitiveRestartNV", glPrimitiveRestartNV == NULL);
 }
 
 #endif /* GL_NV_primitive_restart */
+
+#ifdef GL_NV_query_resource_tag
+
+static void _glewInfo_GL_NV_query_resource_tag (void)
+{
+  glewPrintExt("GL_NV_query_resource_tag", GLEW_NV_query_resource_tag, glewIsSupported("GL_NV_query_resource_tag"), glewGetExtension("GL_NV_query_resource_tag"));
+}
+
+#endif /* GL_NV_query_resource_tag */
+
+#ifdef GL_NV_read_buffer
+
+static void _glewInfo_GL_NV_read_buffer (void)
+{
+  GLboolean fi = glewPrintExt("GL_NV_read_buffer", GLEW_NV_read_buffer, glewIsSupported("GL_NV_read_buffer"), glewGetExtension("GL_NV_read_buffer"));
+
+  glewInfoFunc(fi, "glReadBufferNV", glReadBufferNV == NULL);
+}
+
+#endif /* GL_NV_read_buffer */
+
+#ifdef GL_NV_read_buffer_front
+
+static void _glewInfo_GL_NV_read_buffer_front (void)
+{
+  glewPrintExt("GL_NV_read_buffer_front", GLEW_NV_read_buffer_front, glewIsSupported("GL_NV_read_buffer_front"), glewGetExtension("GL_NV_read_buffer_front"));
+}
+
+#endif /* GL_NV_read_buffer_front */
 
 #ifdef GL_NV_read_depth
 
@@ -7987,21 +8596,21 @@ static void _glewInfo_GL_NV_read_stencil (void)
 
 static void _glewInfo_GL_NV_register_combiners (void)
 {
-  glewPrintExt("GL_NV_register_combiners", GLEW_NV_register_combiners, glewIsSupported("GL_NV_register_combiners"), glewGetExtension("GL_NV_register_combiners"));
+  GLboolean fi = glewPrintExt("GL_NV_register_combiners", GLEW_NV_register_combiners, glewIsSupported("GL_NV_register_combiners"), glewGetExtension("GL_NV_register_combiners"));
 
-  glewInfoFunc("glCombinerInputNV", glCombinerInputNV == NULL);
-  glewInfoFunc("glCombinerOutputNV", glCombinerOutputNV == NULL);
-  glewInfoFunc("glCombinerParameterfNV", glCombinerParameterfNV == NULL);
-  glewInfoFunc("glCombinerParameterfvNV", glCombinerParameterfvNV == NULL);
-  glewInfoFunc("glCombinerParameteriNV", glCombinerParameteriNV == NULL);
-  glewInfoFunc("glCombinerParameterivNV", glCombinerParameterivNV == NULL);
-  glewInfoFunc("glFinalCombinerInputNV", glFinalCombinerInputNV == NULL);
-  glewInfoFunc("glGetCombinerInputParameterfvNV", glGetCombinerInputParameterfvNV == NULL);
-  glewInfoFunc("glGetCombinerInputParameterivNV", glGetCombinerInputParameterivNV == NULL);
-  glewInfoFunc("glGetCombinerOutputParameterfvNV", glGetCombinerOutputParameterfvNV == NULL);
-  glewInfoFunc("glGetCombinerOutputParameterivNV", glGetCombinerOutputParameterivNV == NULL);
-  glewInfoFunc("glGetFinalCombinerInputParameterfvNV", glGetFinalCombinerInputParameterfvNV == NULL);
-  glewInfoFunc("glGetFinalCombinerInputParameterivNV", glGetFinalCombinerInputParameterivNV == NULL);
+  glewInfoFunc(fi, "glCombinerInputNV", glCombinerInputNV == NULL);
+  glewInfoFunc(fi, "glCombinerOutputNV", glCombinerOutputNV == NULL);
+  glewInfoFunc(fi, "glCombinerParameterfNV", glCombinerParameterfNV == NULL);
+  glewInfoFunc(fi, "glCombinerParameterfvNV", glCombinerParameterfvNV == NULL);
+  glewInfoFunc(fi, "glCombinerParameteriNV", glCombinerParameteriNV == NULL);
+  glewInfoFunc(fi, "glCombinerParameterivNV", glCombinerParameterivNV == NULL);
+  glewInfoFunc(fi, "glFinalCombinerInputNV", glFinalCombinerInputNV == NULL);
+  glewInfoFunc(fi, "glGetCombinerInputParameterfvNV", glGetCombinerInputParameterfvNV == NULL);
+  glewInfoFunc(fi, "glGetCombinerInputParameterivNV", glGetCombinerInputParameterivNV == NULL);
+  glewInfoFunc(fi, "glGetCombinerOutputParameterfvNV", glGetCombinerOutputParameterfvNV == NULL);
+  glewInfoFunc(fi, "glGetCombinerOutputParameterivNV", glGetCombinerOutputParameterivNV == NULL);
+  glewInfoFunc(fi, "glGetFinalCombinerInputParameterfvNV", glGetFinalCombinerInputParameterfvNV == NULL);
+  glewInfoFunc(fi, "glGetFinalCombinerInputParameterivNV", glGetFinalCombinerInputParameterivNV == NULL);
 }
 
 #endif /* GL_NV_register_combiners */
@@ -8010,13 +8619,22 @@ static void _glewInfo_GL_NV_register_combiners (void)
 
 static void _glewInfo_GL_NV_register_combiners2 (void)
 {
-  glewPrintExt("GL_NV_register_combiners2", GLEW_NV_register_combiners2, glewIsSupported("GL_NV_register_combiners2"), glewGetExtension("GL_NV_register_combiners2"));
+  GLboolean fi = glewPrintExt("GL_NV_register_combiners2", GLEW_NV_register_combiners2, glewIsSupported("GL_NV_register_combiners2"), glewGetExtension("GL_NV_register_combiners2"));
 
-  glewInfoFunc("glCombinerStageParameterfvNV", glCombinerStageParameterfvNV == NULL);
-  glewInfoFunc("glGetCombinerStageParameterfvNV", glGetCombinerStageParameterfvNV == NULL);
+  glewInfoFunc(fi, "glCombinerStageParameterfvNV", glCombinerStageParameterfvNV == NULL);
+  glewInfoFunc(fi, "glGetCombinerStageParameterfvNV", glGetCombinerStageParameterfvNV == NULL);
 }
 
 #endif /* GL_NV_register_combiners2 */
+
+#ifdef GL_NV_representative_fragment_test
+
+static void _glewInfo_GL_NV_representative_fragment_test (void)
+{
+  glewPrintExt("GL_NV_representative_fragment_test", GLEW_NV_representative_fragment_test, glewIsSupported("GL_NV_representative_fragment_test"), glewGetExtension("GL_NV_representative_fragment_test"));
+}
+
+#endif /* GL_NV_representative_fragment_test */
 
 #ifdef GL_NV_robustness_video_memory_purge
 
@@ -8040,10 +8658,11 @@ static void _glewInfo_GL_NV_sRGB_formats (void)
 
 static void _glewInfo_GL_NV_sample_locations (void)
 {
-  glewPrintExt("GL_NV_sample_locations", GLEW_NV_sample_locations, glewIsSupported("GL_NV_sample_locations"), glewGetExtension("GL_NV_sample_locations"));
+  GLboolean fi = glewPrintExt("GL_NV_sample_locations", GLEW_NV_sample_locations, glewIsSupported("GL_NV_sample_locations"), glewGetExtension("GL_NV_sample_locations"));
 
-  glewInfoFunc("glFramebufferSampleLocationsfvNV", glFramebufferSampleLocationsfvNV == NULL);
-  glewInfoFunc("glNamedFramebufferSampleLocationsfvNV", glNamedFramebufferSampleLocationsfvNV == NULL);
+  glewInfoFunc(fi, "glFramebufferSampleLocationsfvNV", glFramebufferSampleLocationsfvNV == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferSampleLocationsfvNV", glNamedFramebufferSampleLocationsfvNV == NULL);
+  glewInfoFunc(fi, "glResolveDepthValuesNV", glResolveDepthValuesNV == NULL);
 }
 
 #endif /* GL_NV_sample_locations */
@@ -8056,6 +8675,18 @@ static void _glewInfo_GL_NV_sample_mask_override_coverage (void)
 }
 
 #endif /* GL_NV_sample_mask_override_coverage */
+
+#ifdef GL_NV_scissor_exclusive
+
+static void _glewInfo_GL_NV_scissor_exclusive (void)
+{
+  GLboolean fi = glewPrintExt("GL_NV_scissor_exclusive", GLEW_NV_scissor_exclusive, glewIsSupported("GL_NV_scissor_exclusive"), glewGetExtension("GL_NV_scissor_exclusive"));
+
+  glewInfoFunc(fi, "glScissorExclusiveArrayvNV", glScissorExclusiveArrayvNV == NULL);
+  glewInfoFunc(fi, "glScissorExclusiveNV", glScissorExclusiveNV == NULL);
+}
+
+#endif /* GL_NV_scissor_exclusive */
 
 #ifdef GL_NV_shader_atomic_counters
 
@@ -8106,21 +8737,21 @@ static void _glewInfo_GL_NV_shader_atomic_int64 (void)
 
 static void _glewInfo_GL_NV_shader_buffer_load (void)
 {
-  glewPrintExt("GL_NV_shader_buffer_load", GLEW_NV_shader_buffer_load, glewIsSupported("GL_NV_shader_buffer_load"), glewGetExtension("GL_NV_shader_buffer_load"));
+  GLboolean fi = glewPrintExt("GL_NV_shader_buffer_load", GLEW_NV_shader_buffer_load, glewIsSupported("GL_NV_shader_buffer_load"), glewGetExtension("GL_NV_shader_buffer_load"));
 
-  glewInfoFunc("glGetBufferParameterui64vNV", glGetBufferParameterui64vNV == NULL);
-  glewInfoFunc("glGetIntegerui64vNV", glGetIntegerui64vNV == NULL);
-  glewInfoFunc("glGetNamedBufferParameterui64vNV", glGetNamedBufferParameterui64vNV == NULL);
-  glewInfoFunc("glIsBufferResidentNV", glIsBufferResidentNV == NULL);
-  glewInfoFunc("glIsNamedBufferResidentNV", glIsNamedBufferResidentNV == NULL);
-  glewInfoFunc("glMakeBufferNonResidentNV", glMakeBufferNonResidentNV == NULL);
-  glewInfoFunc("glMakeBufferResidentNV", glMakeBufferResidentNV == NULL);
-  glewInfoFunc("glMakeNamedBufferNonResidentNV", glMakeNamedBufferNonResidentNV == NULL);
-  glewInfoFunc("glMakeNamedBufferResidentNV", glMakeNamedBufferResidentNV == NULL);
-  glewInfoFunc("glProgramUniformui64NV", glProgramUniformui64NV == NULL);
-  glewInfoFunc("glProgramUniformui64vNV", glProgramUniformui64vNV == NULL);
-  glewInfoFunc("glUniformui64NV", glUniformui64NV == NULL);
-  glewInfoFunc("glUniformui64vNV", glUniformui64vNV == NULL);
+  glewInfoFunc(fi, "glGetBufferParameterui64vNV", glGetBufferParameterui64vNV == NULL);
+  glewInfoFunc(fi, "glGetIntegerui64vNV", glGetIntegerui64vNV == NULL);
+  glewInfoFunc(fi, "glGetNamedBufferParameterui64vNV", glGetNamedBufferParameterui64vNV == NULL);
+  glewInfoFunc(fi, "glIsBufferResidentNV", glIsBufferResidentNV == NULL);
+  glewInfoFunc(fi, "glIsNamedBufferResidentNV", glIsNamedBufferResidentNV == NULL);
+  glewInfoFunc(fi, "glMakeBufferNonResidentNV", glMakeBufferNonResidentNV == NULL);
+  glewInfoFunc(fi, "glMakeBufferResidentNV", glMakeBufferResidentNV == NULL);
+  glewInfoFunc(fi, "glMakeNamedBufferNonResidentNV", glMakeNamedBufferNonResidentNV == NULL);
+  glewInfoFunc(fi, "glMakeNamedBufferResidentNV", glMakeNamedBufferResidentNV == NULL);
+  glewInfoFunc(fi, "glProgramUniformui64NV", glProgramUniformui64NV == NULL);
+  glewInfoFunc(fi, "glProgramUniformui64vNV", glProgramUniformui64vNV == NULL);
+  glewInfoFunc(fi, "glUniformui64NV", glUniformui64NV == NULL);
+  glewInfoFunc(fi, "glUniformui64vNV", glUniformui64vNV == NULL);
 }
 
 #endif /* GL_NV_shader_buffer_load */
@@ -8143,6 +8774,24 @@ static void _glewInfo_GL_NV_shader_storage_buffer_object (void)
 
 #endif /* GL_NV_shader_storage_buffer_object */
 
+#ifdef GL_NV_shader_subgroup_partitioned
+
+static void _glewInfo_GL_NV_shader_subgroup_partitioned (void)
+{
+  glewPrintExt("GL_NV_shader_subgroup_partitioned", GLEW_NV_shader_subgroup_partitioned, glewIsSupported("GL_NV_shader_subgroup_partitioned"), glewGetExtension("GL_NV_shader_subgroup_partitioned"));
+}
+
+#endif /* GL_NV_shader_subgroup_partitioned */
+
+#ifdef GL_NV_shader_texture_footprint
+
+static void _glewInfo_GL_NV_shader_texture_footprint (void)
+{
+  glewPrintExt("GL_NV_shader_texture_footprint", GLEW_NV_shader_texture_footprint, glewIsSupported("GL_NV_shader_texture_footprint"), glewGetExtension("GL_NV_shader_texture_footprint"));
+}
+
+#endif /* GL_NV_shader_texture_footprint */
+
 #ifdef GL_NV_shader_thread_group
 
 static void _glewInfo_GL_NV_shader_thread_group (void)
@@ -8160,6 +8809,22 @@ static void _glewInfo_GL_NV_shader_thread_shuffle (void)
 }
 
 #endif /* GL_NV_shader_thread_shuffle */
+
+#ifdef GL_NV_shading_rate_image
+
+static void _glewInfo_GL_NV_shading_rate_image (void)
+{
+  GLboolean fi = glewPrintExt("GL_NV_shading_rate_image", GLEW_NV_shading_rate_image, glewIsSupported("GL_NV_shading_rate_image"), glewGetExtension("GL_NV_shading_rate_image"));
+
+  glewInfoFunc(fi, "glBindShadingRateImageNV", glBindShadingRateImageNV == NULL);
+  glewInfoFunc(fi, "glGetShadingRateImagePaletteNV", glGetShadingRateImagePaletteNV == NULL);
+  glewInfoFunc(fi, "glGetShadingRateSampleLocationivNV", glGetShadingRateSampleLocationivNV == NULL);
+  glewInfoFunc(fi, "glShadingRateImageBarrierNV", glShadingRateImageBarrierNV == NULL);
+  glewInfoFunc(fi, "glShadingRateImagePaletteNV", glShadingRateImagePaletteNV == NULL);
+  glewInfoFunc(fi, "glShadingRateSampleOrderCustomNV", glShadingRateSampleOrderCustomNV == NULL);
+}
+
+#endif /* GL_NV_shading_rate_image */
 
 #ifdef GL_NV_shadow_samplers_array
 
@@ -8219,14 +8884,14 @@ static void _glewInfo_GL_NV_texgen_reflection (void)
 
 static void _glewInfo_GL_NV_texture_array (void)
 {
-  glewPrintExt("GL_NV_texture_array", GLEW_NV_texture_array, glewIsSupported("GL_NV_texture_array"), glewGetExtension("GL_NV_texture_array"));
+  GLboolean fi = glewPrintExt("GL_NV_texture_array", GLEW_NV_texture_array, glewIsSupported("GL_NV_texture_array"), glewGetExtension("GL_NV_texture_array"));
 
-  glewInfoFunc("glCompressedTexImage3DNV", glCompressedTexImage3DNV == NULL);
-  glewInfoFunc("glCompressedTexSubImage3DNV", glCompressedTexSubImage3DNV == NULL);
-  glewInfoFunc("glCopyTexSubImage3DNV", glCopyTexSubImage3DNV == NULL);
-  glewInfoFunc("glFramebufferTextureLayerNV", glFramebufferTextureLayerNV == NULL);
-  glewInfoFunc("glTexImage3DNV", glTexImage3DNV == NULL);
-  glewInfoFunc("glTexSubImage3DNV", glTexSubImage3DNV == NULL);
+  glewInfoFunc(fi, "glCompressedTexImage3DNV", glCompressedTexImage3DNV == NULL);
+  glewInfoFunc(fi, "glCompressedTexSubImage3DNV", glCompressedTexSubImage3DNV == NULL);
+  glewInfoFunc(fi, "glCopyTexSubImage3DNV", glCopyTexSubImage3DNV == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureLayerNV", glFramebufferTextureLayerNV == NULL);
+  glewInfoFunc(fi, "glTexImage3DNV", glTexImage3DNV == NULL);
+  glewInfoFunc(fi, "glTexSubImage3DNV", glTexSubImage3DNV == NULL);
 }
 
 #endif /* GL_NV_texture_array */
@@ -8235,9 +8900,9 @@ static void _glewInfo_GL_NV_texture_array (void)
 
 static void _glewInfo_GL_NV_texture_barrier (void)
 {
-  glewPrintExt("GL_NV_texture_barrier", GLEW_NV_texture_barrier, glewIsSupported("GL_NV_texture_barrier"), glewGetExtension("GL_NV_texture_barrier"));
+  GLboolean fi = glewPrintExt("GL_NV_texture_barrier", GLEW_NV_texture_barrier, glewIsSupported("GL_NV_texture_barrier"), glewGetExtension("GL_NV_texture_barrier"));
 
-  glewInfoFunc("glTextureBarrierNV", glTextureBarrierNV == NULL);
+  glewInfoFunc(fi, "glTextureBarrierNV", glTextureBarrierNV == NULL);
 }
 
 #endif /* GL_NV_texture_barrier */
@@ -8309,14 +8974,14 @@ static void _glewInfo_GL_NV_texture_expand_normal (void)
 
 static void _glewInfo_GL_NV_texture_multisample (void)
 {
-  glewPrintExt("GL_NV_texture_multisample", GLEW_NV_texture_multisample, glewIsSupported("GL_NV_texture_multisample"), glewGetExtension("GL_NV_texture_multisample"));
+  GLboolean fi = glewPrintExt("GL_NV_texture_multisample", GLEW_NV_texture_multisample, glewIsSupported("GL_NV_texture_multisample"), glewGetExtension("GL_NV_texture_multisample"));
 
-  glewInfoFunc("glTexImage2DMultisampleCoverageNV", glTexImage2DMultisampleCoverageNV == NULL);
-  glewInfoFunc("glTexImage3DMultisampleCoverageNV", glTexImage3DMultisampleCoverageNV == NULL);
-  glewInfoFunc("glTextureImage2DMultisampleCoverageNV", glTextureImage2DMultisampleCoverageNV == NULL);
-  glewInfoFunc("glTextureImage2DMultisampleNV", glTextureImage2DMultisampleNV == NULL);
-  glewInfoFunc("glTextureImage3DMultisampleCoverageNV", glTextureImage3DMultisampleCoverageNV == NULL);
-  glewInfoFunc("glTextureImage3DMultisampleNV", glTextureImage3DMultisampleNV == NULL);
+  glewInfoFunc(fi, "glTexImage2DMultisampleCoverageNV", glTexImage2DMultisampleCoverageNV == NULL);
+  glewInfoFunc(fi, "glTexImage3DMultisampleCoverageNV", glTexImage3DMultisampleCoverageNV == NULL);
+  glewInfoFunc(fi, "glTextureImage2DMultisampleCoverageNV", glTextureImage2DMultisampleCoverageNV == NULL);
+  glewInfoFunc(fi, "glTextureImage2DMultisampleNV", glTextureImage2DMultisampleNV == NULL);
+  glewInfoFunc(fi, "glTextureImage3DMultisampleCoverageNV", glTextureImage3DMultisampleCoverageNV == NULL);
+  glewInfoFunc(fi, "glTextureImage3DMultisampleNV", glTextureImage3DMultisampleNV == NULL);
 }
 
 #endif /* GL_NV_texture_multisample */
@@ -8379,19 +9044,19 @@ static void _glewInfo_GL_NV_texture_shader3 (void)
 
 static void _glewInfo_GL_NV_transform_feedback (void)
 {
-  glewPrintExt("GL_NV_transform_feedback", GLEW_NV_transform_feedback, glewIsSupported("GL_NV_transform_feedback"), glewGetExtension("GL_NV_transform_feedback"));
+  GLboolean fi = glewPrintExt("GL_NV_transform_feedback", GLEW_NV_transform_feedback, glewIsSupported("GL_NV_transform_feedback"), glewGetExtension("GL_NV_transform_feedback"));
 
-  glewInfoFunc("glActiveVaryingNV", glActiveVaryingNV == NULL);
-  glewInfoFunc("glBeginTransformFeedbackNV", glBeginTransformFeedbackNV == NULL);
-  glewInfoFunc("glBindBufferBaseNV", glBindBufferBaseNV == NULL);
-  glewInfoFunc("glBindBufferOffsetNV", glBindBufferOffsetNV == NULL);
-  glewInfoFunc("glBindBufferRangeNV", glBindBufferRangeNV == NULL);
-  glewInfoFunc("glEndTransformFeedbackNV", glEndTransformFeedbackNV == NULL);
-  glewInfoFunc("glGetActiveVaryingNV", glGetActiveVaryingNV == NULL);
-  glewInfoFunc("glGetTransformFeedbackVaryingNV", glGetTransformFeedbackVaryingNV == NULL);
-  glewInfoFunc("glGetVaryingLocationNV", glGetVaryingLocationNV == NULL);
-  glewInfoFunc("glTransformFeedbackAttribsNV", glTransformFeedbackAttribsNV == NULL);
-  glewInfoFunc("glTransformFeedbackVaryingsNV", glTransformFeedbackVaryingsNV == NULL);
+  glewInfoFunc(fi, "glActiveVaryingNV", glActiveVaryingNV == NULL);
+  glewInfoFunc(fi, "glBeginTransformFeedbackNV", glBeginTransformFeedbackNV == NULL);
+  glewInfoFunc(fi, "glBindBufferBaseNV", glBindBufferBaseNV == NULL);
+  glewInfoFunc(fi, "glBindBufferOffsetNV", glBindBufferOffsetNV == NULL);
+  glewInfoFunc(fi, "glBindBufferRangeNV", glBindBufferRangeNV == NULL);
+  glewInfoFunc(fi, "glEndTransformFeedbackNV", glEndTransformFeedbackNV == NULL);
+  glewInfoFunc(fi, "glGetActiveVaryingNV", glGetActiveVaryingNV == NULL);
+  glewInfoFunc(fi, "glGetTransformFeedbackVaryingNV", glGetTransformFeedbackVaryingNV == NULL);
+  glewInfoFunc(fi, "glGetVaryingLocationNV", glGetVaryingLocationNV == NULL);
+  glewInfoFunc(fi, "glTransformFeedbackAttribsNV", glTransformFeedbackAttribsNV == NULL);
+  glewInfoFunc(fi, "glTransformFeedbackVaryingsNV", glTransformFeedbackVaryingsNV == NULL);
 }
 
 #endif /* GL_NV_transform_feedback */
@@ -8400,15 +9065,15 @@ static void _glewInfo_GL_NV_transform_feedback (void)
 
 static void _glewInfo_GL_NV_transform_feedback2 (void)
 {
-  glewPrintExt("GL_NV_transform_feedback2", GLEW_NV_transform_feedback2, glewIsSupported("GL_NV_transform_feedback2"), glewGetExtension("GL_NV_transform_feedback2"));
+  GLboolean fi = glewPrintExt("GL_NV_transform_feedback2", GLEW_NV_transform_feedback2, glewIsSupported("GL_NV_transform_feedback2"), glewGetExtension("GL_NV_transform_feedback2"));
 
-  glewInfoFunc("glBindTransformFeedbackNV", glBindTransformFeedbackNV == NULL);
-  glewInfoFunc("glDeleteTransformFeedbacksNV", glDeleteTransformFeedbacksNV == NULL);
-  glewInfoFunc("glDrawTransformFeedbackNV", glDrawTransformFeedbackNV == NULL);
-  glewInfoFunc("glGenTransformFeedbacksNV", glGenTransformFeedbacksNV == NULL);
-  glewInfoFunc("glIsTransformFeedbackNV", glIsTransformFeedbackNV == NULL);
-  glewInfoFunc("glPauseTransformFeedbackNV", glPauseTransformFeedbackNV == NULL);
-  glewInfoFunc("glResumeTransformFeedbackNV", glResumeTransformFeedbackNV == NULL);
+  glewInfoFunc(fi, "glBindTransformFeedbackNV", glBindTransformFeedbackNV == NULL);
+  glewInfoFunc(fi, "glDeleteTransformFeedbacksNV", glDeleteTransformFeedbacksNV == NULL);
+  glewInfoFunc(fi, "glDrawTransformFeedbackNV", glDrawTransformFeedbackNV == NULL);
+  glewInfoFunc(fi, "glGenTransformFeedbacksNV", glGenTransformFeedbacksNV == NULL);
+  glewInfoFunc(fi, "glIsTransformFeedbackNV", glIsTransformFeedbackNV == NULL);
+  glewInfoFunc(fi, "glPauseTransformFeedbackNV", glPauseTransformFeedbackNV == NULL);
+  glewInfoFunc(fi, "glResumeTransformFeedbackNV", glResumeTransformFeedbackNV == NULL);
 }
 
 #endif /* GL_NV_transform_feedback2 */
@@ -8426,30 +9091,41 @@ static void _glewInfo_GL_NV_uniform_buffer_unified_memory (void)
 
 static void _glewInfo_GL_NV_vdpau_interop (void)
 {
-  glewPrintExt("GL_NV_vdpau_interop", GLEW_NV_vdpau_interop, glewIsSupported("GL_NV_vdpau_interop"), glewGetExtension("GL_NV_vdpau_interop"));
+  GLboolean fi = glewPrintExt("GL_NV_vdpau_interop", GLEW_NV_vdpau_interop, glewIsSupported("GL_NV_vdpau_interop"), glewGetExtension("GL_NV_vdpau_interop"));
 
-  glewInfoFunc("glVDPAUFiniNV", glVDPAUFiniNV == NULL);
-  glewInfoFunc("glVDPAUGetSurfaceivNV", glVDPAUGetSurfaceivNV == NULL);
-  glewInfoFunc("glVDPAUInitNV", glVDPAUInitNV == NULL);
-  glewInfoFunc("glVDPAUIsSurfaceNV", glVDPAUIsSurfaceNV == NULL);
-  glewInfoFunc("glVDPAUMapSurfacesNV", glVDPAUMapSurfacesNV == NULL);
-  glewInfoFunc("glVDPAURegisterOutputSurfaceNV", glVDPAURegisterOutputSurfaceNV == NULL);
-  glewInfoFunc("glVDPAURegisterVideoSurfaceNV", glVDPAURegisterVideoSurfaceNV == NULL);
-  glewInfoFunc("glVDPAUSurfaceAccessNV", glVDPAUSurfaceAccessNV == NULL);
-  glewInfoFunc("glVDPAUUnmapSurfacesNV", glVDPAUUnmapSurfacesNV == NULL);
-  glewInfoFunc("glVDPAUUnregisterSurfaceNV", glVDPAUUnregisterSurfaceNV == NULL);
+  glewInfoFunc(fi, "glVDPAUFiniNV", glVDPAUFiniNV == NULL);
+  glewInfoFunc(fi, "glVDPAUGetSurfaceivNV", glVDPAUGetSurfaceivNV == NULL);
+  glewInfoFunc(fi, "glVDPAUInitNV", glVDPAUInitNV == NULL);
+  glewInfoFunc(fi, "glVDPAUIsSurfaceNV", glVDPAUIsSurfaceNV == NULL);
+  glewInfoFunc(fi, "glVDPAUMapSurfacesNV", glVDPAUMapSurfacesNV == NULL);
+  glewInfoFunc(fi, "glVDPAURegisterOutputSurfaceNV", glVDPAURegisterOutputSurfaceNV == NULL);
+  glewInfoFunc(fi, "glVDPAURegisterVideoSurfaceNV", glVDPAURegisterVideoSurfaceNV == NULL);
+  glewInfoFunc(fi, "glVDPAUSurfaceAccessNV", glVDPAUSurfaceAccessNV == NULL);
+  glewInfoFunc(fi, "glVDPAUUnmapSurfacesNV", glVDPAUUnmapSurfacesNV == NULL);
+  glewInfoFunc(fi, "glVDPAUUnregisterSurfaceNV", glVDPAUUnregisterSurfaceNV == NULL);
 }
 
 #endif /* GL_NV_vdpau_interop */
+
+#ifdef GL_NV_vdpau_interop2
+
+static void _glewInfo_GL_NV_vdpau_interop2 (void)
+{
+  GLboolean fi = glewPrintExt("GL_NV_vdpau_interop2", GLEW_NV_vdpau_interop2, glewIsSupported("GL_NV_vdpau_interop2"), glewGetExtension("GL_NV_vdpau_interop2"));
+
+  glewInfoFunc(fi, "glVDPAURegisterVideoSurfaceWithPictureStructureNV", glVDPAURegisterVideoSurfaceWithPictureStructureNV == NULL);
+}
+
+#endif /* GL_NV_vdpau_interop2 */
 
 #ifdef GL_NV_vertex_array_range
 
 static void _glewInfo_GL_NV_vertex_array_range (void)
 {
-  glewPrintExt("GL_NV_vertex_array_range", GLEW_NV_vertex_array_range, glewIsSupported("GL_NV_vertex_array_range"), glewGetExtension("GL_NV_vertex_array_range"));
+  GLboolean fi = glewPrintExt("GL_NV_vertex_array_range", GLEW_NV_vertex_array_range, glewIsSupported("GL_NV_vertex_array_range"), glewGetExtension("GL_NV_vertex_array_range"));
 
-  glewInfoFunc("glFlushVertexArrayRangeNV", glFlushVertexArrayRangeNV == NULL);
-  glewInfoFunc("glVertexArrayRangeNV", glVertexArrayRangeNV == NULL);
+  glewInfoFunc(fi, "glFlushVertexArrayRangeNV", glFlushVertexArrayRangeNV == NULL);
+  glewInfoFunc(fi, "glVertexArrayRangeNV", glVertexArrayRangeNV == NULL);
 }
 
 #endif /* GL_NV_vertex_array_range */
@@ -8467,27 +9143,27 @@ static void _glewInfo_GL_NV_vertex_array_range2 (void)
 
 static void _glewInfo_GL_NV_vertex_attrib_integer_64bit (void)
 {
-  glewPrintExt("GL_NV_vertex_attrib_integer_64bit", GLEW_NV_vertex_attrib_integer_64bit, glewIsSupported("GL_NV_vertex_attrib_integer_64bit"), glewGetExtension("GL_NV_vertex_attrib_integer_64bit"));
+  GLboolean fi = glewPrintExt("GL_NV_vertex_attrib_integer_64bit", GLEW_NV_vertex_attrib_integer_64bit, glewIsSupported("GL_NV_vertex_attrib_integer_64bit"), glewGetExtension("GL_NV_vertex_attrib_integer_64bit"));
 
-  glewInfoFunc("glGetVertexAttribLi64vNV", glGetVertexAttribLi64vNV == NULL);
-  glewInfoFunc("glGetVertexAttribLui64vNV", glGetVertexAttribLui64vNV == NULL);
-  glewInfoFunc("glVertexAttribL1i64NV", glVertexAttribL1i64NV == NULL);
-  glewInfoFunc("glVertexAttribL1i64vNV", glVertexAttribL1i64vNV == NULL);
-  glewInfoFunc("glVertexAttribL1ui64NV", glVertexAttribL1ui64NV == NULL);
-  glewInfoFunc("glVertexAttribL1ui64vNV", glVertexAttribL1ui64vNV == NULL);
-  glewInfoFunc("glVertexAttribL2i64NV", glVertexAttribL2i64NV == NULL);
-  glewInfoFunc("glVertexAttribL2i64vNV", glVertexAttribL2i64vNV == NULL);
-  glewInfoFunc("glVertexAttribL2ui64NV", glVertexAttribL2ui64NV == NULL);
-  glewInfoFunc("glVertexAttribL2ui64vNV", glVertexAttribL2ui64vNV == NULL);
-  glewInfoFunc("glVertexAttribL3i64NV", glVertexAttribL3i64NV == NULL);
-  glewInfoFunc("glVertexAttribL3i64vNV", glVertexAttribL3i64vNV == NULL);
-  glewInfoFunc("glVertexAttribL3ui64NV", glVertexAttribL3ui64NV == NULL);
-  glewInfoFunc("glVertexAttribL3ui64vNV", glVertexAttribL3ui64vNV == NULL);
-  glewInfoFunc("glVertexAttribL4i64NV", glVertexAttribL4i64NV == NULL);
-  glewInfoFunc("glVertexAttribL4i64vNV", glVertexAttribL4i64vNV == NULL);
-  glewInfoFunc("glVertexAttribL4ui64NV", glVertexAttribL4ui64NV == NULL);
-  glewInfoFunc("glVertexAttribL4ui64vNV", glVertexAttribL4ui64vNV == NULL);
-  glewInfoFunc("glVertexAttribLFormatNV", glVertexAttribLFormatNV == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribLi64vNV", glGetVertexAttribLi64vNV == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribLui64vNV", glGetVertexAttribLui64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1i64NV", glVertexAttribL1i64NV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1i64vNV", glVertexAttribL1i64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1ui64NV", glVertexAttribL1ui64NV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL1ui64vNV", glVertexAttribL1ui64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL2i64NV", glVertexAttribL2i64NV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL2i64vNV", glVertexAttribL2i64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL2ui64NV", glVertexAttribL2ui64NV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL2ui64vNV", glVertexAttribL2ui64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL3i64NV", glVertexAttribL3i64NV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL3i64vNV", glVertexAttribL3i64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL3ui64NV", glVertexAttribL3ui64NV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL3ui64vNV", glVertexAttribL3ui64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL4i64NV", glVertexAttribL4i64NV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL4i64vNV", glVertexAttribL4i64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL4ui64NV", glVertexAttribL4ui64NV == NULL);
+  glewInfoFunc(fi, "glVertexAttribL4ui64vNV", glVertexAttribL4ui64vNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribLFormatNV", glVertexAttribLFormatNV == NULL);
 }
 
 #endif /* GL_NV_vertex_attrib_integer_64bit */
@@ -8496,20 +9172,20 @@ static void _glewInfo_GL_NV_vertex_attrib_integer_64bit (void)
 
 static void _glewInfo_GL_NV_vertex_buffer_unified_memory (void)
 {
-  glewPrintExt("GL_NV_vertex_buffer_unified_memory", GLEW_NV_vertex_buffer_unified_memory, glewIsSupported("GL_NV_vertex_buffer_unified_memory"), glewGetExtension("GL_NV_vertex_buffer_unified_memory"));
+  GLboolean fi = glewPrintExt("GL_NV_vertex_buffer_unified_memory", GLEW_NV_vertex_buffer_unified_memory, glewIsSupported("GL_NV_vertex_buffer_unified_memory"), glewGetExtension("GL_NV_vertex_buffer_unified_memory"));
 
-  glewInfoFunc("glBufferAddressRangeNV", glBufferAddressRangeNV == NULL);
-  glewInfoFunc("glColorFormatNV", glColorFormatNV == NULL);
-  glewInfoFunc("glEdgeFlagFormatNV", glEdgeFlagFormatNV == NULL);
-  glewInfoFunc("glFogCoordFormatNV", glFogCoordFormatNV == NULL);
-  glewInfoFunc("glGetIntegerui64i_vNV", glGetIntegerui64i_vNV == NULL);
-  glewInfoFunc("glIndexFormatNV", glIndexFormatNV == NULL);
-  glewInfoFunc("glNormalFormatNV", glNormalFormatNV == NULL);
-  glewInfoFunc("glSecondaryColorFormatNV", glSecondaryColorFormatNV == NULL);
-  glewInfoFunc("glTexCoordFormatNV", glTexCoordFormatNV == NULL);
-  glewInfoFunc("glVertexAttribFormatNV", glVertexAttribFormatNV == NULL);
-  glewInfoFunc("glVertexAttribIFormatNV", glVertexAttribIFormatNV == NULL);
-  glewInfoFunc("glVertexFormatNV", glVertexFormatNV == NULL);
+  glewInfoFunc(fi, "glBufferAddressRangeNV", glBufferAddressRangeNV == NULL);
+  glewInfoFunc(fi, "glColorFormatNV", glColorFormatNV == NULL);
+  glewInfoFunc(fi, "glEdgeFlagFormatNV", glEdgeFlagFormatNV == NULL);
+  glewInfoFunc(fi, "glFogCoordFormatNV", glFogCoordFormatNV == NULL);
+  glewInfoFunc(fi, "glGetIntegerui64i_vNV", glGetIntegerui64i_vNV == NULL);
+  glewInfoFunc(fi, "glIndexFormatNV", glIndexFormatNV == NULL);
+  glewInfoFunc(fi, "glNormalFormatNV", glNormalFormatNV == NULL);
+  glewInfoFunc(fi, "glSecondaryColorFormatNV", glSecondaryColorFormatNV == NULL);
+  glewInfoFunc(fi, "glTexCoordFormatNV", glTexCoordFormatNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribFormatNV", glVertexAttribFormatNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribIFormatNV", glVertexAttribIFormatNV == NULL);
+  glewInfoFunc(fi, "glVertexFormatNV", glVertexFormatNV == NULL);
 }
 
 #endif /* GL_NV_vertex_buffer_unified_memory */
@@ -8518,72 +9194,72 @@ static void _glewInfo_GL_NV_vertex_buffer_unified_memory (void)
 
 static void _glewInfo_GL_NV_vertex_program (void)
 {
-  glewPrintExt("GL_NV_vertex_program", GLEW_NV_vertex_program, glewIsSupported("GL_NV_vertex_program"), glewGetExtension("GL_NV_vertex_program"));
+  GLboolean fi = glewPrintExt("GL_NV_vertex_program", GLEW_NV_vertex_program, glewIsSupported("GL_NV_vertex_program"), glewGetExtension("GL_NV_vertex_program"));
 
-  glewInfoFunc("glAreProgramsResidentNV", glAreProgramsResidentNV == NULL);
-  glewInfoFunc("glBindProgramNV", glBindProgramNV == NULL);
-  glewInfoFunc("glDeleteProgramsNV", glDeleteProgramsNV == NULL);
-  glewInfoFunc("glExecuteProgramNV", glExecuteProgramNV == NULL);
-  glewInfoFunc("glGenProgramsNV", glGenProgramsNV == NULL);
-  glewInfoFunc("glGetProgramParameterdvNV", glGetProgramParameterdvNV == NULL);
-  glewInfoFunc("glGetProgramParameterfvNV", glGetProgramParameterfvNV == NULL);
-  glewInfoFunc("glGetProgramStringNV", glGetProgramStringNV == NULL);
-  glewInfoFunc("glGetProgramivNV", glGetProgramivNV == NULL);
-  glewInfoFunc("glGetTrackMatrixivNV", glGetTrackMatrixivNV == NULL);
-  glewInfoFunc("glGetVertexAttribPointervNV", glGetVertexAttribPointervNV == NULL);
-  glewInfoFunc("glGetVertexAttribdvNV", glGetVertexAttribdvNV == NULL);
-  glewInfoFunc("glGetVertexAttribfvNV", glGetVertexAttribfvNV == NULL);
-  glewInfoFunc("glGetVertexAttribivNV", glGetVertexAttribivNV == NULL);
-  glewInfoFunc("glIsProgramNV", glIsProgramNV == NULL);
-  glewInfoFunc("glLoadProgramNV", glLoadProgramNV == NULL);
-  glewInfoFunc("glProgramParameter4dNV", glProgramParameter4dNV == NULL);
-  glewInfoFunc("glProgramParameter4dvNV", glProgramParameter4dvNV == NULL);
-  glewInfoFunc("glProgramParameter4fNV", glProgramParameter4fNV == NULL);
-  glewInfoFunc("glProgramParameter4fvNV", glProgramParameter4fvNV == NULL);
-  glewInfoFunc("glProgramParameters4dvNV", glProgramParameters4dvNV == NULL);
-  glewInfoFunc("glProgramParameters4fvNV", glProgramParameters4fvNV == NULL);
-  glewInfoFunc("glRequestResidentProgramsNV", glRequestResidentProgramsNV == NULL);
-  glewInfoFunc("glTrackMatrixNV", glTrackMatrixNV == NULL);
-  glewInfoFunc("glVertexAttrib1dNV", glVertexAttrib1dNV == NULL);
-  glewInfoFunc("glVertexAttrib1dvNV", glVertexAttrib1dvNV == NULL);
-  glewInfoFunc("glVertexAttrib1fNV", glVertexAttrib1fNV == NULL);
-  glewInfoFunc("glVertexAttrib1fvNV", glVertexAttrib1fvNV == NULL);
-  glewInfoFunc("glVertexAttrib1sNV", glVertexAttrib1sNV == NULL);
-  glewInfoFunc("glVertexAttrib1svNV", glVertexAttrib1svNV == NULL);
-  glewInfoFunc("glVertexAttrib2dNV", glVertexAttrib2dNV == NULL);
-  glewInfoFunc("glVertexAttrib2dvNV", glVertexAttrib2dvNV == NULL);
-  glewInfoFunc("glVertexAttrib2fNV", glVertexAttrib2fNV == NULL);
-  glewInfoFunc("glVertexAttrib2fvNV", glVertexAttrib2fvNV == NULL);
-  glewInfoFunc("glVertexAttrib2sNV", glVertexAttrib2sNV == NULL);
-  glewInfoFunc("glVertexAttrib2svNV", glVertexAttrib2svNV == NULL);
-  glewInfoFunc("glVertexAttrib3dNV", glVertexAttrib3dNV == NULL);
-  glewInfoFunc("glVertexAttrib3dvNV", glVertexAttrib3dvNV == NULL);
-  glewInfoFunc("glVertexAttrib3fNV", glVertexAttrib3fNV == NULL);
-  glewInfoFunc("glVertexAttrib3fvNV", glVertexAttrib3fvNV == NULL);
-  glewInfoFunc("glVertexAttrib3sNV", glVertexAttrib3sNV == NULL);
-  glewInfoFunc("glVertexAttrib3svNV", glVertexAttrib3svNV == NULL);
-  glewInfoFunc("glVertexAttrib4dNV", glVertexAttrib4dNV == NULL);
-  glewInfoFunc("glVertexAttrib4dvNV", glVertexAttrib4dvNV == NULL);
-  glewInfoFunc("glVertexAttrib4fNV", glVertexAttrib4fNV == NULL);
-  glewInfoFunc("glVertexAttrib4fvNV", glVertexAttrib4fvNV == NULL);
-  glewInfoFunc("glVertexAttrib4sNV", glVertexAttrib4sNV == NULL);
-  glewInfoFunc("glVertexAttrib4svNV", glVertexAttrib4svNV == NULL);
-  glewInfoFunc("glVertexAttrib4ubNV", glVertexAttrib4ubNV == NULL);
-  glewInfoFunc("glVertexAttrib4ubvNV", glVertexAttrib4ubvNV == NULL);
-  glewInfoFunc("glVertexAttribPointerNV", glVertexAttribPointerNV == NULL);
-  glewInfoFunc("glVertexAttribs1dvNV", glVertexAttribs1dvNV == NULL);
-  glewInfoFunc("glVertexAttribs1fvNV", glVertexAttribs1fvNV == NULL);
-  glewInfoFunc("glVertexAttribs1svNV", glVertexAttribs1svNV == NULL);
-  glewInfoFunc("glVertexAttribs2dvNV", glVertexAttribs2dvNV == NULL);
-  glewInfoFunc("glVertexAttribs2fvNV", glVertexAttribs2fvNV == NULL);
-  glewInfoFunc("glVertexAttribs2svNV", glVertexAttribs2svNV == NULL);
-  glewInfoFunc("glVertexAttribs3dvNV", glVertexAttribs3dvNV == NULL);
-  glewInfoFunc("glVertexAttribs3fvNV", glVertexAttribs3fvNV == NULL);
-  glewInfoFunc("glVertexAttribs3svNV", glVertexAttribs3svNV == NULL);
-  glewInfoFunc("glVertexAttribs4dvNV", glVertexAttribs4dvNV == NULL);
-  glewInfoFunc("glVertexAttribs4fvNV", glVertexAttribs4fvNV == NULL);
-  glewInfoFunc("glVertexAttribs4svNV", glVertexAttribs4svNV == NULL);
-  glewInfoFunc("glVertexAttribs4ubvNV", glVertexAttribs4ubvNV == NULL);
+  glewInfoFunc(fi, "glAreProgramsResidentNV", glAreProgramsResidentNV == NULL);
+  glewInfoFunc(fi, "glBindProgramNV", glBindProgramNV == NULL);
+  glewInfoFunc(fi, "glDeleteProgramsNV", glDeleteProgramsNV == NULL);
+  glewInfoFunc(fi, "glExecuteProgramNV", glExecuteProgramNV == NULL);
+  glewInfoFunc(fi, "glGenProgramsNV", glGenProgramsNV == NULL);
+  glewInfoFunc(fi, "glGetProgramParameterdvNV", glGetProgramParameterdvNV == NULL);
+  glewInfoFunc(fi, "glGetProgramParameterfvNV", glGetProgramParameterfvNV == NULL);
+  glewInfoFunc(fi, "glGetProgramStringNV", glGetProgramStringNV == NULL);
+  glewInfoFunc(fi, "glGetProgramivNV", glGetProgramivNV == NULL);
+  glewInfoFunc(fi, "glGetTrackMatrixivNV", glGetTrackMatrixivNV == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribPointervNV", glGetVertexAttribPointervNV == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribdvNV", glGetVertexAttribdvNV == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribfvNV", glGetVertexAttribfvNV == NULL);
+  glewInfoFunc(fi, "glGetVertexAttribivNV", glGetVertexAttribivNV == NULL);
+  glewInfoFunc(fi, "glIsProgramNV", glIsProgramNV == NULL);
+  glewInfoFunc(fi, "glLoadProgramNV", glLoadProgramNV == NULL);
+  glewInfoFunc(fi, "glProgramParameter4dNV", glProgramParameter4dNV == NULL);
+  glewInfoFunc(fi, "glProgramParameter4dvNV", glProgramParameter4dvNV == NULL);
+  glewInfoFunc(fi, "glProgramParameter4fNV", glProgramParameter4fNV == NULL);
+  glewInfoFunc(fi, "glProgramParameter4fvNV", glProgramParameter4fvNV == NULL);
+  glewInfoFunc(fi, "glProgramParameters4dvNV", glProgramParameters4dvNV == NULL);
+  glewInfoFunc(fi, "glProgramParameters4fvNV", glProgramParameters4fvNV == NULL);
+  glewInfoFunc(fi, "glRequestResidentProgramsNV", glRequestResidentProgramsNV == NULL);
+  glewInfoFunc(fi, "glTrackMatrixNV", glTrackMatrixNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1dNV", glVertexAttrib1dNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1dvNV", glVertexAttrib1dvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1fNV", glVertexAttrib1fNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1fvNV", glVertexAttrib1fvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1sNV", glVertexAttrib1sNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib1svNV", glVertexAttrib1svNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2dNV", glVertexAttrib2dNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2dvNV", glVertexAttrib2dvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2fNV", glVertexAttrib2fNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2fvNV", glVertexAttrib2fvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2sNV", glVertexAttrib2sNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib2svNV", glVertexAttrib2svNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3dNV", glVertexAttrib3dNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3dvNV", glVertexAttrib3dvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3fNV", glVertexAttrib3fNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3fvNV", glVertexAttrib3fvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3sNV", glVertexAttrib3sNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib3svNV", glVertexAttrib3svNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4dNV", glVertexAttrib4dNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4dvNV", glVertexAttrib4dvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4fNV", glVertexAttrib4fNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4fvNV", glVertexAttrib4fvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4sNV", glVertexAttrib4sNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4svNV", glVertexAttrib4svNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4ubNV", glVertexAttrib4ubNV == NULL);
+  glewInfoFunc(fi, "glVertexAttrib4ubvNV", glVertexAttrib4ubvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribPointerNV", glVertexAttribPointerNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs1dvNV", glVertexAttribs1dvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs1fvNV", glVertexAttribs1fvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs1svNV", glVertexAttribs1svNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs2dvNV", glVertexAttribs2dvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs2fvNV", glVertexAttribs2fvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs2svNV", glVertexAttribs2svNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs3dvNV", glVertexAttribs3dvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs3fvNV", glVertexAttribs3fvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs3svNV", glVertexAttribs3svNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs4dvNV", glVertexAttribs4dvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs4fvNV", glVertexAttribs4fvNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs4svNV", glVertexAttribs4svNV == NULL);
+  glewInfoFunc(fi, "glVertexAttribs4ubvNV", glVertexAttribs4ubvNV == NULL);
 }
 
 #endif /* GL_NV_vertex_program */
@@ -8637,20 +9313,20 @@ static void _glewInfo_GL_NV_vertex_program4 (void)
 
 static void _glewInfo_GL_NV_video_capture (void)
 {
-  glewPrintExt("GL_NV_video_capture", GLEW_NV_video_capture, glewIsSupported("GL_NV_video_capture"), glewGetExtension("GL_NV_video_capture"));
+  GLboolean fi = glewPrintExt("GL_NV_video_capture", GLEW_NV_video_capture, glewIsSupported("GL_NV_video_capture"), glewGetExtension("GL_NV_video_capture"));
 
-  glewInfoFunc("glBeginVideoCaptureNV", glBeginVideoCaptureNV == NULL);
-  glewInfoFunc("glBindVideoCaptureStreamBufferNV", glBindVideoCaptureStreamBufferNV == NULL);
-  glewInfoFunc("glBindVideoCaptureStreamTextureNV", glBindVideoCaptureStreamTextureNV == NULL);
-  glewInfoFunc("glEndVideoCaptureNV", glEndVideoCaptureNV == NULL);
-  glewInfoFunc("glGetVideoCaptureStreamdvNV", glGetVideoCaptureStreamdvNV == NULL);
-  glewInfoFunc("glGetVideoCaptureStreamfvNV", glGetVideoCaptureStreamfvNV == NULL);
-  glewInfoFunc("glGetVideoCaptureStreamivNV", glGetVideoCaptureStreamivNV == NULL);
-  glewInfoFunc("glGetVideoCaptureivNV", glGetVideoCaptureivNV == NULL);
-  glewInfoFunc("glVideoCaptureNV", glVideoCaptureNV == NULL);
-  glewInfoFunc("glVideoCaptureStreamParameterdvNV", glVideoCaptureStreamParameterdvNV == NULL);
-  glewInfoFunc("glVideoCaptureStreamParameterfvNV", glVideoCaptureStreamParameterfvNV == NULL);
-  glewInfoFunc("glVideoCaptureStreamParameterivNV", glVideoCaptureStreamParameterivNV == NULL);
+  glewInfoFunc(fi, "glBeginVideoCaptureNV", glBeginVideoCaptureNV == NULL);
+  glewInfoFunc(fi, "glBindVideoCaptureStreamBufferNV", glBindVideoCaptureStreamBufferNV == NULL);
+  glewInfoFunc(fi, "glBindVideoCaptureStreamTextureNV", glBindVideoCaptureStreamTextureNV == NULL);
+  glewInfoFunc(fi, "glEndVideoCaptureNV", glEndVideoCaptureNV == NULL);
+  glewInfoFunc(fi, "glGetVideoCaptureStreamdvNV", glGetVideoCaptureStreamdvNV == NULL);
+  glewInfoFunc(fi, "glGetVideoCaptureStreamfvNV", glGetVideoCaptureStreamfvNV == NULL);
+  glewInfoFunc(fi, "glGetVideoCaptureStreamivNV", glGetVideoCaptureStreamivNV == NULL);
+  glewInfoFunc(fi, "glGetVideoCaptureivNV", glGetVideoCaptureivNV == NULL);
+  glewInfoFunc(fi, "glVideoCaptureNV", glVideoCaptureNV == NULL);
+  glewInfoFunc(fi, "glVideoCaptureStreamParameterdvNV", glVideoCaptureStreamParameterdvNV == NULL);
+  glewInfoFunc(fi, "glVideoCaptureStreamParameterfvNV", glVideoCaptureStreamParameterfvNV == NULL);
+  glewInfoFunc(fi, "glVideoCaptureStreamParameterivNV", glVideoCaptureStreamParameterivNV == NULL);
 }
 
 #endif /* GL_NV_video_capture */
@@ -8659,20 +9335,20 @@ static void _glewInfo_GL_NV_video_capture (void)
 
 static void _glewInfo_GL_NV_viewport_array (void)
 {
-  glewPrintExt("GL_NV_viewport_array", GLEW_NV_viewport_array, glewIsSupported("GL_NV_viewport_array"), glewGetExtension("GL_NV_viewport_array"));
+  GLboolean fi = glewPrintExt("GL_NV_viewport_array", GLEW_NV_viewport_array, glewIsSupported("GL_NV_viewport_array"), glewGetExtension("GL_NV_viewport_array"));
 
-  glewInfoFunc("glDepthRangeArrayfvNV", glDepthRangeArrayfvNV == NULL);
-  glewInfoFunc("glDepthRangeIndexedfNV", glDepthRangeIndexedfNV == NULL);
-  glewInfoFunc("glDisableiNV", glDisableiNV == NULL);
-  glewInfoFunc("glEnableiNV", glEnableiNV == NULL);
-  glewInfoFunc("glGetFloati_vNV", glGetFloati_vNV == NULL);
-  glewInfoFunc("glIsEnablediNV", glIsEnablediNV == NULL);
-  glewInfoFunc("glScissorArrayvNV", glScissorArrayvNV == NULL);
-  glewInfoFunc("glScissorIndexedNV", glScissorIndexedNV == NULL);
-  glewInfoFunc("glScissorIndexedvNV", glScissorIndexedvNV == NULL);
-  glewInfoFunc("glViewportArrayvNV", glViewportArrayvNV == NULL);
-  glewInfoFunc("glViewportIndexedfNV", glViewportIndexedfNV == NULL);
-  glewInfoFunc("glViewportIndexedfvNV", glViewportIndexedfvNV == NULL);
+  glewInfoFunc(fi, "glDepthRangeArrayfvNV", glDepthRangeArrayfvNV == NULL);
+  glewInfoFunc(fi, "glDepthRangeIndexedfNV", glDepthRangeIndexedfNV == NULL);
+  glewInfoFunc(fi, "glDisableiNV", glDisableiNV == NULL);
+  glewInfoFunc(fi, "glEnableiNV", glEnableiNV == NULL);
+  glewInfoFunc(fi, "glGetFloati_vNV", glGetFloati_vNV == NULL);
+  glewInfoFunc(fi, "glIsEnablediNV", glIsEnablediNV == NULL);
+  glewInfoFunc(fi, "glScissorArrayvNV", glScissorArrayvNV == NULL);
+  glewInfoFunc(fi, "glScissorIndexedNV", glScissorIndexedNV == NULL);
+  glewInfoFunc(fi, "glScissorIndexedvNV", glScissorIndexedvNV == NULL);
+  glewInfoFunc(fi, "glViewportArrayvNV", glViewportArrayvNV == NULL);
+  glewInfoFunc(fi, "glViewportIndexedfNV", glViewportIndexedfNV == NULL);
+  glewInfoFunc(fi, "glViewportIndexedfvNV", glViewportIndexedfvNV == NULL);
 }
 
 #endif /* GL_NV_viewport_array */
@@ -8690,12 +9366,75 @@ static void _glewInfo_GL_NV_viewport_array2 (void)
 
 static void _glewInfo_GL_NV_viewport_swizzle (void)
 {
-  glewPrintExt("GL_NV_viewport_swizzle", GLEW_NV_viewport_swizzle, glewIsSupported("GL_NV_viewport_swizzle"), glewGetExtension("GL_NV_viewport_swizzle"));
+  GLboolean fi = glewPrintExt("GL_NV_viewport_swizzle", GLEW_NV_viewport_swizzle, glewIsSupported("GL_NV_viewport_swizzle"), glewGetExtension("GL_NV_viewport_swizzle"));
 
-  glewInfoFunc("glViewportSwizzleNV", glViewportSwizzleNV == NULL);
+  glewInfoFunc(fi, "glViewportSwizzleNV", glViewportSwizzleNV == NULL);
 }
 
 #endif /* GL_NV_viewport_swizzle */
+
+#ifdef GL_OES_EGL_image
+
+static void _glewInfo_GL_OES_EGL_image (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_EGL_image", GLEW_OES_EGL_image, glewIsSupported("GL_OES_EGL_image"), glewGetExtension("GL_OES_EGL_image"));
+
+  glewInfoFunc(fi, "glEGLImageTargetRenderbufferStorageOES", glEGLImageTargetRenderbufferStorageOES == NULL);
+  glewInfoFunc(fi, "glEGLImageTargetTexture2DOES", glEGLImageTargetTexture2DOES == NULL);
+}
+
+#endif /* GL_OES_EGL_image */
+
+#ifdef GL_OES_EGL_image_external
+
+static void _glewInfo_GL_OES_EGL_image_external (void)
+{
+  glewPrintExt("GL_OES_EGL_image_external", GLEW_OES_EGL_image_external, glewIsSupported("GL_OES_EGL_image_external"), glewGetExtension("GL_OES_EGL_image_external"));
+}
+
+#endif /* GL_OES_EGL_image_external */
+
+#ifdef GL_OES_EGL_image_external_essl3
+
+static void _glewInfo_GL_OES_EGL_image_external_essl3 (void)
+{
+  glewPrintExt("GL_OES_EGL_image_external_essl3", GLEW_OES_EGL_image_external_essl3, glewIsSupported("GL_OES_EGL_image_external_essl3"), glewGetExtension("GL_OES_EGL_image_external_essl3"));
+}
+
+#endif /* GL_OES_EGL_image_external_essl3 */
+
+#ifdef GL_OES_blend_equation_separate
+
+static void _glewInfo_GL_OES_blend_equation_separate (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_blend_equation_separate", GLEW_OES_blend_equation_separate, glewIsSupported("GL_OES_blend_equation_separate"), glewGetExtension("GL_OES_blend_equation_separate"));
+
+  glewInfoFunc(fi, "glBlendEquationSeparateOES", glBlendEquationSeparateOES == NULL);
+}
+
+#endif /* GL_OES_blend_equation_separate */
+
+#ifdef GL_OES_blend_func_separate
+
+static void _glewInfo_GL_OES_blend_func_separate (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_blend_func_separate", GLEW_OES_blend_func_separate, glewIsSupported("GL_OES_blend_func_separate"), glewGetExtension("GL_OES_blend_func_separate"));
+
+  glewInfoFunc(fi, "glBlendFuncSeparateOES", glBlendFuncSeparateOES == NULL);
+}
+
+#endif /* GL_OES_blend_func_separate */
+
+#ifdef GL_OES_blend_subtract
+
+static void _glewInfo_GL_OES_blend_subtract (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_blend_subtract", GLEW_OES_blend_subtract, glewIsSupported("GL_OES_blend_subtract"), glewGetExtension("GL_OES_blend_subtract"));
+
+  glewInfoFunc(fi, "glBlendEquationOES", glBlendEquationOES == NULL);
+}
+
+#endif /* GL_OES_blend_subtract */
 
 #ifdef GL_OES_byte_coordinates
 
@@ -8705,6 +9444,586 @@ static void _glewInfo_GL_OES_byte_coordinates (void)
 }
 
 #endif /* GL_OES_byte_coordinates */
+
+#ifdef GL_OES_compressed_ETC1_RGB8_texture
+
+static void _glewInfo_GL_OES_compressed_ETC1_RGB8_texture (void)
+{
+  glewPrintExt("GL_OES_compressed_ETC1_RGB8_texture", GLEW_OES_compressed_ETC1_RGB8_texture, glewIsSupported("GL_OES_compressed_ETC1_RGB8_texture"), glewGetExtension("GL_OES_compressed_ETC1_RGB8_texture"));
+}
+
+#endif /* GL_OES_compressed_ETC1_RGB8_texture */
+
+#ifdef GL_OES_compressed_paletted_texture
+
+static void _glewInfo_GL_OES_compressed_paletted_texture (void)
+{
+  glewPrintExt("GL_OES_compressed_paletted_texture", GLEW_OES_compressed_paletted_texture, glewIsSupported("GL_OES_compressed_paletted_texture"), glewGetExtension("GL_OES_compressed_paletted_texture"));
+}
+
+#endif /* GL_OES_compressed_paletted_texture */
+
+#ifdef GL_OES_copy_image
+
+static void _glewInfo_GL_OES_copy_image (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_copy_image", GLEW_OES_copy_image, glewIsSupported("GL_OES_copy_image"), glewGetExtension("GL_OES_copy_image"));
+
+  glewInfoFunc(fi, "glCopyImageSubDataOES", glCopyImageSubDataOES == NULL);
+}
+
+#endif /* GL_OES_copy_image */
+
+#ifdef GL_OES_depth24
+
+static void _glewInfo_GL_OES_depth24 (void)
+{
+  glewPrintExt("GL_OES_depth24", GLEW_OES_depth24, glewIsSupported("GL_OES_depth24"), glewGetExtension("GL_OES_depth24"));
+}
+
+#endif /* GL_OES_depth24 */
+
+#ifdef GL_OES_depth32
+
+static void _glewInfo_GL_OES_depth32 (void)
+{
+  glewPrintExt("GL_OES_depth32", GLEW_OES_depth32, glewIsSupported("GL_OES_depth32"), glewGetExtension("GL_OES_depth32"));
+}
+
+#endif /* GL_OES_depth32 */
+
+#ifdef GL_OES_depth_texture
+
+static void _glewInfo_GL_OES_depth_texture (void)
+{
+  glewPrintExt("GL_OES_depth_texture", GLEW_OES_depth_texture, glewIsSupported("GL_OES_depth_texture"), glewGetExtension("GL_OES_depth_texture"));
+}
+
+#endif /* GL_OES_depth_texture */
+
+#ifdef GL_OES_depth_texture_cube_map
+
+static void _glewInfo_GL_OES_depth_texture_cube_map (void)
+{
+  glewPrintExt("GL_OES_depth_texture_cube_map", GLEW_OES_depth_texture_cube_map, glewIsSupported("GL_OES_depth_texture_cube_map"), glewGetExtension("GL_OES_depth_texture_cube_map"));
+}
+
+#endif /* GL_OES_depth_texture_cube_map */
+
+#ifdef GL_OES_draw_buffers_indexed
+
+static void _glewInfo_GL_OES_draw_buffers_indexed (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_draw_buffers_indexed", GLEW_OES_draw_buffers_indexed, glewIsSupported("GL_OES_draw_buffers_indexed"), glewGetExtension("GL_OES_draw_buffers_indexed"));
+
+  glewInfoFunc(fi, "glBlendEquationSeparateiOES", glBlendEquationSeparateiOES == NULL);
+  glewInfoFunc(fi, "glBlendEquationiOES", glBlendEquationiOES == NULL);
+  glewInfoFunc(fi, "glBlendFuncSeparateiOES", glBlendFuncSeparateiOES == NULL);
+  glewInfoFunc(fi, "glBlendFunciOES", glBlendFunciOES == NULL);
+  glewInfoFunc(fi, "glColorMaskiOES", glColorMaskiOES == NULL);
+  glewInfoFunc(fi, "glDisableiOES", glDisableiOES == NULL);
+  glewInfoFunc(fi, "glEnableiOES", glEnableiOES == NULL);
+  glewInfoFunc(fi, "glIsEnablediOES", glIsEnablediOES == NULL);
+}
+
+#endif /* GL_OES_draw_buffers_indexed */
+
+#ifdef GL_OES_draw_texture
+
+static void _glewInfo_GL_OES_draw_texture (void)
+{
+  glewPrintExt("GL_OES_draw_texture", GLEW_OES_draw_texture, glewIsSupported("GL_OES_draw_texture"), glewGetExtension("GL_OES_draw_texture"));
+}
+
+#endif /* GL_OES_draw_texture */
+
+#ifdef GL_OES_element_index_uint
+
+static void _glewInfo_GL_OES_element_index_uint (void)
+{
+  glewPrintExt("GL_OES_element_index_uint", GLEW_OES_element_index_uint, glewIsSupported("GL_OES_element_index_uint"), glewGetExtension("GL_OES_element_index_uint"));
+}
+
+#endif /* GL_OES_element_index_uint */
+
+#ifdef GL_OES_extended_matrix_palette
+
+static void _glewInfo_GL_OES_extended_matrix_palette (void)
+{
+  glewPrintExt("GL_OES_extended_matrix_palette", GLEW_OES_extended_matrix_palette, glewIsSupported("GL_OES_extended_matrix_palette"), glewGetExtension("GL_OES_extended_matrix_palette"));
+}
+
+#endif /* GL_OES_extended_matrix_palette */
+
+#ifdef GL_OES_fbo_render_mipmap
+
+static void _glewInfo_GL_OES_fbo_render_mipmap (void)
+{
+  glewPrintExt("GL_OES_fbo_render_mipmap", GLEW_OES_fbo_render_mipmap, glewIsSupported("GL_OES_fbo_render_mipmap"), glewGetExtension("GL_OES_fbo_render_mipmap"));
+}
+
+#endif /* GL_OES_fbo_render_mipmap */
+
+#ifdef GL_OES_fragment_precision_high
+
+static void _glewInfo_GL_OES_fragment_precision_high (void)
+{
+  glewPrintExt("GL_OES_fragment_precision_high", GLEW_OES_fragment_precision_high, glewIsSupported("GL_OES_fragment_precision_high"), glewGetExtension("GL_OES_fragment_precision_high"));
+}
+
+#endif /* GL_OES_fragment_precision_high */
+
+#ifdef GL_OES_framebuffer_object
+
+static void _glewInfo_GL_OES_framebuffer_object (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_framebuffer_object", GLEW_OES_framebuffer_object, glewIsSupported("GL_OES_framebuffer_object"), glewGetExtension("GL_OES_framebuffer_object"));
+
+  glewInfoFunc(fi, "glBindFramebufferOES", glBindFramebufferOES == NULL);
+  glewInfoFunc(fi, "glBindRenderbufferOES", glBindRenderbufferOES == NULL);
+  glewInfoFunc(fi, "glCheckFramebufferStatusOES", glCheckFramebufferStatusOES == NULL);
+  glewInfoFunc(fi, "glDeleteFramebuffersOES", glDeleteFramebuffersOES == NULL);
+  glewInfoFunc(fi, "glDeleteRenderbuffersOES", glDeleteRenderbuffersOES == NULL);
+  glewInfoFunc(fi, "glFramebufferRenderbufferOES", glFramebufferRenderbufferOES == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture2DOES", glFramebufferTexture2DOES == NULL);
+  glewInfoFunc(fi, "glGenFramebuffersOES", glGenFramebuffersOES == NULL);
+  glewInfoFunc(fi, "glGenRenderbuffersOES", glGenRenderbuffersOES == NULL);
+  glewInfoFunc(fi, "glGenerateMipmapOES", glGenerateMipmapOES == NULL);
+  glewInfoFunc(fi, "glGetFramebufferAttachmentParameterivOES", glGetFramebufferAttachmentParameterivOES == NULL);
+  glewInfoFunc(fi, "glGetRenderbufferParameterivOES", glGetRenderbufferParameterivOES == NULL);
+  glewInfoFunc(fi, "glIsFramebufferOES", glIsFramebufferOES == NULL);
+  glewInfoFunc(fi, "glIsRenderbufferOES", glIsRenderbufferOES == NULL);
+  glewInfoFunc(fi, "glRenderbufferStorageOES", glRenderbufferStorageOES == NULL);
+}
+
+#endif /* GL_OES_framebuffer_object */
+
+#ifdef GL_OES_geometry_point_size
+
+static void _glewInfo_GL_OES_geometry_point_size (void)
+{
+  glewPrintExt("GL_OES_geometry_point_size", GLEW_OES_geometry_point_size, glewIsSupported("GL_OES_geometry_point_size"), glewGetExtension("GL_OES_geometry_point_size"));
+}
+
+#endif /* GL_OES_geometry_point_size */
+
+#ifdef GL_OES_geometry_shader
+
+static void _glewInfo_GL_OES_geometry_shader (void)
+{
+  glewPrintExt("GL_OES_geometry_shader", GLEW_OES_geometry_shader, glewIsSupported("GL_OES_geometry_shader"), glewGetExtension("GL_OES_geometry_shader"));
+}
+
+#endif /* GL_OES_geometry_shader */
+
+#ifdef GL_OES_get_program_binary
+
+static void _glewInfo_GL_OES_get_program_binary (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_get_program_binary", GLEW_OES_get_program_binary, glewIsSupported("GL_OES_get_program_binary"), glewGetExtension("GL_OES_get_program_binary"));
+
+  glewInfoFunc(fi, "glGetProgramBinaryOES", glGetProgramBinaryOES == NULL);
+  glewInfoFunc(fi, "glProgramBinaryOES", glProgramBinaryOES == NULL);
+}
+
+#endif /* GL_OES_get_program_binary */
+
+#ifdef GL_OES_gpu_shader5
+
+static void _glewInfo_GL_OES_gpu_shader5 (void)
+{
+  glewPrintExt("GL_OES_gpu_shader5", GLEW_OES_gpu_shader5, glewIsSupported("GL_OES_gpu_shader5"), glewGetExtension("GL_OES_gpu_shader5"));
+}
+
+#endif /* GL_OES_gpu_shader5 */
+
+#ifdef GL_OES_mapbuffer
+
+static void _glewInfo_GL_OES_mapbuffer (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_mapbuffer", GLEW_OES_mapbuffer, glewIsSupported("GL_OES_mapbuffer"), glewGetExtension("GL_OES_mapbuffer"));
+
+  glewInfoFunc(fi, "glGetBufferPointervOES", glGetBufferPointervOES == NULL);
+  glewInfoFunc(fi, "glMapBufferOES", glMapBufferOES == NULL);
+  glewInfoFunc(fi, "glUnmapBufferOES", glUnmapBufferOES == NULL);
+}
+
+#endif /* GL_OES_mapbuffer */
+
+#ifdef GL_OES_matrix_get
+
+static void _glewInfo_GL_OES_matrix_get (void)
+{
+  glewPrintExt("GL_OES_matrix_get", GLEW_OES_matrix_get, glewIsSupported("GL_OES_matrix_get"), glewGetExtension("GL_OES_matrix_get"));
+}
+
+#endif /* GL_OES_matrix_get */
+
+#ifdef GL_OES_matrix_palette
+
+static void _glewInfo_GL_OES_matrix_palette (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_matrix_palette", GLEW_OES_matrix_palette, glewIsSupported("GL_OES_matrix_palette"), glewGetExtension("GL_OES_matrix_palette"));
+
+  glewInfoFunc(fi, "glCurrentPaletteMatrixOES", glCurrentPaletteMatrixOES == NULL);
+  glewInfoFunc(fi, "glMatrixIndexPointerOES", glMatrixIndexPointerOES == NULL);
+  glewInfoFunc(fi, "glWeightPointerOES", glWeightPointerOES == NULL);
+}
+
+#endif /* GL_OES_matrix_palette */
+
+#ifdef GL_OES_packed_depth_stencil
+
+static void _glewInfo_GL_OES_packed_depth_stencil (void)
+{
+  glewPrintExt("GL_OES_packed_depth_stencil", GLEW_OES_packed_depth_stencil, glewIsSupported("GL_OES_packed_depth_stencil"), glewGetExtension("GL_OES_packed_depth_stencil"));
+}
+
+#endif /* GL_OES_packed_depth_stencil */
+
+#ifdef GL_OES_point_size_array
+
+static void _glewInfo_GL_OES_point_size_array (void)
+{
+  glewPrintExt("GL_OES_point_size_array", GLEW_OES_point_size_array, glewIsSupported("GL_OES_point_size_array"), glewGetExtension("GL_OES_point_size_array"));
+}
+
+#endif /* GL_OES_point_size_array */
+
+#ifdef GL_OES_point_sprite
+
+static void _glewInfo_GL_OES_point_sprite (void)
+{
+  glewPrintExt("GL_OES_point_sprite", GLEW_OES_point_sprite, glewIsSupported("GL_OES_point_sprite"), glewGetExtension("GL_OES_point_sprite"));
+}
+
+#endif /* GL_OES_point_sprite */
+
+#ifdef GL_OES_read_format
+
+static void _glewInfo_GL_OES_read_format (void)
+{
+  glewPrintExt("GL_OES_read_format", GLEW_OES_read_format, glewIsSupported("GL_OES_read_format"), glewGetExtension("GL_OES_read_format"));
+}
+
+#endif /* GL_OES_read_format */
+
+#ifdef GL_OES_required_internalformat
+
+static void _glewInfo_GL_OES_required_internalformat (void)
+{
+  glewPrintExt("GL_OES_required_internalformat", GLEW_OES_required_internalformat, glewIsSupported("GL_OES_required_internalformat"), glewGetExtension("GL_OES_required_internalformat"));
+}
+
+#endif /* GL_OES_required_internalformat */
+
+#ifdef GL_OES_rgb8_rgba8
+
+static void _glewInfo_GL_OES_rgb8_rgba8 (void)
+{
+  glewPrintExt("GL_OES_rgb8_rgba8", GLEW_OES_rgb8_rgba8, glewIsSupported("GL_OES_rgb8_rgba8"), glewGetExtension("GL_OES_rgb8_rgba8"));
+}
+
+#endif /* GL_OES_rgb8_rgba8 */
+
+#ifdef GL_OES_sample_shading
+
+static void _glewInfo_GL_OES_sample_shading (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_sample_shading", GLEW_OES_sample_shading, glewIsSupported("GL_OES_sample_shading"), glewGetExtension("GL_OES_sample_shading"));
+
+  glewInfoFunc(fi, "glMinSampleShadingOES", glMinSampleShadingOES == NULL);
+}
+
+#endif /* GL_OES_sample_shading */
+
+#ifdef GL_OES_sample_variables
+
+static void _glewInfo_GL_OES_sample_variables (void)
+{
+  glewPrintExt("GL_OES_sample_variables", GLEW_OES_sample_variables, glewIsSupported("GL_OES_sample_variables"), glewGetExtension("GL_OES_sample_variables"));
+}
+
+#endif /* GL_OES_sample_variables */
+
+#ifdef GL_OES_shader_image_atomic
+
+static void _glewInfo_GL_OES_shader_image_atomic (void)
+{
+  glewPrintExt("GL_OES_shader_image_atomic", GLEW_OES_shader_image_atomic, glewIsSupported("GL_OES_shader_image_atomic"), glewGetExtension("GL_OES_shader_image_atomic"));
+}
+
+#endif /* GL_OES_shader_image_atomic */
+
+#ifdef GL_OES_shader_io_blocks
+
+static void _glewInfo_GL_OES_shader_io_blocks (void)
+{
+  glewPrintExt("GL_OES_shader_io_blocks", GLEW_OES_shader_io_blocks, glewIsSupported("GL_OES_shader_io_blocks"), glewGetExtension("GL_OES_shader_io_blocks"));
+}
+
+#endif /* GL_OES_shader_io_blocks */
+
+#ifdef GL_OES_shader_multisample_interpolation
+
+static void _glewInfo_GL_OES_shader_multisample_interpolation (void)
+{
+  glewPrintExt("GL_OES_shader_multisample_interpolation", GLEW_OES_shader_multisample_interpolation, glewIsSupported("GL_OES_shader_multisample_interpolation"), glewGetExtension("GL_OES_shader_multisample_interpolation"));
+}
+
+#endif /* GL_OES_shader_multisample_interpolation */
+
+#ifdef GL_OES_single_precision
+
+static void _glewInfo_GL_OES_single_precision (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_single_precision", GLEW_OES_single_precision, glewIsSupported("GL_OES_single_precision"), glewGetExtension("GL_OES_single_precision"));
+
+  glewInfoFunc(fi, "glClearDepthfOES", glClearDepthfOES == NULL);
+  glewInfoFunc(fi, "glClipPlanefOES", glClipPlanefOES == NULL);
+  glewInfoFunc(fi, "glDepthRangefOES", glDepthRangefOES == NULL);
+  glewInfoFunc(fi, "glFrustumfOES", glFrustumfOES == NULL);
+  glewInfoFunc(fi, "glGetClipPlanefOES", glGetClipPlanefOES == NULL);
+  glewInfoFunc(fi, "glOrthofOES", glOrthofOES == NULL);
+}
+
+#endif /* GL_OES_single_precision */
+
+#ifdef GL_OES_standard_derivatives
+
+static void _glewInfo_GL_OES_standard_derivatives (void)
+{
+  glewPrintExt("GL_OES_standard_derivatives", GLEW_OES_standard_derivatives, glewIsSupported("GL_OES_standard_derivatives"), glewGetExtension("GL_OES_standard_derivatives"));
+}
+
+#endif /* GL_OES_standard_derivatives */
+
+#ifdef GL_OES_stencil1
+
+static void _glewInfo_GL_OES_stencil1 (void)
+{
+  glewPrintExt("GL_OES_stencil1", GLEW_OES_stencil1, glewIsSupported("GL_OES_stencil1"), glewGetExtension("GL_OES_stencil1"));
+}
+
+#endif /* GL_OES_stencil1 */
+
+#ifdef GL_OES_stencil4
+
+static void _glewInfo_GL_OES_stencil4 (void)
+{
+  glewPrintExt("GL_OES_stencil4", GLEW_OES_stencil4, glewIsSupported("GL_OES_stencil4"), glewGetExtension("GL_OES_stencil4"));
+}
+
+#endif /* GL_OES_stencil4 */
+
+#ifdef GL_OES_stencil8
+
+static void _glewInfo_GL_OES_stencil8 (void)
+{
+  glewPrintExt("GL_OES_stencil8", GLEW_OES_stencil8, glewIsSupported("GL_OES_stencil8"), glewGetExtension("GL_OES_stencil8"));
+}
+
+#endif /* GL_OES_stencil8 */
+
+#ifdef GL_OES_surfaceless_context
+
+static void _glewInfo_GL_OES_surfaceless_context (void)
+{
+  glewPrintExt("GL_OES_surfaceless_context", GLEW_OES_surfaceless_context, glewIsSupported("GL_OES_surfaceless_context"), glewGetExtension("GL_OES_surfaceless_context"));
+}
+
+#endif /* GL_OES_surfaceless_context */
+
+#ifdef GL_OES_tessellation_point_size
+
+static void _glewInfo_GL_OES_tessellation_point_size (void)
+{
+  glewPrintExt("GL_OES_tessellation_point_size", GLEW_OES_tessellation_point_size, glewIsSupported("GL_OES_tessellation_point_size"), glewGetExtension("GL_OES_tessellation_point_size"));
+}
+
+#endif /* GL_OES_tessellation_point_size */
+
+#ifdef GL_OES_tessellation_shader
+
+static void _glewInfo_GL_OES_tessellation_shader (void)
+{
+  glewPrintExt("GL_OES_tessellation_shader", GLEW_OES_tessellation_shader, glewIsSupported("GL_OES_tessellation_shader"), glewGetExtension("GL_OES_tessellation_shader"));
+}
+
+#endif /* GL_OES_tessellation_shader */
+
+#ifdef GL_OES_texture_3D
+
+static void _glewInfo_GL_OES_texture_3D (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_texture_3D", GLEW_OES_texture_3D, glewIsSupported("GL_OES_texture_3D"), glewGetExtension("GL_OES_texture_3D"));
+
+  glewInfoFunc(fi, "glCompressedTexImage3DOES", glCompressedTexImage3DOES == NULL);
+  glewInfoFunc(fi, "glCompressedTexSubImage3DOES", glCompressedTexSubImage3DOES == NULL);
+  glewInfoFunc(fi, "glCopyTexSubImage3DOES", glCopyTexSubImage3DOES == NULL);
+  glewInfoFunc(fi, "glFramebufferTexture3DOES", glFramebufferTexture3DOES == NULL);
+  glewInfoFunc(fi, "glTexImage3DOES", glTexImage3DOES == NULL);
+  glewInfoFunc(fi, "glTexSubImage3DOES", glTexSubImage3DOES == NULL);
+}
+
+#endif /* GL_OES_texture_3D */
+
+#ifdef GL_OES_texture_border_clamp
+
+static void _glewInfo_GL_OES_texture_border_clamp (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_texture_border_clamp", GLEW_OES_texture_border_clamp, glewIsSupported("GL_OES_texture_border_clamp"), glewGetExtension("GL_OES_texture_border_clamp"));
+
+  glewInfoFunc(fi, "glGetSamplerParameterIivOES", glGetSamplerParameterIivOES == NULL);
+  glewInfoFunc(fi, "glGetSamplerParameterIuivOES", glGetSamplerParameterIuivOES == NULL);
+  glewInfoFunc(fi, "glGetTexParameterIivOES", glGetTexParameterIivOES == NULL);
+  glewInfoFunc(fi, "glGetTexParameterIuivOES", glGetTexParameterIuivOES == NULL);
+  glewInfoFunc(fi, "glSamplerParameterIivOES", glSamplerParameterIivOES == NULL);
+  glewInfoFunc(fi, "glSamplerParameterIuivOES", glSamplerParameterIuivOES == NULL);
+  glewInfoFunc(fi, "glTexParameterIivOES", glTexParameterIivOES == NULL);
+  glewInfoFunc(fi, "glTexParameterIuivOES", glTexParameterIuivOES == NULL);
+}
+
+#endif /* GL_OES_texture_border_clamp */
+
+#ifdef GL_OES_texture_buffer
+
+static void _glewInfo_GL_OES_texture_buffer (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_texture_buffer", GLEW_OES_texture_buffer, glewIsSupported("GL_OES_texture_buffer"), glewGetExtension("GL_OES_texture_buffer"));
+
+  glewInfoFunc(fi, "glTexBufferOES", glTexBufferOES == NULL);
+  glewInfoFunc(fi, "glTexBufferRangeOES", glTexBufferRangeOES == NULL);
+}
+
+#endif /* GL_OES_texture_buffer */
+
+#ifdef GL_OES_texture_compression_astc
+
+static void _glewInfo_GL_OES_texture_compression_astc (void)
+{
+  glewPrintExt("GL_OES_texture_compression_astc", GLEW_OES_texture_compression_astc, glewIsSupported("GL_OES_texture_compression_astc"), glewGetExtension("GL_OES_texture_compression_astc"));
+}
+
+#endif /* GL_OES_texture_compression_astc */
+
+#ifdef GL_OES_texture_cube_map
+
+static void _glewInfo_GL_OES_texture_cube_map (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_texture_cube_map", GLEW_OES_texture_cube_map, glewIsSupported("GL_OES_texture_cube_map"), glewGetExtension("GL_OES_texture_cube_map"));
+
+  glewInfoFunc(fi, "glGetTexGenfvOES", glGetTexGenfvOES == NULL);
+  glewInfoFunc(fi, "glGetTexGenivOES", glGetTexGenivOES == NULL);
+  glewInfoFunc(fi, "glGetTexGenxvOES", glGetTexGenxvOES == NULL);
+  glewInfoFunc(fi, "glTexGenfOES", glTexGenfOES == NULL);
+  glewInfoFunc(fi, "glTexGenfvOES", glTexGenfvOES == NULL);
+  glewInfoFunc(fi, "glTexGeniOES", glTexGeniOES == NULL);
+  glewInfoFunc(fi, "glTexGenivOES", glTexGenivOES == NULL);
+  glewInfoFunc(fi, "glTexGenxOES", glTexGenxOES == NULL);
+  glewInfoFunc(fi, "glTexGenxvOES", glTexGenxvOES == NULL);
+}
+
+#endif /* GL_OES_texture_cube_map */
+
+#ifdef GL_OES_texture_cube_map_array
+
+static void _glewInfo_GL_OES_texture_cube_map_array (void)
+{
+  glewPrintExt("GL_OES_texture_cube_map_array", GLEW_OES_texture_cube_map_array, glewIsSupported("GL_OES_texture_cube_map_array"), glewGetExtension("GL_OES_texture_cube_map_array"));
+}
+
+#endif /* GL_OES_texture_cube_map_array */
+
+#ifdef GL_OES_texture_env_crossbar
+
+static void _glewInfo_GL_OES_texture_env_crossbar (void)
+{
+  glewPrintExt("GL_OES_texture_env_crossbar", GLEW_OES_texture_env_crossbar, glewIsSupported("GL_OES_texture_env_crossbar"), glewGetExtension("GL_OES_texture_env_crossbar"));
+}
+
+#endif /* GL_OES_texture_env_crossbar */
+
+#ifdef GL_OES_texture_mirrored_repeat
+
+static void _glewInfo_GL_OES_texture_mirrored_repeat (void)
+{
+  glewPrintExt("GL_OES_texture_mirrored_repeat", GLEW_OES_texture_mirrored_repeat, glewIsSupported("GL_OES_texture_mirrored_repeat"), glewGetExtension("GL_OES_texture_mirrored_repeat"));
+}
+
+#endif /* GL_OES_texture_mirrored_repeat */
+
+#ifdef GL_OES_texture_npot
+
+static void _glewInfo_GL_OES_texture_npot (void)
+{
+  glewPrintExt("GL_OES_texture_npot", GLEW_OES_texture_npot, glewIsSupported("GL_OES_texture_npot"), glewGetExtension("GL_OES_texture_npot"));
+}
+
+#endif /* GL_OES_texture_npot */
+
+#ifdef GL_OES_texture_stencil8
+
+static void _glewInfo_GL_OES_texture_stencil8 (void)
+{
+  glewPrintExt("GL_OES_texture_stencil8", GLEW_OES_texture_stencil8, glewIsSupported("GL_OES_texture_stencil8"), glewGetExtension("GL_OES_texture_stencil8"));
+}
+
+#endif /* GL_OES_texture_stencil8 */
+
+#ifdef GL_OES_texture_storage_multisample_2d_array
+
+static void _glewInfo_GL_OES_texture_storage_multisample_2d_array (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_texture_storage_multisample_2d_array", GLEW_OES_texture_storage_multisample_2d_array, glewIsSupported("GL_OES_texture_storage_multisample_2d_array"), glewGetExtension("GL_OES_texture_storage_multisample_2d_array"));
+
+  glewInfoFunc(fi, "glTexStorage3DMultisampleOES", glTexStorage3DMultisampleOES == NULL);
+}
+
+#endif /* GL_OES_texture_storage_multisample_2d_array */
+
+#ifdef GL_OES_texture_view
+
+static void _glewInfo_GL_OES_texture_view (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_texture_view", GLEW_OES_texture_view, glewIsSupported("GL_OES_texture_view"), glewGetExtension("GL_OES_texture_view"));
+
+  glewInfoFunc(fi, "glTextureViewOES", glTextureViewOES == NULL);
+}
+
+#endif /* GL_OES_texture_view */
+
+#ifdef GL_OES_vertex_array_object
+
+static void _glewInfo_GL_OES_vertex_array_object (void)
+{
+  GLboolean fi = glewPrintExt("GL_OES_vertex_array_object", GLEW_OES_vertex_array_object, glewIsSupported("GL_OES_vertex_array_object"), glewGetExtension("GL_OES_vertex_array_object"));
+
+  glewInfoFunc(fi, "glBindVertexArrayOES", glBindVertexArrayOES == NULL);
+  glewInfoFunc(fi, "glDeleteVertexArraysOES", glDeleteVertexArraysOES == NULL);
+  glewInfoFunc(fi, "glGenVertexArraysOES", glGenVertexArraysOES == NULL);
+  glewInfoFunc(fi, "glIsVertexArrayOES", glIsVertexArrayOES == NULL);
+}
+
+#endif /* GL_OES_vertex_array_object */
+
+#ifdef GL_OES_vertex_half_float
+
+static void _glewInfo_GL_OES_vertex_half_float (void)
+{
+  glewPrintExt("GL_OES_vertex_half_float", GLEW_OES_vertex_half_float, glewIsSupported("GL_OES_vertex_half_float"), glewGetExtension("GL_OES_vertex_half_float"));
+}
+
+#endif /* GL_OES_vertex_half_float */
+
+#ifdef GL_OES_vertex_type_10_10_10_2
+
+static void _glewInfo_GL_OES_vertex_type_10_10_10_2 (void)
+{
+  glewPrintExt("GL_OES_vertex_type_10_10_10_2", GLEW_OES_vertex_type_10_10_10_2, glewIsSupported("GL_OES_vertex_type_10_10_10_2"), glewGetExtension("GL_OES_vertex_type_10_10_10_2"));
+}
+
+#endif /* GL_OES_vertex_type_10_10_10_2 */
 
 #ifdef GL_OML_interlace
 
@@ -8737,9 +10056,10 @@ static void _glewInfo_GL_OML_subsample (void)
 
 static void _glewInfo_GL_OVR_multiview (void)
 {
-  glewPrintExt("GL_OVR_multiview", GLEW_OVR_multiview, glewIsSupported("GL_OVR_multiview"), glewGetExtension("GL_OVR_multiview"));
+  GLboolean fi = glewPrintExt("GL_OVR_multiview", GLEW_OVR_multiview, glewIsSupported("GL_OVR_multiview"), glewGetExtension("GL_OVR_multiview"));
 
-  glewInfoFunc("glFramebufferTextureMultiviewOVR", glFramebufferTextureMultiviewOVR == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureMultiviewOVR", glFramebufferTextureMultiviewOVR == NULL);
+  glewInfoFunc(fi, "glNamedFramebufferTextureMultiviewOVR", glNamedFramebufferTextureMultiviewOVR == NULL);
 }
 
 #endif /* GL_OVR_multiview */
@@ -8757,9 +10077,9 @@ static void _glewInfo_GL_OVR_multiview2 (void)
 
 static void _glewInfo_GL_OVR_multiview_multisampled_render_to_texture (void)
 {
-  glewPrintExt("GL_OVR_multiview_multisampled_render_to_texture", GLEW_OVR_multiview_multisampled_render_to_texture, glewIsSupported("GL_OVR_multiview_multisampled_render_to_texture"), glewGetExtension("GL_OVR_multiview_multisampled_render_to_texture"));
+  GLboolean fi = glewPrintExt("GL_OVR_multiview_multisampled_render_to_texture", GLEW_OVR_multiview_multisampled_render_to_texture, glewIsSupported("GL_OVR_multiview_multisampled_render_to_texture"), glewGetExtension("GL_OVR_multiview_multisampled_render_to_texture"));
 
-  glewInfoFunc("glFramebufferTextureMultisampleMultiviewOVR", glFramebufferTextureMultisampleMultiviewOVR == NULL);
+  glewInfoFunc(fi, "glFramebufferTextureMultisampleMultiviewOVR", glFramebufferTextureMultisampleMultiviewOVR == NULL);
 }
 
 #endif /* GL_OVR_multiview_multisampled_render_to_texture */
@@ -8782,13 +10102,22 @@ static void _glewInfo_GL_PGI_vertex_hints (void)
 
 #endif /* GL_PGI_vertex_hints */
 
+#ifdef GL_QCOM_YUV_texture_gather
+
+static void _glewInfo_GL_QCOM_YUV_texture_gather (void)
+{
+  glewPrintExt("GL_QCOM_YUV_texture_gather", GLEW_QCOM_YUV_texture_gather, glewIsSupported("GL_QCOM_YUV_texture_gather"), glewGetExtension("GL_QCOM_YUV_texture_gather"));
+}
+
+#endif /* GL_QCOM_YUV_texture_gather */
+
 #ifdef GL_QCOM_alpha_test
 
 static void _glewInfo_GL_QCOM_alpha_test (void)
 {
-  glewPrintExt("GL_QCOM_alpha_test", GLEW_QCOM_alpha_test, glewIsSupported("GL_QCOM_alpha_test"), glewGetExtension("GL_QCOM_alpha_test"));
+  GLboolean fi = glewPrintExt("GL_QCOM_alpha_test", GLEW_QCOM_alpha_test, glewIsSupported("GL_QCOM_alpha_test"), glewGetExtension("GL_QCOM_alpha_test"));
 
-  glewInfoFunc("glAlphaFuncQCOM", glAlphaFuncQCOM == NULL);
+  glewInfoFunc(fi, "glAlphaFuncQCOM", glAlphaFuncQCOM == NULL);
 }
 
 #endif /* GL_QCOM_alpha_test */
@@ -8806,12 +10135,12 @@ static void _glewInfo_GL_QCOM_binning_control (void)
 
 static void _glewInfo_GL_QCOM_driver_control (void)
 {
-  glewPrintExt("GL_QCOM_driver_control", GLEW_QCOM_driver_control, glewIsSupported("GL_QCOM_driver_control"), glewGetExtension("GL_QCOM_driver_control"));
+  GLboolean fi = glewPrintExt("GL_QCOM_driver_control", GLEW_QCOM_driver_control, glewIsSupported("GL_QCOM_driver_control"), glewGetExtension("GL_QCOM_driver_control"));
 
-  glewInfoFunc("glDisableDriverControlQCOM", glDisableDriverControlQCOM == NULL);
-  glewInfoFunc("glEnableDriverControlQCOM", glEnableDriverControlQCOM == NULL);
-  glewInfoFunc("glGetDriverControlStringQCOM", glGetDriverControlStringQCOM == NULL);
-  glewInfoFunc("glGetDriverControlsQCOM", glGetDriverControlsQCOM == NULL);
+  glewInfoFunc(fi, "glDisableDriverControlQCOM", glDisableDriverControlQCOM == NULL);
+  glewInfoFunc(fi, "glEnableDriverControlQCOM", glEnableDriverControlQCOM == NULL);
+  glewInfoFunc(fi, "glGetDriverControlStringQCOM", glGetDriverControlStringQCOM == NULL);
+  glewInfoFunc(fi, "glGetDriverControlsQCOM", glGetDriverControlsQCOM == NULL);
 }
 
 #endif /* GL_QCOM_driver_control */
@@ -8820,16 +10149,16 @@ static void _glewInfo_GL_QCOM_driver_control (void)
 
 static void _glewInfo_GL_QCOM_extended_get (void)
 {
-  glewPrintExt("GL_QCOM_extended_get", GLEW_QCOM_extended_get, glewIsSupported("GL_QCOM_extended_get"), glewGetExtension("GL_QCOM_extended_get"));
+  GLboolean fi = glewPrintExt("GL_QCOM_extended_get", GLEW_QCOM_extended_get, glewIsSupported("GL_QCOM_extended_get"), glewGetExtension("GL_QCOM_extended_get"));
 
-  glewInfoFunc("glExtGetBufferPointervQCOM", glExtGetBufferPointervQCOM == NULL);
-  glewInfoFunc("glExtGetBuffersQCOM", glExtGetBuffersQCOM == NULL);
-  glewInfoFunc("glExtGetFramebuffersQCOM", glExtGetFramebuffersQCOM == NULL);
-  glewInfoFunc("glExtGetRenderbuffersQCOM", glExtGetRenderbuffersQCOM == NULL);
-  glewInfoFunc("glExtGetTexLevelParameterivQCOM", glExtGetTexLevelParameterivQCOM == NULL);
-  glewInfoFunc("glExtGetTexSubImageQCOM", glExtGetTexSubImageQCOM == NULL);
-  glewInfoFunc("glExtGetTexturesQCOM", glExtGetTexturesQCOM == NULL);
-  glewInfoFunc("glExtTexObjectStateOverrideiQCOM", glExtTexObjectStateOverrideiQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetBufferPointervQCOM", glExtGetBufferPointervQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetBuffersQCOM", glExtGetBuffersQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetFramebuffersQCOM", glExtGetFramebuffersQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetRenderbuffersQCOM", glExtGetRenderbuffersQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetTexLevelParameterivQCOM", glExtGetTexLevelParameterivQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetTexSubImageQCOM", glExtGetTexSubImageQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetTexturesQCOM", glExtGetTexturesQCOM == NULL);
+  glewInfoFunc(fi, "glExtTexObjectStateOverrideiQCOM", glExtTexObjectStateOverrideiQCOM == NULL);
 }
 
 #endif /* GL_QCOM_extended_get */
@@ -8838,12 +10167,12 @@ static void _glewInfo_GL_QCOM_extended_get (void)
 
 static void _glewInfo_GL_QCOM_extended_get2 (void)
 {
-  glewPrintExt("GL_QCOM_extended_get2", GLEW_QCOM_extended_get2, glewIsSupported("GL_QCOM_extended_get2"), glewGetExtension("GL_QCOM_extended_get2"));
+  GLboolean fi = glewPrintExt("GL_QCOM_extended_get2", GLEW_QCOM_extended_get2, glewIsSupported("GL_QCOM_extended_get2"), glewGetExtension("GL_QCOM_extended_get2"));
 
-  glewInfoFunc("glExtGetProgramBinarySourceQCOM", glExtGetProgramBinarySourceQCOM == NULL);
-  glewInfoFunc("glExtGetProgramsQCOM", glExtGetProgramsQCOM == NULL);
-  glewInfoFunc("glExtGetShadersQCOM", glExtGetShadersQCOM == NULL);
-  glewInfoFunc("glExtIsProgramBinaryQCOM", glExtIsProgramBinaryQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetProgramBinarySourceQCOM", glExtGetProgramBinarySourceQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetProgramsQCOM", glExtGetProgramsQCOM == NULL);
+  glewInfoFunc(fi, "glExtGetShadersQCOM", glExtGetShadersQCOM == NULL);
+  glewInfoFunc(fi, "glExtIsProgramBinaryQCOM", glExtIsProgramBinaryQCOM == NULL);
 }
 
 #endif /* GL_QCOM_extended_get2 */
@@ -8852,10 +10181,10 @@ static void _glewInfo_GL_QCOM_extended_get2 (void)
 
 static void _glewInfo_GL_QCOM_framebuffer_foveated (void)
 {
-  glewPrintExt("GL_QCOM_framebuffer_foveated", GLEW_QCOM_framebuffer_foveated, glewIsSupported("GL_QCOM_framebuffer_foveated"), glewGetExtension("GL_QCOM_framebuffer_foveated"));
+  GLboolean fi = glewPrintExt("GL_QCOM_framebuffer_foveated", GLEW_QCOM_framebuffer_foveated, glewIsSupported("GL_QCOM_framebuffer_foveated"), glewGetExtension("GL_QCOM_framebuffer_foveated"));
 
-  glewInfoFunc("glFramebufferFoveationConfigQCOM", glFramebufferFoveationConfigQCOM == NULL);
-  glewInfoFunc("glFramebufferFoveationParametersQCOM", glFramebufferFoveationParametersQCOM == NULL);
+  glewInfoFunc(fi, "glFramebufferFoveationConfigQCOM", glFramebufferFoveationConfigQCOM == NULL);
+  glewInfoFunc(fi, "glFramebufferFoveationParametersQCOM", glFramebufferFoveationParametersQCOM == NULL);
 }
 
 #endif /* GL_QCOM_framebuffer_foveated */
@@ -8873,21 +10202,50 @@ static void _glewInfo_GL_QCOM_perfmon_global_mode (void)
 
 static void _glewInfo_GL_QCOM_shader_framebuffer_fetch_noncoherent (void)
 {
-  glewPrintExt("GL_QCOM_shader_framebuffer_fetch_noncoherent", GLEW_QCOM_shader_framebuffer_fetch_noncoherent, glewIsSupported("GL_QCOM_shader_framebuffer_fetch_noncoherent"), glewGetExtension("GL_QCOM_shader_framebuffer_fetch_noncoherent"));
+  GLboolean fi = glewPrintExt("GL_QCOM_shader_framebuffer_fetch_noncoherent", GLEW_QCOM_shader_framebuffer_fetch_noncoherent, glewIsSupported("GL_QCOM_shader_framebuffer_fetch_noncoherent"), glewGetExtension("GL_QCOM_shader_framebuffer_fetch_noncoherent"));
 
-  glewInfoFunc("glFramebufferFetchBarrierQCOM", glFramebufferFetchBarrierQCOM == NULL);
+  glewInfoFunc(fi, "glFramebufferFetchBarrierQCOM", glFramebufferFetchBarrierQCOM == NULL);
 }
 
 #endif /* GL_QCOM_shader_framebuffer_fetch_noncoherent */
+
+#ifdef GL_QCOM_shader_framebuffer_fetch_rate
+
+static void _glewInfo_GL_QCOM_shader_framebuffer_fetch_rate (void)
+{
+  glewPrintExt("GL_QCOM_shader_framebuffer_fetch_rate", GLEW_QCOM_shader_framebuffer_fetch_rate, glewIsSupported("GL_QCOM_shader_framebuffer_fetch_rate"), glewGetExtension("GL_QCOM_shader_framebuffer_fetch_rate"));
+}
+
+#endif /* GL_QCOM_shader_framebuffer_fetch_rate */
+
+#ifdef GL_QCOM_texture_foveated
+
+static void _glewInfo_GL_QCOM_texture_foveated (void)
+{
+  GLboolean fi = glewPrintExt("GL_QCOM_texture_foveated", GLEW_QCOM_texture_foveated, glewIsSupported("GL_QCOM_texture_foveated"), glewGetExtension("GL_QCOM_texture_foveated"));
+
+  glewInfoFunc(fi, "glTextureFoveationParametersQCOM", glTextureFoveationParametersQCOM == NULL);
+}
+
+#endif /* GL_QCOM_texture_foveated */
+
+#ifdef GL_QCOM_texture_foveated_subsampled_layout
+
+static void _glewInfo_GL_QCOM_texture_foveated_subsampled_layout (void)
+{
+  glewPrintExt("GL_QCOM_texture_foveated_subsampled_layout", GLEW_QCOM_texture_foveated_subsampled_layout, glewIsSupported("GL_QCOM_texture_foveated_subsampled_layout"), glewGetExtension("GL_QCOM_texture_foveated_subsampled_layout"));
+}
+
+#endif /* GL_QCOM_texture_foveated_subsampled_layout */
 
 #ifdef GL_QCOM_tiled_rendering
 
 static void _glewInfo_GL_QCOM_tiled_rendering (void)
 {
-  glewPrintExt("GL_QCOM_tiled_rendering", GLEW_QCOM_tiled_rendering, glewIsSupported("GL_QCOM_tiled_rendering"), glewGetExtension("GL_QCOM_tiled_rendering"));
+  GLboolean fi = glewPrintExt("GL_QCOM_tiled_rendering", GLEW_QCOM_tiled_rendering, glewIsSupported("GL_QCOM_tiled_rendering"), glewGetExtension("GL_QCOM_tiled_rendering"));
 
-  glewInfoFunc("glEndTilingQCOM", glEndTilingQCOM == NULL);
-  glewInfoFunc("glStartTilingQCOM", glStartTilingQCOM == NULL);
+  glewInfoFunc(fi, "glEndTilingQCOM", glEndTilingQCOM == NULL);
+  glewInfoFunc(fi, "glStartTilingQCOM", glStartTilingQCOM == NULL);
 }
 
 #endif /* GL_QCOM_tiled_rendering */
@@ -8905,39 +10263,39 @@ static void _glewInfo_GL_QCOM_writeonly_rendering (void)
 
 static void _glewInfo_GL_REGAL_ES1_0_compatibility (void)
 {
-  glewPrintExt("GL_REGAL_ES1_0_compatibility", GLEW_REGAL_ES1_0_compatibility, glewIsSupported("GL_REGAL_ES1_0_compatibility"), glewGetExtension("GL_REGAL_ES1_0_compatibility"));
+  GLboolean fi = glewPrintExt("GL_REGAL_ES1_0_compatibility", GLEW_REGAL_ES1_0_compatibility, glewIsSupported("GL_REGAL_ES1_0_compatibility"), glewGetExtension("GL_REGAL_ES1_0_compatibility"));
 
-  glewInfoFunc("glAlphaFuncx", glAlphaFuncx == NULL);
-  glewInfoFunc("glClearColorx", glClearColorx == NULL);
-  glewInfoFunc("glClearDepthx", glClearDepthx == NULL);
-  glewInfoFunc("glColor4x", glColor4x == NULL);
-  glewInfoFunc("glDepthRangex", glDepthRangex == NULL);
-  glewInfoFunc("glFogx", glFogx == NULL);
-  glewInfoFunc("glFogxv", glFogxv == NULL);
-  glewInfoFunc("glFrustumf", glFrustumf == NULL);
-  glewInfoFunc("glFrustumx", glFrustumx == NULL);
-  glewInfoFunc("glLightModelx", glLightModelx == NULL);
-  glewInfoFunc("glLightModelxv", glLightModelxv == NULL);
-  glewInfoFunc("glLightx", glLightx == NULL);
-  glewInfoFunc("glLightxv", glLightxv == NULL);
-  glewInfoFunc("glLineWidthx", glLineWidthx == NULL);
-  glewInfoFunc("glLoadMatrixx", glLoadMatrixx == NULL);
-  glewInfoFunc("glMaterialx", glMaterialx == NULL);
-  glewInfoFunc("glMaterialxv", glMaterialxv == NULL);
-  glewInfoFunc("glMultMatrixx", glMultMatrixx == NULL);
-  glewInfoFunc("glMultiTexCoord4x", glMultiTexCoord4x == NULL);
-  glewInfoFunc("glNormal3x", glNormal3x == NULL);
-  glewInfoFunc("glOrthof", glOrthof == NULL);
-  glewInfoFunc("glOrthox", glOrthox == NULL);
-  glewInfoFunc("glPointSizex", glPointSizex == NULL);
-  glewInfoFunc("glPolygonOffsetx", glPolygonOffsetx == NULL);
-  glewInfoFunc("glRotatex", glRotatex == NULL);
-  glewInfoFunc("glSampleCoveragex", glSampleCoveragex == NULL);
-  glewInfoFunc("glScalex", glScalex == NULL);
-  glewInfoFunc("glTexEnvx", glTexEnvx == NULL);
-  glewInfoFunc("glTexEnvxv", glTexEnvxv == NULL);
-  glewInfoFunc("glTexParameterx", glTexParameterx == NULL);
-  glewInfoFunc("glTranslatex", glTranslatex == NULL);
+  glewInfoFunc(fi, "glAlphaFuncx", glAlphaFuncx == NULL);
+  glewInfoFunc(fi, "glClearColorx", glClearColorx == NULL);
+  glewInfoFunc(fi, "glClearDepthx", glClearDepthx == NULL);
+  glewInfoFunc(fi, "glColor4x", glColor4x == NULL);
+  glewInfoFunc(fi, "glDepthRangex", glDepthRangex == NULL);
+  glewInfoFunc(fi, "glFogx", glFogx == NULL);
+  glewInfoFunc(fi, "glFogxv", glFogxv == NULL);
+  glewInfoFunc(fi, "glFrustumf", glFrustumf == NULL);
+  glewInfoFunc(fi, "glFrustumx", glFrustumx == NULL);
+  glewInfoFunc(fi, "glLightModelx", glLightModelx == NULL);
+  glewInfoFunc(fi, "glLightModelxv", glLightModelxv == NULL);
+  glewInfoFunc(fi, "glLightx", glLightx == NULL);
+  glewInfoFunc(fi, "glLightxv", glLightxv == NULL);
+  glewInfoFunc(fi, "glLineWidthx", glLineWidthx == NULL);
+  glewInfoFunc(fi, "glLoadMatrixx", glLoadMatrixx == NULL);
+  glewInfoFunc(fi, "glMaterialx", glMaterialx == NULL);
+  glewInfoFunc(fi, "glMaterialxv", glMaterialxv == NULL);
+  glewInfoFunc(fi, "glMultMatrixx", glMultMatrixx == NULL);
+  glewInfoFunc(fi, "glMultiTexCoord4x", glMultiTexCoord4x == NULL);
+  glewInfoFunc(fi, "glNormal3x", glNormal3x == NULL);
+  glewInfoFunc(fi, "glOrthof", glOrthof == NULL);
+  glewInfoFunc(fi, "glOrthox", glOrthox == NULL);
+  glewInfoFunc(fi, "glPointSizex", glPointSizex == NULL);
+  glewInfoFunc(fi, "glPolygonOffsetx", glPolygonOffsetx == NULL);
+  glewInfoFunc(fi, "glRotatex", glRotatex == NULL);
+  glewInfoFunc(fi, "glSampleCoveragex", glSampleCoveragex == NULL);
+  glewInfoFunc(fi, "glScalex", glScalex == NULL);
+  glewInfoFunc(fi, "glTexEnvx", glTexEnvx == NULL);
+  glewInfoFunc(fi, "glTexEnvxv", glTexEnvxv == NULL);
+  glewInfoFunc(fi, "glTexParameterx", glTexParameterx == NULL);
+  glewInfoFunc(fi, "glTranslatex", glTranslatex == NULL);
 }
 
 #endif /* GL_REGAL_ES1_0_compatibility */
@@ -8946,21 +10304,21 @@ static void _glewInfo_GL_REGAL_ES1_0_compatibility (void)
 
 static void _glewInfo_GL_REGAL_ES1_1_compatibility (void)
 {
-  glewPrintExt("GL_REGAL_ES1_1_compatibility", GLEW_REGAL_ES1_1_compatibility, glewIsSupported("GL_REGAL_ES1_1_compatibility"), glewGetExtension("GL_REGAL_ES1_1_compatibility"));
+  GLboolean fi = glewPrintExt("GL_REGAL_ES1_1_compatibility", GLEW_REGAL_ES1_1_compatibility, glewIsSupported("GL_REGAL_ES1_1_compatibility"), glewGetExtension("GL_REGAL_ES1_1_compatibility"));
 
-  glewInfoFunc("glClipPlanef", glClipPlanef == NULL);
-  glewInfoFunc("glClipPlanex", glClipPlanex == NULL);
-  glewInfoFunc("glGetClipPlanef", glGetClipPlanef == NULL);
-  glewInfoFunc("glGetClipPlanex", glGetClipPlanex == NULL);
-  glewInfoFunc("glGetFixedv", glGetFixedv == NULL);
-  glewInfoFunc("glGetLightxv", glGetLightxv == NULL);
-  glewInfoFunc("glGetMaterialxv", glGetMaterialxv == NULL);
-  glewInfoFunc("glGetTexEnvxv", glGetTexEnvxv == NULL);
-  glewInfoFunc("glGetTexParameterxv", glGetTexParameterxv == NULL);
-  glewInfoFunc("glPointParameterx", glPointParameterx == NULL);
-  glewInfoFunc("glPointParameterxv", glPointParameterxv == NULL);
-  glewInfoFunc("glPointSizePointerOES", glPointSizePointerOES == NULL);
-  glewInfoFunc("glTexParameterxv", glTexParameterxv == NULL);
+  glewInfoFunc(fi, "glClipPlanef", glClipPlanef == NULL);
+  glewInfoFunc(fi, "glClipPlanex", glClipPlanex == NULL);
+  glewInfoFunc(fi, "glGetClipPlanef", glGetClipPlanef == NULL);
+  glewInfoFunc(fi, "glGetClipPlanex", glGetClipPlanex == NULL);
+  glewInfoFunc(fi, "glGetFixedv", glGetFixedv == NULL);
+  glewInfoFunc(fi, "glGetLightxv", glGetLightxv == NULL);
+  glewInfoFunc(fi, "glGetMaterialxv", glGetMaterialxv == NULL);
+  glewInfoFunc(fi, "glGetTexEnvxv", glGetTexEnvxv == NULL);
+  glewInfoFunc(fi, "glGetTexParameterxv", glGetTexParameterxv == NULL);
+  glewInfoFunc(fi, "glPointParameterx", glPointParameterx == NULL);
+  glewInfoFunc(fi, "glPointParameterxv", glPointParameterxv == NULL);
+  glewInfoFunc(fi, "glPointSizePointerOES", glPointSizePointerOES == NULL);
+  glewInfoFunc(fi, "glTexParameterxv", glTexParameterxv == NULL);
 }
 
 #endif /* GL_REGAL_ES1_1_compatibility */
@@ -8978,9 +10336,9 @@ static void _glewInfo_GL_REGAL_enable (void)
 
 static void _glewInfo_GL_REGAL_error_string (void)
 {
-  glewPrintExt("GL_REGAL_error_string", GLEW_REGAL_error_string, glewIsSupported("GL_REGAL_error_string"), glewGetExtension("GL_REGAL_error_string"));
+  GLboolean fi = glewPrintExt("GL_REGAL_error_string", GLEW_REGAL_error_string, glewIsSupported("GL_REGAL_error_string"), glewGetExtension("GL_REGAL_error_string"));
 
-  glewInfoFunc("glErrorStringREGAL", glErrorStringREGAL == NULL);
+  glewInfoFunc(fi, "glErrorStringREGAL", glErrorStringREGAL == NULL);
 }
 
 #endif /* GL_REGAL_error_string */
@@ -8989,10 +10347,10 @@ static void _glewInfo_GL_REGAL_error_string (void)
 
 static void _glewInfo_GL_REGAL_extension_query (void)
 {
-  glewPrintExt("GL_REGAL_extension_query", GLEW_REGAL_extension_query, glewIsSupported("GL_REGAL_extension_query"), glewGetExtension("GL_REGAL_extension_query"));
+  GLboolean fi = glewPrintExt("GL_REGAL_extension_query", GLEW_REGAL_extension_query, glewIsSupported("GL_REGAL_extension_query"), glewGetExtension("GL_REGAL_extension_query"));
 
-  glewInfoFunc("glGetExtensionREGAL", glGetExtensionREGAL == NULL);
-  glewInfoFunc("glIsSupportedREGAL", glIsSupportedREGAL == NULL);
+  glewInfoFunc(fi, "glGetExtensionREGAL", glGetExtensionREGAL == NULL);
+  glewInfoFunc(fi, "glIsSupportedREGAL", glIsSupportedREGAL == NULL);
 }
 
 #endif /* GL_REGAL_extension_query */
@@ -9001,9 +10359,9 @@ static void _glewInfo_GL_REGAL_extension_query (void)
 
 static void _glewInfo_GL_REGAL_log (void)
 {
-  glewPrintExt("GL_REGAL_log", GLEW_REGAL_log, glewIsSupported("GL_REGAL_log"), glewGetExtension("GL_REGAL_log"));
+  GLboolean fi = glewPrintExt("GL_REGAL_log", GLEW_REGAL_log, glewIsSupported("GL_REGAL_log"), glewGetExtension("GL_REGAL_log"));
 
-  glewInfoFunc("glLogMessageCallbackREGAL", glLogMessageCallbackREGAL == NULL);
+  glewInfoFunc(fi, "glLogMessageCallbackREGAL", glLogMessageCallbackREGAL == NULL);
 }
 
 #endif /* GL_REGAL_log */
@@ -9012,9 +10370,9 @@ static void _glewInfo_GL_REGAL_log (void)
 
 static void _glewInfo_GL_REGAL_proc_address (void)
 {
-  glewPrintExt("GL_REGAL_proc_address", GLEW_REGAL_proc_address, glewIsSupported("GL_REGAL_proc_address"), glewGetExtension("GL_REGAL_proc_address"));
+  GLboolean fi = glewPrintExt("GL_REGAL_proc_address", GLEW_REGAL_proc_address, glewIsSupported("GL_REGAL_proc_address"), glewGetExtension("GL_REGAL_proc_address"));
 
-  glewInfoFunc("glGetProcAddressREGAL", glGetProcAddressREGAL == NULL);
+  glewInfoFunc(fi, "glGetProcAddressREGAL", glGetProcAddressREGAL == NULL);
 }
 
 #endif /* GL_REGAL_proc_address */
@@ -9059,10 +10417,10 @@ static void _glewInfo_GL_SGIS_color_range (void)
 
 static void _glewInfo_GL_SGIS_detail_texture (void)
 {
-  glewPrintExt("GL_SGIS_detail_texture", GLEW_SGIS_detail_texture, glewIsSupported("GL_SGIS_detail_texture"), glewGetExtension("GL_SGIS_detail_texture"));
+  GLboolean fi = glewPrintExt("GL_SGIS_detail_texture", GLEW_SGIS_detail_texture, glewIsSupported("GL_SGIS_detail_texture"), glewGetExtension("GL_SGIS_detail_texture"));
 
-  glewInfoFunc("glDetailTexFuncSGIS", glDetailTexFuncSGIS == NULL);
-  glewInfoFunc("glGetDetailTexFuncSGIS", glGetDetailTexFuncSGIS == NULL);
+  glewInfoFunc(fi, "glDetailTexFuncSGIS", glDetailTexFuncSGIS == NULL);
+  glewInfoFunc(fi, "glGetDetailTexFuncSGIS", glGetDetailTexFuncSGIS == NULL);
 }
 
 #endif /* GL_SGIS_detail_texture */
@@ -9071,10 +10429,10 @@ static void _glewInfo_GL_SGIS_detail_texture (void)
 
 static void _glewInfo_GL_SGIS_fog_function (void)
 {
-  glewPrintExt("GL_SGIS_fog_function", GLEW_SGIS_fog_function, glewIsSupported("GL_SGIS_fog_function"), glewGetExtension("GL_SGIS_fog_function"));
+  GLboolean fi = glewPrintExt("GL_SGIS_fog_function", GLEW_SGIS_fog_function, glewIsSupported("GL_SGIS_fog_function"), glewGetExtension("GL_SGIS_fog_function"));
 
-  glewInfoFunc("glFogFuncSGIS", glFogFuncSGIS == NULL);
-  glewInfoFunc("glGetFogFuncSGIS", glGetFogFuncSGIS == NULL);
+  glewInfoFunc(fi, "glFogFuncSGIS", glFogFuncSGIS == NULL);
+  glewInfoFunc(fi, "glGetFogFuncSGIS", glGetFogFuncSGIS == NULL);
 }
 
 #endif /* GL_SGIS_fog_function */
@@ -9101,10 +10459,10 @@ static void _glewInfo_GL_SGIS_line_texgen (void)
 
 static void _glewInfo_GL_SGIS_multisample (void)
 {
-  glewPrintExt("GL_SGIS_multisample", GLEW_SGIS_multisample, glewIsSupported("GL_SGIS_multisample"), glewGetExtension("GL_SGIS_multisample"));
+  GLboolean fi = glewPrintExt("GL_SGIS_multisample", GLEW_SGIS_multisample, glewIsSupported("GL_SGIS_multisample"), glewGetExtension("GL_SGIS_multisample"));
 
-  glewInfoFunc("glSampleMaskSGIS", glSampleMaskSGIS == NULL);
-  glewInfoFunc("glSamplePatternSGIS", glSamplePatternSGIS == NULL);
+  glewInfoFunc(fi, "glSampleMaskSGIS", glSampleMaskSGIS == NULL);
+  glewInfoFunc(fi, "glSamplePatternSGIS", glSamplePatternSGIS == NULL);
 }
 
 #endif /* GL_SGIS_multisample */
@@ -9113,12 +10471,12 @@ static void _glewInfo_GL_SGIS_multisample (void)
 
 static void _glewInfo_GL_SGIS_multitexture (void)
 {
-  glewPrintExt("GL_SGIS_multitexture", GLEW_SGIS_multitexture, glewIsSupported("GL_SGIS_multitexture"), glewGetExtension("GL_SGIS_multitexture"));
+  GLboolean fi = glewPrintExt("GL_SGIS_multitexture", GLEW_SGIS_multitexture, glewIsSupported("GL_SGIS_multitexture"), glewGetExtension("GL_SGIS_multitexture"));
 
-  glewInfoFunc("glInterleavedTextureCoordSetsSGIS", glInterleavedTextureCoordSetsSGIS == NULL);
-  glewInfoFunc("glSelectTextureCoordSetSGIS", glSelectTextureCoordSetSGIS == NULL);
-  glewInfoFunc("glSelectTextureSGIS", glSelectTextureSGIS == NULL);
-  glewInfoFunc("glSelectTextureTransformSGIS", glSelectTextureTransformSGIS == NULL);
+  glewInfoFunc(fi, "glInterleavedTextureCoordSetsSGIS", glInterleavedTextureCoordSetsSGIS == NULL);
+  glewInfoFunc(fi, "glSelectTextureCoordSetSGIS", glSelectTextureCoordSetSGIS == NULL);
+  glewInfoFunc(fi, "glSelectTextureSGIS", glSelectTextureSGIS == NULL);
+  glewInfoFunc(fi, "glSelectTextureTransformSGIS", glSelectTextureTransformSGIS == NULL);
 }
 
 #endif /* GL_SGIS_multitexture */
@@ -9145,9 +10503,9 @@ static void _glewInfo_GL_SGIS_point_line_texgen (void)
 
 static void _glewInfo_GL_SGIS_shared_multisample (void)
 {
-  glewPrintExt("GL_SGIS_shared_multisample", GLEW_SGIS_shared_multisample, glewIsSupported("GL_SGIS_shared_multisample"), glewGetExtension("GL_SGIS_shared_multisample"));
+  GLboolean fi = glewPrintExt("GL_SGIS_shared_multisample", GLEW_SGIS_shared_multisample, glewIsSupported("GL_SGIS_shared_multisample"), glewGetExtension("GL_SGIS_shared_multisample"));
 
-  glewInfoFunc("glMultisampleSubRectPosSGIS", glMultisampleSubRectPosSGIS == NULL);
+  glewInfoFunc(fi, "glMultisampleSubRectPosSGIS", glMultisampleSubRectPosSGIS == NULL);
 }
 
 #endif /* GL_SGIS_shared_multisample */
@@ -9156,10 +10514,10 @@ static void _glewInfo_GL_SGIS_shared_multisample (void)
 
 static void _glewInfo_GL_SGIS_sharpen_texture (void)
 {
-  glewPrintExt("GL_SGIS_sharpen_texture", GLEW_SGIS_sharpen_texture, glewIsSupported("GL_SGIS_sharpen_texture"), glewGetExtension("GL_SGIS_sharpen_texture"));
+  GLboolean fi = glewPrintExt("GL_SGIS_sharpen_texture", GLEW_SGIS_sharpen_texture, glewIsSupported("GL_SGIS_sharpen_texture"), glewGetExtension("GL_SGIS_sharpen_texture"));
 
-  glewInfoFunc("glGetSharpenTexFuncSGIS", glGetSharpenTexFuncSGIS == NULL);
-  glewInfoFunc("glSharpenTexFuncSGIS", glSharpenTexFuncSGIS == NULL);
+  glewInfoFunc(fi, "glGetSharpenTexFuncSGIS", glGetSharpenTexFuncSGIS == NULL);
+  glewInfoFunc(fi, "glSharpenTexFuncSGIS", glSharpenTexFuncSGIS == NULL);
 }
 
 #endif /* GL_SGIS_sharpen_texture */
@@ -9168,10 +10526,10 @@ static void _glewInfo_GL_SGIS_sharpen_texture (void)
 
 static void _glewInfo_GL_SGIS_texture4D (void)
 {
-  glewPrintExt("GL_SGIS_texture4D", GLEW_SGIS_texture4D, glewIsSupported("GL_SGIS_texture4D"), glewGetExtension("GL_SGIS_texture4D"));
+  GLboolean fi = glewPrintExt("GL_SGIS_texture4D", GLEW_SGIS_texture4D, glewIsSupported("GL_SGIS_texture4D"), glewGetExtension("GL_SGIS_texture4D"));
 
-  glewInfoFunc("glTexImage4DSGIS", glTexImage4DSGIS == NULL);
-  glewInfoFunc("glTexSubImage4DSGIS", glTexSubImage4DSGIS == NULL);
+  glewInfoFunc(fi, "glTexImage4DSGIS", glTexImage4DSGIS == NULL);
+  glewInfoFunc(fi, "glTexSubImage4DSGIS", glTexSubImage4DSGIS == NULL);
 }
 
 #endif /* GL_SGIS_texture4D */
@@ -9198,10 +10556,10 @@ static void _glewInfo_GL_SGIS_texture_edge_clamp (void)
 
 static void _glewInfo_GL_SGIS_texture_filter4 (void)
 {
-  glewPrintExt("GL_SGIS_texture_filter4", GLEW_SGIS_texture_filter4, glewIsSupported("GL_SGIS_texture_filter4"), glewGetExtension("GL_SGIS_texture_filter4"));
+  GLboolean fi = glewPrintExt("GL_SGIS_texture_filter4", GLEW_SGIS_texture_filter4, glewIsSupported("GL_SGIS_texture_filter4"), glewGetExtension("GL_SGIS_texture_filter4"));
 
-  glewInfoFunc("glGetTexFilterFuncSGIS", glGetTexFilterFuncSGIS == NULL);
-  glewInfoFunc("glTexFilterFuncSGIS", glTexFilterFuncSGIS == NULL);
+  glewInfoFunc(fi, "glGetTexFilterFuncSGIS", glGetTexFilterFuncSGIS == NULL);
+  glewInfoFunc(fi, "glTexFilterFuncSGIS", glTexFilterFuncSGIS == NULL);
 }
 
 #endif /* GL_SGIS_texture_filter4 */
@@ -9228,14 +10586,14 @@ static void _glewInfo_GL_SGIS_texture_select (void)
 
 static void _glewInfo_GL_SGIX_async (void)
 {
-  glewPrintExt("GL_SGIX_async", GLEW_SGIX_async, glewIsSupported("GL_SGIX_async"), glewGetExtension("GL_SGIX_async"));
+  GLboolean fi = glewPrintExt("GL_SGIX_async", GLEW_SGIX_async, glewIsSupported("GL_SGIX_async"), glewGetExtension("GL_SGIX_async"));
 
-  glewInfoFunc("glAsyncMarkerSGIX", glAsyncMarkerSGIX == NULL);
-  glewInfoFunc("glDeleteAsyncMarkersSGIX", glDeleteAsyncMarkersSGIX == NULL);
-  glewInfoFunc("glFinishAsyncSGIX", glFinishAsyncSGIX == NULL);
-  glewInfoFunc("glGenAsyncMarkersSGIX", glGenAsyncMarkersSGIX == NULL);
-  glewInfoFunc("glIsAsyncMarkerSGIX", glIsAsyncMarkerSGIX == NULL);
-  glewInfoFunc("glPollAsyncSGIX", glPollAsyncSGIX == NULL);
+  glewInfoFunc(fi, "glAsyncMarkerSGIX", glAsyncMarkerSGIX == NULL);
+  glewInfoFunc(fi, "glDeleteAsyncMarkersSGIX", glDeleteAsyncMarkersSGIX == NULL);
+  glewInfoFunc(fi, "glFinishAsyncSGIX", glFinishAsyncSGIX == NULL);
+  glewInfoFunc(fi, "glGenAsyncMarkersSGIX", glGenAsyncMarkersSGIX == NULL);
+  glewInfoFunc(fi, "glIsAsyncMarkerSGIX", glIsAsyncMarkerSGIX == NULL);
+  glewInfoFunc(fi, "glPollAsyncSGIX", glPollAsyncSGIX == NULL);
 }
 
 #endif /* GL_SGIX_async */
@@ -9388,10 +10746,10 @@ static void _glewInfo_GL_SGIX_cylinder_texgen (void)
 
 static void _glewInfo_GL_SGIX_datapipe (void)
 {
-  glewPrintExt("GL_SGIX_datapipe", GLEW_SGIX_datapipe, glewIsSupported("GL_SGIX_datapipe"), glewGetExtension("GL_SGIX_datapipe"));
+  GLboolean fi = glewPrintExt("GL_SGIX_datapipe", GLEW_SGIX_datapipe, glewIsSupported("GL_SGIX_datapipe"), glewGetExtension("GL_SGIX_datapipe"));
 
-  glewInfoFunc("glAddressSpace", glAddressSpace == NULL);
-  glewInfoFunc("glDataPipe", glDataPipe == NULL);
+  glewInfoFunc(fi, "glAddressSpace", glAddressSpace == NULL);
+  glewInfoFunc(fi, "glDataPipe", glDataPipe == NULL);
 }
 
 #endif /* GL_SGIX_datapipe */
@@ -9436,9 +10794,9 @@ static void _glewInfo_GL_SGIX_dvc (void)
 
 static void _glewInfo_GL_SGIX_flush_raster (void)
 {
-  glewPrintExt("GL_SGIX_flush_raster", GLEW_SGIX_flush_raster, glewIsSupported("GL_SGIX_flush_raster"), glewGetExtension("GL_SGIX_flush_raster"));
+  GLboolean fi = glewPrintExt("GL_SGIX_flush_raster", GLEW_SGIX_flush_raster, glewIsSupported("GL_SGIX_flush_raster"), glewGetExtension("GL_SGIX_flush_raster"));
 
-  glewInfoFunc("glFlushRasterSGIX", glFlushRasterSGIX == NULL);
+  glewInfoFunc(fi, "glFlushRasterSGIX", glFlushRasterSGIX == NULL);
 }
 
 #endif /* GL_SGIX_flush_raster */
@@ -9465,10 +10823,10 @@ static void _glewInfo_GL_SGIX_fog_factor_to_alpha (void)
 
 static void _glewInfo_GL_SGIX_fog_layers (void)
 {
-  glewPrintExt("GL_SGIX_fog_layers", GLEW_SGIX_fog_layers, glewIsSupported("GL_SGIX_fog_layers"), glewGetExtension("GL_SGIX_fog_layers"));
+  GLboolean fi = glewPrintExt("GL_SGIX_fog_layers", GLEW_SGIX_fog_layers, glewIsSupported("GL_SGIX_fog_layers"), glewGetExtension("GL_SGIX_fog_layers"));
 
-  glewInfoFunc("glFogLayersSGIX", glFogLayersSGIX == NULL);
-  glewInfoFunc("glGetFogLayersSGIX", glGetFogLayersSGIX == NULL);
+  glewInfoFunc(fi, "glFogLayersSGIX", glFogLayersSGIX == NULL);
+  glewInfoFunc(fi, "glGetFogLayersSGIX", glGetFogLayersSGIX == NULL);
 }
 
 #endif /* GL_SGIX_fog_layers */
@@ -9504,9 +10862,9 @@ static void _glewInfo_GL_SGIX_fog_scale (void)
 
 static void _glewInfo_GL_SGIX_fog_texture (void)
 {
-  glewPrintExt("GL_SGIX_fog_texture", GLEW_SGIX_fog_texture, glewIsSupported("GL_SGIX_fog_texture"), glewGetExtension("GL_SGIX_fog_texture"));
+  GLboolean fi = glewPrintExt("GL_SGIX_fog_texture", GLEW_SGIX_fog_texture, glewIsSupported("GL_SGIX_fog_texture"), glewGetExtension("GL_SGIX_fog_texture"));
 
-  glewInfoFunc("glTextureFogSGIX", glTextureFogSGIX == NULL);
+  glewInfoFunc(fi, "glTextureFogSGIX", glTextureFogSGIX == NULL);
 }
 
 #endif /* GL_SGIX_fog_texture */
@@ -9524,25 +10882,25 @@ static void _glewInfo_GL_SGIX_fragment_lighting_space (void)
 
 static void _glewInfo_GL_SGIX_fragment_specular_lighting (void)
 {
-  glewPrintExt("GL_SGIX_fragment_specular_lighting", GLEW_SGIX_fragment_specular_lighting, glewIsSupported("GL_SGIX_fragment_specular_lighting"), glewGetExtension("GL_SGIX_fragment_specular_lighting"));
+  GLboolean fi = glewPrintExt("GL_SGIX_fragment_specular_lighting", GLEW_SGIX_fragment_specular_lighting, glewIsSupported("GL_SGIX_fragment_specular_lighting"), glewGetExtension("GL_SGIX_fragment_specular_lighting"));
 
-  glewInfoFunc("glFragmentColorMaterialSGIX", glFragmentColorMaterialSGIX == NULL);
-  glewInfoFunc("glFragmentLightModelfSGIX", glFragmentLightModelfSGIX == NULL);
-  glewInfoFunc("glFragmentLightModelfvSGIX", glFragmentLightModelfvSGIX == NULL);
-  glewInfoFunc("glFragmentLightModeliSGIX", glFragmentLightModeliSGIX == NULL);
-  glewInfoFunc("glFragmentLightModelivSGIX", glFragmentLightModelivSGIX == NULL);
-  glewInfoFunc("glFragmentLightfSGIX", glFragmentLightfSGIX == NULL);
-  glewInfoFunc("glFragmentLightfvSGIX", glFragmentLightfvSGIX == NULL);
-  glewInfoFunc("glFragmentLightiSGIX", glFragmentLightiSGIX == NULL);
-  glewInfoFunc("glFragmentLightivSGIX", glFragmentLightivSGIX == NULL);
-  glewInfoFunc("glFragmentMaterialfSGIX", glFragmentMaterialfSGIX == NULL);
-  glewInfoFunc("glFragmentMaterialfvSGIX", glFragmentMaterialfvSGIX == NULL);
-  glewInfoFunc("glFragmentMaterialiSGIX", glFragmentMaterialiSGIX == NULL);
-  glewInfoFunc("glFragmentMaterialivSGIX", glFragmentMaterialivSGIX == NULL);
-  glewInfoFunc("glGetFragmentLightfvSGIX", glGetFragmentLightfvSGIX == NULL);
-  glewInfoFunc("glGetFragmentLightivSGIX", glGetFragmentLightivSGIX == NULL);
-  glewInfoFunc("glGetFragmentMaterialfvSGIX", glGetFragmentMaterialfvSGIX == NULL);
-  glewInfoFunc("glGetFragmentMaterialivSGIX", glGetFragmentMaterialivSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentColorMaterialSGIX", glFragmentColorMaterialSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentLightModelfSGIX", glFragmentLightModelfSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentLightModelfvSGIX", glFragmentLightModelfvSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentLightModeliSGIX", glFragmentLightModeliSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentLightModelivSGIX", glFragmentLightModelivSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentLightfSGIX", glFragmentLightfSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentLightfvSGIX", glFragmentLightfvSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentLightiSGIX", glFragmentLightiSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentLightivSGIX", glFragmentLightivSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentMaterialfSGIX", glFragmentMaterialfSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentMaterialfvSGIX", glFragmentMaterialfvSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentMaterialiSGIX", glFragmentMaterialiSGIX == NULL);
+  glewInfoFunc(fi, "glFragmentMaterialivSGIX", glFragmentMaterialivSGIX == NULL);
+  glewInfoFunc(fi, "glGetFragmentLightfvSGIX", glGetFragmentLightfvSGIX == NULL);
+  glewInfoFunc(fi, "glGetFragmentLightivSGIX", glGetFragmentLightivSGIX == NULL);
+  glewInfoFunc(fi, "glGetFragmentMaterialfvSGIX", glGetFragmentMaterialfvSGIX == NULL);
+  glewInfoFunc(fi, "glGetFragmentMaterialivSGIX", glGetFragmentMaterialivSGIX == NULL);
 }
 
 #endif /* GL_SGIX_fragment_specular_lighting */
@@ -9560,9 +10918,9 @@ static void _glewInfo_GL_SGIX_fragments_instrument (void)
 
 static void _glewInfo_GL_SGIX_framezoom (void)
 {
-  glewPrintExt("GL_SGIX_framezoom", GLEW_SGIX_framezoom, glewIsSupported("GL_SGIX_framezoom"), glewGetExtension("GL_SGIX_framezoom"));
+  GLboolean fi = glewPrintExt("GL_SGIX_framezoom", GLEW_SGIX_framezoom, glewIsSupported("GL_SGIX_framezoom"), glewGetExtension("GL_SGIX_framezoom"));
 
-  glewInfoFunc("glFrameZoomSGIX", glFrameZoomSGIX == NULL);
+  glewInfoFunc(fi, "glFrameZoomSGIX", glFrameZoomSGIX == NULL);
 }
 
 #endif /* GL_SGIX_framezoom */
@@ -9580,9 +10938,9 @@ static void _glewInfo_GL_SGIX_icc_texture (void)
 
 static void _glewInfo_GL_SGIX_igloo_interface (void)
 {
-  glewPrintExt("GL_SGIX_igloo_interface", GLEW_SGIX_igloo_interface, glewIsSupported("GL_SGIX_igloo_interface"), glewGetExtension("GL_SGIX_igloo_interface"));
+  GLboolean fi = glewPrintExt("GL_SGIX_igloo_interface", GLEW_SGIX_igloo_interface, glewIsSupported("GL_SGIX_igloo_interface"), glewGetExtension("GL_SGIX_igloo_interface"));
 
-  glewInfoFunc("glIglooInterfaceSGIX", glIglooInterfaceSGIX == NULL);
+  glewInfoFunc(fi, "glIglooInterfaceSGIX", glIglooInterfaceSGIX == NULL);
 }
 
 #endif /* GL_SGIX_igloo_interface */
@@ -9654,19 +11012,19 @@ static void _glewInfo_GL_SGIX_list_priority (void)
 
 static void _glewInfo_GL_SGIX_mpeg1 (void)
 {
-  glewPrintExt("GL_SGIX_mpeg1", GLEW_SGIX_mpeg1, glewIsSupported("GL_SGIX_mpeg1"), glewGetExtension("GL_SGIX_mpeg1"));
+  GLboolean fi = glewPrintExt("GL_SGIX_mpeg1", GLEW_SGIX_mpeg1, glewIsSupported("GL_SGIX_mpeg1"), glewGetExtension("GL_SGIX_mpeg1"));
 
-  glewInfoFunc("glAllocMPEGPredictorsSGIX", glAllocMPEGPredictorsSGIX == NULL);
-  glewInfoFunc("glDeleteMPEGPredictorsSGIX", glDeleteMPEGPredictorsSGIX == NULL);
-  glewInfoFunc("glGenMPEGPredictorsSGIX", glGenMPEGPredictorsSGIX == NULL);
-  glewInfoFunc("glGetMPEGParameterfvSGIX", glGetMPEGParameterfvSGIX == NULL);
-  glewInfoFunc("glGetMPEGParameterivSGIX", glGetMPEGParameterivSGIX == NULL);
-  glewInfoFunc("glGetMPEGPredictorSGIX", glGetMPEGPredictorSGIX == NULL);
-  glewInfoFunc("glGetMPEGQuantTableubv", glGetMPEGQuantTableubv == NULL);
-  glewInfoFunc("glIsMPEGPredictorSGIX", glIsMPEGPredictorSGIX == NULL);
-  glewInfoFunc("glMPEGPredictorSGIX", glMPEGPredictorSGIX == NULL);
-  glewInfoFunc("glMPEGQuantTableubv", glMPEGQuantTableubv == NULL);
-  glewInfoFunc("glSwapMPEGPredictorsSGIX", glSwapMPEGPredictorsSGIX == NULL);
+  glewInfoFunc(fi, "glAllocMPEGPredictorsSGIX", glAllocMPEGPredictorsSGIX == NULL);
+  glewInfoFunc(fi, "glDeleteMPEGPredictorsSGIX", glDeleteMPEGPredictorsSGIX == NULL);
+  glewInfoFunc(fi, "glGenMPEGPredictorsSGIX", glGenMPEGPredictorsSGIX == NULL);
+  glewInfoFunc(fi, "glGetMPEGParameterfvSGIX", glGetMPEGParameterfvSGIX == NULL);
+  glewInfoFunc(fi, "glGetMPEGParameterivSGIX", glGetMPEGParameterivSGIX == NULL);
+  glewInfoFunc(fi, "glGetMPEGPredictorSGIX", glGetMPEGPredictorSGIX == NULL);
+  glewInfoFunc(fi, "glGetMPEGQuantTableubv", glGetMPEGQuantTableubv == NULL);
+  glewInfoFunc(fi, "glIsMPEGPredictorSGIX", glIsMPEGPredictorSGIX == NULL);
+  glewInfoFunc(fi, "glMPEGPredictorSGIX", glMPEGPredictorSGIX == NULL);
+  glewInfoFunc(fi, "glMPEGQuantTableubv", glMPEGQuantTableubv == NULL);
+  glewInfoFunc(fi, "glSwapMPEGPredictorsSGIX", glSwapMPEGPredictorsSGIX == NULL);
 }
 
 #endif /* GL_SGIX_mpeg1 */
@@ -9684,12 +11042,12 @@ static void _glewInfo_GL_SGIX_mpeg2 (void)
 
 static void _glewInfo_GL_SGIX_nonlinear_lighting_pervertex (void)
 {
-  glewPrintExt("GL_SGIX_nonlinear_lighting_pervertex", GLEW_SGIX_nonlinear_lighting_pervertex, glewIsSupported("GL_SGIX_nonlinear_lighting_pervertex"), glewGetExtension("GL_SGIX_nonlinear_lighting_pervertex"));
+  GLboolean fi = glewPrintExt("GL_SGIX_nonlinear_lighting_pervertex", GLEW_SGIX_nonlinear_lighting_pervertex, glewIsSupported("GL_SGIX_nonlinear_lighting_pervertex"), glewGetExtension("GL_SGIX_nonlinear_lighting_pervertex"));
 
-  glewInfoFunc("glGetNonlinLightfvSGIX", glGetNonlinLightfvSGIX == NULL);
-  glewInfoFunc("glGetNonlinMaterialfvSGIX", glGetNonlinMaterialfvSGIX == NULL);
-  glewInfoFunc("glNonlinLightfvSGIX", glNonlinLightfvSGIX == NULL);
-  glewInfoFunc("glNonlinMaterialfvSGIX", glNonlinMaterialfvSGIX == NULL);
+  glewInfoFunc(fi, "glGetNonlinLightfvSGIX", glGetNonlinLightfvSGIX == NULL);
+  glewInfoFunc(fi, "glGetNonlinMaterialfvSGIX", glGetNonlinMaterialfvSGIX == NULL);
+  glewInfoFunc(fi, "glNonlinLightfvSGIX", glNonlinLightfvSGIX == NULL);
+  glewInfoFunc(fi, "glNonlinMaterialfvSGIX", glNonlinMaterialfvSGIX == NULL);
 }
 
 #endif /* GL_SGIX_nonlinear_lighting_pervertex */
@@ -9725,9 +11083,9 @@ static void _glewInfo_GL_SGIX_packed_6bytes (void)
 
 static void _glewInfo_GL_SGIX_pixel_texture (void)
 {
-  glewPrintExt("GL_SGIX_pixel_texture", GLEW_SGIX_pixel_texture, glewIsSupported("GL_SGIX_pixel_texture"), glewGetExtension("GL_SGIX_pixel_texture"));
+  GLboolean fi = glewPrintExt("GL_SGIX_pixel_texture", GLEW_SGIX_pixel_texture, glewIsSupported("GL_SGIX_pixel_texture"), glewGetExtension("GL_SGIX_pixel_texture"));
 
-  glewInfoFunc("glPixelTexGenSGIX", glPixelTexGenSGIX == NULL);
+  glewInfoFunc(fi, "glPixelTexGenSGIX", glPixelTexGenSGIX == NULL);
 }
 
 #endif /* GL_SGIX_pixel_texture */
@@ -9763,10 +11121,10 @@ static void _glewInfo_GL_SGIX_pixel_tiles (void)
 
 static void _glewInfo_GL_SGIX_polynomial_ffd (void)
 {
-  glewPrintExt("GL_SGIX_polynomial_ffd", GLEW_SGIX_polynomial_ffd, glewIsSupported("GL_SGIX_polynomial_ffd"), glewGetExtension("GL_SGIX_polynomial_ffd"));
+  GLboolean fi = glewPrintExt("GL_SGIX_polynomial_ffd", GLEW_SGIX_polynomial_ffd, glewIsSupported("GL_SGIX_polynomial_ffd"), glewGetExtension("GL_SGIX_polynomial_ffd"));
 
-  glewInfoFunc("glDeformSGIX", glDeformSGIX == NULL);
-  glewInfoFunc("glLoadIdentityDeformationMapSGIX", glLoadIdentityDeformationMapSGIX == NULL);
+  glewInfoFunc(fi, "glDeformSGIX", glDeformSGIX == NULL);
+  glewInfoFunc(fi, "glLoadIdentityDeformationMapSGIX", glLoadIdentityDeformationMapSGIX == NULL);
 }
 
 #endif /* GL_SGIX_polynomial_ffd */
@@ -9775,10 +11133,10 @@ static void _glewInfo_GL_SGIX_polynomial_ffd (void)
 
 static void _glewInfo_GL_SGIX_quad_mesh (void)
 {
-  glewPrintExt("GL_SGIX_quad_mesh", GLEW_SGIX_quad_mesh, glewIsSupported("GL_SGIX_quad_mesh"), glewGetExtension("GL_SGIX_quad_mesh"));
+  GLboolean fi = glewPrintExt("GL_SGIX_quad_mesh", GLEW_SGIX_quad_mesh, glewIsSupported("GL_SGIX_quad_mesh"), glewGetExtension("GL_SGIX_quad_mesh"));
 
-  glewInfoFunc("glMeshBreadthSGIX", glMeshBreadthSGIX == NULL);
-  glewInfoFunc("glMeshStrideSGIX", glMeshStrideSGIX == NULL);
+  glewInfoFunc(fi, "glMeshBreadthSGIX", glMeshBreadthSGIX == NULL);
+  glewInfoFunc(fi, "glMeshStrideSGIX", glMeshStrideSGIX == NULL);
 }
 
 #endif /* GL_SGIX_quad_mesh */
@@ -9787,9 +11145,9 @@ static void _glewInfo_GL_SGIX_quad_mesh (void)
 
 static void _glewInfo_GL_SGIX_reference_plane (void)
 {
-  glewPrintExt("GL_SGIX_reference_plane", GLEW_SGIX_reference_plane, glewIsSupported("GL_SGIX_reference_plane"), glewGetExtension("GL_SGIX_reference_plane"));
+  GLboolean fi = glewPrintExt("GL_SGIX_reference_plane", GLEW_SGIX_reference_plane, glewIsSupported("GL_SGIX_reference_plane"), glewGetExtension("GL_SGIX_reference_plane"));
 
-  glewInfoFunc("glReferencePlaneSGIX", glReferencePlaneSGIX == NULL);
+  glewInfoFunc(fi, "glReferencePlaneSGIX", glReferencePlaneSGIX == NULL);
 }
 
 #endif /* GL_SGIX_reference_plane */
@@ -9852,12 +11210,12 @@ static void _glewInfo_GL_SGIX_spotlight_cutoff (void)
 
 static void _glewInfo_GL_SGIX_sprite (void)
 {
-  glewPrintExt("GL_SGIX_sprite", GLEW_SGIX_sprite, glewIsSupported("GL_SGIX_sprite"), glewGetExtension("GL_SGIX_sprite"));
+  GLboolean fi = glewPrintExt("GL_SGIX_sprite", GLEW_SGIX_sprite, glewIsSupported("GL_SGIX_sprite"), glewGetExtension("GL_SGIX_sprite"));
 
-  glewInfoFunc("glSpriteParameterfSGIX", glSpriteParameterfSGIX == NULL);
-  glewInfoFunc("glSpriteParameterfvSGIX", glSpriteParameterfvSGIX == NULL);
-  glewInfoFunc("glSpriteParameteriSGIX", glSpriteParameteriSGIX == NULL);
-  glewInfoFunc("glSpriteParameterivSGIX", glSpriteParameterivSGIX == NULL);
+  glewInfoFunc(fi, "glSpriteParameterfSGIX", glSpriteParameterfSGIX == NULL);
+  glewInfoFunc(fi, "glSpriteParameterfvSGIX", glSpriteParameterfvSGIX == NULL);
+  glewInfoFunc(fi, "glSpriteParameteriSGIX", glSpriteParameteriSGIX == NULL);
+  glewInfoFunc(fi, "glSpriteParameterivSGIX", glSpriteParameterivSGIX == NULL);
 }
 
 #endif /* GL_SGIX_sprite */
@@ -9884,9 +11242,9 @@ static void _glewInfo_GL_SGIX_subsample (void)
 
 static void _glewInfo_GL_SGIX_tag_sample_buffer (void)
 {
-  glewPrintExt("GL_SGIX_tag_sample_buffer", GLEW_SGIX_tag_sample_buffer, glewIsSupported("GL_SGIX_tag_sample_buffer"), glewGetExtension("GL_SGIX_tag_sample_buffer"));
+  GLboolean fi = glewPrintExt("GL_SGIX_tag_sample_buffer", GLEW_SGIX_tag_sample_buffer, glewIsSupported("GL_SGIX_tag_sample_buffer"), glewGetExtension("GL_SGIX_tag_sample_buffer"));
 
-  glewInfoFunc("glTagSampleBufferSGIX", glTagSampleBufferSGIX == NULL);
+  glewInfoFunc(fi, "glTagSampleBufferSGIX", glTagSampleBufferSGIX == NULL);
 }
 
 #endif /* GL_SGIX_tag_sample_buffer */
@@ -9976,10 +11334,10 @@ static void _glewInfo_GL_SGIX_texture_supersample (void)
 
 static void _glewInfo_GL_SGIX_vector_ops (void)
 {
-  glewPrintExt("GL_SGIX_vector_ops", GLEW_SGIX_vector_ops, glewIsSupported("GL_SGIX_vector_ops"), glewGetExtension("GL_SGIX_vector_ops"));
+  GLboolean fi = glewPrintExt("GL_SGIX_vector_ops", GLEW_SGIX_vector_ops, glewIsSupported("GL_SGIX_vector_ops"), glewGetExtension("GL_SGIX_vector_ops"));
 
-  glewInfoFunc("glGetVectorOperationSGIX", glGetVectorOperationSGIX == NULL);
-  glewInfoFunc("glVectorOperationSGIX", glVectorOperationSGIX == NULL);
+  glewInfoFunc(fi, "glGetVectorOperationSGIX", glGetVectorOperationSGIX == NULL);
+  glewInfoFunc(fi, "glVectorOperationSGIX", glVectorOperationSGIX == NULL);
 }
 
 #endif /* GL_SGIX_vector_ops */
@@ -9988,14 +11346,14 @@ static void _glewInfo_GL_SGIX_vector_ops (void)
 
 static void _glewInfo_GL_SGIX_vertex_array_object (void)
 {
-  glewPrintExt("GL_SGIX_vertex_array_object", GLEW_SGIX_vertex_array_object, glewIsSupported("GL_SGIX_vertex_array_object"), glewGetExtension("GL_SGIX_vertex_array_object"));
+  GLboolean fi = glewPrintExt("GL_SGIX_vertex_array_object", GLEW_SGIX_vertex_array_object, glewIsSupported("GL_SGIX_vertex_array_object"), glewGetExtension("GL_SGIX_vertex_array_object"));
 
-  glewInfoFunc("glAreVertexArraysResidentSGIX", glAreVertexArraysResidentSGIX == NULL);
-  glewInfoFunc("glBindVertexArraySGIX", glBindVertexArraySGIX == NULL);
-  glewInfoFunc("glDeleteVertexArraysSGIX", glDeleteVertexArraysSGIX == NULL);
-  glewInfoFunc("glGenVertexArraysSGIX", glGenVertexArraysSGIX == NULL);
-  glewInfoFunc("glIsVertexArraySGIX", glIsVertexArraySGIX == NULL);
-  glewInfoFunc("glPrioritizeVertexArraysSGIX", glPrioritizeVertexArraysSGIX == NULL);
+  glewInfoFunc(fi, "glAreVertexArraysResidentSGIX", glAreVertexArraysResidentSGIX == NULL);
+  glewInfoFunc(fi, "glBindVertexArraySGIX", glBindVertexArraySGIX == NULL);
+  glewInfoFunc(fi, "glDeleteVertexArraysSGIX", glDeleteVertexArraysSGIX == NULL);
+  glewInfoFunc(fi, "glGenVertexArraysSGIX", glGenVertexArraysSGIX == NULL);
+  glewInfoFunc(fi, "glIsVertexArraySGIX", glIsVertexArraySGIX == NULL);
+  glewInfoFunc(fi, "glPrioritizeVertexArraysSGIX", glPrioritizeVertexArraysSGIX == NULL);
 }
 
 #endif /* GL_SGIX_vertex_array_object */
@@ -10058,15 +11416,15 @@ static void _glewInfo_GL_SGI_color_matrix (void)
 
 static void _glewInfo_GL_SGI_color_table (void)
 {
-  glewPrintExt("GL_SGI_color_table", GLEW_SGI_color_table, glewIsSupported("GL_SGI_color_table"), glewGetExtension("GL_SGI_color_table"));
+  GLboolean fi = glewPrintExt("GL_SGI_color_table", GLEW_SGI_color_table, glewIsSupported("GL_SGI_color_table"), glewGetExtension("GL_SGI_color_table"));
 
-  glewInfoFunc("glColorTableParameterfvSGI", glColorTableParameterfvSGI == NULL);
-  glewInfoFunc("glColorTableParameterivSGI", glColorTableParameterivSGI == NULL);
-  glewInfoFunc("glColorTableSGI", glColorTableSGI == NULL);
-  glewInfoFunc("glCopyColorTableSGI", glCopyColorTableSGI == NULL);
-  glewInfoFunc("glGetColorTableParameterfvSGI", glGetColorTableParameterfvSGI == NULL);
-  glewInfoFunc("glGetColorTableParameterivSGI", glGetColorTableParameterivSGI == NULL);
-  glewInfoFunc("glGetColorTableSGI", glGetColorTableSGI == NULL);
+  glewInfoFunc(fi, "glColorTableParameterfvSGI", glColorTableParameterfvSGI == NULL);
+  glewInfoFunc(fi, "glColorTableParameterivSGI", glColorTableParameterivSGI == NULL);
+  glewInfoFunc(fi, "glColorTableSGI", glColorTableSGI == NULL);
+  glewInfoFunc(fi, "glCopyColorTableSGI", glCopyColorTableSGI == NULL);
+  glewInfoFunc(fi, "glGetColorTableParameterfvSGI", glGetColorTableParameterfvSGI == NULL);
+  glewInfoFunc(fi, "glGetColorTableParameterivSGI", glGetColorTableParameterivSGI == NULL);
+  glewInfoFunc(fi, "glGetColorTableSGI", glGetColorTableSGI == NULL);
 }
 
 #endif /* GL_SGI_color_table */
@@ -10093,15 +11451,15 @@ static void _glewInfo_GL_SGI_complex_type (void)
 
 static void _glewInfo_GL_SGI_fft (void)
 {
-  glewPrintExt("GL_SGI_fft", GLEW_SGI_fft, glewIsSupported("GL_SGI_fft"), glewGetExtension("GL_SGI_fft"));
+  GLboolean fi = glewPrintExt("GL_SGI_fft", GLEW_SGI_fft, glewIsSupported("GL_SGI_fft"), glewGetExtension("GL_SGI_fft"));
 
-  glewInfoFunc("glGetPixelTransformParameterfvSGI", glGetPixelTransformParameterfvSGI == NULL);
-  glewInfoFunc("glGetPixelTransformParameterivSGI", glGetPixelTransformParameterivSGI == NULL);
-  glewInfoFunc("glPixelTransformParameterfSGI", glPixelTransformParameterfSGI == NULL);
-  glewInfoFunc("glPixelTransformParameterfvSGI", glPixelTransformParameterfvSGI == NULL);
-  glewInfoFunc("glPixelTransformParameteriSGI", glPixelTransformParameteriSGI == NULL);
-  glewInfoFunc("glPixelTransformParameterivSGI", glPixelTransformParameterivSGI == NULL);
-  glewInfoFunc("glPixelTransformSGI", glPixelTransformSGI == NULL);
+  glewInfoFunc(fi, "glGetPixelTransformParameterfvSGI", glGetPixelTransformParameterfvSGI == NULL);
+  glewInfoFunc(fi, "glGetPixelTransformParameterivSGI", glGetPixelTransformParameterivSGI == NULL);
+  glewInfoFunc(fi, "glPixelTransformParameterfSGI", glPixelTransformParameterfSGI == NULL);
+  glewInfoFunc(fi, "glPixelTransformParameterfvSGI", glPixelTransformParameterfvSGI == NULL);
+  glewInfoFunc(fi, "glPixelTransformParameteriSGI", glPixelTransformParameteriSGI == NULL);
+  glewInfoFunc(fi, "glPixelTransformParameterivSGI", glPixelTransformParameterivSGI == NULL);
+  glewInfoFunc(fi, "glPixelTransformSGI", glPixelTransformSGI == NULL);
 }
 
 #endif /* GL_SGI_fft */
@@ -10119,9 +11477,9 @@ static void _glewInfo_GL_SGI_texture_color_table (void)
 
 static void _glewInfo_GL_SUNX_constant_data (void)
 {
-  glewPrintExt("GL_SUNX_constant_data", GLEW_SUNX_constant_data, glewIsSupported("GL_SUNX_constant_data"), glewGetExtension("GL_SUNX_constant_data"));
+  GLboolean fi = glewPrintExt("GL_SUNX_constant_data", GLEW_SUNX_constant_data, glewIsSupported("GL_SUNX_constant_data"), glewGetExtension("GL_SUNX_constant_data"));
 
-  glewInfoFunc("glFinishTextureSUNX", glFinishTextureSUNX == NULL);
+  glewInfoFunc(fi, "glFinishTextureSUNX", glFinishTextureSUNX == NULL);
 }
 
 #endif /* GL_SUNX_constant_data */
@@ -10139,16 +11497,16 @@ static void _glewInfo_GL_SUN_convolution_border_modes (void)
 
 static void _glewInfo_GL_SUN_global_alpha (void)
 {
-  glewPrintExt("GL_SUN_global_alpha", GLEW_SUN_global_alpha, glewIsSupported("GL_SUN_global_alpha"), glewGetExtension("GL_SUN_global_alpha"));
+  GLboolean fi = glewPrintExt("GL_SUN_global_alpha", GLEW_SUN_global_alpha, glewIsSupported("GL_SUN_global_alpha"), glewGetExtension("GL_SUN_global_alpha"));
 
-  glewInfoFunc("glGlobalAlphaFactorbSUN", glGlobalAlphaFactorbSUN == NULL);
-  glewInfoFunc("glGlobalAlphaFactordSUN", glGlobalAlphaFactordSUN == NULL);
-  glewInfoFunc("glGlobalAlphaFactorfSUN", glGlobalAlphaFactorfSUN == NULL);
-  glewInfoFunc("glGlobalAlphaFactoriSUN", glGlobalAlphaFactoriSUN == NULL);
-  glewInfoFunc("glGlobalAlphaFactorsSUN", glGlobalAlphaFactorsSUN == NULL);
-  glewInfoFunc("glGlobalAlphaFactorubSUN", glGlobalAlphaFactorubSUN == NULL);
-  glewInfoFunc("glGlobalAlphaFactoruiSUN", glGlobalAlphaFactoruiSUN == NULL);
-  glewInfoFunc("glGlobalAlphaFactorusSUN", glGlobalAlphaFactorusSUN == NULL);
+  glewInfoFunc(fi, "glGlobalAlphaFactorbSUN", glGlobalAlphaFactorbSUN == NULL);
+  glewInfoFunc(fi, "glGlobalAlphaFactordSUN", glGlobalAlphaFactordSUN == NULL);
+  glewInfoFunc(fi, "glGlobalAlphaFactorfSUN", glGlobalAlphaFactorfSUN == NULL);
+  glewInfoFunc(fi, "glGlobalAlphaFactoriSUN", glGlobalAlphaFactoriSUN == NULL);
+  glewInfoFunc(fi, "glGlobalAlphaFactorsSUN", glGlobalAlphaFactorsSUN == NULL);
+  glewInfoFunc(fi, "glGlobalAlphaFactorubSUN", glGlobalAlphaFactorubSUN == NULL);
+  glewInfoFunc(fi, "glGlobalAlphaFactoruiSUN", glGlobalAlphaFactoruiSUN == NULL);
+  glewInfoFunc(fi, "glGlobalAlphaFactorusSUN", glGlobalAlphaFactorusSUN == NULL);
 }
 
 #endif /* GL_SUN_global_alpha */
@@ -10166,9 +11524,9 @@ static void _glewInfo_GL_SUN_mesh_array (void)
 
 static void _glewInfo_GL_SUN_read_video_pixels (void)
 {
-  glewPrintExt("GL_SUN_read_video_pixels", GLEW_SUN_read_video_pixels, glewIsSupported("GL_SUN_read_video_pixels"), glewGetExtension("GL_SUN_read_video_pixels"));
+  GLboolean fi = glewPrintExt("GL_SUN_read_video_pixels", GLEW_SUN_read_video_pixels, glewIsSupported("GL_SUN_read_video_pixels"), glewGetExtension("GL_SUN_read_video_pixels"));
 
-  glewInfoFunc("glReadVideoPixelsSUN", glReadVideoPixelsSUN == NULL);
+  glewInfoFunc(fi, "glReadVideoPixelsSUN", glReadVideoPixelsSUN == NULL);
 }
 
 #endif /* GL_SUN_read_video_pixels */
@@ -10186,15 +11544,15 @@ static void _glewInfo_GL_SUN_slice_accum (void)
 
 static void _glewInfo_GL_SUN_triangle_list (void)
 {
-  glewPrintExt("GL_SUN_triangle_list", GLEW_SUN_triangle_list, glewIsSupported("GL_SUN_triangle_list"), glewGetExtension("GL_SUN_triangle_list"));
+  GLboolean fi = glewPrintExt("GL_SUN_triangle_list", GLEW_SUN_triangle_list, glewIsSupported("GL_SUN_triangle_list"), glewGetExtension("GL_SUN_triangle_list"));
 
-  glewInfoFunc("glReplacementCodePointerSUN", glReplacementCodePointerSUN == NULL);
-  glewInfoFunc("glReplacementCodeubSUN", glReplacementCodeubSUN == NULL);
-  glewInfoFunc("glReplacementCodeubvSUN", glReplacementCodeubvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiSUN", glReplacementCodeuiSUN == NULL);
-  glewInfoFunc("glReplacementCodeuivSUN", glReplacementCodeuivSUN == NULL);
-  glewInfoFunc("glReplacementCodeusSUN", glReplacementCodeusSUN == NULL);
-  glewInfoFunc("glReplacementCodeusvSUN", glReplacementCodeusvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodePointerSUN", glReplacementCodePointerSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeubSUN", glReplacementCodeubSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeubvSUN", glReplacementCodeubvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiSUN", glReplacementCodeuiSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuivSUN", glReplacementCodeuivSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeusSUN", glReplacementCodeusSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeusvSUN", glReplacementCodeusvSUN == NULL);
 }
 
 #endif /* GL_SUN_triangle_list */
@@ -10203,51 +11561,60 @@ static void _glewInfo_GL_SUN_triangle_list (void)
 
 static void _glewInfo_GL_SUN_vertex (void)
 {
-  glewPrintExt("GL_SUN_vertex", GLEW_SUN_vertex, glewIsSupported("GL_SUN_vertex"), glewGetExtension("GL_SUN_vertex"));
+  GLboolean fi = glewPrintExt("GL_SUN_vertex", GLEW_SUN_vertex, glewIsSupported("GL_SUN_vertex"), glewGetExtension("GL_SUN_vertex"));
 
-  glewInfoFunc("glColor3fVertex3fSUN", glColor3fVertex3fSUN == NULL);
-  glewInfoFunc("glColor3fVertex3fvSUN", glColor3fVertex3fvSUN == NULL);
-  glewInfoFunc("glColor4fNormal3fVertex3fSUN", glColor4fNormal3fVertex3fSUN == NULL);
-  glewInfoFunc("glColor4fNormal3fVertex3fvSUN", glColor4fNormal3fVertex3fvSUN == NULL);
-  glewInfoFunc("glColor4ubVertex2fSUN", glColor4ubVertex2fSUN == NULL);
-  glewInfoFunc("glColor4ubVertex2fvSUN", glColor4ubVertex2fvSUN == NULL);
-  glewInfoFunc("glColor4ubVertex3fSUN", glColor4ubVertex3fSUN == NULL);
-  glewInfoFunc("glColor4ubVertex3fvSUN", glColor4ubVertex3fvSUN == NULL);
-  glewInfoFunc("glNormal3fVertex3fSUN", glNormal3fVertex3fSUN == NULL);
-  glewInfoFunc("glNormal3fVertex3fvSUN", glNormal3fVertex3fvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiColor3fVertex3fSUN", glReplacementCodeuiColor3fVertex3fSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiColor3fVertex3fvSUN", glReplacementCodeuiColor3fVertex3fvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiColor4fNormal3fVertex3fSUN", glReplacementCodeuiColor4fNormal3fVertex3fSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiColor4fNormal3fVertex3fvSUN", glReplacementCodeuiColor4fNormal3fVertex3fvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiColor4ubVertex3fSUN", glReplacementCodeuiColor4ubVertex3fSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiColor4ubVertex3fvSUN", glReplacementCodeuiColor4ubVertex3fvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiNormal3fVertex3fSUN", glReplacementCodeuiNormal3fVertex3fSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiNormal3fVertex3fvSUN", glReplacementCodeuiNormal3fVertex3fvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fSUN", glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fvSUN", glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiTexCoord2fNormal3fVertex3fSUN", glReplacementCodeuiTexCoord2fNormal3fVertex3fSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiTexCoord2fNormal3fVertex3fvSUN", glReplacementCodeuiTexCoord2fNormal3fVertex3fvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiTexCoord2fVertex3fSUN", glReplacementCodeuiTexCoord2fVertex3fSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiTexCoord2fVertex3fvSUN", glReplacementCodeuiTexCoord2fVertex3fvSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiVertex3fSUN", glReplacementCodeuiVertex3fSUN == NULL);
-  glewInfoFunc("glReplacementCodeuiVertex3fvSUN", glReplacementCodeuiVertex3fvSUN == NULL);
-  glewInfoFunc("glTexCoord2fColor3fVertex3fSUN", glTexCoord2fColor3fVertex3fSUN == NULL);
-  glewInfoFunc("glTexCoord2fColor3fVertex3fvSUN", glTexCoord2fColor3fVertex3fvSUN == NULL);
-  glewInfoFunc("glTexCoord2fColor4fNormal3fVertex3fSUN", glTexCoord2fColor4fNormal3fVertex3fSUN == NULL);
-  glewInfoFunc("glTexCoord2fColor4fNormal3fVertex3fvSUN", glTexCoord2fColor4fNormal3fVertex3fvSUN == NULL);
-  glewInfoFunc("glTexCoord2fColor4ubVertex3fSUN", glTexCoord2fColor4ubVertex3fSUN == NULL);
-  glewInfoFunc("glTexCoord2fColor4ubVertex3fvSUN", glTexCoord2fColor4ubVertex3fvSUN == NULL);
-  glewInfoFunc("glTexCoord2fNormal3fVertex3fSUN", glTexCoord2fNormal3fVertex3fSUN == NULL);
-  glewInfoFunc("glTexCoord2fNormal3fVertex3fvSUN", glTexCoord2fNormal3fVertex3fvSUN == NULL);
-  glewInfoFunc("glTexCoord2fVertex3fSUN", glTexCoord2fVertex3fSUN == NULL);
-  glewInfoFunc("glTexCoord2fVertex3fvSUN", glTexCoord2fVertex3fvSUN == NULL);
-  glewInfoFunc("glTexCoord4fColor4fNormal3fVertex4fSUN", glTexCoord4fColor4fNormal3fVertex4fSUN == NULL);
-  glewInfoFunc("glTexCoord4fColor4fNormal3fVertex4fvSUN", glTexCoord4fColor4fNormal3fVertex4fvSUN == NULL);
-  glewInfoFunc("glTexCoord4fVertex4fSUN", glTexCoord4fVertex4fSUN == NULL);
-  glewInfoFunc("glTexCoord4fVertex4fvSUN", glTexCoord4fVertex4fvSUN == NULL);
+  glewInfoFunc(fi, "glColor3fVertex3fSUN", glColor3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glColor3fVertex3fvSUN", glColor3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glColor4fNormal3fVertex3fSUN", glColor4fNormal3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glColor4fNormal3fVertex3fvSUN", glColor4fNormal3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glColor4ubVertex2fSUN", glColor4ubVertex2fSUN == NULL);
+  glewInfoFunc(fi, "glColor4ubVertex2fvSUN", glColor4ubVertex2fvSUN == NULL);
+  glewInfoFunc(fi, "glColor4ubVertex3fSUN", glColor4ubVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glColor4ubVertex3fvSUN", glColor4ubVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glNormal3fVertex3fSUN", glNormal3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glNormal3fVertex3fvSUN", glNormal3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiColor3fVertex3fSUN", glReplacementCodeuiColor3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiColor3fVertex3fvSUN", glReplacementCodeuiColor3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiColor4fNormal3fVertex3fSUN", glReplacementCodeuiColor4fNormal3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiColor4fNormal3fVertex3fvSUN", glReplacementCodeuiColor4fNormal3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiColor4ubVertex3fSUN", glReplacementCodeuiColor4ubVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiColor4ubVertex3fvSUN", glReplacementCodeuiColor4ubVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiNormal3fVertex3fSUN", glReplacementCodeuiNormal3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiNormal3fVertex3fvSUN", glReplacementCodeuiNormal3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fSUN", glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fvSUN", glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiTexCoord2fNormal3fVertex3fSUN", glReplacementCodeuiTexCoord2fNormal3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiTexCoord2fNormal3fVertex3fvSUN", glReplacementCodeuiTexCoord2fNormal3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiTexCoord2fVertex3fSUN", glReplacementCodeuiTexCoord2fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiTexCoord2fVertex3fvSUN", glReplacementCodeuiTexCoord2fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiVertex3fSUN", glReplacementCodeuiVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glReplacementCodeuiVertex3fvSUN", glReplacementCodeuiVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fColor3fVertex3fSUN", glTexCoord2fColor3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fColor3fVertex3fvSUN", glTexCoord2fColor3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fColor4fNormal3fVertex3fSUN", glTexCoord2fColor4fNormal3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fColor4fNormal3fVertex3fvSUN", glTexCoord2fColor4fNormal3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fColor4ubVertex3fSUN", glTexCoord2fColor4ubVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fColor4ubVertex3fvSUN", glTexCoord2fColor4ubVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fNormal3fVertex3fSUN", glTexCoord2fNormal3fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fNormal3fVertex3fvSUN", glTexCoord2fNormal3fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fVertex3fSUN", glTexCoord2fVertex3fSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord2fVertex3fvSUN", glTexCoord2fVertex3fvSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord4fColor4fNormal3fVertex4fSUN", glTexCoord4fColor4fNormal3fVertex4fSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord4fColor4fNormal3fVertex4fvSUN", glTexCoord4fColor4fNormal3fVertex4fvSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord4fVertex4fSUN", glTexCoord4fVertex4fSUN == NULL);
+  glewInfoFunc(fi, "glTexCoord4fVertex4fvSUN", glTexCoord4fVertex4fvSUN == NULL);
 }
 
 #endif /* GL_SUN_vertex */
+
+#ifdef GL_VIV_shader_binary
+
+static void _glewInfo_GL_VIV_shader_binary (void)
+{
+  glewPrintExt("GL_VIV_shader_binary", GLEW_VIV_shader_binary, glewIsSupported("GL_VIV_shader_binary"), glewGetExtension("GL_VIV_shader_binary"));
+}
+
+#endif /* GL_VIV_shader_binary */
 
 #ifdef GL_WIN_phong_shading
 
@@ -10280,9 +11647,9 @@ static void _glewInfo_GL_WIN_specular_fog (void)
 
 static void _glewInfo_GL_WIN_swap_hint (void)
 {
-  glewPrintExt("GL_WIN_swap_hint", GLEW_WIN_swap_hint, glewIsSupported("GL_WIN_swap_hint"), glewGetExtension("GL_WIN_swap_hint"));
+  GLboolean fi = glewPrintExt("GL_WIN_swap_hint", GLEW_WIN_swap_hint, glewIsSupported("GL_WIN_swap_hint"), glewGetExtension("GL_WIN_swap_hint"));
 
-  glewInfoFunc("glAddSwapHintRectWIN", glAddSwapHintRectWIN == NULL);
+  glewInfoFunc(fi, "glAddSwapHintRectWIN", glAddSwapHintRectWIN == NULL);
 }
 
 #endif /* GL_WIN_swap_hint */
@@ -10293,31 +11660,31 @@ static void _glewInfo_GL_WIN_swap_hint (void)
 
 static void _glewInfo_EGL_VERSION_1_0 (void)
 {
-  glewPrintExt("EGL_VERSION_1_0", EGLEW_VERSION_1_0, EGLEW_VERSION_1_0, EGLEW_VERSION_1_0);
+  GLboolean fi = glewPrintExt("EGL_VERSION_1_0", EGLEW_VERSION_1_0, EGLEW_VERSION_1_0, EGLEW_VERSION_1_0);
 
-  glewInfoFunc("eglChooseConfig", eglChooseConfig == NULL);
-  glewInfoFunc("eglCopyBuffers", eglCopyBuffers == NULL);
-  glewInfoFunc("eglCreateContext", eglCreateContext == NULL);
-  glewInfoFunc("eglCreatePbufferSurface", eglCreatePbufferSurface == NULL);
-  glewInfoFunc("eglCreatePixmapSurface", eglCreatePixmapSurface == NULL);
-  glewInfoFunc("eglCreateWindowSurface", eglCreateWindowSurface == NULL);
-  glewInfoFunc("eglDestroyContext", eglDestroyContext == NULL);
-  glewInfoFunc("eglDestroySurface", eglDestroySurface == NULL);
-  glewInfoFunc("eglGetConfigAttrib", eglGetConfigAttrib == NULL);
-  glewInfoFunc("eglGetConfigs", eglGetConfigs == NULL);
-  glewInfoFunc("eglGetCurrentDisplay", eglGetCurrentDisplay == NULL);
-  glewInfoFunc("eglGetCurrentSurface", eglGetCurrentSurface == NULL);
-  glewInfoFunc("eglGetDisplay", eglGetDisplay == NULL);
-  glewInfoFunc("eglGetError", eglGetError == NULL);
-  glewInfoFunc("eglInitialize", eglInitialize == NULL);
-  glewInfoFunc("eglMakeCurrent", eglMakeCurrent == NULL);
-  glewInfoFunc("eglQueryContext", eglQueryContext == NULL);
-  glewInfoFunc("eglQueryString", eglQueryString == NULL);
-  glewInfoFunc("eglQuerySurface", eglQuerySurface == NULL);
-  glewInfoFunc("eglSwapBuffers", eglSwapBuffers == NULL);
-  glewInfoFunc("eglTerminate", eglTerminate == NULL);
-  glewInfoFunc("eglWaitGL", eglWaitGL == NULL);
-  glewInfoFunc("eglWaitNative", eglWaitNative == NULL);
+  glewInfoFunc(fi, "eglChooseConfig", eglChooseConfig == NULL);
+  glewInfoFunc(fi, "eglCopyBuffers", eglCopyBuffers == NULL);
+  glewInfoFunc(fi, "eglCreateContext", eglCreateContext == NULL);
+  glewInfoFunc(fi, "eglCreatePbufferSurface", eglCreatePbufferSurface == NULL);
+  glewInfoFunc(fi, "eglCreatePixmapSurface", eglCreatePixmapSurface == NULL);
+  glewInfoFunc(fi, "eglCreateWindowSurface", eglCreateWindowSurface == NULL);
+  glewInfoFunc(fi, "eglDestroyContext", eglDestroyContext == NULL);
+  glewInfoFunc(fi, "eglDestroySurface", eglDestroySurface == NULL);
+  glewInfoFunc(fi, "eglGetConfigAttrib", eglGetConfigAttrib == NULL);
+  glewInfoFunc(fi, "eglGetConfigs", eglGetConfigs == NULL);
+  glewInfoFunc(fi, "eglGetCurrentDisplay", eglGetCurrentDisplay == NULL);
+  glewInfoFunc(fi, "eglGetCurrentSurface", eglGetCurrentSurface == NULL);
+  glewInfoFunc(fi, "eglGetDisplay", eglGetDisplay == NULL);
+  glewInfoFunc(fi, "eglGetError", eglGetError == NULL);
+  glewInfoFunc(fi, "eglInitialize", eglInitialize == NULL);
+  glewInfoFunc(fi, "eglMakeCurrent", eglMakeCurrent == NULL);
+  glewInfoFunc(fi, "eglQueryContext", eglQueryContext == NULL);
+  glewInfoFunc(fi, "eglQueryString", eglQueryString == NULL);
+  glewInfoFunc(fi, "eglQuerySurface", eglQuerySurface == NULL);
+  glewInfoFunc(fi, "eglSwapBuffers", eglSwapBuffers == NULL);
+  glewInfoFunc(fi, "eglTerminate", eglTerminate == NULL);
+  glewInfoFunc(fi, "eglWaitGL", eglWaitGL == NULL);
+  glewInfoFunc(fi, "eglWaitNative", eglWaitNative == NULL);
 }
 
 #endif /* EGL_VERSION_1_0 */
@@ -10326,12 +11693,12 @@ static void _glewInfo_EGL_VERSION_1_0 (void)
 
 static void _glewInfo_EGL_VERSION_1_1 (void)
 {
-  glewPrintExt("EGL_VERSION_1_1", EGLEW_VERSION_1_1, EGLEW_VERSION_1_1, EGLEW_VERSION_1_1);
+  GLboolean fi = glewPrintExt("EGL_VERSION_1_1", EGLEW_VERSION_1_1, EGLEW_VERSION_1_1, EGLEW_VERSION_1_1);
 
-  glewInfoFunc("eglBindTexImage", eglBindTexImage == NULL);
-  glewInfoFunc("eglReleaseTexImage", eglReleaseTexImage == NULL);
-  glewInfoFunc("eglSurfaceAttrib", eglSurfaceAttrib == NULL);
-  glewInfoFunc("eglSwapInterval", eglSwapInterval == NULL);
+  glewInfoFunc(fi, "eglBindTexImage", eglBindTexImage == NULL);
+  glewInfoFunc(fi, "eglReleaseTexImage", eglReleaseTexImage == NULL);
+  glewInfoFunc(fi, "eglSurfaceAttrib", eglSurfaceAttrib == NULL);
+  glewInfoFunc(fi, "eglSwapInterval", eglSwapInterval == NULL);
 }
 
 #endif /* EGL_VERSION_1_1 */
@@ -10340,13 +11707,13 @@ static void _glewInfo_EGL_VERSION_1_1 (void)
 
 static void _glewInfo_EGL_VERSION_1_2 (void)
 {
-  glewPrintExt("EGL_VERSION_1_2", EGLEW_VERSION_1_2, EGLEW_VERSION_1_2, EGLEW_VERSION_1_2);
+  GLboolean fi = glewPrintExt("EGL_VERSION_1_2", EGLEW_VERSION_1_2, EGLEW_VERSION_1_2, EGLEW_VERSION_1_2);
 
-  glewInfoFunc("eglBindAPI", eglBindAPI == NULL);
-  glewInfoFunc("eglCreatePbufferFromClientBuffer", eglCreatePbufferFromClientBuffer == NULL);
-  glewInfoFunc("eglQueryAPI", eglQueryAPI == NULL);
-  glewInfoFunc("eglReleaseThread", eglReleaseThread == NULL);
-  glewInfoFunc("eglWaitClient", eglWaitClient == NULL);
+  glewInfoFunc(fi, "eglBindAPI", eglBindAPI == NULL);
+  glewInfoFunc(fi, "eglCreatePbufferFromClientBuffer", eglCreatePbufferFromClientBuffer == NULL);
+  glewInfoFunc(fi, "eglQueryAPI", eglQueryAPI == NULL);
+  glewInfoFunc(fi, "eglReleaseThread", eglReleaseThread == NULL);
+  glewInfoFunc(fi, "eglWaitClient", eglWaitClient == NULL);
 }
 
 #endif /* EGL_VERSION_1_2 */
@@ -10364,9 +11731,9 @@ static void _glewInfo_EGL_VERSION_1_3 (void)
 
 static void _glewInfo_EGL_VERSION_1_4 (void)
 {
-  glewPrintExt("EGL_VERSION_1_4", EGLEW_VERSION_1_4, EGLEW_VERSION_1_4, EGLEW_VERSION_1_4);
+  GLboolean fi = glewPrintExt("EGL_VERSION_1_4", EGLEW_VERSION_1_4, EGLEW_VERSION_1_4, EGLEW_VERSION_1_4);
 
-  glewInfoFunc("eglGetCurrentContext", eglGetCurrentContext == NULL);
+  glewInfoFunc(fi, "eglGetCurrentContext", eglGetCurrentContext == NULL);
 }
 
 #endif /* EGL_VERSION_1_4 */
@@ -10375,29 +11742,38 @@ static void _glewInfo_EGL_VERSION_1_4 (void)
 
 static void _glewInfo_EGL_VERSION_1_5 (void)
 {
-  glewPrintExt("EGL_VERSION_1_5", EGLEW_VERSION_1_5, EGLEW_VERSION_1_5, EGLEW_VERSION_1_5);
+  GLboolean fi = glewPrintExt("EGL_VERSION_1_5", EGLEW_VERSION_1_5, EGLEW_VERSION_1_5, EGLEW_VERSION_1_5);
 
-  glewInfoFunc("eglClientWaitSync", eglClientWaitSync == NULL);
-  glewInfoFunc("eglCreateImage", eglCreateImage == NULL);
-  glewInfoFunc("eglCreatePlatformPixmapSurface", eglCreatePlatformPixmapSurface == NULL);
-  glewInfoFunc("eglCreatePlatformWindowSurface", eglCreatePlatformWindowSurface == NULL);
-  glewInfoFunc("eglCreateSync", eglCreateSync == NULL);
-  glewInfoFunc("eglDestroyImage", eglDestroyImage == NULL);
-  glewInfoFunc("eglDestroySync", eglDestroySync == NULL);
-  glewInfoFunc("eglGetPlatformDisplay", eglGetPlatformDisplay == NULL);
-  glewInfoFunc("eglGetSyncAttrib", eglGetSyncAttrib == NULL);
-  glewInfoFunc("eglWaitSync", eglWaitSync == NULL);
+  glewInfoFunc(fi, "eglClientWaitSync", eglClientWaitSync == NULL);
+  glewInfoFunc(fi, "eglCreateImage", eglCreateImage == NULL);
+  glewInfoFunc(fi, "eglCreatePlatformPixmapSurface", eglCreatePlatformPixmapSurface == NULL);
+  glewInfoFunc(fi, "eglCreatePlatformWindowSurface", eglCreatePlatformWindowSurface == NULL);
+  glewInfoFunc(fi, "eglCreateSync", eglCreateSync == NULL);
+  glewInfoFunc(fi, "eglDestroyImage", eglDestroyImage == NULL);
+  glewInfoFunc(fi, "eglDestroySync", eglDestroySync == NULL);
+  glewInfoFunc(fi, "eglGetPlatformDisplay", eglGetPlatformDisplay == NULL);
+  glewInfoFunc(fi, "eglGetSyncAttrib", eglGetSyncAttrib == NULL);
+  glewInfoFunc(fi, "eglWaitSync", eglWaitSync == NULL);
 }
 
 #endif /* EGL_VERSION_1_5 */
+
+#ifdef EGL_ANDROID_GLES_layers
+
+static void _glewInfo_EGL_ANDROID_GLES_layers (void)
+{
+  glewPrintExt("EGL_ANDROID_GLES_layers", EGLEW_ANDROID_GLES_layers, eglewIsSupported("EGL_ANDROID_GLES_layers"), eglewGetExtension("EGL_ANDROID_GLES_layers"));
+}
+
+#endif /* EGL_ANDROID_GLES_layers */
 
 #ifdef EGL_ANDROID_blob_cache
 
 static void _glewInfo_EGL_ANDROID_blob_cache (void)
 {
-  glewPrintExt("EGL_ANDROID_blob_cache", EGLEW_ANDROID_blob_cache, eglewIsSupported("EGL_ANDROID_blob_cache"), eglewGetExtension("EGL_ANDROID_blob_cache"));
+  GLboolean fi = glewPrintExt("EGL_ANDROID_blob_cache", EGLEW_ANDROID_blob_cache, eglewIsSupported("EGL_ANDROID_blob_cache"), eglewGetExtension("EGL_ANDROID_blob_cache"));
 
-  glewInfoFunc("eglSetBlobCacheFuncsANDROID", eglSetBlobCacheFuncsANDROID == NULL);
+  glewInfoFunc(fi, "eglSetBlobCacheFuncsANDROID", eglSetBlobCacheFuncsANDROID == NULL);
 }
 
 #endif /* EGL_ANDROID_blob_cache */
@@ -10406,9 +11782,9 @@ static void _glewInfo_EGL_ANDROID_blob_cache (void)
 
 static void _glewInfo_EGL_ANDROID_create_native_client_buffer (void)
 {
-  glewPrintExt("EGL_ANDROID_create_native_client_buffer", EGLEW_ANDROID_create_native_client_buffer, eglewIsSupported("EGL_ANDROID_create_native_client_buffer"), eglewGetExtension("EGL_ANDROID_create_native_client_buffer"));
+  GLboolean fi = glewPrintExt("EGL_ANDROID_create_native_client_buffer", EGLEW_ANDROID_create_native_client_buffer, eglewIsSupported("EGL_ANDROID_create_native_client_buffer"), eglewGetExtension("EGL_ANDROID_create_native_client_buffer"));
 
-  glewInfoFunc("eglCreateNativeClientBufferANDROID", eglCreateNativeClientBufferANDROID == NULL);
+  glewInfoFunc(fi, "eglCreateNativeClientBufferANDROID", eglCreateNativeClientBufferANDROID == NULL);
 }
 
 #endif /* EGL_ANDROID_create_native_client_buffer */
@@ -10431,6 +11807,32 @@ static void _glewInfo_EGL_ANDROID_front_buffer_auto_refresh (void)
 
 #endif /* EGL_ANDROID_front_buffer_auto_refresh */
 
+#ifdef EGL_ANDROID_get_frame_timestamps
+
+static void _glewInfo_EGL_ANDROID_get_frame_timestamps (void)
+{
+  GLboolean fi = glewPrintExt("EGL_ANDROID_get_frame_timestamps", EGLEW_ANDROID_get_frame_timestamps, eglewIsSupported("EGL_ANDROID_get_frame_timestamps"), eglewGetExtension("EGL_ANDROID_get_frame_timestamps"));
+
+  glewInfoFunc(fi, "eglGetCompositorTimingANDROID", eglGetCompositorTimingANDROID == NULL);
+  glewInfoFunc(fi, "eglGetCompositorTimingSupportedANDROID", eglGetCompositorTimingSupportedANDROID == NULL);
+  glewInfoFunc(fi, "eglGetFrameTimestampSupportedANDROID", eglGetFrameTimestampSupportedANDROID == NULL);
+  glewInfoFunc(fi, "eglGetFrameTimestampsANDROID", eglGetFrameTimestampsANDROID == NULL);
+  glewInfoFunc(fi, "eglGetNextFrameIdANDROID", eglGetNextFrameIdANDROID == NULL);
+}
+
+#endif /* EGL_ANDROID_get_frame_timestamps */
+
+#ifdef EGL_ANDROID_get_native_client_buffer
+
+static void _glewInfo_EGL_ANDROID_get_native_client_buffer (void)
+{
+  GLboolean fi = glewPrintExt("EGL_ANDROID_get_native_client_buffer", EGLEW_ANDROID_get_native_client_buffer, eglewIsSupported("EGL_ANDROID_get_native_client_buffer"), eglewGetExtension("EGL_ANDROID_get_native_client_buffer"));
+
+  glewInfoFunc(fi, "eglGetNativeClientBufferANDROID", eglGetNativeClientBufferANDROID == NULL);
+}
+
+#endif /* EGL_ANDROID_get_native_client_buffer */
+
 #ifdef EGL_ANDROID_image_native_buffer
 
 static void _glewInfo_EGL_ANDROID_image_native_buffer (void)
@@ -10444,9 +11846,9 @@ static void _glewInfo_EGL_ANDROID_image_native_buffer (void)
 
 static void _glewInfo_EGL_ANDROID_native_fence_sync (void)
 {
-  glewPrintExt("EGL_ANDROID_native_fence_sync", EGLEW_ANDROID_native_fence_sync, eglewIsSupported("EGL_ANDROID_native_fence_sync"), eglewGetExtension("EGL_ANDROID_native_fence_sync"));
+  GLboolean fi = glewPrintExt("EGL_ANDROID_native_fence_sync", EGLEW_ANDROID_native_fence_sync, eglewIsSupported("EGL_ANDROID_native_fence_sync"), eglewGetExtension("EGL_ANDROID_native_fence_sync"));
 
-  glewInfoFunc("eglDupNativeFenceFDANDROID", eglDupNativeFenceFDANDROID == NULL);
+  glewInfoFunc(fi, "eglDupNativeFenceFDANDROID", eglDupNativeFenceFDANDROID == NULL);
 }
 
 #endif /* EGL_ANDROID_native_fence_sync */
@@ -10455,9 +11857,9 @@ static void _glewInfo_EGL_ANDROID_native_fence_sync (void)
 
 static void _glewInfo_EGL_ANDROID_presentation_time (void)
 {
-  glewPrintExt("EGL_ANDROID_presentation_time", EGLEW_ANDROID_presentation_time, eglewIsSupported("EGL_ANDROID_presentation_time"), eglewGetExtension("EGL_ANDROID_presentation_time"));
+  GLboolean fi = glewPrintExt("EGL_ANDROID_presentation_time", EGLEW_ANDROID_presentation_time, eglewIsSupported("EGL_ANDROID_presentation_time"), eglewGetExtension("EGL_ANDROID_presentation_time"));
 
-  glewInfoFunc("eglPresentationTimeANDROID", eglPresentationTimeANDROID == NULL);
+  glewInfoFunc(fi, "eglPresentationTimeANDROID", eglPresentationTimeANDROID == NULL);
 }
 
 #endif /* EGL_ANDROID_presentation_time */
@@ -10493,9 +11895,9 @@ static void _glewInfo_EGL_ANGLE_device_d3d (void)
 
 static void _glewInfo_EGL_ANGLE_query_surface_pointer (void)
 {
-  glewPrintExt("EGL_ANGLE_query_surface_pointer", EGLEW_ANGLE_query_surface_pointer, eglewIsSupported("EGL_ANGLE_query_surface_pointer"), eglewGetExtension("EGL_ANGLE_query_surface_pointer"));
+  GLboolean fi = glewPrintExt("EGL_ANGLE_query_surface_pointer", EGLEW_ANGLE_query_surface_pointer, eglewIsSupported("EGL_ANGLE_query_surface_pointer"), eglewGetExtension("EGL_ANGLE_query_surface_pointer"));
 
-  glewInfoFunc("eglQuerySurfacePointerANGLE", eglQuerySurfacePointerANGLE == NULL);
+  glewInfoFunc(fi, "eglQuerySurfacePointerANGLE", eglQuerySurfacePointerANGLE == NULL);
 }
 
 #endif /* EGL_ANGLE_query_surface_pointer */
@@ -10518,6 +11920,15 @@ static void _glewInfo_EGL_ANGLE_window_fixed_size (void)
 
 #endif /* EGL_ANGLE_window_fixed_size */
 
+#ifdef EGL_ARM_image_format
+
+static void _glewInfo_EGL_ARM_image_format (void)
+{
+  glewPrintExt("EGL_ARM_image_format", EGLEW_ARM_image_format, eglewIsSupported("EGL_ARM_image_format"), eglewGetExtension("EGL_ARM_image_format"));
+}
+
+#endif /* EGL_ARM_image_format */
+
 #ifdef EGL_ARM_implicit_external_sync
 
 static void _glewInfo_EGL_ARM_implicit_external_sync (void)
@@ -10536,6 +11947,15 @@ static void _glewInfo_EGL_ARM_pixmap_multisample_discard (void)
 
 #endif /* EGL_ARM_pixmap_multisample_discard */
 
+#ifdef EGL_EXT_bind_to_front
+
+static void _glewInfo_EGL_EXT_bind_to_front (void)
+{
+  glewPrintExt("EGL_EXT_bind_to_front", EGLEW_EXT_bind_to_front, eglewIsSupported("EGL_EXT_bind_to_front"), eglewGetExtension("EGL_EXT_bind_to_front"));
+}
+
+#endif /* EGL_EXT_bind_to_front */
+
 #ifdef EGL_EXT_buffer_age
 
 static void _glewInfo_EGL_EXT_buffer_age (void)
@@ -10553,6 +11973,34 @@ static void _glewInfo_EGL_EXT_client_extensions (void)
 }
 
 #endif /* EGL_EXT_client_extensions */
+
+#ifdef EGL_EXT_client_sync
+
+static void _glewInfo_EGL_EXT_client_sync (void)
+{
+  GLboolean fi = glewPrintExt("EGL_EXT_client_sync", EGLEW_EXT_client_sync, eglewIsSupported("EGL_EXT_client_sync"), eglewGetExtension("EGL_EXT_client_sync"));
+
+  glewInfoFunc(fi, "eglClientSignalSyncEXT", eglClientSignalSyncEXT == NULL);
+}
+
+#endif /* EGL_EXT_client_sync */
+
+#ifdef EGL_EXT_compositor
+
+static void _glewInfo_EGL_EXT_compositor (void)
+{
+  GLboolean fi = glewPrintExt("EGL_EXT_compositor", EGLEW_EXT_compositor, eglewIsSupported("EGL_EXT_compositor"), eglewGetExtension("EGL_EXT_compositor"));
+
+  glewInfoFunc(fi, "eglCompositorBindTexWindowEXT", eglCompositorBindTexWindowEXT == NULL);
+  glewInfoFunc(fi, "eglCompositorSetContextAttributesEXT", eglCompositorSetContextAttributesEXT == NULL);
+  glewInfoFunc(fi, "eglCompositorSetContextListEXT", eglCompositorSetContextListEXT == NULL);
+  glewInfoFunc(fi, "eglCompositorSetSizeEXT", eglCompositorSetSizeEXT == NULL);
+  glewInfoFunc(fi, "eglCompositorSetWindowAttributesEXT", eglCompositorSetWindowAttributesEXT == NULL);
+  glewInfoFunc(fi, "eglCompositorSetWindowListEXT", eglCompositorSetWindowListEXT == NULL);
+  glewInfoFunc(fi, "eglCompositorSwapPolicyEXT", eglCompositorSwapPolicyEXT == NULL);
+}
+
+#endif /* EGL_EXT_compositor */
 
 #ifdef EGL_EXT_create_context_robustness
 
@@ -10585,9 +12033,9 @@ static void _glewInfo_EGL_EXT_device_drm (void)
 
 static void _glewInfo_EGL_EXT_device_enumeration (void)
 {
-  glewPrintExt("EGL_EXT_device_enumeration", EGLEW_EXT_device_enumeration, eglewIsSupported("EGL_EXT_device_enumeration"), eglewGetExtension("EGL_EXT_device_enumeration"));
+  GLboolean fi = glewPrintExt("EGL_EXT_device_enumeration", EGLEW_EXT_device_enumeration, eglewIsSupported("EGL_EXT_device_enumeration"), eglewGetExtension("EGL_EXT_device_enumeration"));
 
-  glewInfoFunc("eglQueryDevicesEXT", eglQueryDevicesEXT == NULL);
+  glewInfoFunc(fi, "eglQueryDevicesEXT", eglQueryDevicesEXT == NULL);
 }
 
 #endif /* EGL_EXT_device_enumeration */
@@ -10605,11 +12053,11 @@ static void _glewInfo_EGL_EXT_device_openwf (void)
 
 static void _glewInfo_EGL_EXT_device_query (void)
 {
-  glewPrintExt("EGL_EXT_device_query", EGLEW_EXT_device_query, eglewIsSupported("EGL_EXT_device_query"), eglewGetExtension("EGL_EXT_device_query"));
+  GLboolean fi = glewPrintExt("EGL_EXT_device_query", EGLEW_EXT_device_query, eglewIsSupported("EGL_EXT_device_query"), eglewGetExtension("EGL_EXT_device_query"));
 
-  glewInfoFunc("eglQueryDeviceAttribEXT", eglQueryDeviceAttribEXT == NULL);
-  glewInfoFunc("eglQueryDeviceStringEXT", eglQueryDeviceStringEXT == NULL);
-  glewInfoFunc("eglQueryDisplayAttribEXT", eglQueryDisplayAttribEXT == NULL);
+  glewInfoFunc(fi, "eglQueryDeviceAttribEXT", eglQueryDeviceAttribEXT == NULL);
+  glewInfoFunc(fi, "eglQueryDeviceStringEXT", eglQueryDeviceStringEXT == NULL);
+  glewInfoFunc(fi, "eglQueryDisplayAttribEXT", eglQueryDisplayAttribEXT == NULL);
 }
 
 #endif /* EGL_EXT_device_query */
@@ -10631,6 +12079,42 @@ static void _glewInfo_EGL_EXT_gl_colorspace_bt2020_pq (void)
 }
 
 #endif /* EGL_EXT_gl_colorspace_bt2020_pq */
+
+#ifdef EGL_EXT_gl_colorspace_display_p3
+
+static void _glewInfo_EGL_EXT_gl_colorspace_display_p3 (void)
+{
+  glewPrintExt("EGL_EXT_gl_colorspace_display_p3", EGLEW_EXT_gl_colorspace_display_p3, eglewIsSupported("EGL_EXT_gl_colorspace_display_p3"), eglewGetExtension("EGL_EXT_gl_colorspace_display_p3"));
+}
+
+#endif /* EGL_EXT_gl_colorspace_display_p3 */
+
+#ifdef EGL_EXT_gl_colorspace_display_p3_linear
+
+static void _glewInfo_EGL_EXT_gl_colorspace_display_p3_linear (void)
+{
+  glewPrintExt("EGL_EXT_gl_colorspace_display_p3_linear", EGLEW_EXT_gl_colorspace_display_p3_linear, eglewIsSupported("EGL_EXT_gl_colorspace_display_p3_linear"), eglewGetExtension("EGL_EXT_gl_colorspace_display_p3_linear"));
+}
+
+#endif /* EGL_EXT_gl_colorspace_display_p3_linear */
+
+#ifdef EGL_EXT_gl_colorspace_display_p3_passthrough
+
+static void _glewInfo_EGL_EXT_gl_colorspace_display_p3_passthrough (void)
+{
+  glewPrintExt("EGL_EXT_gl_colorspace_display_p3_passthrough", EGLEW_EXT_gl_colorspace_display_p3_passthrough, eglewIsSupported("EGL_EXT_gl_colorspace_display_p3_passthrough"), eglewGetExtension("EGL_EXT_gl_colorspace_display_p3_passthrough"));
+}
+
+#endif /* EGL_EXT_gl_colorspace_display_p3_passthrough */
+
+#ifdef EGL_EXT_gl_colorspace_scrgb
+
+static void _glewInfo_EGL_EXT_gl_colorspace_scrgb (void)
+{
+  glewPrintExt("EGL_EXT_gl_colorspace_scrgb", EGLEW_EXT_gl_colorspace_scrgb, eglewIsSupported("EGL_EXT_gl_colorspace_scrgb"), eglewGetExtension("EGL_EXT_gl_colorspace_scrgb"));
+}
+
+#endif /* EGL_EXT_gl_colorspace_scrgb */
 
 #ifdef EGL_EXT_gl_colorspace_scrgb_linear
 
@@ -10654,13 +12138,31 @@ static void _glewInfo_EGL_EXT_image_dma_buf_import (void)
 
 static void _glewInfo_EGL_EXT_image_dma_buf_import_modifiers (void)
 {
-  glewPrintExt("EGL_EXT_image_dma_buf_import_modifiers", EGLEW_EXT_image_dma_buf_import_modifiers, eglewIsSupported("EGL_EXT_image_dma_buf_import_modifiers"), eglewGetExtension("EGL_EXT_image_dma_buf_import_modifiers"));
+  GLboolean fi = glewPrintExt("EGL_EXT_image_dma_buf_import_modifiers", EGLEW_EXT_image_dma_buf_import_modifiers, eglewIsSupported("EGL_EXT_image_dma_buf_import_modifiers"), eglewGetExtension("EGL_EXT_image_dma_buf_import_modifiers"));
 
-  glewInfoFunc("eglQueryDmaBufFormatsEXT", eglQueryDmaBufFormatsEXT == NULL);
-  glewInfoFunc("eglQueryDmaBufModifiersEXT", eglQueryDmaBufModifiersEXT == NULL);
+  glewInfoFunc(fi, "eglQueryDmaBufFormatsEXT", eglQueryDmaBufFormatsEXT == NULL);
+  glewInfoFunc(fi, "eglQueryDmaBufModifiersEXT", eglQueryDmaBufModifiersEXT == NULL);
 }
 
 #endif /* EGL_EXT_image_dma_buf_import_modifiers */
+
+#ifdef EGL_EXT_image_gl_colorspace
+
+static void _glewInfo_EGL_EXT_image_gl_colorspace (void)
+{
+  glewPrintExt("EGL_EXT_image_gl_colorspace", EGLEW_EXT_image_gl_colorspace, eglewIsSupported("EGL_EXT_image_gl_colorspace"), eglewGetExtension("EGL_EXT_image_gl_colorspace"));
+}
+
+#endif /* EGL_EXT_image_gl_colorspace */
+
+#ifdef EGL_EXT_image_implicit_sync_control
+
+static void _glewInfo_EGL_EXT_image_implicit_sync_control (void)
+{
+  glewPrintExt("EGL_EXT_image_implicit_sync_control", EGLEW_EXT_image_implicit_sync_control, eglewIsSupported("EGL_EXT_image_implicit_sync_control"), eglewGetExtension("EGL_EXT_image_implicit_sync_control"));
+}
+
+#endif /* EGL_EXT_image_implicit_sync_control */
 
 #ifdef EGL_EXT_multiview_window
 
@@ -10675,16 +12177,16 @@ static void _glewInfo_EGL_EXT_multiview_window (void)
 
 static void _glewInfo_EGL_EXT_output_base (void)
 {
-  glewPrintExt("EGL_EXT_output_base", EGLEW_EXT_output_base, eglewIsSupported("EGL_EXT_output_base"), eglewGetExtension("EGL_EXT_output_base"));
+  GLboolean fi = glewPrintExt("EGL_EXT_output_base", EGLEW_EXT_output_base, eglewIsSupported("EGL_EXT_output_base"), eglewGetExtension("EGL_EXT_output_base"));
 
-  glewInfoFunc("eglGetOutputLayersEXT", eglGetOutputLayersEXT == NULL);
-  glewInfoFunc("eglGetOutputPortsEXT", eglGetOutputPortsEXT == NULL);
-  glewInfoFunc("eglOutputLayerAttribEXT", eglOutputLayerAttribEXT == NULL);
-  glewInfoFunc("eglOutputPortAttribEXT", eglOutputPortAttribEXT == NULL);
-  glewInfoFunc("eglQueryOutputLayerAttribEXT", eglQueryOutputLayerAttribEXT == NULL);
-  glewInfoFunc("eglQueryOutputLayerStringEXT", eglQueryOutputLayerStringEXT == NULL);
-  glewInfoFunc("eglQueryOutputPortAttribEXT", eglQueryOutputPortAttribEXT == NULL);
-  glewInfoFunc("eglQueryOutputPortStringEXT", eglQueryOutputPortStringEXT == NULL);
+  glewInfoFunc(fi, "eglGetOutputLayersEXT", eglGetOutputLayersEXT == NULL);
+  glewInfoFunc(fi, "eglGetOutputPortsEXT", eglGetOutputPortsEXT == NULL);
+  glewInfoFunc(fi, "eglOutputLayerAttribEXT", eglOutputLayerAttribEXT == NULL);
+  glewInfoFunc(fi, "eglOutputPortAttribEXT", eglOutputPortAttribEXT == NULL);
+  glewInfoFunc(fi, "eglQueryOutputLayerAttribEXT", eglQueryOutputLayerAttribEXT == NULL);
+  glewInfoFunc(fi, "eglQueryOutputLayerStringEXT", eglQueryOutputLayerStringEXT == NULL);
+  glewInfoFunc(fi, "eglQueryOutputPortAttribEXT", eglQueryOutputPortAttribEXT == NULL);
+  glewInfoFunc(fi, "eglQueryOutputPortStringEXT", eglQueryOutputPortStringEXT == NULL);
 }
 
 #endif /* EGL_EXT_output_base */
@@ -10720,11 +12222,11 @@ static void _glewInfo_EGL_EXT_pixel_format_float (void)
 
 static void _glewInfo_EGL_EXT_platform_base (void)
 {
-  glewPrintExt("EGL_EXT_platform_base", EGLEW_EXT_platform_base, eglewIsSupported("EGL_EXT_platform_base"), eglewGetExtension("EGL_EXT_platform_base"));
+  GLboolean fi = glewPrintExt("EGL_EXT_platform_base", EGLEW_EXT_platform_base, eglewIsSupported("EGL_EXT_platform_base"), eglewGetExtension("EGL_EXT_platform_base"));
 
-  glewInfoFunc("eglCreatePlatformPixmapSurfaceEXT", eglCreatePlatformPixmapSurfaceEXT == NULL);
-  glewInfoFunc("eglCreatePlatformWindowSurfaceEXT", eglCreatePlatformWindowSurfaceEXT == NULL);
-  glewInfoFunc("eglGetPlatformDisplayEXT", eglGetPlatformDisplayEXT == NULL);
+  glewInfoFunc(fi, "eglCreatePlatformPixmapSurfaceEXT", eglCreatePlatformPixmapSurfaceEXT == NULL);
+  glewInfoFunc(fi, "eglCreatePlatformWindowSurfaceEXT", eglCreatePlatformWindowSurfaceEXT == NULL);
+  glewInfoFunc(fi, "eglGetPlatformDisplayEXT", eglGetPlatformDisplayEXT == NULL);
 }
 
 #endif /* EGL_EXT_platform_base */
@@ -10778,12 +12280,21 @@ static void _glewInfo_EGL_EXT_protected_surface (void)
 
 static void _glewInfo_EGL_EXT_stream_consumer_egloutput (void)
 {
-  glewPrintExt("EGL_EXT_stream_consumer_egloutput", EGLEW_EXT_stream_consumer_egloutput, eglewIsSupported("EGL_EXT_stream_consumer_egloutput"), eglewGetExtension("EGL_EXT_stream_consumer_egloutput"));
+  GLboolean fi = glewPrintExt("EGL_EXT_stream_consumer_egloutput", EGLEW_EXT_stream_consumer_egloutput, eglewIsSupported("EGL_EXT_stream_consumer_egloutput"), eglewGetExtension("EGL_EXT_stream_consumer_egloutput"));
 
-  glewInfoFunc("eglStreamConsumerOutputEXT", eglStreamConsumerOutputEXT == NULL);
+  glewInfoFunc(fi, "eglStreamConsumerOutputEXT", eglStreamConsumerOutputEXT == NULL);
 }
 
 #endif /* EGL_EXT_stream_consumer_egloutput */
+
+#ifdef EGL_EXT_surface_CTA861_3_metadata
+
+static void _glewInfo_EGL_EXT_surface_CTA861_3_metadata (void)
+{
+  glewPrintExt("EGL_EXT_surface_CTA861_3_metadata", EGLEW_EXT_surface_CTA861_3_metadata, eglewIsSupported("EGL_EXT_surface_CTA861_3_metadata"), eglewGetExtension("EGL_EXT_surface_CTA861_3_metadata"));
+}
+
+#endif /* EGL_EXT_surface_CTA861_3_metadata */
 
 #ifdef EGL_EXT_surface_SMPTE2086_metadata
 
@@ -10798,12 +12309,23 @@ static void _glewInfo_EGL_EXT_surface_SMPTE2086_metadata (void)
 
 static void _glewInfo_EGL_EXT_swap_buffers_with_damage (void)
 {
-  glewPrintExt("EGL_EXT_swap_buffers_with_damage", EGLEW_EXT_swap_buffers_with_damage, eglewIsSupported("EGL_EXT_swap_buffers_with_damage"), eglewGetExtension("EGL_EXT_swap_buffers_with_damage"));
+  GLboolean fi = glewPrintExt("EGL_EXT_swap_buffers_with_damage", EGLEW_EXT_swap_buffers_with_damage, eglewIsSupported("EGL_EXT_swap_buffers_with_damage"), eglewGetExtension("EGL_EXT_swap_buffers_with_damage"));
 
-  glewInfoFunc("eglSwapBuffersWithDamageEXT", eglSwapBuffersWithDamageEXT == NULL);
+  glewInfoFunc(fi, "eglSwapBuffersWithDamageEXT", eglSwapBuffersWithDamageEXT == NULL);
 }
 
 #endif /* EGL_EXT_swap_buffers_with_damage */
+
+#ifdef EGL_EXT_sync_reuse
+
+static void _glewInfo_EGL_EXT_sync_reuse (void)
+{
+  GLboolean fi = glewPrintExt("EGL_EXT_sync_reuse", EGLEW_EXT_sync_reuse, eglewIsSupported("EGL_EXT_sync_reuse"), eglewGetExtension("EGL_EXT_sync_reuse"));
+
+  glewInfoFunc(fi, "eglUnsignalSyncEXT", eglUnsignalSyncEXT == NULL);
+}
+
+#endif /* EGL_EXT_sync_reuse */
 
 #ifdef EGL_EXT_yuv_surface
 
@@ -10818,9 +12340,9 @@ static void _glewInfo_EGL_EXT_yuv_surface (void)
 
 static void _glewInfo_EGL_HI_clientpixmap (void)
 {
-  glewPrintExt("EGL_HI_clientpixmap", EGLEW_HI_clientpixmap, eglewIsSupported("EGL_HI_clientpixmap"), eglewGetExtension("EGL_HI_clientpixmap"));
+  GLboolean fi = glewPrintExt("EGL_HI_clientpixmap", EGLEW_HI_clientpixmap, eglewIsSupported("EGL_HI_clientpixmap"), eglewGetExtension("EGL_HI_clientpixmap"));
 
-  glewInfoFunc("eglCreatePixmapSurfaceHI", eglCreatePixmapSurfaceHI == NULL);
+  glewInfoFunc(fi, "eglCreatePixmapSurfaceHI", eglCreatePixmapSurfaceHI == NULL);
 }
 
 #endif /* EGL_HI_clientpixmap */
@@ -10865,9 +12387,9 @@ static void _glewInfo_EGL_KHR_cl_event (void)
 
 static void _glewInfo_EGL_KHR_cl_event2 (void)
 {
-  glewPrintExt("EGL_KHR_cl_event2", EGLEW_KHR_cl_event2, eglewIsSupported("EGL_KHR_cl_event2"), eglewGetExtension("EGL_KHR_cl_event2"));
+  GLboolean fi = glewPrintExt("EGL_KHR_cl_event2", EGLEW_KHR_cl_event2, eglewIsSupported("EGL_KHR_cl_event2"), eglewGetExtension("EGL_KHR_cl_event2"));
 
-  glewInfoFunc("eglCreateSync64KHR", eglCreateSync64KHR == NULL);
+  glewInfoFunc(fi, "eglCreateSync64KHR", eglCreateSync64KHR == NULL);
 }
 
 #endif /* EGL_KHR_cl_event2 */
@@ -10921,14 +12443,25 @@ static void _glewInfo_EGL_KHR_create_context_no_error (void)
 
 static void _glewInfo_EGL_KHR_debug (void)
 {
-  glewPrintExt("EGL_KHR_debug", EGLEW_KHR_debug, eglewIsSupported("EGL_KHR_debug"), eglewGetExtension("EGL_KHR_debug"));
+  GLboolean fi = glewPrintExt("EGL_KHR_debug", EGLEW_KHR_debug, eglewIsSupported("EGL_KHR_debug"), eglewGetExtension("EGL_KHR_debug"));
 
-  glewInfoFunc("eglDebugMessageControlKHR", eglDebugMessageControlKHR == NULL);
-  glewInfoFunc("eglLabelObjectKHR", eglLabelObjectKHR == NULL);
-  glewInfoFunc("eglQueryDebugKHR", eglQueryDebugKHR == NULL);
+  glewInfoFunc(fi, "eglDebugMessageControlKHR", eglDebugMessageControlKHR == NULL);
+  glewInfoFunc(fi, "eglLabelObjectKHR", eglLabelObjectKHR == NULL);
+  glewInfoFunc(fi, "eglQueryDebugKHR", eglQueryDebugKHR == NULL);
 }
 
 #endif /* EGL_KHR_debug */
+
+#ifdef EGL_KHR_display_reference
+
+static void _glewInfo_EGL_KHR_display_reference (void)
+{
+  GLboolean fi = glewPrintExt("EGL_KHR_display_reference", EGLEW_KHR_display_reference, eglewIsSupported("EGL_KHR_display_reference"), eglewGetExtension("EGL_KHR_display_reference"));
+
+  glewInfoFunc(fi, "eglQueryDisplayAttribKHR", eglQueryDisplayAttribKHR == NULL);
+}
+
+#endif /* EGL_KHR_display_reference */
 
 #ifdef EGL_KHR_fence_sync
 
@@ -10997,10 +12530,10 @@ static void _glewInfo_EGL_KHR_gl_texture_cubemap_image (void)
 
 static void _glewInfo_EGL_KHR_image (void)
 {
-  glewPrintExt("EGL_KHR_image", EGLEW_KHR_image, eglewIsSupported("EGL_KHR_image"), eglewGetExtension("EGL_KHR_image"));
+  GLboolean fi = glewPrintExt("EGL_KHR_image", EGLEW_KHR_image, eglewIsSupported("EGL_KHR_image"), eglewGetExtension("EGL_KHR_image"));
 
-  glewInfoFunc("eglCreateImageKHR", eglCreateImageKHR == NULL);
-  glewInfoFunc("eglDestroyImageKHR", eglDestroyImageKHR == NULL);
+  glewInfoFunc(fi, "eglCreateImageKHR", eglCreateImageKHR == NULL);
+  glewInfoFunc(fi, "eglDestroyImageKHR", eglDestroyImageKHR == NULL);
 }
 
 #endif /* EGL_KHR_image */
@@ -11027,10 +12560,10 @@ static void _glewInfo_EGL_KHR_image_pixmap (void)
 
 static void _glewInfo_EGL_KHR_lock_surface (void)
 {
-  glewPrintExt("EGL_KHR_lock_surface", EGLEW_KHR_lock_surface, eglewIsSupported("EGL_KHR_lock_surface"), eglewGetExtension("EGL_KHR_lock_surface"));
+  GLboolean fi = glewPrintExt("EGL_KHR_lock_surface", EGLEW_KHR_lock_surface, eglewIsSupported("EGL_KHR_lock_surface"), eglewGetExtension("EGL_KHR_lock_surface"));
 
-  glewInfoFunc("eglLockSurfaceKHR", eglLockSurfaceKHR == NULL);
-  glewInfoFunc("eglUnlockSurfaceKHR", eglUnlockSurfaceKHR == NULL);
+  glewInfoFunc(fi, "eglLockSurfaceKHR", eglLockSurfaceKHR == NULL);
+  glewInfoFunc(fi, "eglUnlockSurfaceKHR", eglUnlockSurfaceKHR == NULL);
 }
 
 #endif /* EGL_KHR_lock_surface */
@@ -11048,9 +12581,9 @@ static void _glewInfo_EGL_KHR_lock_surface2 (void)
 
 static void _glewInfo_EGL_KHR_lock_surface3 (void)
 {
-  glewPrintExt("EGL_KHR_lock_surface3", EGLEW_KHR_lock_surface3, eglewIsSupported("EGL_KHR_lock_surface3"), eglewGetExtension("EGL_KHR_lock_surface3"));
+  GLboolean fi = glewPrintExt("EGL_KHR_lock_surface3", EGLEW_KHR_lock_surface3, eglewIsSupported("EGL_KHR_lock_surface3"), eglewGetExtension("EGL_KHR_lock_surface3"));
 
-  glewInfoFunc("eglQuerySurface64KHR", eglQuerySurface64KHR == NULL);
+  glewInfoFunc(fi, "eglQuerySurface64KHR", eglQuerySurface64KHR == NULL);
 }
 
 #endif /* EGL_KHR_lock_surface3 */
@@ -11077,9 +12610,9 @@ static void _glewInfo_EGL_KHR_no_config_context (void)
 
 static void _glewInfo_EGL_KHR_partial_update (void)
 {
-  glewPrintExt("EGL_KHR_partial_update", EGLEW_KHR_partial_update, eglewIsSupported("EGL_KHR_partial_update"), eglewGetExtension("EGL_KHR_partial_update"));
+  GLboolean fi = glewPrintExt("EGL_KHR_partial_update", EGLEW_KHR_partial_update, eglewIsSupported("EGL_KHR_partial_update"), eglewGetExtension("EGL_KHR_partial_update"));
 
-  glewInfoFunc("eglSetDamageRegionKHR", eglSetDamageRegionKHR == NULL);
+  glewInfoFunc(fi, "eglSetDamageRegionKHR", eglSetDamageRegionKHR == NULL);
 }
 
 #endif /* EGL_KHR_partial_update */
@@ -11124,13 +12657,13 @@ static void _glewInfo_EGL_KHR_platform_x11 (void)
 
 static void _glewInfo_EGL_KHR_reusable_sync (void)
 {
-  glewPrintExt("EGL_KHR_reusable_sync", EGLEW_KHR_reusable_sync, eglewIsSupported("EGL_KHR_reusable_sync"), eglewGetExtension("EGL_KHR_reusable_sync"));
+  GLboolean fi = glewPrintExt("EGL_KHR_reusable_sync", EGLEW_KHR_reusable_sync, eglewIsSupported("EGL_KHR_reusable_sync"), eglewGetExtension("EGL_KHR_reusable_sync"));
 
-  glewInfoFunc("eglClientWaitSyncKHR", eglClientWaitSyncKHR == NULL);
-  glewInfoFunc("eglCreateSyncKHR", eglCreateSyncKHR == NULL);
-  glewInfoFunc("eglDestroySyncKHR", eglDestroySyncKHR == NULL);
-  glewInfoFunc("eglGetSyncAttribKHR", eglGetSyncAttribKHR == NULL);
-  glewInfoFunc("eglSignalSyncKHR", eglSignalSyncKHR == NULL);
+  glewInfoFunc(fi, "eglClientWaitSyncKHR", eglClientWaitSyncKHR == NULL);
+  glewInfoFunc(fi, "eglCreateSyncKHR", eglCreateSyncKHR == NULL);
+  glewInfoFunc(fi, "eglDestroySyncKHR", eglDestroySyncKHR == NULL);
+  glewInfoFunc(fi, "eglGetSyncAttribKHR", eglGetSyncAttribKHR == NULL);
+  glewInfoFunc(fi, "eglSignalSyncKHR", eglSignalSyncKHR == NULL);
 }
 
 #endif /* EGL_KHR_reusable_sync */
@@ -11139,13 +12672,13 @@ static void _glewInfo_EGL_KHR_reusable_sync (void)
 
 static void _glewInfo_EGL_KHR_stream (void)
 {
-  glewPrintExt("EGL_KHR_stream", EGLEW_KHR_stream, eglewIsSupported("EGL_KHR_stream"), eglewGetExtension("EGL_KHR_stream"));
+  GLboolean fi = glewPrintExt("EGL_KHR_stream", EGLEW_KHR_stream, eglewIsSupported("EGL_KHR_stream"), eglewGetExtension("EGL_KHR_stream"));
 
-  glewInfoFunc("eglCreateStreamKHR", eglCreateStreamKHR == NULL);
-  glewInfoFunc("eglDestroyStreamKHR", eglDestroyStreamKHR == NULL);
-  glewInfoFunc("eglQueryStreamKHR", eglQueryStreamKHR == NULL);
-  glewInfoFunc("eglQueryStreamu64KHR", eglQueryStreamu64KHR == NULL);
-  glewInfoFunc("eglStreamAttribKHR", eglStreamAttribKHR == NULL);
+  glewInfoFunc(fi, "eglCreateStreamKHR", eglCreateStreamKHR == NULL);
+  glewInfoFunc(fi, "eglDestroyStreamKHR", eglDestroyStreamKHR == NULL);
+  glewInfoFunc(fi, "eglQueryStreamKHR", eglQueryStreamKHR == NULL);
+  glewInfoFunc(fi, "eglQueryStreamu64KHR", eglQueryStreamu64KHR == NULL);
+  glewInfoFunc(fi, "eglStreamAttribKHR", eglStreamAttribKHR == NULL);
 }
 
 #endif /* EGL_KHR_stream */
@@ -11154,13 +12687,13 @@ static void _glewInfo_EGL_KHR_stream (void)
 
 static void _glewInfo_EGL_KHR_stream_attrib (void)
 {
-  glewPrintExt("EGL_KHR_stream_attrib", EGLEW_KHR_stream_attrib, eglewIsSupported("EGL_KHR_stream_attrib"), eglewGetExtension("EGL_KHR_stream_attrib"));
+  GLboolean fi = glewPrintExt("EGL_KHR_stream_attrib", EGLEW_KHR_stream_attrib, eglewIsSupported("EGL_KHR_stream_attrib"), eglewGetExtension("EGL_KHR_stream_attrib"));
 
-  glewInfoFunc("eglCreateStreamAttribKHR", eglCreateStreamAttribKHR == NULL);
-  glewInfoFunc("eglQueryStreamAttribKHR", eglQueryStreamAttribKHR == NULL);
-  glewInfoFunc("eglSetStreamAttribKHR", eglSetStreamAttribKHR == NULL);
-  glewInfoFunc("eglStreamConsumerAcquireAttribKHR", eglStreamConsumerAcquireAttribKHR == NULL);
-  glewInfoFunc("eglStreamConsumerReleaseAttribKHR", eglStreamConsumerReleaseAttribKHR == NULL);
+  glewInfoFunc(fi, "eglCreateStreamAttribKHR", eglCreateStreamAttribKHR == NULL);
+  glewInfoFunc(fi, "eglQueryStreamAttribKHR", eglQueryStreamAttribKHR == NULL);
+  glewInfoFunc(fi, "eglSetStreamAttribKHR", eglSetStreamAttribKHR == NULL);
+  glewInfoFunc(fi, "eglStreamConsumerAcquireAttribKHR", eglStreamConsumerAcquireAttribKHR == NULL);
+  glewInfoFunc(fi, "eglStreamConsumerReleaseAttribKHR", eglStreamConsumerReleaseAttribKHR == NULL);
 }
 
 #endif /* EGL_KHR_stream_attrib */
@@ -11169,11 +12702,11 @@ static void _glewInfo_EGL_KHR_stream_attrib (void)
 
 static void _glewInfo_EGL_KHR_stream_consumer_gltexture (void)
 {
-  glewPrintExt("EGL_KHR_stream_consumer_gltexture", EGLEW_KHR_stream_consumer_gltexture, eglewIsSupported("EGL_KHR_stream_consumer_gltexture"), eglewGetExtension("EGL_KHR_stream_consumer_gltexture"));
+  GLboolean fi = glewPrintExt("EGL_KHR_stream_consumer_gltexture", EGLEW_KHR_stream_consumer_gltexture, eglewIsSupported("EGL_KHR_stream_consumer_gltexture"), eglewGetExtension("EGL_KHR_stream_consumer_gltexture"));
 
-  glewInfoFunc("eglStreamConsumerAcquireKHR", eglStreamConsumerAcquireKHR == NULL);
-  glewInfoFunc("eglStreamConsumerGLTextureExternalKHR", eglStreamConsumerGLTextureExternalKHR == NULL);
-  glewInfoFunc("eglStreamConsumerReleaseKHR", eglStreamConsumerReleaseKHR == NULL);
+  glewInfoFunc(fi, "eglStreamConsumerAcquireKHR", eglStreamConsumerAcquireKHR == NULL);
+  glewInfoFunc(fi, "eglStreamConsumerGLTextureExternalKHR", eglStreamConsumerGLTextureExternalKHR == NULL);
+  glewInfoFunc(fi, "eglStreamConsumerReleaseKHR", eglStreamConsumerReleaseKHR == NULL);
 }
 
 #endif /* EGL_KHR_stream_consumer_gltexture */
@@ -11182,10 +12715,10 @@ static void _glewInfo_EGL_KHR_stream_consumer_gltexture (void)
 
 static void _glewInfo_EGL_KHR_stream_cross_process_fd (void)
 {
-  glewPrintExt("EGL_KHR_stream_cross_process_fd", EGLEW_KHR_stream_cross_process_fd, eglewIsSupported("EGL_KHR_stream_cross_process_fd"), eglewGetExtension("EGL_KHR_stream_cross_process_fd"));
+  GLboolean fi = glewPrintExt("EGL_KHR_stream_cross_process_fd", EGLEW_KHR_stream_cross_process_fd, eglewIsSupported("EGL_KHR_stream_cross_process_fd"), eglewGetExtension("EGL_KHR_stream_cross_process_fd"));
 
-  glewInfoFunc("eglCreateStreamFromFileDescriptorKHR", eglCreateStreamFromFileDescriptorKHR == NULL);
-  glewInfoFunc("eglGetStreamFileDescriptorKHR", eglGetStreamFileDescriptorKHR == NULL);
+  glewInfoFunc(fi, "eglCreateStreamFromFileDescriptorKHR", eglCreateStreamFromFileDescriptorKHR == NULL);
+  glewInfoFunc(fi, "eglGetStreamFileDescriptorKHR", eglGetStreamFileDescriptorKHR == NULL);
 }
 
 #endif /* EGL_KHR_stream_cross_process_fd */
@@ -11194,9 +12727,9 @@ static void _glewInfo_EGL_KHR_stream_cross_process_fd (void)
 
 static void _glewInfo_EGL_KHR_stream_fifo (void)
 {
-  glewPrintExt("EGL_KHR_stream_fifo", EGLEW_KHR_stream_fifo, eglewIsSupported("EGL_KHR_stream_fifo"), eglewGetExtension("EGL_KHR_stream_fifo"));
+  GLboolean fi = glewPrintExt("EGL_KHR_stream_fifo", EGLEW_KHR_stream_fifo, eglewIsSupported("EGL_KHR_stream_fifo"), eglewGetExtension("EGL_KHR_stream_fifo"));
 
-  glewInfoFunc("eglQueryStreamTimeKHR", eglQueryStreamTimeKHR == NULL);
+  glewInfoFunc(fi, "eglQueryStreamTimeKHR", eglQueryStreamTimeKHR == NULL);
 }
 
 #endif /* EGL_KHR_stream_fifo */
@@ -11214,9 +12747,9 @@ static void _glewInfo_EGL_KHR_stream_producer_aldatalocator (void)
 
 static void _glewInfo_EGL_KHR_stream_producer_eglsurface (void)
 {
-  glewPrintExt("EGL_KHR_stream_producer_eglsurface", EGLEW_KHR_stream_producer_eglsurface, eglewIsSupported("EGL_KHR_stream_producer_eglsurface"), eglewGetExtension("EGL_KHR_stream_producer_eglsurface"));
+  GLboolean fi = glewPrintExt("EGL_KHR_stream_producer_eglsurface", EGLEW_KHR_stream_producer_eglsurface, eglewIsSupported("EGL_KHR_stream_producer_eglsurface"), eglewGetExtension("EGL_KHR_stream_producer_eglsurface"));
 
-  glewInfoFunc("eglCreateStreamProducerSurfaceKHR", eglCreateStreamProducerSurfaceKHR == NULL);
+  glewInfoFunc(fi, "eglCreateStreamProducerSurfaceKHR", eglCreateStreamProducerSurfaceKHR == NULL);
 }
 
 #endif /* EGL_KHR_stream_producer_eglsurface */
@@ -11234,9 +12767,9 @@ static void _glewInfo_EGL_KHR_surfaceless_context (void)
 
 static void _glewInfo_EGL_KHR_swap_buffers_with_damage (void)
 {
-  glewPrintExt("EGL_KHR_swap_buffers_with_damage", EGLEW_KHR_swap_buffers_with_damage, eglewIsSupported("EGL_KHR_swap_buffers_with_damage"), eglewGetExtension("EGL_KHR_swap_buffers_with_damage"));
+  GLboolean fi = glewPrintExt("EGL_KHR_swap_buffers_with_damage", EGLEW_KHR_swap_buffers_with_damage, eglewIsSupported("EGL_KHR_swap_buffers_with_damage"), eglewGetExtension("EGL_KHR_swap_buffers_with_damage"));
 
-  glewInfoFunc("eglSwapBuffersWithDamageKHR", eglSwapBuffersWithDamageKHR == NULL);
+  glewInfoFunc(fi, "eglSwapBuffersWithDamageKHR", eglSwapBuffersWithDamageKHR == NULL);
 }
 
 #endif /* EGL_KHR_swap_buffers_with_damage */
@@ -11254,9 +12787,9 @@ static void _glewInfo_EGL_KHR_vg_parent_image (void)
 
 static void _glewInfo_EGL_KHR_wait_sync (void)
 {
-  glewPrintExt("EGL_KHR_wait_sync", EGLEW_KHR_wait_sync, eglewIsSupported("EGL_KHR_wait_sync"), eglewGetExtension("EGL_KHR_wait_sync"));
+  GLboolean fi = glewPrintExt("EGL_KHR_wait_sync", EGLEW_KHR_wait_sync, eglewIsSupported("EGL_KHR_wait_sync"), eglewGetExtension("EGL_KHR_wait_sync"));
 
-  glewInfoFunc("eglWaitSyncKHR", eglWaitSyncKHR == NULL);
+  glewInfoFunc(fi, "eglWaitSyncKHR", eglWaitSyncKHR == NULL);
 }
 
 #endif /* EGL_KHR_wait_sync */
@@ -11265,10 +12798,10 @@ static void _glewInfo_EGL_KHR_wait_sync (void)
 
 static void _glewInfo_EGL_MESA_drm_image (void)
 {
-  glewPrintExt("EGL_MESA_drm_image", EGLEW_MESA_drm_image, eglewIsSupported("EGL_MESA_drm_image"), eglewGetExtension("EGL_MESA_drm_image"));
+  GLboolean fi = glewPrintExt("EGL_MESA_drm_image", EGLEW_MESA_drm_image, eglewIsSupported("EGL_MESA_drm_image"), eglewGetExtension("EGL_MESA_drm_image"));
 
-  glewInfoFunc("eglCreateDRMImageMESA", eglCreateDRMImageMESA == NULL);
-  glewInfoFunc("eglExportDRMImageMESA", eglExportDRMImageMESA == NULL);
+  glewInfoFunc(fi, "eglCreateDRMImageMESA", eglCreateDRMImageMESA == NULL);
+  glewInfoFunc(fi, "eglExportDRMImageMESA", eglExportDRMImageMESA == NULL);
 }
 
 #endif /* EGL_MESA_drm_image */
@@ -11277,10 +12810,10 @@ static void _glewInfo_EGL_MESA_drm_image (void)
 
 static void _glewInfo_EGL_MESA_image_dma_buf_export (void)
 {
-  glewPrintExt("EGL_MESA_image_dma_buf_export", EGLEW_MESA_image_dma_buf_export, eglewIsSupported("EGL_MESA_image_dma_buf_export"), eglewGetExtension("EGL_MESA_image_dma_buf_export"));
+  GLboolean fi = glewPrintExt("EGL_MESA_image_dma_buf_export", EGLEW_MESA_image_dma_buf_export, eglewIsSupported("EGL_MESA_image_dma_buf_export"), eglewGetExtension("EGL_MESA_image_dma_buf_export"));
 
-  glewInfoFunc("eglExportDMABUFImageMESA", eglExportDMABUFImageMESA == NULL);
-  glewInfoFunc("eglExportDMABUFImageQueryMESA", eglExportDMABUFImageQueryMESA == NULL);
+  glewInfoFunc(fi, "eglExportDMABUFImageMESA", eglExportDMABUFImageMESA == NULL);
+  glewInfoFunc(fi, "eglExportDMABUFImageQueryMESA", eglExportDMABUFImageQueryMESA == NULL);
 }
 
 #endif /* EGL_MESA_image_dma_buf_export */
@@ -11303,13 +12836,25 @@ static void _glewInfo_EGL_MESA_platform_surfaceless (void)
 
 #endif /* EGL_MESA_platform_surfaceless */
 
+#ifdef EGL_MESA_query_driver
+
+static void _glewInfo_EGL_MESA_query_driver (void)
+{
+  GLboolean fi = glewPrintExt("EGL_MESA_query_driver", EGLEW_MESA_query_driver, eglewIsSupported("EGL_MESA_query_driver"), eglewGetExtension("EGL_MESA_query_driver"));
+
+  glewInfoFunc(fi, "eglGetDisplayDriverConfig", eglGetDisplayDriverConfig == NULL);
+  glewInfoFunc(fi, "eglGetDisplayDriverName", eglGetDisplayDriverName == NULL);
+}
+
+#endif /* EGL_MESA_query_driver */
+
 #ifdef EGL_NOK_swap_region
 
 static void _glewInfo_EGL_NOK_swap_region (void)
 {
-  glewPrintExt("EGL_NOK_swap_region", EGLEW_NOK_swap_region, eglewIsSupported("EGL_NOK_swap_region"), eglewGetExtension("EGL_NOK_swap_region"));
+  GLboolean fi = glewPrintExt("EGL_NOK_swap_region", EGLEW_NOK_swap_region, eglewIsSupported("EGL_NOK_swap_region"), eglewGetExtension("EGL_NOK_swap_region"));
 
-  glewInfoFunc("eglSwapBuffersRegionNOK", eglSwapBuffersRegionNOK == NULL);
+  glewInfoFunc(fi, "eglSwapBuffersRegionNOK", eglSwapBuffersRegionNOK == NULL);
 }
 
 #endif /* EGL_NOK_swap_region */
@@ -11318,9 +12863,9 @@ static void _glewInfo_EGL_NOK_swap_region (void)
 
 static void _glewInfo_EGL_NOK_swap_region2 (void)
 {
-  glewPrintExt("EGL_NOK_swap_region2", EGLEW_NOK_swap_region2, eglewIsSupported("EGL_NOK_swap_region2"), eglewGetExtension("EGL_NOK_swap_region2"));
+  GLboolean fi = glewPrintExt("EGL_NOK_swap_region2", EGLEW_NOK_swap_region2, eglewIsSupported("EGL_NOK_swap_region2"), eglewGetExtension("EGL_NOK_swap_region2"));
 
-  glewInfoFunc("eglSwapBuffersRegion2NOK", eglSwapBuffersRegion2NOK == NULL);
+  glewInfoFunc(fi, "eglSwapBuffersRegion2NOK", eglSwapBuffersRegion2NOK == NULL);
 }
 
 #endif /* EGL_NOK_swap_region2 */
@@ -11342,6 +12887,15 @@ static void _glewInfo_EGL_NV_3dvision_surface (void)
 }
 
 #endif /* EGL_NV_3dvision_surface */
+
+#ifdef EGL_NV_context_priority_realtime
+
+static void _glewInfo_EGL_NV_context_priority_realtime (void)
+{
+  glewPrintExt("EGL_NV_context_priority_realtime", EGLEW_NV_context_priority_realtime, eglewIsSupported("EGL_NV_context_priority_realtime"), eglewGetExtension("EGL_NV_context_priority_realtime"));
+}
+
+#endif /* EGL_NV_context_priority_realtime */
 
 #ifdef EGL_NV_coverage_sample
 
@@ -11392,11 +12946,11 @@ static void _glewInfo_EGL_NV_device_cuda (void)
 
 static void _glewInfo_EGL_NV_native_query (void)
 {
-  glewPrintExt("EGL_NV_native_query", EGLEW_NV_native_query, eglewIsSupported("EGL_NV_native_query"), eglewGetExtension("EGL_NV_native_query"));
+  GLboolean fi = glewPrintExt("EGL_NV_native_query", EGLEW_NV_native_query, eglewIsSupported("EGL_NV_native_query"), eglewGetExtension("EGL_NV_native_query"));
 
-  glewInfoFunc("eglQueryNativeDisplayNV", eglQueryNativeDisplayNV == NULL);
-  glewInfoFunc("eglQueryNativePixmapNV", eglQueryNativePixmapNV == NULL);
-  glewInfoFunc("eglQueryNativeWindowNV", eglQueryNativeWindowNV == NULL);
+  glewInfoFunc(fi, "eglQueryNativeDisplayNV", eglQueryNativeDisplayNV == NULL);
+  glewInfoFunc(fi, "eglQueryNativePixmapNV", eglQueryNativePixmapNV == NULL);
+  glewInfoFunc(fi, "eglQueryNativeWindowNV", eglQueryNativeWindowNV == NULL);
 }
 
 #endif /* EGL_NV_native_query */
@@ -11414,12 +12968,21 @@ static void _glewInfo_EGL_NV_post_convert_rounding (void)
 
 static void _glewInfo_EGL_NV_post_sub_buffer (void)
 {
-  glewPrintExt("EGL_NV_post_sub_buffer", EGLEW_NV_post_sub_buffer, eglewIsSupported("EGL_NV_post_sub_buffer"), eglewGetExtension("EGL_NV_post_sub_buffer"));
+  GLboolean fi = glewPrintExt("EGL_NV_post_sub_buffer", EGLEW_NV_post_sub_buffer, eglewIsSupported("EGL_NV_post_sub_buffer"), eglewGetExtension("EGL_NV_post_sub_buffer"));
 
-  glewInfoFunc("eglPostSubBufferNV", eglPostSubBufferNV == NULL);
+  glewInfoFunc(fi, "eglPostSubBufferNV", eglPostSubBufferNV == NULL);
 }
 
 #endif /* EGL_NV_post_sub_buffer */
+
+#ifdef EGL_NV_quadruple_buffer
+
+static void _glewInfo_EGL_NV_quadruple_buffer (void)
+{
+  glewPrintExt("EGL_NV_quadruple_buffer", EGLEW_NV_quadruple_buffer, eglewIsSupported("EGL_NV_quadruple_buffer"), eglewGetExtension("EGL_NV_quadruple_buffer"));
+}
+
+#endif /* EGL_NV_quadruple_buffer */
 
 #ifdef EGL_NV_robustness_video_memory_purge
 
@@ -11434,9 +12997,9 @@ static void _glewInfo_EGL_NV_robustness_video_memory_purge (void)
 
 static void _glewInfo_EGL_NV_stream_consumer_gltexture_yuv (void)
 {
-  glewPrintExt("EGL_NV_stream_consumer_gltexture_yuv", EGLEW_NV_stream_consumer_gltexture_yuv, eglewIsSupported("EGL_NV_stream_consumer_gltexture_yuv"), eglewGetExtension("EGL_NV_stream_consumer_gltexture_yuv"));
+  GLboolean fi = glewPrintExt("EGL_NV_stream_consumer_gltexture_yuv", EGLEW_NV_stream_consumer_gltexture_yuv, eglewIsSupported("EGL_NV_stream_consumer_gltexture_yuv"), eglewGetExtension("EGL_NV_stream_consumer_gltexture_yuv"));
 
-  glewInfoFunc("eglStreamConsumerGLTextureExternalAttribsNV", eglStreamConsumerGLTextureExternalAttribsNV == NULL);
+  glewInfoFunc(fi, "eglStreamConsumerGLTextureExternalAttribsNV", eglStreamConsumerGLTextureExternalAttribsNV == NULL);
 }
 
 #endif /* EGL_NV_stream_consumer_gltexture_yuv */
@@ -11486,6 +13049,15 @@ static void _glewInfo_EGL_NV_stream_cross_system (void)
 
 #endif /* EGL_NV_stream_cross_system */
 
+#ifdef EGL_NV_stream_dma
+
+static void _glewInfo_EGL_NV_stream_dma (void)
+{
+  glewPrintExt("EGL_NV_stream_dma", EGLEW_NV_stream_dma, eglewIsSupported("EGL_NV_stream_dma"), eglewGetExtension("EGL_NV_stream_dma"));
+}
+
+#endif /* EGL_NV_stream_dma */
+
 #ifdef EGL_NV_stream_fifo_next
 
 static void _glewInfo_EGL_NV_stream_fifo_next (void)
@@ -11504,6 +13076,17 @@ static void _glewInfo_EGL_NV_stream_fifo_synchronous (void)
 
 #endif /* EGL_NV_stream_fifo_synchronous */
 
+#ifdef EGL_NV_stream_flush
+
+static void _glewInfo_EGL_NV_stream_flush (void)
+{
+  GLboolean fi = glewPrintExt("EGL_NV_stream_flush", EGLEW_NV_stream_flush, eglewIsSupported("EGL_NV_stream_flush"), eglewGetExtension("EGL_NV_stream_flush"));
+
+  glewInfoFunc(fi, "eglStreamFlushNV", eglStreamFlushNV == NULL);
+}
+
+#endif /* EGL_NV_stream_flush */
+
 #ifdef EGL_NV_stream_frame_limits
 
 static void _glewInfo_EGL_NV_stream_frame_limits (void)
@@ -11517,14 +13100,23 @@ static void _glewInfo_EGL_NV_stream_frame_limits (void)
 
 static void _glewInfo_EGL_NV_stream_metadata (void)
 {
-  glewPrintExt("EGL_NV_stream_metadata", EGLEW_NV_stream_metadata, eglewIsSupported("EGL_NV_stream_metadata"), eglewGetExtension("EGL_NV_stream_metadata"));
+  GLboolean fi = glewPrintExt("EGL_NV_stream_metadata", EGLEW_NV_stream_metadata, eglewIsSupported("EGL_NV_stream_metadata"), eglewGetExtension("EGL_NV_stream_metadata"));
 
-  glewInfoFunc("eglQueryDisplayAttribNV", eglQueryDisplayAttribNV == NULL);
-  glewInfoFunc("eglQueryStreamMetadataNV", eglQueryStreamMetadataNV == NULL);
-  glewInfoFunc("eglSetStreamMetadataNV", eglSetStreamMetadataNV == NULL);
+  glewInfoFunc(fi, "eglQueryDisplayAttribNV", eglQueryDisplayAttribNV == NULL);
+  glewInfoFunc(fi, "eglQueryStreamMetadataNV", eglQueryStreamMetadataNV == NULL);
+  glewInfoFunc(fi, "eglSetStreamMetadataNV", eglSetStreamMetadataNV == NULL);
 }
 
 #endif /* EGL_NV_stream_metadata */
+
+#ifdef EGL_NV_stream_origin
+
+static void _glewInfo_EGL_NV_stream_origin (void)
+{
+  glewPrintExt("EGL_NV_stream_origin", EGLEW_NV_stream_origin, eglewIsSupported("EGL_NV_stream_origin"), eglewGetExtension("EGL_NV_stream_origin"));
+}
+
+#endif /* EGL_NV_stream_origin */
 
 #ifdef EGL_NV_stream_remote
 
@@ -11539,9 +13131,9 @@ static void _glewInfo_EGL_NV_stream_remote (void)
 
 static void _glewInfo_EGL_NV_stream_reset (void)
 {
-  glewPrintExt("EGL_NV_stream_reset", EGLEW_NV_stream_reset, eglewIsSupported("EGL_NV_stream_reset"), eglewGetExtension("EGL_NV_stream_reset"));
+  GLboolean fi = glewPrintExt("EGL_NV_stream_reset", EGLEW_NV_stream_reset, eglewIsSupported("EGL_NV_stream_reset"), eglewGetExtension("EGL_NV_stream_reset"));
 
-  glewInfoFunc("eglResetStreamNV", eglResetStreamNV == NULL);
+  glewInfoFunc(fi, "eglResetStreamNV", eglResetStreamNV == NULL);
 }
 
 #endif /* EGL_NV_stream_reset */
@@ -11577,9 +13169,9 @@ static void _glewInfo_EGL_NV_stream_socket_unix (void)
 
 static void _glewInfo_EGL_NV_stream_sync (void)
 {
-  glewPrintExt("EGL_NV_stream_sync", EGLEW_NV_stream_sync, eglewIsSupported("EGL_NV_stream_sync"), eglewGetExtension("EGL_NV_stream_sync"));
+  GLboolean fi = glewPrintExt("EGL_NV_stream_sync", EGLEW_NV_stream_sync, eglewIsSupported("EGL_NV_stream_sync"), eglewGetExtension("EGL_NV_stream_sync"));
 
-  glewInfoFunc("eglCreateStreamSyncNV", eglCreateStreamSyncNV == NULL);
+  glewInfoFunc(fi, "eglCreateStreamSyncNV", eglCreateStreamSyncNV == NULL);
 }
 
 #endif /* EGL_NV_stream_sync */
@@ -11588,14 +13180,14 @@ static void _glewInfo_EGL_NV_stream_sync (void)
 
 static void _glewInfo_EGL_NV_sync (void)
 {
-  glewPrintExt("EGL_NV_sync", EGLEW_NV_sync, eglewIsSupported("EGL_NV_sync"), eglewGetExtension("EGL_NV_sync"));
+  GLboolean fi = glewPrintExt("EGL_NV_sync", EGLEW_NV_sync, eglewIsSupported("EGL_NV_sync"), eglewGetExtension("EGL_NV_sync"));
 
-  glewInfoFunc("eglClientWaitSyncNV", eglClientWaitSyncNV == NULL);
-  glewInfoFunc("eglCreateFenceSyncNV", eglCreateFenceSyncNV == NULL);
-  glewInfoFunc("eglDestroySyncNV", eglDestroySyncNV == NULL);
-  glewInfoFunc("eglFenceNV", eglFenceNV == NULL);
-  glewInfoFunc("eglGetSyncAttribNV", eglGetSyncAttribNV == NULL);
-  glewInfoFunc("eglSignalSyncNV", eglSignalSyncNV == NULL);
+  glewInfoFunc(fi, "eglClientWaitSyncNV", eglClientWaitSyncNV == NULL);
+  glewInfoFunc(fi, "eglCreateFenceSyncNV", eglCreateFenceSyncNV == NULL);
+  glewInfoFunc(fi, "eglDestroySyncNV", eglDestroySyncNV == NULL);
+  glewInfoFunc(fi, "eglFenceNV", eglFenceNV == NULL);
+  glewInfoFunc(fi, "eglGetSyncAttribNV", eglGetSyncAttribNV == NULL);
+  glewInfoFunc(fi, "eglSignalSyncNV", eglSignalSyncNV == NULL);
 }
 
 #endif /* EGL_NV_sync */
@@ -11604,13 +13196,22 @@ static void _glewInfo_EGL_NV_sync (void)
 
 static void _glewInfo_EGL_NV_system_time (void)
 {
-  glewPrintExt("EGL_NV_system_time", EGLEW_NV_system_time, eglewIsSupported("EGL_NV_system_time"), eglewGetExtension("EGL_NV_system_time"));
+  GLboolean fi = glewPrintExt("EGL_NV_system_time", EGLEW_NV_system_time, eglewIsSupported("EGL_NV_system_time"), eglewGetExtension("EGL_NV_system_time"));
 
-  glewInfoFunc("eglGetSystemTimeFrequencyNV", eglGetSystemTimeFrequencyNV == NULL);
-  glewInfoFunc("eglGetSystemTimeNV", eglGetSystemTimeNV == NULL);
+  glewInfoFunc(fi, "eglGetSystemTimeFrequencyNV", eglGetSystemTimeFrequencyNV == NULL);
+  glewInfoFunc(fi, "eglGetSystemTimeNV", eglGetSystemTimeNV == NULL);
 }
 
 #endif /* EGL_NV_system_time */
+
+#ifdef EGL_NV_triple_buffer
+
+static void _glewInfo_EGL_NV_triple_buffer (void)
+{
+  glewPrintExt("EGL_NV_triple_buffer", EGLEW_NV_triple_buffer, eglewIsSupported("EGL_NV_triple_buffer"), eglewGetExtension("EGL_NV_triple_buffer"));
+}
+
+#endif /* EGL_NV_triple_buffer */
 
 #ifdef EGL_TIZEN_image_native_buffer
 
@@ -11630,6 +13231,30 @@ static void _glewInfo_EGL_TIZEN_image_native_surface (void)
 
 #endif /* EGL_TIZEN_image_native_surface */
 
+#ifdef EGL_WL_bind_wayland_display
+
+static void _glewInfo_EGL_WL_bind_wayland_display (void)
+{
+  GLboolean fi = glewPrintExt("EGL_WL_bind_wayland_display", EGLEW_WL_bind_wayland_display, eglewIsSupported("EGL_WL_bind_wayland_display"), eglewGetExtension("EGL_WL_bind_wayland_display"));
+
+  glewInfoFunc(fi, "eglBindWaylandDisplayWL", eglBindWaylandDisplayWL == NULL);
+  glewInfoFunc(fi, "eglQueryWaylandBufferWL", eglQueryWaylandBufferWL == NULL);
+  glewInfoFunc(fi, "eglUnbindWaylandDisplayWL", eglUnbindWaylandDisplayWL == NULL);
+}
+
+#endif /* EGL_WL_bind_wayland_display */
+
+#ifdef EGL_WL_create_wayland_buffer_from_image
+
+static void _glewInfo_EGL_WL_create_wayland_buffer_from_image (void)
+{
+  GLboolean fi = glewPrintExt("EGL_WL_create_wayland_buffer_from_image", EGLEW_WL_create_wayland_buffer_from_image, eglewIsSupported("EGL_WL_create_wayland_buffer_from_image"), eglewGetExtension("EGL_WL_create_wayland_buffer_from_image"));
+
+  glewInfoFunc(fi, "eglCreateWaylandBufferFromImageWL", eglCreateWaylandBufferFromImageWL == NULL);
+}
+
+#endif /* EGL_WL_create_wayland_buffer_from_image */
+
 #elif _WIN32
 
 #ifdef WGL_3DFX_multisample
@@ -11645,9 +13270,9 @@ static void _glewInfo_WGL_3DFX_multisample (void)
 
 static void _glewInfo_WGL_3DL_stereo_control (void)
 {
-  glewPrintExt("WGL_3DL_stereo_control", WGLEW_3DL_stereo_control, wglewIsSupported("WGL_3DL_stereo_control"), wglewGetExtension("WGL_3DL_stereo_control"));
+  GLboolean fi = glewPrintExt("WGL_3DL_stereo_control", WGLEW_3DL_stereo_control, wglewIsSupported("WGL_3DL_stereo_control"), wglewGetExtension("WGL_3DL_stereo_control"));
 
-  glewInfoFunc("wglSetStereoEmitterState3DL", wglSetStereoEmitterState3DL == NULL);
+  glewInfoFunc(fi, "wglSetStereoEmitterState3DL", wglSetStereoEmitterState3DL == NULL);
 }
 
 #endif /* WGL_3DL_stereo_control */
@@ -11656,17 +13281,17 @@ static void _glewInfo_WGL_3DL_stereo_control (void)
 
 static void _glewInfo_WGL_AMD_gpu_association (void)
 {
-  glewPrintExt("WGL_AMD_gpu_association", WGLEW_AMD_gpu_association, wglewIsSupported("WGL_AMD_gpu_association"), wglewGetExtension("WGL_AMD_gpu_association"));
+  GLboolean fi = glewPrintExt("WGL_AMD_gpu_association", WGLEW_AMD_gpu_association, wglewIsSupported("WGL_AMD_gpu_association"), wglewGetExtension("WGL_AMD_gpu_association"));
 
-  glewInfoFunc("wglBlitContextFramebufferAMD", wglBlitContextFramebufferAMD == NULL);
-  glewInfoFunc("wglCreateAssociatedContextAMD", wglCreateAssociatedContextAMD == NULL);
-  glewInfoFunc("wglCreateAssociatedContextAttribsAMD", wglCreateAssociatedContextAttribsAMD == NULL);
-  glewInfoFunc("wglDeleteAssociatedContextAMD", wglDeleteAssociatedContextAMD == NULL);
-  glewInfoFunc("wglGetContextGPUIDAMD", wglGetContextGPUIDAMD == NULL);
-  glewInfoFunc("wglGetCurrentAssociatedContextAMD", wglGetCurrentAssociatedContextAMD == NULL);
-  glewInfoFunc("wglGetGPUIDsAMD", wglGetGPUIDsAMD == NULL);
-  glewInfoFunc("wglGetGPUInfoAMD", wglGetGPUInfoAMD == NULL);
-  glewInfoFunc("wglMakeAssociatedContextCurrentAMD", wglMakeAssociatedContextCurrentAMD == NULL);
+  glewInfoFunc(fi, "wglBlitContextFramebufferAMD", wglBlitContextFramebufferAMD == NULL);
+  glewInfoFunc(fi, "wglCreateAssociatedContextAMD", wglCreateAssociatedContextAMD == NULL);
+  glewInfoFunc(fi, "wglCreateAssociatedContextAttribsAMD", wglCreateAssociatedContextAttribsAMD == NULL);
+  glewInfoFunc(fi, "wglDeleteAssociatedContextAMD", wglDeleteAssociatedContextAMD == NULL);
+  glewInfoFunc(fi, "wglGetContextGPUIDAMD", wglGetContextGPUIDAMD == NULL);
+  glewInfoFunc(fi, "wglGetCurrentAssociatedContextAMD", wglGetCurrentAssociatedContextAMD == NULL);
+  glewInfoFunc(fi, "wglGetGPUIDsAMD", wglGetGPUIDsAMD == NULL);
+  glewInfoFunc(fi, "wglGetGPUInfoAMD", wglGetGPUInfoAMD == NULL);
+  glewInfoFunc(fi, "wglMakeAssociatedContextCurrentAMD", wglMakeAssociatedContextCurrentAMD == NULL);
 }
 
 #endif /* WGL_AMD_gpu_association */
@@ -11675,12 +13300,12 @@ static void _glewInfo_WGL_AMD_gpu_association (void)
 
 static void _glewInfo_WGL_ARB_buffer_region (void)
 {
-  glewPrintExt("WGL_ARB_buffer_region", WGLEW_ARB_buffer_region, wglewIsSupported("WGL_ARB_buffer_region"), wglewGetExtension("WGL_ARB_buffer_region"));
+  GLboolean fi = glewPrintExt("WGL_ARB_buffer_region", WGLEW_ARB_buffer_region, wglewIsSupported("WGL_ARB_buffer_region"), wglewGetExtension("WGL_ARB_buffer_region"));
 
-  glewInfoFunc("wglCreateBufferRegionARB", wglCreateBufferRegionARB == NULL);
-  glewInfoFunc("wglDeleteBufferRegionARB", wglDeleteBufferRegionARB == NULL);
-  glewInfoFunc("wglRestoreBufferRegionARB", wglRestoreBufferRegionARB == NULL);
-  glewInfoFunc("wglSaveBufferRegionARB", wglSaveBufferRegionARB == NULL);
+  glewInfoFunc(fi, "wglCreateBufferRegionARB", wglCreateBufferRegionARB == NULL);
+  glewInfoFunc(fi, "wglDeleteBufferRegionARB", wglDeleteBufferRegionARB == NULL);
+  glewInfoFunc(fi, "wglRestoreBufferRegionARB", wglRestoreBufferRegionARB == NULL);
+  glewInfoFunc(fi, "wglSaveBufferRegionARB", wglSaveBufferRegionARB == NULL);
 }
 
 #endif /* WGL_ARB_buffer_region */
@@ -11698,9 +13323,9 @@ static void _glewInfo_WGL_ARB_context_flush_control (void)
 
 static void _glewInfo_WGL_ARB_create_context (void)
 {
-  glewPrintExt("WGL_ARB_create_context", WGLEW_ARB_create_context, wglewIsSupported("WGL_ARB_create_context"), wglewGetExtension("WGL_ARB_create_context"));
+  GLboolean fi = glewPrintExt("WGL_ARB_create_context", WGLEW_ARB_create_context, wglewIsSupported("WGL_ARB_create_context"), wglewGetExtension("WGL_ARB_create_context"));
 
-  glewInfoFunc("wglCreateContextAttribsARB", wglCreateContextAttribsARB == NULL);
+  glewInfoFunc(fi, "wglCreateContextAttribsARB", wglCreateContextAttribsARB == NULL);
 }
 
 #endif /* WGL_ARB_create_context */
@@ -11736,9 +13361,9 @@ static void _glewInfo_WGL_ARB_create_context_robustness (void)
 
 static void _glewInfo_WGL_ARB_extensions_string (void)
 {
-  glewPrintExt("WGL_ARB_extensions_string", WGLEW_ARB_extensions_string, wglewIsSupported("WGL_ARB_extensions_string"), wglewGetExtension("WGL_ARB_extensions_string"));
+  GLboolean fi = glewPrintExt("WGL_ARB_extensions_string", WGLEW_ARB_extensions_string, wglewIsSupported("WGL_ARB_extensions_string"), wglewGetExtension("WGL_ARB_extensions_string"));
 
-  glewInfoFunc("wglGetExtensionsStringARB", wglGetExtensionsStringARB == NULL);
+  glewInfoFunc(fi, "wglGetExtensionsStringARB", wglGetExtensionsStringARB == NULL);
 }
 
 #endif /* WGL_ARB_extensions_string */
@@ -11756,10 +13381,10 @@ static void _glewInfo_WGL_ARB_framebuffer_sRGB (void)
 
 static void _glewInfo_WGL_ARB_make_current_read (void)
 {
-  glewPrintExt("WGL_ARB_make_current_read", WGLEW_ARB_make_current_read, wglewIsSupported("WGL_ARB_make_current_read"), wglewGetExtension("WGL_ARB_make_current_read"));
+  GLboolean fi = glewPrintExt("WGL_ARB_make_current_read", WGLEW_ARB_make_current_read, wglewIsSupported("WGL_ARB_make_current_read"), wglewGetExtension("WGL_ARB_make_current_read"));
 
-  glewInfoFunc("wglGetCurrentReadDCARB", wglGetCurrentReadDCARB == NULL);
-  glewInfoFunc("wglMakeContextCurrentARB", wglMakeContextCurrentARB == NULL);
+  glewInfoFunc(fi, "wglGetCurrentReadDCARB", wglGetCurrentReadDCARB == NULL);
+  glewInfoFunc(fi, "wglMakeContextCurrentARB", wglMakeContextCurrentARB == NULL);
 }
 
 #endif /* WGL_ARB_make_current_read */
@@ -11777,13 +13402,13 @@ static void _glewInfo_WGL_ARB_multisample (void)
 
 static void _glewInfo_WGL_ARB_pbuffer (void)
 {
-  glewPrintExt("WGL_ARB_pbuffer", WGLEW_ARB_pbuffer, wglewIsSupported("WGL_ARB_pbuffer"), wglewGetExtension("WGL_ARB_pbuffer"));
+  GLboolean fi = glewPrintExt("WGL_ARB_pbuffer", WGLEW_ARB_pbuffer, wglewIsSupported("WGL_ARB_pbuffer"), wglewGetExtension("WGL_ARB_pbuffer"));
 
-  glewInfoFunc("wglCreatePbufferARB", wglCreatePbufferARB == NULL);
-  glewInfoFunc("wglDestroyPbufferARB", wglDestroyPbufferARB == NULL);
-  glewInfoFunc("wglGetPbufferDCARB", wglGetPbufferDCARB == NULL);
-  glewInfoFunc("wglQueryPbufferARB", wglQueryPbufferARB == NULL);
-  glewInfoFunc("wglReleasePbufferDCARB", wglReleasePbufferDCARB == NULL);
+  glewInfoFunc(fi, "wglCreatePbufferARB", wglCreatePbufferARB == NULL);
+  glewInfoFunc(fi, "wglDestroyPbufferARB", wglDestroyPbufferARB == NULL);
+  glewInfoFunc(fi, "wglGetPbufferDCARB", wglGetPbufferDCARB == NULL);
+  glewInfoFunc(fi, "wglQueryPbufferARB", wglQueryPbufferARB == NULL);
+  glewInfoFunc(fi, "wglReleasePbufferDCARB", wglReleasePbufferDCARB == NULL);
 }
 
 #endif /* WGL_ARB_pbuffer */
@@ -11792,11 +13417,11 @@ static void _glewInfo_WGL_ARB_pbuffer (void)
 
 static void _glewInfo_WGL_ARB_pixel_format (void)
 {
-  glewPrintExt("WGL_ARB_pixel_format", WGLEW_ARB_pixel_format, wglewIsSupported("WGL_ARB_pixel_format"), wglewGetExtension("WGL_ARB_pixel_format"));
+  GLboolean fi = glewPrintExt("WGL_ARB_pixel_format", WGLEW_ARB_pixel_format, wglewIsSupported("WGL_ARB_pixel_format"), wglewGetExtension("WGL_ARB_pixel_format"));
 
-  glewInfoFunc("wglChoosePixelFormatARB", wglChoosePixelFormatARB == NULL);
-  glewInfoFunc("wglGetPixelFormatAttribfvARB", wglGetPixelFormatAttribfvARB == NULL);
-  glewInfoFunc("wglGetPixelFormatAttribivARB", wglGetPixelFormatAttribivARB == NULL);
+  glewInfoFunc(fi, "wglChoosePixelFormatARB", wglChoosePixelFormatARB == NULL);
+  glewInfoFunc(fi, "wglGetPixelFormatAttribfvARB", wglGetPixelFormatAttribfvARB == NULL);
+  glewInfoFunc(fi, "wglGetPixelFormatAttribivARB", wglGetPixelFormatAttribivARB == NULL);
 }
 
 #endif /* WGL_ARB_pixel_format */
@@ -11814,11 +13439,11 @@ static void _glewInfo_WGL_ARB_pixel_format_float (void)
 
 static void _glewInfo_WGL_ARB_render_texture (void)
 {
-  glewPrintExt("WGL_ARB_render_texture", WGLEW_ARB_render_texture, wglewIsSupported("WGL_ARB_render_texture"), wglewGetExtension("WGL_ARB_render_texture"));
+  GLboolean fi = glewPrintExt("WGL_ARB_render_texture", WGLEW_ARB_render_texture, wglewIsSupported("WGL_ARB_render_texture"), wglewGetExtension("WGL_ARB_render_texture"));
 
-  glewInfoFunc("wglBindTexImageARB", wglBindTexImageARB == NULL);
-  glewInfoFunc("wglReleaseTexImageARB", wglReleaseTexImageARB == NULL);
-  glewInfoFunc("wglSetPbufferAttribARB", wglSetPbufferAttribARB == NULL);
+  glewInfoFunc(fi, "wglBindTexImageARB", wglBindTexImageARB == NULL);
+  glewInfoFunc(fi, "wglReleaseTexImageARB", wglReleaseTexImageARB == NULL);
+  glewInfoFunc(fi, "wglSetPbufferAttribARB", wglSetPbufferAttribARB == NULL);
 }
 
 #endif /* WGL_ARB_render_texture */
@@ -11899,12 +13524,12 @@ static void _glewInfo_WGL_EXT_depth_float (void)
 
 static void _glewInfo_WGL_EXT_display_color_table (void)
 {
-  glewPrintExt("WGL_EXT_display_color_table", WGLEW_EXT_display_color_table, wglewIsSupported("WGL_EXT_display_color_table"), wglewGetExtension("WGL_EXT_display_color_table"));
+  GLboolean fi = glewPrintExt("WGL_EXT_display_color_table", WGLEW_EXT_display_color_table, wglewIsSupported("WGL_EXT_display_color_table"), wglewGetExtension("WGL_EXT_display_color_table"));
 
-  glewInfoFunc("wglBindDisplayColorTableEXT", wglBindDisplayColorTableEXT == NULL);
-  glewInfoFunc("wglCreateDisplayColorTableEXT", wglCreateDisplayColorTableEXT == NULL);
-  glewInfoFunc("wglDestroyDisplayColorTableEXT", wglDestroyDisplayColorTableEXT == NULL);
-  glewInfoFunc("wglLoadDisplayColorTableEXT", wglLoadDisplayColorTableEXT == NULL);
+  glewInfoFunc(fi, "wglBindDisplayColorTableEXT", wglBindDisplayColorTableEXT == NULL);
+  glewInfoFunc(fi, "wglCreateDisplayColorTableEXT", wglCreateDisplayColorTableEXT == NULL);
+  glewInfoFunc(fi, "wglDestroyDisplayColorTableEXT", wglDestroyDisplayColorTableEXT == NULL);
+  glewInfoFunc(fi, "wglLoadDisplayColorTableEXT", wglLoadDisplayColorTableEXT == NULL);
 }
 
 #endif /* WGL_EXT_display_color_table */
@@ -11913,9 +13538,9 @@ static void _glewInfo_WGL_EXT_display_color_table (void)
 
 static void _glewInfo_WGL_EXT_extensions_string (void)
 {
-  glewPrintExt("WGL_EXT_extensions_string", WGLEW_EXT_extensions_string, wglewIsSupported("WGL_EXT_extensions_string"), wglewGetExtension("WGL_EXT_extensions_string"));
+  GLboolean fi = glewPrintExt("WGL_EXT_extensions_string", WGLEW_EXT_extensions_string, wglewIsSupported("WGL_EXT_extensions_string"), wglewGetExtension("WGL_EXT_extensions_string"));
 
-  glewInfoFunc("wglGetExtensionsStringEXT", wglGetExtensionsStringEXT == NULL);
+  glewInfoFunc(fi, "wglGetExtensionsStringEXT", wglGetExtensionsStringEXT == NULL);
 }
 
 #endif /* WGL_EXT_extensions_string */
@@ -11933,10 +13558,10 @@ static void _glewInfo_WGL_EXT_framebuffer_sRGB (void)
 
 static void _glewInfo_WGL_EXT_make_current_read (void)
 {
-  glewPrintExt("WGL_EXT_make_current_read", WGLEW_EXT_make_current_read, wglewIsSupported("WGL_EXT_make_current_read"), wglewGetExtension("WGL_EXT_make_current_read"));
+  GLboolean fi = glewPrintExt("WGL_EXT_make_current_read", WGLEW_EXT_make_current_read, wglewIsSupported("WGL_EXT_make_current_read"), wglewGetExtension("WGL_EXT_make_current_read"));
 
-  glewInfoFunc("wglGetCurrentReadDCEXT", wglGetCurrentReadDCEXT == NULL);
-  glewInfoFunc("wglMakeContextCurrentEXT", wglMakeContextCurrentEXT == NULL);
+  glewInfoFunc(fi, "wglGetCurrentReadDCEXT", wglGetCurrentReadDCEXT == NULL);
+  glewInfoFunc(fi, "wglMakeContextCurrentEXT", wglMakeContextCurrentEXT == NULL);
 }
 
 #endif /* WGL_EXT_make_current_read */
@@ -11954,13 +13579,13 @@ static void _glewInfo_WGL_EXT_multisample (void)
 
 static void _glewInfo_WGL_EXT_pbuffer (void)
 {
-  glewPrintExt("WGL_EXT_pbuffer", WGLEW_EXT_pbuffer, wglewIsSupported("WGL_EXT_pbuffer"), wglewGetExtension("WGL_EXT_pbuffer"));
+  GLboolean fi = glewPrintExt("WGL_EXT_pbuffer", WGLEW_EXT_pbuffer, wglewIsSupported("WGL_EXT_pbuffer"), wglewGetExtension("WGL_EXT_pbuffer"));
 
-  glewInfoFunc("wglCreatePbufferEXT", wglCreatePbufferEXT == NULL);
-  glewInfoFunc("wglDestroyPbufferEXT", wglDestroyPbufferEXT == NULL);
-  glewInfoFunc("wglGetPbufferDCEXT", wglGetPbufferDCEXT == NULL);
-  glewInfoFunc("wglQueryPbufferEXT", wglQueryPbufferEXT == NULL);
-  glewInfoFunc("wglReleasePbufferDCEXT", wglReleasePbufferDCEXT == NULL);
+  glewInfoFunc(fi, "wglCreatePbufferEXT", wglCreatePbufferEXT == NULL);
+  glewInfoFunc(fi, "wglDestroyPbufferEXT", wglDestroyPbufferEXT == NULL);
+  glewInfoFunc(fi, "wglGetPbufferDCEXT", wglGetPbufferDCEXT == NULL);
+  glewInfoFunc(fi, "wglQueryPbufferEXT", wglQueryPbufferEXT == NULL);
+  glewInfoFunc(fi, "wglReleasePbufferDCEXT", wglReleasePbufferDCEXT == NULL);
 }
 
 #endif /* WGL_EXT_pbuffer */
@@ -11969,11 +13594,11 @@ static void _glewInfo_WGL_EXT_pbuffer (void)
 
 static void _glewInfo_WGL_EXT_pixel_format (void)
 {
-  glewPrintExt("WGL_EXT_pixel_format", WGLEW_EXT_pixel_format, wglewIsSupported("WGL_EXT_pixel_format"), wglewGetExtension("WGL_EXT_pixel_format"));
+  GLboolean fi = glewPrintExt("WGL_EXT_pixel_format", WGLEW_EXT_pixel_format, wglewIsSupported("WGL_EXT_pixel_format"), wglewGetExtension("WGL_EXT_pixel_format"));
 
-  glewInfoFunc("wglChoosePixelFormatEXT", wglChoosePixelFormatEXT == NULL);
-  glewInfoFunc("wglGetPixelFormatAttribfvEXT", wglGetPixelFormatAttribfvEXT == NULL);
-  glewInfoFunc("wglGetPixelFormatAttribivEXT", wglGetPixelFormatAttribivEXT == NULL);
+  glewInfoFunc(fi, "wglChoosePixelFormatEXT", wglChoosePixelFormatEXT == NULL);
+  glewInfoFunc(fi, "wglGetPixelFormatAttribfvEXT", wglGetPixelFormatAttribfvEXT == NULL);
+  glewInfoFunc(fi, "wglGetPixelFormatAttribivEXT", wglGetPixelFormatAttribivEXT == NULL);
 }
 
 #endif /* WGL_EXT_pixel_format */
@@ -11991,10 +13616,10 @@ static void _glewInfo_WGL_EXT_pixel_format_packed_float (void)
 
 static void _glewInfo_WGL_EXT_swap_control (void)
 {
-  glewPrintExt("WGL_EXT_swap_control", WGLEW_EXT_swap_control, wglewIsSupported("WGL_EXT_swap_control"), wglewGetExtension("WGL_EXT_swap_control"));
+  GLboolean fi = glewPrintExt("WGL_EXT_swap_control", WGLEW_EXT_swap_control, wglewIsSupported("WGL_EXT_swap_control"), wglewGetExtension("WGL_EXT_swap_control"));
 
-  glewInfoFunc("wglGetSwapIntervalEXT", wglGetSwapIntervalEXT == NULL);
-  glewInfoFunc("wglSwapIntervalEXT", wglSwapIntervalEXT == NULL);
+  glewInfoFunc(fi, "wglGetSwapIntervalEXT", wglGetSwapIntervalEXT == NULL);
+  glewInfoFunc(fi, "wglSwapIntervalEXT", wglSwapIntervalEXT == NULL);
 }
 
 #endif /* WGL_EXT_swap_control */
@@ -12012,10 +13637,10 @@ static void _glewInfo_WGL_EXT_swap_control_tear (void)
 
 static void _glewInfo_WGL_I3D_digital_video_control (void)
 {
-  glewPrintExt("WGL_I3D_digital_video_control", WGLEW_I3D_digital_video_control, wglewIsSupported("WGL_I3D_digital_video_control"), wglewGetExtension("WGL_I3D_digital_video_control"));
+  GLboolean fi = glewPrintExt("WGL_I3D_digital_video_control", WGLEW_I3D_digital_video_control, wglewIsSupported("WGL_I3D_digital_video_control"), wglewGetExtension("WGL_I3D_digital_video_control"));
 
-  glewInfoFunc("wglGetDigitalVideoParametersI3D", wglGetDigitalVideoParametersI3D == NULL);
-  glewInfoFunc("wglSetDigitalVideoParametersI3D", wglSetDigitalVideoParametersI3D == NULL);
+  glewInfoFunc(fi, "wglGetDigitalVideoParametersI3D", wglGetDigitalVideoParametersI3D == NULL);
+  glewInfoFunc(fi, "wglSetDigitalVideoParametersI3D", wglSetDigitalVideoParametersI3D == NULL);
 }
 
 #endif /* WGL_I3D_digital_video_control */
@@ -12024,12 +13649,12 @@ static void _glewInfo_WGL_I3D_digital_video_control (void)
 
 static void _glewInfo_WGL_I3D_gamma (void)
 {
-  glewPrintExt("WGL_I3D_gamma", WGLEW_I3D_gamma, wglewIsSupported("WGL_I3D_gamma"), wglewGetExtension("WGL_I3D_gamma"));
+  GLboolean fi = glewPrintExt("WGL_I3D_gamma", WGLEW_I3D_gamma, wglewIsSupported("WGL_I3D_gamma"), wglewGetExtension("WGL_I3D_gamma"));
 
-  glewInfoFunc("wglGetGammaTableI3D", wglGetGammaTableI3D == NULL);
-  glewInfoFunc("wglGetGammaTableParametersI3D", wglGetGammaTableParametersI3D == NULL);
-  glewInfoFunc("wglSetGammaTableI3D", wglSetGammaTableI3D == NULL);
-  glewInfoFunc("wglSetGammaTableParametersI3D", wglSetGammaTableParametersI3D == NULL);
+  glewInfoFunc(fi, "wglGetGammaTableI3D", wglGetGammaTableI3D == NULL);
+  glewInfoFunc(fi, "wglGetGammaTableParametersI3D", wglGetGammaTableParametersI3D == NULL);
+  glewInfoFunc(fi, "wglSetGammaTableI3D", wglSetGammaTableI3D == NULL);
+  glewInfoFunc(fi, "wglSetGammaTableParametersI3D", wglSetGammaTableParametersI3D == NULL);
 }
 
 #endif /* WGL_I3D_gamma */
@@ -12038,20 +13663,20 @@ static void _glewInfo_WGL_I3D_gamma (void)
 
 static void _glewInfo_WGL_I3D_genlock (void)
 {
-  glewPrintExt("WGL_I3D_genlock", WGLEW_I3D_genlock, wglewIsSupported("WGL_I3D_genlock"), wglewGetExtension("WGL_I3D_genlock"));
+  GLboolean fi = glewPrintExt("WGL_I3D_genlock", WGLEW_I3D_genlock, wglewIsSupported("WGL_I3D_genlock"), wglewGetExtension("WGL_I3D_genlock"));
 
-  glewInfoFunc("wglDisableGenlockI3D", wglDisableGenlockI3D == NULL);
-  glewInfoFunc("wglEnableGenlockI3D", wglEnableGenlockI3D == NULL);
-  glewInfoFunc("wglGenlockSampleRateI3D", wglGenlockSampleRateI3D == NULL);
-  glewInfoFunc("wglGenlockSourceDelayI3D", wglGenlockSourceDelayI3D == NULL);
-  glewInfoFunc("wglGenlockSourceEdgeI3D", wglGenlockSourceEdgeI3D == NULL);
-  glewInfoFunc("wglGenlockSourceI3D", wglGenlockSourceI3D == NULL);
-  glewInfoFunc("wglGetGenlockSampleRateI3D", wglGetGenlockSampleRateI3D == NULL);
-  glewInfoFunc("wglGetGenlockSourceDelayI3D", wglGetGenlockSourceDelayI3D == NULL);
-  glewInfoFunc("wglGetGenlockSourceEdgeI3D", wglGetGenlockSourceEdgeI3D == NULL);
-  glewInfoFunc("wglGetGenlockSourceI3D", wglGetGenlockSourceI3D == NULL);
-  glewInfoFunc("wglIsEnabledGenlockI3D", wglIsEnabledGenlockI3D == NULL);
-  glewInfoFunc("wglQueryGenlockMaxSourceDelayI3D", wglQueryGenlockMaxSourceDelayI3D == NULL);
+  glewInfoFunc(fi, "wglDisableGenlockI3D", wglDisableGenlockI3D == NULL);
+  glewInfoFunc(fi, "wglEnableGenlockI3D", wglEnableGenlockI3D == NULL);
+  glewInfoFunc(fi, "wglGenlockSampleRateI3D", wglGenlockSampleRateI3D == NULL);
+  glewInfoFunc(fi, "wglGenlockSourceDelayI3D", wglGenlockSourceDelayI3D == NULL);
+  glewInfoFunc(fi, "wglGenlockSourceEdgeI3D", wglGenlockSourceEdgeI3D == NULL);
+  glewInfoFunc(fi, "wglGenlockSourceI3D", wglGenlockSourceI3D == NULL);
+  glewInfoFunc(fi, "wglGetGenlockSampleRateI3D", wglGetGenlockSampleRateI3D == NULL);
+  glewInfoFunc(fi, "wglGetGenlockSourceDelayI3D", wglGetGenlockSourceDelayI3D == NULL);
+  glewInfoFunc(fi, "wglGetGenlockSourceEdgeI3D", wglGetGenlockSourceEdgeI3D == NULL);
+  glewInfoFunc(fi, "wglGetGenlockSourceI3D", wglGetGenlockSourceI3D == NULL);
+  glewInfoFunc(fi, "wglIsEnabledGenlockI3D", wglIsEnabledGenlockI3D == NULL);
+  glewInfoFunc(fi, "wglQueryGenlockMaxSourceDelayI3D", wglQueryGenlockMaxSourceDelayI3D == NULL);
 }
 
 #endif /* WGL_I3D_genlock */
@@ -12060,12 +13685,12 @@ static void _glewInfo_WGL_I3D_genlock (void)
 
 static void _glewInfo_WGL_I3D_image_buffer (void)
 {
-  glewPrintExt("WGL_I3D_image_buffer", WGLEW_I3D_image_buffer, wglewIsSupported("WGL_I3D_image_buffer"), wglewGetExtension("WGL_I3D_image_buffer"));
+  GLboolean fi = glewPrintExt("WGL_I3D_image_buffer", WGLEW_I3D_image_buffer, wglewIsSupported("WGL_I3D_image_buffer"), wglewGetExtension("WGL_I3D_image_buffer"));
 
-  glewInfoFunc("wglAssociateImageBufferEventsI3D", wglAssociateImageBufferEventsI3D == NULL);
-  glewInfoFunc("wglCreateImageBufferI3D", wglCreateImageBufferI3D == NULL);
-  glewInfoFunc("wglDestroyImageBufferI3D", wglDestroyImageBufferI3D == NULL);
-  glewInfoFunc("wglReleaseImageBufferEventsI3D", wglReleaseImageBufferEventsI3D == NULL);
+  glewInfoFunc(fi, "wglAssociateImageBufferEventsI3D", wglAssociateImageBufferEventsI3D == NULL);
+  glewInfoFunc(fi, "wglCreateImageBufferI3D", wglCreateImageBufferI3D == NULL);
+  glewInfoFunc(fi, "wglDestroyImageBufferI3D", wglDestroyImageBufferI3D == NULL);
+  glewInfoFunc(fi, "wglReleaseImageBufferEventsI3D", wglReleaseImageBufferEventsI3D == NULL);
 }
 
 #endif /* WGL_I3D_image_buffer */
@@ -12074,12 +13699,12 @@ static void _glewInfo_WGL_I3D_image_buffer (void)
 
 static void _glewInfo_WGL_I3D_swap_frame_lock (void)
 {
-  glewPrintExt("WGL_I3D_swap_frame_lock", WGLEW_I3D_swap_frame_lock, wglewIsSupported("WGL_I3D_swap_frame_lock"), wglewGetExtension("WGL_I3D_swap_frame_lock"));
+  GLboolean fi = glewPrintExt("WGL_I3D_swap_frame_lock", WGLEW_I3D_swap_frame_lock, wglewIsSupported("WGL_I3D_swap_frame_lock"), wglewGetExtension("WGL_I3D_swap_frame_lock"));
 
-  glewInfoFunc("wglDisableFrameLockI3D", wglDisableFrameLockI3D == NULL);
-  glewInfoFunc("wglEnableFrameLockI3D", wglEnableFrameLockI3D == NULL);
-  glewInfoFunc("wglIsEnabledFrameLockI3D", wglIsEnabledFrameLockI3D == NULL);
-  glewInfoFunc("wglQueryFrameLockMasterI3D", wglQueryFrameLockMasterI3D == NULL);
+  glewInfoFunc(fi, "wglDisableFrameLockI3D", wglDisableFrameLockI3D == NULL);
+  glewInfoFunc(fi, "wglEnableFrameLockI3D", wglEnableFrameLockI3D == NULL);
+  glewInfoFunc(fi, "wglIsEnabledFrameLockI3D", wglIsEnabledFrameLockI3D == NULL);
+  glewInfoFunc(fi, "wglQueryFrameLockMasterI3D", wglQueryFrameLockMasterI3D == NULL);
 }
 
 #endif /* WGL_I3D_swap_frame_lock */
@@ -12088,12 +13713,12 @@ static void _glewInfo_WGL_I3D_swap_frame_lock (void)
 
 static void _glewInfo_WGL_I3D_swap_frame_usage (void)
 {
-  glewPrintExt("WGL_I3D_swap_frame_usage", WGLEW_I3D_swap_frame_usage, wglewIsSupported("WGL_I3D_swap_frame_usage"), wglewGetExtension("WGL_I3D_swap_frame_usage"));
+  GLboolean fi = glewPrintExt("WGL_I3D_swap_frame_usage", WGLEW_I3D_swap_frame_usage, wglewIsSupported("WGL_I3D_swap_frame_usage"), wglewGetExtension("WGL_I3D_swap_frame_usage"));
 
-  glewInfoFunc("wglBeginFrameTrackingI3D", wglBeginFrameTrackingI3D == NULL);
-  glewInfoFunc("wglEndFrameTrackingI3D", wglEndFrameTrackingI3D == NULL);
-  glewInfoFunc("wglGetFrameUsageI3D", wglGetFrameUsageI3D == NULL);
-  glewInfoFunc("wglQueryFrameTrackingI3D", wglQueryFrameTrackingI3D == NULL);
+  glewInfoFunc(fi, "wglBeginFrameTrackingI3D", wglBeginFrameTrackingI3D == NULL);
+  glewInfoFunc(fi, "wglEndFrameTrackingI3D", wglEndFrameTrackingI3D == NULL);
+  glewInfoFunc(fi, "wglGetFrameUsageI3D", wglGetFrameUsageI3D == NULL);
+  glewInfoFunc(fi, "wglQueryFrameTrackingI3D", wglQueryFrameTrackingI3D == NULL);
 }
 
 #endif /* WGL_I3D_swap_frame_usage */
@@ -12102,16 +13727,16 @@ static void _glewInfo_WGL_I3D_swap_frame_usage (void)
 
 static void _glewInfo_WGL_NV_DX_interop (void)
 {
-  glewPrintExt("WGL_NV_DX_interop", WGLEW_NV_DX_interop, wglewIsSupported("WGL_NV_DX_interop"), wglewGetExtension("WGL_NV_DX_interop"));
+  GLboolean fi = glewPrintExt("WGL_NV_DX_interop", WGLEW_NV_DX_interop, wglewIsSupported("WGL_NV_DX_interop"), wglewGetExtension("WGL_NV_DX_interop"));
 
-  glewInfoFunc("wglDXCloseDeviceNV", wglDXCloseDeviceNV == NULL);
-  glewInfoFunc("wglDXLockObjectsNV", wglDXLockObjectsNV == NULL);
-  glewInfoFunc("wglDXObjectAccessNV", wglDXObjectAccessNV == NULL);
-  glewInfoFunc("wglDXOpenDeviceNV", wglDXOpenDeviceNV == NULL);
-  glewInfoFunc("wglDXRegisterObjectNV", wglDXRegisterObjectNV == NULL);
-  glewInfoFunc("wglDXSetResourceShareHandleNV", wglDXSetResourceShareHandleNV == NULL);
-  glewInfoFunc("wglDXUnlockObjectsNV", wglDXUnlockObjectsNV == NULL);
-  glewInfoFunc("wglDXUnregisterObjectNV", wglDXUnregisterObjectNV == NULL);
+  glewInfoFunc(fi, "wglDXCloseDeviceNV", wglDXCloseDeviceNV == NULL);
+  glewInfoFunc(fi, "wglDXLockObjectsNV", wglDXLockObjectsNV == NULL);
+  glewInfoFunc(fi, "wglDXObjectAccessNV", wglDXObjectAccessNV == NULL);
+  glewInfoFunc(fi, "wglDXOpenDeviceNV", wglDXOpenDeviceNV == NULL);
+  glewInfoFunc(fi, "wglDXRegisterObjectNV", wglDXRegisterObjectNV == NULL);
+  glewInfoFunc(fi, "wglDXSetResourceShareHandleNV", wglDXSetResourceShareHandleNV == NULL);
+  glewInfoFunc(fi, "wglDXUnlockObjectsNV", wglDXUnlockObjectsNV == NULL);
+  glewInfoFunc(fi, "wglDXUnregisterObjectNV", wglDXUnregisterObjectNV == NULL);
 }
 
 #endif /* WGL_NV_DX_interop */
@@ -12129,9 +13754,9 @@ static void _glewInfo_WGL_NV_DX_interop2 (void)
 
 static void _glewInfo_WGL_NV_copy_image (void)
 {
-  glewPrintExt("WGL_NV_copy_image", WGLEW_NV_copy_image, wglewIsSupported("WGL_NV_copy_image"), wglewGetExtension("WGL_NV_copy_image"));
+  GLboolean fi = glewPrintExt("WGL_NV_copy_image", WGLEW_NV_copy_image, wglewIsSupported("WGL_NV_copy_image"), wglewGetExtension("WGL_NV_copy_image"));
 
-  glewInfoFunc("wglCopyImageSubDataNV", wglCopyImageSubDataNV == NULL);
+  glewInfoFunc(fi, "wglCopyImageSubDataNV", wglCopyImageSubDataNV == NULL);
 }
 
 #endif /* WGL_NV_copy_image */
@@ -12140,9 +13765,9 @@ static void _glewInfo_WGL_NV_copy_image (void)
 
 static void _glewInfo_WGL_NV_delay_before_swap (void)
 {
-  glewPrintExt("WGL_NV_delay_before_swap", WGLEW_NV_delay_before_swap, wglewIsSupported("WGL_NV_delay_before_swap"), wglewGetExtension("WGL_NV_delay_before_swap"));
+  GLboolean fi = glewPrintExt("WGL_NV_delay_before_swap", WGLEW_NV_delay_before_swap, wglewIsSupported("WGL_NV_delay_before_swap"), wglewGetExtension("WGL_NV_delay_before_swap"));
 
-  glewInfoFunc("wglDelayBeforeSwapNV", wglDelayBeforeSwapNV == NULL);
+  glewInfoFunc(fi, "wglDelayBeforeSwapNV", wglDelayBeforeSwapNV == NULL);
 }
 
 #endif /* WGL_NV_delay_before_swap */
@@ -12160,16 +13785,25 @@ static void _glewInfo_WGL_NV_float_buffer (void)
 
 static void _glewInfo_WGL_NV_gpu_affinity (void)
 {
-  glewPrintExt("WGL_NV_gpu_affinity", WGLEW_NV_gpu_affinity, wglewIsSupported("WGL_NV_gpu_affinity"), wglewGetExtension("WGL_NV_gpu_affinity"));
+  GLboolean fi = glewPrintExt("WGL_NV_gpu_affinity", WGLEW_NV_gpu_affinity, wglewIsSupported("WGL_NV_gpu_affinity"), wglewGetExtension("WGL_NV_gpu_affinity"));
 
-  glewInfoFunc("wglCreateAffinityDCNV", wglCreateAffinityDCNV == NULL);
-  glewInfoFunc("wglDeleteDCNV", wglDeleteDCNV == NULL);
-  glewInfoFunc("wglEnumGpuDevicesNV", wglEnumGpuDevicesNV == NULL);
-  glewInfoFunc("wglEnumGpusFromAffinityDCNV", wglEnumGpusFromAffinityDCNV == NULL);
-  glewInfoFunc("wglEnumGpusNV", wglEnumGpusNV == NULL);
+  glewInfoFunc(fi, "wglCreateAffinityDCNV", wglCreateAffinityDCNV == NULL);
+  glewInfoFunc(fi, "wglDeleteDCNV", wglDeleteDCNV == NULL);
+  glewInfoFunc(fi, "wglEnumGpuDevicesNV", wglEnumGpuDevicesNV == NULL);
+  glewInfoFunc(fi, "wglEnumGpusFromAffinityDCNV", wglEnumGpusFromAffinityDCNV == NULL);
+  glewInfoFunc(fi, "wglEnumGpusNV", wglEnumGpusNV == NULL);
 }
 
 #endif /* WGL_NV_gpu_affinity */
+
+#ifdef WGL_NV_multigpu_context
+
+static void _glewInfo_WGL_NV_multigpu_context (void)
+{
+  glewPrintExt("WGL_NV_multigpu_context", WGLEW_NV_multigpu_context, wglewIsSupported("WGL_NV_multigpu_context"), wglewGetExtension("WGL_NV_multigpu_context"));
+}
+
+#endif /* WGL_NV_multigpu_context */
 
 #ifdef WGL_NV_multisample_coverage
 
@@ -12184,11 +13818,11 @@ static void _glewInfo_WGL_NV_multisample_coverage (void)
 
 static void _glewInfo_WGL_NV_present_video (void)
 {
-  glewPrintExt("WGL_NV_present_video", WGLEW_NV_present_video, wglewIsSupported("WGL_NV_present_video"), wglewGetExtension("WGL_NV_present_video"));
+  GLboolean fi = glewPrintExt("WGL_NV_present_video", WGLEW_NV_present_video, wglewIsSupported("WGL_NV_present_video"), wglewGetExtension("WGL_NV_present_video"));
 
-  glewInfoFunc("wglBindVideoDeviceNV", wglBindVideoDeviceNV == NULL);
-  glewInfoFunc("wglEnumerateVideoDevicesNV", wglEnumerateVideoDevicesNV == NULL);
-  glewInfoFunc("wglQueryCurrentContextNV", wglQueryCurrentContextNV == NULL);
+  glewInfoFunc(fi, "wglBindVideoDeviceNV", wglBindVideoDeviceNV == NULL);
+  glewInfoFunc(fi, "wglEnumerateVideoDevicesNV", wglEnumerateVideoDevicesNV == NULL);
+  glewInfoFunc(fi, "wglQueryCurrentContextNV", wglQueryCurrentContextNV == NULL);
 }
 
 #endif /* WGL_NV_present_video */
@@ -12215,14 +13849,14 @@ static void _glewInfo_WGL_NV_render_texture_rectangle (void)
 
 static void _glewInfo_WGL_NV_swap_group (void)
 {
-  glewPrintExt("WGL_NV_swap_group", WGLEW_NV_swap_group, wglewIsSupported("WGL_NV_swap_group"), wglewGetExtension("WGL_NV_swap_group"));
+  GLboolean fi = glewPrintExt("WGL_NV_swap_group", WGLEW_NV_swap_group, wglewIsSupported("WGL_NV_swap_group"), wglewGetExtension("WGL_NV_swap_group"));
 
-  glewInfoFunc("wglBindSwapBarrierNV", wglBindSwapBarrierNV == NULL);
-  glewInfoFunc("wglJoinSwapGroupNV", wglJoinSwapGroupNV == NULL);
-  glewInfoFunc("wglQueryFrameCountNV", wglQueryFrameCountNV == NULL);
-  glewInfoFunc("wglQueryMaxSwapGroupsNV", wglQueryMaxSwapGroupsNV == NULL);
-  glewInfoFunc("wglQuerySwapGroupNV", wglQuerySwapGroupNV == NULL);
-  glewInfoFunc("wglResetFrameCountNV", wglResetFrameCountNV == NULL);
+  glewInfoFunc(fi, "wglBindSwapBarrierNV", wglBindSwapBarrierNV == NULL);
+  glewInfoFunc(fi, "wglJoinSwapGroupNV", wglJoinSwapGroupNV == NULL);
+  glewInfoFunc(fi, "wglQueryFrameCountNV", wglQueryFrameCountNV == NULL);
+  glewInfoFunc(fi, "wglQueryMaxSwapGroupsNV", wglQueryMaxSwapGroupsNV == NULL);
+  glewInfoFunc(fi, "wglQuerySwapGroupNV", wglQuerySwapGroupNV == NULL);
+  glewInfoFunc(fi, "wglResetFrameCountNV", wglResetFrameCountNV == NULL);
 }
 
 #endif /* WGL_NV_swap_group */
@@ -12231,10 +13865,10 @@ static void _glewInfo_WGL_NV_swap_group (void)
 
 static void _glewInfo_WGL_NV_vertex_array_range (void)
 {
-  glewPrintExt("WGL_NV_vertex_array_range", WGLEW_NV_vertex_array_range, wglewIsSupported("WGL_NV_vertex_array_range"), wglewGetExtension("WGL_NV_vertex_array_range"));
+  GLboolean fi = glewPrintExt("WGL_NV_vertex_array_range", WGLEW_NV_vertex_array_range, wglewIsSupported("WGL_NV_vertex_array_range"), wglewGetExtension("WGL_NV_vertex_array_range"));
 
-  glewInfoFunc("wglAllocateMemoryNV", wglAllocateMemoryNV == NULL);
-  glewInfoFunc("wglFreeMemoryNV", wglFreeMemoryNV == NULL);
+  glewInfoFunc(fi, "wglAllocateMemoryNV", wglAllocateMemoryNV == NULL);
+  glewInfoFunc(fi, "wglFreeMemoryNV", wglFreeMemoryNV == NULL);
 }
 
 #endif /* WGL_NV_vertex_array_range */
@@ -12243,13 +13877,13 @@ static void _glewInfo_WGL_NV_vertex_array_range (void)
 
 static void _glewInfo_WGL_NV_video_capture (void)
 {
-  glewPrintExt("WGL_NV_video_capture", WGLEW_NV_video_capture, wglewIsSupported("WGL_NV_video_capture"), wglewGetExtension("WGL_NV_video_capture"));
+  GLboolean fi = glewPrintExt("WGL_NV_video_capture", WGLEW_NV_video_capture, wglewIsSupported("WGL_NV_video_capture"), wglewGetExtension("WGL_NV_video_capture"));
 
-  glewInfoFunc("wglBindVideoCaptureDeviceNV", wglBindVideoCaptureDeviceNV == NULL);
-  glewInfoFunc("wglEnumerateVideoCaptureDevicesNV", wglEnumerateVideoCaptureDevicesNV == NULL);
-  glewInfoFunc("wglLockVideoCaptureDeviceNV", wglLockVideoCaptureDeviceNV == NULL);
-  glewInfoFunc("wglQueryVideoCaptureDeviceNV", wglQueryVideoCaptureDeviceNV == NULL);
-  glewInfoFunc("wglReleaseVideoCaptureDeviceNV", wglReleaseVideoCaptureDeviceNV == NULL);
+  glewInfoFunc(fi, "wglBindVideoCaptureDeviceNV", wglBindVideoCaptureDeviceNV == NULL);
+  glewInfoFunc(fi, "wglEnumerateVideoCaptureDevicesNV", wglEnumerateVideoCaptureDevicesNV == NULL);
+  glewInfoFunc(fi, "wglLockVideoCaptureDeviceNV", wglLockVideoCaptureDeviceNV == NULL);
+  glewInfoFunc(fi, "wglQueryVideoCaptureDeviceNV", wglQueryVideoCaptureDeviceNV == NULL);
+  glewInfoFunc(fi, "wglReleaseVideoCaptureDeviceNV", wglReleaseVideoCaptureDeviceNV == NULL);
 }
 
 #endif /* WGL_NV_video_capture */
@@ -12258,14 +13892,14 @@ static void _glewInfo_WGL_NV_video_capture (void)
 
 static void _glewInfo_WGL_NV_video_output (void)
 {
-  glewPrintExt("WGL_NV_video_output", WGLEW_NV_video_output, wglewIsSupported("WGL_NV_video_output"), wglewGetExtension("WGL_NV_video_output"));
+  GLboolean fi = glewPrintExt("WGL_NV_video_output", WGLEW_NV_video_output, wglewIsSupported("WGL_NV_video_output"), wglewGetExtension("WGL_NV_video_output"));
 
-  glewInfoFunc("wglBindVideoImageNV", wglBindVideoImageNV == NULL);
-  glewInfoFunc("wglGetVideoDeviceNV", wglGetVideoDeviceNV == NULL);
-  glewInfoFunc("wglGetVideoInfoNV", wglGetVideoInfoNV == NULL);
-  glewInfoFunc("wglReleaseVideoDeviceNV", wglReleaseVideoDeviceNV == NULL);
-  glewInfoFunc("wglReleaseVideoImageNV", wglReleaseVideoImageNV == NULL);
-  glewInfoFunc("wglSendPbufferToVideoNV", wglSendPbufferToVideoNV == NULL);
+  glewInfoFunc(fi, "wglBindVideoImageNV", wglBindVideoImageNV == NULL);
+  glewInfoFunc(fi, "wglGetVideoDeviceNV", wglGetVideoDeviceNV == NULL);
+  glewInfoFunc(fi, "wglGetVideoInfoNV", wglGetVideoInfoNV == NULL);
+  glewInfoFunc(fi, "wglReleaseVideoDeviceNV", wglReleaseVideoDeviceNV == NULL);
+  glewInfoFunc(fi, "wglReleaseVideoImageNV", wglReleaseVideoImageNV == NULL);
+  glewInfoFunc(fi, "wglSendPbufferToVideoNV", wglSendPbufferToVideoNV == NULL);
 }
 
 #endif /* WGL_NV_video_output */
@@ -12274,14 +13908,14 @@ static void _glewInfo_WGL_NV_video_output (void)
 
 static void _glewInfo_WGL_OML_sync_control (void)
 {
-  glewPrintExt("WGL_OML_sync_control", WGLEW_OML_sync_control, wglewIsSupported("WGL_OML_sync_control"), wglewGetExtension("WGL_OML_sync_control"));
+  GLboolean fi = glewPrintExt("WGL_OML_sync_control", WGLEW_OML_sync_control, wglewIsSupported("WGL_OML_sync_control"), wglewGetExtension("WGL_OML_sync_control"));
 
-  glewInfoFunc("wglGetMscRateOML", wglGetMscRateOML == NULL);
-  glewInfoFunc("wglGetSyncValuesOML", wglGetSyncValuesOML == NULL);
-  glewInfoFunc("wglSwapBuffersMscOML", wglSwapBuffersMscOML == NULL);
-  glewInfoFunc("wglSwapLayerBuffersMscOML", wglSwapLayerBuffersMscOML == NULL);
-  glewInfoFunc("wglWaitForMscOML", wglWaitForMscOML == NULL);
-  glewInfoFunc("wglWaitForSbcOML", wglWaitForSbcOML == NULL);
+  glewInfoFunc(fi, "wglGetMscRateOML", wglGetMscRateOML == NULL);
+  glewInfoFunc(fi, "wglGetSyncValuesOML", wglGetSyncValuesOML == NULL);
+  glewInfoFunc(fi, "wglSwapBuffersMscOML", wglSwapBuffersMscOML == NULL);
+  glewInfoFunc(fi, "wglSwapLayerBuffersMscOML", wglSwapLayerBuffersMscOML == NULL);
+  glewInfoFunc(fi, "wglWaitForMscOML", wglWaitForMscOML == NULL);
+  glewInfoFunc(fi, "wglWaitForSbcOML", wglWaitForSbcOML == NULL);
 }
 
 #endif /* WGL_OML_sync_control */
@@ -12292,9 +13926,9 @@ static void _glewInfo_WGL_OML_sync_control (void)
 
 static void _glewInfo_GLX_VERSION_1_2 (void)
 {
-  glewPrintExt("GLX_VERSION_1_2", GLXEW_VERSION_1_2, GLXEW_VERSION_1_2, GLXEW_VERSION_1_2);
+  GLboolean fi = glewPrintExt("GLX_VERSION_1_2", GLXEW_VERSION_1_2, GLXEW_VERSION_1_2, GLXEW_VERSION_1_2);
 
-  glewInfoFunc("glXGetCurrentDisplay", glXGetCurrentDisplay == NULL);
+  glewInfoFunc(fi, "glXGetCurrentDisplay", glXGetCurrentDisplay == NULL);
 }
 
 #endif /* GLX_VERSION_1_2 */
@@ -12303,25 +13937,25 @@ static void _glewInfo_GLX_VERSION_1_2 (void)
 
 static void _glewInfo_GLX_VERSION_1_3 (void)
 {
-  glewPrintExt("GLX_VERSION_1_3", GLXEW_VERSION_1_3, GLXEW_VERSION_1_3, GLXEW_VERSION_1_3);
+  GLboolean fi = glewPrintExt("GLX_VERSION_1_3", GLXEW_VERSION_1_3, GLXEW_VERSION_1_3, GLXEW_VERSION_1_3);
 
-  glewInfoFunc("glXChooseFBConfig", glXChooseFBConfig == NULL);
-  glewInfoFunc("glXCreateNewContext", glXCreateNewContext == NULL);
-  glewInfoFunc("glXCreatePbuffer", glXCreatePbuffer == NULL);
-  glewInfoFunc("glXCreatePixmap", glXCreatePixmap == NULL);
-  glewInfoFunc("glXCreateWindow", glXCreateWindow == NULL);
-  glewInfoFunc("glXDestroyPbuffer", glXDestroyPbuffer == NULL);
-  glewInfoFunc("glXDestroyPixmap", glXDestroyPixmap == NULL);
-  glewInfoFunc("glXDestroyWindow", glXDestroyWindow == NULL);
-  glewInfoFunc("glXGetCurrentReadDrawable", glXGetCurrentReadDrawable == NULL);
-  glewInfoFunc("glXGetFBConfigAttrib", glXGetFBConfigAttrib == NULL);
-  glewInfoFunc("glXGetFBConfigs", glXGetFBConfigs == NULL);
-  glewInfoFunc("glXGetSelectedEvent", glXGetSelectedEvent == NULL);
-  glewInfoFunc("glXGetVisualFromFBConfig", glXGetVisualFromFBConfig == NULL);
-  glewInfoFunc("glXMakeContextCurrent", glXMakeContextCurrent == NULL);
-  glewInfoFunc("glXQueryContext", glXQueryContext == NULL);
-  glewInfoFunc("glXQueryDrawable", glXQueryDrawable == NULL);
-  glewInfoFunc("glXSelectEvent", glXSelectEvent == NULL);
+  glewInfoFunc(fi, "glXChooseFBConfig", glXChooseFBConfig == NULL);
+  glewInfoFunc(fi, "glXCreateNewContext", glXCreateNewContext == NULL);
+  glewInfoFunc(fi, "glXCreatePbuffer", glXCreatePbuffer == NULL);
+  glewInfoFunc(fi, "glXCreatePixmap", glXCreatePixmap == NULL);
+  glewInfoFunc(fi, "glXCreateWindow", glXCreateWindow == NULL);
+  glewInfoFunc(fi, "glXDestroyPbuffer", glXDestroyPbuffer == NULL);
+  glewInfoFunc(fi, "glXDestroyPixmap", glXDestroyPixmap == NULL);
+  glewInfoFunc(fi, "glXDestroyWindow", glXDestroyWindow == NULL);
+  glewInfoFunc(fi, "glXGetCurrentReadDrawable", glXGetCurrentReadDrawable == NULL);
+  glewInfoFunc(fi, "glXGetFBConfigAttrib", glXGetFBConfigAttrib == NULL);
+  glewInfoFunc(fi, "glXGetFBConfigs", glXGetFBConfigs == NULL);
+  glewInfoFunc(fi, "glXGetSelectedEvent", glXGetSelectedEvent == NULL);
+  glewInfoFunc(fi, "glXGetVisualFromFBConfig", glXGetVisualFromFBConfig == NULL);
+  glewInfoFunc(fi, "glXMakeContextCurrent", glXMakeContextCurrent == NULL);
+  glewInfoFunc(fi, "glXQueryContext", glXQueryContext == NULL);
+  glewInfoFunc(fi, "glXQueryDrawable", glXQueryDrawable == NULL);
+  glewInfoFunc(fi, "glXSelectEvent", glXSelectEvent == NULL);
 }
 
 #endif /* GLX_VERSION_1_3 */
@@ -12348,17 +13982,17 @@ static void _glewInfo_GLX_3DFX_multisample (void)
 
 static void _glewInfo_GLX_AMD_gpu_association (void)
 {
-  glewPrintExt("GLX_AMD_gpu_association", GLXEW_AMD_gpu_association, glxewIsSupported("GLX_AMD_gpu_association"), glxewGetExtension("GLX_AMD_gpu_association"));
+  GLboolean fi = glewPrintExt("GLX_AMD_gpu_association", GLXEW_AMD_gpu_association, glxewIsSupported("GLX_AMD_gpu_association"), glxewGetExtension("GLX_AMD_gpu_association"));
 
-  glewInfoFunc("glXBlitContextFramebufferAMD", glXBlitContextFramebufferAMD == NULL);
-  glewInfoFunc("glXCreateAssociatedContextAMD", glXCreateAssociatedContextAMD == NULL);
-  glewInfoFunc("glXCreateAssociatedContextAttribsAMD", glXCreateAssociatedContextAttribsAMD == NULL);
-  glewInfoFunc("glXDeleteAssociatedContextAMD", glXDeleteAssociatedContextAMD == NULL);
-  glewInfoFunc("glXGetContextGPUIDAMD", glXGetContextGPUIDAMD == NULL);
-  glewInfoFunc("glXGetCurrentAssociatedContextAMD", glXGetCurrentAssociatedContextAMD == NULL);
-  glewInfoFunc("glXGetGPUIDsAMD", glXGetGPUIDsAMD == NULL);
-  glewInfoFunc("glXGetGPUInfoAMD", glXGetGPUInfoAMD == NULL);
-  glewInfoFunc("glXMakeAssociatedContextCurrentAMD", glXMakeAssociatedContextCurrentAMD == NULL);
+  glewInfoFunc(fi, "glXBlitContextFramebufferAMD", glXBlitContextFramebufferAMD == NULL);
+  glewInfoFunc(fi, "glXCreateAssociatedContextAMD", glXCreateAssociatedContextAMD == NULL);
+  glewInfoFunc(fi, "glXCreateAssociatedContextAttribsAMD", glXCreateAssociatedContextAttribsAMD == NULL);
+  glewInfoFunc(fi, "glXDeleteAssociatedContextAMD", glXDeleteAssociatedContextAMD == NULL);
+  glewInfoFunc(fi, "glXGetContextGPUIDAMD", glXGetContextGPUIDAMD == NULL);
+  glewInfoFunc(fi, "glXGetCurrentAssociatedContextAMD", glXGetCurrentAssociatedContextAMD == NULL);
+  glewInfoFunc(fi, "glXGetGPUIDsAMD", glXGetGPUIDsAMD == NULL);
+  glewInfoFunc(fi, "glXGetGPUInfoAMD", glXGetGPUInfoAMD == NULL);
+  glewInfoFunc(fi, "glXMakeAssociatedContextCurrentAMD", glXMakeAssociatedContextCurrentAMD == NULL);
 }
 
 #endif /* GLX_AMD_gpu_association */
@@ -12376,9 +14010,9 @@ static void _glewInfo_GLX_ARB_context_flush_control (void)
 
 static void _glewInfo_GLX_ARB_create_context (void)
 {
-  glewPrintExt("GLX_ARB_create_context", GLXEW_ARB_create_context, glxewIsSupported("GLX_ARB_create_context"), glxewGetExtension("GLX_ARB_create_context"));
+  GLboolean fi = glewPrintExt("GLX_ARB_create_context", GLXEW_ARB_create_context, glxewIsSupported("GLX_ARB_create_context"), glxewGetExtension("GLX_ARB_create_context"));
 
-  glewInfoFunc("glXCreateContextAttribsARB", glXCreateContextAttribsARB == NULL);
+  glewInfoFunc(fi, "glXCreateContextAttribsARB", glXCreateContextAttribsARB == NULL);
 }
 
 #endif /* GLX_ARB_create_context */
@@ -12486,11 +14120,11 @@ static void _glewInfo_GLX_ATI_pixel_format_float (void)
 
 static void _glewInfo_GLX_ATI_render_texture (void)
 {
-  glewPrintExt("GLX_ATI_render_texture", GLXEW_ATI_render_texture, glxewIsSupported("GLX_ATI_render_texture"), glxewGetExtension("GLX_ATI_render_texture"));
+  GLboolean fi = glewPrintExt("GLX_ATI_render_texture", GLXEW_ATI_render_texture, glxewIsSupported("GLX_ATI_render_texture"), glxewGetExtension("GLX_ATI_render_texture"));
 
-  glewInfoFunc("glXBindTexImageATI", glXBindTexImageATI == NULL);
-  glewInfoFunc("glXDrawableAttribATI", glXDrawableAttribATI == NULL);
-  glewInfoFunc("glXReleaseTexImageATI", glXReleaseTexImageATI == NULL);
+  glewInfoFunc(fi, "glXBindTexImageATI", glXBindTexImageATI == NULL);
+  glewInfoFunc(fi, "glXDrawableAttribATI", glXDrawableAttribATI == NULL);
+  glewInfoFunc(fi, "glXReleaseTexImageATI", glXReleaseTexImageATI == NULL);
 }
 
 #endif /* GLX_ATI_render_texture */
@@ -12503,6 +14137,15 @@ static void _glewInfo_GLX_EXT_buffer_age (void)
 }
 
 #endif /* GLX_EXT_buffer_age */
+
+#ifdef GLX_EXT_context_priority
+
+static void _glewInfo_GLX_EXT_context_priority (void)
+{
+  glewPrintExt("GLX_EXT_context_priority", GLXEW_EXT_context_priority, glxewIsSupported("GLX_EXT_context_priority"), glxewGetExtension("GLX_EXT_context_priority"));
+}
+
+#endif /* GLX_EXT_context_priority */
 
 #ifdef GLX_EXT_create_context_es2_profile
 
@@ -12544,12 +14187,13 @@ static void _glewInfo_GLX_EXT_framebuffer_sRGB (void)
 
 static void _glewInfo_GLX_EXT_import_context (void)
 {
-  glewPrintExt("GLX_EXT_import_context", GLXEW_EXT_import_context, glxewIsSupported("GLX_EXT_import_context"), glxewGetExtension("GLX_EXT_import_context"));
+  GLboolean fi = glewPrintExt("GLX_EXT_import_context", GLXEW_EXT_import_context, glxewIsSupported("GLX_EXT_import_context"), glxewGetExtension("GLX_EXT_import_context"));
 
-  glewInfoFunc("glXFreeContextEXT", glXFreeContextEXT == NULL);
-  glewInfoFunc("glXGetContextIDEXT", glXGetContextIDEXT == NULL);
-  glewInfoFunc("glXImportContextEXT", glXImportContextEXT == NULL);
-  glewInfoFunc("glXQueryContextInfoEXT", glXQueryContextInfoEXT == NULL);
+  glewInfoFunc(fi, "glXFreeContextEXT", glXFreeContextEXT == NULL);
+  glewInfoFunc(fi, "glXGetContextIDEXT", glXGetContextIDEXT == NULL);
+  glewInfoFunc(fi, "glXGetCurrentDisplayEXT", glXGetCurrentDisplayEXT == NULL);
+  glewInfoFunc(fi, "glXImportContextEXT", glXImportContextEXT == NULL);
+  glewInfoFunc(fi, "glXQueryContextInfoEXT", glXQueryContextInfoEXT == NULL);
 }
 
 #endif /* GLX_EXT_import_context */
@@ -12562,6 +14206,15 @@ static void _glewInfo_GLX_EXT_libglvnd (void)
 }
 
 #endif /* GLX_EXT_libglvnd */
+
+#ifdef GLX_EXT_no_config_context
+
+static void _glewInfo_GLX_EXT_no_config_context (void)
+{
+  glewPrintExt("GLX_EXT_no_config_context", GLXEW_EXT_no_config_context, glxewIsSupported("GLX_EXT_no_config_context"), glxewGetExtension("GLX_EXT_no_config_context"));
+}
+
+#endif /* GLX_EXT_no_config_context */
 
 #ifdef GLX_EXT_scene_marker
 
@@ -12585,9 +14238,9 @@ static void _glewInfo_GLX_EXT_stereo_tree (void)
 
 static void _glewInfo_GLX_EXT_swap_control (void)
 {
-  glewPrintExt("GLX_EXT_swap_control", GLXEW_EXT_swap_control, glxewIsSupported("GLX_EXT_swap_control"), glxewGetExtension("GLX_EXT_swap_control"));
+  GLboolean fi = glewPrintExt("GLX_EXT_swap_control", GLXEW_EXT_swap_control, glxewIsSupported("GLX_EXT_swap_control"), glxewGetExtension("GLX_EXT_swap_control"));
 
-  glewInfoFunc("glXSwapIntervalEXT", glXSwapIntervalEXT == NULL);
+  glewInfoFunc(fi, "glXSwapIntervalEXT", glXSwapIntervalEXT == NULL);
 }
 
 #endif /* GLX_EXT_swap_control */
@@ -12605,10 +14258,10 @@ static void _glewInfo_GLX_EXT_swap_control_tear (void)
 
 static void _glewInfo_GLX_EXT_texture_from_pixmap (void)
 {
-  glewPrintExt("GLX_EXT_texture_from_pixmap", GLXEW_EXT_texture_from_pixmap, glxewIsSupported("GLX_EXT_texture_from_pixmap"), glxewGetExtension("GLX_EXT_texture_from_pixmap"));
+  GLboolean fi = glewPrintExt("GLX_EXT_texture_from_pixmap", GLXEW_EXT_texture_from_pixmap, glxewIsSupported("GLX_EXT_texture_from_pixmap"), glxewGetExtension("GLX_EXT_texture_from_pixmap"));
 
-  glewInfoFunc("glXBindTexImageEXT", glXBindTexImageEXT == NULL);
-  glewInfoFunc("glXReleaseTexImageEXT", glXReleaseTexImageEXT == NULL);
+  glewInfoFunc(fi, "glXBindTexImageEXT", glXBindTexImageEXT == NULL);
+  glewInfoFunc(fi, "glXReleaseTexImageEXT", glXReleaseTexImageEXT == NULL);
 }
 
 #endif /* GLX_EXT_texture_from_pixmap */
@@ -12644,9 +14297,9 @@ static void _glewInfo_GLX_INTEL_swap_event (void)
 
 static void _glewInfo_GLX_MESA_agp_offset (void)
 {
-  glewPrintExt("GLX_MESA_agp_offset", GLXEW_MESA_agp_offset, glxewIsSupported("GLX_MESA_agp_offset"), glxewGetExtension("GLX_MESA_agp_offset"));
+  GLboolean fi = glewPrintExt("GLX_MESA_agp_offset", GLXEW_MESA_agp_offset, glxewIsSupported("GLX_MESA_agp_offset"), glxewGetExtension("GLX_MESA_agp_offset"));
 
-  glewInfoFunc("glXGetAGPOffsetMESA", glXGetAGPOffsetMESA == NULL);
+  glewInfoFunc(fi, "glXGetAGPOffsetMESA", glXGetAGPOffsetMESA == NULL);
 }
 
 #endif /* GLX_MESA_agp_offset */
@@ -12655,9 +14308,9 @@ static void _glewInfo_GLX_MESA_agp_offset (void)
 
 static void _glewInfo_GLX_MESA_copy_sub_buffer (void)
 {
-  glewPrintExt("GLX_MESA_copy_sub_buffer", GLXEW_MESA_copy_sub_buffer, glxewIsSupported("GLX_MESA_copy_sub_buffer"), glxewGetExtension("GLX_MESA_copy_sub_buffer"));
+  GLboolean fi = glewPrintExt("GLX_MESA_copy_sub_buffer", GLXEW_MESA_copy_sub_buffer, glxewIsSupported("GLX_MESA_copy_sub_buffer"), glxewGetExtension("GLX_MESA_copy_sub_buffer"));
 
-  glewInfoFunc("glXCopySubBufferMESA", glXCopySubBufferMESA == NULL);
+  glewInfoFunc(fi, "glXCopySubBufferMESA", glXCopySubBufferMESA == NULL);
 }
 
 #endif /* GLX_MESA_copy_sub_buffer */
@@ -12666,9 +14319,9 @@ static void _glewInfo_GLX_MESA_copy_sub_buffer (void)
 
 static void _glewInfo_GLX_MESA_pixmap_colormap (void)
 {
-  glewPrintExt("GLX_MESA_pixmap_colormap", GLXEW_MESA_pixmap_colormap, glxewIsSupported("GLX_MESA_pixmap_colormap"), glxewGetExtension("GLX_MESA_pixmap_colormap"));
+  GLboolean fi = glewPrintExt("GLX_MESA_pixmap_colormap", GLXEW_MESA_pixmap_colormap, glxewIsSupported("GLX_MESA_pixmap_colormap"), glxewGetExtension("GLX_MESA_pixmap_colormap"));
 
-  glewInfoFunc("glXCreateGLXPixmapMESA", glXCreateGLXPixmapMESA == NULL);
+  glewInfoFunc(fi, "glXCreateGLXPixmapMESA", glXCreateGLXPixmapMESA == NULL);
 }
 
 #endif /* GLX_MESA_pixmap_colormap */
@@ -12677,12 +14330,12 @@ static void _glewInfo_GLX_MESA_pixmap_colormap (void)
 
 static void _glewInfo_GLX_MESA_query_renderer (void)
 {
-  glewPrintExt("GLX_MESA_query_renderer", GLXEW_MESA_query_renderer, glxewIsSupported("GLX_MESA_query_renderer"), glxewGetExtension("GLX_MESA_query_renderer"));
+  GLboolean fi = glewPrintExt("GLX_MESA_query_renderer", GLXEW_MESA_query_renderer, glxewIsSupported("GLX_MESA_query_renderer"), glxewGetExtension("GLX_MESA_query_renderer"));
 
-  glewInfoFunc("glXQueryCurrentRendererIntegerMESA", glXQueryCurrentRendererIntegerMESA == NULL);
-  glewInfoFunc("glXQueryCurrentRendererStringMESA", glXQueryCurrentRendererStringMESA == NULL);
-  glewInfoFunc("glXQueryRendererIntegerMESA", glXQueryRendererIntegerMESA == NULL);
-  glewInfoFunc("glXQueryRendererStringMESA", glXQueryRendererStringMESA == NULL);
+  glewInfoFunc(fi, "glXQueryCurrentRendererIntegerMESA", glXQueryCurrentRendererIntegerMESA == NULL);
+  glewInfoFunc(fi, "glXQueryCurrentRendererStringMESA", glXQueryCurrentRendererStringMESA == NULL);
+  glewInfoFunc(fi, "glXQueryRendererIntegerMESA", glXQueryRendererIntegerMESA == NULL);
+  glewInfoFunc(fi, "glXQueryRendererStringMESA", glXQueryRendererStringMESA == NULL);
 }
 
 #endif /* GLX_MESA_query_renderer */
@@ -12691,9 +14344,9 @@ static void _glewInfo_GLX_MESA_query_renderer (void)
 
 static void _glewInfo_GLX_MESA_release_buffers (void)
 {
-  glewPrintExt("GLX_MESA_release_buffers", GLXEW_MESA_release_buffers, glxewIsSupported("GLX_MESA_release_buffers"), glxewGetExtension("GLX_MESA_release_buffers"));
+  GLboolean fi = glewPrintExt("GLX_MESA_release_buffers", GLXEW_MESA_release_buffers, glxewIsSupported("GLX_MESA_release_buffers"), glxewGetExtension("GLX_MESA_release_buffers"));
 
-  glewInfoFunc("glXReleaseBuffersMESA", glXReleaseBuffersMESA == NULL);
+  glewInfoFunc(fi, "glXReleaseBuffersMESA", glXReleaseBuffersMESA == NULL);
 }
 
 #endif /* GLX_MESA_release_buffers */
@@ -12702,9 +14355,9 @@ static void _glewInfo_GLX_MESA_release_buffers (void)
 
 static void _glewInfo_GLX_MESA_set_3dfx_mode (void)
 {
-  glewPrintExt("GLX_MESA_set_3dfx_mode", GLXEW_MESA_set_3dfx_mode, glxewIsSupported("GLX_MESA_set_3dfx_mode"), glxewGetExtension("GLX_MESA_set_3dfx_mode"));
+  GLboolean fi = glewPrintExt("GLX_MESA_set_3dfx_mode", GLXEW_MESA_set_3dfx_mode, glxewIsSupported("GLX_MESA_set_3dfx_mode"), glxewGetExtension("GLX_MESA_set_3dfx_mode"));
 
-  glewInfoFunc("glXSet3DfxModeMESA", glXSet3DfxModeMESA == NULL);
+  glewInfoFunc(fi, "glXSet3DfxModeMESA", glXSet3DfxModeMESA == NULL);
 }
 
 #endif /* GLX_MESA_set_3dfx_mode */
@@ -12713,10 +14366,10 @@ static void _glewInfo_GLX_MESA_set_3dfx_mode (void)
 
 static void _glewInfo_GLX_MESA_swap_control (void)
 {
-  glewPrintExt("GLX_MESA_swap_control", GLXEW_MESA_swap_control, glxewIsSupported("GLX_MESA_swap_control"), glxewGetExtension("GLX_MESA_swap_control"));
+  GLboolean fi = glewPrintExt("GLX_MESA_swap_control", GLXEW_MESA_swap_control, glxewIsSupported("GLX_MESA_swap_control"), glxewGetExtension("GLX_MESA_swap_control"));
 
-  glewInfoFunc("glXGetSwapIntervalMESA", glXGetSwapIntervalMESA == NULL);
-  glewInfoFunc("glXSwapIntervalMESA", glXSwapIntervalMESA == NULL);
+  glewInfoFunc(fi, "glXGetSwapIntervalMESA", glXGetSwapIntervalMESA == NULL);
+  glewInfoFunc(fi, "glXSwapIntervalMESA", glXSwapIntervalMESA == NULL);
 }
 
 #endif /* GLX_MESA_swap_control */
@@ -12725,10 +14378,10 @@ static void _glewInfo_GLX_MESA_swap_control (void)
 
 static void _glewInfo_GLX_NV_copy_buffer (void)
 {
-  glewPrintExt("GLX_NV_copy_buffer", GLXEW_NV_copy_buffer, glxewIsSupported("GLX_NV_copy_buffer"), glxewGetExtension("GLX_NV_copy_buffer"));
+  GLboolean fi = glewPrintExt("GLX_NV_copy_buffer", GLXEW_NV_copy_buffer, glxewIsSupported("GLX_NV_copy_buffer"), glxewGetExtension("GLX_NV_copy_buffer"));
 
-  glewInfoFunc("glXCopyBufferSubDataNV", glXCopyBufferSubDataNV == NULL);
-  glewInfoFunc("glXNamedCopyBufferSubDataNV", glXNamedCopyBufferSubDataNV == NULL);
+  glewInfoFunc(fi, "glXCopyBufferSubDataNV", glXCopyBufferSubDataNV == NULL);
+  glewInfoFunc(fi, "glXNamedCopyBufferSubDataNV", glXNamedCopyBufferSubDataNV == NULL);
 }
 
 #endif /* GLX_NV_copy_buffer */
@@ -12737,9 +14390,9 @@ static void _glewInfo_GLX_NV_copy_buffer (void)
 
 static void _glewInfo_GLX_NV_copy_image (void)
 {
-  glewPrintExt("GLX_NV_copy_image", GLXEW_NV_copy_image, glxewIsSupported("GLX_NV_copy_image"), glxewGetExtension("GLX_NV_copy_image"));
+  GLboolean fi = glewPrintExt("GLX_NV_copy_image", GLXEW_NV_copy_image, glxewIsSupported("GLX_NV_copy_image"), glxewGetExtension("GLX_NV_copy_image"));
 
-  glewInfoFunc("glXCopyImageSubDataNV", glXCopyImageSubDataNV == NULL);
+  glewInfoFunc(fi, "glXCopyImageSubDataNV", glXCopyImageSubDataNV == NULL);
 }
 
 #endif /* GLX_NV_copy_image */
@@ -12748,9 +14401,9 @@ static void _glewInfo_GLX_NV_copy_image (void)
 
 static void _glewInfo_GLX_NV_delay_before_swap (void)
 {
-  glewPrintExt("GLX_NV_delay_before_swap", GLXEW_NV_delay_before_swap, glxewIsSupported("GLX_NV_delay_before_swap"), glxewGetExtension("GLX_NV_delay_before_swap"));
+  GLboolean fi = glewPrintExt("GLX_NV_delay_before_swap", GLXEW_NV_delay_before_swap, glxewIsSupported("GLX_NV_delay_before_swap"), glxewGetExtension("GLX_NV_delay_before_swap"));
 
-  glewInfoFunc("glXDelayBeforeSwapNV", glXDelayBeforeSwapNV == NULL);
+  glewInfoFunc(fi, "glXDelayBeforeSwapNV", glXDelayBeforeSwapNV == NULL);
 }
 
 #endif /* GLX_NV_delay_before_swap */
@@ -12763,6 +14416,15 @@ static void _glewInfo_GLX_NV_float_buffer (void)
 }
 
 #endif /* GLX_NV_float_buffer */
+
+#ifdef GLX_NV_multigpu_context
+
+static void _glewInfo_GLX_NV_multigpu_context (void)
+{
+  glewPrintExt("GLX_NV_multigpu_context", GLXEW_NV_multigpu_context, glxewIsSupported("GLX_NV_multigpu_context"), glxewGetExtension("GLX_NV_multigpu_context"));
+}
+
+#endif /* GLX_NV_multigpu_context */
 
 #ifdef GLX_NV_multisample_coverage
 
@@ -12777,10 +14439,10 @@ static void _glewInfo_GLX_NV_multisample_coverage (void)
 
 static void _glewInfo_GLX_NV_present_video (void)
 {
-  glewPrintExt("GLX_NV_present_video", GLXEW_NV_present_video, glxewIsSupported("GLX_NV_present_video"), glxewGetExtension("GLX_NV_present_video"));
+  GLboolean fi = glewPrintExt("GLX_NV_present_video", GLXEW_NV_present_video, glxewIsSupported("GLX_NV_present_video"), glxewGetExtension("GLX_NV_present_video"));
 
-  glewInfoFunc("glXBindVideoDeviceNV", glXBindVideoDeviceNV == NULL);
-  glewInfoFunc("glXEnumerateVideoDevicesNV", glXEnumerateVideoDevicesNV == NULL);
+  glewInfoFunc(fi, "glXBindVideoDeviceNV", glXBindVideoDeviceNV == NULL);
+  glewInfoFunc(fi, "glXEnumerateVideoDevicesNV", glXEnumerateVideoDevicesNV == NULL);
 }
 
 #endif /* GLX_NV_present_video */
@@ -12798,14 +14460,14 @@ static void _glewInfo_GLX_NV_robustness_video_memory_purge (void)
 
 static void _glewInfo_GLX_NV_swap_group (void)
 {
-  glewPrintExt("GLX_NV_swap_group", GLXEW_NV_swap_group, glxewIsSupported("GLX_NV_swap_group"), glxewGetExtension("GLX_NV_swap_group"));
+  GLboolean fi = glewPrintExt("GLX_NV_swap_group", GLXEW_NV_swap_group, glxewIsSupported("GLX_NV_swap_group"), glxewGetExtension("GLX_NV_swap_group"));
 
-  glewInfoFunc("glXBindSwapBarrierNV", glXBindSwapBarrierNV == NULL);
-  glewInfoFunc("glXJoinSwapGroupNV", glXJoinSwapGroupNV == NULL);
-  glewInfoFunc("glXQueryFrameCountNV", glXQueryFrameCountNV == NULL);
-  glewInfoFunc("glXQueryMaxSwapGroupsNV", glXQueryMaxSwapGroupsNV == NULL);
-  glewInfoFunc("glXQuerySwapGroupNV", glXQuerySwapGroupNV == NULL);
-  glewInfoFunc("glXResetFrameCountNV", glXResetFrameCountNV == NULL);
+  glewInfoFunc(fi, "glXBindSwapBarrierNV", glXBindSwapBarrierNV == NULL);
+  glewInfoFunc(fi, "glXJoinSwapGroupNV", glXJoinSwapGroupNV == NULL);
+  glewInfoFunc(fi, "glXQueryFrameCountNV", glXQueryFrameCountNV == NULL);
+  glewInfoFunc(fi, "glXQueryMaxSwapGroupsNV", glXQueryMaxSwapGroupsNV == NULL);
+  glewInfoFunc(fi, "glXQuerySwapGroupNV", glXQuerySwapGroupNV == NULL);
+  glewInfoFunc(fi, "glXResetFrameCountNV", glXResetFrameCountNV == NULL);
 }
 
 #endif /* GLX_NV_swap_group */
@@ -12814,10 +14476,10 @@ static void _glewInfo_GLX_NV_swap_group (void)
 
 static void _glewInfo_GLX_NV_vertex_array_range (void)
 {
-  glewPrintExt("GLX_NV_vertex_array_range", GLXEW_NV_vertex_array_range, glxewIsSupported("GLX_NV_vertex_array_range"), glxewGetExtension("GLX_NV_vertex_array_range"));
+  GLboolean fi = glewPrintExt("GLX_NV_vertex_array_range", GLXEW_NV_vertex_array_range, glxewIsSupported("GLX_NV_vertex_array_range"), glxewGetExtension("GLX_NV_vertex_array_range"));
 
-  glewInfoFunc("glXAllocateMemoryNV", glXAllocateMemoryNV == NULL);
-  glewInfoFunc("glXFreeMemoryNV", glXFreeMemoryNV == NULL);
+  glewInfoFunc(fi, "glXAllocateMemoryNV", glXAllocateMemoryNV == NULL);
+  glewInfoFunc(fi, "glXFreeMemoryNV", glXFreeMemoryNV == NULL);
 }
 
 #endif /* GLX_NV_vertex_array_range */
@@ -12826,13 +14488,13 @@ static void _glewInfo_GLX_NV_vertex_array_range (void)
 
 static void _glewInfo_GLX_NV_video_capture (void)
 {
-  glewPrintExt("GLX_NV_video_capture", GLXEW_NV_video_capture, glxewIsSupported("GLX_NV_video_capture"), glxewGetExtension("GLX_NV_video_capture"));
+  GLboolean fi = glewPrintExt("GLX_NV_video_capture", GLXEW_NV_video_capture, glxewIsSupported("GLX_NV_video_capture"), glxewGetExtension("GLX_NV_video_capture"));
 
-  glewInfoFunc("glXBindVideoCaptureDeviceNV", glXBindVideoCaptureDeviceNV == NULL);
-  glewInfoFunc("glXEnumerateVideoCaptureDevicesNV", glXEnumerateVideoCaptureDevicesNV == NULL);
-  glewInfoFunc("glXLockVideoCaptureDeviceNV", glXLockVideoCaptureDeviceNV == NULL);
-  glewInfoFunc("glXQueryVideoCaptureDeviceNV", glXQueryVideoCaptureDeviceNV == NULL);
-  glewInfoFunc("glXReleaseVideoCaptureDeviceNV", glXReleaseVideoCaptureDeviceNV == NULL);
+  glewInfoFunc(fi, "glXBindVideoCaptureDeviceNV", glXBindVideoCaptureDeviceNV == NULL);
+  glewInfoFunc(fi, "glXEnumerateVideoCaptureDevicesNV", glXEnumerateVideoCaptureDevicesNV == NULL);
+  glewInfoFunc(fi, "glXLockVideoCaptureDeviceNV", glXLockVideoCaptureDeviceNV == NULL);
+  glewInfoFunc(fi, "glXQueryVideoCaptureDeviceNV", glXQueryVideoCaptureDeviceNV == NULL);
+  glewInfoFunc(fi, "glXReleaseVideoCaptureDeviceNV", glXReleaseVideoCaptureDeviceNV == NULL);
 }
 
 #endif /* GLX_NV_video_capture */
@@ -12841,14 +14503,14 @@ static void _glewInfo_GLX_NV_video_capture (void)
 
 static void _glewInfo_GLX_NV_video_out (void)
 {
-  glewPrintExt("GLX_NV_video_out", GLXEW_NV_video_out, glxewIsSupported("GLX_NV_video_out"), glxewGetExtension("GLX_NV_video_out"));
+  GLboolean fi = glewPrintExt("GLX_NV_video_out", GLXEW_NV_video_out, glxewIsSupported("GLX_NV_video_out"), glxewGetExtension("GLX_NV_video_out"));
 
-  glewInfoFunc("glXBindVideoImageNV", glXBindVideoImageNV == NULL);
-  glewInfoFunc("glXGetVideoDeviceNV", glXGetVideoDeviceNV == NULL);
-  glewInfoFunc("glXGetVideoInfoNV", glXGetVideoInfoNV == NULL);
-  glewInfoFunc("glXReleaseVideoDeviceNV", glXReleaseVideoDeviceNV == NULL);
-  glewInfoFunc("glXReleaseVideoImageNV", glXReleaseVideoImageNV == NULL);
-  glewInfoFunc("glXSendPbufferToVideoNV", glXSendPbufferToVideoNV == NULL);
+  glewInfoFunc(fi, "glXBindVideoImageNV", glXBindVideoImageNV == NULL);
+  glewInfoFunc(fi, "glXGetVideoDeviceNV", glXGetVideoDeviceNV == NULL);
+  glewInfoFunc(fi, "glXGetVideoInfoNV", glXGetVideoInfoNV == NULL);
+  glewInfoFunc(fi, "glXReleaseVideoDeviceNV", glXReleaseVideoDeviceNV == NULL);
+  glewInfoFunc(fi, "glXReleaseVideoImageNV", glXReleaseVideoImageNV == NULL);
+  glewInfoFunc(fi, "glXSendPbufferToVideoNV", glXSendPbufferToVideoNV == NULL);
 }
 
 #endif /* GLX_NV_video_out */
@@ -12866,13 +14528,13 @@ static void _glewInfo_GLX_OML_swap_method (void)
 
 static void _glewInfo_GLX_OML_sync_control (void)
 {
-  glewPrintExt("GLX_OML_sync_control", GLXEW_OML_sync_control, glxewIsSupported("GLX_OML_sync_control"), glxewGetExtension("GLX_OML_sync_control"));
+  GLboolean fi = glewPrintExt("GLX_OML_sync_control", GLXEW_OML_sync_control, glxewIsSupported("GLX_OML_sync_control"), glxewGetExtension("GLX_OML_sync_control"));
 
-  glewInfoFunc("glXGetMscRateOML", glXGetMscRateOML == NULL);
-  glewInfoFunc("glXGetSyncValuesOML", glXGetSyncValuesOML == NULL);
-  glewInfoFunc("glXSwapBuffersMscOML", glXSwapBuffersMscOML == NULL);
-  glewInfoFunc("glXWaitForMscOML", glXWaitForMscOML == NULL);
-  glewInfoFunc("glXWaitForSbcOML", glXWaitForSbcOML == NULL);
+  glewInfoFunc(fi, "glXGetMscRateOML", glXGetMscRateOML == NULL);
+  glewInfoFunc(fi, "glXGetSyncValuesOML", glXGetSyncValuesOML == NULL);
+  glewInfoFunc(fi, "glXSwapBuffersMscOML", glXSwapBuffersMscOML == NULL);
+  glewInfoFunc(fi, "glXWaitForMscOML", glXWaitForMscOML == NULL);
+  glewInfoFunc(fi, "glXWaitForSbcOML", glXWaitForSbcOML == NULL);
 }
 
 #endif /* GLX_OML_sync_control */
@@ -12917,14 +14579,14 @@ static void _glewInfo_GLX_SGIS_shared_multisample (void)
 
 static void _glewInfo_GLX_SGIX_fbconfig (void)
 {
-  glewPrintExt("GLX_SGIX_fbconfig", GLXEW_SGIX_fbconfig, glxewIsSupported("GLX_SGIX_fbconfig"), glxewGetExtension("GLX_SGIX_fbconfig"));
+  GLboolean fi = glewPrintExt("GLX_SGIX_fbconfig", GLXEW_SGIX_fbconfig, glxewIsSupported("GLX_SGIX_fbconfig"), glxewGetExtension("GLX_SGIX_fbconfig"));
 
-  glewInfoFunc("glXChooseFBConfigSGIX", glXChooseFBConfigSGIX == NULL);
-  glewInfoFunc("glXCreateContextWithConfigSGIX", glXCreateContextWithConfigSGIX == NULL);
-  glewInfoFunc("glXCreateGLXPixmapWithConfigSGIX", glXCreateGLXPixmapWithConfigSGIX == NULL);
-  glewInfoFunc("glXGetFBConfigAttribSGIX", glXGetFBConfigAttribSGIX == NULL);
-  glewInfoFunc("glXGetFBConfigFromVisualSGIX", glXGetFBConfigFromVisualSGIX == NULL);
-  glewInfoFunc("glXGetVisualFromFBConfigSGIX", glXGetVisualFromFBConfigSGIX == NULL);
+  glewInfoFunc(fi, "glXChooseFBConfigSGIX", glXChooseFBConfigSGIX == NULL);
+  glewInfoFunc(fi, "glXCreateContextWithConfigSGIX", glXCreateContextWithConfigSGIX == NULL);
+  glewInfoFunc(fi, "glXCreateGLXPixmapWithConfigSGIX", glXCreateGLXPixmapWithConfigSGIX == NULL);
+  glewInfoFunc(fi, "glXGetFBConfigAttribSGIX", glXGetFBConfigAttribSGIX == NULL);
+  glewInfoFunc(fi, "glXGetFBConfigFromVisualSGIX", glXGetFBConfigFromVisualSGIX == NULL);
+  glewInfoFunc(fi, "glXGetVisualFromFBConfigSGIX", glXGetVisualFromFBConfigSGIX == NULL);
 }
 
 #endif /* GLX_SGIX_fbconfig */
@@ -12933,16 +14595,16 @@ static void _glewInfo_GLX_SGIX_fbconfig (void)
 
 static void _glewInfo_GLX_SGIX_hyperpipe (void)
 {
-  glewPrintExt("GLX_SGIX_hyperpipe", GLXEW_SGIX_hyperpipe, glxewIsSupported("GLX_SGIX_hyperpipe"), glxewGetExtension("GLX_SGIX_hyperpipe"));
+  GLboolean fi = glewPrintExt("GLX_SGIX_hyperpipe", GLXEW_SGIX_hyperpipe, glxewIsSupported("GLX_SGIX_hyperpipe"), glxewGetExtension("GLX_SGIX_hyperpipe"));
 
-  glewInfoFunc("glXBindHyperpipeSGIX", glXBindHyperpipeSGIX == NULL);
-  glewInfoFunc("glXDestroyHyperpipeConfigSGIX", glXDestroyHyperpipeConfigSGIX == NULL);
-  glewInfoFunc("glXHyperpipeAttribSGIX", glXHyperpipeAttribSGIX == NULL);
-  glewInfoFunc("glXHyperpipeConfigSGIX", glXHyperpipeConfigSGIX == NULL);
-  glewInfoFunc("glXQueryHyperpipeAttribSGIX", glXQueryHyperpipeAttribSGIX == NULL);
-  glewInfoFunc("glXQueryHyperpipeBestAttribSGIX", glXQueryHyperpipeBestAttribSGIX == NULL);
-  glewInfoFunc("glXQueryHyperpipeConfigSGIX", glXQueryHyperpipeConfigSGIX == NULL);
-  glewInfoFunc("glXQueryHyperpipeNetworkSGIX", glXQueryHyperpipeNetworkSGIX == NULL);
+  glewInfoFunc(fi, "glXBindHyperpipeSGIX", glXBindHyperpipeSGIX == NULL);
+  glewInfoFunc(fi, "glXDestroyHyperpipeConfigSGIX", glXDestroyHyperpipeConfigSGIX == NULL);
+  glewInfoFunc(fi, "glXHyperpipeAttribSGIX", glXHyperpipeAttribSGIX == NULL);
+  glewInfoFunc(fi, "glXHyperpipeConfigSGIX", glXHyperpipeConfigSGIX == NULL);
+  glewInfoFunc(fi, "glXQueryHyperpipeAttribSGIX", glXQueryHyperpipeAttribSGIX == NULL);
+  glewInfoFunc(fi, "glXQueryHyperpipeBestAttribSGIX", glXQueryHyperpipeBestAttribSGIX == NULL);
+  glewInfoFunc(fi, "glXQueryHyperpipeConfigSGIX", glXQueryHyperpipeConfigSGIX == NULL);
+  glewInfoFunc(fi, "glXQueryHyperpipeNetworkSGIX", glXQueryHyperpipeNetworkSGIX == NULL);
 }
 
 #endif /* GLX_SGIX_hyperpipe */
@@ -12951,13 +14613,13 @@ static void _glewInfo_GLX_SGIX_hyperpipe (void)
 
 static void _glewInfo_GLX_SGIX_pbuffer (void)
 {
-  glewPrintExt("GLX_SGIX_pbuffer", GLXEW_SGIX_pbuffer, glxewIsSupported("GLX_SGIX_pbuffer"), glxewGetExtension("GLX_SGIX_pbuffer"));
+  GLboolean fi = glewPrintExt("GLX_SGIX_pbuffer", GLXEW_SGIX_pbuffer, glxewIsSupported("GLX_SGIX_pbuffer"), glxewGetExtension("GLX_SGIX_pbuffer"));
 
-  glewInfoFunc("glXCreateGLXPbufferSGIX", glXCreateGLXPbufferSGIX == NULL);
-  glewInfoFunc("glXDestroyGLXPbufferSGIX", glXDestroyGLXPbufferSGIX == NULL);
-  glewInfoFunc("glXGetSelectedEventSGIX", glXGetSelectedEventSGIX == NULL);
-  glewInfoFunc("glXQueryGLXPbufferSGIX", glXQueryGLXPbufferSGIX == NULL);
-  glewInfoFunc("glXSelectEventSGIX", glXSelectEventSGIX == NULL);
+  glewInfoFunc(fi, "glXCreateGLXPbufferSGIX", glXCreateGLXPbufferSGIX == NULL);
+  glewInfoFunc(fi, "glXDestroyGLXPbufferSGIX", glXDestroyGLXPbufferSGIX == NULL);
+  glewInfoFunc(fi, "glXGetSelectedEventSGIX", glXGetSelectedEventSGIX == NULL);
+  glewInfoFunc(fi, "glXQueryGLXPbufferSGIX", glXQueryGLXPbufferSGIX == NULL);
+  glewInfoFunc(fi, "glXSelectEventSGIX", glXSelectEventSGIX == NULL);
 }
 
 #endif /* GLX_SGIX_pbuffer */
@@ -12966,10 +14628,10 @@ static void _glewInfo_GLX_SGIX_pbuffer (void)
 
 static void _glewInfo_GLX_SGIX_swap_barrier (void)
 {
-  glewPrintExt("GLX_SGIX_swap_barrier", GLXEW_SGIX_swap_barrier, glxewIsSupported("GLX_SGIX_swap_barrier"), glxewGetExtension("GLX_SGIX_swap_barrier"));
+  GLboolean fi = glewPrintExt("GLX_SGIX_swap_barrier", GLXEW_SGIX_swap_barrier, glxewIsSupported("GLX_SGIX_swap_barrier"), glxewGetExtension("GLX_SGIX_swap_barrier"));
 
-  glewInfoFunc("glXBindSwapBarrierSGIX", glXBindSwapBarrierSGIX == NULL);
-  glewInfoFunc("glXQueryMaxSwapBarriersSGIX", glXQueryMaxSwapBarriersSGIX == NULL);
+  glewInfoFunc(fi, "glXBindSwapBarrierSGIX", glXBindSwapBarrierSGIX == NULL);
+  glewInfoFunc(fi, "glXQueryMaxSwapBarriersSGIX", glXQueryMaxSwapBarriersSGIX == NULL);
 }
 
 #endif /* GLX_SGIX_swap_barrier */
@@ -12978,9 +14640,9 @@ static void _glewInfo_GLX_SGIX_swap_barrier (void)
 
 static void _glewInfo_GLX_SGIX_swap_group (void)
 {
-  glewPrintExt("GLX_SGIX_swap_group", GLXEW_SGIX_swap_group, glxewIsSupported("GLX_SGIX_swap_group"), glxewGetExtension("GLX_SGIX_swap_group"));
+  GLboolean fi = glewPrintExt("GLX_SGIX_swap_group", GLXEW_SGIX_swap_group, glxewIsSupported("GLX_SGIX_swap_group"), glxewGetExtension("GLX_SGIX_swap_group"));
 
-  glewInfoFunc("glXJoinSwapGroupSGIX", glXJoinSwapGroupSGIX == NULL);
+  glewInfoFunc(fi, "glXJoinSwapGroupSGIX", glXJoinSwapGroupSGIX == NULL);
 }
 
 #endif /* GLX_SGIX_swap_group */
@@ -12989,13 +14651,13 @@ static void _glewInfo_GLX_SGIX_swap_group (void)
 
 static void _glewInfo_GLX_SGIX_video_resize (void)
 {
-  glewPrintExt("GLX_SGIX_video_resize", GLXEW_SGIX_video_resize, glxewIsSupported("GLX_SGIX_video_resize"), glxewGetExtension("GLX_SGIX_video_resize"));
+  GLboolean fi = glewPrintExt("GLX_SGIX_video_resize", GLXEW_SGIX_video_resize, glxewIsSupported("GLX_SGIX_video_resize"), glxewGetExtension("GLX_SGIX_video_resize"));
 
-  glewInfoFunc("glXBindChannelToWindowSGIX", glXBindChannelToWindowSGIX == NULL);
-  glewInfoFunc("glXChannelRectSGIX", glXChannelRectSGIX == NULL);
-  glewInfoFunc("glXChannelRectSyncSGIX", glXChannelRectSyncSGIX == NULL);
-  glewInfoFunc("glXQueryChannelDeltasSGIX", glXQueryChannelDeltasSGIX == NULL);
-  glewInfoFunc("glXQueryChannelRectSGIX", glXQueryChannelRectSGIX == NULL);
+  glewInfoFunc(fi, "glXBindChannelToWindowSGIX", glXBindChannelToWindowSGIX == NULL);
+  glewInfoFunc(fi, "glXChannelRectSGIX", glXChannelRectSGIX == NULL);
+  glewInfoFunc(fi, "glXChannelRectSyncSGIX", glXChannelRectSyncSGIX == NULL);
+  glewInfoFunc(fi, "glXQueryChannelDeltasSGIX", glXQueryChannelDeltasSGIX == NULL);
+  glewInfoFunc(fi, "glXQueryChannelRectSGIX", glXQueryChannelRectSGIX == NULL);
 }
 
 #endif /* GLX_SGIX_video_resize */
@@ -13013,9 +14675,9 @@ static void _glewInfo_GLX_SGIX_visual_select_group (void)
 
 static void _glewInfo_GLX_SGI_cushion (void)
 {
-  glewPrintExt("GLX_SGI_cushion", GLXEW_SGI_cushion, glxewIsSupported("GLX_SGI_cushion"), glxewGetExtension("GLX_SGI_cushion"));
+  GLboolean fi = glewPrintExt("GLX_SGI_cushion", GLXEW_SGI_cushion, glxewIsSupported("GLX_SGI_cushion"), glxewGetExtension("GLX_SGI_cushion"));
 
-  glewInfoFunc("glXCushionSGI", glXCushionSGI == NULL);
+  glewInfoFunc(fi, "glXCushionSGI", glXCushionSGI == NULL);
 }
 
 #endif /* GLX_SGI_cushion */
@@ -13024,10 +14686,10 @@ static void _glewInfo_GLX_SGI_cushion (void)
 
 static void _glewInfo_GLX_SGI_make_current_read (void)
 {
-  glewPrintExt("GLX_SGI_make_current_read", GLXEW_SGI_make_current_read, glxewIsSupported("GLX_SGI_make_current_read"), glxewGetExtension("GLX_SGI_make_current_read"));
+  GLboolean fi = glewPrintExt("GLX_SGI_make_current_read", GLXEW_SGI_make_current_read, glxewIsSupported("GLX_SGI_make_current_read"), glxewGetExtension("GLX_SGI_make_current_read"));
 
-  glewInfoFunc("glXGetCurrentReadDrawableSGI", glXGetCurrentReadDrawableSGI == NULL);
-  glewInfoFunc("glXMakeCurrentReadSGI", glXMakeCurrentReadSGI == NULL);
+  glewInfoFunc(fi, "glXGetCurrentReadDrawableSGI", glXGetCurrentReadDrawableSGI == NULL);
+  glewInfoFunc(fi, "glXMakeCurrentReadSGI", glXMakeCurrentReadSGI == NULL);
 }
 
 #endif /* GLX_SGI_make_current_read */
@@ -13036,9 +14698,9 @@ static void _glewInfo_GLX_SGI_make_current_read (void)
 
 static void _glewInfo_GLX_SGI_swap_control (void)
 {
-  glewPrintExt("GLX_SGI_swap_control", GLXEW_SGI_swap_control, glxewIsSupported("GLX_SGI_swap_control"), glxewGetExtension("GLX_SGI_swap_control"));
+  GLboolean fi = glewPrintExt("GLX_SGI_swap_control", GLXEW_SGI_swap_control, glxewIsSupported("GLX_SGI_swap_control"), glxewGetExtension("GLX_SGI_swap_control"));
 
-  glewInfoFunc("glXSwapIntervalSGI", glXSwapIntervalSGI == NULL);
+  glewInfoFunc(fi, "glXSwapIntervalSGI", glXSwapIntervalSGI == NULL);
 }
 
 #endif /* GLX_SGI_swap_control */
@@ -13047,10 +14709,10 @@ static void _glewInfo_GLX_SGI_swap_control (void)
 
 static void _glewInfo_GLX_SGI_video_sync (void)
 {
-  glewPrintExt("GLX_SGI_video_sync", GLXEW_SGI_video_sync, glxewIsSupported("GLX_SGI_video_sync"), glxewGetExtension("GLX_SGI_video_sync"));
+  GLboolean fi = glewPrintExt("GLX_SGI_video_sync", GLXEW_SGI_video_sync, glxewIsSupported("GLX_SGI_video_sync"), glxewGetExtension("GLX_SGI_video_sync"));
 
-  glewInfoFunc("glXGetVideoSyncSGI", glXGetVideoSyncSGI == NULL);
-  glewInfoFunc("glXWaitVideoSyncSGI", glXWaitVideoSyncSGI == NULL);
+  glewInfoFunc(fi, "glXGetVideoSyncSGI", glXGetVideoSyncSGI == NULL);
+  glewInfoFunc(fi, "glXWaitVideoSyncSGI", glXWaitVideoSyncSGI == NULL);
 }
 
 #endif /* GLX_SGI_video_sync */
@@ -13059,9 +14721,9 @@ static void _glewInfo_GLX_SGI_video_sync (void)
 
 static void _glewInfo_GLX_SUN_get_transparent_index (void)
 {
-  glewPrintExt("GLX_SUN_get_transparent_index", GLXEW_SUN_get_transparent_index, glxewIsSupported("GLX_SUN_get_transparent_index"), glxewGetExtension("GLX_SUN_get_transparent_index"));
+  GLboolean fi = glewPrintExt("GLX_SUN_get_transparent_index", GLXEW_SUN_get_transparent_index, glxewIsSupported("GLX_SUN_get_transparent_index"), glxewGetExtension("GLX_SUN_get_transparent_index"));
 
-  glewInfoFunc("glXGetTransparentIndexSUN", glXGetTransparentIndexSUN == NULL);
+  glewInfoFunc(fi, "glXGetTransparentIndexSUN", glXGetTransparentIndexSUN == NULL);
 }
 
 #endif /* GLX_SUN_get_transparent_index */
@@ -13070,10 +14732,10 @@ static void _glewInfo_GLX_SUN_get_transparent_index (void)
 
 static void _glewInfo_GLX_SUN_video_resize (void)
 {
-  glewPrintExt("GLX_SUN_video_resize", GLXEW_SUN_video_resize, glxewIsSupported("GLX_SUN_video_resize"), glxewGetExtension("GLX_SUN_video_resize"));
+  GLboolean fi = glewPrintExt("GLX_SUN_video_resize", GLXEW_SUN_video_resize, glxewIsSupported("GLX_SUN_video_resize"), glxewGetExtension("GLX_SUN_video_resize"));
 
-  glewInfoFunc("glXGetVideoResizeSUN", glXGetVideoResizeSUN == NULL);
-  glewInfoFunc("glXVideoResizeSUN", glXVideoResizeSUN == NULL);
+  glewInfoFunc(fi, "glXGetVideoResizeSUN", glXGetVideoResizeSUN == NULL);
+  glewInfoFunc(fi, "glXVideoResizeSUN", glXVideoResizeSUN == NULL);
 }
 
 #endif /* GLX_SUN_video_resize */
@@ -13171,6 +14833,9 @@ static void glewInfo (void)
 #ifdef GL_AMD_draw_buffers_blend
   _glewInfo_GL_AMD_draw_buffers_blend();
 #endif /* GL_AMD_draw_buffers_blend */
+#ifdef GL_AMD_framebuffer_multisample_advanced
+  _glewInfo_GL_AMD_framebuffer_multisample_advanced();
+#endif /* GL_AMD_framebuffer_multisample_advanced */
 #ifdef GL_AMD_framebuffer_sample_positions
   _glewInfo_GL_AMD_framebuffer_sample_positions();
 #endif /* GL_AMD_framebuffer_sample_positions */
@@ -13180,6 +14845,9 @@ static void glewInfo (void)
 #ifdef GL_AMD_gpu_shader_half_float
   _glewInfo_GL_AMD_gpu_shader_half_float();
 #endif /* GL_AMD_gpu_shader_half_float */
+#ifdef GL_AMD_gpu_shader_half_float_fetch
+  _glewInfo_GL_AMD_gpu_shader_half_float_fetch();
+#endif /* GL_AMD_gpu_shader_half_float_fetch */
 #ifdef GL_AMD_gpu_shader_int16
   _glewInfo_GL_AMD_gpu_shader_int16();
 #endif /* GL_AMD_gpu_shader_int16 */
@@ -13225,6 +14893,9 @@ static void glewInfo (void)
 #ifdef GL_AMD_shader_explicit_vertex_parameter
   _glewInfo_GL_AMD_shader_explicit_vertex_parameter();
 #endif /* GL_AMD_shader_explicit_vertex_parameter */
+#ifdef GL_AMD_shader_image_load_store_lod
+  _glewInfo_GL_AMD_shader_image_load_store_lod();
+#endif /* GL_AMD_shader_image_load_store_lod */
 #ifdef GL_AMD_shader_stencil_export
   _glewInfo_GL_AMD_shader_stencil_export();
 #endif /* GL_AMD_shader_stencil_export */
@@ -13909,6 +15580,9 @@ static void glewInfo (void)
 #ifdef GL_ARM_shader_framebuffer_fetch_depth_stencil
   _glewInfo_GL_ARM_shader_framebuffer_fetch_depth_stencil();
 #endif /* GL_ARM_shader_framebuffer_fetch_depth_stencil */
+#ifdef GL_ARM_texture_unnormalized_coordinates
+  _glewInfo_GL_ARM_texture_unnormalized_coordinates();
+#endif /* GL_ARM_texture_unnormalized_coordinates */
 #ifdef GL_ATIX_point_sprites
   _glewInfo_GL_ATIX_point_sprites();
 #endif /* GL_ATIX_point_sprites */
@@ -13972,12 +15646,12 @@ static void glewInfo (void)
 #ifdef GL_ATI_vertex_streams
   _glewInfo_GL_ATI_vertex_streams();
 #endif /* GL_ATI_vertex_streams */
-#ifdef GL_EGL_KHR_context_flush_control
-  _glewInfo_GL_EGL_KHR_context_flush_control();
-#endif /* GL_EGL_KHR_context_flush_control */
-#ifdef GL_EGL_NV_robustness_video_memory_purge
-  _glewInfo_GL_EGL_NV_robustness_video_memory_purge();
-#endif /* GL_EGL_NV_robustness_video_memory_purge */
+#ifdef GL_DMP_program_binary
+  _glewInfo_GL_DMP_program_binary();
+#endif /* GL_DMP_program_binary */
+#ifdef GL_DMP_shader_binary
+  _glewInfo_GL_DMP_shader_binary();
+#endif /* GL_DMP_shader_binary */
 #ifdef GL_EXT_422_pixels
   _glewInfo_GL_EXT_422_pixels();
 #endif /* GL_EXT_422_pixels */
@@ -13987,6 +15661,15 @@ static void glewInfo (void)
 #ifdef GL_EXT_EGL_image_array
   _glewInfo_GL_EXT_EGL_image_array();
 #endif /* GL_EXT_EGL_image_array */
+#ifdef GL_EXT_EGL_image_external_wrap_modes
+  _glewInfo_GL_EXT_EGL_image_external_wrap_modes();
+#endif /* GL_EXT_EGL_image_external_wrap_modes */
+#ifdef GL_EXT_EGL_image_storage
+  _glewInfo_GL_EXT_EGL_image_storage();
+#endif /* GL_EXT_EGL_image_storage */
+#ifdef GL_EXT_EGL_sync
+  _glewInfo_GL_EXT_EGL_sync();
+#endif /* GL_EXT_EGL_sync */
 #ifdef GL_EXT_YUV_target
   _glewInfo_GL_EXT_YUV_target();
 #endif /* GL_EXT_YUV_target */
@@ -14029,6 +15712,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_clear_texture
   _glewInfo_GL_EXT_clear_texture();
 #endif /* GL_EXT_clear_texture */
+#ifdef GL_EXT_clip_control
+  _glewInfo_GL_EXT_clip_control();
+#endif /* GL_EXT_clip_control */
 #ifdef GL_EXT_clip_cull_distance
   _glewInfo_GL_EXT_clip_cull_distance();
 #endif /* GL_EXT_clip_cull_distance */
@@ -14080,12 +15766,18 @@ static void glewInfo (void)
 #ifdef GL_EXT_depth_bounds_test
   _glewInfo_GL_EXT_depth_bounds_test();
 #endif /* GL_EXT_depth_bounds_test */
+#ifdef GL_EXT_depth_clamp
+  _glewInfo_GL_EXT_depth_clamp();
+#endif /* GL_EXT_depth_clamp */
 #ifdef GL_EXT_direct_state_access
   _glewInfo_GL_EXT_direct_state_access();
 #endif /* GL_EXT_direct_state_access */
 #ifdef GL_EXT_discard_framebuffer
   _glewInfo_GL_EXT_discard_framebuffer();
 #endif /* GL_EXT_discard_framebuffer */
+#ifdef GL_EXT_disjoint_timer_query
+  _glewInfo_GL_EXT_disjoint_timer_query();
+#endif /* GL_EXT_disjoint_timer_query */
 #ifdef GL_EXT_draw_buffers
   _glewInfo_GL_EXT_draw_buffers();
 #endif /* GL_EXT_draw_buffers */
@@ -14104,6 +15796,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_draw_range_elements
   _glewInfo_GL_EXT_draw_range_elements();
 #endif /* GL_EXT_draw_range_elements */
+#ifdef GL_EXT_draw_transform_feedback
+  _glewInfo_GL_EXT_draw_transform_feedback();
+#endif /* GL_EXT_draw_transform_feedback */
 #ifdef GL_EXT_external_buffer
   _glewInfo_GL_EXT_external_buffer();
 #endif /* GL_EXT_external_buffer */
@@ -14212,6 +15907,18 @@ static void glewInfo (void)
 #ifdef GL_EXT_multiview_draw_buffers
   _glewInfo_GL_EXT_multiview_draw_buffers();
 #endif /* GL_EXT_multiview_draw_buffers */
+#ifdef GL_EXT_multiview_tessellation_geometry_shader
+  _glewInfo_GL_EXT_multiview_tessellation_geometry_shader();
+#endif /* GL_EXT_multiview_tessellation_geometry_shader */
+#ifdef GL_EXT_multiview_texture_multisample
+  _glewInfo_GL_EXT_multiview_texture_multisample();
+#endif /* GL_EXT_multiview_texture_multisample */
+#ifdef GL_EXT_multiview_timer_query
+  _glewInfo_GL_EXT_multiview_timer_query();
+#endif /* GL_EXT_multiview_timer_query */
+#ifdef GL_EXT_occlusion_query_boolean
+  _glewInfo_GL_EXT_occlusion_query_boolean();
+#endif /* GL_EXT_occlusion_query_boolean */
 #ifdef GL_EXT_packed_depth_stencil
   _glewInfo_GL_EXT_packed_depth_stencil();
 #endif /* GL_EXT_packed_depth_stencil */
@@ -14245,6 +15952,12 @@ static void glewInfo (void)
 #ifdef GL_EXT_post_depth_coverage
   _glewInfo_GL_EXT_post_depth_coverage();
 #endif /* GL_EXT_post_depth_coverage */
+#ifdef GL_EXT_primitive_bounding_box
+  _glewInfo_GL_EXT_primitive_bounding_box();
+#endif /* GL_EXT_primitive_bounding_box */
+#ifdef GL_EXT_protected_textures
+  _glewInfo_GL_EXT_protected_textures();
+#endif /* GL_EXT_protected_textures */
 #ifdef GL_EXT_provoking_vertex
   _glewInfo_GL_EXT_provoking_vertex();
 #endif /* GL_EXT_provoking_vertex */
@@ -14263,6 +15976,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_rescale_normal
   _glewInfo_GL_EXT_rescale_normal();
 #endif /* GL_EXT_rescale_normal */
+#ifdef GL_EXT_robustness
+  _glewInfo_GL_EXT_robustness();
+#endif /* GL_EXT_robustness */
 #ifdef GL_EXT_sRGB
   _glewInfo_GL_EXT_sRGB();
 #endif /* GL_EXT_sRGB */
@@ -14293,6 +16009,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_shader_framebuffer_fetch
   _glewInfo_GL_EXT_shader_framebuffer_fetch();
 #endif /* GL_EXT_shader_framebuffer_fetch */
+#ifdef GL_EXT_shader_framebuffer_fetch_non_coherent
+  _glewInfo_GL_EXT_shader_framebuffer_fetch_non_coherent();
+#endif /* GL_EXT_shader_framebuffer_fetch_non_coherent */
 #ifdef GL_EXT_shader_group_vote
   _glewInfo_GL_EXT_shader_group_vote();
 #endif /* GL_EXT_shader_group_vote */
@@ -14338,6 +16057,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_sparse_texture2
   _glewInfo_GL_EXT_sparse_texture2();
 #endif /* GL_EXT_sparse_texture2 */
+#ifdef GL_EXT_static_vertex_array
+  _glewInfo_GL_EXT_static_vertex_array();
+#endif /* GL_EXT_static_vertex_array */
 #ifdef GL_EXT_stencil_clear_tag
   _glewInfo_GL_EXT_stencil_clear_tag();
 #endif /* GL_EXT_stencil_clear_tag */
@@ -14350,6 +16072,12 @@ static void glewInfo (void)
 #ifdef GL_EXT_subtexture
   _glewInfo_GL_EXT_subtexture();
 #endif /* GL_EXT_subtexture */
+#ifdef GL_EXT_tessellation_point_size
+  _glewInfo_GL_EXT_tessellation_point_size();
+#endif /* GL_EXT_tessellation_point_size */
+#ifdef GL_EXT_tessellation_shader
+  _glewInfo_GL_EXT_tessellation_shader();
+#endif /* GL_EXT_tessellation_shader */
 #ifdef GL_EXT_texture
   _glewInfo_GL_EXT_texture();
 #endif /* GL_EXT_texture */
@@ -14359,6 +16087,12 @@ static void glewInfo (void)
 #ifdef GL_EXT_texture_array
   _glewInfo_GL_EXT_texture_array();
 #endif /* GL_EXT_texture_array */
+#ifdef GL_EXT_texture_border_clamp
+  _glewInfo_GL_EXT_texture_border_clamp();
+#endif /* GL_EXT_texture_border_clamp */
+#ifdef GL_EXT_texture_buffer
+  _glewInfo_GL_EXT_texture_buffer();
+#endif /* GL_EXT_texture_buffer */
 #ifdef GL_EXT_texture_buffer_object
   _glewInfo_GL_EXT_texture_buffer_object();
 #endif /* GL_EXT_texture_buffer_object */
@@ -14383,6 +16117,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_texture_compression_s3tc
   _glewInfo_GL_EXT_texture_compression_s3tc();
 #endif /* GL_EXT_texture_compression_s3tc */
+#ifdef GL_EXT_texture_compression_s3tc_srgb
+  _glewInfo_GL_EXT_texture_compression_s3tc_srgb();
+#endif /* GL_EXT_texture_compression_s3tc_srgb */
 #ifdef GL_EXT_texture_cube_map
   _glewInfo_GL_EXT_texture_cube_map();
 #endif /* GL_EXT_texture_cube_map */
@@ -14413,6 +16150,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_texture_format_BGRA8888
   _glewInfo_GL_EXT_texture_format_BGRA8888();
 #endif /* GL_EXT_texture_format_BGRA8888 */
+#ifdef GL_EXT_texture_format_sRGB_override
+  _glewInfo_GL_EXT_texture_format_sRGB_override();
+#endif /* GL_EXT_texture_format_sRGB_override */
 #ifdef GL_EXT_texture_integer
   _glewInfo_GL_EXT_texture_integer();
 #endif /* GL_EXT_texture_integer */
@@ -14422,6 +16162,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_texture_mirror_clamp
   _glewInfo_GL_EXT_texture_mirror_clamp();
 #endif /* GL_EXT_texture_mirror_clamp */
+#ifdef GL_EXT_texture_mirror_clamp_to_edge
+  _glewInfo_GL_EXT_texture_mirror_clamp_to_edge();
+#endif /* GL_EXT_texture_mirror_clamp_to_edge */
 #ifdef GL_EXT_texture_norm16
   _glewInfo_GL_EXT_texture_norm16();
 #endif /* GL_EXT_texture_norm16 */
@@ -14431,6 +16174,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_texture_perturb_normal
   _glewInfo_GL_EXT_texture_perturb_normal();
 #endif /* GL_EXT_texture_perturb_normal */
+#ifdef GL_EXT_texture_query_lod
+  _glewInfo_GL_EXT_texture_query_lod();
+#endif /* GL_EXT_texture_query_lod */
 #ifdef GL_EXT_texture_rectangle
   _glewInfo_GL_EXT_texture_rectangle();
 #endif /* GL_EXT_texture_rectangle */
@@ -14449,6 +16195,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_texture_sRGB_decode
   _glewInfo_GL_EXT_texture_sRGB_decode();
 #endif /* GL_EXT_texture_sRGB_decode */
+#ifdef GL_EXT_texture_shadow_lod
+  _glewInfo_GL_EXT_texture_shadow_lod();
+#endif /* GL_EXT_texture_shadow_lod */
 #ifdef GL_EXT_texture_shared_exponent
   _glewInfo_GL_EXT_texture_shared_exponent();
 #endif /* GL_EXT_texture_shared_exponent */
@@ -14503,6 +16252,9 @@ static void glewInfo (void)
 #ifdef GL_EXT_x11_sync_object
   _glewInfo_GL_EXT_x11_sync_object();
 #endif /* GL_EXT_x11_sync_object */
+#ifdef GL_FJ_shader_binary_GCCSO
+  _glewInfo_GL_FJ_shader_binary_GCCSO();
+#endif /* GL_FJ_shader_binary_GCCSO */
 #ifdef GL_GREMEDY_frame_terminator
   _glewInfo_GL_GREMEDY_frame_terminator();
 #endif /* GL_GREMEDY_frame_terminator */
@@ -14539,12 +16291,45 @@ static void glewInfo (void)
 #ifdef GL_IBM_vertex_array_lists
   _glewInfo_GL_IBM_vertex_array_lists();
 #endif /* GL_IBM_vertex_array_lists */
+#ifdef GL_IMG_bindless_texture
+  _glewInfo_GL_IMG_bindless_texture();
+#endif /* GL_IMG_bindless_texture */
+#ifdef GL_IMG_framebuffer_downsample
+  _glewInfo_GL_IMG_framebuffer_downsample();
+#endif /* GL_IMG_framebuffer_downsample */
+#ifdef GL_IMG_multisampled_render_to_texture
+  _glewInfo_GL_IMG_multisampled_render_to_texture();
+#endif /* GL_IMG_multisampled_render_to_texture */
+#ifdef GL_IMG_program_binary
+  _glewInfo_GL_IMG_program_binary();
+#endif /* GL_IMG_program_binary */
+#ifdef GL_IMG_read_format
+  _glewInfo_GL_IMG_read_format();
+#endif /* GL_IMG_read_format */
+#ifdef GL_IMG_shader_binary
+  _glewInfo_GL_IMG_shader_binary();
+#endif /* GL_IMG_shader_binary */
+#ifdef GL_IMG_texture_compression_pvrtc
+  _glewInfo_GL_IMG_texture_compression_pvrtc();
+#endif /* GL_IMG_texture_compression_pvrtc */
+#ifdef GL_IMG_texture_compression_pvrtc2
+  _glewInfo_GL_IMG_texture_compression_pvrtc2();
+#endif /* GL_IMG_texture_compression_pvrtc2 */
+#ifdef GL_IMG_texture_env_enhanced_fixed_function
+  _glewInfo_GL_IMG_texture_env_enhanced_fixed_function();
+#endif /* GL_IMG_texture_env_enhanced_fixed_function */
+#ifdef GL_IMG_texture_filter_cubic
+  _glewInfo_GL_IMG_texture_filter_cubic();
+#endif /* GL_IMG_texture_filter_cubic */
 #ifdef GL_INGR_color_clamp
   _glewInfo_GL_INGR_color_clamp();
 #endif /* GL_INGR_color_clamp */
 #ifdef GL_INGR_interlace_read
   _glewInfo_GL_INGR_interlace_read();
 #endif /* GL_INGR_interlace_read */
+#ifdef GL_INTEL_blackhole_render
+  _glewInfo_GL_INTEL_blackhole_render();
+#endif /* GL_INTEL_blackhole_render */
 #ifdef GL_INTEL_conservative_rasterization
   _glewInfo_GL_INTEL_conservative_rasterization();
 #endif /* GL_INTEL_conservative_rasterization */
@@ -14563,6 +16348,9 @@ static void glewInfo (void)
 #ifdef GL_INTEL_performance_query
   _glewInfo_GL_INTEL_performance_query();
 #endif /* GL_INTEL_performance_query */
+#ifdef GL_INTEL_shader_integer_functions2
+  _glewInfo_GL_INTEL_shader_integer_functions2();
+#endif /* GL_INTEL_shader_integer_functions2 */
 #ifdef GL_INTEL_texture_scissor
   _glewInfo_GL_INTEL_texture_scissor();
 #endif /* GL_INTEL_texture_scissor */
@@ -14590,6 +16378,9 @@ static void glewInfo (void)
 #ifdef GL_KHR_robustness
   _glewInfo_GL_KHR_robustness();
 #endif /* GL_KHR_robustness */
+#ifdef GL_KHR_shader_subgroup
+  _glewInfo_GL_KHR_shader_subgroup();
+#endif /* GL_KHR_shader_subgroup */
 #ifdef GL_KHR_texture_compression_astc_hdr
   _glewInfo_GL_KHR_texture_compression_astc_hdr();
 #endif /* GL_KHR_texture_compression_astc_hdr */
@@ -14605,15 +16396,24 @@ static void glewInfo (void)
 #ifdef GL_MESAX_texture_stack
   _glewInfo_GL_MESAX_texture_stack();
 #endif /* GL_MESAX_texture_stack */
+#ifdef GL_MESA_framebuffer_flip_y
+  _glewInfo_GL_MESA_framebuffer_flip_y();
+#endif /* GL_MESA_framebuffer_flip_y */
 #ifdef GL_MESA_pack_invert
   _glewInfo_GL_MESA_pack_invert();
 #endif /* GL_MESA_pack_invert */
+#ifdef GL_MESA_program_binary_formats
+  _glewInfo_GL_MESA_program_binary_formats();
+#endif /* GL_MESA_program_binary_formats */
 #ifdef GL_MESA_resize_buffers
   _glewInfo_GL_MESA_resize_buffers();
 #endif /* GL_MESA_resize_buffers */
 #ifdef GL_MESA_shader_integer_functions
   _glewInfo_GL_MESA_shader_integer_functions();
 #endif /* GL_MESA_shader_integer_functions */
+#ifdef GL_MESA_tile_raster_order
+  _glewInfo_GL_MESA_tile_raster_order();
+#endif /* GL_MESA_tile_raster_order */
 #ifdef GL_MESA_window_pos
   _glewInfo_GL_MESA_window_pos();
 #endif /* GL_MESA_window_pos */
@@ -14629,9 +16429,15 @@ static void glewInfo (void)
 #ifdef GL_NVX_gpu_memory_info
   _glewInfo_GL_NVX_gpu_memory_info();
 #endif /* GL_NVX_gpu_memory_info */
+#ifdef GL_NVX_gpu_multicast2
+  _glewInfo_GL_NVX_gpu_multicast2();
+#endif /* GL_NVX_gpu_multicast2 */
 #ifdef GL_NVX_linked_gpu_multicast
   _glewInfo_GL_NVX_linked_gpu_multicast();
 #endif /* GL_NVX_linked_gpu_multicast */
+#ifdef GL_NVX_progress_fence
+  _glewInfo_GL_NVX_progress_fence();
+#endif /* GL_NVX_progress_fence */
 #ifdef GL_NV_3dvision_settings
   _glewInfo_GL_NV_3dvision_settings();
 #endif /* GL_NV_3dvision_settings */
@@ -14674,6 +16480,9 @@ static void glewInfo (void)
 #ifdef GL_NV_compute_program5
   _glewInfo_GL_NV_compute_program5();
 #endif /* GL_NV_compute_program5 */
+#ifdef GL_NV_compute_shader_derivatives
+  _glewInfo_GL_NV_compute_shader_derivatives();
+#endif /* GL_NV_compute_shader_derivatives */
 #ifdef GL_NV_conditional_render
   _glewInfo_GL_NV_conditional_render();
 #endif /* GL_NV_conditional_render */
@@ -14683,9 +16492,15 @@ static void glewInfo (void)
 #ifdef GL_NV_conservative_raster_dilate
   _glewInfo_GL_NV_conservative_raster_dilate();
 #endif /* GL_NV_conservative_raster_dilate */
+#ifdef GL_NV_conservative_raster_pre_snap
+  _glewInfo_GL_NV_conservative_raster_pre_snap();
+#endif /* GL_NV_conservative_raster_pre_snap */
 #ifdef GL_NV_conservative_raster_pre_snap_triangles
   _glewInfo_GL_NV_conservative_raster_pre_snap_triangles();
 #endif /* GL_NV_conservative_raster_pre_snap_triangles */
+#ifdef GL_NV_conservative_raster_underestimation
+  _glewInfo_GL_NV_conservative_raster_underestimation();
+#endif /* GL_NV_conservative_raster_underestimation */
 #ifdef GL_NV_copy_buffer
   _glewInfo_GL_NV_copy_buffer();
 #endif /* GL_NV_copy_buffer */
@@ -14704,6 +16519,9 @@ static void glewInfo (void)
 #ifdef GL_NV_depth_clamp
   _glewInfo_GL_NV_depth_clamp();
 #endif /* GL_NV_depth_clamp */
+#ifdef GL_NV_depth_nonlinear
+  _glewInfo_GL_NV_depth_nonlinear();
+#endif /* GL_NV_depth_nonlinear */
 #ifdef GL_NV_depth_range_unclamped
   _glewInfo_GL_NV_depth_range_unclamped();
 #endif /* GL_NV_depth_range_unclamped */
@@ -14758,6 +16576,9 @@ static void glewInfo (void)
 #ifdef GL_NV_fragment_program_option
   _glewInfo_GL_NV_fragment_program_option();
 #endif /* GL_NV_fragment_program_option */
+#ifdef GL_NV_fragment_shader_barycentric
+  _glewInfo_GL_NV_fragment_shader_barycentric();
+#endif /* GL_NV_fragment_shader_barycentric */
 #ifdef GL_NV_fragment_shader_interlock
   _glewInfo_GL_NV_fragment_shader_interlock();
 #endif /* GL_NV_fragment_shader_interlock */
@@ -14818,6 +16639,12 @@ static void glewInfo (void)
 #ifdef GL_NV_light_max_exponent
   _glewInfo_GL_NV_light_max_exponent();
 #endif /* GL_NV_light_max_exponent */
+#ifdef GL_NV_memory_attachment
+  _glewInfo_GL_NV_memory_attachment();
+#endif /* GL_NV_memory_attachment */
+#ifdef GL_NV_mesh_shader
+  _glewInfo_GL_NV_mesh_shader();
+#endif /* GL_NV_mesh_shader */
 #ifdef GL_NV_multisample_coverage
   _glewInfo_GL_NV_multisample_coverage();
 #endif /* GL_NV_multisample_coverage */
@@ -14875,6 +16702,15 @@ static void glewInfo (void)
 #ifdef GL_NV_primitive_restart
   _glewInfo_GL_NV_primitive_restart();
 #endif /* GL_NV_primitive_restart */
+#ifdef GL_NV_query_resource_tag
+  _glewInfo_GL_NV_query_resource_tag();
+#endif /* GL_NV_query_resource_tag */
+#ifdef GL_NV_read_buffer
+  _glewInfo_GL_NV_read_buffer();
+#endif /* GL_NV_read_buffer */
+#ifdef GL_NV_read_buffer_front
+  _glewInfo_GL_NV_read_buffer_front();
+#endif /* GL_NV_read_buffer_front */
 #ifdef GL_NV_read_depth
   _glewInfo_GL_NV_read_depth();
 #endif /* GL_NV_read_depth */
@@ -14890,6 +16726,9 @@ static void glewInfo (void)
 #ifdef GL_NV_register_combiners2
   _glewInfo_GL_NV_register_combiners2();
 #endif /* GL_NV_register_combiners2 */
+#ifdef GL_NV_representative_fragment_test
+  _glewInfo_GL_NV_representative_fragment_test();
+#endif /* GL_NV_representative_fragment_test */
 #ifdef GL_NV_robustness_video_memory_purge
   _glewInfo_GL_NV_robustness_video_memory_purge();
 #endif /* GL_NV_robustness_video_memory_purge */
@@ -14902,6 +16741,9 @@ static void glewInfo (void)
 #ifdef GL_NV_sample_mask_override_coverage
   _glewInfo_GL_NV_sample_mask_override_coverage();
 #endif /* GL_NV_sample_mask_override_coverage */
+#ifdef GL_NV_scissor_exclusive
+  _glewInfo_GL_NV_scissor_exclusive();
+#endif /* GL_NV_scissor_exclusive */
 #ifdef GL_NV_shader_atomic_counters
   _glewInfo_GL_NV_shader_atomic_counters();
 #endif /* GL_NV_shader_atomic_counters */
@@ -14926,12 +16768,21 @@ static void glewInfo (void)
 #ifdef GL_NV_shader_storage_buffer_object
   _glewInfo_GL_NV_shader_storage_buffer_object();
 #endif /* GL_NV_shader_storage_buffer_object */
+#ifdef GL_NV_shader_subgroup_partitioned
+  _glewInfo_GL_NV_shader_subgroup_partitioned();
+#endif /* GL_NV_shader_subgroup_partitioned */
+#ifdef GL_NV_shader_texture_footprint
+  _glewInfo_GL_NV_shader_texture_footprint();
+#endif /* GL_NV_shader_texture_footprint */
 #ifdef GL_NV_shader_thread_group
   _glewInfo_GL_NV_shader_thread_group();
 #endif /* GL_NV_shader_thread_group */
 #ifdef GL_NV_shader_thread_shuffle
   _glewInfo_GL_NV_shader_thread_shuffle();
 #endif /* GL_NV_shader_thread_shuffle */
+#ifdef GL_NV_shading_rate_image
+  _glewInfo_GL_NV_shading_rate_image();
+#endif /* GL_NV_shading_rate_image */
 #ifdef GL_NV_shadow_samplers_array
   _glewInfo_GL_NV_shadow_samplers_array();
 #endif /* GL_NV_shadow_samplers_array */
@@ -15010,6 +16861,9 @@ static void glewInfo (void)
 #ifdef GL_NV_vdpau_interop
   _glewInfo_GL_NV_vdpau_interop();
 #endif /* GL_NV_vdpau_interop */
+#ifdef GL_NV_vdpau_interop2
+  _glewInfo_GL_NV_vdpau_interop2();
+#endif /* GL_NV_vdpau_interop2 */
 #ifdef GL_NV_vertex_array_range
   _glewInfo_GL_NV_vertex_array_range();
 #endif /* GL_NV_vertex_array_range */
@@ -15052,9 +16906,192 @@ static void glewInfo (void)
 #ifdef GL_NV_viewport_swizzle
   _glewInfo_GL_NV_viewport_swizzle();
 #endif /* GL_NV_viewport_swizzle */
+#ifdef GL_OES_EGL_image
+  _glewInfo_GL_OES_EGL_image();
+#endif /* GL_OES_EGL_image */
+#ifdef GL_OES_EGL_image_external
+  _glewInfo_GL_OES_EGL_image_external();
+#endif /* GL_OES_EGL_image_external */
+#ifdef GL_OES_EGL_image_external_essl3
+  _glewInfo_GL_OES_EGL_image_external_essl3();
+#endif /* GL_OES_EGL_image_external_essl3 */
+#ifdef GL_OES_blend_equation_separate
+  _glewInfo_GL_OES_blend_equation_separate();
+#endif /* GL_OES_blend_equation_separate */
+#ifdef GL_OES_blend_func_separate
+  _glewInfo_GL_OES_blend_func_separate();
+#endif /* GL_OES_blend_func_separate */
+#ifdef GL_OES_blend_subtract
+  _glewInfo_GL_OES_blend_subtract();
+#endif /* GL_OES_blend_subtract */
 #ifdef GL_OES_byte_coordinates
   _glewInfo_GL_OES_byte_coordinates();
 #endif /* GL_OES_byte_coordinates */
+#ifdef GL_OES_compressed_ETC1_RGB8_texture
+  _glewInfo_GL_OES_compressed_ETC1_RGB8_texture();
+#endif /* GL_OES_compressed_ETC1_RGB8_texture */
+#ifdef GL_OES_compressed_paletted_texture
+  _glewInfo_GL_OES_compressed_paletted_texture();
+#endif /* GL_OES_compressed_paletted_texture */
+#ifdef GL_OES_copy_image
+  _glewInfo_GL_OES_copy_image();
+#endif /* GL_OES_copy_image */
+#ifdef GL_OES_depth24
+  _glewInfo_GL_OES_depth24();
+#endif /* GL_OES_depth24 */
+#ifdef GL_OES_depth32
+  _glewInfo_GL_OES_depth32();
+#endif /* GL_OES_depth32 */
+#ifdef GL_OES_depth_texture
+  _glewInfo_GL_OES_depth_texture();
+#endif /* GL_OES_depth_texture */
+#ifdef GL_OES_depth_texture_cube_map
+  _glewInfo_GL_OES_depth_texture_cube_map();
+#endif /* GL_OES_depth_texture_cube_map */
+#ifdef GL_OES_draw_buffers_indexed
+  _glewInfo_GL_OES_draw_buffers_indexed();
+#endif /* GL_OES_draw_buffers_indexed */
+#ifdef GL_OES_draw_texture
+  _glewInfo_GL_OES_draw_texture();
+#endif /* GL_OES_draw_texture */
+#ifdef GL_OES_element_index_uint
+  _glewInfo_GL_OES_element_index_uint();
+#endif /* GL_OES_element_index_uint */
+#ifdef GL_OES_extended_matrix_palette
+  _glewInfo_GL_OES_extended_matrix_palette();
+#endif /* GL_OES_extended_matrix_palette */
+#ifdef GL_OES_fbo_render_mipmap
+  _glewInfo_GL_OES_fbo_render_mipmap();
+#endif /* GL_OES_fbo_render_mipmap */
+#ifdef GL_OES_fragment_precision_high
+  _glewInfo_GL_OES_fragment_precision_high();
+#endif /* GL_OES_fragment_precision_high */
+#ifdef GL_OES_framebuffer_object
+  _glewInfo_GL_OES_framebuffer_object();
+#endif /* GL_OES_framebuffer_object */
+#ifdef GL_OES_geometry_point_size
+  _glewInfo_GL_OES_geometry_point_size();
+#endif /* GL_OES_geometry_point_size */
+#ifdef GL_OES_geometry_shader
+  _glewInfo_GL_OES_geometry_shader();
+#endif /* GL_OES_geometry_shader */
+#ifdef GL_OES_get_program_binary
+  _glewInfo_GL_OES_get_program_binary();
+#endif /* GL_OES_get_program_binary */
+#ifdef GL_OES_gpu_shader5
+  _glewInfo_GL_OES_gpu_shader5();
+#endif /* GL_OES_gpu_shader5 */
+#ifdef GL_OES_mapbuffer
+  _glewInfo_GL_OES_mapbuffer();
+#endif /* GL_OES_mapbuffer */
+#ifdef GL_OES_matrix_get
+  _glewInfo_GL_OES_matrix_get();
+#endif /* GL_OES_matrix_get */
+#ifdef GL_OES_matrix_palette
+  _glewInfo_GL_OES_matrix_palette();
+#endif /* GL_OES_matrix_palette */
+#ifdef GL_OES_packed_depth_stencil
+  _glewInfo_GL_OES_packed_depth_stencil();
+#endif /* GL_OES_packed_depth_stencil */
+#ifdef GL_OES_point_size_array
+  _glewInfo_GL_OES_point_size_array();
+#endif /* GL_OES_point_size_array */
+#ifdef GL_OES_point_sprite
+  _glewInfo_GL_OES_point_sprite();
+#endif /* GL_OES_point_sprite */
+#ifdef GL_OES_read_format
+  _glewInfo_GL_OES_read_format();
+#endif /* GL_OES_read_format */
+#ifdef GL_OES_required_internalformat
+  _glewInfo_GL_OES_required_internalformat();
+#endif /* GL_OES_required_internalformat */
+#ifdef GL_OES_rgb8_rgba8
+  _glewInfo_GL_OES_rgb8_rgba8();
+#endif /* GL_OES_rgb8_rgba8 */
+#ifdef GL_OES_sample_shading
+  _glewInfo_GL_OES_sample_shading();
+#endif /* GL_OES_sample_shading */
+#ifdef GL_OES_sample_variables
+  _glewInfo_GL_OES_sample_variables();
+#endif /* GL_OES_sample_variables */
+#ifdef GL_OES_shader_image_atomic
+  _glewInfo_GL_OES_shader_image_atomic();
+#endif /* GL_OES_shader_image_atomic */
+#ifdef GL_OES_shader_io_blocks
+  _glewInfo_GL_OES_shader_io_blocks();
+#endif /* GL_OES_shader_io_blocks */
+#ifdef GL_OES_shader_multisample_interpolation
+  _glewInfo_GL_OES_shader_multisample_interpolation();
+#endif /* GL_OES_shader_multisample_interpolation */
+#ifdef GL_OES_single_precision
+  _glewInfo_GL_OES_single_precision();
+#endif /* GL_OES_single_precision */
+#ifdef GL_OES_standard_derivatives
+  _glewInfo_GL_OES_standard_derivatives();
+#endif /* GL_OES_standard_derivatives */
+#ifdef GL_OES_stencil1
+  _glewInfo_GL_OES_stencil1();
+#endif /* GL_OES_stencil1 */
+#ifdef GL_OES_stencil4
+  _glewInfo_GL_OES_stencil4();
+#endif /* GL_OES_stencil4 */
+#ifdef GL_OES_stencil8
+  _glewInfo_GL_OES_stencil8();
+#endif /* GL_OES_stencil8 */
+#ifdef GL_OES_surfaceless_context
+  _glewInfo_GL_OES_surfaceless_context();
+#endif /* GL_OES_surfaceless_context */
+#ifdef GL_OES_tessellation_point_size
+  _glewInfo_GL_OES_tessellation_point_size();
+#endif /* GL_OES_tessellation_point_size */
+#ifdef GL_OES_tessellation_shader
+  _glewInfo_GL_OES_tessellation_shader();
+#endif /* GL_OES_tessellation_shader */
+#ifdef GL_OES_texture_3D
+  _glewInfo_GL_OES_texture_3D();
+#endif /* GL_OES_texture_3D */
+#ifdef GL_OES_texture_border_clamp
+  _glewInfo_GL_OES_texture_border_clamp();
+#endif /* GL_OES_texture_border_clamp */
+#ifdef GL_OES_texture_buffer
+  _glewInfo_GL_OES_texture_buffer();
+#endif /* GL_OES_texture_buffer */
+#ifdef GL_OES_texture_compression_astc
+  _glewInfo_GL_OES_texture_compression_astc();
+#endif /* GL_OES_texture_compression_astc */
+#ifdef GL_OES_texture_cube_map
+  _glewInfo_GL_OES_texture_cube_map();
+#endif /* GL_OES_texture_cube_map */
+#ifdef GL_OES_texture_cube_map_array
+  _glewInfo_GL_OES_texture_cube_map_array();
+#endif /* GL_OES_texture_cube_map_array */
+#ifdef GL_OES_texture_env_crossbar
+  _glewInfo_GL_OES_texture_env_crossbar();
+#endif /* GL_OES_texture_env_crossbar */
+#ifdef GL_OES_texture_mirrored_repeat
+  _glewInfo_GL_OES_texture_mirrored_repeat();
+#endif /* GL_OES_texture_mirrored_repeat */
+#ifdef GL_OES_texture_npot
+  _glewInfo_GL_OES_texture_npot();
+#endif /* GL_OES_texture_npot */
+#ifdef GL_OES_texture_stencil8
+  _glewInfo_GL_OES_texture_stencil8();
+#endif /* GL_OES_texture_stencil8 */
+#ifdef GL_OES_texture_storage_multisample_2d_array
+  _glewInfo_GL_OES_texture_storage_multisample_2d_array();
+#endif /* GL_OES_texture_storage_multisample_2d_array */
+#ifdef GL_OES_texture_view
+  _glewInfo_GL_OES_texture_view();
+#endif /* GL_OES_texture_view */
+#ifdef GL_OES_vertex_array_object
+  _glewInfo_GL_OES_vertex_array_object();
+#endif /* GL_OES_vertex_array_object */
+#ifdef GL_OES_vertex_half_float
+  _glewInfo_GL_OES_vertex_half_float();
+#endif /* GL_OES_vertex_half_float */
+#ifdef GL_OES_vertex_type_10_10_10_2
+  _glewInfo_GL_OES_vertex_type_10_10_10_2();
+#endif /* GL_OES_vertex_type_10_10_10_2 */
 #ifdef GL_OML_interlace
   _glewInfo_GL_OML_interlace();
 #endif /* GL_OML_interlace */
@@ -15079,6 +17116,9 @@ static void glewInfo (void)
 #ifdef GL_PGI_vertex_hints
   _glewInfo_GL_PGI_vertex_hints();
 #endif /* GL_PGI_vertex_hints */
+#ifdef GL_QCOM_YUV_texture_gather
+  _glewInfo_GL_QCOM_YUV_texture_gather();
+#endif /* GL_QCOM_YUV_texture_gather */
 #ifdef GL_QCOM_alpha_test
   _glewInfo_GL_QCOM_alpha_test();
 #endif /* GL_QCOM_alpha_test */
@@ -15103,6 +17143,15 @@ static void glewInfo (void)
 #ifdef GL_QCOM_shader_framebuffer_fetch_noncoherent
   _glewInfo_GL_QCOM_shader_framebuffer_fetch_noncoherent();
 #endif /* GL_QCOM_shader_framebuffer_fetch_noncoherent */
+#ifdef GL_QCOM_shader_framebuffer_fetch_rate
+  _glewInfo_GL_QCOM_shader_framebuffer_fetch_rate();
+#endif /* GL_QCOM_shader_framebuffer_fetch_rate */
+#ifdef GL_QCOM_texture_foveated
+  _glewInfo_GL_QCOM_texture_foveated();
+#endif /* GL_QCOM_texture_foveated */
+#ifdef GL_QCOM_texture_foveated_subsampled_layout
+  _glewInfo_GL_QCOM_texture_foveated_subsampled_layout();
+#endif /* GL_QCOM_texture_foveated_subsampled_layout */
 #ifdef GL_QCOM_tiled_rendering
   _glewInfo_GL_QCOM_tiled_rendering();
 #endif /* GL_QCOM_tiled_rendering */
@@ -15478,6 +17527,9 @@ static void glewInfo (void)
 #ifdef GL_SUN_vertex
   _glewInfo_GL_SUN_vertex();
 #endif /* GL_SUN_vertex */
+#ifdef GL_VIV_shader_binary
+  _glewInfo_GL_VIV_shader_binary();
+#endif /* GL_VIV_shader_binary */
 #ifdef GL_WIN_phong_shading
   _glewInfo_GL_WIN_phong_shading();
 #endif /* GL_WIN_phong_shading */
@@ -15639,6 +17691,9 @@ static void wglewInfo ()
 #ifdef WGL_NV_gpu_affinity
   _glewInfo_WGL_NV_gpu_affinity();
 #endif /* WGL_NV_gpu_affinity */
+#ifdef WGL_NV_multigpu_context
+  _glewInfo_WGL_NV_multigpu_context();
+#endif /* WGL_NV_multigpu_context */
 #ifdef WGL_NV_multisample_coverage
   _glewInfo_WGL_NV_multisample_coverage();
 #endif /* WGL_NV_multisample_coverage */
@@ -15732,6 +17787,9 @@ static void glxewInfo ()
 #ifdef GLX_EXT_buffer_age
   _glewInfo_GLX_EXT_buffer_age();
 #endif /* GLX_EXT_buffer_age */
+#ifdef GLX_EXT_context_priority
+  _glewInfo_GLX_EXT_context_priority();
+#endif /* GLX_EXT_context_priority */
 #ifdef GLX_EXT_create_context_es2_profile
   _glewInfo_GLX_EXT_create_context_es2_profile();
 #endif /* GLX_EXT_create_context_es2_profile */
@@ -15750,6 +17808,9 @@ static void glxewInfo ()
 #ifdef GLX_EXT_libglvnd
   _glewInfo_GLX_EXT_libglvnd();
 #endif /* GLX_EXT_libglvnd */
+#ifdef GLX_EXT_no_config_context
+  _glewInfo_GLX_EXT_no_config_context();
+#endif /* GLX_EXT_no_config_context */
 #ifdef GLX_EXT_scene_marker
   _glewInfo_GLX_EXT_scene_marker();
 #endif /* GLX_EXT_scene_marker */
@@ -15807,6 +17868,9 @@ static void glxewInfo ()
 #ifdef GLX_NV_float_buffer
   _glewInfo_GLX_NV_float_buffer();
 #endif /* GLX_NV_float_buffer */
+#ifdef GLX_NV_multigpu_context
+  _glewInfo_GLX_NV_multigpu_context();
+#endif /* GLX_NV_multigpu_context */
 #ifdef GLX_NV_multisample_coverage
   _glewInfo_GLX_NV_multisample_coverage();
 #endif /* GLX_NV_multisample_coverage */
@@ -15909,6 +17973,9 @@ static void eglewInfo ()
 #ifdef EGL_VERSION_1_5
   _glewInfo_EGL_VERSION_1_5();
 #endif /* EGL_VERSION_1_5 */
+#ifdef EGL_ANDROID_GLES_layers
+  _glewInfo_EGL_ANDROID_GLES_layers();
+#endif /* EGL_ANDROID_GLES_layers */
 #ifdef EGL_ANDROID_blob_cache
   _glewInfo_EGL_ANDROID_blob_cache();
 #endif /* EGL_ANDROID_blob_cache */
@@ -15921,6 +17988,12 @@ static void eglewInfo ()
 #ifdef EGL_ANDROID_front_buffer_auto_refresh
   _glewInfo_EGL_ANDROID_front_buffer_auto_refresh();
 #endif /* EGL_ANDROID_front_buffer_auto_refresh */
+#ifdef EGL_ANDROID_get_frame_timestamps
+  _glewInfo_EGL_ANDROID_get_frame_timestamps();
+#endif /* EGL_ANDROID_get_frame_timestamps */
+#ifdef EGL_ANDROID_get_native_client_buffer
+  _glewInfo_EGL_ANDROID_get_native_client_buffer();
+#endif /* EGL_ANDROID_get_native_client_buffer */
 #ifdef EGL_ANDROID_image_native_buffer
   _glewInfo_EGL_ANDROID_image_native_buffer();
 #endif /* EGL_ANDROID_image_native_buffer */
@@ -15948,18 +18021,30 @@ static void eglewInfo ()
 #ifdef EGL_ANGLE_window_fixed_size
   _glewInfo_EGL_ANGLE_window_fixed_size();
 #endif /* EGL_ANGLE_window_fixed_size */
+#ifdef EGL_ARM_image_format
+  _glewInfo_EGL_ARM_image_format();
+#endif /* EGL_ARM_image_format */
 #ifdef EGL_ARM_implicit_external_sync
   _glewInfo_EGL_ARM_implicit_external_sync();
 #endif /* EGL_ARM_implicit_external_sync */
 #ifdef EGL_ARM_pixmap_multisample_discard
   _glewInfo_EGL_ARM_pixmap_multisample_discard();
 #endif /* EGL_ARM_pixmap_multisample_discard */
+#ifdef EGL_EXT_bind_to_front
+  _glewInfo_EGL_EXT_bind_to_front();
+#endif /* EGL_EXT_bind_to_front */
 #ifdef EGL_EXT_buffer_age
   _glewInfo_EGL_EXT_buffer_age();
 #endif /* EGL_EXT_buffer_age */
 #ifdef EGL_EXT_client_extensions
   _glewInfo_EGL_EXT_client_extensions();
 #endif /* EGL_EXT_client_extensions */
+#ifdef EGL_EXT_client_sync
+  _glewInfo_EGL_EXT_client_sync();
+#endif /* EGL_EXT_client_sync */
+#ifdef EGL_EXT_compositor
+  _glewInfo_EGL_EXT_compositor();
+#endif /* EGL_EXT_compositor */
 #ifdef EGL_EXT_create_context_robustness
   _glewInfo_EGL_EXT_create_context_robustness();
 #endif /* EGL_EXT_create_context_robustness */
@@ -15984,6 +18069,18 @@ static void eglewInfo ()
 #ifdef EGL_EXT_gl_colorspace_bt2020_pq
   _glewInfo_EGL_EXT_gl_colorspace_bt2020_pq();
 #endif /* EGL_EXT_gl_colorspace_bt2020_pq */
+#ifdef EGL_EXT_gl_colorspace_display_p3
+  _glewInfo_EGL_EXT_gl_colorspace_display_p3();
+#endif /* EGL_EXT_gl_colorspace_display_p3 */
+#ifdef EGL_EXT_gl_colorspace_display_p3_linear
+  _glewInfo_EGL_EXT_gl_colorspace_display_p3_linear();
+#endif /* EGL_EXT_gl_colorspace_display_p3_linear */
+#ifdef EGL_EXT_gl_colorspace_display_p3_passthrough
+  _glewInfo_EGL_EXT_gl_colorspace_display_p3_passthrough();
+#endif /* EGL_EXT_gl_colorspace_display_p3_passthrough */
+#ifdef EGL_EXT_gl_colorspace_scrgb
+  _glewInfo_EGL_EXT_gl_colorspace_scrgb();
+#endif /* EGL_EXT_gl_colorspace_scrgb */
 #ifdef EGL_EXT_gl_colorspace_scrgb_linear
   _glewInfo_EGL_EXT_gl_colorspace_scrgb_linear();
 #endif /* EGL_EXT_gl_colorspace_scrgb_linear */
@@ -15993,6 +18090,12 @@ static void eglewInfo ()
 #ifdef EGL_EXT_image_dma_buf_import_modifiers
   _glewInfo_EGL_EXT_image_dma_buf_import_modifiers();
 #endif /* EGL_EXT_image_dma_buf_import_modifiers */
+#ifdef EGL_EXT_image_gl_colorspace
+  _glewInfo_EGL_EXT_image_gl_colorspace();
+#endif /* EGL_EXT_image_gl_colorspace */
+#ifdef EGL_EXT_image_implicit_sync_control
+  _glewInfo_EGL_EXT_image_implicit_sync_control();
+#endif /* EGL_EXT_image_implicit_sync_control */
 #ifdef EGL_EXT_multiview_window
   _glewInfo_EGL_EXT_multiview_window();
 #endif /* EGL_EXT_multiview_window */
@@ -16029,12 +18132,18 @@ static void eglewInfo ()
 #ifdef EGL_EXT_stream_consumer_egloutput
   _glewInfo_EGL_EXT_stream_consumer_egloutput();
 #endif /* EGL_EXT_stream_consumer_egloutput */
+#ifdef EGL_EXT_surface_CTA861_3_metadata
+  _glewInfo_EGL_EXT_surface_CTA861_3_metadata();
+#endif /* EGL_EXT_surface_CTA861_3_metadata */
 #ifdef EGL_EXT_surface_SMPTE2086_metadata
   _glewInfo_EGL_EXT_surface_SMPTE2086_metadata();
 #endif /* EGL_EXT_surface_SMPTE2086_metadata */
 #ifdef EGL_EXT_swap_buffers_with_damage
   _glewInfo_EGL_EXT_swap_buffers_with_damage();
 #endif /* EGL_EXT_swap_buffers_with_damage */
+#ifdef EGL_EXT_sync_reuse
+  _glewInfo_EGL_EXT_sync_reuse();
+#endif /* EGL_EXT_sync_reuse */
 #ifdef EGL_EXT_yuv_surface
   _glewInfo_EGL_EXT_yuv_surface();
 #endif /* EGL_EXT_yuv_surface */
@@ -16074,6 +18183,9 @@ static void eglewInfo ()
 #ifdef EGL_KHR_debug
   _glewInfo_EGL_KHR_debug();
 #endif /* EGL_KHR_debug */
+#ifdef EGL_KHR_display_reference
+  _glewInfo_EGL_KHR_display_reference();
+#endif /* EGL_KHR_display_reference */
 #ifdef EGL_KHR_fence_sync
   _glewInfo_EGL_KHR_fence_sync();
 #endif /* EGL_KHR_fence_sync */
@@ -16182,6 +18294,9 @@ static void eglewInfo ()
 #ifdef EGL_MESA_platform_surfaceless
   _glewInfo_EGL_MESA_platform_surfaceless();
 #endif /* EGL_MESA_platform_surfaceless */
+#ifdef EGL_MESA_query_driver
+  _glewInfo_EGL_MESA_query_driver();
+#endif /* EGL_MESA_query_driver */
 #ifdef EGL_NOK_swap_region
   _glewInfo_EGL_NOK_swap_region();
 #endif /* EGL_NOK_swap_region */
@@ -16194,6 +18309,9 @@ static void eglewInfo ()
 #ifdef EGL_NV_3dvision_surface
   _glewInfo_EGL_NV_3dvision_surface();
 #endif /* EGL_NV_3dvision_surface */
+#ifdef EGL_NV_context_priority_realtime
+  _glewInfo_EGL_NV_context_priority_realtime();
+#endif /* EGL_NV_context_priority_realtime */
 #ifdef EGL_NV_coverage_sample
   _glewInfo_EGL_NV_coverage_sample();
 #endif /* EGL_NV_coverage_sample */
@@ -16218,6 +18336,9 @@ static void eglewInfo ()
 #ifdef EGL_NV_post_sub_buffer
   _glewInfo_EGL_NV_post_sub_buffer();
 #endif /* EGL_NV_post_sub_buffer */
+#ifdef EGL_NV_quadruple_buffer
+  _glewInfo_EGL_NV_quadruple_buffer();
+#endif /* EGL_NV_quadruple_buffer */
 #ifdef EGL_NV_robustness_video_memory_purge
   _glewInfo_EGL_NV_robustness_video_memory_purge();
 #endif /* EGL_NV_robustness_video_memory_purge */
@@ -16239,18 +18360,27 @@ static void eglewInfo ()
 #ifdef EGL_NV_stream_cross_system
   _glewInfo_EGL_NV_stream_cross_system();
 #endif /* EGL_NV_stream_cross_system */
+#ifdef EGL_NV_stream_dma
+  _glewInfo_EGL_NV_stream_dma();
+#endif /* EGL_NV_stream_dma */
 #ifdef EGL_NV_stream_fifo_next
   _glewInfo_EGL_NV_stream_fifo_next();
 #endif /* EGL_NV_stream_fifo_next */
 #ifdef EGL_NV_stream_fifo_synchronous
   _glewInfo_EGL_NV_stream_fifo_synchronous();
 #endif /* EGL_NV_stream_fifo_synchronous */
+#ifdef EGL_NV_stream_flush
+  _glewInfo_EGL_NV_stream_flush();
+#endif /* EGL_NV_stream_flush */
 #ifdef EGL_NV_stream_frame_limits
   _glewInfo_EGL_NV_stream_frame_limits();
 #endif /* EGL_NV_stream_frame_limits */
 #ifdef EGL_NV_stream_metadata
   _glewInfo_EGL_NV_stream_metadata();
 #endif /* EGL_NV_stream_metadata */
+#ifdef EGL_NV_stream_origin
+  _glewInfo_EGL_NV_stream_origin();
+#endif /* EGL_NV_stream_origin */
 #ifdef EGL_NV_stream_remote
   _glewInfo_EGL_NV_stream_remote();
 #endif /* EGL_NV_stream_remote */
@@ -16275,12 +18405,21 @@ static void eglewInfo ()
 #ifdef EGL_NV_system_time
   _glewInfo_EGL_NV_system_time();
 #endif /* EGL_NV_system_time */
+#ifdef EGL_NV_triple_buffer
+  _glewInfo_EGL_NV_triple_buffer();
+#endif /* EGL_NV_triple_buffer */
 #ifdef EGL_TIZEN_image_native_buffer
   _glewInfo_EGL_TIZEN_image_native_buffer();
 #endif /* EGL_TIZEN_image_native_buffer */
 #ifdef EGL_TIZEN_image_native_surface
   _glewInfo_EGL_TIZEN_image_native_surface();
 #endif /* EGL_TIZEN_image_native_surface */
+#ifdef EGL_WL_bind_wayland_display
+  _glewInfo_EGL_WL_bind_wayland_display();
+#endif /* EGL_WL_bind_wayland_display */
+#ifdef EGL_WL_create_wayland_buffer_from_image
+  _glewInfo_EGL_WL_create_wayland_buffer_from_image();
+#endif /* EGL_WL_create_wayland_buffer_from_image */
 }
 
 #endif /* _WIN32 */
@@ -16303,7 +18442,8 @@ int main (int argc, char** argv)
     0,   /* major */
     0,   /* minor */
     0,   /* profile mask */
-    0    /* flags */
+    0,   /* flags */
+    0    /* experimental */
   };
 
 #if defined(GLEW_EGL)
@@ -16324,7 +18464,8 @@ int main (int argc, char** argv)
 #endif
       "[-version <OpenGL version>] "
       "[-profile core|compatibility] "
-      "[-flag debug|forward]"
+      "[-flag debug|forward] "
+      "[-experimental]"
       "\n");
     return 1;
   }
@@ -16335,7 +18476,7 @@ int main (int argc, char** argv)
     glewDestroyContext();
     return 1;
   }
-  glewExperimental = GL_TRUE;
+  glewExperimental = params.experimental ? GL_TRUE : GL_FALSE;
   err = glewInit();
   if (GLEW_OK != err)
   {
@@ -16410,7 +18551,11 @@ GLboolean glewParseArgs (int argc, char** argv, struct createParams *params)
     if (!strcmp(argv[p], "-version"))
     {
       if (++p >= argc) return GL_TRUE;
+#if defined(__STDC_LIB_EXT1__) || (defined(_MSC_VER) && (_MSC_VER >= 1400))
+      if (sscanf_s(argv[p++], "%d.%d", &params->major, &params->minor) != 2) return GL_TRUE;
+#else
       if (sscanf(argv[p++], "%d.%d", &params->major, &params->minor) != 2) return GL_TRUE;
+#endif
     }
     else if (!strcmp(argv[p], "-profile"))
     {
@@ -16441,13 +18586,18 @@ GLboolean glewParseArgs (int argc, char** argv, struct createParams *params)
     {
       if (++p >= argc) return GL_TRUE;
       params->display = argv[p++];
-     }
+    }
     else if (!strcmp(argv[p], "-visual"))
     {
       if (++p >= argc) return GL_TRUE;
       params->visual = (int)strtol(argv[p++], NULL, 0);
     }
 #endif
+    else if (!strcmp(argv[p], "-experimental"))
+    {
+      params->experimental = 1;
+      ++p;
+    }
     else
       return GL_TRUE;
   }
