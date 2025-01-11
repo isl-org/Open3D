@@ -66,9 +66,6 @@ public:
     /// Generate Google style python docstring.
     std::string ToGoogleDocString() const;
 
-    /// Apply fixes to namespace, e.g. "::" to "." for python
-    static std::string NamespaceFix(const std::string& s);
-
 protected:
     /// Parse the function name from docstring.
     ///
