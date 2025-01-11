@@ -7,11 +7,12 @@
 
 # examples/python/reconstruction_system/run_system.py
 
-import json
 import argparse
-import time
 import datetime
-import os, sys
+import json
+import os
+import sys
+import time
 from os.path import isfile
 
 import open3d as o3d
@@ -22,7 +23,7 @@ sys.path.append(pyexample_path)
 from open3d_example import check_folder_structure
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from initialize_config import initialize_config, dataset_loader
+from initialize_config import dataset_loader, initialize_config
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     for key, val in config.items():
         print("%40s : %s" % (key, str(val)))
 
-    times = [0, 0, 0, 0, 0, 0]
+    times: list[float] = [0, 0, 0, 0, 0, 0]
     if args.make:
         start_time = time.time()
         import make_fragments
