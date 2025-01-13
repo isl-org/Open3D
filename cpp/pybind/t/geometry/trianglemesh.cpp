@@ -344,9 +344,9 @@ This example shows how to create a hemisphere from a sphere::
     // Triangle Mesh's creation APIs.
     triangle_mesh
             .def_static("create_box", &TriangleMesh::CreateBox,
-                        "Create a box triangle mesh. One vertex of the box"
-                        "will be placed at the origin and the box aligns"
-                        "with the positive x, y, and z axes."
+                        "Create a box triangle mesh. One vertex of the box "
+                        "will be placed at the origin and the box aligns "
+                        "with the positive x, y, and z axes.",
                         "width"_a = 1.0,
                         "height"_a = 1.0, "depth"_a = 1.0,
                         "float_dtype"_a = core::Float32,
