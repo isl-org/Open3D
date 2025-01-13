@@ -46,7 +46,7 @@ jobs:
               bash -c "cp /root/Open3D/open3d-*-docs.tar.gz /opt/mount \
                     && chown $(id -u):$(id -g) /opt/mount/open3d-*-docs.tar.gz"
 
-        # Rename from Github PR branch SHA to original branch SHA, if needed.
+          # Rename from Github PR branch SHA to original branch SHA, if needed.
           mv open3d-*-docs.tar.gz open3d-${GITHUB_SHA}-docs.tar.gz
 
       - name: Upload docs
