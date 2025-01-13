@@ -134,6 +134,21 @@ public:
     /// \param robust If set to true uses a more robust method which works
     ///               in degenerate cases but introduces noise to the points
     ///               coordinates.
+
+    static OrientedBoundingBox CreateFromPointsMinimalApprox(
+            const std::vector<Eigen::Vector3d>& points, bool robust = false);
+
+    /// Creates the oriented bounding box with the smallest volume.
+    /// This algorithm is inspired by the article "An Exact Algorithm for
+    /// Finding Minimum Oriented Bounding Boxes" written by Jukka Jylänki.
+    /// The original implementation can be found at the following address:
+    /// https://github.com/juj/MathGeoLib/blob/55053da5e3e55a83043af7324944407b174c3724/src/Geometry/OBB.cpp#L987
+    ///
+    /// \param points The input points
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+
     static OrientedBoundingBox CreateFromPointsMinimal(
             const std::vector<Eigen::Vector3d>& points, bool robust = false);
 

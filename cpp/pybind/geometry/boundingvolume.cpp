@@ -84,17 +84,19 @@ Returns:
      bounding box is oriented such that the axes are ordered with respect to
      the principal components.
 )doc")
-            .def_static("create_from_points_minimal",
-                        &OrientedBoundingBox::CreateFromPointsMinimal,
+            .def_static("create_from_points_approx",
+                        &OrientedBoundingBox::CreateFromPointsMinimalApprox,
                         "points"_a, "robust"_a = false,
                         R"doc(
-Creates the oriented bounding box with the smallest volume.
+Creates the oriented bounding box with optimized (but not 
+necessarily smallest) volume.
 
 The algorithm makes use of the fact that at least one edge of
 the convex hull must be collinear with an edge of the minimum
 bounding box: for each triangle in the convex hull, calculate
 the minimal axis aligned box in the frame of that triangle.
-at the end, return the box with the smallest volume
+at the end, return the box with optimized (but not necessarily 
+smallest) volume.
 
 Args:
      points (open3d.utility.Vector3dVector): Input points.
@@ -105,6 +107,26 @@ Returns:
      open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
      bounding box is oriented such that its volume is minimized.
 )doc")
+            .def_static("create_from_points_minimal",
+                        &OrientedBoundingBox::CreateFromPointsMinimal,
+                        "points"_a, "robust"_a = false,
+                        R"doc(
+Creates the oriented bounding box with the smallest volume.
+
+The algorithm creates the oriented bounding box with the smallest volume.
+It is inspired by the article "An Exact Algorithm for Finding Minimum 
+Oriented Bounding Boxes" written by Jukka Jylänki. 
+
+Args:
+     points (open3d.utility.Vector3dVector): Input points.
+     robust (bool): If set to true uses a more robust method which works in
+          degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+     open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
+     bounding box is oriented such that its volume is minimized.
+)doc")
+
             .def("volume", &OrientedBoundingBox::Volume,
                  "Returns the volume of the bounding box.")
             .def("get_box_points", &OrientedBoundingBox::GetBoxPoints,
