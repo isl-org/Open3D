@@ -43,14 +43,17 @@ jobs:
           -t open3d-ci:docs -f docker/Dockerfile.docs .
 
           docker run -v "${GITHUB_WORKSPACE}:/opt/mount" --rm open3d-ci:docs \
-              bash -c "cp /root/Open3D/open3d-*-docs.tar.* /opt/mount \
-                    && chown $(id -u):$(id -g) /opt/mount/open3d-*-docs.tar.*"
+              bash -c "cp /root/Open3D/open3d-*-docs.tar.gz /opt/mount \
+                    && chown $(id -u):$(id -g) /opt/mount/open3d-*-docs.tar.gz"
+
+        # Rename from Github PR branch SHA to original branch SHA, if needed.
+          mv open3d-*-docs.tar.gz open3d-${GITHUB_SHA}-docs.tar.gz
 
       - name: Upload docs
         uses: actions/upload-artifact@v4
         with:
-          name: open3d-${{ github.sha }}-docs.tar
-          path: open3d-${{ github.sha }}-docs.tar.*
+          name: open3d-${{ github.sha }}-docs
+          path: open3d-${{ github.sha }}-docs.tar.gz
           if-no-files-found: error
           compression-level: 0 # no compression
 
