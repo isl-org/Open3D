@@ -43,7 +43,7 @@ jobs:
           -t open3d-ci:docs -f docker/Dockerfile.docs .
 
           docker run -v "${GITHUB_WORKSPACE}:/opt/mount" --rm open3d-ci:docs \
-              bash -c "cp /root/open3d/open3d-*-docs.tar.* /opt/mount \
+              bash -c "cp /root/Open3D/open3d-*-docs.tar.* /opt/mount \
                     && chown $(id -u):$(id -g) /opt/mount/open3d-*-docs.tar.*"
 
       - name: Upload docs
