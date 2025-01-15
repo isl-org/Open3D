@@ -576,6 +576,30 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
             points.GetDtype(), points.GetDevice());
 }
 
+OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimalApprox(
+        const core::Tensor &points, bool robust) {
+    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
+    return OrientedBoundingBox::FromLegacy(
+            open3d::geometry::OrientedBoundingBox::
+                    CreateFromPointsMinimalApprox(
+                            core::eigen_converter::TensorToEigenVector3dVector(
+                                    points),
+                            robust),
+            points.GetDtype(), points.GetDevice());
+}
+
+OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
+        const core::Tensor &points, bool robust) {
+    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
+    return OrientedBoundingBox::FromLegacy(
+            open3d::geometry::OrientedBoundingBox::CreateFromPointsMinimal(
+                    core::eigen_converter::TensorToEigenVector3dVector(points),
+                    robust),
+            points.GetDtype(), points.GetDevice());
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

@@ -323,6 +323,24 @@ that could be computed for example with O'Rourke's algorithm
 (cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf, https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
 This is a wrapper for a CPU implementation.)",
                    "points"_a, "robust"_a = false);
+    obb.def_static("create_from_points_minimal_approx",
+                   &OrientedBoundingBox::CreateFromPointsMinimalApprox,
+                   R"(Creates the oriented bounding box with optimized (but not 
+necessarily smallest) volume. The algorithm makes use of the fact that at least one 
+edge of the convex hull must be collinear with an edge of the minimum bounding box: 
+for each triangle in the convex hull, calculate the minimal axis aligned box in the 
+frame of that triangle. at the end, return the box with optimized (but not 
+necessarily smallest) volume. This is a wrapper for a CPU implementation.)",
+                   "points"_a, "robust"_a = false);
+    obb.def_static(
+            "create_from_points_minimal",
+            &OrientedBoundingBox::CreateFromPointsMinimal,
+            R"(Creates the oriented bounding box with the smallest volume.
+The algorithm creates the oriented bounding box with the smallest volume.
+It is inspired by the article "An Exact Algorithm for Finding Minimum 
+Oriented Bounding Boxes" written by Jukka Jylänki. 
+This is a wrapper for a CPU implementation.)",
+            "points"_a, "robust"_a = false);
 
     docstring::ClassMethodDocInject(
             m, "OrientedBoundingBox", "set_center",

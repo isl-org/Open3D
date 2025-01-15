@@ -460,6 +460,36 @@ public:
     static OrientedBoundingBox CreateFromPoints(const core::Tensor &points,
                                                 bool robust = false);
 
+    /// Creates the oriented bounding box with the smallest volume.
+    /// The algorithm makes use of the fact that at least one edge of
+    /// the convex hull must be collinear with an edge of the minimum
+    /// bounding box: for each triangle in the convex hull, calculate
+    /// the minimal axis aligned box in the frame of that triangle.
+    /// at the end, return the box with the smallest volume
+    /// \param points A list of points with data type of float32 or float64 (N x
+    /// 3 tensor, where N must be larger than 3).
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+
+    static OrientedBoundingBox CreateFromPointsMinimalApprox(
+            const core::Tensor &points, bool robust = false);
+
+    /// Creates the oriented bounding box with the smallest volume.
+    /// This algorithm is inspired by the article "An Exact Algorithm for
+    /// Finding Minimum Oriented Bounding Boxes" written by Jukka Jylänki.
+    /// The original implementation can be found at the following address:
+    /// https://github.com/juj/MathGeoLib/blob/55053da5e3e55a83043af7324944407b174c3724/src/Geometry/OBB.cpp#L987
+    ///
+    /// \param points A list of points with data type of float32 or float64 (N x
+    /// 3 tensor, where N must be larger than 3).
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+
+    static OrientedBoundingBox CreateFromPointsMinimal(
+            const core::Tensor &points, bool robust = false);
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     core::Dtype dtype_ = core::Float32;

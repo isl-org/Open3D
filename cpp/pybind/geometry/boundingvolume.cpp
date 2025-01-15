@@ -84,7 +84,7 @@ Returns:
      bounding box is oriented such that the axes are ordered with respect to
      the principal components.
 )doc")
-            .def_static("create_from_points_approx",
+            .def_static("create_from_points_minimal_approx",
                         &OrientedBoundingBox::CreateFromPointsMinimalApprox,
                         "points"_a, "robust"_a = false,
                         R"doc(
