@@ -307,8 +307,6 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
         // Update the OBB with the best orientation found
         obb.R_ = best_R;
         obb.extent_ = best_extent;
-
-        // Note: obb.center_ and obb.color_ remain unchanged.
     };
 
     // --------------------------------------------------------------------
