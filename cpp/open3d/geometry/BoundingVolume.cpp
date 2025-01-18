@@ -1108,9 +1108,9 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
                     constexpr double tooCloseToFaceEpsilon = 1e-4;
 
                     Eigen::Matrix3d A;
-                    A.row(0) = f2b;
-                    A.row(1) = f1a - f1b;
-                    A.row(2) = f2a - f2b;
+                    A.col(0) = f2b;
+                    A.col(1) = f1a - f1b;
+                    A.col(2) = f2a - f2b;
                     Eigen::ColPivHouseholderQR<Eigen::Matrix3d> solver(A);
                     Eigen::Vector3d x = solver.solve(-f1b);
                     double c = x(0);
