@@ -39,9 +39,7 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
 
     rng = np.random.RandomState(123)
 
-    conv_attrs = {
-        'normalize': with_normalization,
-    }
+    conv_attrs = {'normalize': with_normalization, 'max_temp_mem_MB': 64}
 
     filters = rng.random(size=(kernel_size, in_channels,
                                out_channels)).astype(dtype)
@@ -75,8 +73,14 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
 
     arange = np.arange(neighbors_index.shape[0])
     inv_neighbors_index, inv_neighbors_row_splits, inv_arange = mltest.run_op(
-        ml, ml.device, False, ml.ops.invert_neighbors_list, num_inp,
-        neighbors_index, neighbors_row_splits, arange)
+        ml,
+        ml.device,
+        False,
+        ml.ops.invert_neighbors_list,
+        num_points=num_inp,
+        inp_neighbors_index=neighbors_index,
+        inp_neighbors_row_splits=neighbors_row_splits,
+        inp_neighbors_attributes=arange)
 
     inv_neighbors_kernel_index = neighbors_kernel_index[inv_arange]
     if with_neighbors_importance:
