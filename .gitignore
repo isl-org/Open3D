@@ -37,7 +37,6 @@ _vimrc_local.vim
 .vscode/
 .clangd/
 .ccls-cache/
-.hypothesis/
 
 # Build artifacts
 **/package-lock.json

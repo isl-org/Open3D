@@ -41,14 +41,9 @@ std::vector<paddle::Tensor> Nms(paddle::Tensor& boxes,
         paddle::Tensor temp_keep_indices = paddle::from_blob(
                 keep_indices_blob.data(), out_shape, out_strides,
                 phi::DataType::INT64, phi::DataLayout::NCHW, phi::CPUPlace());
-        if (boxes.is_gpu()) {
-            temp_keep_indices = temp_keep_indices.copy_to(boxes.place(), false);
-        }
+        paddle::Tensor keep_indices = temp_keep_indices.copy_to(boxes.place(), false);
 
-        paddle::Tensor keep_indices = paddle::empty_like(temp_keep_indices);
-
-        return {paddle::experimental::copysign(temp_keep_indices,
-                                               keep_indices)};
+        return {keep_indices};
     } else {
         // keep indices is nullptr
         return {InitializedEmptyTensor<int64_t>({0}, boxes.place())};

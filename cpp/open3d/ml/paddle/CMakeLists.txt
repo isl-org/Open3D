@@ -128,8 +128,7 @@ target_link_libraries(open3d_paddle_ops PRIVATE
     Open3D::3rdparty_eigen3
     Open3D::3rdparty_fmt
     Open3D::3rdparty_nanoflann
-    Open3D::3rdparty_parallelstl
-    Open3D::3rdparty_tbb
+    TBB::tbb
 )
 
 if (BUILD_CUDA_MODULE)
