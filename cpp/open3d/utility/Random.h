@@ -68,7 +68,7 @@ public:
     ///
     /// \param low The lower bound (inclusive).
     /// \param high The upper bound (exclusive). \p high must be > \p low.
-    UniformIntGenerator(const T low, const T high) : distribution_(low, high) {
+    UniformIntGenerator(const T low, const T high) : distribution_(low, high-1) {
         if (low < 0) {
             utility::LogError("low must be > 0, but got {}.", low);
         }
