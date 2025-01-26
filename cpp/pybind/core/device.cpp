@@ -48,7 +48,9 @@ void pybind_core_device_definitions(py::module &m) {
                 utility::LogWarn("Unknown device type");
                 return d.ToString();
         }
-        return fmt::format("open3d.core.Device({}, {})", device_type, d.GetID()); });
+        return fmt::format("open3d.core.Device({}, {})", device_type,
+                           d.GetID());
+    });
     device.def("__str__", &Device::ToString);
     device.def("get_type", &Device::GetType);
     device.def("get_id", &Device::GetID);
