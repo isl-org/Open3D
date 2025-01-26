@@ -45,11 +45,10 @@ void pybind_core_device_definitions(py::module &m) {
                 device_type = "SYCL";
                 break;
             default:
-                utility::LogWarn("Unknown device type");
+                utility::LogError("Unknown device type");
                 return d.ToString();
         }
-        return fmt::format("open3d.core.Device({}, {})", device_type,
-                           d.GetID());
+        return fmt::format("Device({}, {})", device_type, d.GetID());
     });
     device.def("__str__", &Device::ToString);
     device.def("get_type", &Device::GetType);
