@@ -409,7 +409,7 @@ This example shows how to create a hemisphere from a sphere::
                         "device"_a = core::Device("CPU:0"))
             .def_static("create_mobius", &TriangleMesh::CreateMobius,
                         "Create a Mobius strip.", "length_split"_a = 70,
-                        "width_split"_a = 15, "twists"_a = 1, "raidus"_a = 1,
+                        "width_split"_a = 15, "twists"_a = 1, "radius"_a = 1,
                         "flatness"_a = 1, "width"_a = 1, "scale"_a = 1,
                         "float_dtype"_a = core::Float32,
                         "int_dtype"_a = core::Int64,
