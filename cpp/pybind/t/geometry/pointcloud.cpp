@@ -765,7 +765,7 @@ Args:
 
 Example:
 
-    This code computes parititions a point cloud such that each partition
+    This code computes partitions of a point cloud such that each partition
     contains at most 20 points::
 
         import open3d as o3d
