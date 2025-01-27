@@ -710,15 +710,15 @@ void pybind_trianglemesh_definitions(py::module &m) {
              {"map_texture_to_each_face", "Map entire texture to each face."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_tetrahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_octahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_icosahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_sphere",
