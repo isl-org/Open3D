@@ -65,6 +65,4 @@ cd docker
 ./docker_test.sh openblas-amd64-py38-dev
 ```
 
-Build Docker for Paddle backend:
-
 See `./docker_build.sh` and `./docker_test.sh` for all available options.

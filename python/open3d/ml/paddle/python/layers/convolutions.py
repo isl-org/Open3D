@@ -289,7 +289,6 @@ class ContinuousConv(paddle.nn.Layer):
                         radius * radius)
                 else:  # L1
                     neighbors_distance_normalized = self.nns.neighbors_distance / radius
-                
                 neighbors_importance = self.window_function(
                     neighbors_distance_normalized)
 
