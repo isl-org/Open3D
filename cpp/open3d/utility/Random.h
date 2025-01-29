@@ -73,8 +73,9 @@ public:
             utility::LogError("low must be > 0, but got {}.", low);
         }
         if (low > high) {
-            utility::LogError("low must be <= high, but got low={} and high={}.",
-                              low, high);
+            utility::LogError(
+                    "low must be <= high, but got low={} and high={}.", low,
+                    high);
         }
     }
 
