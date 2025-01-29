@@ -251,7 +251,6 @@ class ContinuousConv(paddle.nn.Layer):
             inp_importance = paddle.empty(
                 (0,), dtype=paddle.float32).to(self.kernel.place)
 
-        return_distances = not self.window_function is None
 
         if not user_neighbors_index is None and not user_neighbors_row_splits is None:
 
@@ -272,12 +271,6 @@ class ContinuousConv(paddle.nn.Layer):
                     queries=out_positions,
                     radius=radius,
                     hash_table=fixed_radius_search_hash_table)
-                if return_distances:
-                    if self.radius_search_metric == 'L2':
-                        neighbors_distance_normalized = self.nns.neighbors_distance / (
-                            radius * radius)
-                    else:  # L1
-                        neighbors_distance_normalized = self.nns.neighbors_distance / radius
 
             elif len(extents.shape) == 1:
                 radii = 0.5 * extents
@@ -291,6 +284,12 @@ class ContinuousConv(paddle.nn.Layer):
             if self.window_function is None:
                 neighbors_importance = paddle.empty((0,), dtype=paddle.float32)
             else:
+                if self.radius_search_metric == 'L2':
+                    neighbors_distance_normalized = self.nns.neighbors_distance / (
+                        radius * radius)
+                else:  # L1
+                    neighbors_distance_normalized = self.nns.neighbors_distance / radius
+                
                 neighbors_importance = self.window_function(
                     neighbors_distance_normalized)
 

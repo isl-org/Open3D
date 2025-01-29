@@ -16,7 +16,7 @@ namespace {
 template <class TReal, class TFeat>
 class OutputAllocator {
 public:
-    OutputAllocator(paddle::Place place) : place(place) {}
+    explicit OutputAllocator(paddle::Place place) : place(place) {}
 
     void AllocPooledPositions(TReal** ptr, size_t num) {
         if (num != 0) {

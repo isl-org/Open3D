@@ -96,7 +96,7 @@ install_python_dependencies() {
     if [ "$BUILD_PADDLE_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip uninstall paddlepaddle paddlepaddle-gpu -y
-            python -m pip install --pre $PADDLE_GLNX -i $PADDLE_GLNX_PIP_INDEX
+            python -m pip install --pre "$PADDLE_GLNX" -i "$PADDLE_GLNX_PIP_INDEX"
         else
             echo "unknown OS $OSTYPE"
             exit 1
