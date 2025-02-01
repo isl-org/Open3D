@@ -27,62 +27,65 @@ OPTION:
     openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
     openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
+    openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
     openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
     openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
+    openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
     openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
     openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
+    openblas-arm64-py312-dev    : OpenBLAS ARM64 3.12 wheel, developer mode
     openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
     openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
     openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
+    openblas-arm64-py312        : OpenBLAS ARM64 3.12 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
-    cpu-static                   : Ubuntu CPU static
-    cpu-shared                   : Ubuntu CPU shared (cxx11_abi)
-    cpu-shared-release           : Ubuntu CPU shared (cxx11_abi), release mode
-    cpu-shared-ml                : Ubuntu CPU shared with ML (pre_cxx11_abi)
-    cpu-shared-ml-release        : Ubuntu CPU shared with ML (pre_cxx11_abi), release mode
+    cpu-static                  : Ubuntu CPU static
+    cpu-shared                  : Ubuntu CPU shared (cxx11_abi)
+    cpu-shared-release          : Ubuntu CPU shared (cxx11_abi), release mode
+    cpu-shared-ml               : Ubuntu CPU shared with ML (pre_cxx11_abi)
+    cpu-shared-ml-release       : Ubuntu CPU shared with ML (pre_cxx11_abi), release mode
 
     # Sycl CPU CI (Dockerfile.ci)
-    sycl-shared                  : SYCL (oneAPI) with shared lib
-    sycl-static                  : SYCL (oneAPI) with static lib
+    sycl-shared                : SYCL (oneAPI) with shared lib
+    sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-bionic                   : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), release mode
-    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
-    4-shared-bionic            : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
-    4-shared-bionic-release    : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
-    5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
+    2-focal                   : CUDA CI, 2-bionic, developer mode
+    3-ml-shared-focal-release : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), release mode
+    3-ml-shared-focal         : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
+    4-shared-focal            : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
+    4-shared-focal-release    : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
+    5-ml-jammy                 : CUDA CI, 5-ml-focal, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
     cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
+    cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, developer mode
     cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
-
-    # Paddle wheels (Dockerfile.paddle)
-    paddle_cuda_wheel_py310_dev : CUDA Python 3.10 wheel, developer mode
-    paddle_cuda_wheel_py310     : CUDA Python 3.10 wheel, release mode
+    cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
 CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.20.6-linux-x86_64
-CMAKE_VERSION_AARCH64=cmake-3.20.6-linux-aarch64
-CUDA_VERSION=11.7.1-cudnn8
+CMAKE_VERSION=cmake-3.29.2-linux-x86_64
+CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
+CUDA_VERSION=12.1.0-cudnn8
+CUDA_VERSION_LATEST=12.1.0-cudnn8
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -671,6 +674,9 @@ function main() {
         ;;
     cuda_wheel_py311)
         cuda_wheel_build py311
+        ;;
+    cuda_wheel_py312)
+        cuda_wheel_build py312
         ;;
 
     # ML CIs
