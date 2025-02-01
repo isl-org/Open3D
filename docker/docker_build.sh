@@ -76,6 +76,9 @@ OPTION:
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
     cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
+    # Paddle wheels (Dockerfile.paddle)
+    paddle_cuda_wheel_py310_dev : CUDA Python 3.10 wheel, developer mode
+    paddle_cuda_wheel_py310     : CUDA Python 3.10 wheel, release mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
