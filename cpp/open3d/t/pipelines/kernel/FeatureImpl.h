@@ -116,19 +116,17 @@ void ComputeFPFHFeatureCPU
          const core::Tensor &counts,
          core::Tensor &fpfhs,
          const utility::optional<core::Tensor> &mask,
-         const utility::optional<core::Tensor>
-                 &map_batch_info_idx_to_point_idx) {
+         const utility::optional<core::Tensor> &map_info_idx_to_point_idx) {
     const core::Dtype dtype = points.GetDtype();
     const core::Device device = points.GetDevice();
     const int64_t n_points = points.GetLength();
 
     const bool filter_fpfh =
-            mask.has_value() && map_batch_info_idx_to_point_idx.has_value();
-    if (mask.has_value() ^ map_batch_info_idx_to_point_idx.has_value()) {
+            mask.has_value() && map_info_idx_to_point_idx.has_value();
+    if (mask.has_value() ^ map_info_idx_to_point_idx.has_value()) {
         utility::LogError(
-                "Parameters mask and map_batch_info_idx_to_point_idx must be "
-                "both "
-                "provided or both not provided.");
+                "Parameters mask and map_info_idx_to_point_idx must "
+                "either be both provided or both not provided.");
     }
     if (filter_fpfh) {
         if (mask.value().GetShape()[0] != n_points) {
@@ -137,19 +135,19 @@ void ComputeFPFHFeatureCPU
                     "be equal to the number of points {:d}.",
                     (int)mask.value().GetShape()[0], n_points);
         }
-        if (map_batch_info_idx_to_point_idx.value().GetShape()[0] !=
-            counts.GetShape()[0]) {
+        if (map_info_idx_to_point_idx.value().GetShape()[0] !=
+            counts.GetShape()[0] - (indices.GetShape().size() == 1 ? 1 : 0)) {
             utility::LogError(
-                    "Parameter map_batch_info_idx_to_point_idx was provided, "
+                    "Parameter map_info_idx_to_point_idx was provided, "
                     "but its size"
                     "{:d} should be equal to the size of counts {:d}.",
-                    (int)map_batch_info_idx_to_point_idx.value().GetShape()[0],
+                    (int)map_info_idx_to_point_idx.value().GetShape()[0],
                     (int)counts.GetShape()[0]);
         }
     }
 
     core::Tensor map_spfh_info_idx_to_point_idx =
-            map_batch_info_idx_to_point_idx.value_or(
+            map_info_idx_to_point_idx.value_or(
                     core::Tensor::Empty({0}, core::Int64, device));
 
     const core::Tensor map_fpfh_idx_to_point_idx =

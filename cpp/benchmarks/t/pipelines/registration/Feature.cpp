@@ -5,8 +5,6 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <map>
-
 #include "open3d/t/pipelines/registration/Feature.h"
 
 #include <benchmark/benchmark.h>
