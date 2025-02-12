@@ -583,6 +583,12 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
         case Method::MINIMAL_JYLANKI:
             return kernel::minimum_obb::ComputeMinimumOBBJylanki(points,
                                                                  robust);
+        default:
+            utility::LogError(
+                    "Invalid method for computing oriented bounding "
+                    "box. Supported methods are PCA, MINIMAL_APPROX, "
+                    "and MINIMAL_JYLANKI.");
+            return OrientedBoundingBox();
     }
 }
 
