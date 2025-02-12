@@ -9,6 +9,7 @@
 
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorFunction.h"
+#include "open3d/t/geometry/kernel/MinimumOBB.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 
 namespace open3d {
@@ -566,38 +567,23 @@ OrientedBoundingBox OrientedBoundingBox::FromLegacy(
 }
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
-        const core::Tensor &points, bool robust) {
+        const core::Tensor &points, bool robust, Method method) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
-    return OrientedBoundingBox::FromLegacy(
-            open3d::geometry::OrientedBoundingBox::CreateFromPoints(
-                    core::eigen_converter::TensorToEigenVector3dVector(points),
-                    robust),
-            points.GetDtype(), points.GetDevice());
-}
-
-OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimalApprox(
-        const core::Tensor &points, bool robust) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
-    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
-    return OrientedBoundingBox::FromLegacy(
-            open3d::geometry::OrientedBoundingBox::
-                    CreateFromPointsMinimalApprox(
+    switch (method) {
+        case Method::PCA:
+            return OrientedBoundingBox::FromLegacy(
+                    open3d::geometry::OrientedBoundingBox::CreateFromPoints(
                             core::eigen_converter::TensorToEigenVector3dVector(
                                     points),
                             robust),
-            points.GetDtype(), points.GetDevice());
-}
-
-OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
-        const core::Tensor &points, bool robust) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
-    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
-    return OrientedBoundingBox::FromLegacy(
-            open3d::geometry::OrientedBoundingBox::CreateFromPointsMinimal(
-                    core::eigen_converter::TensorToEigenVector3dVector(points),
-                    robust),
-            points.GetDtype(), points.GetDevice());
+                    points.GetDtype(), points.GetDevice());
+        case Method::MINIMAL_APPROX:
+            return kernel::minimum_obb::ComputeMinimumOBBApprox(points, robust);
+        case Method::MINIMAL_JYLANKI:
+            return kernel::minimum_obb::ComputeMinimumOBBJylanki(points,
+                                                                 robust);
+    }
 }
 
 }  // namespace geometry
