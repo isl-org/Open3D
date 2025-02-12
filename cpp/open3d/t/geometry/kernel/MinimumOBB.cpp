@@ -1270,9 +1270,9 @@ OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor& points,
                                         .GetOrientedBoundingBox());
     double min_vol = min_box.Volume();
 
-    PointCloud hull_pcd;
+    PointCloud hull_pcd(hull_mesh.GetVertexPositions().Clone());
     for (auto& tri : hull_t) {
-        hull_pcd.SetPointPositions(hull_mesh.GetVertexPositions());
+        hull_pcd.GetPointPositions().CopyFrom(hull_mesh.GetVertexPositions());
         Eigen::Vector3d a = hull_v[tri(0)];
         Eigen::Vector3d b = hull_v[tri(1)];
         Eigen::Vector3d c = hull_v[tri(2)];
