@@ -316,31 +316,80 @@ The scaling center will be the box center if it is not specified.)",
             "create_from_axis_aligned_bounding_box",
             &OrientedBoundingBox::CreateFromAxisAlignedBoundingBox, "aabb"_a,
             "Create an OrientedBoundingBox from a legacy Open3D oriented box.");
+
+    py::enum_<OrientedBoundingBox::Method>(obb, "Method")
+            .value("PCA", OrientedBoundingBox::Method::PCA)
+            .value("MINIMAL_APPROX",
+                   OrientedBoundingBox::Method::MINIMAL_APPROX)
+            .value("MINIMAL_JYLANKI",
+                   OrientedBoundingBox::Method::MINIMAL_JYLANKI)
+            .export_values();
+
     obb.def_static("create_from_points", &OrientedBoundingBox::CreateFromPoints,
-                   R"(Creates an oriented bounding box using a PCA.
-Note that this is only an approximation to the minimum oriented bounding box
-that could be computed for example with O'Rourke's algorithm
-(cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf, https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
-This is a wrapper for a CPU implementation.)",
-                   "points"_a, "robust"_a = false);
-    obb.def_static("create_from_points_minimal_approx",
-                   &OrientedBoundingBox::CreateFromPointsMinimalApprox,
-                   R"(Creates the oriented bounding box with optimized (but not 
-necessarily smallest) volume. The algorithm makes use of the fact that at least one 
-edge of the convex hull must be collinear with an edge of the minimum bounding box: 
-for each triangle in the convex hull, calculate the minimal axis aligned box in the 
-frame of that triangle. at the end, return the box with optimized (but not 
-necessarily smallest) volume. This is a wrapper for a CPU implementation.)",
-                   "points"_a, "robust"_a = false);
-    obb.def_static(
-            "create_from_points_minimal",
-            &OrientedBoundingBox::CreateFromPointsMinimal,
-            R"(Creates the oriented bounding box with the smallest volume.
-The algorithm creates the oriented bounding box with the smallest volume.
-It is inspired by the article "An Exact Algorithm for Finding Minimum 
-Oriented Bounding Boxes" written by Jukka Jylänki. 
-This is a wrapper for a CPU implementation.)",
-            "points"_a, "robust"_a = false);
+                   R"(Creates an oriented bounding box with various algorithms.
+
+Args:
+    points (open3d.core.Tensor): A list of points with data type of float32 or 
+        float64 (N x 3 tensor, where N must be larger than 3).
+    robust (bool): If set to true uses a more robust method which works in 
+        degenerate cases but introduces noise to the points coordinates.
+    method (open3d.t.geometry.OrientedBoundingBox.Method): This is one of 
+        `PCA`, `MINIMAL_APPROX`, `MINIMAL_JYLANKI`. 
+
+        - `PCA` computes an oriented bounding box using the principal component
+        analysis. The output is in most cases not a minimal oriented bounding box.
+        This algorithm is the fastest.
+        - `MINIMAL_APPROX` is a fast approximation algorithm. The algorithm 
+        makes use of the fact that at least one edge of the convex hull must be
+        collinear with an edge of the minimum bounding box: for each triangle in
+        the convex hull, calculate the minimal axis aligned box in the frame of
+        that triangle. At the end, return the box with the smallest volume.
+        This algorithm is a good choice if speed and accuracy is important.
+        - `MINIMAL_JYLANKI` computes an oriented bounding box using a more 
+        accurate but slower algorithm. This algorithm is inspired by the article 
+        "An Exact Algorithm for Finding Minimum Oriented Bounding Boxes" 
+        written by Jukka Jylänki. The original implementation can be found at 
+        the following address:
+        https://github.com/juj/MathGeoLib/blob/55053da5e3e55a83043af7324944407b174c3724/src/Geometry/OBB.cpp#L987
+        This algorithm is the best choice if accuracy is most important.
+
+Returns:
+    The oriented bounding box.
+    
+    For the `PCA` method the bounding box is oriented such that the axes are 
+    ordered with respect to the principal components.
+
+    For the `MINIMAL_JYLANKI` method the bounding box is oriented to be closest 
+    to the identity rotation matrix.
+
+Example:
+    This example shows a comparison of all algorithms::
+
+        import open3d as o3d
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.io.read_triangle_mesh(bunny.path)
+
+        methods = [
+            o3d.t.geometry.OrientedBoundingBox.Method.PCA,
+            o3d.t.geometry.OrientedBoundingBox.Method.MINIMAL_APPROX,
+            o3d.t.geometry.OrientedBoundingBox.Method.MINIMAL_JYLANKI,
+        ]
+
+        obbs = []
+        for method, color in zip(methods, [(1,0,0),(0,1,0),(0,0,1)]):
+            obb = o3d.t.geometry.OrientedBoundingBox.create_from_points(
+                mesh.vertex.positions, method=method)
+            obb.set_color(color)
+            obbs.append(obb)
+            print(f"Volume is {obb.volume()} with {method.name}")
+            
+
+        o3d.visualization.draw([obb.to_legacy() for obb in obbs] + [mesh])
+
+)",
+                   "points"_a, "robust"_a = false,
+                   "method"_a = OrientedBoundingBox::Method::MINIMAL_APPROX);
 
     docstring::ClassMethodDocInject(
             m, "OrientedBoundingBox", "set_center",
