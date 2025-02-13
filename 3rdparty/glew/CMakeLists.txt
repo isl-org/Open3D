@@ -38,6 +38,7 @@ add_library(${GLEW_LIBRARY} STATIC ${glew_sources} ${glew_headers})
 set_target_properties(${GLEW_LIBRARY} PROPERTIES
 		OUTPUT_NAME ${GLEW_LIBRARY}
 		POSITION_INDEPENDENT_CODE ON
+		CXX_VISIBILITY_PRESET "hidden"
 		FOLDER "3rdparty"
 )
 

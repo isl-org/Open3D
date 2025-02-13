@@ -132,18 +132,18 @@ void PrintSYCLDevices(bool print_all) {
     int nd = 0;
     utility::LogInfo("# Open3D SYCL device");
     try {
-        utility::LogInfo(
-                "- Device(\"SYCL:{}\"): {}", nd,
-                SYCLDeviceToString(sycl::device(sycl::gpu_selector_v)));
+        auto dev = sycl::device(sycl::gpu_selector_v);
+        utility::LogInfo("- Device(\"SYCL:{}\"): {}", nd,
+                         SYCLDeviceToString(dev));
         ++nd;
-    } catch (const sycl::exception &e) {
+    } catch (const sycl::exception &e) {  // No SYCL GPU available.
     }
     try {
+        auto dev = sycl::device(sycl::cpu_selector_v);
         utility::LogInfo("# Open3D SYCL device (CPU fallback)");
-        utility::LogInfo(
-                "- Device(\"SYCL:{}\"): {}", nd,
-                SYCLDeviceToString(sycl::device(sycl::cpu_selector_v)));
-    } catch (const sycl::exception &e) {
+        utility::LogInfo("- Device(\"SYCL:{}\"): {}", nd,
+                         SYCLDeviceToString(dev));
+    } catch (const sycl::exception &e) {  // No SYCL CPU available.
         if (nd == 0) utility::LogInfo("- Device(\"SYCL:0\"): N/A");
     }
     if (print_all) {
