@@ -103,6 +103,8 @@ class PyAPIDocsBuilder:
             import open3d.ml.tf
         if open3d._build_config['BUILD_PYTORCH_OPS']:
             import open3d.ml.torch
+        if open3d._build_config['BUILD_PADDLE_OPS']:
+            import open3d.ml.paddle
 
         try:
             # Try to import directly. This will work for pure python submodules
@@ -139,7 +141,8 @@ class PyAPIDocsBuilder:
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
         if not (full_module_name.startswith("open3d.ml.tf") or
-                full_module_name.startswith("open3d.ml.torch")):
+                full_module_name.startswith("open3d.ml.torch") or
+                full_module_name.startswith("open3d.ml.paddle")):
             out_string += "\n    :inherited-members:"
         out_string += "\n"
 

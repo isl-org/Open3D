@@ -45,6 +45,10 @@ open3d.ml.torch.modules
 open3d.ml.torch.modules.losses
 open3d.ml.torch.modules.metrics
 open3d.ml.torch.pipelines
+open3d.ml.paddle
+open3d.ml.paddle.layers
+open3d.ml.paddle.ops
+open3d.ml.paddle.classes
 open3d.pipelines
 open3d.pipelines.color_map
 open3d.pipelines.integration
