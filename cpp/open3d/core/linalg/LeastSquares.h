@@ -25,6 +25,16 @@ void LeastSquaresCUDA(void* A_data,
                       const Device& device);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+void LeastSquaresSYCL(void* A_data,
+                      void* B_data,
+                      int64_t m,
+                      int64_t n,
+                      int64_t k,
+                      Dtype dtype,
+                      const Device& device);
+#endif
+
 void LeastSquaresCPU(void* A_data,
                      void* B_data,
                      int64_t m,

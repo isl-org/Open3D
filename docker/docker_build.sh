@@ -48,6 +48,7 @@ OPTION:
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
+    cpu-static-release          : Ubuntu CPU static, release mode
     cpu-shared                  : Ubuntu CPU shared (cxx11_abi)
     cpu-shared-release          : Ubuntu CPU shared (cxx11_abi), release mode
     cpu-shared-ml               : Ubuntu CPU shared with ML (pre_cxx11_abi)
@@ -379,6 +380,21 @@ cpu-static_export_env() {
     export BUILD_SYCL_MODULE=OFF
 }
 
+cpu-static-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-static
+
+    export BASE_IMAGE=ubuntu:20.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.8
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=VIEWER
+    export BUILD_SYCL_MODULE=OFF
+}
+
 cpu-shared_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared
 
@@ -447,34 +463,42 @@ sycl-shared_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-shared
 
     # https://hub.docker.com/r/intel/oneapi-basekit
-    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-20.04
-    export BASE_IMAGE=intel/oneapi-basekit:2024.1.0-devel-ubuntu20.04
-    export DEVELOPER_BUILD=ON
+    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-22.04
+    export BASE_IMAGE=intel/oneapi-basekit:2024.1.1-devel-ubuntu22.04
+    export DEVELOPER_BUILD=${DEVELOPER_BUILD:-ON}
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=${PYTHON_VERSION:-3.10}
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-    export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=OFF
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
     export BUILD_SYCL_MODULE=ON
+
+    export IGC_EnableDPEmulation=1       # Enable float64 emulation during compilation
+    export SYCL_CACHE_PERSISTENT=1       # Cache SYCL kernel binaries.
+    export OverrideDefaultFP64Settings=1 # Enable double precision emulation at runtime.
 }
 
 sycl-static_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-static
 
     # https://hub.docker.com/r/intel/oneapi-basekit
-    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-20.04
-    export BASE_IMAGE=intel/oneapi-basekit:2024.1.0-devel-ubuntu20.04
+    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-22.04
+    export BASE_IMAGE=intel/oneapi-basekit:2024.1.1-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=OFF
     export BUILD_SYCL_MODULE=ON
+
+    export IGC_EnableDPEmulation=1       # Enable float64 emulation during compilation
+    export SYCL_CACHE_PERSISTENT=1       # Cache SYCL kernel binaries.
+    export OverrideDefaultFP64Settings=1 # Enable double precision emulation at runtime.
 }
 
 function main() {
@@ -571,6 +595,10 @@ function main() {
     # CPU CI
     cpu-static)
         cpu-static_export_env
+        ci_build
+        ;;
+    cpu-static-release)
+        cpu-static-release_export_env
         ci_build
         ;;
     cpu-shared)

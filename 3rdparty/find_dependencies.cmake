@@ -682,14 +682,15 @@ if(USE_SYSTEM_GLFW)
     endif()
 endif()
 if(NOT USE_SYSTEM_GLFW)
-    message(STATUS "Building library 3rdparty_glfw from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/glfw)
+    include(${Open3D_3RDPARTY_DIR}/glfw/glfw.cmake)
     open3d_import_3rdparty_library(3rdparty_glfw
         HEADER
-        INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/glfw/include/
-        LIBRARIES    glfw3
-        DEPENDS      glfw
+        INCLUDE_DIRS ${GLFW_INCLUDE_DIRS}
+        LIB_DIR      ${GLFW_LIB_DIR}
+        LIBRARIES    ${GLFW_LIBRARIES}
+        DEPENDS      ext_glfw
     )
+
     target_link_libraries(3rdparty_glfw INTERFACE Open3D::3rdparty_threads)
     if(UNIX AND NOT APPLE)
         find_library(RT_LIBRARY rt)
@@ -720,8 +721,9 @@ if(NOT USE_SYSTEM_GLFW)
         target_link_libraries(3rdparty_glfw INTERFACE gdi32)
     endif()
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_glfw)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_glfw)
 else()
-    list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_glfw)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_glfw)
 endif()
 if(TARGET Open3D::3rdparty_x11)
     target_link_libraries(3rdparty_glfw INTERFACE Open3D::3rdparty_x11)
@@ -1381,8 +1383,8 @@ if(BUILD_GUI)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-                                  ${CPP_LIBRARY} ${CPPABI_LIBRARY})
-            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY} ${CPPABI_LIBRARY}")
+                                  ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}")
             if (LIBCPP_VERSION GREATER 11)
                 message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that "
                 "interferes with the system libunwind.so.8 and may crash Python code when exceptions "
@@ -1532,12 +1534,17 @@ open3d_import_3rdparty_library(3rdparty_uvatlas
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_uvatlas)
 
 
+# SYCL link options are specified here. Compile options are only applied to SYCL source files and are specified in cmake/Open3DSYCLTargetSources.cmake
 if(BUILD_SYCL_MODULE)
     add_library(3rdparty_sycl INTERFACE)
     target_link_libraries(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl>)
     target_link_options(3rdparty_sycl INTERFACE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64_x86_64>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=${OPEN3D_SYCL_TARGETS}>)
+    if (OPEN3D_SYCL_TARGET_BACKEND_OPTIONS)
+        target_link_options(3rdparty_sycl INTERFACE
+            $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-Xs ${OPEN3D_SYCL_TARGET_BACKEND_OPTIONS}>)
+    endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS 3rdparty_sycl EXPORT Open3DTargets)
     endif()
@@ -1563,8 +1570,12 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
         LIB_DIR      ${MKL_ROOT}/lib/intel64
-        LIBRARIES    mkl_intel_ilp64 mkl_tbb_thread mkl_core
+        LIBRARIES    $<$<BOOL:${BUILD_SYCL_MODULE}>:mkl_sycl> mkl_intel_ilp64 mkl_tbb_thread mkl_core
     )
+    if (BUILD_SYCL_MODULE)
+    # target_link_options(3rdparty_mkl INTERFACE "-Wl,-export-dynamic")
+        target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+    endif()
     # MKL definitions
     target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")

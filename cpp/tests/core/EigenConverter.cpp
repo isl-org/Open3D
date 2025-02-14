@@ -17,10 +17,11 @@
 namespace open3d {
 namespace tests {
 
-class EigenConverterPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(EigenConverter,
-                         EigenConverterPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class EigenConverterPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        EigenConverter,
+        EigenConverterPermuteDevices,
+        testing::ValuesIn(EigenConverterPermuteDevices::TestCases()));
 
 TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
     core::Device device = GetParam();

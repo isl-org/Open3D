@@ -20,12 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PIP_VER: "23.2.1"
-  WHEEL_VER: "0.38.4"
-  STOOLS_VER: "67.3.2"
-  JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
-  IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
-  CUDA_VERSION: "12.4.0"
+  PIP_VER: "24.3.1"
+  CUDA_VERSION: "12.1.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -213,15 +209,16 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }}
           .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           Remove-Item "C:\Program Files\Open3D" -Recurse
+      - name: Install Open3D python build requirements
+        working-directory: ${{ env.SOURCE_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install -U pip==${{ env.PIP_VER }}
+          python -m pip install -U -c python/requirements_build.txt wheel setuptools
       - name: Install Python package
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
-            wheel==${{ env.WHEEL_VER }} `
-            setuptools==${{ env.STOOLS_VER }} `
-            jedi==${{ env.JEDI_VER }} `
-            idna==${{ env.IDNA_VER }}
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
@@ -272,6 +269,9 @@ jobs:
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
+          # maturin>1.7.8 breaks dependency y-py (Python 3.12) and pywinpty (Python 3.8) wheel building
+          # https://github.com/MichaIng/DietPi/issues/7329#issuecomment-2565130837
+          python -m pip install maturin==1.7.8
           python -m pip install -r python/requirements.txt
           python -m pip install -r python/requirements_jupyter_build.txt
       
@@ -307,13 +307,17 @@ jobs:
             -DBUILD_PYTORCH_OPS=ON `
             ${{ env.SRC_DIR }}
 
+      - name: Install Open3D python build requirements
+        working-directory: ${{ env.SOURCE_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install -U pip==${{ env.PIP_VER }}
+          python -m pip install -U -c python/requirements_build.txt wheel setuptools
+
       - name: Build Python package
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
-                                          wheel==${{ env.WHEEL_VER }} `
-                                          setuptools==${{ env.STOOLS_VER }}
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -376,10 +380,8 @@ jobs:
           python -V
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
-
-          python -m pip install --upgrade pip==${{ env.PIP_VER }} `
-            wheel==${{ env.WHEEL_VER }} `
-            setuptools==${{ env.STOOLS_VER }}
+          python -m pip install -U pip==${{ env.PIP_VER }}
+          python -m pip install -U -c python/requirements_build.txt wheel setuptools
           python -m pip install -U -r python/requirements_test.txt
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {

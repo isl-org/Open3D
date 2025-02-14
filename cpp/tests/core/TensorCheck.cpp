@@ -14,10 +14,11 @@
 namespace open3d {
 namespace tests {
 
-class TensorCheckPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Tensor,
-                         TensorCheckPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorCheckPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorCheckPermuteDevices,
+        testing::ValuesIn(TensorCheckPermuteDevices::TestCases()));
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
     core::Device device = GetParam();

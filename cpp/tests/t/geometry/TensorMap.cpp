@@ -15,10 +15,11 @@
 namespace open3d {
 namespace tests {
 
-class TensorMapPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(TensorMap,
-                         TensorMapPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorMapPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        TensorMap,
+        TensorMapPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(TensorMapPermuteDevices, Constructor) {
     core::Dtype dtype = core::Float32;
