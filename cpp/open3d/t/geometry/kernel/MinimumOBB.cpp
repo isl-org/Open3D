@@ -60,11 +60,10 @@ OrientedBoundingBox ComputeMinimumOBBJylanki(const core::Tensor& points_,
         utility::LogError("Input point set is empty.");
         return OrientedBoundingBox();
     }
-    // else if (points_.GetShape(0) == 1) {
-    //     OrientedBoundingBox obb;
-    //     obb.SetCenter(points_.Reshape({3}));
-    //     return OrientedBoundingBox();
-    // }
+    if (points_.GetShape(0) < 4) {
+        utility::LogError("Input point set has less than 4 points.");
+        return OrientedBoundingBox();
+    }
     PointCloud pcd(points_);
     auto hull_mesh = pcd.ComputeConvexHull(robust);
     if (hull_mesh.GetVertexPositions().NumElements() == 0) {
@@ -1250,6 +1249,11 @@ OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor& points,
         utility::LogError("Input point set is empty.");
         return OrientedBoundingBox();
     }
+    if (points.GetShape(0) < 4) {
+        utility::LogError("Input point set has less than 4 points.");
+        return OrientedBoundingBox();
+    }
+
     PointCloud pcd(points);
     auto hull_mesh = pcd.ComputeConvexHull(robust);
     if (hull_mesh.GetVertexPositions().NumElements() == 0) {
@@ -1265,9 +1269,10 @@ OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor& points,
             core::eigen_converter::TensorToEigenVector3iVector(
                     hull_mesh.GetTriangleIndices());
 
-    OrientedBoundingBox min_box(AxisAlignedBoundingBox::CreateFromPoints(
-                                        hull_mesh.GetVertexPositions())
-                                        .GetOrientedBoundingBox());
+    OrientedBoundingBox min_box(
+            AxisAlignedBoundingBox::CreateFromPoints(
+                    hull_mesh.GetVertexPositions().To(core::Float32))
+                    .GetOrientedBoundingBox());
     double min_vol = min_box.Volume();
 
     PointCloud hull_pcd(hull_mesh.GetVertexPositions().Clone());
@@ -1300,7 +1305,10 @@ OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor& points,
             min_box.Rotate(rot, center);
         }
     }
-    return min_box;
+    auto dtype = points.GetDtype();
+    return OrientedBoundingBox(min_box.GetCenter().To(dtype),
+                               min_box.GetRotation().To(dtype),
+                               min_box.GetExtent().To(dtype));
 }
 
 }  // namespace minimum_obb

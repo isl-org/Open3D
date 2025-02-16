@@ -572,6 +572,9 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
     switch (method) {
         case Method::PCA:
+            if (points.GetShape(0) < 4) {
+                utility::LogError("Input point set has less than 4 points.");
+            }
             return OrientedBoundingBox::FromLegacy(
                     open3d::geometry::OrientedBoundingBox::CreateFromPoints(
                             core::eigen_converter::TensorToEigenVector3dVector(
