@@ -130,11 +130,21 @@ def main():
                         type=str,
                         required=True,
                         help="This is cpp/open3d/ml/tensorflow")
+    parser.add_argument("--dependencies_dir",
+                        type=str,
+                        required=True,
+                        help="PyTorch dependencies directory")
 
     args = parser.parse_args()
     print(args)
 
+    if sys.platform == "win32":
+        open3d_deps = os.add_dll_directory(args.dependencies_dir)
+
     torch.ops.load_library(args.lib)
+
+    if sys.platform == "win32":
+        open3d_deps.close()
 
     generated_function_strs = ''
     generated_namedtuple_strs = ''

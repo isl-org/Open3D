@@ -31,7 +31,7 @@ jobs:
   windows:
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -96,6 +96,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
+      
+      - name: Checkout Open3D-ML
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          path: open3d_ml
+      
+      - name: Install PyTorch requirements
+        run: |
+          python -m pip install -r open3d_ml/requirements-torch.txt
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -107,7 +117,7 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake --version
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
@@ -119,6 +129,7 @@ jobs:
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
+            -DBUILD_PYTORCH_OPS=ON `
             ${{ env.SRC_DIR }}
 
       - name: Build
@@ -202,7 +213,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
