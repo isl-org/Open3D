@@ -421,7 +421,7 @@ void pybind_trianglemesh_definitions(py::module &m) {
             .def_static("create_mobius", &TriangleMesh::CreateMobius,
                         "Factory function to create a Mobius strip.",
                         "length_split"_a = 70, "width_split"_a = 15,
-                        "twists"_a = 1, "raidus"_a = 1, "flatness"_a = 1,
+                        "twists"_a = 1, "radius"_a = 1, "flatness"_a = 1,
                         "width"_a = 1, "scale"_a = 1)
             .def_readwrite("vertices", &TriangleMesh::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
@@ -710,15 +710,15 @@ void pybind_trianglemesh_definitions(py::module &m) {
              {"map_texture_to_each_face", "Map entire texture to each face."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_tetrahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_octahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_icosahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_sphere",

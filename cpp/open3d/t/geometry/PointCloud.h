@@ -710,7 +710,7 @@ public:
     /// surface points from the first point cloud that have the second point
     /// cloud points within the threshold radius, while Precision is the
     /// percentage of points from the second point cloud that have the first
-    /// point cloud points within the threhold radius.
+    /// point cloud points within the threshold radius.
 
     /// \f{eqnarray*}{
     ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
