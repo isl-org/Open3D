@@ -55,7 +55,7 @@ ExternalProject_Add(ext_ipp
     URL_HASH SHA256=${IPP_HASH}
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/ipp"
     # Copy all libs from lib/tl/tbb to lib/ since Open3D cmake scripts only support one LIB_DIR per dependency
-    UPDATE_COMMAND rsync -rut <SOURCE_DIR>/${IPP_SUBPATH}lib/tl/tbb/ <SOURCE_DIR>/${IPP_SUBPATH}lib/
+    UPDATE_COMMAND cp -rp <SOURCE_DIR>/${IPP_SUBPATH}lib/tl/tbb/. <SOURCE_DIR>/${IPP_SUBPATH}lib/
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
