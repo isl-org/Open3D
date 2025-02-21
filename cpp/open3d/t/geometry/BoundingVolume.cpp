@@ -567,11 +567,11 @@ OrientedBoundingBox OrientedBoundingBox::FromLegacy(
 }
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
-        const core::Tensor &points, bool robust, Method method) {
+        const core::Tensor &points, bool robust, MethodOBBCreate method) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
     switch (method) {
-        case Method::PCA:
+        case MethodOBBCreate::PCA:
             if (points.GetShape(0) < 4) {
                 utility::LogError("Input point set has less than 4 points.");
             }
@@ -581,9 +581,9 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
                                     points),
                             robust),
                     points.GetDtype(), points.GetDevice());
-        case Method::MINIMAL_APPROX:
+        case MethodOBBCreate::MINIMAL_APPROX:
             return kernel::minimum_obb::ComputeMinimumOBBApprox(points, robust);
-        case Method::MINIMAL_JYLANKI:
+        case MethodOBBCreate::MINIMAL_JYLANKI:
             return kernel::minimum_obb::ComputeMinimumOBBJylanki(points,
                                                                  robust);
         default:

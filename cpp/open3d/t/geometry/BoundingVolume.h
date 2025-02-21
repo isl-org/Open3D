@@ -444,8 +444,6 @@ public:
             const core::Dtype &dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
-    enum Method { PCA = 0, MINIMAL_APPROX = 1, MINIMAL_JYLANKI = 2 };
-
     /// Creates an oriented bounding box with various algorithms.
     /// \param points A list of points with data type of float32 or float64 (N x
     /// 3 tensor, where N must be larger than 3).
@@ -470,9 +468,10 @@ public:
     ///     https://github.com/juj/MathGeoLib/blob/55053da5e3e55a83043af7324944407b174c3724/src/Geometry/OBB.cpp#L987
     /// \return OrientedBoundingBox with same data type and device as input
     /// points.
-    static OrientedBoundingBox CreateFromPoints(const core::Tensor &points,
-                                                bool robust = false,
-                                                Method method = MINIMAL_APPROX);
+    static OrientedBoundingBox CreateFromPoints(
+            const core::Tensor &points,
+            bool robust = false,
+            MethodOBBCreate method = MethodOBBCreate::MINIMAL_APPROX);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

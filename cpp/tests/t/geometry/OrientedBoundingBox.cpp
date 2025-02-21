@@ -315,8 +315,7 @@ TEST_P(OrientedBoundingBoxPermuteDevices, CreateFromPoints) {
                                                     device);
     t::geometry::OrientedBoundingBox obb =
             t::geometry::OrientedBoundingBox::CreateFromPoints(
-                    points, false,
-                    t::geometry::OrientedBoundingBox::Method::PCA);
+                    points, false, t::geometry::MethodOBBCreate::PCA);
 
     double volume_pca = obb.Volume();
     EXPECT_TRUE(obb.GetCenter().AllClose(
@@ -330,8 +329,7 @@ TEST_P(OrientedBoundingBoxPermuteDevices, CreateFromPoints) {
                                       device)));
 
     obb = t::geometry::OrientedBoundingBox::CreateFromPoints(
-            points, false,
-            t::geometry::OrientedBoundingBox::Method::MINIMAL_APPROX);
+            points, false, t::geometry::MethodOBBCreate::MINIMAL_APPROX);
 
     double volume_minimal_approx = obb.Volume();
     EXPECT_TRUE(obb.GetCenter().AllClose(core::Tensor::Init<float>(
@@ -345,8 +343,7 @@ TEST_P(OrientedBoundingBoxPermuteDevices, CreateFromPoints) {
                                       device)));
 
     obb = t::geometry::OrientedBoundingBox::CreateFromPoints(
-            points, false,
-            t::geometry::OrientedBoundingBox::Method::MINIMAL_JYLANKI);
+            points, false, t::geometry::MethodOBBCreate::MINIMAL_JYLANKI);
 
     double volume_minimal_jylanki = obb.Volume();
     EXPECT_TRUE(obb.GetCenter().AllClose(core::Tensor::Init<float>(
@@ -366,21 +363,18 @@ TEST_P(OrientedBoundingBoxPermuteDevices, CreateFromPoints) {
     auto points3 = points.GetItem(core::TensorKey::Slice(0, 3, 1));
 
     EXPECT_THROW(obb = t::geometry::OrientedBoundingBox::CreateFromPoints(
-                         points3, false,
-                         t::geometry::OrientedBoundingBox::Method::PCA),
+                         points3, false, t::geometry::MethodOBBCreate::PCA),
                  std::runtime_error);
 
-    EXPECT_THROW(
-            obb = t::geometry::OrientedBoundingBox::CreateFromPoints(
-                    points3, false,
-                    t::geometry::OrientedBoundingBox::Method::MINIMAL_APPROX),
-            std::runtime_error);
+    EXPECT_THROW(obb = t::geometry::OrientedBoundingBox::CreateFromPoints(
+                         points3, false,
+                         t::geometry::MethodOBBCreate::MINIMAL_APPROX),
+                 std::runtime_error);
 
-    EXPECT_THROW(
-            obb = t::geometry::OrientedBoundingBox::CreateFromPoints(
-                    points3, false,
-                    t::geometry::OrientedBoundingBox::Method::MINIMAL_JYLANKI),
-            std::runtime_error);
+    EXPECT_THROW(obb = t::geometry::OrientedBoundingBox::CreateFromPoints(
+                         points3, false,
+                         t::geometry::MethodOBBCreate::MINIMAL_JYLANKI),
+                 std::runtime_error);
 }
 
 }  // namespace tests

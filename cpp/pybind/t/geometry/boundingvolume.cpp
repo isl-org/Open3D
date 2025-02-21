@@ -317,14 +317,6 @@ The scaling center will be the box center if it is not specified.)",
             &OrientedBoundingBox::CreateFromAxisAlignedBoundingBox, "aabb"_a,
             "Create an OrientedBoundingBox from a legacy Open3D oriented box.");
 
-    py::enum_<OrientedBoundingBox::Method>(obb, "Method")
-            .value("PCA", OrientedBoundingBox::Method::PCA)
-            .value("MINIMAL_APPROX",
-                   OrientedBoundingBox::Method::MINIMAL_APPROX)
-            .value("MINIMAL_JYLANKI",
-                   OrientedBoundingBox::Method::MINIMAL_JYLANKI)
-            .export_values();
-
     obb.def_static("create_from_points", &OrientedBoundingBox::CreateFromPoints,
                    R"(Creates an oriented bounding box with various algorithms.
 
@@ -387,7 +379,7 @@ Example:
         o3d.visualization.draw([obb.to_legacy() for obb in obbs] + [mesh])
 )",
                    "points"_a, "robust"_a = false,
-                   "method"_a = OrientedBoundingBox::Method::MINIMAL_APPROX);
+                   "method"_a = MethodOBBCreate::MINIMAL_APPROX);
 
     docstring::ClassMethodDocInject(
             m, "OrientedBoundingBox", "set_center",
