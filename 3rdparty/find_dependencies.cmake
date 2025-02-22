@@ -669,6 +669,8 @@ if(USE_SYSTEM_GLFW)
     open3d_find_package_3rdparty_library(3rdparty_glfw
         HEADER
         PACKAGE glfw3
+        VERSION 3.4
+        REQUIRED
         TARGETS glfw
     )
     if(NOT 3rdparty_glfw_FOUND)
