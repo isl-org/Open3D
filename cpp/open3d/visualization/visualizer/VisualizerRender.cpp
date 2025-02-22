@@ -39,8 +39,12 @@ bool Visualizer::InitOpenGL() {
 #endif
 
     glewExperimental = true;
-    if (glewInit() != GLEW_OK) {
-        utility::LogWarning("Failed to initialize GLEW.");
+    const GLenum init_ret = glewInit();
+    if (init_ret != GLEW_OK) {
+        const std::string err_msg{
+                reinterpret_cast<const char *>(glewGetErrorString(init_ret))};
+        utility::LogWarning("Failed to initialize GLEW: {} ({})", err_msg,
+                            init_ret);
         return false;
     }
 
