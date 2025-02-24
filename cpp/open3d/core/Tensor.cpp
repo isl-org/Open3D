@@ -112,25 +112,10 @@ private:
     Open3DDLManagedTensor(const Tensor& o3d_tensor) {
         o3d_tensor_ = o3d_tensor;
 
-        // Prepare dl_device_type
-        DLDeviceType dl_device_type;
-        Device device = o3d_tensor_.GetDevice();
-        switch (device.GetType()) {
-            case Device::DeviceType::CPU:
-                dl_device_type = DLDeviceType::kDLCPU;
-                break;
-            case Device::DeviceType::CUDA:
-                dl_device_type = DLDeviceType::kDLGPU;
-                break;
-            default:
-                utility::LogError("ToDLPack: unsupported device type {}",
-                                  device.ToString());
-        }
-
-        // Prepare dl_context
-        DLContext dl_context;
-        dl_context.device_type = dl_device_type;
-        dl_context.device_id = device.GetID();
+        // Prepare dl_device
+        DLDevice dl_device;
+        std::tie(dl_device.device_type, dl_device.device_id) =
+                getDLPackDevice(o3d_tensor_);
 
         // Prepare dl_data_type
         DLDataType dl_data_type;
@@ -140,12 +125,12 @@ private:
         dl_data_type.bits = static_cast<uint8_t>(dtype.ByteSize() * 8);
         dl_data_type.lanes = 1;
 
-        // Prepare dl_tensor, this uses dl_device_type, dl_context and
+        // Prepare dl_tensor, this uses dl_device_type, dl_device and
         // dl_data_type prepared above.
         DLTensor dl_tensor;
         // Not Blob's data pointer.
         dl_tensor.data = const_cast<void*>(o3d_tensor_.GetDataPtr());
-        dl_tensor.ctx = dl_context;
+        dl_tensor.device = dl_device;
         dl_tensor.ndim = static_cast<int>(o3d_tensor_.GetShape().size());
         dl_tensor.dtype = dl_data_type;
         // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
@@ -174,6 +159,28 @@ public:
         Open3DDLManagedTensor* o3d_dl_tensor =
                 new Open3DDLManagedTensor(o3d_tensor);
         return &o3d_dl_tensor->dl_managed_tensor_;
+    }
+
+    static std::pair<DLDeviceType, int> getDLPackDevice(
+            const Tensor& o3d_tensor) {
+        // Prepare dl_device_type
+        DLDeviceType dl_device_type;
+        Device device = o3d_tensor.GetDevice();
+        switch (device.GetType()) {
+            case Device::DeviceType::CPU:
+                dl_device_type = DLDeviceType::kDLCPU;
+                break;
+            case Device::DeviceType::CUDA:
+                dl_device_type = DLDeviceType::kDLCUDA;
+                break;
+            case Device::DeviceType::SYCL:
+                dl_device_type = DLDeviceType::kDLOneAPI;
+                break;
+            default:
+                utility::LogError("ToDLPack: unsupported device type {}",
+                                  device.ToString());
+        }
+        return std::make_pair(dl_device_type, device.GetID());
     }
 
     static void Deleter(DLManagedTensor* arg) {
@@ -1779,16 +1786,20 @@ DLManagedTensor* Tensor::ToDLPack() const {
 
 Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
     Device device;
-    switch (src->dl_tensor.ctx.device_type) {
+    switch (src->dl_tensor.device.device_type) {
         case DLDeviceType::kDLCPU:
-            device = Device("CPU", src->dl_tensor.ctx.device_id);
+            device = Device("CPU", src->dl_tensor.device.device_id);
             break;
-        case DLDeviceType::kDLGPU:
-            device = Device("CUDA", src->dl_tensor.ctx.device_id);
+        case DLDeviceType::kDLCUDA:
+            device = Device("CUDA", src->dl_tensor.device.device_id);
+            break;
+        case DLDeviceType::kDLOneAPI:
+            device = Device("SYCL", src->dl_tensor.device.device_id);
             break;
         default:
-            utility::LogError("Unsupported device_type {}",
-                              src->dl_tensor.ctx.device_type);
+            utility::LogError(
+                    "Unsupported device_type {}",
+                    static_cast<int>(src->dl_tensor.device.device_type));
     }
 
     Dtype dtype = DLDataTypeToDtype(src->dl_tensor.dtype);

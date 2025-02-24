@@ -7,6 +7,8 @@
 
 #include "open3d/core/Tensor.h"
 
+#include <pybind11/pytypes.h>
+
 #include <vector>
 
 #include "open3d/core/Blob.h"
@@ -500,7 +502,7 @@ Example:
         return core::PyArrayToTensor(np_array, /*inplace=*/true);
     });
 
-    tensor.def("to_dlpack", [](const Tensor& tensor) {
+    auto to_dlpack = [](const Tensor& tensor) {
         DLManagedTensor* dl_managed_tensor = tensor.ToDLPack();
         // See PyTorch's torch/csrc/Module.cpp
         auto capsule_destructor = [](PyObject* data) {
@@ -518,9 +520,32 @@ Example:
             }
         };
         return py::capsule(dl_managed_tensor, "dltensor", capsule_destructor);
+    };
+    tensor.def("to_dlpack", to_dlpack);
+    tensor.def("__dlpack__", to_dlpack);
+    tensor.def("__dlpack_device__", [](const Tensor& tensor) {
+        // &Open3DDLManagedTensor::getDLPackDevice
+        // Prepare dl_device_type
+        DLDeviceType dl_device_type;
+        Device device = tensor.GetDevice();
+        switch (device.GetType()) {
+            case Device::DeviceType::CPU:
+                dl_device_type = DLDeviceType::kDLCPU;
+                break;
+            case Device::DeviceType::CUDA:
+                dl_device_type = DLDeviceType::kDLCUDA;
+                break;
+            case Device::DeviceType::SYCL:
+                dl_device_type = DLDeviceType::kDLOneAPI;
+                break;
+            default:
+                utility::LogError("ToDLPack: unsupported device type {}",
+                                  device.ToString());
+        }
+        return std::make_pair(dl_device_type, device.GetID());
     });
 
-    tensor.def_static("from_dlpack", [](py::capsule data) {
+    auto from_dlpack = [](py::capsule data) {
         DLManagedTensor* dl_managed_tensor =
                 static_cast<DLManagedTensor*>(data);
         if (!dl_managed_tensor) {
@@ -535,6 +560,13 @@ Example:
         Tensor t = Tensor::FromDLPack(dl_managed_tensor);
         PyCapsule_SetName(data.ptr(), "used_dltensor");
         return t;
+    };
+    tensor.def_static("from_dlpack", from_dlpack);
+    tensor.def_static("from_dlpack", [](const py::object& ext_tensor) {
+        if (hasattr(ext_tensor, "__dlpack__")) {
+            return from_dlpack(ext_tensor.attr("__dlpack__")());
+        }
+        auto device = ext_tensor.attr("__dlpack_device__")();
     });
 
     // Numpy IO.
