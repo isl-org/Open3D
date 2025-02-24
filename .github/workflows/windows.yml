@@ -21,7 +21,7 @@ concurrency:
 
 env:
   PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.1.0"
+  CUDA_VERSION: "12.4.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -106,7 +106,8 @@ jobs:
       - name: Install PyTorch requirements
         run: |
           if (${{ matrix.BUILD_CUDA_MODULE == 'ON' }}) {
-            python -m pip install -r open3d_ml/requirements-torch-cuda.txt
+            python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+            python -m pip install tensorboard
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
