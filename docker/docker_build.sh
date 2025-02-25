@@ -261,6 +261,7 @@ ci_build() {
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
         --build-arg CI="${CI:-}" \
+	--network host \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd

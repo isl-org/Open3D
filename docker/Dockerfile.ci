@@ -242,7 +242,7 @@ RUN ccache -s \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
- && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
+ && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel* /; fi \
  && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
  && if [[ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
  && ls -alh /
