@@ -164,12 +164,10 @@ install(TARGETS Open3D EXPORT Open3DTargets
         RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
         LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
-	COMPONENT dev
 )
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}
-    COMPONENT dev
     FILES_MATCHING
         PATTERN "*.h"
         PATTERN "*.cuh"
@@ -179,12 +177,11 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 install(FILES
         "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
         "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
-        DESTINATION "${Open3D_INSTALL_CMAKE_DIR}" COMPONENT dev)
+        DESTINATION "${Open3D_INSTALL_CMAKE_DIR}")
 
 # Install GUI resources
 if (BUILD_GUI)
     install(DIRECTORY ${GUI_RESOURCE_DIR}
-	    COMPONENT dev
          DESTINATION "${Open3D_INSTALL_RESOURCE_DIR}")
 endif()
 
@@ -204,7 +201,6 @@ Libs: -L${libdir} -Wl,-rpath,${libdir} -lOpen3D -ltbb]=]  @ONLY NEWLINE_STYLE LF
     file(GENERATE OUTPUT Open3D.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc.in"
         TARGET "Open3D::Open3D")
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc"
-	    COMPONENT dev
         DESTINATION "${Open3D_INSTALL_LIB_DIR}/pkgconfig")
 endif ()
 

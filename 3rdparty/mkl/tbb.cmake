@@ -14,9 +14,10 @@ set(_build_shared_libs ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS ON)
 set(_win_exp_all_syms ${CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS})
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)   # ON interferes with TBB symbols
+set(TBB_VERSION "2021.12.0")
 FetchContent_Declare(
     ext_tbb
-    URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.12.0.tar.gz # April 2024
+    URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v${TBB_VERSION}.tar.gz # April 2024
     URL_HASH SHA256=c7bb7aa69c254d91b8f0041a71c5bcc3936acb64408a1719aec0b2b7639dd84f
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/tbb"
 )
