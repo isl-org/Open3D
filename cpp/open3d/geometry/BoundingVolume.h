@@ -126,7 +126,7 @@ public:
     ///     For an exact algorithm use the Tensor version of
     ///     open3d::t::geometry::OrientedBoundingBox::CreateFromPoints() and
     ///     select the method
-    ///     open3d::t::geometry::OrientedBoundingBox::Method::MINIMAL_JYLANKI.
+    ///     open3d::t::geometry::MethodOBBCreate::MINIMAL_JYLANKI.
     static OrientedBoundingBox CreateFromPoints(
             const std::vector<Eigen::Vector3d>& points, bool robust = false);
 
@@ -145,7 +145,7 @@ public:
     ///     For an exact algorithm use the Tensor version of
     ///     open3d::t::geometry::OrientedBoundingBox::CreateFromPoints() and
     ///     select the method
-    ///     open3d::t::geometry::OrientedBoundingBox::Method::MINIMAL_JYLANKI.
+    ///     open3d::t::geometry::MethodOBBCreate::MINIMAL_JYLANKI.
     static OrientedBoundingBox CreateFromPointsMinimal(
             const std::vector<Eigen::Vector3d>& points, bool robust = false);
 

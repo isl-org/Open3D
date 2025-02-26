@@ -62,7 +62,7 @@ void pybind_geometry_declarations(py::module& m) {
             m_geometry, "MetricParameters",
             "Holder for various parameters required by metrics.");
 
-    py::enum_<MethodOBBCreate>(m_geometry, "Method")
+    py::enum_<MethodOBBCreate>(m_geometry, "MethodOBBCreate")
             .value("PCA", MethodOBBCreate::PCA)
             .value("MINIMAL_APPROX", MethodOBBCreate::MINIMAL_APPROX)
             .value("MINIMAL_JYLANKI", MethodOBBCreate::MINIMAL_JYLANKI)

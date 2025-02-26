@@ -451,7 +451,7 @@ public:
     /// degenerate cases but introduces noise to the points coordinates.
     /// \param method This is one of \c PCA, \c MINIMAL_APPROX,
     /// \c MINIMAL_JYLANKI in the
-    /// open3d::t::geometry::OrientedBoundingBox::Method namespace.
+    /// open3d::t::geometry::MethodOBBCreate namespace.
     ///     \li \c PCA computes an oriented bounding box using the principal
     ///     component analysis of the convex hull.
     ///     \li \c MINIMAL_APPROX computes an oriented bounding box using a fast

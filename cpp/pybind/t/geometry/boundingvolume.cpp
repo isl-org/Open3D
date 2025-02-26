@@ -363,9 +363,9 @@ Example:
         mesh = o3d.t.io.read_triangle_mesh(bunny.path)
 
         methods = [
-            o3d.t.geometry.OrientedBoundingBox.Method.PCA,
-            o3d.t.geometry.OrientedBoundingBox.Method.MINIMAL_APPROX,
-            o3d.t.geometry.OrientedBoundingBox.Method.MINIMAL_JYLANKI,
+            o3d.t.geometry.PCA,
+            o3d.t.geometry.MINIMAL_APPROX,
+            o3d.t.geometry.MINIMAL_JYLANKI,
         ]
 
         obbs = []

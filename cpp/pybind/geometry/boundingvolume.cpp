@@ -76,7 +76,7 @@ The returned bounding box is an approximation to the minimal bounding box.
 
 Note:
      See the Tensor version open3d.t.geometry.OrientedBoundingBox.create_from_points()
-     and select the method open3d.t.geometry.OrientedBoundingBox.Method.MINIMAL_JYLANKI
+     and select the method open3d.t.geometry.MINIMAL_JYLANKI
      for an algorithm returning the minimum oriented bounding box.
 
 Args:
@@ -105,7 +105,7 @@ smallest) volume.
 
 Note:
      See the Tensor version open3d.t.geometry.OrientedBoundingBox.create_from_points()
-     and select the method open3d.t.geometry.OrientedBoundingBox.Method.MINIMAL_JYLANKI
+     and select the method open3d.t.geometry.MINIMAL_JYLANKI
      for an algorithm returning the minimum oriented bounding box.
 
 Args:
