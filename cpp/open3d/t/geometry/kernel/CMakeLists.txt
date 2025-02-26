@@ -9,6 +9,7 @@ target_sources(tgeometry_kernel PRIVATE
     PointCloud.cpp
     PointCloudCPU.cpp
     Metrics.cpp
+    MinimumOBB.cpp
     TriangleMesh.cpp
     TriangleMeshCPU.cpp
     Transform.cpp
