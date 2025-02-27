@@ -230,7 +230,7 @@ RUN \
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
- && if [[ "${PACKAGE}" = "ON" ]]; then make package; fi \
+ && if [[ "${PACKAGE}" = "ON" ]]; then make VERBOSE=1 package; fi \
  && if [[ "${PACKAGE}" = "VIEWER" ]]; then make package-Open3DViewer-deb; fi \
  && if [[ "${CI:-}a" != "a" ]]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc librealsense; fi
 # If CI is not null or unset, remove all large build folders to save disk space
