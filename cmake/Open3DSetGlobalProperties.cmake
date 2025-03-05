@@ -25,18 +25,8 @@ function(open3d_enable_strip target)
     endif()
 endfunction()
 
-# RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder. 
-# Also check the Python virtual env /lib folder for 3rd party dependency libraries installed with `pip install`
+# RPATH handling (see below). We don't install targets such as pybind, so BUILD_RPATH must be relative as well.
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
-if (APPLE)
-# Add options to cover the various ways in which open3d shared lib or apps can be installed wrt TBB DSO
-    set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/;@loader_path/../../../../")
-# pybind with open3d shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
-    set(CMAKE_BUILD_RPATH "@loader_path/../")   
-elseif(UNIX)
-    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../")
-    set(CMAKE_BUILD_RPATH "$ORIGIN/../")
-endif()
 
 # open3d_set_global_properties(target)
 #
@@ -203,5 +193,24 @@ function(open3d_set_global_properties target)
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
     target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")
     target_compile_definitions(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_DEFINITIONS}>")
+
+    # RPATH handling. Check current folder, one folder above (cpu/pybind ->
+    # libtbb) and the lib sibling folder (bin/Open3D -> lib/libOpen3D).  Also
+    # check the Python virtual env /lib folder for 3rd party dependency
+    # libraries installed with `pip install`
+    if (APPLE)
+    # Add options to cover the various ways in which open3d shared lib or apps can be installed wrt dependent DSOs
+        set_target_properties(${target} PROPERTIES 
+            INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../../"
+    # pybind with open3d shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
+            BUILD_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../../")
+    elseif(UNIX)
+        message(STATUS "Setting RPATH for ${target}")
+        # INSTALL_RPATH for C++ binaries.
+        set_target_properties(${target} PROPERTIES 
+            INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../"
+        # BUILD_RPATH for Python wheel libs and app.
+            BUILD_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../")
+    endif()
 
 endfunction()

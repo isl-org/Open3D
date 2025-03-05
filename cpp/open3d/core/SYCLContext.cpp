@@ -55,8 +55,10 @@ SYCLDevice::SYCLDevice(const sycl::device &sycl_device) {
            aspects.end();
     if (!fp64) {
         utility::LogWarning(
-                "SYCL device {} does not support double precision. Using "
-                "emulation.",
+                "SYCL device {} does not support double precision. Use env "
+                "vars 'OverrideDefaultFP64Settings=1' "
+                "'IGC_EnableDPEmulation=1' to enable double precision "
+                "emulation on Intel GPUs.",
                 name);
     }
     usm_device_allocations =
@@ -78,6 +80,7 @@ SYCLContext::SYCLContext() {
         const Device open3d_device = Device("SYCL:0");
         devices_.emplace(open3d_device, sycl_device);
     } catch (const sycl::exception &e) {
+        utility::LogWarning("SYCL GPU unavailable: {}", e.what());
     }
 
     // SYCL CPU fallback.
@@ -94,6 +97,7 @@ SYCLContext::SYCLContext() {
                 Device("SYCL:" + std::to_string(devices_.size()));
         devices_.emplace(open3d_device, sycl_device);
     } catch (const sycl::exception &e) {
+        utility::LogWarning("SYCL CPU unavailable: {}", e.what());
     }
 
     if (devices_.size() == 0) {

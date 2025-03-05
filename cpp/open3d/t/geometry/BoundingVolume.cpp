@@ -9,6 +9,7 @@
 
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorFunction.h"
+#include "open3d/t/geometry/kernel/MinimumOBB.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 
 namespace open3d {
@@ -566,14 +567,32 @@ OrientedBoundingBox OrientedBoundingBox::FromLegacy(
 }
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
-        const core::Tensor &points, bool robust) {
+        const core::Tensor &points, bool robust, MethodOBBCreate method) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
-    return OrientedBoundingBox::FromLegacy(
-            open3d::geometry::OrientedBoundingBox::CreateFromPoints(
-                    core::eigen_converter::TensorToEigenVector3dVector(points),
-                    robust),
-            points.GetDtype(), points.GetDevice());
+    switch (method) {
+        case MethodOBBCreate::PCA:
+            if (points.GetShape(0) < 4) {
+                utility::LogError("Input point set has less than 4 points.");
+            }
+            return OrientedBoundingBox::FromLegacy(
+                    open3d::geometry::OrientedBoundingBox::CreateFromPoints(
+                            core::eigen_converter::TensorToEigenVector3dVector(
+                                    points),
+                            robust),
+                    points.GetDtype(), points.GetDevice());
+        case MethodOBBCreate::MINIMAL_APPROX:
+            return kernel::minimum_obb::ComputeMinimumOBBApprox(points, robust);
+        case MethodOBBCreate::MINIMAL_JYLANKI:
+            return kernel::minimum_obb::ComputeMinimumOBBJylanki(points,
+                                                                 robust);
+        default:
+            utility::LogError(
+                    "Invalid method for computing oriented bounding "
+                    "box. Supported methods are PCA, MINIMAL_APPROX, "
+                    "and MINIMAL_JYLANKI.");
+            return OrientedBoundingBox();
+    }
 }
 
 }  // namespace geometry
