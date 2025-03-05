@@ -33,7 +33,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -49,7 +51,7 @@ jobs:
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
-      CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-ci-ccache
+      CCACHE_TAR_NAME: open3d-ubuntu-2404-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
@@ -124,11 +126,14 @@ jobs:
     name: Test wheel CPU
     permissions:
       contents: read
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
