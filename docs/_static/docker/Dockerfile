@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 # ENV http_proxy  ""
 # ENV HTTP_PROXY  ""
