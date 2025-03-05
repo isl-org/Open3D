@@ -31,7 +31,7 @@ jobs:
   windows:
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       matrix:
@@ -233,7 +233,7 @@ jobs:
     name: Build wheel
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -330,7 +330,7 @@ jobs:
     name: Test wheel
     permissions:
       contents: read
-    runs-on: windows-2019
+    runs-on: windows-2025
     needs: [build-wheel]
     strategy:
       fail-fast: false

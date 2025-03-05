@@ -30,10 +30,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-12]
+        os: [ubuntu-24.04, macos-13]
         GLIBCXX_USE_CXX11_ABI: [0, 1]
         exclude:
-          - os: macos-12
+          - os: macos-13
             GLIBCXX_USE_CXX11_ABI: 0
     env:
       GLIBCXX_USE_CXX11_ABI: ${{ matrix.GLIBCXX_USE_CXX11_ABI }}
@@ -48,7 +48,7 @@ jobs:
           python-version: 3.8
 
       - name: Install dependencies
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' }}
         run: |
           source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu
@@ -76,7 +76,7 @@ jobs:
     permissions:
       contents: write  # upload
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
-    runs-on: windows-2019
+    runs-on: windows-2025
     env:
       WORK_DIR: "C:\\WebRTC"  # Not enough space in D:
       OPEN3D_DIR: "D:\\a\\open3d\\open3d"
