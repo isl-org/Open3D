@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
     # TODO: Convert to docker
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
   Windows:
     permissions:
       contents: write
-    runs-on: windows-2019
+    runs-on: windows-2025
     env:
       SRC_DIR: "D:\\a\\open3d\\open3d"
       BUILD_DIR: "C:\\Open3D\\build"
@@ -63,7 +63,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             "${{ env.SRC_DIR }}\3rdparty\vtk"
@@ -89,7 +89,7 @@ jobs:
   MacOS:
     permissions:
       contents: write
-    runs-on: macos-12
+    runs-on: macos-13
     strategy:
       fail-fast: false
 

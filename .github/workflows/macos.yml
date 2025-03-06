@@ -32,9 +32,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-13 is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-15 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-13, macos-14]
+        os: [macos-13, macos-15]
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
@@ -184,17 +184,17 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        # macos-13 is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-15 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-13, macos-14]
+        os: [macos-13, macos-15]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          # TODO: remove macos-14 excludes when https://github.com/actions/setup-python/issues/808 is fixed
-          - os: macos-14
+          # TODO: remove macos-15 excludes when https://github.com/actions/setup-python/issues/808 is fixed
+          - os: macos-15
             python_version: '3.8'
-          - os: macos-14
+          - os: macos-15
             python_version: '3.9'
           - is_main: false
             python_version: '3.8'
@@ -250,7 +250,7 @@ jobs:
           source util/ci_utils.sh
           install_python_dependencies
 
-          # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
+          # Fix macos-15 arm64 runner image issues, see comments in MacOS job.
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
           fi
@@ -370,14 +370,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, macos-14]
+        os: [macos-13, macos-15]
         python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - os: macos-14
+          - os: macos-15
             python_version: '3.8'
-          - os: macos-14
+          - os: macos-15
             python_version: '3.9'
           - is_main: false
             python_version: '3.8'
