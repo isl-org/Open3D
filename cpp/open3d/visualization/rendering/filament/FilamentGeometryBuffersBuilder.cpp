@@ -250,9 +250,14 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
     using GT = t::geometry::Geometry::GeometryType;
 
     switch (geometry.GetGeometryType()) {
-        case GT::PointCloud:
-            return std::make_unique<TPointCloudBuffersBuilder>(
-                    static_cast<const t::geometry::PointCloud&>(geometry));
+        case GT::PointCloud: {
+            const t::geometry::PointCloud& pointcloud = static_cast<const t::geometry::PointCloud&>(geometry);
+            if (pointcloud.IsGaussian()) {
+                return std::make_unique<TGaussianBuffersBuilder>(pointcloud);
+            } else {
+                return std::make_unique<TPointCloudBuffersBuilder>(pointcloud);
+            }
+        }
         case GT::TriangleMesh:
             return std::make_unique<TMeshBuffersBuilder>(
                     static_cast<const t::geometry::TriangleMesh&>(geometry));

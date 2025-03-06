@@ -102,7 +102,8 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
          ResourceManager::kDefaultUnlitPolygonOffsetShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
         {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader}};
+        {"unlitLine", ResourceManager::kDefaultLineShader},
+        {"gaussian", ResourceManager::kGaussian}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -1131,6 +1132,9 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
+    } else if (props.shader == "gaussian") {
+        UpdateDefaultLit(geom.mat);
+        // need to make changes here, just update the parameter
     } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
