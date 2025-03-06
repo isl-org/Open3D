@@ -50,6 +50,7 @@ namespace rendering {
 class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
+    static const MaterialHandle kGaussian;
     static const MaterialHandle kDefaultLitWithTransparency;
     static const MaterialHandle kDefaultLitSSR;
     static const MaterialHandle kDefaultUnlit;

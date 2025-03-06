@@ -176,6 +176,20 @@ private:
     t::geometry::PointCloud geometry_;
 };
 
+class TGaussianBuffersBuilder : public GeometryBuffersBuilder {
+public:
+    explicit TGaussianBuffersBuilder(const t::geometry::PointCloud& geometry);
+
+    filament::RenderableManager::PrimitiveType GetPrimitiveType()
+            const override;
+
+    Buffers ConstructBuffers() override;
+    filament::Box ComputeAABB() override;
+
+private:
+    t::geometry::PointCloud geometry_;
+};
+
 class TLineSetBuffersBuilder : public GeometryBuffersBuilder {
 public:
     explicit TLineSetBuffersBuilder(const t::geometry::LineSet& geometry);
