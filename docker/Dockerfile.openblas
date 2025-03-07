@@ -6,10 +6,12 @@ FROM ${BASE_IMAGE}
 SHELL ["/bin/bash", "-c"]
 
 # Required build args, should be specified in docker_build.sh
+ARG CONDA_SUFFIX
 ARG CMAKE_VERSION
 ARG PYTHON_VERSION
 ARG DEVELOPER_BUILD
-RUN if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi \
+RUN if [ -z "${CONDA_SUFFIX}"    ]; then echo "Error: ARG CONDA_SUFFIX    not specified."; exit 1; fi \
+ && if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi \
  && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
  && if [ -z "${DEVELOPER_BUILD}" ]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
 
@@ -30,39 +32,46 @@ RUN apt-get update && apt-get install -y \
 
 # Minimal dependencies for building
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    git \
- && rm -rf /var/lib/apt/lists/*
- 
-# Minimal dependencies for building
-RUN apt-get update && apt-get install -y \
+    git  \
+    wget \
     curl \
-    libssl-dev \
+    build-essential \
+    pkg-config \
+    zlib1g \
     zlib1g-dev \
+    libssl-dev \
     libbz2-dev \
     libreadline-dev \
     libsqlite3-dev \
-    llvm \
-    libncurses5-dev \
+    libncursesw5-dev \
     xz-utils \
     tk-dev \
     libxml2-dev \
     libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
+    libcurl4-openssl-dev \
     libidn2-dev \
+    libidn2-0 \
  && rm -rf /var/lib/apt/lists/*
 
-# Install pyenv
-RUN curl https://pyenv.run | bash
-# Update PATH to include pyenv binaries and shims
-ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:$PATH"
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
 
-# Install desired Python version via pyenv and set it as global
-RUN pyenv install ${PYTHON_VERSION} \
- && pyenv global ${PYTHON_VERSION}
-RUN which python \
- && python --version
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # CMake
 # PWD is /, cmake will be installed to /root/${CMAKE_VERSION}/bin/cmake
