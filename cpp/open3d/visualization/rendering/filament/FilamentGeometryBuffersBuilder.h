@@ -176,9 +176,9 @@ private:
     t::geometry::PointCloud geometry_;
 };
 
-class TGaussianBuffersBuilder : public GeometryBuffersBuilder {
+class TGaussianSplatBuffersBuilder : public GeometryBuffersBuilder {
 public:
-    explicit TGaussianBuffersBuilder(const t::geometry::PointCloud& geometry);
+    explicit TGaussianSplatBuffersBuilder(const t::geometry::PointCloud& geometry);
 
     filament::RenderableManager::PrimitiveType GetPrimitiveType()
             const override;

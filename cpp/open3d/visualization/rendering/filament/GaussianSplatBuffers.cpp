@@ -86,7 +86,7 @@ struct ColoredVertex {
 };
 }  // namespace
 
-TGaussianBuffersBuilder::TGaussianBuffersBuilder(
+TGaussianSplatBuffersBuilder::TGaussianSplatBuffersBuilder(
         const t::geometry::PointCloud& geometry)
     : geometry_(geometry) {
     // Make sure geometry is on CPU
@@ -129,12 +129,12 @@ TGaussianBuffersBuilder::TGaussianBuffersBuilder(
     }
 }
 
-RenderableManager::PrimitiveType TGaussianBuffersBuilder::GetPrimitiveType()
+RenderableManager::PrimitiveType TGaussianSplatBuffersBuilder::GetPrimitiveType()
         const {
     return RenderableManager::PrimitiveType::POINTS;
 }
 
-GeometryBuffersBuilder::Buffers TGaussianBuffersBuilder::ConstructBuffers() {
+GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
@@ -331,7 +331,7 @@ GeometryBuffersBuilder::Buffers TGaussianBuffersBuilder::ConstructBuffers() {
     return std::make_tuple(vb_handle, ib_handle, downsampled_handle);
 }
 
-filament::Box TGaussianBuffersBuilder::ComputeAABB() {
+filament::Box TGaussianSplatBuffersBuilder::ComputeAABB() {
     auto min_bounds = geometry_.GetMinBound();
     auto max_bounds = geometry_.GetMaxBound();
     auto* min_bounds_float = min_bounds.GetDataPtr<float>();

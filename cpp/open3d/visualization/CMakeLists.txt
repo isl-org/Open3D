@@ -80,7 +80,7 @@ if (BUILD_GUI)
         rendering/filament/LineSetBuffers.cpp
         rendering/filament/PointCloudBuffers.cpp
         rendering/filament/TriangleMeshBuffers.cpp
-        rendering/filament/GaussianBuffers.cpp
+        rendering/filament/GaussianSplatBuffers.cpp
     )
 
     target_sources(visualization PRIVATE

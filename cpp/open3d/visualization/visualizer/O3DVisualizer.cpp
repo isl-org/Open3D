@@ -60,7 +60,7 @@ namespace visualizer {
 namespace {
 static const std::string kShaderLit = "defaultLit";
 static const std::string kShaderUnlit = "defaultUnlit";
-static const std::string kGaussian = "gaussian";
+static const std::string kShaderGaussianSplat = "gaussianSplat";
 static const std::string kShaderUnlitLines = "unlitLine";
 
 static const std::string kDefaultIBL = "default";
@@ -931,7 +931,7 @@ Ctrl-alt-click to polygon select)";
             if (has_normals) {
                 mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
                 mat.shader = kShaderLit;
-                mat.shader = kGaussian;
+                mat.shader = kShaderGaussianSplat;
                 is_default_color = false;
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);

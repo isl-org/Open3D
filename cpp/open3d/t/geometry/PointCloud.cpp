@@ -1369,14 +1369,14 @@ core::Tensor PointCloud::ComputeMetrics(const PointCloud &pcd2,
                                 metrics, params);
 }
 
-bool PointCloud::IsGaussian() const {
-    std::vector<std::string> keys_to_check = {"f_dc", "f_rest", "normals", "opacity", "rot", "scale"};
+bool PointCloud::IsGaussianSplat() const {
+    std::vector<std::string> keys_to_check = {"f_dc", "opacity", "rot", "scale"};
     for (const auto& key : keys_to_check) {
-        if (point_attr_.find(key) != point_attr_.end()) {
-            return true;
+        if (point_attr_.find(key) == point_attr_.end()) {
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 }  // namespace geometry
