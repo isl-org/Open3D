@@ -80,6 +80,9 @@ RUN which python \
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
+ENV LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
+ENV LD_LIBRARY_PATH=/usr/lib:/lib
+
 # Build
 RUN mkdir build \
  && cd build \
