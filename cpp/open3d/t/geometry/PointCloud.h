@@ -738,7 +738,7 @@ public:
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
 
-    bool IsGaussian() const;
+    bool IsGaussianSplat() const;
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap point_attr_;

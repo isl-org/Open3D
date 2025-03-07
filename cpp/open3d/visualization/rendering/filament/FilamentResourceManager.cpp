@@ -318,7 +318,7 @@ TextureSettings GetSettingsFromImage(const t::geometry::Image& image,
 
 const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
-const MaterialHandle FilamentResourceManager::kGaussian =
+const MaterialHandle FilamentResourceManager::kGaussianSplatShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
         MaterialHandle::Next();
@@ -1036,7 +1036,7 @@ void FilamentResourceManager::LoadDefaults() {
     gaussian_mat->setDefaultParameter("reflectanceMap", texture, default_sampler);
 
     gaussian_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
-    materials_[kGaussian] = BoxResource(gaussian_mat, engine_);
+    materials_[kGaussianSplatShader] = BoxResource(gaussian_mat, engine_);
 
     const auto lit_trans_path =
             resource_root + "/defaultLitTransparency.filamat";
