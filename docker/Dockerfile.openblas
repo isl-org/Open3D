@@ -1,12 +1,11 @@
-# FROM must be called before other ARGs except for ARG BASE_IMAGE
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# Set shell to bash for the rest of the Dockerfile
+# For the rest of this Dockerfile
 SHELL ["/bin/bash", "-c"]
 
-# Required build arguments, specified in docker_build.sh
-# Removed CONDA_SUFFIX as it’s no longer needed with pyenv
+# Required build args, should be specified in docker_build.sh
 ARG CMAKE_VERSION
 ARG PYTHON_VERSION
 ARG DEVELOPER_BUILD
@@ -14,12 +13,15 @@ RUN if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not sp
  && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
  && if [ -z "${DEVELOPER_BUILD}" ]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
 
-# Prevent interactive inputs during package installation
+# Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
 # Minimal dependencies for running Docker
+# wget    : for downloading
+# libgl1  : available on Ubuntu ARM desktop by default
+# libgomp1: available on Ubuntu ARM desktop by default
 RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
@@ -28,19 +30,17 @@ RUN apt-get update && apt-get install -y \
 
 # Minimal dependencies for building
 RUN apt-get update && apt-get install -y \
+    git  \
+    wget \
+    curl \
     build-essential \
-    git \
- && rm -rf /var/lib/apt/lists/*
-
-# Dependencies for building Python with pyenv
-RUN apt-get update && apt-get install -y \
-    libssl-dev \
+    pkg-config \
+    zlib1g \
     zlib1g-dev \
+    libssl-dev \
     libbz2-dev \
     libreadline-dev \
     libsqlite3-dev \
-    curl \
-    llvm \
     libncursesw5-dev \
     xz-utils \
     tk-dev \
@@ -52,23 +52,34 @@ RUN apt-get update && apt-get install -y \
     libidn2-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Install pyenv
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
-ENV PATH=$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
-RUN git clone https://github.com/pyenv/pyenv.git $PYENV_ROOT \
- && pyenv install ${PYTHON_VERSION} \
- && pyenv global ${PYTHON_VERSION} \
- && which python \
- && python --version
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
 
-# Install CMake
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# CMake
+# PWD is /, cmake will be installed to /root/${CMAKE_VERSION}/bin/cmake
 RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -xf ${CMAKE_VERSION}.tar.gz \
  && cp -ar ${CMAKE_VERSION} ${HOME}
-ENV PATH=${HOME}/${CMAKE_VERSION}/bin:$PATH
+ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 
-# Install Open3D C++ dependencies
+# Install dependencies before copying the full Open3D directory for better Docker caching
+# Open3D C++ dependencies
 COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
 RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
  && rm -rf /var/lib/apt/lists/*
@@ -78,7 +89,7 @@ RUN echo ${PATH} \
  && echo "g++=$(which g++)" \
  && g++ --version
 
-# Install Python dependencies
+# Python and dependencies
 COPY ./python/requirements*.txt /root/Open3D/python/
 RUN which python \
  && python --version \
@@ -86,11 +97,12 @@ RUN which python \
   -r /root/Open3D/python/requirements_build.txt \
   -r /root/Open3D/python/requirements_test.txt
 
-# Copy Open3D repository and set working directory
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
-# Build Open3D
+# Build
 RUN mkdir build \
  && cd build \
  && cmake \
@@ -103,19 +115,3 @@ RUN mkdir build \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc)
 RUN cp build/lib/python_package/pip_package/*.whl /
-COPY . /root/Open3D
-WORKDIR /root/Open3D
-
-# Build Open3D
-RUN mkdir build \
- && cd build \
- && cmake \
-    -DBUILD_UNIT_TESTS=ON \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-    -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
-    .. \
- && make -j$(nproc) \
- && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
-RUN cp build/lib/python_package/pip_package/*.whl 
