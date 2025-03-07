@@ -30,6 +30,12 @@ RUN apt-get update && apt-get install -y \
 
 # Minimal dependencies for building
 RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+ && rm -rf /var/lib/apt/lists/*
+ 
+# Minimal dependencies for building
+RUN apt-get update && apt-get install -y \
     curl \
     libssl-dev \
     zlib1g-dev \
