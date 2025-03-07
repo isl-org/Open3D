@@ -97,9 +97,6 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build
-RUN if [ "$(uname -m)" = "aarch64" ]; then \
-      export LD_PRELOAD=/opt/conda/envs/open3d/lib/libgomp.so.1; \
-    fi \
 RUN mkdir build \
  && cd build \
  && cmake \
