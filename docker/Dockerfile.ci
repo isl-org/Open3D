@@ -87,6 +87,9 @@ RUN apt-get update && apt-get install -y \
     libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
+    libcurl4-openssl-dev \
+    libidn2-dev \
+    libidn2-0 \
     && if [ $BUILD_SYCL_MODULE = "ON" ]; then apt-get install -y intel-level-zero-gpu-raytracing ; fi \
  && rm -rf /var/lib/apt/lists/*
 
