@@ -89,6 +89,12 @@ struct ColoredVertex {
 TGaussianSplatBuffersBuilder::TGaussianSplatBuffersBuilder(
         const t::geometry::PointCloud& geometry)
     : geometry_(geometry) {
+    if (!geometry.IsGaussianSplat()) {
+        utility::LogWarning(
+            "TGaussianSplatBuffers is constructed for a geometry that is not GaussianSplat."
+        );
+    }
+    
     // Make sure geometry is on CPU
     auto pts = geometry.GetPointPositions();
     if (pts.IsCUDA()) {
@@ -106,25 +112,17 @@ TGaussianSplatBuffersBuilder::TGaussianSplatBuffersBuilder(
                 pts.GetDtype().ToString());
         geometry_.GetPointPositions() = pts.To(core::Float32);
     }
-    if (geometry_.HasPointNormals() &&
-        geometry_.GetPointNormals().GetDtype() != core::Float32) {
-        auto normals = geometry_.GetPointNormals();
-        utility::LogWarning(
-                "Tensor point cloud normals must have DType of Float32 not {}. "
-                "Converting.",
-                normals.GetDtype().ToString());
-        geometry_.GetPointNormals() = normals.To(core::Float32);
-    }
-    if (geometry_.HasPointColors() &&
-        geometry_.GetPointColors().GetDtype() != core::Float32) {
-        auto colors = geometry_.GetPointColors();
-        utility::LogWarning(
-                "Tensor point cloud colors must have DType of Float32 not {}. "
-                "Converting.",
-                colors.GetDtype().ToString());
-        geometry_.GetPointColors() = colors.To(core::Float32);
-        if (colors.GetDtype() == core::UInt8) {
-            geometry_.GetPointColors() = geometry_.GetPointColors() / 255.0f;
+
+    std::vector<std::string> check_list = {"f_dc", "opacity", "rot", "scale", "f_rest"};
+    for (const auto& check_item : check_list) {
+        if (geometry_.HasPointAttr(check_item) &&
+            geometry_.GetPointAttr(check_item).GetDtype() != core::Float32) {
+            auto check_item_instance = geometry_.GetPointAttr(check_item);
+            utility::LogWarning(
+                    "Tensor gaussian splat {} must have DType of Float32 not {}. "
+                    "Converting.",
+                    check_item, check_item_instance.GetDtype().ToString());
+            geometry_.GetPointAttr(check_item) = check_item_instance.To(core::Float32);
         }
     }
 }
@@ -141,7 +139,7 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
     const auto& points = geometry_.GetPointPositions();
     const size_t n_vertices = points.GetLength();
 
-    // we usePOSITION for positions, COLOR for f_dc and opacity, TANGENTS for rot 
+    // we use POSITION for positions, COLOR for f_dc and opacity, TANGENTS for rot 
     // CUSTOM0 for scale, CUSTOM1-CUSTOM6 for f_rest. 
     VertexBuffer* vbuf = VertexBuffer::Builder()
                                  .bufferCount(10)
@@ -205,7 +203,7 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
     const size_t rot_array_size = n_vertices * 4 * sizeof(float);
     float* rot_array = static_cast<float*>(malloc(rot_array_size));
     if (geometry_.HasPointAttr("rot")) {
-        memcpy(rot_array, geometry_.GetPointAttr("rot").GetDataPtr(),
+        std::memcpy(rot_array, geometry_.GetPointAttr("rot").GetDataPtr(),
                rot_array_size);
     } else {
         for (size_t i = 0; i < n_vertices * 4; ++i) {
@@ -219,7 +217,7 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
 
     const size_t scale_array_size = n_vertices * 4 * sizeof(float);
     float* scale_array = static_cast<float*>(malloc(scale_array_size));
-    memset(scale_array, 0, scale_array_size);
+    std::memset(scale_array, 0, scale_array_size);
     if (geometry_.HasPointAttr("scale")) {
         float* scale_src = static_cast<float*>(geometry_.GetPointAttr("scale").GetDataPtr());
         for (size_t i = 0; i < n_vertices; i++) {
@@ -237,9 +235,9 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
         float* f_rest_array = static_cast<float*>(malloc(f_rest_array_size));
         if (geometry_.HasPointAttr("f_rest")) {
             float* f_rest_src = static_cast<float*>(geometry_.GetPointAttr("f_rest").GetDataPtr());
-            memcpy(f_rest_array, f_rest_src + i * n_vertices * 4, f_rest_array_size);
+            std::memcpy(f_rest_array, f_rest_src + i * n_vertices * 4, f_rest_array_size);
         } else {
-            memset(f_rest_array, 0, f_rest_array_size);
+            std::memset(f_rest_array, 0, f_rest_array_size);
         }
         VertexBuffer::BufferDescriptor f_rest_descriptor(
                     f_rest_array, f_rest_array_size, GeometryBuffersBuilder::DeallocateBuffer);
