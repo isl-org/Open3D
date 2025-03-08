@@ -656,5 +656,82 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
     EXPECT_TRUE(ascii_f32_pcd.GetPointColors().AllClose(color_uint8));
 }
 
+// Test read of splat files by verifying number of elements
+TEST(TPointCloudIO, ReadPointCloudFromSPLAT1) {
+    t::geometry::PointCloud pcd;
+
+    std::string filename =
+            utility::filesystem::GetTempDirectoryPath() + "/test_read.splat";
+
+    t::io::ReadPointCloudFromSPLAT(filename, pcd,
+                                   {"splat", false, false, true});
+
+    EXPECT_FALSE(pcd.IsEmpty());
+    EXPECT_EQ(pcd.GetPointAttr("positions").GetLength(), 72637);
+    EXPECT_EQ(pcd.GetPointAttr("scale").GetLength(), 72637);
+    EXPECT_EQ(pcd.GetPointAttr("rot").GetLength(), 72637);
+    EXPECT_EQ(pcd.GetPointAttr("opacity").GetLength(), 72637);
+    EXPECT_EQ(pcd.GetPointAttr("f_dc").GetLength(), 72637);
+    EXPECT_EQ(pcd.GetPointAttr("f_rest").GetLength(), 72637);
+    EXPECT_FALSE(pcd.HasPointAttr("x"));
+}
+
+// Test consistency of vaues after writing and reading.
+TEST(TPointCloudIO, ReadWritePointCloudAsSPLAT) {
+    t::geometry::PointCloud pcd_base;
+    t::geometry::PointCloud pcd_new;
+    std::vector<int> random_numbers(100);
+
+    std::string filename =
+            utility::filesystem::GetTempDirectoryPath() + "/test_read.splat";
+    std::string new_filename = utility::filesystem::GetTempDirectoryPath() +
+                               "/new_test_read.splat";
+
+    t::io::ReadPointCloudFromSPLAT(filename, pcd_base,
+                                   {"splat", false, false, true});
+    t::io::WritePointCloudToSPLAT(new_filename, pcd_base,
+                                  {"splat", false, false, true});
+    t::io::ReadPointCloudFromSPLAT(new_filename, pcd_new,
+                                   {"splat", false, false, true});
+
+    // Total Gaussians
+    long num_gaussians_base =
+            static_cast<long>(pcd_base.GetPointPositions().GetLength());
+    long num_gaussians_new =
+            static_cast<long>(pcd_new.GetPointPositions().GetLength());
+    EXPECT_EQ(num_gaussians_base, num_gaussians_new);
+
+    Rand(random_numbers, 0, num_gaussians_new, 89);
+
+    // Take pointers
+    float *base_position_ptr =
+            static_cast<float *>(pcd_base.GetPointPositions().GetDataPtr());
+    float *base_scale_ptr =
+            static_cast<float *>(pcd_base.GetPointAttr("scale").GetDataPtr());
+    float *base_opacity_ptr =
+            static_cast<float *>(pcd_base.GetPointAttr("opacity").GetDataPtr());
+
+    float *new_position_ptr =
+            static_cast<float *>(pcd_new.GetPointPositions().GetDataPtr());
+    float *new_scale_ptr =
+            static_cast<float *>(pcd_new.GetPointAttr("scale").GetDataPtr());
+    float *new_opacity_ptr =
+            static_cast<float *>(pcd_new.GetPointAttr("opacity").GetDataPtr());
+
+    // Verify values
+    for (int64_t i = 0; i < 100; i++) {
+        int element_index = random_numbers[i];
+        int val_index[1];
+        Rand(val_index, 1, 0, 3, 89);
+
+        EXPECT_EQ(base_position_ptr[element_index * 3 + val_index[0]],
+                  new_position_ptr[element_index * 3 + val_index[0]]);
+        EXPECT_EQ(base_scale_ptr[element_index * 3 + val_index[0]],
+                  new_scale_ptr[element_index * 3 + val_index[0]]);
+        EXPECT_EQ(base_opacity_ptr[element_index],
+                  new_opacity_ptr[element_index]);
+    }
+}
+
 }  // namespace tests
 }  // namespace open3d
