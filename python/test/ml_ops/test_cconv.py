@@ -183,6 +183,7 @@ def test_cconv_gradient(ml, dtype, filter_size, out_channels, in_channels,
         'coordinate_mapping': coordinate_mapping,
         'normalize': with_normalization,
         'interpolation': interpolation,
+        'max_temp_mem_MB': 64
     }
 
     filters = np.random.random(size=(*filter_size, in_channels,
@@ -223,9 +224,14 @@ def test_cconv_gradient(ml, dtype, filter_size, out_channels, in_channels,
         neighbors_importance_sum = np.empty((0,), dtype=dtype)
 
     inverted_neighbors_index, inverted_neighbors_row_splits, inverted_neighbors_importance = mltest.run_op(
-        ml, ml.device, False, ml.ops.invert_neighbors_list,
-        inp_positions.shape[0], neighbors_index, neighbors_row_splits,
-        neighbors_importance)
+        ml,
+        ml.device,
+        False,
+        ml.ops.invert_neighbors_list,
+        num_points=inp_positions.shape[0],
+        inp_neighbors_index=neighbors_index,
+        inp_neighbors_row_splits=neighbors_row_splits,
+        inp_neighbors_attributes=neighbors_importance)
 
     # print(neighbors_row_splits, inverted_neighbors_row_splits)
     # print(neighbors_index, inverted_neighbors_index)

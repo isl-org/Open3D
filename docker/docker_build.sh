@@ -77,6 +77,9 @@ OPTION:
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
     cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
+    # Paddle wheels (Dockerfile.paddle)
+    paddle_cuda_wheel_py310_dev : CUDA Python 3.10 wheel, developer mode
+    paddle_cuda_wheel_py310     : CUDA Python 3.10 wheel, release mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -229,6 +232,45 @@ cuda_wheel_build() {
               && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
+}
+
+paddle_cuda_wheel_build() {
+    BASE_IMAGE=registry.baidubce.com/paddlepaddle/paddle:3.0.0b1-gpu-${PADDLE_CUDA_VERSION}
+    BUILD_PADDLE_OPS=ON
+
+    options="$(echo "$@" | tr ' ' '|')"
+    echo "[cuda_wheel_build()] options: ${options}"
+    if [[ "py310" =~ ^($options)$ ]]; then
+        PYTHON_VERSION=3.10
+    else
+        echo "Invalid python version."
+        print_usage_and_exit_docker_build
+    fi
+    if [[ "dev" =~ ^($options)$ ]]; then
+        DEVELOPER_BUILD=ON
+    else
+        DEVELOPER_BUILD=OFF
+    fi
+    echo "[paddle_cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
+    echo "[paddle_cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
+    echo "[paddle_cuda_wheel_build()] BUILD_PADDLE_OPS=${BUILD_PADDLE_OPS:?'env var must be set.'}"
+
+    pushd "${HOST_OPEN3D_ROOT}"
+    docker build \
+        --progress plain \
+        --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+        --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+        --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
+        --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        --build-arg BUILD_PADDLE_OPS="${BUILD_PADDLE_OPS}" \
+        -t open3d-ci:wheel \
+        -f docker/Dockerfile.paddle .
+    popd
+
+    python_package_dir=/root/Open3D/build/lib/python_package
+    docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
+        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl"
 }
 
 ci_build() {
