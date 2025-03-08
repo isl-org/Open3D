@@ -861,6 +861,7 @@ Ctrl-alt-click to polygon select)";
         } else {  // branch only applies to geometries
             bool has_colors = false;
             bool has_normals = false;
+            bool is_gaussian_splat = false;
 
             auto cloud = std::dynamic_pointer_cast<geometry::PointCloud>(geom);
             auto lines = std::dynamic_pointer_cast<geometry::LineSet>(geom);
@@ -887,6 +888,7 @@ Ctrl-alt-click to polygon select)";
                 has_colors = !cloud->colors_.empty();
                 has_normals = !cloud->normals_.empty();
             } else if (t_cloud) {
+                if (t_cloud->IsGaussianSplat()) is_gaussian_splat = true;
                 has_colors = t_cloud->HasPointColors();
                 has_normals = t_cloud->HasPointNormals();
             } else if (lines) {
@@ -931,8 +933,10 @@ Ctrl-alt-click to polygon select)";
             if (has_normals) {
                 mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
                 mat.shader = kShaderLit;
-                mat.shader = kShaderGaussianSplat;
                 is_default_color = false;
+            }
+            if (is_gaussian_splat) {
+                mat.shader = kShaderGaussianSplat;
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
 
