@@ -37,80 +37,13 @@ using namespace filament;
 namespace open3d {
 namespace visualization {
 namespace rendering {
-
-namespace {
-struct ColoredVertex {
-    math::float3 position = {0.f, 0.f, 0.f};
-    // Default to mid-gray which provides good separation from the two most
-    // common background colors: white and black. Otherwise, point clouds
-    // without per-vertex colors may appear is if they are not rendering because
-    // they blend with the background.
-    math::float4 color = {0.5f, 0.5f, 0.5f, 1.f};
-    math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
-    math::float2 uv = {0.f, 0.f};
-
-    static std::uint32_t GetPositionOffset() {
-        return offsetof(ColoredVertex, position);
-    }
-    static std::uint32_t GetColorOffset() {
-        return offsetof(ColoredVertex, color);
-    }
-    static std::uint32_t GetTangentOffset() {
-        return offsetof(ColoredVertex, tangent);
-    }
-    static std::uint32_t GetUVOffset() { return offsetof(ColoredVertex, uv); }
-    void SetVertexPosition(const Eigen::Vector3d& pos) {
-        auto float_pos = pos.cast<float>();
-        position.x = float_pos(0);
-        position.y = float_pos(1);
-        position.z = float_pos(2);
-    }
-
-    float sRGBToLinear(float color) {
-        return color <= 0.04045f ? color / 12.92f
-                                 : pow((color + 0.055f) / 1.055f, 2.4f);
-    }
-
-    void SetVertexColor(const Eigen::Vector3d& c, bool adjust_for_srgb) {
-        auto float_color = c.cast<float>();
-        if (adjust_for_srgb) {
-            color.x = sRGBToLinear(float_color(0));
-            color.y = sRGBToLinear(float_color(1));
-            color.z = sRGBToLinear(float_color(2));
-        } else {
-            color.x = float_color(0);
-            color.y = float_color(1);
-            color.z = float_color(2);
-        }
-    }
-};
-}  // namespace
-
 TGaussianSplatBuffersBuilder::TGaussianSplatBuffersBuilder(
         const t::geometry::PointCloud& geometry)
-    : geometry_(geometry) {
+    : TPointCloudBuffersBuilder(geometry) {
     if (!geometry.IsGaussianSplat()) {
         utility::LogWarning(
             "TGaussianSplatBuffers is constructed for a geometry that is not GaussianSplat."
         );
-    }
-    
-    // Make sure geometry is on CPU
-    auto pts = geometry.GetPointPositions();
-    if (pts.IsCUDA()) {
-        utility::LogWarning(
-                "GPU resident point clouds are not currently supported for "
-                "visualization. Copying data to CPU.");
-        geometry_ = geometry.To(core::Device("CPU:0"));
-    }
-
-    // Now make sure data types are Float32
-    if (pts.GetDtype() != core::Float32) {
-        utility::LogWarning(
-                "Tensor point cloud points must have DType of Float32 not {}. "
-                "Converting.",
-                pts.GetDtype().ToString());
-        geometry_.GetPointPositions() = pts.To(core::Float32);
     }
 
     std::vector<std::string> check_list = {"f_dc", "opacity", "rot", "scale", "f_rest"};
@@ -125,11 +58,6 @@ TGaussianSplatBuffersBuilder::TGaussianSplatBuffersBuilder(
             geometry_.GetPointAttr(check_item) = check_item_instance.To(core::Float32);
         }
     }
-}
-
-RenderableManager::PrimitiveType TGaussianSplatBuffersBuilder::GetPrimitiveType()
-        const {
-    return RenderableManager::PrimitiveType::POINTS;
 }
 
 GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers() {
@@ -254,32 +182,6 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
 
     return std::make_tuple(vb_handle, ib_handle, downsampled_handle);
 }
-
-filament::Box TGaussianSplatBuffersBuilder::ComputeAABB() {
-    auto min_bounds = geometry_.GetMinBound();
-    auto max_bounds = geometry_.GetMaxBound();
-    auto* min_bounds_float = min_bounds.GetDataPtr<float>();
-    auto* max_bounds_float = max_bounds.GetDataPtr<float>();
-
-    filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
-                               min_bounds_float[2]);
-    filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
-                               max_bounds_float[2]);
-
-    Box aabb;
-    aabb.set(min, max);
-    if (aabb.isEmpty()) {
-        min.x -= 0.1f;
-        min.y -= 0.1f;
-        min.z -= 0.1f;
-        max.x += 0.1f;
-        max.y += 0.1f;
-        max.z += 0.1f;
-        aabb.set(min, max);
-    }
-    return aabb;
-}
-
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
