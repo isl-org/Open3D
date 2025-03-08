@@ -325,7 +325,7 @@ def _find_clang_format():
         """
         version_str = subprocess.check_output([bin_path, "--version"
                                               ]).decode("utf-8").strip()
-        match = re.match("^clang-format version ([0-9.]*).*$", version_str)
+        match = re.match("^.*clang-format version ([0-9.]*).*$", version_str)
         return match.group(1) if match else None
 
     def parse_version_major(bin_path):
