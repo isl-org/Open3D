@@ -1019,7 +1019,7 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = BoxResource(lit_mat, engine_);
 
-    const auto gaussian_path = resource_root + "/gaussian.filamat";
+    const auto gaussian_path = resource_root + "/gaussianSplat.filamat";
     auto gaussian_mat = LoadMaterialFromFile(gaussian_path, engine_);
     gaussian_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                     default_color);
