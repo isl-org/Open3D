@@ -1,0 +1,64 @@
+material {
+    name : defaultLit,
+    shadingModel : lit,
+    doubleSided : true,
+    parameters : [
+        { type : float3,    name : baseColor },
+        { type : float,     name : baseMetallic },
+        { type : float,     name : baseRoughness },
+        { type : float,     name : reflectance },
+        { type : float,     name : pointSize },
+        { type : float,     name : clearCoat },
+        { type : float,     name : clearCoatRoughness },
+        { type : float,     name : anisotropy },
+        { type : sampler2d, name : albedo },
+        { type : sampler2d, name : ao_rough_metalMap },
+        { type : sampler2d, name : normalMap },
+        { type : sampler2d, name : reflectanceMap },
+        { type : sampler2d, name : anisotropyMap }
+    ],
+    requires : [
+        color,    // f_dc and opacity
+        tangents, // rot
+        custom0,  // scale
+        custom1,  // custom1-custom6 store f_rest_0-f_rest_23 SH coeffs
+        custom2,
+        custom3,
+        custom4,
+        custom5,
+        custom6
+    ]
+}
+
+vertex {
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+    }
+}
+
+fragment {
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        // The correct way to calculate RGB value is using f_dc and opacity.
+        float4 f_dc_and_opacity = getColor();
+        // Define SH_C0 constant
+        float SH_C0 = 0.28209479177387814;
+        // Calculate color components
+        float r = 0.5 + SH_C0 * f_dc_and_opacity.x;
+        float g = 0.5 + SH_C0 * f_dc_and_opacity.y;
+        float b = 0.5 + SH_C0 * f_dc_and_opacity.z;
+        float a = 1.0 / (1.0 + exp(-f_dc_and_opacity.w));
+        // Assign to material.baseColor
+        material.baseColor.rgb = vec3(r, g, b);
+
+        // Wrong Case1: Calculate RGB value using color directly.
+        // material.baseColor.rgb = getColor().rgb;
+  
+        // Wrong Case2: Calculate RGB value using world position.
+        // material.baseColor.rgb = getWorldPosition();
+
+        // Wrong Case3: Calculate RGB value using user world position.
+        // material.baseColor.rgb = getUserWorldPosition();
+    }
+}
