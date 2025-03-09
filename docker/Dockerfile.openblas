@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
     libgomp1 \
+    libidn2-dev \
+    libidn2-0 \
  && rm -rf /var/lib/apt/lists/*
 
 # Minimal dependencies for building
@@ -47,6 +49,8 @@ RUN conda create -y -n open3d python=${PYTHON_VERSION} \
  && source activate open3d
 RUN which python \
  && python --version
+
+RUN conda install conda-forge::libgomp
 
 # CMake
 # PWD is /, cmake will be installed to /root/${CMAKE_VERSION}/bin/cmake
