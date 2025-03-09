@@ -52,12 +52,22 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
     libidn2-dev \
     libidn2-0 \
-    gfortran \
-    libblas-dev \
-    liblapack-dev \
-    liblapacke-dev \
+    xorg-dev \
+    libxcb-shm0 \
+    libglu1-mesa-dev \
+    python3-dev \
+    libc++-dev \
+    libc++abi-dev \
+    libsdl2-dev \
+    libxi-dev \
+    libtbb-dev \
+    libosmesa6-dev \
+    libudev-dev \
+    autoconf \
+    libtool \
     && if [ $BUILD_SYCL_MODULE = "ON" ]; then apt-get install -y intel-level-zero-gpu-raytracing ; fi \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
+
 
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run
