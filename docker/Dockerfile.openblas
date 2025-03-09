@@ -55,7 +55,7 @@ RUN apt-get update && apt-get install -y \
     gfortran \
     libblas-dev \
     liblapack-dev \
-    liblapacke-dev
+    liblapacke-dev \
     && if [ $BUILD_SYCL_MODULE = "ON" ]; then apt-get install -y intel-level-zero-gpu-raytracing ; fi \
  && rm -rf /var/lib/apt/lists/*
 
