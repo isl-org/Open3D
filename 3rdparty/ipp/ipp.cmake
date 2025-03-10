@@ -7,6 +7,12 @@
 
 include(ExternalProject)
 
+if(WIN32)
+    set(IPP_SUBPATH "Library/")
+else()
+    set(IPP_SUBPATH "")
+endif()
+
 # These archives are created from the pip wheels for ipp-static, ipp-devel and
 # ipp-include and excluding the shared libraries to reduce download size.
 # Check in order APPLE -> WIN32 -> UNIX, since UNIX may be defined on APPLE / WIN32 as well
@@ -31,12 +37,6 @@ else()
     set(WITH_IPP OFF)
     message(FATAL_ERROR "Intel IPP disabled: Unsupported Platform.")
     return()
-endif()
-
-if(WIN32)
-    set(IPP_SUBPATH "Library/")
-else()
-    set(IPP_SUBPATH "")
 endif()
 
 # Threading layer libs must be linked first.
