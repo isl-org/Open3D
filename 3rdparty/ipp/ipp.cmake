@@ -22,7 +22,7 @@ elseif(WIN32 AND CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL AMD64)
     set(IPP_URL "https://github.com/isl-org/open3d_downloads/releases/download/mkl-static-2024.1/ipp_static-2021.11.0-win_amd64.zip") 
     set(IPP_HASH "69e8a7dc891609de6fea478a67659d2f874d12b51a47bd2e3e5a7c4c473c53a6")
     cmake_minimum_required(VERSION 3.26)  # for copy_directory_if_different
-    set(COPY_TBB_COMMAND cmake -E copy_directory_if_different <SOURCE_DIR>/${IPP_SUBPATH}lib/tl/tbb/ <SOURCE_DIR>/${IPP_SUBPATH}lib/)
+    set(COPY_TBB_COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different <SOURCE_DIR>/${IPP_SUBPATH}lib/tl/tbb/ <SOURCE_DIR>/${IPP_SUBPATH}lib/)
 elseif(UNIX AND CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL x86_64)
     set(IPP_URL "https://github.com/isl-org/open3d_downloads/releases/download/mkl-static-2024.1/ipp_static-2021.11.0-linux_x86_64.tar.xz")
     set(IPP_HASH "51f33fd5bf5011e9eae0e034e5cc70a7c0ac0ba93d6a3f66fd7e145cf1a5e30b")
