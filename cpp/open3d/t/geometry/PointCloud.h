@@ -214,6 +214,41 @@ public:
     /// This is a convenience function.
     bool HasPointNormals() const { return HasPointAttr("normals"); }
 
+    /// Returns true if all of the following are true:
+    /// 1) attribute "scale" exist
+    /// 2) attribute "scale"'s length as points' length
+    /// 3) attribute "scale"'s length > 0
+    /// This is a convenience function.
+    bool HasPointScales() const { return HasPointAttr("scale"); }
+
+    /// Returns true if all of the following are true:
+    /// 1) attribute "opacity" exist
+    /// 2) attribute "opacity"'s length as points' length
+    /// 3) attribute "opacity"'s length > 0
+    /// This is a convenience function.
+    bool HasPointOpacities() const { return HasPointAttr("opacity"); }
+
+    /// Returns true if all of the following are true:
+    /// 1) attribute "rot" exist
+    /// 2) attribute "rot"'s length as points' length
+    /// 3) attribute "rot"'s length > 0
+    /// This is a convenience function.
+    bool HasPointRots() const { return HasPointAttr("rot"); }
+
+    /// Returns true if all of the following are true:
+    /// 1) attribute "f_dc" exist
+    /// 2) attribute "f_dc"'s length as points' length
+    /// 3) attribute "f_dc"'s length > 0
+    /// This is a convenience function.
+    bool HasPointFDCs() const { return HasPointAttr("f_dc"); }
+
+    /// Returns true if all of the following are true:
+    /// 1) attribute "f_rest" exist
+    /// 2) attribute "f_rest"'s length as points' length
+    /// 3) attribute "f_rest"'s length > 0
+    /// This is a convenience function.
+    bool HasPointFRests() const { return HasPointAttr("f_rest"); }
+
 public:
     /// Transfer the point cloud to a specified device.
     /// \param device The targeted device to convert to.

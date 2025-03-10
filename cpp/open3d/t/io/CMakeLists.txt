@@ -13,6 +13,7 @@ target_sources(tio PRIVATE
     file_format/FileJPG.cpp
     file_format/FilePCD.cpp
     file_format/FilePLY.cpp
+    file_format/FileSPLAT.cpp
     file_format/FilePNG.cpp
     file_format/FilePTS.cpp
     file_format/FileTXT.cpp
