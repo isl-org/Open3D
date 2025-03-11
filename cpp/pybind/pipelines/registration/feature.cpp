@@ -7,6 +7,7 @@
 
 #include "open3d/pipelines/registration/Feature.h"
 
+#include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
 #include "pybind/docstring.h"
 #include "pybind/pipelines/registration/registration.h"
@@ -63,11 +64,15 @@ void pybind_feature_definitions(py::module &m_registration) {
               "Set to ``True`` to invert the selection of indices."}});
     m_registration.def("compute_fpfh_feature", &ComputeFPFHFeature,
                        "Function to compute FPFH feature for a point cloud",
-                       "input"_a, "search_param"_a);
+                       "input"_a, "search_param"_a, "indices"_a = py::none());
     docstring::FunctionDocInject(
             m_registration, "compute_fpfh_feature",
-            {{"input", "The Input point cloud."},
-             {"search_param", "KDTree KNN search parameter."}});
+            {
+                    {"input", "The Input point cloud."},
+                    {"search_param", "KDTree KNN search parameter."},
+                    {"indices",
+                     "Indices to select points for feature computation."},
+            });
 
     m_registration.def(
             "correspondences_from_features", &CorrespondencesFromFeatures,

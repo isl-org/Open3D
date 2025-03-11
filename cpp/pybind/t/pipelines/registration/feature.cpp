@@ -23,8 +23,11 @@ void pybind_feature_definitions(py::module &m_registration) {
                        R"(Function to compute FPFH feature for a point cloud.
 It uses KNN search (Not recommended to use on GPU) if only max_nn parameter
 is provided, Radius search (Not recommended to use on GPU) if only radius
-parameter is provided, and Hybrid search (Recommended) if both are provided.)",
-                       "input"_a, "max_nn"_a = 100, "radius"_a = py::none());
+parameter is provided, and Hybrid search (Recommended) if both are provided.
+If indices is provided, the function will compute FPFH features only on the
+selected points.)",
+                       "input"_a, "max_nn"_a = 100, "radius"_a = py::none(),
+                       "indices"_a = py::none());
     docstring::FunctionDocInject(
             m_registration, "compute_fpfh_feature",
             {{"input",
@@ -34,7 +37,10 @@ parameter is provided, and Hybrid search (Recommended) if both are provided.)",
               "100]"},
              {"radius",
               "[optional] Neighbor search radius parameter. [Recommended ~5x "
-              "voxel size]"}});
+              "voxel size]"},
+             {"indices",
+              "[optional] Tensor with the indices of the points to compute "
+              "FPFH features on. [Default = None]"}});
 
     m_registration.def(
             "correspondences_from_features", &CorrespondencesFromFeatures,
