@@ -15,12 +15,16 @@ material {
         { type : sampler2d, name : ao_rough_metalMap },
         { type : sampler2d, name : normalMap },
         { type : sampler2d, name : reflectanceMap },
-        { type : sampler2d, name : anisotropyMap }
+        { type : sampler2d, name : anisotropyMap },
+        { type : int,       name : shDegree }
+    ],
+    variables : [
+        colorFromSh
     ],
     requires : [
-        color,    // f_dc and opacity
+        color,    // scale
         tangents, // rot
-        custom0,  // scale
+        custom0,  // f_dc and opacity
         custom1,  // custom1-custom6 store f_rest_0-f_rest_23 SH coeffs
         custom2,
         custom3,
@@ -31,8 +35,52 @@ material {
 }
 
 vertex {
+    #include "../../shader/glsl/ShCoeffsToColorFast.glsl"
+
     void materialVertex(inout MaterialVertexInputs material) {
         gl_PointSize = materialParams.pointSize;
+
+        // refering to https://google.github.io/filament/Materials.html#materialdefinitions/shaderpublicapis/vertexonly,
+        // the worldPosition coordinate in the vertex shader is shifted by the camera position.
+        vec3 dir = material.worldPosition.xyz;
+
+        // According to "../../shader/glsl/ShCoeffsToColorFast.glsl", the coeffs should be in the following order:
+        // [Y0_R, Y0_G, Y0_B, Y1m1_R, Y1m1_G, Y1m1_B, Y10_R, Y10_G, Y10_B, Y11_R, Y11_G, Y11_B, Y2m2_R, Y2m2_G, Y2m2_B, ...]
+        float coeffs[25 * 3];
+
+        for (int i = 0; i < 25 * 3; i++) {
+            coeffs[i] = 0.0;
+        }
+
+        float4 f_dc_and_opacity = getCustom0();
+        coeffs[0] = f_dc_and_opacity.r;
+        coeffs[1] = f_dc_and_opacity.g;
+        coeffs[2] = f_dc_and_opacity.b;
+
+        vec4 fRest[6];
+        fRest[0] = getCustom1();
+        fRest[1] = getCustom2();
+        fRest[2] = getCustom3();
+        fRest[3] = getCustom4();
+        fRest[4] = getCustom5();
+        fRest[5] = getCustom6();
+
+        for (int i = 0; i < 6; i++) {
+            coeffs[3+ i * 4 + 0] = fRest[i].x;
+            coeffs[3+ i * 4 + 1] = fRest[i].y;
+            coeffs[3+ i * 4 + 2] = fRest[i].z;
+            coeffs[3+ i * 4 + 3] = fRest[i].w;
+        }
+
+        float colors[3];
+        for (int c = 0; c < 3; c++) {
+            sh_coeffs_to_color_fast(materialParams.shDegree, c, dir, coeffs, colors);
+        }
+
+        material.colorFromSh.r = colors[0];
+        material.colorFromSh.g = colors[1];
+        material.colorFromSh.b = colors[2];
+        material.colorFromSh.a = 0.0;
     }
 }
 
@@ -40,17 +88,13 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
 
-        // The correct way to calculate RGB value is using f_dc and opacity.
-        float4 f_dc_and_opacity = getColor();
-        // Define SH_C0 constant
-        float SH_C0 = 0.28209479177387814;
-        // Calculate color components
-        float r = 0.5 + SH_C0 * f_dc_and_opacity.x;
-        float g = 0.5 + SH_C0 * f_dc_and_opacity.y;
-        float b = 0.5 + SH_C0 * f_dc_and_opacity.z;
-        float a = 1.0 / (1.0 + exp(-f_dc_and_opacity.w));
-        // Assign to material.baseColor
+        // The following code is only used to test we can get colorFromSh from vertex shader.
+        float r = 0.0;
+        float g = 0.0;
+        float b = 0.0;
         material.baseColor.rgb = vec3(r, g, b);
+        
+        material.baseColor.rgb = variable_colorFromSh.rgb;
 
         // Wrong Case1: Calculate RGB value using color directly.
         // material.baseColor.rgb = getColor().rgb;
