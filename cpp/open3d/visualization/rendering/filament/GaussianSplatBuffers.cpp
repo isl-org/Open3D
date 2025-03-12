@@ -112,11 +112,9 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
     const size_t scale_array_size = n_vertices * 4 * sizeof(float);
     float* scale_array = static_cast<float*>(malloc(scale_array_size));
     std::memset(scale_array, 0, scale_array_size);
-    if (geometry_.HasPointAttr("scale")) {
-        float* scale_src = static_cast<float*>(geometry_.GetPointAttr("scale").GetDataPtr());
-        for (size_t i = 0; i < n_vertices; i++) {
-            std::memcpy(scale_array + i * 4, scale_src + i * 3, 3*sizeof(float));
-        }
+    float* scale_src = geometry_.GetPointAttr("scale").GetDataPtr<float>();
+    for (size_t i = 0; i < n_vertices; i++) {
+        std::memcpy(scale_array + i * 4, scale_src + i * 3, 3*sizeof(float));
     }
     VertexBuffer::BufferDescriptor scale_descriptor(
             scale_array, scale_array_size, GeometryBuffersBuilder::DeallocateBuffer);
@@ -124,32 +122,22 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
 
     const size_t rot_array_size = n_vertices * 4 * sizeof(float);
     float* rot_array = static_cast<float*>(malloc(rot_array_size));
-    if (geometry_.HasPointAttr("rot")) {
-        std::memcpy(rot_array, geometry_.GetPointAttr("rot").GetDataPtr(),
-               rot_array_size);
-    } else {
-        for (size_t i = 0; i < n_vertices * 4; ++i) {
-            rot_array[i] = 1.f;
-        }
-    }
+    std::memset(rot_array, 0, rot_array_size);
+    std::memcpy(rot_array, geometry_.GetPointAttr("rot").GetDataPtr(),
+            rot_array_size);
     VertexBuffer::BufferDescriptor rot_descriptor(
                 rot_array, rot_array_size,
                 GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 2, std::move(rot_descriptor));
 
     const size_t color_array_size = n_vertices * 4 * sizeof(float);
-    float* color_array = static_cast<float*>(malloc(color_array_size));
-    if (geometry_.HasPointAttr("f_dc") && geometry_.HasPointAttr("opacity")) {
-        float* f_dc_ptr = static_cast<float*>(geometry_.GetPointAttr("f_dc").GetDataPtr());
-        float* opacity_ptr = static_cast<float*>(geometry_.GetPointAttr("opacity").GetDataPtr());
-        for (size_t i = 0; i < n_vertices; i++) {
-            std::memcpy(color_array + i * 4, f_dc_ptr + i * 3, 3 * sizeof(float));
-            std::memcpy(color_array + i * 4 + 3, opacity_ptr + i, sizeof(float));
-        }
-    } else {
-        for (size_t i = 0; i < n_vertices * 4; i++) {
-            color_array[i] = 1.f;
-        }
+    float* color_array = static_cast<float*>(malloc(color_array_size));   
+    std::memset(color_array, 0, color_array_size);
+    float* f_dc_ptr = geometry_.GetPointAttr("f_dc").GetDataPtr<float>();
+    float* opacity_ptr = geometry_.GetPointAttr("opacity").GetDataPtr<float>();
+    for (size_t i = 0; i < n_vertices; i++) {
+        std::memcpy(color_array + i * 4, f_dc_ptr + i * 3, 3 * sizeof(float));
+        std::memcpy(color_array + i * 4 + 3, opacity_ptr + i, sizeof(float));
     }
     VertexBuffer::BufferDescriptor color_descriptor(
                 color_array, color_array_size,
@@ -162,7 +150,7 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
     for(size_t i = 0; i < custom_buffer_num; i++) {
         float* f_rest_array = static_cast<float*>(malloc(f_rest_array_size));
         if (geometry_.HasPointAttr("f_rest")) {
-            float* f_rest_src = static_cast<float*>(geometry_.GetPointAttr("f_rest").GetDataPtr());
+            float* f_rest_src = geometry_.GetPointAttr("f_rest").GetDataPtr<float>();
             std::memcpy(f_rest_array, f_rest_src + i * n_vertices * 4, f_rest_array_size);
         } else {
             std::memset(f_rest_array, 0, f_rest_array_size);
