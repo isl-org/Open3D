@@ -83,6 +83,9 @@ struct MaterialRecord {
     // Infinite ground plane
     float ground_plane_axis = 0.f;  // 0: XZ; >0: XY; <0: YZ
 
+    // This is only used in gaussian splat.
+    int sh_degree = 2;
+
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;
