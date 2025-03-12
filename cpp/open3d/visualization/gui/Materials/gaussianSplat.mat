@@ -19,7 +19,10 @@ material {
         { type : int,       name : shDegree }
     ],
     variables : [
-        colorFromSh
+        colorFromSh,
+        test1,
+        test2,
+        test3
     ],
     requires : [
         color,    // scale
@@ -81,6 +84,11 @@ vertex {
         material.colorFromSh.g = colors[1];
         material.colorFromSh.b = colors[2];
         material.colorFromSh.a = 0.0;
+
+        // The following code is just used for verifing we can get data from different buffer.
+        // material.test1 = getTangents();
+        material.test2 = getCustom1();
+        material.test3 = getCustom6();
     }
 }
 
@@ -104,5 +112,17 @@ fragment {
 
         // Wrong Case3: Calculate RGB value using user world position.
         // material.baseColor.rgb = getUserWorldPosition();
+
+        // test case1: Check we can get data rot, this does not work for now.
+        // material.baseColor.rgb = variable_test1.rgb;
+
+        // test case2: Check we can get data f_rest for order 1
+        // material.baseColor.rgb = variable_test2.rgb;
+
+        // test case3: Check we can get data f_rest for order 2
+        // material.baseColor.rgb = variable_test3.rgb;
+
+        // test case3: Check we can get data scale
+        // material.baseColor.rgb = getColor().rgb;
     }
 }
