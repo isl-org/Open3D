@@ -172,8 +172,15 @@ public:
     Buffers ConstructBuffers() override;
     filament::Box ComputeAABB() override;
 
-private:
+protected:
     t::geometry::PointCloud geometry_;
+};
+
+class TGaussianSplatBuffersBuilder : public TPointCloudBuffersBuilder {
+public:
+    explicit TGaussianSplatBuffersBuilder(const t::geometry::PointCloud& geometry);
+
+    Buffers ConstructBuffers() override;
 };
 
 class TLineSetBuffersBuilder : public GeometryBuffersBuilder {
