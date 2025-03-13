@@ -67,10 +67,22 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
     const auto& points = geometry_.GetPointPositions();
     const size_t n_vertices = points.GetLength();
 
+    int sh_degree = geometry_.GaussianSplatGetSHOrder();
+    if (sh_degree > 2) {
+        // If the degree of SH coeffs is higher than 2, we treate it as degree 2.
+        sh_degree  = 2;
+    }
+
+    int f_rest_coeffs_count = sh_degree * (sh_degree + 2) * 3;
+    int f_rest_buffer_count = (f_rest_coeffs_count + 3) / 4;
+
+    int base_buffer_count = 4;
+    int all_buffer_count = base_buffer_count + f_rest_buffer_count;
+
     // we use POSITION for positions, COLOR for scale, TANGENTS for rot 
     // CUSTOM0 for f_dc and opacity, CUSTOM1-CUSTOM6 for f_rest. 
-    VertexBuffer* vbuf = VertexBuffer::Builder()
-                                 .bufferCount(10)
+    VertexBuffer::Builder buffer_builder = VertexBuffer::Builder()
+                                 .bufferCount(all_buffer_count)
                                  .vertexCount(uint32_t(n_vertices))
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3)
@@ -79,20 +91,19 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
                                  .attribute(VertexAttribute::TANGENTS, 2,
                                             VertexBuffer::AttributeType::FLOAT4)
                                  .attribute(VertexAttribute::CUSTOM0, 3,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::CUSTOM1, 4,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::CUSTOM2, 5,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::CUSTOM3, 6,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::CUSTOM4, 7,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::CUSTOM5, 8,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::CUSTOM6, 9,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .build(engine);
+                                            VertexBuffer::AttributeType::FLOAT4);
+    if (sh_degree >= 1) {
+        buffer_builder.attribute(VertexAttribute::CUSTOM1, 4, VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM2, 5, VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM3, 6, VertexBuffer::AttributeType::FLOAT4);
+    }
+    if (sh_degree == 2) {
+        buffer_builder.attribute(VertexAttribute::CUSTOM4, 7, VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM5, 8, VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM6, 9, VertexBuffer::AttributeType::FLOAT4);
+    }
+
+    VertexBuffer* vbuf = buffer_builder.build(engine);
 
     VertexBufferHandle vb_handle;
     if (vbuf) {
@@ -144,17 +155,22 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
                 GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 3, std::move(color_descriptor));
 
-    const size_t f_rest_array_size = n_vertices * 4 * sizeof(float);
-    const size_t custom_buffer_num = 6;
+    int data_count_in_one_buffer = 4;
+    const size_t f_rest_array_size = n_vertices * data_count_in_one_buffer * sizeof(float);
     const size_t custom_buffer_start_index = 4;
-    for(size_t i = 0; i < custom_buffer_num; i++) {
+    for(int i = 0; i < f_rest_buffer_count; i++) {
         float* f_rest_array = static_cast<float*>(malloc(f_rest_array_size));
-        if (geometry_.HasPointAttr("f_rest")) {
-            float* f_rest_src = geometry_.GetPointAttr("f_rest").GetDataPtr<float>();
-            std::memcpy(f_rest_array, f_rest_src + i * n_vertices * 4, f_rest_array_size);
-        } else {
-            std::memset(f_rest_array, 0, f_rest_array_size);
+        std::memset(f_rest_array, 0, f_rest_array_size);
+
+        size_t copy_data_size = f_rest_array_size;
+        if (i == f_rest_buffer_count -1) {
+            int remaining_count_in_last_iter = data_count_in_one_buffer + (f_rest_coeffs_count
+                - f_rest_buffer_count * data_count_in_one_buffer);
+            copy_data_size = n_vertices * remaining_count_in_last_iter * sizeof(float);
         }
+
+        float* f_rest_src = geometry_.GetPointAttr("f_rest").GetDataPtr<float>();
+        std::memcpy(f_rest_array, f_rest_src + i * n_vertices * data_count_in_one_buffer, copy_data_size);
         VertexBuffer::BufferDescriptor f_rest_descriptor(
                     f_rest_array, f_rest_array_size, GeometryBuffersBuilder::DeallocateBuffer);
         vbuf->setBufferAt(engine, custom_buffer_start_index + i, std::move(f_rest_descriptor));
