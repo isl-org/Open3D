@@ -745,9 +745,14 @@ public:
     /// are missing, the function returns \c false; otherwise, it returns \c true.
     /// \return \c true if all required attributes are present, \c false otherwise.
     bool IsGaussianSplat() const;
+
+    int GaussianSplatGetSHOrder() const;
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap point_attr_;
+
+private:
+    std::optional<int> findPositiveIntegerSolution(int x) const;
 };
 
 }  // namespace geometry

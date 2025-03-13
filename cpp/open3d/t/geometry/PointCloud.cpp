@@ -1379,6 +1379,68 @@ bool PointCloud::IsGaussianSplat() const {
     return true;
 }
 
+int PointCloud::GaussianSplatGetSHOrder() const {
+    if (point_attr_.find("f_rest") == point_attr_.end()) {
+        return 0;
+    } else {
+        const core::Tensor & f_rest = GetPointAttr("f_rest");
+        auto shape = f_rest.GetShape();
+        size_t num_dims = shape.size();
+
+        int dim_of_degree = shape[1];
+        if (num_dims == 2) {
+            if (dim_of_degree % 3 != 0) {
+                utility::LogError("SH coeffs are in shape [N, Nc], but the dimension of Nc cannot be divided by 3");
+            }
+            dim_of_degree = dim_of_degree / 3;
+        }
+
+        std::optional<int> degree = findPositiveIntegerSolution(dim_of_degree);
+        if (degree.has_value()) {
+            if (degree.value() > 2) {
+                utility::LogWarning("The SH coeffs degree higher than 2 is not supported for now.");
+            }
+            return degree.value();
+        } else {
+            utility::LogError("The number of SH coeffs is not a valid value.");
+        }
+        return -1;
+    }
+}
+
+std::optional<int> PointCloud::findPositiveIntegerSolution(int x) const {
+    // Coefficients of the quadratic equation n^2 + 2n - x = 0
+    int a = 1;
+    int b = 2;
+    int c = -x;
+
+    // Calculate the discriminant
+    int discriminant = b * b - 4 * a * c;
+
+    // Check if the discriminant is non-negative and a perfect square
+    if (discriminant < 0) {
+        return std::nullopt;
+    }
+
+    int sqrt_discriminant = static_cast<int>(std::sqrt(discriminant));
+    if (sqrt_discriminant * sqrt_discriminant != discriminant) {
+        return std::nullopt;
+    }
+
+    // Calculate the two possible solutions for n
+    int n1 = (-b + sqrt_discriminant) / (2 * a);
+    int n2 = (-b - sqrt_discriminant) / (2 * a);
+
+    // Check if either solution is a valid positive integer
+    // There is definitely a positive result because x is positive.
+    if (n1 > 0 && n1 * (n1 + 2) == x) {
+        return n1;
+    } else if (n2 > 0 && n2 * (n2 + 2) == x) {
+        return n2;
+    }
+
+    return std::nullopt;
+}
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
