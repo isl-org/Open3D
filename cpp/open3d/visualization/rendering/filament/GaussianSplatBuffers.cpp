@@ -169,6 +169,7 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
             copy_data_size = n_vertices * remaining_count_in_last_iter * sizeof(float);
         }
 
+        // f_rest_buffer_count is not 0 means that can get f_rest data here.
         float* f_rest_src = geometry_.GetPointAttr("f_rest").GetDataPtr<float>();
         std::memcpy(f_rest_array, f_rest_src + i * n_vertices * data_count_in_one_buffer, copy_data_size);
         VertexBuffer::BufferDescriptor f_rest_descriptor(
