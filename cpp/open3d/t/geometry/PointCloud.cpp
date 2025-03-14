@@ -1370,8 +1370,9 @@ core::Tensor PointCloud::ComputeMetrics(const PointCloud &pcd2,
 }
 
 bool PointCloud::IsGaussianSplat() const {
-    std::vector<std::string> keys_to_check = {"f_dc", "opacity", "rot", "scale"};
-    for (const auto& key : keys_to_check) {
+    std::vector<std::string> keys_to_check = {"f_dc", "opacity", "rot",
+                                              "scale"};
+    for (const auto &key : keys_to_check) {
         if (point_attr_.find(key) == point_attr_.end()) {
             return false;
         }
@@ -1383,7 +1384,7 @@ int PointCloud::GaussianSplatGetSHOrder() const {
     if (point_attr_.find("f_rest") == point_attr_.end()) {
         return 0;
     } else {
-        const core::Tensor & f_rest = GetPointAttr("f_rest");
+        const core::Tensor &f_rest = GetPointAttr("f_rest");
         // core::AssertTensorShape(f_rest, {core::None, core::None, 3});
         auto Nc = f_rest.GetShape(1);
 
@@ -1391,14 +1392,19 @@ int PointCloud::GaussianSplatGetSHOrder() const {
         size_t num_dims = f_rest.GetShape().size();
         if (num_dims == 2) {
             if (Nc % 3 != 0) {
-                utility::LogError("SH coeffs are in shape [N, Nc], but the dimension of Nc cannot be divided by 3");
+                utility::LogError(
+                        "SH coeffs are in shape [N, Nc], but the dimension of "
+                        "Nc cannot be divided by 3");
             }
             Nc = Nc / 3;
         }
 
-        auto deg = static_cast<int>(sqrt(Nc+1));
-        if (deg * deg != Nc+1) {
-            utility::LogError("f_rest has incomplete Spherical Harmonics coefficients ({}), expected 0, 3, 8 or 15.", Nc);
+        auto deg = static_cast<int>(sqrt(Nc + 1));
+        if (deg * deg != Nc + 1) {
+            utility::LogError(
+                    "f_rest has incomplete Spherical Harmonics coefficients "
+                    "({}), expected 0, 3, 8 or 15.",
+                    Nc);
         }
         return deg - 1;
     }

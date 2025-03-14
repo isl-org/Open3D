@@ -1022,7 +1022,7 @@ void FilamentResourceManager::LoadDefaults() {
     const auto gaussian_path = resource_root + "/gaussianSplat.filamat";
     auto gaussian_mat = LoadMaterialFromFile(gaussian_path, engine_);
     gaussian_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
-                                    default_color);
+                                      default_color);
     gaussian_mat->setDefaultParameter("baseRoughness", 0.7f);
     gaussian_mat->setDefaultParameter("reflectance", 0.5f);
     gaussian_mat->setDefaultParameter("baseMetallic", 0.f);
@@ -1031,11 +1031,14 @@ void FilamentResourceManager::LoadDefaults() {
     gaussian_mat->setDefaultParameter("anisotropy", 0.f);
     gaussian_mat->setDefaultParameter("pointSize", 3.f);
     gaussian_mat->setDefaultParameter("albedo", texture, default_sampler);
-    gaussian_mat->setDefaultParameter("ao_rough_metalMap", texture, default_sampler);
+    gaussian_mat->setDefaultParameter("ao_rough_metalMap", texture,
+                                      default_sampler);
     gaussian_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
-    gaussian_mat->setDefaultParameter("reflectanceMap", texture, default_sampler);
+    gaussian_mat->setDefaultParameter("reflectanceMap", texture,
+                                      default_sampler);
 
-    gaussian_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
+    gaussian_mat->setDefaultParameter("anisotropyMap", texture,
+                                      default_sampler);
     materials_[kGaussianSplatShader] = BoxResource(gaussian_mat, engine_);
 
     const auto lit_trans_path =

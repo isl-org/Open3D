@@ -42,25 +42,29 @@ TGaussianSplatBuffersBuilder::TGaussianSplatBuffersBuilder(
     : TPointCloudBuffersBuilder(geometry) {
     if (!geometry.IsGaussianSplat()) {
         utility::LogWarning(
-            "TGaussianSplatBuffers is constructed for a geometry that is not GaussianSplat."
-        );
+                "TGaussianSplatBuffers is constructed for a geometry that is "
+                "not GaussianSplat.");
     }
 
-    std::vector<std::string> check_list = {"f_dc", "opacity", "rot", "scale", "f_rest"};
+    std::vector<std::string> check_list = {"f_dc", "opacity", "rot", "scale",
+                                           "f_rest"};
     for (const auto& check_item : check_list) {
         if (geometry_.HasPointAttr(check_item) &&
             geometry_.GetPointAttr(check_item).GetDtype() != core::Float32) {
             auto check_item_instance = geometry_.GetPointAttr(check_item);
             utility::LogWarning(
-                    "Tensor gaussian splat {} must have DType of Float32 not {}. "
+                    "Tensor gaussian splat {} must have DType of Float32 not "
+                    "{}. "
                     "Converting.",
                     check_item, check_item_instance.GetDtype().ToString());
-            geometry_.GetPointAttr(check_item) = check_item_instance.To(core::Float32);
+            geometry_.GetPointAttr(check_item) =
+                    check_item_instance.To(core::Float32);
         }
     }
 }
 
-GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers() {
+GeometryBuffersBuilder::Buffers
+TGaussianSplatBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
@@ -69,8 +73,9 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
 
     int sh_degree = geometry_.GaussianSplatGetSHOrder();
     if (sh_degree > 2) {
-        // If the degree of SH coeffs is higher than 2, we treate it as degree 2.
-        sh_degree  = 2;
+        // If the degree of SH coeffs is higher than 2, we treate it as
+        // degree 2.
+        sh_degree = 2;
     }
 
     int f_rest_coeffs_count = sh_degree * (sh_degree + 2) * 3;
@@ -79,28 +84,35 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
     int base_buffer_count = 4;
     int all_buffer_count = base_buffer_count + f_rest_buffer_count;
 
-    // we use POSITION for positions, COLOR for scale, TANGENTS for rot 
-    // CUSTOM0 for f_dc and opacity, CUSTOM1-CUSTOM6 for f_rest. 
-    VertexBuffer::Builder buffer_builder = VertexBuffer::Builder()
-                                 .bufferCount(all_buffer_count)
-                                 .vertexCount(uint32_t(n_vertices))
-                                 .attribute(VertexAttribute::POSITION, 0,
-                                            VertexBuffer::AttributeType::FLOAT3)
-                                 .attribute(VertexAttribute::COLOR, 1,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::TANGENTS, 2,
-                                            VertexBuffer::AttributeType::FLOAT4)
-                                 .attribute(VertexAttribute::CUSTOM0, 3,
-                                            VertexBuffer::AttributeType::FLOAT4);
+    // we use POSITION for positions, COLOR for scale, TANGENTS for rot
+    // CUSTOM0 for f_dc and opacity, CUSTOM1-CUSTOM6 for f_rest.
+    VertexBuffer::Builder buffer_builder =
+            VertexBuffer::Builder()
+                    .bufferCount(all_buffer_count)
+                    .vertexCount(uint32_t(n_vertices))
+                    .attribute(VertexAttribute::POSITION, 0,
+                               VertexBuffer::AttributeType::FLOAT3)
+                    .attribute(VertexAttribute::COLOR, 1,
+                               VertexBuffer::AttributeType::FLOAT4)
+                    .attribute(VertexAttribute::TANGENTS, 2,
+                               VertexBuffer::AttributeType::FLOAT4)
+                    .attribute(VertexAttribute::CUSTOM0, 3,
+                               VertexBuffer::AttributeType::FLOAT4);
     if (sh_degree >= 1) {
-        buffer_builder.attribute(VertexAttribute::CUSTOM1, 4, VertexBuffer::AttributeType::FLOAT4);
-        buffer_builder.attribute(VertexAttribute::CUSTOM2, 5, VertexBuffer::AttributeType::FLOAT4);
-        buffer_builder.attribute(VertexAttribute::CUSTOM3, 6, VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM1, 4,
+                                 VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM2, 5,
+                                 VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM3, 6,
+                                 VertexBuffer::AttributeType::FLOAT4);
     }
     if (sh_degree == 2) {
-        buffer_builder.attribute(VertexAttribute::CUSTOM4, 7, VertexBuffer::AttributeType::FLOAT4);
-        buffer_builder.attribute(VertexAttribute::CUSTOM5, 8, VertexBuffer::AttributeType::FLOAT4);
-        buffer_builder.attribute(VertexAttribute::CUSTOM6, 9, VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM4, 7,
+                                 VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM5, 8,
+                                 VertexBuffer::AttributeType::FLOAT4);
+        buffer_builder.attribute(VertexAttribute::CUSTOM6, 9,
+                                 VertexBuffer::AttributeType::FLOAT4);
     }
 
     VertexBuffer* vbuf = buffer_builder.build(engine);
@@ -125,24 +137,25 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
     std::memset(scale_array, 0, scale_array_size);
     float* scale_src = geometry_.GetPointAttr("scale").GetDataPtr<float>();
     for (size_t i = 0; i < n_vertices; i++) {
-        std::memcpy(scale_array + i * 4, scale_src + i * 3, 3*sizeof(float));
+        std::memcpy(scale_array + i * 4, scale_src + i * 3, 3 * sizeof(float));
     }
     VertexBuffer::BufferDescriptor scale_descriptor(
-            scale_array, scale_array_size, GeometryBuffersBuilder::DeallocateBuffer);
+            scale_array, scale_array_size,
+            GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 1, std::move(scale_descriptor));
 
     const size_t rot_array_size = n_vertices * 4 * sizeof(float);
     float* rot_array = static_cast<float*>(malloc(rot_array_size));
     std::memset(rot_array, 0, rot_array_size);
     std::memcpy(rot_array, geometry_.GetPointAttr("rot").GetDataPtr(),
-            rot_array_size);
+                rot_array_size);
     VertexBuffer::BufferDescriptor rot_descriptor(
-                rot_array, rot_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
+            rot_array, rot_array_size,
+            GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 2, std::move(rot_descriptor));
 
     const size_t color_array_size = n_vertices * 4 * sizeof(float);
-    float* color_array = static_cast<float*>(malloc(color_array_size));   
+    float* color_array = static_cast<float*>(malloc(color_array_size));
     std::memset(color_array, 0, color_array_size);
     float* f_dc_ptr = geometry_.GetPointAttr("f_dc").GetDataPtr<float>();
     float* opacity_ptr = geometry_.GetPointAttr("opacity").GetDataPtr<float>();
@@ -151,30 +164,39 @@ GeometryBuffersBuilder::Buffers TGaussianSplatBuffersBuilder::ConstructBuffers()
         std::memcpy(color_array + i * 4 + 3, opacity_ptr + i, sizeof(float));
     }
     VertexBuffer::BufferDescriptor color_descriptor(
-                color_array, color_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
+            color_array, color_array_size,
+            GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 3, std::move(color_descriptor));
 
     int data_count_in_one_buffer = 4;
-    const size_t f_rest_array_size = n_vertices * data_count_in_one_buffer * sizeof(float);
+    const size_t f_rest_array_size =
+            n_vertices * data_count_in_one_buffer * sizeof(float);
     const size_t custom_buffer_start_index = 4;
-    for(int i = 0; i < f_rest_buffer_count; i++) {
+    for (int i = 0; i < f_rest_buffer_count; i++) {
         float* f_rest_array = static_cast<float*>(malloc(f_rest_array_size));
         std::memset(f_rest_array, 0, f_rest_array_size);
 
         size_t copy_data_size = f_rest_array_size;
-        if (i == f_rest_buffer_count -1) {
-            int remaining_count_in_last_iter = data_count_in_one_buffer + (f_rest_coeffs_count
-                - f_rest_buffer_count * data_count_in_one_buffer);
-            copy_data_size = n_vertices * remaining_count_in_last_iter * sizeof(float);
+        if (i == f_rest_buffer_count - 1) {
+            int remaining_count_in_last_iter =
+                    data_count_in_one_buffer +
+                    (f_rest_coeffs_count -
+                     f_rest_buffer_count * data_count_in_one_buffer);
+            copy_data_size =
+                    n_vertices * remaining_count_in_last_iter * sizeof(float);
         }
 
         // f_rest_buffer_count is not 0 means that can get f_rest data here.
-        float* f_rest_src = geometry_.GetPointAttr("f_rest").GetDataPtr<float>();
-        std::memcpy(f_rest_array, f_rest_src + i * n_vertices * data_count_in_one_buffer, copy_data_size);
+        float* f_rest_src =
+                geometry_.GetPointAttr("f_rest").GetDataPtr<float>();
+        std::memcpy(f_rest_array,
+                    f_rest_src + i * n_vertices * data_count_in_one_buffer,
+                    copy_data_size);
         VertexBuffer::BufferDescriptor f_rest_descriptor(
-                    f_rest_array, f_rest_array_size, GeometryBuffersBuilder::DeallocateBuffer);
-        vbuf->setBufferAt(engine, custom_buffer_start_index + i, std::move(f_rest_descriptor));
+                f_rest_array, f_rest_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, custom_buffer_start_index + i,
+                          std::move(f_rest_descriptor));
     }
 
     auto ib_handle = CreateIndexBuffer(n_vertices);
