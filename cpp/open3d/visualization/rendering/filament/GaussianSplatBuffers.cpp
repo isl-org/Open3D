@@ -79,7 +79,9 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
     }
 
     int f_rest_coeffs_count = sh_degree * (sh_degree + 2) * 3;
-    int f_rest_buffer_count = (f_rest_coeffs_count + 3) / 4;
+    int f_rest_buffer_count = (f_rest_coeffs_count % 4 == 0)
+                                      ? (f_rest_coeffs_count / 4)
+                                      : std::ceil(f_rest_coeffs_count / 4.0);
 
     int base_buffer_count = 4;
     int all_buffer_count = base_buffer_count + f_rest_buffer_count;
@@ -174,7 +176,6 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
     const size_t custom_buffer_start_index = 4;
     for (int i = 0; i < f_rest_buffer_count; i++) {
         float* f_rest_array = static_cast<float*>(malloc(f_rest_array_size));
-        std::memset(f_rest_array, 0, f_rest_array_size);
 
         size_t copy_data_size = f_rest_array_size;
         if (i == f_rest_buffer_count - 1) {
