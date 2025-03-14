@@ -46,38 +46,51 @@ vertex {
         // refering to https://google.github.io/filament/Materials.html#materialdefinitions/shaderpublicapis/vertexonly,
         // the worldPosition coordinate in the vertex shader is shifted by the camera position.
         vec3 dir = material.worldPosition.xyz;
+        float inorm = inversesqrt(dot(dir, dir));
+        dir = dir * inorm;
 
         // According to "../../shader/glsl/ShCoeffsToColorFast.glsl", the coeffs should be in the following order:
         // [Y0_R, Y0_G, Y0_B, Y1m1_R, Y1m1_G, Y1m1_B, Y10_R, Y10_G, Y10_B, Y11_R, Y11_G, Y11_B, Y2m2_R, Y2m2_G, Y2m2_B, ...]
-        float coeffs[25 * 3];
-
-        for (int i = 0; i < 25 * 3; i++) {
-            coeffs[i] = 0.0;
-        }
-
+        vec3 colors;
+        
         float4 f_dc_and_opacity = getCustom0();
-        coeffs[0] = f_dc_and_opacity.r;
-        coeffs[1] = f_dc_and_opacity.g;
-        coeffs[2] = f_dc_and_opacity.b;
+        colors = sh0_coeffs_to_color_fast(f_dc_and_opacity.xyz);
 
-        vec4 fRest[6];
-        fRest[0] = getCustom1();
-        fRest[1] = getCustom2();
-        fRest[2] = getCustom3();
-        fRest[3] = getCustom4();
-        fRest[4] = getCustom5();
-        fRest[5] = getCustom6();
+        if (materialParams.shDegree >= 1) {
+            float coeffs_sh1[3 * 3];
+            float4 buffer1 = getCustom1();
+            float4 buffer2 = getCustom2();
 
-        for (int i = 0; i < 6; i++) {
-            coeffs[3+ i * 4 + 0] = fRest[i].x;
-            coeffs[3+ i * 4 + 1] = fRest[i].y;
-            coeffs[3+ i * 4 + 2] = fRest[i].z;
-            coeffs[3+ i * 4 + 3] = fRest[i].w;
+            for (int i = 0; i < 4; i++) {
+                coeffs_sh1[i] = buffer1[i];
+                coeffs_sh1[4 + i] = buffer2[i];
+            }
+
+            float4 buffer3 = getCustom3();
+            coeffs_sh1[8] = buffer3[0];
+
+            colors += sh1_coeffs_to_color_fast(dir, coeffs_sh1);
         }
 
-        float colors[3];
-        for (int c = 0; c < 3; c++) {
-            sh_coeffs_to_color_fast(materialParams.shDegree, c, dir, coeffs, colors);
+        if (materialParams.shDegree >= 2) {
+            float coeffs_sh2[5 * 3];
+
+            float4 buffer3 = getCustom3();
+            coeffs_sh2[0] = buffer3[1];
+            coeffs_sh2[1] = buffer3[2];
+            coeffs_sh2[2] = buffer3[3];
+
+            float4 buffer4 = getCustom4();
+            float4 buffer5 = getCustom5();
+            float4 buffer6 = getCustom6();
+
+            for (int i = 0; i < 4; i++) {
+                coeffs_sh2[3 + i] = buffer4[i];
+                coeffs_sh2[3 + 4 + i] = buffer5[i];
+                coeffs_sh2[3 + 2*4 + i] = buffer6[i];
+            }
+
+            colors += sh2_coeffs_to_color_fast(dir, coeffs_sh2);
         }
 
         material.colorFromSh.r = colors[0];
@@ -86,7 +99,7 @@ vertex {
         material.colorFromSh.a = 0.0;
 
         // The following code is just used for verifing we can get data from different buffer.
-        // material.test1 = getTangents();
+        //material.test1 = getCustom7();
         material.test2 = getCustom1();
         material.test3 = getCustom6();
     }
@@ -113,8 +126,8 @@ fragment {
         // Wrong Case3: Calculate RGB value using user world position.
         // material.baseColor.rgb = getUserWorldPosition();
 
-        // test case1: Check we can get data rot, this does not work for now.
-        // material.baseColor.rgb = variable_test1.rgb;
+        // test case1: Check we can get data rot.
+        material.baseColor.rgb = variable_test1.rgb;
 
         // test case2: Check we can get data f_rest for order 1
         // material.baseColor.rgb = variable_test2.rgb;
