@@ -172,6 +172,11 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
     const size_t f_rest_array_size =
             n_vertices * data_count_in_one_buffer * sizeof(float);
     const size_t custom_buffer_start_index = 4;
+
+    float* f_rest_src =
+            (f_rest_buffer_count > 0)
+                    ? geometry_.GetPointAttr("f_rest").GetDataPtr<float>()
+                    : nullptr;
     for (int i = 0; i < f_rest_buffer_count; i++) {
         float* f_rest_array = static_cast<float*>(malloc(f_rest_array_size));
 
@@ -187,9 +192,6 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
                         0, f_rest_array_size);
         }
 
-        // f_rest_buffer_count is not 0 means that can get f_rest data here.
-        float* f_rest_src =
-                geometry_.GetPointAttr("f_rest").GetDataPtr<float>();
         std::memcpy(f_rest_array,
                     f_rest_src + i * n_vertices * data_count_in_one_buffer,
                     copy_data_size);
