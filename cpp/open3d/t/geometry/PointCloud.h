@@ -738,9 +738,24 @@ public:
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
 
+    /// \brief Checks if the point cloud is formatted for Gaussian Splatting.
+    ///
+    /// This function verifies that the point attribute container contains all
+    /// the required keys
+    /// ("f_dc", "opacity", "rot", and "scale") necessary for Gaussian
+    /// Splatting. If any of these keys are missing, the function returns \c
+    /// false; otherwise, it returns \c true. \return \c true if all required
+    /// attributes are present, \c false otherwise.
+    bool IsGaussianSplat() const;
+
+    int GaussianSplatGetSHOrder() const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap point_attr_;
+
+private:
+    std::optional<int> findPositiveIntegerSolution(int x) const;
 };
 
 }  // namespace geometry
