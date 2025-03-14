@@ -148,7 +148,6 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
 
     const size_t rot_array_size = n_vertices * 4 * sizeof(float);
     float* rot_array = static_cast<float*>(malloc(rot_array_size));
-    std::memset(rot_array, 0, rot_array_size);
     std::memcpy(rot_array, geometry_.GetPointAttr("rot").GetDataPtr(),
                 rot_array_size);
     VertexBuffer::BufferDescriptor rot_descriptor(
@@ -158,7 +157,6 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
 
     const size_t color_array_size = n_vertices * 4 * sizeof(float);
     float* color_array = static_cast<float*>(malloc(color_array_size));
-    std::memset(color_array, 0, color_array_size);
     float* f_dc_ptr = geometry_.GetPointAttr("f_dc").GetDataPtr<float>();
     float* opacity_ptr = geometry_.GetPointAttr("opacity").GetDataPtr<float>();
     for (size_t i = 0; i < n_vertices; i++) {
@@ -185,6 +183,8 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
                      f_rest_buffer_count * data_count_in_one_buffer);
             copy_data_size =
                     n_vertices * remaining_count_in_last_iter * sizeof(float);
+            std::memset(f_rest_src + i * n_vertices * data_count_in_one_buffer,
+                        0, f_rest_array_size);
         }
 
         // f_rest_buffer_count is not 0 means that can get f_rest data here.
