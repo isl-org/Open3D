@@ -41,14 +41,11 @@ def point_cloud_video(executor, rgbd_frame, mdata, timestamp, o3dvis):
     app = gui.Application.instance
     update_flag = rendering.Scene.UPDATE_POINTS_FLAG | rendering.Scene.UPDATE_COLORS_FLAG
 
-    executor.submit(io3d.write_image,
-                    f"capture/color/{fid:05d}.jpg",
+    executor.submit(io3d.write_image, f"capture/color/{fid:05d}.jpg",
                     rgbd_frame.color)
-    executor.submit(io3d.write_image,
-                    f"capture/depth/{fid:05d}.png",
+    executor.submit(io3d.write_image, f"capture/depth/{fid:05d}.png",
                     rgbd_frame.depth)
-    print(f"Frame: {fid}, timestamp: {timestamp * 1e-6:.3f}s",
-          end="\r")
+    print(f"Frame: {fid}, timestamp: {timestamp * 1e-6:.3f}s", end="\r")
     if fid == 0:
         # Start with a dummy max sized point cloud to allocate GPU buffers
         # for update_geometry()
