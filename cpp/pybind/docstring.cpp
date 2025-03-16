@@ -138,8 +138,9 @@ size_t FunctionDoc::ParseSummary() {
         overload_docs_.push_back(OverloadDocs{});
         size_t result_type_pos = arrow_pos + 4;
         size_t summary_start_pos =
-                result_type_pos +
-                utility::WordLength(pybind_doc_, result_type_pos, "._:,[]() ,\"");
+                result_type_pos + utility::WordLength(pybind_doc_,
+                                                      result_type_pos,
+                                                      "._:,[]() ,\"");
         summary_end_pos =
                 pybind_doc_.find(". " + name_ + "(", summary_start_pos);
         if (summary_end_pos == std::string::npos)
