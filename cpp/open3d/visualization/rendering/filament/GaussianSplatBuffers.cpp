@@ -72,11 +72,6 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
     const size_t n_vertices = points.GetLength();
 
     int sh_degree = geometry_.GaussianSplatGetSHOrder();
-    if (sh_degree > 2) {
-        // If the degree of SH coeffs is higher than 2, we treate it as
-        // degree 2.
-        sh_degree = 2;
-    }
 
     int f_rest_coeffs_count = sh_degree * (sh_degree + 2) * 3;
     int f_rest_buffer_count = (f_rest_coeffs_count % 4 == 0)
