@@ -106,6 +106,14 @@ vertex {
 }
 
 fragment {
+    float sRGB_to_linear(float color) {
+        return color <= 0.04045 ? color / 12.92 : pow((color + 0.055) / 1.055, 2.4);
+    }
+
+    float linear_to_sRGB(float color) {
+        return color <= 0.0031308 ? color * 12.92 : 1.055 * pow(color, 1.0 / 2.4) - 0.055;
+    }
+
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
 
@@ -127,7 +135,7 @@ fragment {
         // material.baseColor.rgb = getUserWorldPosition();
 
         // test case1: Check we can get data rot.
-        material.baseColor.rgb = variable_test1.rgb;
+        // material.baseColor.rgb = variable_test1.rgb;
 
         // test case2: Check we can get data f_rest for order 1
         // material.baseColor.rgb = variable_test2.rgb;
@@ -137,5 +145,14 @@ fragment {
 
         // test case3: Check we can get data scale
         // material.baseColor.rgb = getColor().rgb;
+
+        // test case4: test the color space(linear RGB or sRGB)
+        // r = linear_to_sRGB(variable_colorFromSh.r);
+        // g = linear_to_sRGB(variable_colorFromSh.g);
+        // b = linear_to_sRGB(variable_colorFromSh.b);
+        // r = sRGB_to_linear(variable_colorFromSh.r);
+        // g = sRGB_to_linear(variable_colorFromSh.g);
+        // b = sRGB_to_linear(variable_colorFromSh.b);
+        // material.baseColor.rgb = vec3(r, g, b);
     }
 }
