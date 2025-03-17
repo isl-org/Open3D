@@ -1,3 +1,5 @@
+// Refering to [this link](https://github.com/nerfstudio-project/gsplat/blob/bd64a47414e182dc105c1a2fdb6691068518d060/gsplat/cuda/include/spherical_harmonics.cuh)
+
 vec3 sh0_coeffs_to_color_fast(vec3 coeffs_sh0) {
     return 0.2820947917738781 * coeffs_sh0;
 }
