@@ -143,10 +143,10 @@ fragment {
         // test case3: Check we can get data f_rest for order 2
         // material.baseColor.rgb = variable_test3.rgb;
 
-        // test case3: Check we can get data scale
+        // test case4: Check we can get data scale
         // material.baseColor.rgb = getColor().rgb;
 
-        // test case4: test the color space(linear RGB or sRGB)
+        // test case5: test the color space(linear RGB or sRGB)
         // r = linear_to_sRGB(variable_colorFromSh.r);
         // g = linear_to_sRGB(variable_colorFromSh.g);
         // b = linear_to_sRGB(variable_colorFromSh.b);
