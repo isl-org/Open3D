@@ -50,8 +50,6 @@ RUN conda create -y -n open3d python=${PYTHON_VERSION} \
 RUN which python \
  && python --version
 
-RUN conda install conda-forge::libgomp
-
 # CMake
 # PWD is /, cmake will be installed to /root/${CMAKE_VERSION}/bin/cmake
 RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
