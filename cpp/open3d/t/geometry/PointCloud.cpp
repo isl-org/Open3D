@@ -1415,7 +1415,7 @@ int PointCloud::GaussianSplatGetSHOrder() const {
                     deg);
         }
 
-        return deg - 1;
+        return deg;
     }
 }
 }  // namespace geometry
