@@ -78,10 +78,10 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
                                       ? (f_rest_coeffs_count / 4)
                                       : std::ceil(f_rest_coeffs_count / 4.0);
 
-    int base_buffer_count = 4;
+    int base_buffer_count = 5;
     int all_buffer_count = base_buffer_count + f_rest_buffer_count;
 
-    // we use POSITION for positions, COLOR for scale, TANGENTS for rot
+    // we use POSITION for positions, COLOR for scale, CUSTOM7 for rot
     // CUSTOM0 for f_dc and opacity, CUSTOM1-CUSTOM6 for f_rest.
     VertexBuffer::Builder buffer_builder =
             VertexBuffer::Builder()
@@ -92,23 +92,25 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
                     .attribute(VertexAttribute::COLOR, 1,
                                VertexBuffer::AttributeType::FLOAT4)
                     .attribute(VertexAttribute::TANGENTS, 2,
-                               VertexBuffer::AttributeType::FLOAT4)
+                               VertexBuffer::AttributeType::FLOAT)
                     .attribute(VertexAttribute::CUSTOM0, 3,
+                               VertexBuffer::AttributeType::FLOAT4)
+                    .attribute(VertexAttribute::CUSTOM7, 4,
                                VertexBuffer::AttributeType::FLOAT4);
     if (sh_degree >= 1) {
-        buffer_builder.attribute(VertexAttribute::CUSTOM1, 4,
+        buffer_builder.attribute(VertexAttribute::CUSTOM1, 5,
                                  VertexBuffer::AttributeType::FLOAT4);
-        buffer_builder.attribute(VertexAttribute::CUSTOM2, 5,
+        buffer_builder.attribute(VertexAttribute::CUSTOM2, 6,
                                  VertexBuffer::AttributeType::FLOAT4);
-        buffer_builder.attribute(VertexAttribute::CUSTOM3, 6,
+        buffer_builder.attribute(VertexAttribute::CUSTOM3, 7,
                                  VertexBuffer::AttributeType::FLOAT4);
     }
     if (sh_degree == 2) {
-        buffer_builder.attribute(VertexAttribute::CUSTOM4, 7,
+        buffer_builder.attribute(VertexAttribute::CUSTOM4, 8,
                                  VertexBuffer::AttributeType::FLOAT4);
-        buffer_builder.attribute(VertexAttribute::CUSTOM5, 8,
+        buffer_builder.attribute(VertexAttribute::CUSTOM5, 9,
                                  VertexBuffer::AttributeType::FLOAT4);
-        buffer_builder.attribute(VertexAttribute::CUSTOM6, 9,
+        buffer_builder.attribute(VertexAttribute::CUSTOM6, 10,
                                  VertexBuffer::AttributeType::FLOAT4);
     }
 
@@ -141,14 +143,15 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
             GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 1, std::move(scale_descriptor));
 
-    const size_t rot_array_size = n_vertices * 4 * sizeof(float);
-    float* rot_array = static_cast<float*>(malloc(rot_array_size));
-    std::memcpy(rot_array, geometry_.GetPointAttr("rot").GetDataPtr(),
-                rot_array_size);
-    VertexBuffer::BufferDescriptor rot_descriptor(
-            rot_array, rot_array_size,
+    // We need to allocate a buffer for TANGENTS; otherwise, Filament will issue
+    // a warning.
+    const size_t empty_array_size = n_vertices * sizeof(float);
+    float* empty_array = static_cast<float*>(malloc(empty_array_size));
+    std::memset(empty_array, 0, empty_array_size);
+    VertexBuffer::BufferDescriptor empty_descriptor(
+            empty_array, empty_array_size,
             GeometryBuffersBuilder::DeallocateBuffer);
-    vbuf->setBufferAt(engine, 2, std::move(rot_descriptor));
+    vbuf->setBufferAt(engine, 2, std::move(empty_descriptor));
 
     const size_t color_array_size = n_vertices * 4 * sizeof(float);
     float* color_array = static_cast<float*>(malloc(color_array_size));
@@ -163,11 +166,19 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
             GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 3, std::move(color_descriptor));
 
+    const size_t rot_array_size = n_vertices * 4 * sizeof(float);
+    float* rot_array = static_cast<float*>(malloc(rot_array_size));
+    std::memcpy(rot_array, geometry_.GetPointAttr("rot").GetDataPtr(),
+                rot_array_size);
+    VertexBuffer::BufferDescriptor rot_descriptor(
+            rot_array, rot_array_size,
+            GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 4, std::move(rot_descriptor));
+
     int data_count_in_one_buffer = 4;
     const size_t f_rest_array_size =
             n_vertices * data_count_in_one_buffer * sizeof(float);
-    const size_t custom_buffer_start_index = 4;
-
+    const size_t custom_buffer_start_index = 5;
     float* f_rest_src =
             (f_rest_buffer_count > 0)
                     ? geometry_.GetPointAttr("f_rest").GetDataPtr<float>()
@@ -183,8 +194,7 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
                      f_rest_buffer_count * data_count_in_one_buffer);
             copy_data_size =
                     n_vertices * remaining_count_in_last_iter * sizeof(float);
-            std::memset(f_rest_src + i * n_vertices * data_count_in_one_buffer,
-                        0, f_rest_array_size);
+            std::memset(f_rest_array, 0, f_rest_array_size);
         }
 
         std::memcpy(f_rest_array,
