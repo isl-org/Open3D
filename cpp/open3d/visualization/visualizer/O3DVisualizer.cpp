@@ -937,6 +937,7 @@ Ctrl-alt-click to polygon select)";
             }
             if (is_gaussian_splat) {
                 mat.shader = kShaderGaussianSplat;
+                mat.sh_degree = t_cloud->GaussianSplatGetSHOrder();
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
 
