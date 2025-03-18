@@ -190,9 +190,8 @@ setup_args = dict(
     description="@PROJECT_DESCRIPTION@",
     long_description=long_description,
     long_description_content_type="text/x-rst",
-    # Metadata below is valid but currently ignored by pip (<=v23)
-    obsoletes=["open3d_python"],
-    provides=["open3d", "open3d_cpu", "open3d_xpu"],  # For open3d-cpu
+    obsoletes_dist=["open3d_python"],
+    provides_dist=["open3d", "open3d_cpu", "open3d_xpu"],  # For open3d-cpu
 )
 
 setup(**setup_args)
