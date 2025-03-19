@@ -658,6 +658,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
 // Test read of splat files by verifying number of elements
 TEST(TPointCloudIO, ReadPointCloudFromSPLAT1) {
+    int expected_len = 72637;
     t::geometry::PointCloud pcd;
 
     std::string filename =
@@ -667,12 +668,11 @@ TEST(TPointCloudIO, ReadPointCloudFromSPLAT1) {
                                    {"splat", false, false, true});
 
     EXPECT_FALSE(pcd.IsEmpty());
-    EXPECT_EQ(pcd.GetPointAttr("positions").GetLength(), 72637);
-    EXPECT_EQ(pcd.GetPointAttr("scale").GetLength(), 72637);
-    EXPECT_EQ(pcd.GetPointAttr("rot").GetLength(), 72637);
-    EXPECT_EQ(pcd.GetPointAttr("opacity").GetLength(), 72637);
-    EXPECT_EQ(pcd.GetPointAttr("f_dc").GetLength(), 72637);
-    EXPECT_EQ(pcd.GetPointAttr("f_rest").GetLength(), 72637);
+    EXPECT_EQ(pcd.GetPointAttr("positions").GetLength(), expected_len);
+    EXPECT_EQ(pcd.GetPointAttr("scale").GetLength(), expected_len);
+    EXPECT_EQ(pcd.GetPointAttr("rot").GetLength(), expected_len);
+    EXPECT_EQ(pcd.GetPointAttr("opacity").GetLength(), expected_len);
+    EXPECT_EQ(pcd.GetPointAttr("f_dc").GetLength(), expected_len);
     EXPECT_FALSE(pcd.HasPointAttr("x"));
 }
 
