@@ -92,6 +92,7 @@ open3d_add_compiled_materials(materials
     Materials/infiniteGroundPlane.mat
     Materials/normals.mat
     Materials/pointcloud.mat
+    Materials/gaussianSplat.mat
     Materials/ui_blit.mat
     Materials/unlitBackground.mat
     Materials/unlitGradient.mat

@@ -1,0 +1,151 @@
+material {
+    name : defaultLit,
+    shadingModel : lit,
+    doubleSided : true,
+    parameters : [
+        { type : float3,    name : baseColor },
+        { type : float,     name : baseMetallic },
+        { type : float,     name : baseRoughness },
+        { type : float,     name : reflectance },
+        { type : float,     name : pointSize },
+        { type : float,     name : clearCoat },
+        { type : float,     name : clearCoatRoughness },
+        { type : float,     name : anisotropy },
+        { type : sampler2d, name : albedo },
+        { type : sampler2d, name : ao_rough_metalMap },
+        { type : sampler2d, name : normalMap },
+        { type : sampler2d, name : reflectanceMap },
+        { type : sampler2d, name : anisotropyMap },
+        { type : int,       name : shDegree }
+    ],
+    variables : [
+        colorFromSh,
+        test1,
+        test2,
+        test3
+    ],
+    requires : [
+        color,    // scale
+        tangents,
+        custom0,  // f_dc and opacity
+        custom1,  // custom1-custom6 store f_rest_0-f_rest_23 SH coeffs
+        custom2,
+        custom3,
+        custom4,
+        custom5,
+        custom6,
+        custom7   // rot
+    ]
+}
+
+vertex {
+    #include "../../shader/glsl/ShCoeffsToColorFast.glsl"
+
+    void materialVertex(inout MaterialVertexInputs material) {
+        gl_PointSize = materialParams.pointSize;
+
+        // refering to https://google.github.io/filament/Materials.html#materialdefinitions/shaderpublicapis/vertexonly,
+        // the worldPosition coordinate in the vertex shader is shifted by the camera position.
+        vec3 dir = material.worldPosition.xyz;
+        float inorm = inversesqrt(dot(dir, dir));
+        dir = dir * inorm;
+
+        // According to "../../shader/glsl/ShCoeffsToColorFast.glsl", the coeffs should be in the following order:
+        // [Y0_R, Y0_G, Y0_B, Y1m1_R, Y1m1_G, Y1m1_B, Y10_R, Y10_G, Y10_B, Y11_R, Y11_G, Y11_B, Y2m2_R, Y2m2_G, Y2m2_B, ...]
+        vec3 colors;
+        
+        float4 f_dc_and_opacity = getCustom0();
+        colors = sh0_coeffs_to_color_fast(f_dc_and_opacity.xyz);
+
+        if (materialParams.shDegree >= 1) {
+            float coeffs_sh1[3 * 3];
+            float4 buffer1 = getCustom1();
+            float4 buffer2 = getCustom2();
+
+            for (int i = 0; i < 4; i++) {
+                coeffs_sh1[i] = buffer1[i];
+                coeffs_sh1[4 + i] = buffer2[i];
+            }
+
+            float4 buffer3 = getCustom3();
+            coeffs_sh1[8] = buffer3[0];
+
+            colors += sh1_coeffs_to_color_fast(dir, coeffs_sh1);
+        }
+
+        if (materialParams.shDegree >= 2) {
+            float coeffs_sh2[5 * 3];
+
+            float4 buffer3 = getCustom3();
+            coeffs_sh2[0] = buffer3[1];
+            coeffs_sh2[1] = buffer3[2];
+            coeffs_sh2[2] = buffer3[3];
+
+            float4 buffer4 = getCustom4();
+            float4 buffer5 = getCustom5();
+            float4 buffer6 = getCustom6();
+
+            for (int i = 0; i < 4; i++) {
+                coeffs_sh2[3 + i] = buffer4[i];
+                coeffs_sh2[3 + 4 + i] = buffer5[i];
+                coeffs_sh2[3 + 2*4 + i] = buffer6[i];
+            }
+
+            colors += sh2_coeffs_to_color_fast(dir, coeffs_sh2);
+        }
+
+        material.colorFromSh.r = colors[0];
+        material.colorFromSh.g = colors[1];
+        material.colorFromSh.b = colors[2];
+        material.colorFromSh.a = 0.0;
+
+        // The following code is just used for verifing we can get data from different buffer.
+        material.test1 = getCustom7();
+        material.test2 = getCustom1();
+        material.test3 = getCustom6();
+    }
+}
+
+fragment {
+    float sRGB_to_linear(float color) {
+        return color <= 0.04045 ? color / 12.92 : pow((color + 0.055) / 1.055, 2.4);
+    }
+
+    float linear_to_sRGB(float color) {
+        return color <= 0.0031308 ? color * 12.92 : 1.055 * pow(color, 1.0 / 2.4) - 0.055;
+    }
+
+    void material(inout MaterialInputs material) {
+        prepareMaterial(material);
+
+        // The following code is only used to test we can get colorFromSh from vertex shader.
+        float r = 0.0;
+        float g = 0.0;
+        float b = 0.0;
+        material.baseColor.rgb = vec3(r, g, b);
+
+        // test case1: verify the effect of 'f_dc'
+        material.baseColor.rgb = variable_colorFromSh.rgb;
+
+        // test case2: Check we can get data 'rot'.
+        // material.baseColor.rgb = variable_test1.rgb;
+
+        // test case3: Check we can get data 'f_rest' of degree 1
+        // material.baseColor.rgb = variable_test2.rgb * 10.0;
+
+        // test case4: Check we can get data 'f_rest' of degree 2
+        // material.baseColor.rgb = variable_test3.rgb * 10.0;
+
+        // test case5: Check we can get data 'scale'
+        // material.baseColor.rgb = getColor().rgb * (-0.05);
+
+        // test case6: test the color space(linear RGB or sRGB)
+        // r = linear_to_sRGB(variable_colorFromSh.r);
+        // g = linear_to_sRGB(variable_colorFromSh.g);
+        // b = linear_to_sRGB(variable_colorFromSh.b);
+        // r = sRGB_to_linear(variable_colorFromSh.r);
+        // g = sRGB_to_linear(variable_colorFromSh.g);
+        // b = sRGB_to_linear(variable_colorFromSh.b);
+        // material.baseColor.rgb = vec3(r, g, b);
+    }
+}
