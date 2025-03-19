@@ -909,6 +909,9 @@ if(NOT USE_SYSTEM_CURL)
         # ```
         # The "Foundation" framework is already linked by GLFW.
         target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+    elseif(UNIX)
+        find_library(LIBIDN2 NAMES idn2 libidn2 libidn2.so.0  )
+        target_link_libraries(3rdparty_curl INTERFACE ${LIBIDN2})
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
