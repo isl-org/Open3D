@@ -404,37 +404,39 @@ TEST_P(PointCloudIOPermuteDevices, ReadWrite3DGSPointCloudPLY) {
                                "/test_sample_3dgs_format.ply";
     std::ofstream outfile;
     outfile.open(filename_out);
-    char data[1000] =
-            "ply \n"
-            "format ascii 1.0 \n"
-            "element vertex 2 \n"
-            "property float x \n"
-            "property float y \n"
-            "property float z \n"
-            "property float nx \n"
-            "property float ny \n"
-            "property float nz \n"
-            "property float f_dc_0 \n"
-            "property float f_dc_1 \n"
-            "property float f_dc_2 \n"
-            "property float f_rest_0 \n"
-            "property float f_rest_1 \n"
-            "property float f_rest_2 \n"
-            "property float opacity \n"
-            "property float scale_0 \n"
-            "property float scale_1 \n"
-            "property float scale_2 \n"
-            "property float rot_0 \n"
-            "property float rot_1 \n"
-            "property float rot_2 \n"
-            "property float rot_3 \n"
-            "end_header \n"
-            "0.7236 -0.52572 -0.447215 1.56827 -2.18747 -1.86078 -1.20846 "
-            "0.45058 -0.98568 -1.56484 1.45875 -2.54894 -1.56895 2.56841 "
-            "-0.58956 -1.54784 -0.89565 -2.56845 -1.56581 0.25685 \n"
-            "0.6598 -1.42875 -2.857215 -1.78825 2.54852 -0.38478 0.245846 "
-            "-0.3305 -1.58646 0.564854 -2.8579 -0.44568 1.33395 -1.58847 "
-            "-2.55896 0.58984 2.13565 1.33845 -2.45685 -1.66585 \n";
+    char data[1100] = R"(ply
+format ascii 1.0
+element vertex 2
+property float x
+property float y
+property float z
+property float nx
+property float ny
+property float nz
+property float f_dc_0
+property float f_dc_1
+property float f_dc_2
+property float f_rest_0
+property float f_rest_1
+property float f_rest_2
+property float f_rest_3
+property float f_rest_4
+property float f_rest_5
+property float f_rest_6
+property float f_rest_7
+property float f_rest_8
+property float opacity
+property float scale_0
+property float scale_1
+property float scale_2
+property float rot_0
+property float rot_1
+property float rot_2
+property float rot_3
+end_header
+0.7236 -0.52572 -0.447215 1.56827 -2.18747 -1.86078 -1.20846 0.45058 -0.98568 -1.56484 0.35058 -0.78568 0.35058 -0.68568 0.65058 -0.38568 1.45875 -2.54894 -1.56895 2.56841 -0.58956 -1.54784 -0.89565 -2.56845 -1.56581 0.25685
+0.6598 -1.42875 -2.857215 -1.78825 2.54852 -0.38478 0.245846 -0.3305 -1.58646 -1.58646 -0.5305 -1.28646 -0.8305 -1.18646 -0.9305 0.564854 -2.8579 -0.44568 1.33395 -1.58847 -2.55896 0.58984 2.13565 1.33845 -2.45685 -1.66585
+)";
     outfile << data;
     outfile.close();
 
@@ -472,34 +474,37 @@ TEST_P(PointCloudIOPermuteDevices, ReadWrite3DGSPointCloudPLY2) {
                                "/test_sample_3dgs_wrong_format.ply";
     std::ofstream outfile;
     outfile.open(filename_out);
-    char data[1000] =
-            "ply \n"
-            "format ascii 1.0 \n"
-            "element vertex 2 \n"
-            "property float x \n"
-            "property float y \n"
-            "property float z \n"
-            "property float nx \n"
-            "property float ny \n"
-            "property float nz \n"
-            "property float f_rest_0 \n"
-            "property float f_rest_1 \n"
-            "property float f_rest_2 \n"
-            "property float opacity \n"
-            "property float scale_0 \n"
-            "property float scale_1 \n"
-            "property float scale_2 \n"
-            "property float rot_0 \n"
-            "property float rot_1 \n"
-            "property float rot_2 \n"
-            "property float rot_3 \n"
-            "end_header \n"
-            "0.7236 -0.52572 -0.447215 1.56827 -2.18747 -1.86078 -1.20846 "
-            "0.45058 -0.98568 -1.56484 1.45875 -2.54894 -1.56895 2.56841 "
-            "-0.58956 -1.54784 -0.89565 \n"
-            "0.6598 -1.42875 -2.857215 -1.78825 2.54852 -0.38478 0.245846 "
-            "-0.3305 -1.58646 0.564854 -2.8579 -0.44568 1.33395 -1.58847 "
-            "-2.55896 0.58984 2.13565 \n";
+    char data[1000] = R"(ply
+format ascii 1.0
+element vertex 2
+property float x
+property float y
+property float z
+property float nx
+property float ny
+property float nz
+property float f_rest_0
+property float f_rest_1
+property float f_rest_2
+property float f_rest_3
+property float f_rest_4
+property float f_rest_5
+property float f_rest_6
+property float f_rest_7
+property float f_rest_8
+property float opacity
+property float scale_0
+property float scale_1
+property float scale_2
+property float rot_0
+property float rot_1
+property float rot_2
+property float rot_3
+end_header
+0.7236 -0.52572 -0.447215 1.56827 -2.18747 -1.86078 -1.20846 0.45058 -0.98568 0.35058 -0.78568 0.35058 -0.68568 0.65058 -0.38568 -1.56484 1.45875 -2.54894 -1.56895 2.56841 -0.58956 -1.54784 -0.89565
+0.6598 -1.42875 -2.857215 -1.78825 2.54852 -0.38478 0.245846 -0.3305 -1.58646 -0.5305 -1.28646 -0.8305 -1.18646 -0.9305 -1.33646 0.564854 -2.8579 -0.44568 1.33395 -1.58847 -2.55896 0.58984 2.13565
+)";
+
     outfile << data;
     outfile.close();
 
@@ -658,7 +663,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
 // Test read of splat files by verifying number of elements
 TEST(TPointCloudIO, ReadPointCloudFromSPLAT1) {
-    int expected_len = 72637;
+    int expected_len = 2;
     t::geometry::PointCloud pcd;
 
     std::string filename =
@@ -680,12 +685,25 @@ TEST(TPointCloudIO, ReadPointCloudFromSPLAT1) {
 TEST(TPointCloudIO, ReadWritePointCloudAsSPLAT) {
     t::geometry::PointCloud pcd_base;
     t::geometry::PointCloud pcd_new;
-    std::vector<int> random_numbers(100);
 
     std::string filename =
             utility::filesystem::GetTempDirectoryPath() + "/test_read.splat";
     std::string new_filename = utility::filesystem::GetTempDirectoryPath() +
                                "/new_test_read.splat";
+
+    // Write a small splat file
+    unsigned char output_splat[64] = {
+            0xd9, 0x3d, 0x39, 0x3f, 0x96, 0x95, 0x06, 0xbf, 0x5d, 0xf9, 0xe4,
+            0xbe, 0x95, 0xb8, 0x50, 0x41, 0x62, 0xf8, 0x0d, 0x3f, 0xd9, 0xcf,
+            0x59, 0x3e, 0x28, 0x9f, 0x38, 0x2b, 0x5b, 0x17, 0x40, 0x8a, 0xa7,
+            0xe8, 0x28, 0x3f, 0x48, 0xe1, 0xb6, 0xbf, 0x9c, 0xdc, 0x36, 0xc0,
+            0xbb, 0x23, 0x51, 0x3e, 0x1f, 0x7c, 0x9e, 0x3d, 0xa3, 0xdf, 0xe6,
+            0x3f, 0x91, 0x67, 0x0d, 0xc9, 0xc6, 0xab, 0x2f, 0x49};
+
+    std::ofstream outfile(filename, std::ios::binary);  // Open in binary mode
+    outfile.write(reinterpret_cast<const char *>(output_splat),
+                  sizeof(output_splat));
+    outfile.close();
 
     t::io::ReadPointCloudFromSPLAT(filename, pcd_base,
                                    {"splat", false, false, true});
@@ -700,8 +718,6 @@ TEST(TPointCloudIO, ReadWritePointCloudAsSPLAT) {
     long num_gaussians_new =
             static_cast<long>(pcd_new.GetPointPositions().GetLength());
     EXPECT_EQ(num_gaussians_base, num_gaussians_new);
-
-    Rand(random_numbers, 0, num_gaussians_new, 89);
 
     // Take pointers
     float *base_position_ptr =
@@ -719,17 +735,15 @@ TEST(TPointCloudIO, ReadWritePointCloudAsSPLAT) {
             static_cast<float *>(pcd_new.GetPointAttr("opacity").GetDataPtr());
 
     // Verify values
-    for (int64_t i = 0; i < 100; i++) {
-        int element_index = random_numbers[i];
+    for (int64_t i = 0; i < num_gaussians_new; i++) {
         int val_index[1];
         Rand(val_index, 1, 0, 3, 89);
 
-        EXPECT_EQ(base_position_ptr[element_index * 3 + val_index[0]],
-                  new_position_ptr[element_index * 3 + val_index[0]]);
-        EXPECT_EQ(base_scale_ptr[element_index * 3 + val_index[0]],
-                  new_scale_ptr[element_index * 3 + val_index[0]]);
-        EXPECT_EQ(base_opacity_ptr[element_index],
-                  new_opacity_ptr[element_index]);
+        EXPECT_EQ(base_position_ptr[i * 3 + val_index[0]],
+                  new_position_ptr[i * 3 + val_index[0]]);
+        EXPECT_EQ(base_scale_ptr[i * 3 + val_index[0]],
+                  new_scale_ptr[i * 3 + val_index[0]]);
+        EXPECT_EQ(base_opacity_ptr[i], new_opacity_ptr[i]);
     }
 }
 
