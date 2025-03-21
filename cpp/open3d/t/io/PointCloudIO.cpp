@@ -52,6 +52,7 @@ static const std::unordered_map<
                 {"xyzrgb", WritePointCloudToTXT},
                 {"pcd", WritePointCloudToPCD},
                 {"ply", WritePointCloudToPLY},
+                {"splat", WritePointCloudToSPLAT},
                 {"pts", WritePointCloudToPTS},
         };
 

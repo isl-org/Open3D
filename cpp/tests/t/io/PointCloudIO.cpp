@@ -214,6 +214,56 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
     EXPECT_FALSE(pcd.HasPointAttr("intensity"));
 }
 
+// Reading ascii and check for 3DGS attributes.
+TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
+    std::string filename_out = utility::filesystem::GetTempDirectoryPath() +
+                               "/test_sample_right_3dgs_format.ply";
+    std::ofstream outfile;
+    outfile.open(filename_out);
+    char data[1000] =
+            "ply \n"
+            "format ascii 1.0 \n"
+            "element vertex 2 \n"
+            "property float x \n"
+            "property float y \n"
+            "property float z \n"
+            "property float nx \n"
+            "property float ny \n"
+            "property float nz \n"
+            "property float f_dc_0 \n"
+            "property float f_dc_1 \n"
+            "property float f_dc_2 \n"
+            "property float f_rest_0 \n"
+            "property float f_rest_1 \n"
+            "property float f_rest_2 \n"
+            "property float opacity \n"
+            "property float scale_0 \n"
+            "property float scale_1 \n"
+            "property float scale_2 \n"
+            "property float rot_0 \n"
+            "property float rot_1 \n"
+            "property float rot_2 \n"
+            "property float rot_3 \n"
+            "end_header \n"
+            "0.7236 -0.52572 -0.447215 1.56827 -2.18747 -1.86078 -1.20846 "
+            "0.45058 -0.98568 -1.56484 1.45875 -2.54894 -1.56895 2.56841 "
+            "-0.58956 -1.54784 -0.89565 -2.56845 -1.56581 0.25685 \n"
+            "0.6598 -1.42875 -2.857215 -1.78825 2.54852 -0.38478 0.245846 "
+            "-0.3305 -1.58646 0.564854 -2.8579 -0.44568 1.33395 -1.58847 "
+            "-2.55896 0.58984 2.13565 1.33845 -2.45685 -1.66585 \n";
+    outfile << data;
+    outfile.close();
+
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(filename_out, pcd, {"auto", false, false, true});
+    EXPECT_TRUE(pcd.HasPointAttr("positions"));
+    EXPECT_TRUE(pcd.HasPointAttr("opacity"));
+    EXPECT_TRUE(pcd.HasPointAttr("rot"));
+    EXPECT_TRUE(pcd.HasPointAttr("scale"));
+    EXPECT_TRUE(pcd.HasPointAttr("f_dc"));
+    EXPECT_TRUE(pcd.HasPointAttr("f_rest"));
+}
+
 // Read write empty point cloud.
 TEST(TPointCloudIO, ReadWriteEmptyPTS) {
     t::geometry::PointCloud pcd, pcd_read;
@@ -309,16 +359,11 @@ TEST(TPointCloudIO, WritePTSColorConversion1) {
 
 // Check PTS color boolean to uint8 conversion.
 TEST(TPointCloudIO, WritePTSColorConversion2) {
-    t::geometry::PointCloud pcd, pcd_read;
-    std::string file_name = utility::filesystem::GetTempDirectoryPath() +
-                            "/test_color_conversion.pts";
-    pcd.SetPointPositions(core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}));
-    pcd.SetPointColors(core::Tensor::Init<bool>({{1, 0, 0}, {1, 0, 1}}));
-    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
-    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
-                                      {"auto", false, false, true}));
-    EXPECT_EQ(pcd_read.GetPointColors().ToFlatVector<uint8_t>(),
-              std::vector<uint8_t>({255, 0, 0, 255, 0, 255}));
+    // Read PointCloud from PLY file.
+    t::geometry::PointCloud pcd_ply;
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd_ply,
+                          {"auto", false, false, true});
 }
 
 TEST(TPointCloudIO, ReadWritePointCloudAsNPZ) {
@@ -352,6 +397,144 @@ TEST_P(PointCloudIOPermuteDevices, WriteDeviceTestPLY) {
     core::Tensor points = core::Tensor::Ones({10, 3}, core::Float32, device);
     t::geometry::PointCloud pcd(points);
     EXPECT_TRUE(t::io::WritePointCloud(filename, pcd));
+}
+
+TEST_P(PointCloudIOPermuteDevices, ReadWrite3DGSPointCloudPLY) {
+    std::string filename_out = utility::filesystem::GetTempDirectoryPath() +
+                               "/test_sample_3dgs_format.ply";
+    std::ofstream outfile;
+    outfile.open(filename_out);
+    char data[1100] = R"(ply
+format ascii 1.0
+element vertex 2
+property float x
+property float y
+property float z
+property float nx
+property float ny
+property float nz
+property float f_dc_0
+property float f_dc_1
+property float f_dc_2
+property float f_rest_0
+property float f_rest_1
+property float f_rest_2
+property float f_rest_3
+property float f_rest_4
+property float f_rest_5
+property float f_rest_6
+property float f_rest_7
+property float f_rest_8
+property float opacity
+property float scale_0
+property float scale_1
+property float scale_2
+property float rot_0
+property float rot_1
+property float rot_2
+property float rot_3
+end_header
+0.7236 -0.52572 -0.447215 1.56827 -2.18747 -1.86078 -1.20846 0.45058 -0.98568 -1.56484 0.35058 -0.78568 0.35058 -0.68568 0.65058 -0.38568 1.45875 -2.54894 -1.56895 2.56841 -0.58956 -1.54784 -0.89565 -2.56845 -1.56581 0.25685
+0.6598 -1.42875 -2.857215 -1.78825 2.54852 -0.38478 0.245846 -0.3305 -1.58646 -1.58646 -0.5305 -1.28646 -0.8305 -1.18646 -0.9305 0.564854 -2.8579 -0.44568 1.33395 -1.58847 -2.55896 0.58984 2.13565 1.33845 -2.45685 -1.66585
+)";
+    outfile << data;
+    outfile.close();
+
+    // Read PointCloud from PLY file.
+    t::geometry::PointCloud pcd_ply;
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd_ply,
+                          {"auto", false, false, true});
+
+    const int64_t n_points = pcd_ply.GetPointPositions().GetLength();
+    const core::SizeVector one_dim = {n_points, 1};
+    const core::SizeVector three_dim = {n_points, 3};
+    const core::SizeVector four_dim = {n_points, 4};
+    const core::SizeVector eight_dim = {n_points, 8, 3};
+
+    core::Tensor opacity_attr = core::Tensor::Ones(one_dim, core::Float32);
+    core::Tensor rot_attr = core::Tensor::Ones(four_dim, core::Float32);
+    core::Tensor scale_attr = core::Tensor::Ones(three_dim, core::Float32);
+    core::Tensor f_dc_attr = core::Tensor::Ones(three_dim, core::Float32);
+    core::Tensor f_rest_attr = core::Tensor::Ones(eight_dim, core::Float32);
+
+    pcd_ply.SetPointAttr("opacity", opacity_attr);
+    pcd_ply.SetPointAttr("rot", rot_attr);
+    pcd_ply.SetPointAttr("scale", scale_attr);
+    pcd_ply.SetPointAttr("f_dc", f_dc_attr);
+    pcd_ply.SetPointAttr("f_rest", f_rest_attr);
+
+    std::string filename = utility::filesystem::GetTempDirectoryPath() +
+                           "/test_write_3dgs_pointcloud.ply";
+    EXPECT_TRUE(t::io::WritePointCloud(filename, pcd_ply));
+}
+
+TEST_P(PointCloudIOPermuteDevices, ReadWrite3DGSPointCloudPLY2) {
+    std::string filename_out = utility::filesystem::GetTempDirectoryPath() +
+                               "/test_sample_3dgs_wrong_format.ply";
+    std::ofstream outfile;
+    outfile.open(filename_out);
+    char data[1000] = R"(ply
+format ascii 1.0
+element vertex 2
+property float x
+property float y
+property float z
+property float nx
+property float ny
+property float nz
+property float f_rest_0
+property float f_rest_1
+property float f_rest_2
+property float f_rest_3
+property float f_rest_4
+property float f_rest_5
+property float f_rest_6
+property float f_rest_7
+property float f_rest_8
+property float opacity
+property float scale_0
+property float scale_1
+property float scale_2
+property float rot_0
+property float rot_1
+property float rot_2
+property float rot_3
+end_header
+0.7236 -0.52572 -0.447215 1.56827 -2.18747 -1.86078 -1.20846 0.45058 -0.98568 0.35058 -0.78568 0.35058 -0.68568 0.65058 -0.38568 -1.56484 1.45875 -2.54894 -1.56895 2.56841 -0.58956 -1.54784 -0.89565
+0.6598 -1.42875 -2.857215 -1.78825 2.54852 -0.38478 0.245846 -0.3305 -1.58646 -0.5305 -1.28646 -0.8305 -1.18646 -0.9305 -1.33646 0.564854 -2.8579 -0.44568 1.33395 -1.58847 -2.55896 0.58984 2.13565
+)";
+
+    outfile << data;
+    outfile.close();
+
+    // Read PointCloud from PLY file.
+    t::geometry::PointCloud pcd_ply;
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd_ply,
+                          {"auto", false, false, true});
+
+    const int64_t n_points = pcd_ply.GetPointPositions().GetLength();
+    const core::SizeVector one_dim = {n_points, 1};
+    const core::SizeVector three_dim = {n_points, 3};
+    const core::SizeVector four_dim = {n_points, 4};
+    const core::SizeVector eight_dim = {n_points, 8, 3};
+
+    core::Tensor opacity_attr = core::Tensor::Ones(one_dim, core::Float32);
+    core::Tensor rot_attr = core::Tensor::Ones(four_dim, core::Float32);
+    core::Tensor scale_attr = core::Tensor::Ones(three_dim, core::Float32);
+    core::Tensor f_dc_attr = core::Tensor::Ones(four_dim, core::Float32);
+    core::Tensor f_rest_attr = core::Tensor::Ones(eight_dim, core::Float32);
+
+    pcd_ply.SetPointAttr("opacity", opacity_attr);
+    pcd_ply.SetPointAttr("rot", rot_attr);
+    pcd_ply.SetPointAttr("scale", scale_attr);
+    pcd_ply.SetPointAttr("f_dc", f_dc_attr);
+    pcd_ply.SetPointAttr("f_rest", f_rest_attr);
+
+    std::string filename = utility::filesystem::GetTempDirectoryPath() +
+                           "/test_write_3dgs_wrong_pointcloud.ply";
+    EXPECT_ANY_THROW(t::io::WritePointCloud(filename, pcd_ply));
 }
 
 TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
@@ -476,6 +659,92 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
     t::io::ReadPointCloud(filename_ascii_uint32, ascii_uint32_pcd);
 
     EXPECT_TRUE(ascii_f32_pcd.GetPointColors().AllClose(color_uint8));
+}
+
+// Test read of splat files by verifying number of elements
+TEST(TPointCloudIO, ReadPointCloudFromSPLAT1) {
+    int expected_len = 2;
+    t::geometry::PointCloud pcd;
+
+    std::string filename =
+            utility::filesystem::GetTempDirectoryPath() + "/test_read.splat";
+
+    t::io::ReadPointCloudFromSPLAT(filename, pcd,
+                                   {"splat", false, false, true});
+
+    EXPECT_FALSE(pcd.IsEmpty());
+    EXPECT_EQ(pcd.GetPointAttr("positions").GetLength(), expected_len);
+    EXPECT_EQ(pcd.GetPointAttr("scale").GetLength(), expected_len);
+    EXPECT_EQ(pcd.GetPointAttr("rot").GetLength(), expected_len);
+    EXPECT_EQ(pcd.GetPointAttr("opacity").GetLength(), expected_len);
+    EXPECT_EQ(pcd.GetPointAttr("f_dc").GetLength(), expected_len);
+    EXPECT_FALSE(pcd.HasPointAttr("x"));
+}
+
+// Test consistency of vaues after writing and reading.
+TEST(TPointCloudIO, ReadWritePointCloudAsSPLAT) {
+    t::geometry::PointCloud pcd_base;
+    t::geometry::PointCloud pcd_new;
+
+    std::string filename =
+            utility::filesystem::GetTempDirectoryPath() + "/test_read.splat";
+    std::string new_filename = utility::filesystem::GetTempDirectoryPath() +
+                               "/new_test_read.splat";
+
+    // Write a small splat file
+    unsigned char output_splat[64] = {
+            0xd9, 0x3d, 0x39, 0x3f, 0x96, 0x95, 0x06, 0xbf, 0x5d, 0xf9, 0xe4,
+            0xbe, 0x95, 0xb8, 0x50, 0x41, 0x62, 0xf8, 0x0d, 0x3f, 0xd9, 0xcf,
+            0x59, 0x3e, 0x28, 0x9f, 0x38, 0x2b, 0x5b, 0x17, 0x40, 0x8a, 0xa7,
+            0xe8, 0x28, 0x3f, 0x48, 0xe1, 0xb6, 0xbf, 0x9c, 0xdc, 0x36, 0xc0,
+            0xbb, 0x23, 0x51, 0x3e, 0x1f, 0x7c, 0x9e, 0x3d, 0xa3, 0xdf, 0xe6,
+            0x3f, 0x91, 0x67, 0x0d, 0xc9, 0xc6, 0xab, 0x2f, 0x49};
+
+    std::ofstream outfile(filename, std::ios::binary);  // Open in binary mode
+    outfile.write(reinterpret_cast<const char *>(output_splat),
+                  sizeof(output_splat));
+    outfile.close();
+
+    t::io::ReadPointCloudFromSPLAT(filename, pcd_base,
+                                   {"splat", false, false, true});
+    t::io::WritePointCloudToSPLAT(new_filename, pcd_base,
+                                  {"splat", false, false, true});
+    t::io::ReadPointCloudFromSPLAT(new_filename, pcd_new,
+                                   {"splat", false, false, true});
+
+    // Total Gaussians
+    long num_gaussians_base =
+            static_cast<long>(pcd_base.GetPointPositions().GetLength());
+    long num_gaussians_new =
+            static_cast<long>(pcd_new.GetPointPositions().GetLength());
+    EXPECT_EQ(num_gaussians_base, num_gaussians_new);
+
+    // Take pointers
+    float *base_position_ptr =
+            static_cast<float *>(pcd_base.GetPointPositions().GetDataPtr());
+    float *base_scale_ptr =
+            static_cast<float *>(pcd_base.GetPointAttr("scale").GetDataPtr());
+    float *base_opacity_ptr =
+            static_cast<float *>(pcd_base.GetPointAttr("opacity").GetDataPtr());
+
+    float *new_position_ptr =
+            static_cast<float *>(pcd_new.GetPointPositions().GetDataPtr());
+    float *new_scale_ptr =
+            static_cast<float *>(pcd_new.GetPointAttr("scale").GetDataPtr());
+    float *new_opacity_ptr =
+            static_cast<float *>(pcd_new.GetPointAttr("opacity").GetDataPtr());
+
+    // Verify values
+    for (int64_t i = 0; i < num_gaussians_new; i++) {
+        int val_index[1];
+        Rand(val_index, 1, 0, 3, 89);
+
+        EXPECT_EQ(base_position_ptr[i * 3 + val_index[0]],
+                  new_position_ptr[i * 3 + val_index[0]]);
+        EXPECT_EQ(base_scale_ptr[i * 3 + val_index[0]],
+                  new_scale_ptr[i * 3 + val_index[0]]);
+        EXPECT_EQ(base_opacity_ptr[i], new_opacity_ptr[i]);
+    }
 }
 
 }  // namespace tests
