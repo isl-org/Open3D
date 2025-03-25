@@ -72,6 +72,12 @@ TGaussianSplatBuffersBuilder::ConstructBuffers() {
     const size_t n_vertices = points.GetLength();
 
     int sh_degree = geometry_.GaussianSplatGetSHOrder();
+    if (sh_degree > 2) {
+        utility::LogWarning(
+                "Rendering for Gaussian splats with SH degrees higher than 2 "
+                "is not supported. They are processed as SH degree 2.");
+        sh_degree = 2;
+    }
 
     int f_rest_coeffs_count = sh_degree * (sh_degree + 2) * 3;
     int f_rest_buffer_count = (f_rest_coeffs_count % 4 == 0)

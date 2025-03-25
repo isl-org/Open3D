@@ -1406,15 +1406,7 @@ int PointCloud::GaussianSplatGetSHOrder() const {
                     "({}), expected 0, 3, 8 or 15.",
                     Nc);
         }
-
         deg = deg - 1;
-        if (deg > 2) {
-            utility::LogWarning(
-                    "SH degree higher than 2 is not supported. The SH degree "
-                    "of in input data is {}, we set it as 2.",
-                    deg);
-            deg = 2;
-        }
 
         return deg;
     }
