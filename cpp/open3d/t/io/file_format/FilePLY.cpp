@@ -18,32 +18,15 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
-#define POSITIONS_ATTR_NAME "positions"
-#define NORMALS_ATTR_NAME "normals"
-#define COLORS_ATTR_NAME "colors"
-#define OPACITY_ATTR_NAME "opacity"  // The opacity
-#define ROTATION_ATTR_NAME "rot"     // The Gaussian rotation as a quaternion.
-#define SCALE_ATTR_NAME "scale"      // The Gaussian scale.
-#define F_DC_ATTR_NAME "f_dc"        // DC color components.
-#define F_REST_ATTR_NAME "f_rest"    // Spherical Harmonics Coefficients (SHC).
-
-#define POSITIONS_ATTR_MAX_DIM 3
-#define NORMALS_ATTR_MAX_DIM 3
-#define COLORS_ATTR_MAX_DIM 3
-#define OPACITY_ATTR_MAX_DIM 1   // Scalar opacity.
-#define ROTATION_ATTR_MAX_DIM 4  // Rotation channels.
-#define SCALE_ATTR_MAX_DIM 3     // Channels for x,y,z.
-#define F_DC_ATTR_MAX_DIM 3      // Channels for R,G,B.
-#define F_REST_ATTR_MAX_DIM 1  // Non-DC color. Each property read as a scalar.
-
-#define ROTATION_SUFFIX_INDEX 4
-#define SCALE_SUFFIX_INDEX 6
-#define F_DC_SUFFIX_INDEX 5
-#define F_REST_SUFFIX_INDEX 7
-
 namespace open3d {
 namespace t {
 namespace io {
+
+namespace {
+constexpr auto ROTATION_SUFFIX_INDEX = std::strlen("rot_");
+constexpr auto SCALE_SUFFIX_INDEX = std::strlen("scale_");
+constexpr auto F_DC_SUFFIX_INDEX = std::strlen("f_dc_");
+constexpr auto F_REST_SUFFIX_INDEX = std::strlen("f_rest_");
 
 struct PLYReaderState {
     struct AttrState {
@@ -60,7 +43,7 @@ struct PLYReaderState {
 };
 
 template <typename T>
-static int ReadAttributeCallback(p_ply_argument argument) {
+int ReadAttributeCallback(p_ply_argument argument) {
     PLYReaderState *state_ptr;
     long id;
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
@@ -86,7 +69,7 @@ static int ReadAttributeCallback(p_ply_argument argument) {
 
 // Some of these datatypes are supported by Tensor but are added here just
 // for completeness.
-static std::string GetDtypeString(e_ply_type type) {
+std::string GetDtypeString(e_ply_type type) {
     if (type == PLY_INT8) {
         return "int8";
     } else if (type == PLY_UINT8) {
@@ -126,7 +109,7 @@ static std::string GetDtypeString(e_ply_type type) {
     }
 }
 
-static core::Dtype GetDtype(e_ply_type type) {
+core::Dtype GetDtype(e_ply_type type) {
     // PLY_LIST attribute is not supported.
     // Currently, we are not doing datatype conversions, so some of the ply
     // datatypes are not included.
@@ -146,96 +129,49 @@ static core::Dtype GetDtype(e_ply_type type) {
     }
 }
 
-static std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
+// Map ply attributes to Open3D point cloud attributes
+std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
         const std::string &name) {
     // Positions attribute.
-    if (name == "x")
-        return std::make_tuple(POSITIONS_ATTR_NAME, POSITIONS_ATTR_MAX_DIM, 0);
-    if (name == "y")
-        return std::make_tuple(POSITIONS_ATTR_NAME, POSITIONS_ATTR_MAX_DIM, 1);
-    if (name == "z")
-        return std::make_tuple(POSITIONS_ATTR_NAME, POSITIONS_ATTR_MAX_DIM, 2);
+    if (name == "x") return std::make_tuple("positions", 3, 0);
+    if (name == "y") return std::make_tuple("positions", 3, 1);
+    if (name == "z") return std::make_tuple("positions", 3, 2);
 
     // Normals attribute.
-    if (name == "nx")
-        return std::make_tuple(NORMALS_ATTR_NAME, NORMALS_ATTR_MAX_DIM, 0);
-    if (name == "ny")
-        return std::make_tuple(NORMALS_ATTR_NAME, NORMALS_ATTR_MAX_DIM, 1);
-    if (name == "nz")
-        return std::make_tuple(NORMALS_ATTR_NAME, NORMALS_ATTR_MAX_DIM, 2);
+    if (name == "nx") return std::make_tuple("normals", 3, 0);
+    if (name == "ny") return std::make_tuple("normals", 3, 1);
+    if (name == "nz") return std::make_tuple("normals", 3, 2);
 
     // Colors attribute.
-    if (name == "red")
-        return std::make_tuple(COLORS_ATTR_NAME, COLORS_ATTR_MAX_DIM, 0);
-    if (name == "green")
-        return std::make_tuple(COLORS_ATTR_NAME, COLORS_ATTR_MAX_DIM, 1);
-    if (name == "blue")
-        return std::make_tuple(COLORS_ATTR_NAME, COLORS_ATTR_MAX_DIM, 2);
+    if (name == "red") return std::make_tuple("colors", 3, 0);
+    if (name == "green") return std::make_tuple("colors", 3, 1);
+    if (name == "blue") return std::make_tuple("colors", 3, 2);
 
-    // Extra attributes for 3DGS.
-    // Property names with prefixes are mapped to grouped attributes.
-
-    // f_dc attribute.
-    if (name.rfind(std::string(F_DC_ATTR_NAME) + "_", 0) == 0) {
+    // 3DGS SH DC component.
+    if (name.rfind(std::string("f_dc") + "_", 0) == 0) {
         int offset = std::stoi(name.substr(F_DC_SUFFIX_INDEX));
-        return std::make_tuple(F_DC_ATTR_NAME, F_DC_ATTR_MAX_DIM, offset);
+        return std::make_tuple("f_dc", 3, offset);
     }
-    // f_rest attribute.
-    if (name.rfind(std::string(F_REST_ATTR_NAME) + "_", 0) == 0) {
+    // 3DGS SH higher order components. stride = 0 => set later
+    if (name.rfind(std::string("f_rest") + "_", 0) == 0) {
         int offset = std::stoi(name.substr(F_REST_SUFFIX_INDEX));
-        return std::make_tuple(F_REST_ATTR_NAME, F_REST_ATTR_MAX_DIM, offset);
+        return std::make_tuple("f_rest", 0, offset);
     }
-    // scale attribute.
-    if (name.rfind(std::string(SCALE_ATTR_NAME) + "_", 0) == 0) {
+    // 3DGS Gaussian scale attribute.
+    if (name.rfind(std::string("scale") + "_", 0) == 0) {
         int offset = std::stoi(name.substr(SCALE_SUFFIX_INDEX));
-        return std::make_tuple(SCALE_ATTR_NAME, SCALE_ATTR_MAX_DIM, offset);
+        return std::make_tuple("scale", 3, offset);
     }
-    // rot attribute.
-    if (name.rfind(std::string(ROTATION_ATTR_NAME) + "_", 0) == 0) {
+    // 3DGS Gaussian rotation as a quaternion.
+    if (name.rfind(std::string("rot") + "_", 0) == 0) {
         int offset = std::stoi(name.substr(ROTATION_SUFFIX_INDEX));
-        return std::make_tuple(ROTATION_ATTR_NAME, ROTATION_ATTR_MAX_DIM,
-                               offset);
+        return std::make_tuple("rot", 4, offset);
     }
     // Other attribute.
     return std::make_tuple(name, 1, 0);
 }
 
-bool Is3DGSPointCloud(const geometry::PointCloud &pointcloud) {
-    return (pointcloud.HasPointAttr(OPACITY_ATTR_NAME) &&
-            pointcloud.HasPointAttr(ROTATION_ATTR_NAME) &&
-            pointcloud.HasPointAttr(SCALE_ATTR_NAME) &&
-            pointcloud.HasPointAttr(F_DC_ATTR_NAME));
-}
-
-bool CheckMandatory3DGSProperty(const geometry::PointCloud &pointcloud,
-                                const std::string &property,
-                                const core::SizeVector &dims) {
-    core::AssertTensorShape(pointcloud.GetPointAttr(property), dims);
-    return true;
-}
-
-bool Validate3DGSPointCloudProperties(const geometry::PointCloud &pointcloud) {
-    int64_t num_points = pointcloud.GetPointPositions().GetLength();
-
-    // Assert attribute shapes.
-    bool valid_positions =
-            CheckMandatory3DGSProperty(pointcloud, POSITIONS_ATTR_NAME,
-                                       {num_points, POSITIONS_ATTR_MAX_DIM});
-    bool valid_normals = CheckMandatory3DGSProperty(
-            pointcloud, NORMALS_ATTR_NAME, {num_points, NORMALS_ATTR_MAX_DIM});
-    bool valid_opacity = CheckMandatory3DGSProperty(
-            pointcloud, OPACITY_ATTR_NAME, {num_points, OPACITY_ATTR_MAX_DIM});
-    bool valid_rot =
-            CheckMandatory3DGSProperty(pointcloud, ROTATION_ATTR_NAME,
-                                       {num_points, ROTATION_ATTR_MAX_DIM});
-    bool valid_scale = CheckMandatory3DGSProperty(
-            pointcloud, SCALE_ATTR_NAME, {num_points, SCALE_ATTR_MAX_DIM});
-    bool valid_f_dc = CheckMandatory3DGSProperty(
-            pointcloud, F_DC_ATTR_NAME, {num_points, F_DC_ATTR_MAX_DIM});
-
-    return (valid_positions && valid_normals && valid_opacity && valid_rot &&
-            valid_scale && valid_f_dc);
-}
+}  // namespace
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
@@ -275,10 +211,9 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     std::unordered_map<std::string, bool> primary_attr_init = {
-            {POSITIONS_ATTR_NAME, false}, {NORMALS_ATTR_NAME, false},
-            {COLORS_ATTR_NAME, false},    {OPACITY_ATTR_NAME, false},
-            {ROTATION_ATTR_NAME, false},  {SCALE_ATTR_NAME, false},
-            {F_DC_ATTR_NAME, false},      {F_REST_ATTR_NAME, false},
+            {"positions", false}, {"normals", false}, {"colors", false},
+            {"opacity", false},   {"rot", false},     {"scale", false},
+            {"f_dc", false},      {"f_rest", false},
     };
 
     int f_rest_count = 0;
@@ -312,14 +247,10 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
             const std::string attr_name = std::string(name);
 
-            std::string target;
-            int stride, offset;
-
-            std::tie(target, stride, offset) =
+            auto [target, stride, offset] =
                     GetNameStrideOffsetForAttribute(attr_name);
 
-            if (target == F_REST_ATTR_NAME) {
-                stride = 1;
+            if (target == "f_rest") {
                 f_rest_count++;
             }
 
@@ -352,15 +283,23 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     }
 
     if (f_rest_count > 0) {
+        if (f_rest_count % 3 != 0) {
+            utility::LogWarning(
+                    "Read PLY failed: 3DGS f_rest attribute has {} elements "
+                    "per point, which is not divisible by 3.",
+                    f_rest_count);
+            ply_close(ply_file);
+            return false;
+        }
         core::Tensor new_f_rest =
-                core::Tensor::Empty({element_size, f_rest_count}, core::Float32,
-                                    pointcloud.GetDevice());
-        pointcloud.SetPointAttr(F_REST_ATTR_NAME, new_f_rest);
+                core::Tensor::Empty({element_size, f_rest_count / 3, 3},
+                                    core::Float32, pointcloud.GetDevice());
+        pointcloud.SetPointAttr("f_rest", new_f_rest);
         for (auto &attr_state : state.id_to_attr_state_) {
-            if (attr_state->name_ == F_REST_ATTR_NAME) {
+            if (attr_state->name_ == "f_rest") {
                 attr_state->data_ptr_ =
-                        pointcloud.GetPointAttr(F_REST_ATTR_NAME).GetDataPtr();
-                attr_state->stride_ = 1;
+                        pointcloud.GetPointAttr("f_rest").GetDataPtr();
+                attr_state->stride_ = f_rest_count;
             }
         }
     }
@@ -379,36 +318,15 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     ply_close(ply_file);
     reporter.Finish();
 
-    if (Is3DGSPointCloud(pointcloud)) {
-        utility::LogInfo("PLY file identified as 3DGS format.");
-        if (!Validate3DGSPointCloudProperties(pointcloud)) {
-            return false;
-        }
+    if (pointcloud.IsGaussianSplat()) {  // validates 3DGS, if present.
+        utility::LogDebug("PLY file contains a Gaussian Splat.");
     }
 
-    if (pointcloud.HasPointAttr(F_REST_ATTR_NAME)) {
-        core::Tensor f_rest_tensor = pointcloud.GetPointAttr(F_REST_ATTR_NAME);
-        auto shape = f_rest_tensor.GetShape();  // shape = {N, f_rest_count}
-        utility::LogInfo("f_rest tensor shape before: {}", shape.ToString());
-        int num_f_rest_channels = shape[1];
-        utility::LogInfo("Computed num_f_rest_channels: {}",
-                         num_f_rest_channels);
-        if (num_f_rest_channels % 3 == 0) {
-            int Nc = num_f_rest_channels / 3;
-            pointcloud.SetPointAttr(
-                    F_REST_ATTR_NAME,
-                    f_rest_tensor.Reshape({shape[0], Nc, 3}).Clone());
-        } else {
-            utility::LogWarning(
-                    "f_rest attribute has {} columns, which is not divisible "
-                    "by 3.",
-                    num_f_rest_channels);
-        }
-    }
     return true;
 }
 
-static e_ply_type GetPlyType(const core::Dtype &dtype) {
+namespace {
+e_ply_type GetPlyType(const core::Dtype &dtype) {
     if (dtype == core::UInt8) {
         return PLY_UCHAR;
     } else if (dtype == core::UInt16) {
@@ -438,6 +356,7 @@ struct AttributePtr {
     const void *data_ptr_;
     const int group_size_;
 };
+}  // namespace
 
 bool WritePointCloudToPLY(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
@@ -447,23 +366,22 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    if (Is3DGSPointCloud(pointcloud)) {
-        utility::LogInfo("PLY point cloud identified as 3DGS format.");
-        if (!Validate3DGSPointCloudProperties(pointcloud)) {
-            return false;
-        }
+    if (pointcloud.IsGaussianSplat()) {  // validates 3DGS, if present.
+        utility::LogDebug("Writing Gaussian Splat point cloud to PLY file.");
     }
 
-    geometry::TensorMap t_map(pointcloud.GetPointAttr().Contiguous());
+    geometry::TensorMap t_map =
+            pointcloud.To(core::Device("CPU:0")).GetPointAttr().Contiguous();
 
     long num_points =
             static_cast<long>(pointcloud.GetPointPositions().GetLength());
 
     // Verify that standard attributes have length equal to num_points.
-    // Extra attributes must have at least 2 dimensions: (num_points, channels).
+    // Extra attributes must have at least 2 dimensions: (num_points, channels,
+    // ...).
     for (auto const &it : t_map) {
-        if (it.first == POSITIONS_ATTR_NAME || it.first == NORMALS_ATTR_NAME ||
-            it.first == COLORS_ATTR_NAME) {
+        if (it.first == "positions" || it.first == "normals" ||
+            it.first == "colors") {
             if (it.second.GetLength() != num_points) {
                 utility::LogWarning(
                         "Write PLY failed: Points ({}) and {} ({}) have "
@@ -473,18 +391,16 @@ bool WritePointCloudToPLY(const std::string &filename,
             }
         } else {
             auto shape = it.second.GetShape();
-            // Only tensors with shape (num_points, channels) are supported.
+            // Only tensors with shape (num_points, channels, ...) are
+            // supported.
             if (shape.size() < 2 || shape[0] != num_points) {
                 utility::LogWarning(
                         "Write PLY failed. PointCloud contains {} attribute "
-                        "which "
-                        "is not supported by PLY IO. Only points, normals, "
-                        "colors "
-                        "and attributes with shape (num_points, 1) are "
-                        "supported. "
-                        "Expected shape: {} but got {}.",
-                        it.first, core::SizeVector({num_points, 1}).ToString(),
-                        it.second.GetShape().ToString());
+                        "which is not supported by PLY IO. Only points, "
+                        "normals, colors and attributes with shape "
+                        "(num_points, channels, ...) are supported. Expected "
+                        "shape: {{{}, ...}} but got {}.",
+                        it.first, num_points, it.second.GetShape().ToString());
                 return false;
             }
         }
@@ -504,22 +420,19 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_add_element(ply_file, "vertex", num_points);
 
     std::vector<AttributePtr> attribute_ptrs;
-    attribute_ptrs.emplace_back(t_map[POSITIONS_ATTR_NAME].GetDtype(),
-                                t_map[POSITIONS_ATTR_NAME].GetDataPtr(),
-                                POSITIONS_ATTR_MAX_DIM);
+    attribute_ptrs.emplace_back(t_map["positions"].GetDtype(),
+                                t_map["positions"].GetDataPtr(), 3);
 
-    e_ply_type pointType = GetPlyType(t_map[POSITIONS_ATTR_NAME].GetDtype());
+    e_ply_type pointType = GetPlyType(t_map["positions"].GetDtype());
     ply_add_property(ply_file, "x", pointType, pointType, pointType);
     ply_add_property(ply_file, "y", pointType, pointType, pointType);
     ply_add_property(ply_file, "z", pointType, pointType, pointType);
 
     if (pointcloud.HasPointNormals()) {
-        attribute_ptrs.emplace_back(t_map[NORMALS_ATTR_NAME].GetDtype(),
-                                    t_map[NORMALS_ATTR_NAME].GetDataPtr(),
-                                    NORMALS_ATTR_MAX_DIM);
+        attribute_ptrs.emplace_back(t_map["normals"].GetDtype(),
+                                    t_map["normals"].GetDataPtr(), 3);
 
-        e_ply_type pointNormalsType =
-                GetPlyType(t_map[NORMALS_ATTR_NAME].GetDtype());
+        e_ply_type pointNormalsType = GetPlyType(t_map["normals"].GetDtype());
         ply_add_property(ply_file, "nx", pointNormalsType, pointNormalsType,
                          pointNormalsType);
         ply_add_property(ply_file, "ny", pointNormalsType, pointNormalsType,
@@ -529,12 +442,10 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     if (pointcloud.HasPointColors()) {
-        attribute_ptrs.emplace_back(t_map[COLORS_ATTR_NAME].GetDtype(),
-                                    t_map[COLORS_ATTR_NAME].GetDataPtr(),
-                                    COLORS_ATTR_MAX_DIM);
+        attribute_ptrs.emplace_back(t_map["colors"].GetDtype(),
+                                    t_map["colors"].GetDataPtr(), 3);
 
-        e_ply_type pointColorType =
-                GetPlyType(t_map[COLORS_ATTR_NAME].GetDtype());
+        e_ply_type pointColorType = GetPlyType(t_map["colors"].GetDtype());
         ply_add_property(ply_file, "red", pointColorType, pointColorType,
                          pointColorType);
         ply_add_property(ply_file, "green", pointColorType, pointColorType,
@@ -550,8 +461,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     // property (e.g., "f_rest_0", "f_rest_1", ...).
     e_ply_type attributeType;
     for (auto const &it : t_map) {
-        if (it.first == POSITIONS_ATTR_NAME || it.first == COLORS_ATTR_NAME ||
-            it.first == NORMALS_ATTR_NAME)
+        if (it.first == "positions" || it.first == "colors" ||
+            it.first == "normals")
             continue;
         auto shape = it.second.GetShape();
         int group_size = 1;
