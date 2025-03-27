@@ -23,10 +23,10 @@ namespace t {
 namespace io {
 
 namespace {
-constexpr auto ROTATION_SUFFIX_INDEX = std::strlen("rot_");
-constexpr auto SCALE_SUFFIX_INDEX = std::strlen("scale_");
-constexpr auto F_DC_SUFFIX_INDEX = std::strlen("f_dc_");
-constexpr auto F_REST_SUFFIX_INDEX = std::strlen("f_rest_");
+constexpr auto ROTATION_SUFFIX_INDEX = std::char_traits<char>::length("rot_");
+constexpr auto SCALE_SUFFIX_INDEX = std::char_traits<char>::length("scale_");
+constexpr auto F_DC_SUFFIX_INDEX = std::char_traits<char>::length("f_dc_");
+constexpr auto F_REST_SUFFIX_INDEX = std::char_traits<char>::length("f_rest_");
 
 struct PLYReaderState {
     struct AttrState {
@@ -246,39 +246,32 @@ bool ReadPointCloudFromPLY(const std::string &filename,
             }
 
             const std::string attr_name = std::string(name);
-
-            auto [target, stride, offset] =
+            auto [name, stride, offset] =
                     GetNameStrideOffsetForAttribute(attr_name);
-
-            if (target == "f_rest") {
+            if (name == "f_rest") {
                 f_rest_count++;
             }
-
-            attr_state->name_ = target;
+            attr_state->name_ = name;
             attr_state->stride_ = stride;
             attr_state->offset_ = offset;
 
-            if (primary_attr_init.count(target)) {
-                if (primary_attr_init.at(target) == false) {
+            if (primary_attr_init.count(name)) {
+                if (primary_attr_init.at(name) == false) {
                     pointcloud.SetPointAttr(
-                            target, core::Tensor::Empty({element_size, stride},
-                                                        GetDtype(type)));
-                    primary_attr_init[target] = true;
+                            name, core::Tensor::Empty({element_size, stride},
+                                                      GetDtype(type)));
+                    primary_attr_init[name] = true;
                 }
             } else {
                 pointcloud.SetPointAttr(
-                        target, core::Tensor::Empty({element_size, stride},
-                                                    GetDtype(type)));
+                        name, core::Tensor::Empty({element_size, stride},
+                                                  GetDtype(type)));
             }
-
-            attr_state->data_ptr_ =
-                    pointcloud.GetPointAttr(target).GetDataPtr();
-
+            attr_state->data_ptr_ = pointcloud.GetPointAttr(name).GetDataPtr();
             attr_state->size_ = element_size;
             attr_state->current_size_ = 0;
             state.id_to_attr_state_.push_back(attr_state);
         }
-
         attribute = ply_get_next_property(element, attribute);
     }
 

@@ -89,15 +89,15 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
         // Open the file
         utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
-            utility::LogError("Read SPLAT failed: unable to open file: {}",
-                              filename);
+            utility::LogWarning("Read SPLAT failed: unable to open file: {}",
+                                filename);
             return false;
         }
         pointcloud.Clear();
 
         size_t file_size = file.GetFileSize();
-        if (file_size % SPLAT_GAUSSIAN_BYTE_SIZE) {
-            utility::LogError(
+        if (file_size == 0 || file_size % SPLAT_GAUSSIAN_BYTE_SIZE > 0) {
+            utility::LogWarning(
                     "Read SPLAT failed: file {} does not contain "
                     "a whole number of Gaussians. File Size {}"
                     " bytes, Gaussian Size {} bytes.",
@@ -250,7 +250,7 @@ bool WritePointCloudToSPLAT(const std::string &filename,
     try {
         splat_file.exceptions(std::ofstream::badbit);  // failbit not set for
                                                        // binary IO errors
-    } catch (const std::ios_base::failure &e) {
+    } catch (const std::ios_base::failure &) {
         utility::LogError("Write SPLAT failed: unable to open file: {}.",
                           filename);
         return false;
