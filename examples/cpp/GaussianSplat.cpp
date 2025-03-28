@@ -5,22 +5,37 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+// To run this example, download some sample Gaussian Splats. You can use these
+// samples to get started:
+// clang-format off
+// curl -O https://github.com/isl-org/open3d_downloads/releases/download/3dgs-1/mipnerf360_garden_crop_table.ply
+// curl -O https://github.com/isl-org/open3d_downloads/releases/download/3dgs-1/mipnerf360_garden_crop_table.splat
+// clang-format on
+
 #include <cstdlib>
 
 #include "open3d/Open3D.h"
 
 using namespace open3d;
 
-void Visualize_GaussianSplat() {
-    // Please use you own file path.
-    std::string file = "./point_cloud_29999_only_table.npz";
-    std::shared_ptr<t::geometry::PointCloud> pointcloud = std::make_shared<t::geometry::PointCloud>();
-    io::ReadPointCloudOption tmp = io::ReadPointCloudOption();
-    t::io::ReadPointCloudFromNPZ(file, *pointcloud, tmp);
- 
-    visualization::Draw({pointcloud});
+void PrintUsage() {
+    utility::LogInfo("Visualize Gaussian Splat from PLY or SPLAT file.");
+    utility::LogInfo("Usage: GaussianSplat <filename.[ply|splat]>");
 }
 
 int main(int argc, char **argv) {
-    Visualize_GaussianSplat();
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintUsage();
+        return 1;
+    }
+    std::shared_ptr<t::geometry::PointCloud> gsplat =
+            std::make_shared<t::geometry::PointCloud>();
+    if (!t::io::ReadPointCloud(argv[1], *gsplat)) {
+        utility::LogWarning("Failed to read file {}", argv[1]);
+        return 1;
+    }
+    visualization::Draw({visualization::DrawObject(argv[1], gsplat)},
+                        "Gaussian Splat");
 }
