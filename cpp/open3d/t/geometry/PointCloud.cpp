@@ -1369,6 +1369,21 @@ core::Tensor PointCloud::ComputeMetrics(const PointCloud &pcd2,
                                 metrics, params);
 }
 
+bool PointCloud::IsGaussianSplat() const {
+    auto num_points = GetPointPositions().GetLength();
+    bool have_all_attrs = HasPointAttr("opacity") && HasPointAttr("rot") &&
+                          HasPointAttr("scale") && HasPointAttr("f_dc");
+    if (!have_all_attrs) {  // not 3DGS, no messages.
+        return false;
+    }
+    // Existing but invalid attributes cause errors.
+    core::AssertTensorShape(GetPointAttr("opacity"), {num_points, 1});
+    core::AssertTensorShape(GetPointAttr("rot"), {num_points, 4});
+    core::AssertTensorShape(GetPointAttr("scale"), {num_points, 3});
+    core::AssertTensorShape(GetPointAttr("f_dc"), {num_points, 3});
+    // GaussianSplatGetSHOrder(); // TODO: Tests f_rest shape is valid.
+    return true;
+}
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
