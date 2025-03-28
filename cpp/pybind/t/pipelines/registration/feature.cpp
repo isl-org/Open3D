@@ -43,8 +43,7 @@ Returns:
     The FPFH feature tensor with shape (N, 33).
 
 Example:
-    This example shows how to compute the features and correspondences for two 
-    point clouds::
+    This example shows how to compute the FPFH features for a point cloud::
 
         import open3d as o3d
         # read and downsample point clouds
