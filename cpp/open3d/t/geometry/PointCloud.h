@@ -738,6 +738,14 @@ public:
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
 
+    /// Check if this point cloud has all the attributes required for a Gaussian
+    /// Splat. This checks for the presence of scale, rot, opacity and f_dc
+    /// attributes.
+    /// \returns True if a valid 3DGS point cloud, else False.
+    /// \throws If point cloud has 3DGS attributes, but they are invalid (wrong
+    /// shape).
+    bool IsGaussianSplat() const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap point_attr_;

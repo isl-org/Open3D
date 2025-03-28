@@ -22,6 +22,12 @@ namespace open3d {
 namespace t {
 namespace io {
 
+namespace {
+constexpr auto ROTATION_SUFFIX_INDEX = std::char_traits<char>::length("rot_");
+constexpr auto SCALE_SUFFIX_INDEX = std::char_traits<char>::length("scale_");
+constexpr auto F_DC_SUFFIX_INDEX = std::char_traits<char>::length("f_dc_");
+constexpr auto F_REST_SUFFIX_INDEX = std::char_traits<char>::length("f_rest_");
+
 struct PLYReaderState {
     struct AttrState {
         std::string name_;
@@ -37,7 +43,7 @@ struct PLYReaderState {
 };
 
 template <typename T>
-static int ReadAttributeCallback(p_ply_argument argument) {
+int ReadAttributeCallback(p_ply_argument argument) {
     PLYReaderState *state_ptr;
     long id;
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
@@ -63,7 +69,7 @@ static int ReadAttributeCallback(p_ply_argument argument) {
 
 // Some of these datatypes are supported by Tensor but are added here just
 // for completeness.
-static std::string GetDtypeString(e_ply_type type) {
+std::string GetDtypeString(e_ply_type type) {
     if (type == PLY_INT8) {
         return "int8";
     } else if (type == PLY_UINT8) {
@@ -103,7 +109,7 @@ static std::string GetDtypeString(e_ply_type type) {
     }
 }
 
-static core::Dtype GetDtype(e_ply_type type) {
+core::Dtype GetDtype(e_ply_type type) {
     // PLY_LIST attribute is not supported.
     // Currently, we are not doing datatype conversions, so some of the ply
     // datatypes are not included.
@@ -123,7 +129,8 @@ static core::Dtype GetDtype(e_ply_type type) {
     }
 }
 
-static std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
+// Map ply attributes to Open3D point cloud attributes
+std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
         const std::string &name) {
     // Positions attribute.
     if (name == "x") return std::make_tuple("positions", 3, 0);
@@ -140,9 +147,31 @@ static std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
     if (name == "green") return std::make_tuple("colors", 3, 1);
     if (name == "blue") return std::make_tuple("colors", 3, 2);
 
+    // 3DGS SH DC component.
+    if (name.rfind(std::string("f_dc") + "_", 0) == 0) {
+        int offset = std::stoi(name.substr(F_DC_SUFFIX_INDEX));
+        return std::make_tuple("f_dc", 3, offset);
+    }
+    // 3DGS SH higher order components. stride = 0 => set later
+    if (name.rfind(std::string("f_rest") + "_", 0) == 0) {
+        int offset = std::stoi(name.substr(F_REST_SUFFIX_INDEX));
+        return std::make_tuple("f_rest", 0, offset);
+    }
+    // 3DGS Gaussian scale attribute.
+    if (name.rfind(std::string("scale") + "_", 0) == 0) {
+        int offset = std::stoi(name.substr(SCALE_SUFFIX_INDEX));
+        return std::make_tuple("scale", 3, offset);
+    }
+    // 3DGS Gaussian rotation as a quaternion.
+    if (name.rfind(std::string("rot") + "_", 0) == 0) {
+        int offset = std::stoi(name.substr(ROTATION_SUFFIX_INDEX));
+        return std::make_tuple("rot", 4, offset);
+    }
     // Other attribute.
     return std::make_tuple(name, 1, 0);
 }
+
+}  // namespace
 
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
@@ -177,12 +206,17 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     // No element with name "vertex".
     if (!element) {
         utility::LogWarning("Read PLY failed: no vertex attribute.");
+        ply_close(ply_file);
         return false;
     }
 
     std::unordered_map<std::string, bool> primary_attr_init = {
-            {"positions", false}, {"normals", false}, {"colors", false}};
+            {"positions", false}, {"normals", false}, {"colors", false},
+            {"opacity", false},   {"rot", false},     {"scale", false},
+            {"f_dc", false},      {"f_rest", false},
+    };
 
+    int f_rest_count = 0;
     p_ply_property attribute = ply_get_next_property(element, nullptr);
 
     while (attribute) {
@@ -210,37 +244,57 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                         "size of {} ({}).",
                         name, size, element_name, element_size);
             }
+
             const std::string attr_name = std::string(name);
-
-            std::tie(attr_state->name_, attr_state->stride_,
-                     attr_state->offset_) =
+            auto [name, stride, offset] =
                     GetNameStrideOffsetForAttribute(attr_name);
+            if (name == "f_rest") {
+                f_rest_count++;
+            }
+            attr_state->name_ = name;
+            attr_state->stride_ = stride;
+            attr_state->offset_ = offset;
 
-            if (primary_attr_init.count(attr_state->name_)) {
-                if (primary_attr_init.at(attr_state->name_) == false) {
+            if (primary_attr_init.count(name)) {
+                if (primary_attr_init.at(name) == false) {
                     pointcloud.SetPointAttr(
-                            attr_state->name_,
-                            core::Tensor::Empty(
-                                    {element_size, attr_state->stride_},
-                                    GetDtype(type)));
-                    primary_attr_init[attr_state->name_] = true;
+                            name, core::Tensor::Empty({element_size, stride},
+                                                      GetDtype(type)));
+                    primary_attr_init[name] = true;
                 }
             } else {
                 pointcloud.SetPointAttr(
-                        attr_state->name_,
-                        core::Tensor::Empty({element_size, attr_state->stride_},
-                                            GetDtype(type)));
+                        name, core::Tensor::Empty({element_size, stride},
+                                                  GetDtype(type)));
             }
-
-            attr_state->data_ptr_ =
-                    pointcloud.GetPointAttr(attr_state->name_).GetDataPtr();
-
+            attr_state->data_ptr_ = pointcloud.GetPointAttr(name).GetDataPtr();
             attr_state->size_ = element_size;
             attr_state->current_size_ = 0;
             state.id_to_attr_state_.push_back(attr_state);
         }
-
         attribute = ply_get_next_property(element, attribute);
+    }
+
+    if (f_rest_count > 0) {
+        if (f_rest_count % 3 != 0) {
+            utility::LogWarning(
+                    "Read PLY failed: 3DGS f_rest attribute has {} elements "
+                    "per point, which is not divisible by 3.",
+                    f_rest_count);
+            ply_close(ply_file);
+            return false;
+        }
+        core::Tensor new_f_rest =
+                core::Tensor::Empty({element_size, f_rest_count / 3, 3},
+                                    core::Float32, pointcloud.GetDevice());
+        pointcloud.SetPointAttr("f_rest", new_f_rest);
+        for (auto &attr_state : state.id_to_attr_state_) {
+            if (attr_state->name_ == "f_rest") {
+                attr_state->data_ptr_ =
+                        pointcloud.GetPointAttr("f_rest").GetDataPtr();
+                attr_state->stride_ = f_rest_count;
+            }
+        }
     }
 
     utility::CountingProgressReporter reporter(params.update_progress);
@@ -257,10 +311,15 @@ bool ReadPointCloudFromPLY(const std::string &filename,
     ply_close(ply_file);
     reporter.Finish();
 
+    if (pointcloud.IsGaussianSplat()) {  // validates 3DGS, if present.
+        utility::LogDebug("PLY file contains a Gaussian Splat.");
+    }
+
     return true;
 }
 
-static e_ply_type GetPlyType(const core::Dtype &dtype) {
+namespace {
+e_ply_type GetPlyType(const core::Dtype &dtype) {
     if (dtype == core::UInt8) {
         return PLY_UCHAR;
     } else if (dtype == core::UInt16) {
@@ -290,6 +349,7 @@ struct AttributePtr {
     const void *data_ptr_;
     const int group_size_;
 };
+}  // namespace
 
 bool WritePointCloudToPLY(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
@@ -299,12 +359,19 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    geometry::TensorMap t_map(pointcloud.GetPointAttr().Contiguous());
+    if (pointcloud.IsGaussianSplat()) {  // validates 3DGS, if present.
+        utility::LogDebug("Writing Gaussian Splat point cloud to PLY file.");
+    }
+
+    geometry::TensorMap t_map =
+            pointcloud.To(core::Device("CPU:0")).GetPointAttr().Contiguous();
 
     long num_points =
             static_cast<long>(pointcloud.GetPointPositions().GetLength());
 
-    // Make sure all the attributes have same size.
+    // Verify that standard attributes have length equal to num_points.
+    // Extra attributes must have at least 2 dimensions: (num_points, channels,
+    // ...).
     for (auto const &it : t_map) {
         if (it.first == "positions" || it.first == "normals" ||
             it.first == "colors") {
@@ -315,15 +382,20 @@ bool WritePointCloudToPLY(const std::string &filename,
                         num_points, it.first, it.second.GetLength());
                 return false;
             }
-        } else if (it.second.GetShape() != core::SizeVector({num_points, 1})) {
-            utility::LogWarning(
-                    "Write PLY failed. PointCloud contains {} attribute which "
-                    "is not supported by PLY IO. Only points, normals, colors "
-                    "and attributes with shape (num_points, 1) are supported. "
-                    "Expected shape: {} but got {}.",
-                    it.first, core::SizeVector({num_points, 1}).ToString(),
-                    it.second.GetShape().ToString());
-            return false;
+        } else {
+            auto shape = it.second.GetShape();
+            // Only tensors with shape (num_points, channels, ...) are
+            // supported.
+            if (shape.size() < 2 || shape[0] != num_points) {
+                utility::LogWarning(
+                        "Write PLY failed. PointCloud contains {} attribute "
+                        "which is not supported by PLY IO. Only points, "
+                        "normals, colors and attributes with shape "
+                        "(num_points, channels, ...) are supported. Expected "
+                        "shape: {{{}, ...}} but got {}.",
+                        it.first, num_points, it.second.GetShape().ToString());
+                return false;
+            }
         }
     }
 
@@ -375,16 +447,38 @@ bool WritePointCloudToPLY(const std::string &filename,
                          pointColorType);
     }
 
+    // Process extra attributes.
+    // Extra attributes are expected to be tensors with shape (num_points,
+    // channels) or (num_points, C, D). For multi-channel attributes, the
+    // channels are flattened, and each channel is written as a separate
+    // property (e.g., "f_rest_0", "f_rest_1", ...).
     e_ply_type attributeType;
     for (auto const &it : t_map) {
-        if (it.first != "positions" && it.first != "colors" &&
-            it.first != "normals") {
+        if (it.first == "positions" || it.first == "colors" ||
+            it.first == "normals")
+            continue;
+        auto shape = it.second.GetShape();
+        int group_size = 1;
+        if (shape.size() == 2) {
+            group_size = shape[1];
+        } else if (shape.size() >= 3) {
+            group_size = shape[1] * shape[2];
+        }
+        if (group_size == 1) {
             attribute_ptrs.emplace_back(it.second.GetDtype(),
                                         it.second.GetDataPtr(), 1);
-
             attributeType = GetPlyType(it.second.GetDtype());
             ply_add_property(ply_file, it.first.c_str(), attributeType,
                              attributeType, attributeType);
+        } else {
+            for (int ch = 0; ch < group_size; ch++) {
+                std::string prop_name = it.first + "_" + std::to_string(ch);
+                attributeType = GetPlyType(it.second.GetDtype());
+                ply_add_property(ply_file, prop_name.c_str(), attributeType,
+                                 attributeType, attributeType);
+            }
+            attribute_ptrs.emplace_back(it.second.GetDtype(),
+                                        it.second.GetDataPtr(), group_size);
         }
     }
 
