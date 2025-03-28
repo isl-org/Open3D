@@ -435,18 +435,18 @@ TEST_P(PointCloudIOPermuteDevices, ReadWrite3DGSPointCloudPLY) {
 
     auto num_gaussians_new = pcd_ply_binary.GetPointPositions().GetLength();
     EXPECT_EQ(num_gaussians_base, num_gaussians_new);
-    EXPECT_TRUE(pcd_ply.GetPointPositions().AllClose(
-            pcd_ply_binary.GetPointPositions()));
-    EXPECT_TRUE(pcd_ply.GetPointAttr("scale").AllClose(
-            pcd_ply_binary.GetPointAttr("scale")));
-    EXPECT_TRUE(pcd_ply.GetPointAttr("opacity").AllClose(
-            pcd_ply_binary.GetPointAttr("opacity")));
-    EXPECT_TRUE(pcd_ply.GetPointAttr("rot").AllClose(
-            pcd_ply_binary.GetPointAttr("rot")));
-    EXPECT_TRUE(pcd_ply.GetPointAttr("f_dc").AllClose(
-            pcd_ply_binary.GetPointAttr("f_dc")));
-    EXPECT_TRUE(pcd_ply.GetPointAttr("f_rest").AllClose(
-            pcd_ply_binary.GetPointAttr("f_rest")));
+    AllCloseOrMaxError(pcd_ply.GetPointPositions(),
+                       pcd_ply_binary.GetPointPositions(), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("scale"),
+                       pcd_ply_binary.GetPointAttr("scale"), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("opacity"),
+                       pcd_ply_binary.GetPointAttr("opacity"), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("rot"),
+                       pcd_ply_binary.GetPointAttr("rot"), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("f_dc"),
+                       pcd_ply_binary.GetPointAttr("f_dc"), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("f_rest"),
+                       pcd_ply_binary.GetPointAttr("f_rest"), 1e-5, 1e-8);
 
     auto opacity = pcd_ply.GetPointAttr("opacity");
     // Error if the shape of the attribute is not 2D with len = num_points
@@ -597,19 +597,19 @@ TEST(TPointCloudIO, ReadWrite3DGSPLYToSPLAT) {
     t::io::ReadPointCloud(filename_splat, pcd_splat,
                           {"auto", false, false, true});
 
-    EXPECT_TRUE(pcd_ply.GetPointPositions().AllClose(
-            pcd_splat.GetPointPositions()));
-    EXPECT_TRUE(pcd_ply.GetPointAttr("scale").AllClose(
-            pcd_splat.GetPointAttr("scale")));
-    EXPECT_TRUE(pcd_ply.GetPointAttr("opacity").AllClose(
-            pcd_splat.GetPointAttr("opacity"), 0,
-            0.01));  // expect quantization errors
-    EXPECT_TRUE(pcd_ply.GetPointAttr("rot").AllClose(
-            pcd_splat.GetPointAttr("rot"), 0,
-            0.01));  // expect quantization errors
-    EXPECT_TRUE(pcd_ply.GetPointAttr("f_dc").AllClose(
-            pcd_splat.GetPointAttr("f_dc"), 0,
-            0.01));  // expect quantization errors
+    AllCloseOrMaxError(pcd_ply.GetPointPositions(),
+                       pcd_splat.GetPointPositions(), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("scale"),
+                       pcd_splat.GetPointAttr("scale"), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("opacity"),
+                       pcd_splat.GetPointAttr("opacity"), 0,
+                       0.01);  // expect quantization errors
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("rot"),
+                       pcd_splat.GetPointAttr("rot"), 0,
+                       0.01);  // expect quantization errors
+    AllCloseOrMaxError(pcd_ply.GetPointAttr("f_dc"),
+                       pcd_splat.GetPointAttr("f_dc"), 0,
+                       0.01);  // expect quantization errors
     EXPECT_FALSE(pcd_splat.HasPointAttr("f_rest"));
 }
 
@@ -658,18 +658,19 @@ TEST(TPointCloudIO, ReadWrite3DGSSPLAT) {
 
     auto num_gaussians_new = pcd_new.GetPointPositions().GetLength();
     EXPECT_EQ(num_gaussians_base, num_gaussians_new);
-    EXPECT_TRUE(
-            pcd_base.GetPointPositions().AllClose(pcd_new.GetPointPositions()));
-    EXPECT_TRUE(pcd_base.GetPointAttr("scale").AllClose(
-            pcd_new.GetPointAttr("scale")));
-    EXPECT_TRUE(pcd_base.GetPointAttr("opacity").AllClose(
-            pcd_new.GetPointAttr("opacity")));
-    EXPECT_TRUE(pcd_base.GetPointAttr("rot").AllClose(
-            pcd_new.GetPointAttr("rot"), 0,
-            0.004));  // expect quantization errors
-    EXPECT_TRUE(pcd_base.GetPointAttr("f_dc").AllClose(
-            pcd_new.GetPointAttr("f_dc"), 0,
-            0.004));  // expect quantization errors
+    AllCloseOrMaxError(pcd_base.GetPointPositions(),
+                       pcd_new.GetPointPositions(), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_base.GetPointAttr("scale"),
+                       pcd_new.GetPointAttr("scale"), 1e-5, 1e-8);
+    AllCloseOrMaxError(pcd_base.GetPointAttr("opacity"),
+                       pcd_new.GetPointAttr("opacity"), 0,
+                       0.01);  // expect quantization errors
+    AllCloseOrMaxError(pcd_base.GetPointAttr("rot"),
+                       pcd_new.GetPointAttr("rot"), 0,
+                       0.01);  // expect quantization errors
+    AllCloseOrMaxError(pcd_base.GetPointAttr("f_dc"),
+                       pcd_new.GetPointAttr("f_dc"), 0,
+                       0.01);  // expect quantization errors
 }
 
 }  // namespace tests

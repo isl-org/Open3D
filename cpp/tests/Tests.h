@@ -34,5 +34,17 @@ const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
 // Mechanism for reporting unit tests for which there is no implementation yet.
 void NotImplemented();
 
+#define AllCloseOrMaxError(Arr1, Arr2, rtol, atol)                           \
+    EXPECT_TRUE(Arr1.AllClose(Arr2, rtol, atol)) << fmt::format(             \
+            "Tensors are not close wrt (relative, absolute) tolerance ({}, " \
+            "{}). Max error: {} ",                                           \
+            rtol, atol,                                                      \
+            (Arr1 - Arr2)                                                    \
+                    .Abs()                                                   \
+                    .Flatten()                                               \
+                    .Max({0})                                                \
+                    .To(core::Float32)                                       \
+                    .Item<float>());
+
 }  // namespace tests
 }  // namespace open3d
