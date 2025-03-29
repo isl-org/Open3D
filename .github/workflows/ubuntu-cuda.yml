@@ -149,7 +149,7 @@ jobs:
             --command="sudo Open3D/docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}"
           if [ "${BUILD_PACKAGE}" == 'true' ]; then
             gcloud compute scp --zone="${GCE_ZONE}" \
-              "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
+              "${INSTANCE_NAME}":open3d-devel-linux* "$PWD"
           fi
 
       - name: Upload package
@@ -157,7 +157,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open3d-devel-linux-x86_64-cuda-${{ matrix.CI_CONFIG }}
-          path: open3d-devel-linux*.tar.xz
+          path: open3d-devel-linux*
           if-no-files-found: error
 
       - name: Update devel release
@@ -165,7 +165,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-devel-linux-*.tar.xz --clobber
+          gh release upload main-devel open3d-devel-linux-* --clobber
           gh release view main-devel
 
       - name: VM run docker
