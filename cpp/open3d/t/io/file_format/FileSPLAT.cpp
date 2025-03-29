@@ -76,7 +76,6 @@ std::vector<int64_t> SortedSplatIndices(geometry::TensorMap &t_map) {
 
                 return score_left < score_right;  // Sort in descending order
             });
-
     return indices;
 }
 
@@ -179,7 +178,7 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
                 quat_norm += rot_float[i] * rot_float[i];
             }
             quat_norm = sqrt(quat_norm);
-            if (quat_norm > 1e-6) {
+            if (quat_norm > std::numeric_limits<float>::epsilon()) {
                 for (int i = 0; i < 4; i++) {
                     rot_float[i] /= quat_norm;
                 }
@@ -199,7 +198,7 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {
-        utility::LogError("Read SPLAT failed: {}", e.what());
+        utility::LogError("Read SPLAT file {} failed: {}", filename, e.what());
     }
     return false;
 }
@@ -251,8 +250,8 @@ bool WritePointCloudToSPLAT(const std::string &filename,
         splat_file.exceptions(std::ofstream::badbit);  // failbit not set for
                                                        // binary IO errors
     } catch (const std::ios_base::failure &) {
-        utility::LogError("Write SPLAT failed: unable to open file: {}.",
-                          filename);
+        utility::LogWarning("Write SPLAT failed: unable to open file: {}.",
+                            filename);
         return false;
     }
 
@@ -287,13 +286,19 @@ bool WritePointCloudToSPLAT(const std::string &filename,
             Eigen::Vector4f rot{rot_ptr[rot_offset], rot_ptr[rot_offset + 1],
                                 rot_ptr[rot_offset + 2],
                                 rot_ptr[rot_offset + 3]};
+            if (auto quat_norm = rot.norm();
+                quat_norm > std::numeric_limits<float>::epsilon()) {
+                rot /= quat_norm;
+            } else {
+                rot = {1.f, 0.f, 0.f, 0.f};  // wxyz quaternion
+            }
             // offset should be 127, but we follow the reference
             // antimatter/convert.py code
-            rot = (rot.normalized() * 128.0).array().round() + 128.0;
-            auto int8_rot =
-                    rot.cwiseMin(255.0).cwiseMax(0.0).cast<int8_t>().eval();
-            splat_file.write(reinterpret_cast<const char *>(int8_rot.data()),
-                             4 * sizeof(int8_t));
+            rot = (rot * 128.0).array().round() + 128.0;
+            auto uint8_rot =
+                    rot.cwiseMin(255.0).cwiseMax(0.0).cast<uint8_t>().eval();
+            splat_file.write(reinterpret_cast<const char *>(uint8_rot.data()),
+                             4 * sizeof(uint8_t));
 
             if (i % 1000 == 0) {
                 reporter.Update(i);
@@ -303,7 +308,8 @@ bool WritePointCloudToSPLAT(const std::string &filename,
         reporter.Finish();
         return true;
     } catch (const std::ios_base::failure &e) {
-        utility::LogError("Write SPLAT failed: {}", e.what());
+        utility::LogWarning("Write SPLAT to file {} failed: {}", filename,
+                            e.what());
         return false;
     }
 }
