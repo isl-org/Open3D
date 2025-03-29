@@ -76,7 +76,7 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "OFF" ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" 
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "ON" ]]; then
             python -m pip install -U "${TORCH_GLNX}.cxx11.abi" -i "$TORCH_CXX11_URL"
@@ -356,7 +356,9 @@ install_docs_dependencies() {
     command -v python
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
-    which cmake || python -m pip install -U -q cmake
+    # cmake 4.0 breaks librealsense. Remove restriction when librealsense is
+    # updated.
+    which cmake || python -m pip install -U -q cmake <4.0
     python -m pip install -U -q -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
