@@ -217,40 +217,45 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
 
 namespace {
 // Test ply file containig 3DGS data
-const char test_3dgs_ply_data[] = R"(ply
-format ascii 1.0
-element vertex 2
-property float x
-property float y
-property float z
-property float nx
-property float ny
-property float nz
-property float f_dc_0
-property float f_dc_1
-property float f_dc_2
-property float f_rest_0
-property float f_rest_1
-property float f_rest_2
-property float f_rest_3
-property float f_rest_4
-property float f_rest_5
-property float f_rest_6
-property float f_rest_7
-property float f_rest_8
-property float opacity
-property float scale_0
-property float scale_1
-property float scale_2
-property float rot_0
-property float rot_1
-property float rot_2
-property float rot_3
-end_header
-0.7236  -0.52572 -0.44721  0.48902 -0.48306 -0.7263  -1.20846  0.45058 -0.98568 -0.15648  0.03506 -0.07857  0.03506 -0.06857  0.06506 -0.03857 0.14588 -0.25489  0.56895  2.56841  0.58956  1.54784 -0.34619 -0.7938 -0.48108  0.1364
-0.6598  -1.42875 -2.85722 -0.69152  0.69793 -0.18625  0.24585 -0.3305 -1.58646 -0.15865 -0.05305 -0.12865 -0.08305 -0.11865 -0.09305  0.05648 -0.28579 -0.04457  0.33395  1.58847  2.55896  0.58984  0.55591  0.27858 -0.50835 -0.59577
-)";
-
+const char test_3dgs_ply_data[] =
+        "ply \n"
+        "format ascii 1.0 \n"
+        "element vertex 2 \n"
+        "property float x \n"
+        "property float y \n"
+        "property float z \n"
+        "property float nx \n"
+        "property float ny \n"
+        "property float nz \n"
+        "property float f_dc_0 \n"
+        "property float f_dc_1 \n"
+        "property float f_dc_2 \n"
+        "property float f_rest_0 \n"
+        "property float f_rest_1 \n"
+        "property float f_rest_2 \n"
+        "property float f_rest_3 \n"
+        "property float f_rest_4 \n"
+        "property float f_rest_5 \n"
+        "property float f_rest_6 \n"
+        "property float f_rest_7 \n"
+        "property float f_rest_8 \n"
+        "property float opacity \n"
+        "property float scale_0 \n"
+        "property float scale_1 \n"
+        "property float scale_2 \n"
+        "property float rot_0 \n"
+        "property float rot_1 \n"
+        "property float rot_2 \n"
+        "property float rot_3 \n"
+        "end_header \n"
+        "0.7236  -0.52572 -0.44721  0.48902 -0.48306 -0.7263  -1.20846  "
+        "0.45058 -0.98568 -0.15648  0.03506 -0.07857  0.03506 -0.06857  "
+        "0.06506 -0.03857 0.14588 -0.25489  0.56895  2.56841  0.58956  1.54784 "
+        "-0.34619 -0.7938 -0.48108  0.1364 \n"
+        "0.6598  -1.42875 -2.85722 -0.69152  0.69793 -0.18625  0.24585 -0.3305 "
+        "-1.58646 -0.15865 -0.05305 -0.12865 -0.08305 -0.11865 -0.09305  "
+        "0.05648 -0.28579 -0.04457  0.33395  1.58847  2.55896  0.58984  "
+        "0.55591  0.27858 -0.50835 -0.59577 \n";
 }  // namespace
 
 // Reading ascii and check for 3DGS attributes.
@@ -435,18 +440,18 @@ TEST_P(PointCloudIOPermuteDevices, ReadWrite3DGSPointCloudPLY) {
 
     auto num_gaussians_new = pcd_ply_binary.GetPointPositions().GetLength();
     EXPECT_EQ(num_gaussians_base, num_gaussians_new);
-    AllCloseOrMaxError(pcd_ply.GetPointPositions(),
-                       pcd_ply_binary.GetPointPositions(), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("scale"),
-                       pcd_ply_binary.GetPointAttr("scale"), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("opacity"),
-                       pcd_ply_binary.GetPointAttr("opacity"), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("rot"),
-                       pcd_ply_binary.GetPointAttr("rot"), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("f_dc"),
-                       pcd_ply_binary.GetPointAttr("f_dc"), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("f_rest"),
-                       pcd_ply_binary.GetPointAttr("f_rest"), 1e-5, 1e-8);
+    AllCloseOrShow(pcd_ply.GetPointPositions(),
+                   pcd_ply_binary.GetPointPositions(), 1e-5, 1e-8);
+    AllCloseOrShow(pcd_ply.GetPointAttr("scale"),
+                   pcd_ply_binary.GetPointAttr("scale"), 1e-5, 1e-8);
+    AllCloseOrShow(pcd_ply.GetPointAttr("opacity"),
+                   pcd_ply_binary.GetPointAttr("opacity"), 1e-5, 1e-8);
+    AllCloseOrShow(pcd_ply.GetPointAttr("rot"),
+                   pcd_ply_binary.GetPointAttr("rot"), 1e-5, 1e-8);
+    AllCloseOrShow(pcd_ply.GetPointAttr("f_dc"),
+                   pcd_ply_binary.GetPointAttr("f_dc"), 1e-5, 1e-8);
+    AllCloseOrShow(pcd_ply.GetPointAttr("f_rest"),
+                   pcd_ply_binary.GetPointAttr("f_rest"), 1e-5, 1e-8);
 
     auto opacity = pcd_ply.GetPointAttr("opacity");
     // Error if the shape of the attribute is not 2D with len = num_points
@@ -597,19 +602,19 @@ TEST(TPointCloudIO, ReadWrite3DGSPLYToSPLAT) {
     t::io::ReadPointCloud(filename_splat, pcd_splat,
                           {"auto", false, false, true});
 
-    AllCloseOrMaxError(pcd_ply.GetPointPositions(),
-                       pcd_splat.GetPointPositions(), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("scale"),
-                       pcd_splat.GetPointAttr("scale"), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("opacity"),
-                       pcd_splat.GetPointAttr("opacity"), 0,
-                       0.01);  // expect quantization errors
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("rot"),
-                       pcd_splat.GetPointAttr("rot"), 0,
-                       0.01);  // expect quantization errors
-    AllCloseOrMaxError(pcd_ply.GetPointAttr("f_dc"),
-                       pcd_splat.GetPointAttr("f_dc"), 0,
-                       0.01);  // expect quantization errors
+    AllCloseOrShow(pcd_ply.GetPointPositions(), pcd_splat.GetPointPositions(),
+                   1e-5, 1e-8);
+    AllCloseOrShow(pcd_ply.GetPointAttr("scale"),
+                   pcd_splat.GetPointAttr("scale"), 1e-5, 1e-8);
+    AllCloseOrShow(pcd_ply.GetPointAttr("opacity"),
+                   pcd_splat.GetPointAttr("opacity"), 0,
+                   0.01);  // expect quantization errors
+    AllCloseOrShow(pcd_ply.GetPointAttr("rot"), pcd_splat.GetPointAttr("rot"),
+                   0,
+                   0.01);  // expect quantization errors
+    AllCloseOrShow(pcd_ply.GetPointAttr("f_dc"), pcd_splat.GetPointAttr("f_dc"),
+                   0,
+                   0.01);  // expect quantization errors
     EXPECT_FALSE(pcd_splat.HasPointAttr("f_rest"));
 }
 
@@ -623,20 +628,19 @@ TEST(TPointCloudIO, ReadWrite3DGSSPLAT) {
     std::string new_filename = utility::filesystem::GetTempDirectoryPath() +
                                "/new_test_read.splat";
 
-    // Write a small splat file.
-    // This is the same point cloud as test_3dgs_ply_data (without f_rest),
-    // converted to splat using the reference code from
+    // Write a small splat file.  This is the same point cloud as
+    // test_3dgs_ply_data (without f_rest), converted to splat using the
+    // reference code from
     // github.com/antimatter15/splat/blob/367a9439609d043f1b23a9b455a77a977f2e7758/convert.py
-    // (March 2025). Converted to C array using xxd.
+    // (March 2025). Converted to C array with:
     // xxd -i test_3dgs_data.splat > test_3dgs_data_splat.h
+    // clang-format off
     const unsigned char output_splat[64] = {
-            0xd9, 0x3d, 0x39, 0x3f, 0x96, 0x95, 0x06, 0xbf, 0xb6, 0xf8, 0xe4,
-            0xbe, 0x96, 0xb8, 0x50, 0x41, 0x16, 0xcf, 0xe6, 0x3f, 0x16, 0x71,
-            0x96, 0x40, 0x29, 0xa0, 0x39, 0xa3, 0x54, 0x1a, 0x42, 0x91, 0xa7,
-            0xe8, 0x28, 0x3f, 0x48, 0xe1, 0xb6, 0xbf, 0xb1, 0xdc, 0x36, 0xc0,
-            0x18, 0xae, 0x9c, 0x40, 0x08, 0xc2, 0x4e, 0x41, 0xa2, 0xdf, 0xe6,
-            0x3f, 0x91, 0x68, 0x0d, 0x95, 0xc7, 0xa4, 0x3f, 0x34};
-
+            0xd9, 0x3d, 0x39, 0x3f, 0x96, 0x95, 0x06, 0xbf, 0xb6, 0xf8, 0xe4, 0xbe, 0x96, 0xb8, 0x50, 0x41,
+            0x16, 0xcf, 0xe6, 0x3f, 0x16, 0x71, 0x96, 0x40, 0x29, 0xa0, 0x39, 0xa3, 0x54, 0x1a, 0x42, 0x91,
+            0xa7, 0xe8, 0x28, 0x3f, 0x48, 0xe1, 0xb6, 0xbf, 0xb1, 0xdc, 0x36, 0xc0, 0x18, 0xae, 0x9c, 0x40,
+            0x08, 0xc2, 0x4e, 0x41, 0xa2, 0xdf, 0xe6, 0x3f, 0x91, 0x68, 0x0d, 0x95, 0xc7, 0xa4, 0x3f, 0x34};
+    // clang-format on
     {
         std::ofstream outfile(filename,
                               std::ios::binary);  // Open in binary mode
@@ -658,19 +662,18 @@ TEST(TPointCloudIO, ReadWrite3DGSSPLAT) {
 
     auto num_gaussians_new = pcd_new.GetPointPositions().GetLength();
     EXPECT_EQ(num_gaussians_base, num_gaussians_new);
-    AllCloseOrMaxError(pcd_base.GetPointPositions(),
-                       pcd_new.GetPointPositions(), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_base.GetPointAttr("scale"),
-                       pcd_new.GetPointAttr("scale"), 1e-5, 1e-8);
-    AllCloseOrMaxError(pcd_base.GetPointAttr("opacity"),
-                       pcd_new.GetPointAttr("opacity"), 0,
-                       0.01);  // expect quantization errors
-    AllCloseOrMaxError(pcd_base.GetPointAttr("rot"),
-                       pcd_new.GetPointAttr("rot"), 0,
-                       0.01);  // expect quantization errors
-    AllCloseOrMaxError(pcd_base.GetPointAttr("f_dc"),
-                       pcd_new.GetPointAttr("f_dc"), 0,
-                       0.01);  // expect quantization errors
+    AllCloseOrShow(pcd_base.GetPointPositions(), pcd_new.GetPointPositions(),
+                   1e-5, 1e-8);
+    AllCloseOrShow(pcd_base.GetPointAttr("scale"),
+                   pcd_new.GetPointAttr("scale"), 1e-5, 1e-8);
+    AllCloseOrShow(pcd_base.GetPointAttr("opacity"),
+                   pcd_new.GetPointAttr("opacity"), 0,
+                   0.01);  // expect quantization errors
+    AllCloseOrShow(pcd_base.GetPointAttr("rot"), pcd_new.GetPointAttr("rot"), 0,
+                   0.01);  // expect quantization errors
+    AllCloseOrShow(pcd_base.GetPointAttr("f_dc"), pcd_new.GetPointAttr("f_dc"),
+                   0,
+                   0.01);  // expect quantization errors
 }
 
 }  // namespace tests
