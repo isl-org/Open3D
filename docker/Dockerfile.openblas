@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
     libgomp1 \
+    libidn2-dev \
+    libidn2-0 \
  && rm -rf /var/lib/apt/lists/*
 
 # Minimal dependencies for building
