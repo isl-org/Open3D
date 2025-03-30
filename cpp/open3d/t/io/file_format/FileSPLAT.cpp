@@ -88,7 +88,7 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
     try {
         // Open the file
         utility::filesystem::CFile file;
-        if (!file.Open(filename, "r")) {
+        if (!file.Open(filename, "rb")) {
             utility::LogWarning("Read SPLAT failed: unable to open file: {}",
                                 filename);
             return false;
