@@ -217,45 +217,39 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
 
 namespace {
 // Test ply file containig 3DGS data
-const char test_3dgs_ply_data[] =
-        "ply \n"
-        "format ascii 1.0 \n"
-        "element vertex 2 \n"
-        "property float x \n"
-        "property float y \n"
-        "property float z \n"
-        "property float nx \n"
-        "property float ny \n"
-        "property float nz \n"
-        "property float f_dc_0 \n"
-        "property float f_dc_1 \n"
-        "property float f_dc_2 \n"
-        "property float f_rest_0 \n"
-        "property float f_rest_1 \n"
-        "property float f_rest_2 \n"
-        "property float f_rest_3 \n"
-        "property float f_rest_4 \n"
-        "property float f_rest_5 \n"
-        "property float f_rest_6 \n"
-        "property float f_rest_7 \n"
-        "property float f_rest_8 \n"
-        "property float opacity \n"
-        "property float scale_0 \n"
-        "property float scale_1 \n"
-        "property float scale_2 \n"
-        "property float rot_0 \n"
-        "property float rot_1 \n"
-        "property float rot_2 \n"
-        "property float rot_3 \n"
-        "end_header \n"
-        "0.7236  -0.52572 -0.44721  0.48902 -0.48306 -0.7263  -1.20846  "
-        "0.45058 -0.98568 -0.15648  0.03506 -0.07857  0.03506 -0.06857  "
-        "0.06506 -0.03857 0.14588 -0.25489  0.56895  2.56841  0.58956  1.54784 "
-        "-0.34619 -0.7938 -0.48108  0.1364 \n"
-        "0.6598  -1.42875 -2.85722 -0.69152  0.69793 -0.18625  0.24585 -0.3305 "
-        "-1.58646 -0.15865 -0.05305 -0.12865 -0.08305 -0.11865 -0.09305  "
-        "0.05648 -0.28579 -0.04457  0.33395  1.58847  2.55896  0.58984  "
-        "0.55591  0.27858 -0.50835 -0.59577 \n";
+const char test_3dgs_ply_data[] = R"(ply
+format ascii 1.0
+element vertex 2
+property float x
+property float y
+property float z
+property float nx
+property float ny
+property float nz
+property float f_dc_0
+property float f_dc_1
+property float f_dc_2
+property float f_rest_0
+property float f_rest_1
+property float f_rest_2
+property float f_rest_3
+property float f_rest_4
+property float f_rest_5
+property float f_rest_6
+property float f_rest_7
+property float f_rest_8
+property float opacity
+property float scale_0
+property float scale_1
+property float scale_2
+property float rot_0
+property float rot_1
+property float rot_2
+property float rot_3
+end_header
+0.7236  -0.52572 -0.44721  0.48902 -0.48306 -0.7263  -1.20846 0.45058 -0.98568 -0.15648  0.03506 -0.07857  0.03506 -0.06857 0.06506 -0.03857 0.14588 -0.25489  0.56895  2.56841  0.58956  1.54784 -0.34619 -0.7938 -0.48108  0.1364
+0.6598  -1.42875 -2.85722 -0.69152  0.69793 -0.18625  0.24585 -0.3305 -1.58646 -0.15865 -0.05305 -0.12865 -0.08305 -0.11865 -0.09305 0.05648 -0.28579 -0.04457  0.33395  1.58847  2.55896  0.58984 0.55591  0.27858 -0.50835 -0.59577
+)";
 }  // namespace
 
 // Reading ascii and check for 3DGS attributes.
