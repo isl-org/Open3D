@@ -30,6 +30,8 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     libidn2-dev \
     libidn2-0 \
+    clang \
+    ninja-build \
  && rm -rf /var/lib/apt/lists/*
 
 # Minimal dependencies for building
@@ -86,7 +88,6 @@ WORKDIR /root/Open3D
 RUN mkdir build \
  && cd build \
  && cmake \
-    -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=1" \
     -DBUILD_UNIT_TESTS=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
