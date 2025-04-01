@@ -356,6 +356,8 @@ install_docs_dependencies() {
     command -v python
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
+    # cmake 4.0 breaks librealsense. Remove restriction when librealsense is
+    # updated.
     which cmake || python -m pip install -U -q "cmake<4.0"
     python -m pip install -U -q -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ -d "$1" ]]; then

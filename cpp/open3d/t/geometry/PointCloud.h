@@ -746,6 +746,12 @@ public:
     /// shape).
     bool IsGaussianSplat() const;
 
+    /// \brief Returns the order of spherical harmonics used for Gaussian
+    /// Splatting. Returns 0 if f_rest is not present.
+    /// \throws If point cloud has f_rest 3DGS attribute, with the wrong
+    /// shape.
+    int GaussianSplatGetSHOrder() const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap point_attr_;
