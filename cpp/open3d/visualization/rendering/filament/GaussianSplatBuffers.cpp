@@ -40,17 +40,13 @@ namespace rendering {
 TGaussianSplatBuffersBuilder::TGaussianSplatBuffersBuilder(
         const t::geometry::PointCloud& geometry)
     : TPointCloudBuffersBuilder(geometry) {
-    if (!geometry.IsGaussianSplat()) {
-        utility::LogWarning(
-                "TGaussianSplatBuffers is constructed for a geometry that is "
-                "not GaussianSplat.");
-    }
-
     std::vector<std::string> check_list = {"f_dc", "opacity", "rot", "scale",
                                            "f_rest"};
     for (const auto& check_item : check_list) {
-        if (geometry_.HasPointAttr(check_item) &&
-            geometry_.GetPointAttr(check_item).GetDtype() != core::Float32) {
+        if (check_item == "f_rest" && !geometry_.HasPointAttr(check_item)) {
+            continue;
+        }
+        if (geometry_.GetPointAttr(check_item).GetDtype() != core::Float32) {
             auto check_item_instance = geometry_.GetPointAttr(check_item);
             utility::LogWarning(
                     "Tensor gaussian splat {} must have DType of Float32 not "
