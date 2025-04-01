@@ -86,6 +86,7 @@ WORKDIR /root/Open3D
 RUN mkdir build \
  && cd build \
  && cmake \
+    -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=1" \
     -DBUILD_UNIT_TESTS=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
