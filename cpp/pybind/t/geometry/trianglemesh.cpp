@@ -220,7 +220,7 @@ Returns:
             R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
 
 Args:
-    joggle_inputs (bool with default False): Handle precision problems by
+    joggle_inputs (bool, default=False): Handle precision problems by
         randomly perturbing the input data. Set to True if perturbing the input
         iis acceptable but you need convex simplicial output. If False,
         neighboring facets may be merged in case of precision problems. See
@@ -344,11 +344,10 @@ This example shows how to create a hemisphere from a sphere::
     // Triangle Mesh's creation APIs.
     triangle_mesh
             .def_static("create_box", &TriangleMesh::CreateBox,
-                        "Create a box triangle mesh. One vertex of the box"
-                        "will be placed at the origin and the box aligns"
-                        "with the positive x, y, and z axes."
-                        "width"_a = 1.0,
-                        "height"_a = 1.0, "depth"_a = 1.0,
+                        "Create a box triangle mesh. One vertex of the box "
+                        "will be placed at the origin and the box aligns "
+                        "with the positive x, y, and z axes.",
+                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0,
                         "float_dtype"_a = core::Float32,
                         "int_dtype"_a = core::Int64,
                         "device"_a = core::Device("CPU:0"))
@@ -1157,7 +1156,7 @@ the sampled surface points of the first mesh to the second mesh and vice versa.
 The F-Score at the fixed threshold radius is the harmonic mean of the Precision
 and Recall. Recall is the percentage of surface points from the first mesh that
 have the second mesh within the threshold radius, while Precision is the
-percentage of sampled points from the second mesh that have the first mesh
+percentage of sampled points from the second mesh that have the first mesh 
 surface within the threshold radius.
 
 .. math::
