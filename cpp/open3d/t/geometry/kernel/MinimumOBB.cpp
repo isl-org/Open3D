@@ -64,7 +64,8 @@ OrientedBoundingBox ComputeMinimumOBBJylanki(const core::Tensor& points_,
         utility::LogError("Input point set has less than 4 points.");
         return OrientedBoundingBox();
     }
-    PointCloud pcd(points_);
+    // copy to CPU here
+    PointCloud pcd(points_.To(core::Device()));
     auto hull_mesh = pcd.ComputeConvexHull(robust);
     if (hull_mesh.GetVertexPositions().NumElements() == 0) {
         utility::LogError("Failed to compute convex hull.");
@@ -1239,7 +1240,7 @@ OrientedBoundingBox ComputeMinimumOBBJylanki(const core::Tensor& points_,
         min_obb.R_.col(2) = -min_obb.R_.col(2);
     }
     mapOBBToClosestIdentity(min_obb);
-    return static_cast<OrientedBoundingBox>(min_obb);
+    return static_cast<OrientedBoundingBox>(min_obb).To(points_.GetDevice());
 }
 
 OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor& points,
@@ -1254,7 +1255,8 @@ OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor& points,
         return OrientedBoundingBox();
     }
 
-    PointCloud pcd(points);
+    // copy to cpu here
+    PointCloud pcd(points.To(core::Device()));
     auto hull_mesh = pcd.ComputeConvexHull(robust);
     if (hull_mesh.GetVertexPositions().NumElements() == 0) {
         utility::LogError("Failed to compute convex hull.");
@@ -1305,10 +1307,11 @@ OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor& points,
             min_box.Rotate(rot, center);
         }
     }
+    auto device = points.GetDevice();
     auto dtype = points.GetDtype();
-    return OrientedBoundingBox(min_box.GetCenter().To(dtype),
-                               min_box.GetRotation().To(dtype),
-                               min_box.GetExtent().To(dtype));
+    return OrientedBoundingBox(min_box.GetCenter().To(device, dtype),
+                               min_box.GetRotation().To(device, dtype),
+                               min_box.GetExtent().To(device, dtype));
 }
 
 }  // namespace minimum_obb
