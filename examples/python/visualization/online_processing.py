@@ -233,7 +233,7 @@ class PipelineView:
 
         Args:
             vfov (float): Vertical field of view for the 3D scene.
-            max_pcd_vertices (int): Maximum point clud verties for which memory
+            max_pcd_vertices (int): Maximum point cloud vertices for which memory
                 is allocated.
             callbacks (dict of kwargs): Callbacks provided by the controller
                 for various operations.

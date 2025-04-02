@@ -710,7 +710,7 @@ public:
     /// surface points from the first point cloud that have the second point
     /// cloud points within the threshold radius, while Precision is the
     /// percentage of points from the second point cloud that have the first
-    /// point cloud points within the threhold radius.
+    /// point cloud points within the threshold radius.
 
     /// \f{eqnarray*}{
     ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
@@ -745,6 +745,12 @@ public:
     /// \throws If point cloud has 3DGS attributes, but they are invalid (wrong
     /// shape).
     bool IsGaussianSplat() const;
+
+    /// \brief Returns the order of spherical harmonics used for Gaussian
+    /// Splatting. Returns 0 if f_rest is not present.
+    /// \throws If point cloud has f_rest 3DGS attribute, with the wrong
+    /// shape.
+    int GaussianSplatGetSHOrder() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");
