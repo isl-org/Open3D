@@ -9,7 +9,9 @@
 
 #include <unordered_map>
 
+#ifdef HAS_MINIZIP
 #include "open3d/utility/ExtractZIP.h"
+#endif
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
@@ -19,9 +21,11 @@ namespace utility {
 static const std::unordered_map<
         std::string,
         std::function<void(const std::string&, const std::string&)>>
-        file_extension_to_extract_function{
-                {"zip", ExtractFromZIP},
-        };
+        file_extension_to_extract_function {
+#if HAS_MINIZIP
+    {"zip", ExtractFromZIP},
+#endif
+};
 
 bool IsSupportedCompressedFilePath(const std::string& file_path) {
     const std::string format =
