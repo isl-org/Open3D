@@ -3,14 +3,17 @@
 Docker
 ======
 
-Docker provides a convenient way to build, install and run applications isolated
-from the rest of your system. You do not need to change software versions on
-your system or install new software, except the Docker engine itself.
+Docker provides a convenient way to build, install and run applications
+isolated from the rest of your system. You do not need to change software
+versions on your system or install new software, except the Docker engine
+itself.
 
-First, install Docker following the `official guide <https://docs.docker.com/get-docker/>`_.
-Also, complete the `post-installation steps for Linux <https://docs.docker.com/engine/install/linux-postinstall/>`_.
-Make sure that ``docker`` can be executed without root privileges. To verify
-Docker is installed correctly, run:
+First, install Docker following the
+`official guide <https://docs.docker.com/get-docker/>`_. (Under Linux,
+complete the
+`post-installation steps for Linux <https://docs.docker.com/engine/install/linux-postinstall/>`_
+and make sure that ``docker`` can be executed without root privileges.)
+To verify Docker is installed correctly, run:
 
 .. code-block:: bash
 
@@ -150,6 +153,8 @@ If your current system does not support the minimum system requirements for
 building Open3D or if you have different versions of Open3D dependencies
 installed, you can build Open3D from source in docker without interfering with
 your system. This may be the case for older OS such as Ubuntu 16.04 or CentOS 7.
+It is also a convenient way to build Open3D for Linux under Windows, including
+its documentation and the Python package and its documentation, and to test it.
 We provide docker build scripts and dockerfiles to build Python wheels in
 various configurations. You can choose between different versions of Python,
 hardware architectures (AMD64, ARM64, CUDA) and developer vs release modes. Some
@@ -166,5 +171,8 @@ sample configuration options available are shown below.
 Run ``./docker_build.sh`` without arguments to get a list of all available build
 configurations.
 
-.. note:: You can control support for PyTorch and Tensorflow with environment variables: 
+.. note:: You can control support for PyTorch and Tensorflow with environment variables:
           `BUILD_PYTORCH_OPS=ON` and `BUILD_TENSORFLOW_OPS=ON`
+
+More instructions for building and testing Open3D for Linux using Docker
+are located in the ``README.md`` file of the ``docker`` directory.

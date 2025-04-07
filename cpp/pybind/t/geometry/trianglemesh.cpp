@@ -415,7 +415,7 @@ This example shows how to create a hemisphere from a sphere::
                         "device"_a = core::Device("CPU:0"))
             .def_static("create_mobius", &TriangleMesh::CreateMobius,
                         "Create a Mobius strip.", "length_split"_a = 70,
-                        "width_split"_a = 15, "twists"_a = 1, "raidus"_a = 1,
+                        "width_split"_a = 15, "twists"_a = 1, "radius"_a = 1,
                         "flatness"_a = 1, "width"_a = 1, "scale"_a = 1,
                         "float_dtype"_a = core::Float32,
                         "int_dtype"_a = core::Int64,
@@ -438,19 +438,19 @@ This example shows how to create a hemisphere from a sphere::
              {"device", "Device of the create sphere."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_tetrahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"float_dtype", "Float_dtype, Float32 or Float64."},
              {"int_dtype", "Int_dtype, Int32 or Int64."},
              {"device", "Device of the create tetrahedron."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_octahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"float_dtype", "Float_dtype, Float32 or Float64."},
              {"int_dtype", "Int_dtype, Int32 or Int64."},
              {"device", "Device of the create octahedron."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_icosahedron",
-            {{"radius", "Distance from centroid to mesh vetices."},
+            {{"radius", "Distance from centroid to mesh vertices."},
              {"float_dtype", "Float_dtype, Float32 or Float64."},
              {"int_dtype", "Int_dtype, Int32 or Int64."},
              {"device", "Device of the create octahedron."}});
@@ -552,7 +552,7 @@ Returns:
     Text as triangle mesh.
 
 Example:
-    This shows how to simplifify the Stanford Bunny mesh::
+    This shows how to simplify the Stanford Bunny mesh::
 
         import open3d as o3d
 
@@ -642,7 +642,7 @@ Returns:
     Simplified TriangleMesh.
 
 Example:
-    This shows how to simplifify the Stanford Bunny mesh::
+    This shows how to simplify the Stanford Bunny mesh::
 
         bunny = o3d.data.BunnyMesh()
         mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
@@ -669,7 +669,7 @@ Returns:
     The mesh describing the union volume.
 
 Example:
-    This copmutes the union of a sphere and a cube::
+    This computes the union of a sphere and a cube::
 
         box = o3d.geometry.TriangleMesh.create_box()
         box = o3d.t.geometry.TriangleMesh.from_legacy(box)
@@ -700,7 +700,7 @@ Returns:
     The mesh describing the intersection volume.
 
 Example:
-    This copmutes the intersection of a sphere and a cube::
+    This computes the intersection of a sphere and a cube::
 
         box = o3d.geometry.TriangleMesh.create_box()
         box = o3d.t.geometry.TriangleMesh.from_legacy(box)
@@ -1163,8 +1163,8 @@ the sampled surface points of the first mesh to the second mesh and vice versa.
 The F-Score at the fixed threshold radius is the harmonic mean of the Precision
 and Recall. Recall is the percentage of surface points from the first mesh that
 have the second mesh within the threshold radius, while Precision is the
-percentage of sampled points from the second mesh that have the first mesh
-surface within the threhold radius.
+percentage of sampled points from the second mesh that have the first mesh 
+surface within the threshold radius.
 
 .. math::
     :nowrap:

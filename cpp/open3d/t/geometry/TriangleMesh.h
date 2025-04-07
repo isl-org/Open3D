@@ -425,7 +425,7 @@ public:
     /// Create a tetrahedron triangle mesh. The centroid of the mesh will be
     /// placed at (0, 0, 0) and the vertices have a distance of radius to the
     /// center.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param float_dtype Float32 or Float64, used to store floating point
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
@@ -440,7 +440,7 @@ public:
     /// Create a octahedron triangle mesh. The centroid of the mesh will be
     /// placed at (0, 0, 0) and the vertices have a distance of radius to the
     /// center.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param float_dtype Float32 or Float64, used to store floating point
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
@@ -455,7 +455,7 @@ public:
     /// Create a icosahedron triangle mesh. The centroid of the mesh will be
     /// placed at (0, 0, 0) and the vertices have a distance of radius to the
     /// center.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param float_dtype Float32 or Float64, used to store floating point
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
@@ -1083,7 +1083,7 @@ public:
     /// percentage of surface points from the first mesh that have the second
     /// mesh within the threshold radius, while Precision is the percentage of
     /// sampled points from the second mesh that have the first mesh surface
-    /// within the threhold radius.
+    /// within the threshold radius.
 
     /// \f{eqnarray*}{
     ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
