@@ -357,6 +357,13 @@ This example shows how to create a hemisphere from a sphere::
                         "float_dtype"_a = core::Float32,
                         "int_dtype"_a = core::Int64,
                         "device"_a = core::Device("CPU:0"))
+            .def_static("create_sphere", &TriangleMesh::CreateEllipsoid,
+                        "Create an ellipsoid mesh centered at (0, 0, 0).",
+                        "radius_x"_a = 1.0, "radius_y"_a = 1.0,
+                        "radius_z"_a = 1.0, "resolution"_a = 20,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
             .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
                         "Create a tetrahedron mesh centered at (0, 0, 0).",
                         "radius"_a = 1.0, "float_dtype"_a = core::Float32,

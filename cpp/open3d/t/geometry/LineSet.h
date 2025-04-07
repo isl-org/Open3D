@@ -368,6 +368,9 @@ public:
     /// Create an oriented bounding box from point attribute "positions".
     OrientedBoundingBox GetOrientedBoundingBox() const;
 
+    /// Create an oriented bounding ellipsoid from point attribute "positions".
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid() const;
+
     /// Sweeps the line set rotationally about an axis.
     /// \param angle The rotation angle in degree.
     /// \param axis The rotation axis.

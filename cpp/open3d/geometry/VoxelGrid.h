@@ -86,6 +86,11 @@ public:
     OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
 
+    /// Creates an oriented bounding ellipsoid that encapsulates the
+    /// axis-aligned bounding from GetAxisAlignedBoundingBox().
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust = false) const override;
+
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;

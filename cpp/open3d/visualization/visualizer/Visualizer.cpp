@@ -400,6 +400,12 @@ bool Visualizer::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::OrientedBoundingEllipsoid) {
+        renderer_ptr = std::make_shared<glsl::OrientedBoundingEllipsoidRenderer>();
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::OrientedBoundingBox) {
         renderer_ptr = std::make_shared<glsl::OrientedBoundingBoxRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {

@@ -115,6 +115,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
         case geometry::Geometry::GeometryType::Octree:
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
+        case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
         case geometry::Geometry::GeometryType::Unspecified:
             return false;
     }
@@ -214,6 +215,7 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
         case geometry::Geometry::GeometryType::Octree:
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
+        case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
         case geometry::Geometry::GeometryType::Unspecified:
             break;
     }
@@ -754,9 +756,9 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
     }
 }
 
-const std::vector<Eigen::Vector3d>
-        *VisualizerWithVertexSelection::GetGeometryPoints(
-                std::shared_ptr<const geometry::Geometry> geometry) {
+const std::vector<Eigen::Vector3d> *
+VisualizerWithVertexSelection::GetGeometryPoints(
+        std::shared_ptr<const geometry::Geometry> geometry) {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {
@@ -786,6 +788,7 @@ const std::vector<Eigen::Vector3d>
         case geometry::Geometry::GeometryType::Octree:
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
+        case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
         case geometry::Geometry::GeometryType::Unspecified:
             points = nullptr;
             break;

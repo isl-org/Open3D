@@ -47,6 +47,8 @@ public:
         OrientedBoundingBox = 11,
         /// AxisAlignedBoundingBox
         AxisAlignedBoundingBox = 12,
+        /// OrientedBoundingEllipsoid
+        OrientedBoundingEllipsoid = 13,
     };
 
 public:

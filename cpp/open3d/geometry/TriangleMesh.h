@@ -589,6 +589,18 @@ public:
             const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
             bool create_uv_map = false);
 
+    /// Factory function to create solid mesh from an OrientedBoundingEllipsoid.
+    /// \param obel OrientedBoundingEllipsoid object to create a mesh of
+    /// \param scale scale factor along each direction of
+    /// OrientedBoundingEllipsoid
+    /// \param resolution defines the resolution of the ellipsoid.
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &obel,
+            const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
+            int resolution = 20,
+            bool create_uv_map = false);
+
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
     /// \param width is x-directional length.
@@ -616,6 +628,20 @@ public:
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateSphere(
             double radius = 1.0,
+            int resolution = 20,
+            bool create_uv_map = false);
+
+    /// Factory function to create an ellipsoid mesh (TriangleMeshFactory.cpp)
+    /// The ellipsoid with will be centered at (0, 0, 0).
+    /// \param radius_x defines first radii of the ellipsoid.
+    /// \param radius_y defines second radii of the ellipsoid.
+    /// \param radius_z defines third radii of the ellipsoid.
+    /// \param resolution defines the resolution of the ellipsoid.
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateEllipsoid(
+            double radius_x = 1.0,
+            double radius_y = 1.0,
+            double radius_z = 1.0,
             int resolution = 20,
             bool create_uv_map = false);
 

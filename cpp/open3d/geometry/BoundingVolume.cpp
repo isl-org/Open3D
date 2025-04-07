@@ -15,10 +15,114 @@
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/MinimumOBB.h"
+#include "open3d/t/geometry/kernel/MinimumOBEL.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
+
+OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Clear() {
+    center_.setZero();
+    radii_.setZero();
+    R_ = Eigen::Matrix3d::Identity();
+    color_.setOnes();
+    return *this;
+}
+
+bool OrientedBoundingEllipsoid::IsEmpty() const { return Volume() <= 0; }
+
+Eigen::Vector3d OrientedBoundingEllipsoid::GetMinBound() const {
+    auto points = GetEllipsoidPoints();
+    return ComputeMinBound(points);
+}
+
+Eigen::Vector3d OrientedBoundingEllipsoid::GetMaxBound() const {
+    auto points = GetEllipsoidPoints();
+    return ComputeMaxBound(points);
+}
+
+Eigen::Vector3d OrientedBoundingEllipsoid::GetCenter() const { return center_; }
+
+AxisAlignedBoundingBox OrientedBoundingEllipsoid::GetAxisAlignedBoundingBox()
+        const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetEllipsoidPoints());
+}
+
+OrientedBoundingBox OrientedBoundingEllipsoid::GetOrientedBoundingBox(
+        bool) const {
+    return OrientedBoundingBox::CreateFromPoints(GetEllipsoidPoints());
+}
+
+OrientedBoundingBox OrientedBoundingEllipsoid::GetMinimalOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(GetEllipsoidPoints());
+}
+
+OrientedBoundingEllipsoid
+OrientedBoundingEllipsoid::GetOrientedBoundingEllipsoid(bool) const {
+    return *this;
+}
+
+OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Transform(
+        const Eigen::Matrix4d& transformation) {
+    utility::LogError(
+            "A general transform of an OrientedBoundingEllipsoid is not "
+            "implemented. "
+            "Call Translate, Scale, and Rotate.");
+    return *this;
+}
+
+OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Translate(
+        const Eigen::Vector3d& translation, bool relative) {
+    if (relative) {
+        center_ += translation;
+    } else {
+        center_ = translation;
+    }
+    return *this;
+}
+
+OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Scale(
+        const double scale, const Eigen::Vector3d& center) {
+    radii_ *= scale;
+    center_ = scale * (center_ - center) + center;
+    return *this;
+}
+
+OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Rotate(
+        const Eigen::Matrix3d& R, const Eigen::Vector3d& center) {
+    R_ = R * R_;
+    center_ = R * (center_ - center) + center;
+    return *this;
+}
+
+double OrientedBoundingEllipsoid::Volume() const {
+    return 4 * M_PI * radii_(0) * radii_(1) * radii_(2) / 3.0;
+}
+
+std::vector<Eigen::Vector3d> OrientedBoundingEllipsoid::GetEllipsoidPoints()
+        const {
+    Eigen::Vector3d x_axis = R_ * Eigen::Vector3d(radii_(0), 0, 0);
+    Eigen::Vector3d y_axis = R_ * Eigen::Vector3d(0, radii_(1), 0);
+    Eigen::Vector3d z_axis = R_ * Eigen::Vector3d(0, 0, radii_(2));
+    std::vector<Eigen::Vector3d> points(6);
+    points[0] = center_ + R_ * x_axis;
+    points[1] = center_ - R_ * x_axis;
+    points[2] = center_ + y_axis;
+    points[3] = center_ - y_axis;
+    points[4] = center_ + z_axis;
+    points[5] = center_ - z_axis;
+    return points;
+}
+
+OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
+        const std::vector<Eigen::Vector3d>& points, bool robust) {
+    auto tpoints = core::eigen_converter::EigenVector3dVectorToTensor(
+            points, core::Float64, core::Device());
+    return t::geometry::kernel::minimum_obel::ComputeMinimumOBELApprox(tpoints,
+                                                                       robust)
+            .ToLegacy();
+}
 
 OrientedBoundingBox& OrientedBoundingBox::Clear() {
     center_.setZero();
@@ -53,6 +157,11 @@ OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox(bool) const {
 OrientedBoundingBox OrientedBoundingBox::GetMinimalOrientedBoundingBox(
         bool) const {
     return *this;
+}
+
+OrientedBoundingEllipsoid OrientedBoundingBox::GetOrientedBoundingEllipsoid(
+        bool) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(GetBoxPoints());
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Transform(
@@ -249,6 +358,11 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
         max_bound_ = max_bound.cwiseMax(min_bound);
         min_bound_ = max_bound.cwiseMin(min_bound);
     }
+}
+
+OrientedBoundingEllipsoid AxisAlignedBoundingBox::GetOrientedBoundingEllipsoid(
+        bool) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(GetBoxPoints());
 }
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(

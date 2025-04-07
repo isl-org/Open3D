@@ -95,6 +95,11 @@ OrientedBoundingBox VoxelGrid::GetMinimalOrientedBoundingBox(bool) const {
             GetAxisAlignedBoundingBox());
 }
 
+OrientedBoundingEllipsoid VoxelGrid::GetOrientedBoundingEllipsoid(bool) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(
+            GetAxisAlignedBoundingBox().GetBoxPoints());
+}
+
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
     utility::LogError("VoxelGrid::Transform is not supported");
     return *this;

@@ -221,12 +221,12 @@ void pybind_trianglemesh_definitions(py::module &m) {
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("get_surface_area",
-                 (double (TriangleMesh::*)() const) &
+                 (double(TriangleMesh::*)() const) &
                          TriangleMesh::GetSurfaceArea,
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
             .def("get_volume",
-                 (double (TriangleMesh::*)() const) & TriangleMesh::GetVolume,
+                 (double(TriangleMesh::*)() const) & TriangleMesh::GetVolume,
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
             .def("sample_points_uniformly",
@@ -357,6 +357,12 @@ void pybind_trianglemesh_definitions(py::module &m) {
                     "Factory function to create a solid oriented bounding box.",
                     "obox"_a, "scale"_a = Eigen::Vector3d::Ones(),
                     "create_uv_map"_a = false)
+            .def_static("create_from_oriented_bounding_box",
+                        &TriangleMesh::CreateFromOrientedBoundingEllipsoid,
+                        "Factory function to create a solid oriented bounding "
+                        "ellipsoid.",
+                        "obel"_a, "scale"_a = Eigen::Vector3d::Ones(),
+                        "resolution"_a = 20, "create_uv_map"_a = false)
             .def_static("create_box", &TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
@@ -391,6 +397,12 @@ void pybind_trianglemesh_definitions(py::module &m) {
                         "(0, 0, 0).",
                         "radius"_a = 1.0, "resolution"_a = 20,
                         "create_uv_map"_a = false)
+            .def_static(
+                    "create_ellipsoid", &TriangleMesh::CreateEllipsoid,
+                    "Factory function to create an ellipsoid mesh centered at "
+                    "(0, 0, 0).",
+                    "radius_x"_a = 1.0, "radius_y"_a = 1.0, "radius_z"_a = 1.0,
+                    "resolution"_a = 20, "create_uv_map"_a = false)
             .def_static("create_cylinder", &TriangleMesh::CreateCylinder,
                         "Factory function to create a cylinder mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
@@ -723,6 +735,18 @@ void pybind_trianglemesh_definitions(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_sphere",
             {{"radius", "The radius of the sphere."},
+             {"resolution",
+              "The resolution of the sphere. The longitues will be split into "
+              "``resolution`` segments (i.e. there are ``resolution + 1`` "
+              "latitude lines including the north and south pole). The "
+              "latitudes will be split into ```2 * resolution`` segments (i.e. "
+              "there are ``2 * resolution`` longitude lines.)"},
+             {"create_uv_map", "Add default uv map to the mesh."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_ellipsoid",
+            {{"radius_x", "The first radii of the ellipsoid."},
+             {"radius_y", "The second radii of the ellipsoid."},
+             {"radius_z", "The third radii of the ellipsoid."},
              {"resolution",
               "The resolution of the sphere. The longitues will be split into "
               "``resolution`` segments (i.e. there are ``resolution + 1`` "
