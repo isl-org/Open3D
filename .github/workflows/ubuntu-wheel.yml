@@ -109,7 +109,7 @@ jobs:
       - name: Upload ccache to GCS
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.xz gs://open3d-ci-cache/
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:

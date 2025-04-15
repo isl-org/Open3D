@@ -1,6 +1,9 @@
 open3d_ispc_add_library(visualization OBJECT)
 
-target_sources(visualization PRIVATE
+open3d_ispc_add_library(visualization_impl OBJECT)
+set_target_properties(visualization_impl PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
+target_sources(visualization_impl PRIVATE
     shader/GeometryRenderer.cpp
     shader/ImageMaskShader.cpp
     shader/ImageShader.cpp
@@ -62,14 +65,14 @@ if (BUILD_GUI)
         rendering/Renderer.cpp
         rendering/RendererHandle.cpp
         rendering/RotationInteractorLogic.cpp
+        rendering/filament/FilamentEngine.cpp
+        rendering/filament/FilamentRenderer.cpp
     )
 
-    target_sources(visualization PRIVATE
+    target_sources(visualization_impl PRIVATE
         rendering/filament/FilamentCamera.cpp
-        rendering/filament/FilamentEngine.cpp
         rendering/filament/FilamentEntitiesMods.cpp
         rendering/filament/FilamentGeometryBuffersBuilder.cpp
-        rendering/filament/FilamentRenderer.cpp
         rendering/filament/FilamentRenderToBuffer.cpp
         rendering/filament/FilamentResourceManager.cpp
         rendering/filament/FilamentScene.cpp
@@ -77,6 +80,7 @@ if (BUILD_GUI)
         rendering/filament/LineSetBuffers.cpp
         rendering/filament/PointCloudBuffers.cpp
         rendering/filament/TriangleMeshBuffers.cpp
+        rendering/filament/GaussianSplatBuffers.cpp
     )
 
     target_sources(visualization PRIVATE
@@ -131,13 +135,18 @@ open3d_add_encoded_shader(shader
 # Source group for Visual Studio
 add_source_group(shader/glsl)
 
-add_dependencies(visualization shader)
+add_dependencies(visualization_impl shader)
 
 
 open3d_show_and_abort_on_warning(visualization)
 open3d_set_global_properties(visualization)
 open3d_set_open3d_lib_properties(visualization)
 open3d_link_3rdparty_libraries(visualization)
+
+open3d_show_and_abort_on_warning(visualization_impl)
+open3d_set_global_properties(visualization_impl)
+open3d_set_open3d_lib_properties(visualization_impl)
+open3d_link_3rdparty_libraries(visualization_impl)
 
 # export GUI_RESOURCE_DIR to parent scope
 if (BUILD_GUI)

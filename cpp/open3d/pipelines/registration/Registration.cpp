@@ -117,45 +117,34 @@ RegistrationResult RegistrationICP(
     if (max_correspondence_distance <= 0.0) {
         utility::LogError("Invalid max_correspondence_distance.");
     }
-    if ((estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::PointToPlane ||
-         estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::ColoredICP) &&
-        (!target.HasNormals())) {
-        utility::LogError(
-                "TransformationEstimationPointToPlane and "
-                "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors for target PointCloud.");
-    }
-    if ((estimation.GetTransformationEstimationType() ==
-         TransformationEstimationType::GeneralizedICP) &&
-        (!target.HasCovariances() || !source.HasCovariances())) {
-        utility::LogError(
-                "TransformationEstimationForGeneralizedICP require "
-                "pre-computed per point covariances matrices for source and "
-                "target PointCloud.");
-    }
+
+    auto [source_initialized_c, target_initialized_c] =
+            estimation.InitializePointCloudsForTransformation(
+                    source, target, max_correspondence_distance);
 
     Eigen::Matrix4d transformation = init;
     geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(target);
-    geometry::PointCloud pcd = source;
+    const geometry::PointCloud &target_initialized = *target_initialized_c;
+    kdtree.SetGeometry(target_initialized);
+    geometry::PointCloud pcd(*source_initialized_c);
+
     if (!init.isIdentity()) {
         pcd.Transform(init);
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            pcd, target_initialized, kdtree, max_correspondence_distance,
+            transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
-                pcd, target, result.correspondence_set_);
+                pcd, target_initialized, result.correspondence_set_);
         transformation = update * transformation;
         pcd.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
+                pcd, target_initialized, kdtree, max_correspondence_distance,
                 transformation);
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&

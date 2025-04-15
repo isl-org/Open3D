@@ -14,6 +14,10 @@ if (BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
     target_link_libraries(benchmarks PRIVATE CUDA::cudart)
 endif()
+if (BUILD_SYCL_MODULE)
+    find_package(IntelSYCL REQUIRED)   # requires cmake>=3.25 on Windows
+    add_sycl_to_target(TARGET benchmarks)
+endif()
 
 open3d_show_and_abort_on_warning(benchmarks)
 open3d_set_global_properties(benchmarks)

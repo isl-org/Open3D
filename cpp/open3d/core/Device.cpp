@@ -32,13 +32,13 @@ static Device::DeviceType StringToDeviceType(const std::string& type_colon_id) {
         } else {
             utility::LogError(
                     "Invalid device string {}. Valid device strings are like "
-                    "\"CPU:0\" or \"CUDA:1\"",
+                    "\"CPU:0\", \"CUDA:1\" or \"SYCL:0\"",
                     type_colon_id);
         }
     } else {
         utility::LogError(
                 "Invalid device string {}. Valid device strings are like "
-                "\"CPU:0\" or \"CUDA:1\"",
+                "\"CPU:0\", \"CUDA:1\" or \"SYCL:0\"",
                 type_colon_id);
     }
 }
@@ -51,7 +51,7 @@ static int StringToDeviceId(const std::string& type_colon_id) {
     } else {
         utility::LogError(
                 "Invalid device string {}. Valid device strings are like "
-                "\"CPU:0\" or \"CUDA:1\"",
+                "\"CPU:0\", \"CUDA:1\" or \"SYCL:0\"",
                 type_colon_id);
     }
 }
@@ -137,7 +137,7 @@ std::vector<Device> Device::GetAvailableCUDADevices() {
 }
 
 std::vector<Device> Device::GetAvailableSYCLDevices() {
-    return sycl::GetAvailableSYCLDevices();
+    return sy::GetAvailableSYCLDevices();
 }
 
 void Device::PrintAvailableDevices() {

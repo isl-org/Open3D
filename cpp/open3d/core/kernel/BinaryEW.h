@@ -48,6 +48,13 @@ void BinaryEWCPU(const Tensor& lhs,
                  Tensor& dst,
                  BinaryEWOpCode op_code);
 
+#ifdef BUILD_SYCL_MODULE
+void BinaryEWSYCL(const Tensor& lhs,
+                  const Tensor& rhs,
+                  Tensor& dst,
+                  BinaryEWOpCode op_code);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void BinaryEWCUDA(const Tensor& lhs,
                   const Tensor& rhs,

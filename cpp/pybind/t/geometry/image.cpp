@@ -181,7 +181,8 @@ void pybind_image_definitions(py::module &m) {
                  "Upsample if sampling rate > 1. Aspect ratio is always "
                  "kept.",
                  "sampling_rate"_a = 0.5,
-                 "interp_type"_a = Image::InterpType::Nearest)
+                 py::arg_v("interp_type", Image::InterpType::Nearest,
+                           "open3d.t.geometry.InterpType.Nearest"))
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
                  "formed by a chained Gaussian filter (kernel_size = 5, sigma"

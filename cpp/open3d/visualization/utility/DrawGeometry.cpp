@@ -35,7 +35,7 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     Eigen::Vector3d *lookat /* = nullptr */,
                     Eigen::Vector3d *up /* = nullptr */,
                     Eigen::Vector3d *front /* = nullptr */,
-                    double *zoom /* = zoom */) {
+                    double *zoom /* = nullptr */) {
     Visualizer visualizer;
     if (!visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                            top)) {

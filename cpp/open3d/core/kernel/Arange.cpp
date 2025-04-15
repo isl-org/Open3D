@@ -63,6 +63,12 @@ Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
 
     if (device.IsCPU()) {
         ArangeCPU(start, stop, step, dst);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ArangeSYCL(start, stop, step, dst);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         ArangeCUDA(start, stop, step, dst);
