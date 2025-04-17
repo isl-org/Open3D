@@ -860,7 +860,7 @@ if(USE_SYSTEM_ZLIB)
         PACKAGE zlib
         TARGETS ZLIB::zlib
     )
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_zlib)
+    list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_zlib)
     endif()
 if(NOT USE_SYSTEM_ZLIB)
     include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
@@ -871,7 +871,7 @@ if(NOT USE_SYSTEM_ZLIB)
         LIBRARIES    ${ZLIB_LIBRARIES}
         DEPENDS      ext_zlib
     )
-    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM Open3D::3rdparty_zlib)
+    list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_zlib)
 endif()
 
 # Curl
