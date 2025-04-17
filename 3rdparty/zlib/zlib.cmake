@@ -1,9 +1,12 @@
 include(ExternalProject)
 
+# ------------------------------------------------------------------
+# Library name (needed by the rest of Open3D build files)
+# ------------------------------------------------------------------
 if(MSVC)
-    set(lib_name zlibstatic)
+    set(ZLIB_LIB_NAME zlibstatic)  # .lib produced by zlib‑ng –compat
 else()
-    set(lib_name z)
+    set(ZLIB_LIB_NAME z)           # libz.a produced by zlib‑ng –compat
 endif()
 
 find_package(Git QUIET REQUIRED)
@@ -15,7 +18,7 @@ ExternalProject_Add(
     URL_HASH SHA256=fcb41dd59a3f17002aeb1bb21f04696c9b721404890bb945c5ab39d2cb69654c
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/zlib"
     CMAKE_ARGS
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.10
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DZLIB_COMPAT:BOOL=ON
         -DZLIB_ENABLE_TESTS:BOOL=OFF
@@ -25,15 +28,15 @@ ExternalProject_Add(
         # assember error in GPU CI. zlib symbols are hidden during linking.
         ${ExternalProject_CMAKE_ARGS}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}d${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${ZLIB_LIB_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${ZLIB_LIB_NAME}d${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
 set(ZLIB_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(ZLIB_LIB_DIR ${INSTALL_DIR}/lib)
 if(MSVC)
-    set(ZLIB_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
+    set(ZLIB_LIBRARIES ${ZLIB_LIB_NAME}$<$<CONFIG:Debug>:d>)
 else()
-    set(ZLIB_LIBRARIES ${lib_name})
+    set(ZLIB_LIBRARIES ${ZLIB_LIB_NAME})
 endif()
