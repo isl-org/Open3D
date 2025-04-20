@@ -177,7 +177,7 @@ cpp_python_linking_uninstall_test() {
     fi
 
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        cd examples/cmake/open3d-cmake-find-package \
+     && cd examples/cmake/open3d-cmake-find-package \
      && mkdir build \
      && pushd build \
      && echo Testing build with cmake \
@@ -188,7 +188,7 @@ cpp_python_linking_uninstall_test() {
 
     if [ "${BUILD_SHARED_LIBS}" == "ON" ] && [ "${BUILD_SYCL_MODULE}" == "OFF" ]; then
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-            cd examples/cmake/open3d-cmake-find-package \
+         && cd examples/cmake/open3d-cmake-find-package \
          && mkdir build \
          && pushd build \
          && echo Testing build with pkg-config \
