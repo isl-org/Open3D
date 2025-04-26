@@ -17,8 +17,8 @@ endif()
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
-    URL https://github.com/assimp/assimp/archive/refs/tags/v5.4.2.zip
-    URL_HASH SHA256=03e38d123f6bf19a48658d197fd09c9a69db88c076b56a476ab2da9f5eb87dcc
+    URL https://github.com/assimp/assimp/archive/refs/tags/v5.4.3.zip
+    URL_HASH SHA256=795c29716f4ac123b403e53b677e9f32a8605c4a7b2d9904bfaae3f4053b506d
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
     CMAKE_ARGS

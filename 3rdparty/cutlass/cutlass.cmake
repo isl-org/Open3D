@@ -3,8 +3,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_cutlass
     PREFIX cutlass
-    URL https://github.com/NVIDIA/cutlass/archive/refs/tags/v1.3.3.tar.gz
-    URL_HASH SHA256=12d5b4c913063625154019b0a03a253c5b9339c969939454b81f6baaf82b34ca
+    URL https://github.com/NVIDIA/cutlass/archive/refs/tags/v3.9.0.tar.gz
+    URL_HASH SHA256=0ea98a598d1f77fade5187ff6ec6d9e6ef3acd267ee68850aae6e800dcbd69c7
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/cutlass"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""

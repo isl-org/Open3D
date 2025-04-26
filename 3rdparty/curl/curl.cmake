@@ -29,8 +29,8 @@ if(BUILD_CURL_FROM_SOURCE)
     ExternalProject_Add(
         ext_curl
         PREFIX curl
-        URL https://github.com/curl/curl/releases/download/curl-7_88_0/curl-7.88.0.tar.xz
-        URL_HASH SHA256=fd17432cf28714a4cf39d89e26b8ace0d8901199fe5d01d75eb0ae3bbfcc731f
+        URL https://github.com/curl/curl/releases/download/curl-8_13_0/curl-8.13.0.tar.xz
+        URL_HASH SHA256=4a093979a3c2d02de2fbc00549a32771007f2e78032c6faa5ecd2f7a9e152025
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/curl"
         CMAKE_ARGS
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
