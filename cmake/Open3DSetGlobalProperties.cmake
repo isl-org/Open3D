@@ -62,7 +62,7 @@ function(open3d_set_global_properties target)
     # The linkage can be "-lstdc++fs" or "-lc++fs" or ""(empty). In our
     # experiments, the behaviour doesn't quite match the specifications.
     #
-    # - On Ubuntu 20.04:
+    # - On Ubuntu 22.04:
     #   - "-lstdc++fs" works with with GCC 7/10 and Clang 7/12
     #   - "" does not work with GCC 7/10 and Clang 7/12
     #

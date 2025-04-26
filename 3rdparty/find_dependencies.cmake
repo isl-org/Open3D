@@ -1673,7 +1673,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
                     endif()
                 endif()
             elseif(UNIX AND NOT APPLE)
-                # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
+                # On Ubuntu 22.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
                 # The temporary solution is to link the shared library libgfortran.so.
                 # If we distribute a Python wheel, the user's system will also need
                 # to have libgfortran.so preinstalled.
