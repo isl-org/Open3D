@@ -112,12 +112,14 @@ openblas_export_env() {
         export BASE_IMAGE=ubuntu:20.04
         export CONDA_SUFFIX=x86_64
         export CMAKE_VERSION=${CMAKE_VERSION}
+        export BUILD_SHARED_LIBS=OFF
     elif [[ "arm64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform ARM64"
         export DOCKER_TAG=open3d-ci:openblas-arm64
         export BASE_IMAGE=arm64v8/ubuntu:20.04
         export CONDA_SUFFIX=aarch64
         export CMAKE_VERSION=${CMAKE_VERSION_AARCH64}
+        export BUILD_SHARED_LIBS=ON
     else
         echo "Invalid platform."
         print_usage_and_exit_docker_build
@@ -152,7 +154,6 @@ openblas_export_env() {
     fi
 
     # For docker_test.sh
-    export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_PYTORCH_OPS=OFF
     export BUILD_TENSORFLOW_OPS=OFF
