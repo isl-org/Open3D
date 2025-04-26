@@ -49,15 +49,15 @@ eval $(
 )
 # To avoid dependence on libunwind, we don't want to use clang / libc++ versions later than 11.
 # Ubuntu 20.04's has versions 8, 10 or 12 while Ubuntu 22.04 has versions 11 and later.
-if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
-    deps=("${deps[@]/clang/clang-10}")
-    deps=("${deps[@]/libc++-dev/libc++-10-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-10-dev}")
-fi
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
     deps=("${deps[@]/clang/clang-11}")
     deps=("${deps[@]/libc++-dev/libc++-11-dev}")
     deps=("${deps[@]/libc++abi-dev/libc++abi-11-dev}")
+fi
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "24.04" ]; then
+    deps=("${deps[@]/clang/clang-13}")
+    deps=("${deps[@]/libc++-dev/libc++-13-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-13-dev}")
 fi
 
 # Special case for ARM64
