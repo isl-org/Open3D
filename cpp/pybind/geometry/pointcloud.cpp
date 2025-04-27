@@ -90,7 +90,11 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "set of points has farthest distance. The sample is performed "
                  "by selecting the farthest point from previous selected "
                  "points iteratively.",
-                 "num_samples"_a)
+                 "num_samples"_a,
+                 "Index to start downsampling from. Valid index is a "
+                 "non-negative number less than number of points in the "
+                 "input pointcloud.",
+                 "start_index"_a = 0)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
                          const AxisAlignedBoundingBox &, bool) const) &
@@ -146,7 +150,7 @@ void pybind_pointcloud_definitions(py::module &m) {
                  &PointCloud::OrientNormalsConsistentTangentPlane,
                  "Function to orient the normals with respect to consistent "
                  "tangent planes",
-                 "k"_a, "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0)
+                 "k"_a, "lambda_penalty"_a = 0.0, "cos_alpha_tol"_a = 1.0)
             .def("compute_point_cloud_distance",
                  &PointCloud::ComputePointCloudDistance,
                  "For each point in the source point cloud, compute the "

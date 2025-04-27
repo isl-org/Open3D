@@ -35,6 +35,10 @@ void IndexAdd_(int64_t dim,
 
     if (dst.IsCPU()) {
         IndexAddCPU_(dim, index, src_permute, dst_permute);
+    } else if (dst.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        IndexAddSYCL_(dim, index, src_permute, dst_permute);
+#endif
     } else if (dst.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         IndexAddCUDA_(dim, index, src_permute, dst_permute);

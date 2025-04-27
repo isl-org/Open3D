@@ -7,7 +7,6 @@ target_sources(tgeometry PRIVATE
     LineSet.cpp
     BoundingVolume.cpp
     PointCloud.cpp
-    RaycastingScene.cpp
     RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
@@ -15,6 +14,16 @@ target_sources(tgeometry PRIVATE
     VoxelBlockGrid.cpp
     VtkUtils.cpp
 )
+
+if (BUILD_SYCL_MODULE)
+    open3d_sycl_target_sources(tgeometry PRIVATE
+        RaycastingScene.cpp
+    )
+else()
+    target_sources(tgeometry PRIVATE
+        RaycastingScene.cpp
+    )
+endif()
 
 open3d_show_and_abort_on_warning(tgeometry)
 open3d_set_global_properties(tgeometry)

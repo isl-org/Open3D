@@ -63,6 +63,16 @@ else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
 endif()
 option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
+if(BUILD_SYCL_MODULE)
+    set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING 
+    "SYCL targets: spir64 for JIT, or another for AOT compilation. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
+)
+    set(OPEN3D_SYCL_TARGET_BACKEND_OPTIONS "" CACHE STRING 
+    "SYCL target backend options, e.g. to compile for a specific device. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
+)
+    set(BUILD_ISPC_MODULE OFF CACHE BOOL "Build the ISPC module" FORCE)
+    set(BUILD_CUDA_MODULE OFF CACHE BOOL "Build the CUDA module" FORCE)
+endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
 option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF)
 if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
@@ -282,12 +292,6 @@ endif()
 if(BUILD_SYCL_MODULE AND NOT GLIBCXX_USE_CXX11_ABI)
     message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires GLIBCXX_USE_CXX11_ABI=ON")
 endif()
-if(BUILD_SYCL_MODULE AND BUILD_TENSORFLOW_OPS)
-    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_TENSORFLOW_OPS=OFF")
-endif()
-if(BUILD_SYCL_MODULE AND BUILD_PYTORCH_OPS)
-    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_PYTORCH_OPS=OFF")
-endif()
 if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
     message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
 endif()
@@ -430,8 +434,8 @@ if(BUILD_CUDA_MODULE)
     endif()
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
-    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
-        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
+        message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
     endif()
 endif()
 
@@ -476,6 +480,8 @@ if(WIN32)
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
+        # MSVC standards-compliant mode: Error in PoissonRecon 3rd party header
+        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)   
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members

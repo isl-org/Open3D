@@ -67,7 +67,7 @@ def test_size_vector():
         sv = o3d.core.SizeVector(["foo", "bar"])
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_implicit_conversion(device):
     # Reshape
     t = o3d.core.Tensor.ones((3, 4), device=device)

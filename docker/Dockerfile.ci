@@ -19,17 +19,17 @@ ARG PACKAGE
 ARG BUILD_SYCL_MODULE
 ARG CI
 
-RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
- && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
- && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
- && if [ -z "${CCACHE_VERSION}"       ]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
- && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
- && if [ -z "${BUILD_SHARED_LIBS}"               ]; then echo "Error: ARG BUILD_SHARED_LIBS               not specified."; exit 1; fi \
- && if [ -z "${BUILD_CUDA_MODULE}"    ]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
- && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
- && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
- && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi \
- && if [ -z "${BUILD_SYCL_MODULE}"    ]; then echo "Error: ARG BUILD_SYCL_MODULE    not specified."; exit 1; fi
+RUN if [[ -z "${DEVELOPER_BUILD}"      ]]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
+ && if [[ -z "${CCACHE_TAR_NAME}"      ]]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
+ && if [[ -z "${CMAKE_VERSION}"        ]]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
+ && if [[ -z "${CCACHE_VERSION}"       ]]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
+ && if [[ -z "${PYTHON_VERSION}"       ]]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_SHARED_LIBS}"    ]]; then echo "Error: ARG BUILD_SHARED_LIBS    not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_CUDA_MODULE}"    ]]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_TENSORFLOW_OPS}" ]]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_PYTORCH_OPS}"    ]]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
+ && if [[ -z "${PACKAGE}"              ]]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_SYCL_MODULE}"    ]]; then echo "Error: ARG BUILD_SYCL_MODULE    not specified."; exit 1; fi
 
 # Fix Nvidia repo key rotation issue
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
@@ -87,9 +87,11 @@ RUN apt-get update && apt-get install -y \
     libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
+    ca-certificates \
+    && if [ $BUILD_SYCL_MODULE = "ON" ]; then apt-get install -y intel-level-zero-gpu-raytracing ; fi \
  && rm -rf /var/lib/apt/lists/*
 
-# pyenv or Intel Python
+# pyenv
 # The pyenv python paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
 # The soft link from the python patch level version to the python mino version
@@ -97,15 +99,12 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
-        curl https://pyenv.run | bash \
+RUN curl https://pyenv.run | bash \
         && pyenv update \
         && pyenv install $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION}; \
-    fi
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 RUN python --version && pip --version
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -144,10 +143,10 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.?z ]; then tar -xf ${CCACHE_TAR_NAME}.tar.?z; fi \
  && mkdir -p ${CCACHE_DIR} \
- && ccache -M 5G \
+ && ccache -M 4G \
  && ccache -s
 
 # Checkout Open3D-ML main branch
@@ -161,7 +160,12 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Open3D C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
+# If BUILD_SYCL_MODULE=ON, do not install clang - this installs libomp5-dev which gets linked into the shared library.
+RUN if [[ "$(uname -m)" = "x86_64" ]] ; then \
+        ./util/install_deps_ubuntu.sh assume-yes no-filament-deps ; \
+    else \
+        ./util/install_deps_ubuntu.sh assume-yes ; \
+    fi
 
 # Open3D Python dependencies
 RUN source util/ci_utils.sh \
@@ -191,9 +195,11 @@ RUN \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
         export GLIBCXX_USE_CXX11_ABI=ON; \
+        export BUILD_ISPC_MODULE=OFF; \
     else \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
+        export BUILD_ISPC_MODULE=ON; \
         # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
         if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
             export GLIBCXX_USE_CXX11_ABI=OFF; \
@@ -208,11 +214,12 @@ RUN \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
           -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
+          -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
-          -DBUILD_COMMON_ISPC_ISAS=ON \
+          -DBUILD_COMMON_ISPC_ISAS=${BUILD_ISPC_MODULE} \
           -DGLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI} \
           -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
           -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
@@ -224,9 +231,9 @@ RUN \
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
- && if [ "${PACKAGE}" = "ON" ]; then make package; fi \
- && if [ "${PACKAGE}" = "VIEWER" ]; then make package-Open3DViewer-deb; fi \
- && if [ "${CI:-}a" != "a" ]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc; fi
+ && if [[ "${PACKAGE}" = "ON" ]]; then make package; fi \
+ && if [[ "${PACKAGE}" = "VIEWER" ]]; then make package-Open3DViewer-deb; fi \
+ && if [[ "${CI:-}a" != "a" ]]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc librealsense; fi
 # If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
@@ -235,9 +242,10 @@ RUN ccache -s \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
- && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
- && if [ "${PACKAGE}" = "ON" ]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
- && if [ "${PACKAGE}" = "VIEWER" ]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
+ && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
+ && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
+ && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
+ && if [[ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."

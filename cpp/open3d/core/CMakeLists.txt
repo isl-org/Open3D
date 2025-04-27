@@ -5,7 +5,6 @@ target_sources(core PRIVATE
     CUDAUtils.cpp
     Device.cpp
     Dtype.cpp
-    EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCached.cpp
@@ -23,6 +22,7 @@ target_sources(core PRIVATE
 
 # Compile regardless BUILD_SYCL_MODULE == ON or OFF.
 open3d_sycl_target_sources(core PRIVATE
+    EigenConverter.cpp
     SYCLUtils.cpp
 )
 
@@ -41,39 +41,16 @@ target_sources(core PRIVATE
     hashmap/HashBackendBuffer.cpp
     hashmap/HashMap.cpp
     hashmap/HashSet.cpp
-    kernel/Arange.cpp
-    kernel/ArangeCPU.cpp
-    kernel/BinaryEW.cpp
-    kernel/BinaryEWCPU.cpp
-    kernel/IndexGetSet.cpp
-    kernel/IndexGetSetCPU.cpp
-    kernel/IndexReduction.cpp
-    kernel/IndexReductionCPU.cpp
     kernel/Kernel.cpp
-    kernel/NonZero.cpp
-    kernel/NonZeroCPU.cpp
-    kernel/Reduction.cpp
-    kernel/ReductionCPU.cpp
-    kernel/UnaryEW.cpp
-    kernel/UnaryEWCPU.cpp
-    kernel/UnaryEWSYCL.cpp
     linalg/AddMM.cpp
-    linalg/AddMMCPU.cpp
     linalg/Det.cpp
     linalg/Inverse.cpp
-    linalg/InverseCPU.cpp
     linalg/LeastSquares.cpp
-    linalg/LeastSquaresCPU.cpp
     linalg/LU.cpp
-    linalg/LUCPU.cpp
     linalg/Matmul.cpp
-    linalg/MatmulCPU.cpp
     linalg/Solve.cpp
-    linalg/SolveCPU.cpp
     linalg/SVD.cpp
-    linalg/SVDCPU.cpp
     linalg/Tri.cpp
-    linalg/TriCPU.cpp
     nns/FixedRadiusIndex.cpp
     nns/FixedRadiusSearchOps.cpp
     nns/KnnIndex.cpp
@@ -82,11 +59,60 @@ target_sources(core PRIVATE
     nns/NNSIndex.cpp
 )
 
+# core_impl contains the implementation of core functions that are not exposed in the public API
+open3d_ispc_add_library(core_impl OBJECT)
+set_target_properties(core_impl PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+
+target_sources(core_impl PRIVATE
+    kernel/Arange.cpp
+    kernel/BinaryEW.cpp
+    kernel/IndexGetSet.cpp
+    kernel/IndexReduction.cpp
+    kernel/NonZero.cpp
+    kernel/Reduction.cpp
+    kernel/UnaryEW.cpp
+    kernel/ArangeCPU.cpp
+    kernel/BinaryEWCPU.cpp
+    kernel/IndexGetSetCPU.cpp
+    kernel/IndexReductionCPU.cpp
+    kernel/NonZeroCPU.cpp
+    kernel/ReductionCPU.cpp
+    kernel/UnaryEWCPU.cpp
+    linalg/AddMMCPU.cpp
+    linalg/InverseCPU.cpp
+    linalg/LeastSquaresCPU.cpp
+    linalg/LUCPU.cpp
+    linalg/MatmulCPU.cpp
+    linalg/SolveCPU.cpp
+    linalg/SVDCPU.cpp
+    linalg/TriCPU.cpp
+)
+
+if (BUILD_SYCL_MODULE)
+open3d_sycl_target_sources(core_impl PRIVATE
+    kernel/UnaryEWSYCL.cpp
+    kernel/BinaryEWSYCL.cpp
+    kernel/ArangeSYCL.cpp
+    kernel/IndexGetSetSYCL.cpp
+    kernel/NonZeroSYCL.cpp
+    kernel/IndexReductionSYCL.cpp
+    kernel/ReductionSYCL.cpp
+    linalg/AddMMSYCL.cpp
+    linalg/InverseSYCL.cpp
+    linalg/LeastSquaresSYCL.cpp
+    linalg/LUSYCL.cpp
+    linalg/MatmulSYCL.cpp
+    linalg/SolveSYCL.cpp
+    linalg/SVDSYCL.cpp
+    linalg/TriSYCL.cpp
+)
+endif()
+
 if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
         MemoryManagerCUDA.cpp
     )
-    target_sources(core PRIVATE
+    target_sources(core_impl PRIVATE
         hashmap/CUDA/CreateCUDAHashBackend.cu
         hashmap/CUDA/CUDAHashBackendBuffer.cu
         hashmap/CUDA/SlabNodeManager.cu
@@ -116,6 +142,8 @@ endif()
 if (BUILD_ISPC_MODULE)
     target_sources(core PRIVATE
         Indexer.ispc
+    )
+    target_sources(core_impl PRIVATE
         kernel/BinaryEWCPU.ispc
         kernel/UnaryEWCPU.ispc
     )
@@ -126,6 +154,12 @@ open3d_set_global_properties(core)
 open3d_set_open3d_lib_properties(core)
 open3d_link_3rdparty_libraries(core)
 
+open3d_show_and_abort_on_warning(core_impl)
+open3d_set_global_properties(core_impl)
+open3d_set_open3d_lib_properties(core_impl)
+open3d_link_3rdparty_libraries(core_impl)
+
 if(BUILD_CUDA_MODULE)
     target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_include_directories(core_impl SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()

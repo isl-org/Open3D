@@ -47,7 +47,7 @@ constexpr int kOpen3DImageIODefaultQuality = -1;
 ///
 /// Supported file extensions are png, jpg/jpeg. Data type and number of
 /// channels depends on the file extension.
-/// - PNG: Dtype should be one of core::UInt8, core::UInt16
+/// - PNG: Dtype should be one of core::Bool, core::UInt8, core::UInt16
 ///        Supported number of channels are 1, 3, and 4.
 /// - JPG: Dtyppe should be core::UInt8
 ///        Supported number of channels are 1 and 3.

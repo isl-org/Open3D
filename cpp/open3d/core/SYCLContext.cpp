@@ -7,17 +7,19 @@
 
 #include "open3d/core/SYCLContext.h"
 
-#include <CL/sycl.hpp>
 #include <array>
 #include <cstdlib>
 #include <sstream>
+#include <sycl/sycl.hpp>
 
 #include "open3d/core/SYCLUtils.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
-namespace sycl {
+namespace sy {
+
+OPEN3D_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device);
 
 SYCLContext &SYCLContext::GetInstance() {
     static thread_local SYCLContext instance;
@@ -27,48 +29,75 @@ SYCLContext &SYCLContext::GetInstance() {
 bool SYCLContext::IsAvailable() { return devices_.size() > 0; }
 
 bool SYCLContext::IsDeviceAvailable(const Device &device) {
-    bool rc = false;
-    for (const Device &device_ : devices_) {
-        if (device == device_) {
-            rc = true;
-            break;
-        }
-    }
-    return rc;
+    return devices_.find(device) != devices_.end();
 }
-std::vector<Device> SYCLContext::GetAvailableSYCLDevices() { return devices_; }
+std::vector<Device> SYCLContext::GetAvailableSYCLDevices() {
+    std::vector<Device> device_vec;
+    for (const auto &device : devices_) {
+        device_vec.push_back(device.first);
+    }
+    return device_vec;
+}
 
-sy::queue SYCLContext::GetDefaultQueue(const Device &device) {
-    return device_to_default_queue_.at(device);
+sycl::queue SYCLContext::GetDefaultQueue(const Device &device) {
+    return devices_.at(device).queue;
+}
+
+SYCLDevice::SYCLDevice(const sycl::device &sycl_device) {
+    namespace sid = sycl::info::device;
+    device = sycl_device;
+    queue = sycl::queue(device);
+    name = device.get_info<sid::name>();
+    device_type = GetDeviceTypeName(device);
+    max_work_group_size = device.get_info<sid::max_work_group_size>();
+    auto aspects = device.get_info<sid::aspects>();
+    fp64 = std::find(aspects.begin(), aspects.end(), sycl::aspect::fp64) !=
+           aspects.end();
+    if (!fp64) {
+        utility::LogWarning(
+                "SYCL device {} does not support double precision. Use env "
+                "vars 'OverrideDefaultFP64Settings=1' "
+                "'IGC_EnableDPEmulation=1' to enable double precision "
+                "emulation on Intel GPUs.",
+                name);
+    }
+    usm_device_allocations =
+            std::find(aspects.begin(), aspects.end(),
+                      sycl::aspect::usm_device_allocations) != aspects.end();
+    if (!usm_device_allocations) {
+        utility::LogWarning(
+                "SYCL device {} does not support USM device allocations. "
+                "Open3D SYCL support may not work.",
+                name);
+    }
 }
 
 SYCLContext::SYCLContext() {
     // SYCL GPU.
     // TODO: Currently we only support one GPU device.
     try {
-        const sy::device &sycl_device = sy::device(sy::gpu_selector());
+        const sycl::device &sycl_device = sycl::device(sycl::gpu_selector_v);
         const Device open3d_device = Device("SYCL:0");
-        devices_.push_back(open3d_device);
-        device_to_sycl_device_[open3d_device] = sycl_device;
-        device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
-    } catch (const sy::exception &e) {
+        devices_.emplace(open3d_device, sycl_device);
+    } catch (const sycl::exception &e) {
+        utility::LogWarning("SYCL GPU unavailable: {}", e.what());
     }
 
-    if (devices_.size() == 0) {
-        // SYCL CPU fallback.
-        // This could happen if the Intel GPGPU driver is not installed or if
-        // your CPU does not have integrated GPU.
-        try {
-            const sy::device &sycl_device = sy::device(sy::host_selector());
-            const Device open3d_device = Device("SYCL:0");
+    // SYCL CPU fallback.
+    // This could happen if the Intel GPGPU driver is not installed or if
+    // your CPU does not have integrated GPU.
+    try {
+        if (devices_.size() == 0) {
             utility::LogWarning(
                     "SYCL GPU device is not available, falling back to SYCL "
                     "host device.");
-            devices_.push_back(open3d_device);
-            device_to_sycl_device_[open3d_device] = sycl_device;
-            device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
-        } catch (const sy::exception &e) {
         }
+        const sycl::device &sycl_device = sycl::device(sycl::cpu_selector_v);
+        const Device open3d_device =
+                Device("SYCL:" + std::to_string(devices_.size()));
+        devices_.emplace(open3d_device, sycl_device);
+    } catch (const sycl::exception &e) {
+        utility::LogWarning("SYCL CPU unavailable: {}", e.what());
     }
 
     if (devices_.size() == 0) {
@@ -76,6 +105,6 @@ SYCLContext::SYCLContext() {
     }
 }
 
-}  // namespace sycl
+}  // namespace sy
 }  // namespace core
 }  // namespace open3d

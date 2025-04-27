@@ -63,7 +63,7 @@ torch::Tensor furthest_point_sampling(torch::Tensor points,
 }
 
 static auto registry_fp = torch::RegisterOperators(
-        "open3d::furthest_point_sampling(Tensor points, int sample_siz)"
+        "open3d::furthest_point_sampling(Tensor points, int sample_size)"
         " -> Tensor out",
         &furthest_point_sampling);
 #endif
