@@ -1,7 +1,12 @@
+
 #
 # Open3D 3rd party library integration
 #
 set(Open3D_3RDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if (NOT MSVC)
+    add_compile_options(-fPIC)
+endif()
 
 # EXTERNAL_MODULES
 # CMake modules we depend on in our public interface. These are modules we
@@ -909,6 +914,11 @@ if(NOT USE_SYSTEM_CURL)
         # ```
         # The "Foundation" framework is already linked by GLFW.
         target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+    elseif(UNIX)
+        find_library(LIBIDN2 NAMES idn2 libidn2 libidn2.so.0  )
+        if(LIBIDN2)
+            target_link_libraries(3rdparty_curl INTERFACE ${LIBIDN2})
+        endif()
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
@@ -1673,7 +1683,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
                     endif()
                 endif()
             elseif(UNIX AND NOT APPLE)
-                # On Ubuntu 22.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
+                # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
                 # The temporary solution is to link the shared library libgfortran.so.
                 # If we distribute a Python wheel, the user's system will also need
                 # to have libgfortran.so preinstalled.
