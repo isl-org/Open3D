@@ -1,4 +1,13 @@
 ## Main
+
+## 0.20.0
+-   Ubuntu 20.04 focal to 22.04 jammy and ubuntu 22.04 jammy to 24.04 noble to have double memory TLS Block
+-   ARM CI with Github ARM Runners to build cuda and arm cpu.
+-   Update cutlass to 3.9.0, pybind11 and vtk to support newer SO arm builds.
+-   Update pytorch 2.7.0 & tensorflow 2.19.0 and cuda 12.8.1 to support Blackwell devices.
+  
+## 0.19.0
+
 -   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
 -   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)

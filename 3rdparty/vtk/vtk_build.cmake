@@ -6,7 +6,7 @@ else()
     set(VTK_LIB_SUFFIX "")
 endif()
 
-set(VTK_VERSION 9.1)
+set(VTK_VERSION 9.4.1)
 
 set(VTK_LIBRARIES
     vtkFiltersGeneral-${VTK_VERSION}${VTK_LIB_SUFFIX}
