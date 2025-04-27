@@ -13,77 +13,67 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+# ---------------------------------------------------------------------------
+# Run every job against the full set of CPython versions we support.
+# ---------------------------------------------------------------------------
+
 env:
   GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
   GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
+  PY_MATRIX: |
+    3.8
+    3.9
+    3.10
+    3.11
+    3.12
 
 jobs:
+  # -------------------------------------------------------------------------
+  # x86‑64 builds
+  # -------------------------------------------------------------------------
   openblas-amd64:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-      - name: Maximize build space
-        run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-      - name: Docker build
-        run: docker/docker_build.sh openblas-amd64-py312-dev
 
-      - name: Docker test
-        run: docker/docker_test.sh openblas-amd64-py312-dev
-
-  openblas-arm64:
-    permissions:
-      contents: read
-    runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-        is_main:
-          - ${{ github.ref == 'refs/heads/main' }}
-        exclude:
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.10'
-          - is_main: false
-            python_version: '3.11'
+        python_version: [${{ env.PY_MATRIX }}]
+
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
-      CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
+      CCACHE_TAR_NAME: open3d-ubuntu-2204-openblas-ci-ccache
       OPEN3D_CPU_RENDERING: true
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
-      # Be verbose and explicit here such that a developer can directly copy the
-      # `docker/docker_build.sh xxx` command to execute locally.
+
+      # ---------------------------------------------------------------------
+      # Build image / wheel for the current Python version
+      # ---------------------------------------------------------------------
       - name: Compute Docker tag for this matrix entry
         run: |
           # Strip the dot: 3.8 ➜ 38, 3.10 ➜ 310 …
           PY_NO_DOT="${PYTHON_VERSION//./}"
-          # Add “-dev” only when requested
           DEV_SUFFIX=$([ "${DEVELOPER_BUILD}" = "ON" ] && echo "-dev")
-          echo "DOCKER_TAG=openblas-arm64-py${PY_NO_DOT}${DEV_SUFFIX}" >> $GITHUB_ENV
-      - name: Docker build
+          echo "DOCKER_TAG=openblas-amd64-py${PY_NO_DOT}${DEV_SUFFIX}" >> $GITHUB_ENV
+
+      - name: Docker build (x86‑64 / Python ${{ matrix.python_version }})
+        run: docker/docker_build.sh "${DOCKER_TAG}"
+
+      - name: Capture wheel names
         run: |
-          docker/docker_build.sh "${DOCKER_TAG}"
-          # (wheel-name logic can stay as is)
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
-          echo "PIP_PKG_NAME=$PIP_PKG_NAME"       >> $GITHUB_ENV
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME"        >> $GITHUB_ENV
           echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel to GitHub artifacts
@@ -95,5 +85,59 @@ jobs:
             ${{ env.PIP_CPU_PKG_NAME }}
           if-no-files-found: error
 
-      - name: Docker test
+      - name: Docker test (x86‑64 / Python ${{ matrix.python_version }})
+        run: docker/docker_test.sh "${DOCKER_TAG}"
+
+  # -------------------------------------------------------------------------
+  # ARM64 builds
+  # -------------------------------------------------------------------------
+  openblas-arm64:
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04-arm
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [${{ env.PY_MATRIX }}]
+
+    env:
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+      PYTHON_VERSION: ${{ matrix.python_version }}
+      CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
+      OPEN3D_CPU_RENDERING: true
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
+      - name: Compute Docker tag for this matrix entry
+        run: |
+          PY_NO_DOT="${PYTHON_VERSION//./}"
+          DEV_SUFFIX=$([ "${DEVELOPER_BUILD}" = "ON" ] && echo "-dev")
+          echo "DOCKER_TAG=openblas-arm64-py${PY_NO_DOT}${DEV_SUFFIX}" >> $GITHUB_ENV
+
+      - name: Docker build (arm64 / Python ${{ matrix.python_version }})
+        run: |
+          docker/docker_build.sh "${DOCKER_TAG}"
+          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
+          PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME"        >> $GITHUB_ENV
+          echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
+
+      - name: Upload wheel to GitHub artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PIP_PKG_NAME }}
+          path: |
+            ${{ env.PIP_PKG_NAME }}
+            ${{ env.PIP_CPU_PKG_NAME }}
+          if-no-files-found: error
+
+      - name: Docker test (arm64 / Python ${{ matrix.python_version }})
         run: docker/docker_test.sh "${DOCKER_TAG}"
