@@ -494,30 +494,7 @@ open3d_find_package_3rdparty_library(3rdparty_threads
     TARGETS Threads::Threads
 )
 
-# Assimp
-if(USE_SYSTEM_ASSIMP)
-    open3d_find_package_3rdparty_library(3rdparty_assimp
-        PACKAGE assimp
-        TARGETS assimp::assimp
-    )
-    if(NOT 3rdparty_assimp_FOUND)
-        set(USE_SYSTEM_ASSIMP OFF)
-    endif()
-endif()
-if(NOT USE_SYSTEM_ASSIMP)
-    include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
-    open3d_import_3rdparty_library(3rdparty_assimp
-        INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
-        LIB_DIR      ${ASSIMP_LIB_DIR}
-        LIBRARIES    ${ASSIMP_LIBRARIES}
-        DEPENDS      ext_assimp
-    )
-    add_dependencies(ext_assimp ext_zlib)
-    target_link_libraries(3rdparty_assimp INTERFACE Open3D::3rdparty_zlib)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_assimp)
-else()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_assimp)
-endif()
+
 
 # OpenMP
 if(WITH_OPENMP)
@@ -874,6 +851,31 @@ if(NOT USE_SYSTEM_ZLIB)
         DEPENDS      ext_zlib
     )
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_zlib)
+endif()
+
+# Assimp
+if(USE_SYSTEM_ASSIMP)
+    open3d_find_package_3rdparty_library(3rdparty_assimp
+        PACKAGE assimp
+        TARGETS assimp::assimp
+    )
+    if(NOT 3rdparty_assimp_FOUND)
+        set(USE_SYSTEM_ASSIMP OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_ASSIMP)
+    include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
+    open3d_import_3rdparty_library(3rdparty_assimp
+        INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
+        LIB_DIR      ${ASSIMP_LIB_DIR}
+        LIBRARIES    ${ASSIMP_LIBRARIES}
+        DEPENDS      ext_assimp
+    )
+    add_dependencies(ext_assimp ext_zlib)
+    target_link_libraries(3rdparty_assimp INTERFACE Open3D::3rdparty_zlib)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_assimp)
+else()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_assimp)
 endif()
 
 # Curl

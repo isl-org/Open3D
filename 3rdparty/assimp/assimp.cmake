@@ -6,6 +6,10 @@ else()
     set(lib_name assimp)
 endif()
 
+ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
+set(ZLIB_INSTALL_DIR ${INSTALL_DIR})
+unset(INSTALL_DIR)
+
 # IntelLLVM (SYCL) compiler defaults to fast math, causing NaN comparison code
 # compilation error.
 if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
@@ -30,6 +34,7 @@ ExternalProject_Add(
         -DASSIMP_BUILD_TESTS=OFF
         -DASSIMP_INSTALL_PDB=OFF
         -DASSIMP_BUILD_ZLIB=OFF
+        -DZLIB_ROOT:PATH=${ZLIB_INSTALL_DIR}
         -DASSIMP_NO_EXPORT=OFF
         -DHUNTER_ENABLED=OFF # Renamed to "ASSIMP_HUNTER_ENABLED" in newer assimp.
         -DASSIMP_WARNINGS_AS_ERRORS=OFF
