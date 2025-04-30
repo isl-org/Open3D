@@ -6,6 +6,10 @@ else()
     set(LIBPNG_LIB_NAME png16)
 endif()
 
+ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
+set(ZLIB_INSTALL_DIR ${INSTALL_DIR})
+unset(INSTALL_DIR)
+
 ExternalProject_Add(
     ext_libpng
     PREFIX libpng
@@ -20,6 +24,7 @@ ExternalProject_Add(
         -DPNG_EXECUTABLES=OFF
         -DPNG_TESTS=OFF
         -DPNG_BUILD_ZLIB=OFF
+        -DZLIB_ROOT:PATH=${ZLIB_INSTALL_DIR}
         -DPNG_ARM_NEON=off # Must be lower case.
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS

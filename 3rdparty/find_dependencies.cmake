@@ -512,6 +512,8 @@ if(NOT USE_SYSTEM_ASSIMP)
         LIBRARIES    ${ASSIMP_LIBRARIES}
         DEPENDS      ext_assimp
     )
+    add_dependencies(ext_assimp ext_zlib)
+    target_link_libraries(3rdparty_assimp INTERFACE Open3D::3rdparty_zlib)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_assimp)
 else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_assimp)
