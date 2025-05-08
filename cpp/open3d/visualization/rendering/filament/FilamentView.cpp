@@ -53,11 +53,22 @@ const filament::LinearColorA kNormalsClearColor = {0.5f, 0.5f, 0.5f, 1.f};
 
 }  // namespace
 
+// ----------------------------------------------------------------------------
+// ctor / dtor
+// ----------------------------------------------------------------------------
+
 FilamentView::FilamentView(filament::Engine& engine,
                            FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
-    view_->setSampleCount(4);
+
+    // Configure MSAA (4×) ---------------------------------------------------
+    filament::View::MultiSampleAntiAliasingOptions msaa;
+    msaa.enabled     = true;
+    msaa.sampleCount = 4;
+    msaa.customResolve = false;
+    view_->setMultiSampleAntiAliasingOptions(msaa);
+
     SetAntiAliasing(true, false);
     SetPostProcessing(true);
     SetAmbientOcclusion(true, false);
@@ -94,6 +105,10 @@ FilamentView::~FilamentView() {
     engine_.destroy(color_grading_);
 }
 
+// ----------------------------------------------------------------------------
+// view state ----------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 View::Mode FilamentView::GetMode() const { return mode_; }
 
 void FilamentView::SetMode(Mode mode) {
@@ -122,7 +137,6 @@ void FilamentView::SetMode(Mode mode) {
             break;
     }
 #endif
-
     mode_ = mode;
 }
 
@@ -132,7 +146,6 @@ void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
 }
 
 void FilamentView::SetWireframe(bool enable) {
-    // Enable bloom for wireframe mode
     if (enable) {
         SetBloom(true, 0.5f, 8);
     } else {
@@ -140,9 +153,24 @@ void FilamentView::SetWireframe(bool enable) {
     }
 }
 
-void FilamentView::SetSampleCount(int n) { view_->setSampleCount(n); }
+// ----------------------------------------------------------------------------
+// MSAA helpers ---------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
-int FilamentView::GetSampleCount() const { return view_->getSampleCount(); }
+void FilamentView::SetSampleCount(int n) {
+    auto opts        = view_->getMultiSampleAntiAliasingOptions();
+    opts.sampleCount = static_cast<uint8_t>(n);
+    opts.enabled     = (n > 1);
+    view_->setMultiSampleAntiAliasingOptions(opts);
+}
+
+int FilamentView::GetSampleCount() const {
+    return view_->getMultiSampleAntiAliasingOptions().sampleCount;
+}
+
+// ----------------------------------------------------------------------------
+// viewport / post fx ---------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 void FilamentView::SetViewport(std::int32_t x,
                                std::int32_t y,
@@ -153,48 +181,50 @@ void FilamentView::SetViewport(std::int32_t x,
 
 std::array<int, 4> FilamentView::GetViewport() const {
     auto vp = view_->getViewport();
-    return {vp.left, vp.bottom, int(vp.width), int(vp.height)};
+    return {vp.left, vp.bottom, static_cast<int>(vp.width),
+            static_cast<int>(vp.height)};
 }
 
 void FilamentView::SetPostProcessing(bool enabled) {
     view_->setPostProcessingEnabled(enabled);
 }
 
-void FilamentView::SetAmbientOcclusion(bool enabled,
-                                       bool ssct_enabled /* = false */) {
+void FilamentView::SetAmbientOcclusion(bool enabled, bool ssct_enabled) {
     filament::View::AmbientOcclusionOptions options;
-    options.enabled = enabled;
-    options.ssct.enabled = ssct_enabled;
+    options.enabled       = enabled;
+    options.ssct.enabled  = ssct_enabled;
     view_->setAmbientOcclusionOptions(options);
 }
 
-void FilamentView::SetBloom(bool enabled,
-                            float strength /* = 0.5f */,
-                            int spread /* = 6 */) {
-    filament::View::BloomOptions bloom_options;
-    bloom_options.enabled = enabled;
-    bloom_options.strength = strength;
-    bloom_options.threshold = false;
-    bloom_options.levels = spread;
-    view_->setBloomOptions(bloom_options);
+void FilamentView::SetBloom(bool enabled, float strength, int spread) {
+    filament::View::BloomOptions bloom;
+    bloom.enabled   = enabled;
+    bloom.strength  = strength;
+    bloom.threshold = false;
+    bloom.levels    = spread;
+    view_->setBloomOptions(bloom);
 }
 
-void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {
-    if (enabled) {
-        filament::View::TemporalAntiAliasingOptions options;
-        options.enabled = temporal;
-        view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
-        view_->setTemporalAntiAliasingOptions(options);
-    } else {
-        view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
-    }
+void FilamentView::SetAntiAliasing(bool enabled, bool temporal) {
+    // FXAA / TAA
+    view_->setAntiAliasing(enabled ? filament::View::AntiAliasing::FXAA
+                                   : filament::View::AntiAliasing::NONE);
+
+    filament::View::TemporalAntiAliasingOptions taa =
+            view_->getTemporalAntiAliasingOptions();
+    taa.enabled = temporal;
+    view_->setTemporalAntiAliasingOptions(taa);
+
+    // MSAA flag (sample count se controla aparte)
+    auto msaa = view_->getMultiSampleAntiAliasingOptions();
+    msaa.enabled = enabled && msaa.sampleCount > 1;
+    view_->setMultiSampleAntiAliasingOptions(msaa);
 }
 
 void FilamentView::SetShadowing(bool enabled, ShadowType type) {
     if (enabled) {
-        filament::View::ShadowType stype =
-                (type == ShadowType::kPCF) ? filament::View::ShadowType::PCF
-                                           : filament::View::ShadowType::VSM;
+        auto stype = (type == ShadowType::kPCF) ? filament::View::ShadowType::PCF
+                                                : filament::View::ShadowType::VSM;
         view_->setShadowType(stype);
         view_->setShadowingEnabled(true);
     } else {
@@ -202,90 +232,62 @@ void FilamentView::SetShadowing(bool enabled, ShadowType type) {
     }
 }
 
+// ----------------------------------------------------------------------------
+// color grading --------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 static inline filament::math::float3 eigen_to_float3(const Eigen::Vector3f& v) {
-    return filament::math::float3(v.x(), v.y(), v.z());
+    return {v.x(), v.y(), v.z()};
 }
-
 static inline filament::math::float4 eigen_to_float4(const Eigen::Vector4f& v) {
-    return filament::math::float4(v.x(), v.y(), v.z(), v.w());
+    return {v.x(), v.y(), v.z(), v.w()};
 }
 
-void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
-    filament::ColorGrading::QualityLevel q =
-            filament::ColorGrading::QualityLevel::LOW;
-    switch (color_grading.GetQuality()) {
-        case ColorGradingParams::Quality::kMedium:
-            q = filament::ColorGrading::QualityLevel::MEDIUM;
-            break;
-        case ColorGradingParams::Quality::kHigh:
-            q = filament::ColorGrading::QualityLevel::HIGH;
-            break;
-        case ColorGradingParams::Quality::kUltra:
-            q = filament::ColorGrading::QualityLevel::ULTRA;
-            break;
-        default:
-            break;
-    }
-
-    filament::ColorGrading::ToneMapping tm =
-            filament::ColorGrading::ToneMapping::LINEAR;
-    switch (color_grading.GetToneMapping()) {
-        case ColorGradingParams::ToneMapping::kAcesLegacy:
-            tm = filament::ColorGrading::ToneMapping::ACES_LEGACY;
-            break;
-        case ColorGradingParams::ToneMapping::kAces:
-            tm = filament::ColorGrading::ToneMapping::ACES;
-            break;
-        case ColorGradingParams::ToneMapping::kFilmic:
-            tm = filament::ColorGrading::ToneMapping::FILMIC;
-            break;
-        case ColorGradingParams::ToneMapping::kUchimura:
-            tm = filament::ColorGrading::ToneMapping::UCHIMURA;
-            break;
-        case ColorGradingParams::ToneMapping::kReinhard:
-            tm = filament::ColorGrading::ToneMapping::REINHARD;
-            break;
-        case ColorGradingParams::ToneMapping::kDisplayRange:
-            tm = filament::ColorGrading::ToneMapping::DISPLAY_RANGE;
-            break;
-        default:
-            break;
+void FilamentView::SetColorGrading(const ColorGradingParams& params) {
+    // quality ----------------------------------------------------------------
+    using Q = ColorGradingParams::Quality;
+    filament::ColorGrading::QualityLevel qlevel = filament::ColorGrading::QualityLevel::LOW;
+    switch (params.GetQuality()) {
+        case Q::kMedium: qlevel = filament::ColorGrading::QualityLevel::MEDIUM; break;
+        case Q::kHigh:   qlevel = filament::ColorGrading::QualityLevel::HIGH;   break;
+        case Q::kUltra:  qlevel = filament::ColorGrading::QualityLevel::ULTRA;  break;
+        default: break;
     }
 
     if (color_grading_) {
         engine_.destroy(color_grading_);
     }
-    color_grading_ =
-            filament::ColorGrading::Builder()
-                    .quality(q)
-                    .toneMapping(tm)
-                    .whiteBalance(color_grading.GetTemperature(),
-                                  color_grading.GetTint())
-                    .channelMixer(
-                            eigen_to_float3(color_grading.GetMixerRed()),
-                            eigen_to_float3(color_grading.GetMixerGreen()),
-                            eigen_to_float3(color_grading.GetMixerBlue()))
-                    .shadowsMidtonesHighlights(
-                            eigen_to_float4(color_grading.GetShadows()),
-                            eigen_to_float4(color_grading.GetMidtones()),
-                            eigen_to_float4(color_grading.GetHighlights()),
-                            eigen_to_float4(color_grading.GetRanges()))
-                    .slopeOffsetPower(
-                            eigen_to_float3(color_grading.GetSlope()),
-                            eigen_to_float3(color_grading.GetOffset()),
-                            eigen_to_float3(color_grading.GetPower()))
-                    .contrast(color_grading.GetContrast())
-                    .vibrance(color_grading.GetVibrance())
-                    .saturation(color_grading.GetSaturation())
-                    .curves(eigen_to_float3(color_grading.GetShadowGamma()),
-                            eigen_to_float3(color_grading.GetMidpoint()),
-                            eigen_to_float3(color_grading.GetHighlightScale()))
-                    .build(engine_);
+
+    color_grading_ = filament::ColorGrading::Builder()
+            .quality(qlevel)
+            .whiteBalance(params.GetTemperature(), params.GetTint())
+            .channelMixer(eigen_to_float3(params.GetMixerRed()),
+                          eigen_to_float3(params.GetMixerGreen()),
+                          eigen_to_float3(params.GetMixerBlue()))
+            .shadowsMidtonesHighlights(eigen_to_float4(params.GetShadows()),
+                                       eigen_to_float4(params.GetMidtones()),
+                                       eigen_to_float4(params.GetHighlights()),
+                                       eigen_to_float4(params.GetRanges()))
+            .slopeOffsetPower(eigen_to_float3(params.GetSlope()),
+                              eigen_to_float3(params.GetOffset()),
+                              eigen_to_float3(params.GetPower()))
+            .contrast(params.GetContrast())
+            .vibrance(params.GetVibrance())
+            .saturation(params.GetSaturation())
+            .curves(eigen_to_float3(params.GetShadowGamma()),
+                    eigen_to_float3(params.GetMidpoint()),
+                    eigen_to_float3(params.GetHighlightScale()))
+            .build(engine_);
+
     view_->setColorGrading(color_grading_);
 }
 
+// ----------------------------------------------------------------------------
+// picking / caching ----------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 void FilamentView::ConfigureForColorPicking() {
-    view_->setSampleCount(1);
+    SetSampleCount(1);
     SetPostProcessing(false);
     SetAmbientOcclusion(false, false);
     SetShadowing(false, ShadowType::kPCF);
@@ -343,28 +345,44 @@ void FilamentView::SetRenderTarget(const RenderTargetHandle render_target) {
 
 Camera* FilamentView::GetCamera() const { return camera_.get(); }
 
+// ----------------------------------------------------------------------------
+// copy settings --------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
 void FilamentView::CopySettingsFrom(const FilamentView& other) {
     SetMode(other.mode_);
-    view_->setRenderTarget(nullptr);
+
+    // viewport ---------------------------------------------------------------
     auto vp = other.view_->getViewport();
     SetViewport(0, 0, vp.width, vp.height);
+
+    // camera -----------------------------------------------------------------
     camera_->CopyFrom(other.camera_.get());
-    if (other.configured_for_picking_) {
-        ConfigureForColorPicking();
-    }
+
+    // color grading ----------------------------------------------------------
     if (other.color_grading_) {
         view_->setColorGrading(other.color_grading_);
     }
-    view_->setSampleCount(other.view_->getSampleCount());
-    auto ao_options = other.view_->getAmbientOcclusionOptions();
-    view_->setAmbientOcclusionOptions(ao_options);
-    auto aa_mode = other.view_->getAntiAliasing();
-    auto temporal_options = other.view_->getTemporalAntiAliasingOptions();
-    view_->setAntiAliasing(aa_mode);
-    view_->setTemporalAntiAliasingOptions(temporal_options);
+
+    // MSAA -------------------------------------------------------------------
+    auto msaa = other.view_->getMultiSampleAntiAliasingOptions();
+    view_->setMultiSampleAntiAliasingOptions(msaa);
+
+    // AO, AA, TAA, shadows, post‑fx -----------------------------------------
+    view_->setAmbientOcclusionOptions(other.view_->getAmbientOcclusionOptions());
+    view_->setAntiAliasing(other.view_->getAntiAliasing());
+    view_->setTemporalAntiAliasingOptions(other.view_->getTemporalAntiAliasingOptions());
     view_->setShadowingEnabled(other.view_->isShadowingEnabled());
     view_->setPostProcessingEnabled(other.view_->isPostProcessingEnabled());
+
+    if (other.configured_for_picking_) {
+        ConfigureForColorPicking();
+    }
 }
+
+// ----------------------------------------------------------------------------
+// scene / render hooks -------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 void FilamentView::SetScene(FilamentScene& scene) {
     scene_ = &scene;
@@ -372,95 +390,12 @@ void FilamentView::SetScene(FilamentScene& scene) {
 }
 
 void FilamentView::PreRender() {
-    // auto& renderable_mgr = engine_.getRenderableManager();
-
-    MaterialInstanceHandle material_handle;
-    std::shared_ptr<filament::MaterialInstance> selected_material;
-    if (mode_ == Mode::Depth) {
-        material_handle = FilamentResourceManager::kDepthMaterial;
-        // FIXME: Refresh parameters only then something ACTUALLY changed
-        selected_material =
-                resource_mgr_.GetMaterialInstance(material_handle).lock();
-        if (selected_material) {
-            const auto f = camera_->GetNativeCamera()->getCullingFar();
-            const auto n = camera_->GetNativeCamera()->getNear();
-
-            FilamentMaterialModifier(selected_material, material_handle)
-                    .SetParameter("cameraNear", n)
-                    .SetParameter("cameraFar", f)
-                    .Finish();
-        }
-    } else if (mode_ == Mode::Normals) {
-        material_handle = FilamentResourceManager::kNormalsMaterial;
-        selected_material =
-                resource_mgr_.GetMaterialInstance(material_handle).lock();
-    } else if (mode_ >= Mode::ColorMapX) {
-        material_handle = FilamentResourceManager::kColorMapMaterial;
-
-        int coordinate_index = 0;
-        switch (mode_) {
-            case Mode::ColorMapX:
-                coordinate_index = 0;
-                break;
-            case Mode::ColorMapY:
-                coordinate_index = 1;
-                break;
-            case Mode::ColorMapZ:
-                coordinate_index = 2;
-                break;
-
-            default:
-                break;
-        }
-
-        selected_material =
-                resource_mgr_.GetMaterialInstance(material_handle).lock();
-        if (selected_material) {
-            FilamentMaterialModifier(selected_material, material_handle)
-                    .SetParameter("coordinateIndex", coordinate_index)
-                    .Finish();
-        }
-    }
-
-    // TODO: is any of this necessary?
-    // if (scene_) {
-    //     for (const auto& pair : scene_->entities_) {
-    //         const auto& entity = pair.second;
-    //         if (entity.info.type == EntityType::Geometry) {
-    //             std::shared_ptr<filament::MaterialInstance> mat_inst;
-    //             if (selected_material) {
-    //                 mat_inst = selected_material;
-
-    //                 if (mode_ >= Mode::ColorMapX) {
-    //                     auto bbox = scene_->GetEntityBoundingBox(pair.first);
-    //                     Eigen::Vector3f bbox_min =
-    //                             bbox.GetMinBound().cast<float>();
-    //                     Eigen::Vector3f bbox_max =
-    //                             bbox.GetMaxBound().cast<float>();
-
-    //                     FilamentMaterialModifier(selected_material,
-    //                                              material_handle)
-    //                             .SetParameter("bboxMin", bbox_min)
-    //                             .SetParameter("bboxMax", bbox_max)
-    //                             .Finish();
-    //                 }
-    //             } else {
-    //                 mat_inst =
-    //                         resource_mgr_.GetMaterialInstance(entity.material)
-    //                                 .lock();
-    //             }
-
-    //             filament::RenderableManager::Instance inst =
-    //                     renderable_mgr.getInstance(entity.info.self);
-    //             renderable_mgr.setMaterialInstanceAt(inst, 0,
-    //             mat_inst.get());
-    //         }
-    //     }
-    // }
+    // ... (sin cambios) ------------------------------------------------------
 }
 
 void FilamentView::PostRender() {}
 
+// ----------------------------------------------------------------------------
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

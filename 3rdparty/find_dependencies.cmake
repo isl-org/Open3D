@@ -1312,13 +1312,21 @@ if(BUILD_GUI)
                 endif()
             endif()
         endif()
-        if (APPLE)
-            if (APPLE_AARCH64)
-                set(FILAMENT_RUNTIME_VER arm64)
+        if (UNIX AND NOT APPLE)
+            if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+                set(FILAMENT_RUNTIME_VER aarch64)
             else()
                 set(FILAMENT_RUNTIME_VER x86_64)
             endif()
-        endif()
+        elseif (APPLE)
+            if (APPLE_AARCH64)
+                set(FILAMENT_RUNTIME_VER arm64)
+           else()
+               set(FILAMENT_RUNTIME_VER x86_64)
+           endif()
+       else()  # WIN32
+           set(FILAMENT_RUNTIME_VER x86_64)
+       endif()
         open3d_import_3rdparty_library(3rdparty_filament
             HEADER
             INCLUDE_DIRS ${FILAMENT_ROOT}/include/
@@ -1673,7 +1681,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
                     endif()
                 endif()
             elseif(UNIX AND NOT APPLE)
-                # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
+                # On Ubuntu 22.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
                 # The temporary solution is to link the shared library libgfortran.so.
                 # If we distribute a Python wheel, the user's system will also need
                 # to have libgfortran.so preinstalled.
