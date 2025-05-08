@@ -1369,6 +1369,39 @@ core::Tensor PointCloud::ComputeMetrics(const PointCloud &pcd2,
                                 metrics, params);
 }
 
+bool PointCloud::IsGaussianSplat() const {
+    bool have_all_attrs = HasPointAttr("opacity") && HasPointAttr("rot") &&
+                          HasPointAttr("scale") && HasPointAttr("f_dc");
+    if (!have_all_attrs) {  // not 3DGS, no messages.
+        return false;
+    }
+    // Existing but invalid attributes cause errors.
+    auto num_points = GetPointPositions().GetLength();
+    core::AssertTensorShape(GetPointAttr("opacity"), {num_points, 1});
+    core::AssertTensorShape(GetPointAttr("rot"), {num_points, 4});
+    core::AssertTensorShape(GetPointAttr("scale"), {num_points, 3});
+    core::AssertTensorShape(GetPointAttr("f_dc"), {num_points, 3});
+    GaussianSplatGetSHOrder();  // Tests f_rest shape is valid.
+    return true;
+}
+
+int PointCloud::GaussianSplatGetSHOrder() const {
+    if (point_attr_.find("f_rest") == point_attr_.end()) {
+        return 0;
+    }
+    const core::Tensor &f_rest = GetPointAttr("f_rest");
+    auto num_points = GetPointPositions().GetLength();
+    core::AssertTensorShape(f_rest, {num_points, core::None, 3});
+    auto Nc = f_rest.GetShape(1);
+    auto degp1 = static_cast<int>(sqrt(Nc + 1));
+    if (degp1 * degp1 != Nc + 1) {
+        utility::LogError(
+                "f_rest has incomplete Spherical Harmonics coefficients "
+                "({}), expected 0, 3, 8 or 15.",
+                Nc);
+    }
+    return degp1 - 1;
+}
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

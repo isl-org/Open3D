@@ -43,6 +43,12 @@ void Triu(const Tensor& A, Tensor& output, const int diagonal) {
 #else
         utility::LogError("Unimplemented device.");
 #endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        TriuSYCL(A.Contiguous(), output, diagonal);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
     } else {
         TriuCPU(A.Contiguous(), output, diagonal);
     }
@@ -56,6 +62,12 @@ void Tril(const Tensor& A, Tensor& output, const int diagonal) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         TrilCUDA(A.Contiguous(), output, diagonal);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        TrilSYCL(A.Contiguous(), output, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif
@@ -73,6 +85,12 @@ void Triul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         TriulCUDA(A.Contiguous(), upper, lower, diagonal);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        TriulSYCL(A.Contiguous(), upper, lower, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif

@@ -1313,7 +1313,7 @@ uint32_t RaycastingScene::AddTriangles(const TriangleMesh& mesh) {
 }
 
 std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
-        const core::Tensor& rays, const int nthreads) {
+        const core::Tensor& rays, const int nthreads) const {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
                                                  impl_->tensor_device_);
     auto shape = rays.GetShape();
@@ -1723,7 +1723,6 @@ uint32_t RaycastingScene::INVALID_ID() { return RTC_INVALID_GEOMETRY_ID; }
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
-
 namespace fmt {
 template <>
 struct formatter<RTCError> {

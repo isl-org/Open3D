@@ -34,7 +34,7 @@ def test_slice_plane():
     assert slices.line.indices.shape == (9, 2)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_box(device):
     # Test with default parameters.
     box_default = o3d.t.geometry.TriangleMesh.create_box(device=device)
@@ -118,7 +118,7 @@ def test_create_box(device):
     assert box_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_sphere(device):
     # Test with custom parameters.
     sphere_custom = o3d.t.geometry.TriangleMesh.create_sphere(
@@ -180,7 +180,7 @@ def test_create_sphere(device):
     assert sphere_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_tetrahedron(device):
     # Test with custom parameters.
     tetrahedron_custom = o3d.t.geometry.TriangleMesh.create_tetrahedron(
@@ -204,7 +204,7 @@ def test_create_tetrahedron(device):
     assert tetrahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_octahedron(device):
     # Test with custom parameters.
     octahedron_custom = o3d.t.geometry.TriangleMesh.create_octahedron(
@@ -242,7 +242,7 @@ def test_create_octahedron(device):
     assert octahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_icosahedron(device):
     # Test with custom parameters.
     icosahedron_custom = o3d.t.geometry.TriangleMesh.create_icosahedron(
@@ -298,7 +298,7 @@ def test_create_icosahedron(device):
     assert icosahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_cylinder(device):
     # Test with custom parameters.
     cylinder_custom = o3d.t.geometry.TriangleMesh.create_cylinder(
@@ -360,7 +360,7 @@ def test_create_cylinder(device):
     assert cylinder_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_cone(device):
     # Test with custom parameters.
     cone_custom = o3d.t.geometry.TriangleMesh.create_cone(
@@ -404,7 +404,7 @@ def test_create_cone(device):
     assert cone_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_torus(device):
     # Test with custom parameters.
     torus_custom = o3d.t.geometry.TriangleMesh.create_torus(
@@ -482,7 +482,7 @@ def test_create_torus(device):
     assert torus_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_arrow(device):
     # Test with custom parameters.
     arrow_custom = o3d.t.geometry.TriangleMesh.create_arrow(
@@ -546,7 +546,7 @@ def test_create_arrow(device):
     assert arrow_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_create_mobius(device):
     # Test with custom parameters.
     mobius_custom = o3d.t.geometry.TriangleMesh.create_mobius(
@@ -818,7 +818,7 @@ def test_extrude_linear():
     assert ans.triangle.indices.shape == (8, 3)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_pickle(device):
     mesh = o3d.t.geometry.TriangleMesh.create_box().to(device)
     with tempfile.TemporaryDirectory() as temp_dir:

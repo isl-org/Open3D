@@ -1329,7 +1329,7 @@ protected:
 
     /// Underlying memory buffer for Tensor.
     std::shared_ptr<Blob> blob_ = nullptr;
-};  // namespace core
+};
 
 template <>
 inline Tensor::Tensor(const std::vector<bool>& init_vals,
@@ -1423,6 +1423,12 @@ inline Tensor operator*(T scalar_lhs, const Tensor& rhs) {
 template <typename T>
 inline Tensor operator/(T scalar_lhs, const Tensor& rhs) {
     return Tensor::Full({}, scalar_lhs, rhs.GetDtype(), rhs.GetDevice()) / rhs;
+}
+
+inline void AssertNotSYCL(const Tensor& tensor) {
+    if (tensor.GetDevice().IsSYCL()) {
+        utility::LogError("Not supported for SYCL device.");
+    }
 }
 
 }  // namespace core
