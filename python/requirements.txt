@@ -1,4 +1,4 @@
-numpy>=1.18.0,<2.0.0
+numpy>=1.18.0
 dash>=2.6.0
 werkzeug>=3.0.0
 flask>=3.0.0

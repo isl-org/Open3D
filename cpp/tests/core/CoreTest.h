@@ -15,6 +15,10 @@
 #include "tests/Tests.h"
 
 namespace open3d {
+namespace core {
+void PrintTo(const Device &device, std::ostream *os);
+void PrintTo(const Dtype &dtype, std::ostream *os);
+}  // namespace core
 namespace tests {
 
 class PermuteDtypesWithBool : public testing::TestWithParam<core::Dtype> {

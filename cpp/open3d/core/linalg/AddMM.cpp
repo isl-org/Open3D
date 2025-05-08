@@ -99,6 +99,13 @@ void AddMM(const Tensor& A,
 #else
         utility::LogError("Unimplemented device.");
 #endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        AddMMSYCL(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
+                  ldb, lda, ldc, dtype, device);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
     } else {
         AddMMCPU(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
                  ldb, lda, ldc, dtype);

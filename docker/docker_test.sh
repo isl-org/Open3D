@@ -41,6 +41,7 @@ OPTION:
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
+    cpu-static-release          : Ubuntu CPU static, release mode
     cpu-shared                  : Ubuntu CPU shared
     cpu-shared-release          : Ubuntu CPU shared, release mode
     cpu-shared-ml               : Ubuntu CPU shared with ML
@@ -120,10 +121,12 @@ cpp_python_linking_uninstall_test() {
     echo "[cpp_python_linking_uninstall_test()] NPROC=${NPROC:=$(nproc)}"
 
     # Config-dependent argument: gpu_run_args
+    docker_run="docker run --cpus ${NPROC}"
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
-        docker_run="docker run --cpus ${NPROC} --gpus all"
-    else
-        docker_run="docker run --cpus ${NPROC}"
+        docker_run="${docker_run} --gpus all"
+    fi
+    if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
+        docker_run="${docker_run} --device=/dev/dri"
     fi
 
     # Config-dependent argument: pytest_args
@@ -318,6 +321,11 @@ openblas-arm64-py312)
 # CPU CI
 cpu-static)
     cpu-static_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+cpu-static-release)
+    cpu-static-release_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;

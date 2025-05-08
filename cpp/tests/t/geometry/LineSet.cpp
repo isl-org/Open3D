@@ -16,12 +16,12 @@
 namespace open3d {
 namespace tests {
 
-class LineSetPermuteDevices : public PermuteDevices {};
+class LineSetPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(LineSet,
                          LineSetPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+                         testing::ValuesIn(LineSetPermuteDevices::TestCases()));
 
-class LineSetPermuteDevicePairs : public PermuteDevicePairs {};
+class LineSetPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         LineSet,
         LineSetPermuteDevicePairs,
@@ -277,6 +277,7 @@ TEST_P(LineSetPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 
 TEST_P(LineSetPermuteDevices, Transform) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::LineSet lineset(device);
     core::Tensor transformation = core::Tensor::Init<float>(
@@ -333,6 +334,7 @@ TEST_P(LineSetPermuteDevices, Scale) {
 
 TEST_P(LineSetPermuteDevices, Rotate) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::LineSet lineset(device);
     core::Tensor rotation = core::Tensor::Init<float>(

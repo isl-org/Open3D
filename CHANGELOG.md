@@ -1,4 +1,6 @@
 ## Main
+-   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
+-   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
 -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
@@ -45,6 +47,7 @@
 -   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
 -   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
+-   Add choice of voxel pooling mode when creating VoxelGrid from PointCloud (PR #6937)
 -   Support lowercase types when reading PCD files (PR #6930)
 -   Fix visualization/draw ICP example and add warnings (PR #6933)
 -   Unified cloud initializer pipeline for ICP (fixes segfault colored ICP) (PR #6942)
@@ -53,6 +56,8 @@
 -   Fix render to depth image on Apple Retina displays (PR #7001)
 -   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
 -   Add select_by_index method to Feature class (PR #7039)
+-   Add optional indices arg for fast computation of a small subset of FPFH features (PR #7118).
+
 
 ## 0.13
 
