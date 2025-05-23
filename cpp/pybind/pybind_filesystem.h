@@ -99,7 +99,9 @@ public:
         return true;
     }
 
-    PYBIND11_TYPE_CASTER(T, const_name("os.PathLike"));
+    PYBIND11_TYPE_CASTER(T,
+                         io_name("Union[os.PathLike, str, bytes]",
+                                 "pathlib.Path"));
 };
 
 template <>
