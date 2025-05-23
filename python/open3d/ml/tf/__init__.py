@@ -11,7 +11,7 @@ from tensorflow import __version__ as _tf_version
 from open3d import _build_config
 
 if not _build_config["Tensorflow_VERSION"]:
-    raise Exception('Open3D was not built with TensorFlow support!')
+    raise ImportError('Open3D was not built with TensorFlow support!')
 
 _o3d_tf_version = _build_config["Tensorflow_VERSION"].split('.')
 if _tf_version.split('.')[:2] != _o3d_tf_version[:2]:
