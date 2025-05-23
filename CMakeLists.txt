@@ -107,6 +107,7 @@ option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF
 option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
 option(USE_SYSTEM_JSONCPP         "Use system pre-installed jsoncpp"         OFF)
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
+option(USE_SYSTEM_MINIZIP         "Use system pre-installed minizip"         OFF)
 option(USE_SYSTEM_MSGPACK         "Use system pre-installed msgpack"         OFF)
 option(USE_SYSTEM_NANOFLANN       "Use system pre-installed nanoflann"       OFF)
 option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"         OFF)
@@ -119,6 +120,7 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(USE_SYSTEM_VTK             "Use system pre-installed VTK"             OFF)
 option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
+option(USE_SYSTEM_ZLIB            "Use system pre-installed ZLib"            OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
 else()
@@ -131,7 +133,6 @@ else()
 endif()
 
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
-option(WITH_MINIZIP               "Enable MiniZIP"                           OFF)
 
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)

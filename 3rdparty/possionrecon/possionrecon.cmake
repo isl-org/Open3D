@@ -11,6 +11,9 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
+    PATCH_COMMAND ${GIT_EXECUTABLE} init
+    COMMAND       ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace --verbose
+                  ${CMAKE_CURRENT_LIST_DIR}/eigen_rows.patch
 )
 
 ExternalProject_Get_Property(ext_poisson SOURCE_DIR)

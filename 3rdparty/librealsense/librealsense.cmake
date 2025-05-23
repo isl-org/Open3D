@@ -21,7 +21,7 @@ ExternalProject_Add(
     COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
         ${CMAKE_CURRENT_LIST_DIR}/fix-macos-arm64.patch
     CMAKE_ARGS
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.10
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF
         -DBUILD_EXAMPLES=OFF

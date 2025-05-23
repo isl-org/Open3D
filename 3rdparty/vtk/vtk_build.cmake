@@ -43,6 +43,7 @@ if(BUILD_VTK_FROM_SOURCE)
         UPDATE_COMMAND ""
         CMAKE_ARGS
             ${ExternalProject_CMAKE_ARGS_hidden}
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.10
             -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DVTK_GROUP_ENABLE_Imaging=NO

@@ -78,6 +78,7 @@ function(open3d_print_configuration_summary)
         VTK
         WebRTC
         ZeroMQ
+        ZLIB
     )
     foreach(dep IN LISTS 3RDPARTY_DEPENDENCIES)
         string(TOLOWER "${dep}" dep_lower)

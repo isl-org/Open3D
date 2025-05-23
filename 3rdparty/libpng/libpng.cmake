@@ -6,21 +6,25 @@ else()
     set(LIBPNG_LIB_NAME png16)
 endif()
 
+ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
+set(ZLIB_INSTALL_DIR ${INSTALL_DIR})
+unset(INSTALL_DIR)
+
 ExternalProject_Add(
     ext_libpng
     PREFIX libpng
-    URL https://github.com/glennrp/libpng/archive/refs/tags/v1.6.37.tar.gz
-    URL_HASH SHA256=ca74a0dace179a8422187671aee97dd3892b53e168627145271cad5b5ac81307
+    URL https://github.com/glennrp/libpng/archive/refs/tags/v1.6.47.tar.gz
+    URL_HASH SHA256=631a4c58ea6c10c81f160c4b21fa8495b715d251698ebc2552077e8450f30454
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/libpng"
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.10
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DPNG_SHARED=OFF
         -DPNG_EXECUTABLES=OFF
         -DPNG_TESTS=OFF
-        -DPNG_BUILD_ZLIB=ON # Prevent libpng from calling find_pacakge(zlib).
-        -DZLIB_INCLUDE_DIR=${ZLIB_INCLUDE_DIRS}
+        -DPNG_BUILD_ZLIB=OFF
+        -DZLIB_ROOT:PATH=${ZLIB_INSTALL_DIR}
         -DPNG_ARM_NEON=off # Must be lower case.
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS

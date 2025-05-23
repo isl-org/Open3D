@@ -38,7 +38,7 @@ ExternalProject_Add(
         # Does not seem to work. We have to directly set the flags on Windows.
         #-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         #-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.10
         -DBUILD_STATIC=ON
         -DBUILD_SHARED=OFF
         -DBUILD_TESTS=OFF
