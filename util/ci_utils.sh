@@ -76,7 +76,7 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "OFF" ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" 
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "ON" ]]; then
             python -m pip install -U "${TORCH_GLNX}.cxx11.abi" -i "$TORCH_CXX11_URL"
@@ -376,6 +376,8 @@ install_docs_dependencies() {
 # Build documentation
 # Usage: build_docs $DEVELOPER_BUILD
 build_docs() {
+    echo "Using cmake: $(command -v cmake)"
+    cmake --version
     NPROC=$(nproc)
     echo NPROC="$NPROC"
     mkdir -p build
