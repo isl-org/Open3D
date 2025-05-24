@@ -57,6 +57,7 @@
 -   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
 -   Add select_by_index method to Feature class (PR #7039)
 -   Add optional indices arg for fast computation of a small subset of FPFH features (PR #7118).
+-   Update the ZLib provider to not use a patched version, instead it uses the new separate minizip provider. The WITH_MINIZIP option is now USE_SYSTEM_MINIZIP. (PR #7022)
 
 
 ## 0.13

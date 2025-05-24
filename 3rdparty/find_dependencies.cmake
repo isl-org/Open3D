@@ -855,6 +855,25 @@ if (BUILD_LIBREALSENSE)
     endif()
 endif()
 
+if(USE_SYSTEM_ZLIB)
+    open3d_find_package_3rdparty_library(3rdparty_zlib
+        PACKAGE ZLIB
+        TARGETS ZLIB::ZLIB
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_zlib)
+endif()
+if(NOT USE_SYSTEM_ZLIB)
+    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
+    open3d_import_3rdparty_library(3rdparty_zlib
+        HIDDEN
+        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
+        LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
+        DEPENDS      ext_zlib
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_zlib)
+endif()
+
 # Curl
 # - Curl should be linked before PNG, otherwise it will have undefined symbols.
 # - openssl.cmake needs to be included before curl.cmake, for the
@@ -927,15 +946,6 @@ if(USE_SYSTEM_PNG)
     endif()
 endif()
 if(NOT USE_SYSTEM_PNG)
-    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
-    open3d_import_3rdparty_library(3rdparty_zlib
-        HIDDEN
-        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
-        LIB_DIR      ${ZLIB_LIB_DIR}
-        LIBRARIES    ${ZLIB_LIBRARIES}
-        DEPENDS      ext_zlib
-    )
-
     include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
     open3d_import_3rdparty_library(3rdparty_png
         INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
@@ -1138,11 +1148,23 @@ open3d_import_3rdparty_library(3rdparty_poisson
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_poisson)
 
 # Minizip
-if(WITH_MINIZIP)
-    open3d_pkg_config_3rdparty_library(3rdparty_minizip
-        SEARCH_ARGS minizip
+if(USE_SYSTEM_MINIZIP)
+    open3d_find_package_3rdparty_library(3rdparty_zlib
+        PACKAGE minizip
+        TARGETS MINIZIP::minizip
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+endif()
+if(NOT USE_SYSTEM_MINIZIP)
+    include(${Open3D_3RDPARTY_DIR}/zlib/minizip.cmake)
+    open3d_import_3rdparty_library(3rdparty_minizip
+        HIDDEN
+        INCLUDE_DIRS ${MINIZIP_INCLUDE_DIRS}
+        LIB_DIR      ${MINIZIP_LIB_DIR}
+        LIBRARIES    ${MINIZIP_LIBRARIES}
+        DEPENDS      ext_minizip
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_minizip)
 endif()
 
 # Googletest

@@ -20,14 +20,6 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
-#ifdef __APPLE__
-// In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no
-// need for specific 64 bit functions
-#define FOPEN_FUNC(filename, mode) fopen(filename, mode)
-#else
-#define FOPEN_FUNC(filename, mode) fopen64(filename, mode)
-#endif
-
 // If required in future, the `WRITEBUFFERSIZE` size can be increased to 16384.
 #define WRITEBUFFERSIZE (8192)
 
@@ -43,7 +35,7 @@ static int ExtractCurrentFile(unzFile uf,
     int err = UNZ_OK;
     FILE *fout = nullptr;
     void *buf;
-    uInt size_buf;
+    std::uint32_t size_buf;
 
     unz_file_info64 file_info;
     err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip,
@@ -97,14 +89,14 @@ static int ExtractCurrentFile(unzFile uf,
         if (err == UNZ_OK) {
             std::string file_path = extract_dir + "/" +
                                     static_cast<std::string>(write_filename);
-            fout = FOPEN_FUNC(file_path.c_str(), "wb");
+            fout = fopen(file_path.c_str(), "wb");
 
             // Some zipfile don't contain directory alone before file.
             if ((fout == nullptr) &&
                 filename_withoutpath == (char *)filename_inzip) {
                 utility::filesystem::MakeDirectoryHierarchy(extract_dir);
 
-                fout = FOPEN_FUNC(file_path.c_str(), "wb");
+                fout = fopen(file_path.c_str(), "wb");
             }
 
             if (fout == nullptr) {
@@ -179,7 +171,7 @@ void ExtractFromZIP(const std::string &file_path,
     // ExtractFromZIP supports password. Can be exposed if required in future.
     const std::string password = "";
 
-    for (uLong i = 0; i < gi.number_entry; ++i) {
+    for (std::uint64_t i = 0; i < gi.number_entry; ++i) {
         err = ExtractCurrentFile(uf, extract_dir, password);
         if (err != UNZ_OK) {
             // Close file, before throwing exception.
