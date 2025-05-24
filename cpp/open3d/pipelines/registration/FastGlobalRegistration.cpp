@@ -70,7 +70,7 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     int number_of_trial = ncorr * 100;
 
     if (ncorr <= 2) {
-        utility::LogError(
+        utility::LogWarning(
                 "Not enough correspondences for tuple test. At least 3 needed, "
                 "got {}.",
                 ncorr);
