@@ -69,6 +69,14 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
+    if (ncorr <= 2) {
+        utility::LogWarning(
+                "Not enough correspondences for tuple test. At least 3 needed, "
+                "got {}.",
+                ncorr);
+        return {};
+    }
+
     utility::random::UniformIntGenerator<int> rand_generator(0, ncorr - 1);
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
