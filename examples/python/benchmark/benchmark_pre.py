@@ -6,8 +6,9 @@
 # ----------------------------------------------------------------------------
 
 import os
-import sys
 import pickle
+import sys
+
 import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,7 +42,6 @@ if __name__ == "__main__":
     n_ply_files = len(dataset.paths)
     voxel_size = 0.05
 
-    alignment = []
     for s in range(n_ply_files):
         source = o3d.io.read_point_cloud(dataset.paths[s])
         source_down, source_fpfh = preprocess_point_cloud(source, voxel_size)

@@ -7,13 +7,14 @@
 
 import os
 import sys
+
 import numpy as np
 import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import *
+from open3d_example import CameraPose, draw_registration_result
 
 do_visualization = False
 
