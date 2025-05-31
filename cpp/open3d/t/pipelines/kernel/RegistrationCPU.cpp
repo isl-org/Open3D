@@ -129,6 +129,133 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
 }
 
 template <typename scalar_t, typename funct_t>
+static void ComputePoseSymmetricKernelCPU(
+        const scalar_t *source_points_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *source_normals_ptr,
+        const scalar_t *target_normals_ptr,
+        const int64_t *correspondence_indices,
+        const int n,
+        scalar_t *global_sum,
+        funct_t GetWeightFromRobustKernel) {
+    std::vector<scalar_t> A_1x29(29, 0.0);
+#ifdef _WIN32
+    std::vector<scalar_t> zeros_29(29, 0.0);
+    A_1x29 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), zeros_29,
+            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     ++workload_idx) {
+#else
+    scalar_t *A_reduction = A_1x29.data();
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
+    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
+#endif
+                    if (correspondence_indices[workload_idx] == -1) continue;
+                    int target_idx = 3 * correspondence_indices[workload_idx];
+                    int source_idx = 3 * workload_idx;
+
+                    scalar_t sx = source_points_ptr[source_idx];
+                    scalar_t sy = source_points_ptr[source_idx + 1];
+                    scalar_t sz = source_points_ptr[source_idx + 2];
+                    scalar_t tx = target_points_ptr[target_idx];
+                    scalar_t ty = target_points_ptr[target_idx + 1];
+                    scalar_t tz = target_points_ptr[target_idx + 2];
+                    scalar_t nsx = source_normals_ptr[source_idx];
+                    scalar_t nsy = source_normals_ptr[source_idx + 1];
+                    scalar_t nsz = source_normals_ptr[source_idx + 2];
+                    scalar_t ntx = target_normals_ptr[target_idx];
+                    scalar_t nty = target_normals_ptr[target_idx + 1];
+                    scalar_t ntz = target_normals_ptr[target_idx + 2];
+
+                    scalar_t dx = sx - tx;
+                    scalar_t dy = sy - ty;
+                    scalar_t dz = sz - tz;
+
+                    scalar_t r1 = dx * ntx + dy * nty + dz * ntz;
+                    scalar_t r2 = dx * nsx + dy * nsy + dz * nsz;
+
+                    scalar_t J1[6] = { -sz * nty + sy * ntz,
+                                        sz * ntx - sx * ntz,
+                                        -sy * ntx + sx * nty,
+                                        ntx,
+                                        nty,
+                                        ntz };
+                    scalar_t J2[6] = { -sz * nsy + sy * nsz,
+                                        sz * nsx - sx * nsz,
+                                        -sy * nsx + sx * nsy,
+                                        nsx,
+                                        nsy,
+                                        nsz };
+
+                    scalar_t w1 = GetWeightFromRobustKernel(r1);
+                    scalar_t w2 = GetWeightFromRobustKernel(r2);
+
+                    int i = 0;
+                    for (int j = 0; j < 6; ++j) {
+                        for (int k = 0; k <= j; ++k) {
+                            A_reduction[i] += J1[j] * w1 * J1[k] +
+                                              J2[j] * w2 * J2[k];
+                            ++i;
+                        }
+                        A_reduction[21 + j] +=
+                                J1[j] * w1 * r1 + J2[j] * w2 * r2;
+                    }
+                    A_reduction[27] += r1 * r1 + r2 * r2;
+                    A_reduction[28] += 1;
+                }
+#ifdef _WIN32
+                return A_reduction;
+            },
+            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
+                std::vector<scalar_t> result(29);
+                for (int j = 0; j < 29; ++j) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
+#endif
+
+    for (int i = 0; i < 29; ++i) {
+        global_sum[i] = A_1x29[i];
+    }
+}
+
+void ComputePoseSymmetricCPU(const core::Tensor &source_points,
+                              const core::Tensor &target_points,
+                              const core::Tensor &source_normals,
+                              const core::Tensor &target_normals,
+                              const core::Tensor &correspondence_indices,
+                              core::Tensor &pose,
+                              float &residual,
+                              int &inlier_count,
+                              const core::Dtype &dtype,
+                              const core::Device &device,
+                              const registration::RobustKernel &kernel) {
+    int n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
+                    ComputePoseSymmetricKernelCPU(
+                            source_points.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            source_normals.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(), n,
+                            global_sum_ptr, GetWeightFromRobustKernel);
+                });
+    });
+
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
+}
+
+template <typename scalar_t, typename funct_t>
 static void ComputePoseColoredICPKernelCPU(
         const scalar_t *source_points_ptr,
         const scalar_t *source_colors_ptr,
