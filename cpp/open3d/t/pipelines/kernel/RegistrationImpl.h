@@ -37,6 +37,18 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
                                 const core::Device &device,
                                 const registration::RobustKernel &kernel);
 
+void ComputePoseSymmetricCPU(const core::Tensor &source_points,
+                             const core::Tensor &target_points,
+                             const core::Tensor &source_normals,
+                             const core::Tensor &target_normals,
+                             const core::Tensor &correspondence_indices,
+                             core::Tensor &pose,
+                             float &residual,
+                             int &inlier_count,
+                             const core::Dtype &dtype,
+                             const core::Device &device,
+                             const registration::RobustKernel &kernel);
+
 void ComputePoseColoredICPCPU(const core::Tensor &source_points,
                               const core::Tensor &source_colors,
                               const core::Tensor &target_points,

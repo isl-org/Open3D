@@ -36,6 +36,14 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_positions,
                                      const core::Tensor &correspondence_indices,
                                      const registration::RobustKernel &kernel);
 
+/// \brief Computes pose for symmetric ICP registration.
+core::Tensor ComputePoseSymmetric(const core::Tensor &source_positions,
+                                  const core::Tensor &target_positions,
+                                  const core::Tensor &source_normals,
+                                  const core::Tensor &target_normals,
+                                  const core::Tensor &correspondence_indices,
+                                  const registration::RobustKernel &kernel);
+
 /// \brief Computes pose for colored-icp registration method.
 ///
 /// \param source_positions source point positions of Float32 or Float64 dtype.

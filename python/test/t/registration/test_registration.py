@@ -203,6 +203,44 @@ def test_icp_point_to_plane(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
+def test_icp_symmetric(device):
+
+    supported_dtypes = [o3c.float32, o3c.float64]
+    for dtype in supported_dtypes:
+        source_t, target_t = get_pcds(dtype, device)
+
+        source_legacy = source_t.to_legacy()
+        target_legacy = target_t.to_legacy()
+
+        max_correspondence_distance = 3.0
+
+        init_trans_legacy = np.array([[0.862, 0.011, -0.507, 0.5],
+                                      [-0.139, 0.967, -0.215, 0.7],
+                                      [0.487, 0.255, 0.835, -1.4],
+                                      [0.0, 0.0, 0.0, 1.0]])
+        init_trans_t = o3c.Tensor(init_trans_legacy,
+                                  dtype=o3c.float64,
+                                  device=device)
+
+        reg_sym_t = o3d.t.pipelines.registration.registration_symmetric_icp(
+            source_t, target_t, max_correspondence_distance, init_trans_t,
+            o3d.t.pipelines.registration.TransformationEstimationSymmetric(),
+            o3d.t.pipelines.registration.ICPConvergenceCriteria(
+                max_iteration=2))
+
+        reg_sym_legacy = o3d.pipelines.registration.registration_symmetric_icp(
+            source_legacy, target_legacy, max_correspondence_distance,
+            init_trans_legacy,
+            o3d.pipelines.registration.TransformationEstimationSymmetric(),
+            o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
+
+        np.testing.assert_allclose(reg_sym_t.inlier_rmse,
+                                   reg_sym_legacy.inlier_rmse, 0.001)
+        np.testing.assert_allclose(reg_sym_t.fitness,
+                                   reg_sym_legacy.fitness, 0.001)
+
+
+@pytest.mark.parametrize("device", list_devices())
 def test_get_information_matrix(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]

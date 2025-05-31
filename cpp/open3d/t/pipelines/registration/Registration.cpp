@@ -105,6 +105,17 @@ ICP(const geometry::PointCloud &source,
                          estimation, callback_after_iteration);
 }
 
+RegistrationResult SymmetricICP(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_correspondence_distance,
+        const core::Tensor &init_source_to_target,
+        const TransformationEstimationSymmetric &estimation,
+        const ICPConvergenceCriteria &criteria) {
+    return ICP(source, target, max_correspondence_distance,
+               init_source_to_target, estimation, criteria);
+}
+
 static void AssertInputMultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
