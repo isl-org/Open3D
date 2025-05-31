@@ -51,6 +51,35 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     return pose;
 }
 
+core::Tensor ComputePoseSymmetric(const core::Tensor &source_points,
+                                  const core::Tensor &target_points,
+                                  const core::Tensor &source_normals,
+                                  const core::Tensor &target_normals,
+                                  const core::Tensor &correspondence_indices,
+                                  const registration::RobustKernel &kernel) {
+    const core::Device device = source_points.GetDevice();
+    core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
+    float residual = 0;
+    int inlier_count = 0;
+
+    if (source_points.IsCPU()) {
+        ComputePoseSymmetricCPU(source_points.Contiguous(),
+                                target_points.Contiguous(),
+                                source_normals.Contiguous(),
+                                target_normals.Contiguous(),
+                                correspondence_indices.Contiguous(), pose,
+                                residual, inlier_count, source_points.GetDtype(),
+                                device, kernel);
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+
+    utility::LogDebug("Symmetric Transform: residual {}, inlier_count {}",
+                      residual, inlier_count);
+
+    return pose;
+}
+
 core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                                    const core::Tensor &source_colors,
                                    const core::Tensor &target_points,
