@@ -110,11 +110,10 @@ RUN python --version && pip --version
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Dependencies: cmake
-ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
+ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
- && tar -xf ${CMAKE_VERSION}.tar.gz \
- && cp -ar ${CMAKE_VERSION} ${HOME} \
+ && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
 # Dependencies: ccache
@@ -189,6 +188,9 @@ RUN mkdir -p /etc/apt/keyrings \
  && npm install -g yarn \
  && yarn --version
 
+
+# Use symlink install to save space in CI
+ENV CMAKE_INSTALL_MODE=${CI:+SYMLINK}
 # Build all
 RUN \
     if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
@@ -229,10 +231,10 @@ RUN \
           -DCMAKE_INSTALL_PREFIX=~/open3d_install \
           .. \
  && make VERBOSE=1 -j$(nproc) \
- && make install-pip-package -j$(nproc) \
+ && env CMAKE_INSTALL_MODE=COPY make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
- && if [[ "${PACKAGE}" = "ON" ]]; then make package; fi \
- && if [[ "${PACKAGE}" = "VIEWER" ]]; then make package-Open3DViewer-deb; fi \
+ && if [[ "${PACKAGE}" = "ON" ]]; then env CMAKE_INSTALL_MODE=COPY make package; fi \
+ && if [[ "${PACKAGE}" = "VIEWER" ]]; then env CMAKE_INSTALL_MODE=COPY make package-Open3DViewer-deb; fi \
  && if [[ "${CI:-}a" != "a" ]]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc librealsense; fi
 # If CI is not null or unset, remove all large build folders to save disk space
 
