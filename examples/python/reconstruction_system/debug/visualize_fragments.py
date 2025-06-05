@@ -9,15 +9,17 @@
 
 import argparse
 import json
+import os
 import sys
+
 import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
-from open3d_example import *
+from open3d_example import draw_geometries_flip, get_file_list, join
 
 sys.path.append(".")
-from initialize_config import *
+from initialize_config import initialize_config
 
 # test wide baseline matching
 if __name__ == "__main__":
