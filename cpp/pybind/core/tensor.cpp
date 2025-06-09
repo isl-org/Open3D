@@ -394,22 +394,22 @@ void pybind_core_tensor_definitions(py::module& m) {
             },
             "Create a 1D tensor with evenly spaced values in the given "
             "interval.",
-            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "stop"_a, py::pos_only(), py::kw_only(), "dtype"_a = py::none(),
+            "device"_a = py::none());
     tensor.def_static(
             "arange",
-            [](utility::optional<int64_t> start, int64_t stop,
-               utility::optional<int64_t> step, utility::optional<Dtype> dtype,
+            [](int64_t start, int64_t stop, utility::optional<int64_t> step,
+               utility::optional<Dtype> dtype,
                utility::optional<Device> device) {
                 return Tensor::Arange(
-                        start.has_value() ? start.value() : 0, stop,
-                        step.has_value() ? step.value() : 1,
+                        start, stop, step.has_value() ? step.value() : 1,
                         dtype.has_value() ? dtype.value() : core::Int64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create a 1D tensor with evenly spaced values in the given "
             "interval.",
-            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
-            "dtype"_a = py::none(), "device"_a = py::none());
+            "start"_a, "stop"_a, "step"_a = py::none(), "dtype"_a = py::none(),
+            py::kw_only(), "device"_a = py::none());
 
     // Tensor creation from arange for float.
     tensor.def_static(
@@ -423,22 +423,22 @@ void pybind_core_tensor_definitions(py::module& m) {
             },
             "Create a 1D tensor with evenly spaced values in the given "
             "interval.",
-            "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "stop"_a, py::pos_only(), py::kw_only(), "dtype"_a = py::none(),
+            "device"_a = py::none());
     tensor.def_static(
             "arange",
-            [](utility::optional<double> start, double stop,
-               utility::optional<double> step, utility::optional<Dtype> dtype,
+            [](double start, double stop, utility::optional<double> step,
+               utility::optional<Dtype> dtype,
                utility::optional<Device> device) {
                 return Tensor::Arange(
-                        start.has_value() ? start.value() : 0.0, stop,
-                        step.has_value() ? step.value() : 1.0,
+                        start, stop, step.has_value() ? step.value() : 1.0,
                         dtype.has_value() ? dtype.value() : core::Float64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create a 1D tensor with evenly spaced values in the given "
             "interval.",
-            "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
-            "dtype"_a = py::none(), "device"_a = py::none());
+            "start"_a, "stop"_a, "step"_a = py::none(), "dtype"_a = py::none(),
+            py::kw_only(), "device"_a = py::none());
 
     tensor.def(
             "append",

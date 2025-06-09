@@ -56,6 +56,20 @@ void Inverse(const Tensor &A, Tensor &output) {
 #else
         utility::LogError("Unimplemented device.");
 #endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        Tensor ipiv = Tensor::Empty({n}, core::Int64, device);
+        void *ipiv_data = ipiv.GetDataPtr();
+
+        // LAPACKE supports getri, A is in-place modified as output.
+        Tensor A_T = A.T().To(device, /*copy=*/true);
+        void *A_data = A_T.GetDataPtr();
+
+        InverseSYCL(A_data, ipiv_data, nullptr, n, dtype, device);
+        output = A_T.T();
+#else
+        utility::LogError("Unimplemented device.");
+#endif
     } else {
         Dtype ipiv_dtype;
         if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {

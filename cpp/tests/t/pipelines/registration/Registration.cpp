@@ -63,8 +63,8 @@ GetRegistrationTestData(core::Dtype& dtype, core::Device& device) {
     data::DemoICPPointClouds pcd_fragments;
     t::io::ReadPointCloud(pcd_fragments.GetPaths()[0], source_tpcd);
     t::io::ReadPointCloud(pcd_fragments.GetPaths()[1], target_tpcd);
-    source_tpcd = source_tpcd.To(device).VoxelDownSample(0.02);
-    target_tpcd = target_tpcd.To(device).VoxelDownSample(0.02);
+    source_tpcd = source_tpcd.To(device).VoxelDownSample(0.05);
+    target_tpcd = target_tpcd.To(device).VoxelDownSample(0.05);
 
     // Convert color to float values.
     for (auto& kv : source_tpcd.GetPointAttr()) {

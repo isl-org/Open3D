@@ -22,10 +22,10 @@
 namespace open3d {
 namespace tests {
 
-class IndexerPermuteDevices : public PermuteDevices {};
+class IndexerPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(Indexer,
                          IndexerPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+                         testing::ValuesIn(IndexerPermuteDevices::TestCases()));
 
 TEST_P(IndexerPermuteDevices, TensorRef) {
     core::Device device = GetParam();

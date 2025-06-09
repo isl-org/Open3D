@@ -49,7 +49,7 @@ def list_non_bool_dtypes():
 
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_concatenate(dtype, device):
 
     # 0-D cannot be concatenated.
@@ -200,7 +200,7 @@ def test_concatenate(dtype, device):
 
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_append(dtype, device):
     # Appending 0-D.
     # 0-D can only be appended along axis = null.

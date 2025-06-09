@@ -4,6 +4,7 @@
 // Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+#pragma once
 
 #include <vector>
 

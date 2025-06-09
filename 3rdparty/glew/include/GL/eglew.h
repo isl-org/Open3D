@@ -1,6 +1,6 @@
 /*
 ** The OpenGL Extension Wrangler Library
-** Copyright (C) 2008-2017, Nigel Stewart <nigels[]users sourceforge net>
+** Copyright (C) 2008-2019, Nigel Stewart <nigels[]users sourceforge net>
 ** Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
 ** Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
 ** Copyright (C) 2002, Lev Povalahev
@@ -106,7 +106,11 @@
 #include <KHR/khrplatform.h>
 #include <EGL/eglplatform.h>
 
-#include <GL/glew.h>
+#ifndef GLEW_INCLUDE
+#  include <GL/glew.h>
+#else
+#  include GLEW_INCLUDE
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,6 +155,7 @@ typedef khronos_utime_nanoseconds_t EGLuint64NV;
 typedef khronos_stime_nanoseconds_t EGLnsecsANDROID;
 
 struct EGLClientPixmapHI;
+struct AHardwareBuffer;
 
 #define EGL_DONT_CARE                     ((EGLint)-1)
 
@@ -476,12 +481,21 @@ typedef EGLBoolean  ( * PFNEGLWAITSYNCPROC) (EGLDisplay  dpy, EGLSync  sync, EGL
 
 #endif /* EGL_VERSION_1_5 */
 
+/* ------------------------ EGL_ANDROID_GLES_layers ------------------------ */
+
+#ifndef EGL_ANDROID_GLES_layers
+#define EGL_ANDROID_GLES_layers 1
+
+#define EGLEW_ANDROID_GLES_layers EGLEW_GET_VAR(__EGLEW_ANDROID_GLES_layers)
+
+#endif /* EGL_ANDROID_GLES_layers */
+
 /* ------------------------- EGL_ANDROID_blob_cache ------------------------ */
 
 #ifndef EGL_ANDROID_blob_cache
 #define EGL_ANDROID_blob_cache 1
 
-typedef void  ( * PFNEGLSETBLOBCACHEFUNCSANDROIDPROC) (EGLDisplay  dpy, EGLSetBlobFuncANDROID  set, EGLGetBlobFuncANDROID  get);
+typedef void ( * PFNEGLSETBLOBCACHEFUNCSANDROIDPROC) (EGLDisplay dpy, EGLSetBlobFuncANDROID set, EGLGetBlobFuncANDROID get);
 
 #define eglSetBlobCacheFuncsANDROID EGLEW_GET_FUN(__eglewSetBlobCacheFuncsANDROID)
 
@@ -499,7 +513,7 @@ typedef void  ( * PFNEGLSETBLOBCACHEFUNCSANDROIDPROC) (EGLDisplay  dpy, EGLSetBl
 #define EGL_NATIVE_BUFFER_USAGE_TEXTURE_BIT_ANDROID 0x00000004
 #define EGL_NATIVE_BUFFER_USAGE_ANDROID 0x3143
 
-typedef EGLClientBuffer  ( * PFNEGLCREATENATIVECLIENTBUFFERANDROIDPROC) (const EGLint * attrib_list);
+typedef EGLClientBuffer ( * PFNEGLCREATENATIVECLIENTBUFFERANDROIDPROC) (const EGLint* attrib_list);
 
 #define eglCreateNativeClientBufferANDROID EGLEW_GET_FUN(__eglewCreateNativeClientBufferANDROID)
 
@@ -529,6 +543,54 @@ typedef EGLClientBuffer  ( * PFNEGLCREATENATIVECLIENTBUFFERANDROIDPROC) (const E
 
 #endif /* EGL_ANDROID_front_buffer_auto_refresh */
 
+/* -------------------- EGL_ANDROID_get_frame_timestamps ------------------- */
+
+#ifndef EGL_ANDROID_get_frame_timestamps
+#define EGL_ANDROID_get_frame_timestamps 1
+
+#define EGL_TIMESTAMPS_ANDROID 0x3430
+#define EGL_COMPOSITE_DEADLINE_ANDROID 0x3431
+#define EGL_COMPOSITE_INTERVAL_ANDROID 0x3432
+#define EGL_COMPOSITE_TO_PRESENT_LATENCY_ANDROID 0x3433
+#define EGL_REQUESTED_PRESENT_TIME_ANDROID 0x3434
+#define EGL_RENDERING_COMPLETE_TIME_ANDROID 0x3435
+#define EGL_COMPOSITION_LATCH_TIME_ANDROID 0x3436
+#define EGL_FIRST_COMPOSITION_START_TIME_ANDROID 0x3437
+#define EGL_LAST_COMPOSITION_START_TIME_ANDROID 0x3438
+#define EGL_FIRST_COMPOSITION_GPU_FINISHED_TIME_ANDROID 0x3439
+#define EGL_DISPLAY_PRESENT_TIME_ANDROID 0x343A
+#define EGL_DEQUEUE_READY_TIME_ANDROID 0x343B
+#define EGL_READS_DONE_TIME_ANDROID 0x343C
+
+typedef EGLBoolean ( * PFNEGLGETCOMPOSITORTIMINGANDROIDPROC) (EGLDisplay dpy, EGLSurface surface, EGLint numTimestamps, const EGLint* names, EGLnsecsANDROID* values);
+typedef EGLBoolean ( * PFNEGLGETCOMPOSITORTIMINGSUPPORTEDANDROIDPROC) (EGLDisplay dpy, EGLSurface surface, EGLint name);
+typedef EGLBoolean ( * PFNEGLGETFRAMETIMESTAMPSUPPORTEDANDROIDPROC) (EGLDisplay dpy, EGLSurface surface, EGLint timestamp);
+typedef EGLBoolean ( * PFNEGLGETFRAMETIMESTAMPSANDROIDPROC) (EGLDisplay dpy, EGLSurface surface, EGLuint64KHR frameId, EGLint numTimestamps, const EGLint* timestamps, EGLnsecsANDROID* values);
+typedef EGLBoolean ( * PFNEGLGETNEXTFRAMEIDANDROIDPROC) (EGLDisplay dpy, EGLSurface surface, EGLuint64KHR* frameId);
+
+#define eglGetCompositorTimingANDROID EGLEW_GET_FUN(__eglewGetCompositorTimingANDROID)
+#define eglGetCompositorTimingSupportedANDROID EGLEW_GET_FUN(__eglewGetCompositorTimingSupportedANDROID)
+#define eglGetFrameTimestampSupportedANDROID EGLEW_GET_FUN(__eglewGetFrameTimestampSupportedANDROID)
+#define eglGetFrameTimestampsANDROID EGLEW_GET_FUN(__eglewGetFrameTimestampsANDROID)
+#define eglGetNextFrameIdANDROID EGLEW_GET_FUN(__eglewGetNextFrameIdANDROID)
+
+#define EGLEW_ANDROID_get_frame_timestamps EGLEW_GET_VAR(__EGLEW_ANDROID_get_frame_timestamps)
+
+#endif /* EGL_ANDROID_get_frame_timestamps */
+
+/* ------------------ EGL_ANDROID_get_native_client_buffer ----------------- */
+
+#ifndef EGL_ANDROID_get_native_client_buffer
+#define EGL_ANDROID_get_native_client_buffer 1
+
+typedef EGLClientBuffer ( * PFNEGLGETNATIVECLIENTBUFFERANDROIDPROC) (const struct AHardwareBuffer* buffer);
+
+#define eglGetNativeClientBufferANDROID EGLEW_GET_FUN(__eglewGetNativeClientBufferANDROID)
+
+#define EGLEW_ANDROID_get_native_client_buffer EGLEW_GET_VAR(__EGLEW_ANDROID_get_native_client_buffer)
+
+#endif /* EGL_ANDROID_get_native_client_buffer */
+
 /* -------------------- EGL_ANDROID_image_native_buffer -------------------- */
 
 #ifndef EGL_ANDROID_image_native_buffer
@@ -549,7 +611,7 @@ typedef EGLClientBuffer  ( * PFNEGLCREATENATIVECLIENTBUFFERANDROIDPROC) (const E
 #define EGL_SYNC_NATIVE_FENCE_FD_ANDROID 0x3145
 #define EGL_SYNC_NATIVE_FENCE_SIGNALED_ANDROID 0x3146
 
-typedef EGLint  ( * PFNEGLDUPNATIVEFENCEFDANDROIDPROC) (EGLDisplay  dpy, EGLSyncKHR  sync);
+typedef EGLint ( * PFNEGLDUPNATIVEFENCEFDANDROIDPROC) (EGLDisplay dpy, EGLSyncKHR sync);
 
 #define eglDupNativeFenceFDANDROID EGLEW_GET_FUN(__eglewDupNativeFenceFDANDROID)
 
@@ -562,7 +624,7 @@ typedef EGLint  ( * PFNEGLDUPNATIVEFENCEFDANDROIDPROC) (EGLDisplay  dpy, EGLSync
 #ifndef EGL_ANDROID_presentation_time
 #define EGL_ANDROID_presentation_time 1
 
-typedef EGLBoolean  ( * PFNEGLPRESENTATIONTIMEANDROIDPROC) (EGLDisplay  dpy, EGLSurface  surface, EGLnsecsANDROID  time);
+typedef EGLBoolean ( * PFNEGLPRESENTATIONTIMEANDROIDPROC) (EGLDisplay dpy, EGLSurface surface, EGLnsecsANDROID time);
 
 #define eglPresentationTimeANDROID EGLEW_GET_FUN(__eglewPresentationTimeANDROID)
 
@@ -609,7 +671,7 @@ typedef EGLBoolean  ( * PFNEGLPRESENTATIONTIMEANDROIDPROC) (EGLDisplay  dpy, EGL
 #ifndef EGL_ANGLE_query_surface_pointer
 #define EGL_ANGLE_query_surface_pointer 1
 
-typedef EGLBoolean  ( * PFNEGLQUERYSURFACEPOINTERANGLEPROC) (EGLDisplay  dpy, EGLSurface  surface, EGLint  attribute, void ** value);
+typedef EGLBoolean ( * PFNEGLQUERYSURFACEPOINTERANGLEPROC) (EGLDisplay dpy, EGLSurface surface, EGLint attribute, void** value);
 
 #define eglQuerySurfacePointerANGLE EGLEW_GET_FUN(__eglewQuerySurfacePointerANGLE)
 
@@ -639,6 +701,18 @@ typedef EGLBoolean  ( * PFNEGLQUERYSURFACEPOINTERANGLEPROC) (EGLDisplay  dpy, EG
 
 #endif /* EGL_ANGLE_window_fixed_size */
 
+/* -------------------------- EGL_ARM_image_format ------------------------- */
+
+#ifndef EGL_ARM_image_format
+#define EGL_ARM_image_format 1
+
+#define EGL_COLOR_COMPONENT_TYPE_UNSIGNED_INTEGER_ARM 0x3287
+#define EGL_COLOR_COMPONENT_TYPE_INTEGER_ARM 0x3288
+
+#define EGLEW_ARM_image_format EGLEW_GET_VAR(__EGLEW_ARM_image_format)
+
+#endif /* EGL_ARM_image_format */
+
 /* --------------------- EGL_ARM_implicit_external_sync -------------------- */
 
 #ifndef EGL_ARM_implicit_external_sync
@@ -661,6 +735,17 @@ typedef EGLBoolean  ( * PFNEGLQUERYSURFACEPOINTERANGLEPROC) (EGLDisplay  dpy, EG
 
 #endif /* EGL_ARM_pixmap_multisample_discard */
 
+/* ------------------------- EGL_EXT_bind_to_front ------------------------- */
+
+#ifndef EGL_EXT_bind_to_front
+#define EGL_EXT_bind_to_front 1
+
+#define EGL_FRONT_BUFFER_EXT 0x3464
+
+#define EGLEW_EXT_bind_to_front EGLEW_GET_VAR(__EGLEW_EXT_bind_to_front)
+
+#endif /* EGL_EXT_bind_to_front */
+
 /* --------------------------- EGL_EXT_buffer_age -------------------------- */
 
 #ifndef EGL_EXT_buffer_age
@@ -680,6 +765,52 @@ typedef EGLBoolean  ( * PFNEGLQUERYSURFACEPOINTERANGLEPROC) (EGLDisplay  dpy, EG
 #define EGLEW_EXT_client_extensions EGLEW_GET_VAR(__EGLEW_EXT_client_extensions)
 
 #endif /* EGL_EXT_client_extensions */
+
+/* -------------------------- EGL_EXT_client_sync -------------------------- */
+
+#ifndef EGL_EXT_client_sync
+#define EGL_EXT_client_sync 1
+
+#define EGL_SYNC_CLIENT_EXT 0x3364
+#define EGL_SYNC_CLIENT_SIGNAL_EXT 0x3365
+
+typedef EGLBoolean ( * PFNEGLCLIENTSIGNALSYNCEXTPROC) (EGLDisplay dpy, EGLSync sync, const EGLAttrib* attrib_list);
+
+#define eglClientSignalSyncEXT EGLEW_GET_FUN(__eglewClientSignalSyncEXT)
+
+#define EGLEW_EXT_client_sync EGLEW_GET_VAR(__EGLEW_EXT_client_sync)
+
+#endif /* EGL_EXT_client_sync */
+
+/* --------------------------- EGL_EXT_compositor -------------------------- */
+
+#ifndef EGL_EXT_compositor
+#define EGL_EXT_compositor 1
+
+#define EGL_PRIMARY_COMPOSITOR_CONTEXT_EXT 0x3460
+#define EGL_EXTERNAL_REF_ID_EXT 0x3461
+#define EGL_COMPOSITOR_DROP_NEWEST_FRAME_EXT 0x3462
+#define EGL_COMPOSITOR_KEEP_NEWEST_FRAME_EXT 0x3463
+
+typedef EGLBoolean ( * PFNEGLCOMPOSITORBINDTEXWINDOWEXTPROC) (EGLint external_win_id);
+typedef EGLBoolean ( * PFNEGLCOMPOSITORSETCONTEXTATTRIBUTESEXTPROC) (EGLint external_ref_id, const EGLint* context_attributes, EGLint num_entries);
+typedef EGLBoolean ( * PFNEGLCOMPOSITORSETCONTEXTLISTEXTPROC) (const EGLint* external_ref_ids, EGLint num_entries);
+typedef EGLBoolean ( * PFNEGLCOMPOSITORSETSIZEEXTPROC) (EGLint external_win_id, EGLint width, EGLint height);
+typedef EGLBoolean ( * PFNEGLCOMPOSITORSETWINDOWATTRIBUTESEXTPROC) (EGLint external_win_id, const EGLint* window_attributes, EGLint num_entries);
+typedef EGLBoolean ( * PFNEGLCOMPOSITORSETWINDOWLISTEXTPROC) (EGLint external_ref_id, const EGLint* external_win_ids, EGLint num_entries);
+typedef EGLBoolean ( * PFNEGLCOMPOSITORSWAPPOLICYEXTPROC) (EGLint external_win_id, EGLint policy);
+
+#define eglCompositorBindTexWindowEXT EGLEW_GET_FUN(__eglewCompositorBindTexWindowEXT)
+#define eglCompositorSetContextAttributesEXT EGLEW_GET_FUN(__eglewCompositorSetContextAttributesEXT)
+#define eglCompositorSetContextListEXT EGLEW_GET_FUN(__eglewCompositorSetContextListEXT)
+#define eglCompositorSetSizeEXT EGLEW_GET_FUN(__eglewCompositorSetSizeEXT)
+#define eglCompositorSetWindowAttributesEXT EGLEW_GET_FUN(__eglewCompositorSetWindowAttributesEXT)
+#define eglCompositorSetWindowListEXT EGLEW_GET_FUN(__eglewCompositorSetWindowListEXT)
+#define eglCompositorSwapPolicyEXT EGLEW_GET_FUN(__eglewCompositorSwapPolicyEXT)
+
+#define EGLEW_EXT_compositor EGLEW_GET_VAR(__EGLEW_EXT_compositor)
+
+#endif /* EGL_EXT_compositor */
 
 /* ------------------- EGL_EXT_create_context_robustness ------------------- */
 
@@ -713,6 +844,7 @@ typedef EGLBoolean  ( * PFNEGLQUERYSURFACEPOINTERANGLEPROC) (EGLDisplay  dpy, EG
 #define EGL_EXT_device_drm 1
 
 #define EGL_DRM_DEVICE_FILE_EXT 0x3233
+#define EGL_DRM_MASTER_FD_EXT 0x333C
 
 #define EGLEW_EXT_device_drm EGLEW_GET_VAR(__EGLEW_EXT_device_drm)
 
@@ -723,7 +855,7 @@ typedef EGLBoolean  ( * PFNEGLQUERYSURFACEPOINTERANGLEPROC) (EGLDisplay  dpy, EG
 #ifndef EGL_EXT_device_enumeration
 #define EGL_EXT_device_enumeration 1
 
-typedef EGLBoolean  ( * PFNEGLQUERYDEVICESEXTPROC) (EGLint  max_devices, EGLDeviceEXT * devices, EGLint * num_devices);
+typedef EGLBoolean ( * PFNEGLQUERYDEVICESEXTPROC) (EGLint max_devices, EGLDeviceEXT* devices, EGLint* num_devices);
 
 #define eglQueryDevicesEXT EGLEW_GET_FUN(__eglewQueryDevicesEXT)
 
@@ -750,9 +882,9 @@ typedef EGLBoolean  ( * PFNEGLQUERYDEVICESEXTPROC) (EGLint  max_devices, EGLDevi
 #define EGL_BAD_DEVICE_EXT 0x322B
 #define EGL_DEVICE_EXT 0x322C
 
-typedef EGLBoolean  ( * PFNEGLQUERYDEVICEATTRIBEXTPROC) (EGLDeviceEXT  device, EGLint  attribute, EGLAttrib * value);
-typedef const char * ( * PFNEGLQUERYDEVICESTRINGEXTPROC) (EGLDeviceEXT  device, EGLint  name);
-typedef EGLBoolean  ( * PFNEGLQUERYDISPLAYATTRIBEXTPROC) (EGLDisplay  dpy, EGLint  attribute, EGLAttrib * value);
+typedef EGLBoolean ( * PFNEGLQUERYDEVICEATTRIBEXTPROC) (EGLDeviceEXT device, EGLint attribute, EGLAttrib* value);
+typedef const char* ( * PFNEGLQUERYDEVICESTRINGEXTPROC) (EGLDeviceEXT device, EGLint name);
+typedef EGLBoolean ( * PFNEGLQUERYDISPLAYATTRIBEXTPROC) (EGLDisplay dpy, EGLint attribute, EGLAttrib* value);
 
 #define eglQueryDeviceAttribEXT EGLEW_GET_FUN(__eglewQueryDeviceAttribEXT)
 #define eglQueryDeviceStringEXT EGLEW_GET_FUN(__eglewQueryDeviceStringEXT)
@@ -783,6 +915,50 @@ typedef EGLBoolean  ( * PFNEGLQUERYDISPLAYATTRIBEXTPROC) (EGLDisplay  dpy, EGLin
 #define EGLEW_EXT_gl_colorspace_bt2020_pq EGLEW_GET_VAR(__EGLEW_EXT_gl_colorspace_bt2020_pq)
 
 #endif /* EGL_EXT_gl_colorspace_bt2020_pq */
+
+/* -------------------- EGL_EXT_gl_colorspace_display_p3 ------------------- */
+
+#ifndef EGL_EXT_gl_colorspace_display_p3
+#define EGL_EXT_gl_colorspace_display_p3 1
+
+#define EGL_GL_COLORSPACE_DISPLAY_P3_EXT 0x3363
+
+#define EGLEW_EXT_gl_colorspace_display_p3 EGLEW_GET_VAR(__EGLEW_EXT_gl_colorspace_display_p3)
+
+#endif /* EGL_EXT_gl_colorspace_display_p3 */
+
+/* ---------------- EGL_EXT_gl_colorspace_display_p3_linear ---------------- */
+
+#ifndef EGL_EXT_gl_colorspace_display_p3_linear
+#define EGL_EXT_gl_colorspace_display_p3_linear 1
+
+#define EGL_GL_COLORSPACE_DISPLAY_P3_LINEAR_EXT 0x3362
+
+#define EGLEW_EXT_gl_colorspace_display_p3_linear EGLEW_GET_VAR(__EGLEW_EXT_gl_colorspace_display_p3_linear)
+
+#endif /* EGL_EXT_gl_colorspace_display_p3_linear */
+
+/* -------------- EGL_EXT_gl_colorspace_display_p3_passthrough ------------- */
+
+#ifndef EGL_EXT_gl_colorspace_display_p3_passthrough
+#define EGL_EXT_gl_colorspace_display_p3_passthrough 1
+
+#define EGL_GL_COLORSPACE_DISPLAY_P3_PASSTHROUGH_EXT 0x3490
+
+#define EGLEW_EXT_gl_colorspace_display_p3_passthrough EGLEW_GET_VAR(__EGLEW_EXT_gl_colorspace_display_p3_passthrough)
+
+#endif /* EGL_EXT_gl_colorspace_display_p3_passthrough */
+
+/* ---------------------- EGL_EXT_gl_colorspace_scrgb ---------------------- */
+
+#ifndef EGL_EXT_gl_colorspace_scrgb
+#define EGL_EXT_gl_colorspace_scrgb 1
+
+#define EGL_GL_COLORSPACE_SCRGB_EXT 0x3351
+
+#define EGLEW_EXT_gl_colorspace_scrgb EGLEW_GET_VAR(__EGLEW_EXT_gl_colorspace_scrgb)
+
+#endif /* EGL_EXT_gl_colorspace_scrgb */
 
 /* ------------------- EGL_EXT_gl_colorspace_scrgb_linear ------------------ */
 
@@ -844,8 +1020,8 @@ typedef EGLBoolean  ( * PFNEGLQUERYDISPLAYATTRIBEXTPROC) (EGLDisplay  dpy, EGLin
 #define EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT 0x3449
 #define EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT 0x344A
 
-typedef EGLBoolean  ( * PFNEGLQUERYDMABUFFORMATSEXTPROC) (EGLDisplay  dpy, EGLint  max_formats, EGLint  *formats, EGLint  *num_formats);
-typedef EGLBoolean  ( * PFNEGLQUERYDMABUFMODIFIERSEXTPROC) (EGLDisplay  dpy, EGLint  format, EGLint  max_modifiers, EGLuint64KHR  *modifiers, EGLBoolean  *external_only, EGLint  *num_modifiers);
+typedef EGLBoolean ( * PFNEGLQUERYDMABUFFORMATSEXTPROC) (EGLDisplay dpy, EGLint max_formats, EGLint* formats, EGLint* num_formats);
+typedef EGLBoolean ( * PFNEGLQUERYDMABUFMODIFIERSEXTPROC) (EGLDisplay dpy, EGLint format, EGLint max_modifiers, EGLuint64KHR* modifiers, EGLBoolean* external_only, EGLint* num_modifiers);
 
 #define eglQueryDmaBufFormatsEXT EGLEW_GET_FUN(__eglewQueryDmaBufFormatsEXT)
 #define eglQueryDmaBufModifiersEXT EGLEW_GET_FUN(__eglewQueryDmaBufModifiersEXT)
@@ -853,6 +1029,31 @@ typedef EGLBoolean  ( * PFNEGLQUERYDMABUFMODIFIERSEXTPROC) (EGLDisplay  dpy, EGL
 #define EGLEW_EXT_image_dma_buf_import_modifiers EGLEW_GET_VAR(__EGLEW_EXT_image_dma_buf_import_modifiers)
 
 #endif /* EGL_EXT_image_dma_buf_import_modifiers */
+
+/* ---------------------- EGL_EXT_image_gl_colorspace ---------------------- */
+
+#ifndef EGL_EXT_image_gl_colorspace
+#define EGL_EXT_image_gl_colorspace 1
+
+#define EGL_GL_COLORSPACE 0x309D
+#define EGL_GL_COLORSPACE_DEFAULT_EXT 0x314D
+
+#define EGLEW_EXT_image_gl_colorspace EGLEW_GET_VAR(__EGLEW_EXT_image_gl_colorspace)
+
+#endif /* EGL_EXT_image_gl_colorspace */
+
+/* ------------------ EGL_EXT_image_implicit_sync_control ------------------ */
+
+#ifndef EGL_EXT_image_implicit_sync_control
+#define EGL_EXT_image_implicit_sync_control 1
+
+#define EGL_IMPORT_SYNC_TYPE_EXT 0x3470
+#define EGL_IMPORT_IMPLICIT_SYNC_EXT 0x3471
+#define EGL_IMPORT_EXPLICIT_SYNC_EXT 0x3472
+
+#define EGLEW_EXT_image_implicit_sync_control EGLEW_GET_VAR(__EGLEW_EXT_image_implicit_sync_control)
+
+#endif /* EGL_EXT_image_implicit_sync_control */
 
 /* ------------------------ EGL_EXT_multiview_window ----------------------- */
 
@@ -874,14 +1075,14 @@ typedef EGLBoolean  ( * PFNEGLQUERYDMABUFMODIFIERSEXTPROC) (EGLDisplay  dpy, EGL
 #define EGL_BAD_OUTPUT_PORT_EXT 0x322E
 #define EGL_SWAP_INTERVAL_EXT 0x322F
 
-typedef EGLBoolean  ( * PFNEGLGETOUTPUTLAYERSEXTPROC) (EGLDisplay  dpy, const EGLAttrib * attrib_list, EGLOutputLayerEXT * layers, EGLint  max_layers, EGLint * num_layers);
-typedef EGLBoolean  ( * PFNEGLGETOUTPUTPORTSEXTPROC) (EGLDisplay  dpy, const EGLAttrib * attrib_list, EGLOutputPortEXT * ports, EGLint  max_ports, EGLint * num_ports);
-typedef EGLBoolean  ( * PFNEGLOUTPUTLAYERATTRIBEXTPROC) (EGLDisplay  dpy, EGLOutputLayerEXT  layer, EGLint  attribute, EGLAttrib  value);
-typedef EGLBoolean  ( * PFNEGLOUTPUTPORTATTRIBEXTPROC) (EGLDisplay  dpy, EGLOutputPortEXT  port, EGLint  attribute, EGLAttrib  value);
-typedef EGLBoolean  ( * PFNEGLQUERYOUTPUTLAYERATTRIBEXTPROC) (EGLDisplay  dpy, EGLOutputLayerEXT  layer, EGLint  attribute, EGLAttrib * value);
-typedef const char * ( * PFNEGLQUERYOUTPUTLAYERSTRINGEXTPROC) (EGLDisplay  dpy, EGLOutputLayerEXT  layer, EGLint  name);
-typedef EGLBoolean  ( * PFNEGLQUERYOUTPUTPORTATTRIBEXTPROC) (EGLDisplay  dpy, EGLOutputPortEXT  port, EGLint  attribute, EGLAttrib * value);
-typedef const char * ( * PFNEGLQUERYOUTPUTPORTSTRINGEXTPROC) (EGLDisplay  dpy, EGLOutputPortEXT  port, EGLint  name);
+typedef EGLBoolean ( * PFNEGLGETOUTPUTLAYERSEXTPROC) (EGLDisplay dpy, const EGLAttrib* attrib_list, EGLOutputLayerEXT* layers, EGLint max_layers, EGLint* num_layers);
+typedef EGLBoolean ( * PFNEGLGETOUTPUTPORTSEXTPROC) (EGLDisplay dpy, const EGLAttrib* attrib_list, EGLOutputPortEXT* ports, EGLint max_ports, EGLint* num_ports);
+typedef EGLBoolean ( * PFNEGLOUTPUTLAYERATTRIBEXTPROC) (EGLDisplay dpy, EGLOutputLayerEXT layer, EGLint attribute, EGLAttrib value);
+typedef EGLBoolean ( * PFNEGLOUTPUTPORTATTRIBEXTPROC) (EGLDisplay dpy, EGLOutputPortEXT port, EGLint attribute, EGLAttrib value);
+typedef EGLBoolean ( * PFNEGLQUERYOUTPUTLAYERATTRIBEXTPROC) (EGLDisplay dpy, EGLOutputLayerEXT layer, EGLint attribute, EGLAttrib* value);
+typedef const char* ( * PFNEGLQUERYOUTPUTLAYERSTRINGEXTPROC) (EGLDisplay dpy, EGLOutputLayerEXT layer, EGLint name);
+typedef EGLBoolean ( * PFNEGLQUERYOUTPUTPORTATTRIBEXTPROC) (EGLDisplay dpy, EGLOutputPortEXT port, EGLint attribute, EGLAttrib* value);
+typedef const char* ( * PFNEGLQUERYOUTPUTPORTSTRINGEXTPROC) (EGLDisplay dpy, EGLOutputPortEXT port, EGLint name);
 
 #define eglGetOutputLayersEXT EGLEW_GET_FUN(__eglewGetOutputLayersEXT)
 #define eglGetOutputPortsEXT EGLEW_GET_FUN(__eglewGetOutputPortsEXT)
@@ -939,9 +1140,9 @@ typedef const char * ( * PFNEGLQUERYOUTPUTPORTSTRINGEXTPROC) (EGLDisplay  dpy, E
 #ifndef EGL_EXT_platform_base
 #define EGL_EXT_platform_base 1
 
-typedef EGLSurface  ( * PFNEGLCREATEPLATFORMPIXMAPSURFACEEXTPROC) (EGLDisplay  dpy, EGLConfig  config, void * native_pixmap, const EGLint * attrib_list);
-typedef EGLSurface  ( * PFNEGLCREATEPLATFORMWINDOWSURFACEEXTPROC) (EGLDisplay  dpy, EGLConfig  config, void * native_window, const EGLint * attrib_list);
-typedef EGLDisplay  ( * PFNEGLGETPLATFORMDISPLAYEXTPROC) (EGLenum  platform, void * native_display, const EGLint * attrib_list);
+typedef EGLSurface ( * PFNEGLCREATEPLATFORMPIXMAPSURFACEEXTPROC) (EGLDisplay dpy, EGLConfig config, void* native_pixmap, const EGLint* attrib_list);
+typedef EGLSurface ( * PFNEGLCREATEPLATFORMWINDOWSURFACEEXTPROC) (EGLDisplay dpy, EGLConfig config, void* native_window, const EGLint* attrib_list);
+typedef EGLDisplay ( * PFNEGLGETPLATFORMDISPLAYEXTPROC) (EGLenum platform, void* native_display, const EGLint* attrib_list);
 
 #define eglCreatePlatformPixmapSurfaceEXT EGLEW_GET_FUN(__eglewCreatePlatformPixmapSurfaceEXT)
 #define eglCreatePlatformWindowSurfaceEXT EGLEW_GET_FUN(__eglewCreatePlatformWindowSurfaceEXT)
@@ -1012,13 +1213,25 @@ typedef EGLDisplay  ( * PFNEGLGETPLATFORMDISPLAYEXTPROC) (EGLenum  platform, voi
 #ifndef EGL_EXT_stream_consumer_egloutput
 #define EGL_EXT_stream_consumer_egloutput 1
 
-typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMEROUTPUTEXTPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLOutputLayerEXT  layer);
+typedef EGLBoolean ( * PFNEGLSTREAMCONSUMEROUTPUTEXTPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLOutputLayerEXT layer);
 
 #define eglStreamConsumerOutputEXT EGLEW_GET_FUN(__eglewStreamConsumerOutputEXT)
 
 #define EGLEW_EXT_stream_consumer_egloutput EGLEW_GET_VAR(__EGLEW_EXT_stream_consumer_egloutput)
 
 #endif /* EGL_EXT_stream_consumer_egloutput */
+
+/* ------------------- EGL_EXT_surface_CTA861_3_metadata ------------------- */
+
+#ifndef EGL_EXT_surface_CTA861_3_metadata
+#define EGL_EXT_surface_CTA861_3_metadata 1
+
+#define EGL_CTA861_3_MAX_CONTENT_LIGHT_LEVEL_EXT 0x3360
+#define EGL_CTA861_3_MAX_FRAME_AVERAGE_LEVEL_EXT 0x3361
+
+#define EGLEW_EXT_surface_CTA861_3_metadata EGLEW_GET_VAR(__EGLEW_EXT_surface_CTA861_3_metadata)
+
+#endif /* EGL_EXT_surface_CTA861_3_metadata */
 
 /* ------------------- EGL_EXT_surface_SMPTE2086_metadata ------------------ */
 
@@ -1035,6 +1248,7 @@ typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMEROUTPUTEXTPROC) (EGLDisplay  dpy, EGL
 #define EGL_SMPTE2086_WHITE_POINT_Y_EXT 0x3348
 #define EGL_SMPTE2086_MAX_LUMINANCE_EXT 0x3349
 #define EGL_SMPTE2086_MIN_LUMINANCE_EXT 0x334A
+#define EGL_METADATA_SCALING_EXT 50000
 
 #define EGLEW_EXT_surface_SMPTE2086_metadata EGLEW_GET_VAR(__EGLEW_EXT_surface_SMPTE2086_metadata)
 
@@ -1045,13 +1259,26 @@ typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMEROUTPUTEXTPROC) (EGLDisplay  dpy, EGL
 #ifndef EGL_EXT_swap_buffers_with_damage
 #define EGL_EXT_swap_buffers_with_damage 1
 
-typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC) (EGLDisplay  dpy, EGLSurface  surface, EGLint * rects, EGLint  n_rects);
+typedef EGLBoolean ( * PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC) (EGLDisplay dpy, EGLSurface surface, const EGLint* rects, EGLint n_rects);
 
 #define eglSwapBuffersWithDamageEXT EGLEW_GET_FUN(__eglewSwapBuffersWithDamageEXT)
 
 #define EGLEW_EXT_swap_buffers_with_damage EGLEW_GET_VAR(__EGLEW_EXT_swap_buffers_with_damage)
 
 #endif /* EGL_EXT_swap_buffers_with_damage */
+
+/* --------------------------- EGL_EXT_sync_reuse -------------------------- */
+
+#ifndef EGL_EXT_sync_reuse
+#define EGL_EXT_sync_reuse 1
+
+typedef EGLBoolean ( * PFNEGLUNSIGNALSYNCEXTPROC) (EGLDisplay dpy, EGLSync sync, const EGLAttrib* attrib_list);
+
+#define eglUnsignalSyncEXT EGLEW_GET_FUN(__eglewUnsignalSyncEXT)
+
+#define EGLEW_EXT_sync_reuse EGLEW_GET_VAR(__EGLEW_EXT_sync_reuse)
+
+#endif /* EGL_EXT_sync_reuse */
 
 /* -------------------------- EGL_EXT_yuv_surface -------------------------- */
 
@@ -1095,7 +1322,7 @@ typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC) (EGLDisplay  dpy, EG
 
 #define EGL_CLIENT_PIXMAP_POINTER_HI 0x8F74
 
-typedef EGLSurface  ( * PFNEGLCREATEPIXMAPSURFACEHIPROC) (EGLDisplay  dpy, EGLConfig  config, struct EGLClientPixmapHI * pixmap);
+typedef EGLSurface ( * PFNEGLCREATEPIXMAPSURFACEHIPROC) (EGLDisplay dpy, EGLConfig config, struct EGLClientPixmapHI* pixmap);
 
 #define eglCreatePixmapSurfaceHI EGLEW_GET_FUN(__eglewCreatePixmapSurfaceHI)
 
@@ -1165,7 +1392,7 @@ typedef EGLSurface  ( * PFNEGLCREATEPIXMAPSURFACEHIPROC) (EGLDisplay  dpy, EGLCo
 #define EGL_SYNC_CL_EVENT_KHR 0x30FE
 #define EGL_SYNC_CL_EVENT_COMPLETE_KHR 0x30FF
 
-typedef EGLSyncKHR  ( * PFNEGLCREATESYNC64KHRPROC) (EGLDisplay  dpy, EGLenum  type, const EGLAttribKHR * attrib_list);
+typedef EGLSyncKHR ( * PFNEGLCREATESYNC64KHRPROC) (EGLDisplay dpy, EGLenum type, const EGLAttribKHR* attrib_list);
 
 #define eglCreateSync64KHR EGLEW_GET_FUN(__eglewCreateSync64KHR)
 
@@ -1261,9 +1488,9 @@ typedef EGLSyncKHR  ( * PFNEGLCREATESYNC64KHRPROC) (EGLDisplay  dpy, EGLenum  ty
 #define EGL_DEBUG_MSG_WARN_KHR 0x33BB
 #define EGL_DEBUG_MSG_INFO_KHR 0x33BC
 
-typedef EGLint  ( * PFNEGLDEBUGMESSAGECONTROLKHRPROC) (EGLDEBUGPROCKHR  callback, const EGLAttrib * attrib_list);
-typedef EGLint  ( * PFNEGLLABELOBJECTKHRPROC) (EGLDisplay  display, EGLenum  objectType, EGLObjectKHR  object, EGLLabelKHR  label);
-typedef EGLBoolean  ( * PFNEGLQUERYDEBUGKHRPROC) (EGLint  attribute, EGLAttrib * value);
+typedef EGLint ( * PFNEGLDEBUGMESSAGECONTROLKHRPROC) (EGLDEBUGPROCKHR callback, const EGLAttrib* attrib_list);
+typedef EGLint ( * PFNEGLLABELOBJECTKHRPROC) (EGLDisplay display, EGLenum objectType, EGLObjectKHR object, EGLLabelKHR label);
+typedef EGLBoolean ( * PFNEGLQUERYDEBUGKHRPROC) (EGLint attribute, EGLAttrib* value);
 
 #define eglDebugMessageControlKHR EGLEW_GET_FUN(__eglewDebugMessageControlKHR)
 #define eglLabelObjectKHR EGLEW_GET_FUN(__eglewLabelObjectKHR)
@@ -1272,6 +1499,21 @@ typedef EGLBoolean  ( * PFNEGLQUERYDEBUGKHRPROC) (EGLint  attribute, EGLAttrib *
 #define EGLEW_KHR_debug EGLEW_GET_VAR(__EGLEW_KHR_debug)
 
 #endif /* EGL_KHR_debug */
+
+/* ----------------------- EGL_KHR_display_reference ----------------------- */
+
+#ifndef EGL_KHR_display_reference
+#define EGL_KHR_display_reference 1
+
+#define EGL_TRACK_REFERENCES_KHR 0x3352
+
+typedef EGLBoolean ( * PFNEGLQUERYDISPLAYATTRIBKHRPROC) (EGLDisplay dpy, EGLint name, EGLAttrib* value);
+
+#define eglQueryDisplayAttribKHR EGLEW_GET_FUN(__eglewQueryDisplayAttribKHR)
+
+#define EGLEW_KHR_display_reference EGLEW_GET_VAR(__EGLEW_KHR_display_reference)
+
+#endif /* EGL_KHR_display_reference */
 
 /* --------------------------- EGL_KHR_fence_sync -------------------------- */
 
@@ -1366,8 +1608,8 @@ typedef EGLBoolean  ( * PFNEGLQUERYDEBUGKHRPROC) (EGLint  attribute, EGLAttrib *
 
 #define EGL_NATIVE_PIXMAP_KHR 0x30B0
 
-typedef EGLImageKHR  ( * PFNEGLCREATEIMAGEKHRPROC) (EGLDisplay  dpy, EGLContext  ctx, EGLenum  target, EGLClientBuffer  buffer, const EGLint * attrib_list);
-typedef EGLBoolean  ( * PFNEGLDESTROYIMAGEKHRPROC) (EGLDisplay  dpy, EGLImageKHR  image);
+typedef EGLImageKHR ( * PFNEGLCREATEIMAGEKHRPROC) (EGLDisplay dpy, EGLContext ctx, EGLenum target, EGLClientBuffer buffer, const EGLint* attrib_list);
+typedef EGLBoolean ( * PFNEGLDESTROYIMAGEKHRPROC) (EGLDisplay dpy, EGLImageKHR image);
 
 #define eglCreateImageKHR EGLEW_GET_FUN(__eglewCreateImageKHR)
 #define eglDestroyImageKHR EGLEW_GET_FUN(__eglewDestroyImageKHR)
@@ -1425,8 +1667,8 @@ typedef EGLBoolean  ( * PFNEGLDESTROYIMAGEKHRPROC) (EGLDisplay  dpy, EGLImageKHR
 #define EGL_LOWER_LEFT_KHR 0x30CE
 #define EGL_UPPER_LEFT_KHR 0x30CF
 
-typedef EGLBoolean  ( * PFNEGLLOCKSURFACEKHRPROC) (EGLDisplay  dpy, EGLSurface  surface, const EGLint * attrib_list);
-typedef EGLBoolean  ( * PFNEGLUNLOCKSURFACEKHRPROC) (EGLDisplay  dpy, EGLSurface  surface);
+typedef EGLBoolean ( * PFNEGLLOCKSURFACEKHRPROC) (EGLDisplay dpy, EGLSurface surface, const EGLint* attrib_list);
+typedef EGLBoolean ( * PFNEGLUNLOCKSURFACEKHRPROC) (EGLDisplay dpy, EGLSurface surface);
 
 #define eglLockSurfaceKHR EGLEW_GET_FUN(__eglewLockSurfaceKHR)
 #define eglUnlockSurfaceKHR EGLEW_GET_FUN(__eglewUnlockSurfaceKHR)
@@ -1509,7 +1751,7 @@ typedef EGLBoolean  ( * PFNEGLQUERYSURFACE64KHRPROC) (EGLDisplay  dpy, EGLSurfac
 
 #define EGL_BUFFER_AGE_KHR 0x313D
 
-typedef EGLBoolean  ( * PFNEGLSETDAMAGEREGIONKHRPROC) (EGLDisplay  dpy, EGLSurface  surface, EGLint * rects, EGLint  n_rects);
+typedef EGLBoolean ( * PFNEGLSETDAMAGEREGIONKHRPROC) (EGLDisplay dpy, EGLSurface surface, EGLint* rects, EGLint n_rects);
 
 #define eglSetDamageRegionKHR EGLEW_GET_FUN(__eglewSetDamageRegionKHR)
 
@@ -1577,11 +1819,11 @@ typedef EGLBoolean  ( * PFNEGLSETDAMAGEREGIONKHRPROC) (EGLDisplay  dpy, EGLSurfa
 #define EGL_SYNC_REUSABLE_KHR 0x30FA
 #define EGL_FOREVER_KHR 0xFFFFFFFFFFFFFFFF
 
-typedef EGLint  ( * PFNEGLCLIENTWAITSYNCKHRPROC) (EGLDisplay  dpy, EGLSyncKHR  sync, EGLint  flags, EGLTimeKHR  timeout);
-typedef EGLSyncKHR  ( * PFNEGLCREATESYNCKHRPROC) (EGLDisplay  dpy, EGLenum  type, const EGLint * attrib_list);
-typedef EGLBoolean  ( * PFNEGLDESTROYSYNCKHRPROC) (EGLDisplay  dpy, EGLSyncKHR  sync);
-typedef EGLBoolean  ( * PFNEGLGETSYNCATTRIBKHRPROC) (EGLDisplay  dpy, EGLSyncKHR  sync, EGLint  attribute, EGLint * value);
-typedef EGLBoolean  ( * PFNEGLSIGNALSYNCKHRPROC) (EGLDisplay  dpy, EGLSyncKHR  sync, EGLenum  mode);
+typedef EGLint ( * PFNEGLCLIENTWAITSYNCKHRPROC) (EGLDisplay dpy, EGLSyncKHR sync, EGLint flags, EGLTimeKHR timeout);
+typedef EGLSyncKHR ( * PFNEGLCREATESYNCKHRPROC) (EGLDisplay dpy, EGLenum type, const EGLint* attrib_list);
+typedef EGLBoolean ( * PFNEGLDESTROYSYNCKHRPROC) (EGLDisplay dpy, EGLSyncKHR sync);
+typedef EGLBoolean ( * PFNEGLGETSYNCATTRIBKHRPROC) (EGLDisplay dpy, EGLSyncKHR sync, EGLint attribute, EGLint* value);
+typedef EGLBoolean ( * PFNEGLSIGNALSYNCKHRPROC) (EGLDisplay dpy, EGLSyncKHR sync, EGLenum mode);
 
 #define eglClientWaitSyncKHR EGLEW_GET_FUN(__eglewClientWaitSyncKHR)
 #define eglCreateSyncKHR EGLEW_GET_FUN(__eglewCreateSyncKHR)
@@ -1611,11 +1853,11 @@ typedef EGLBoolean  ( * PFNEGLSIGNALSYNCKHRPROC) (EGLDisplay  dpy, EGLSyncKHR  s
 #define EGL_BAD_STREAM_KHR 0x321B
 #define EGL_BAD_STATE_KHR 0x321C
 
-typedef EGLStreamKHR  ( * PFNEGLCREATESTREAMKHRPROC) (EGLDisplay  dpy, const EGLint * attrib_list);
-typedef EGLBoolean  ( * PFNEGLDESTROYSTREAMKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream);
-typedef EGLBoolean  ( * PFNEGLQUERYSTREAMKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  attribute, EGLint * value);
-typedef EGLBoolean  ( * PFNEGLQUERYSTREAMU64KHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  attribute, EGLuint64KHR * value);
-typedef EGLBoolean  ( * PFNEGLSTREAMATTRIBKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  attribute, EGLint  value);
+typedef EGLStreamKHR ( * PFNEGLCREATESTREAMKHRPROC) (EGLDisplay dpy, const EGLint* attrib_list);
+typedef EGLBoolean ( * PFNEGLDESTROYSTREAMKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream);
+typedef EGLBoolean ( * PFNEGLQUERYSTREAMKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLenum attribute, EGLint* value);
+typedef EGLBoolean ( * PFNEGLQUERYSTREAMU64KHRPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLenum attribute, EGLuint64KHR* value);
+typedef EGLBoolean ( * PFNEGLSTREAMATTRIBKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLenum attribute, EGLint value);
 
 #define eglCreateStreamKHR EGLEW_GET_FUN(__eglewCreateStreamKHR)
 #define eglDestroyStreamKHR EGLEW_GET_FUN(__eglewDestroyStreamKHR)
@@ -1637,11 +1879,11 @@ typedef EGLBoolean  ( * PFNEGLSTREAMATTRIBKHRPROC) (EGLDisplay  dpy, EGLStreamKH
 #define EGL_STREAM_STATE_CREATED_KHR 0x3215
 #define EGL_STREAM_STATE_CONNECTING_KHR 0x3216
 
-typedef EGLStreamKHR  ( * PFNEGLCREATESTREAMATTRIBKHRPROC) (EGLDisplay  dpy, const EGLAttrib * attrib_list);
-typedef EGLBoolean  ( * PFNEGLQUERYSTREAMATTRIBKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  attribute, EGLAttrib * value);
-typedef EGLBoolean  ( * PFNEGLSETSTREAMATTRIBKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  attribute, EGLAttrib  value);
-typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERACQUIREATTRIBKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, const EGLAttrib * attrib_list);
-typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERRELEASEATTRIBKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, const EGLAttrib * attrib_list);
+typedef EGLStreamKHR ( * PFNEGLCREATESTREAMATTRIBKHRPROC) (EGLDisplay dpy, const EGLAttrib* attrib_list);
+typedef EGLBoolean ( * PFNEGLQUERYSTREAMATTRIBKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLenum attribute, EGLAttrib* value);
+typedef EGLBoolean ( * PFNEGLSETSTREAMATTRIBKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLenum attribute, EGLAttrib value);
+typedef EGLBoolean ( * PFNEGLSTREAMCONSUMERACQUIREATTRIBKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream, const EGLAttrib* attrib_list);
+typedef EGLBoolean ( * PFNEGLSTREAMCONSUMERRELEASEATTRIBKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream, const EGLAttrib* attrib_list);
 
 #define eglCreateStreamAttribKHR EGLEW_GET_FUN(__eglewCreateStreamAttribKHR)
 #define eglQueryStreamAttribKHR EGLEW_GET_FUN(__eglewQueryStreamAttribKHR)
@@ -1660,9 +1902,9 @@ typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERRELEASEATTRIBKHRPROC) (EGLDisplay  d
 
 #define EGL_CONSUMER_ACQUIRE_TIMEOUT_USEC_KHR 0x321E
 
-typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERACQUIREKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream);
-typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream);
-typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERRELEASEKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream);
+typedef EGLBoolean ( * PFNEGLSTREAMCONSUMERACQUIREKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream);
+typedef EGLBoolean ( * PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream);
+typedef EGLBoolean ( * PFNEGLSTREAMCONSUMERRELEASEKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream);
 
 #define eglStreamConsumerAcquireKHR EGLEW_GET_FUN(__eglewStreamConsumerAcquireKHR)
 #define eglStreamConsumerGLTextureExternalKHR EGLEW_GET_FUN(__eglewStreamConsumerGLTextureExternalKHR)
@@ -1677,8 +1919,8 @@ typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERRELEASEKHRPROC) (EGLDisplay  dpy, EG
 #ifndef EGL_KHR_stream_cross_process_fd
 #define EGL_KHR_stream_cross_process_fd 1
 
-typedef EGLStreamKHR  ( * PFNEGLCREATESTREAMFROMFILEDESCRIPTORKHRPROC) (EGLDisplay  dpy, EGLNativeFileDescriptorKHR  file_descriptor);
-typedef EGLNativeFileDescriptorKHR  ( * PFNEGLGETSTREAMFILEDESCRIPTORKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream);
+typedef EGLStreamKHR ( * PFNEGLCREATESTREAMFROMFILEDESCRIPTORKHRPROC) (EGLDisplay dpy, EGLNativeFileDescriptorKHR file_descriptor);
+typedef EGLNativeFileDescriptorKHR ( * PFNEGLGETSTREAMFILEDESCRIPTORKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream);
 
 #define eglCreateStreamFromFileDescriptorKHR EGLEW_GET_FUN(__eglewCreateStreamFromFileDescriptorKHR)
 #define eglGetStreamFileDescriptorKHR EGLEW_GET_FUN(__eglewGetStreamFileDescriptorKHR)
@@ -1697,7 +1939,7 @@ typedef EGLNativeFileDescriptorKHR  ( * PFNEGLGETSTREAMFILEDESCRIPTORKHRPROC) (E
 #define EGL_STREAM_TIME_CONSUMER_KHR 0x31FE
 #define EGL_STREAM_TIME_PRODUCER_KHR 0x31FF
 
-typedef EGLBoolean  ( * PFNEGLQUERYSTREAMTIMEKHRPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  attribute, EGLTimeKHR * value);
+typedef EGLBoolean ( * PFNEGLQUERYSTREAMTIMEKHRPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLenum attribute, EGLTimeKHR* value);
 
 #define eglQueryStreamTimeKHR EGLEW_GET_FUN(__eglewQueryStreamTimeKHR)
 
@@ -1721,7 +1963,7 @@ typedef EGLBoolean  ( * PFNEGLQUERYSTREAMTIMEKHRPROC) (EGLDisplay  dpy, EGLStrea
 
 #define EGL_STREAM_BIT_KHR 0x0800
 
-typedef EGLSurface  ( * PFNEGLCREATESTREAMPRODUCERSURFACEKHRPROC) (EGLDisplay  dpy, EGLConfig  config, EGLStreamKHR  stream, const EGLint * attrib_list);
+typedef EGLSurface ( * PFNEGLCREATESTREAMPRODUCERSURFACEKHRPROC) (EGLDisplay dpy, EGLConfig config, EGLStreamKHR stream, const EGLint* attrib_list);
 
 #define eglCreateStreamProducerSurfaceKHR EGLEW_GET_FUN(__eglewCreateStreamProducerSurfaceKHR)
 
@@ -1743,7 +1985,7 @@ typedef EGLSurface  ( * PFNEGLCREATESTREAMPRODUCERSURFACEKHRPROC) (EGLDisplay  d
 #ifndef EGL_KHR_swap_buffers_with_damage
 #define EGL_KHR_swap_buffers_with_damage 1
 
-typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC) (EGLDisplay  dpy, EGLSurface  surface, EGLint * rects, EGLint  n_rects);
+typedef EGLBoolean ( * PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC) (EGLDisplay dpy, EGLSurface surface, const EGLint* rects, EGLint n_rects);
 
 #define eglSwapBuffersWithDamageKHR EGLEW_GET_FUN(__eglewSwapBuffersWithDamageKHR)
 
@@ -1767,7 +2009,7 @@ typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSWITHDAMAGEKHRPROC) (EGLDisplay  dpy, EG
 #ifndef EGL_KHR_wait_sync
 #define EGL_KHR_wait_sync 1
 
-typedef EGLint  ( * PFNEGLWAITSYNCKHRPROC) (EGLDisplay  dpy, EGLSyncKHR  sync, EGLint  flags);
+typedef EGLint ( * PFNEGLWAITSYNCKHRPROC) (EGLDisplay dpy, EGLSyncKHR sync, EGLint flags);
 
 #define eglWaitSyncKHR EGLEW_GET_FUN(__eglewWaitSyncKHR)
 
@@ -1782,14 +2024,15 @@ typedef EGLint  ( * PFNEGLWAITSYNCKHRPROC) (EGLDisplay  dpy, EGLSyncKHR  sync, E
 
 #define EGL_DRM_BUFFER_USE_SCANOUT_MESA 0x00000001
 #define EGL_DRM_BUFFER_USE_SHARE_MESA 0x00000002
+#define EGL_DRM_BUFFER_USE_CURSOR_MESA 0x00000004
 #define EGL_DRM_BUFFER_FORMAT_MESA 0x31D0
 #define EGL_DRM_BUFFER_USE_MESA 0x31D1
 #define EGL_DRM_BUFFER_FORMAT_ARGB32_MESA 0x31D2
 #define EGL_DRM_BUFFER_MESA 0x31D3
 #define EGL_DRM_BUFFER_STRIDE_MESA 0x31D4
 
-typedef EGLImageKHR  ( * PFNEGLCREATEDRMIMAGEMESAPROC) (EGLDisplay  dpy, const EGLint * attrib_list);
-typedef EGLBoolean  ( * PFNEGLEXPORTDRMIMAGEMESAPROC) (EGLDisplay  dpy, EGLImageKHR  image, EGLint * name, EGLint * handle, EGLint * stride);
+typedef EGLImageKHR ( * PFNEGLCREATEDRMIMAGEMESAPROC) (EGLDisplay dpy, const EGLint* attrib_list);
+typedef EGLBoolean ( * PFNEGLEXPORTDRMIMAGEMESAPROC) (EGLDisplay dpy, EGLImageKHR image, EGLint* name, EGLint* handle, EGLint* stride);
 
 #define eglCreateDRMImageMESA EGLEW_GET_FUN(__eglewCreateDRMImageMESA)
 #define eglExportDRMImageMESA EGLEW_GET_FUN(__eglewExportDRMImageMESA)
@@ -1803,8 +2046,8 @@ typedef EGLBoolean  ( * PFNEGLEXPORTDRMIMAGEMESAPROC) (EGLDisplay  dpy, EGLImage
 #ifndef EGL_MESA_image_dma_buf_export
 #define EGL_MESA_image_dma_buf_export 1
 
-typedef EGLBoolean  ( * PFNEGLEXPORTDMABUFIMAGEMESAPROC) (EGLDisplay  dpy, EGLImageKHR  image, int * fds, EGLint * strides, EGLint * offsets);
-typedef EGLBoolean  ( * PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC) (EGLDisplay  dpy, EGLImageKHR  image, int * fourcc, int * num_planes, EGLuint64KHR * modifiers);
+typedef EGLBoolean ( * PFNEGLEXPORTDMABUFIMAGEMESAPROC) (EGLDisplay dpy, EGLImageKHR image, int* fds, EGLint* strides, EGLint* offsets);
+typedef EGLBoolean ( * PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC) (EGLDisplay dpy, EGLImageKHR image, int* fourcc, int* num_planes, EGLuint64KHR* modifiers);
 
 #define eglExportDMABUFImageMESA EGLEW_GET_FUN(__eglewExportDMABUFImageMESA)
 #define eglExportDMABUFImageQueryMESA EGLEW_GET_FUN(__eglewExportDMABUFImageQueryMESA)
@@ -1835,12 +2078,27 @@ typedef EGLBoolean  ( * PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC) (EGLDisplay  dpy, 
 
 #endif /* EGL_MESA_platform_surfaceless */
 
+/* ------------------------- EGL_MESA_query_driver ------------------------- */
+
+#ifndef EGL_MESA_query_driver
+#define EGL_MESA_query_driver 1
+
+typedef char* ( * PFNEGLGETDISPLAYDRIVERCONFIGPROC) (EGLDisplay dpy);
+typedef const char* ( * PFNEGLGETDISPLAYDRIVERNAMEPROC) (EGLDisplay dpy);
+
+#define eglGetDisplayDriverConfig EGLEW_GET_FUN(__eglewGetDisplayDriverConfig)
+#define eglGetDisplayDriverName EGLEW_GET_FUN(__eglewGetDisplayDriverName)
+
+#define EGLEW_MESA_query_driver EGLEW_GET_VAR(__EGLEW_MESA_query_driver)
+
+#endif /* EGL_MESA_query_driver */
+
 /* -------------------------- EGL_NOK_swap_region -------------------------- */
 
 #ifndef EGL_NOK_swap_region
 #define EGL_NOK_swap_region 1
 
-typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSREGIONNOKPROC) (EGLDisplay  dpy, EGLSurface  surface, EGLint  numRects, const EGLint * rects);
+typedef EGLBoolean ( * PFNEGLSWAPBUFFERSREGIONNOKPROC) (EGLDisplay dpy, EGLSurface surface, EGLint numRects, const EGLint* rects);
 
 #define eglSwapBuffersRegionNOK EGLEW_GET_FUN(__eglewSwapBuffersRegionNOK)
 
@@ -1853,7 +2111,7 @@ typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSREGIONNOKPROC) (EGLDisplay  dpy, EGLSur
 #ifndef EGL_NOK_swap_region2
 #define EGL_NOK_swap_region2 1
 
-typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSREGION2NOKPROC) (EGLDisplay  dpy, EGLSurface  surface, EGLint  numRects, const EGLint * rects);
+typedef EGLBoolean ( * PFNEGLSWAPBUFFERSREGION2NOKPROC) (EGLDisplay dpy, EGLSurface surface, EGLint numRects, const EGLint* rects);
 
 #define eglSwapBuffersRegion2NOK EGLEW_GET_FUN(__eglewSwapBuffersRegion2NOK)
 
@@ -1882,6 +2140,17 @@ typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSREGION2NOKPROC) (EGLDisplay  dpy, EGLSu
 #define EGLEW_NV_3dvision_surface EGLEW_GET_VAR(__EGLEW_NV_3dvision_surface)
 
 #endif /* EGL_NV_3dvision_surface */
+
+/* -------------------- EGL_NV_context_priority_realtime ------------------- */
+
+#ifndef EGL_NV_context_priority_realtime
+#define EGL_NV_context_priority_realtime 1
+
+#define EGL_CONTEXT_PRIORITY_REALTIME_NV 0x3357
+
+#define EGLEW_NV_context_priority_realtime EGLEW_GET_VAR(__EGLEW_NV_context_priority_realtime)
+
+#endif /* EGL_NV_context_priority_realtime */
 
 /* ------------------------- EGL_NV_coverage_sample ------------------------ */
 
@@ -1950,9 +2219,9 @@ typedef EGLBoolean  ( * PFNEGLSWAPBUFFERSREGION2NOKPROC) (EGLDisplay  dpy, EGLSu
 #ifndef EGL_NV_native_query
 #define EGL_NV_native_query 1
 
-typedef EGLBoolean  ( * PFNEGLQUERYNATIVEDISPLAYNVPROC) (EGLDisplay  dpy, EGLNativeDisplayType * display_id);
-typedef EGLBoolean  ( * PFNEGLQUERYNATIVEPIXMAPNVPROC) (EGLDisplay  dpy, EGLSurface  surf, EGLNativePixmapType * pixmap);
-typedef EGLBoolean  ( * PFNEGLQUERYNATIVEWINDOWNVPROC) (EGLDisplay  dpy, EGLSurface  surf, EGLNativeWindowType * window);
+typedef EGLBoolean ( * PFNEGLQUERYNATIVEDISPLAYNVPROC) (EGLDisplay dpy, EGLNativeDisplayType* display_id);
+typedef EGLBoolean ( * PFNEGLQUERYNATIVEPIXMAPNVPROC) (EGLDisplay dpy, EGLSurface surf, EGLNativePixmapType* pixmap);
+typedef EGLBoolean ( * PFNEGLQUERYNATIVEWINDOWNVPROC) (EGLDisplay dpy, EGLSurface surf, EGLNativeWindowType* window);
 
 #define eglQueryNativeDisplayNV EGLEW_GET_FUN(__eglewQueryNativeDisplayNV)
 #define eglQueryNativePixmapNV EGLEW_GET_FUN(__eglewQueryNativePixmapNV)
@@ -1978,13 +2247,24 @@ typedef EGLBoolean  ( * PFNEGLQUERYNATIVEWINDOWNVPROC) (EGLDisplay  dpy, EGLSurf
 
 #define EGL_POST_SUB_BUFFER_SUPPORTED_NV 0x30BE
 
-typedef EGLBoolean  ( * PFNEGLPOSTSUBBUFFERNVPROC) (EGLDisplay  dpy, EGLSurface  surface, EGLint  x, EGLint  y, EGLint  width, EGLint  height);
+typedef EGLBoolean ( * PFNEGLPOSTSUBBUFFERNVPROC) (EGLDisplay dpy, EGLSurface surface, EGLint x, EGLint y, EGLint width, EGLint height);
 
 #define eglPostSubBufferNV EGLEW_GET_FUN(__eglewPostSubBufferNV)
 
 #define EGLEW_NV_post_sub_buffer EGLEW_GET_VAR(__EGLEW_NV_post_sub_buffer)
 
 #endif /* EGL_NV_post_sub_buffer */
+
+/* ------------------------ EGL_NV_quadruple_buffer ------------------------ */
+
+#ifndef EGL_NV_quadruple_buffer
+#define EGL_NV_quadruple_buffer 1
+
+#define EGL_QUADRUPLE_BUFFER_NV 0x3231
+
+#define EGLEW_NV_quadruple_buffer EGLEW_GET_VAR(__EGLEW_NV_quadruple_buffer)
+
+#endif /* EGL_NV_quadruple_buffer */
 
 /* ------------------ EGL_NV_robustness_video_memory_purge ----------------- */
 
@@ -2008,7 +2288,7 @@ typedef EGLBoolean  ( * PFNEGLPOSTSUBBUFFERNVPROC) (EGLDisplay  dpy, EGLSurface 
 #define EGL_YUV_PLANE1_TEXTURE_UNIT_NV 0x332D
 #define EGL_YUV_PLANE2_TEXTURE_UNIT_NV 0x332E
 
-typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALATTRIBSNVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLAttrib  *attrib_list);
+typedef EGLBoolean ( * PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALATTRIBSNVPROC) (EGLDisplay dpy, EGLStreamKHR stream, const EGLAttrib* attrib_list);
 
 #define eglStreamConsumerGLTextureExternalAttribsNV EGLEW_GET_FUN(__eglewStreamConsumerGLTextureExternalAttribsNV)
 
@@ -2071,6 +2351,18 @@ typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALATTRIBSNVPROC) (EGL
 
 #endif /* EGL_NV_stream_cross_system */
 
+/* --------------------------- EGL_NV_stream_dma --------------------------- */
+
+#ifndef EGL_NV_stream_dma
+#define EGL_NV_stream_dma 1
+
+#define EGL_STREAM_DMA_NV 0x3371
+#define EGL_STREAM_DMA_SERVER_NV 0x3372
+
+#define EGLEW_NV_stream_dma EGLEW_GET_VAR(__EGLEW_NV_stream_dma)
+
+#endif /* EGL_NV_stream_dma */
+
 /* ------------------------ EGL_NV_stream_fifo_next ------------------------ */
 
 #ifndef EGL_NV_stream_fifo_next
@@ -2093,6 +2385,19 @@ typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALATTRIBSNVPROC) (EGL
 #define EGLEW_NV_stream_fifo_synchronous EGLEW_GET_VAR(__EGLEW_NV_stream_fifo_synchronous)
 
 #endif /* EGL_NV_stream_fifo_synchronous */
+
+/* -------------------------- EGL_NV_stream_flush -------------------------- */
+
+#ifndef EGL_NV_stream_flush
+#define EGL_NV_stream_flush 1
+
+typedef EGLBoolean ( * PFNEGLSTREAMFLUSHNVPROC) (EGLDisplay dpy, EGLStreamKHR stream);
+
+#define eglStreamFlushNV EGLEW_GET_FUN(__eglewStreamFlushNV)
+
+#define EGLEW_NV_stream_flush EGLEW_GET_VAR(__EGLEW_NV_stream_flush)
+
+#endif /* EGL_NV_stream_flush */
 
 /* ----------------------- EGL_NV_stream_frame_limits ---------------------- */
 
@@ -2126,9 +2431,9 @@ typedef EGLBoolean  ( * PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALATTRIBSNVPROC) (EGL
 #define EGL_METADATA3_TYPE_NV 0x325C
 #define EGL_PENDING_METADATA_NV 0x3328
 
-typedef EGLBoolean  ( * PFNEGLQUERYDISPLAYATTRIBNVPROC) (EGLDisplay  dpy, EGLint  attribute, EGLAttrib * value);
-typedef EGLBoolean  ( * PFNEGLQUERYSTREAMMETADATANVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  name, EGLint  n, EGLint  offset, EGLint  size, void * data);
-typedef EGLBoolean  ( * PFNEGLSETSTREAMMETADATANVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLint  n, EGLint  offset, EGLint  size, const void * data);
+typedef EGLBoolean ( * PFNEGLQUERYDISPLAYATTRIBNVPROC) (EGLDisplay dpy, EGLint attribute, EGLAttrib* value);
+typedef EGLBoolean ( * PFNEGLQUERYSTREAMMETADATANVPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLenum name, EGLint n, EGLint offset, EGLint size, void* data);
+typedef EGLBoolean ( * PFNEGLSETSTREAMMETADATANVPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLint n, EGLint offset, EGLint size, const void* data);
 
 #define eglQueryDisplayAttribNV EGLEW_GET_FUN(__eglewQueryDisplayAttribNV)
 #define eglQueryStreamMetadataNV EGLEW_GET_FUN(__eglewQueryStreamMetadataNV)
@@ -2137,6 +2442,27 @@ typedef EGLBoolean  ( * PFNEGLSETSTREAMMETADATANVPROC) (EGLDisplay  dpy, EGLStre
 #define EGLEW_NV_stream_metadata EGLEW_GET_VAR(__EGLEW_NV_stream_metadata)
 
 #endif /* EGL_NV_stream_metadata */
+
+/* -------------------------- EGL_NV_stream_origin ------------------------- */
+
+#ifndef EGL_NV_stream_origin
+#define EGL_NV_stream_origin 1
+
+#define EGL_STREAM_FRAME_ORIGIN_X_NV 0x3366
+#define EGL_STREAM_FRAME_ORIGIN_Y_NV 0x3367
+#define EGL_STREAM_FRAME_MAJOR_AXIS_NV 0x3368
+#define EGL_CONSUMER_AUTO_ORIENTATION_NV 0x3369
+#define EGL_PRODUCER_AUTO_ORIENTATION_NV 0x336A
+#define EGL_LEFT_NV 0x336B
+#define EGL_RIGHT_NV 0x336C
+#define EGL_TOP_NV 0x336D
+#define EGL_BOTTOM_NV 0x336E
+#define EGL_X_AXIS_NV 0x336F
+#define EGL_Y_AXIS_NV 0x3370
+
+#define EGLEW_NV_stream_origin EGLEW_GET_VAR(__EGLEW_NV_stream_origin)
+
+#endif /* EGL_NV_stream_origin */
 
 /* -------------------------- EGL_NV_stream_remote ------------------------- */
 
@@ -2164,7 +2490,7 @@ typedef EGLBoolean  ( * PFNEGLSETSTREAMMETADATANVPROC) (EGLDisplay  dpy, EGLStre
 #define EGL_SUPPORT_RESET_NV 0x3334
 #define EGL_SUPPORT_REUSE_NV 0x3335
 
-typedef EGLBoolean  ( * PFNEGLRESETSTREAMNVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream);
+typedef EGLBoolean ( * PFNEGLRESETSTREAMNVPROC) (EGLDisplay dpy, EGLStreamKHR stream);
 
 #define eglResetStreamNV EGLEW_GET_FUN(__eglewResetStreamNV)
 
@@ -2215,7 +2541,7 @@ typedef EGLBoolean  ( * PFNEGLRESETSTREAMNVPROC) (EGLDisplay  dpy, EGLStreamKHR 
 #define EGL_SYNC_TYPE_KHR 0x30F7
 #define EGL_SYNC_NEW_FRAME_NV 0x321F
 
-typedef EGLSyncKHR  ( * PFNEGLCREATESTREAMSYNCNVPROC) (EGLDisplay  dpy, EGLStreamKHR  stream, EGLenum  type, const EGLint * attrib_list);
+typedef EGLSyncKHR ( * PFNEGLCREATESTREAMSYNCNVPROC) (EGLDisplay dpy, EGLStreamKHR stream, EGLenum type, const EGLint* attrib_list);
 
 #define eglCreateStreamSyncNV EGLEW_GET_FUN(__eglewCreateStreamSyncNV)
 
@@ -2241,12 +2567,12 @@ typedef EGLSyncKHR  ( * PFNEGLCREATESTREAMSYNCNVPROC) (EGLDisplay  dpy, EGLStrea
 #define EGL_SYNC_FENCE_NV 0x30EF
 #define EGL_FOREVER_NV 0xFFFFFFFFFFFFFFFF
 
-typedef EGLint  ( * PFNEGLCLIENTWAITSYNCNVPROC) (EGLSyncNV  sync, EGLint  flags, EGLTimeNV  timeout);
-typedef EGLSyncNV  ( * PFNEGLCREATEFENCESYNCNVPROC) (EGLDisplay  dpy, EGLenum  condition, const EGLint * attrib_list);
-typedef EGLBoolean  ( * PFNEGLDESTROYSYNCNVPROC) (EGLSyncNV  sync);
-typedef EGLBoolean  ( * PFNEGLFENCENVPROC) (EGLSyncNV  sync);
-typedef EGLBoolean  ( * PFNEGLGETSYNCATTRIBNVPROC) (EGLSyncNV  sync, EGLint  attribute, EGLint * value);
-typedef EGLBoolean  ( * PFNEGLSIGNALSYNCNVPROC) (EGLSyncNV  sync, EGLenum  mode);
+typedef EGLint ( * PFNEGLCLIENTWAITSYNCNVPROC) (EGLSyncNV sync, EGLint flags, EGLTimeNV timeout);
+typedef EGLSyncNV ( * PFNEGLCREATEFENCESYNCNVPROC) (EGLDisplay dpy, EGLenum condition, const EGLint* attrib_list);
+typedef EGLBoolean ( * PFNEGLDESTROYSYNCNVPROC) (EGLSyncNV sync);
+typedef EGLBoolean ( * PFNEGLFENCENVPROC) (EGLSyncNV sync);
+typedef EGLBoolean ( * PFNEGLGETSYNCATTRIBNVPROC) (EGLSyncNV sync, EGLint attribute, EGLint* value);
+typedef EGLBoolean ( * PFNEGLSIGNALSYNCNVPROC) (EGLSyncNV sync, EGLenum mode);
 
 #define eglClientWaitSyncNV EGLEW_GET_FUN(__eglewClientWaitSyncNV)
 #define eglCreateFenceSyncNV EGLEW_GET_FUN(__eglewCreateFenceSyncNV)
@@ -2264,8 +2590,8 @@ typedef EGLBoolean  ( * PFNEGLSIGNALSYNCNVPROC) (EGLSyncNV  sync, EGLenum  mode)
 #ifndef EGL_NV_system_time
 #define EGL_NV_system_time 1
 
-typedef EGLuint64NV  ( * PFNEGLGETSYSTEMTIMEFREQUENCYNVPROC) ( void );
-typedef EGLuint64NV  ( * PFNEGLGETSYSTEMTIMENVPROC) ( void );
+typedef EGLuint64NV ( * PFNEGLGETSYSTEMTIMEFREQUENCYNVPROC) (void);
+typedef EGLuint64NV ( * PFNEGLGETSYSTEMTIMENVPROC) (void);
 
 #define eglGetSystemTimeFrequencyNV EGLEW_GET_FUN(__eglewGetSystemTimeFrequencyNV)
 #define eglGetSystemTimeNV EGLEW_GET_FUN(__eglewGetSystemTimeNV)
@@ -2273,6 +2599,17 @@ typedef EGLuint64NV  ( * PFNEGLGETSYSTEMTIMENVPROC) ( void );
 #define EGLEW_NV_system_time EGLEW_GET_VAR(__EGLEW_NV_system_time)
 
 #endif /* EGL_NV_system_time */
+
+/* -------------------------- EGL_NV_triple_buffer ------------------------- */
+
+#ifndef EGL_NV_triple_buffer
+#define EGL_NV_triple_buffer 1
+
+#define EGL_TRIPLE_BUFFER_NV 0x3230
+
+#define EGLEW_NV_triple_buffer EGLEW_GET_VAR(__EGLEW_NV_triple_buffer)
+
+#endif /* EGL_NV_triple_buffer */
 
 /* --------------------- EGL_TIZEN_image_native_buffer --------------------- */
 
@@ -2295,6 +2632,44 @@ typedef EGLuint64NV  ( * PFNEGLGETSYSTEMTIMENVPROC) ( void );
 #define EGLEW_TIZEN_image_native_surface EGLEW_GET_VAR(__EGLEW_TIZEN_image_native_surface)
 
 #endif /* EGL_TIZEN_image_native_surface */
+
+/* ---------------------- EGL_WL_bind_wayland_display ---------------------- */
+
+#ifndef EGL_WL_bind_wayland_display
+#define EGL_WL_bind_wayland_display 1
+
+#define EGL_WAYLAND_BUFFER_WL 0x31D5
+#define EGL_WAYLAND_PLANE_WL 0x31D6
+#define EGL_TEXTURE_Y_U_V_WL 0x31D7
+#define EGL_TEXTURE_Y_UV_WL 0x31D8
+#define EGL_TEXTURE_Y_XUXV_WL 0x31D9
+#define EGL_TEXTURE_EXTERNAL_WL 0x31DA
+#define EGL_WAYLAND_Y_INVERTED_WL 0x31DB
+
+typedef EGLBoolean ( * PFNEGLBINDWAYLANDDISPLAYWLPROC) (EGLDisplay dpy, struct wl_display* display);
+typedef EGLBoolean ( * PFNEGLQUERYWAYLANDBUFFERWLPROC) (EGLDisplay dpy, struct wl_resource* buffer, EGLint attribute, EGLint* value);
+typedef EGLBoolean ( * PFNEGLUNBINDWAYLANDDISPLAYWLPROC) (EGLDisplay dpy, struct wl_display* display);
+
+#define eglBindWaylandDisplayWL EGLEW_GET_FUN(__eglewBindWaylandDisplayWL)
+#define eglQueryWaylandBufferWL EGLEW_GET_FUN(__eglewQueryWaylandBufferWL)
+#define eglUnbindWaylandDisplayWL EGLEW_GET_FUN(__eglewUnbindWaylandDisplayWL)
+
+#define EGLEW_WL_bind_wayland_display EGLEW_GET_VAR(__EGLEW_WL_bind_wayland_display)
+
+#endif /* EGL_WL_bind_wayland_display */
+
+/* ---------------- EGL_WL_create_wayland_buffer_from_image ---------------- */
+
+#ifndef EGL_WL_create_wayland_buffer_from_image
+#define EGL_WL_create_wayland_buffer_from_image 1
+
+typedef struct wl_buffer* ( * PFNEGLCREATEWAYLANDBUFFERFROMIMAGEWLPROC) (EGLDisplay dpy, EGLImageKHR image);
+
+#define eglCreateWaylandBufferFromImageWL EGLEW_GET_FUN(__eglewCreateWaylandBufferFromImageWL)
+
+#define EGLEW_WL_create_wayland_buffer_from_image EGLEW_GET_VAR(__EGLEW_WL_create_wayland_buffer_from_image)
+
+#endif /* EGL_WL_create_wayland_buffer_from_image */
 
 /* ------------------------------------------------------------------------- */
 
@@ -2353,11 +2728,29 @@ EGLEW_FUN_EXPORT PFNEGLSETBLOBCACHEFUNCSANDROIDPROC __eglewSetBlobCacheFuncsANDR
 
 EGLEW_FUN_EXPORT PFNEGLCREATENATIVECLIENTBUFFERANDROIDPROC __eglewCreateNativeClientBufferANDROID;
 
+EGLEW_FUN_EXPORT PFNEGLGETCOMPOSITORTIMINGANDROIDPROC __eglewGetCompositorTimingANDROID;
+EGLEW_FUN_EXPORT PFNEGLGETCOMPOSITORTIMINGSUPPORTEDANDROIDPROC __eglewGetCompositorTimingSupportedANDROID;
+EGLEW_FUN_EXPORT PFNEGLGETFRAMETIMESTAMPSUPPORTEDANDROIDPROC __eglewGetFrameTimestampSupportedANDROID;
+EGLEW_FUN_EXPORT PFNEGLGETFRAMETIMESTAMPSANDROIDPROC __eglewGetFrameTimestampsANDROID;
+EGLEW_FUN_EXPORT PFNEGLGETNEXTFRAMEIDANDROIDPROC __eglewGetNextFrameIdANDROID;
+
+EGLEW_FUN_EXPORT PFNEGLGETNATIVECLIENTBUFFERANDROIDPROC __eglewGetNativeClientBufferANDROID;
+
 EGLEW_FUN_EXPORT PFNEGLDUPNATIVEFENCEFDANDROIDPROC __eglewDupNativeFenceFDANDROID;
 
 EGLEW_FUN_EXPORT PFNEGLPRESENTATIONTIMEANDROIDPROC __eglewPresentationTimeANDROID;
 
 EGLEW_FUN_EXPORT PFNEGLQUERYSURFACEPOINTERANGLEPROC __eglewQuerySurfacePointerANGLE;
+
+EGLEW_FUN_EXPORT PFNEGLCLIENTSIGNALSYNCEXTPROC __eglewClientSignalSyncEXT;
+
+EGLEW_FUN_EXPORT PFNEGLCOMPOSITORBINDTEXWINDOWEXTPROC __eglewCompositorBindTexWindowEXT;
+EGLEW_FUN_EXPORT PFNEGLCOMPOSITORSETCONTEXTATTRIBUTESEXTPROC __eglewCompositorSetContextAttributesEXT;
+EGLEW_FUN_EXPORT PFNEGLCOMPOSITORSETCONTEXTLISTEXTPROC __eglewCompositorSetContextListEXT;
+EGLEW_FUN_EXPORT PFNEGLCOMPOSITORSETSIZEEXTPROC __eglewCompositorSetSizeEXT;
+EGLEW_FUN_EXPORT PFNEGLCOMPOSITORSETWINDOWATTRIBUTESEXTPROC __eglewCompositorSetWindowAttributesEXT;
+EGLEW_FUN_EXPORT PFNEGLCOMPOSITORSETWINDOWLISTEXTPROC __eglewCompositorSetWindowListEXT;
+EGLEW_FUN_EXPORT PFNEGLCOMPOSITORSWAPPOLICYEXTPROC __eglewCompositorSwapPolicyEXT;
 
 EGLEW_FUN_EXPORT PFNEGLQUERYDEVICESEXTPROC __eglewQueryDevicesEXT;
 
@@ -2385,6 +2778,8 @@ EGLEW_FUN_EXPORT PFNEGLSTREAMCONSUMEROUTPUTEXTPROC __eglewStreamConsumerOutputEX
 
 EGLEW_FUN_EXPORT PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC __eglewSwapBuffersWithDamageEXT;
 
+EGLEW_FUN_EXPORT PFNEGLUNSIGNALSYNCEXTPROC __eglewUnsignalSyncEXT;
+
 EGLEW_FUN_EXPORT PFNEGLCREATEPIXMAPSURFACEHIPROC __eglewCreatePixmapSurfaceHI;
 
 EGLEW_FUN_EXPORT PFNEGLCREATESYNC64KHRPROC __eglewCreateSync64KHR;
@@ -2392,6 +2787,8 @@ EGLEW_FUN_EXPORT PFNEGLCREATESYNC64KHRPROC __eglewCreateSync64KHR;
 EGLEW_FUN_EXPORT PFNEGLDEBUGMESSAGECONTROLKHRPROC __eglewDebugMessageControlKHR;
 EGLEW_FUN_EXPORT PFNEGLLABELOBJECTKHRPROC __eglewLabelObjectKHR;
 EGLEW_FUN_EXPORT PFNEGLQUERYDEBUGKHRPROC __eglewQueryDebugKHR;
+
+EGLEW_FUN_EXPORT PFNEGLQUERYDISPLAYATTRIBKHRPROC __eglewQueryDisplayAttribKHR;
 
 EGLEW_FUN_EXPORT PFNEGLCREATEIMAGEKHRPROC __eglewCreateImageKHR;
 EGLEW_FUN_EXPORT PFNEGLDESTROYIMAGEKHRPROC __eglewDestroyImageKHR;
@@ -2442,6 +2839,9 @@ EGLEW_FUN_EXPORT PFNEGLEXPORTDRMIMAGEMESAPROC __eglewExportDRMImageMESA;
 EGLEW_FUN_EXPORT PFNEGLEXPORTDMABUFIMAGEMESAPROC __eglewExportDMABUFImageMESA;
 EGLEW_FUN_EXPORT PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC __eglewExportDMABUFImageQueryMESA;
 
+EGLEW_FUN_EXPORT PFNEGLGETDISPLAYDRIVERCONFIGPROC __eglewGetDisplayDriverConfig;
+EGLEW_FUN_EXPORT PFNEGLGETDISPLAYDRIVERNAMEPROC __eglewGetDisplayDriverName;
+
 EGLEW_FUN_EXPORT PFNEGLSWAPBUFFERSREGIONNOKPROC __eglewSwapBuffersRegionNOK;
 
 EGLEW_FUN_EXPORT PFNEGLSWAPBUFFERSREGION2NOKPROC __eglewSwapBuffersRegion2NOK;
@@ -2453,6 +2853,8 @@ EGLEW_FUN_EXPORT PFNEGLQUERYNATIVEWINDOWNVPROC __eglewQueryNativeWindowNV;
 EGLEW_FUN_EXPORT PFNEGLPOSTSUBBUFFERNVPROC __eglewPostSubBufferNV;
 
 EGLEW_FUN_EXPORT PFNEGLSTREAMCONSUMERGLTEXTUREEXTERNALATTRIBSNVPROC __eglewStreamConsumerGLTextureExternalAttribsNV;
+
+EGLEW_FUN_EXPORT PFNEGLSTREAMFLUSHNVPROC __eglewStreamFlushNV;
 
 EGLEW_FUN_EXPORT PFNEGLQUERYDISPLAYATTRIBNVPROC __eglewQueryDisplayAttribNV;
 EGLEW_FUN_EXPORT PFNEGLQUERYSTREAMMETADATANVPROC __eglewQueryStreamMetadataNV;
@@ -2471,16 +2873,25 @@ EGLEW_FUN_EXPORT PFNEGLSIGNALSYNCNVPROC __eglewSignalSyncNV;
 
 EGLEW_FUN_EXPORT PFNEGLGETSYSTEMTIMEFREQUENCYNVPROC __eglewGetSystemTimeFrequencyNV;
 EGLEW_FUN_EXPORT PFNEGLGETSYSTEMTIMENVPROC __eglewGetSystemTimeNV;
+
+EGLEW_FUN_EXPORT PFNEGLBINDWAYLANDDISPLAYWLPROC __eglewBindWaylandDisplayWL;
+EGLEW_FUN_EXPORT PFNEGLQUERYWAYLANDBUFFERWLPROC __eglewQueryWaylandBufferWL;
+EGLEW_FUN_EXPORT PFNEGLUNBINDWAYLANDDISPLAYWLPROC __eglewUnbindWaylandDisplayWL;
+
+EGLEW_FUN_EXPORT PFNEGLCREATEWAYLANDBUFFERFROMIMAGEWLPROC __eglewCreateWaylandBufferFromImageWL;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_VERSION_1_0;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_VERSION_1_1;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_VERSION_1_2;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_VERSION_1_3;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_VERSION_1_4;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_VERSION_1_5;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_GLES_layers;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_blob_cache;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_create_native_client_buffer;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_framebuffer_target;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_front_buffer_auto_refresh;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_get_frame_timestamps;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_get_native_client_buffer;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_image_native_buffer;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_native_fence_sync;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANDROID_presentation_time;
@@ -2490,10 +2901,14 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_ANGLE_device_d3d;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANGLE_query_surface_pointer;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANGLE_surface_d3d_texture_2d_share_handle;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ANGLE_window_fixed_size;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_ARM_image_format;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ARM_implicit_external_sync;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_ARM_pixmap_multisample_discard;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_bind_to_front;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_buffer_age;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_client_extensions;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_client_sync;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_compositor;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_create_context_robustness;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_device_base;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_device_drm;
@@ -2502,9 +2917,15 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_device_openwf;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_device_query;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_gl_colorspace_bt2020_linear;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_gl_colorspace_bt2020_pq;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_gl_colorspace_display_p3;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_gl_colorspace_display_p3_linear;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_gl_colorspace_display_p3_passthrough;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_gl_colorspace_scrgb;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_gl_colorspace_scrgb_linear;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_image_dma_buf_import;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_image_dma_buf_import_modifiers;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_image_gl_colorspace;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_image_implicit_sync_control;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_multiview_window;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_output_base;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_output_drm;
@@ -2517,8 +2938,10 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_platform_x11;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_protected_content;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_protected_surface;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_stream_consumer_egloutput;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_surface_CTA861_3_metadata;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_surface_SMPTE2086_metadata;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_swap_buffers_with_damage;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_sync_reuse;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_yuv_surface;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_HI_clientpixmap;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_HI_colorformats;
@@ -2532,6 +2955,7 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_context_flush_control;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_create_context;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_create_context_no_error;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_debug;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_display_reference;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_fence_sync;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_get_all_proc_addresses;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_gl_colorspace;
@@ -2568,10 +2992,12 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_MESA_drm_image;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_MESA_image_dma_buf_export;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_MESA_platform_gbm;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_MESA_platform_surfaceless;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_MESA_query_driver;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NOK_swap_region;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NOK_swap_region2;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NOK_texture_from_pixmap;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_3dvision_surface;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_context_priority_realtime;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_coverage_sample;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_coverage_sample_resolve;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_cuda_event;
@@ -2580,6 +3006,7 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_device_cuda;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_native_query;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_post_convert_rounding;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_post_sub_buffer;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_quadruple_buffer;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_robustness_video_memory_purge;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_consumer_gltexture_yuv;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_cross_display;
@@ -2587,10 +3014,13 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_cross_object;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_cross_partition;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_cross_process;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_cross_system;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_dma;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_fifo_next;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_fifo_synchronous;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_flush;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_frame_limits;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_metadata;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_origin;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_remote;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_reset;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_socket;
@@ -2599,8 +3029,11 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_socket_unix;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_stream_sync;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_sync;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_system_time;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_NV_triple_buffer;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_TIZEN_image_native_buffer;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_TIZEN_image_native_surface;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_WL_bind_wayland_display;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_WL_create_wayland_buffer_from_image;
 /* ------------------------------------------------------------------------ */
 
 GLEWAPI GLenum GLEWAPIENTRY eglewInit (EGLDisplay display);
