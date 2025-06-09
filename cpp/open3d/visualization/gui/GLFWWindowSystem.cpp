@@ -87,15 +87,9 @@ int KeymodsFromGLFW(int glfw_mods) {
 }
 
 float CallGLFWGetWindowContentScale(GLFWwindow* w) {
-    // Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
-#if (GLFW_VERSION_MAJOR > 3 || \
-     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
     float xscale, yscale;
     glfwGetWindowContentScale(w, &xscale, &yscale);
     return std::min(xscale, yscale);
-#else
-    return 1.0f;
-#endif  // GLFW version >= 3.3
 }
 
 }  // namespace

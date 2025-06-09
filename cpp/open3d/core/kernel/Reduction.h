@@ -59,6 +59,14 @@ void ReductionCPU(const Tensor& src,
                   bool keepdim,
                   ReductionOpCode op_code);
 
+#ifdef BUILD_SYCL_MODULE
+void ReductionSYCL(const Tensor& src,
+                   Tensor& dst,
+                   const SizeVector& dims,
+                   bool keepdim,
+                   ReductionOpCode op_code);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void ReductionCUDA(const Tensor& src,
                    Tensor& dst,

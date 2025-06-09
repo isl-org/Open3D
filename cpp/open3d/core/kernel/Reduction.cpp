@@ -37,6 +37,10 @@ void Reduction(const Tensor& src,
                         dims);
             }
         }
+        if (src.NumElements() == 0) {
+            utility::LogError(
+                    "Zero-size Tensor does not support Arg Reductions.");
+        }
     }
 
     SizeVector keepdim_shape =
@@ -71,6 +75,12 @@ void Reduction(const Tensor& src,
 
     if (src.IsCPU()) {
         ReductionCPU(src, dst, dims, keepdim, op_code);
+    } else if (src.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ReductionSYCL(src, dst, dims, keepdim, op_code);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else if (src.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         ReductionCUDA(src, dst, dims, keepdim, op_code);

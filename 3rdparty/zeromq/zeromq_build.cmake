@@ -19,7 +19,7 @@ if(WIN32)
         string(APPEND lib_name -${CMAKE_VS_PLATFORM_TOOLSET})
     endif()
     string(APPEND lib_name -mt-s)
-    set(lib_suffix -4_3_3)
+    set(lib_suffix -4_3_5)
 else()
     set(WIN_CMAKE_ARGS "")
     set(lib_name zmq)
@@ -29,8 +29,8 @@ endif()
 ExternalProject_Add(
     ext_zeromq
     PREFIX zeromq
-    URL https://github.com/zeromq/libzmq/releases/download/v4.3.3/zeromq-4.3.3.tar.gz
-    URL_HASH SHA256=9d9285db37ae942ed0780c016da87060497877af45094ff9e1a1ca736e3875a2
+    URL https://github.com/zeromq/libzmq/releases/download/v4.3.5/zeromq-4.3.5.tar.gz
+    URL_HASH SHA256=6653ef5910f17954861fe72332e68b03ca6e4d9c7160eb3a8de5a5a913bfab43
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/zeromq"
     # do not update
     UPDATE_COMMAND ""
@@ -38,6 +38,7 @@ ExternalProject_Add(
         # Does not seem to work. We have to directly set the flags on Windows.
         #-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
         #-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DBUILD_STATIC=ON
         -DBUILD_SHARED=OFF
         -DBUILD_TESTS=OFF
@@ -58,8 +59,8 @@ ExternalProject_Add(
 ExternalProject_Add(
     ext_cppzmq
     PREFIX zeromq
-    URL https://github.com/zeromq/cppzmq/archive/v4.7.1.tar.gz
-    URL_HASH SHA256=9853e0437d834cbed5d3c223bf1d755cadee70e7c964c6e42c4c6783dee5d02c
+    URL https://github.com/zeromq/cppzmq/archive/refs/tags/v4.10.0.tar.gz
+    URL_HASH SHA256=c81c81bba8a7644c84932225f018b5088743a22999c6d82a2b5f5cd1e6942b74
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/zeromq"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""

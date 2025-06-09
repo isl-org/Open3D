@@ -331,17 +331,17 @@ Return:
     pointcloud.def(
             "orient_normals_consistent_tangent_plane",
             &PointCloud::OrientNormalsConsistentTangentPlane, "k"_a,
-            "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0,
+            "lambda_penalty"_a = 0.0, "cos_alpha_tol"_a = 1.0,
             R"(Function to consistently orient the normals of a point cloud based on tangent planes.
 
 The algorithm is described in Hoppe et al., "Surface Reconstruction from Unorganized Points", 1992.
-Additional information about the choice of lambda and cos_alpha_tol for complex
+Additional information about the choice of lambda_penalty and cos_alpha_tol for complex
 point clouds can be found in Piazza, Valentini, Varetti, "Mesh Reconstruction from Point Cloud", 2023
 (https://eugeniovaretti.github.io/meshreco/Piazza_Valentini_Varetti_MeshReconstructionFromPointCloud_2023.pdf).
 
 Args:
     k (int): Number of neighbors to use for tangent plane estimation.
-    lambda (float): A non-negative real parameter that influences the distance
+    lambda_penalty (float): A non-negative real parameter that influences the distance
         metric used to identify the true neighbors of a point in complex
         geometries. It penalizes the distance between a point and the tangent
         plane defined by the reference point and its normal vector, helping to
@@ -354,7 +354,7 @@ Args:
 Example:
     We use Bunny point cloud to compute its normals and orient them consistently.
     The initial reconstruction adheres to Hoppe's algorithm (raw), whereas the
-    second reconstruction utilises the lambda and cos_alpha_tol parameters.
+    second reconstruction utilises the lambda_penalty and cos_alpha_tol parameters.
     Due to the high density of the Bunny point cloud available in Open3D a larger
     value of the parameter k is employed to test the algorithm.  Usually you do
     not have at disposal such a refined point clouds, thus you cannot find a
@@ -379,7 +379,7 @@ Example:
         poisson_mesh.compute_vertex_normals()
         o3d.visualization.draw_geometries([poisson_mesh])
 
-        # Case 2, reconstruction using lambda and cos_alpha_tol parameters:
+        # Case 2, reconstruction using lambda_penalty and cos_alpha_tol parameters:
         pcd_robust = o3d.io.read_point_cloud(data.path)
 
         # Compute normals and orient them consistently, using k=100 neighbours
@@ -765,7 +765,7 @@ Args:
 
 Example:
 
-    This code computes parititions a point cloud such that each partition
+    This code computes partitions of a point cloud such that each partition
     contains at most 20 points::
 
         import open3d as o3d
@@ -780,16 +780,16 @@ Example:
 
     pointcloud.def("compute_metrics", &PointCloud::ComputeMetrics, "pcd2"_a,
                    "metrics"_a, "params"_a,
-                   R"(Compute various metrics between two point clouds. 
-            
-Currently, Chamfer distance, Hausdorff distance and F-Score `[Knapitsch2017] <../tutorial/reference.html#Knapitsch2017>`_ are supported. 
-The Chamfer distance is the sum of the mean distance to the nearest neighbor 
+                   R"(Compute various metrics between two point clouds.
+
+Currently, Chamfer distance, Hausdorff distance and F-Score `[Knapitsch2017] <../tutorial/reference.html#Knapitsch2017>`_ are supported.
+The Chamfer distance is the sum of the mean distance to the nearest neighbor
 from the points of the first point cloud to the second point cloud. The F-Score
-at a fixed threshold radius is the harmonic mean of the Precision and Recall. 
-Recall is the percentage of surface points from the first point cloud that have 
-the second point cloud points within the threshold radius, while Precision is 
-the percentage of points from the second point cloud that have the first point 
-cloud points within the threhold radius.
+at a fixed threshold radius is the harmonic mean of the Precision and Recall.
+Recall is the percentage of surface points from the first point cloud that have
+the second point cloud points within the threshold radius, while Precision is
+the percentage of points from the second point cloud that have the first point
+cloud points within the threshold radius.
 
 .. math::
     :nowrap:

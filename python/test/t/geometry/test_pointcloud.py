@@ -19,7 +19,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_constructor_and_accessors(device):
     dtype = o3c.float32
 
@@ -46,7 +46,7 @@ def test_constructor_and_accessors(device):
     assert pcd.point.positions.allclose(o3c.Tensor([[1, 2, 3]], dtype, device))
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_from_legacy(device):
     dtype = o3c.float32
 
@@ -63,7 +63,7 @@ def test_from_legacy(device):
         o3c.Tensor([[6, 7, 8], [9, 10, 11]], dtype, device))
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_to_legacy(device):
     dtype = o3c.float32
 
@@ -180,7 +180,7 @@ def test_extrude_linear():
     assert ans.line.indices.shape == (1, 2)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_pickle(device):
     pcd = o3d.t.geometry.PointCloud(device)
     with tempfile.TemporaryDirectory() as temp_dir:

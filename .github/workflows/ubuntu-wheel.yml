@@ -109,7 +109,7 @@ jobs:
       - name: Upload ccache to GCS
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.xz gs://open3d-ci-cache/
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
@@ -123,7 +123,7 @@ jobs:
     name: Test wheel CPU
     permissions:
       contents: read
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [build-wheel]
     strategy:
       fail-fast: false

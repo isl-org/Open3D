@@ -19,6 +19,7 @@ ExternalProject_Add(
     COMMAND       ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
                   ${CMAKE_CURRENT_LIST_DIR}/0001-patch-zlib-to-enable-unzip.patch
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         # zlib needs visiible symbols for examples. Disabling example building causes
         # assember error in GPU CI. zlib symbols are hidden during linking.
