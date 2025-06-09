@@ -37,7 +37,8 @@ void ExpectEQInternal(const std::string& line_info,
                       const Eigen::Matrix<T, M, N, A>& v1,
                       double threshold = THRESHOLD_1E_6) {
     EXPECT_EQ(v0.size(), v1.size());
-    EXPECT_TRUE(v0.isApprox(v1, threshold))
+    // Use an absolute tolerance check on the norm of the difference.
+    EXPECT_LE((v0 - v1).norm(), threshold)
             << line_info << "threshold:\n"
             << threshold << "\nv0:\n"
             << v0.format(matrix_fmt) << "\nv1:\n"
