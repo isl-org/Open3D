@@ -83,8 +83,8 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 
 # Shared variables
 CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.29.2-linux-x86_64
-CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
+CMAKE_VERSION=cmake-3.31.7-linux-x86_64
+CMAKE_VERSION_AARCH64=cmake-3.31.7-linux-aarch64
 CUDA_VERSION=12.1.0-cudnn8
 CUDA_VERSION_LATEST=12.1.0-cudnn8
 
