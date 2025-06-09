@@ -26,12 +26,12 @@ BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
-TENSORFLOW_VER="2.16.2"
-TORCH_VER="2.2.2"
+TENSORFLOW_VER="2.16.0"
+TORCH_VER="2.1.0"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 TORCH_CXX11_URL="https://download.pytorch.org/whl/"
 # Python
-PIP_VER="24.3.1"
+PIP_VER="25.1.1"
 PROTOBUF_VER="4.24.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
