@@ -57,7 +57,8 @@
 -   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
 -   Add select_by_index method to Feature class (PR #7039)
 -   Add optional indices arg for fast computation of a small subset of FPFH features (PR #7118).
-
+-   Fix CMake configuration summary incorrectly reporting `no` for system BLAS. (PR #7230)
+-   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
 
 ## 0.13
 
