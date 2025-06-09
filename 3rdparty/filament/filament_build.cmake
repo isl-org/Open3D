@@ -44,7 +44,7 @@ set(lib_byproducts ${filament_LIBRARIES})
 list(TRANSFORM lib_byproducts PREPEND ${FILAMENT_ROOT}/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
 list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-set(filament_cxx_flags "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wpass-failed=transform-warning")
+set(filament_cxx_flags "${CMAKE_CXX_FLAGS} -Wno-deprecated" "-Wno-pass-failed=transform-warning")
 if(NOT WIN32)
     # Issue Open3D#1909, filament#2146
     set(filament_cxx_flags "${filament_cxx_flags} -fno-builtin")
@@ -53,8 +53,8 @@ endif()
 ExternalProject_Add(
         ext_filament
         PREFIX filament
-        URL https://github.com/google/filament/archive/refs/tags/v1.49.1.tar.gz
-        URL_HASH SHA256=f092aeb1d24d9d84a3cc2327fc3359a5e2893d16e7ac55aab9a56aaae64e121f
+        URL https://github.com/google/filament/archive/refs/tags/v1.61.0.tar.gz
+        URL_HASH SHA256=8fe250142d72686e5b48403aefe55786da03b4604e6c44cd3c7c4d2a48e4b99d
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
         UPDATE_COMMAND ""
         CMAKE_ARGS
