@@ -60,10 +60,16 @@ if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
     deps=("${deps[@]/libc++abi-dev/libc++abi-11-dev}")
 fi
 
+
 # Special case for ARM64
 if [ "$(uname -m)" == "aarch64" ]; then
     # For compiling LAPACK in OpenBLAS
     deps+=("gfortran")
+fi
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "24.04" ]; then
+    deps=("${deps[@]/clang/clang-14}")
+    deps=("${deps[@]/libc++-dev/libc++-14-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-14-dev}")
 fi
 
 echo "apt-get install ${deps[*]}"
