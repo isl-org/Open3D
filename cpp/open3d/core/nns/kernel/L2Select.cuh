@@ -196,13 +196,20 @@ void runL2SelectMin(const cudaStream_t stream,
         auto grid =
                 dim3(utility::DivUp(outDistances.GetShape(0), kRowsPerBlock));
 
+        // The blockReduceAll function used in the kernel requires shared memory
+        // for its operation. The batched version for kRowsPerBlock elements
+        // needs space for kRowsPerBlock * kThreadsPerBlock elements.
+        const size_t shared_mem_size =
+                kRowsPerBlock * kThreadsPerBlock * sizeof(Pair<T, int>);
+
         l2SelectMin1<T, TIndex, kRowsPerBlock, kThreadsPerBlock>
-                <<<grid, block, 0, stream>>>(productDistances.GetDataPtr<T>(),
-                                             centroidDistances.GetDataPtr<T>(),
-                                             outDistances.GetDataPtr<T>(),
-                                             outIndices.GetDataPtr<TIndex>(),
-                                             (int)productDistances.GetShape(0),
-                                             (int)productDistances.GetShape(1));
+                <<<grid, block, shared_mem_size, stream>>>(
+                        productDistances.GetDataPtr<T>(),
+                        centroidDistances.GetDataPtr<T>(),
+                        outDistances.GetDataPtr<T>(),
+                        outIndices.GetDataPtr<TIndex>(),
+                        (int)productDistances.GetShape(0),
+                        (int)productDistances.GetShape(1));
     } else {
         auto grid = dim3(outDistances.GetShape(0));
 
