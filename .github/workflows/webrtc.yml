@@ -76,7 +76,7 @@ jobs:
     permissions:
       contents: write  # upload
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
-    runs-on: windows-2019
+    runs-on: windows-2025
     env:
       WORK_DIR: "C:\\WebRTC"  # Not enough space in D:
       OPEN3D_DIR: "D:\\a\\open3d\\open3d"
