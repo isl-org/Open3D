@@ -28,16 +28,16 @@ else()
         string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
         if(${glibc_version} VERSION_LESS "2.33")
             set(FILAMENT_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.49.1-ubuntu20.04.tgz)
+                    https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.49.1-ubuntu20.04.tgz)
             set(FILAMENT_SHA256 f4ba020f0ca63540e2f86b36d1728a1ea063ddd5eb55b0ba6fc621ee815a60a7)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
-                "Open3D built Filament binary for Ubuntu 20.04.")
+                    "Open3D built Filament binary for Ubuntu 20.04.")
         else()
             set(FILAMENT_URL
-                https://github.com/google/filament/releases/download/v1.49.1/filament-v1.49.1-linux.tgz)
+                    https://github.com/google/filament/releases/download/v1.49.1/filament-v1.49.1-linux.tgz)
             set(FILAMENT_SHA256 ddd086310d1ee650831e21f6a11f489cb385826fbeea446e7803bec8d6e7442b)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
-                "Google Filament binary.")
+                    "Google Filament binary.")
         endif()
     endif()
 
@@ -55,17 +55,17 @@ else()
 
     # ExternalProject_Add happens at build time.
     ExternalProject_Add(
-        ext_filament
-        PREFIX filament
-        URL ${FILAMENT_URL}
-        URL_HASH SHA256=${FILAMENT_SHA256}
-        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_IN_SOURCE ON
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ${lib_byproducts}
+            ext_filament
+            PREFIX filament
+            URL ${FILAMENT_URL}
+            URL_HASH SHA256=${FILAMENT_SHA256}
+            DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_IN_SOURCE ON
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            BUILD_BYPRODUCTS ${lib_byproducts}
     )
     ExternalProject_Get_Property(ext_filament SOURCE_DIR)
     message(STATUS "Filament source dir is ${SOURCE_DIR}")

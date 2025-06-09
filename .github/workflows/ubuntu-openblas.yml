@@ -138,7 +138,7 @@ jobs:
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
-            --command="sudo docker run --rm arm64v8/ubuntu:20.04 uname -p \
+            --command="sudo docker run --rm arm64v8/ubuntu:22.04 uname -p \
                     && sudo Open3D/docker/docker_build.sh ${CI_CONFIG}"
       - name: VM run docker
         run: |
