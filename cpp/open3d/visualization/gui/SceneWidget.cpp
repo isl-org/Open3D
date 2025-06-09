@@ -10,6 +10,7 @@
 #include <imgui.h>
 
 #include <Eigen/Geometry>
+#include <cstring>
 #include <set>
 #include <unordered_set>
 

@@ -150,16 +150,18 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
                                                             int height,
                                                             const char* title,
                                                             int flags) {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // NOTE: Setting alpha and stencil bits to match GLX standard default
-    // values. GLFW sets these internally to 8 and 8 respectively if not
-    // specified which causes problems with Filament on Linux with Nvidia binary
-    // driver
-    glfwWindowHint(GLFW_ALPHA_BITS, 0);
-    glfwWindowHint(GLFW_STENCIL_BITS, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // // NOTE: Setting alpha and stencil bits to match GLX standard default
+    // // values. GLFW sets these internally to 8 and 8 respectively if not
+    // // specified which causes problems with Filament on Linux with Nvidia
+    // binary
+    // // driver
+    // glfwWindowHint(GLFW_ALPHA_BITS, 0);
+    // glfwWindowHint(GLFW_STENCIL_BITS, 0);
 
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);

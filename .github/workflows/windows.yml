@@ -31,7 +31,7 @@ jobs:
   windows:
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       matrix:
@@ -107,7 +107,7 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake --version
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
@@ -202,7 +202,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
@@ -233,7 +233,7 @@ jobs:
     name: Build wheel
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -283,7 +283,7 @@ jobs:
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
@@ -330,7 +330,7 @@ jobs:
     name: Test wheel
     permissions:
       contents: read
-    runs-on: windows-2019
+    runs-on: windows-2025
     needs: [build-wheel]
     strategy:
       fail-fast: false
