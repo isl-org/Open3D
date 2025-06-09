@@ -56,11 +56,11 @@ OPTION:
     sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-focal                   : CUDA CI, 2-focal, developer mode
-    3-ml-shared-focal-release : CUDA CI, 3-ml-shared-focal, release mode
-    3-ml-shared-focal         : CUDA CI, 3-ml-shared-focal, developer mode
-    4-shared-focal            : CUDA CI, 4-shared-focal, developer mode
-    4-shared-focal-release    : CUDA CI, 4-shared-focal, release mode
+    2-jammy                   : CUDA CI, 2-jammy, developer mode
+    3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy, release mode
+    3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy, developer mode
+    4-shared-jammy            : CUDA CI, 4-shared-jammy, developer mode
+    4-shared-jammy-release    : CUDA CI, 4-shared-jammy, release mode
     5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
 "
 
@@ -385,28 +385,28 @@ sycl-static)
     ;;
 
 # ML CIs
-2-focal)
-    2-focal_export_env
+2-jammy)
+    2-jammy_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-3-ml-shared-focal)
-    3-ml-shared-focal_export_env
+3-ml-shared-jammy)
+    3-ml-shared-jammy_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-3-ml-shared-focal-release)
-    3-ml-shared-focal-release_export_env
+3-ml-shared-jammy-release)
+    3-ml-shared-jammy-release_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-4-shared-focal)
-    4-shared-focal_export_env
+4-shared-jammy)
+    4-shared-jammy_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-4-shared-focal-release)
-    4-shared-focal-release_export_env
+4-shared-jammy-release)
+    4-shared-jammy-release_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
