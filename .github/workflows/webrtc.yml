@@ -68,8 +68,8 @@ jobs:
         with:
           name: webrtc_release_${{ matrix.os }}
           path: |
-                 webrtc_*.tar.gz
-                 checksum_*.txt
+            webrtc_*.tar.gz
+            checksum_*.txt
           if-no-files-found: error
 
   Windows:
@@ -176,6 +176,6 @@ jobs:
         with:
           name: webrtc_release_windows
           path: |
-                 ${{ env.WORK_DIR }}/webrtc_*.zip
-                 ${{ env.WORK_DIR }}/checksum_*.txt
+            ${{ env.WORK_DIR }}/webrtc_*.zip
+            ${{ env.WORK_DIR }}/checksum_*.txt
           if-no-files-found: error
