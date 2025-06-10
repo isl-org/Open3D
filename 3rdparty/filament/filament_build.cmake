@@ -54,8 +54,8 @@ endif()
 ExternalProject_Add(
     ext_filament
     PREFIX filament
-    URL https://github.com/google/filament/archive/refs/tags/v1.49.1.tar.gz
-     URL_HASH SHA256=f092aeb1d24d9d84a3cc2327fc3359a5e2893d16e7ac55aab9a56aaae64e121f
+    URL https://github.com/google/filament/archive/refs/tags/v1.54.0.tar.gz
+     URL_HASH SHA256=f4cb4eb81e3a5d66a9612ac131d16183e118b694f4f34c051506c523a8389e8d
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
