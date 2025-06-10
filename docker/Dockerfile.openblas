@@ -81,6 +81,7 @@ WORKDIR /root/Open3D
 RUN mkdir build \
  && cd build \
  && cmake \
+    -DCMAKE_CXX_FLAGS="-ftls-model=global-dynamic" \
     -DBUILD_UNIT_TESTS=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
