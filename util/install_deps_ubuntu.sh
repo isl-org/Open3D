@@ -21,6 +21,7 @@ deps=(
     libxcb-shm0
     libglu1-mesa-dev
     python3-dev
+    libssl-dev
     # filament linking
     libc++-dev
     libc++abi-dev
