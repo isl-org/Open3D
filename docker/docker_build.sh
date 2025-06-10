@@ -33,6 +33,7 @@ OPTION:
     openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
+    openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
     openblas-amd64-py313        : OpenBLAS AMD64 3.13 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
