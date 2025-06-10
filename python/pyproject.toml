@@ -5,6 +5,6 @@ requires = [
     "jupyter_packaging~=0.12",
     "jupyterlab>=3.0.0,==3.*",
     "setuptools>=67.3.2",
-    "wheel==0.38.4",
+    "wheel==0.45.1",
 ]
 build-backend = "setuptools.build_meta"
