@@ -10,7 +10,7 @@
 #   We don't want to have a cartesian product of different combinations of
 #   options. E.g., to support Ubuntu {22.04, 24.04} with Python {3.7, 3.8}, we
 #   don't specify the OS and Python version separately, instead, we have a flat
-#   list of combinations: [u2004_py39, u2004_py310, u2404_py39, u2404_py310].
+#   list of combinations: [u2204_py39, u2204_py310, u2404_py39, u2404_py310].
 # - No external environment variables.
 #   This script should not make assumptions on external environment variables.
 #   This make the Docker image reproducible across different machines.
@@ -180,7 +180,7 @@ openblas_build() {
 
 cuda_wheel_build() {
     BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
-    CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-ci-ccache
+    CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"

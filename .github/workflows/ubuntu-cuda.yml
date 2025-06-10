@@ -117,7 +117,7 @@ jobs:
               --machine-type=n1-standard-8 \
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
-              --image-family="ubuntu-os-docker-gpu-2004-lts" \
+              --image-family="ubuntu-os-docker-gpu-2204-lts" \
               --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
               --scopes="storage-full,compute-rw" \
               --service-account="$GCE_GPU_CI_SA"; do
