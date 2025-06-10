@@ -22,6 +22,7 @@ deps=(
     libglu1-mesa-dev
     python3-dev
     libssl-dev
+    libcurl4-openssl-dev
     # filament linking
     libc++-dev
     libc++abi-dev
