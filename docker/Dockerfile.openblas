@@ -6,12 +6,10 @@ FROM ${BASE_IMAGE}
 SHELL ["/bin/bash", "-c"]
 
 # Required build args, should be specified in docker_build.sh
-ARG CONDA_SUFFIX
 ARG CMAKE_VERSION
 ARG PYTHON_VERSION
 ARG DEVELOPER_BUILD
-RUN if [ -z "${CONDA_SUFFIX}"    ]; then echo "Error: ARG CONDA_SUFFIX    not specified."; exit 1; fi \
- && if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi \
+RUN if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi \
  && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
  && if [ -z "${DEVELOPER_BUILD}" ]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
 
@@ -19,64 +17,63 @@ RUN if [ -z "${CONDA_SUFFIX}"    ]; then echo "Error: ARG CONDA_SUFFIX    not sp
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
-
-# Minimal dependencies for running Docker
-# wget    : for downloading
-# libgl1  : available on Ubuntu ARM desktop by default
-# libgomp1: available on Ubuntu ARM desktop by default
-RUN apt-get update && apt-get install -y \
-    wget \
+# --- 1. INSTALL BASIC DEPENDENCIES AND BUILD DEPS FOR PYENV ---
+# Install not only basic dependencies, but also those necessary
+# for pyenv to build Python from source. This also includes the fix
+# for the curl (77) error by installing ca-certificates.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Runtime and download dependencies
+    wget curl \
     libgl1 \
     libgomp1 \
- && rm -rf /var/lib/apt/lists/*
-
-# Minimal dependencies for building
-RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    # General build dependencies
     build-essential \
     git \
+    # Build dependencies for Python (required by pyenv)
+    libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev llvm \
+    libncurses5-dev libncursesw5-dev \
+    xz-utils tk-dev libffi-dev liblzma-dev \
+ && update-ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh \
- && bash Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh -b \
- && rm Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh \
- && conda --version
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-RUN conda create -y -n open3d python=${PYTHON_VERSION} \
- && source activate open3d
-RUN which python \
- && python --version
+# --- 2. PYTHON INSTALLATION WITH PYENV (REPLACES MINICONDA) ---
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+ && pyenv update \
+ && pyenv install $PYTHON_VERSION \
+ && pyenv global $PYTHON_VERSION \
+ && pyenv rehash \
+ # Upgrade pip
+ && pip install --upgrade pip setuptools wheel
 
-# CMake
-# PWD is /, cmake will be installed to /root/${CMAKE_VERSION}/bin/cmake
+# Verify that the correct Python version is active
+RUN which python \
+ && python --version \
+ && pip --version
+
+# --- 3. CMAKE INSTALLATION ---
 RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -xf ${CMAKE_VERSION}.tar.gz \
- && cp -ar ${CMAKE_VERSION} ${HOME}
+ && cp -ar ${CMAKE_VERSION} ${HOME} \
+ && rm ${CMAKE_VERSION}.tar.gz
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 
-# Install dependencies before copying the full Open3D directory for better Docker caching
-# Open3D C++ dependencies
+# --- 4. INSTALL OPEN3D DEPENDENCIES AND COMPILER ---
 COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
 RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
  && rm -rf /var/lib/apt/lists/*
-RUN echo ${PATH} \
- && echo "gcc=$(which gcc)" \
- && gcc --version \
- && echo "g++=$(which g++)" \
- && g++ --version
 
-# Python and dependencies
+# --- 5. INSTALL PYTHON DEPENDENCIES (PIP) ---
 COPY ./python/requirements*.txt /root/Open3D/python/
-RUN which python \
- && python --version \
- && python -m pip install -U -r /root/Open3D/python/requirements.txt \
+RUN pip install -U -r /root/Open3D/python/requirements.txt \
   -r /root/Open3D/python/requirements_build.txt \
   -r /root/Open3D/python/requirements_test.txt
 
-# Open3D repo
-# Always keep /root/Open3D as the WORKDIR
+# --- 6. COPY AND BUILD OPEN3D ---
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
@@ -84,6 +81,8 @@ WORKDIR /root/Open3D
 RUN mkdir build \
  && cd build \
  && cmake \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_CXX_FLAGS="-ftls-model=global-dynamic" \
     -DBUILD_UNIT_TESTS=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
@@ -91,5 +90,6 @@ RUN mkdir build \
     .. \
  && make -j$(nproc) \
  && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
+ && make install -j$(nproc) \
+ && pyenv rehash
 RUN cp build/lib/python_package/pip_package/*.whl /

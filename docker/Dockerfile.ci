@@ -182,7 +182,7 @@ RUN mkdir -p /etc/apt/keyrings \
  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
  | tee /etc/apt/sources.list.d/nodesource.list \
  && apt-get update \
- && apt-get install -y nodejs \
+ && apt-get install -y nodejs npm \
  && rm -rf /var/lib/apt/lists/* \
  && node --version \
  && npm install -g yarn \
@@ -209,7 +209,8 @@ RUN \
     fi \
  && mkdir build \
  && cd build \
- && cmake -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
+ && cmake -DCMAKE_CXX_FLAGS="-ftls-model=global-dynamic" \
+          -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
