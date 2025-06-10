@@ -45,6 +45,8 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-${CONDA_
 ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
 RUN conda create -y -n open3d python=${PYTHON_VERSION} \
  && source activate open3d
+RUN conda install -y -n open3d -c conda-forge "libstdcxx-ng>=13" \
+ && conda clean -afy
 RUN which python \
  && python --version
 
@@ -66,6 +68,16 @@ RUN echo ${PATH} \
  && gcc --version \
  && echo "g++=$(which g++)" \
  && g++ --version
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential        \
+        gcc-12 g++-12          \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 90 \
+                           --slave   /usr/bin/g++ g++ /usr/bin/g++-12 \
+    && gcc  --version \
+    && g++  --version \
+    && rm -rf /var/lib/apt/lists/*
 
 # Python and dependencies
 COPY ./python/requirements*.txt /root/Open3D/python/
