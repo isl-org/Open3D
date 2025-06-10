@@ -1,4 +1,5 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
 ARG BASE_IMAGE=nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
 FROM ${BASE_IMAGE}
 
@@ -92,8 +93,7 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
 ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
 RUN conda create -y -n open3d python=${PYTHON_VERSION} \
  && source activate open3d
-RUN conda install -y -n open3d -c conda-forge "libstdcxx-ng>=13" \
- && conda clean -afy
+
 RUN which python \
  && python --version
 
