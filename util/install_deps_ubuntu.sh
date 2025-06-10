@@ -20,9 +20,6 @@ deps=(
     xorg-dev
     libxcb-shm0
     libglu1-mesa-dev
-    mesa-common-dev
-    mesa-utils
-    freeglut3-dev
     python3-dev
     # filament linking
     libc++-dev
