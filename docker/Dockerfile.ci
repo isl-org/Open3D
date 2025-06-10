@@ -1,74 +1,122 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
-ARG BASE_IMAGE=nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# Customizable build arguments from cuda.yml
+# For bash-specific commands
+SHELL ["/bin/bash", "-c"]
+
+# Required build args, should be specified in docker_build.sh
 ARG DEVELOPER_BUILD
 ARG CCACHE_TAR_NAME
-# NOTE: CMAKE_VERSION should now be just the version number, e.g., "3.28.1"
-# The architecture suffix will be determined automatically inside the Dockerfile.
 ARG CMAKE_VERSION
 ARG CCACHE_VERSION
 ARG PYTHON_VERSION
+ARG BUILD_SHARED_LIBS
+ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
+ARG PACKAGE
+ARG BUILD_SYCL_MODULE
 ARG CI
 
+RUN if [[ -z "${DEVELOPER_BUILD}"      ]]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
+ && if [[ -z "${CCACHE_TAR_NAME}"      ]]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
+ && if [[ -z "${CMAKE_VERSION}"        ]]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
+ && if [[ -z "${CCACHE_VERSION}"       ]]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
+ && if [[ -z "${PYTHON_VERSION}"       ]]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_SHARED_LIBS}"    ]]; then echo "Error: ARG BUILD_SHARED_LIBS    not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_CUDA_MODULE}"    ]]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_TENSORFLOW_OPS}" ]]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_PYTORCH_OPS}"    ]]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
+ && if [[ -z "${PACKAGE}"              ]]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi \
+ && if [[ -z "${BUILD_SYCL_MODULE}"    ]]; then echo "Error: ARG BUILD_SYCL_MODULE    not specified."; exit 1; fi
+
+# Fix Nvidia repo key rotation issue
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
+# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
+RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
+        export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn; \
+        apt-key del 7fa2af80; \
+        apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub; \
+        apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub; \
+    fi
+
 # Forward all ARG to ENV
-# ci_utils.sh requires these environment variables
+# ci_utils.sh may require these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ENV CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
-ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV PACKAGE=${PACKAGE}
+ENV BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
-# This prevents "sudo: command not found" errors in scripts run as root
 ENV SUDO=command
 
-# Use bash as the default shell for complex commands
-SHELL ["/bin/bash", "-c"]
+# The base image already contains the oneAPI packages.
+# Having this in the list can cause checksum errors when apt-get update.
+RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+        rm -rf /etc/apt/sources.list.d/oneAPI.list; \
+    fi
 
-# --- DYNAMIC ARCHITECTURE-AWARE INSTALLATIONS ---
-
-# Fix Nvidia repo key rotation issue by auto-detecting architecture
-# uname -m returns 'x86_64' for amd64 and 'aarch64' for arm64
-RUN export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn \
- && apt-key del 7fa2af80 \
- && case "$(uname -m)" in \
-        "x86_64") NVIDIA_ARCH="x86_64";; \
-        "aarch64") NVIDIA_ARCH="sbsa";; \
-        *) echo "Unsupported architecture: $(uname -m)" && exit 1;; \
-    esac \
- && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu22.04/${NVIDIA_ARCH}/3bf863cc.pub \
- && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu22.04/x86_64/7fa2af80.pub
-
-# Dependencies: basic and pyenv build deps (these are cross-platform)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
+# Dependencies: basic and python-build
+RUN apt-get update && apt-get install -y \
+    git  \
     wget \
     curl \
-    ca-certificates \
     build-essential \
-    libssl-dev zlib1g-dev libbz2-dev \
-    libreadline-dev libsqlite3-dev llvm \
-    libncurses5-dev libncursesw5-dev \
-    xz-utils tk-dev libffi-dev liblzma-dev \
- && update-ca-certificates \
+    pkg-config \
+    zlib1g \
+    zlib1g-dev \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
+    ca-certificates \
+    && if [ $BUILD_SYCL_MODULE = "ON" ]; then apt-get install -y intel-level-zero-gpu-raytracing ; fi \
  && rm -rf /var/lib/apt/lists/*
 
-# Dependencies: cmake, with automatic architecture detection
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Dependencies: cmake
 ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
-# Dependencies: ccache (build from source is cross-platform)
+# Dependencies: ccache
 WORKDIR /root
 RUN git clone https://github.com/ccache/ccache.git \
  && cd ccache \
@@ -77,68 +125,117 @@ RUN git clone https://github.com/ccache/ccache.git \
  && cd build \
  && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON .. \
  && make install -j$(nproc) \
+ && which ccache \
  && ccache --version \
- && ccache -M 4G \
  && ccache -s
 
-# Download ccache from GCS bucket (optional)
+# Download ccache from GCS bucket
+# If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
+# Example directory structure:
+# - CCACHE_DIR        = ~/.cache/ccache
+# - CCACHE_DIR_NAME   = ccache
+# - CCACHE_DIR_PARENT = ~/.cache
+# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz || wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
  && if [ -f ${CCACHE_TAR_NAME}.tar.?z ]; then tar -xf ${CCACHE_TAR_NAME}.tar.?z; fi \
+ && mkdir -p ${CCACHE_DIR} \
+ && ccache -M 4G \
  && ccache -s
 
-# --- PYTHON INSTALLATION WITH PYENV (REPLACES MINICONDA) ---
-ENV PYENV_ROOT=/root/.pyenv
-ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
-RUN curl https://pyenv.run | bash \
- && pyenv update \
- && pyenv install $PYTHON_VERSION \
- && pyenv global $PYTHON_VERSION \
- && pyenv rehash \
- && pip install --upgrade pip setuptools wheel
-
-# Verify Python installation
-RUN which python \
- && python --version \
- && pip --version
-
 # Checkout Open3D-ML main branch
+# TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
 
-# Open3D C++ dependencies (The script is arch-aware)
-COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
-RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
- && rm -rf /var/lib/apt/lists/*
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
+
+# Open3D C++ dependencies
+# If BUILD_SYCL_MODULE=ON, do not install clang - this installs libomp5-dev which gets linked into the shared library.
+RUN if [[ "$(uname -m)" = "x86_64" ]] ; then \
+        ./util/install_deps_ubuntu.sh assume-yes no-filament-deps ; \
+    else \
+        ./util/install_deps_ubuntu.sh assume-yes ; \
+    fi
 
 # Open3D Python dependencies
-COPY ./util/ci_utils.sh /root/Open3D/util/
-COPY ./python/requirements*.txt /root/Open3D/python/
-RUN source /root/Open3D/util/ci_utils.sh \
- && install_python_dependencies with-jupyter
+RUN source util/ci_utils.sh \
+ && if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
+        install_python_dependencies with-cuda with-jupyter; \
+    else \
+        install_python_dependencies with-jupyter; \
+    fi \
+ && pip install -r python/requirements_test.txt
 
-# Open3D Jupyter dependencies (NodeSource script is arch-aware)
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
- && apt-get install -y nodejs \
+# Open3D Jupyter dependencies
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y nodejs npm \
  && rm -rf /var/lib/apt/lists/* \
  && node --version \
  && npm install -g yarn \
  && yarn --version
 
-# Open3D repo
-COPY . /root/Open3D
-WORKDIR /root/Open3D
 
-# Build python wheel
-RUN export NPROC=$(nproc) \
- && export BUILD_SHARED_LIBS=OFF \
- && source /root/Open3D/util/ci_utils.sh \
- && build_pip_package build_azure_kinect build_jupyter \
- && if [ ${CI:-}a != a ]; then cd /root/Open3D/build/ && ls | grep -Ev '^lib$' | xargs rm -rf ; fi
- # remove build folder (except lib) to save CI space on Github
+# Build all
+RUN \
+    if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+        export CMAKE_CXX_COMPILER=icpx; \
+        export CMAKE_C_COMPILER=icx; \
+        export GLIBCXX_USE_CXX11_ABI=ON; \
+        export BUILD_ISPC_MODULE=OFF; \
+    else \
+        export CMAKE_CXX_COMPILER=g++; \
+        export CMAKE_C_COMPILER=gcc; \
+        export BUILD_ISPC_MODULE=ON; \
+        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
+        if [ "$BUILD_PYTORCH_OPS" = "ON" ]; then \
+            export GLIBCXX_USE_CXX11_ABI=OFF; \
+        else \
+            export GLIBCXX_USE_CXX11_ABI=ON; \
+        fi \
+    fi \
+ && mkdir build \
+ && cd build \
+ && cmake -DCMAKE_CXX_FLAGS="-ftls-model=global-dynamic" \
+          -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
+          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
+          -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
+          -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
+          -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
+          -DBUILD_LIBREALSENSE=ON \
+          -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
+          -DBUILD_COMMON_CUDA_ARCHS=ON \
+          -DBUILD_COMMON_ISPC_ISAS=${BUILD_ISPC_MODULE} \
+          -DGLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI} \
+          -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
+          -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
+          -DBUILD_UNIT_TESTS=ON \
+          -DBUILD_BENCHMARKS=ON \
+          -DBUILD_EXAMPLES=ON \
+          -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+          .. \
+ && make VERBOSE=1 -j$(nproc) \
+ && make install-pip-package -j$(nproc) \
+ && make install -j$(nproc) \
+ && if [[ "${PACKAGE}" = "ON" ]]; then make package; fi \
+ && if [[ "${PACKAGE}" = "VIEWER" ]]; then make package-Open3DViewer-deb; fi \
+ && if [[ "${CI:-}a" != "a" ]]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc librealsense; fi
+# If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
@@ -146,6 +243,10 @@ RUN ccache -s \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
- && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME}
+ && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
+ && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
+ && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
+ && if [[ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
+ && ls -alh /
 
 RUN echo "Docker build done."
