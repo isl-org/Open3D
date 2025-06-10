@@ -87,7 +87,14 @@ FilamentView::FilamentView(filament::Engine& engine,
 }
 
 FilamentView::~FilamentView() {
-    view_->setCamera(nullptr);
+    #if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wnonnull"
+    #endif
+        view_->setCamera(nullptr);
+    #if defined(__clang__)
+    #pragma clang diagnostic pop
+    #endif
     view_->setScene(nullptr);
 
     camera_.reset();
@@ -361,7 +368,7 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
     if (other.color_grading_) {
         view_->setColorGrading(other.color_grading_);
     }
-    view_->setSampleCount(other.view_->getSampleCount());
+    view_->setMultiSampleAntiAliasingOptions(other.view_->getMultiSampleAntiAliasingOptions());
     auto ao_options = other.view_->getAmbientOcclusionOptions();
     view_->setAmbientOcclusionOptions(ao_options);
     auto aa_mode = other.view_->getAntiAliasing();

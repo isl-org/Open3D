@@ -76,7 +76,7 @@ folder that contains data you wish to visualize.
     wget https://github.com/isl-org/Open3D/releases/download/v@OPEN3D_VERSION@/open3d-app-@OPEN3D_VERSION@-Ubuntu.deb
     # Build docker image in folder containing Open3D deb package.
     docker build -t open3d-viewer -f- . <<EOF
-    FROM ubuntu:20.04
+    FROM ubuntu:22.04
     COPY open3d*.deb /root/
     RUN apt-get update \
         && apt-get install --yes /root/open3d*.deb \
@@ -117,7 +117,7 @@ driver with an environment variable (``EGL_PLATFORM=surfaceless``):
     wget https://raw.githubusercontent.com/isl-org/Open3D/v@OPEN3D_VERSION@/examples/python/visualization/render_to_image.py
     # Build docker image
     docker build -t open3d-headless -f- . <<EOF
-    FROM ubuntu:20.04
+    FROM ubuntu:22.04
     RUN apt-get update \
         && apt-get install --yes --no-install-recommends \
         libegl1 libgl1 libgomp1 python3-pip \

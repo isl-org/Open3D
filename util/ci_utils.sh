@@ -31,7 +31,7 @@ TORCH_VER="2.2.2"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 TORCH_CXX11_URL="https://download.pytorch.org/whl/"
 # Python
-PIP_VER="24.3.1"
+PIP_VER="25.0.1"
 PROTOBUF_VER="4.24.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install

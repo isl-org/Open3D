@@ -1,5 +1,7 @@
+
+
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
-ARG BASE_IMAGE=nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04
+ARG BASE_IMAGE=nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
 FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
@@ -27,7 +29,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
-# Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
 
 # Fix Nvidia repo key rotation issue
@@ -83,17 +84,23 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
 RUN ccache -M 4G \
  && ccache -s
 
-# Miniconda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
- && bash Miniconda3-latest-Linux-x86_64.sh -b \
- && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-RUN conda create -y -n open3d python=${PYTHON_VERSION} \
- && source activate open3d
-RUN which python \
- && python --version
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
@@ -117,7 +124,7 @@ RUN source /root/Open3D/util/ci_utils.sh \
 
 # Open3D Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
- && apt-get install -y nodejs \
+ && apt-get install -y nodejs npm \
  && rm -rf /var/lib/apt/lists/* \
  && node --version
 RUN npm install -g yarn \

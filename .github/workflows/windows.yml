@@ -1,3 +1,4 @@
+
 name: Windows
 permissions: {}
 
@@ -22,7 +23,7 @@ concurrency:
 env:
   PIP_VER: "24.3.1"
   CUDA_VERSION: "12.1.0"
-  SRC_DIR: "D:\\a\\open3d\\open3d"
+  SRC_DIR: ${{ github.workspace }}
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
@@ -210,7 +211,7 @@ jobs:
           .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Open3D python build requirements
-        working-directory: ${{ env.SOURCE_DIR }}
+        working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
@@ -297,7 +298,7 @@ jobs:
             ${{ env.SRC_DIR }}
 
       - name: Install Open3D python build requirements
-        working-directory: ${{ env.SOURCE_DIR }}
+        working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
