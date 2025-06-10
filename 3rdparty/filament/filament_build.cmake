@@ -1,3 +1,4 @@
+
 include(ExternalProject)
 
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
@@ -13,21 +14,21 @@ if(NOT is_multi_config)
 endif()
 
 set(filament_LIBRARIES
-        filameshio
-        filament
-        filaflat
-        filabridge
-        geometry
-        backend
-        bluegl
-        bluevk
-        ibl
-        image
-        ktxreader
-        meshoptimizer
-        smol-v
-        utils
-        vkshaders
+    filameshio
+    filament
+    filaflat
+    filabridge
+    geometry
+    backend
+    bluegl
+    bluevk
+    ibl
+    image
+    ktxreader
+    meshoptimizer
+    smol-v
+    utils
+    vkshaders
 )
 
 # Locate byproducts
@@ -51,13 +52,13 @@ if(NOT WIN32)
 endif()
 
 ExternalProject_Add(
-        ext_filament
-        PREFIX filament
-        URL https://github.com/google/filament/archive/refs/tags/v1.61.0.tar.gz
-        URL_HASH SHA256=8fe250142d72686e5b48403aefe55786da03b4604e6c44cd3c7c4d2a48e4b99d
-        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
-        UPDATE_COMMAND ""
-        CMAKE_ARGS
+    ext_filament
+    PREFIX filament
+    URL https://github.com/google/filament/archive/refs/tags/v1.49.1.tar.gz
+     URL_HASH SHA256=f092aeb1d24d9d84a3cc2327fc3359a5e2893d16e7ac55aab9a56aaae64e121f
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
+    UPDATE_COMMAND ""
+    CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}
         -DCCACHE_PROGRAM=OFF  # Enables ccache, "launch-cxx" is not working.
@@ -74,5 +75,5 @@ ExternalProject_Add(
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
         -DSPIRV_WERROR=OFF
-        BUILD_BYPRODUCTS ${lib_byproducts}
+    BUILD_BYPRODUCTS ${lib_byproducts}
 )
