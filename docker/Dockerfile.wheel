@@ -61,19 +61,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && update-ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-# Dependencies: cmake, with automatic architecture detection
-RUN case "$(uname -m)" in \
-        "x86_64")  CMAKE_ARCH_SUFFIX="linux-x86_64";; \
-        "aarch64") CMAKE_ARCH_SUFFIX="linux-aarch64";; \
-        *) echo "Unsupported architecture for CMake: $(uname -m)" && exit 1;; \
-    esac \
- && CMAKE_FILENAME="cmake-${CMAKE_VERSION}-${CMAKE_ARCH_SUFFIX}" \
- && CMAKE_FOLDER="cmake-${CMAKE_VERSION}-${CMAKE_ARCH_SUFFIX}" \
- && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_FILENAME}.tar.gz \
- && tar -xf ${CMAKE_FILENAME}.tar.gz \
- && cp -ar ${CMAKE_FOLDER} /root/cmake \
- && rm -f ${CMAKE_FILENAME}.tar.gz
-ENV PATH=/root/cmake/bin:${PATH}
+# Dependencies: cmake
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -xf ${CMAKE_VERSION}.tar.gz \
+ && cp -ar ${CMAKE_VERSION} ${HOME}
+ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 
 # Dependencies: ccache (build from source is cross-platform)
 WORKDIR /root
