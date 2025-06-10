@@ -1675,6 +1675,10 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
                 # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
                 # which prevents it from being used in a shared library.
                 # We link the shared version (-lgfortran) instead. This also handles libgcc.
+                find_library(GCC_S_SHARED_LIB NAMES gcc_s REQUIRED)
+                find_library(GFORTRAN_SHARED_LIB NAMES gfortran REQUIRED)
+                # quadmath may not be present on all systems, so don't make it required.
+                find_library(QUADMATH_SHARED_LIB NAMES quadmath)
                 target_link_libraries(3rdparty_blas INTERFACE gfortran)
                 if(APPLE_AARCH64)
                     find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
