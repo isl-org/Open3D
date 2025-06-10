@@ -91,16 +91,6 @@ RUN apt-get update && apt-get install -y \
     && if [ $BUILD_SYCL_MODULE = "ON" ]; then apt-get install -y intel-level-zero-gpu-raytracing ; fi \
  && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential        \
-        gcc-12 g++-12          \
-    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 90 \
-                           --slave   /usr/bin/g++ g++ /usr/bin/g++-12 \
-    && gcc  --version \
-    && g++  --version \
-    && rm -rf /var/lib/apt/lists/*
-
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run
 # does not need to activate the environment again.
@@ -192,7 +182,7 @@ RUN mkdir -p /etc/apt/keyrings \
  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" \
  | tee /etc/apt/sources.list.d/nodesource.list \
  && apt-get update \
- && apt-get install -y nodejs \
+ && apt-get install -y nodejs npm \
  && rm -rf /var/lib/apt/lists/* \
  && node --version \
  && npm install -g yarn \
