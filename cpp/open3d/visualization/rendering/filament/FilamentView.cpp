@@ -87,7 +87,14 @@ FilamentView::FilamentView(filament::Engine& engine,
 }
 
 FilamentView::~FilamentView() {
-    view_->setCamera(nullptr);
+    #if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wnonnull"
+    #endif
+        view_->setCamera(nullptr);
+    #if defined(__clang__)
+    #pragma clang diagnostic pop
+    #endif
     view_->setScene(nullptr);
 
     camera_.reset();
