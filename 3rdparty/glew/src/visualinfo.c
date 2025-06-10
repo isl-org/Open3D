@@ -4,7 +4,7 @@
 ** Copyright (C) Nate Robins, 1997
 **               Michael Wimmer, 1999
 **               Milan Ikits, 2002-2008
-**               Nigel Stewart, 2008-2013
+**               Nigel Stewart, 2008-2019
 **
 ** visualinfo is a small utility that displays all available visuals,
 ** aka. pixelformats, in an OpenGL system along with renderer version
@@ -592,7 +592,7 @@ VisualInfoGDI (GLContext* ctx)
 	 || (drawableonly && !(pfd.dwFlags & PFD_DRAW_TO_WINDOW))) continue;
       fprintf(file, "Visual ID: %2d  depth=%d  class=%s\n", i, pfd.cDepthBits, 
 	     pfd.cColorBits <= 8 ? "PseudoColor" : "TrueColor");
-      fprintf(file, "    bufferSize=%d level=%d renderType=%s doubleBuffer=%ld stereo=%ld\n", pfd.cColorBits, pfd.bReserved, pfd.iPixelType == PFD_TYPE_RGBA ? "rgba" : "ci", pfd.dwFlags & PFD_DOUBLEBUFFER, pfd.dwFlags & PFD_STEREO);
+      fprintf(file, "    bufferSize=%d level=%d renderType=%s doubleBuffer=%ld stereo=%ld\n", pfd.cColorBits, pfd.bReserved, pfd.iPixelType == PFD_TYPE_RGBA ? "rgba" : "ci", (long) (pfd.dwFlags & PFD_DOUBLEBUFFER), (long) (pfd.dwFlags & PFD_STEREO));
       fprintf(file, "    generic=%d generic accelerated=%d\n", (pfd.dwFlags & PFD_GENERIC_FORMAT) == PFD_GENERIC_FORMAT, (pfd.dwFlags & PFD_GENERIC_ACCELERATED) == PFD_GENERIC_ACCELERATED);
       fprintf(file, "    rgba: redSize=%d greenSize=%d blueSize=%d alphaSize=%d\n", pfd.cRedBits, pfd.cGreenBits, pfd.cBlueBits, pfd.cAlphaBits);
       fprintf(file, "    auxBuffers=%d depthSize=%d stencilSize=%d\n", pfd.cAuxBuffers, pfd.cDepthBits, pfd.cStencilBits);

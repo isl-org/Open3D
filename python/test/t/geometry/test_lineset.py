@@ -35,7 +35,7 @@ def test_extrude_linear():
     assert ans.triangle.indices.shape == (4, 3)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_pickle(device):
     line = o3d.t.geometry.LineSet([[0.7, 0, 0], [1, 0, 0]], [[0, 1]]).to(device)
     with tempfile.TemporaryDirectory() as temp_dir:

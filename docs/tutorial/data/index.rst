@@ -175,13 +175,13 @@ A 3D Mobius knot mesh in PLY format.
     data::KnotMesh dataset;
     auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
-TriangleModel with PRB texture
+TriangleModel with PBR texture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 MonkeyModel
 -----------
 
-The monkey model with PRB texture.
+The monkey model with PBR texture.
 
 .. code-block:: python
 
@@ -197,7 +197,7 @@ The monkey model with PRB texture.
 SwordModel
 ----------
 
-The sword model with PRB texture.
+The sword model with PBR texture.
 
 .. code-block:: python
 
@@ -213,7 +213,7 @@ The sword model with PRB texture.
 CrateModel
 ----------
 
-The crate model with PRB texture.
+The crate model with PBR texture.
 
 .. code-block:: python
 
@@ -229,7 +229,7 @@ The crate model with PRB texture.
 FlightHelmetModel
 -----------------
 
-The flight helmet gltf model with PRB texture.
+The flight helmet gltf model with PBR texture.
 
 .. code-block:: python
 

@@ -11,6 +11,7 @@
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Kernel.h"
@@ -23,10 +24,10 @@
 namespace open3d {
 namespace tests {
 
-class LinalgPermuteDevices : public PermuteDevices {};
+class LinalgPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(Linalg,
                          LinalgPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+                         testing::ValuesIn(LinalgPermuteDevices::TestCases()));
 
 TEST_P(LinalgPermuteDevices, Matmul) {
     const float EPSILON = 1e-8;
@@ -482,6 +483,9 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
+    if (core::sy::GetDeviceType(device) == "cpu") {
+        GTEST_SKIP() << "MKL unsupported SYCL device.";
+    }
     core::Dtype dtype = core::Float32;
 
     // Solve test.

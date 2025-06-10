@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "open3d/geometry/KDTreeSearchParam.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 
@@ -59,10 +60,14 @@ public:
 ///
 /// \param input The Input point cloud.
 /// \param search_param KDTree KNN search parameter.
+/// \param indices Indices of the points to compute FPFH features on.
+/// If not set, compute features for the whole point cloud.
 std::shared_ptr<Feature> ComputeFPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeSearchParam &search_param =
-                geometry::KDTreeSearchParamKNN());
+                geometry::KDTreeSearchParamKNN(),
+        const utility::optional<std::vector<size_t>> &indices =
+                utility::nullopt);
 
 /// \brief Function to find correspondences via 1-nearest neighbor feature
 /// matching. Target is used to construct a nearest neighbor search

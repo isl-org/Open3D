@@ -33,6 +33,11 @@ void pybind_sycl_utils_definitions(py::module& m) {
                "Enables the JIT cache for SYCL. This sets an environment "
                "variable and "
                "will affect the entire process and any child processes.");
+
+    m_sycl.def("get_device_type", sy::GetDeviceType, "device"_a,
+               "Returns the device type (cpu / gpu / accelerator / custom) of "
+               "the specified device as a string. Returns empty string if the "
+               "device is not available.");
 }
 
 }  // namespace core

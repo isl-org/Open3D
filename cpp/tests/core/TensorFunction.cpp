@@ -15,10 +15,11 @@
 namespace open3d {
 namespace tests {
 
-class TensorFunctionPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Tensor,
-                         TensorFunctionPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorFunctionPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorFunctionPermuteDevices,
+        testing::ValuesIn(TensorFunctionPermuteDevices::TestCases()));
 
 TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     core::Device device = GetParam();
@@ -105,7 +106,7 @@ TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(core::Concatenate({a, b.To(core::Float64), c}));
-    if (device.IsCUDA()) {
+    if (!device.IsCPU()) {
         EXPECT_ANY_THROW(
                 core::Concatenate({a, b.To(core::Device("CPU:0")), c}));
     }
@@ -205,7 +206,7 @@ TEST_P(TensorFunctionPermuteDevices, Append) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(core::Append(self, other.To(core::Float64)));
-    if (device.IsCUDA()) {
+    if (!device.IsCPU()) {
         EXPECT_ANY_THROW(core::Append(self, other.To(core::Device("CPU:0"))));
     }
 

@@ -74,6 +74,11 @@ Creates the oriented bounding box that encloses the set of points.
 Computes the oriented bounding box based on the PCA of the convex hull.
 The returned bounding box is an approximation to the minimal bounding box.
 
+Note:
+     See the Tensor version open3d.t.geometry.OrientedBoundingBox.create_from_points()
+     and select the method open3d.t.geometry.MINIMAL_JYLANKI
+     for an algorithm returning the minimum oriented bounding box.
+
 Args:
      points (open3d.utility.Vector3dVector): Input points.
      robust (bool): If set to true uses a more robust method which works in
@@ -88,13 +93,20 @@ Returns:
                         &OrientedBoundingBox::CreateFromPointsMinimal,
                         "points"_a, "robust"_a = false,
                         R"doc(
-Creates the oriented bounding box with the smallest volume.
+Creates the oriented bounding box with optimized (but not 
+necessarily smallest) volume.
 
 The algorithm makes use of the fact that at least one edge of
 the convex hull must be collinear with an edge of the minimum
 bounding box: for each triangle in the convex hull, calculate
 the minimal axis aligned box in the frame of that triangle.
-at the end, return the box with the smallest volume
+at the end, return the box with optimized (but not necessarily 
+smallest) volume.
+
+Note:
+     See the Tensor version open3d.t.geometry.OrientedBoundingBox.create_from_points()
+     and select the method open3d.t.geometry.MINIMAL_JYLANKI
+     for an algorithm returning the minimum oriented bounding box.
 
 Args:
      points (open3d.utility.Vector3dVector): Input points.
@@ -105,6 +117,7 @@ Returns:
      open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
      bounding box is oriented such that its volume is minimized.
 )doc")
+
             .def("volume", &OrientedBoundingBox::Volume,
                  "Returns the volume of the bounding box.")
             .def("get_box_points", &OrientedBoundingBox::GetBoxPoints,

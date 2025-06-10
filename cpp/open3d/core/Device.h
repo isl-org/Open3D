@@ -115,4 +115,12 @@ struct hash<open3d::core::Device> {
         return std::hash<std::string>{}(device.ToString());
     }
 };
+
+template <>
+struct less<open3d::core::Device> {
+    bool operator()(const open3d::core::Device& lhs,
+                    const open3d::core::Device& rhs) const {
+        return lhs.ToString() < rhs.ToString();
+    }
+};
 }  // namespace std

@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-# Use: install_deps_ubuntu.sh [ assume-yes ]
+# Use: install_deps_ubuntu.sh [ assume-yes ] [ no-filament-deps ]
 
 set -ev
 
 SUDO=${SUDO:=sudo} # SUDO=command in docker (running as root, sudo not available)
-if [ "$1" == "assume-yes" ]; then
+options="$(echo "$@" | tr ' ' '|')"
+APT_CONFIRM=""
+if [[ "assume-yes" =~ ^($options)$ ]]; then
     APT_CONFIRM="--assume-yes"
-else
-    APT_CONFIRM=""
+fi
+FILAMENT_DEPS="yes"
+if [[ "no-filament-deps" =~ ^($options)$ ]]; then
+    FILAMENT_DEPS=""
 fi
 
 deps=(
@@ -17,12 +21,10 @@ deps=(
     libxcb-shm0
     libglu1-mesa-dev
     python3-dev
-    # Filament build-from-source
-    clang
+    # filament linking
     libc++-dev
     libc++abi-dev
     libsdl2-dev
-    ninja-build
     libxi-dev
     # ML
     libtbb-dev
@@ -33,6 +35,12 @@ deps=(
     autoconf
     libtool
 )
+
+if [[ "$FILAMENT_DEPS" ]]; then     # Filament build-from-source
+    deps+=(clang
+        ninja-build
+    )
+fi
 
 eval $(
     source /etc/lsb-release;

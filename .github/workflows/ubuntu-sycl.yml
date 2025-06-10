@@ -3,6 +3,11 @@ permissions: {}
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release wheels'
+        required: false
+        default: 'ON'
   push:
     branches:
       - main
@@ -16,11 +21,12 @@ concurrency:
 env:
   NPROC: 2
   GCE_CLI_GHA_VERSION: "416.0.0"
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
   ubuntu-sycl:
     permissions:
-      contents: read
+      contents: write  # Release upload
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -48,6 +54,26 @@ jobs:
           else
             docker/docker_test.sh sycl-static
           fi
+
+      - name: Upload Python wheel and C++ binary package to GitHub artifacts
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-sycl-linux-wheel-and-binary
+          path: |
+            open3d-*.whl
+            open3d-devel-*.tar.xz
+          if-no-files-found: error
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ${{ matrix.BUILD_SHARED_LIBS }} == 'ON' ] ; then
+            gh release upload main-devel open3d-*.whl --clobber
+            gh release upload main-devel open3d-devel-*.tar.xz --clobber
+          fi
+          gh release view main-devel
 
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}
