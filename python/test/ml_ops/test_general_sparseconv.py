@@ -8,6 +8,7 @@
 
 import open3d as o3d
 import numpy as np
+
 np.set_printoptions(linewidth=600)
 np.set_printoptions(threshold=np.inf)
 import pytest

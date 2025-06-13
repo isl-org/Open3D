@@ -53,7 +53,7 @@ public:
         return color_device;
     }
 
-    ~RGBDImage() override{};
+    ~RGBDImage() override {};
 
     /// Clear stored data.
     RGBDImage &Clear() override;
