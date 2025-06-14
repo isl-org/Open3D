@@ -669,6 +669,8 @@ if(USE_SYSTEM_GLFW)
     open3d_find_package_3rdparty_library(3rdparty_glfw
         HEADER
         PACKAGE glfw3
+        VERSION 3.4
+        REQUIRED
         TARGETS glfw
     )
     if(NOT 3rdparty_glfw_FOUND)
@@ -867,29 +869,31 @@ if(USE_SYSTEM_CURL)
         set(USE_SYSTEM_CURL OFF)
     endif()
 endif()
-if(NOT USE_SYSTEM_CURL)
-    if(USE_SYSTEM_OPENSSL)
-        open3d_find_package_3rdparty_library(3rdparty_openssl
-            PACKAGE OpenSSL
-            TARGETS OpenSSL::Crypto
-        )
-        if(NOT 3rdparty_openssl_FOUND)
-            set(USE_SYSTEM_OPENSSL OFF)
-        endif()
-    endif()
-    if(NOT USE_SYSTEM_OPENSSL)
-        # BoringSSL
-        include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
-        open3d_import_3rdparty_library(3rdparty_openssl
-            INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
-            INCLUDE_ALL
-            INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
-            LIB_DIR      ${BORINGSSL_LIB_DIR}
-            LIBRARIES    ${BORINGSSL_LIBRARIES}
-            DEPENDS      ext_zlib ext_boringssl
-        )
-    endif()
 
+if(USE_SYSTEM_OPENSSL)
+    open3d_find_package_3rdparty_library(3rdparty_openssl
+        PACKAGE OpenSSL
+        REQUIRED
+        TARGETS OpenSSL::Crypto
+    )
+    if(NOT 3rdparty_openssl_FOUND)
+        set(USE_SYSTEM_OPENSSL OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_OPENSSL)
+    # BoringSSL
+    include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+    open3d_import_3rdparty_library(3rdparty_openssl
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        LIB_DIR      ${BORINGSSL_LIB_DIR}
+        LIBRARIES    ${BORINGSSL_LIBRARIES}
+        DEPENDS      ext_zlib ext_boringssl
+    )
+endif()
+
+if(NOT USE_SYSTEM_CURL)
     include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
     open3d_import_3rdparty_library(3rdparty_curl
         INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
@@ -917,7 +921,7 @@ if(NOT USE_SYSTEM_CURL)
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
 
 # PNG
 if(USE_SYSTEM_PNG)
