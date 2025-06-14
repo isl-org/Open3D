@@ -130,7 +130,7 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
-            -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_LIBREALSENSE=OFF `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
@@ -307,7 +307,7 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_AZURE_KINECT=ON `
-            -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_LIBREALSENSE=OFF `
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             ${{ env.SRC_DIR }}
