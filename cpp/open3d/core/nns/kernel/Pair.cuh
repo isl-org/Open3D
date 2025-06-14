@@ -42,7 +42,7 @@ namespace core {
 /// A simple pair type for CUDA device usage
 template <typename K, typename V>
 struct Pair {
-    constexpr __device__ inline Pair() {}
+    constexpr __device__ inline Pair() = default; // required to compile on ctk-12.2 + aarch64
 
     constexpr __device__ inline Pair(K key, V value) : k(key), v(value) {}
 
