@@ -22,7 +22,7 @@ concurrency:
 
 env:
   PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.1.0"
+  CUDA_VERSION: "12.8.0"
   SRC_DIR: ${{ github.workspace }}
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
