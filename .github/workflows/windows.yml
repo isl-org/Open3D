@@ -21,7 +21,7 @@ concurrency:
 
 env:
   PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.1.0"
+  CUDA_VERSION: "12.4.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -31,7 +31,7 @@ jobs:
   windows:
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -96,6 +96,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
+      
+      - name: Checkout Open3D-ML
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          path: open3d_ml
+      
+      - name: Install PyTorch requirements
+        run: |
+          if (${{ matrix.BUILD_CUDA_MODULE == 'ON' }}) {
+            python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+            python -m pip install tensorboard
+          } else {
+            python -m pip install -r open3d_ml/requirements-torch.txt
+          }
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -107,7 +122,7 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake --version
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
@@ -115,10 +130,11 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
-            -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_LIBREALSENSE=OFF `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
+            -DBUILD_PYTORCH_OPS=ON `
             ${{ env.SRC_DIR }}
 
       - name: Build
@@ -202,7 +218,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
@@ -214,7 +230,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -c python/requirements_build.txt wheel setuptools
+          python -m pip install -U -r python/requirements_build.txt
       - name: Install Python package
         working-directory: ${{ env.BUILD_DIR }}
         run: |
@@ -291,7 +307,7 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_AZURE_KINECT=ON `
-            -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_LIBREALSENSE=OFF `
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             ${{ env.SRC_DIR }}
