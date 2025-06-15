@@ -94,17 +94,16 @@ TransformationEstimationSymmetric::
                 const geometry::PointCloud &target,
                 double max_correspondence_distance) const {
     if (!target.HasNormals() || !source.HasNormals()) {
-        utility::LogError(
-                "SymmetricICP requires both source and target to have normals.");
+        utility::LogError("SymmetricICP requires both source and target to "
+                          "have normals.");
     }
     std::shared_ptr<const geometry::PointCloud> source_initialized_c(
             &source, [](const geometry::PointCloud *) {});
     std::shared_ptr<const geometry::PointCloud> target_initialized_c(
             &target, [](const geometry::PointCloud *) {});
     if (!source_initialized_c || !target_initialized_c) {
-        utility::LogError(
-                "Internal error: InitializePointCloudsForTransformation returns "
-                "nullptr.");
+        utility::LogError("Internal error: InitializePointCloudsFor"
+                          "Transformation returns nullptr.");
     }
     return std::make_tuple(source_initialized_c, target_initialized_c);
 }
