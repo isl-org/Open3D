@@ -120,6 +120,12 @@ void pybind_registration_declarations(py::module &m) {
             te_p2l(m_registration, "TransformationEstimationPointToPlane",
                    "Class to estimate a transformation for point to "
                    "plane distance.");
+    py::class_<TransformationEstimationSymmetric,
+               PyTransformationEstimation<TransformationEstimationSymmetric>,
+               TransformationEstimation>
+            te_sym(m_registration, "TransformationEstimationSymmetric",
+                   "Class to estimate a transformation for symmetric "
+                   "point to plane distance.");
     py::class_<
             TransformationEstimationForColoredICP,
             PyTransformationEstimation<TransformationEstimationForColoredICP>,
