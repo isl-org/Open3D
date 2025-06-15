@@ -84,7 +84,7 @@ TEST(SymmetricICP, TransformationEstimationSymmetricComputeTransformation) {
     registration::TransformationEstimationSymmetric estimation;
 
     Eigen::Matrix4d transformation =
-        estimation.ComputeTransformation(source, target, corres);
+            estimation.ComputeTransformation(source, target, corres);
 
     // Should be close to identity for perfect correspondence
     EXPECT_TRUE(transformation.isApprox(Eigen::Matrix4d::Identity(), 1e-3));
@@ -98,7 +98,7 @@ TEST(SymmetricICP,
     registration::TransformationEstimationSymmetric estimation;
 
     Eigen::Matrix4d transformation =
-        estimation.ComputeTransformation(source, target, corres);
+            estimation.ComputeTransformation(source, target, corres);
 
     EXPECT_TRUE(transformation.isApprox(Eigen::Matrix4d::Identity()));
 }
@@ -116,7 +116,7 @@ TEST(SymmetricICP,
     registration::TransformationEstimationSymmetric estimation;
 
     Eigen::Matrix4d transformation =
-        estimation.ComputeTransformation(source, target, corres);
+            estimation.ComputeTransformation(source, target, corres);
 
     EXPECT_TRUE(transformation.isApprox(Eigen::Matrix4d::Identity()));
 }
@@ -130,18 +130,17 @@ TEST(SymmetricICP, RegistrationSymmetricICP) {
     source.normals_ = {{0, 0, 1}, {0, 0, 1}, {0, 0, 1}};
 
     // Target is slightly translated
-    target.points_ = {{0.05, 0.05, 0.05},
-                      {1.05, 0.05, 0.05},
-                      {0.05, 1.05, 0.05}};
+    target.points_ = {
+            {0.05, 0.05, 0.05}, {1.05, 0.05, 0.05}, {0.05, 1.05, 0.05}};
     target.normals_ = {{0, 0, 1}, {0, 0, 1}, {0, 0, 1}};
 
     registration::TransformationEstimationSymmetric estimation;
     registration::ICPConvergenceCriteria criteria;
 
     registration::RegistrationResult result =
-            registration::RegistrationSymmetricICP(
-                    source, target, 0.1, Eigen::Matrix4d::Identity(),
-                    estimation, criteria);
+            registration::RegistrationSymmetricICP(source, target, 0.1,
+                                                   Eigen::Matrix4d::Identity(),
+                                                   estimation, criteria);
 
     EXPECT_GT(result.correspondence_set_.size(), 0);
     EXPECT_GT(result.fitness_, 0.0);
@@ -164,13 +163,13 @@ TEST(SymmetricICP, RegistrationSymmetricICPConvergence) {
         double z = rand_gen();
 
         source.points_.push_back({x, y, z});
-        source.normals_.push_back({0, 0, 1}); // Simple normal for testing
+        source.normals_.push_back({0, 0, 1});  // Simple normal for testing
     }
 
     // Create target by transforming source with known transformation
     Eigen::Matrix4d true_transformation = Eigen::Matrix4d::Identity();
-    true_transformation(0, 3) = 0.1; // Small translation in x
-    true_transformation(1, 3) = 0.05; // Small translation in y
+    true_transformation(0, 3) = 0.1;   // Small translation in x
+    true_transformation(1, 3) = 0.05;  // Small translation in y
 
     target = source;
     target.Transform(true_transformation);
@@ -179,9 +178,9 @@ TEST(SymmetricICP, RegistrationSymmetricICPConvergence) {
     registration::ICPConvergenceCriteria criteria(1e-6, 1e-6, 30);
 
     registration::RegistrationResult result =
-            registration::RegistrationSymmetricICP(
-                    source, target, 0.5, Eigen::Matrix4d::Identity(),
-                    estimation, criteria);
+            registration::RegistrationSymmetricICP(source, target, 0.5,
+                                                   Eigen::Matrix4d::Identity(),
+                                                   estimation, criteria);
 
     // Check that registration converged to reasonable result
     EXPECT_GT(result.fitness_, 0.5);

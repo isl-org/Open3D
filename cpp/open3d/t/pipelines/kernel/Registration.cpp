@@ -63,13 +63,11 @@ core::Tensor ComputePoseSymmetric(const core::Tensor &source_points,
     int inlier_count = 0;
 
     if (source_points.IsCPU()) {
-        ComputePoseSymmetricCPU(source_points.Contiguous(),
-                                target_points.Contiguous(),
-                                source_normals.Contiguous(),
-                                target_normals.Contiguous(),
-                                correspondence_indices.Contiguous(), pose,
-                                residual, inlier_count, source_points.GetDtype(),
-                                device, kernel);
+        ComputePoseSymmetricCPU(
+                source_points.Contiguous(), target_points.Contiguous(),
+                source_normals.Contiguous(), target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), pose, residual,
+                inlier_count, source_points.GetDtype(), device, kernel);
     } else {
         utility::LogError("Unimplemented device.");
     }

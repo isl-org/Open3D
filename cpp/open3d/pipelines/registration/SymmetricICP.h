@@ -74,4 +74,3 @@ RegistrationResult RegistrationSymmetricICP(
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace open3d
-

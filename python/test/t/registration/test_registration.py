@@ -236,8 +236,8 @@ def test_icp_symmetric(device):
 
         np.testing.assert_allclose(reg_sym_t.inlier_rmse,
                                    reg_sym_legacy.inlier_rmse, 0.001)
-        np.testing.assert_allclose(reg_sym_t.fitness,
-                                   reg_sym_legacy.fitness, 0.001)
+        np.testing.assert_allclose(reg_sym_t.fitness, reg_sym_legacy.fitness,
+                                   0.001)
 
 
 @pytest.mark.parametrize("device", list_devices())

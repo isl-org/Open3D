@@ -129,15 +129,14 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
 }
 
 template <typename scalar_t, typename funct_t>
-static void ComputePoseSymmetricKernelCPU(
-        const scalar_t *source_points_ptr,
-        const scalar_t *target_points_ptr,
-        const scalar_t *source_normals_ptr,
-        const scalar_t *target_normals_ptr,
-        const int64_t *correspondence_indices,
-        const int n,
-        scalar_t *global_sum,
-        funct_t GetWeightFromRobustKernel) {
+static void ComputePoseSymmetricKernelCPU(const scalar_t *source_points_ptr,
+                                          const scalar_t *target_points_ptr,
+                                          const scalar_t *source_normals_ptr,
+                                          const scalar_t *target_normals_ptr,
+                                          const int64_t *correspondence_indices,
+                                          const int n,
+                                          scalar_t *global_sum,
+                                          funct_t GetWeightFromRobustKernel) {
     std::vector<scalar_t> A_1x29(29, 0.0);
 #ifdef _WIN32
     std::vector<scalar_t> zeros_29(29, 0.0);
@@ -175,18 +174,18 @@ static void ComputePoseSymmetricKernelCPU(
                     scalar_t r1 = dx * ntx + dy * nty + dz * ntz;
                     scalar_t r2 = dx * nsx + dy * nsy + dz * nsz;
 
-                    scalar_t J1[6] = { -sz * nty + sy * ntz,
-                                        sz * ntx - sx * ntz,
-                                        -sy * ntx + sx * nty,
-                                        ntx,
-                                        nty,
-                                        ntz };
-                    scalar_t J2[6] = { -sz * nsy + sy * nsz,
-                                        sz * nsx - sx * nsz,
-                                        -sy * nsx + sx * nsy,
-                                        nsx,
-                                        nsy,
-                                        nsz };
+                    scalar_t J1[6] = {-sz * nty + sy * ntz,
+                                      sz * ntx - sx * ntz,
+                                      -sy * ntx + sx * nty,
+                                      ntx,
+                                      nty,
+                                      ntz};
+                    scalar_t J2[6] = {-sz * nsy + sy * nsz,
+                                      sz * nsx - sx * nsz,
+                                      -sy * nsx + sx * nsy,
+                                      nsx,
+                                      nsy,
+                                      nsz};
 
                     scalar_t w1 = GetWeightFromRobustKernel(r1);
                     scalar_t w2 = GetWeightFromRobustKernel(r2);
@@ -194,8 +193,8 @@ static void ComputePoseSymmetricKernelCPU(
                     int i = 0;
                     for (int j = 0; j < 6; ++j) {
                         for (int k = 0; k <= j; ++k) {
-                            A_reduction[i] += J1[j] * w1 * J1[k] +
-                                              J2[j] * w2 * J2[k];
+                            A_reduction[i] +=
+                                    J1[j] * w1 * J1[k] + J2[j] * w2 * J2[k];
                             ++i;
                         }
                         A_reduction[21 + j] +=
@@ -222,16 +221,16 @@ static void ComputePoseSymmetricKernelCPU(
 }
 
 void ComputePoseSymmetricCPU(const core::Tensor &source_points,
-                              const core::Tensor &target_points,
-                              const core::Tensor &source_normals,
-                              const core::Tensor &target_normals,
-                              const core::Tensor &correspondence_indices,
-                              core::Tensor &pose,
-                              float &residual,
-                              int &inlier_count,
-                              const core::Dtype &dtype,
-                              const core::Device &device,
-                              const registration::RobustKernel &kernel) {
+                             const core::Tensor &target_points,
+                             const core::Tensor &source_normals,
+                             const core::Tensor &target_normals,
+                             const core::Tensor &correspondence_indices,
+                             core::Tensor &pose,
+                             float &residual,
+                             int &inlier_count,
+                             const core::Dtype &dtype,
+                             const core::Device &device,
+                             const registration::RobustKernel &kernel) {
     int n = source_points.GetLength();
 
     core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);

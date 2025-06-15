@@ -10,6 +10,7 @@ import numpy as np
 
 
 class TestSymmetricICP:
+
     def test_transformation_estimation_symmetric_constructor(self):
         """Test TransformationEstimationSymmetric constructor."""
         estimation = o3d.pipelines.registration.TransformationEstimationSymmetric(
