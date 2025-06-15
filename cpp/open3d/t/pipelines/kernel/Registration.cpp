@@ -68,6 +68,13 @@ core::Tensor ComputePoseSymmetric(const core::Tensor &source_points,
                 source_normals.Contiguous(), target_normals.Contiguous(),
                 correspondence_indices.Contiguous(), pose, residual,
                 inlier_count, source_points.GetDtype(), device, kernel);
+    } else if (source_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
+        CUDA_CALL(ComputePoseSymmetricCUDA, source_points.Contiguous(),
+                  target_points.Contiguous(), source_normals.Contiguous(),
+                  target_normals.Contiguous(),
+                  correspondence_indices.Contiguous(), pose, residual,
+                  inlier_count, source_points.GetDtype(), device, kernel);
     } else {
         utility::LogError("Unimplemented device.");
     }

@@ -268,5 +268,179 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeTransformationSymmetric) {
     }
 }
 
+TEST_P(TransformationEstimationPermuteDevices, SymmetricICPDeviceConsistency) {
+    core::Device device = GetParam();
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        // Create simple test data for device consistency testing
+        t::geometry::PointCloud source_pcd(device), target_pcd(device);
+        core::Tensor corres;
+        std::tie(source_pcd, target_pcd, corres) =
+                GetTestPointCloudsAndCorrespondences(dtype, device);
+
+        // Add normals to source
+        core::Tensor source_normals =
+                core::Tensor::Init<double>({{-0.1, -0.2, -0.8},
+                                            {0.2, -0.1, -0.7},
+                                            {0.05, -0.4, -0.6},
+                                            {-0.01, -0.3, -0.5},
+                                            {0.3, -0.1, -0.7},
+                                            {0.06, -0.4, -0.4},
+                                            {0.2, 0.2, -0.8},
+                                            {0.4, 0.1, -0.5},
+                                            {0.1, 0.1, -0.7},
+                                            {0.2, 0.3, -0.9},
+                                            {0.3, -0.2, -0.2},
+                                            {0.1, 0.1, -0.6},
+                                            {0.05, -0.4, -0.4},
+                                            {0.1, 0.2, -0.7}},
+                                           device);
+        source_pcd.SetPointNormals(source_normals.To(device, dtype));
+
+        t::pipelines::registration::TransformationEstimationSymmetric
+                estimation;
+
+        // Test RMSE computation
+        double rmse = estimation.ComputeRMSE(source_pcd, target_pcd, corres);
+        EXPECT_GT(rmse, 0.0);
+        EXPECT_TRUE(std::isfinite(rmse));
+
+        // Test transformation computation
+        core::Tensor transform = estimation.ComputeTransformation(
+                source_pcd, target_pcd, corres);
+        EXPECT_EQ(transform.GetShape(), core::SizeVector({4, 4}));
+        EXPECT_EQ(transform.GetDevice(), device);
+        EXPECT_TRUE(transform.AllClose(transform));  // Check for NaN/Inf
+    }
+}
+
+TEST_P(TransformationEstimationPermuteDevices,
+       SymmetricICPCPUvsGPUConsistency) {
+    core::Device device = GetParam();
+
+    // Skip CUDA consistency test if device is CPU
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        GTEST_SKIP() << "Skipping CPU vs GPU consistency test for CPU device";
+    }
+
+#ifdef BUILD_CUDA_MODULE
+    for (auto dtype : {core::Float32, core::Float64}) {
+        // Create identical test data for both CPU and GPU
+        auto [source_cpu, target_cpu, corres_cpu] =
+                GetTestPointCloudsAndCorrespondences(dtype,
+                                                     core::Device("CPU:0"));
+
+        // Add normals to source
+        core::Tensor source_normals_cpu =
+                core::Tensor::Init<double>({{-0.1, -0.2, -0.8},
+                                            {0.2, -0.1, -0.7},
+                                            {0.05, -0.4, -0.6},
+                                            {-0.01, -0.3, -0.5},
+                                            {0.3, -0.1, -0.7},
+                                            {0.06, -0.4, -0.4},
+                                            {0.2, 0.2, -0.8},
+                                            {0.4, 0.1, -0.5},
+                                            {0.1, 0.1, -0.7},
+                                            {0.2, 0.3, -0.9},
+                                            {0.3, -0.2, -0.2},
+                                            {0.1, 0.1, -0.6},
+                                            {0.05, -0.4, -0.4},
+                                            {0.1, 0.2, -0.7}},
+                                           core::Device("CPU:0"));
+        source_cpu.SetPointNormals(
+                source_normals_cpu.To(core::Device("CPU:0"), dtype));
+
+        // Copy to GPU
+        auto source_gpu = source_cpu.To(device);
+        auto target_gpu = target_cpu.To(device);
+        auto corres_gpu = corres_cpu.To(device);
+
+        // Test on both devices
+        t::pipelines::registration::TransformationEstimationSymmetric
+                estimation;
+
+        // Compute on CPU
+        double rmse_cpu =
+                estimation.ComputeRMSE(source_cpu, target_cpu, corres_cpu);
+        core::Tensor transform_cpu = estimation.ComputeTransformation(
+                source_cpu, target_cpu, corres_cpu);
+
+        // Compute on GPU
+        double rmse_gpu =
+                estimation.ComputeRMSE(source_gpu, target_gpu, corres_gpu);
+        core::Tensor transform_gpu = estimation.ComputeTransformation(
+                source_gpu, target_gpu, corres_gpu);
+
+        // Compare results - they should be very close
+        EXPECT_NEAR(rmse_cpu, rmse_gpu, 1e-6);
+        EXPECT_TRUE(transform_cpu.AllClose(
+                transform_gpu.To(core::Device("CPU:0")), 1e-6, 1e-6));
+
+        utility::LogInfo("CPU RMSE: {}, GPU RMSE: {}", rmse_cpu, rmse_gpu);
+    }
+#else
+    GTEST_SKIP() << "CUDA not available, skipping CPU vs GPU consistency test";
+#endif
+}
+
+TEST_P(TransformationEstimationPermuteDevices, SymmetricICPRobustKernels) {
+    core::Device device = GetParam();
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source_pcd(device), target_pcd(device);
+        core::Tensor corres;
+        std::tie(source_pcd, target_pcd, corres) =
+                GetTestPointCloudsAndCorrespondences(dtype, device);
+
+        // Add normals to source
+        core::Tensor source_normals =
+                core::Tensor::Init<double>({{-0.1, -0.2, -0.8},
+                                            {0.2, -0.1, -0.7},
+                                            {0.05, -0.4, -0.6},
+                                            {-0.01, -0.3, -0.5},
+                                            {0.3, -0.1, -0.7},
+                                            {0.06, -0.4, -0.4},
+                                            {0.2, 0.2, -0.8},
+                                            {0.4, 0.1, -0.5},
+                                            {0.1, 0.1, -0.7},
+                                            {0.2, 0.3, -0.9},
+                                            {0.3, -0.2, -0.2},
+                                            {0.1, 0.1, -0.6},
+                                            {0.05, -0.4, -0.4},
+                                            {0.1, 0.2, -0.7}},
+                                           device);
+        source_pcd.SetPointNormals(source_normals.To(device, dtype));
+
+        // Test different robust kernels
+        std::vector<t::pipelines::registration::RobustKernel> kernels = {
+                t::pipelines::registration::RobustKernel(
+                        t::pipelines::registration::RobustKernelMethod::L2Loss,
+                        1.0, 1.0),
+                t::pipelines::registration::RobustKernel(
+                        t::pipelines::registration::RobustKernelMethod::L1Loss,
+                        1.0, 1.0),
+                t::pipelines::registration::RobustKernel(
+                        t::pipelines::registration::RobustKernelMethod::
+                                HuberLoss,
+                        1.0, 1.0)};
+
+        for (const auto& kernel : kernels) {
+            t::pipelines::registration::TransformationEstimationSymmetric
+                    estimation(kernel);
+
+            double rmse =
+                    estimation.ComputeRMSE(source_pcd, target_pcd, corres);
+            core::Tensor transform = estimation.ComputeTransformation(
+                    source_pcd, target_pcd, corres);
+
+            // All kernels should produce valid results
+            EXPECT_GT(rmse, 0.0);
+            EXPECT_TRUE(std::isfinite(rmse));
+            EXPECT_EQ(transform.GetShape(), core::SizeVector({4, 4}));
+            EXPECT_TRUE(transform.AllClose(transform));  // Check for NaN/Inf
+        }
+    }
+}
+
 }  // namespace tests
 }  // namespace open3d
