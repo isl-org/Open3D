@@ -73,7 +73,7 @@ jobs:
           # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
-          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "npp", "npp_dev", "thrust"
+          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "thrust"
           $CUDA_PACKAGES.ForEach({ $CUDA_INSTALL_ARGS += " $($_)_$($CUDA_VER)" })
           # Download and install CUDA
           echo "Downloading CUDA installer from $CUDA_URL"
