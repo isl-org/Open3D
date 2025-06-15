@@ -7,9 +7,6 @@
 
 #pragma once
 
-#include <Eigen/Core>
-#include <memory>
-
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"

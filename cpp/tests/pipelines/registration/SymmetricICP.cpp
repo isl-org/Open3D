@@ -7,8 +7,6 @@
 
 #include "open3d/pipelines/registration/SymmetricICP.h"
 
-#include <random>
-
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/utility/Eigen.h"
