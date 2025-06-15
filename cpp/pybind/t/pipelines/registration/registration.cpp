@@ -494,8 +494,7 @@ void pybind_registration_definitions(py::module &m) {
                     core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
             "estimation_method"_a = TransformationEstimationSymmetric(),
             "criteria"_a = ICPConvergenceCriteria());
-    docstring::FunctionDocInject(m_registration,
-                                 "registration_symmetric_icp",
+    docstring::FunctionDocInject(m_registration, "registration_symmetric_icp",
                                  map_shared_argument_docstrings);
 
     m_registration.def(
