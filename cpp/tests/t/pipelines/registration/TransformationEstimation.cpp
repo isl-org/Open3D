@@ -201,8 +201,8 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeRMSESymmetric) {
 
         t::pipelines::registration::TransformationEstimationSymmetric
                 estimation_symmetric;
-        double symmetric_rmse =
-                estimation_symmetric.ComputeRMSE(source_pcd, target_pcd, corres);
+        double symmetric_rmse = estimation_symmetric.ComputeRMSE(
+                source_pcd, target_pcd, corres);
 
         // Symmetric RMSE should be positive and finite
         EXPECT_GT(symmetric_rmse, 0.0);
@@ -242,21 +242,22 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeTransformationSymmetric) {
                 estimation_symmetric;
 
         // Compute initial RMSE
-        double initial_rmse =
-                estimation_symmetric.ComputeRMSE(source_pcd, target_pcd, corres);
+        double initial_rmse = estimation_symmetric.ComputeRMSE(
+                source_pcd, target_pcd, corres);
         (void)initial_rmse;  // Suppress unused variable warning
 
         // Get transform
         core::Tensor symmetric_transform =
-                estimation_symmetric.ComputeTransformation(source_pcd, target_pcd,
-                                                           corres);
+                estimation_symmetric.ComputeTransformation(source_pcd,
+                                                           target_pcd, corres);
 
         // Verify transformation is 4x4 matrix
         EXPECT_EQ(symmetric_transform.GetShape(), core::SizeVector({4, 4}));
         EXPECT_EQ(symmetric_transform.GetDtype(), core::Float64);
 
         // Apply transform
-        t::geometry::PointCloud source_transformed_symmetric = source_pcd.Clone();
+        t::geometry::PointCloud source_transformed_symmetric =
+                source_pcd.Clone();
         source_transformed_symmetric.Transform(symmetric_transform);
         double final_rmse = estimation_symmetric.ComputeRMSE(
                 source_transformed_symmetric, target_pcd, corres);
