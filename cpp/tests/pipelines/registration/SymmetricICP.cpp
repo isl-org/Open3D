@@ -90,7 +90,8 @@ TEST(SymmetricICP, TransformationEstimationSymmetricComputeTransformation) {
     EXPECT_TRUE(transformation.isApprox(Eigen::Matrix4d::Identity(), 1e-3));
 }
 
-TEST(SymmetricICP, TransformationEstimationSymmetricComputeTransformationEmptyCorres) {
+TEST(SymmetricICP,
+     TransformationEstimationSymmetricComputeTransformationEmptyCorres) {
     geometry::PointCloud source;
     geometry::PointCloud target;
     registration::CorrespondenceSet corres;
@@ -102,7 +103,8 @@ TEST(SymmetricICP, TransformationEstimationSymmetricComputeTransformationEmptyCo
     EXPECT_TRUE(transformation.isApprox(Eigen::Matrix4d::Identity()));
 }
 
-TEST(SymmetricICP, TransformationEstimationSymmetricComputeTransformationNoNormals) {
+TEST(SymmetricICP,
+     TransformationEstimationSymmetricComputeTransformationNoNormals) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
@@ -128,15 +130,18 @@ TEST(SymmetricICP, RegistrationSymmetricICP) {
     source.normals_ = {{0, 0, 1}, {0, 0, 1}, {0, 0, 1}};
 
     // Target is slightly translated
-    target.points_ = {{0.05, 0.05, 0.05}, {1.05, 0.05, 0.05}, {0.05, 1.05, 0.05}};
+    target.points_ = {{0.05, 0.05, 0.05},
+                      {1.05, 0.05, 0.05},
+                      {0.05, 1.05, 0.05}};
     target.normals_ = {{0, 0, 1}, {0, 0, 1}, {0, 0, 1}};
 
     registration::TransformationEstimationSymmetric estimation;
     registration::ICPConvergenceCriteria criteria;
 
     registration::RegistrationResult result =
-        registration::RegistrationSymmetricICP(
-            source, target, 0.1, Eigen::Matrix4d::Identity(), estimation, criteria);
+            registration::RegistrationSymmetricICP(
+                    source, target, 0.1, Eigen::Matrix4d::Identity(),
+                    estimation, criteria);
 
     EXPECT_GT(result.correspondence_set_.size(), 0);
     EXPECT_GT(result.fitness_, 0.0);
@@ -174,8 +179,9 @@ TEST(SymmetricICP, RegistrationSymmetricICPConvergence) {
     registration::ICPConvergenceCriteria criteria(1e-6, 1e-6, 30);
 
     registration::RegistrationResult result =
-        registration::RegistrationSymmetricICP(
-            source, target, 0.5, Eigen::Matrix4d::Identity(), estimation, criteria);
+            registration::RegistrationSymmetricICP(
+                    source, target, 0.5, Eigen::Matrix4d::Identity(),
+                    estimation, criteria);
 
     // Check that registration converged to reasonable result
     EXPECT_GT(result.fitness_, 0.5);
