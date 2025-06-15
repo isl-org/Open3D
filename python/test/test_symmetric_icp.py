@@ -166,7 +166,7 @@ class TestSymmetricICP:
         result = o3d.pipelines.registration.registration_symmetric_icp(
             source, target, 0.1, np.eye(4), estimation, criteria)
 
-        assert len(result.correspondences) > 0
+        assert len(result.correspondence_set_) > 0
         assert result.fitness > 0.0
         assert result.inlier_rmse >= 0.0
 
@@ -197,7 +197,7 @@ class TestSymmetricICP:
         result = o3d.pipelines.registration.registration_symmetric_icp(
             source, target, 0.1, np.eye(4), estimation, criteria)
 
-        assert len(result.correspondences) > 0
+        assert len(result.correspondence_set_) > 0
         assert result.fitness > 0.0
 
     def test_registration_symmetric_icp_convergence(self):
@@ -238,21 +238,24 @@ class TestSymmetricICP:
 
     def test_registration_symmetric_icp_requires_normals(self):
         """Test that symmetric ICP requires normals."""
+        import pytest
+
         source = o3d.geometry.PointCloud()
         target = o3d.geometry.PointCloud()
 
         source.points = o3d.utility.Vector3dVector([[0, 0, 0], [1, 0, 0]])
         target.points = o3d.utility.Vector3dVector([[0.1, 0.1, 0.1],
                                                     [1.1, 0.1, 0.1]])
-        # No normals set - should handle gracefully
+        # No normals set - should raise an error
 
         estimation = o3d.pipelines.registration.TransformationEstimationSymmetric(
         )
         criteria = o3d.pipelines.registration.ICPConvergenceCriteria()
 
-        # This should not crash, but may not produce meaningful results
-        result = o3d.pipelines.registration.registration_symmetric_icp(
-            source, target, 0.1, np.eye(4), estimation, criteria)
-
-        # The function should complete without error
-        assert result is not None
+        # This should raise a RuntimeError about missing normals
+        with pytest.raises(
+                RuntimeError,
+                match=
+                "SymmetricICP requires both source and target to have normals"):
+            o3d.pipelines.registration.registration_symmetric_icp(
+                source, target, 0.1, np.eye(4), estimation, criteria)
