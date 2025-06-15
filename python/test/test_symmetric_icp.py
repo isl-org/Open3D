@@ -166,7 +166,7 @@ class TestSymmetricICP:
         result = o3d.pipelines.registration.registration_symmetric_icp(
             source, target, 0.1, np.eye(4), estimation, criteria)
 
-        assert len(result.correspondence_set_) > 0
+        assert len(result.correspondence_set) > 0
         assert result.fitness > 0.0
         assert result.inlier_rmse >= 0.0
 
@@ -197,7 +197,7 @@ class TestSymmetricICP:
         result = o3d.pipelines.registration.registration_symmetric_icp(
             source, target, 0.1, np.eye(4), estimation, criteria)
 
-        assert len(result.correspondence_set_) > 0
+        assert len(result.correspondence_set) > 0
         assert result.fitness > 0.0
 
     def test_registration_symmetric_icp_convergence(self):
