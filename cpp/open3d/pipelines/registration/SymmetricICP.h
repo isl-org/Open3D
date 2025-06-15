@@ -52,7 +52,6 @@ public:
             const geometry::PointCloud &target,
             double max_correspondence_distance) const override;
 
-public:
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
     std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
 
