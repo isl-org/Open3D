@@ -10,6 +10,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/Registration.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 
 namespace open3d {
 namespace t {
@@ -168,42 +169,41 @@ double TransformationEstimationSymmetric::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
     if (!target.HasPointNormals() || !source.HasPointNormals()) {
         utility::LogError(
                 "SymmetricICP requires both source and target to have normals.");
     }
+
     core::AssertTensorDtype(target.GetPointPositions(),
                             source.GetPointPositions().GetDtype());
     core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
     AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
-    double error = 0.0;
-    int64_t count = 0;
-    const core::Dtype dtype = source.GetPointPositions().GetDtype();
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        const scalar_t *sp = source.GetPointPositions().GetDataPtr<scalar_t>();
-        const scalar_t *tp = target.GetPointPositions().GetDataPtr<scalar_t>();
-        const scalar_t *sn = source.GetPointNormals().GetDataPtr<scalar_t>();
-        const scalar_t *tn = target.GetPointNormals().GetDataPtr<scalar_t>();
-        const int64_t *corr = correspondences.GetDataPtr<int64_t>();
-        int64_t n = source.GetPointPositions().GetLength();
-#pragma omp parallel for reduction(+ : error, count)
-        for (int64_t i = 0; i < n; ++i) {
-            int64_t j = corr[i];
-            if (j < 0) continue;
-            scalar_t dx = sp[3 * i] - tp[3 * j];
-            scalar_t dy = sp[3 * i + 1] - tp[3 * j + 1];
-            scalar_t dz = sp[3 * i + 2] - tp[3 * j + 2];
-            scalar_t r1 = dx * tn[3 * j] + dy * tn[3 * j + 1] + dz * tn[3 * j + 2];
-            scalar_t r2 = dx * sn[3 * i] + dy * sn[3 * i + 1] + dz * sn[3 * i + 2];
-            error += static_cast<double>(r1) * r1 +
-                     static_cast<double>(r2) * r2;
-            count++;
-        }
-    });
-    if (count == 0) return 0.0;
-    return std::sqrt(error / static_cast<double>(count));
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+    core::Tensor source_points_indexed =
+            source.GetPointPositions().IndexGet({valid});
+    core::Tensor target_points_indexed =
+            target.GetPointPositions().IndexGet({neighbour_indices});
+    core::Tensor source_normals_indexed =
+            source.GetPointNormals().IndexGet({valid});
+    core::Tensor target_normals_indexed =
+            target.GetPointNormals().IndexGet({neighbour_indices});
+
+    // Compute residuals for both point-to-plane terms
+    core::Tensor diff = source_points_indexed - target_points_indexed;
+    core::Tensor r1 = diff.Mul(target_normals_indexed).Sum({1});
+    core::Tensor r2 = diff.Mul(source_normals_indexed).Sum({1});
+    
+    // Compute symmetric error
+    core::Tensor error_t = r1.Mul(r1) + r2.Mul(r2);
+    double error = error_t.Sum({0}).To(core::Float64).Item<double>();
+    return std::sqrt(error / static_cast<double>(neighbour_indices.GetLength()));
 }
 
 core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
@@ -212,6 +212,9 @@ core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
         const core::Tensor &correspondences,
         const core::Tensor &current_transform,
         const std::size_t iteration) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
     if (!target.HasPointNormals() || !source.HasPointNormals()) {
         utility::LogError(
                 "SymmetricICP requires both source and target to have normals.");
@@ -222,91 +225,21 @@ core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
     core::AssertTensorDtype(target.GetPointPositions(),
                             source.GetPointPositions().GetDtype());
     core::AssertTensorDtype(target.GetPointNormals(),
-                            source.GetPointNormals().GetDtype());
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(source.GetPointNormals(),
+                            source.GetPointPositions().GetDtype());
     core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
     AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
-    core::Tensor global_sum = core::Tensor::Zeros({29},
-                                                 source.GetPointPositions().GetDtype(),
-                                                 source.GetDevice());
+    // Get pose {6} of type Float64.
+    core::Tensor pose = pipelines::kernel::ComputePoseSymmetric(
+            source.GetPointPositions(), target.GetPointPositions(),
+            source.GetPointNormals(), target.GetPointNormals(),
+            correspondences, this->kernel_);
 
-    const core::Dtype dtype = source.GetPointPositions().GetDtype();
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        std::vector<scalar_t> A(29, 0.0);
-        const scalar_t *sp = source.GetPointPositions().GetDataPtr<scalar_t>();
-        const scalar_t *tp = target.GetPointPositions().GetDataPtr<scalar_t>();
-        const scalar_t *sn = source.GetPointNormals().GetDataPtr<scalar_t>();
-        const scalar_t *tn = target.GetPointNormals().GetDataPtr<scalar_t>();
-        const int64_t *corr = correspondences.GetDataPtr<int64_t>();
-        int64_t n = source.GetPointPositions().GetLength();
-
-        DISPATCH_ROBUST_KERNEL_FUNCTION(
-                kernel_.type_, scalar_t, kernel_.scaling_parameter_,
-                kernel_.shape_parameter_, [&]() {
-#pragma omp parallel for reduction(+ : A[:29])
-                    for (int64_t i = 0; i < n; ++i) {
-                        int64_t j = corr[i];
-                        if (j < 0) continue;
-                        scalar_t sx = sp[3 * i];
-                        scalar_t sy = sp[3 * i + 1];
-                        scalar_t sz = sp[3 * i + 2];
-                        scalar_t tx = tp[3 * j];
-                        scalar_t ty = tp[3 * j + 1];
-                        scalar_t tz = tp[3 * j + 2];
-                        scalar_t nsx = sn[3 * i];
-                        scalar_t nsy = sn[3 * i + 1];
-                        scalar_t nsz = sn[3 * i + 2];
-                        scalar_t ntx = tn[3 * j];
-                        scalar_t nty = tn[3 * j + 1];
-                        scalar_t ntz = tn[3 * j + 2];
-                        scalar_t dx = sx - tx;
-                        scalar_t dy = sy - ty;
-                        scalar_t dz = sz - tz;
-
-                        scalar_t r1 = dx * ntx + dy * nty + dz * ntz;
-                        scalar_t r2 = dx * nsx + dy * nsy + dz * nsz;
-
-                        scalar_t J1[6] = { -sz * nty + sy * ntz,
-                                            sz * ntx - sx * ntz,
-                                            -sy * ntx + sx * nty,
-                                            ntx,
-                                            nty,
-                                            ntz };
-                        scalar_t J2[6] = { -sz * nsy + sy * nsz,
-                                            sz * nsx - sx * nsz,
-                                            -sy * nsx + sx * nsy,
-                                            nsx,
-                                            nsy,
-                                            nsz };
-
-                        scalar_t w1 = GetWeightFromRobustKernel(r1);
-                        scalar_t w2 = GetWeightFromRobustKernel(r2);
-
-                        int idx = 0;
-                        for (int a = 0; a < 6; ++a) {
-                            for (int b = 0; b <= a; ++b) {
-                                A[idx] += J1[a] * w1 * J1[b] +
-                                          J2[a] * w2 * J2[b];
-                                ++idx;
-                            }
-                            A[21 + a] +=
-                                    J1[a] * w1 * r1 + J2[a] * w2 * r2;
-                        }
-                        A[27] += r1 * r1 + r2 * r2;
-                        A[28] += 1;
-                    }
-                });
-        for (int i = 0; i < 29; ++i) {
-            global_sum.GetDataPtr<scalar_t>()[i] = A[i];
-        }
-    });
-
-    core::Tensor pose;
-    float residual;
-    int inlier_count;
-    pipelines::kernel::DecodeAndSolve6x6(global_sum, pose, residual,
-                                         inlier_count);
+    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
+    // device, from pose {6}.
     (void)current_transform;
     (void)iteration;
     return pipelines::kernel::PoseToTransformation(pose);

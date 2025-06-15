@@ -171,5 +171,101 @@ TEST_P(TransformationEstimationPermuteDevices,
     }
 }
 
+TEST_P(TransformationEstimationPermuteDevices, ComputeRMSESymmetric) {
+    core::Device device = GetParam();
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source_pcd(device), target_pcd(device);
+        core::Tensor corres;
+        std::tie(source_pcd, target_pcd, corres) =
+                GetTestPointCloudsAndCorrespondences(dtype, device);
+
+        // Add normals to source point cloud (required for symmetric ICP)
+        core::Tensor source_normals =
+                core::Tensor::Init<double>({{-0.1, -0.2, -0.8},
+                                            {0.2, -0.1, -0.7},
+                                            {0.05, -0.4, -0.6},
+                                            {-0.01, -0.3, -0.5},
+                                            {0.3, -0.1, -0.7},
+                                            {0.06, -0.4, -0.4},
+                                            {0.2, 0.2, -0.8},
+                                            {0.4, 0.1, -0.5},
+                                            {0.1, 0.1, -0.7},
+                                            {0.2, 0.3, -0.9},
+                                            {0.3, -0.2, -0.2},
+                                            {0.1, 0.1, -0.6},
+                                            {0.05, -0.4, -0.4},
+                                            {0.1, 0.2, -0.7}},
+                                           device);
+        source_pcd.SetPointNormals(source_normals.To(device, dtype));
+
+        t::pipelines::registration::TransformationEstimationSymmetric
+                estimation_symmetric;
+        double symmetric_rmse =
+                estimation_symmetric.ComputeRMSE(source_pcd, target_pcd, corres);
+
+        // Symmetric RMSE should be positive and finite
+        EXPECT_GT(symmetric_rmse, 0.0);
+        EXPECT_TRUE(std::isfinite(symmetric_rmse));
+    }
+}
+
+TEST_P(TransformationEstimationPermuteDevices, ComputeTransformationSymmetric) {
+    core::Device device = GetParam();
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source_pcd(device), target_pcd(device);
+        core::Tensor corres;
+        std::tie(source_pcd, target_pcd, corres) =
+                GetTestPointCloudsAndCorrespondences(dtype, device);
+
+        // Add normals to source point cloud (required for symmetric ICP)
+        core::Tensor source_normals =
+                core::Tensor::Init<double>({{-0.1, -0.2, -0.8},
+                                            {0.2, -0.1, -0.7},
+                                            {0.05, -0.4, -0.6},
+                                            {-0.01, -0.3, -0.5},
+                                            {0.3, -0.1, -0.7},
+                                            {0.06, -0.4, -0.4},
+                                            {0.2, 0.2, -0.8},
+                                            {0.4, 0.1, -0.5},
+                                            {0.1, 0.1, -0.7},
+                                            {0.2, 0.3, -0.9},
+                                            {0.3, -0.2, -0.2},
+                                            {0.1, 0.1, -0.6},
+                                            {0.05, -0.4, -0.4},
+                                            {0.1, 0.2, -0.7}},
+                                           device);
+        source_pcd.SetPointNormals(source_normals.To(device, dtype));
+
+        t::pipelines::registration::TransformationEstimationSymmetric
+                estimation_symmetric;
+
+        // Compute initial RMSE
+        double initial_rmse =
+                estimation_symmetric.ComputeRMSE(source_pcd, target_pcd, corres);
+        (void)initial_rmse;  // Suppress unused variable warning
+
+        // Get transform
+        core::Tensor symmetric_transform =
+                estimation_symmetric.ComputeTransformation(source_pcd, target_pcd,
+                                                           corres);
+
+        // Verify transformation is 4x4 matrix
+        EXPECT_EQ(symmetric_transform.GetShape(), core::SizeVector({4, 4}));
+        EXPECT_EQ(symmetric_transform.GetDtype(), core::Float64);
+
+        // Apply transform
+        t::geometry::PointCloud source_transformed_symmetric = source_pcd.Clone();
+        source_transformed_symmetric.Transform(symmetric_transform);
+        double final_rmse = estimation_symmetric.ComputeRMSE(
+                source_transformed_symmetric, target_pcd, corres);
+
+        // Final RMSE should be finite and potentially lower than initial
+        EXPECT_TRUE(std::isfinite(final_rmse));
+        EXPECT_GE(final_rmse, 0.0);
+    }
+}
+
 }  // namespace tests
 }  // namespace open3d
