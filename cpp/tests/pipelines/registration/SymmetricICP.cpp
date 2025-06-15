@@ -30,7 +30,6 @@ TEST(SymmetricICP, TransformationEstimationSymmetricComputeRMSE) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
-    // Create simple test point clouds with normals
     source.points_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}};
     source.normals_ = {{0, 0, 1}, {0, 0, 1}, {0, 0, 1}};
 
@@ -60,7 +59,6 @@ TEST(SymmetricICP, TransformationEstimationSymmetricComputeRMSENoNormals) {
 
     source.points_ = {{0, 0, 0}, {1, 0, 0}};
     target.points_ = {{0.1, 0.1, 0.1}, {1.1, 0.1, 0.1}};
-    // No normals
 
     registration::CorrespondenceSet corres = {{0, 0}, {1, 1}};
     registration::TransformationEstimationSymmetric estimation;

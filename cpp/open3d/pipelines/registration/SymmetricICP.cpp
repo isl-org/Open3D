@@ -54,7 +54,7 @@ Eigen::Matrix4d TransformationEstimationSymmetric::ComputeTransformation(
                 const Eigen::Vector3d &vt = target.points_[corres[i][1]];
                 const Eigen::Vector3d &ns = source.normals_[corres[i][0]];
                 const Eigen::Vector3d &nt = target.normals_[corres[i][1]];
-                Eigen::Vector3d d = vs - vt;
+                const Eigen::Vector3d d = vs - vt;
 
                 J_r.resize(2);
                 r.resize(2);
