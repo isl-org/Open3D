@@ -174,7 +174,8 @@ double TransformationEstimationSymmetric::ComputeRMSE(
     }
     if (!target.HasPointNormals() || !source.HasPointNormals()) {
         utility::LogError(
-                "SymmetricICP requires both source and target to have normals.");
+                "SymmetricICP requires both source and target to have "
+                "normals.");
     }
 
     core::AssertTensorDtype(target.GetPointPositions(),
@@ -199,11 +200,12 @@ double TransformationEstimationSymmetric::ComputeRMSE(
     core::Tensor diff = source_points_indexed - target_points_indexed;
     core::Tensor r1 = diff.Mul(target_normals_indexed).Sum({1});
     core::Tensor r2 = diff.Mul(source_normals_indexed).Sum({1});
-    
+
     // Compute symmetric error
     core::Tensor error_t = r1.Mul(r1) + r2.Mul(r2);
     double error = error_t.Sum({0}).To(core::Float64).Item<double>();
-    return std::sqrt(error / static_cast<double>(neighbour_indices.GetLength()));
+    return std::sqrt(error /
+                     static_cast<double>(neighbour_indices.GetLength()));
 }
 
 core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
@@ -217,7 +219,8 @@ core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
     }
     if (!target.HasPointNormals() || !source.HasPointNormals()) {
         utility::LogError(
-                "SymmetricICP requires both source and target to have normals.");
+                "SymmetricICP requires both source and target to have "
+                "normals.");
     }
 
     core::AssertTensorDtypes(source.GetPointPositions(),
@@ -235,8 +238,8 @@ core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
     // Get pose {6} of type Float64.
     core::Tensor pose = pipelines::kernel::ComputePoseSymmetric(
             source.GetPointPositions(), target.GetPointPositions(),
-            source.GetPointNormals(), target.GetPointNormals(),
-            correspondences, this->kernel_);
+            source.GetPointNormals(), target.GetPointNormals(), correspondences,
+            this->kernel_);
 
     // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
     // device, from pose {6}.
