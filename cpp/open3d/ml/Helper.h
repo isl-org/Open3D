@@ -15,10 +15,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-// TODO: Disable fmt() macro defined in fmt<7.0.0.
-// TODO: Remove this line once Open3D upgrades its fmt dependency.
-// #define FMT_STRING_ALIAS 0
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/utility/Logging.h"
 

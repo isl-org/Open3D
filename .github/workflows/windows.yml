@@ -1,3 +1,7 @@
+# FIXME:
+# - MSVC 17 and CUDA 12.4+ error while building CreateCUDAHashBackend.cu
+# - PyTorch Ops in debug mode - DLL initialization error while loading open3d_torch_ops.dll
+
 name: Windows
 permissions: {}
 
@@ -105,9 +109,9 @@ jobs:
       
       - name: Install PyTorch requirements
         run: |
-          if (${{ matrix.BUILD_CUDA_MODULE == 'ON' }}) {
-            python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-            python -m pip install tensorboard
+          if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
+            # TODO: Replace with requirements-torch-cuda.txt when available
+            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
@@ -122,6 +126,10 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake --version
+          $Env:BUILD_PYTORCH_OPS = "ON"
+          if ${{ matrix.CONFIG }} -eq "Debug" {
+            $Env:BUILD_PYTORCH_OPS = "OFF"  # DLL initialization error in Debug config
+          }
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
@@ -134,7 +142,7 @@ jobs:
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
-            -DBUILD_PYTORCH_OPS=ON `
+            -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }}`
             ${{ env.SRC_DIR }}
 
       - name: Build
@@ -310,6 +318,7 @@ jobs:
             -DBUILD_LIBREALSENSE=OFF `
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
+            -DBUILD_PYTORCH_OPS=ON `
             ${{ env.SRC_DIR }}
 
       - name: Install Open3D python build requirements
