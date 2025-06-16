@@ -28,7 +28,7 @@ env:
   CUDA_VERSION: "12.4.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
-  NPROC: 2
+  NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
@@ -77,7 +77,7 @@ jobs:
           # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
-          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "thrust"
+          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "nvtx", "thrust"
           $CUDA_PACKAGES.ForEach({ $CUDA_INSTALL_ARGS += " $($_)_$($CUDA_VER)" })
           # Download and install CUDA
           echo "Downloading CUDA installer from $CUDA_URL"
@@ -278,7 +278,13 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-
+      
+      - name: Checkout Open3D-ML
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          path: open3d_ml
+      
       - name: Setup Windows SDK
         uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
         with:
@@ -293,11 +299,15 @@ jobs:
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
+          python -m pip install -U pip==${{ env.PIP_VER }}
           # maturin>1.7.8 breaks dependency y-py (Python 3.12) and pywinpty (Python 3.8) wheel building
           # https://github.com/MichaIng/DietPi/issues/7329#issuecomment-2565130837
           python -m pip install maturin==1.7.8
           python -m pip install -r python/requirements.txt
+          python -m pip install -U -c python/requirements_build.txt wheel setuptools
           python -m pip install -r python/requirements_jupyter_build.txt
+          python -m pip install -r ../open3d_ml/requirements-torch.txt
+
 
       - name: Config
         run: |
@@ -320,13 +330,6 @@ jobs:
             -DBUILD_JUPYTER_EXTENSION=ON `
             -DBUILD_PYTORCH_OPS=ON `
             ${{ env.SRC_DIR }}
-
-      - name: Install Open3D python build requirements
-        working-directory: ${{ env.SOURCE_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -c python/requirements_build.txt wheel setuptools
 
       - name: Build Python package
         working-directory: ${{ env.BUILD_DIR }}
