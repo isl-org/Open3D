@@ -274,7 +274,7 @@ def draw_plotly_server(geometry_list,
                        lookat=None,
                        up=None,
                        zoom=1.0,
-                      port=8050):
+                       port=8050):
     """Serves Open3D geometries via a Dash web application using Plotly.
 
     This function creates a Plotly figure and embeds it within a Dash web
