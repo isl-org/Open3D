@@ -115,6 +115,12 @@ struct MetricParameters {
     }
 };
 
+enum class MethodOBBCreate {
+    PCA,             ///< Principal Component Analysis
+    MINIMAL_APPROX,  ///< Minimal OBB approximation
+    MINIMAL_JYLANKI  ///< Minimal OBB by Jylanki
+};
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

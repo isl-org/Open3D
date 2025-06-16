@@ -81,7 +81,7 @@ TEST(FixedRadiusIndex, SearchRadius) {
     float radius = 0.1;
     core::nns::FixedRadiusIndex index32(dataset_points, radius, core::Int32);
 
-    // if raidus == 0.1
+    // if radius == 0.1
     core::Tensor indices, distances, neighbors_row_splits;
     core::SizeVector shape{2};
     gt_indices = core::Tensor::Init<int32_t>({1, 4}, device);
@@ -102,7 +102,7 @@ TEST(FixedRadiusIndex, SearchRadius) {
     // Set up index.
     core::nns::FixedRadiusIndex index64(dataset_points, radius, core::Int64);
 
-    // if raidus == 0.1
+    // if radius == 0.1
     shape = core::SizeVector{2};
     gt_indices = core::Tensor::Init<int64_t>({1, 4}, device);
     gt_neighbors_row_splits = gt_neighbors_row_splits.To(core::Int64);
@@ -324,7 +324,7 @@ TEST(FixedRadiusIndex, SearchHybrid) {
     int max_knn = 3;
     core::nns::FixedRadiusIndex index32(dataset_points, radius, core::Int32);
 
-    // if raidus == 0.1
+    // if radius == 0.1
     core::Tensor indices, distances, counts;
     core::SizeVector shape{1, 3};
     core::SizeVector shape_counts{1};
@@ -347,7 +347,7 @@ TEST(FixedRadiusIndex, SearchHybrid) {
     // Set up index.
     core::nns::FixedRadiusIndex index64(dataset_points, radius, core::Int64);
 
-    // if raidus == 0.1
+    // if radius == 0.1
     gt_indices = core::Tensor::Init<int64_t>({{1, 4, -1}}, device);
     gt_counts = core::Tensor::Init<int64_t>({2}, device);
 

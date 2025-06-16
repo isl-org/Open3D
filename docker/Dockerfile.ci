@@ -87,6 +87,7 @@ RUN apt-get update && apt-get install -y \
     libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
+    ca-certificates \
     && if [ $BUILD_SYCL_MODULE = "ON" ]; then apt-get install -y intel-level-zero-gpu-raytracing ; fi \
  && rm -rf /var/lib/apt/lists/*
 
@@ -109,11 +110,10 @@ RUN python --version && pip --version
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Dependencies: cmake
-ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
+ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
- && tar -xf ${CMAKE_VERSION}.tar.gz \
- && cp -ar ${CMAKE_VERSION} ${HOME} \
+ && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
 # Dependencies: ccache
@@ -187,6 +187,7 @@ RUN mkdir -p /etc/apt/keyrings \
  && node --version \
  && npm install -g yarn \
  && yarn --version
+
 
 # Build all
 RUN \

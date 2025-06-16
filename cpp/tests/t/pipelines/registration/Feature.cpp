@@ -42,19 +42,21 @@ TEST_P(FeaturePermuteDevices, SelectByIndex) {
     const auto fpfh_t =
             t::pipelines::registration::ComputeFPFHFeature(pcd, 100, 0.01);
 
-    const auto selected_fpfh =
-            fpfh->SelectByIndex({53, 194, 839, 2543, 6391, 29483}, false);
-    const auto selected_indeces_t =
-            core::TensorKey::IndexTensor(core::Tensor::Init<int64_t>(
-                    {53, 194, 839, 2543, 6391, 29483}, device));
-    const auto selected_fpfh_t = fpfh_t.GetItem(selected_indeces_t);
+    const std::vector<size_t> indices = {53,  6391, 194,  31037, 15936,
+                                         345, 6839, 2543, 29483};
+    const auto selected_fpfh = fpfh->SelectByIndex(indices, false);
+    std::vector<int64_t> sorted_indices(indices.begin(), indices.end());
+    std::sort(sorted_indices.begin(), sorted_indices.end());
+    const auto indices_t = core::TensorKey::IndexTensor(core::Tensor(
+            sorted_indices, {(int)sorted_indices.size()}, core::Int64, device));
+    const auto selected_fpfh_t = fpfh_t.GetItem(indices_t);
 
     EXPECT_TRUE(selected_fpfh_t.AllClose(
             core::eigen_converter::EigenMatrixToTensor(selected_fpfh->data_)
                     .T()
                     .To(selected_fpfh_t.GetDevice(),
                         selected_fpfh_t.GetDtype()),
-            1e-4, 1e-4));
+            1e-6, 1e-6));
 }
 
 TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
@@ -79,6 +81,30 @@ TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
                     .T()
                     .To(fpfh_t.GetDevice(), fpfh_t.GetDtype()),
             1e-4, 1e-4));
+
+    const std::vector<size_t> indices = {4,     27403, 103,  9172,  5728, 839,
+                                         12943, 28,    9374, 17837, 7390, 473,
+                                         11836, 26362, 3046, 35027, 5738};
+    const auto selected_fpfh_by_index = fpfh->SelectByIndex(indices);
+    const auto computed_fpfh_by_index =
+            pipelines::registration::ComputeFPFHFeature(
+                    pcd_legacy, geometry::KDTreeSearchParamHybrid(0.01, 100),
+                    indices);
+
+    EXPECT_TRUE(selected_fpfh_by_index->data_.isApprox(
+            computed_fpfh_by_index->data_, 1e-4));
+
+    std::vector<int64_t> sorted_indices(indices.begin(), indices.end());
+    std::sort(sorted_indices.begin(), sorted_indices.end());
+    const auto indices_t = core::Tensor(
+            sorted_indices, {(int)sorted_indices.size()}, core::Int64, device);
+    const auto selected_fpfh_t_by_index = fpfh_t.IndexGet({indices_t});
+    const auto computed_fpfh_t_by_index =
+            t::pipelines::registration::ComputeFPFHFeature(pcd, 100, 0.01,
+                                                           indices_t);
+
+    EXPECT_TRUE(selected_fpfh_t_by_index.AllClose(computed_fpfh_t_by_index,
+                                                  1e-4, 1e-4));
 }
 
 TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {
