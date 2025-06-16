@@ -120,15 +120,15 @@ jobs:
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
-          cd ${{ env.BUILD_DIR }}
+          New-Item -Path '${{ env.BUILD_DIR }}' -ItemType Directory
+          cd '${{ env.BUILD_DIR }}'
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake --version
-          $Env:BUILD_PYTORCH_OPS = "ON"
-          if ${{ matrix.CONFIG }} -eq "Debug" {
-            $Env:BUILD_PYTORCH_OPS = "OFF"  # DLL initialization error in Debug config
+          $env:BUILD_PYTORCH_OPS = "ON"
+          if ('${{ matrix.CONFIG }}' -eq "Debug") {
+            $env:BUILD_PYTORCH_OPS = "OFF"  # DLL initialization error in Debug config
           }
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
@@ -142,7 +142,7 @@ jobs:
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
-            -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }}`
+            -DBUILD_PYTORCH_OPS=$env:BUILD_PYTORCH_OPS `
             ${{ env.SRC_DIR }}
 
       - name: Build

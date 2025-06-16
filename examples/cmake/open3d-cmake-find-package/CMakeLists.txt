@@ -15,14 +15,20 @@ endif()
 
 # Find installed Open3D, which exports Open3D::Open3D
 find_package(Open3D REQUIRED)
+set(USE_CUDA FALSE)
 if (TARGET Open3D::3rdparty_cublas)
+    set(USE_CUDA TRUE)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
+    find_package(CUDAToolkit REQUIRED)
 endif()
 
 add_executable(Draw)
 target_sources(Draw PRIVATE Draw.cpp)
 target_link_libraries(Draw PRIVATE Open3D::Open3D)
+if (USE_CUDA)
+    target_link_libraries(Draw PRIVATE CUDA::cudart_static)
+endif()
 
 # On Windows if BUILD_SHARED_LIBS is enabled, copy .dll files to the executable directory
 if(WIN32)
