@@ -81,7 +81,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open3d-devel-linux-x86_64-ML_${{ matrix.MLOPS }}
-          path: open3d-devel-*.tar.xz
+          path: open3d-devel-*
           if-no-files-found: error
       - name: Upload viewer to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
@@ -96,7 +96,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ ${BUILD_SHARED_LIBS} == 'ON' ] ; then
-            gh release upload main-devel open3d-devel-*.tar.xz --clobber
+            gh release upload main-devel open3d-devel-* --clobber
           else
             gh release upload main-devel open3d-viewer-*-Linux.deb --clobber
           fi
