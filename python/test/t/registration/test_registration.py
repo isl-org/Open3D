@@ -208,6 +208,10 @@ def test_icp_symmetric(device):
     supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
         source_t, target_t = get_pcds(dtype, device)
+        
+        # Symmetric ICP requires normals for both source and target
+        source_t.estimate_normals()
+        target_t.estimate_normals()
 
         source_legacy = source_t.to_legacy()
         target_legacy = target_t.to_legacy()
