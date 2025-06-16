@@ -127,8 +127,9 @@ jobs:
           }
           cmake --version
           $env:BUILD_PYTORCH_OPS = "ON"
-          if ('${{ matrix.CONFIG }}' -eq "Debug") {
-            $env:BUILD_PYTORCH_OPS = "OFF"  # DLL initialization error in Debug config
+          # DLL initialization error in Debug config, PyTorch + CUDA nvToolsExt not found error
+          if ('${{ matrix.CONFIG }}' -eq "Debug" -or '${{ matrix.BUILD_CUDA_MODULE }}' -eq "ON") {
+            $env:BUILD_PYTORCH_OPS = "OFF"  
           }
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
@@ -306,7 +307,7 @@ jobs:
           python -m pip install -r python/requirements.txt
           python -m pip install -U -c python/requirements_build.txt wheel setuptools
           python -m pip install -r python/requirements_jupyter_build.txt
-          python -m pip install -r ../open3d_ml/requirements-torch.txt
+          python -m pip install -r open3d_ml/requirements-torch.txt
 
 
       - name: Config
