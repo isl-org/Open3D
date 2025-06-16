@@ -9,8 +9,8 @@ endif()
 ExternalProject_Add(
     ext_libpng
     PREFIX libpng
-    URL https://github.com/glennrp/libpng/archive/refs/tags/v1.6.37.tar.gz
-    URL_HASH SHA256=ca74a0dace179a8422187671aee97dd3892b53e168627145271cad5b5ac81307
+    URL https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.49.tar.gz
+    URL_HASH SHA256=e425762fdfb9bb30a5d2da29c0067570e96b5d41d79c659cf0dad861e9df738e
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/libpng"
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -19,8 +19,7 @@ ExternalProject_Add(
         -DPNG_SHARED=OFF
         -DPNG_EXECUTABLES=OFF
         -DPNG_TESTS=OFF
-        -DPNG_BUILD_ZLIB=ON # Prevent libpng from calling find_pacakge(zlib).
-        -DZLIB_INCLUDE_DIR=${ZLIB_INCLUDE_DIRS}
+        -DZLIB_ROOT=${CMAKE_BINARY_DIR}/zlib
         -DPNG_ARM_NEON=off # Must be lower case.
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
