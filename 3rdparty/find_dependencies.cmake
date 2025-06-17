@@ -896,7 +896,7 @@ endif()
 
 if(NOT USE_SYSTEM_CURL)
     if (APPLE)
-        message(WARNING "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
+        message(SEND_ERROR "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
     endif()
     include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
     open3d_import_3rdparty_library(3rdparty_curl
