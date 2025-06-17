@@ -21,11 +21,11 @@ namespace utility {
 static const std::unordered_map<
         std::string,
         std::function<void(const std::string&, const std::string&)>>
-        file_extension_to_extract_function{
+        file_extension_to_extract_function {
 #if HAS_MINIZIP
-                {"zip", ExtractFromZIP},
+    {"zip", ExtractFromZIP},
 #endif
-        };
+};
 
 bool IsSupportedCompressedFilePath(const std::string& file_path) {
     const std::string format =
