@@ -87,7 +87,7 @@ static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
 
 class MaterialPool {
 public:
-    MaterialPool(){};
+    MaterialPool() {};
 
     MaterialPool(filament::Engine* engine,
                  filament::Material* material_template) {

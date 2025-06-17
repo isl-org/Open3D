@@ -74,7 +74,8 @@ private:
         std::string name;
         size_t start_index;
 
-        Obj(const std::string &n, size_t start) : name(n), start_index(start){};
+        Obj(const std::string &n, size_t start)
+            : name(n), start_index(start) {};
         bool IsValid() const { return !name.empty(); }
     };
 
@@ -328,8 +329,8 @@ void PickPointsInteractor::DoPick() {
                 view, picking_scene_->GetScene(),
                 [this](std::shared_ptr<geometry::Image> img) {
 #if WANT_DEBUG_IMAGE
-                    std::cout << "[debug] Writing pick image to "
-                              << "debug.png" << std::endl;
+                    std::cout << "[debug] Writing pick image to " << "debug.png"
+                              << std::endl;
                     io::WriteImage("debug.png", *img);
 #endif  // WANT_DEBUG_IMAGE
                     this->OnPickImageDone(img);
