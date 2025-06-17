@@ -89,9 +89,9 @@ jobs:
           }
           # Add CUDA environment variables.
           $CUDA_PATH = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$CUDA_VER"
-          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "$CUDA_PATH\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -122,17 +122,18 @@ jobs:
           $ErrorActionPreference = 'Stop'
           New-Item -Path '${{ env.BUILD_DIR }}' -ItemType Directory
           cd '${{ env.BUILD_DIR }}'
-          if (${env:DEVELOPER_BUILD} -ne "OFF") {
-            ${env:DEVELOPER_BUILD}="ON"
+          if ($Env:DEVELOPER_BUILD -ne "OFF") {
+            $Env:DEVELOPER_BUILD = "ON"
           }
           cmake --version
-          $env:BUILD_PYTORCH_OPS = "ON"
+          $Env:BUILD_PYTORCH_OPS = "ON"
           # DLL initialization error in Debug config, PyTorch + CUDA nvToolsExt not found error
           if ('${{ matrix.CONFIG }}' -eq "Debug" -or '${{ matrix.BUILD_CUDA_MODULE }}' -eq "ON") {
-            $env:BUILD_PYTORCH_OPS = "OFF"  
+            $Env:BUILD_PYTORCH_OPS = "OFF"  
           }
+          echo "BUILD_PYTORCH_OPS=$Env:BUILD_PYTORCH_OPS"
           cmake -G "Visual Studio 17 2022" -A x64 `
-            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
@@ -143,7 +144,7 @@ jobs:
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
-            -DBUILD_PYTORCH_OPS=$env:BUILD_PYTORCH_OPS `
+            -DBUILD_PYTORCH_OPS=$Env:BUILD_PYTORCH_OPS `
             ${{ env.SRC_DIR }}
 
       - name: Build
@@ -168,7 +169,7 @@ jobs:
           }
           $DEVEL_PKG_NAME=(Get-ChildItem package/open3d-devel-*.zip).Name
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
-            $env:GITHUB_ENV -Encoding utf8 -Append
+            $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload Package
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
@@ -315,12 +316,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
-          if (${env:DEVELOPER_BUILD} -ne "OFF") {
-            ${env:DEVELOPER_BUILD}="ON"
+          if ($Env:DEVELOPER_BUILD -ne "OFF") {
+            $Env:DEVELOPER_BUILD = "ON"
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
-            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
@@ -338,7 +339,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
-          echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload wheel
         uses: actions/upload-artifact@v4
