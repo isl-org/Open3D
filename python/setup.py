@@ -166,6 +166,9 @@ elif "@BUILD_SYCL_MODULE@" == "ON":
         "\n\nThis wheel contains cross-platform GPU support through SYCL.")
     classifiers.append("Environment :: GPU")
 
+if "@BUILD_VISUALIZATION@" == "OFF":
+    name += "-headless"
+
 setup_args = dict(
     name=name,
     version="@PROJECT_VERSION@",
@@ -193,5 +196,8 @@ setup_args = dict(
     obsoletes_dist=["open3d_python"],
     provides_dist=["open3d", "open3d_cpu", "open3d_xpu"],  # For open3d-cpu
 )
+
+if "@BUILD_VISUALIZATION@" == "OFF":
+    setup_args["keywords"] = setup_args["keywords"].replace(" visualization", "")
 
 setup(**setup_args)

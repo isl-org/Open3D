@@ -62,6 +62,7 @@ if(BUILD_SHARED_LIBS)
 else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
 endif()
+option(BUILD_VISUALIZATION        "Package Open3D without Visualization" ON)
 option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
 if(BUILD_SYCL_MODULE)
     set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING 
