@@ -18,5 +18,6 @@ index 15ceebe..9049831 100644
 +    contrib/minizip/unzip.c
 +    contrib/minizip/ioapi.c
  )
-
+ 
  if(NOT MINGW)
+ 
