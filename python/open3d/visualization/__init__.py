@@ -16,6 +16,7 @@ else:
     from open3d.cpu.pybind.visualization import *
 
 from ._external_visualizer import *
+from .draw_plotly import get_plotly_fig
 from .draw_plotly import draw_plotly
 from .draw_plotly import draw_plotly_server
 from .to_mitsuba import to_mitsuba
