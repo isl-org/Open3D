@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-12]
+        os: [ubuntu-22.04, macos-12]
         GLIBCXX_USE_CXX11_ABI: [0, 1]
         exclude:
           - os: macos-12
@@ -48,7 +48,7 @@ jobs:
           python-version: 3.8
 
       - name: Install dependencies
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu

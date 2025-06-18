@@ -1,4 +1,13 @@
 ## Main
+
+## 0.20
+
+-   Upgrade OpenBlas supporting Grace ARM
+-   Upgrade filament to v1.59.4.
+-   Upgrade CI to use Ubuntu 22.04 because Ubuntu 20.04 is EOL and glibc is bugged for ARM64.
+
+## 0.19
+
 -   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
 -   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
