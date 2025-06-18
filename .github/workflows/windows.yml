@@ -55,6 +55,11 @@ jobs:
     steps:
       - name: Disk space used
         run: Get-PSDrive
+            
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+        with:
+          sdk-version: 19041
 
       - name: Install CUDA
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
@@ -123,6 +128,7 @@ jobs:
           }
           cmake --version
           cmake -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
@@ -276,6 +282,11 @@ jobs:
           repository: isl-org/Open3D-ML
           path: open3d_ml
       
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+        with:
+          sdk-version: 19041
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -305,6 +316,7 @@ jobs:
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
