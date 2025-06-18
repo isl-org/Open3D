@@ -9,14 +9,22 @@
 
 import math
 import multiprocessing
-import os, sys
+import os
+import sys
+
 import numpy as np
 import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import *
+from open3d_example import (
+    get_rgbd_file_lists,
+    initialize_opencv,
+    join,
+    make_clean_folder,
+    read_rgbd_image,
+)
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_fragment

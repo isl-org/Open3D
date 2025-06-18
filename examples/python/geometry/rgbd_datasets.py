@@ -5,10 +5,11 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-import open3d as o3d
-import numpy as np
-import matplotlib.image as mpimg
 import re
+
+import matplotlib.image as mpimg
+import numpy as np
+import open3d as o3d
 
 
 def visualize_rgbd(rgbd_image):
@@ -32,10 +33,10 @@ def read_nyu_pgm(filename, byteorder='>'):
         buffer = f.read()
     try:
         header, width, height, maxval = re.search(
-            b"(^P5\s(?:\s*#.*[\r\n])*"
-            b"(\d+)\s(?:\s*#.*[\r\n])*"
-            b"(\d+)\s(?:\s*#.*[\r\n])*"
-            b"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
+            rb"(^P5\s(?:\s*#.*[\r\n])*"
+            rb"(\d+)\s(?:\s*#.*[\r\n])*"
+            rb"(\d+)\s(?:\s*#.*[\r\n])*"
+            rb"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
     except AttributeError:
         raise ValueError("Not a raw PGM file: '%s'" % filename)
     img = np.frombuffer(buffer,

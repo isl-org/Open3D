@@ -13,13 +13,12 @@ import argparse
 import pickle
 from collections import OrderedDict
 
-import numpy as np
-import open3d as o3d
-from scipy.spatial import cKDTree
-import nvidia_smi
 import matplotlib.pyplot as plt
-
+import numpy as np
+import nvidia_smi
+import open3d as o3d
 from benchmark_utils import measure_memory, print_system_info, print_table_memory
+from scipy.spatial import cKDTree
 
 
 # Define NNS methods
@@ -181,18 +180,18 @@ if __name__ == "__main__":
                 del queries
                 o3d.core.cuda.release_cache()
 
-        with open(f"{method}.pkl", 'wb') as f:
-            pickle.dump(results, f)
+        with open(f"{method}.pkl", 'wb') as fw:
+            pickle.dump(results, fw)
 
-    results = []
+    method_results = []
     for method in methods:
-        with open(f"{method}.pkl", "rb") as f:
+        with open(f"{method}.pkl", "rb") as fr:
             print(f"{method}.pkl")
-            data = pickle.load(f)
-            results.append(data)
+            data = pickle.load(fr)
+            method_results.append(data)
 
     print_system_info()
-    print_table_memory(methods, results)
+    print_table_memory(methods, method_results)
 
     fig = plt.figure(figsize=(10, 10))
     ax1 = fig.add_subplot(2, 2, 1)
@@ -202,9 +201,9 @@ if __name__ == "__main__":
     dtypes = ["int32", "int64"]
     colors = ["b", "r"]
     lines = ["^", "o"]
-    for idx, result in enumerate(results):  # int, long
-        ks = [[], [], [], []]  # num_points
-        ms = [[], [], [], []]
+    for idx, result in enumerate(method_results):  # int, long
+        ks: list[list] = [[], [], [], []]  # num_points
+        ms: list[list] = [[], [], [], []]
         for value in result.values():
             if value['num_points'] == int(np.power(10, 4)):
                 ks[0].append(value['k'])

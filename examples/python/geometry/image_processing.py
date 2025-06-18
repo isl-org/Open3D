@@ -5,11 +5,11 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-
+import matplotlib.pyplot as plt
+import numpy as np
 import open3d as o3d
+
 #conda install pillow matplotlib
 
 if __name__ == "__main__":
@@ -65,5 +65,5 @@ if __name__ == "__main__":
     for i in range(4):
         for j in range(pyramid_levels):
             plt.subplot(4, pyramid_levels, i * 4 + j + 1)
-            plt.imshow(switcher.get(i)[j])
+            plt.imshow(switcher[i][j])
     plt.show()
