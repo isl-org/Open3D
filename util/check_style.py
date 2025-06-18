@@ -40,15 +40,7 @@ if sys.version_info < (3, 6):
 
 # Check and import yapf
 # > not found: throw exception
-# > version mismatch: throw exception
-try:
-    import yapf
-except ImportError:
-    raise ImportError(
-        "yapf not found. Install with `pip install yapf==0.30.0`.")
-if yapf.__version__ != "0.30.0":
-    raise RuntimeError(
-        "yapf 0.30.0 required. Install with `pip install yapf==0.30.0`.")
+import yapf
 
 # Check and import nbformat
 # > not found: throw exception
