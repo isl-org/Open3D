@@ -497,8 +497,9 @@ open3d_find_package_3rdparty_library(3rdparty_threads
 # Assimp
 if(USE_SYSTEM_ASSIMP)
     open3d_find_package_3rdparty_library(3rdparty_assimp
-            PACKAGE assimp
-            TARGETS assimp::assimp
+        PACKAGE assimp
+        TARGETS assimp::assimp
+        DEPENDS ext_zlib
     )
     if(NOT 3rdparty_assimp_FOUND)
         set(USE_SYSTEM_ASSIMP OFF)
@@ -894,6 +895,9 @@ if(NOT USE_SYSTEM_OPENSSL)
 endif()
 
 if(NOT USE_SYSTEM_CURL)
+    if (APPLE)
+        message(SEND_ERROR "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
+    endif()
     include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
     open3d_import_3rdparty_library(3rdparty_curl
             INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
@@ -912,7 +916,12 @@ if(NOT USE_SYSTEM_CURL)
         #     _Curl_resolv in libcurl.a(hostip.c.o)
         # ```
         # The "Foundation" framework is already linked by GLFW.
-        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration -framework Foundation")
+    elseif(UNIX)
+        find_library(LIBIDN2 NAMES idn2 libidn2 libidn2.so.0  )
+        if(LIBIDN2)
+            target_link_libraries(3rdparty_curl INTERFACE ${LIBIDN2})
+        endif()
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
@@ -1914,8 +1923,9 @@ endif ()
 # embree
 if(USE_SYSTEM_EMBREE)
     open3d_find_package_3rdparty_library(3rdparty_embree
-            PACKAGE embree
-            TARGETS embree
+        PACKAGE embree
+        TARGETS embree
+        VERSION 4.3.3 # for "rtcGetErrorString"
     )
     if(NOT 3rdparty_embree_FOUND)
         set(USE_SYSTEM_EMBREE OFF)
