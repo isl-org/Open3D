@@ -152,7 +152,7 @@ CorrespondenceSetPixelWise ComputeCorrespondence(
                                     depth_buffer_private);
 
         }  //    omp critical
-    }      //    omp parallel
+    }  //    omp parallel
 
     CorrespondenceSetPixelWise correspondence;
     int correspondence_count = CountCorrespondence(correspondence_map);

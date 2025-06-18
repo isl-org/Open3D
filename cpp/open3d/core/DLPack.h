@@ -197,8 +197,8 @@ namespace fmt {
 template <>
 struct formatter<DLDeviceType> {
     template <typename FormatContext>
-    auto format(const DLDeviceType& c, FormatContext& ctx) const
-            -> decltype(ctx.out()) {
+    auto format(const DLDeviceType& c,
+                FormatContext& ctx) const -> decltype(ctx.out()) {
         const char* text = nullptr;
         switch (c) {
             case kDLCPU:

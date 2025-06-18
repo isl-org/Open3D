@@ -48,77 +48,74 @@ std::string FindFontPath(std::string font, FontStyle style) {
             suffixes = kNormalSuffixes;
             break;
         case FontStyle::BOLD:
-            suffixes = {
-                " Bold.ttf",
-                " Bold.ttc",
-                " Bold.otf",
-                "-Bold.ttf",
-                "-Bold.ttc",
-                "-Bold.otf",
-                "Bold.ttf",
-                "Bold.ttc",
-                "Bold.oft"
+            suffixes = {" Bold.ttf",
+                        " Bold.ttc",
+                        " Bold.otf",
+                        "-Bold.ttf",
+                        "-Bold.ttc",
+                        "-Bold.otf",
+                        "Bold.ttf",
+                        "Bold.ttc",
+                        "Bold.oft"
 #if _WIN32
-                ,
-                "b.ttf",
-                "b.ttc",
-                "b.otf"
+                        ,
+                        "b.ttf",
+                        "b.ttc",
+                        "b.otf"
 #endif  // _WIN32
             };
             break;
         case FontStyle::ITALIC:
-            suffixes = {
-                " Italic.ttf",
-                " Italic.ttc",
-                " Italic.otf",
-                "-Italic.ttf",
-                "-Italic.ttc",
-                "-Italic.otf",
-                "Italic.ttf",
-                "Italic.ttc",
-                "Italic.otf",
-                "-MediumItalic.ttf",
-                "-MediumItalic.ttc",
-                "-MediumItalic.otf",
-                "MediumItalic.ttf",
-                "MediumItalic.ttc",
-                "MediumItalic.otf",
-                "-Oblique.ttf",
-                "-Oblique.ttc",
-                "-Oblique.otf",
-                "Oblique.ttf",
-                "Oblique.ttc",
-                "Oblique.otf",
-                "-MediumOblique.ttf",
-                "-MediumOblique.ttc",
-                "-MediumOblique.otf",
-                "MediumOblique.ttf",
-                "MediumOblique.ttc",
-                "MediumOblique.otf"
+            suffixes = {" Italic.ttf",
+                        " Italic.ttc",
+                        " Italic.otf",
+                        "-Italic.ttf",
+                        "-Italic.ttc",
+                        "-Italic.otf",
+                        "Italic.ttf",
+                        "Italic.ttc",
+                        "Italic.otf",
+                        "-MediumItalic.ttf",
+                        "-MediumItalic.ttc",
+                        "-MediumItalic.otf",
+                        "MediumItalic.ttf",
+                        "MediumItalic.ttc",
+                        "MediumItalic.otf",
+                        "-Oblique.ttf",
+                        "-Oblique.ttc",
+                        "-Oblique.otf",
+                        "Oblique.ttf",
+                        "Oblique.ttc",
+                        "Oblique.otf",
+                        "-MediumOblique.ttf",
+                        "-MediumOblique.ttc",
+                        "-MediumOblique.otf",
+                        "MediumOblique.ttf",
+                        "MediumOblique.ttc",
+                        "MediumOblique.otf"
 #if _WIN32
-                ,
-                "i.ttf",
-                "i.ttc",
-                "i.otf"
+                        ,
+                        "i.ttf",
+                        "i.ttc",
+                        "i.otf"
 #endif  // _WIN32
             };
             break;
         case FontStyle::BOLD_ITALIC:
-            suffixes = {
-                " Bold Italic.ttf",
-                " Bold Italic.ttc",
-                " Bold Italic.otf",
-                "-BoldItalic.ttf",
-                "-BoldItalic.ttc",
-                "-BoldItalic.otf",
-                "BoldItalic.ttf",
-                "BoldItalic.ttc",
-                "BoldItalic.oft"
+            suffixes = {" Bold Italic.ttf",
+                        " Bold Italic.ttc",
+                        " Bold Italic.otf",
+                        "-BoldItalic.ttf",
+                        "-BoldItalic.ttc",
+                        "-BoldItalic.otf",
+                        "BoldItalic.ttf",
+                        "BoldItalic.ttc",
+                        "BoldItalic.oft"
 #if _WIN32
-                ,
-                "bi.ttf",
-                "bi.ttc",
-                "bi.otf"
+                        ,
+                        "bi.ttf",
+                        "bi.ttc",
+                        "bi.otf"
 #endif  // _WIN32
             };
             break;

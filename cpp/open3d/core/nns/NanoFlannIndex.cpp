@@ -19,7 +19,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-NanoFlannIndex::NanoFlannIndex(){};
+NanoFlannIndex::NanoFlannIndex() {};
 
 NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
     SetTensorData(dataset_points);
@@ -30,7 +30,7 @@ NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points,
     SetTensorData(dataset_points, index_dtype);
 };
 
-NanoFlannIndex::~NanoFlannIndex(){};
+NanoFlannIndex::~NanoFlannIndex() {};
 
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points,
                                    const Dtype &index_dtype) {

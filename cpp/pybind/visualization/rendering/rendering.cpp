@@ -242,9 +242,9 @@ void pybind_rendering_definitions(py::module &m) {
                  "parameter is optional and is True if the image is in the "
                  "sRGB colorspace and False otherwise")
             .def("update_texture",
-                 (bool (Renderer::*)(TextureHandle,
-                                     const std::shared_ptr<geometry::Image>,
-                                     bool)) &
+                 (bool(Renderer::*)(TextureHandle,
+                                    const std::shared_ptr<geometry::Image>,
+                                    bool)) &
                          Renderer::UpdateTexture,
                  "texture"_a, "image"_a, "is_sRGB"_a = false,
                  "Updates the contents of the texture to be the new image, or "
@@ -316,21 +316,20 @@ void pybind_rendering_definitions(py::module &m) {
     auto cam = static_cast<py::class_<Camera, std::shared_ptr<Camera>>>(
             m_rendering.attr("Camera"));
     cam.def("set_projection",
-            (void (Camera::*)(double, double, double, double,
-                              Camera::FovType)) &
+            (void(Camera::*)(double, double, double, double, Camera::FovType)) &
                     Camera::SetProjection,
             "field_of_view"_a, "aspect_ratio"_a, "near_plane"_a, "far_plane"_a,
             "field_of_view_type"_a, "Sets a perspective projection.")
             .def("set_projection",
-                 (void (Camera::*)(Camera::Projection, double, double, double,
-                                   double, double, double)) &
+                 (void(Camera::*)(Camera::Projection, double, double, double,
+                                  double, double, double)) &
                          Camera::SetProjection,
                  "projection_type"_a, "left"_a, "right"_a, "bottom"_a, "top"_a,
                  "near"_a, "far"_a,
                  "Sets the camera projection via a viewing frustum. ")
             .def("set_projection",
-                 (void (Camera::*)(const Eigen::Matrix3d &, double, double,
-                                   double, double)) &
+                 (void(Camera::*)(const Eigen::Matrix3d &, double, double,
+                                  double, double)) &
                          Camera::SetProjection,
                  "intrinsics"_a, "near_plane"_a, "far_plane"_a, "image_width"_a,
                  "image_height"_a,
@@ -538,7 +537,7 @@ void pybind_rendering_definitions(py::module &m) {
                  "Sets the camera with the given name as the active camera for "
                  "the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(
+                 (bool(Scene::*)(
                          const std::string &, const geometry::Geometry3D &,
                          const MaterialRecord &, const std::string &, size_t)) &
                          Scene::AddGeometry,
@@ -546,7 +545,7 @@ void pybind_rendering_definitions(py::module &m) {
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(
+                 (bool(Scene::*)(
                          const std::string &, const t::geometry::Geometry &,
                          const MaterialRecord &, const std::string &, size_t)) &
                          Scene::AddGeometry,

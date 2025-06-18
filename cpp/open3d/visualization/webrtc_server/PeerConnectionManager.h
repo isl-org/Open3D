@@ -120,7 +120,7 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise)
-            : pc_(pc), promise_(promise){};
+            : pc_(pc), promise_(promise) {};
 
     private:
         webrtc::PeerConnectionInterface* pc_;
@@ -153,7 +153,7 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise)
-            : pc_(pc), promise_(promise){};
+            : pc_(pc), promise_(promise) {};
 
     private:
         webrtc::PeerConnectionInterface* pc_;

@@ -147,14 +147,18 @@
 #define OPEN3D_EXPORT_VECTORIZED_1(ISPCKernel, ISPCFunction, type1)    \
     export void ISPCKernel(uniform int64_t start, uniform int64_t end, \
                            type1 arg1) {                               \
-        foreach (i = start... end) { ISPCFunction(i, arg1); }          \
+        foreach (i = start... end) {                                   \
+            ISPCFunction(i, arg1);                                     \
+        }                                                              \
     }
 
 /// See OPEN3D_EXPORT_VECTORIZED(...) for details.
 #define OPEN3D_EXPORT_VECTORIZED_2(ISPCKernel, ISPCFunction, type1, type2) \
     export void ISPCKernel(uniform int64_t start, uniform int64_t end,     \
                            type1 arg1, type2 arg2) {                       \
-        foreach (i = start... end) { ISPCFunction(i, arg1, arg2); }        \
+        foreach (i = start... end) {                                       \
+            ISPCFunction(i, arg1, arg2);                                   \
+        }                                                                  \
     }
 
 /// See OPEN3D_EXPORT_VECTORIZED(...) for details.
@@ -162,7 +166,9 @@
                                    type3)                                  \
     export void ISPCKernel(uniform int64_t start, uniform int64_t end,     \
                            type1 arg1, type2 arg2, type3 arg3) {           \
-        foreach (i = start... end) { ISPCFunction(i, arg1, arg2, arg3); }  \
+        foreach (i = start... end) {                                       \
+            ISPCFunction(i, arg1, arg2, arg3);                             \
+        }                                                                  \
     }
 
 /// See OPEN3D_EXPORT_VECTORIZED(...) for details.

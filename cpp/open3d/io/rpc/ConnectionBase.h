@@ -21,8 +21,8 @@ namespace rpc {
 /// Base class for all connections
 class ConnectionBase {
 public:
-    ConnectionBase(){};
-    virtual ~ConnectionBase(){};
+    ConnectionBase() {};
+    virtual ~ConnectionBase() {};
 
     /// Function for sending data wrapped in a zmq message object.
     virtual std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg) = 0;

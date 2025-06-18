@@ -13,7 +13,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-NearestNeighborSearch::~NearestNeighborSearch(){};
+NearestNeighborSearch::~NearestNeighborSearch() {};
 
 bool NearestNeighborSearch::SetIndex() {
     nanoflann_index_.reset(new NanoFlannIndex());

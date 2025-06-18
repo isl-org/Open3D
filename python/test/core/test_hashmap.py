@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import sys, os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices
 

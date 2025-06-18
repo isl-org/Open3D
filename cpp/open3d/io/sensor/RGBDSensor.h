@@ -23,7 +23,7 @@ class RGBDSensor {
 public:
     RGBDSensor() {}
     virtual bool Connect(size_t sensor_index) = 0;
-    virtual ~RGBDSensor(){};
+    virtual ~RGBDSensor() {};
 
     /// Capture one frame, return an RGBDImage.
     /// If \p enable_align_depth_to_color is true, the depth image will be

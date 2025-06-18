@@ -28,7 +28,7 @@ class WindowSystem {
 public:
     using OSWindow = void*;
 
-    virtual ~WindowSystem(){};
+    virtual ~WindowSystem() {};
 
     virtual void Initialize() = 0;
     virtual void Uninitialize() = 0;

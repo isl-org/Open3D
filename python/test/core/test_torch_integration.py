@@ -12,6 +12,7 @@ import pytest
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices_with_torch, torch_available
 
