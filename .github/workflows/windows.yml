@@ -111,7 +111,7 @@ jobs:
       - name: Install PyTorch requirements
         run: |
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
-            # TODO: Replace with requirements-torch-cuda.txt when available
+            # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
             python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
@@ -128,8 +128,8 @@ jobs:
           }
           cmake --version
           cmake -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
@@ -316,8 +316,8 @@ jobs:
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
-            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
@@ -416,5 +416,5 @@ jobs:
           echo "Running Open3D python tests..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/
+          python -m pytest python/test/
           deactivate

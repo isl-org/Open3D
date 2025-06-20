@@ -482,7 +482,7 @@ endif()
 if(WIN32)
     # Set oldest supported Windows version to Windows 10 (10.0, 0x0A00)
     # https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
-    add_compile_definitions(WINVER="0x0A00" _WIN32_WINNT="0x0A00")
+    add_compile_definitions(WINVER=0x0A00 _WIN32_WINNT=0x0A00)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explicitly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well

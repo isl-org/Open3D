@@ -176,7 +176,7 @@ void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
     culling_proj[2][2] = (-far - near) / (far - near);
     culling_proj[3][2] = -2.0 * far * near / (far - near);
 
-#ifdef WIN32
+#ifdef _WIN32
     camera_->setCustomProjection(custom_proj, near, far);
 #else
     camera_->setCustomProjection(custom_proj, culling_proj, near, far);
