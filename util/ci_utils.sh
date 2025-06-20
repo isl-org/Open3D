@@ -11,6 +11,7 @@ if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA inpu
 fi
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
+NPROC=$((NPROC+2))  # run nproc+2 jobs to speed up the build
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         BUILD_CUDA_MODULE=ON
@@ -378,7 +379,6 @@ install_docs_dependencies() {
 build_docs() {
     echo "Using cmake: $(command -v cmake)"
     cmake --version
-    NPROC=$(nproc)
     echo NPROC="$NPROC"
     mkdir -p build
     cd build

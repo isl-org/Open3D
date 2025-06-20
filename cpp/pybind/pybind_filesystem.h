@@ -21,7 +21,7 @@
 
 #include <string>
 
-#ifdef WIN32
+#ifdef _WIN32
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #endif
 #ifdef __APPLE__

@@ -135,7 +135,6 @@ function(open3d_set_global_properties target)
     endif()
     if(WIN32)
         target_compile_definitions(${target} PRIVATE
-            WINDOWS
             _CRT_SECURE_NO_DEPRECATE
             _CRT_NONSTDC_NO_DEPRECATE
             _SCL_SECURE_NO_WARNINGS
