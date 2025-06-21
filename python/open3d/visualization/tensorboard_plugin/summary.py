@@ -503,8 +503,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                 },
                 faces=faces[bidx] if len(faces) > 0 else faces,
                 face_attributes={
-                    prop: tensor[bidx]
-                    for prop, tensor in triangle_data.items()
+                    prop: tensor[bidx] for prop, tensor in triangle_data.items()
                 },
                 lines=lines[bidx] if len(lines) > 0 else lines,
                 line_attributes={

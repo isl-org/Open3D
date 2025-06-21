@@ -14,14 +14,7 @@
 
 option(APPLY "Apply style to files in-place." OFF)
 
-# Try to locate "clang-format-10" and then "clang-format"
-find_program(CLANG_FORMAT clang-format-10 PATHS ENV PATH)
-if(NOT CLANG_FORMAT)
-    find_program(CLANG_FORMAT clang-format-mp-10 PATHS ENV PATH)
-endif()
-if(NOT CLANG_FORMAT)
-    find_program(CLANG_FORMAT clang-format PATHS ENV PATH)
-endif()
+find_program(CLANG_FORMAT clang-format PATHS ENV PATH)
 if(CLANG_FORMAT)
     message(STATUS "clang-format found at: ${CLANG_FORMAT}")
     execute_process(COMMAND ${CLANG_FORMAT} --version)

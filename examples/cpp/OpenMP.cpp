@@ -118,7 +118,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
         omp_set_num_threads(i);
 #endif
 #pragma omp parallel default(none) shared(nThreads)
-        { simple_task(); }
+        {
+            simple_task();
+        }
     }
 
     for (int i = 1; i <= test_thread; i *= 2) {
@@ -141,7 +143,9 @@ void TestMatrixMultiplication(int argc, char **argv) {
         omp_set_num_threads(i);
 #endif
 #pragma omp parallel default(none) shared(nThreads)
-        { svd_task(); }
+        {
+            svd_task();
+        }
     }
 
     for (int i = 1; i <= test_thread; i *= 2) {
@@ -222,7 +226,7 @@ void TestBindedFunction() {
                 ATA += ATA_private;
                 ATb += ATb_private;
             }  // omp critical
-        }      // omp parallel
+        }  // omp parallel
     }
     std::cout << ATA << std::endl;
     std::cout << ATb << std::endl;
@@ -250,7 +254,7 @@ void TestBindedFunction() {
                 ATA += ATA_private;
                 ATb += ATb_private;
             }  // omp critical
-        }      // omp parallel
+        }  // omp parallel
     }
     std::cout << ATA << std::endl;
     std::cout << ATb << std::endl;
@@ -278,7 +282,7 @@ void TestBindedFunction() {
                 ATA += ATA_private;
                 ATb += ATb_private;
             }  // omp critical
-        }      // omp parallel
+        }  // omp parallel
     }
     std::cout << ATA << std::endl;
     std::cout << ATb << std::endl;
@@ -310,7 +314,7 @@ void TestBindedFunction() {
                 ATA += ATA_private;
                 ATb += ATb_private;
             }  // omp critical
-        }      // omp parallel
+        }  // omp parallel
     }
     std::cout << ATA << std::endl;
     std::cout << ATb << std::endl;

@@ -76,7 +76,7 @@ enum class FontStyle {
 
 class FontContext {
 public:
-    virtual ~FontContext(){};
+    virtual ~FontContext() {};
 
     virtual void* GetFont(FontId font_id) = 0;
 };

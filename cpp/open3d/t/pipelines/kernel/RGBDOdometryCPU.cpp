@@ -54,7 +54,8 @@ void ComputeOdometryInformationMatrixCPU(const core::Tensor& source_vertex_map,
                      workload_idx++) {
 #else
     float* A_reduction = A_1x21.data();
-#pragma omp parallel for reduction(+ : A_reduction[:21]) schedule(static) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for reduction(+ : A_reduction[ : 21]) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     int y = workload_idx / cols;
@@ -154,7 +155,8 @@ void ComputeOdometryResultIntensityCPU(
                      workload_idx++) {
 #else
     float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for reduction(+ : A_reduction[ : 29]) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     int y = workload_idx / cols;
@@ -254,7 +256,8 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
                      workload_idx++) {
 #else
     float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for reduction(+ : A_reduction[ : 29]) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     int y = workload_idx / cols;
@@ -346,7 +349,8 @@ void ComputeOdometryResultPointToPlaneCPU(
                      workload_idx++) {
 #else
     float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for reduction(+ : A_reduction[ : 29]) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     int y = workload_idx / cols;

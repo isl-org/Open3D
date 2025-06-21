@@ -21,7 +21,7 @@ concurrency:
 
 env:
   PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.1.0"
+  CUDA_VERSION: "12.6.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -31,7 +31,7 @@ jobs:
   windows:
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -52,9 +52,9 @@ jobs:
         run: Get-PSDrive
 
       - name: Setup Windows SDK
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2.4
         with:
-          sdk-version: 19041
+          sdk-version: 22621
 
       - name: Install CUDA
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
@@ -95,7 +95,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: '3.10'
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -107,9 +107,9 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake --version
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
-            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
+            -DCMAKE_SYSTEM_VERSION="10.0.22621.0" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
@@ -202,7 +202,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
@@ -233,32 +233,30 @@ jobs:
     name: Build wheel
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
       - name: Setup Windows SDK
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2.4
         with:
-          sdk-version: 19041
+          sdk-version: 22621
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -283,10 +281,10 @@ jobs:
           if (${env:DEVELOPER_BUILD} -ne "OFF") {
             ${env:DEVELOPER_BUILD}="ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
-            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
+            -DCMAKE_SYSTEM_VERSION="10.0.22621.0" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
@@ -330,23 +328,21 @@ jobs:
     name: Test wheel
     permissions:
       contents: read
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
 
     steps:
       - name: Checkout source code
