@@ -23,6 +23,7 @@ env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  BUILD_CUDA_MODULE: OFF
 
 jobs:
   MacOS:
@@ -38,9 +39,9 @@ jobs:
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
-      BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
-      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
+      # Tensorflow 2.19, PyTorch 2.7 are only available for Apple Silicon (macos-14)
+      BUILD_TENSORFLOW_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
       LOW_MEM_USAGE: ON
     steps:
       - name: Checkout source code
@@ -199,9 +200,10 @@ jobs:
             python_version: '3.12'
 
     env:
-      BUILD_CUDA_MODULE: OFF
-      # TensorFlow v2.19 does not support Python 3.13
-      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version == '3.13' && 'OFF' || 'ON' }}
+      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
+      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version == '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
+      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
+      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code

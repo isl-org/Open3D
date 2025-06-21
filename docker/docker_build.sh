@@ -72,11 +72,10 @@ OPTION:
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
-CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.29.2-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
-CUDA_VERSION=12.6.0-cudnn8
-CUDA_VERSION_LATEST=12.6.0-cudnn8
+CUDA_VERSION=12.6.3-cudnn
+CUDA_VERSION_LATEST=12.6.3-cudnn
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -199,7 +198,6 @@ cuda_wheel_build() {
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-        --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
@@ -222,7 +220,6 @@ ci_build() {
     echo "[ci_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
     echo "[ci_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
     echo "[ci_build()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[ci_build()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[ci_build()] PYTHON_VERSION=${PYTHON_VERSION}"
     echo "[ci_build()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
@@ -237,7 +234,6 @@ ci_build() {
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-        --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}" \
         --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
@@ -309,8 +305,7 @@ ci_build() {
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
-    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
     export BUILD_SYCL_MODULE=OFF
@@ -500,14 +495,6 @@ function main() {
         ;;
     cpu-static-release)
         cpu-static-release_export_env
-        ci_build
-        ;;
-    cpu-shared)
-        cpu-shared_export_env
-        ci_build
-        ;;
-    cpu-shared-release)
-        cpu-shared-release_export_env
         ci_build
         ;;
     cpu-shared-ml)
