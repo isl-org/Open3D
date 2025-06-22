@@ -213,6 +213,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: ss/torch27
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
@@ -381,7 +382,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          ref: ss/torch27
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels

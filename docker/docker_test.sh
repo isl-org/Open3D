@@ -65,7 +65,6 @@ ci_print_env() {
     echo "[ci_print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
     echo "[ci_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
     echo "[ci_print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[ci_print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[ci_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
     echo "[ci_print_env()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[ci_print_env()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"

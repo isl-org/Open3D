@@ -106,7 +106,7 @@ jobs:
               --machine-type=t2a-standard-4 \
               --boot-disk-size="128GB" \
               --image-project="ubuntu-os-cloud" \
-              --image-family="ubuntu-2004-lts-arm64" \
+              --image-family="ubuntu-2404-lts-arm64" \
               --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
               --scopes="storage-full,compute-rw" \
               --service-account="$GCE_GPU_CI_SA"; do

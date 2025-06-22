@@ -137,7 +137,7 @@ RUN ccache --version \
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b ss/torch27 ${OPEN3D_ML_ROOT}
 
 # Open3D repo
 # Always keep /root/Open3D as the WORKDIR

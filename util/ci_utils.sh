@@ -141,7 +141,8 @@ build_pip_package() {
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u
-    if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
+    if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] && \
+        [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
         git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
@@ -307,7 +308,7 @@ test_cpp_example() {
     if [ "$runExample" == ON ]; then
         ./Draw --skip-for-unit-test
     fi
-    if [ $BUILD_SHARED_LIBS == ON ]; then
+    if [ "$BUILD_SHARED_LIBS" == ON ]; then
         rm -r ./*
         echo Testing build with pkg-config
         export PKG_CONFIG_PATH=${OPEN3D_INSTALL_DIR}/lib/pkgconfig
@@ -347,15 +348,16 @@ install_docs_dependencies() {
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt" \
+            -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt" \
+            -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
     echo
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt" \
+        -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt" \
+        -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
 }
 
 # Build documentation

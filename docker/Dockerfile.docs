@@ -51,7 +51,7 @@ RUN apt-get update && apt-get install -y \
  && rm -rf /var/lib/apt/lists/*
 
 # Checkout Open3D-ML main branch
-RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b ss/torch27 ${OPEN3D_ML_ROOT}
 # Open3D docs dependencies
 RUN source util/ci_utils.sh && install_docs_dependencies "${OPEN3D_ML_ROOT}"
 
