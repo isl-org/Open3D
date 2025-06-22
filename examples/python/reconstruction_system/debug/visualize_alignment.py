@@ -7,18 +7,20 @@
 
 # examples/python/reconstruction_system/debug/visualize_alignment.py
 
-import numpy as np
-import json
 import argparse
+import json
+import os
 import sys
+
+import numpy as np
 import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
-from open3d_example import *
+from open3d_example import draw_registration_result, get_file_list, join
 
 sys.path.append(".")
-from initialize_config import *
+from initialize_config import initialize_config
 
 
 def list_posegraph_files(folder_posegraph):
