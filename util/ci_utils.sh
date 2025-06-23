@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -30,7 +31,7 @@ TENSORFLOW_VER="2.19.0"
 TORCH_VER="2.7.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
-PIP_VER="25.0.1"
+PIP_VER="25.1.1"
 PROTOBUF_VER="4.24.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
