@@ -436,7 +436,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     }
     if (filter_vertex) {
         const double epsilon = 1e-15;
-        for (auto& vertex : mesh->vertices_) {
+        for (auto &vertex : mesh->vertices_) {
             for (int i = 0; i < 3; ++i) {
                 if (std::abs(vertex(i)) < epsilon) {
                     vertex(i) = 0.0;
@@ -1233,7 +1233,8 @@ double TriangleMesh::GetVolume() const {
 
     double volume = 0;
     int64_t num_triangles = triangles_.size();
-#pragma omp parallel for reduction(+ : volume) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for reduction(+ : volume) \
+        num_threads(utility::EstimateMaxThreads())
     for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
         volume += GetSignedVolumeOfTriangle(tidx);
     }

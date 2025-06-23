@@ -65,7 +65,8 @@ __global__ void l2SelectMin1(T* productDistances,
     }
 
     int rowStart = blockIdx.x * kRowsPerBlock;
-    bool endRow = (blockIdx.x == gridDim.x - 1) && (num_points % kRowsPerBlock != 0);
+    bool endRow =
+            (blockIdx.x == gridDim.x - 1) && (num_points % kRowsPerBlock != 0);
 
     if (endRow) {
         for (int row = rowStart; row < num_points; ++row) {
@@ -79,8 +80,9 @@ __global__ void l2SelectMin1(T* productDistances,
                 }
             }
 
-            threadMin[0] = blockReduceAll<Pair<T, int>, Min<Pair<T, int>>, false, false>(
-    threadMin[0], Min<Pair<T, int>>(), blockMin);
+            threadMin[0] = blockReduceAll<Pair<T, int>, Min<Pair<T, int>>,
+                                          false, false>(
+                    threadMin[0], Min<Pair<T, int>>(), blockMin);
 
             if (threadIdx.x == 0) {
                 outDistances[row] = threadMin[0].k;
@@ -98,7 +100,8 @@ __global__ void l2SelectMin1(T* productDistances,
 
 #pragma unroll
             for (int row = 0; row < kRowsPerBlock; ++row) {
-                distance[row] = productDistances[(rowStart + row) * dim + col] + centroidDistance;
+                distance[row] = productDistances[(rowStart + row) * dim + col] +
+                                centroidDistance;
             }
 
 #pragma unroll
@@ -110,8 +113,8 @@ __global__ void l2SelectMin1(T* productDistances,
             }
         }
 
-        blockReduceAll<kRowsPerBlock, Pair<T, int>, Min<Pair<T, int>>, false, false>(
-    threadMin, Min<Pair<T, int>>(), blockMin);
+        blockReduceAll<kRowsPerBlock, Pair<T, int>, Min<Pair<T, int>>, false,
+                       false>(threadMin, Min<Pair<T, int>>(), blockMin);
 
         if (threadIdx.x == 0) {
 #pragma unroll
