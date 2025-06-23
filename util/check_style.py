@@ -317,7 +317,7 @@ def _find_clang_format():
     Returns (bin_path, version) to clang-format version 10, throws exception
     otherwise.
     """
-    required_clang_format_major = 10
+    required_clang_format_major = 20
 
     def parse_version(bin_path):
         """
