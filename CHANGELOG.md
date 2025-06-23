@@ -59,6 +59,7 @@
 -   Add optional indices arg for fast computation of a small subset of FPFH features (PR #7118).
 -   Fix CMake configuration summary incorrectly reporting `no` for system BLAS. (PR #7230)
 -   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
+-   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
 
 ## 0.13
 
