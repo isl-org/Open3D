@@ -184,26 +184,20 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        # macos-13 is Intel runner, macos-14 is Apple Silicon
+        # macos-13 is Intel runner, macos-15 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-13, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        os: [macos-13, macos-15]
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           # TODO: remove macos-14 excludes when https://github.com/actions/setup-python/issues/808 is fixed
-          - os: macos-14
-            python_version: '3.8'
-          - os: macos-14
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
 
     env:
       BUILD_CUDA_MODULE: OFF
@@ -305,7 +299,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -313,6 +307,8 @@ jobs:
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
     steps:
       - name: Checkout source code  # for gh release upload
         uses: actions/checkout@v4
@@ -371,22 +367,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-13, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - os: macos-14
-            python_version: '3.8'
-          - os: macos-14
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML

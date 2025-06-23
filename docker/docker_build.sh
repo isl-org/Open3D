@@ -8,7 +8,7 @@
 # Guidelines:
 # - Use a flat list of options.
 #   We don't want to have a cartesian product of different combinations of
-#   options. E.g., to support Ubuntu {22.04, 24.04} with Python {3.7, 3.8}, we
+#   options. E.g., to support Ubuntu {22.04, 24.04} with Python {3.10, 3.11}, we
 #   don't specify the OS and Python version separately, instead, we have a flat
 #   list of combinations: [u2204_py39, u2204_py310, u2404_py39, u2404_py310].
 # - No external environment variables.
@@ -23,28 +23,20 @@ __usage_docker_build="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py38-dev     : OpenBLAS AMD64 3.8 wheel, developer mode
-    openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
     openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
     openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
     openblas-amd64-py313-dev    : OpenBLAS AMD64 3.13 wheel, developer mode
-    openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
-    openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
     openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
     openblas-amd64-py313        : OpenBLAS AMD64 3.13 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
-    openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
-    openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
     openblas-arm64-py312-dev    : OpenBLAS ARM64 3.12 wheel, developer mode
     openblas-arm64-py313-dev    : OpenBLAS ARM64 3.13 wheel, developer mode
-    openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
-    openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
     openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
     openblas-arm64-py312        : OpenBLAS ARM64 3.12 wheel, release mode
@@ -71,14 +63,10 @@ OPTION:
     5-ml-noble                 : CUDA CI, 5-ml-jammy, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
-    cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
-    cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
     cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, developer mode
     cuda_wheel_py313_dev       : CUDA Python 3.13 wheel, developer mode
-    cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
-    cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
     cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
@@ -91,8 +79,8 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.31.7-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.31.7-linux-aarch64
-CUDA_VERSION=12.8.0-cudnn
-CUDA_VERSION_LATEST=12.8.0-cudnn
+CUDA_VERSION=12.6.0-cudnn
+CUDA_VERSION_LATEST=12.6.0-cudnn
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -126,13 +114,7 @@ openblas_export_env() {
         print_usage_and_exit_docker_build
     fi
 
-    if [[ "py38" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.8
-        export DOCKER_TAG=${DOCKER_TAG}-py38
-    elif [[ "py39" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.9
-        export DOCKER_TAG=${DOCKER_TAG}-py39
-    elif [[ "py310" =~ ^($options)$ ]]; then
+    if [[ "py310" =~ ^($options)$ ]]; then
         export PYTHON_VERSION=3.10
         export DOCKER_TAG=${DOCKER_TAG}-py310
     elif [[ "py311" =~ ^($options)$ ]]; then
@@ -189,11 +171,7 @@ cuda_wheel_build() {
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
-    if [[ "py38" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.8
-    elif [[ "py39" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.9
-    elif [[ "py310" =~ ^($options)$ ]]; then
+    if [[ "py310" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
@@ -283,7 +261,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-2-jammy
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -298,7 +276,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-jammy
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
@@ -314,7 +292,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-jammy
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
@@ -362,7 +340,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu24.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-5-ml-noble
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
@@ -378,7 +356,7 @@ cpu-static_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -393,7 +371,7 @@ cpu-static-release_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -424,7 +402,7 @@ cpu-shared-ml_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
@@ -440,7 +418,7 @@ cpu-shared-release_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.12 # no TF versions after 2.13.2 for Python 3.8
+    export PYTHON_VERSION=3.12 # no TF versions after 2.13.2 for Python 3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
@@ -456,7 +434,7 @@ cpu-shared-ml-release_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
@@ -516,14 +494,6 @@ function main() {
     echo "[$(basename $0)] building $1"
     case "$1" in
     # OpenBLAS AMD64
-    openblas-amd64-py38-dev)
-        openblas_export_env amd64 py38 dev
-        openblas_build
-        ;;
-    openblas-amd64-py39-dev)
-        openblas_export_env amd64 py39 dev
-        openblas_build
-        ;;
     openblas-amd64-py310-dev)
         openblas_export_env amd64 py310 dev
         openblas_build
@@ -538,14 +508,6 @@ function main() {
         ;;
     openblas-amd64-py313-dev)
         openblas_export_env amd64 py313 dev
-        openblas_build
-        ;;
-    openblas-amd64-py38)
-        openblas_export_env amd64 py38
-        openblas_build
-        ;;
-    openblas-amd64-py39)
-        openblas_export_env amd64 py39
         openblas_build
         ;;
     openblas-amd64-py310)
@@ -566,14 +528,6 @@ function main() {
         ;;
 
     # OpenBLAS ARM64
-    openblas-arm64-py38-dev)
-        openblas_export_env arm64 py38 dev
-        openblas_build
-        ;;
-    openblas-arm64-py39-dev)
-        openblas_export_env arm64 py39 dev
-        openblas_build
-        ;;
     openblas-arm64-py310-dev)
         openblas_export_env arm64 py310 dev
         openblas_build
@@ -588,14 +542,6 @@ function main() {
         ;;
     openblas-arm64-py313-dev)
         openblas_export_env arm64 py313 dev
-        openblas_build
-        ;;
-    openblas-arm64-py38)
-        openblas_export_env arm64 py38
-        openblas_build
-        ;;
-    openblas-arm64-py39)
-        openblas_export_env arm64 py39
         openblas_build
         ;;
     openblas-arm64-py310)
@@ -651,12 +597,6 @@ function main() {
         ;;
 
     # CUDA wheels
-    cuda_wheel_py38_dev)
-        cuda_wheel_build py38 dev
-        ;;
-    cuda_wheel_py39_dev)
-        cuda_wheel_build py39 dev
-        ;;
     cuda_wheel_py310_dev)
         cuda_wheel_build py310 dev
         ;;
@@ -668,12 +608,6 @@ function main() {
         ;;
     cuda_wheel_py313_dev)
         cuda_wheel_build py313 dev
-        ;;
-    cuda_wheel_py38)
-        cuda_wheel_build py38
-        ;;
-    cuda_wheel_py39)
-        cuda_wheel_build py39
         ;;
     cuda_wheel_py310)
         cuda_wheel_build py310
