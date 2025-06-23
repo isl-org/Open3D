@@ -45,10 +45,10 @@ try:
     import yapf
 except ImportError:
     raise ImportError(
-        "yapf not found. Install with `pip install yapf==0.30.0`.")
-if yapf.__version__ != "0.30.0":
+        "yapf not found. Install with `pip install yapf==0.43.0`.")
+if yapf.__version__ != "0.43.0":
     raise RuntimeError(
-        "yapf 0.30.0 required. Install with `pip install yapf==0.30.0`.")
+        "yapf 0.43.0º required. Install with `pip install yapf==0.43.0`.")
 
 # Check and import nbformat
 # > not found: throw exception
