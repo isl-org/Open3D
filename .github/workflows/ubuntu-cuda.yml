@@ -56,13 +56,12 @@ jobs:
         include:
           - CI_CONFIG: 2-jammy
           - CI_CONFIG: 3-ml-shared-jammy
-          - CI_CONFIG: 4-shared-jammy
           - CI_CONFIG: 5-ml-noble
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : ${{ matrix.CI_CONFIG }}
-      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-jammy", "4-shared-jammy"]'), matrix.CI_CONFIG) }}
+      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-jammy"]'), matrix.CI_CONFIG) }}
       GCE_INSTANCE_PREFIX: open3d-ci-${{ matrix.CI_CONFIG }}
       DOCKER_TAG         : open3d-ci:${{ matrix.CI_CONFIG }}
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
