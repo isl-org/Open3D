@@ -248,19 +248,21 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
+    HAVE_PYTORCH_OPS=OFF
+    HAVE_TENSORFLOW_OPS=OFF
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_PYTORCH_OPS'])"; then
-        BUILD_PYTORCH_OPS=ON
+        HAVE_PYTORCH_OPS=ON
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
         python -W default -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_TENSORFLOW_OPS'])"; then
-        BUILD_TENSORFLOW_OPS=ON
+        HAVE_TENSORFLOW_OPS=ON
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
         python -W default -c \
             "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
     fi
-    if [ "$BUILD_TENSORFLOW_OPS" == ON ] && [ "$BUILD_PYTORCH_OPS" == ON ]; then
+    if [ "$HAVE_TENSORFLOW_OPS" == ON ] && [ "$HAVE_PYTORCH_OPS" == ON ]; then
         echo "Importing TensorFlow and torch in the reversed order"
         python -W default -c "import tensorflow as tf; import torch; import open3d.ml.torch as o3d"
         echo "Importing TensorFlow and torch in the normal order"
