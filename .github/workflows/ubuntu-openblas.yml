@@ -1,4 +1,3 @@
-
 name: Ubuntu OpenBLAS
 permissions: {}
 
@@ -32,6 +31,7 @@ jobs:
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
+
       - name: Docker build
         run: docker/docker_build.sh openblas-amd64-py312-dev
 
@@ -69,8 +69,7 @@ jobs:
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
-      # Be verbose and explicit here such that a developer can directly copy the
-      # `docker/docker_build.sh xxx` command to execute locally.
+
       - name: Compute Docker tag for this matrix entry
         run: |
           # Strip the dot: 3.8 ➜ 38, 3.10 ➜ 310 …
@@ -78,23 +77,24 @@ jobs:
           # Add “-dev” only when requested
           DEV_SUFFIX=$([ "${DEVELOPER_BUILD}" = "ON" ] && echo "-dev")
           echo "DOCKER_TAG=openblas-arm64-py${PY_NO_DOT}${DEV_SUFFIX}" >> $GITHUB_ENV
+
       - name: Docker build
         run: |
           docker/docker_build.sh "${DOCKER_TAG}"
-          # (wheel-name logic can stay as is)
-          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
-          PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
-          echo "PIP_PKG_NAME=$PIP_PKG_NAME"       >> $GITHUB_ENV
-          echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME" >> $GITHUB_ENV
+
+      - name: Docker test
+        run: docker/docker_test.sh "${DOCKER_TAG}"
 
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PIP_PKG_NAME }}
-          path: |
-            ${{ env.PIP_PKG_NAME }}
-            ${{ env.PIP_CPU_PKG_NAME }}
+          path: open3d-*.whl
           if-no-files-found: error
 
-      - name: Docker test
-        run: docker/docker_test.sh "${DOCKER_TAG}"
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload main-devel open3d-*.whl --clobber
+          gh release view main-devel
