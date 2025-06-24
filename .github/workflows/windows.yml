@@ -1,3 +1,7 @@
+# FIXME:
+# - MSVC 17 and CUDA 12.4+ error while building CreateCUDAHashBackend.cu
+# - PyTorch Ops in debug mode - DLL initialization error while loading open3d_torch_ops.dll
+
 name: Windows
 permissions: {}
 
@@ -21,17 +25,17 @@ concurrency:
 
 env:
   PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.1.0"
+  CUDA_VERSION: "12.4.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
-  NPROC: 2
+  NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
   windows:
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -46,16 +50,12 @@ jobs:
           - BUILD_CUDA_MODULE: ON
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ ( matrix.BUILD_CUDA_MODULE == 'ON' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}
 
     steps:
       - name: Disk space used
         run: Get-PSDrive
-
-      - name: Setup Windows SDK
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
-        with:
-          sdk-version: 19041
-
+            
       - name: Install CUDA
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
@@ -73,7 +73,7 @@ jobs:
           # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
-          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "npp", "npp_dev", "thrust"
+          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "nvtx", "thrust"
           $CUDA_PACKAGES.ForEach({ $CUDA_INSTALL_ARGS += " $($_)_$($CUDA_VER)" })
           # Download and install CUDA
           echo "Downloading CUDA installer from $CUDA_URL"
@@ -85,9 +85,9 @@ jobs:
           }
           # Add CUDA environment variables.
           $CUDA_PATH = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$CUDA_VER"
-          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "$CUDA_PATH\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -96,29 +96,44 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.8
+      
+      - name: Checkout Open3D-ML
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          path: open3d_ml
+      
+      - name: Install PyTorch requirements
+        run: |
+          if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
+            # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
+            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+          } else {
+            python -m pip install -r open3d_ml/requirements-torch.txt
+          }
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
-          cd ${{ env.BUILD_DIR }}
-          if (${env:DEVELOPER_BUILD} -ne "OFF") {
-            ${env:DEVELOPER_BUILD}="ON"
+          New-Item -Path '${{ env.BUILD_DIR }}' -ItemType Directory
+          cd '${{ env.BUILD_DIR }}'
+          if ($Env:DEVELOPER_BUILD -ne "OFF") {
+            $Env:DEVELOPER_BUILD = "ON"
           }
           cmake --version
-          cmake -G "Visual Studio 16 2019" -A x64 `
-            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
-            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
+          cmake -G "Visual Studio 17 2022" -A x64 `
+            -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
-            -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_LIBREALSENSE=OFF `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
+            -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
             ${{ env.SRC_DIR }}
 
       - name: Build
@@ -143,7 +158,7 @@ jobs:
           }
           $DEVEL_PKG_NAME=(Get-ChildItem package/open3d-devel-*.zip).Name
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
-            $env:GITHUB_ENV -Encoding utf8 -Append
+            $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload Package
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
@@ -202,7 +217,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
@@ -214,7 +229,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -c python/requirements_build.txt wheel setuptools
+          python -m pip install -U -r python/requirements_build.txt
       - name: Install Python package
         working-directory: ${{ env.BUILD_DIR }}
         run: |
@@ -233,7 +248,7 @@ jobs:
     name: Build wheel
     permissions:
       contents: write  # upload
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -254,12 +269,13 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-
-      - name: Setup Windows SDK
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+      
+      - name: Checkout Open3D-ML
+        uses: actions/checkout@v4
         with:
-          sdk-version: 19041
-
+          repository: isl-org/Open3D-ML
+          path: open3d_ml
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -269,39 +285,36 @@ jobs:
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
+          python -m pip install -U pip==${{ env.PIP_VER }}
           # maturin>1.7.8 breaks dependency y-py (Python 3.12) and pywinpty (Python 3.8) wheel building
           # https://github.com/MichaIng/DietPi/issues/7329#issuecomment-2565130837
           python -m pip install maturin==1.7.8
           python -m pip install -r python/requirements.txt
+          python -m pip install -U -c python/requirements_build.txt wheel setuptools
           python -m pip install -r python/requirements_jupyter_build.txt
+          python -m pip install -r open3d_ml/requirements-torch.txt
+
 
       - name: Config
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
-          if (${env:DEVELOPER_BUILD} -ne "OFF") {
-            ${env:DEVELOPER_BUILD}="ON"
+          if ($Env:DEVELOPER_BUILD -ne "OFF") {
+            $Env:DEVELOPER_BUILD = "ON"
           }
-          cmake -G "Visual Studio 16 2019" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
-            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
-            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
+            -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_AZURE_KINECT=ON `
-            -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_LIBREALSENSE=OFF `
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
+            -DBUILD_PYTORCH_OPS=ON `
             ${{ env.SRC_DIR }}
-
-      - name: Install Open3D python build requirements
-        working-directory: ${{ env.SOURCE_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -c python/requirements_build.txt wheel setuptools
 
       - name: Build Python package
         working-directory: ${{ env.BUILD_DIR }}
@@ -309,7 +322,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
-          echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload wheel
         uses: actions/upload-artifact@v4
@@ -330,7 +343,7 @@ jobs:
     name: Test wheel
     permissions:
       contents: read
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: [build-wheel]
     strategy:
       fail-fast: false
@@ -391,5 +404,5 @@ jobs:
           echo "Running Open3D python tests..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
-          python -m pytest python/test/ --ignore python/test/ml_ops/
+          python -m pytest python/test/
           deactivate

@@ -799,7 +799,7 @@ void GuiVisualizer::Init() {
         file_menu->AddItem("Open...", FILE_OPEN, gui::KEY_O);
         file_menu->AddItem("Export Current Image...", FILE_EXPORT_RGB);
         file_menu->AddSeparator();
-#if defined(WIN32)
+#if defined(_WIN32)
         file_menu->AddItem("Exit", FILE_QUIT);
 #elif !defined(__APPLE__)  // quit goes in app menu on macOS
         file_menu->AddItem("Quit", FILE_QUIT, gui::KEY_Q);

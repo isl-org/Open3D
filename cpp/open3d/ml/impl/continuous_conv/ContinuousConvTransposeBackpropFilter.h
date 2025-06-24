@@ -64,6 +64,9 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
            sizeof(TOut) * spatial_filter_size * in_channels * out_channels);
     std::mutex filter_backprop_mutex;
 
+    typedef Eigen::Array<TFeat, VECSIZE, Eigen::Dynamic> Matrix;
+    typedef Eigen::Array<TReal, VECSIZE, 3> Matrix3C;
+
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
             [&](const tbb::blocked_range<size_t>& r) {
@@ -75,13 +78,12 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                 Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> C(
                         out_channels, range_length);
 
-                typedef Eigen::Array<TFeat, VECSIZE, Eigen::Dynamic> Matrix;
                 Matrix infeat(VECSIZE, in_channels);
 
                 Eigen::Array<TReal, 3, 1> offsets_(offsets[0], offsets[1],
                                                    offsets[2]);
 
-                Eigen::Array<TReal, VECSIZE, 3> inv_extents;
+                Matrix3C inv_extents;
                 if (INDIVIDUAL_EXTENT == false) {
                     if (ISOTROPIC_EXTENT) {
                         inv_extents = 1 / extents[0];
