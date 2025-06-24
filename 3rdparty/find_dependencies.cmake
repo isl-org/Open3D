@@ -1625,7 +1625,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             else()
                 message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
                                     "On Ubuntu, please install by `apt install gfortran`. "
-                                    "On macOS, please install by `brew install gfortran`. ")
+                                    "On macOS, please install by `brew install gcc`. ")
             endif()
 
             include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
@@ -1655,21 +1655,23 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             endif()
 
             if(LINUX_AARCH64 OR APPLE_AARCH64)
-                # Find libgfortran.a and libgcc.a inside the gfortran library search
-                # directories. This ensures that the library matches the compiler.
-                # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
-                # find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-                # find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
-                # target_link_libraries(3rdparty_blas INTERFACE
-                #         ${gfortran_lib}
-                #         ${gcc_lib}
-                # )
-                # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
-                # which prevents it from being used in a shared library.
-                # We link the shared version (-lgfortran) instead. This also handles libgcc.
-                # TODO: This requires packaging libgfortran with the Python
-                # wheel
-                target_link_libraries(3rdparty_blas INTERFACE gfortran)
+                if(APPLE_AARCH64)
+                    # Find libgfortran.a and libgcc.a inside the gfortran library search
+                    # directories. This ensures that the library matches the compiler.
+                    # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
+                    find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
+                endif()
+                if(LINUX_AARCH64)
+                    # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
+                    # which prevents it from being used in a shared library.
+                    # We link the shared version (-lgfortran) instead.
+                    # TODO: This requires packaging libgfortran with the Python
+                    # wheel
+                    find_library(gfortran_lib NAMES libgfortran${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc${CMAKE_SHARED_LIBRARY_SUFFIX}      PATHS ${gfortran_lib_dirs} REQUIRED)
+                endif()
+                target_link_libraries(3rdparty_blas INTERFACE ${gfortran_lib} ${gcc_lib})
                 if(APPLE_AARCH64)
                     find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
                     target_link_libraries(3rdparty_blas INTERFACE
