@@ -15,10 +15,6 @@ endif()
 
 # Find installed Open3D, which exports Open3D::Open3D
 find_package(Open3D REQUIRED)
-if (TARGET Open3D::3rdparty_cublas)
-    enable_language(CUDA)
-    set(CMAKE_CUDA_STANDARD 17)
-endif()
 
 add_executable(Draw)
 target_sources(Draw PRIVATE Draw.cpp)
