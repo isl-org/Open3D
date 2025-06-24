@@ -494,47 +494,11 @@ open3d_find_package_3rdparty_library(3rdparty_threads
     TARGETS Threads::Threads
 )
 
-# PNG
-if(USE_SYSTEM_PNG)
-    # ZLIB::ZLIB is automatically included by the PNG package.
-    open3d_find_package_3rdparty_library(3rdparty_png
-        PACKAGE PNG
-        PACKAGE_VERSION_VAR PNG_VERSION_STRING
-        TARGETS PNG::PNG
-    )
-    if(NOT 3rdparty_png_FOUND)
-        set(USE_SYSTEM_PNG OFF)
-    endif()
-endif()
-if(NOT USE_SYSTEM_PNG)
-    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
-    open3d_import_3rdparty_library(3rdparty_zlib
-        HIDDEN
-        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
-        LIB_DIR      ${ZLIB_LIB_DIR}
-        LIBRARIES    ${ZLIB_LIBRARIES}
-        DEPENDS      ext_zlib
-    )
-
-    include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
-    open3d_import_3rdparty_library(3rdparty_png
-        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
-        LIB_DIR      ${LIBPNG_LIB_DIR}
-        LIBRARIES    ${LIBPNG_LIBRARIES}
-        DEPENDS      ext_libpng
-    )
-    target_link_libraries(3rdparty_png INTERFACE Open3D::3rdparty_zlib)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_png)
-else()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_png)
-endif()
-
 # Assimp
 if(USE_SYSTEM_ASSIMP)
     open3d_find_package_3rdparty_library(3rdparty_assimp
         PACKAGE assimp
         TARGETS assimp::assimp
-        DEPENDS ext_zlib
     )
     if(NOT 3rdparty_assimp_FOUND)
         set(USE_SYSTEM_ASSIMP OFF)
@@ -961,6 +925,41 @@ if(NOT USE_SYSTEM_CURL)
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
+
+# PNG
+if(USE_SYSTEM_PNG)
+    # ZLIB::ZLIB is automatically included by the PNG package.
+    open3d_find_package_3rdparty_library(3rdparty_png
+        PACKAGE PNG
+        PACKAGE_VERSION_VAR PNG_VERSION_STRING
+        TARGETS PNG::PNG
+    )
+    if(NOT 3rdparty_png_FOUND)
+        set(USE_SYSTEM_PNG OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_PNG)
+    include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
+    open3d_import_3rdparty_library(3rdparty_zlib
+        HIDDEN
+        INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
+        LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
+        DEPENDS      ext_zlib
+    )
+
+    include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
+    open3d_import_3rdparty_library(3rdparty_png
+        INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
+        LIB_DIR      ${LIBPNG_LIB_DIR}
+        LIBRARIES    ${LIBPNG_LIBRARIES}
+        DEPENDS      ext_libpng
+    )
+    target_link_libraries(3rdparty_png INTERFACE Open3D::3rdparty_zlib)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_png)
+else()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_png)
+endif()
 
 # rply
 open3d_build_3rdparty_library(3rdparty_rply DIRECTORY rply
