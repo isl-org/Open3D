@@ -101,6 +101,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: ss/torch27
           path: open3d_ml
       
       - name: Install PyTorch requirements
@@ -222,6 +223,10 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
           cmake --build . --config ${{ matrix.CONFIG }}
+          if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
+            $env:Path = "$env:CUDA_PATH\bin;$env:Path"
+            echo "Updated PATH: $env:Path"
+          }
           .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Open3D python build requirements
@@ -272,6 +277,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: ss/torch27
           path: open3d_ml
       
       - name: Set up Python
