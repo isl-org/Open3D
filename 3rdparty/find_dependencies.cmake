@@ -499,7 +499,6 @@ if(USE_SYSTEM_ASSIMP)
     open3d_find_package_3rdparty_library(3rdparty_assimp
         PACKAGE assimp
         TARGETS assimp::assimp
-        DEPENDS ext_zlib
     )
     if(NOT 3rdparty_assimp_FOUND)
         set(USE_SYSTEM_ASSIMP OFF)
@@ -956,7 +955,6 @@ if(NOT USE_SYSTEM_PNG)
             LIBRARIES    ${LIBPNG_LIBRARIES}
             DEPENDS      ext_libpng
     )
-    add_dependencies(ext_libpng ext_zlib)
     target_link_libraries(3rdparty_png INTERFACE Open3D::3rdparty_zlib)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_png)
 else()
@@ -1622,9 +1620,9 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
                 message(STATUS "System BLAS/LAPACK/LAPACKE found.")
                 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM
-                        ${BLAS_LIBRARIES}
-                        ${LAPACK_LIBRARIES}
-                        ${LAPACKE_LIBRARIES}
+                    ${BLAS_LIBRARIES}
+                    ${LAPACK_LIBRARIES}
+                    ${LAPACKE_LIBRARIES}
                 )
             else()
                 message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting USE_SYSTEM_BLAS=OFF.")
@@ -1641,8 +1639,8 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
                 message(STATUS "gfortran found at ${gfortran}")
             else()
                 message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
-                        "On Ubuntu, please install by `apt install gfortran`. "
-                        "On macOS, please install by `brew install gfortran`. ")
+                                    "On Ubuntu, please install by `apt install gfortran`. "
+                                    "On macOS, please install by `brew install gcc`. ")
             endif()
 
             include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
@@ -1670,30 +1668,33 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             else()
                 message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
             endif()
-
             if(LINUX_AARCH64 OR APPLE_AARCH64)
-                # Find libgfortran.a and libgcc.a inside the gfortran library search
-                # directories. This ensures that the library matches the compiler.
-                # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
-                # find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-                # find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
-                # target_link_libraries(3rdparty_blas INTERFACE
-                #         ${gfortran_lib}
-                #         ${gcc_lib}
-                # )
-                # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
-                # which prevents it from being used in a shared library.
-                # We link the shared version (-lgfortran) instead. This also handles libgcc.
-                target_link_libraries(3rdparty_blas INTERFACE gfortran)
+                if(APPLE_AARCH64)
+                    # Find libgfortran.a and libgcc.a inside the gfortran library search
+                    # directories. This ensures that the library matches the compiler.
+                    # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
+                    find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
+                endif()
+                if(LINUX_AARCH64)
+                    # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
+                    # which prevents it from being used in a shared library.
+                    # We link the shared version (-lgfortran) instead.
+                    # TODO: This requires packaging libgfortran with the Python
+                    # wheel
+                    find_library(gfortran_lib NAMES libgfortran${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc${CMAKE_SHARED_LIBRARY_SUFFIX}      PATHS ${gfortran_lib_dirs} REQUIRED)
+                endif()
+                target_link_libraries(3rdparty_blas INTERFACE ${gfortran_lib} ${gcc_lib})
                 if(APPLE_AARCH64)
                     find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
                     target_link_libraries(3rdparty_blas INTERFACE
-                            ${quadmath_lib})
+                        ${quadmath_lib})
                     # Suppress Apple compiler warnigns.
                     if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
                         message(WARNING "All link warnings have been disabled on Apple Silicon builds "
-                                "due to the large number of spurious warnings that are generated. If you "
-                                "need to see link warnings please build with -DCMAKE_BUILD_TYPE=Debug.")
+                            "due to the large number of spurious warnings that are generated. If you "
+                            "need to see link warnings please build with -DCMAKE_BUILD_TYPE=Debug.")
                         target_link_options(3rdparty_blas INTERFACE "-Wl,-w")
                     endif()
                 endif()
@@ -1771,7 +1772,7 @@ if(BUILD_CUDA_MODULE)
         # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
         # cudatoolkit conda package), or have a mechanism to locate the CUDA
         # toolkit from the system.
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cusolver CUDA::cublas)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
         # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack

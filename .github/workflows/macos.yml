@@ -71,7 +71,8 @@ jobs:
 
           if [[ ${{ runner.arch }} == "ARM64"  ]]; then
             # Fix gfortran not found issue
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
+            brew install gcc
+            ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
           fi
 
           # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
