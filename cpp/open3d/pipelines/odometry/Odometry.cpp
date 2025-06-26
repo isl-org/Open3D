@@ -152,7 +152,7 @@ CorrespondenceSetPixelWise ComputeCorrespondence(
                                     depth_buffer_private);
 
         }  //    omp critical
-    }  //    omp parallel
+    }      //    omp parallel
 
     CorrespondenceSetPixelWise correspondence;
     int correspondence_count = CountCorrespondence(correspondence_map);
@@ -260,9 +260,7 @@ static Eigen::Matrix6d CreateInformationMatrix(
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
 #pragma omp critical(CreateInformationMatrix)
-        {
-            GTG += GTG_private;
-        }
+        { GTG += GTG_private; }
     }
     return GTG;
 }

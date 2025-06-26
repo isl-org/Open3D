@@ -526,7 +526,8 @@ void Application::OnMenuItemSelected(Menu::ItemId itemId) {
 
 void Application::Run() {
     EnvUnlocker noop;  // containing env is C++
-    while (RunOneTick(noop));
+    while (RunOneTick(noop))
+        ;
 }
 
 bool Application::RunOneTick(EnvUnlocker &unlocker,
