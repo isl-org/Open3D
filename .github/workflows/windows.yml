@@ -224,8 +224,8 @@ jobs:
             ..
           cmake --build . --config ${{ matrix.CONFIG }}
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
-            $env:Path = "$env:CUDA_PATH\bin;$env:Path"
-            echo "Updated PATH: $env:Path"
+            echo "PATH: $env:Path"
+            dumpbin /dependents .\${{ matrix.CONFIG }}\Draw.exe
           }
           .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           Remove-Item "C:\Program Files\Open3D" -Recurse
