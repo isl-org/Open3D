@@ -1155,7 +1155,7 @@ void pybind_gui_definitions(py::module &m) {
                  })
             .def_property(
                     "color_value", &ColorEdit::GetValue,
-                    (void (ColorEdit::*)(const Color &)) & ColorEdit::SetValue,
+                    (void(ColorEdit::*)(const Color &)) & ColorEdit::SetValue,
                     "Color value (gui.Color)")
             .def("set_on_value_changed", &ColorEdit::SetOnValueChanged,
                  "Calls f(Color) when color changes by user input");
@@ -1169,19 +1169,18 @@ void pybind_gui_definitions(py::module &m) {
             .def("clear_items", &Combobox::ClearItems, "Removes all items")
             .def("add_item", &Combobox::AddItem, "Adds an item to the end")
             .def("change_item",
-                 (void (Combobox::*)(int, const char *)) & Combobox::ChangeItem,
+                 (void(Combobox::*)(int, const char *)) & Combobox::ChangeItem,
                  "Changes the text of the item at index: "
                  "change_item(index, newtext)")
             .def("change_item",
-                 (void (Combobox::*)(const char *, const char *)) &
+                 (void(Combobox::*)(const char *, const char *)) &
                          Combobox::ChangeItem,
                  "Changes the text of the matching item: "
                  "change_item(text, newtext)")
             .def("remove_item",
-                 (void (Combobox::*)(const char *)) & Combobox::RemoveItem,
+                 (void(Combobox::*)(const char *)) & Combobox::RemoveItem,
                  "Removes the first item of the given text")
-            .def("remove_item",
-                 (void (Combobox::*)(int)) & Combobox::RemoveItem,
+            .def("remove_item", (void(Combobox::*)(int)) & Combobox::RemoveItem,
                  "Removes the item at the index")
             .def_property_readonly("number_of_items",
                                    &Combobox::GetNumberOfItems,

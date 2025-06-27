@@ -40,15 +40,7 @@ if sys.version_info < (3, 6):
 
 # Check and import yapf
 # > not found: throw exception
-# > version mismatch: throw exception
-try:
-    import yapf
-except ImportError:
-    raise ImportError(
-        "yapf not found. Install with `pip install yapf==0.30.0`.")
-if yapf.__version__ != "0.30.0":
-    raise RuntimeError(
-        "yapf 0.30.0 required. Install with `pip install yapf==0.30.0`.")
+import yapf
 
 # Check and import nbformat
 # > not found: throw exception
@@ -317,7 +309,7 @@ def _find_clang_format():
     Returns (bin_path, version) to clang-format version 10, throws exception
     otherwise.
     """
-    required_clang_format_major = 10
+    required_clang_format_major = 18
 
     def parse_version(bin_path):
         """

@@ -114,9 +114,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Sa32.f = A_3x3[7];
     Sa33.f = A_3x3[8];
 
-    //###########################################################
-    // Compute normal equations matrix
-    //###########################################################
+    // ###########################################################
+    //  Compute normal equations matrix
+    // ###########################################################
 
     Ss11.f = Sa11.f * Sa11.f;
     Stmp1.f = Sa21.f * Sa21.f;
@@ -159,9 +159,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Sqvvy.f = 0.f;
     Sqvvz.f = 0.f;
 
-    //###########################################################
-    // Solve symmetric eigenproblem using Jacobi iteration
-    //###########################################################
+    // ###########################################################
+    //  Solve symmetric eigenproblem using Jacobi iteration
+    // ###########################################################
     for (int i = 0; i < 4; i++) {
         Ssh.f = Ss21.f * 0.5f;
         Stmp5.f = __dsub_rn(Ss11.f, Ss22.f);
@@ -200,9 +200,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
         printf("GPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
                Sch.f);
 #endif
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __dadd_rn(Stmp1.f, Stmp2.f);
         Ss33.f = Ss33.f * Stmp3.f;
@@ -241,9 +241,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -306,9 +306,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
                Sch.f);
 #endif
 
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __dadd_rn(Stmp1.f, Stmp2.f);
         Ss11.f = Ss11.f * Stmp3.f;
@@ -347,9 +347,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -413,9 +413,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
                Sch.f);
 #endif
 
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __dadd_rn(Stmp1.f, Stmp2.f);
         Ss22.f = Ss22.f * Stmp3.f;
@@ -454,9 +454,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -475,9 +475,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
 #endif
     }
 
-    //###########################################################
-    // Normalize quaternion for matrix V
-    //###########################################################
+    // ###########################################################
+    //  Normalize quaternion for matrix V
+    // ###########################################################
 
     Stmp2.f = Sqvs.f * Sqvs.f;
     Stmp1.f = Sqvvx.f * Sqvvx.f;
@@ -500,9 +500,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Sqvvy.f = Sqvvy.f * Stmp1.f;
     Sqvvz.f = Sqvvz.f * Stmp1.f;
 
-    //###########################################################
-    // Transform quaternion to matrix V
-    //###########################################################
+    // ###########################################################
+    //  Transform quaternion to matrix V
+    // ###########################################################
 
     Stmp1.f = Sqvvx.f * Sqvvx.f;
     Stmp2.f = Sqvvy.f * Sqvvy.f;
@@ -532,9 +532,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Sv32.f = __dadd_rn(Stmp2.f, Sv32.f);
     Sv13.f = __dadd_rn(Stmp3.f, Sv13.f);
 
-    ///###########################################################
+    /// ###########################################################
     // Multiply (from the right) with V
-    //###########################################################
+    // ###########################################################
 
     Stmp2.f = Sa12.f;
     Stmp3.f = Sa13.f;
@@ -590,9 +590,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Stmp1.f = Sv33.f * Stmp3.f;
     Sa33.f = __dadd_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Permute columns such that the singular values are sorted
-    //###########################################################
+    // ###########################################################
+    //  Permute columns such that the singular values are sorted
+    // ###########################################################
 
     Stmp1.f = Sa11.f * Sa11.f;
     Stmp4.f = Sa21.f * Sa21.f;
@@ -774,9 +774,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Sv23.f = Sv23.f * Stmp4.f;
     Sv33.f = Sv33.f * Stmp4.f;
 
-    //###########################################################
-    // Construct QR factorization of A*V (=U*D) using Givens rotations
-    //###########################################################
+    // ###########################################################
+    //  Construct QR factorization of A*V (=U*D) using Givens rotations
+    // ###########################################################
 
     Su11.f = 1.f;
     Su12.f = 0.f;
@@ -841,9 +841,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __dadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa11.f;
     Stmp2.f = Ss.f * Sa21.f;
@@ -866,9 +866,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Sa13.f = __dadd_rn(Sa13.f, Stmp2.f);
     Sa23.f = __dsub_rn(Sa23.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su11.f;
     Stmp2.f = Ss.f * Su12.f;
@@ -946,9 +946,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __dadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa11.f;
     Stmp2.f = Ss.f * Sa31.f;
@@ -971,9 +971,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Sa13.f = __dadd_rn(Sa13.f, Stmp2.f);
     Sa33.f = __dsub_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su11.f;
     Stmp2.f = Ss.f * Su13.f;
@@ -1051,9 +1051,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __dadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa21.f;
     Stmp2.f = Ss.f * Sa31.f;
@@ -1076,9 +1076,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     Sa23.f = __dadd_rn(Sa23.f, Stmp2.f);
     Sa33.f = __dsub_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su12.f;
     Stmp2.f = Ss.f * Su13.f;
@@ -1153,9 +1153,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Sa32.f = A_3x3[7];
     Sa33.f = A_3x3[8];
 
-    //###########################################################
-    // Compute normal equations matrix
-    //###########################################################
+    // ###########################################################
+    //  Compute normal equations matrix
+    // ###########################################################
 
     Ss11.f = Sa11.f * Sa11.f;
     Stmp1.f = Sa21.f * Sa21.f;
@@ -1198,9 +1198,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Sqvvy.f = 0.f;
     Sqvvz.f = 0.f;
 
-    //###########################################################
-    // Solve symmetric eigenproblem using Jacobi iteration
-    //###########################################################
+    // ###########################################################
+    //  Solve symmetric eigenproblem using Jacobi iteration
+    // ###########################################################
     for (int i = 0; i < 4; i++) {
         Ssh.f = Ss21.f * 0.5f;
         Stmp5.f = __fsub_rn(Ss11.f, Ss22.f);
@@ -1239,9 +1239,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
         printf("GPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
                Sch.f);
 #endif
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __fadd_rn(Stmp1.f, Stmp2.f);
         Ss33.f = Ss33.f * Stmp3.f;
@@ -1280,9 +1280,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -1345,9 +1345,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
                Sch.f);
 #endif
 
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __fadd_rn(Stmp1.f, Stmp2.f);
         Ss11.f = Ss11.f * Stmp3.f;
@@ -1386,9 +1386,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -1452,9 +1452,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
                Sch.f);
 #endif
 
-        //###########################################################
-        // Perform the actual Givens conjugation
-        //###########################################################
+        // ###########################################################
+        //  Perform the actual Givens conjugation
+        // ###########################################################
 
         Stmp3.f = __fadd_rn(Stmp1.f, Stmp2.f);
         Ss22.f = Ss22.f * Stmp3.f;
@@ -1493,9 +1493,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
         printf("%.20g %.20g %.20g\n", Ss31.f, Ss32.f, Ss33.f);
 #endif
 
-        //###########################################################
-        // Compute the cumulative rotation, in quaternion form
-        //###########################################################
+        // ###########################################################
+        //  Compute the cumulative rotation, in quaternion form
+        // ###########################################################
 
         Stmp1.f = Ssh.f * Sqvvx.f;
         Stmp2.f = Ssh.f * Sqvvy.f;
@@ -1514,9 +1514,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
 #endif
     }
 
-    //###########################################################
-    // Normalize quaternion for matrix V
-    //###########################################################
+    // ###########################################################
+    //  Normalize quaternion for matrix V
+    // ###########################################################
 
     Stmp2.f = Sqvs.f * Sqvs.f;
     Stmp1.f = Sqvvx.f * Sqvvx.f;
@@ -1539,9 +1539,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Sqvvy.f = Sqvvy.f * Stmp1.f;
     Sqvvz.f = Sqvvz.f * Stmp1.f;
 
-    //###########################################################
-    // Transform quaternion to matrix V
-    //###########################################################
+    // ###########################################################
+    //  Transform quaternion to matrix V
+    // ###########################################################
 
     Stmp1.f = Sqvvx.f * Sqvvx.f;
     Stmp2.f = Sqvvy.f * Sqvvy.f;
@@ -1571,9 +1571,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Sv32.f = __fadd_rn(Stmp2.f, Sv32.f);
     Sv13.f = __fadd_rn(Stmp3.f, Sv13.f);
 
-    ///###########################################################
+    /// ###########################################################
     // Multiply (from the right) with V
-    //###########################################################
+    // ###########################################################
 
     Stmp2.f = Sa12.f;
     Stmp3.f = Sa13.f;
@@ -1629,9 +1629,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Stmp1.f = Sv33.f * Stmp3.f;
     Sa33.f = __fadd_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Permute columns such that the singular values are sorted
-    //###########################################################
+    // ###########################################################
+    //  Permute columns such that the singular values are sorted
+    // ###########################################################
 
     Stmp1.f = Sa11.f * Sa11.f;
     Stmp4.f = Sa21.f * Sa21.f;
@@ -1813,9 +1813,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Sv23.f = Sv23.f * Stmp4.f;
     Sv33.f = Sv33.f * Stmp4.f;
 
-    //###########################################################
-    // Construct QR factorization of A*V (=U*D) using Givens rotations
-    //###########################################################
+    // ###########################################################
+    //  Construct QR factorization of A*V (=U*D) using Givens rotations
+    // ###########################################################
 
     Su11.f = 1.f;
     Su12.f = 0.f;
@@ -1880,9 +1880,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __fadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa11.f;
     Stmp2.f = Ss.f * Sa21.f;
@@ -1905,9 +1905,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Sa13.f = __fadd_rn(Sa13.f, Stmp2.f);
     Sa23.f = __fsub_rn(Sa23.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su11.f;
     Stmp2.f = Ss.f * Su12.f;
@@ -1985,9 +1985,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __fadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa11.f;
     Stmp2.f = Ss.f * Sa31.f;
@@ -2010,9 +2010,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Sa13.f = __fadd_rn(Sa13.f, Stmp2.f);
     Sa33.f = __fsub_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su11.f;
     Stmp2.f = Ss.f * Su13.f;
@@ -2090,9 +2090,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Ss.f = Ssh.f * Sch.f;
     Ss.f = __fadd_rn(Ss.f, Ss.f);
 
-    //###########################################################
-    // Rotate matrix A
-    //###########################################################
+    // ###########################################################
+    //  Rotate matrix A
+    // ###########################################################
 
     Stmp1.f = Ss.f * Sa21.f;
     Stmp2.f = Ss.f * Sa31.f;
@@ -2115,9 +2115,9 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     Sa23.f = __fadd_rn(Sa23.f, Stmp2.f);
     Sa33.f = __fsub_rn(Sa33.f, Stmp1.f);
 
-    //###########################################################
-    // Update matrix U
-    //###########################################################
+    // ###########################################################
+    //  Update matrix U
+    // ###########################################################
 
     Stmp1.f = Ss.f * Su12.f;
     Stmp2.f = Ss.f * Su13.f;
@@ -2178,17 +2178,17 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void solve_svd3x3(
     scalar_t S[3];
     svd3x3(A_3x3, U, S, V);
 
-    //###########################################################
-    // Sigma^+
-    //###########################################################
+    // ###########################################################
+    //  Sigma^+
+    // ###########################################################
     const scalar_t epsilon = 1e-10;
     S[0] = abs(S[0]) < epsilon ? 0 : 1.0 / S[0];
     S[1] = abs(S[1]) < epsilon ? 0 : 1.0 / S[1];
     S[2] = abs(S[2]) < epsilon ? 0 : 1.0 / S[2];
 
-    //###########################################################
-    // (Sigma^+) * UT
-    //###########################################################
+    // ###########################################################
+    //  (Sigma^+) * UT
+    // ###########################################################
     scalar_t S_UT[9];
 
     S_UT[0] = U[0] * S[0];
@@ -2201,15 +2201,15 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void solve_svd3x3(
     S_UT[7] = U[5] * S[2];
     S_UT[8] = U[8] * S[2];
 
-    //###########################################################
-    // Ainv = V * [(Sigma^+) * UT]
-    //###########################################################
+    // ###########################################################
+    //  Ainv = V * [(Sigma^+) * UT]
+    // ###########################################################
     scalar_t Ainv[9] = {0};
     matmul3x3_3x3(V, S_UT, Ainv);
 
-    //###########################################################
-    // x = Ainv * b
-    //###########################################################
+    // ###########################################################
+    //  x = Ainv * b
+    // ###########################################################
 
     matmul3x3_3x1(Ainv, B_3x1, X_3x1);
 }
