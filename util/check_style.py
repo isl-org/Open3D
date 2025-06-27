@@ -311,8 +311,8 @@ def _find_clang_format():
         return bin_path, bin_version
 
     raise RuntimeError(
-        "clang-format version not found. Please install with 'pip install clang-format'"
-    )
+        "clang-format version not found. Please install with "
+        "'pip install -c python/requirements_style.txt clang-format'")
 
 
 def _filter_files(files, ignored_patterns):
