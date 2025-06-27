@@ -446,6 +446,11 @@ def test_plugin_data_reader(geometry_data, logdir):
                 BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
             bbox_ls_ref.line.indices = bbox_ls_ref.line.indices.to(
                 o3d.core.int32)
+            print(f"{bbox_ls_out.point.positions=}")
+            print(f"{bbox_ls_ref.point.positions=}")
+            print(
+                f"{(bbox_ls_out.point.positions-bbox_ls_ref.point.positions).max()}"
+            )
             assert (bbox_ls_out.point.positions == bbox_ls_ref.point.positions
                    ).all()
             assert (bbox_ls_out.line.indices == bbox_ls_ref.line.indices).all()

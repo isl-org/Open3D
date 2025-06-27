@@ -55,7 +55,7 @@ jobs:
     steps:
       - name: Disk space used
         run: Get-PSDrive
-            
+
       - name: Install CUDA
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
@@ -96,14 +96,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      
+
       - name: Checkout Open3D-ML
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
           ref: ss/torch27
           path: open3d_ml
-      
+
       - name: Install PyTorch requirements
         run: |
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
@@ -272,14 +272,14 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-      
+
       - name: Checkout Open3D-ML
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
           ref: ss/torch27
           path: open3d_ml
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -293,10 +293,10 @@ jobs:
           # maturin>1.7.8 breaks dependency y-py (Python 3.12) and pywinpty (Python 3.8) wheel building
           # https://github.com/MichaIng/DietPi/issues/7329#issuecomment-2565130837
           python -m pip install maturin==1.7.8
-          python -m pip install -r python/requirements.txt
-          python -m pip install -U -c python/requirements_build.txt wheel setuptools
-          python -m pip install -r python/requirements_jupyter_build.txt
-          python -m pip install -r open3d_ml/requirements-torch.txt
+          python -m pip install -U -r python/requirements.txt `
+            -r python/requirements_build.txt `
+            -r python/requirements_jupyter_build.txt `
+            -r open3d_ml/requirements-torch.txt
 
 
       - name: Config
