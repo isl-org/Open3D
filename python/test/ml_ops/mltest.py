@@ -15,10 +15,14 @@ import urllib.request
 import io
 
 # skip all tests if the ml ops were not built
+have_tf = importlib.util.find_spec("tensorflow") is not None
+have_torch = importlib.util.find_spec("torch") is not None
 default_marks = [
     pytest.mark.skipif(not (o3d._build_config['BUILD_TENSORFLOW_OPS'] or
                             o3d._build_config['BUILD_PYTORCH_OPS']),
                        reason='ml ops not built'),
+    pytest.mark.skipif(not have_tf and not have_torch,
+                       reason='PyTorch and Tensorflow not installed.'),
 ]
 
 MLModules = namedtuple('MLModules', [

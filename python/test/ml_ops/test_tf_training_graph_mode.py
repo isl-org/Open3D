@@ -73,8 +73,10 @@ def test_training_graph_mode(ml):
             losses = []
 
             for batch_i in range(batch_size):
+                pos0 = batch[batch_i]['pos0']
                 inputs = ([
-                    batch[batch_i]['pos0'], batch[batch_i]['vel0'], None,
+                    pos0, batch[batch_i]['vel0'],
+                    tf.zeros((tf.shape(pos0)[0], 0), dtype=pos0.dtype),
                     batch[batch_i]['box'], batch[batch_i]['box_normals']
                 ])
 
@@ -83,7 +85,9 @@ def test_training_graph_mode(ml):
                 l = 0.5 * loss_fn(pr_pos1, batch[batch_i]['pos1'],
                                   model.num_fluid_neighbors)
 
-                inputs = (pr_pos1, pr_vel1, None, batch[batch_i]['box'],
+                inputs = (pr_pos1, pr_vel1,
+                          tf.zeros((tf.shape(pr_pos1)[0], 0),
+                                   dtype=pr_pos1.dtype), batch[batch_i]['box'],
                           batch[batch_i]['box_normals'])
                 pr_pos2, pr_vel2 = model(inputs)
 

@@ -11,7 +11,7 @@ if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA inpu
 fi
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
-NPROC=$((NPROC+2))  # run nproc+2 jobs to speed up the build
+NPROC=$((NPROC + 2))                         # run nproc+2 jobs to speed up the build
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         BUILD_CUDA_MODULE=ON
@@ -27,10 +27,9 @@ BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
-TENSORFLOW_VER="2.16.2"
-TORCH_VER="2.2.2"
+TENSORFLOW_VER="2.19.0"
+TORCH_VER="2.7.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
-TORCH_CXX11_URL="https://download.pytorch.org/whl/"
 # Python
 PIP_VER="24.3.1"
 PROTOBUF_VER="4.24.0"
@@ -43,7 +42,7 @@ install_python_dependencies() {
     echo "Installing Python dependencies"
     options="$(echo "$@" | tr ' ' '|')"
     python -m pip install -U pip=="$PIP_VER"
-    python -m pip install -U -c "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt" wheel setuptools
+    python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
         python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}/python/requirements_test.txt"
     fi
@@ -76,11 +75,8 @@ install_python_dependencies() {
         python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" # ML/requirements-tensorflow.txt
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
-        if [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "OFF" ]]; then
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
-            python -m pip install tensorboard
-        elif [[ "$OSTYPE" == "linux-gnu"* && "$BUILD_SYCL_MODULE" == "ON" ]]; then
-            python -m pip install -U "${TORCH_GLNX}.cxx11.abi" -i "$TORCH_CXX11_URL"
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard
@@ -118,8 +114,6 @@ build_all() {
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
         -DBUILD_COMMON_CUDA_ARCHS=ON
         -DBUILD_COMMON_ISPC_ISAS=ON
-        # TODO: PyTorch still use old CXX ABI, remove this line when PyTorch is updated
-        -DGLIBCXX_USE_CXX11_ABI=OFF
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
@@ -148,7 +142,8 @@ build_pip_package() {
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u
-    if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
+    if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
+        [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists
         git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
@@ -174,13 +169,6 @@ build_pip_package() {
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
     fi
-    CXX11_ABI=ON
-    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
-        CXX11_ABI=$(python -c "import tensorflow as tf; print('ON' if tf.__cxx11_abi_flag__ else 'OFF')")
-    elif [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-        CXX11_ABI=$(python -c "import torch; print('ON' if torch._C._GLIBCXX_USE_CXX11_ABI else 'OFF')")
-    fi
-    echo Building with GLIBCXX_USE_CXX11_ABI="$CXX11_ABI"
     set -u
 
     echo
@@ -192,7 +180,6 @@ build_pip_package() {
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=ON"
-        "-DGLIBCXX_USE_CXX11_ABI=$CXX11_ABI"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
@@ -262,19 +249,21 @@ test_wheel() {
     #     find "$DLL_PATH"/cpu/ -type f -execdir otool -L {} \;
     # fi
     echo
+    HAVE_PYTORCH_OPS=OFF
+    HAVE_TENSORFLOW_OPS=OFF
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_PYTORCH_OPS'])"; then
-        BUILD_PYTORCH_OPS=ON
+        HAVE_PYTORCH_OPS=ON
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
         python -W default -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_TENSORFLOW_OPS'])"; then
-        BUILD_TENSORFLOW_OPS=ON
+        HAVE_TENSORFLOW_OPS=ON
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
         python -W default -c \
             "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
     fi
-    if [ "$BUILD_TENSORFLOW_OPS" == ON ] && [ "$BUILD_PYTORCH_OPS" == ON ]; then
+    if [ "$HAVE_TENSORFLOW_OPS" == ON ] && [ "$HAVE_PYTORCH_OPS" == ON ]; then
         echo "Importing TensorFlow and torch in the reversed order"
         python -W default -c "import tensorflow as tf; import torch; import open3d.ml.torch as o3d"
         echo "Importing TensorFlow and torch in the normal order"
@@ -322,7 +311,7 @@ test_cpp_example() {
     if [ "$runExample" == ON ]; then
         ./Draw --skip-for-unit-test
     fi
-    if [ $BUILD_SHARED_LIBS == ON ]; then
+    if [ "$BUILD_SHARED_LIBS" == ON ]; then
         rm -r ./*
         echo Testing build with pkg-config
         export PKG_CONFIG_PATH=${OPEN3D_INSTALL_DIR}/lib/pkgconfig
@@ -362,16 +351,16 @@ install_docs_dependencies() {
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch-cxx11-abi.txt"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt" \
+            -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt" \
+            -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
     echo
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt" \
+        -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt" \
+        -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
 }
 
 # Build documentation
@@ -400,7 +389,6 @@ build_docs() {
         "-DWITH_OPENMP=ON"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
-        "-DGLIBCXX_USE_CXX11_ABI=ON"
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_EXAMPLES=OFF"

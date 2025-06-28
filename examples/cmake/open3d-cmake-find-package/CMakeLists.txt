@@ -29,6 +29,8 @@ if(WIN32)
     else() 
         set(copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/tbb12$<$<CONFIG:Debug>:_debug>.dll") 
     endif()
+    # For CUDA builds, we must also copy the CUDA DLLs. Alternately, add
+    # $Env:CUDA_PATH/bin to $Env:PATH to avoid this copy.
     add_custom_command(TARGET Draw POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy ${copy_dlls}
                         ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>
