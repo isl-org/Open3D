@@ -104,7 +104,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: ss/torch27
+          ref: main
           path: open3d_ml
 
       - name: Install PyTorch requirements
@@ -228,7 +228,7 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }}
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'OFF' ) {    # FIXME
             .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
-          } 
+          }
           Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Open3D python build requirements
         working-directory: ${{ env.SOURCE_DIR }}
@@ -278,7 +278,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: ss/torch27
+          ref: main
           path: open3d_ml
 
       - name: Set up Python
@@ -369,6 +369,13 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Checkout Open3D-ML
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          ref: main
+          path: open3d_ml
+
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
@@ -387,8 +394,9 @@ jobs:
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
           python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -c python/requirements_build.txt wheel setuptools
-          python -m pip install -U -r python/requirements_test.txt
+          python -m pip install -U -r python/requirements_build.txt `
+            -r python/requirements_test.txt `
+            -r open3d_ml/requirements-torch.txt
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
@@ -407,6 +415,5 @@ jobs:
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-          echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/
           deactivate
