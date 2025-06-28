@@ -375,6 +375,10 @@ jobs:
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
+      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version == '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
+      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
+      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

@@ -11,7 +11,7 @@ if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA inpu
 fi
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
-NPROC=$((NPROC+2))  # run nproc+2 jobs to speed up the build
+NPROC=$((NPROC + 2))                         # run nproc+2 jobs to speed up the build
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         BUILD_CUDA_MODULE=ON
@@ -42,7 +42,7 @@ install_python_dependencies() {
     echo "Installing Python dependencies"
     options="$(echo "$@" | tr ' ' '|')"
     python -m pip install -U pip=="$PIP_VER"
-    python -m pip install -U -c "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt" wheel setuptools
+    python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
         python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}/python/requirements_test.txt"
     fi
@@ -142,7 +142,7 @@ build_pip_package() {
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u
-    if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] && \
+    if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
         # the build system of the main repo expects a main branch. make sure main exists

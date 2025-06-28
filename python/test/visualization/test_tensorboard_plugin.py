@@ -446,13 +446,9 @@ def test_plugin_data_reader(geometry_data, logdir):
                 BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
             bbox_ls_ref.line.indices = bbox_ls_ref.line.indices.to(
                 o3d.core.int32)
-            print(f"{bbox_ls_out.point.positions=}")
-            print(f"{bbox_ls_ref.point.positions=}")
-            print(
-                f"{(bbox_ls_out.point.positions-bbox_ls_ref.point.positions).max()}"
-            )
-            assert (bbox_ls_out.point.positions == bbox_ls_ref.point.positions
-                   ).all()
+            # Not identical on macOS ARM64
+            assert bbox_ls_out.point.positions.allclose(
+                bbox_ls_ref.point.positions, rtol=0, atol=1e-6)
             assert (bbox_ls_out.line.indices == bbox_ls_ref.line.indices).all()
             assert "colors" not in bbox_ls_out.line
             label_conf_ref = tuple((bb.label_class, bb.confidence)
