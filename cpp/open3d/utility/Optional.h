@@ -404,14 +404,16 @@ public:
     }
 
     template <class U = T>
-    auto operator=(U&& v) -> typename std::enable_if<
-            std::is_constructible<T, U>::value &&
-                    !std::is_same<typename std::decay<U>::type,
-                                  optional<T>>::value &&
-                    (std::is_scalar<T>::value ||
-                     std::is_same<typename std::decay<U>::type, T>::value) &&
-                    std::is_assignable<T&, U>::value,
-            optional&>::type {
+    auto operator=(U&& v) ->
+            typename std::enable_if<
+                    std::is_constructible<T, U>::value &&
+                            !std::is_same<typename std::decay<U>::type,
+                                          optional<T>>::value &&
+                            (std::is_scalar<T>::value ||
+                             std::is_same<typename std::decay<U>::type,
+                                          T>::value) &&
+                            std::is_assignable<T&, U>::value,
+                    optional&>::type {
         if (initialized()) {
             contained_val() = std::forward<U>(v);
         } else {
@@ -570,17 +572,19 @@ public:
     // }
 
     template <typename U>
-    auto operator=(U&& rhs) noexcept -> typename std::enable_if<
-            std::is_same<typename std::decay<U>::type, optional<T&>>::value,
-            optional&>::type {
+    auto operator=(U&& rhs) noexcept ->
+            typename std::enable_if<std::is_same<typename std::decay<U>::type,
+                                                 optional<T&>>::value,
+                                    optional&>::type {
         ref = rhs.ref;
         return *this;
     }
 
     template <typename U>
-    auto operator=(U&& rhs) noexcept -> typename std::enable_if<
-            !std::is_same<typename std::decay<U>::type, optional<T&>>::value,
-            optional&>::type = delete;
+    auto operator=(U&& rhs) noexcept ->
+            typename std::enable_if<!std::is_same<typename std::decay<U>::type,
+                                                  optional<T&>>::value,
+                                    optional&>::type = delete;
 
     void emplace(T& v) noexcept { ref = detail_::static_addressof(v); }
 

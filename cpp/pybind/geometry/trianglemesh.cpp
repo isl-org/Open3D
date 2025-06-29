@@ -221,12 +221,12 @@ void pybind_trianglemesh_definitions(py::module &m) {
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("get_surface_area",
-                 (double (TriangleMesh::*)() const) &
+                 (double(TriangleMesh::*)() const) &
                          TriangleMesh::GetSurfaceArea,
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
             .def("get_volume",
-                 (double (TriangleMesh::*)() const) & TriangleMesh::GetVolume,
+                 (double(TriangleMesh::*)() const) & TriangleMesh::GetVolume,
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
             .def("sample_points_uniformly",

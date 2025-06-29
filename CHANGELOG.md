@@ -1,5 +1,6 @@
 ## Main
 
+
 ## 0.20
 
 -   Upgrade OpenBlas supporting Grace ARM
@@ -8,6 +9,7 @@
 
 ## 0.19
 
+-   Corrected documentation for Link Open3D in C++ projects (broken links).
 -   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
 -   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
