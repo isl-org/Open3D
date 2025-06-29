@@ -177,7 +177,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 install(FILES
         "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
         "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
-        DESTINATION "${Open3D_INSTALL_CMAKE_DIR}" COMPONENT dev)
+        DESTINATION "${Open3D_INSTALL_CMAKE_DIR}")
 
 # Install GUI resources
 if (BUILD_GUI)

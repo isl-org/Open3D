@@ -363,6 +363,7 @@ else()
     set(Open3D_INSTALL_RESOURCE_DIR bin)
     set(Open3D_INSTALL_CMAKE_DIR CMake)
 endif()
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "dev")
 
 # Put build results in some predictable places
 # The $<CONFIG> generator expression makes sure that XCode or Visual Studio do not
