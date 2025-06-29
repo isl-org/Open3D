@@ -334,6 +334,9 @@ void pybind_octree_definitions(py::module &m) {
             .def("locate_leaf_node", &Octree::LocateLeafNode, "point"_a,
                  "Returns leaf OctreeNode and OctreeNodeInfo where the query"
                  "point should reside.")
+            .def("radius_search", &Octree::RadiusSearch, "point_cloud_points"_a,
+                 "sphere_origin"_a, "radius"_a,
+                 "Returns indices of points within search radius.")
             .def_static("is_point_in_bound", &Octree::IsPointInBound, "point"_a,
                         "origin"_a, "size"_a,
                         "Return true if point within bound, that is, origin<= "
