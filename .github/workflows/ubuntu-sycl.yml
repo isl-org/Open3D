@@ -19,7 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NPROC: 2
   GCE_CLI_GHA_VERSION: "416.0.0"
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
@@ -61,7 +60,7 @@ jobs:
         with:
           name: open3d-sycl-linux-wheel-and-binary
           path: |
-            open3d-*.whl
+            open3d*.whl
             open3d-devel-*.tar.xz
           if-no-files-found: error
       - name: Update devel release

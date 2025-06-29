@@ -1,6 +1,9 @@
 # FIXME:
-# - MSVC 17 and CUDA 12.4+ error while building CreateCUDAHashBackend.cu
+# - librealsense upgrade needed to build with MSVC 17
+# - MSVC 17 and CUDA 12.4+ error while building CreateCUDAHashBackend.cu (Debug only)
 # - PyTorch Ops in debug mode - DLL initialization error while loading open3d_torch_ops.dll
+# - CUDA - Draw.exe does not run due to CUDA DLL path issues
+
 
 name: Windows
 permissions: {}
@@ -25,7 +28,7 @@ concurrency:
 
 env:
   PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.4.0"
+  CUDA_VERSION: "12.6.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
@@ -46,16 +49,16 @@ jobs:
         exclude:
           - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: ON
-        include:
-          - BUILD_CUDA_MODULE: ON
+          - BUILD_CUDA_MODULE: ON   # FIXME
+            CONFIG: Debug
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ ( matrix.BUILD_CUDA_MODULE == 'ON' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}
+      BUILD_PYTORCH_OPS: ${{ ( matrix.BUILD_CUDA_MODULE == 'ON' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
 
     steps:
       - name: Disk space used
         run: Get-PSDrive
-            
+
       - name: Install CUDA
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
@@ -95,14 +98,15 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
-      
+          python-version: '3.10'
+
       - name: Checkout Open3D-ML
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: main
           path: open3d_ml
-      
+
       - name: Install PyTorch requirements
         run: |
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
@@ -222,7 +226,9 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
           cmake --build . --config ${{ matrix.CONFIG }}
-          .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
+          if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'OFF' ) {    # FIXME
+            .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
+          }
           Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Open3D python build requirements
         working-directory: ${{ env.SOURCE_DIR }}
@@ -237,7 +243,7 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}  # FIXME
         run: |
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
@@ -253,29 +259,28 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-      
+
       - name: Checkout Open3D-ML
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: main
           path: open3d_ml
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -289,10 +294,10 @@ jobs:
           # maturin>1.7.8 breaks dependency y-py (Python 3.12) and pywinpty (Python 3.8) wheel building
           # https://github.com/MichaIng/DietPi/issues/7329#issuecomment-2565130837
           python -m pip install maturin==1.7.8
-          python -m pip install -r python/requirements.txt
-          python -m pip install -U -c python/requirements_build.txt wheel setuptools
-          python -m pip install -r python/requirements_jupyter_build.txt
-          python -m pip install -r open3d_ml/requirements-torch.txt
+          python -m pip install -U -r python/requirements.txt `
+            -r python/requirements_build.txt `
+            -r python/requirements_jupyter_build.txt `
+            -r open3d_ml/requirements-torch.txt
 
 
       - name: Config
@@ -303,6 +308,7 @@ jobs:
           if ($Env:DEVELOPER_BUILD -ne "OFF") {
             $Env:DEVELOPER_BUILD = "ON"
           }
+          # FIXME: librealsense upgrade needed
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
@@ -348,22 +354,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Checkout Open3D-ML
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          ref: main
+          path: open3d_ml
 
       - name: Download wheels
         uses: actions/download-artifact@v4
@@ -383,8 +394,9 @@ jobs:
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
           python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -c python/requirements_build.txt wheel setuptools
-          python -m pip install -U -r python/requirements_test.txt
+          python -m pip install -U -r python/requirements_build.txt `
+            -r python/requirements_test.txt `
+            -r open3d_ml/requirements-torch.txt
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
@@ -403,6 +415,5 @@ jobs:
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-          echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/
           deactivate

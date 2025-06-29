@@ -748,7 +748,9 @@ private:
                     rgbd, intrinsic, Eigen::Matrix4d::Identity(), true);
             pcd->Transform(pose_graph.nodes_[i].pose_);
 #pragma omp critical
-            { fragment += *pcd; }
+            {
+                fragment += *pcd;
+            }
         }
 
         const geometry::PointCloud fragment_down = *fragment.VoxelDownSample(

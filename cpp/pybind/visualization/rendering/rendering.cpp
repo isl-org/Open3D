@@ -35,9 +35,6 @@ public:
         gui::InitializeForPython(resource_path, true);
         width_ = width;
         height_ = height;
-        // NOTE: OffscreenRenderer now always uses headless so that a window
-        // system is never required
-        EngineInstance::EnableHeadless();
         renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
                                          height,
                                          EngineInstance::GetResourceManager());
@@ -234,18 +231,17 @@ void pybind_rendering_definitions(py::module &m) {
                  "Applies to everything being rendered, so it essentially acts "
                  "as the background color of the window")
             .def("add_texture",
-                 (TextureHandle(Renderer::*)(
-                         const std::shared_ptr<geometry::Image>, bool)) &
-                         Renderer::AddTexture,
+                 (TextureHandle (Renderer::*)(
+                         const std::shared_ptr<geometry::Image>,
+                         bool))&Renderer::AddTexture,
                  "image"_a, "is_sRGB"_a = false,
                  "Adds a texture. The first parameter is the image, the second "
                  "parameter is optional and is True if the image is in the "
                  "sRGB colorspace and False otherwise")
             .def("update_texture",
-                 (bool(Renderer::*)(TextureHandle,
-                                    const std::shared_ptr<geometry::Image>,
-                                    bool)) &
-                         Renderer::UpdateTexture,
+                 (bool (Renderer::*)(TextureHandle,
+                                     const std::shared_ptr<geometry::Image>,
+                                     bool))&Renderer::UpdateTexture,
                  "texture"_a, "image"_a, "is_sRGB"_a = false,
                  "Updates the contents of the texture to be the new image, or "
                  "returns False and does nothing if the image is a different "
@@ -328,9 +324,8 @@ void pybind_rendering_definitions(py::module &m) {
                  "near"_a, "far"_a,
                  "Sets the camera projection via a viewing frustum. ")
             .def("set_projection",
-                 (void(Camera::*)(const Eigen::Matrix3d &, double, double,
-                                  double, double)) &
-                         Camera::SetProjection,
+                 (void (Camera::*)(const Eigen::Matrix3d &, double, double,
+                                   double, double))&Camera::SetProjection,
                  "intrinsics"_a, "near_plane"_a, "far_plane"_a, "image_width"_a,
                  "image_height"_a,
                  "Sets the camera projection via intrinsics matrix.")

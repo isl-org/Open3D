@@ -204,7 +204,6 @@ function(open3d_set_global_properties target)
     # pybind with open3d shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
             BUILD_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../../")
     elseif(UNIX)
-        message(STATUS "Setting RPATH for ${target}")
         # INSTALL_RPATH for C++ binaries.
         set_target_properties(${target} PROPERTIES 
             INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../"

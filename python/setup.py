@@ -131,8 +131,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -169,7 +167,7 @@ elif "@BUILD_SYCL_MODULE@" == "ON":
 setup_args = dict(
     name=name,
     version="@PROJECT_VERSION@",
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),

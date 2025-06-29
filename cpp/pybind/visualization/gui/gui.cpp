@@ -1155,6 +1155,7 @@ void pybind_gui_definitions(py::module &m) {
                  })
             .def_property(
                     "color_value", &ColorEdit::GetValue,
+                    (void (ColorEdit::*)(const Color &))&ColorEdit::SetValue,
                     (void(ColorEdit::*)(const Color &)) & ColorEdit::SetValue,
                     "Color value (gui.Color)")
             .def("set_on_value_changed", &ColorEdit::SetOnValueChanged,

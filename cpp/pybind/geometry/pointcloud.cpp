@@ -96,13 +96,13 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "input pointcloud.",
                  "start_index"_a = 0)
             .def("crop",
-                 (std::shared_ptr<PointCloud>(PointCloud::*)(
+                 (std::shared_ptr<PointCloud> (PointCloud::*)(
                          const AxisAlignedBoundingBox &, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
             .def("crop",
-                 (std::shared_ptr<PointCloud>(PointCloud::*)(
+                 (std::shared_ptr<PointCloud> (PointCloud::*)(
                          const OrientedBoundingBox &, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",

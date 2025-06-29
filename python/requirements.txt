@@ -2,5 +2,5 @@ numpy>=1.18.0
 dash>=2.6.0
 werkzeug>=3.0.0
 flask>=3.0.0
-nbformat>=5.7.0
+nbformat>=5.10.4
 configargparse
