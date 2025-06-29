@@ -33,15 +33,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-13 is Intel runner, macos-15 is Apple Silicon
+        # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-13, macos-15]
+        os: [macos-13, macos-14]
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
-      # Tensorflow 2.19, PyTorch 2.7 are only available for Apple Silicon (macos-15)
-      BUILD_TENSORFLOW_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-15' ) && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-15' ) && 'ON' || 'OFF' }}
+      # Tensorflow 2.19, PyTorch 2.7 are only available for Apple Silicon (macos-14)
+      BUILD_TENSORFLOW_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
       LOW_MEM_USAGE: ON
     steps:
       - name: Checkout source code
@@ -186,9 +186,9 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        # macos-13 is Intel runner, macos-15 is Apple Silicon
+        # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
-        os: [macos-13, macos-15]
+        os: [macos-13, macos-14]
         python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -201,9 +201,9 @@ jobs:
             python_version: '3.12'
 
     env:
-      # TensorFlow v2.19 only supports macOS-15 (Apple Silicon) and python 3.9-3.12
+      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
       BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version == '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
-      # PyTorch 2.7 only supports macOS-15 (Apple Silicon)
+      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
       BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -214,7 +214,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: ss/torch27
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
@@ -247,7 +247,7 @@ jobs:
           source util/ci_utils.sh
           install_python_dependencies
 
-          # Fix macos-15 arm64 runner image issues, see comments in MacOS job.
+          # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
           if [[ ${{ runner.arch}} == "ARM64"  ]]; then
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
           fi
@@ -361,7 +361,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, macos-15]
+        os: [macos-13, macos-14]
         python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -375,6 +375,10 @@ jobs:
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
+      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version == '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
+      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
+      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -383,7 +387,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: ss/torch27
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels

@@ -13,10 +13,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
-  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
-
 jobs:
   openblas-amd64:
     permissions:
@@ -41,26 +37,23 @@ jobs:
   openblas-arm64:
     permissions:
       contents: read
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04-arm   # latest
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
-      CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code

@@ -19,23 +19,25 @@ OPTION:
     openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
     openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
+    openblas-amd64-py313-dev    : OpenBLAS AMD64 3.13 wheel, developer mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
     openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
+    openblas-amd64-py313        : OpenBLAS AMD64 3.13 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
     openblas-arm64-py312-dev    : OpenBLAS ARM64 3.12 wheel, developer mode
+    openblas-arm64-py313-dev    : OpenBLAS ARM64 3.13 wheel, developer mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
     openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
     openblas-arm64-py312        : OpenBLAS ARM64 3.12 wheel, release mode
+    openblas-arm64-py313        : OpenBLAS ARM64 3.13 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
     cpu-static-release          : Ubuntu CPU static, release mode
-    cpu-shared                  : Ubuntu CPU shared
-    cpu-shared-release          : Ubuntu CPU shared, release mode
     cpu-shared-ml               : Ubuntu CPU shared with ML
     cpu-shared-ml-release       : Ubuntu CPU shared with ML, release mode
 
@@ -45,10 +47,8 @@ OPTION:
 
     # ML CIs (Dockerfile.ci)
     2-jammy                   : CUDA CI, 2-jammy, developer mode
-    3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy, release mode
-    3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy, developer mode
-    4-shared-jammy            : CUDA CI, 4-shared-jammy, developer mode
-    4-shared-jammy-release    : CUDA CI, 4-shared-jammy, release mode
+    3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy (cxx11_abi), release mode
+    3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
     5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
 "
 
@@ -65,7 +65,6 @@ ci_print_env() {
     echo "[ci_print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
     echo "[ci_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
     echo "[ci_print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[ci_print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[ci_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
     echo "[ci_print_env()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[ci_print_env()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
@@ -222,6 +221,11 @@ openblas-amd64-py312-dev)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-amd64-py313-dev)
+    openblas_export_env amd64 py313 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 openblas-amd64-py310)
     openblas_export_env amd64 py310
     openblas_print_env
@@ -234,6 +238,11 @@ openblas-amd64-py311)
     ;;
 openblas-amd64-py312)
     openblas_export_env amd64 py312
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py313)
+    openblas_export_env amd64 py313
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -254,6 +263,11 @@ openblas-arm64-py312-dev)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-arm64-py313-dev)
+    openblas_export_env arm64 py313 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 openblas-arm64-py310)
     openblas_export_env arm64 py310
     openblas_print_env
@@ -269,6 +283,11 @@ openblas-arm64-py312)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-arm64-py313)
+    openblas_export_env arm64 py313
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 
 # CPU CI
 cpu-static)
@@ -278,16 +297,6 @@ cpu-static)
     ;;
 cpu-static-release)
     cpu-static-release_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-cpu-shared)
-    cpu-shared_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-cpu-shared-release)
-    cpu-shared-release_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -314,14 +323,9 @@ sycl-static)
     cpp_python_linking_uninstall_test
     ;;
 
-# ML CIs
+    # ML CIs
 2-jammy)
     2-jammy_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-3-ml-shared-jammy)
-    3-ml-shared-jammy_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -330,13 +334,8 @@ sycl-static)
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-4-shared-jammy)
-    4-shared-jammy_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-4-shared-jammy-release)
-    4-shared-jammy-release_export_env
+3-ml-shared-jammy)
+    3-ml-shared-jammy_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -345,7 +344,6 @@ sycl-static)
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-
 *)
     echo "Error: invalid argument: ${1}." >&2
     print_usage_and_exit_docker_test

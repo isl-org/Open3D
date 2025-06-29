@@ -33,22 +33,8 @@ CPP_FORMAT_DIRS = [
     "docs/_static",
 ]
 
-# Yapf requires python 3.6+
-if sys.version_info < (3, 6):
-    raise RuntimeError("Requires Python 3.6+, currently using Python "
-                       f"{sys.version_info.major}.{sys.version_info.minor}.")
-
-# Check and import yapf
-# > not found: throw exception
 import yapf
-
-# Check and import nbformat
-# > not found: throw exception
-try:
-    import nbformat
-except ImportError:
-    raise ImportError(
-        "nbformat not found. Install with `pip install nbformat`.")
+import nbformat
 
 
 class CppFormatter:
@@ -306,10 +292,10 @@ def _glob_files(directories, extensions):
 
 def _find_clang_format():
     """
-    Returns (bin_path, version) to clang-format version 10, throws exception
+    Returns (bin_path, version) to clang-format, throws exception
     otherwise.
     """
-    required_clang_format_major = 18
+
     def parse_version(bin_path):
         """
         Get clang-format version string. Returns None if parsing fails.
@@ -319,38 +305,14 @@ def _find_clang_format():
         match = re.match("^.*clang-format version ([0-9.]*).*$", version_str)
         return match.group(1) if match else None
 
-    def parse_version_major(bin_path):
-        """
-        Get clang-format major version. Returns None if parsing fails.
-        """
-        version = parse_version(bin_path)
-        return int(version.split(".")[0]) if version else None
-
-    def find_bin_by_name(bin_name):
-        """
-        Returns bin path if found. Otherwise, returns None.
-        """
-        bin_path = shutil.which(bin_name)
-        if bin_path is None:
-            return None
-        else:
-            major = parse_version_major(bin_path)
-            return bin_path if major == required_clang_format_major else None
-
-    bin_path = find_bin_by_name("clang-format")
-    if bin_path is not None:
-        bin_version = parse_version(bin_path)
-        return bin_path, bin_version
-
-    bin_path = find_bin_by_name(f"clang-format-{required_clang_format_major}")
+    bin_path = shutil.which("clang-format")
     if bin_path is not None:
         bin_version = parse_version(bin_path)
         return bin_path, bin_version
 
     raise RuntimeError(
-        f"clang-format version {required_clang_format_major} not found. "
-        "See https://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
-        "for help on clang-format installation.")
+        "clang-format version not found. Please install with "
+        "'pip install -c python/requirements_style.txt clang-format'")
 
 
 def _filter_files(files, ignored_patterns):
@@ -387,7 +349,7 @@ def main():
 
     # Check formatting libs
     clang_format_bin, clang_format_version = _find_clang_format()
-    print(f"Using clang-format {clang_format_bin} ({clang_format_bin})")
+    print(f"Using clang-format {clang_format_version} ({clang_format_bin})")
     print(f"Using yapf {yapf.__version__} ({yapf.__file__})")
     print(f"Using nbformat {nbformat.__version__} ({nbformat.__file__})")
     pwd = Path(__file__).resolve().parent

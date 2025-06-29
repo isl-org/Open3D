@@ -33,7 +33,7 @@ Python applications looks like this:
 .. code-block:: dockerfile
 
     # This could also be another Ubuntu or Debian based distribution
-    FROM ubuntu:22.04
+    FROM ubuntu:24.04
 
     # Install Open3D system dependencies and pip
     RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -76,7 +76,7 @@ folder that contains data you wish to visualize.
     wget https://github.com/isl-org/Open3D/releases/download/v@OPEN3D_VERSION@/open3d-app-@OPEN3D_VERSION@-Ubuntu.deb
     # Build docker image in folder containing Open3D deb package.
     docker build -t open3d-viewer -f- . <<EOF
-    FROM ubuntu:22.04
+    FROM ubuntu:24.04
     COPY open3d*.deb /root/
     RUN apt-get update \
         && apt-get install --yes /root/open3d*.deb \
@@ -117,7 +117,7 @@ driver with an environment variable (``EGL_PLATFORM=surfaceless``):
     wget https://raw.githubusercontent.com/isl-org/Open3D/v@OPEN3D_VERSION@/examples/python/visualization/render_to_image.py
     # Build docker image
     docker build -t open3d-headless -f- . <<EOF
-    FROM ubuntu:22.04
+    FROM ubuntu:24.04
     RUN apt-get update \
         && apt-get install --yes --no-install-recommends \
         libegl1 libgl1 libgomp1 python3-pip \
@@ -164,9 +164,9 @@ sample configuration options available are shown below.
 
     cd docker
 
-    ./docker_build.sh cuda_wheel_py310_dev   # Python 3.10, AMD64, CUDA with MKL, developer mode
-    ./docker_build.sh openblas-amd64-py310  # Python 3.10, AMD64 with OpenBLAS instead of MKL, release mode
-    ./docker_build.sh openblas-arm64-py37   # Python 3.7, ARM64 with OpenBLAS, release mode
+    ./docker_build.sh cuda_wheel_py312_dev   # Python 3.12, AMD64, CUDA with MKL, developer mode
+    ./docker_build.sh openblas-amd64-py311  # Python 3.11, AMD64 with OpenBLAS instead of MKL, release mode
+    ./docker_build.sh openblas-arm64-py313   # Python 3.13, ARM64 with OpenBLAS, release mode
 
 Run ``./docker_build.sh`` without arguments to get a list of all available build
 configurations.

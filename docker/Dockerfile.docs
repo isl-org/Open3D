@@ -33,6 +33,7 @@ RUN apt-get update && apt-get install -y \
     git  \
     curl \
     build-essential \
+    ccache \
     pkg-config \
     zlib1g \
     zlib1g-dev \
@@ -50,7 +51,7 @@ RUN apt-get update && apt-get install -y \
  && rm -rf /var/lib/apt/lists/*
 
 # Checkout Open3D-ML main branch
-RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main ${OPEN3D_ML_ROOT}
 # Open3D docs dependencies
 RUN source util/ci_utils.sh && install_docs_dependencies "${OPEN3D_ML_ROOT}"
 
@@ -62,7 +63,8 @@ RUN source util/ci_utils.sh && install_docs_dependencies "${OPEN3D_ML_ROOT}"
 # - CCACHE_DIR_PARENT = ~/.cache
 # We need to set ccache size explicitly with -M, otherwise the defualt size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
-RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+RUN ccache --version \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && CCACHE_TAR_NAME="open3d-ci-cpu" \
