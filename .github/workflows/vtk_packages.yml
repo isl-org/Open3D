@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
     # TODO: Convert to docker
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
