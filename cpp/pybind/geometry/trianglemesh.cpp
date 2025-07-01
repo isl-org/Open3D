@@ -209,24 +209,24 @@ void pybind_trianglemesh_definitions(py::module &m) {
                  "Indices of vertices to be selected.",
                  "indices"_a, "cleanup"_a = true)
             .def("crop",
-                 (std::shared_ptr<TriangleMesh> (TriangleMesh::*)(
+                 (std::shared_ptr<TriangleMesh>(TriangleMesh::*)(
                          const AxisAlignedBoundingBox &) const) &
                          TriangleMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("crop",
-                 (std::shared_ptr<TriangleMesh> (TriangleMesh::*)(
+                 (std::shared_ptr<TriangleMesh>(TriangleMesh::*)(
                          const OrientedBoundingBox &) const) &
                          TriangleMesh::Crop,
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("get_surface_area",
-                 (double (TriangleMesh::*)() const) &
+                 (double(TriangleMesh::*)() const) &
                          TriangleMesh::GetSurfaceArea,
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
             .def("get_volume",
-                 (double (TriangleMesh::*)() const) & TriangleMesh::GetVolume,
+                 (double(TriangleMesh::*)() const) & TriangleMesh::GetVolume,
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
             .def("sample_points_uniformly",
