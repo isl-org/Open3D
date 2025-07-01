@@ -28,6 +28,7 @@ deps=(
     libc++abi-dev
     libsdl2-dev
     libxi-dev
+    g++
     # ML
     libtbb-dev
     # Headless rendering
