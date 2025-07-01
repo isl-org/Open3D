@@ -169,7 +169,7 @@ GET_INITIAL_VALUE(double, -11)
 
 #define TEMPLATE(T)                                                         \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction1)(        \
-            int64_t idx, int64_t* uniform v) {                              \
+            int64_t idx, int64_t * uniform v) {                             \
         v[idx] = idx == 0 ? OPEN3D_SPECIALIZED(T, GetInitialValue)() : idx; \
     }
 OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
@@ -177,7 +177,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 
 #define TEMPLATE(T)                                                  \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction2)( \
-            int64_t idx, int64_t* uniform v, bool* uniform arg2) {   \
+            int64_t idx, int64_t * uniform v, bool* uniform arg2) {  \
         OPEN3D_SPECIALIZED(T, TemplateISPCFunction1)(idx, v);        \
         *arg2 = true;                                                \
     }
@@ -186,7 +186,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 
 #define TEMPLATE(T)                                                  \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction3)( \
-            int64_t idx, int64_t* uniform v, bool* uniform arg2,     \
+            int64_t idx, int64_t * uniform v, bool* uniform arg2,    \
             uint8_t* uniform arg3) {                                 \
         OPEN3D_SPECIALIZED(T, TemplateISPCFunction2)(idx, v, arg2);  \
         *arg3 = 3;                                                   \
@@ -196,7 +196,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 
 #define TEMPLATE(T)                                                       \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction4)(      \
-            int64_t idx, int64_t* uniform v, bool* uniform arg2,          \
+            int64_t idx, int64_t * uniform v, bool* uniform arg2,         \
             uint8_t* uniform arg3, int8_t* uniform arg4) {                \
         OPEN3D_SPECIALIZED(T, TemplateISPCFunction3)(idx, v, arg2, arg3); \
         *arg4 = 4;                                                        \
@@ -206,7 +206,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 
 #define TEMPLATE(T)                                                  \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction5)( \
-            int64_t idx, int64_t* uniform v, bool* uniform arg2,     \
+            int64_t idx, int64_t * uniform v, bool* uniform arg2,    \
             uint8_t* uniform arg3, int8_t* uniform arg4,             \
             uint16_t* uniform arg5) {                                \
         OPEN3D_SPECIALIZED(T, TemplateISPCFunction4)                 \
@@ -218,7 +218,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 
 #define TEMPLATE(T)                                                  \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction6)( \
-            int64_t idx, int64_t* uniform v, bool* uniform arg2,     \
+            int64_t idx, int64_t * uniform v, bool* uniform arg2,    \
             uint8_t* uniform arg3, int8_t* uniform arg4,             \
             uint16_t* uniform arg5, int16_t* uniform arg6) {         \
         OPEN3D_SPECIALIZED(T, TemplateISPCFunction5)                 \
@@ -230,7 +230,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 
 #define TEMPLATE(T)                                                  \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction7)( \
-            int64_t idx, int64_t* uniform v, bool* uniform arg2,     \
+            int64_t idx, int64_t * uniform v, bool* uniform arg2,    \
             uint8_t* uniform arg3, int8_t* uniform arg4,             \
             uint16_t* uniform arg5, int16_t* uniform arg6,           \
             uint32_t* uniform arg7) {                                \
@@ -243,7 +243,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 
 #define TEMPLATE(T)                                                  \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction8)( \
-            int64_t idx, int64_t* uniform v, bool* uniform arg2,     \
+            int64_t idx, int64_t * uniform v, bool* uniform arg2,    \
             uint8_t* uniform arg3, int8_t* uniform arg4,             \
             uint16_t* uniform arg5, int16_t* uniform arg6,           \
             uint32_t* uniform arg7, int32_t* uniform arg8) {         \
@@ -256,7 +256,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 
 #define TEMPLATE(T)                                                  \
     static inline void OPEN3D_SPECIALIZED(T, TemplateISPCFunction9)( \
-            int64_t idx, int64_t* uniform v, bool* uniform arg2,     \
+            int64_t idx, int64_t * uniform v, bool* uniform arg2,    \
             uint8_t* uniform arg3, int8_t* uniform arg4,             \
             uint16_t* uniform arg5, int16_t* uniform arg6,           \
             uint32_t* uniform arg7, int32_t* uniform arg8,           \

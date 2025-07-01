@@ -340,9 +340,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
 #pragma omp critical(GetInformationMatrixFromPointClouds)
-        {
-            GTG += GTG_private;
-        }
+        { GTG += GTG_private; }
     }
     return GTG;
 }
