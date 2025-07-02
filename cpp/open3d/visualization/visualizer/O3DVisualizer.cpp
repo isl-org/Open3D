@@ -1400,6 +1400,10 @@ Ctrl-alt-click to polygon select)";
         scene_->ForceRedraw();
     }
 
+    std::shared_ptr<MenuBase> GetMenubar() {
+        return Application::GetInstance().GetMenubar();
+    }
+
     void ShowSettings(bool show, bool cancel_auto_show = true) {
         if (cancel_auto_show) {
             can_auto_show_settings_ = false;
@@ -2425,6 +2429,10 @@ MaterialRecord O3DVisualizer::GetGeometryMaterial(
 void O3DVisualizer::ModifyGeometryMaterial(
         const std::string &name, const rendering::MaterialRecord *material) {
     impl_->ModifyGeometryMaterial(name, material);
+}
+
+std::shared_ptr<MenuBase> O3DVisualizer::GetMenubar() {
+    return impl_->GetMenubar();
 }
 
 void O3DVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }

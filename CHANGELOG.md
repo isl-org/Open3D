@@ -61,6 +61,7 @@
 -   Fix CMake configuration summary incorrectly reporting `no` for system BLAS. (PR #7230)
 -   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
 -   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
+-   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
 
 ## 0.13
 
