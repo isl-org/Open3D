@@ -47,6 +47,22 @@ together to enable full end to end pipelines:
 
 For more, please visit the [Open3D documentation](https://www.open3d.org/docs).
 
+Also checkout this great introduction to modern 3D data processing that features
+Open3D:
+
+<img src="https://learning.oreilly.com/covers/urn:orm:book:9781098161323/400w/" width="240" alt="3D Data Science with Python" />
+
+[3D Data Science with Python](https://learning.oreilly.com/library/view/3d-data-science/9781098161323/)
+by [Dr. Florent Poux](https://www.graphics.rwth-aachen.de/person/306/)
+
+From the author:
+
+> Throughout the book, I showcase how Open3D enables efficient point cloud
+> processing, mesh manipulation, and 3D visualization through practical examples
+> and code samples. Readers learn to leverage Open3D's powerful capabilities for
+> registration, segmentation, and feature extraction in real-world 3D data
+> science workflows.
+
 ## Python quick start
 
 Pre-built pip packages support Ubuntu 22.04+, macOS 10.15+ and Windows 10+
