@@ -947,6 +947,7 @@ if(NOT USE_SYSTEM_PNG)
         LIBRARIES    ${ZLIB_LIBRARIES}
         DEPENDS      ext_zlib
     )
+    add_dependencies(ext_assimp ext_zlib)
 
     include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
     open3d_import_3rdparty_library(3rdparty_png
@@ -1676,7 +1677,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
                     # TODO: This requires packaging libgfortran with the Python
                     # wheel
                     find_library(gfortran_lib NAMES libgfortran${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS ${gfortran_lib_dirs} REQUIRED)
-                    find_library(gcc_lib      NAMES libgcc${CMAKE_SHARED_LIBRARY_SUFFIX}      PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc_s${CMAKE_SHARED_LIBRARY_SUFFIX}      PATHS ${gfortran_lib_dirs} REQUIRED)
                 endif()
                 target_link_libraries(3rdparty_blas INTERFACE ${gfortran_lib} ${gcc_lib})
                 if(APPLE_AARCH64)
@@ -1796,6 +1797,7 @@ if(BUILD_CUDA_MODULE)
                     CUDA::cublas_static
                     CUDA::cublasLt_static
                     CUDA::culibos
+                    CUDA::cudart_static
                 )
             else()
                 # Use shared CUDA libraries.
