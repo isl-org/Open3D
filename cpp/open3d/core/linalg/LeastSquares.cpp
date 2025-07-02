@@ -64,6 +64,12 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
 #else
         utility::LogError("Unimplemented device.");
 #endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        LeastSquaresSYCL(A_data, B_data, m, n, k, dtype, device);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
     } else {
         LeastSquaresCPU(A_data, B_data, m, n, k, dtype, device);
     }

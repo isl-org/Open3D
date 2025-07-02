@@ -430,15 +430,15 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     const size_t uv_array_size = n_vertices * 2 * sizeof(float);
     float* uv_array = static_cast<float*>(malloc(uv_array_size));
     if (geometry_.HasPointAttr("uv")) {
-        const float* uv_src = static_cast<const float*>(
-                geometry_.GetPointAttr("uv").GetDataPtr());
+        const float* uv_src =
+                geometry_.GetPointAttr("uv").GetDataPtr<const float>();
         memcpy(uv_array, uv_src, uv_array_size);
     } else if (geometry_.HasPointAttr("__visualization_scalar")) {
         // Update in FilamentScene::UpdateGeometry(), too.
         memset(uv_array, 0, uv_array_size);
         auto vis_scalars =
                 geometry_.GetPointAttr("__visualization_scalar").Contiguous();
-        const float* src = static_cast<const float*>(vis_scalars.GetDataPtr());
+        const float* src = vis_scalars.GetDataPtr<const float>();
         const size_t n = 2 * n_vertices;
         for (size_t i = 0; i < n; i += 2) {
             uv_array[i] = *src++;

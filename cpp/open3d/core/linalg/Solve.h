@@ -23,6 +23,16 @@ void SolveCPU(void* A_data,
               Dtype dtype,
               const Device& device);
 
+#ifdef BUILD_SYCL_MODULE
+void SolveSYCL(void* A_data,
+               void* B_data,
+               void* ipiv_data,
+               int64_t n,
+               int64_t k,
+               Dtype dtype,
+               const Device& device);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void SolveCUDA(void* A_data,
                void* B_data,

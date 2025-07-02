@@ -77,6 +77,7 @@ endif()
 
 if (BUILD_GUI)
     open3d_add_example(Draw)
+    open3d_add_example(GaussianSplat)
     open3d_add_example(MultipleWindows       Open3D::3rdparty_threads)
     open3d_add_example(OffscreenRendering)
     open3d_add_example(TICPSequential        Open3D::3rdparty_threads)

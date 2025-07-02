@@ -35,6 +35,7 @@ static const std::unordered_map<
                 {"xyzrgb", ReadPointCloudFromTXT},
                 {"pcd", ReadPointCloudFromPCD},
                 {"ply", ReadPointCloudFromPLY},
+                {"splat", ReadPointCloudFromSPLAT},
                 {"pts", ReadPointCloudFromPTS},
         };
 
@@ -52,6 +53,7 @@ static const std::unordered_map<
                 {"xyzrgb", WritePointCloudToTXT},
                 {"pcd", WritePointCloudToPCD},
                 {"ply", WritePointCloudToPLY},
+                {"splat", WritePointCloudToSPLAT},
                 {"pts", WritePointCloudToPTS},
         };
 

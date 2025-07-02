@@ -77,6 +77,7 @@ if (BUNDLE_OPEN3D_ML)
     file(RENAME "${PYTHON_PACKAGE_DST_DIR}/open3d/ml3d" "${PYTHON_PACKAGE_DST_DIR}/open3d/_ml3d")
 endif()
 
+set(requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt)
 # Build Jupyter plugin.
 if (BUILD_JUPYTER_EXTENSION)
     if (WIN32 OR UNIX AND NOT LINUX_AARCH64)
@@ -113,16 +114,18 @@ if (BUILD_JUPYTER_EXTENSION)
                             "npm install -g yarn.")
     endif()
 
-    # Append requirements_jupyter_install.txt to requirements.txt
-    # These will be installed when `pip install open3d`.
-    execute_process(COMMAND ${CMAKE_COMMAND} -E cat
-        ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
-        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt
-        OUTPUT_VARIABLE ALL_REQUIREMENTS
-    )
-    # The double-quote "" is important as it keeps the semicolons.
-    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt "${ALL_REQUIREMENTS}")
+    list(APPEND requirement_files 
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt)
 endif()
+
+if (BUILD_SYCL_MODULE)
+    list(APPEND requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt)
+endif()
+
+# These will be installed when the user does `pip install open3d`.
+ execute_process(COMMAND ${CMAKE_COMMAND} -E cat ${requirement_files}
+        OUTPUT_FILE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt
+    )
 
 if (BUILD_GUI)
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")

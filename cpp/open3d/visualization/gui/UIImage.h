@@ -16,7 +16,7 @@ namespace t {
 namespace geometry {
 class Image;
 }
-}
+}  // namespace t
 
 namespace geometry {
 class Image;

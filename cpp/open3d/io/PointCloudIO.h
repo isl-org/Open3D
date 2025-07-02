@@ -44,7 +44,7 @@ struct ReadPointCloudOption {
           remove_nan_points(remove_nan_points),
           remove_infinite_points(remove_infinite_points),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     ReadPointCloudOption(std::function<bool(double)> up)
         : ReadPointCloudOption() {
         update_progress = up;
@@ -101,7 +101,7 @@ struct WritePointCloudOption {
           write_ascii(write_ascii),
           compressed(compressed),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     // for compatibility
     WritePointCloudOption(bool write_ascii,
                           bool compressed = false,
@@ -110,7 +110,7 @@ struct WritePointCloudOption {
         : write_ascii(IsAscii(write_ascii)),
           compressed(Compressed(compressed)),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     // for compatibility
     WritePointCloudOption(std::string format,
                           bool write_ascii,
@@ -121,7 +121,7 @@ struct WritePointCloudOption {
           write_ascii(IsAscii(write_ascii)),
           compressed(Compressed(compressed)),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     WritePointCloudOption(std::function<bool(double)> up)
         : WritePointCloudOption() {
         update_progress = up;
