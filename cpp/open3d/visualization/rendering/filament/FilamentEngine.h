@@ -28,10 +28,6 @@ public:
     // If not called, platform available default backend will be used.
     static void SelectBackend(RenderingType type);
 
-    /// Initialize Engine for headless rendering. Must be called before first
-    /// access to the Engine (GetInstance).
-    static void EnableHeadless();
-
     // Specifies path to load shaders and skyboxes from. Must be called before
     // instance usage, or default path will be used.
     static void SetResourcePath(const std::string& resource_path);
@@ -53,7 +49,6 @@ private:
     EngineInstance();
 
     static RenderingType type_;
-    static bool is_headless_;
     static std::string resource_path_;
     filament::Engine* engine_;
     FilamentResourceManager* resource_manager_;

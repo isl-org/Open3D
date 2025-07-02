@@ -65,8 +65,8 @@ From the author:
 
 ## Python quick start
 
-Pre-built pip packages support Ubuntu 20.04+, macOS 10.15+ and Windows 10+
-(64-bit) with Python 3.8-3.11.
+Pre-built pip packages support Ubuntu 22.04+, macOS 10.15+ and Windows 10+
+(64-bit) with Python 3.10-3.13.
 
 ```bash
 # Install
