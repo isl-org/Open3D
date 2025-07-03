@@ -44,7 +44,7 @@ set(lib_byproducts ${filament_LIBRARIES})
 list(TRANSFORM lib_byproducts PREPEND ${FILAMENT_ROOT}/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
 list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-set(filament_cxx_flags "${CMAKE_CXX_FLAGS} -Wno-deprecated")
+set(filament_cxx_flags "${CMAKE_CXX_FLAGS} -Wno-deprecated" "-Wno-pass-failed=transform-warning")
 if(NOT WIN32)
     # Issue Open3D#1909, filament#2146
     set(filament_cxx_flags "${filament_cxx_flags} -fno-builtin")
