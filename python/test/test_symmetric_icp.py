@@ -238,7 +238,9 @@ class TestSymmetricICP:
         true_transformation[0, 3] = 0.1  # Small translation in x
         true_transformation[1, 3] = 0.05  # Small translation in y
 
-        target = source.clone()
+        import copy
+
+        target = copy.deepcopy(source)
         target.transform(true_transformation)
 
         estimation = o3d.pipelines.registration.TransformationEstimationSymmetric(
