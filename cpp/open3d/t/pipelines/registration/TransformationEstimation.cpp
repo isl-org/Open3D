@@ -187,6 +187,12 @@ double TransformationEstimationSymmetric::ComputeRMSE(
     core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
     core::Tensor neighbour_indices =
             correspondences.IndexGet({valid}).Reshape({-1});
+
+    // Check if there are any valid correspondences
+    if (neighbour_indices.GetLength() == 0) {
+        return 0.0;
+    }
+
     core::Tensor source_points_indexed =
             source.GetPointPositions().IndexGet({valid});
     core::Tensor target_points_indexed =
@@ -223,6 +229,10 @@ core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
                 "normals.");
     }
 
+    const core::Device device = source.GetPointPositions().GetDevice();
+    core::AssertTensorDevice(target.GetPointPositions(), device);
+
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
     core::AssertTensorDtypes(source.GetPointPositions(),
                              {core::Float64, core::Float32});
     core::AssertTensorDtype(target.GetPointPositions(),
@@ -234,6 +244,13 @@ core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
     core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
     AssertValidCorrespondences(correspondences, source.GetPointPositions());
+
+    // Check if there are any valid correspondences
+    core::Tensor valid = correspondences.Ne(-1);
+    if (valid.Any().Item<bool>() == false) {
+        // Return identity transformation if no valid correspondences
+        return core::Tensor::Eye(4, dtype, device);
+    }
 
     // Get pose {6} of type Float64.
     core::Tensor pose = pipelines::kernel::ComputePoseSymmetric(
