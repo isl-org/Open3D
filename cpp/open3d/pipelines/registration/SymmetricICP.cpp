@@ -54,9 +54,13 @@ Eigen::Matrix4d TransformationEstimationSymmetric::ComputeTransformation(
                 const Eigen::Vector3d &nt = target.normals_[corres[i][1]];
                 const Eigen::Vector3d d = vs - vt;
 
-                J_r.resize(2);
-                r.resize(2);
-                w.resize(2);
+                // Symmetric ICP always uses exactly 2 jacobians/residuals
+                // Ensure vectors have correct size (only resizes on first call)
+                if (J_r.size() != 2) {
+                    J_r.resize(2);
+                    r.resize(2);
+                    w.resize(2);
+                }
 
                 r[0] = d.dot(nt);
                 w[0] = kernel_->Weight(r[0]);
