@@ -114,6 +114,13 @@ RegistrationResult RegistrationSymmetricICP(
         const Eigen::Matrix4d &init,
         const TransformationEstimationSymmetric &estimation,
         const ICPConvergenceCriteria &criteria) {
+    // Validate that both point clouds have normals
+    if (!source.HasNormals() || !target.HasNormals()) {
+        utility::LogError(
+                "SymmetricICP requires both source and target to have "
+                "normals.");
+    }
+
     return RegistrationICP(source, target, max_correspondence_distance, init,
                            estimation, criteria);
 }

@@ -170,6 +170,22 @@ class TestSymmetricICP:
         assert result.fitness > 0.0
         assert result.inlier_rmse >= 0.0
 
+        # Verify the transformation matrix
+        # Target is translated by [0.05, 0.05, 0.05] from source
+        # So the transformation should recover approximately this translation
+        expected_translation = np.array([0.05, 0.05, 0.05])
+        computed_translation = result.transformation[:3, 3]
+        np.testing.assert_allclose(
+            computed_translation, expected_translation,
+            atol=1e-2)  # Allow some tolerance due to iterative nature
+
+        # Rotation should be close to identity
+        expected_rotation = np.eye(3)
+        computed_rotation = result.transformation[:3, :3]
+        np.testing.assert_allclose(computed_rotation,
+                                   expected_rotation,
+                                   atol=1e-2)
+
     def test_registration_symmetric_icp_with_robust_kernel(self):
         """Test registration_symmetric_icp with robust kernel."""
         source = o3d.geometry.PointCloud()
