@@ -218,7 +218,7 @@ private:
 /// \class TransformationEstimationSymmetric
 ///
 /// Class to estimate a transformation matrix tensor of shape {4, 4}, dtype
-/// Float64, on CPU device for symmetric point-to-plane distance.
+/// Float64, on CPU or CUDA device for symmetric point-to-plane distance.
 class TransformationEstimationSymmetric : public TransformationEstimation {
 public:
     explicit TransformationEstimationSymmetric(
