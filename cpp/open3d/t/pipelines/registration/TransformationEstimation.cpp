@@ -241,7 +241,6 @@ core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
                             source.GetPointPositions().GetDtype());
     core::AssertTensorDtype(source.GetPointNormals(),
                             source.GetPointPositions().GetDtype());
-    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
     AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
