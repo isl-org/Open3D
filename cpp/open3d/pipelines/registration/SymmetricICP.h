@@ -25,7 +25,7 @@ class RegistrationResult;
 /// \brief Transformation estimation for symmetric point-to-plane ICP.
 class TransformationEstimationSymmetric : public TransformationEstimation {
 public:
-    ~TransformationEstimationSymmetric() override{};
+    ~TransformationEstimationSymmetric() override {};
 
     TransformationEstimationType GetTransformationEstimationType()
             const override {
