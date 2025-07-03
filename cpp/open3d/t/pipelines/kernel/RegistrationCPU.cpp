@@ -147,61 +147,41 @@ static void ComputePoseSymmetricKernelCPU(const scalar_t *source_points_ptr,
                      ++workload_idx) {
 #else
     scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for reduction(+ : A_reduction[ : 29]) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
 #endif
-                    if (correspondence_indices[workload_idx] == -1) continue;
-                    int target_idx = 3 * correspondence_indices[workload_idx];
-                    int source_idx = 3 * workload_idx;
+                    scalar_t J_ij[12] = {0};
+                    scalar_t r1 = 0, r2 = 0;
+                    const bool valid = GetJacobianSymmetric<scalar_t>(
+                            workload_idx, source_points_ptr, target_points_ptr,
+                            source_normals_ptr, target_normals_ptr,
+                            correspondence_indices, J_ij, r1, r2);
 
-                    scalar_t sx = source_points_ptr[source_idx];
-                    scalar_t sy = source_points_ptr[source_idx + 1];
-                    scalar_t sz = source_points_ptr[source_idx + 2];
-                    scalar_t tx = target_points_ptr[target_idx];
-                    scalar_t ty = target_points_ptr[target_idx + 1];
-                    scalar_t tz = target_points_ptr[target_idx + 2];
-                    scalar_t nsx = source_normals_ptr[source_idx];
-                    scalar_t nsy = source_normals_ptr[source_idx + 1];
-                    scalar_t nsz = source_normals_ptr[source_idx + 2];
-                    scalar_t ntx = target_normals_ptr[target_idx];
-                    scalar_t nty = target_normals_ptr[target_idx + 1];
-                    scalar_t ntz = target_normals_ptr[target_idx + 2];
+                    if (valid) {
+                        const scalar_t w1 = GetWeightFromRobustKernel(r1);
+                        const scalar_t w2 = GetWeightFromRobustKernel(r2);
 
-                    scalar_t dx = sx - tx;
-                    scalar_t dy = sy - ty;
-                    scalar_t dz = sz - tz;
-
-                    scalar_t r1 = dx * ntx + dy * nty + dz * ntz;
-                    scalar_t r2 = dx * nsx + dy * nsy + dz * nsz;
-
-                    scalar_t J1[6] = {-sz * nty + sy * ntz,
-                                      sz * ntx - sx * ntz,
-                                      -sy * ntx + sx * nty,
-                                      ntx,
-                                      nty,
-                                      ntz};
-                    scalar_t J2[6] = {-sz * nsy + sy * nsz,
-                                      sz * nsx - sx * nsz,
-                                      -sy * nsx + sx * nsy,
-                                      nsx,
-                                      nsy,
-                                      nsz};
-
-                    scalar_t w1 = GetWeightFromRobustKernel(r1);
-                    scalar_t w2 = GetWeightFromRobustKernel(r2);
-
-                    int i = 0;
-                    for (int j = 0; j < 6; ++j) {
-                        for (int k = 0; k <= j; ++k) {
-                            A_reduction[i] +=
-                                    J1[j] * w1 * J1[k] + J2[j] * w2 * J2[k];
-                            ++i;
+                        // Accumulate JtJ and Jtr for both terms
+                        int i = 0;
+                        for (int j = 0; j < 6; ++j) {
+                            for (int k = 0; k <= j; ++k) {
+                                // Contribution from first term (source to
+                                // target)
+                                A_reduction[i] += J_ij[j] * w1 * J_ij[k];
+                                // Contribution from second term (target to
+                                // source)
+                                A_reduction[i] +=
+                                        J_ij[j + 6] * w2 * J_ij[k + 6];
+                                ++i;
+                            }
+                            // Jtr contributions
+                            A_reduction[21 + j] +=
+                                    J_ij[j] * w1 * r1 + J_ij[j + 6] * w2 * r2;
                         }
-                        A_reduction[21 + j] +=
-                                J1[j] * w1 * r1 + J2[j] * w2 * r2;
+                        A_reduction[27] += r1 * r1 + r2 * r2;
+                        A_reduction[28] += 1;
                     }
-                    A_reduction[27] += r1 * r1 + r2 * r2;
-                    A_reduction[28] += 1;
                 }
 #ifdef _WIN32
                 return A_reduction;
