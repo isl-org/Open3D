@@ -171,12 +171,13 @@ class TestSymmetricICP:
         assert result.inlier_rmse >= 0.0
 
         # Verify the transformation matrix
-        # Target is translated by [0.05, 0.05, 0.05] from source
-        # So the transformation should recover approximately this translation
-        expected_translation = np.array([0.05, 0.05, 0.05])
+        # With all normals pointing in Z direction, symmetric ICP can only
+        # constrain motion along Z axis. X and Y translations are not observable.
+        # So we only check that Z translation is recovered correctly.
         computed_translation = result.transformation[:3, 3]
+        expected_z_translation = 0.05
         np.testing.assert_allclose(
-            computed_translation, expected_translation,
+            computed_translation[2], expected_z_translation,
             atol=1e-2)  # Allow some tolerance due to iterative nature
 
         # Rotation should be close to identity
