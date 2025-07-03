@@ -665,9 +665,16 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         if (geometry_update_needed) {
             auto& renderable_mgr = engine_.getRenderableManager();
             auto inst = renderable_mgr.getInstance(g->filament_entity);
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnonnull"
+#endif
             renderable_mgr.setGeometryAt(
                     inst, 0, filament::RenderableManager::PrimitiveType::POINTS,
                     nullptr, nullptr, 0, n_vertices);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         }
     }
 }
