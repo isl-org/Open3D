@@ -295,7 +295,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
     }
     if (filter_vertex) {
         const double epsilon = 1e-15;
-        for (auto& vertex : mesh->vertices_) {
+        for (auto &vertex : mesh->vertices_) {
             for (int i = 0; i < 3; ++i) {
                 if (std::abs(vertex(i)) < epsilon) {
                     vertex(i) = 0.0;
@@ -398,7 +398,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
     }
     if (filter_vertex) {
         const double epsilon = 1e-15;
-        for (auto& vertex : mesh->vertices_) {
+        for (auto &vertex : mesh->vertices_) {
             for (int i = 0; i < 3; ++i) {
                 if (std::abs(vertex(i)) < epsilon) {
                     vertex(i) = 0.0;
@@ -456,7 +456,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     }
     if (filter_vertex) {
         const double epsilon = 1e-15;
-        for (auto& vertex : mesh->vertices_) {
+        for (auto &vertex : mesh->vertices_) {
             for (int i = 0; i < 3; ++i) {
                 if (std::abs(vertex(i)) < epsilon) {
                     vertex(i) = 0.0;
