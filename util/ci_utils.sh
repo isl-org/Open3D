@@ -31,8 +31,8 @@ TENSORFLOW_VER="2.19.0"
 TORCH_VER="2.7.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
-PIP_VER="24.3.1"
-PROTOBUF_VER="4.24.0"
+PIP_VER="25.1.1"
+PROTOBUF_VER="6.31.1"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
