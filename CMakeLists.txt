@@ -302,7 +302,7 @@ endif()
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)   # Improved compatibility
 
 # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).

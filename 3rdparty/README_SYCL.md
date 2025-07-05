@@ -93,7 +93,7 @@ Open3D is designed to make use of the SYCL GPU devices.
   - ML ops not supported (C++17 cannot be enabled for TF)
 - Requirements (required by DPC++)
   - Only supports `GLIBCXX_USE_CXX11_ABI=ON`
-  - Only supports `set(CMAKE_CXX_STANDARD 17)`
+  - Only supports `set(CMAKE_CXX_STANDARD 20)`
 
 
 ## List of oneAPI Python packages
