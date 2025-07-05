@@ -35,9 +35,6 @@ public:
         gui::InitializeForPython(resource_path, true);
         width_ = width;
         height_ = height;
-        // NOTE: OffscreenRenderer now always uses headless so that a window
-        // system is never required
-        EngineInstance::EnableHeadless();
         renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
                                          height,
                                          EngineInstance::GetResourceManager());

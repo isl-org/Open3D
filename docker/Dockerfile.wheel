@@ -1,5 +1,5 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
-ARG BASE_IMAGE=nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04
+ARG BASE_IMAGE=nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04
 FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
@@ -119,7 +119,7 @@ RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-jupyter
 
 # Open3D Jupyter dependencies
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
  && node --version

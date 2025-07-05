@@ -489,7 +489,7 @@ if(WIN32)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
         # MSVC standards-compliant mode: Error in PoissonRecon 3rd party header
-        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)   
+        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members

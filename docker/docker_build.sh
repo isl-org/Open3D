@@ -72,8 +72,9 @@ OPTION:
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
-CMAKE_VERSION=cmake-3.29.2-linux-x86_64
-CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
+AARCH="$(uname -m)"
+# do cmake pending on the architecture
+CMAKE_VERSION=cmake-3.31.8-linux-${AARCH}
 CUDA_VERSION=12.6.3-cudnn
 CUDA_VERSION_LATEST=12.6.3-cudnn
 
@@ -106,7 +107,7 @@ openblas_export_env() {
         export DOCKER_TAG=open3d-ci:openblas-arm64
         export BASE_IMAGE=arm64v8/ubuntu:22.04
         export CONDA_SUFFIX=aarch64
-        export CMAKE_VERSION=${CMAKE_VERSION_AARCH64}
+        export CMAKE_VERSION=${CMAKE_VERSION}
     else
         echo "Invalid platform."
         print_usage_and_exit_docker_build
