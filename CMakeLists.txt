@@ -75,7 +75,7 @@ if(BUILD_SYCL_MODULE)
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
 option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF)
-if(BUILD_GUI AND (WIN32 OR UNIX AND NOT APPLE_AARCH64))
+if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
@@ -231,6 +231,9 @@ endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
+if(BUILD_WEBRTC AND LINUX_AARCH64)
+    message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
+endif()
 if(BUILD_WEBRTC AND NOT BUILD_GUI)
     message(FATAL_ERROR "BUILD_WEBRTC=ON requires BUILD_GUI=ON")
 endif()
@@ -300,9 +303,6 @@ endif()
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
 set(CMAKE_CXX_STANDARD 17)
-if (MSVC)
-    set(CMAKE_CXX_STANDARD 20)
-endif()
 set(CMAKE_CXX_EXTENSIONS OFF)   # Improved compatibility
 
 # Suppress warnings for deprecated C++17 functions (stdgpu->thrust with CUDA 11 for MSVC).
@@ -489,7 +489,7 @@ if(WIN32)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
         # MSVC standards-compliant mode: Error in PoissonRecon 3rd party header
-        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)   
+        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members
@@ -498,10 +498,6 @@ if(WIN32)
         #
         # See: https://github.com/tensorflow/tensorflow/pull/10962
         add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj;/Ob2>")
-
-        # Suppress deprecation warnings that become errors for features depcrecated in
-        # C++20 that we still use.
-        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/D_SILENCE_CXX20_IS_POD_DEPRECATION_WARNING>")
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
