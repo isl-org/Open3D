@@ -1,6 +1,7 @@
 name: Clean release
 permissions: {}
 on:
+  workflow_dispatch:
   workflow_run:  # Triggered when long running macos workflow ends
     workflows: [macos]
     types: [completed]
