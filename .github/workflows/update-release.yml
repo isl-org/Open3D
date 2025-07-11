@@ -20,7 +20,7 @@ jobs:
           # Total assets from each main branch commmit:
           # Python wheels (4x4) + Viewer (3) + C++ libs (4+2+2) = 27,
           release_assets=($(gh release view main-devel --json assets --jq '.assets[] | .name'))
-          last_shas=($(git log --pretty=format:%h --abbrev-commit -n 3))
+          last_shas=($(git log -b origin/main --pretty=format:%h --abbrev-commit -n 3))
           echo "Removing release assets except from last 3 commits: ${last_shas[@]}"
           for relass in "${release_assets[@]}"; do
               found=false
@@ -31,7 +31,7 @@ jobs:
               done
               if [ $found == false ]; then
                   set -x
-                  gh release delete-asset main-devel $relass
+                  echo gh release delete-asset main-devel $relass
                   set +x
               fi
           done
