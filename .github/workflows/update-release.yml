@@ -32,7 +32,7 @@ jobs:
               done
               if [ $found == false ]; then
                   set -x
-                  echo gh release delete-asset main-devel $relass
+                  gh release delete-asset main-devel $relass
                   set +x
               fi
           done
