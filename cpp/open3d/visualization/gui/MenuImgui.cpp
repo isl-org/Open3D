@@ -135,6 +135,23 @@ void MenuImgui::InsertSeparator(int index) {
 
 int MenuImgui::GetNumberOfItems() const { return int(impl_->items_.size()); }
 
+std::shared_ptr<MenuBase> MenuImgui::GetMenu(const char *name) {
+    for (auto &item : impl_->items_) {
+        if (item.name_.compare(name) == 0) {
+            return item.submenu_;
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<MenuBase> MenuImgui::GetMenu(ItemId item_id) {
+    auto item = impl_->FindMenuItem(item_id);
+    if (item) {
+        return item->submenu_;
+    }
+    return nullptr;
+}
+
 bool MenuImgui::IsEnabled(ItemId item_id) const {
     auto *item = impl_->FindMenuItem(item_id);
     if (item) {
