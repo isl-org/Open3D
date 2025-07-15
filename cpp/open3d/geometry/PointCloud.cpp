@@ -544,6 +544,49 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
     return SelectByIndex(selected_indices);
 }
 
+std::shared_ptr<PointCloud> PointCloud::FilterBilateral(
+        double radius,
+        double sigma_s,
+        double sigma_r) const {
+    auto output = std::make_shared<PointCloud>(*this);
+    KDTreeFlann kdtree(*this);
+
+    const double two_sigma_spatial2 = 2.0 * sigma_s * sigma_s;
+    const double two_sigma_range2 = 2.0 * sigma_r * sigma_r;
+    
+    for (size_t i = 0; i < points_.size(); ++i) {
+        const auto& point = points_[i];
+        const auto& color = colors_[i];
+
+        std::vector<int> indices;
+        std::vector<double> distances;
+        const auto nb_count = kdtree.SearchRadius(point, radius, indices, distances);
+        if (nb_count <= 1) {
+            continue;
+        }
+
+        double weighted_sum {0.0};
+        Eigen::Vector3d point_sum {};
+
+        for (const auto npoint_index : indices) {
+            const auto& npoint = points_[npoint_index];
+            const auto& ncolor = colors_[npoint_index];
+
+            const auto spatial_distance = (npoint - point).squaredNorm();
+            // TODO: which ColorToIntensityConversionType to use? Equal or Weighted?
+            const auto range_distance = (ncolor - color).squaredNorm();
+
+            // TODO: add a reference for this formula
+            const auto w = std::exp(-spatial_distance/two_sigma_spatial2 - range_distance/two_sigma_range2);
+            point_sum += w * npoint;
+            weighted_sum += w;
+        }
+        output->points_[i] = point_sum / weighted_sum;
+    }
+
+    return output;
+}
+
 std::shared_ptr<PointCloud> PointCloud::Crop(const AxisAlignedBoundingBox &bbox,
                                              bool invert) const {
     if (bbox.IsEmpty()) {
