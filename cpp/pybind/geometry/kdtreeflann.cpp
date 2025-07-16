@@ -18,18 +18,12 @@ void pybind_kdtreeflann_declarations(py::module &m) {
     py::class_<KDTreeSearchParam> kdtreesearchparam(
             m, "KDTreeSearchParam", "Base class for KDTree search parameters.");
     // open3d.geometry.KDTreeSearchParam.Type
-    py::enum_<KDTreeSearchParam::SearchType> kdtree_search_param_type(
-            kdtreesearchparam, "Type", py::arithmetic());
-    kdtree_search_param_type
+    py::native_enum<KDTreeSearchParam::SearchType>(kdtreesearchparam, "Type", "enum.Enum", "Enum class for Geometry types.")
             .value("KNNSearch", KDTreeSearchParam::SearchType::Knn)
             .value("RadiusSearch", KDTreeSearchParam::SearchType::Radius)
             .value("HybridSearch", KDTreeSearchParam::SearchType::Hybrid)
-            .export_values();
-    kdtree_search_param_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Geometry types.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
     py::class_<KDTreeSearchParamKNN> kdtreesearchparam_knn(
             m, "KDTreeSearchParamKNN", kdtreesearchparam,
             "KDTree search parameters for pure KNN search.");

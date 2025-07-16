@@ -31,6 +31,7 @@
 #include <pybind11/pybind11.h>  // Include first to suppress compiler warnings
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <pybind11/native_enum.h>
 
 #include "open3d/pipelines/registration/PoseGraph.h"
 #include "open3d/utility/Eigen.h"

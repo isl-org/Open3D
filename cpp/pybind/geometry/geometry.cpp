@@ -17,26 +17,18 @@ namespace geometry {
 void pybind_geometry_classes_declarations(py::module &m) {
     py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
             geometry(m, "Geometry", "The base geometry class.");
-    py::enum_<Geometry::GeometryType> geometry_type(geometry, "Type",
-                                                    py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    geometry_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Geometry types.";
-            }),
-            py::none(), py::none(), "");
-
-    geometry_type.value("Unspecified", Geometry::GeometryType::Unspecified)
-            .value("PointCloud", Geometry::GeometryType::PointCloud)
-            .value("VoxelGrid", Geometry::GeometryType::VoxelGrid)
-            .value("LineSet", Geometry::GeometryType::LineSet)
-            .value("TriangleMesh", Geometry::GeometryType::TriangleMesh)
-            .value("HalfEdgeTriangleMesh",
-                   Geometry::GeometryType::HalfEdgeTriangleMesh)
-            .value("Image", Geometry::GeometryType::Image)
-            .value("RGBDImage", Geometry::GeometryType::RGBDImage)
-            .value("TetraMesh", Geometry::GeometryType::TetraMesh)
-            .export_values();
+    py::native_enum<Geometry::GeometryType>(geometry, "Type", "enum.Enum", "Enum class for Geometry types.")
+        .value("Unspecified", Geometry::GeometryType::Unspecified)
+        .value("PointCloud", Geometry::GeometryType::PointCloud)
+        .value("VoxelGrid", Geometry::GeometryType::VoxelGrid)
+        .value("LineSet", Geometry::GeometryType::LineSet)
+        .value("TriangleMesh", Geometry::GeometryType::TriangleMesh)
+        .value("HalfEdgeTriangleMesh", Geometry::GeometryType::HalfEdgeTriangleMesh)
+        .value("Image", Geometry::GeometryType::Image)
+        .value("RGBDImage", Geometry::GeometryType::RGBDImage)
+        .value("TetraMesh", Geometry::GeometryType::TetraMesh)
+        .export_values()
+        .finalize();
     py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
                std::shared_ptr<Geometry3D>, Geometry>
             geometry3d(m, "Geometry3D",

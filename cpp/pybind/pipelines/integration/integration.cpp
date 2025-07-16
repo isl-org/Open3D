@@ -42,18 +42,12 @@ void pybind_integration_declarations(py::module &m) {
     py::module m_integration =
             m.def_submodule("integration", "Integration pipeline.");
     // open3d.integration.TSDFVolumeColorType
-    py::enum_<TSDFVolumeColorType> tsdf_volume_color_type(
-            m_integration, "TSDFVolumeColorType", py::arithmetic());
-    tsdf_volume_color_type.value("NoColor", TSDFVolumeColorType::NoColor)
+    py::native_enum<TSDFVolumeColorType>(m_integration, "TSDFVolumeColorType", "enum.Enum", "Enum class for TSDFVolumeColorType.")
+            .value("NoColor", TSDFVolumeColorType::NoColor)
             .value("RGB8", TSDFVolumeColorType::RGB8)
             .value("Gray32", TSDFVolumeColorType::Gray32)
-            .export_values();
-    // Trick to write docs without listing the members in the enum class again.
-    tsdf_volume_color_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for TSDFVolumeColorType.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
     py::class_<TSDFVolume, PyTSDFVolume<TSDFVolume>> tsdfvolume(
             m_integration, "TSDFVolume", R"(Base class of the Truncated
 Signed Distance Function (TSDF) volume This volume is usually used to integrate

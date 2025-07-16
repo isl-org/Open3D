@@ -84,18 +84,13 @@ static const std::unordered_map<std::string, std::string>
 };
 
 void pybind_class_io_declarations(py::module &m_io) {
-    py::enum_<FileGeometry> geom_type(m_io, "FileGeometry", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    geom_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Geometry types";
-            }),
-            py::none(), py::none(), "");
-    geom_type.value("CONTENTS_UNKNOWN", FileGeometry::CONTENTS_UNKNOWN)
-            .value("CONTAINS_POINTS", FileGeometry::CONTAINS_POINTS)
-            .value("CONTAINS_LINES", FileGeometry::CONTAINS_LINES)
-            .value("CONTAINS_TRIANGLES", FileGeometry::CONTAINS_TRIANGLES)
-            .export_values();
+py::native_enum<FileGeometry>(m_io, "FileGeometry", "enum.IntFlag", "Geometry types")
+        .value("CONTENTS_UNKNOWN", FileGeometry::CONTENTS_UNKNOWN)
+        .value("CONTAINS_POINTS", FileGeometry::CONTAINS_POINTS)
+        .value("CONTAINS_LINES", FileGeometry::CONTAINS_LINES)
+        .value("CONTAINS_TRIANGLES", FileGeometry::CONTAINS_TRIANGLES)
+        .export_values()
+        .finalize();
 }
 void pybind_class_io_definitions(py::module &m_io) {
     m_io.def(

@@ -307,11 +307,12 @@ private:
 void pybind_gui_declarations(py::module &m) {
     py::module m_gui = m.def_submodule("gui");
     pybind_gui_events_declarations(m_gui);
-    py::enum_<FontStyle> font_style(m_gui, "FontStyle", "Font style");
-    font_style.value("NORMAL", FontStyle::NORMAL)
+    py::native_enum<FontStyle>(m_gui, "FontStyle", "enum.Enum", "Font style")
+            .value("NORMAL", FontStyle::NORMAL)
             .value("BOLD", FontStyle::BOLD)
             .value("ITALIC", FontStyle::ITALIC)
-            .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC);
+            .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC)
+            .finalize();
     py::class_<FontDescription> fd(m_gui, "FontDescription",
                                    "Class to describe a custom font");
     py::class_<Application> application(m_gui, "Application",
@@ -340,10 +341,8 @@ void pybind_gui_declarations(py::module &m) {
     py::class_<Size> size(m_gui, "Size", "Size object");
     py::class_<Widget, UnownedPointer<Widget>> widget(m_gui, "Widget",
                                                       "Base widget class");
-    py::enum_<EventCallbackResult> widget_event_callback_result(
-            widget, "EventCallbackResult", "Returned by event handlers",
-            py::arithmetic());
-    widget_event_callback_result
+    py::native_enum<EventCallbackResult>(
+            widget, "EventCallbackResult", "enum.IntEnum", "Returned by event handlers")
             .value("IGNORED", EventCallbackResult::IGNORED,
                    "Event handler ignored the event, widget will "
                    "handle event normally")
@@ -357,7 +356,8 @@ void pybind_gui_declarations(py::module &m) {
                    "handling stops, widget will not handle the "
                    "event. This is useful when you are replacing "
                    "functionality")
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<Widget::Constraints> constraints(
             widget, "Constraints",
             "Constraints object for Widget.calc_preferred_size()");
@@ -401,25 +401,19 @@ void pybind_gui_declarations(py::module &m) {
             m_gui, "Combobox", "Exclusive selection from a pull-down menu");
     py::class_<RadioButton, UnownedPointer<RadioButton>, Widget> radiobtn(
             m_gui, "RadioButton", "Exclusive selection from radio button list");
-    py::enum_<RadioButton::Type> radiobtn_type(radiobtn, "Type",
-                                               py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    radiobtn_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for RadioButton types.";
-            }),
-            py::none(), py::none(), "");
-    radiobtn_type.value("VERT", RadioButton::Type::VERT)
+    py::native_enum<RadioButton::Type>(radiobtn, "Type", "enum.Enum", "Enum class for RadioButton types.")
+            .value("VERT", RadioButton::Type::VERT)
             .value("HORIZ", RadioButton::Type::HORIZ)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
             m_gui, "UIImage",
             "A bitmap suitable for displaying with ImageWidget");
-    py::enum_<UIImage::Scaling> uiimage_scaling(uiimage, "Scaling",
-                                                py::arithmetic());
-    uiimage_scaling.value("NONE", UIImage::Scaling::NONE)
+    py::native_enum<UIImage::Scaling>(uiimage, "Scaling", "enum.Enum", "Enum class for UIImage scaling modes.")
+            .value("NONE", UIImage::Scaling::NONE)
             .value("ANY", UIImage::Scaling::ANY)
-            .value("ASPECT", UIImage::Scaling::ASPECT);
+            .value("ASPECT", UIImage::Scaling::ASPECT)
+            .finalize();
     py::class_<PyImageWidget, UnownedPointer<PyImageWidget>, Widget>
             imagewidget(m_gui, "ImageWidget", "Displays a bitmap");
     py::class_<Label, UnownedPointer<Label>, Widget> label(m_gui, "Label",
@@ -430,49 +424,32 @@ void pybind_gui_declarations(py::module &m) {
             m_gui, "ListView", "Displays a list of text");
     py::class_<NumberEdit, UnownedPointer<NumberEdit>, Widget> numedit(
             m_gui, "NumberEdit", "Allows the user to enter a number.");
-    py::enum_<NumberEdit::Type> numedit_type(numedit, "Type", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    numedit_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for NumberEdit types.";
-            }),
-            py::none(), py::none(), "");
-    numedit_type.value("INT", NumberEdit::Type::INT)
+    py::native_enum<NumberEdit::Type>(numedit, "Type", "enum.Enum", "Enum class for NumberEdit types.")
+            .value("INT", NumberEdit::Type::INT)
             .value("DOUBLE", NumberEdit::Type::DOUBLE)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<ProgressBar, UnownedPointer<ProgressBar>, Widget> progress(
             m_gui, "ProgressBar", "Displays a progress bar");
     py::class_<PySceneWidget, UnownedPointer<PySceneWidget>, Widget> scene(
             m_gui, "SceneWidget", "Displays 3D content");
-    py::enum_<SceneWidget::Controls> scene_ctrl(scene, "Controls",
-                                                py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    scene_ctrl.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class describing mouse interaction.";
-            }),
-            py::none(), py::none(), "");
-    scene_ctrl.value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
-            .value("ROTATE_CAMERA_SPHERE",
-                   SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
+    py::native_enum<SceneWidget::Controls>(scene, "Controls", "enum.Enum", "Enum class describing mouse interaction.")
+            .value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
+            .value("ROTATE_CAMERA_SPHERE", SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
             .value("FLY", SceneWidget::Controls::FLY)
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
             .value("ROTATE_MODEL", SceneWidget::Controls::ROTATE_MODEL)
             .value("PICK_POINTS", SceneWidget::Controls::PICK_POINTS)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(
             m_gui, "Slider", "A slider widget for visually selecting numbers");
-    py::enum_<Slider::Type> slider_type(slider, "Type", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    slider_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Slider types.";
-            }),
-            py::none(), py::none(), "");
-    slider_type.value("INT", Slider::Type::INT)
+    py::native_enum<Slider::Type>(slider, "Type", "enum.Enum", "Enum class for Slider types.")
+            .value("INT", Slider::Type::INT)
             .value("DOUBLE", Slider::Type::DOUBLE)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<StackedWidget, UnownedPointer<StackedWidget>, Widget> stacked(
             m_gui, "StackedWidget", "Like a TabControl but without the tabs");
     py::class_<TabControl, UnownedPointer<TabControl>, Widget> tabctrl(
@@ -515,17 +492,12 @@ void pybind_gui_declarations(py::module &m) {
                                                               "Dialog");
     py::class_<FileDialog, UnownedPointer<FileDialog>, Dialog> filedlg(
             m_gui, "FileDialog", "File picker dialog");
-    py::enum_<FileDialog::Mode> filedlg_mode(filedlg, "Mode", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    filedlg_mode.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for FileDialog modes.";
-            }),
-            py::none(), py::none(), "");
-    filedlg_mode.value("OPEN", FileDialog::Mode::OPEN)
+    py::native_enum<FileDialog::Mode>(filedlg, "Mode", "enum.Enum", "Enum class for FileDialog modes.")
+            .value("OPEN", FileDialog::Mode::OPEN)
             .value("SAVE", FileDialog::Mode::SAVE)
             .value("OPEN_DIR", FileDialog::Mode::OPEN_DIR)
-            .export_values();
+            .export_values()
+            .finalize();
 }
 void pybind_gui_definitions(py::module &m) {
     auto m_gui = static_cast<py::module>(m.attr("gui"));
