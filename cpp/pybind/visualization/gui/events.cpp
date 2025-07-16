@@ -24,7 +24,6 @@ void pybind_gui_events_declarations(py::module& m_gui) {
             .value("RIGHT", MouseButton::RIGHT)
             .value("BUTTON4", MouseButton::BUTTON4)
             .value("BUTTON5", MouseButton::BUTTON5)
-            .export_values()
             .finalize();
     py::native_enum<KeyModifier>(m_gui, "KeyModifier", "enum.IntFlag",
                                  "Key modifier identifiers")
@@ -33,7 +32,6 @@ void pybind_gui_events_declarations(py::module& m_gui) {
             .value("CTRL", KeyModifier::CTRL)
             .value("ALT", KeyModifier::ALT)
             .value("META", KeyModifier::META)
-            .export_values()
             .finalize();
     py::class_<MouseEvent> mouse_event(m_gui, "MouseEvent",
                                        "Object that stores mouse events");
@@ -44,7 +42,6 @@ void pybind_gui_events_declarations(py::module& m_gui) {
             .value("DRAG", MouseEvent::Type::DRAG)
             .value("BUTTON_UP", MouseEvent::Type::BUTTON_UP)
             .value("WHEEL", MouseEvent::Type::WHEEL)
-            .export_values()
             .finalize();
     py::native_enum<KeyName>(m_gui, "KeyName", "enum.IntEnum",
                              "Names of keys. Used by KeyEvent.key")
@@ -152,7 +149,6 @@ void pybind_gui_events_declarations(py::module& m_gui) {
             .value("F11", KeyName::KEY_F11)
             .value("F12", KeyName::KEY_F12)
             .value("UNKNOWN", KeyName::KEY_UNKNOWN)
-            .export_values()
             .finalize();
     py::class_<KeyEvent> key_event(m_gui, "KeyEvent",
                                    "Object that stores key events");
@@ -160,7 +156,6 @@ void pybind_gui_events_declarations(py::module& m_gui) {
                                     "Key event type.")
             .value("DOWN", KeyEvent::Type::DOWN)
             .value("UP", KeyEvent::Type::UP)
-            .export_values()
             .finalize();
 }
 void pybind_gui_events_definitions(py::module& m_gui) {

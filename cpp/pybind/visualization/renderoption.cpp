@@ -29,7 +29,6 @@ void pybind_renderoption_declarations(py::module &m) {
             .value("YCoordinate", RenderOption::PointColorOption::YCoordinate)
             .value("ZCoordinate", RenderOption::PointColorOption::ZCoordinate)
             .value("Normal", RenderOption::PointColorOption::Normal)
-            .export_values()
             .finalize();
     // This is a nested class, but now it's bind to the module
     // o3d.visualization.MeshShadeOption
@@ -38,7 +37,6 @@ void pybind_renderoption_declarations(py::module &m) {
             "Enum class for mesh shading for ``TriangleMesh``.")
             .value("Default", RenderOption::MeshShadeOption::FlatShade)
             .value("Color", RenderOption::MeshShadeOption::SmoothShade)
-            .export_values()
             .finalize();
 
     // This is a nested class, but now it's bind to the module
@@ -52,7 +50,6 @@ void pybind_renderoption_declarations(py::module &m) {
             .value("YCoordinate", RenderOption::MeshColorOption::YCoordinate)
             .value("ZCoordinate", RenderOption::MeshColorOption::ZCoordinate)
             .value("Normal", RenderOption::MeshColorOption::Normal)
-            .export_values()
             .finalize();
 }
 void pybind_renderoption_definitions(py::module &m) {
