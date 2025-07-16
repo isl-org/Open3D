@@ -38,14 +38,15 @@ static const std::unordered_map<std::string, std::string>
                  "by a 3x3 Gaussian kernel before downsampling."}};
 
 void pybind_image_declarations(py::module &m) {
-    py::native_enum<Image::FilterType>(m, "ImageFilterType", "enum.Enum", "Enum class for Image filter types.")
-        .value("Gaussian3", Image::FilterType::Gaussian3)
-        .value("Gaussian5", Image::FilterType::Gaussian5)
-        .value("Gaussian7", Image::FilterType::Gaussian7)
-        .value("Sobel3dx", Image::FilterType::Sobel3Dx)
-        .value("Sobel3dy", Image::FilterType::Sobel3Dy)
-        .export_values()
-        .finalize();
+    py::native_enum<Image::FilterType>(m, "ImageFilterType", "enum.Enum",
+                                       "Enum class for Image filter types.")
+            .value("Gaussian3", Image::FilterType::Gaussian3)
+            .value("Gaussian5", Image::FilterType::Gaussian5)
+            .value("Gaussian7", Image::FilterType::Gaussian7)
+            .value("Sobel3dx", Image::FilterType::Sobel3Dx)
+            .value("Sobel3dy", Image::FilterType::Sobel3Dy)
+            .export_values()
+            .finalize();
     py::class_<Image, PyGeometry2D<Image>, std::shared_ptr<Image>, Geometry2D>
             image(m, "Image", py::buffer_protocol(),
                   "The image class stores image with customizable width, "

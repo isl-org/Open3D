@@ -28,7 +28,8 @@ void pybind_o3dvisualizer_declarations(py::module& m) {
     py::class_<O3DVisualizer, UnownedPointer<O3DVisualizer>, gui::Window>
             o3dvis(m, "O3DVisualizer", "Visualization object used by draw()");
 
-    py::native_enum<O3DVisualizer::Shader>(o3dvis, "Shader", "enum.Enum", "Scene-level rendering options")
+    py::native_enum<O3DVisualizer::Shader>(o3dvis, "Shader", "enum.Enum",
+                                           "Scene-level rendering options")
             .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
             .value("UNLIT", O3DVisualizer::Shader::UNLIT,
@@ -40,7 +41,9 @@ void pybind_o3dvisualizer_declarations(py::module& m) {
             .export_values()
             .finalize();
 
-    py::native_enum<O3DVisualizer::TickResult>(o3dvis, "TickResult", "enum.Enum", "Return value from animation tick callback")
+    py::native_enum<O3DVisualizer::TickResult>(
+            o3dvis, "TickResult", "enum.Enum",
+            "Return value from animation tick callback")
             .value("NO_CHANGE", O3DVisualizer::TickResult::NO_CHANGE,
                    "Signals that no change happened and no redraw is required")
             .value("REDRAW", O3DVisualizer::TickResult::REDRAW,

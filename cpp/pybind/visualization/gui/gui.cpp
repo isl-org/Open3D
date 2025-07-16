@@ -341,8 +341,9 @@ void pybind_gui_declarations(py::module &m) {
     py::class_<Size> size(m_gui, "Size", "Size object");
     py::class_<Widget, UnownedPointer<Widget>> widget(m_gui, "Widget",
                                                       "Base widget class");
-    py::native_enum<EventCallbackResult>(
-            widget, "EventCallbackResult", "enum.IntEnum", "Returned by event handlers")
+    py::native_enum<EventCallbackResult>(widget, "EventCallbackResult",
+                                         "enum.IntEnum",
+                                         "Returned by event handlers")
             .value("IGNORED", EventCallbackResult::IGNORED,
                    "Event handler ignored the event, widget will "
                    "handle event normally")
@@ -401,7 +402,8 @@ void pybind_gui_declarations(py::module &m) {
             m_gui, "Combobox", "Exclusive selection from a pull-down menu");
     py::class_<RadioButton, UnownedPointer<RadioButton>, Widget> radiobtn(
             m_gui, "RadioButton", "Exclusive selection from radio button list");
-    py::native_enum<RadioButton::Type>(radiobtn, "Type", "enum.Enum", "Enum class for RadioButton types.")
+    py::native_enum<RadioButton::Type>(radiobtn, "Type", "enum.Enum",
+                                       "Enum class for RadioButton types.")
             .value("VERT", RadioButton::Type::VERT)
             .value("HORIZ", RadioButton::Type::HORIZ)
             .export_values()
@@ -409,7 +411,8 @@ void pybind_gui_declarations(py::module &m) {
     py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
             m_gui, "UIImage",
             "A bitmap suitable for displaying with ImageWidget");
-    py::native_enum<UIImage::Scaling>(uiimage, "Scaling", "enum.Enum", "Enum class for UIImage scaling modes.")
+    py::native_enum<UIImage::Scaling>(uiimage, "Scaling", "enum.Enum",
+                                      "Enum class for UIImage scaling modes.")
             .value("NONE", UIImage::Scaling::NONE)
             .value("ANY", UIImage::Scaling::ANY)
             .value("ASPECT", UIImage::Scaling::ASPECT)
@@ -424,7 +427,8 @@ void pybind_gui_declarations(py::module &m) {
             m_gui, "ListView", "Displays a list of text");
     py::class_<NumberEdit, UnownedPointer<NumberEdit>, Widget> numedit(
             m_gui, "NumberEdit", "Allows the user to enter a number.");
-    py::native_enum<NumberEdit::Type>(numedit, "Type", "enum.Enum", "Enum class for NumberEdit types.")
+    py::native_enum<NumberEdit::Type>(numedit, "Type", "enum.Enum",
+                                      "Enum class for NumberEdit types.")
             .value("INT", NumberEdit::Type::INT)
             .value("DOUBLE", NumberEdit::Type::DOUBLE)
             .export_values()
@@ -433,9 +437,12 @@ void pybind_gui_declarations(py::module &m) {
             m_gui, "ProgressBar", "Displays a progress bar");
     py::class_<PySceneWidget, UnownedPointer<PySceneWidget>, Widget> scene(
             m_gui, "SceneWidget", "Displays 3D content");
-    py::native_enum<SceneWidget::Controls>(scene, "Controls", "enum.Enum", "Enum class describing mouse interaction.")
+    py::native_enum<SceneWidget::Controls>(
+            scene, "Controls", "enum.Enum",
+            "Enum class describing mouse interaction.")
             .value("ROTATE_CAMERA", SceneWidget::Controls::ROTATE_CAMERA)
-            .value("ROTATE_CAMERA_SPHERE", SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
+            .value("ROTATE_CAMERA_SPHERE",
+                   SceneWidget::Controls::ROTATE_CAMERA_SPHERE)
             .value("FLY", SceneWidget::Controls::FLY)
             .value("ROTATE_SUN", SceneWidget::Controls::ROTATE_SUN)
             .value("ROTATE_IBL", SceneWidget::Controls::ROTATE_IBL)
@@ -445,7 +452,8 @@ void pybind_gui_declarations(py::module &m) {
             .finalize();
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(
             m_gui, "Slider", "A slider widget for visually selecting numbers");
-    py::native_enum<Slider::Type>(slider, "Type", "enum.Enum", "Enum class for Slider types.")
+    py::native_enum<Slider::Type>(slider, "Type", "enum.Enum",
+                                  "Enum class for Slider types.")
             .value("INT", Slider::Type::INT)
             .value("DOUBLE", Slider::Type::DOUBLE)
             .export_values()
@@ -492,7 +500,8 @@ void pybind_gui_declarations(py::module &m) {
                                                               "Dialog");
     py::class_<FileDialog, UnownedPointer<FileDialog>, Dialog> filedlg(
             m_gui, "FileDialog", "File picker dialog");
-    py::native_enum<FileDialog::Mode>(filedlg, "Mode", "enum.Enum", "Enum class for FileDialog modes.")
+    py::native_enum<FileDialog::Mode>(filedlg, "Mode", "enum.Enum",
+                                      "Enum class for FileDialog modes.")
             .value("OPEN", FileDialog::Mode::OPEN)
             .value("SAVE", FileDialog::Mode::SAVE)
             .value("OPEN_DIR", FileDialog::Mode::OPEN_DIR)

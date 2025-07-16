@@ -23,7 +23,8 @@ void pybind_camera_declarations(py::module &m) {
     // open3d.camera.PinholeCameraIntrinsicParameters
     py::native_enum<PinholeCameraIntrinsicParameters> pinhole_intr_params(
             m_camera, "PinholeCameraIntrinsicParameters", "enum.Enum",
-            "Enum class that contains default camera intrinsic parameters for different sensors.");
+            "Enum class that contains default camera intrinsic parameters for "
+            "different sensors.");
     pinhole_intr_params
             .value("PrimeSenseDefault",
                    PinholeCameraIntrinsicParameters::PrimeSenseDefault,

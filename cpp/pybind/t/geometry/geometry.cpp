@@ -50,7 +50,8 @@ void pybind_geometry_declarations(py::module& m) {
             "geometry", "Tensor-based geometry defining module.");
 
     py::native_enum<Metric>(
-            m_geometry, "Metric", "enum.Enum", "Enum for metrics for comparing point clouds and triangle meshes.")
+            m_geometry, "Metric", "enum.Enum",
+            "Enum for metrics for comparing point clouds and triangle meshes.")
             .value("ChamferDistance", Metric::ChamferDistance,
                    "Chamfer Distance")
             .value("HausdorffDistance", Metric::HausdorffDistance,
@@ -62,7 +63,9 @@ void pybind_geometry_declarations(py::module& m) {
             m_geometry, "MetricParameters",
             "Holder for various parameters required by metrics.");
 
-    py::native_enum<MethodOBBCreate>(m_geometry, "MethodOBBCreate", "enum.Enum", "Methods for creating oriented bounding boxes.")
+    py::native_enum<MethodOBBCreate>(
+            m_geometry, "MethodOBBCreate", "enum.Enum",
+            "Methods for creating oriented bounding boxes.")
             .value("PCA", MethodOBBCreate::PCA)
             .value("MINIMAL_APPROX", MethodOBBCreate::MINIMAL_APPROX)
             .value("MINIMAL_JYLANKI", MethodOBBCreate::MINIMAL_JYLANKI)

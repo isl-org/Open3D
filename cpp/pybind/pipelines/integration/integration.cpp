@@ -42,7 +42,9 @@ void pybind_integration_declarations(py::module &m) {
     py::module m_integration =
             m.def_submodule("integration", "Integration pipeline.");
     // open3d.integration.TSDFVolumeColorType
-    py::native_enum<TSDFVolumeColorType>(m_integration, "TSDFVolumeColorType", "enum.Enum", "Enum class for TSDFVolumeColorType.")
+    py::native_enum<TSDFVolumeColorType>(m_integration, "TSDFVolumeColorType",
+                                         "enum.Enum",
+                                         "Enum class for TSDFVolumeColorType.")
             .value("NoColor", TSDFVolumeColorType::NoColor)
             .value("RGB8", TSDFVolumeColorType::RGB8)
             .value("Gray32", TSDFVolumeColorType::Gray32)

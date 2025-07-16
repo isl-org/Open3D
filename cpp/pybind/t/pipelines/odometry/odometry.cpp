@@ -80,7 +80,8 @@ static const std::unordered_map<std::string, std::string>
 void pybind_odometry_declarations(py::module &m) {
     py::module m_odometry =
             m.def_submodule("odometry", "Tensor odometry pipeline.");
-    py::native_enum<Method>(m_odometry, "Method", "enum.Enum", "Tensor odometry estimation method.")
+    py::native_enum<Method>(m_odometry, "Method", "enum.Enum",
+                            "Tensor odometry estimation method.")
             .value("PointToPlane", Method::PointToPlane)
             .value("Intensity", Method::Intensity)
             .value("Hybrid", Method::Hybrid)

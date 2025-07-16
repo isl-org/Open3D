@@ -58,7 +58,8 @@ void pybind_image_declarations(py::module &m) {
             image(m, "Image", py::buffer_protocol(),
                   "The Image class stores image with customizable rols, cols, "
                   "channels, dtype and device.");
-    py::native_enum<Image::InterpType>(m, "InterpType", "enum.Enum", "Interpolation type.")
+    py::native_enum<Image::InterpType>(m, "InterpType", "enum.Enum",
+                                       "Interpolation type.")
             .value("Nearest", Image::InterpType::Nearest)
             .value("Linear", Image::InterpType::Linear)
             .value("Cubic", Image::InterpType::Cubic)

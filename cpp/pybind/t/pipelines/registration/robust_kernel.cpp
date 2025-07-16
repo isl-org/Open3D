@@ -19,7 +19,9 @@ void pybind_robust_kernel_declarations(py::module& m) {
     py::module m_robust_kernel = m.def_submodule(
             "robust_kernel",
             "Tensor-based robust kernel for outlier rejection.");
-    py::native_enum<RobustKernelMethod>(m_robust_kernel, "RobustKernelMethod", "enum.Enum", "Robust kernel method for outlier rejection.")
+    py::native_enum<RobustKernelMethod>(
+            m_robust_kernel, "RobustKernelMethod", "enum.Enum",
+            "Robust kernel method for outlier rejection.")
             .value("L2Loss", RobustKernelMethod::L2Loss)
             .value("L1Loss", RobustKernelMethod::L1Loss)
             .value("HuberLoss", RobustKernelMethod::HuberLoss)

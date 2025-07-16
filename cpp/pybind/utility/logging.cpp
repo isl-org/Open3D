@@ -14,13 +14,14 @@ namespace open3d {
 namespace utility {
 
 void pybind_logging_declarations(py::module& m) {
-    py::native_enum<VerbosityLevel>(m, "VerbosityLevel", "enum.IntEnum", "Enum class for VerbosityLevel.")
-        .value("Error", VerbosityLevel::Error)
-        .value("Warning", VerbosityLevel::Warning)
-        .value("Info", VerbosityLevel::Info)
-        .value("Debug", VerbosityLevel::Debug)
-        .export_values()
-        .finalize();
+    py::native_enum<VerbosityLevel>(m, "VerbosityLevel", "enum.IntEnum",
+                                    "Enum class for VerbosityLevel.")
+            .value("Error", VerbosityLevel::Error)
+            .value("Warning", VerbosityLevel::Warning)
+            .value("Info", VerbosityLevel::Info)
+            .value("Debug", VerbosityLevel::Debug)
+            .export_values()
+            .finalize();
     py::class_<VerbosityContextManager> verbosity_context_manager(
             m, "VerbosityContextManager",
             "A context manager to "

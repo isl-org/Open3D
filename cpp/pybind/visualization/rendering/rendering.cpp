@@ -125,13 +125,17 @@ void pybind_rendering_declarations(py::module &m) {
                       "image");
     py::class_<Camera, std::shared_ptr<Camera>> cam(m_rendering, "Camera",
                                                     "Camera object");
-    py::native_enum<Camera::FovType>(cam, "FovType", "enum.Enum", "Enum class for Camera field of view types.")
+    py::native_enum<Camera::FovType>(
+            cam, "FovType", "enum.Enum",
+            "Enum class for Camera field of view types.")
             .value("Vertical", Camera::FovType::Vertical)
             .value("Horizontal", Camera::FovType::Horizontal)
             .export_values()
             .finalize();
 
-    py::native_enum<Camera::Projection>(cam, "Projection", "enum.Enum", "Enum class for Camera projection types.")
+    py::native_enum<Camera::Projection>(
+            cam, "Projection", "enum.Enum",
+            "Enum class for Camera projection types.")
             .value("Perspective", Camera::Projection::Perspective)
             .value("Ortho", Camera::Projection::Ortho)
             .export_values()
@@ -180,33 +184,38 @@ void pybind_rendering_declarations(py::module &m) {
             m_rendering, "ColorGrading",
             "Parameters to control color grading options");
     py::native_enum<ColorGradingParams::Quality>(
-            color_grading, "Quality", "enum.Enum", "Quality level of color grading operations")
+            color_grading, "Quality", "enum.Enum",
+            "Quality level of color grading operations")
             .value("LOW", ColorGradingParams::Quality::kLow)
             .value("MEDIUM", ColorGradingParams::Quality::kMedium)
             .value("HIGH", ColorGradingParams::Quality::kHigh)
             .value("ULTRA", ColorGradingParams::Quality::kUltra)
             .finalize();
     py::native_enum<ColorGradingParams::ToneMapping>(
-            color_grading, "ToneMapping", "enum.Enum", "Specifies the tone-mapping algorithm")
+            color_grading, "ToneMapping", "enum.Enum",
+            "Specifies the tone-mapping algorithm")
             .value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
             .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
             .value("ACES", ColorGradingParams::ToneMapping::kAces)
             .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
             .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
             .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
-            .value("DISPLAY_RANGE", ColorGradingParams::ToneMapping::kDisplayRange)
+            .value("DISPLAY_RANGE",
+                   ColorGradingParams::ToneMapping::kDisplayRange)
             .finalize();
     py::class_<View, UnownedPointer<View>> view(m_rendering, "View",
                                                 "Low-level view class");
     py::native_enum<View::ShadowType>(
-            view, "ShadowType", "enum.Enum", "Available shadow mapping algorithm options")
+            view, "ShadowType", "enum.Enum",
+            "Available shadow mapping algorithm options")
             .value("PCF", View::ShadowType::kPCF)
             .value("VSM", View::ShadowType::kVSM)
             .finalize();
     py::class_<Scene, UnownedPointer<Scene>> scene(m_rendering, "Scene",
                                                    "Low-level rendering scene");
     py::native_enum<Scene::GroundPlane>(
-            scene, "GroundPlane", "enum.Enum", "Plane on which to show ground plane: XZ, XY, or YZ")
+            scene, "GroundPlane", "enum.Enum",
+            "Plane on which to show ground plane: XZ, XY, or YZ")
             .value("XZ", Scene::GroundPlane::XZ)
             .value("XY", Scene::GroundPlane::XY)
             .value("YZ", Scene::GroundPlane::YZ)
@@ -215,7 +224,8 @@ void pybind_rendering_declarations(py::module &m) {
     py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
             m_rendering, "Open3DScene", "High-level scene for rending");
     py::native_enum<Open3DScene::LightingProfile>(
-            o3dscene, "LightingProfile", "enum.Enum", "Enum for conveniently setting lighting")
+            o3dscene, "LightingProfile", "enum.Enum",
+            "Enum for conveniently setting lighting")
             .value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
             .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
             .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)

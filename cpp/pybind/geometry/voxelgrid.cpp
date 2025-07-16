@@ -29,7 +29,8 @@ void pybind_voxelgrid_declarations(py::module &m) {
                       "VoxelGrid is a collection of voxels which are aligned "
                       "in grid.");
     py::native_enum<VoxelGrid::VoxelPoolingMode>(
-            voxelgrid, "VoxelPoolingMode", "enum.Enum", "Mode of determining color for each voxel.")
+            voxelgrid, "VoxelPoolingMode", "enum.Enum",
+            "Mode of determining color for each voxel.")
             .value("AVG", VoxelGrid::VoxelPoolingMode::AVG)
             .value("MIN", VoxelGrid::VoxelPoolingMode::MIN)
             .value("MAX", VoxelGrid::VoxelPoolingMode::MAX)
