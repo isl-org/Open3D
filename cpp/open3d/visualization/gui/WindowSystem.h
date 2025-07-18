@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ class WindowSystem {
 public:
     using OSWindow = void*;
 
-    virtual ~WindowSystem(){};
+    virtual ~WindowSystem() {};
 
     virtual void Initialize() = 0;
     virtual void Uninitialize() = 0;

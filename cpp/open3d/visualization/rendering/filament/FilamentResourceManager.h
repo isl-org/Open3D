@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -50,6 +50,7 @@ namespace rendering {
 class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
+    static const MaterialHandle kGaussianSplatShader;
     static const MaterialHandle kDefaultLitWithTransparency;
     static const MaterialHandle kDefaultLitSSR;
     static const MaterialHandle kDefaultUnlit;

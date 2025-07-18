@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -507,7 +507,7 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
 }
 
 std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
-        size_t num_samples) const {
+        const size_t num_samples, const size_t start_index) const {
     if (num_samples == 0) {
         return std::make_shared<PointCloud>();
     } else if (num_samples == points_.size()) {
@@ -516,6 +516,9 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
         utility::LogError(
                 "Illegal number of samples: {}, must <= point size: {}",
                 num_samples, points_.size());
+    } else if (start_index >= points_.size()) {
+        utility::LogError("Illegal start index: {}, must < point size: {}",
+                          start_index, points_.size());
     }
     // We can also keep track of the non-selected indices with unordered_set,
     // but since typically num_samples << num_points, it may not be worth it.
@@ -524,7 +527,7 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
     const size_t num_points = points_.size();
     std::vector<double> distances(num_points,
                                   std::numeric_limits<double>::infinity());
-    size_t farthest_index = 0;
+    size_t farthest_index = start_index;
     for (size_t i = 0; i < num_samples; i++) {
         selected_indices.push_back(farthest_index);
         const Eigen::Vector3d &selected = points_[farthest_index];
@@ -616,7 +619,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     utility::OMPProgressBar progress_bar(
             points_.size(), "Remove statistical outliers: ", print_progress);
 
-#pragma omp parallel for reduction(+ : valid_distances) schedule(static) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for reduction(+ : valid_distances) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;

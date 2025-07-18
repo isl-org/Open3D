@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -15,6 +15,7 @@
 # https://github.com/dmlc/xgboost/issues/1715
 import os
 import sys
+import re
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 # Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
@@ -26,22 +27,6 @@ from pathlib import Path
 import warnings
 from open3d._build_config import _build_config
 
-
-def load_cdll(path):
-    """
-    Wrapper around ctypes.CDLL to take care of Windows compatibility.
-    """
-    path = Path(path)
-    if not path.is_file():
-        raise FileNotFoundError(f"Shared library file not found: {path}.")
-
-    if sys.platform == "win32" and sys.version_info >= (3, 8):
-        # https://stackoverflow.com/a/64472088/1255535
-        return CDLL(str(path), winmode=0)
-    else:
-        return CDLL(str(path))
-
-
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
 
@@ -50,7 +35,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
     try:  # StopIteration if cpu version not available
-        load_cdll(str(next((Path(__file__).parent / "cpu").glob("pybind*"))))
+        CDLL(str(next((Path(__file__).parent / "cpu").glob("pybind*"))))
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CPU Python "
@@ -59,9 +44,23 @@ if _build_config["BUILD_CUDA_MODULE"]:
             ImportWarning,
         )
     try:
+        if sys.platform == "win32" and sys.version_info >= (3, 8):
+            # Since Python 3.8, the PATH environment variable is not used to find DLLs anymore.
+            # To allow Windows users to use Open3D with CUDA without running into dependency-problems,
+            # look for the CUDA bin directory in PATH and explicitly add it to the DLL search path.
+            cuda_bin_path = None
+            for path in os.environ['PATH'].split(';'):
+                # search heuristic: look for a path containing "cuda" and "bin" in this order.
+                if re.search(r'cuda.*bin', path, re.IGNORECASE):
+                    cuda_bin_path = path
+                    break
+
+            if cuda_bin_path:
+                os.add_dll_directory(cuda_bin_path)
+
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
-        _pybind_cuda = load_cdll(
+        _pybind_cuda = CDLL(
             str(next((Path(__file__).parent / "cuda").glob("pybind*"))))
         if _pybind_cuda.open3d_core_cuda_device_count() > 0:
             from open3d.cuda.pybind import (
@@ -212,4 +211,4 @@ def _jupyter_nbextension_paths():
 
 if sys.platform == "win32":
     _win32_dll_dir.close()
-del os, sys, CDLL, load_cdll, find_library, Path, warnings, _insert_pybind_names
+del os, sys, CDLL, find_library, Path, warnings, _insert_pybind_names

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,15 +22,18 @@ void pybind_meshbase_declarations(py::module &m) {
                      "MeshBase class. Triangle mesh contains vertices. "
                      "Optionally, the mesh "
                      "may also contain vertex normals and vertex colors.");
-    py::enum_<MeshBase::SimplificationContraction>(m,
-                                                   "SimplificationContraction")
+    py::native_enum<MeshBase::SimplificationContraction>(
+            m, "SimplificationContraction", "enum.Enum",
+            "Method for mesh simplification contraction.")
             .value("Average", MeshBase::SimplificationContraction::Average,
                    "The vertex positions are computed by the averaging.")
             .value("Quadric", MeshBase::SimplificationContraction::Quadric,
                    "The vertex positions are computed by minimizing the "
                    "distance to the adjacent triangle planes.")
-            .export_values();
-    py::enum_<MeshBase::FilterScope>(m, "FilterScope")
+            .export_values()
+            .finalize();
+    py::native_enum<MeshBase::FilterScope>(m, "FilterScope", "enum.Enum",
+                                           "Scope for mesh filtering.")
             .value("All", MeshBase::FilterScope::All,
                    "All properties (color, normal, vertex position) are "
                    "filtered.")
@@ -40,16 +43,19 @@ void pybind_meshbase_declarations(py::module &m) {
                    "Only the normal values are filtered.")
             .value("Vertex", MeshBase::FilterScope::Vertex,
                    "Only the vertex positions are filtered.")
-            .export_values();
-    py::enum_<MeshBase::DeformAsRigidAsPossibleEnergy>(
-            m, "DeformAsRigidAsPossibleEnergy")
+            .export_values()
+            .finalize();
+    py::native_enum<MeshBase::DeformAsRigidAsPossibleEnergy>(
+            m, "DeformAsRigidAsPossibleEnergy", "enum.Enum",
+            "Energy model for the as-rigid-as-possible mesh deformation.")
             .value("Spokes", MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
-                   "is the original energy as formulated in orkine and Alexa, "
+                   "Is the original energy as formulated in orkine and Alexa, "
                    "\"As-Rigid-As-Possible Surface Modeling\", 2007.")
             .value("Smoothed",
                    MeshBase::DeformAsRigidAsPossibleEnergy::Smoothed,
-                   "adds a rotation smoothing term to the rotations.")
-            .export_values();
+                   "Adds a rotation smoothing term to the rotations.")
+            .export_values()
+            .finalize();
 }
 
 void pybind_meshbase_definitions(py::module &m) {

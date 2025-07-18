@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
-#ifdef WIN32
+#ifdef _WIN32
 #include <direct.h>
 #include <dirent/dirent.h>
 #include <io.h>
@@ -28,7 +28,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #endif
 #ifdef __APPLE__
@@ -55,7 +55,7 @@ static std::string GetEnvVar(const std::string &env_var) {
 
 std::string GetHomeDirectory() {
     std::string home_dir = "";
-#ifdef WINDOWS
+#ifdef _WIN32
     // %USERPROFILE%
     // %HOMEDRIVE%
     // %HOMEPATH%
@@ -235,7 +235,7 @@ bool DirectoryIsEmpty(const std::string &directory) {
 }
 
 bool MakeDirectory(const std::string &directory) {
-#ifdef WINDOWS
+#ifdef _WIN32
     return (_mkdir(directory.c_str()) == 0);
 #else
     return (mkdir(directory.c_str(), S_IRWXU) == 0);
@@ -395,7 +395,7 @@ std::string GetIOErrorString(const int errnoVal) {
         // Error below could be EWOULDBLOCK on Linux
         case EAGAIN:
             return "Resource unavailable, try again";
-#if !defined(WIN32)
+#if !defined(_WIN32)
         case EDQUOT:
             return "Over quota";
 #endif

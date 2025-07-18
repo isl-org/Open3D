@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -41,6 +41,9 @@ void TryGLVersion(int major,
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     glfwSetErrorCallback(GLFWErrorCallback);
+#ifdef HEADLESS_RENDERING
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
+#endif
     if (!glfwInit()) {
         utility::LogError("Failed to initialize GLFW");
     }
@@ -62,7 +65,15 @@ void TryGLVersion(int major,
     }
 
     auto reportGlStringFunc = [](GLenum id, std::string name) {
+// Note: with GLFW 3.3.9 it appears that OpenGL entry points are no longer auto
+// loaded? The else part crashes on Apple with a null pointer.
+#ifdef __APPLE__
+        PFNGLGETSTRINGIPROC _glGetString =
+                (PFNGLGETSTRINGIPROC)glfwGetProcAddress("glGetString");
+        const auto r = _glGetString(id, 0);
+#else
         const auto r = glGetString(id);
+#endif
         if (!r) {
             utility::LogWarning("Unable to get info on {} id {:d}", name, id);
         } else {

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -45,7 +45,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         const PointCloud &input,
         double voxel_size,
         const Eigen::Vector3d &min_bound,
-        const Eigen::Vector3d &max_bound) {
+        const Eigen::Vector3d &max_bound,
+        VoxelGrid::VoxelPoolingMode pooling_mode) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
         utility::LogError("voxel_size <= 0.");
@@ -57,7 +58,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = min_bound;
-    std::unordered_map<Eigen::Vector3i, AvgColorVoxel,
+    std::unordered_map<Eigen::Vector3i, AggColorVoxel,
                        utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     Eigen::Vector3d ref_coord;
@@ -76,9 +77,15 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
     }
     for (auto accpoint : voxelindex_to_accpoint) {
         const Eigen::Vector3i &grid_index = accpoint.second.GetVoxelIndex();
-        const Eigen::Vector3d &color =
-                has_colors ? accpoint.second.GetAverageColor()
-                           : Eigen::Vector3d(0, 0, 0);
+        // clang-format off
+        const Eigen::Vector3d &color = has_colors ?
+            (pooling_mode == VoxelPoolingMode::AVG ? accpoint.second.GetAverageColor()
+            : pooling_mode == VoxelPoolingMode::MIN ? accpoint.second.GetMinColor()
+            : pooling_mode == VoxelPoolingMode::MAX ? accpoint.second.GetMaxColor()
+            : pooling_mode == VoxelPoolingMode::SUM ? accpoint.second.GetSumColor()
+            : Eigen::Vector3d::Zero())
+            : Eigen::Vector3d::Zero();
+        // clang-format on
         output->AddVoxel(geometry::Voxel(grid_index, color));
     }
     utility::LogDebug(
@@ -88,12 +95,14 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
 }
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloud(
-        const PointCloud &input, double voxel_size) {
+        const PointCloud &input,
+        double voxel_size,
+        VoxelGrid::VoxelPoolingMode pooling_mode) {
     Eigen::Vector3d voxel_size3(voxel_size, voxel_size, voxel_size);
     Eigen::Vector3d min_bound = input.GetMinBound() - voxel_size3 * 0.5;
     Eigen::Vector3d max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     return CreateFromPointCloudWithinBounds(input, voxel_size, min_bound,
-                                            max_bound);
+                                            max_bound, pooling_mode);
 }
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -218,14 +218,6 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
 
-    auto assert_dtype_is_float = [](Dtype dtype) -> void {
-        if (dtype != core::Float32 && dtype != core::Float64) {
-            utility::LogError(
-                    "Only supports Float32 and Float64, but {} is used.",
-                    dtype.ToString());
-        }
-    };
-
     if (op_code == UnaryEWOpCode::LogicalNot) {
         if (dst_dtype == src_dtype) {
             Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
@@ -259,7 +251,6 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     } else if (op_code == UnaryEWOpCode::IsNan ||
                op_code == UnaryEWOpCode::IsInf ||
                op_code == UnaryEWOpCode::IsFinite) {
-        assert_dtype_is_float(src_dtype);
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
 #ifdef BUILD_ISPC_MODULE
         ispc::Indexer ispc_indexer = indexer.ToISPC();
@@ -291,7 +282,6 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case UnaryEWOpCode::Sqrt:
-                    assert_dtype_is_float(src_dtype);
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUSqrtElementKernel<scalar_t>,
                             OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
@@ -299,7 +289,6 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Sin:
-                    assert_dtype_is_float(src_dtype);
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUSinElementKernel<scalar_t>,
                             OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
@@ -307,7 +296,6 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Cos:
-                    assert_dtype_is_float(src_dtype);
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUCosElementKernel<scalar_t>,
                             OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
@@ -322,7 +310,6 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                                                        &ispc_indexer));
                     break;
                 case UnaryEWOpCode::Exp:
-                    assert_dtype_is_float(src_dtype);
                     LaunchUnaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUExpElementKernel<scalar_t>,
                             OPEN3D_TEMPLATE_VECTORIZED(scalar_t,

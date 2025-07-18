@@ -20,6 +20,7 @@ ExternalProject_Add(
         ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
         ${CMAKE_CURRENT_LIST_DIR}/fix_mac_apple_silicon_build.patch
     CMAKE_ARGS
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF
         -DBUILD_EXAMPLES=OFF
@@ -30,6 +31,7 @@ ExternalProject_Add(
         -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
         -DUSE_EXTERNAL_USB=ON
         -DBUILD_TOOLS=OFF
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
         # checking CXX_COMPILER_ID is not supported.
         $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}>>

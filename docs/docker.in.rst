@@ -3,14 +3,17 @@
 Docker
 ======
 
-Docker provides a convenient way to build, install and run applications isolated
-from the rest of your system. You do not need to change software versions on
-your system or install new software, except the Docker engine itself.
+Docker provides a convenient way to build, install and run applications
+isolated from the rest of your system. You do not need to change software
+versions on your system or install new software, except the Docker engine
+itself.
 
-First, install Docker following the `official guide <https://docs.docker.com/get-docker/>`_.
-Also, complete the `post-installation steps for Linux <https://docs.docker.com/engine/install/linux-postinstall/>`_.
-Make sure that ``docker`` can be executed without root privileges. To verify
-Docker is installed correctly, run:
+First, install Docker following the
+`official guide <https://docs.docker.com/get-docker/>`_. (Under Linux,
+complete the
+`post-installation steps for Linux <https://docs.docker.com/engine/install/linux-postinstall/>`_
+and make sure that ``docker`` can be executed without root privileges.)
+To verify Docker is installed correctly, run:
 
 .. code-block:: bash
 
@@ -30,7 +33,7 @@ Python applications looks like this:
 .. code-block:: dockerfile
 
     # This could also be another Ubuntu or Debian based distribution
-    FROM ubuntu:22.04
+    FROM ubuntu:24.04
 
     # Install Open3D system dependencies and pip
     RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -73,7 +76,7 @@ folder that contains data you wish to visualize.
     wget https://github.com/isl-org/Open3D/releases/download/v@OPEN3D_VERSION@/open3d-app-@OPEN3D_VERSION@-Ubuntu.deb
     # Build docker image in folder containing Open3D deb package.
     docker build -t open3d-viewer -f- . <<EOF
-    FROM ubuntu:20.04
+    FROM ubuntu:24.04
     COPY open3d*.deb /root/
     RUN apt-get update \
         && apt-get install --yes /root/open3d*.deb \
@@ -114,7 +117,7 @@ driver with an environment variable (``EGL_PLATFORM=surfaceless``):
     wget https://raw.githubusercontent.com/isl-org/Open3D/v@OPEN3D_VERSION@/examples/python/visualization/render_to_image.py
     # Build docker image
     docker build -t open3d-headless -f- . <<EOF
-    FROM ubuntu:20.04
+    FROM ubuntu:24.04
     RUN apt-get update \
         && apt-get install --yes --no-install-recommends \
         libegl1 libgl1 libgomp1 python3-pip \
@@ -150,6 +153,8 @@ If your current system does not support the minimum system requirements for
 building Open3D or if you have different versions of Open3D dependencies
 installed, you can build Open3D from source in docker without interfering with
 your system. This may be the case for older OS such as Ubuntu 16.04 or CentOS 7.
+It is also a convenient way to build Open3D for Linux under Windows, including
+its documentation and the Python package and its documentation, and to test it.
 We provide docker build scripts and dockerfiles to build Python wheels in
 various configurations. You can choose between different versions of Python,
 hardware architectures (AMD64, ARM64, CUDA) and developer vs release modes. Some
@@ -159,12 +164,15 @@ sample configuration options available are shown below.
 
     cd docker
 
-    ./docker_build.sh cuda_wheel_py38_dev   # Python 3.8, AMD64, CUDA with MKL, developer mode
-    ./docker_build.sh openblas-amd64-py310  # Python 3.10, AMD64 with OpenBLAS instead of MKL, release mode
-    ./docker_build.sh openblas-arm64-py37   # Python 3.7, ARM64 with OpenBLAS, release mode
+    ./docker_build.sh cuda_wheel_py312_dev   # Python 3.12, AMD64, CUDA with MKL, developer mode
+    ./docker_build.sh openblas-amd64-py311  # Python 3.11, AMD64 with OpenBLAS instead of MKL, release mode
+    ./docker_build.sh openblas-arm64-py313   # Python 3.13, ARM64 with OpenBLAS, release mode
 
 Run ``./docker_build.sh`` without arguments to get a list of all available build
 configurations.
 
-.. note:: You can control support for PyTorch and Tensorflow with environment variables: 
+.. note:: You can control support for PyTorch and Tensorflow with environment variables:
           `BUILD_PYTORCH_OPS=ON` and `BUILD_TENSORFLOW_OPS=ON`
+
+More instructions for building and testing Open3D for Linux using Docker
+are located in the ``README.md`` file of the ``docker`` directory.

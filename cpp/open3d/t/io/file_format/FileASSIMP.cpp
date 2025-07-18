@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -245,7 +245,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     if (mesh.HasTriangleColors()) {
         utility::LogWarning(
                 "Exporting triangle colors is not supported. Please convert to "
-                "vertex colors or export to a format that supporst it.");
+                "vertex colors or export to a format that supports it.");
     }
 
     Assimp::Exporter exporter;

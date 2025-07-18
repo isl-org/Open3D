@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,10 +17,11 @@
 namespace open3d {
 namespace tests {
 
-class EigenConverterPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(EigenConverter,
-                         EigenConverterPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class EigenConverterPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        EigenConverter,
+        EigenConverterPermuteDevices,
+        testing::ValuesIn(EigenConverterPermuteDevices::TestCases()));
 
 TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
     core::Device device = GetParam();

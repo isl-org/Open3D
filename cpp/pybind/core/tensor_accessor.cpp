@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -78,8 +78,8 @@ static TensorKey ToTensorKey(const Tensor& key_tensor) {
     }
 }
 
-/// Convert supported types to TensorKey. Infer types via type name and dynamic
-/// casting. Supported types:
+/// Convert supported types to TensorKey.
+/// Supported types:
 /// 1) int
 /// 2) slice
 /// 3) list
@@ -87,30 +87,27 @@ static TensorKey ToTensorKey(const Tensor& key_tensor) {
 /// 5) numpy.ndarray
 /// 6) Tensor
 static TensorKey PyHandleToTensorKey(const py::handle& item) {
-    // Infer types from type name and dynamic casting.
-    // See: https://github.com/pybind/pybind11/issues/84.
-    std::string class_name(py::str(item.get_type()));
-    if (class_name == "<class 'int'>") {
-        return ToTensorKey(static_cast<int64_t>(item.cast<py::int_>()));
-    } else if (class_name == "<class 'slice'>") {
-        return ToTensorKey(item.cast<py::slice>());
-    } else if (class_name == "<class 'list'>") {
-        return ToTensorKey(item.cast<py::list>());
-    } else if (class_name == "<class 'tuple'>") {
-        return ToTensorKey(item.cast<py::tuple>());
-    } else if (class_name == "<class 'numpy.ndarray'>") {
-        return ToTensorKey(item.cast<py::array>());
-    } else if (class_name.find("open3d") != std::string::npos &&
-               class_name.find("Tensor") != std::string::npos) {
+    if (py::isinstance<py::int_>(item)) {
+        return ToTensorKey(
+                static_cast<int64_t>(py::reinterpret_borrow<py::int_>(item)));
+    } else if (py::isinstance<py::slice>(item)) {
+        return ToTensorKey(py::reinterpret_borrow<py::slice>(item));
+    } else if (py::isinstance<py::list>(item)) {
+        return ToTensorKey(py::reinterpret_borrow<py::list>(item));
+    } else if (py::isinstance<py::tuple>(item)) {
+        return ToTensorKey(py::reinterpret_borrow<py::tuple>(item));
+    } else if (py::isinstance<py::array>(item)) {
+        return ToTensorKey(py::reinterpret_borrow<py::array>(item));
+    } else if (py::isinstance<Tensor>(item)) {
         try {
-            Tensor* tensor = item.cast<Tensor*>();
-            return ToTensorKey(*tensor);
+            return ToTensorKey(*item.cast<Tensor*>());
         } catch (...) {
             utility::LogError("Cannot cast index to Tensor.");
         }
     } else {
-        utility::LogError("PyHandleToTensorKey has invalid key type {}.",
-                          class_name);
+        utility::LogError(
+                "PyHandleToTensorKey has invalid key type {}.",
+                static_cast<std::string>(py::str(py::type::of(item))));
     }
 }
 

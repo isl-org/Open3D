@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -25,6 +25,40 @@ INSTANTIATE_TEST_SUITE_P(Feature,
                          FeaturePermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
+TEST_P(FeaturePermuteDevices, SelectByIndex) {
+    core::Device device = GetParam();
+
+    open3d::geometry::PointCloud pcd_legacy;
+    data::BunnyMesh bunny;
+    open3d::io::ReadPointCloud(bunny.GetPath(), pcd_legacy);
+
+    pcd_legacy.EstimateNormals();
+    // Convert to float64 to avoid precision loss.
+    const auto pcd = t::geometry::PointCloud::FromLegacy(pcd_legacy,
+                                                         core::Float64, device);
+
+    const auto fpfh = pipelines::registration::ComputeFPFHFeature(
+            pcd_legacy, geometry::KDTreeSearchParamHybrid(0.01, 100));
+    const auto fpfh_t =
+            t::pipelines::registration::ComputeFPFHFeature(pcd, 100, 0.01);
+
+    const std::vector<size_t> indices = {53,  6391, 194,  31037, 15936,
+                                         345, 6839, 2543, 29483};
+    const auto selected_fpfh = fpfh->SelectByIndex(indices, false);
+    std::vector<int64_t> sorted_indices(indices.begin(), indices.end());
+    std::sort(sorted_indices.begin(), sorted_indices.end());
+    const auto indices_t = core::TensorKey::IndexTensor(core::Tensor(
+            sorted_indices, {(int)sorted_indices.size()}, core::Int64, device));
+    const auto selected_fpfh_t = fpfh_t.GetItem(indices_t);
+
+    EXPECT_TRUE(selected_fpfh_t.AllClose(
+            core::eigen_converter::EigenMatrixToTensor(selected_fpfh->data_)
+                    .T()
+                    .To(selected_fpfh_t.GetDevice(),
+                        selected_fpfh_t.GetDtype()),
+            1e-6, 1e-6));
+}
+
 TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
     core::Device device = GetParam();
 
@@ -47,6 +81,30 @@ TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
                     .T()
                     .To(fpfh_t.GetDevice(), fpfh_t.GetDtype()),
             1e-4, 1e-4));
+
+    const std::vector<size_t> indices = {4,     27403, 103,  9172,  5728, 839,
+                                         12943, 28,    9374, 17837, 7390, 473,
+                                         11836, 26362, 3046, 35027, 5738};
+    const auto selected_fpfh_by_index = fpfh->SelectByIndex(indices);
+    const auto computed_fpfh_by_index =
+            pipelines::registration::ComputeFPFHFeature(
+                    pcd_legacy, geometry::KDTreeSearchParamHybrid(0.01, 100),
+                    indices);
+
+    EXPECT_TRUE(selected_fpfh_by_index->data_.isApprox(
+            computed_fpfh_by_index->data_, 1e-4));
+
+    std::vector<int64_t> sorted_indices(indices.begin(), indices.end());
+    std::sort(sorted_indices.begin(), sorted_indices.end());
+    const auto indices_t = core::Tensor(
+            sorted_indices, {(int)sorted_indices.size()}, core::Int64, device);
+    const auto selected_fpfh_t_by_index = fpfh_t.IndexGet({indices_t});
+    const auto computed_fpfh_t_by_index =
+            t::pipelines::registration::ComputeFPFHFeature(pcd, 100, 0.01,
+                                                           indices_t);
+
+    EXPECT_TRUE(selected_fpfh_t_by_index.AllClose(computed_fpfh_t_by_index,
+                                                  1e-4, 1e-4));
 }
 
 TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {

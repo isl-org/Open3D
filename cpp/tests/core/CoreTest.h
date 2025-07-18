@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -15,6 +15,10 @@
 #include "tests/Tests.h"
 
 namespace open3d {
+namespace core {
+void PrintTo(const Device &device, std::ostream *os);
+void PrintTo(const Dtype &dtype, std::ostream *os);
+}  // namespace core
 namespace tests {
 
 class PermuteDtypesWithBool : public testing::TestWithParam<core::Dtype> {

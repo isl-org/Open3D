@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise)
-            : pc_(pc), promise_(promise){};
+            : pc_(pc), promise_(promise) {};
 
     private:
         webrtc::PeerConnectionInterface* pc_;
@@ -153,7 +153,7 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise)
-            : pc_(pc), promise_(promise){};
+            : pc_(pc), promise_(promise) {};
 
     private:
         webrtc::PeerConnectionInterface* pc_;

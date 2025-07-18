@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -152,7 +152,7 @@ CorrespondenceSetPixelWise ComputeCorrespondence(
                                     depth_buffer_private);
 
         }  //    omp critical
-    }      //    omp parallel
+    }  //    omp parallel
 
     CorrespondenceSetPixelWise correspondence;
     int correspondence_count = CountCorrespondence(correspondence_map);

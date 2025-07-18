@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -197,8 +197,8 @@ namespace fmt {
 template <>
 struct formatter<DLDeviceType> {
     template <typename FormatContext>
-    auto format(const DLDeviceType& c, FormatContext& ctx) const
-            -> decltype(ctx.out()) {
+    auto format(const DLDeviceType& c,
+                FormatContext& ctx) const -> decltype(ctx.out()) {
         const char* text = nullptr;
         switch (c) {
             case kDLCPU:

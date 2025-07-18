@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,6 +17,7 @@
 
 namespace open3d {
 namespace geometry {
+namespace {
 
 class BallPivotingVertex;
 class BallPivotingEdge;
@@ -733,6 +734,7 @@ private:
     std::vector<BallPivotingVertexPtr> vertices;
     std::shared_ptr<TriangleMesh> mesh_;
 };
+}  // namespace
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudBallPivoting(
         const PointCloud& pcd, const std::vector<double>& radii) {

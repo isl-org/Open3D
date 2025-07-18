@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -799,7 +799,7 @@ void GuiVisualizer::Init() {
         file_menu->AddItem("Open...", FILE_OPEN, gui::KEY_O);
         file_menu->AddItem("Export Current Image...", FILE_EXPORT_RGB);
         file_menu->AddSeparator();
-#if defined(WIN32)
+#if defined(_WIN32)
         file_menu->AddItem("Exit", FILE_QUIT);
 #elif !defined(__APPLE__)  // quit goes in app menu on macOS
         file_menu->AddItem("Quit", FILE_QUIT, gui::KEY_Q);
@@ -1166,10 +1166,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 model_success = false;
             }
         }
-        if (!model_success) {
-            utility::LogInfo("{} appears to be a point cloud", path.c_str());
-        }
-
+        // path appears to be a point cloud...
         auto geometry = std::shared_ptr<geometry::Geometry3D>();
         if (!model_success) {
             auto cloud = std::make_shared<geometry::PointCloud>();

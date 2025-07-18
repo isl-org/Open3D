@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // Altered from Filament's ImGuiHelper.cpp
@@ -87,7 +87,7 @@ static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
 
 class MaterialPool {
 public:
-    MaterialPool(){};
+    MaterialPool() {};
 
     MaterialPool(filament::Engine* engine,
                  filament::Material* material_template) {

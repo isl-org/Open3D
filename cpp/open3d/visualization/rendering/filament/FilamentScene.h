@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -305,6 +305,7 @@ private:
                                   bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
+    void UpdateGaussianSplat(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);

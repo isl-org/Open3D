@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ public:
     }
 
     void Allocate(int64_t capacity) override;
-    void Free() override{};
+    void Free() override {};
 
 protected:
     std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash, Eq>>

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -68,6 +68,14 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     double scale = option.tuple_scale_;
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
+
+    if (ncorr <= 2) {
+        utility::LogWarning(
+                "Not enough correspondences for tuple test. At least 3 needed, "
+                "got {}.",
+                ncorr);
+        return {};
+    }
 
     utility::random::UniformIntGenerator<int> rand_generator(0, ncorr - 1);
     std::vector<std::pair<int, int>> corres_tuple;

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -39,8 +39,12 @@ bool Visualizer::InitOpenGL() {
 #endif
 
     glewExperimental = true;
-    if (glewInit() != GLEW_OK) {
-        utility::LogWarning("Failed to initialize GLEW.");
+    const GLenum init_ret = glewInit();
+    if (init_ret != GLEW_OK && init_ret != GLEW_ERROR_NO_GLX_DISPLAY) {
+        const std::string err_msg{
+                reinterpret_cast<const char *>(glewGetErrorString(init_ret))};
+        utility::LogWarning("Failed to initialize GLEW: {} ({})", err_msg,
+                            init_ret);
         return false;
     }
 
@@ -187,6 +191,8 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
     if (do_render) {
         Render(true);
         is_redraw_required_ = false;
+    } else {
+        glfwMakeContextCurrent(window_);
     }
     glFinish();
     glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(),

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2023 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <cstdio>
@@ -43,13 +24,13 @@ int main(int argc, char **argv) {
                argv[1]);
         return 1;
     }
-
+    /* clang-format off */
     fprintf(file_out, "// ----------------------------------------------------------------------------\n");
     fprintf(file_out, "// -                        Open3D: www.open3d.org                            -\n");
     fprintf(file_out, "// ----------------------------------------------------------------------------\n");
     fprintf(file_out, "// The MIT License (MIT)\n");
     fprintf(file_out, "//\n");
-    fprintf(file_out, "// Copyright (c) 2018-2023 www.open3d.org\n");
+    fprintf(file_out, "// Copyright (c) 2018-2024 www.open3d.org\n");
     fprintf(file_out, "//\n");
     fprintf(file_out, "// Permission is hereby granted, free of charge, to any person obtaining a copy\n");
     fprintf(file_out, "// of this software and associated documentation files (the \"Software\"), to deal\n");
@@ -69,7 +50,8 @@ int main(int argc, char **argv) {
     fprintf(file_out, "// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS\n");
     fprintf(file_out, "// IN THE SOFTWARE.\n");
     fprintf(file_out, "// ----------------------------------------------------------------------------\n");
-    
+    /* clang-format on */
+
     fprintf(file_out, "// Automatically generated header file for shader.\n");
     fprintf(file_out, "\n");
     fprintf(file_out, "#pragma once\n");

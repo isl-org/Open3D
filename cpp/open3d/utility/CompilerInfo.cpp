@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -44,12 +44,19 @@ std::string CompilerInfo::CUDACompilerVersion() const {
 
 void CompilerInfo::Print() const {
 #ifdef BUILD_CUDA_MODULE
-    utility::LogInfo("CompilerInfo: C++ {}, {} {}, {} {}.", CXXStandard(),
-                     CXXCompilerId(), CXXCompilerVersion(), CUDACompilerId(),
-                     CUDACompilerVersion());
+    utility::LogInfo("CompilerInfo: C++ {}, {} {}, {} {}, SYCL disabled.",
+                     CXXStandard(), CXXCompilerId(), CXXCompilerVersion(),
+                     CUDACompilerId(), CUDACompilerVersion());
 #else
-    utility::LogInfo("CompilerInfo: C++ {}, {} {}, CUDA disabled.",
-                     CXXStandard(), CXXCompilerId(), CXXCompilerVersion());
+#ifdef BUILD_SYCL_MODULE
+    utility::LogInfo(
+            "CompilerInfo: C++ {}, {} {}, CUDA disabled, SYCL enabled.",
+            CXXStandard(), CXXCompilerId(), CXXCompilerVersion());
+#else
+    utility::LogInfo(
+            "CompilerInfo: C++ {}, {} {}, CUDA disabled, SYCL disabled",
+            CXXStandard(), CXXCompilerId(), CXXCompilerVersion());
+#endif
 #endif
 }
 

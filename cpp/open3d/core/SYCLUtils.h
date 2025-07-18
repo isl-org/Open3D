@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@
 
 namespace open3d {
 namespace core {
-namespace sycl {
+namespace sy {
 
 /// Runs simple SYCL test program for sanity checks.
 /// \return Retuns 0 if successful.
@@ -37,9 +37,17 @@ bool IsAvailable();
 /// Returns true if the specified SYCL device is available.
 bool IsDeviceAvailable(const Device& device);
 
+/// Returns the device type (cpu / gpu / accelerator / custom) of the specified
+/// device as a string. Returns empty string if the device is not available.
+std::string GetDeviceType(const Device& device);
+
 /// Return a list of available SYCL devices.
 std::vector<Device> GetAvailableSYCLDevices();
 
-}  // namespace sycl
+/// Enables the JIT cache for SYCL. This sets an environment variable and will
+/// affect the entire process and any child processes.
+void enablePersistentJITCache();
+
+}  // namespace sy
 }  // namespace core
 }  // namespace open3d

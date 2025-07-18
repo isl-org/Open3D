@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,6 +19,13 @@ void ArangeCPU(const Tensor& start,
                const Tensor& stop,
                const Tensor& step,
                Tensor& dst);
+
+#ifdef BUILD_SYCL_MODULE
+void ArangeSYCL(const Tensor& start,
+                const Tensor& stop,
+                const Tensor& step,
+                Tensor& dst);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 void ArangeCUDA(const Tensor& start,

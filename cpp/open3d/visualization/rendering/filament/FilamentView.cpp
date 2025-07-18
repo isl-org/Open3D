@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -355,6 +355,7 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
     if (other.color_grading_) {
         view_->setColorGrading(other.color_grading_);
     }
+    view_->setSampleCount(other.view_->getSampleCount());
     auto ao_options = other.view_->getAmbientOcclusionOptions();
     view_->setAmbientOcclusionOptions(ao_options);
     auto aa_mode = other.view_->getAntiAliasing();

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -211,15 +211,12 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     return residual;
 };
 
-RegistrationResult RegistrationColoredICP(
+std::tuple<std::shared_ptr<const geometry::PointCloud>,
+           std::shared_ptr<const geometry::PointCloud>>
+TransformationEstimationForColoredICP::InitializePointCloudsForTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        double max_distance,
-        const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
-        const TransformationEstimationForColoredICP &estimation
-        /* = TransformationEstimationForColoredICP()*/,
-        const ICPConvergenceCriteria
-                &criteria /* = ICPConvergenceCriteria()*/) {
+        double max_correspondence_distance) const {
     if (!target.HasNormals()) {
         utility::LogError(
                 "ColoredICP requires target pointcloud to have normals.");
@@ -232,17 +229,34 @@ RegistrationResult RegistrationColoredICP(
         utility::LogError(
                 "ColoredICP requires source pointcloud to have colors.");
     }
-
-    if (auto target_c = InitializePointCloudForColoredICP(
-                target,
-                geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30))) {
-        return RegistrationICP(source, *target_c, max_distance, init,
-                               estimation, criteria);
-    } else {
+    std::shared_ptr<const geometry::PointCloud> source_initialized_c(
+            &source, [](const geometry::PointCloud *) {});
+    std::shared_ptr<geometry::PointCloud> target_initialized_c(
+            InitializePointCloudForColoredICP(
+                    target, geometry::KDTreeSearchParamHybrid(
+                                    max_correspondence_distance * 2.0, 30)));
+    if (!source_initialized_c || !target_initialized_c) {
         utility::LogError(
-                "Internal error: InitializePointCloudForColoredICP returns "
+                "Internal error: InitializePointCloudsForTransformation "
+                "returns "
                 "nullptr.");
-    };
+    }
+    return std::make_tuple(source_initialized_c,
+                           std::const_pointer_cast<const geometry::PointCloud>(
+                                   target_initialized_c));
+}
+
+RegistrationResult RegistrationColoredICP(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_distance,
+        const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
+        const TransformationEstimationForColoredICP &estimation
+        /* = TransformationEstimationForColoredICP()*/,
+        const ICPConvergenceCriteria
+                &criteria /* = ICPConvergenceCriteria()*/) {
+    return RegistrationICP(source, target, max_distance, init, estimation,
+                           criteria);
 }
 
 }  // namespace registration

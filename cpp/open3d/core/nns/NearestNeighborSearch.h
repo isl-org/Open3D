@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -27,12 +27,14 @@ public:
     /// Constructor.
     ///
     /// \param dataset_points Dataset points for constructing search index. Must
-    /// be 2D, with shape {n, d}.
+    /// be 2D, with shape {n, d}. SYCL tensors are not yet supported.
     // NearestNeighborSearch(const Tensor &dataset_points)
     //     : dataset_points_(dataset_points){};
     NearestNeighborSearch(const Tensor &dataset_points,
                           const Dtype &index_dtype = core::Int32)
-        : dataset_points_(dataset_points), index_dtype_(index_dtype){};
+        : dataset_points_(dataset_points), index_dtype_(index_dtype) {
+        AssertNotSYCL(dataset_points_);
+    };
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
     NearestNeighborSearch &operator=(const NearestNeighborSearch &) = delete;

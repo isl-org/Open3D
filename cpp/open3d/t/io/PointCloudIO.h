@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -73,6 +73,14 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 bool WritePointCloudToPLY(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params);
+
+bool ReadPointCloudFromSPLAT(const std::string &filename,
+                             geometry::PointCloud &pointcloud,
+                             const ReadPointCloudOption &params);
+
+bool WritePointCloudToSPLAT(const std::string &filename,
+                            const geometry::PointCloud &pointcloud,
+                            const WritePointCloudOption &params);
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,

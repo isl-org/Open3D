@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -51,6 +51,12 @@ void BinaryEW(const Tensor& lhs,
 
     if (lhs.IsCPU()) {
         BinaryEWCPU(lhs, rhs, dst, op_code);
+    } else if (lhs.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        BinaryEWSYCL(lhs, rhs, dst, op_code);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else if (lhs.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         BinaryEWCUDA(lhs, rhs, dst, op_code);

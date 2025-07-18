@@ -1,12 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <initializer_list>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -351,10 +352,12 @@ public:
     /// points has farthest distance.
     ///
     /// The sampling is performed by selecting the farthest point from previous
-    /// selected points iteratively.
+    /// selected points iteratively, starting from `start_index`.
     ///
     /// \param num_samples Number of points to be sampled.
-    PointCloud FarthestPointDownSample(size_t num_samples) const;
+    /// \param start_index Index to start downsampling from.
+    PointCloud FarthestPointDownSample(const size_t num_samples,
+                                       const size_t start_index = 0) const;
 
     /// \brief Remove points that have less than \p nb_points neighbors in a
     /// sphere of a given radius.
@@ -696,6 +699,58 @@ public:
     /// \param max_points The maximum allowed number of points in a partition.
     /// \return The number of partitions.
     int PCAPartition(int max_points);
+
+    /// Compute various metrics between two point clouds. Currently, Chamfer
+    /// distance, Hausdorff distance and F-Score
+    /// <a href="../tutorial/reference.html#Knapitsch2017">[[Knapitsch2017]]</a>
+    /// are supported. The Chamfer distance is the sum of the mean distance to
+    /// the nearest neighbor from the points of the first point cloud to the
+    /// second point cloud. The F-Score at a fixed threshold radius is the
+    /// harmonic mean of the Precision and Recall. Recall is the percentage of
+    /// surface points from the first point cloud that have the second point
+    /// cloud points within the threshold radius, while Precision is the
+    /// percentage of points from the second point cloud that have the first
+    /// point cloud points within the threshold radius.
+
+    /// \f{eqnarray*}{
+    ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
+    ///   || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X)
+    ///   || \\{}
+    ///   \text{Hausdorff distance: } d_H(X,Y) &=& \max \left\{ \max_{i \in X}
+    ///   || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}
+    ///   \\{}
+    ///   \text{Precision: } P(X,Y|d) &=& \frac{100}{|X|} \sum_{i \in X} || x_i
+    ///   - n(x_i, Y) || < d \\{}
+    ///   \text{Recall: } R(X,Y|d) &=& \frac{100}{|Y|} \sum_{i \in Y} || y_i -
+    ///   n(y_i, X) || < d \\{}
+    ///   \text{F-Score: } F(X,Y|d) &=& \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) +
+    ///   R(X,Y|d)}
+    /// \f}
+
+    /// \param pcd2 Other point cloud to compare with.
+    /// \param metrics List of Metric s to compute.  Multiple metrics can be
+    /// computed at once for efficiency.
+    /// \param params MetricParameters struct holds parameters required by
+    /// different metrics.
+    /// \returns Tensor containing the requested metrics.
+    core::Tensor ComputeMetrics(
+            const PointCloud &pcd2,
+            std::vector<Metric> metrics = {Metric::ChamferDistance},
+            MetricParameters params = MetricParameters()) const;
+
+    /// Check if this point cloud has all the attributes required for a Gaussian
+    /// Splat. This checks for the presence of scale, rot, opacity and f_dc
+    /// attributes.
+    /// \returns True if a valid 3DGS point cloud, else False.
+    /// \throws If point cloud has 3DGS attributes, but they are invalid (wrong
+    /// shape).
+    bool IsGaussianSplat() const;
+
+    /// \brief Returns the order of spherical harmonics used for Gaussian
+    /// Splatting. Returns 0 if f_rest is not present.
+    /// \throws If point cloud has f_rest 3DGS attribute, with the wrong
+    /// shape.
+    int GaussianSplatGetSHOrder() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

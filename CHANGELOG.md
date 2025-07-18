@@ -1,4 +1,7 @@
 ## Main
+-   Corrected documentation for Link Open3D in C++ projects (broken links).
+-   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
+-   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
 -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
@@ -40,12 +43,24 @@
 -   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)
 -   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
+-   Python 3.12 support
 -   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
 -   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
 -   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
+-   Add choice of voxel pooling mode when creating VoxelGrid from PointCloud (PR #6937)
 -   Support lowercase types when reading PCD files (PR #6930)
 -   Fix visualization/draw ICP example and add warnings (PR #6933)
+-   Unified cloud initializer pipeline for ICP (fixes segfault colored ICP) (PR #6942)
+-   Fix tensor EstimatePointWiseNormalsWithFastEigen3x3 (PR #6980)
+-   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
+-   Fix render to depth image on Apple Retina displays (PR #7001)
+-   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
+-   Add select_by_index method to Feature class (PR #7039)
+-   Add optional indices arg for fast computation of a small subset of FPFH features (PR #7118).
+-   Fix CMake configuration summary incorrectly reporting `no` for system BLAS. (PR #7230)
+-   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
+-   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
 
 ## 0.13
 

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,9 +17,10 @@ namespace open3d {
 namespace tests {
 
 class MemoryManagerPermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(MemoryManager,
-                         MemoryManagerPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+INSTANTIATE_TEST_SUITE_P(
+        MemoryManager,
+        MemoryManagerPermuteDevices,
+        testing::ValuesIn(MemoryManagerPermuteDevices::TestCases()));
 
 class MemoryManagerPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(

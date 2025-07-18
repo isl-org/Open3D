@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -67,6 +67,19 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const = 0;
+
+    /// Initialize the source and target point cloud for the transformation
+    /// estimation.
+    ///
+    /// \param source Source point cloud.
+    /// \param target Target point cloud.
+    /// \param max_correspondence_distance Maximum correspondence distance.
+    virtual std::tuple<std::shared_ptr<const geometry::PointCloud>,
+                       std::shared_ptr<const geometry::PointCloud>>
+    InitializePointCloudsForTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            double max_correspondence_distance) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -94,6 +107,13 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
+
+    std::tuple<std::shared_ptr<const geometry::PointCloud>,
+               std::shared_ptr<const geometry::PointCloud>>
+    InitializePointCloudsForTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            double max_correspondence_distance) const override;
 
 public:
     /// \brief Set to True to estimate scaling, False to force scaling to be 1.
@@ -136,6 +156,13 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
+
+    std::tuple<std::shared_ptr<const geometry::PointCloud>,
+               std::shared_ptr<const geometry::PointCloud>>
+    InitializePointCloudsForTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            double max_correspondence_distance) const override;
 
 public:
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.

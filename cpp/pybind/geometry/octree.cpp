@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -270,9 +270,8 @@ void pybind_octree_definitions(py::module &m) {
                      repr << "OctreePointColorLeafNode with color ["
                           << color_leaf_node.color_(0) << ", "
                           << color_leaf_node.color_(1) << ", "
-                          << color_leaf_node.color_(2) << "] "
-                          << "containing " << color_leaf_node.indices_.size()
-                          << " points.";
+                          << color_leaf_node.color_(2) << "] " << "containing "
+                          << color_leaf_node.indices_.size() << " points.";
                      return repr.str();
                  })
             .def_readwrite("color", &OctreePointColorLeafNode::color_,

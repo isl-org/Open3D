@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,8 +19,9 @@ void pybind_robust_kernel_declarations(py::module& m) {
     py::module m_robust_kernel = m.def_submodule(
             "robust_kernel",
             "Tensor-based robust kernel for outlier rejection.");
-    py::enum_<RobustKernelMethod>(m_robust_kernel, "RobustKernelMethod",
-                                  "Robust kernel method for outlier rejection.")
+    py::native_enum<RobustKernelMethod>(
+            m_robust_kernel, "RobustKernelMethod", "enum.Enum",
+            "Robust kernel method for outlier rejection.")
             .value("L2Loss", RobustKernelMethod::L2Loss)
             .value("L1Loss", RobustKernelMethod::L1Loss)
             .value("HuberLoss", RobustKernelMethod::HuberLoss)
@@ -28,7 +29,8 @@ void pybind_robust_kernel_declarations(py::module& m) {
             .value("GMLoss", RobustKernelMethod::GMLoss)
             .value("TukeyLoss", RobustKernelMethod::TukeyLoss)
             .value("GeneralizedLoss", RobustKernelMethod::GeneralizedLoss)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<RobustKernel> robust_kernel(m_robust_kernel, "RobustKernel",
                                            R"(
 Base class that models a robust kernel for outlier rejection. The virtual
@@ -115,7 +117,9 @@ void pybind_robust_kernel_definitions(py::module& m) {
                      return new RobustKernel(type, scaling_parameter,
                                              shape_parameter);
                  }),
-                 "type"_a = RobustKernelMethod::L2Loss,
+                 py::arg_v("type", RobustKernelMethod::L2Loss,
+                           "open3d.t.pipelines.registration.RobustKernelMethod."
+                           "L2Loss"),
                  "scaling_parameter"_a = 1.0, "shape_parameter"_a = 1.0)
             .def_readwrite("type", &RobustKernel::type_, "Loss type.")
             .def_readwrite("scaling_parameter",

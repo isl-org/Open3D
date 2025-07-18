@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,19 +14,14 @@ namespace open3d {
 namespace utility {
 
 void pybind_logging_declarations(py::module& m) {
-    py::enum_<VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
-                                 "VerbosityLevel");
-    vl.value("Error", VerbosityLevel::Error)
+    py::native_enum<VerbosityLevel>(m, "VerbosityLevel", "enum.IntEnum",
+                                    "Enum class for VerbosityLevel.")
+            .value("Error", VerbosityLevel::Error)
             .value("Warning", VerbosityLevel::Warning)
             .value("Info", VerbosityLevel::Info)
             .value("Debug", VerbosityLevel::Debug)
-            .export_values();
-    // Trick to write docs without listing the members in the enum class again.
-    vl.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for VerbosityLevel.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
     py::class_<VerbosityContextManager> verbosity_context_manager(
             m, "VerbosityContextManager",
             "A context manager to "

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -20,6 +20,15 @@ void LUCPU(void* A_data,
            int64_t cols,
            Dtype dtype,
            const Device& device);
+
+#ifdef BUILD_SYCL_MODULE
+void LUSYCL(void* A_data,
+            void* ipiv_data,
+            int64_t rows,
+            int64_t cols,
+            Dtype dtype,
+            const Device& device);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 void LUCUDA(void* A_data,

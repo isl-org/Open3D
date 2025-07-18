@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Torch specific machine learning functions."""
@@ -12,7 +12,7 @@ import torch as _torch
 from open3d import _build_config
 
 if not _build_config["Pytorch_VERSION"]:
-    raise Exception('Open3D was not built with PyTorch support!')
+    raise ImportError('Open3D was not built with PyTorch support!')
 _o3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
 # Check match with PyTorch version, any patch level is OK
 if _verp(_torch.__version__).release[:2] != _o3d_torch_version.release[:2]:

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -155,6 +155,12 @@ Image Image::RGBToGray() const {
 Image Image::Resize(float sampling_rate, InterpType interp_type) const {
     if (sampling_rate == 1.0f) {
         return *this;
+    }
+    if (GetDtype() == core::Bool) {  // Resize via UInt8
+        return Image(Image(data_.ReinterpretCast(core::UInt8))
+                             .Resize(sampling_rate, interp_type)
+                             .AsTensor()
+                             .ReinterpretCast(core::Bool));
     }
 
     static const dtype_channels_pairs npp_supported{

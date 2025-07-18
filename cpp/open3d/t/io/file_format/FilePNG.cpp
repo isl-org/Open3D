@@ -1,12 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <png.h>
 
+#include "open3d/core/Dtype.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Logging.h"
 
@@ -78,7 +79,8 @@ bool WriteImageToPNG(const std::string &filename,
         utility::LogWarning("Write PNG failed: image has no data.");
         return false;
     }
-    if (image.GetDtype() != core::UInt8 && image.GetDtype() != core::UInt16) {
+    if (image.GetDtype() != core::Bool && image.GetDtype() != core::UInt8 &&
+        image.GetDtype() != core::UInt16) {
         utility::LogWarning("Write PNG failed: unsupported image data.");
         return false;
     }

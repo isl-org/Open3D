@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,12 +22,13 @@
 namespace open3d {
 namespace tests {
 
-class TensorObjectPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(TensorObject,
-                         TensorObjectPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorObjectPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        TensorObject,
+        TensorObjectPermuteDevices,
+        testing::ValuesIn(TensorObjectPermuteDevices::TestCases()));
 
-class TensorObjectPermuteDevicePairs : public PermuteDevicePairs {};
+class TensorObjectPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         TensorObject,
         TensorObjectPermuteDevicePairs,

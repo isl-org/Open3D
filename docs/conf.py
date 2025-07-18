@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -67,6 +67,8 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
+    "sphinx_tabs.tabs",
+    "sphinx_copybutton",
     "nbsphinx",
     "m2r2",
 ]
@@ -262,8 +264,31 @@ def skip(app, what, name, obj, would_skip, options):
     return would_skip
 
 
+def fix_namespace(text):
+    """Fixes namespace in a string by removing .[cpu|cuda].pybind."""
+    return (text.replace("open3d.cpu.pybind.", "open3d.").replace(
+        "open3d.cuda.pybind.", "open3d.") if text is not None else None)
+
+
+def process_signature(app, what, name, obj, options, signature,
+                      return_annotation):
+    """Fixes namespace in signature by removing .[cpu|cuda].pybind."""
+    return (
+        fix_namespace(signature),
+        fix_namespace(return_annotation),
+    )
+
+
+def process_docstring(app, what, name, obj, options, lines):
+    """Fixes namespace in docstring by removing .[cpu|cuda].pybind."""
+    for i, line in enumerate(lines):
+        lines[i] = fix_namespace(line)
+
+
 def setup(app):
     app.connect("autodoc-skip-member", skip)
+    app.connect("autodoc-process-signature", process_signature)
+    app.connect("autodoc-process-docstring", process_docstring)
     # Add Google analytics
     app.add_js_file("https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3",
                     **{'async': 'async'})

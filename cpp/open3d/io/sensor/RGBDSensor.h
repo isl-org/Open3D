@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ class RGBDSensor {
 public:
     RGBDSensor() {}
     virtual bool Connect(size_t sensor_index) = 0;
-    virtual ~RGBDSensor(){};
+    virtual ~RGBDSensor() {};
 
     /// Capture one frame, return an RGBDImage.
     /// If \p enable_align_depth_to_color is true, the depth image will be

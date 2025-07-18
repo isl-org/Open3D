@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -30,12 +30,15 @@ namespace registration {
 /// 100].
 /// \param radius [optional] Neighbor search radius parameter. [Recommended ~5x
 /// voxel size].
+/// \param indices [optional] Tensor with the indices of the points to compute "
+/// FPFH features on. [Default = None].
 /// \return A Tensor of FPFH feature of the input point cloud with
 /// shape {N, 33}, data type and device same as input.
 core::Tensor ComputeFPFHFeature(
         const geometry::PointCloud &input,
         const utility::optional<int> max_nn = 100,
-        const utility::optional<double> radius = utility::nullopt);
+        const utility::optional<double> radius = utility::nullopt,
+        const utility::optional<core::Tensor> &indices = utility::nullopt);
 
 /// \brief Function to find correspondences via 1-nearest neighbor feature
 /// matching. Target is used to construct a nearest neighbor search

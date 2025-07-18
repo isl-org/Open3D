@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-NearestNeighborSearch::~NearestNeighborSearch(){};
+NearestNeighborSearch::~NearestNeighborSearch() {};
 
 bool NearestNeighborSearch::SetIndex() {
     nanoflann_index_.reset(new NanoFlannIndex());

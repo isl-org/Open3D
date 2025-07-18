@@ -1,13 +1,14 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Tests the implementation of the continuous convolution ops"""
 
 import open3d as o3d
 import numpy as np
+
 np.set_printoptions(linewidth=600)
 np.set_printoptions(threshold=np.inf)
 import pytest

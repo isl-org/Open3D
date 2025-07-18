@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ added = [False] * n_pcd
 curr_sec = int(time.time() - start_time)
 prev_sec = curr_sec - 1
 
-while True:
+while curr_sec < 10:
     curr_sec = int(time.time() - start_time)
     if curr_sec - prev_sec == 1:
         prev_sec = curr_sec
@@ -54,3 +54,4 @@ while True:
                 print("Removing %d" % i)
 
     visualize_non_blocking(vis, pcds)
+    time.sleep(0.025)  # yield CPU to others while maintaining responsiveness

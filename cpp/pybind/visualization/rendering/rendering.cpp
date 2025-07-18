@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -111,6 +111,8 @@ private:
 
 void pybind_rendering_declarations(py::module &m) {
     py::module m_rendering = m.def_submodule("rendering");
+    py::class_<TextureHandle> texture_handle(m_rendering, "TextureHandle",
+                                             "Handle to a texture");
     py::class_<Renderer> renderer(
             m_rendering, "Renderer",
             "Renderer class that manages 3D resources. Get from gui.Window.");
@@ -123,19 +125,21 @@ void pybind_rendering_declarations(py::module &m) {
                       "image");
     py::class_<Camera, std::shared_ptr<Camera>> cam(m_rendering, "Camera",
                                                     "Camera object");
-    py::enum_<Camera::FovType> fov_type(cam, "FovType", py::arithmetic(),
-                                        "Enum class for Camera field of view "
-                                        "types.");
-    fov_type.value("Vertical", Camera::FovType::Vertical)
+    py::native_enum<Camera::FovType>(
+            cam, "FovType", "enum.Enum",
+            "Enum class for Camera field of view types.")
+            .value("Vertical", Camera::FovType::Vertical)
             .value("Horizontal", Camera::FovType::Horizontal)
-            .export_values();
+            .export_values()
+            .finalize();
 
-    py::enum_<Camera::Projection> proj_type(cam, "Projection", py::arithmetic(),
-                                            "Enum class for Camera projection "
-                                            "types.");
-    proj_type.value("Perspective", Camera::Projection::Perspective)
+    py::native_enum<Camera::Projection>(
+            cam, "Projection", "enum.Enum",
+            "Enum class for Camera projection types.")
+            .value("Perspective", Camera::Projection::Perspective)
             .value("Ortho", Camera::Projection::Ortho)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<Gradient, std::shared_ptr<Gradient>> gradient(
             m_rendering, "Gradient",
             "Manages a gradient for the unlitGradient shader."
@@ -159,10 +163,11 @@ void pybind_rendering_declarations(py::module &m) {
             "the texture."
             "  The points *must* be sorted from the smallest value to the "
             "largest. The values must be in the range [0, 1].");
-    py::enum_<Gradient::Mode> gradient_mode(gradient, "Mode", py::arithmetic());
-    gradient_mode.value("GRADIENT", Gradient::Mode::kGradient)
+    py::native_enum<Gradient::Mode>(gradient, "Mode", "enum.Enum")
+            .value("GRADIENT", Gradient::Mode::kGradient)
             .value("LUT", Gradient::Mode::kLUT)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<Gradient::Point> gpt(gradient, "Point");
     py::class_<MaterialRecord> mat(
             m_rendering, "MaterialRecord",
@@ -178,50 +183,56 @@ void pybind_rendering_declarations(py::module &m) {
     py::class_<ColorGradingParams> color_grading(
             m_rendering, "ColorGrading",
             "Parameters to control color grading options");
-    py::enum_<ColorGradingParams::Quality> cgp_quality(
-            color_grading, "Quality",
-            "Quality level of color grading operations");
-    cgp_quality.value("LOW", ColorGradingParams::Quality::kLow)
+    py::native_enum<ColorGradingParams::Quality>(
+            color_grading, "Quality", "enum.Enum",
+            "Quality level of color grading operations")
+            .value("LOW", ColorGradingParams::Quality::kLow)
             .value("MEDIUM", ColorGradingParams::Quality::kMedium)
             .value("HIGH", ColorGradingParams::Quality::kHigh)
-            .value("ULTRA", ColorGradingParams::Quality::kUltra);
-    py::enum_<ColorGradingParams::ToneMapping> cgp_tone(
-            color_grading, "ToneMapping",
-            "Specifies the tone-mapping algorithm");
-    cgp_tone.value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
+            .value("ULTRA", ColorGradingParams::Quality::kUltra)
+            .finalize();
+    py::native_enum<ColorGradingParams::ToneMapping>(
+            color_grading, "ToneMapping", "enum.Enum",
+            "Specifies the tone-mapping algorithm")
+            .value("LINEAR", ColorGradingParams::ToneMapping::kLinear)
             .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
             .value("ACES", ColorGradingParams::ToneMapping::kAces)
             .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
             .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
             .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
             .value("DISPLAY_RANGE",
-                   ColorGradingParams::ToneMapping::kDisplayRange);
+                   ColorGradingParams::ToneMapping::kDisplayRange)
+            .finalize();
     py::class_<View, UnownedPointer<View>> view(m_rendering, "View",
                                                 "Low-level view class");
-    py::enum_<View::ShadowType> shadow_type(
-            view, "ShadowType", "Available shadow mapping algorithm options");
-    shadow_type.value("PCF", View::ShadowType::kPCF)
-            .value("VSM", View::ShadowType::kVSM);
+    py::native_enum<View::ShadowType>(
+            view, "ShadowType", "enum.Enum",
+            "Available shadow mapping algorithm options")
+            .value("PCF", View::ShadowType::kPCF)
+            .value("VSM", View::ShadowType::kVSM)
+            .finalize();
     py::class_<Scene, UnownedPointer<Scene>> scene(m_rendering, "Scene",
                                                    "Low-level rendering scene");
-    py::enum_<Scene::GroundPlane> ground_plane(
-            scene, "GroundPlane", py::arithmetic(),
-            "Plane on which to show ground plane: XZ, XY, or YZ");
-    ground_plane.value("XZ", Scene::GroundPlane::XZ)
+    py::native_enum<Scene::GroundPlane>(
+            scene, "GroundPlane", "enum.Enum",
+            "Plane on which to show ground plane: XZ, XY, or YZ")
+            .value("XZ", Scene::GroundPlane::XZ)
             .value("XY", Scene::GroundPlane::XY)
             .value("YZ", Scene::GroundPlane::YZ)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<Open3DScene, UnownedPointer<Open3DScene>> o3dscene(
             m_rendering, "Open3DScene", "High-level scene for rending");
-    py::enum_<Open3DScene::LightingProfile> lighting(
-            o3dscene, "LightingProfile", py::arithmetic(),
-            "Enum for conveniently setting lighting");
-    lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
+    py::native_enum<Open3DScene::LightingProfile>(
+            o3dscene, "LightingProfile", "enum.Enum",
+            "Enum for conveniently setting lighting")
+            .value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
             .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
             .value("MED_SHADOWS", Open3DScene::LightingProfile::MED_SHADOWS)
             .value("SOFT_SHADOWS", Open3DScene::LightingProfile::SOFT_SHADOWS)
             .value("NO_SHADOWS", Open3DScene::LightingProfile::NO_SHADOWS)
-            .export_values();
+            .export_values()
+            .finalize();
 }
 void pybind_rendering_definitions(py::module &m) {
     auto m_rendering = static_cast<py::module>(m.attr("rendering"));
@@ -240,9 +251,9 @@ void pybind_rendering_definitions(py::module &m) {
                  "parameter is optional and is True if the image is in the "
                  "sRGB colorspace and False otherwise")
             .def("update_texture",
-                 (bool (Renderer::*)(TextureHandle,
-                                     const std::shared_ptr<geometry::Image>,
-                                     bool)) &
+                 (bool(Renderer::*)(TextureHandle,
+                                    const std::shared_ptr<geometry::Image>,
+                                    bool)) &
                          Renderer::UpdateTexture,
                  "texture"_a, "image"_a, "is_sRGB"_a = false,
                  "Updates the contents of the texture to be the new image, or "
@@ -314,21 +325,20 @@ void pybind_rendering_definitions(py::module &m) {
     auto cam = static_cast<py::class_<Camera, std::shared_ptr<Camera>>>(
             m_rendering.attr("Camera"));
     cam.def("set_projection",
-            (void (Camera::*)(double, double, double, double,
-                              Camera::FovType)) &
+            (void(Camera::*)(double, double, double, double, Camera::FovType)) &
                     Camera::SetProjection,
             "field_of_view"_a, "aspect_ratio"_a, "near_plane"_a, "far_plane"_a,
             "field_of_view_type"_a, "Sets a perspective projection.")
             .def("set_projection",
-                 (void (Camera::*)(Camera::Projection, double, double, double,
-                                   double, double, double)) &
+                 (void(Camera::*)(Camera::Projection, double, double, double,
+                                  double, double, double)) &
                          Camera::SetProjection,
                  "projection_type"_a, "left"_a, "right"_a, "bottom"_a, "top"_a,
                  "near"_a, "far"_a,
                  "Sets the camera projection via a viewing frustum. ")
             .def("set_projection",
-                 (void (Camera::*)(const Eigen::Matrix3d &, double, double,
-                                   double, double)) &
+                 (void(Camera::*)(const Eigen::Matrix3d &, double, double,
+                                  double, double)) &
                          Camera::SetProjection,
                  "intrinsics"_a, "near_plane"_a, "far_plane"_a, "image_width"_a,
                  "image_height"_a,
@@ -514,7 +524,9 @@ void pybind_rendering_definitions(py::module &m) {
                  "Typical values are 2, 4 or 8. The maximum possible value "
                  "depends on the underlying GPU and OpenGL driver.")
             .def("set_shadowing", &View::SetShadowing, "enabled"_a,
-                 "type"_a = View::ShadowType::kPCF,
+                 py::arg_v(
+                         "type", View::ShadowType::kPCF,
+                         "open3d.visualization.rendering.View.ShadowType.PCF"),
                  "True to enable, false to enable all shadow mapping when "
                  "rendering this View. When enabling shadow mapping you may "
                  "also specify one of two shadow mapping algorithms: PCF "
@@ -534,7 +546,7 @@ void pybind_rendering_definitions(py::module &m) {
                  "Sets the camera with the given name as the active camera for "
                  "the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(
+                 (bool(Scene::*)(
                          const std::string &, const geometry::Geometry3D &,
                          const MaterialRecord &, const std::string &, size_t)) &
                          Scene::AddGeometry,
@@ -542,7 +554,7 @@ void pybind_rendering_definitions(py::module &m) {
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(
+                 (bool(Scene::*)(
                          const std::string &, const t::geometry::Geometry &,
                          const MaterialRecord &, const std::string &, size_t)) &
                          Scene::AddGeometry,

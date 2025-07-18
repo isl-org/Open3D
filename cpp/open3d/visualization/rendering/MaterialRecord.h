@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -82,6 +82,9 @@ struct MaterialRecord {
 
     // Infinite ground plane
     float ground_plane_axis = 0.f;  // 0: XZ; >0: XY; <0: YZ
+
+    // This is only used in gaussian splat.
+    int sh_degree = 0;
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;

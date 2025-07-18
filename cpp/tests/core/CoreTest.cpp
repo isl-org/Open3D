@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,6 +16,13 @@
 #include "open3d/core/SizeVector.h"
 
 namespace open3d {
+namespace core {
+void PrintTo(const Device &device, std::ostream *os) {
+    *os << device.ToString();
+}
+void PrintTo(const Dtype &dtype, std::ostream *os) { *os << dtype.ToString(); }
+}  // namespace core
+
 namespace tests {
 
 std::vector<core::Dtype> PermuteDtypesWithBool::TestCases() {
@@ -45,7 +52,6 @@ std::vector<core::Device> PermuteDevices::TestCases() {
         devices.push_back(cuda_devices[0]);
         devices.push_back(cuda_devices[1]);
     }
-
     return devices;
 }
 
@@ -53,8 +59,12 @@ std::vector<core::Device> PermuteDevicesWithSYCL::TestCases() {
     std::vector<core::Device> devices = PermuteDevices::TestCases();
     std::vector<core::Device> sycl_devices =
             core::Device::GetAvailableSYCLDevices();
-    if (!sycl_devices.empty()) {
+    // Skip the last SYCL device - this is the CPU fallback and support is
+    // untested.
+    if (sycl_devices.size() > 1) {
         devices.push_back(sycl_devices[0]);
+        // devices.insert(devices.end(), sycl_devices.begin(),
+        // sycl_devices.end());
     }
     return devices;
 }
@@ -85,7 +95,6 @@ PermuteDevicePairs::TestCases() {
             }
         }
     }
-
     return device_pairs;
 }
 
@@ -105,7 +114,11 @@ PermuteDevicePairsWithSYCL::TestCases() {
     std::vector<core::Device> devices;
     devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
     devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
-    devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end());
+    // Skip the last SYCL device - this is the CPU fallback
+    if (sycl_devices.size() > 1) {
+        devices.insert(devices.end(), sycl_devices.begin(),
+                       sycl_devices.end() - 1);
+    }
 
     // Self-pairs and cross pairs (bidirectional).
     std::vector<std::pair<core::Device, core::Device>> device_pairs;
@@ -119,7 +132,6 @@ PermuteDevicePairsWithSYCL::TestCases() {
             }
         }
     }
-
     return device_pairs;
 }
 

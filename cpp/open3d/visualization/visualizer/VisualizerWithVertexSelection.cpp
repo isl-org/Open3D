@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -754,9 +754,9 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
     }
 }
 
-const std::vector<Eigen::Vector3d>
-        *VisualizerWithVertexSelection::GetGeometryPoints(
-                std::shared_ptr<const geometry::Geometry> geometry) {
+const std::vector<Eigen::Vector3d> *
+VisualizerWithVertexSelection::GetGeometryPoints(
+        std::shared_ptr<const geometry::Geometry> geometry) {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {

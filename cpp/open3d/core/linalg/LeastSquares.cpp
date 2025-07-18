@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -61,6 +61,12 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         LeastSquaresCUDA(A_data, B_data, m, n, k, dtype, device);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        LeastSquaresSYCL(A_data, B_data, m, n, k, dtype, device);
 #else
         utility::LogError("Unimplemented device.");
 #endif

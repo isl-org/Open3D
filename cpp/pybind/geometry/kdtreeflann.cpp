@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -18,18 +18,14 @@ void pybind_kdtreeflann_declarations(py::module &m) {
     py::class_<KDTreeSearchParam> kdtreesearchparam(
             m, "KDTreeSearchParam", "Base class for KDTree search parameters.");
     // open3d.geometry.KDTreeSearchParam.Type
-    py::enum_<KDTreeSearchParam::SearchType> kdtree_search_param_type(
-            kdtreesearchparam, "Type", py::arithmetic());
-    kdtree_search_param_type
+    py::native_enum<KDTreeSearchParam::SearchType>(
+            kdtreesearchparam, "Type", "enum.Enum",
+            "Enum class for Geometry types.")
             .value("KNNSearch", KDTreeSearchParam::SearchType::Knn)
             .value("RadiusSearch", KDTreeSearchParam::SearchType::Radius)
             .value("HybridSearch", KDTreeSearchParam::SearchType::Hybrid)
-            .export_values();
-    kdtree_search_param_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Geometry types.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
     py::class_<KDTreeSearchParamKNN> kdtreesearchparam_knn(
             m, "KDTreeSearchParamKNN", kdtreesearchparam,
             "KDTree search parameters for pure KNN search.");
@@ -58,10 +54,10 @@ void pybind_kdtreeflann_definitions(py::module &m) {
     kdtreesearchparam_knn.def(py::init<int>(), "knn"_a = 30)
             .def("__repr__",
                  [](const KDTreeSearchParamKNN &param) {
-                     return std::string(
-                                    "KDTreeSearchParamKNN with knn "
-                                    "= ") +
-                            std::to_string(param.knn_);
+                     return fmt::format(
+                             "KDTreeSearchParamKNN("
+                             "knn={})",
+                             param.knn_);
                  })
             .def_readwrite("knn", &KDTreeSearchParamKNN::knn_,
                            "Number of the neighbors that will be searched.");
@@ -73,10 +69,10 @@ void pybind_kdtreeflann_definitions(py::module &m) {
     kdtreesearchparam_radius.def(py::init<double>(), "radius"_a)
             .def("__repr__",
                  [](const KDTreeSearchParamRadius &param) {
-                     return std::string(
-                                    "KDTreeSearchParamRadius with "
-                                    "radius = ") +
-                            std::to_string(param.radius_);
+                     return fmt::format(
+                             "KDTreeSearchParamRadius("
+                             "radius={})",
+                             param.radius_);
                  })
             .def_readwrite("radius", &KDTreeSearchParamRadius::radius_,
                            "Search radius.");
@@ -89,11 +85,11 @@ void pybind_kdtreeflann_definitions(py::module &m) {
             .def(py::init<double, int>(), "radius"_a, "max_nn"_a)
             .def("__repr__",
                  [](const KDTreeSearchParamHybrid &param) {
-                     return std::string(
-                                    "KDTreeSearchParamHybrid with "
-                                    "radius = ") +
-                            std::to_string(param.radius_) +
-                            " and max_nn = " + std::to_string(param.max_nn_);
+                     return fmt::format(
+                             "KDTreeSearchParamHybrid("
+                             "radius={}, "
+                             "max_nn={})",
+                             param.radius_, param.max_nn_);
                  })
             .def_readwrite("radius", &KDTreeSearchParamHybrid::radius_,
                            "Search radius.")

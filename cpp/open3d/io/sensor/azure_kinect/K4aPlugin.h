@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -303,8 +303,8 @@ namespace fmt {
 template <>
 struct formatter<k4a_wait_result_t> {
     template <typename FormatContext>
-    auto format(const k4a_wait_result_t &c, FormatContext &ctx) const
-            -> decltype(ctx.out()) {
+    auto format(const k4a_wait_result_t &c,
+                FormatContext &ctx) const -> decltype(ctx.out()) {
         const char *text = nullptr;
         switch (c) {
             case K4A_WAIT_RESULT_SUCCEEDED:

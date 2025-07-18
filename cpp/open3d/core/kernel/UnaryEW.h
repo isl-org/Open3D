@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -32,15 +32,18 @@ enum class UnaryEWOpCode {
 };
 
 void UnaryEW(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
-
 void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
+
+#ifdef BUILD_SYCL_MODULE
+void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code);
 #endif
 
-// Copy is separated from other unary ops since it support cross-device copy and
-// dtype casting.
+// Copy is separated from other unary ops since it supports cross-device copy
+// and dtype casting.
 void Copy(const Tensor& src, Tensor& dst);
 
 void CopyCPU(const Tensor& src, Tensor& dst);

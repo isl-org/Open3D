@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -34,11 +34,11 @@ class Indexer;
 class IndexerIterator;
 
 // Maximum number of dimensions of TensorRef.
-static constexpr int64_t MAX_DIMS = 10;
+static constexpr int64_t MAX_DIMS = 5;
 
 // Maximum number of inputs of an op.
 // MAX_INPUTS shall be >= MAX_DIMS to support advanced indexing.
-static constexpr int64_t MAX_INPUTS = 10;
+static constexpr int64_t MAX_INPUTS = 5;
 
 // Maximum number of outputs of an op. This number can be increased when
 // necessary.
@@ -110,7 +110,7 @@ struct TensorRef {
 
     TensorRef(const Tensor& t) {
         if (t.NumDims() > MAX_DIMS) {
-            utility::LogError("Tenor has too many dimensions {} > {}.",
+            utility::LogError("Tensor has too many dimensions {} > {}.",
                               t.NumDims(), MAX_DIMS);
         }
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
@@ -638,7 +638,7 @@ protected:
 class IndexerIterator {
 public:
     struct Iterator {
-        Iterator(){};
+        Iterator() {};
         Iterator(const Indexer& indexer);
         Iterator(Iterator&& other) = default;
 

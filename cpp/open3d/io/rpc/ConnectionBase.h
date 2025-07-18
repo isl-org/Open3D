@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -21,8 +21,8 @@ namespace rpc {
 /// Base class for all connections
 class ConnectionBase {
 public:
-    ConnectionBase(){};
-    virtual ~ConnectionBase(){};
+    ConnectionBase() {};
+    virtual ~ConnectionBase() {};
 
     /// Function for sending data wrapped in a zmq message object.
     virtual std::shared_ptr<zmq::message_t> Send(zmq::message_t& send_msg) = 0;

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -34,6 +34,7 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/t/geometry/kernel/Metrics.h"
 #include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
@@ -383,12 +384,42 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
             false, false);
 }
 
-PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
-    // We want the sampled points has the attributes of the original point
-    // cloud, so full copy is needed.
-    const open3d::geometry::PointCloud lpcd = ToLegacy();
-    return FromLegacy(*lpcd.FarthestPointDownSample(num_samples),
-                      GetPointPositions().GetDtype(), GetDevice());
+PointCloud PointCloud::FarthestPointDownSample(const size_t num_samples,
+                                               const size_t start_index) const {
+    const core::Dtype dtype = GetPointPositions().GetDtype();
+    const int64_t num_points = GetPointPositions().GetLength();
+    if (num_samples == 0) {
+        return PointCloud(GetDevice());
+    } else if (num_samples == size_t(num_points)) {
+        return Clone();
+    } else if (num_samples > size_t(num_points)) {
+        utility::LogError(
+                "Illegal number of samples: {}, must <= point size: {}",
+                num_samples, num_points);
+    } else if (start_index >= size_t(num_points)) {
+        utility::LogError("Illegal start index: {}, must <= point size: {}",
+                          start_index, num_points);
+    }
+    core::Tensor selection_mask =
+            core::Tensor::Zeros({num_points}, core::Bool, GetDevice());
+    core::Tensor smallest_distances = core::Tensor::Full(
+            {num_points}, std::numeric_limits<double>::infinity(), dtype,
+            GetDevice());
+
+    int64_t farthest_index = static_cast<int64_t>(start_index);
+
+    for (size_t i = 0; i < num_samples; i++) {
+        selection_mask[farthest_index] = true;
+        core::Tensor selected = GetPointPositions()[farthest_index];
+
+        core::Tensor diff = GetPointPositions() - selected;
+        core::Tensor distances_to_selected = (diff * diff).Sum({1});
+        smallest_distances = open3d::core::Minimum(distances_to_selected,
+                                                   smallest_distances);
+
+        farthest_index = smallest_distances.ArgMax({0}).Item<int64_t>();
+    }
+    return SelectByMask(selection_mask);
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
@@ -1305,6 +1336,72 @@ int PointCloud::PCAPartition(int max_points) {
     return num_partitions;
 }
 
+core::Tensor PointCloud::ComputeMetrics(const PointCloud &pcd2,
+                                        std::vector<Metric> metrics,
+                                        MetricParameters params) const {
+    if (IsEmpty() || pcd2.IsEmpty()) {
+        utility::LogError("One or both input point clouds are empty!");
+    }
+    if (!IsCPU() || !pcd2.IsCPU()) {
+        utility::LogWarning(
+                "ComputeDistance is implemented only on CPU. Computing on "
+                "CPU.");
+    }
+    core::Tensor points1 = GetPointPositions().To(core::Device("CPU:0")),
+                 points2 = pcd2.GetPointPositions().To(core::Device("CPU:0"));
+    [[maybe_unused]] core::Tensor indices12, indices21;
+    core::Tensor sqr_distance12, sqr_distance21;
+
+    core::nns::NearestNeighborSearch tree1(points1);
+    core::nns::NearestNeighborSearch tree2(points2);
+
+    if (!tree2.KnnIndex()) {
+        utility::LogError("[ComputeDistance] Building KNN-Index failed!");
+    }
+    if (!tree1.KnnIndex()) {
+        utility::LogError("[ComputeDistance] Building KNN-Index failed!");
+    }
+
+    std::tie(indices12, sqr_distance12) = tree2.KnnSearch(points1, 1);
+    std::tie(indices21, sqr_distance21) = tree1.KnnSearch(points2, 1);
+
+    return ComputeMetricsCommon(sqr_distance12.Sqrt_(), sqr_distance21.Sqrt_(),
+                                metrics, params);
+}
+
+bool PointCloud::IsGaussianSplat() const {
+    bool have_all_attrs = HasPointAttr("opacity") && HasPointAttr("rot") &&
+                          HasPointAttr("scale") && HasPointAttr("f_dc");
+    if (!have_all_attrs) {  // not 3DGS, no messages.
+        return false;
+    }
+    // Existing but invalid attributes cause errors.
+    auto num_points = GetPointPositions().GetLength();
+    core::AssertTensorShape(GetPointAttr("opacity"), {num_points, 1});
+    core::AssertTensorShape(GetPointAttr("rot"), {num_points, 4});
+    core::AssertTensorShape(GetPointAttr("scale"), {num_points, 3});
+    core::AssertTensorShape(GetPointAttr("f_dc"), {num_points, 3});
+    GaussianSplatGetSHOrder();  // Tests f_rest shape is valid.
+    return true;
+}
+
+int PointCloud::GaussianSplatGetSHOrder() const {
+    if (point_attr_.find("f_rest") == point_attr_.end()) {
+        return 0;
+    }
+    const core::Tensor &f_rest = GetPointAttr("f_rest");
+    auto num_points = GetPointPositions().GetLength();
+    core::AssertTensorShape(f_rest, {num_points, core::None, 3});
+    auto Nc = f_rest.GetShape(1);
+    auto degp1 = static_cast<int>(sqrt(Nc + 1));
+    if (degp1 * degp1 != Nc + 1) {
+        utility::LogError(
+                "f_rest has incomplete Spherical Harmonics coefficients "
+                "({}), expected 0, 3, 8 or 15.",
+                Nc);
+    }
+    return degp1 - 1;
+}
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

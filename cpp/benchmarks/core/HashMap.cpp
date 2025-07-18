@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -253,8 +253,8 @@ void HashReserveInt(benchmark::State& state,
 
 class Int3 {
 public:
-    Int3() : x_(0), y_(0), z_(0){};
-    Int3(int k) : x_(k), y_(k * 2), z_(k * 4){};
+    Int3() : x_(0), y_(0), z_(0) {};
+    Int3(int k) : x_(k), y_(k * 2), z_(k * 4) {};
     bool operator==(const Int3& other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }

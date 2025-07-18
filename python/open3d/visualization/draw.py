@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -93,12 +93,12 @@ def draw(geometry=None,
         on_animation_frame (Callable): Callback for each animation frame update
             with signature::
 
-                Callback(O3DVisualizer, double time) -> None
+                Callback(O3DVisualizer o3dvis, double time) -> None
 
         on_animation_tick (Callable): Callback for each animation time step with
             signature::
 
-                Callback(O3DVisualizer, double tick_duration, double time) -> TickResult
+                Callback(O3DVisualizer o3dvis, double tick_duration, double time) -> TickResult
 
             If the callback returns ``TickResult.REDRAW``, the scene is redrawn.
             It should return ``TickResult.NOCHANGE`` if redraw is not required.
@@ -153,7 +153,7 @@ def draw(geometry=None,
                           ("Toggle truth/result", toggle_result)])
     """
     gui.Application.instance.initialize()
-    w = O3DVisualizer(title, width, height)
+    w = O3DVisualizer(title, int(width), int(height))
     w.set_background(bg_color, bg_image)
 
     if actions is not None:

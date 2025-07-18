@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,10 +16,9 @@ namespace open3d {
 namespace tests {
 
 class BlobPermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(
-        Blob,
-        BlobPermuteDevices,
-        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+INSTANTIATE_TEST_SUITE_P(Blob,
+                         BlobPermuteDevices,
+                         testing::ValuesIn(BlobPermuteDevices::TestCases()));
 
 TEST_P(BlobPermuteDevices, BlobConstructor) {
     core::Device device = GetParam();

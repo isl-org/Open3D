@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,6 +16,10 @@ namespace kernel {
 Tensor NonZero(const Tensor& src);
 
 Tensor NonZeroCPU(const Tensor& src);
+
+#ifdef BUILD_SYCL_MODULE
+Tensor NonZeroSYCL(const Tensor& src);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 Tensor NonZeroCUDA(const Tensor& src);

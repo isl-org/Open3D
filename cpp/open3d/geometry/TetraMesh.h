@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ public:
     TetraMesh &operator+=(const TetraMesh &mesh);
     TetraMesh operator+(const TetraMesh &mesh) const;
 
-    /// \brief Function that removes duplicated verties, i.e., vertices that
+    /// \brief Function that removes duplicated vertices, i.e., vertices that
     /// have identical coordinates.
     TetraMesh &RemoveDuplicatedVertices();
 

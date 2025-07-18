@@ -7,9 +7,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
-    # Jul 2024: Fix FindThrust.cmake
-    URL https://github.com/stotko/stdgpu/archive/1b6a3319f1fbf180166e1bbc1d75f69ab622a0a0.tar.gz
-    URL_HASH SHA256=FAA3BF9CBE49EF9CC09E2E07E60D10BBF3B896EDB6089C920BEBE0F850FD95E4
+    URL https://github.com/stotko/stdgpu/archive/2588168d226bd17229dbf58d821549580791089d.tar.gz
+    URL_HASH SHA256=86e50789bbe21c57f64358c6acbd4481d56c1e45ce9ba1fb5c5c8482c3973215
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/stdgpu"
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -18,6 +17,7 @@ ExternalProject_Add(
         -DSTDGPU_BUILD_SHARED_LIBS=OFF
         -DSTDGPU_BUILD_EXAMPLES=OFF
         -DSTDGPU_BUILD_TESTS=OFF
+        -DSTDGPU_BUILD_BENCHMARKS=OFF
         -DSTDGPU_ENABLE_CONTRACT_CHECKS=OFF
         -DTHRUST_INCLUDE_DIR=${CUDAToolkit_INCLUDE_DIRS}
         ${ExternalProject_CMAKE_ARGS_hidden}

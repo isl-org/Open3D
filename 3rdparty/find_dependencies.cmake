@@ -169,6 +169,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+    -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
     -DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}
     -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
     # Always build 3rd party code in Release mode. Ignored by multi-config
@@ -669,6 +670,8 @@ if(USE_SYSTEM_GLFW)
     open3d_find_package_3rdparty_library(3rdparty_glfw
         HEADER
         PACKAGE glfw3
+        VERSION 3.4
+        REQUIRED
         TARGETS glfw
     )
     if(NOT 3rdparty_glfw_FOUND)
@@ -682,14 +685,15 @@ if(USE_SYSTEM_GLFW)
     endif()
 endif()
 if(NOT USE_SYSTEM_GLFW)
-    message(STATUS "Building library 3rdparty_glfw from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/glfw)
+    include(${Open3D_3RDPARTY_DIR}/glfw/glfw.cmake)
     open3d_import_3rdparty_library(3rdparty_glfw
         HEADER
-        INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/glfw/include/
-        LIBRARIES    glfw3
-        DEPENDS      glfw
+        INCLUDE_DIRS ${GLFW_INCLUDE_DIRS}
+        LIB_DIR      ${GLFW_LIB_DIR}
+        LIBRARIES    ${GLFW_LIBRARIES}
+        DEPENDS      ext_glfw
     )
+
     target_link_libraries(3rdparty_glfw INTERFACE Open3D::3rdparty_threads)
     if(UNIX AND NOT APPLE)
         find_library(RT_LIBRARY rt)
@@ -720,8 +724,9 @@ if(NOT USE_SYSTEM_GLFW)
         target_link_libraries(3rdparty_glfw INTERFACE gdi32)
     endif()
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_glfw)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_glfw)
 else()
-    list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_glfw)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_glfw)
 endif()
 if(TARGET Open3D::3rdparty_x11)
     target_link_libraries(3rdparty_glfw INTERFACE Open3D::3rdparty_x11)
@@ -865,29 +870,34 @@ if(USE_SYSTEM_CURL)
         set(USE_SYSTEM_CURL OFF)
     endif()
 endif()
-if(NOT USE_SYSTEM_CURL)
-    if(USE_SYSTEM_OPENSSL)
-        open3d_find_package_3rdparty_library(3rdparty_openssl
-            PACKAGE OpenSSL
-            TARGETS OpenSSL::Crypto
-        )
-        if(NOT 3rdparty_openssl_FOUND)
-            set(USE_SYSTEM_OPENSSL OFF)
-        endif()
-    endif()
-    if(NOT USE_SYSTEM_OPENSSL)
-        # BoringSSL
-        include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
-        open3d_import_3rdparty_library(3rdparty_openssl
-            INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
-            INCLUDE_ALL
-            INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
-            LIB_DIR      ${BORINGSSL_LIB_DIR}
-            LIBRARIES    ${BORINGSSL_LIBRARIES}
-            DEPENDS      ext_zlib ext_boringssl
-        )
-    endif()
 
+if(USE_SYSTEM_OPENSSL)
+    open3d_find_package_3rdparty_library(3rdparty_openssl
+        PACKAGE OpenSSL
+        REQUIRED
+        TARGETS OpenSSL::Crypto
+    )
+    if(NOT 3rdparty_openssl_FOUND)
+        set(USE_SYSTEM_OPENSSL OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_OPENSSL)
+    # BoringSSL
+    include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+    open3d_import_3rdparty_library(3rdparty_openssl
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        LIB_DIR      ${BORINGSSL_LIB_DIR}
+        LIBRARIES    ${BORINGSSL_LIBRARIES}
+        DEPENDS      ext_zlib ext_boringssl
+    )
+endif()
+
+if(NOT USE_SYSTEM_CURL)
+    if (APPLE)
+        message(SEND_ERROR "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
+    endif()
     include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
     open3d_import_3rdparty_library(3rdparty_curl
         INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
@@ -906,11 +916,16 @@ if(NOT USE_SYSTEM_CURL)
         #     _Curl_resolv in libcurl.a(hostip.c.o)
         # ```
         # The "Foundation" framework is already linked by GLFW.
-        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration -framework Foundation")
+    elseif(UNIX)
+        find_library(LIBIDN2 NAMES idn2 libidn2 libidn2.so.0  )
+        if(LIBIDN2)
+            target_link_libraries(3rdparty_curl INTERFACE ${LIBIDN2})
+        endif()
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
 
 # PNG
 if(USE_SYSTEM_PNG)
@@ -933,6 +948,7 @@ if(NOT USE_SYSTEM_PNG)
         LIBRARIES    ${ZLIB_LIBRARIES}
         DEPENDS      ext_zlib
     )
+    add_dependencies(ext_assimp ext_zlib)
 
     include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
     open3d_import_3rdparty_library(3rdparty_png
@@ -941,7 +957,6 @@ if(NOT USE_SYSTEM_PNG)
         LIBRARIES    ${LIBPNG_LIBRARIES}
         DEPENDS      ext_libpng
     )
-    add_dependencies(ext_libpng ext_zlib)
     target_link_libraries(3rdparty_png INTERFACE Open3D::3rdparty_zlib)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_png)
 else()
@@ -1381,10 +1396,10 @@ if(BUILD_GUI)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-                                  ${CPP_LIBRARY} ${CPPABI_LIBRARY})
-            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY} ${CPPABI_LIBRARY}")
+                                  ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}")
             if (LIBCPP_VERSION GREATER 11)
-                message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that " 
+                message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that "
                 "interferes with the system libunwind.so.8 and may crash Python code when exceptions "
                 "are used. Please consider using libc++ (LLVM) v11.")
             endif()
@@ -1532,12 +1547,17 @@ open3d_import_3rdparty_library(3rdparty_uvatlas
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_uvatlas)
 
 
+# SYCL link options are specified here. Compile options are only applied to SYCL source files and are specified in cmake/Open3DSYCLTargetSources.cmake
 if(BUILD_SYCL_MODULE)
     add_library(3rdparty_sycl INTERFACE)
     target_link_libraries(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl>)
     target_link_options(3rdparty_sycl INTERFACE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64_x86_64>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=${OPEN3D_SYCL_TARGETS}>)
+    if (OPEN3D_SYCL_TARGET_BACKEND_OPTIONS)
+        target_link_options(3rdparty_sycl INTERFACE
+            $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-Xs ${OPEN3D_SYCL_TARGET_BACKEND_OPTIONS}>)
+    endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS 3rdparty_sycl EXPORT Open3DTargets)
     endif()
@@ -1563,8 +1583,12 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
         LIB_DIR      ${MKL_ROOT}/lib/intel64
-        LIBRARIES    mkl_intel_ilp64 mkl_tbb_thread mkl_core
+        LIBRARIES    $<$<BOOL:${BUILD_SYCL_MODULE}>:mkl_sycl> mkl_intel_ilp64 mkl_tbb_thread mkl_core
     )
+    if (BUILD_SYCL_MODULE)
+    # target_link_options(3rdparty_mkl INTERFACE "-Wl,-export-dynamic")
+        target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+    endif()
     # MKL definitions
     target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
@@ -1610,7 +1634,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             else()
                 message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
                                     "On Ubuntu, please install by `apt install gfortran`. "
-                                    "On macOS, please install by `brew install gfortran`. ")
+                                    "On macOS, please install by `brew install gcc`. ")
             endif()
 
             include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
@@ -1640,15 +1664,23 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             endif()
 
             if(LINUX_AARCH64 OR APPLE_AARCH64)
-                # Find libgfortran.a and libgcc.a inside the gfortran library search
-                # directories. This ensures that the library matches the compiler.
-                # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
-                find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-                find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
-                target_link_libraries(3rdparty_blas INTERFACE
-                    ${gfortran_lib}
-                    ${gcc_lib}
-                )
+                if(APPLE_AARCH64)
+                    # Find libgfortran.a and libgcc.a inside the gfortran library search
+                    # directories. This ensures that the library matches the compiler.
+                    # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
+                    find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
+                endif()
+                if(LINUX_AARCH64)
+                    # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
+                    # which prevents it from being used in a shared library.
+                    # We link the shared version (-lgfortran) instead.
+                    # TODO: This requires packaging libgfortran with the Python
+                    # wheel
+                    find_library(gfortran_lib NAMES libgfortran${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc_s${CMAKE_SHARED_LIBRARY_SUFFIX}      PATHS ${gfortran_lib_dirs} REQUIRED)
+                endif()
+                target_link_libraries(3rdparty_blas INTERFACE ${gfortran_lib} ${gcc_lib})
                 if(APPLE_AARCH64)
                     find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
                     target_link_libraries(3rdparty_blas INTERFACE
@@ -1697,7 +1729,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
             LIB_DIR      ${STATIC_MKL_LIB_DIR}
             LIBRARIES    ${STATIC_MKL_LIBRARIES}
-            DEPENDS      ext_tbb ext_mkl_include ext_mkl
+            DEPENDS      Open3D::3rdparty_tbb ext_mkl_include ext_mkl
         )
         if(UNIX)
             target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
@@ -1719,7 +1751,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     endif()
     if(NOT USE_SYSTEM_TBB)
         include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM TBB::tbb)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
     else()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
     endif()
@@ -1735,7 +1767,7 @@ if(BUILD_CUDA_MODULE)
         # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
         # cudatoolkit conda package), or have a mechanism to locate the CUDA
         # toolkit from the system.
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cusolver CUDA::cublas)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
         # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
@@ -1766,6 +1798,7 @@ if(BUILD_CUDA_MODULE)
                     CUDA::cublas_static
                     CUDA::cublasLt_static
                     CUDA::culibos
+                    CUDA::cudart_static
                 )
             else()
                 # Use shared CUDA libraries.
@@ -1889,6 +1922,7 @@ if(USE_SYSTEM_EMBREE)
     open3d_find_package_3rdparty_library(3rdparty_embree
         PACKAGE embree
         TARGETS embree
+        VERSION 4.3.3 # for "rtcGetErrorString"
     )
     if(NOT 3rdparty_embree_FOUND)
         set(USE_SYSTEM_EMBREE OFF)

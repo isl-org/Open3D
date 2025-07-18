@@ -1,10 +1,12 @@
 docutils==0.20.1
 furo==2023.9.10
-jinja2==3.1.4
+jinja2>=3.1.6
 m2r2==0.3.3.post2
 matplotlib==3.7.3
 nbsphinx==0.9.3
 sphinx==7.1.2
+sphinx-tabs==3.4.7
+sphinx-copybutton==0.5.2
 nbconvert==6.5.4
 lxml==5.2.1
-lxml_html_clean==0.2.2
+lxml_html_clean==0.4.0

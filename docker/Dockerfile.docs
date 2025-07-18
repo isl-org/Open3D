@@ -1,0 +1,88 @@
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# For bash-specific commands
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Required build args, should be specified in docker_build.sh
+ARG DEVELOPER_BUILD
+
+RUN if [[ -z "${DEVELOPER_BUILD}"      ]]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi
+
+# Forward all ARG to ENV
+# ci_utils.sh may require these environment variables
+ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+# Non-interactive notebook rendering
+ENV CI=true
+
+# Prevent interactive inputs when installing packages
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
+ENV OPEN3D_ML_ROOT=/root/Open3D-ML
+
+# Always keep /root/Open3D as the WORKDIR
+WORKDIR /root/Open3D
+COPY util/ci_utils.sh util/install_deps_ubuntu.sh util/
+COPY python/requirements*.txt python/
+COPY docs/requirements.txt docs/
+
+# Dependencies: basic and python-build
+RUN apt-get update && apt-get install -y \
+    git  \
+    curl \
+    build-essential \
+    ccache \
+    pkg-config \
+    zlib1g \
+    zlib1g-dev \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+# Checkout Open3D-ML main branch
+RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main ${OPEN3D_ML_ROOT}
+# Open3D docs dependencies
+RUN source util/ci_utils.sh && install_docs_dependencies "${OPEN3D_ML_ROOT}"
+
+# Download ccache from GCS bucket. We reuse the cpu ccache for docs. No need to upload back.
+# If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
+# Example directory structure:
+# - CCACHE_DIR        = ~/.cache/ccache
+# - CCACHE_DIR_NAME   = ccache
+# - CCACHE_DIR_PARENT = ~/.cache
+# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# *not* determined by ccache's default, but the downloaded ccache file's config.
+RUN ccache --version \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && CCACHE_TAR_NAME="open3d-ci-cpu" \
+ && mkdir -p ${CCACHE_DIR_PARENT} \
+ && cd ${CCACHE_DIR_PARENT} \
+ && (curl -s -O https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.xz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.xz || true; fi \
+ && mkdir -p ${CCACHE_DIR} \
+ && ccache -M 4G \
+ && ccache -s
+
+# Open3D repo
+COPY . /root/Open3D
+
+# PWD: Open3D/docs after build_docs
+# Docs in docs/_out/html
+RUN source util/ci_utils.sh && build_docs "$DEVELOPER_BUILD" \
+&& ccache -s \
+&& tar -C _out -cvzf "/root/Open3D/open3d-$(git rev-parse HEAD)-docs.tar.gz" html
+
+RUN echo "Docker documentation build done."

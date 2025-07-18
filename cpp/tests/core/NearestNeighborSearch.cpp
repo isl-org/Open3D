@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -191,7 +191,7 @@ TEST_P(NNSPermuteDevices, FixedRadiusSearch) {
                      std::runtime_error);
     }
 
-    // If raidus == 0.1.
+    // If radius == 0.1.
     nns32.FixedRadiusIndex(0.1);
     std::tuple<core::Tensor, core::Tensor, core::Tensor> result;
     core::SizeVector shape{2};
@@ -223,7 +223,7 @@ TEST_P(NNSPermuteDevices, FixedRadiusSearch) {
                      std::runtime_error);
     }
 
-    // If raidus == 0.1.
+    // If radius == 0.1.
     nns64.FixedRadiusIndex(0.1);
     gt_indices = core::Tensor::Init<int64_t>({1, 4}, device);
     gt_distances = core::Tensor::Init<double>({0.00626358, 0.00747938}, device);

@@ -11,9 +11,9 @@
     <key>CFBundleGetInfoString</key>
     <string>${MACOSX_BUNDLE_INFO_STRING}</string>
     <key>CFBundleIconFile</key> <!-- macOS 10.12-; uses .icns file -->
-    <string>${MACOSX_BUNDLE_ICON_FILE}</string>
+    <string>AppIcon</string>
     <key>CFBundleIconName</key> <!-- macOS 10.13+; requires Assets.car -->
-    <string>${MACOSX_BUNDLE_ICON_FILE}</string>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>${MACOSX_BUNDLE_GUI_IDENTIFIER}</string>
     <key>CFBundleInfoDictionaryVersion</key>
@@ -77,11 +77,11 @@
             <key>LSHandlerRank</key>
             <string>Owner</string>
         </dict>
-         <dict> <!-- GLTB -->
+         <dict> <!-- GLB -->
             <key>CFBundleTypeIconFile</key>
             <string>documentIcon</string>
             <key>CFBundleTypeName</key>
-            <string>GL Binary Transmission Format</string>
+            <string>GL Transmission Format (Binary)</string>
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
             <key>LSIsAppleDefaultForType</key>
@@ -318,7 +318,7 @@
                 </array>
                 <key>public.mime-type</key>
                 <array>
-                    <string>model/gltf</string>
+                    <string>model/gltf+json</string>
                 </array>
             </dict>
         </dict>
@@ -332,7 +332,7 @@
                 <string>public.data</string>
             </array>
             <key>UTTypeDescription</key>
-            <string>GL Binary Transmission Format</string>
+            <string>GL Transmission Format (Binary)</string>
             <key>UTTypeTagSpecification</key>
             <dict>
                 <key>public.filename-extension</key>
@@ -341,7 +341,7 @@
                 </array>
                 <key>public.mime-type</key>
                 <array>
-                    <string>model/glb</string>
+                    <string>model/glb-binary</string>
                 </array>
             </dict>
         </dict>

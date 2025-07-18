@@ -1,18 +1,20 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-
 #include "open3d/geometry/BoundingVolume.h"
 
 #include <Eigen/Eigenvalues>
+#include <iostream>
 #include <numeric>
 
+#include "open3d/core/EigenConverter.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/kernel/MinimumOBB.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -189,36 +191,11 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
         const std::vector<Eigen::Vector3d>& points, bool robust) {
-    std::shared_ptr<TriangleMesh> mesh;
-    std::tie(mesh, std::ignore) = Qhull::ComputeConvexHull(points, robust);
-    double min_vol = -1;
-    OrientedBoundingBox min_box;
-    PointCloud hull_pcd;
-    for (auto& tri : mesh->triangles_) {
-        hull_pcd.points_ = mesh->vertices_;
-        Eigen::Vector3d a = mesh->vertices_[tri(0)];
-        Eigen::Vector3d b = mesh->vertices_[tri(1)];
-        Eigen::Vector3d c = mesh->vertices_[tri(2)];
-        Eigen::Vector3d u = b - a;
-        Eigen::Vector3d v = c - a;
-        Eigen::Vector3d w = u.cross(v);
-        v = w.cross(u);
-        u = u / u.norm();
-        v = v / v.norm();
-        w = w / w.norm();
-        Eigen::Matrix3d m_rot;
-        m_rot << u[0], v[0], w[0], u[1], v[1], w[1], u[2], v[2], w[2];
-        hull_pcd.Rotate(m_rot.inverse(), a);
-
-        const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
-        double volume = aabox.Volume();
-        if (min_vol == -1. || volume < min_vol) {
-            min_vol = volume;
-            min_box = aabox.GetOrientedBoundingBox();
-            min_box.Rotate(m_rot, a);
-        }
-    }
-    return min_box;
+    auto tpoints = core::eigen_converter::EigenVector3dVectorToTensor(
+            points, core::Float64, core::Device());
+    return t::geometry::kernel::minimum_obb::ComputeMinimumOBBJylanki(tpoints,
+                                                                      robust)
+            .ToLegacy();
 }
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Clear() {
@@ -264,8 +241,10 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
       color_(1, 1, 1) {
     if ((max_bound_.array() < min_bound_.array()).any()) {
         open3d::utility::LogWarning(
-                "max_bound {} of bounding box is smaller than min_bound {} in "
-                "one or more axes. Fix input values to remove this warning.",
+                "max_bound {} of bounding box is smaller than min_bound {} "
+                "in "
+                "one or more axes. Fix input values to remove this "
+                "warning.",
                 max_bound_, min_bound_);
         max_bound_ = max_bound.cwiseMax(min_bound);
         min_bound_ = max_bound.cwiseMin(min_bound);
@@ -275,7 +254,8 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(
         const Eigen::Matrix4d& transformation) {
     utility::LogError(
-            "A general transform of a AxisAlignedBoundingBox would not be axis "
+            "A general transform of a AxisAlignedBoundingBox would not be "
+            "axis "
             "aligned anymore, convert it to a OrientedBoundingBox first");
     return *this;
 }
@@ -303,7 +283,8 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(
         const Eigen::Matrix3d& rotation, const Eigen::Vector3d& center) {
     utility::LogError(
-            "A rotation of an AxisAlignedBoundingBox would not be axis-aligned "
+            "A rotation of an AxisAlignedBoundingBox would not be "
+            "axis-aligned "
             "anymore, convert it to an OrientedBoundingBox first");
     return *this;
 }
@@ -331,7 +312,8 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
     AxisAlignedBoundingBox box;
     if (points.empty()) {
         utility::LogWarning(
-                "The number of points is 0 when creating axis-aligned bounding "
+                "The number of points is 0 when creating axis-aligned "
+                "bounding "
                 "box.");
         box.min_bound_ = Eigen::Vector3d(0.0, 0.0, 0.0);
         box.max_bound_ = Eigen::Vector3d(0.0, 0.0, 0.0);
