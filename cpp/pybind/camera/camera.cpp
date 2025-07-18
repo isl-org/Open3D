@@ -21,9 +21,10 @@ void pybind_camera_declarations(py::module &m) {
             "PinholeCameraIntrinsic class stores intrinsic camera matrix, and "
             "image height and width.");
     // open3d.camera.PinholeCameraIntrinsicParameters
-    py::enum_<PinholeCameraIntrinsicParameters> pinhole_intr_params(
-            m_camera, "PinholeCameraIntrinsicParameters", py::arithmetic(),
-            "PinholeCameraIntrinsicParameters");
+    py::native_enum<PinholeCameraIntrinsicParameters> pinhole_intr_params(
+            m_camera, "PinholeCameraIntrinsicParameters", "enum.Enum",
+            "Enum class that contains default camera intrinsic parameters for "
+            "different sensors.");
     pinhole_intr_params
             .value("PrimeSenseDefault",
                    PinholeCameraIntrinsicParameters::PrimeSenseDefault,
@@ -36,13 +37,8 @@ void pybind_camera_declarations(py::module &m) {
                    PinholeCameraIntrinsicParameters::Kinect2ColorCameraDefault,
                    "Default camera intrinsic parameter for Kinect2 color "
                    "camera.")
-            .export_values();
-    pinhole_intr_params.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class that contains default camera intrinsic "
-                       "parameters for different sensors.";
-            }),
-            py::none(), py::none(), "");
+            .export_values()
+            .finalize();
     py::class_<PinholeCameraParameters> pinhole_param(
             m_camera, "PinholeCameraParameters",
             "Contains both intrinsic and extrinsic pinhole camera parameters.");
