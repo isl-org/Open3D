@@ -1,0 +1,30 @@
+From 5a244052e2df7842940dfb5a9011973a09626300 Mon Sep 17 00:00:00 2001
+From: Nir Azkiel <nir.azkiel@intel.com>
+Date: Tue, 28 May 2024 17:17:04 +0300
+Subject: [PATCH] fix mac apple silicon build
+
+---
+ CMake/unix_config.cmake | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/CMake/unix_config.cmake b/CMake/unix_config.cmake
+index 5a187c7c7a..89272b8ee1 100644
+--- a/CMake/unix_config.cmake
++++ b/CMake/unix_config.cmake
+@@ -19,12 +19,12 @@ macro(os_set_flags)
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-switch -Wno-multichar -Wsequence-point -Wformat -Wformat-security")
+ 
+     execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine OUTPUT_VARIABLE MACHINE)
+-    if(${MACHINE} MATCHES "arm-*")
+-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -mfpu=neon -mfloat-abi=hard -ftree-vectorize -latomic")
+-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=hard -ftree-vectorize -latomic")
+-    elseif(${MACHINE} MATCHES "aarch64-*")
++    if(${MACHINE} MATCHES "arm64-*" OR ${MACHINE} MATCHES "aarch64-*")
+         set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -mstrict-align -ftree-vectorize")
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mstrict-align -ftree-vectorize")
++    elseif(${MACHINE} MATCHES "arm-*")
++        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -mfpu=neon -mfloat-abi=hard -ftree-vectorize -latomic")
++        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=hard -ftree-vectorize -latomic")
+     elseif(${MACHINE} MATCHES "powerpc64(le)?-linux-gnu")
+         set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -ftree-vectorize")
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftree-vectorize")
