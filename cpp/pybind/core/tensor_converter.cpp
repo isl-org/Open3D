@@ -197,26 +197,30 @@ Tensor PyHandleToTensor(const py::handle& handle,
     // 5) tuple
     // 6) numpy.ndarray (value will be copied)
     // 7) Tensor (value will be copied)
-    std::string class_name(py::str(handle.get_type()));
-    if (class_name == "<class 'bool'>") {
-        return BoolToTensor(static_cast<bool>(handle.cast<py::bool_>()), dtype,
-                            device);
-    } else if (class_name == "<class 'int'>") {
-        return IntToTensor(static_cast<int64_t>(handle.cast<py::int_>()), dtype,
-                           device);
-    } else if (class_name == "<class 'float'>") {
-        return DoubleToTensor(static_cast<double>(handle.cast<py::float_>()),
-                              dtype, device);
-    } else if (class_name == "<class 'list'>") {
-        return PyListToTensor(handle.cast<py::list>(), dtype, device);
-    } else if (class_name == "<class 'tuple'>") {
-        return PyTupleToTensor(handle.cast<py::tuple>(), dtype, device);
-    } else if (class_name == "<class 'numpy.ndarray'>") {
-        return CastOptionalDtypeDevice(PyArrayToTensor(handle.cast<py::array>(),
-                                                       /*inplace=*/!force_copy),
-                                       dtype, device);
-    } else if (class_name.find("open3d") != std::string::npos &&
-               class_name.find("Tensor") != std::string::npos) {
+    if (py::isinstance<py::bool_>(handle)) {
+        return BoolToTensor(
+                static_cast<bool>(py::reinterpret_borrow<py::bool_>(handle)),
+                dtype, device);
+    } else if (py::isinstance<py::int_>(handle)) {
+        return IntToTensor(
+                static_cast<int64_t>(py::reinterpret_borrow<py::int_>(handle)),
+                dtype, device);
+    } else if (py::isinstance<py::float_>(handle)) {
+        return DoubleToTensor(
+                static_cast<double>(py::reinterpret_borrow<py::float_>(handle)),
+                dtype, device);
+    } else if (py::isinstance<py::list>(handle)) {
+        return PyListToTensor(py::reinterpret_borrow<py::list>(handle), dtype,
+                              device);
+    } else if (py::isinstance<py::tuple>(handle)) {
+        return PyTupleToTensor(py::reinterpret_borrow<py::tuple>(handle), dtype,
+                               device);
+    } else if (py::isinstance<py::array>(handle)) {
+        return CastOptionalDtypeDevice(
+                PyArrayToTensor(py::reinterpret_borrow<py::array>(handle),
+                                /*inplace=*/!force_copy),
+                dtype, device);
+    } else if (py::isinstance<Tensor>(handle)) {
         try {
             Tensor* tensor = handle.cast<Tensor*>();
             if (force_copy) {
@@ -228,8 +232,9 @@ Tensor PyHandleToTensor(const py::handle& handle,
             utility::LogError("Cannot cast index to Tensor.");
         }
     } else {
-        utility::LogError("PyHandleToTensor has invalid input type {}.",
-                          class_name);
+        utility::LogError(
+                "PyHandleToTensor has invalid input type {}.",
+                static_cast<std::string>(py::str(py::type::of(handle))));
     }
 }
 

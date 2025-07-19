@@ -8,7 +8,7 @@
 # Guidelines:
 # - Use a flat list of options.
 #   We don't want to have a cartesian product of different combinations of
-#   options. E.g., to support Ubuntu {20.04, 24.04} with Python {3.7, 3.8}, we
+#   options. E.g., to support Ubuntu {22.04, 24.04} with Python {3.11, 3.12}, we
 #   don't specify the OS and Python version separately, instead, we have a flat
 #   list of combinations: [u2004_py39, u2004_py310, u2404_py39, u2404_py310].
 # - No external environment variables.
@@ -23,69 +23,59 @@ __usage_docker_build="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py38-dev     : OpenBLAS AMD64 3.8 wheel, developer mode
-    openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
     openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
     openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
-    openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
-    openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
+    openblas-amd64-py313-dev    : OpenBLAS AMD64 3.13 wheel, developer mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
     openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
+    openblas-amd64-py313        : OpenBLAS AMD64 3.13 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
-    openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
-    openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
     openblas-arm64-py312-dev    : OpenBLAS ARM64 3.12 wheel, developer mode
-    openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
-    openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
+    openblas-arm64-py313-dev    : OpenBLAS ARM64 3.13 wheel, developer mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
     openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
     openblas-arm64-py312        : OpenBLAS ARM64 3.12 wheel, release mode
+    openblas-arm64-py313        : OpenBLAS ARM64 3.13 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
-    cpu-shared                  : Ubuntu CPU shared (cxx11_abi)
-    cpu-shared-release          : Ubuntu CPU shared (cxx11_abi), release mode
-    cpu-shared-ml               : Ubuntu CPU shared with ML (pre_cxx11_abi)
-    cpu-shared-ml-release       : Ubuntu CPU shared with ML (pre_cxx11_abi), release mode
+    cpu-static-release          : Ubuntu CPU static, release mode
+    cpu-shared-ml               : Ubuntu CPU shared with ML (cxx11_abi)
+    cpu-shared-ml-release       : Ubuntu CPU shared with ML (cxx11_abi), release mode
 
     # Sycl CPU CI (Dockerfile.ci)
     sycl-shared                : SYCL (oneAPI) with shared lib
     sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-focal                   : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-focal-release : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), release mode
-    3-ml-shared-focal         : CUDA CI, 3-ml-shared-bionic (pre_cxx11_abi), developer mode
-    4-shared-focal            : CUDA CI, 4-shared-bionic (cxx11_abi), developer mode
-    4-shared-focal-release    : CUDA CI, 4-shared-bionic (cxx11_abi), release mode
-    5-ml-jammy                 : CUDA CI, 5-ml-focal, developer mode
+    2-jammy                   : CUDA CI, 2-jammy, developer mode
+    3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy (cxx11_abi), release mode
+    3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
+    5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
-    cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
-    cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
     cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, developer mode
-    cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
-    cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
+    cuda_wheel_py313_dev       : CUDA Python 3.13 wheel, developer mode
     cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
     cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
     cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
+    cuda_wheel_py313           : CUDA Python 3.13 wheel, release mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
-CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.29.2-linux-x86_64
 CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
-CUDA_VERSION=12.1.0-cudnn8
-CUDA_VERSION_LATEST=12.1.0-cudnn8
+CUDA_VERSION=12.6.3-cudnn
+CUDA_VERSION_LATEST=12.6.3-cudnn
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -108,13 +98,13 @@ openblas_export_env() {
     if [[ "amd64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform AMD64"
         export DOCKER_TAG=open3d-ci:openblas-amd64
-        export BASE_IMAGE=ubuntu:20.04
+        export BASE_IMAGE=ubuntu:22.04
         export CONDA_SUFFIX=x86_64
         export CMAKE_VERSION=${CMAKE_VERSION}
     elif [[ "arm64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform ARM64"
         export DOCKER_TAG=open3d-ci:openblas-arm64
-        export BASE_IMAGE=arm64v8/ubuntu:20.04
+        export BASE_IMAGE=arm64v8/ubuntu:22.04
         export CONDA_SUFFIX=aarch64
         export CMAKE_VERSION=${CMAKE_VERSION_AARCH64}
     else
@@ -122,13 +112,7 @@ openblas_export_env() {
         print_usage_and_exit_docker_build
     fi
 
-    if [[ "py38" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.8
-        export DOCKER_TAG=${DOCKER_TAG}-py38
-    elif [[ "py39" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.9
-        export DOCKER_TAG=${DOCKER_TAG}-py39
-    elif [[ "py310" =~ ^($options)$ ]]; then
+    if [[ "py310" =~ ^($options)$ ]]; then
         export PYTHON_VERSION=3.10
         export DOCKER_TAG=${DOCKER_TAG}-py310
     elif [[ "py311" =~ ^($options)$ ]]; then
@@ -137,6 +121,9 @@ openblas_export_env() {
     elif [[ "py312" =~ ^($options)$ ]]; then
         export PYTHON_VERSION=3.12
         export DOCKER_TAG=${DOCKER_TAG}-py312
+    elif [[ "py313" =~ ^($options)$ ]]; then
+        export PYTHON_VERSION=3.13
+        export DOCKER_TAG=${DOCKER_TAG}-py313
     else
         echo "Invalid python version."
         print_usage_and_exit_docker_build
@@ -178,21 +165,19 @@ openblas_build() {
 }
 
 cuda_wheel_build() {
-    BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
-    CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-ci-ccache
+    BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
+    CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
-    if [[ "py38" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.8
-    elif [[ "py39" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.9
-    elif [[ "py310" =~ ^($options)$ ]]; then
+    if [[ "py310" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.10
     elif [[ "py311" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.11
     elif [[ "py312" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.12
+    elif [[ "py313" =~ ^($options)$ ]]; then
+        PYTHON_VERSION=3.13
     else
         echo "Invalid python version."
         print_usage_and_exit_docker_build
@@ -213,7 +198,6 @@ cuda_wheel_build() {
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-        --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
@@ -225,9 +209,9 @@ cuda_wheel_build() {
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
         bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
-              && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
+              && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
-              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
+              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
 }
 
 ci_build() {
@@ -236,7 +220,6 @@ ci_build() {
     echo "[ci_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
     echo "[ci_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
     echo "[ci_build()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[ci_build()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[ci_build()] PYTHON_VERSION=${PYTHON_VERSION}"
     echo "[ci_build()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
@@ -251,7 +234,6 @@ ci_build() {
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-        --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}" \
         --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
@@ -269,13 +251,13 @@ ci_build() {
                && chown $(id -u):$(id -g) /opt/mount/open3d*"
 }
 
-2-focal_export_env() {
-    export DOCKER_TAG=open3d-ci:2-focal
+2-jammy_export_env() {
+    export DOCKER_TAG=open3d-ci:2-jammy
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-2-focal
-    export PYTHON_VERSION=3.8
+    export CCACHE_TAR_NAME=open3d-ci-2-jammy
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -284,81 +266,46 @@ ci_build() {
     export BUILD_SYCL_MODULE=OFF
 }
 
-3-ml-shared-focal_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-focal
+3-ml-shared-jammy_export_env() {
+    export DOCKER_TAG=open3d-ci:3-ml-shared-jammy
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-focal
-    export PYTHON_VERSION=3.8
+    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-jammy
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
-    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
 }
 
-3-ml-shared-focal-release_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-focal
+3-ml-shared-jammy-release_export_env() {
+    export DOCKER_TAG=open3d-ci:3-ml-shared-jammy
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-focal
-    export PYTHON_VERSION=3.8
+    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-jammy
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
-    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
 }
 
-4-shared-focal_export_env() {
-    export DOCKER_TAG=open3d-ci:4-shared-focal
-
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
-    export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-4-shared-focal
-    export PYTHON_VERSION=3.12
-    export BUILD_SHARED_LIBS=ON
-    export BUILD_CUDA_MODULE=ON
-    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
-    export BUILD_TENSORFLOW_OPS=ON
-    export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-4-shared-focal-release_export_env() {
-    export DOCKER_TAG=open3d-ci:4-shared-focal
-
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
-    export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-4-shared-focal
-    export PYTHON_VERSION=3.12
-    export BUILD_SHARED_LIBS=ON
-    export BUILD_CUDA_MODULE=ON
-    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
-    export BUILD_TENSORFLOW_OPS=ON
-    export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-5-ml-jammy_export_env() {
-    export DOCKER_TAG=open3d-ci:5-ml-jammy
+5-ml-noble_export_env() {
+    export DOCKER_TAG=open3d-ci:5-ml-noble
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-5-ml-jammy
-    export PYTHON_VERSION=3.8
+    export CCACHE_TAR_NAME=open3d-ci-5-ml-noble
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
-    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
     export BUILD_SYCL_MODULE=OFF
@@ -367,10 +314,10 @@ ci_build() {
 cpu-static_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-static
 
-    export BASE_IMAGE=ubuntu:20.04
+    export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -379,50 +326,32 @@ cpu-static_export_env() {
     export BUILD_SYCL_MODULE=OFF
 }
 
-cpu-shared_export_env() {
-    export DOCKER_TAG=open3d-ci:cpu-shared
+cpu-static-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-static
 
-    export BASE_IMAGE=ubuntu:20.04
-    export DEVELOPER_BUILD=ON
+    export BASE_IMAGE=ubuntu:22.04
+    export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.12
-    export BUILD_SHARED_LIBS=ON
+    export PYTHON_VERSION=3.10
+    export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
-    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
-    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=ON
+    export PACKAGE=VIEWER
     export BUILD_SYCL_MODULE=OFF
 }
 
 cpu-shared-ml_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared-ml
 
-    export BASE_IMAGE=ubuntu:20.04
+    export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
-    export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-cpu-shared-release_export_env() {
-    export DOCKER_TAG=open3d-ci:cpu-shared
-
-    export BASE_IMAGE=ubuntu:20.04
-    export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.12   # no TF versions after 2.13.2 for Python 3.8
-    export BUILD_SHARED_LIBS=ON
-    export BUILD_CUDA_MODULE=OFF
-    # TODO: tensorflow tests moved here till PyTorch supports cxx11_abi
     export BUILD_TENSORFLOW_OPS=ON
-    export BUILD_PYTORCH_OPS=OFF
+    export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
 }
@@ -430,14 +359,13 @@ cpu-shared-release_export_env() {
 cpu-shared-ml-release_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared-ml
 
-    export BASE_IMAGE=ubuntu:20.04
+    export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-    # TODO: re-enable tensorflow support, off due to due to cxx11_abi issue with PyTorch
-    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
     export BUILD_SYCL_MODULE=OFF
@@ -447,34 +375,42 @@ sycl-shared_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-shared
 
     # https://hub.docker.com/r/intel/oneapi-basekit
-    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-20.04
-    export BASE_IMAGE=intel/oneapi-basekit:2024.1.0-devel-ubuntu20.04
-    export DEVELOPER_BUILD=ON
+    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-22.04
+    export BASE_IMAGE=intel/oneapi-basekit:2024.1.1-devel-ubuntu22.04
+    export DEVELOPER_BUILD=${DEVELOPER_BUILD:-ON}
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=${PYTHON_VERSION:-3.10}
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
-    export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=OFF
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
     export BUILD_SYCL_MODULE=ON
+
+    export IGC_EnableDPEmulation=1       # Enable float64 emulation during compilation
+    export SYCL_CACHE_PERSISTENT=1       # Cache SYCL kernel binaries.
+    export OverrideDefaultFP64Settings=1 # Enable double precision emulation at runtime.
 }
 
 sycl-static_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-static
 
     # https://hub.docker.com/r/intel/oneapi-basekit
-    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-20.04
-    export BASE_IMAGE=intel/oneapi-basekit:2024.1.0-devel-ubuntu20.04
+    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-22.04
+    export BASE_IMAGE=intel/oneapi-basekit:2024.1.1-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=3.8
+    export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=OFF
     export BUILD_SYCL_MODULE=ON
+
+    export IGC_EnableDPEmulation=1       # Enable float64 emulation during compilation
+    export SYCL_CACHE_PERSISTENT=1       # Cache SYCL kernel binaries.
+    export OverrideDefaultFP64Settings=1 # Enable double precision emulation at runtime.
 }
 
 function main() {
@@ -485,14 +421,6 @@ function main() {
     echo "[$(basename $0)] building $1"
     case "$1" in
     # OpenBLAS AMD64
-    openblas-amd64-py38-dev)
-        openblas_export_env amd64 py38 dev
-        openblas_build
-        ;;
-    openblas-amd64-py39-dev)
-        openblas_export_env amd64 py39 dev
-        openblas_build
-        ;;
     openblas-amd64-py310-dev)
         openblas_export_env amd64 py310 dev
         openblas_build
@@ -505,12 +433,8 @@ function main() {
         openblas_export_env amd64 py312 dev
         openblas_build
         ;;
-    openblas-amd64-py38)
-        openblas_export_env amd64 py38
-        openblas_build
-        ;;
-    openblas-amd64-py39)
-        openblas_export_env amd64 py39
+    openblas-amd64-py313-dev)
+        openblas_export_env amd64 py313 dev
         openblas_build
         ;;
     openblas-amd64-py310)
@@ -525,16 +449,12 @@ function main() {
         openblas_export_env amd64 py312
         openblas_build
         ;;
+    openblas-amd64-py313)
+        openblas_export_env amd64 py313
+        openblas_build
+        ;;
 
     # OpenBLAS ARM64
-    openblas-arm64-py38-dev)
-        openblas_export_env arm64 py38 dev
-        openblas_build
-        ;;
-    openblas-arm64-py39-dev)
-        openblas_export_env arm64 py39 dev
-        openblas_build
-        ;;
     openblas-arm64-py310-dev)
         openblas_export_env arm64 py310 dev
         openblas_build
@@ -547,12 +467,8 @@ function main() {
         openblas_export_env arm64 py312 dev
         openblas_build
         ;;
-    openblas-arm64-py38)
-        openblas_export_env arm64 py38
-        openblas_build
-        ;;
-    openblas-arm64-py39)
-        openblas_export_env arm64 py39
+    openblas-arm64-py313-dev)
+        openblas_export_env arm64 py313 dev
         openblas_build
         ;;
     openblas-arm64-py310)
@@ -567,18 +483,18 @@ function main() {
         openblas_export_env arm64 py312
         openblas_build
         ;;
+    openblas-arm64-py313)
+        openblas_export_env arm64 py313
+        openblas_build
+        ;;
 
     # CPU CI
     cpu-static)
         cpu-static_export_env
         ci_build
         ;;
-    cpu-shared)
-        cpu-shared_export_env
-        ci_build
-        ;;
-    cpu-shared-release)
-        cpu-shared-release_export_env
+    cpu-static-release)
+        cpu-static-release_export_env
         ci_build
         ;;
     cpu-shared-ml)
@@ -601,12 +517,6 @@ function main() {
         ;;
 
     # CUDA wheels
-    cuda_wheel_py38_dev)
-        cuda_wheel_build py38 dev
-        ;;
-    cuda_wheel_py39_dev)
-        cuda_wheel_build py39 dev
-        ;;
     cuda_wheel_py310_dev)
         cuda_wheel_build py310 dev
         ;;
@@ -616,11 +526,8 @@ function main() {
     cuda_wheel_py312_dev)
         cuda_wheel_build py312 dev
         ;;
-    cuda_wheel_py38)
-        cuda_wheel_build py38
-        ;;
-    cuda_wheel_py39)
-        cuda_wheel_build py39
+    cuda_wheel_py313_dev)
+        cuda_wheel_build py313 dev
         ;;
     cuda_wheel_py310)
         cuda_wheel_build py310
@@ -631,30 +538,25 @@ function main() {
     cuda_wheel_py312)
         cuda_wheel_build py312
         ;;
+    cuda_wheel_py313)
+        cuda_wheel_build py313
+        ;;
 
     # ML CIs
-    2-focal)
-        2-focal_export_env
+    2-jammy)
+        2-jammy_export_env
         ci_build
         ;;
-    3-ml-shared-focal-release)
-        3-ml-shared-focal-release_export_env
+    3-ml-shared-jammy-release)
+        3-ml-shared-jammy-release_export_env
         ci_build
         ;;
-    3-ml-shared-focal)
-        3-ml-shared-focal_export_env
+    3-ml-shared-jammy)
+        3-ml-shared-jammy_export_env
         ci_build
         ;;
-    4-shared-focal-release)
-        4-shared-focal-release_export_env
-        ci_build
-        ;;
-    4-shared-focal)
-        4-shared-focal_export_env
-        ci_build
-        ;;
-    5-ml-jammy)
-        5-ml-jammy_export_env
+    5-ml-noble)
+        5-ml-noble_export_env
         ci_build
         ;;
     *)

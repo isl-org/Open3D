@@ -223,30 +223,21 @@ Case 2: When documenting Python bindings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * First, complete the Python binding code following the guides from `Pybind11 Docs <https://pybind11.readthedocs.io/en/stable/basics.html>`_. Make sure to write the high-level docstrings for the classes and functions. Also use ``"param_name"_a`` to denote function parameters.  Use standard RST based docstring syntax (`Google style <https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings>`__) as explained `here <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_ and `there <https://www.python.org/dev/peps/pep-0257/>`_.
-* Use the ``docstring::ClassMethodDocInject()`` or ``docstring::FunctionDocInject()`` to insert parameter docs.
-* Example binding and docstrings for the ``Calculator`` class:
+* Writing docstrings that render as expected can be tricky. The following example docstring points out some of the pitfalls to watch out for:
 
-..  code:: cpp
+.. tabs::
 
-    py::class_<Calculator> calculator(
-                m, "Calculator",
-                "Calculator class performs numerical computations.");
-    calculator.def("add", &Calculator::Add,
-                   "Performs ``a`` plus ``b``, i.e. :math:`c=a+b` Unlike "
-                   ":math:`open3d.Calculator.sub`, "
-                   ":math:`open3d.Calculator.add` is "
-                   "commutative.",
-                                "a"_a, "b"_a);
-    calculator.def("sub", &Calculator::Add, "Subtracts ``b`` from ``a``,"
-                   " i.e. :math:`c=a-b`",
-                   "a"_a,
-                   "b"_a);
-    docstring::ClassMethodDocInject(m, "Calculator", "add",
-                                    {{"a", "LHS operand for summation."},
-                                     {"b", "RHS operand for summation."}});
-    docstring::ClassMethodDocInject(m, "Calculator", "sub",
-                                    {{"a", "LHS operand for subtraction."},
-                                     {"b", "RHS operand for subtraction."}});
+   .. tab:: Docstring example
+
+      .. literalinclude:: ./example_python_docstring.rst
+         :language: rest
+
+   .. tab:: Rendered result
+
+      .. image:: ../../_static/contribute/example_python_docstring.webp
+         :width: 800
+         :alt: Rendered docstring
+      
 
 Case 3: When documenting pure Python code (no bindings)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

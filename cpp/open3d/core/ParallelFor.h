@@ -99,6 +99,11 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
 /// \note If you use a lambda function, capture only the required variables
 /// instead of all to prevent accidental race conditions. If you want the
 /// kernel to be used on both CPU and CUDA, capture the variables by value.
+/// \note This does not dispatch to SYCL, since SYCL has extra constraints:
+///      - Lambdas may capture by value only.
+///      - No function pointers / virtual functions.
+/// Auto dispatch to SYCL will enforce these conditions even on CPU devices. Use
+/// ParallelForSYCL instead.
 template <typename func_t>
 void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 #ifdef __CUDACC__

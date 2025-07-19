@@ -28,9 +28,8 @@ void pybind_o3dvisualizer_declarations(py::module& m) {
     py::class_<O3DVisualizer, UnownedPointer<O3DVisualizer>, gui::Window>
             o3dvis(m, "O3DVisualizer", "Visualization object used by draw()");
 
-    py::enum_<O3DVisualizer::Shader> dv_shader(o3dvis, "Shader",
-                                               "Scene-level rendering options");
-    dv_shader
+    py::native_enum<O3DVisualizer::Shader>(o3dvis, "Shader", "enum.Enum",
+                                           "Scene-level rendering options")
             .value("STANDARD", O3DVisualizer::Shader::STANDARD,
                    "Pixel colors from standard lighting model")
             .value("UNLIT", O3DVisualizer::Shader::UNLIT,
@@ -39,15 +38,18 @@ void pybind_o3dvisualizer_declarations(py::module& m) {
                    "Pixel colors correspond to surface normal")
             .value("DEPTH", O3DVisualizer::Shader::DEPTH,
                    "Pixel colors correspond to depth buffer value")
-            .export_values();
+            .export_values()
+            .finalize();
 
-    py::enum_<O3DVisualizer::TickResult> tick_result(
-            o3dvis, "TickResult", "Return value from animation tick callback");
-    tick_result
+    py::native_enum<O3DVisualizer::TickResult>(
+            o3dvis, "TickResult", "enum.Enum",
+            "Return value from animation tick callback")
             .value("NO_CHANGE", O3DVisualizer::TickResult::NO_CHANGE,
                    "Signals that no change happened and no redraw is required")
             .value("REDRAW", O3DVisualizer::TickResult::REDRAW,
-                   "Signals that a redraw is required");
+                   "Signals that a redraw is required")
+            .export_values()
+            .finalize();
 
     py::class_<O3DVisualizer::DrawObject> drawobj(
             o3dvis, "DrawObject",
@@ -324,8 +326,8 @@ void pybind_o3dvisualizer_definitions(py::module& m) {
                  "redraw is required.",
                  "callback"_a)
             .def("export_current_image", &O3DVisualizer::ExportCurrentImage,
-                 "Exports a PNG image of what is currently displayed to the "
-                 "given path.",
+                 "Exports a PNG or JPEG image of what is currently displayed "
+                 "to the given path.",
                  "path"_a)
             .def("start_rpc_interface", &O3DVisualizer::StartRPCInterface,
                  "address"_a, "timeout"_a,

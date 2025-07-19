@@ -503,8 +503,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                 },
                 faces=faces[bidx] if len(faces) > 0 else faces,
                 face_attributes={
-                    prop: tensor[bidx]
-                    for prop, tensor in triangle_data.items()
+                    prop: tensor[bidx] for prop, tensor in triangle_data.items()
                 },
                 lines=lines[bidx] if len(lines) > 0 else lines,
                 line_attributes={
@@ -575,6 +574,7 @@ def add_3d(name,
         data (dict): A dictionary of tensors representing 3D data. Tensorflow,
             PyTorch, Numpy and Open3D tensors are supported. The following keys
             are supported:
+
             - ``vertex_positions``: shape `(B, N, 3)` where B is the number of point
               clouds and must be same for each key. N is the number of 3D points.
               Will be cast to ``float32``.

@@ -352,10 +352,12 @@ public:
     /// points has farthest distance.
     ///
     /// The sampling is performed by selecting the farthest point from previous
-    /// selected points iteratively.
+    /// selected points iteratively, starting from `start_index`.
     ///
     /// \param num_samples Number of points to be sampled.
-    PointCloud FarthestPointDownSample(size_t num_samples) const;
+    /// \param start_index Index to start downsampling from.
+    PointCloud FarthestPointDownSample(const size_t num_samples,
+                                       const size_t start_index = 0) const;
 
     /// \brief Remove points that have less than \p nb_points neighbors in a
     /// sphere of a given radius.
@@ -708,7 +710,7 @@ public:
     /// surface points from the first point cloud that have the second point
     /// cloud points within the threshold radius, while Precision is the
     /// percentage of points from the second point cloud that have the first
-    /// point cloud points within the threhold radius.
+    /// point cloud points within the threshold radius.
 
     /// \f{eqnarray*}{
     ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
@@ -735,6 +737,20 @@ public:
             const PointCloud &pcd2,
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
+
+    /// Check if this point cloud has all the attributes required for a Gaussian
+    /// Splat. This checks for the presence of scale, rot, opacity and f_dc
+    /// attributes.
+    /// \returns True if a valid 3DGS point cloud, else False.
+    /// \throws If point cloud has 3DGS attributes, but they are invalid (wrong
+    /// shape).
+    bool IsGaussianSplat() const;
+
+    /// \brief Returns the order of spherical harmonics used for Gaussian
+    /// Splatting. Returns 0 if f_rest is not present.
+    /// \throws If point cloud has f_rest 3DGS attribute, with the wrong
+    /// shape.
+    int GaussianSplatGetSHOrder() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

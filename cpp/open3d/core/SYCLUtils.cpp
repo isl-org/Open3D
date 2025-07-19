@@ -84,7 +84,7 @@ int SYCLDemo() {
 
 #ifdef BUILD_SYCL_MODULE
 
-static std::string GetDeviceTypeName(const sycl::device &device) {
+OPEN3D_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device) {
     auto device_type = device.get_info<sycl::info::device::device_type>();
     switch (device_type) {
         case sycl::info::device_type::cpu:
@@ -95,6 +95,8 @@ static std::string GetDeviceTypeName(const sycl::device &device) {
             return "host";
         case sycl::info::device_type::accelerator:
             return "acc";
+        case sycl::info::device_type::custom:
+            return "custom";
         default:
             return "unknown";
     }
@@ -118,14 +120,32 @@ static std::string SYCLDeviceToString(const sycl::device &device) {
 
 void PrintSYCLDevices(bool print_all) {
 #ifdef BUILD_SYCL_MODULE
-    const char *filter = std::getenv("SYCL_DEVICE_FILTER");
+    const char *filter = std::getenv("ONEAPI_DEVICE_SELECTOR");
     if (filter) {
         utility::LogWarning(
-                "SYCL_DEVICE_FILTER environment variable is set to {}. To see "
-                "the correct device id, please unset SYCL_DEVICE_FILTER.",
+                "ONEAPI_DEVICE_SELECTOR environment variable is set to {}. To "
+                "see the correct device id, please unset "
+                "ONEAPI_DEVICE_SELECTOR.",
                 filter);
     }
 
+    int nd = 0;
+    utility::LogInfo("# Open3D SYCL device");
+    try {
+        auto dev = sycl::device(sycl::gpu_selector_v);
+        utility::LogInfo("- Device(\"SYCL:{}\"): {}", nd,
+                         SYCLDeviceToString(dev));
+        ++nd;
+    } catch (const sycl::exception &e) {  // No SYCL GPU available.
+    }
+    try {
+        auto dev = sycl::device(sycl::cpu_selector_v);
+        utility::LogInfo("# Open3D SYCL device (CPU fallback)");
+        utility::LogInfo("- Device(\"SYCL:{}\"): {}", nd,
+                         SYCLDeviceToString(dev));
+    } catch (const sycl::exception &e) {  // No SYCL CPU available.
+        if (nd == 0) utility::LogInfo("- Device(\"SYCL:0\"): N/A");
+    }
     if (print_all) {
         utility::LogInfo("# All SYCL devices");
         const std::vector<sycl::platform> &platforms =
@@ -168,24 +188,6 @@ void PrintSYCLDevices(bool print_all) {
         } catch (const sycl::exception &e) {
             utility::LogInfo("- sycl::accelerator_selector_v: N/A");
         }
-
-        utility::LogInfo("# Open3D SYCL device");
-        try {
-            const sycl::device &device = sycl::device(sycl::gpu_selector_v);
-            utility::LogInfo("- Device(\"SYCL:0\"): {}",
-                             SYCLDeviceToString(device));
-        } catch (const sycl::exception &e) {
-            utility::LogInfo("- Device(\"SYCL:0\"): N/A");
-        }
-    } else {
-        utility::LogInfo("# Open3D SYCL device");
-        try {
-            const sycl::device &device = sycl::device(sycl::gpu_selector_v);
-            utility::LogInfo("- Device(\"SYCL:0\"): {}",
-                             SYCLDeviceToString(device));
-        } catch (const sycl::exception &e) {
-            utility::LogInfo("- Device(\"SYCL:0\"): N/A");
-        }
     }
 
 #else
@@ -210,6 +212,20 @@ bool IsDeviceAvailable(const Device &device) {
 #endif
 }
 
+std::string GetDeviceType(const Device &device) {
+#ifdef BUILD_SYCL_MODULE
+    if (IsDeviceAvailable(device)) {
+        return SYCLContext::GetInstance()
+                .GetDeviceProperties(device)
+                .device_type;
+    } else {
+        return "";
+    }
+#else
+    return "";
+#endif
+}
+
 std::vector<Device> GetAvailableSYCLDevices() {
 #ifdef BUILD_SYCL_MODULE
     return SYCLContext::GetInstance().GetAvailableSYCLDevices();
@@ -225,10 +241,11 @@ void enablePersistentJITCache() {
 #else
     setenv("SYCL_CACHE_PERSISTENT", "1", 1);
 #endif
-#endif
+#else
     utility::LogInfo(
             "enablePersistentJITCache is not compiled with "
             "BUILD_SYCL_MODULE=ON.");
+#endif
 }
 
 }  // namespace sy

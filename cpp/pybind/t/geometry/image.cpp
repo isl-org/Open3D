@@ -58,13 +58,15 @@ void pybind_image_declarations(py::module &m) {
             image(m, "Image", py::buffer_protocol(),
                   "The Image class stores image with customizable rols, cols, "
                   "channels, dtype and device.");
-    py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
+    py::native_enum<Image::InterpType>(m, "InterpType", "enum.Enum",
+                                       "Interpolation type.")
             .value("Nearest", Image::InterpType::Nearest)
             .value("Linear", Image::InterpType::Linear)
             .value("Cubic", Image::InterpType::Cubic)
             .value("Lanczos", Image::InterpType::Lanczos)
             .value("Super", Image::InterpType::Super)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
                Geometry>
             rgbd_image(
@@ -181,7 +183,8 @@ void pybind_image_definitions(py::module &m) {
                  "Upsample if sampling rate > 1. Aspect ratio is always "
                  "kept.",
                  "sampling_rate"_a = 0.5,
-                 "interp_type"_a = Image::InterpType::Nearest)
+                 py::arg_v("interp_type", Image::InterpType::Nearest,
+                           "open3d.t.geometry.InterpType.Nearest"))
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
                  "formed by a chained Gaussian filter (kernel_size = 5, sigma"

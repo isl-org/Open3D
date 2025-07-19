@@ -21,7 +21,7 @@
 
 #include <string>
 
-#ifdef WIN32
+#ifdef _WIN32
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #endif
 #ifdef __APPLE__
@@ -99,7 +99,9 @@ public:
         return true;
     }
 
-    PYBIND11_TYPE_CASTER(T, const_name("os.PathLike"));
+    PYBIND11_TYPE_CASTER(T,
+                         io_name("Union[os.PathLike, str, bytes]",
+                                 "pathlib.Path"));
 };
 
 template <>

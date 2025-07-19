@@ -54,15 +54,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - CI_CONFIG: 2-focal
-          - CI_CONFIG: 3-ml-shared-focal
-          - CI_CONFIG: 4-shared-focal
-          - CI_CONFIG: 5-ml-jammy
+          - CI_CONFIG: 2-jammy
+          - CI_CONFIG: 3-ml-shared-jammy
+          - CI_CONFIG: 5-ml-noble
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : ${{ matrix.CI_CONFIG }}
-      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-focal", "4-shared-focal"]'), matrix.CI_CONFIG) }}
+      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-jammy"]'), matrix.CI_CONFIG) }}
       GCE_INSTANCE_PREFIX: open3d-ci-${{ matrix.CI_CONFIG }}
       DOCKER_TAG         : open3d-ci:${{ matrix.CI_CONFIG }}
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
@@ -180,7 +179,7 @@ jobs:
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
             --command="ls -alh \
-                    && gsutil cp ${CCACHE_TAR_NAME}.tar.gz gs://open3d-ci-cache/"
+                    && gsutil cp ${CCACHE_TAR_NAME}.tar.xz gs://open3d-ci-cache/"
 
       - name: VM delete
         if: always()

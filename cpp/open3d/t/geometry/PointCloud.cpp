@@ -384,7 +384,8 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
             false, false);
 }
 
-PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
+PointCloud PointCloud::FarthestPointDownSample(const size_t num_samples,
+                                               const size_t start_index) const {
     const core::Dtype dtype = GetPointPositions().GetDtype();
     const int64_t num_points = GetPointPositions().GetLength();
     if (num_samples == 0) {
@@ -395,6 +396,9 @@ PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
         utility::LogError(
                 "Illegal number of samples: {}, must <= point size: {}",
                 num_samples, num_points);
+    } else if (start_index >= size_t(num_points)) {
+        utility::LogError("Illegal start index: {}, must <= point size: {}",
+                          start_index, num_points);
     }
     core::Tensor selection_mask =
             core::Tensor::Zeros({num_points}, core::Bool, GetDevice());
@@ -402,7 +406,7 @@ PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
             {num_points}, std::numeric_limits<double>::infinity(), dtype,
             GetDevice());
 
-    int64_t farthest_index = 0;
+    int64_t farthest_index = static_cast<int64_t>(start_index);
 
     for (size_t i = 0; i < num_samples; i++) {
         selection_mask[farthest_index] = true;
@@ -1365,6 +1369,39 @@ core::Tensor PointCloud::ComputeMetrics(const PointCloud &pcd2,
                                 metrics, params);
 }
 
+bool PointCloud::IsGaussianSplat() const {
+    bool have_all_attrs = HasPointAttr("opacity") && HasPointAttr("rot") &&
+                          HasPointAttr("scale") && HasPointAttr("f_dc");
+    if (!have_all_attrs) {  // not 3DGS, no messages.
+        return false;
+    }
+    // Existing but invalid attributes cause errors.
+    auto num_points = GetPointPositions().GetLength();
+    core::AssertTensorShape(GetPointAttr("opacity"), {num_points, 1});
+    core::AssertTensorShape(GetPointAttr("rot"), {num_points, 4});
+    core::AssertTensorShape(GetPointAttr("scale"), {num_points, 3});
+    core::AssertTensorShape(GetPointAttr("f_dc"), {num_points, 3});
+    GaussianSplatGetSHOrder();  // Tests f_rest shape is valid.
+    return true;
+}
+
+int PointCloud::GaussianSplatGetSHOrder() const {
+    if (point_attr_.find("f_rest") == point_attr_.end()) {
+        return 0;
+    }
+    const core::Tensor &f_rest = GetPointAttr("f_rest");
+    auto num_points = GetPointPositions().GetLength();
+    core::AssertTensorShape(f_rest, {num_points, core::None, 3});
+    auto Nc = f_rest.GetShape(1);
+    auto degp1 = static_cast<int>(sqrt(Nc + 1));
+    if (degp1 * degp1 != Nc + 1) {
+        utility::LogError(
+                "f_rest has incomplete Spherical Harmonics coefficients "
+                "({}), expected 0, 3, 8 or 15.",
+                Nc);
+    }
+    return degp1 - 1;
+}
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

@@ -39,7 +39,7 @@
 
 namespace open3d {
 namespace geometry {
-namespace poisson {
+namespace {
 
 // The order of the B-Spline used to splat in data for color interpolation
 static const int DATA_DEGREE = 0;
@@ -713,7 +713,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
                       Time() - startTime, FEMTree<Dim, Real>::MaxMemoryUsage());
 }
 
-}  // namespace poisson
+}  // namespace
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
 TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
@@ -722,10 +722,9 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           float scale,
                                           bool linear_fit,
                                           int n_threads) {
-    static const BoundaryType BType = poisson::DEFAULT_FEM_BOUNDARY;
+    static const BoundaryType BType = DEFAULT_FEM_BOUNDARY;
     typedef IsotropicUIntPack<
-            poisson::DIMENSION,
-            FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
+            DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
             FEMSigs;
 
     if (!pcd.HasNormals()) {
@@ -746,8 +745,8 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
 
     auto mesh = std::make_shared<TriangleMesh>();
     std::vector<double> densities;
-    poisson::Execute<float>(pcd, mesh, densities, static_cast<int>(depth),
-                            width, scale, linear_fit, FEMSigs());
+    Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale,
+                   linear_fit, FEMSigs());
 
     ThreadPool::Terminate();
 

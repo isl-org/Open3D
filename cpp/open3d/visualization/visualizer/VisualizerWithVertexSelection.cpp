@@ -754,9 +754,9 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
     }
 }
 
-const std::vector<Eigen::Vector3d>
-        *VisualizerWithVertexSelection::GetGeometryPoints(
-                std::shared_ptr<const geometry::Geometry> geometry) {
+const std::vector<Eigen::Vector3d> *
+VisualizerWithVertexSelection::GetGeometryPoints(
+        std::shared_ptr<const geometry::Geometry> geometry) {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {

@@ -1,5 +1,8 @@
 # Open3D Docker
 
+This README covers, first, dependencies and instructions for building Linux, then those
+for Windows.
+
 ## Dependencies
 
 ### Docker dependencies
@@ -66,3 +69,80 @@ cd docker
 ```
 
 See `./docker_build.sh` and `./docker_test.sh` for all available options.
+
+## Building for Linux under Windows
+
+You can build and test Open3D for Linux in a Docker container under Windows using the provided scripts thanks to **[Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/)** and **[WSL](https://learn.microsoft.com/en-us/windows/wsl/about)**.
+
+This guide walks you through installing Docker Desktop, setting up Windows Subsystem for Linux (WSL), configuring Docker integration with WSL, and building Open3D for Linux including its documentation and the Python wheel, and testing it, using the provided scripts (respectively `docker_build.sh` and `docker_test.sh`).
+
+### Step 1: Install Docker Desktop
+
+1. **Download and Install**: [Download Docker Desktop](https://www.docker.com/products/docker-desktop) and follow the on-screen prompts to install.
+2. **Launch Docker Desktop**: After installation, open Docker Desktop to ensure it is running.
+
+### Step 2: Install and Set Up WSL
+
+1. **Enable WSL**: Open PowerShell as Administrator and install WSL:
+
+   ```powershell
+   wsl --install
+   ```
+
+2. **Install a Linux Distribution** (e.g., Ubuntu-24.04):
+
+   ```powershell
+   wsl --install -d Ubuntu-24.04
+   ```
+
+3. **Restart** your system if prompted.
+
+### Step 3: Enable Docker Integration with WSL
+
+1. **Open Docker Desktop**.
+2. **Go to Settings** > **Resources** > **WSL Integration**.
+3. **Enable Integration** for your Linux distribution (e.g., Ubuntu-24.04).
+4. If necessary, **restart Docker Desktop** to apply the changes.
+
+### Step 4: Clone and check out Open3D repository
+
+1. **Open a terminal** within WSL.
+2. **Clone and check out** Open3D repository into the folder of your choice:
+
+   ```bash
+   git clone https://github.com/isl-org/Open3D /path/to/Open3D
+   ```
+
+### Step 5: Build Open3D for Linux in WSL using the provided script
+
+1. **Open your WSL terminal**.
+2. **Navigate** to the Docker folder in the Open3D repository:
+
+   ```bash
+   cd /path/to/Open3D/docker
+   ```
+
+3. **Disable PyTorch and TensorFlow ops** if not needed:
+
+   ```bash
+   export BUILD_PYTORCH_OPS=OFF
+   export BUILD_TENSORFLOW_OPS=OFF
+   ```
+
+4. **Run the Docker build script**:
+
+   E.g.:
+
+   ```bash
+   ./docker_build.sh openblas-amd64-py312
+   ```
+
+   Check the log of the build. After the build completes, you will have an Open3D Docker image ready to use, and the artifacts (binaries, documentation and Python package) will have been copied back to the host.
+
+5. **Run tests within the built Docker image**:
+
+   E.g.:
+
+   ```bash
+   ./docker_test.sh openblas-amd64-py312
+   ```

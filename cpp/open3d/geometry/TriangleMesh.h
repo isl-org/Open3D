@@ -116,7 +116,7 @@ public:
     /// needed.
     TriangleMesh &ComputeAdjacencyList();
 
-    /// \brief Function that removes duplicated verties, i.e., vertices that
+    /// \brief Function that removes duplicated vertices, i.e., vertices that
     /// have identical coordinates.
     TriangleMesh &RemoveDuplicatedVertices();
 
@@ -560,7 +560,7 @@ public:
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \p radius defines the
     /// distance from the center to the mesh vertices.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateTetrahedron(
             double radius = 1.0, bool create_uv_map = false);
@@ -568,7 +568,7 @@ public:
     /// Factory function to create an octahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \p radius defines the
     /// distance from the center to the mesh vertices.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateOctahedron(
             double radius = 1.0, bool create_uv_map = false);

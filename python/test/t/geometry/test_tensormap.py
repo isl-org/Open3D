@@ -14,6 +14,7 @@ import tempfile
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
@@ -22,7 +23,7 @@ class WrongType():
     pass
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_tensormap(device):
     dtype = o3c.float32
 
@@ -103,7 +104,7 @@ def test_tensormap(device):
     assert primary_key == "positions"
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_tensormap_modify(device):
     # Assigning to the *elements* of an alias will change the value in the map.
     # This tests that the alias shares the same memory as the tensor in the map.
@@ -170,7 +171,7 @@ def test_tensormap_modify(device):
     np.testing.assert_equal(tm.b.cpu().numpy(), [100])
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_tensor_dict_modify(device):
     """
     Same as test_tensormap_modify(), but we put Tensors in a python dict.
@@ -301,7 +302,7 @@ def test_numpy_dict_modify():
     np.testing.assert_equal(tm["b"], [100])
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_pickle(device):
     tm = o3d.t.geometry.TensorMap("positions")
     with tempfile.TemporaryDirectory() as temp_dir:

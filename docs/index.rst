@@ -24,7 +24,9 @@ Open3D: A Modern Library for 3D Data Processing
     builddocs
     docker
     arm
+    sycl
     open3d_ml
+    poux_book
 
 .. toctree::
     :maxdepth: 2

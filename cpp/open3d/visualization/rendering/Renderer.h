@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "open3d/visualization/rendering/MaterialModifier.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 
