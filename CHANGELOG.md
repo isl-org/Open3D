@@ -62,6 +62,7 @@
 -   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
 -   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
 -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
+-   Fix `deprecated-declarations` warnings when compiling code with C++20 standard (PR #7303)
 
 ## 0.13
 
