@@ -61,6 +61,7 @@
 -   Fix CMake configuration summary incorrectly reporting `no` for system BLAS. (PR #7230)
 -   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
 -   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
+-   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
 
 ## 0.13
 
