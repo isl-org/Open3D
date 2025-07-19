@@ -20,6 +20,9 @@ ExternalProject_Add(
     # Patch for macOS ARM64 support for versions < 2.50.0
     COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
         ${CMAKE_CURRENT_LIST_DIR}/fix-macos-arm64.patch
+    # Patch to include the <chrono> header for the system_clock type
+    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+        ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
