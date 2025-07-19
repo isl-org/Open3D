@@ -62,6 +62,8 @@
 -   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
 -   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
 -   Fix Illegal instruction (core dumped) on linux system's without AVX #7308
+-   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
+
 ## 0.13
 
 -   CUDA support 10.1 -> 11.0. Tensorflow 2.3.1 -> 2.4.1. PyTorch 1.6.0 -> 1.7.1 (PR #3049). This requires a custom PyTorch wheel from <https://github.com/isl-org/open3d_downloads/releases/tag/torch1.7.1> due to PyTorch issue #52663

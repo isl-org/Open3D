@@ -1,0 +1,12 @@
+diff --git a/src/backend.h b/src/backend.h
+index a402e3dfb..0acd299c0 100644
+--- a/src/backend.h
++++ b/src/backend.h
+@@ -14,6 +14,7 @@
+ 
+ #include <memory>       // For shared_ptr
+ #include <functional>   // For function
++#include <chrono>
+ #include <thread>       // For this_thread::sleep_for
+ #include <vector>
+ #include <algorithm>
