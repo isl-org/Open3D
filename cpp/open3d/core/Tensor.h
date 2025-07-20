@@ -62,8 +62,9 @@ public:
 
         // Check data types
         AssertTemplateDtype<T>();
-        if (!std::is_pod<T>()) {
-            utility::LogError("Object must be a POD.");
+        if (!(std::is_standard_layout<T>::value && std::is_trivial<T>::value)) {
+            utility::LogError(
+                    "Object must be a StandardLayout and TrivialType type.");
         }
 
         // Copy data to blob
