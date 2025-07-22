@@ -84,7 +84,7 @@ libpng                      1.6.49                                libpng license
 The free reference library for reading and writing PNGs
 http://www.libpng.org/
 --------------------------------------------------------------------------------
-librealsense                2.44.0                               Apache-2 license
+librealsense                2.54.2                               Apache-2 license
 A cross-platform library for capturing data from the Intel RealSense F200,
 SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
@@ -105,7 +105,7 @@ PoissonReco                 12.0                                     BSD license
 Poisson Surface Reconstruction
 https://github.com/mkazhdan/PoissonRecon
 --------------------------------------------------------------------------------
-pybind11                    v2.13.1                                  BSD license
+pybind11                    v3.00.0                                  BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
 --------------------------------------------------------------------------------

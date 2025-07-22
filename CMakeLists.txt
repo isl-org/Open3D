@@ -64,10 +64,10 @@ else()
 endif()
 option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
 if(BUILD_SYCL_MODULE)
-    set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING 
+    set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING
     "SYCL targets: spir64 for JIT, or another for AOT compilation. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
 )
-    set(OPEN3D_SYCL_TARGET_BACKEND_OPTIONS "" CACHE STRING 
+    set(OPEN3D_SYCL_TARGET_BACKEND_OPTIONS "" CACHE STRING
     "SYCL target backend options, e.g. to compile for a specific device. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
 )
     set(BUILD_ISPC_MODULE OFF CACHE BOOL "Build the ISPC module" FORCE)
