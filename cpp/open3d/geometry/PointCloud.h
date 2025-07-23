@@ -14,7 +14,6 @@
 
 #include "open3d/geometry/Geometry3D.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 
@@ -179,6 +178,12 @@ public:
     /// \param start_index Index to start downsampling from.
     std::shared_ptr<PointCloud> FarthestPointDownSample(
             const size_t num_samples, const size_t start_index = 0) const;
+
+    /// \brief Bilateral filter for point cloud.
+    /// TODO: write a proper description.
+    std::shared_ptr<PointCloud> FilterBilateral(double radius,
+                                                double sigma_s,
+                                                double sigma_r) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
     ///
