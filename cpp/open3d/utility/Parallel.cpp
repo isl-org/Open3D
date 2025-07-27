@@ -45,6 +45,22 @@ int EstimateMaxThreads() {
 #endif
 }
 
+int GetNumThreads() {
+#ifdef _OPENMP
+    return omp_get_num_threads();
+#else
+    return 1;  // No parallelism available.
+#endif
+}
+
+int GetThreadNum() {
+#ifdef _OPENMP
+    return omp_get_thread_num();
+#else
+    return 0;  // No parallelism available, so thread ID is always 0.
+#endif
+}
+
 bool InParallel() {
     // TODO: when we add TBB/Parallel STL support to ParallelFor, update this.
 #ifdef _OPENMP
