@@ -548,40 +548,58 @@ std::shared_ptr<PointCloud> PointCloud::FilterBilateral(
         double radius,
         double sigma_s,
         double sigma_r) const {
-    auto output = std::make_shared<PointCloud>(*this);
+    auto output = std::make_shared<PointCloud>();
     KDTreeFlann kdtree(*this);
 
-    const double two_sigma_spatial2 = 2.0 * sigma_s * sigma_s;
-    const double two_sigma_range2 = 2.0 * sigma_r * sigma_r;
-    
+    output->points_.reserve(points_.size());
+
+    const auto two_sigma_spatial2 = 2.0 * sigma_s * sigma_s;
+    const auto two_sigma_range2 = 2.0 * sigma_r * sigma_r;
+
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d cov;
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
+
     for (size_t i = 0; i < points_.size(); ++i) {
         const auto& point = points_[i];
-        const auto& color = colors_[i];
 
         std::vector<int> indices;
         std::vector<double> distances;
         const auto nb_count = kdtree.SearchRadius(point, radius, indices, distances);
         if (nb_count <= 1) {
+            output->points_.push_back(point);
             continue;
         }
 
-        double weighted_sum {0.0};
-        Eigen::Vector3d point_sum {};
+        std::tie(mean, cov) = utility::ComputeMeanAndCovariance(points_, indices);
+
+        solver.computeDirect(cov, Eigen::ComputeEigenvectors);
+        Eigen::Matrix<double, 3, 1> normal_vector = solver.eigenvectors().col(0).cast<double>().normalized();
+
+        double sum {0.0};
+        double normalizing_factor {0.0};
 
         for (const auto npoint_index : indices) {
-            const auto& npoint = points_[npoint_index];
-            const auto& ncolor = colors_[npoint_index];
+            const auto& npoint = points_.at(npoint_index);
 
-            const auto spatial_distance = (npoint - point).squaredNorm();
-            // TODO: which ColorToIntensityConversionType to use? Equal or Weighted?
-            const auto range_distance = (ncolor - color).squaredNorm();
+            const auto distance = (npoint - point).squaredNorm();
+            const auto normal_distance = (npoint - mean).dot(normal_vector);
 
-            // TODO: add a reference for this formula
-            const auto w = std::exp(-spatial_distance/two_sigma_spatial2 - range_distance/two_sigma_range2);
-            point_sum += w * npoint;
-            weighted_sum += w;
+            const auto distance_weight = std::exp(-distance * distance / two_sigma_spatial2);
+            const auto normal_distance_weight = std::exp(-normal_distance * normal_distance / two_sigma_range2);
+
+            const auto weight = distance_weight * normal_distance_weight;
+            sum += weight * normal_distance;
+            normalizing_factor += weight;
         }
-        output->points_[i] = point_sum / weighted_sum;
+
+        if (normalizing_factor < std::numeric_limits<double>::epsilon()) {
+            sum = 0.0;
+        } else {
+            sum /= normalizing_factor;
+        }
+
+        output->points_.push_back(point + sum * normal_vector);
     }
 
     return output;
