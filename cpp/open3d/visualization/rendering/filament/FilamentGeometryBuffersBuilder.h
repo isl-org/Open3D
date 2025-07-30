@@ -26,9 +26,11 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293)
-// Filament uses OPAQUE and TRANSPARENT as enums which conflicts with windows.h
+// Filament uses these as enums / local variables that conflict with windows.h
 #undef OPAQUE
 #undef TRANSPARENT
+#undef near
+#undef far
 #endif // _MSC_VER
 
 #include <filament/Box.h>
