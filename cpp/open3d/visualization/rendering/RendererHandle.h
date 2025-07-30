@@ -166,9 +166,9 @@ struct formatter<
     auto format(const open3d::visualization::rendering::REHandle_abstract& uid,
                 FormatContext& ctx) const -> decltype(ctx.out()) {
         return fmt::format_to(ctx.out(), "[{}, {}, hash: {}]",
-                         open3d::visualization::rendering::REHandle_abstract::
-                                 TypeToString(uid.type),
-                         uid.GetId(), uid.Hash());
+                              open3d::visualization::rendering::
+                                      REHandle_abstract::TypeToString(uid.type),
+                              uid.GetId(), uid.Hash());
     }
 
     template <typename ParseContext>

@@ -46,7 +46,7 @@ jobs:
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
-      CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-ci-ccache
+      CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
@@ -90,6 +90,14 @@ jobs:
             ${{ env.PIP_PKG_NAME }}
             ${{ env.PIP_CPU_PKG_NAME }}
           if-no-files-found: error
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload main-devel ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
+          ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }} --clobber
+          gh release view main-devel
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: 'google-github-actions/auth@v2'
@@ -106,14 +114,6 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.xz gs://open3d-ci-cache/
-      - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload main-devel ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
-          ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }} --clobber
-          gh release view main-devel
 
   test-wheel-cpu:
     name: Test wheel CPU
