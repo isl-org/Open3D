@@ -31,8 +31,8 @@ TENSORFLOW_VER="2.19.0"
 TORCH_VER="2.7.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
-PIP_VER="24.3.1"
-PROTOBUF_VER="4.24.0"
+PIP_VER="25.1.1"
+PROTOBUF_VER="6.31.1"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -140,7 +140,14 @@ build_pip_package() {
     echo "Building Open3D wheel"
     options="$(echo "$@" | tr ' ' '|')"
 
-    BUILD_FILAMENT_FROM_SOURCE=OFF
+    AARCH="$(uname -m)"
+    if [[ "$AARCH" == "aarch64" ]]; then
+        echo "Building for aarch64 architecture"
+        BUILD_FILAMENT_FROM_SOURCE=ON
+    else
+        echo "Building for x86_64 architecture"
+        BUILD_FILAMENT_FROM_SOURCE=OFF
+    fi
     set +u
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
@@ -165,9 +172,11 @@ build_pip_package() {
     if [[ "build_jupyter" =~ ^($options)$ ]]; then
         echo "Building Jupyter extension in Python wheel."
         BUILD_JUPYTER_EXTENSION=ON
+        BUILD_WEBRTC_FROM_SOURCE=ON
     else
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
+        BUILD_WEBRTC_FROM_SOURCE=OFF
     fi
     set -u
 
@@ -184,6 +193,7 @@ build_pip_package() {
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
+        "-DBUILD_WEBRTC=$BUILD_WEBRTC_FROM_SOURCE"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_UNIT_TESTS=OFF"
