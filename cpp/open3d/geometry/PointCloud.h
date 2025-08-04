@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <limits>
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -179,11 +180,22 @@ public:
     std::shared_ptr<PointCloud> FarthestPointDownSample(
             const size_t num_samples, const size_t start_index = 0) const;
 
-    /// \brief Bilateral filter for point cloud.
-    /// TODO: write a proper description.
-    std::shared_ptr<PointCloud> FilterBilateral(double radius,
-                                                double sigma_s,
-                                                double sigma_r) const;
+    /// \brief Function to apply a bilateral filter for point cloud as described
+    /// in Delon, Julie, Agnès Desolneux, Jean-Luc Lisani, and Luis Baumela, "A
+    /// Non-Local Algorithm for Image Denoising.", 2017.
+    ///
+    /// Read the paper for more details on the choice of the parameters.
+    /// If either of the parameters \p sigma_s or \p sigma_r is not provided,
+    /// the function will use a stable heuristic by setting both of the
+    /// variables to the third of the specified radius.
+    ///
+    /// \param radius Radius of the neighborhood to consider.
+    /// \param sigma_s Gaussian weight for the euclidean distance.
+    /// \param sigma_r Gaussian weight for the distance to the tangent plane.
+    std::shared_ptr<PointCloud> FilterBilateral(
+            double radius,
+            double sigma_s = -std::numeric_limits<double>::max(),
+            double sigma_r = -std::numeric_limits<double>::max()) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
     ///

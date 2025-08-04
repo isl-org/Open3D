@@ -890,6 +890,65 @@ TEST(PointCloud, FarthestPointDownSample) {
     ExpectEQ(pcd_down_2->points_, expected_2);
 }
 
+TEST(PointCloud, FilterBilateral) {
+    // If every point lies on a perfect plane, bilateral filtering should leave
+    // it unchanged.
+    {
+        auto cloud = std::make_shared<geometry::PointCloud>();
+        constexpr auto side{10};
+        constexpr auto z{0.0};
+        for (int i = 0; i < side; ++i) {
+            for (int j = 0; j < side; ++j) {
+                cloud->points_.push_back(Eigen::Vector3d(
+                        double(i) / (side - 1), double(j) / (side - 1), z));
+            }
+        }
+        const auto result = cloud->FilterBilateral(2.0, 2 / 3.0, 0.0);
+        ASSERT_EQ(result->points_.size(), cloud->points_.size());
+        for (size_t i = 0; i < cloud->points_.size(); ++i) {
+            EXPECT_NEAR(result->points_[i].x(), cloud->points_[i].x(), 1e-8);
+            EXPECT_NEAR(result->points_[i].y(), cloud->points_[i].y(), 1e-8);
+            EXPECT_NEAR(result->points_[i].z(), cloud->points_[i].z(), 1e-8);
+        }
+    }
+
+    // Edge-preservation test.
+    {
+        constexpr auto n{50};
+        // Empirical margin indicating that the original step (1.0) hasn't been
+        // smoothed out and still differs by the set margin
+        constexpr auto edge_diff{0.3};
+        std::mt19937 gen(42);
+        std::normal_distribution<double> noise(0.0, 0.5);
+        auto cloud = std::make_shared<geometry::PointCloud>();
+        for (size_t i = 0; i < n; ++i) {
+            double x = static_cast<double>(i) / (n - 1);
+            double z = (i < n / 2 ? 0.0 : 1.0) + noise(gen);
+            cloud->points_.push_back({x, 0.0, z});
+        }
+        const auto result = cloud->FilterBilateral(2);
+        // Check difference at boundary
+        double zL = result->points_[n / 2 - 1].z();
+        double zR = result->points_[n / 2].z();
+        EXPECT_GT(std::abs(zR - zL), edge_diff);
+    }
+
+    // Edge cases.
+    {
+        auto empty = std::make_shared<geometry::PointCloud>();
+        auto out_empty = empty->FilterBilateral(2.0);
+        EXPECT_TRUE(out_empty->points_.empty());
+
+        auto single = std::make_shared<geometry::PointCloud>();
+        single->points_.push_back({0, 0, 0});
+        auto out_single = single->FilterBilateral(2.0);
+        ASSERT_EQ(out_single->points_.size(), 1u);
+        EXPECT_NEAR(out_single->points_[0].x(), 0.0, 1e-8);
+        EXPECT_NEAR(out_single->points_[0].y(), 0.0, 1e-8);
+        EXPECT_NEAR(out_single->points_[0].z(), 0.0, 1e-8);
+    }
+}
+
 TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
     geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
     geometry::PointCloud pcd({{0, 0, 0},

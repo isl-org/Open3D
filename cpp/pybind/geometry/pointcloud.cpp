@@ -7,6 +7,7 @@
 
 #include "open3d/geometry/PointCloud.h"
 
+#include <limits>
 #include <vector>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
@@ -95,6 +96,17 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "non-negative number less than number of points in the "
                  "input pointcloud.",
                  "start_index"_a = 0)
+            .def("filter_bilateral", &PointCloud::FilterBilateral,
+                 "Function to filter input pointcloud into output pointcloud "
+                 "using bilateral filter. The filter is applied to each point "
+                 "independently, and the result is a new point cloud."
+                 "Based on Julie Digne1, Carlo de Franchis "
+                 "'The Bilateral Filter for Point Clouds', 2017. "
+                 "The choice of the parameters can be found in the "
+                 "aforementioned paper."
+                 "radius"_a,
+                 "sigma_s"_a = -std::numeric_limits<double>::max(),
+                 "sigma_r"_a = -std::numeric_limits<double>::max())
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
                          const AxisAlignedBoundingBox &, bool) const) &

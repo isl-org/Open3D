@@ -544,14 +544,21 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
     return SelectByIndex(selected_indices);
 }
 
-std::shared_ptr<PointCloud> PointCloud::FilterBilateral(
-        double radius,
-        double sigma_s,
-        double sigma_r) const {
-    auto output = std::make_shared<PointCloud>();
+std::shared_ptr<PointCloud> PointCloud::FilterBilateral(double radius,
+                                                        double sigma_s,
+                                                        double sigma_r) const {
+    constexpr auto eps = std::numeric_limits<double>::epsilon();
+
+    auto output = std::make_shared<PointCloud>(*this);
     KDTreeFlann kdtree(*this);
 
-    output->points_.reserve(points_.size());
+    if (std::abs(sigma_s + std::numeric_limits<double>::max()) < eps) {
+        sigma_s = radius / 3.0;
+    }
+
+    if (std::abs(sigma_r + std::numeric_limits<double>::max()) < eps) {
+        sigma_r = radius / 3.0;
+    }
 
     const auto two_sigma_spatial2 = 2.0 * sigma_s * sigma_s;
     const auto two_sigma_range2 = 2.0 * sigma_r * sigma_r;
@@ -561,45 +568,56 @@ std::shared_ptr<PointCloud> PointCloud::FilterBilateral(
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
 
     for (size_t i = 0; i < points_.size(); ++i) {
-        const auto& point = points_[i];
+        const auto &point = points_[i];
 
         std::vector<int> indices;
         std::vector<double> distances;
-        const auto nb_count = kdtree.SearchRadius(point, radius, indices, distances);
+        const auto nb_count =
+                kdtree.SearchRadius(point, radius, indices, distances);
         if (nb_count <= 1) {
-            output->points_.push_back(point);
             continue;
         }
 
-        std::tie(mean, cov) = utility::ComputeMeanAndCovariance(points_, indices);
+        std::tie(mean, cov) =
+                utility::ComputeMeanAndCovariance(points_, indices);
 
         solver.computeDirect(cov, Eigen::ComputeEigenvectors);
-        Eigen::Matrix<double, 3, 1> normal_vector = solver.eigenvectors().col(0).cast<double>().normalized();
+        Eigen::Matrix<double, 3, 1> normal_vector =
+                solver.eigenvectors().col(0).cast<double>().normalized();
 
-        double sum {0.0};
-        double normalizing_factor {0.0};
+        double sum{0.0};
+        double normalizing_factor{0.0};
 
         for (const auto npoint_index : indices) {
-            const auto& npoint = points_.at(npoint_index);
+            const auto &npoint = points_.at(npoint_index);
 
             const auto distance = (npoint - point).squaredNorm();
             const auto normal_distance = (npoint - mean).dot(normal_vector);
 
-            const auto distance_weight = std::exp(-distance * distance / two_sigma_spatial2);
-            const auto normal_distance_weight = std::exp(-normal_distance * normal_distance / two_sigma_range2);
+            double weight{1.0};
+            if (std::abs(two_sigma_spatial2) > eps) {
+                const auto distance_weight =
+                        std::exp(-distance * distance / two_sigma_spatial2);
+                weight *= distance_weight;
+            }
 
-            const auto weight = distance_weight * normal_distance_weight;
+            if (std::abs(two_sigma_range2) > eps) {
+                const auto normal_distance_weight = std::exp(
+                        -normal_distance * normal_distance / two_sigma_range2);
+                weight *= normal_distance_weight;
+            }
+
             sum += weight * normal_distance;
             normalizing_factor += weight;
         }
 
-        if (normalizing_factor < std::numeric_limits<double>::epsilon()) {
+        if (normalizing_factor < eps) {
             sum = 0.0;
         } else {
             sum /= normalizing_factor;
         }
 
-        output->points_.push_back(point + sum * normal_vector);
+        output->points_[i] = point + sum * normal_vector;
     }
 
     return output;
