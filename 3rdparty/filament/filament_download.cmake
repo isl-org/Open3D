@@ -1,6 +1,6 @@
 include(FetchContent)
 
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl bluevk ibl image meshoptimizer smol-v utils vkshaders)
+set(filament_LIBRARIES filameshio filament filaflat filabridge geometry backend bluegl bluevk ibl image ktxreader meshoptimizer smol-v utils vkshaders)
 
 if (FILAMENT_PRECOMPILED_ROOT)
     if (EXISTS "${FILAMENT_PRECOMPILED_ROOT}")
@@ -13,51 +13,38 @@ else()
     set(lib_dir lib)
     # Setup download links
     if(WIN32)
-        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.9.9/filament-v1.9.9-windows.tgz)
-        set(FILAMENT_SHA256 3a937a54a0c6b693c833737878761f8ba8ee02744be3c2f9ec33b1c6399ba31b)
-        # Required for filament v1.9.9
-        # Older versions of filament do not contain vkshaders.
-        # They also have a different directory structure.
-        # Remove vkshaders here so we can use newer versions with FILAMENT_PRECOMPILED_ROOT.
-        list(REMOVE_ITEM filament_LIBRARIES vkshaders)
+        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.54.0/filament-v1.54.0-windows.tgz)
+        set(FILAMENT_SHA256 370b85dbaf1a3be26a5a80f60c912f11887748ddd1c42796a83fe989f5805f7b)
         if (STATIC_WINDOWS_RUNTIME)
             string(APPEND lib_dir /x86_64/mt)
         else()
             string(APPEND lib_dir /x86_64/md)
         endif()
     elseif(APPLE)
-        if (APPLE_AARCH64)
-            set(FILAMENT_URL https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-macos_arm64.tgz)
-            set(FILAMENT_SHA256 3422bdff451d90144fbb69e625d8dcaeaf3222dc2c28879536067937955bc362)
-            string(APPEND lib_dir /arm64)
-            # Our arm64 builds use FILAMENT_SUPPORTS_VULKAN=OFF
-            list(REMOVE_ITEM filament_LIBRARIES bluevk)
-        else()
-            set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.9.19/filament-v1.9.19-mac.tgz)
-            set(FILAMENT_SHA256 2765d0ce60647fc17d1880c4618cf7d6b5343d8be4dad87978c3917d9c723b4e)
-            string(APPEND lib_dir /x86_64)
-        endif()
+        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.54.0/filament-v1.54.0-mac.tgz)
+        set(FILAMENT_SHA256 9b71642bd697075110579ccb55a2e8f319b05bbd89613c72567745534936186e)
     else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
         execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
         string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
-        if(${glibc_version} VERSION_LESS "2.31")
+        if(${glibc_version} VERSION_LESS "2.33")
             set(FILAMENT_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux.tgz)
-            set(FILAMENT_SHA256 f0c0b05a543dd0c82b1cd571957a90f28e72cfeee36d19a527c17ac9de4733d5)
+                    https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.49.1-ubuntu20.04.tgz)
+            set(FILAMENT_SHA256 f4ba020f0ca63540e2f86b36d1728a1ea063ddd5eb55b0ba6fc621ee815a60a7)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
-                "Google Filament binary.")
+                    "Open3D built Filament binary for Ubuntu 20.04.")
         else()
             set(FILAMENT_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux-20.04.tgz)
-            set(FILAMENT_SHA256 c756fd76f5c6a40ca554f8c3cca424354a2a22ea6fce3c8ea893d4c4aa39514c)
+                    https://github.com/google/filament/releases/download/v1.54.0/filament-v1.54.0-linux.tgz)
+            set(FILAMENT_SHA256 f07fbe8fcb6422a682f429d95fa2e097c538d0d900c62f0a835f595ab3909e8e)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
-                "Open3D Filament binary.")
+                    "Google Filament binary.")
         endif()
     endif()
 
     set(lib_byproducts ${filament_LIBRARIES})
     list(TRANSFORM lib_byproducts PREPEND <SOURCE_DIR>/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
     list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
+    message(STATUS "Filament byproducts: ${lib_byproducts}")
 
     if(WIN32)
         set(lib_byproducts_debug ${filament_LIBRARIES})
@@ -68,19 +55,20 @@ else()
 
     # ExternalProject_Add happens at build time.
     ExternalProject_Add(
-        ext_filament
-        PREFIX filament
-        URL ${FILAMENT_URL}
-        URL_HASH SHA256=${FILAMENT_SHA256}
-        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_IN_SOURCE ON
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ${lib_byproducts}
+            ext_filament
+            PREFIX filament
+            URL ${FILAMENT_URL}
+            URL_HASH SHA256=${FILAMENT_SHA256}
+            DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_IN_SOURCE ON
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            BUILD_BYPRODUCTS ${lib_byproducts}
     )
     ExternalProject_Get_Property(ext_filament SOURCE_DIR)
+    message(STATUS "Filament source dir is ${SOURCE_DIR}")
     set(FILAMENT_ROOT ${SOURCE_DIR})
 endif()
 

@@ -33,9 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-13 is Intel runner, macos-14 is Apple Silicon
-        # https://github.com/actions/runner-images
-        os: [macos-13, macos-14]
+        os: [macos-14]
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
@@ -133,50 +131,6 @@ jobs:
           path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
           if-no-files-found: error
 
-  fuse-viewer:
-    permissions:
-      contents: write  # Release upload
-    name: Fuse x64 and ARM64 viewer app
-    runs-on: [macos-13]
-    needs: [MacOS]
-    steps:
-      - name: Checkout source code  # for gh release upload
-        uses: actions/checkout@v4
-      - name: Download viewer apps
-        uses: actions/download-artifact@v4
-        with:
-          pattern: open3d-app-macosx-10_15-*
-          merge-multiple: true
-
-      - name: Fuse x64 and arm64 viewer apps
-        run: |
-          unzip open3d-*-app-macosx-10_15-X64.zip -d x64
-          unzip open3d-*-app-macosx-10_15-ARM64.zip -d arm64
-          APP_NAME=$(ls open3d-*-app-macosx-10_15-X64.zip)
-          APP_NAME=${APP_NAME/-X64/-universal2}  # includes version
-          for i in arm64/Open3D.app/Contents/MacOS/*; do
-            filepath=Open3D.app/Contents/MacOS/$(basename $i)
-            lipo -create arm64/${filepath} x64/${filepath} -output arm64/${filepath}
-          done
-          mv arm64/Open3D.app Open3D.app
-          zip -rv "${APP_NAME}" Open3D.app
-
-      - name: Upload Open3D viewer app
-        uses: actions/upload-artifact@v4
-        with:
-          name: open3d-app-macosx-10_15-universal2
-          path: open3d-*-app-macosx-10_15-universal2.zip
-          if-no-files-found: error
-
-      - name: Update viewer devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel open3d-*-app-macosx-10_15-universal2.zip --clobber
-          gh release view main-devel
-
-
   build-wheel:
     name: Build wheel
     permissions:
@@ -186,9 +140,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        # macos-13 is Intel runner, macos-14 is Apple Silicon
-        # https://github.com/actions/runner-images
-        os: [macos-13, macos-14]
+        os: [macos-14]
         python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
@@ -283,75 +235,6 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-
-  fuse-wheel:
-    name: Fuse universal2 wheel
-    permissions:
-      contents: write  # Release upload
-    runs-on: [macos-13]
-    needs: [build-wheel]
-    strategy:
-      fail-fast: false
-      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
-      matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
-        is_main:
-          - ${{ github.ref == 'refs/heads/main' }}
-        exclude:
-          - is_main: false
-            python_version: '3.10'
-          - is_main: false
-            python_version: '3.11'
-          - is_main: false
-            python_version: '3.12'
-    steps:
-      - name: Checkout source code  # for gh release upload
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python_version }}
-
-      - name: Download X64 wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: open3d-*macosx*_x86_64.whl
-          path: x64_wheels
-          merge-multiple: true
-
-      - name: Download ARM64 wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: open3d-*macosx*_arm64.whl
-          path: arm64_wheels
-          merge-multiple: true
-
-      - name: Fuse x64 and ARM64 wheels
-        env:
-          python_version: ${{ matrix.python_version }}
-        run: |
-          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
-          mkdir universal_wheels
-          pip install delocate
-          delocate-merge -v -w universal_wheels x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
-          NEW_WHL_NAME=$(basename universal_wheels/open3d-*${PYTAG}*.whl)
-          echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
-
-      - name: Upload merged wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PIP_PKG_NAME }}
-          path: universal_wheels/${{ env.PIP_PKG_NAME }}
-          if-no-files-found: error
-
-      - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel universal_wheels/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
-
   test-wheel:
     name: Test wheel
     permissions:
@@ -361,7 +244,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, macos-14]
+        os: [macos-14]
         python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
