@@ -1479,10 +1479,12 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     // well within float range. (exp(89.f) is inf)
     float min_sqr_distance =
             get_min_cam_sqrdistance(GetVertexPositions(), extrinsic_matrices);
-    float softmax_shift = 10.f, softmax_scale = 20 * min_sqr_distance;
+    const float softmax_scale = 20 * min_sqr_distance;
+    constexpr float softmax_shift = 10.f, LOG_FLT_MAX = 88.f;
     // (u,v) -> (x,y,z) : {tex_size, tex_size, 3}
+    // margin = 4px for tex_size = 1024
     core::Tensor position_map = BakeVertexAttrTextures(
-            tex_size, {"positions"}, 1, 0, false)["positions"];
+            tex_size, {"positions"}, tex_size / 256, 0, false)["positions"];
     core::Tensor albedo =
             core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
     albedo.Slice(2, 3, 4).Fill(EPS);  // regularize weight
@@ -1600,7 +1602,8 @@ Image TriangleMesh::ProjectImagesToAlbedo(
              p_albedo < albedo.GetDataPtr<float>() + albedo.NumElements();
              p_albedo += 4, p_this_albedo += 4) {
             float softmax_weight =
-                    exp(softmax_scale * p_this_albedo[3] - softmax_shift);
+                    exp(std::min(LOG_FLT_MAX, softmax_scale * p_this_albedo[3] -
+                                                      softmax_shift));
             for (auto k = 0; k < 3; ++k)
                 p_albedo[k] += p_this_albedo[k] * softmax_weight;
             p_albedo[3] += softmax_weight;
@@ -1612,10 +1615,8 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     tbb::parallel_for_each(range, project_one_image);
     albedo.Slice(2, 0, 3) /= albedo.Slice(2, 3, 4);
 
-    // Image::To uses saturate_cast
-    Image albedo_texture =
-            Image(albedo.Slice(2, 0, 3).Contiguous())
-                    .To(core::UInt8, /*copy=*/true, /*scale=*/255.f);
+    Image albedo_texture{
+            (albedo.Slice(2, 0, 3) * 255.f).Clip_(0.f, 255.f).To(core::UInt8)};
     if (update_material) {
         if (!HasMaterial()) {
             SetMaterial(visualization::rendering::Material());
