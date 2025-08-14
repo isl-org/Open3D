@@ -1919,7 +1919,9 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
     destroy_map(mat.maps.anisotropy_map);
 
     manager.Destroy(mat.mat_instance);
-
+    
+    // destroy filament entity
+    utils::EntityManager::get().destroy(filament_entity);
     filament_entity.clear();
 }
 
