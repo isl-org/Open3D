@@ -189,6 +189,18 @@ public:
                                                   double height,
                                                   double depth);
 
+    /// Creates a voxel grid given sparse 3d indices.
+    ///
+    /// \param indices 3d indices of each VoxelGrid.
+    /// \param colors Voxel colors for each voxel of the VoxelGrid.
+    /// \param origin Coordinate center of the VoxelGrid.
+    /// \param voxel_size Voxel size of of the VoxelGrid construction.
+    static std::shared_ptr<VoxelGrid> CreateFromSparseIndices(
+            const std::vector<Eigen::Vector3i>& indices,
+            const std::vector<Eigen::Vector3d>& colors,
+            const Eigen::Vector3d origin,
+            double voxel_size);
+
     /// \enum VoxelPoolingMode
     ///
     /// \brief Possible ways of determining voxel color from PointCloud.
