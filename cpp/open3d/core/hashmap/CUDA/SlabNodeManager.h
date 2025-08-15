@@ -111,7 +111,7 @@ public:
                         memory_block_bitmap_ | (1 << empty_lane));
                 if (read_bitmap == memory_block_bitmap_) {
                     // Successful attempt.
-                    memory_block_bitmap_ = memory_block_bitmap_ |= (1 << empty_lane);
+                    memory_block_bitmap_ |= (1 << empty_lane);
                     allocated_result =
                             (super_block_index_ << kSuperBlockMaskBits) |
                             (memory_block_index_ << kBlockMaskBits) |
