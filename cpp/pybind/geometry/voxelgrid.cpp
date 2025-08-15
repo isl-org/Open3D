@@ -135,7 +135,8 @@ void pybind_voxelgrid_definitions(py::module &m) {
                         "carving",
                         "origin"_a, "color"_a, "voxel_size"_a, "width"_a,
                         "height"_a, "depth"_a)
-            .def_static("create_from_sparse_indices", &VoxelGrid::CreateFromSparseIndices,
+            .def_static("create_from_sparse_indices",
+                        &VoxelGrid::CreateFromSparseIndices,
                         "Creates a voxel grid given sparse 3d indices",
                         "indices"_a, "colors"_a, "origin"_a, "voxel_size"_a)
             .def_static(

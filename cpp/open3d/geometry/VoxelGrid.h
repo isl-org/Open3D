@@ -196,8 +196,8 @@ public:
     /// \param origin Coordinate center of the VoxelGrid.
     /// \param voxel_size Voxel size of of the VoxelGrid construction.
     static std::shared_ptr<VoxelGrid> CreateFromSparseIndices(
-            const std::vector<Eigen::Vector3i>& indices,
-            const std::vector<Eigen::Vector3d>& colors,
+            const std::vector<Eigen::Vector3i> &indices,
+            const std::vector<Eigen::Vector3d> &colors,
             const Eigen::Vector3d origin,
             double voxel_size);
 
