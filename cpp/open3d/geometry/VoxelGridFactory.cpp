@@ -53,8 +53,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromSparseIndices(
     output->origin_ = origin;
     output->voxel_size_ = voxel_size;
     for (size_t i = 0; i < indices.size(); ++i) {
-        Eigen::Vector3i grid_index(indices[i](0), indices[i](1), indices[i](2));
-        output->AddVoxel(geometry::Voxel(grid_index, colors[i]));
+        output->AddVoxel(geometry::Voxel(indices[i], colors[i]));
     }
     return output;
 }
