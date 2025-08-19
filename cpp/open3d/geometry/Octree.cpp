@@ -49,7 +49,8 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
     return node;
 }
 
-std::shared_ptr<OctreeNode> OctreeNode::ConstructFromBinaryStream(const std::string& in, size_t& offset) {
+std::shared_ptr<OctreeNode> OctreeNode::ConstructFromBinaryStream(
+        const std::string& in, size_t& offset) {
     std::string class_id(&in[offset], 24);
 
     std::shared_ptr<OctreeNode> node = nullptr;
@@ -67,7 +68,8 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromBinaryStream(const std::str
 
     // Convert from binary
     if (node != nullptr) {
-        bool deserialization_success = node->DeserializeFromBinaryStream(in, offset);
+        bool deserialization_success =
+                node->DeserializeFromBinaryStream(in, offset);
         if (!deserialization_success) {
             node = nullptr;
         }
@@ -154,7 +156,8 @@ bool OctreeInternalNode::SerializeToBinaryStream(std::string& out) const {
     // Write children
     for (int cid = 0; cid < 8; ++cid) {
         bool has_child = (children_[cid] != nullptr);
-        out.append(reinterpret_cast<const char*>(&has_child), sizeof(has_child));
+        out.append(reinterpret_cast<const char*>(&has_child),
+                   sizeof(has_child));
         if (has_child) {
             rc = rc && children_[cid]->SerializeToBinaryStream(out);
         }
@@ -162,7 +165,8 @@ bool OctreeInternalNode::SerializeToBinaryStream(std::string& out) const {
     return rc;
 }
 
-bool OctreeInternalNode::DeserializeFromBinaryStream(const std::string& in, size_t& offset) {
+bool OctreeInternalNode::DeserializeFromBinaryStream(const std::string& in,
+                                                     size_t& offset) {
     // Read and check class identifier
     if (in.size() < offset + 19) return false;
     if (std::string(&in[offset], 18) != "OctreeInternalNode") return false;
@@ -262,21 +266,24 @@ bool OctreeInternalPointNode::SerializeToBinaryStream(std::string& out) const {
     // Write children
     for (int cid = 0; cid < 8; ++cid) {
         bool has_child = (children_[cid] != nullptr);
-        out.append(reinterpret_cast<const char*>(&has_child), sizeof(has_child));
+        out.append(reinterpret_cast<const char*>(&has_child),
+                   sizeof(has_child));
         if (has_child) {
             rc = rc && children_[cid]->SerializeToBinaryStream(out);
         }
     }
     // Write indices
     size_t num_indices = indices_.size();
-    out.append(reinterpret_cast<const char*>(&num_indices), sizeof(num_indices));
+    out.append(reinterpret_cast<const char*>(&num_indices),
+               sizeof(num_indices));
     for (size_t idx : indices_) {
         out.append(reinterpret_cast<const char*>(&idx), sizeof(idx));
     }
     return rc;
 }
 
-bool OctreeInternalPointNode::DeserializeFromBinaryStream(const std::string& in, size_t& offset) {
+bool OctreeInternalPointNode::DeserializeFromBinaryStream(const std::string& in,
+                                                          size_t& offset) {
     // Read and check class identifier
     if (in.size() < offset + 24) return false;
     if (std::string(&in[offset], 23) != "OctreeInternalPointNode") return false;
@@ -375,11 +382,13 @@ bool OctreeColorLeafNode::SerializeToBinaryStream(std::string& out) const {
     const char class_id[] = "OctreeColorLeafNode";
     out.append(class_id, sizeof(class_id));
     // Write color_ (Eigen::Vector3d)
-    out.append(reinterpret_cast<const char*>(color_.data()), sizeof(double) * 3);
+    out.append(reinterpret_cast<const char*>(color_.data()),
+               sizeof(double) * 3);
     return true;
 }
 
-bool OctreeColorLeafNode::DeserializeFromBinaryStream(const std::string& in, size_t& offset) {
+bool OctreeColorLeafNode::DeserializeFromBinaryStream(const std::string& in,
+                                                      size_t& offset) {
     // Read and check class identifier
     if (in.size() < offset + 20) return false;
     if (std::string(&in[offset], 19) != "OctreeColorLeafNode") return false;
@@ -472,20 +481,24 @@ bool OctreePointColorLeafNode::SerializeToBinaryStream(std::string& out) const {
     const char class_id[] = "OctreePointColorLeafNode";
     out.append(class_id, sizeof(class_id));
     // Write color_ (Eigen::Vector3d)
-    out.append(reinterpret_cast<const char*>(color_.data()), sizeof(double) * 3);
+    out.append(reinterpret_cast<const char*>(color_.data()),
+               sizeof(double) * 3);
     // Write indices
     size_t num_indices = indices_.size();
-    out.append(reinterpret_cast<const char*>(&num_indices), sizeof(num_indices));
+    out.append(reinterpret_cast<const char*>(&num_indices),
+               sizeof(num_indices));
     for (size_t idx : indices_) {
         out.append(reinterpret_cast<const char*>(&idx), sizeof(idx));
     }
     return rc;
 }
 
-bool OctreePointColorLeafNode::DeserializeFromBinaryStream(const std::string& in, size_t& offset) {
+bool OctreePointColorLeafNode::DeserializeFromBinaryStream(
+        const std::string& in, size_t& offset) {
     // Read and check class identifier
     if (in.size() < offset + 25) return false;
-    if (std::string(&in[offset], 24) != "OctreePointColorLeafNode") return false;
+    if (std::string(&in[offset], 24) != "OctreePointColorLeafNode")
+        return false;
     offset += 25;
     // Read color_ (Eigen::Vector3d)
     if (in.size() < offset + sizeof(double) * 3) return false;
@@ -976,7 +989,8 @@ bool Octree::SerializeToBinaryStream(std::string& out) const {
     bool rc = true;
     // Serialize the basic attributes
     out.clear();
-    out.append(reinterpret_cast<const char*>(origin_.data()), sizeof(double) * 3);
+    out.append(reinterpret_cast<const char*>(origin_.data()),
+               sizeof(double) * 3);
     out.append(reinterpret_cast<const char*>(&size_), sizeof(double));
     out.append(reinterpret_cast<const char*>(&max_depth_), sizeof(size_t));
     // Serialize the root node

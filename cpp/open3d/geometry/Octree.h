@@ -78,12 +78,14 @@ public:
     /// Factory function to construct an OctreeNode by parsing the json value.
     static std::shared_ptr<OctreeNode> ConstructFromJsonValue(
             const Json::Value& value);
-    /// Factory function to construct an OctreeNode by reading from a binary stream.
+    /// Factory function to construct an OctreeNode by reading from a binary
+    /// stream.
     static std::shared_ptr<OctreeNode> ConstructFromBinaryStream(
             const std::string& in, size_t& offset);
 
     virtual bool SerializeToBinaryStream(std::string& out) const = 0;
-    virtual bool DeserializeFromBinaryStream(const std::string& in, size_t& offset) = 0;
+    virtual bool DeserializeFromBinaryStream(const std::string& in,
+                                             size_t& offset) = 0;
 };
 
 /// \class OctreeInternalNode
