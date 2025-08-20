@@ -51,6 +51,7 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
 
 std::shared_ptr<OctreeNode> OctreeNode::ConstructFromBinaryStream(
         const std::string& in, size_t& offset) {
+    if (in.size() < offset + 18) return nullptr;
     std::string class_id(&in[offset], 24);
 
     std::shared_ptr<OctreeNode> node = nullptr;
@@ -63,7 +64,7 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromBinaryStream(
     } else if (std::string(&in[offset], 24) == "OctreePointColorLeafNode") {
         node = std::make_shared<OctreePointColorLeafNode>();
     } else {
-        utility::LogWarning("Unhandled class id {}", class_id);
+        utility::LogError("Unhandled class id {}", class_id);
     }
 
     // Convert from binary
