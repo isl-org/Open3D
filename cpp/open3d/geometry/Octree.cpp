@@ -155,7 +155,7 @@ bool OctreeInternalNode::SerializeToBinaryStream(std::string& out) const {
     out.append(class_id, sizeof(class_id));
     // Write children
     for (int cid = 0; cid < 8; ++cid) {
-        bool has_child = (children_[cid] != nullptr);
+        uint8_t has_child = (children_[cid] != nullptr);
         out.append(reinterpret_cast<const char*>(&has_child),
                    sizeof(has_child));
         if (has_child) {
@@ -173,9 +173,9 @@ bool OctreeInternalNode::DeserializeFromBinaryStream(const std::string& in,
     offset += 19;
     // Read children
     for (int cid = 0; cid < 8; ++cid) {
-        if (in.size() < offset + sizeof(bool)) return false;
-        bool has_child = *reinterpret_cast<const bool*>(&in[offset]);
-        offset += sizeof(bool);
+        if (in.size() < offset + sizeof(uint8_t)) return false;
+        uint8_t has_child = *reinterpret_cast<const uint8_t*>(&in[offset]);
+        offset += sizeof(uint8_t);
         if (has_child) {
             children_[cid] = OctreeNode::ConstructFromBinaryStream(in, offset);
             if (!children_[cid]) {
@@ -265,7 +265,7 @@ bool OctreeInternalPointNode::SerializeToBinaryStream(std::string& out) const {
     out.append(class_id, sizeof(class_id));
     // Write children
     for (int cid = 0; cid < 8; ++cid) {
-        bool has_child = (children_[cid] != nullptr);
+        uint8_t has_child = (children_[cid] != nullptr);
         out.append(reinterpret_cast<const char*>(&has_child),
                    sizeof(has_child));
         if (has_child) {
@@ -273,10 +273,10 @@ bool OctreeInternalPointNode::SerializeToBinaryStream(std::string& out) const {
         }
     }
     // Write indices
-    size_t num_indices = indices_.size();
+    uint64_t num_indices = indices_.size();
     out.append(reinterpret_cast<const char*>(&num_indices),
                sizeof(num_indices));
-    for (size_t idx : indices_) {
+    for (uint64_t idx : indices_) {
         out.append(reinterpret_cast<const char*>(&idx), sizeof(idx));
     }
     return rc;
@@ -291,9 +291,9 @@ bool OctreeInternalPointNode::DeserializeFromBinaryStream(const std::string& in,
 
     // Read children
     for (int cid = 0; cid < 8; ++cid) {
-        if (in.size() < offset + sizeof(bool)) return false;
-        bool has_child = *reinterpret_cast<const bool*>(&in[offset]);
-        offset += sizeof(bool);
+        if (in.size() < offset + sizeof(uint8_t)) return false;
+        uint8_t has_child = *reinterpret_cast<const uint8_t*>(&in[offset]);
+        offset += sizeof(uint8_t);
         if (has_child) {
             children_[cid] = OctreeNode::ConstructFromBinaryStream(in, offset);
             if (!children_[cid]) {
@@ -305,15 +305,15 @@ bool OctreeInternalPointNode::DeserializeFromBinaryStream(const std::string& in,
     }
 
     // Read indices size
-    if (in.size() < offset + sizeof(size_t)) return false;
-    size_t indices_size = *reinterpret_cast<const size_t*>(&in[offset]);
-    offset += sizeof(size_t);
+    if (in.size() < offset + sizeof(uint64_t)) return false;
+    uint64_t indices_size = *reinterpret_cast<const uint64_t*>(&in[offset]);
+    offset += sizeof(uint64_t);
     // Read indices
     indices_.clear();
-    for (size_t i = 0; i < indices_size; ++i) {
-        if (in.size() < offset + sizeof(size_t)) return false;
-        size_t idx = *reinterpret_cast<const size_t*>(&in[offset]);
-        offset += sizeof(size_t);
+    for (uint64_t i = 0; i < indices_size; ++i) {
+        if (in.size() < offset + sizeof(uint64_t)) return false;
+        uint64_t idx = *reinterpret_cast<const uint64_t*>(&in[offset]);
+        offset += sizeof(uint64_t);
         indices_.push_back(idx);
     }
 
@@ -484,10 +484,10 @@ bool OctreePointColorLeafNode::SerializeToBinaryStream(std::string& out) const {
     out.append(reinterpret_cast<const char*>(color_.data()),
                sizeof(double) * 3);
     // Write indices
-    size_t num_indices = indices_.size();
+    uint64_t num_indices = indices_.size();
     out.append(reinterpret_cast<const char*>(&num_indices),
                sizeof(num_indices));
-    for (size_t idx : indices_) {
+    for (uint64_t idx : indices_) {
         out.append(reinterpret_cast<const char*>(&idx), sizeof(idx));
     }
     return rc;
@@ -506,9 +506,9 @@ bool OctreePointColorLeafNode::DeserializeFromBinaryStream(
     offset += sizeof(double) * 3;
 
     // Read indices size
-    if (in.size() < offset + sizeof(size_t)) return false;
-    size_t indices_size = *reinterpret_cast<const size_t*>(&in[offset]);
-    offset += sizeof(size_t);
+    if (in.size() < offset + sizeof(uint64_t)) return false;
+    uint64_t indices_size = *reinterpret_cast<const uint64_t*>(&in[offset]);
+    offset += sizeof(uint64_t);
     // Read indices
     indices_.clear();
     for (size_t i = 0; i < indices_size; ++i) {
@@ -992,7 +992,7 @@ bool Octree::SerializeToBinaryStream(std::string& out) const {
     out.append(reinterpret_cast<const char*>(origin_.data()),
                sizeof(double) * 3);
     out.append(reinterpret_cast<const char*>(&size_), sizeof(double));
-    out.append(reinterpret_cast<const char*>(&max_depth_), sizeof(size_t));
+    out.append(reinterpret_cast<const char*>(&max_depth_), sizeof(uint64_t));
     // Serialize the root node
     if (root_node_) {
         rc = rc && root_node_->SerializeToBinaryStream(out);
@@ -1011,9 +1011,9 @@ bool Octree::DeserializeFromBinaryStream(const std::string& in) {
     std::memcpy(&size_, &in[offset], sizeof(size_));
     offset += sizeof(double);
 
-    if (in.size() < offset + sizeof(max_depth_)) return false;
-    std::memcpy(&max_depth_, &in[offset], sizeof(max_depth_));
-    offset += sizeof(size_t);
+    if (in.size() < offset + sizeof(uint64_t)) return false;
+    std::memcpy(&max_depth_, &in[offset], sizeof(uint64_t));
+    offset += sizeof(uint64_t);
 
     // Deserialize the root node
     root_node_ = OctreeNode::ConstructFromBinaryStream(in, offset);
