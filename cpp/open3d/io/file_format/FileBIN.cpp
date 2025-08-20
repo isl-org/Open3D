@@ -86,39 +86,59 @@ bool WriteFeatureToBIN(const std::string &filename,
 
 bool ReadOctreeBinaryStreamFromBIN(const std::string &filename,
                                    std::string &bin_data) {
-    std::ifstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
+    FILE *file = utility::filesystem::FOpen(filename, "rb");
+    if (file == NULL) {
         utility::LogWarning("Read BIN failed: unable to open file: {}",
                             filename);
         return false;
     }
 
-    // Read file contents into bin_data
-    bin_data.assign((std::istreambuf_iterator<char>(file)),
-                    std::istreambuf_iterator<char>());
+    // Get file size
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-    file.close();
+    if (file_size < 0) {
+        utility::LogWarning(
+                "Read BIN failed: unable to determine file size: {}", filename);
+        fclose(file);
+        return false;
+    }
+
+    bin_data.resize(static_cast<uint64_t>(file_size));
+    if (file_size > 0) {
+        uint64_t read_size =
+                fread(&bin_data[0], 1, static_cast<uint64_t>(file_size), file);
+        if (read_size != static_cast<uint64_t>(file_size)) {
+            utility::LogWarning("Read BIN failed: error reading file: {}",
+                                filename);
+            fclose(file);
+            return false;
+        }
+    }
+
+    fclose(file);
     return true;
 }
 
 bool WriteOctreeBinaryStreamToBIN(const std::string &filename,
                                   const std::string &bin_data) {
-    std::ofstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
+    FILE *file = utility::filesystem::FOpen(filename, "wb");
+    if (file == NULL) {
         utility::LogWarning("Write BIN failed: unable to open file: {}",
                             filename);
         return false;
     }
 
-    file.write(bin_data.data(), bin_data.size());
-    if (!file) {
+    uint64_t write_size = fwrite(bin_data.data(), 1, bin_data.size(), file);
+    if (write_size != bin_data.size()) {
         utility::LogWarning("Write BIN failed: error writing to file: {}",
                             filename);
-        file.close();
+        fclose(file);
         return false;
     }
 
-    file.close();
+    fclose(file);
     return true;
 }
 
