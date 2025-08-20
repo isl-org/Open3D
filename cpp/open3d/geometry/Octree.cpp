@@ -63,7 +63,7 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromBinaryStream(
     } else if (std::string(&in[offset], 24) == "OctreePointColorLeafNode") {
         node = std::make_shared<OctreePointColorLeafNode>();
     } else {
-        utility::LogError("Unhandled class id {}", class_id);
+        utility::LogWarning("Unhandled class id {}", class_id);
     }
 
     // Convert from binary
@@ -1003,8 +1003,8 @@ bool Octree::SerializeToBinaryStream(std::string& out) const {
 bool Octree::DeserializeFromBinaryStream(const std::string& in) {
     size_t offset = 0;
     // Deserialize the basic attributes
-    if (in.size() < offset + sizeof(origin_) * 3) return false;
-    std::memcpy(origin_.data(), &in[offset], sizeof(origin_) * 3);
+    if (in.size() < offset + sizeof(double) * 3) return false;
+    std::memcpy(origin_.data(), &in[offset], sizeof(double) * 3);
     offset += sizeof(double) * 3;
 
     if (in.size() < offset + sizeof(size_)) return false;
