@@ -52,7 +52,6 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromJsonValue(
 std::shared_ptr<OctreeNode> OctreeNode::ConstructFromBinaryStream(
         const std::string& in, size_t& offset) {
     if (in.size() < offset + 18) return nullptr;
-    std::string class_id(&in[offset], 24);
 
     std::shared_ptr<OctreeNode> node = nullptr;
     if (std::string(&in[offset], 18) == "OctreeInternalNode") {
@@ -64,7 +63,8 @@ std::shared_ptr<OctreeNode> OctreeNode::ConstructFromBinaryStream(
     } else if (std::string(&in[offset], 24) == "OctreePointColorLeafNode") {
         node = std::make_shared<OctreePointColorLeafNode>();
     } else {
-        utility::LogError("Unhandled class id {}", class_id);
+        utility::LogError("Unhandled class id {}",
+                          std::string(&in[offset], 24));
     }
 
     // Convert from binary
@@ -512,10 +512,10 @@ bool OctreePointColorLeafNode::DeserializeFromBinaryStream(
     offset += sizeof(uint64_t);
     // Read indices
     indices_.clear();
-    for (size_t i = 0; i < indices_size; ++i) {
-        if (in.size() < offset + sizeof(size_t)) return false;
-        size_t idx = *reinterpret_cast<const size_t*>(&in[offset]);
-        offset += sizeof(size_t);
+    for (uint64_t i = 0; i < indices_size; ++i) {
+        if (in.size() < offset + sizeof(uint64_t)) return false;
+        uint64_t idx = *reinterpret_cast<const uint64_t*>(&in[offset]);
+        offset += sizeof(uint64_t);
         indices_.push_back(idx);
     }
 
@@ -1018,11 +1018,6 @@ bool Octree::DeserializeFromBinaryStream(const std::string& in) {
 
     // Deserialize the root node
     root_node_ = OctreeNode::ConstructFromBinaryStream(in, offset);
-    if (root_node_) {
-        if (!root_node_->DeserializeFromBinaryStream(in, offset)) {
-            return false;
-        }
-    }
     return true;
 }
 
