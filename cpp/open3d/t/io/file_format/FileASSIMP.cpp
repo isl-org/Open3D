@@ -13,17 +13,14 @@
 #include <assimp/Exporter.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/ProgressHandler.hpp>
-#include <fstream>
-#include <numeric>
+#include <unordered_map>
 #include <vector>
 
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/TensorFunction.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/TriangleMeshIO.h"
-#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/ProgressReporters.h"
 
 #define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
 #define AI_MATKEY_CLEARCOAT_ROUGHNESS "$mat.clearcoatroughness", 0, 0
@@ -252,6 +249,7 @@ geometry::TriangleMesh MakeVertexUVsUnique(const geometry::TriangleMesh& mesh,
     }
     geometry::TriangleMesh new_mesh;
     core::Tensor new_vertices, new_faces, new_normals, new_colors, vertex_uvs;
+    bool need_updates = true;
 
     DISPATCH_INT_DTYPE_PREFIX_TO_TEMPLATE(indices.GetDtype(), int, [&]() {
         scalar_int_t next_vertex_idx = 0;
@@ -276,6 +274,10 @@ geometry::TriangleMesh MakeVertexUVsUnique(const geometry::TriangleMesh& mesh,
         }
         // Create new tensors with the correct size
         int64_t num_new_vertices = next_vertex_idx;
+        if (num_new_vertices == vertices.GetShape(0)) {
+            need_updates = false;
+            return;  // No duplicate UVs found return the original mesh.
+        }
         new_vertices =
                 core::Tensor::Empty({num_new_vertices, 3}, vertices.GetDtype());
 
@@ -322,6 +324,9 @@ geometry::TriangleMesh MakeVertexUVsUnique(const geometry::TriangleMesh& mesh,
             }
         }
     });
+    if (!need_updates) {
+        return mesh;
+    }
 
     new_mesh.SetVertexPositions(new_vertices);
     new_mesh.SetTriangleIndices(new_faces);

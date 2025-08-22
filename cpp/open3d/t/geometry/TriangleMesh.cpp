@@ -1482,9 +1482,12 @@ Image TriangleMesh::ProjectImagesToAlbedo(
     const float softmax_scale = 20 * min_sqr_distance;
     constexpr float softmax_shift = 10.f, LOG_FLT_MAX = 88.f;
     // (u,v) -> (x,y,z) : {tex_size, tex_size, 3}
-    // margin = 4px for tex_size = 1024
+    // margin \propto tex_size (default 2px for 512 size texture as in
+    // BakeVertexAttrTextures()). Should be at least 1px.
     core::Tensor position_map = BakeVertexAttrTextures(
-            tex_size, {"positions"}, tex_size / 256, 0, false)["positions"];
+            tex_size, {"positions"}, /*margin=*/(tex_size + 255) / 256,
+            /*fill=*/0,
+            /*update_material=*/false)["positions"];
     core::Tensor albedo =
             core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
     albedo.Slice(2, 3, 4).Fill(EPS);  // regularize weight
