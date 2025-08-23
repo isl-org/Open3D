@@ -38,5 +38,16 @@ bool ReadOctreeFromJson(const std::string &filename, geometry::Octree &octree);
 bool WriteOctreeToJson(const std::string &filename,
                        const geometry::Octree &octree);
 
+bool ReadOctreeFromBIN(const std::string &filename, geometry::Octree &octree);
+
+bool WriteOctreeToBIN(const std::string &filename,
+                      const geometry::Octree &octree);
+
+bool ReadOctreeBinaryStreamFromBIN(const std::string &filename,
+                                   std::string &bin_data);
+
+bool WriteOctreeBinaryStreamToBIN(const std::string &filename,
+                                  const std::string &bin_data);
+
 }  // namespace io
 }  // namespace open3d
