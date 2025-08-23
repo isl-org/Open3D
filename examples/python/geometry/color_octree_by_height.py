@@ -39,6 +39,7 @@ except Exception:
 
 o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Error)
 
+
 def safe_boundary_half_edges(mesh, vid):
     try:
         return mesh.BoundaryHalfEdgesFromVertex(vid)
@@ -54,6 +55,7 @@ def safe_send_data(data):
         return False
     return True
 
+
 def safe_unpack_message(data):
     """Prevents RemoteFunctions.SendReceiveUnpackMessages from failing."""
     try:
@@ -65,6 +67,7 @@ def safe_unpack_message(data):
         return msg_id, payload
     except Exception:
         return None, None
+
 
 # Create synthetic point cloud
 xyz = np.random.rand(10000, 3) * 10  # Points in [0,10]
@@ -126,6 +129,7 @@ def apply_color(pcd,
     color_octree_leaves(octree, pcd)
     return pcd, octree
 
+
 pcd, octree = apply_color(pcd,
                           octree,
                           'height',
@@ -133,7 +137,9 @@ pcd, octree = apply_color(pcd,
                           z_normalized=z_normalized,
                           rgb_colors=rgb_colors)
 
-# Custom visualization 
+# Custom visualization
+
+
 def custom_visualize(pcd, octree):
     vis = o3d.visualization.VisualizerWithKeyCallback()
     vis.create_window(window_name='Octree and Point Cloud Visualization')
@@ -143,7 +149,8 @@ def custom_visualize(pcd, octree):
     def toggle_color_map(vis):
         nonlocal pcd, octree
         if color_mode[0] == 'height':
-            current_cmap_index[0] = (current_cmap_index[0] + 1) % len(color_maps)
+            current_cmap_index[0] = (
+                current_cmap_index[0] + 1) % len(color_maps)
             new_cmap = color_maps[current_cmap_index[0]]
             print(f"Switching to color map: {new_cmap} (height mode)")
             pcd, octree = apply_color(pcd,
@@ -163,7 +170,8 @@ def custom_visualize(pcd, octree):
         nonlocal pcd, octree
         color_mode[0] = 'rgb' if color_mode[0] == 'height' else 'height'
         if color_mode[0] == 'height':
-            print(f"Switching to height mode with color map: {color_maps[current_cmap_index[0]]}")
+            print(
+                f"Switching to height mode with color map: {color_maps[current_cmap_index[0]]}")
             pcd, octree = apply_color(
                 pcd,
                 octree,
@@ -173,7 +181,8 @@ def custom_visualize(pcd, octree):
                 rgb_colors=rgb_colors)
         else:
             print("Switching to RGB mode")
-            pcd, octree = apply_color(pcd, octree, 'rgb', rgb_colors=rgb_colors)
+            pcd, octree = apply_color(
+                pcd, octree, 'rgb', rgb_colors=rgb_colors)
         vis.update_geometry(pcd)
         vis.update_geometry(octree)
         vis.update_renderer()
@@ -187,7 +196,8 @@ def custom_visualize(pcd, octree):
     vis.run()
     vis.destroy_window()
 
-# Run visualization 
+
+# Run visualization
 try:
     custom_visualize(pcd, octree)
 except Exception as e:
