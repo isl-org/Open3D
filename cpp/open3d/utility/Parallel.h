@@ -13,9 +13,6 @@ namespace utility {
 /// Estimate the maximum number of threads to be used in a parallel region.
 int EstimateMaxThreads();
 
-/// Returns the number of threads in the current parallel region.
-int GetNumThreads();
-
 /// Returns the thread ID in the current parallel region.
 int GetThreadNum();
 

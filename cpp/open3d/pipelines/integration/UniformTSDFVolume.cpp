@@ -260,13 +260,16 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     // Create a vector to hold voxels for each thread in the parallel region,
     // since access to voxel_grid->voxels_ (std::unordered_map) is not
     // thread-safe.
-    std::vector<std::vector<geometry::Voxel>> per_thread_voxels;
+    std::vector<std::vector<std::pair<Eigen::Vector3i, geometry::Voxel>>>
+            per_thread_voxels;
 
-#pragma omp parallel num_threads(utility::EstimateMaxThreads())
+    int num_threads = utility::EstimateMaxThreads();
+
+#pragma omp parallel num_threads(num_threads)
     {
 #pragma omp single
-        { per_thread_voxels.resize(utility::GetNumThreads()); }
-        int thread_id = utility::GetThreadNum();
+        { per_thread_voxels.resize(num_threads); }
+        auto &thread_voxels = per_thread_voxels[utility::GetThreadNum()];
 
 #ifdef _WIN32
 #pragma omp for schedule(static)
@@ -283,17 +286,22 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                         double c = (f + 1.0) * 0.5;
                         Eigen::Vector3d color(c, c, c);
                         Eigen::Vector3i index(x, y, z);
-                        per_thread_voxels[thread_id].emplace_back(index, color);
+                        thread_voxels.emplace_back(std::make_pair(
+                                index, geometry::Voxel(index, color)));
                     }
                 }
             }
         }
     }
 
+    size_t total_voxels = 0;
     for (const auto &thread_vector : per_thread_voxels) {
-        for (const auto &voxel : thread_vector) {
-            voxel_grid->voxels_[voxel.grid_index_] = voxel;
-        }
+        total_voxels += thread_vector.size();
+    }
+    voxel_grid->voxels_.reserve(total_voxels);
+
+    for (const auto &thread_vector : per_thread_voxels) {
+        voxel_grid->voxels_.insert(thread_vector.begin(), thread_vector.end());
     }
 
     return voxel_grid;

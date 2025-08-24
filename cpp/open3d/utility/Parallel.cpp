@@ -45,14 +45,6 @@ int EstimateMaxThreads() {
 #endif
 }
 
-int GetNumThreads() {
-#ifdef _OPENMP
-    return omp_get_num_threads();
-#else
-    return 1;  // No parallelism available.
-#endif
-}
-
 int GetThreadNum() {
 #ifdef _OPENMP
     return omp_get_thread_num();
