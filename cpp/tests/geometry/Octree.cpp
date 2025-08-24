@@ -357,6 +357,79 @@ TEST(Octree, FragmentPLYLocate) {
     }
 }
 
+TEST(Octree, RadiusSearchCube) {
+    std::vector<Eigen::Vector3d> points{
+            Eigen::Vector3d(0.5, 0.5, 0.5), Eigen::Vector3d(1.5, 0.5, 0.5),
+            Eigen::Vector3d(0.5, 1.5, 0.5), Eigen::Vector3d(1.5, 1.5, 0.5),
+            Eigen::Vector3d(0.5, 0.5, 1.5), Eigen::Vector3d(1.5, 0.5, 1.5),
+            Eigen::Vector3d(0.5, 1.5, 1.5), Eigen::Vector3d(1.5, 1.5, 1.5),
+    };
+
+    for (auto& depth : {1, 2, 3}) {
+        geometry::Octree octree(depth, Eigen::Vector3d(0, 0, 0), 2);
+        for (size_t i = 0; i < points.size(); ++i) {
+            octree.InsertPoint(
+                    points[i],
+                    geometry::OctreePointColorLeafNode::GetInitFunction(),
+                    geometry::OctreePointColorLeafNode::GetUpdateFunction(
+                            i, Eigen::Vector3d(0, 0, 0)),
+                    geometry::OctreeInternalPointNode::GetInitFunction(),
+                    geometry::OctreeInternalPointNode::GetUpdateFunction(i));
+        }
+
+        {
+            auto indices = octree.RadiusSearch(
+                    points, Eigen::Vector3d(0.5, 0.5, 0.5), 0.1);
+            ASSERT_EQ(indices.size(), 1);
+            EXPECT_EQ(indices[0], 0);
+        }
+
+        {
+            auto indices = octree.RadiusSearch(
+                    points, Eigen::Vector3d(0.5, 0.5, 0.5), 1.0);
+            std::set<size_t> expected = {0, 1, 2, 4};
+            std::set<size_t> actual(indices.begin(), indices.end());
+            EXPECT_EQ(actual, expected);
+        }
+
+        {
+            auto indices = octree.RadiusSearch(
+                    points, Eigen::Vector3d(0.5, 0.5, 0.5), 0.999);
+            std::set<size_t> expected = {0};
+            std::set<size_t> actual(indices.begin(), indices.end());
+            EXPECT_EQ(actual, expected);
+        }
+
+        {
+            auto indices = octree.RadiusSearch(
+                    points, Eigen::Vector3d(2.0, 2.0, 2.0), 0.2);
+            EXPECT_TRUE(indices.empty());
+        }
+    }
+}
+
+TEST(Octree, RadiusSearchRandom) {
+    geometry::PointCloud pc;
+    int size = 1000;
+    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
+    Eigen::Vector3d dmax(1.0, 1.0, 1.0);
+    pc.points_.resize(size);
+    Rand(pc.points_, dmin, dmax, 0);
+
+    auto octree = geometry::Octree(4);
+    octree.ConvertFromPointCloud(pc, 0.01);
+    std::vector<size_t> indices_ =
+            octree.RadiusSearch(pc.points_, pc.GetCenter(), 0.2);
+
+    std::vector<size_t> expected;
+    expected.reserve(size);
+    for (int i = 0; i < size; ++i)
+        if ((pc.points_[i] - pc.GetCenter()).norm() <= 0.2)
+            expected.push_back(i);
+    std::sort(indices_.begin(), indices_.end());
+    EXPECT_EQ(indices_, expected);
+}
+
 TEST(Octree, ConvertFromPointCloudBoundSinglePoint) {
     geometry::Octree octree(10);
     geometry::PointCloud pcd;
