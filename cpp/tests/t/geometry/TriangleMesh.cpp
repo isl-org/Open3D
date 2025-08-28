@@ -1403,17 +1403,14 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
     //         {std::shared_ptr<TriangleMesh>(&sphere, [](TriangleMesh*) {})},
     //         "ProjectImagesToAlbedo", 1024, 768);
 
+    // Round to uint8_t for tests due to numerical errors between platforms
     EXPECT_THAT(albedo.AsTensor()
                         .To(core::Float32)
                         .Mean({0, 1})
-                        .ToFlatVector<float>(),
-                AnyOf(ElementsAre(FloatEq(87.8693), FloatEq(67.538),
-                                  FloatEq(64.31)),  // macOS
-                      ElementsAre(FloatEq(87.8758),
-                                  FloatEq(67.5518),  // Linux / Windows
-                                  FloatEq(64.3254)))
-
-    );
+                        .Round()
+                        .To(core::UInt8)
+                        .ToFlatVector<uint8_t>(),
+                ElementsAre(88, 67, 64));
 }  // namespace tests
 
 TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
