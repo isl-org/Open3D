@@ -20,7 +20,7 @@ namespace visualization {
 namespace rendering {
 
 // If you add entry here, don't forget to update TypeToString!
-enum class EntityType : std::uint16_t {
+enum class EntityType : std::uint32_t {
     None = 0,
 
     View,
@@ -47,11 +47,11 @@ enum class EntityType : std::uint16_t {
 struct REHandle_abstract {
     static const char* TypeToString(EntityType type);
 
-    static const std::uint16_t kBadId = 0;
+    static const std::uint32_t kBadId = 0;
     const EntityType type = EntityType::None;
 
-    inline size_t Hash() const {
-        return static_cast<std::uint16_t>(type) << 16 | id;
+    inline uint64_t Hash() const {
+        return static_cast<std::uint64_t>(type) << 32 | id;
     }
 
     bool operator==(const REHandle_abstract& other) const {
@@ -70,16 +70,16 @@ struct REHandle_abstract {
 
     REHandle_abstract() : type(EntityType::None), id(kBadId) {}
 
-    std::uint16_t GetId() const { return id; }
+    std::uint32_t GetId() const { return id; }
 
 protected:
-    REHandle_abstract(const EntityType aType, const std::uint16_t aId)
+    REHandle_abstract(const EntityType aType, const std::uint32_t aId)
         : type(aType), id(aId) {}
 
-    static std::array<std::uint16_t, static_cast<size_t>(EntityType::Count)>
+    static std::array<std::uint32_t, static_cast<size_t>(EntityType::Count)>
             uid_table;
 
-    std::uint16_t id = kBadId;
+    std::uint32_t id = kBadId;
 };
 
 std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid);
@@ -91,7 +91,7 @@ struct REHandle : public REHandle_abstract {
     static const REHandle kBad;
 
     static REHandle Next() {
-        const auto index = static_cast<std::uint16_t>(entityType);
+        const auto index = static_cast<std::uint32_t>(entityType);
         auto id = ++uid_table[index];
         if (id == REHandle_abstract::kBadId) {
             uid_table[index] = REHandle_abstract::kBadId + 1;
@@ -113,7 +113,7 @@ struct REHandle : public REHandle_abstract {
     REHandle() : REHandle_abstract(entityType, REHandle_abstract::kBadId) {}
     REHandle(const REHandle& other) : REHandle_abstract(entityType, other.id) {}
     // Don't use this constructor unless you know what you are doing
-    explicit REHandle(std::uint16_t id) : REHandle_abstract(entityType, id) {}
+    explicit REHandle(std::uint32_t id) : REHandle_abstract(entityType, id) {}
 
     REHandle& operator=(const REHandle& other) {
         id = other.id;
