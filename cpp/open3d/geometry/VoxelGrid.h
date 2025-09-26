@@ -111,10 +111,10 @@ public:
         auto it = voxels_.find(idx);
         if (it != voxels_.end()) {
             auto voxel = it->second;
-            return ((voxel.grid_index_.cast<double>() +
-                     Eigen::Vector3d(0.5, 0.5, 0.5)) *
-                    voxel_size_) +
-                   origin_;
+            Eigen::Vector3d local = (voxel.grid_index_.cast<double>() +
+                                     Eigen::Vector3d(0.5, 0.5, 0.5)) *
+                                    voxel_size_;
+            return origin_ + origin_rotation_ * local;
         } else {
             return Eigen::Vector3d::Zero();
         }
@@ -259,6 +259,9 @@ public:
     double voxel_size_ = 0.0;
     /// Coordinate of the origin point.
     Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();
+    /// Orientation (rotation) of the voxel grid (world = origin_ +
+    /// origin_rotation_ * local)
+    Eigen::Matrix3d origin_rotation_ = Eigen::Matrix3d::Identity();
     /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,
                        Voxel,
