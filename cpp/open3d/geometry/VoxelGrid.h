@@ -72,6 +72,7 @@ public:
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
 
+    std::vector<Eigen::Vector3d> GetAllVoxelCorners() const;
     /// Creates the axis-aligned bounding box around the object.
     /// Further details in AxisAlignedBoundingBox::AxisAlignedBoundingBox()
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;

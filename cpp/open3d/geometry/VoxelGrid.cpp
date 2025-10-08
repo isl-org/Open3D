@@ -39,28 +39,56 @@ bool VoxelGrid::IsEmpty() const { return !HasVoxels(); }
 Eigen::Vector3d VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
         return origin_;
-    } else {
-        Eigen::Array3i min_grid_index = voxels_.begin()->first;
-        for (const auto &it : voxels_) {
-            const geometry::Voxel &voxel = it.second;
-            min_grid_index = min_grid_index.min(voxel.grid_index_.array());
-        }
-        return min_grid_index.cast<double>() * voxel_size_ + origin_.array();
     }
+
+    const auto corners = GetAllVoxelCorners();
+
+    Eigen::Vector3d min_bound = corners.front();
+    for (const auto &p : corners) {
+        min_bound = min_bound.cwiseMin(p);
+    }
+
+    return min_bound;
 }
 
 Eigen::Vector3d VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
         return origin_;
-    } else {
-        Eigen::Array3i max_grid_index = voxels_.begin()->first;
-        for (const auto &it : voxels_) {
-            const geometry::Voxel &voxel = it.second;
-            max_grid_index = max_grid_index.max(voxel.grid_index_.array());
-        }
-        return (max_grid_index.cast<double>() + 1) * voxel_size_ +
-               origin_.array();
     }
+
+    const auto corners = GetAllVoxelCorners();
+
+    Eigen::Vector3d max_bound = corners.front();
+    for (const auto &p : corners) {
+        max_bound = max_bound.cwiseMax(p);
+    }
+
+    return max_bound;
+}
+
+std::vector<Eigen::Vector3d> VoxelGrid::GetAllVoxelCorners() const {
+    std::vector<Eigen::Vector3d> voxel_corners;
+    voxel_corners.reserve(voxels_.size() * 8);
+
+    // Precompute voxel corner offsets in local grid space
+    static const Eigen::Vector3d offsets[8] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0},
+                                               {1, 1, 0}, {0, 0, 1}, {1, 0, 1},
+                                               {0, 1, 1}, {1, 1, 1}};
+
+    for (const auto &it : voxels_) {
+        const Eigen::Vector3i &grid_index = it.second.grid_index_;
+        Eigen::Vector3d base =
+                origin_ +
+                origin_rotation_ * (grid_index.cast<double>() * voxel_size_);
+
+        // Add all 8 corners directly without constructing temporary vectors
+        for (const auto &off : offsets) {
+            voxel_corners.push_back(base +
+                                    origin_rotation_ * (off * voxel_size_));
+        }
+    }
+
+    return voxel_corners;
 }
 
 Eigen::Vector3d VoxelGrid::GetCenter() const {
@@ -86,14 +114,14 @@ AxisAlignedBoundingBox VoxelGrid::GetAxisAlignedBoundingBox() const {
     return box;
 }
 
-OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox(bool) const {
-    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
-            GetAxisAlignedBoundingBox());
+OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(GetAllVoxelCorners(), robust);
 }
 
-OrientedBoundingBox VoxelGrid::GetMinimalOrientedBoundingBox(bool) const {
-    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
-            GetAxisAlignedBoundingBox());
+OrientedBoundingBox VoxelGrid::GetMinimalOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromPointsMinimal(GetAllVoxelCorners(),
+                                                        robust);
 }
 
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
