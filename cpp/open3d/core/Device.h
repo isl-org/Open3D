@@ -13,6 +13,8 @@
 namespace open3d {
 namespace core {
 
+// TODO: PyTorch device compatibility: Switch to lower case devices (cpu instead of CPU)
+// Make xpu a synonym for sycl:xpu
 /// Device context specifying device type and device id.
 /// For CPU, there is only one device with id 0.
 class Device {
