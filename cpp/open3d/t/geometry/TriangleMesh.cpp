@@ -137,7 +137,12 @@ std::string TriangleMesh::ToString() const {
         triangles_attr_str[triangles_attr_str.size() - 1] = '.';
     }
 
-    return str + vertices_attr_str + triangles_attr_str;
+    std::string material_str;
+    if (HasMaterial()) {
+        material_str = '\n' + GetMaterial().ToString();
+    }
+
+    return str + vertices_attr_str + triangles_attr_str + material_str;
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
@@ -1892,6 +1897,130 @@ core::Tensor TriangleMesh::ComputeMetrics(const TriangleMesh &mesh2,
     core::Tensor distance12 = scene2.ComputeDistance(points1);
 
     return ComputeMetricsCommon(distance12, distance21, metrics, params);
+}
+
+
+std::pair<Image, RaycastingScene> TriangleMesh::ComputeAmbientOcclusion(size_t tex_width,
+                                                         size_t n_rays, float max_hit_distance, optional<RaycastingScene> opt_rcs) {
+    if (!HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "TriangleMesh does not contain 'texture_uvs'. Please compute "
+                "it with ComputeUVAtlas() first.");
+    }
+    if (!HasVertexNormals()) {
+        utility::LogWarning(
+                "TriangleMesh does not have vertex normals. Computing them "
+                "now.");
+        ComputeVertexNormals(true);
+    }
+
+    // Bake positions and normals into textures.
+    const float margin = (tex_width + 511.f) / 512.f;
+    auto baked_textures = BakeVertexAttrTextures(
+            tex_width, {"positions", "normals"}, margin, 0.0, false);
+    core::Tensor position_map =
+            baked_textures["positions"].To(GetDevice(), core::Float32);
+    core::Tensor normal_map =
+            baked_textures["normals"].To(GetDevice(), core::Float32);
+
+    RaycastingScene rcs;
+    if (opt_rcs.has_value()) {
+        rcs = opt_rcs.value();
+    } else {
+        rcs.AddTriangles(*this);
+    }
+
+    const int64_t n_pixels = tex_width * tex_width;
+    const int64_t total_rays = n_pixels * n_rays;
+
+    // Reshape maps and create masks for valid pixels (not in the margin).
+    core::Tensor positions = position_map.Reshape({n_pixels, 3});
+    core::Tensor normals = normal_map.Reshape({n_pixels, 3});
+    core::Tensor valid_mask = positions.GetItem({core::TensorKey::Slice(0, core::None, 1)})
+                                      .To(core::Bool)
+                                      .Any({1})
+                                      .LogicalNot();
+    core::Tensor valid_indices = valid_mask.NonZero().Flatten();
+    const int64_t n_valid_pixels = valid_indices.GetLength();
+    const int64_t n_valid_rays = n_valid_pixels * n_rays;
+
+    if (n_valid_pixels == 0) {
+        utility::LogWarning("No valid pixels found to compute AO on.");
+        return Image(core::Tensor::Ones({(int64_t)tex_width, (int64_t)tex_width, 1},
+                                        core::UInt8, GetDevice()) * 255);
+    }
+
+    // Get origins and normals for valid pixels.
+    core::Tensor valid_positions = positions.IndexGet({valid_indices});
+    core::Tensor valid_normals = normals.IndexGet({valid_indices});
+
+    // Small offset to prevent self-intersection.
+    const float epsilon = 1e-5f;
+    core::Tensor origins = valid_positions.Repeat(n_rays, 0) +
+                           valid_normals.Repeat(n_rays, 0) * epsilon;
+
+    // Cosine-weighted hemisphere sampling.
+    core::Tensor r1 = core::Tensor::Rand({n_valid_rays, 1}, core::Float32, GetDevice());
+    core::Tensor r2 = core::Tensor::Rand({n_valid_rays, 1}, core::Float32, GetDevice());
+    core::Tensor r = r1.Sqrt();
+    core::Tensor theta = r2 * 2.0 * M_PI;
+    core::Tensor x = r * theta.Cos();
+    core::Tensor y = r * theta.Sin();
+    core::Tensor z = (core::Tensor::Ones({n_valid_rays, 1}, core::Float32, GetDevice()) - r1).Sqrt();
+
+    core::Tensor sampled_dirs = core::Tensor::HStack({x, y, z});
+
+    // Create basis from normals to transform sampled directions.
+    core::Tensor t = valid_normals.Repeat(n_rays, 0);
+    core::Tensor up = core::Tensor::Zeros({1, 3}, core::Float32, GetDevice());
+    up[0][2] = 1.0;
+    core::Tensor b = t.Cross(up);
+    core::Tensor b_norm = b.Norm({1}, true).Maximum(1e-6);
+    b /= b_norm;
+    core::Tensor a = t.Cross(b);
+
+    // Transform directions to world space.
+    core::Tensor directions =
+            sampled_dirs.GetItem({core::TensorKey::Slice(), core::TensorKey::Slice(0, 1, 1)}) * a +
+            sampled_dirs.GetItem({core::TensorKey::Slice(), core::TensorKey::Slice(1, 2, 1)}) * b +
+            sampled_dirs.GetItem({core::TensorKey::Slice(), core::TensorKey::Slice(2, 3, 1)}) * t;
+
+    // Cast all rays at once.
+    core::Tensor rays = core::Tensor::HStack({origins, directions});
+    auto results = rcs.CastRays(rays);
+    core::Tensor t_hit = results["t_hit"];
+
+    // Compute occlusion with quadratic distance falloff.
+    core::Tensor occlusion = core::Tensor::Ones({n_valid_rays}, core::Float32, GetDevice());
+    core::Tensor hit_mask = t_hit.IsFinite();
+    core::Tensor hit_distances = t_hit.IndexGet({hit_mask});
+    core::Tensor occlusion_values = 1.0f / (1.0f + hit_distances * hit_distances);
+    occlusion.IndexSet({hit_mask}, occlusion_values);
+
+    // Average occlusion per pixel.
+    core::Tensor ao_values = occlusion.Reshape({n_valid_pixels, (int64_t)n_rays}).Mean({1});
+
+    // Create the full AO texture.
+    core::Tensor ao_texture = core::Tensor::Ones({n_pixels}, core::Float32, GetDevice());
+    ao_texture.IndexSet({valid_indices}, 1.0f - ao_values);
+    ao_texture = ao_texture.Reshape({(int64_t)tex_width, (int64_t)tex_width, 1});
+
+    // Denoise with bilateral filter.
+    Image ao_image(ao_texture);
+    Image position_image(position_map);
+    Image denoised_ao_image = ao_image.FilterBilateral(
+            /*kernel_size*/ 5, /*value_stddev*/ 0.1, /*distance_stddev*/ 3.0,
+            position_image);
+
+    // Convert to an 8-bit image and update material.
+    Image final_image((denoised_ao_image.AsTensor() * 255.f).Clip_(0.f, 255.f).To(core::UInt8));
+    GetMaterial().SetAOMap(final_image);
+
+    return [final_image, rcs];
+}
+
+
+
 }
 
 }  // namespace geometry
