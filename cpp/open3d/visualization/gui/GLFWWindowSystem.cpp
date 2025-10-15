@@ -12,6 +12,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
@@ -221,7 +222,11 @@ Point GLFWWindowSystem::GetWindowPos(OSWindow w) const {
 }
 
 void GLFWWindowSystem::SetWindowPos(OSWindow w, int x, int y) {
-    glfwSetWindowPos((GLFWwindow*)w, x, y);
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+        utility::LogDebug("[GLFW] setWindowPos() is not supported on Wayland.");
+    } else {
+        glfwSetWindowPos((GLFWwindow*)w, x, y);
+    }
 }
 
 Size GLFWWindowSystem::GetWindowSize(OSWindow w) const {
