@@ -102,7 +102,9 @@ bool Visualizer::CreateVisualizerWindow(
     if (window_) {  // window already created
         utility::LogDebug("[Visualizer] Reusing window.");
         UpdateWindowTitle();
-        glfwSetWindowPos(window_, left, top);
+        if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND) {
+            glfwSetWindowPos(window_, left, top);
+        }
         glfwSetWindowSize(window_, width, height);
 #ifdef __APPLE__
         glfwSetWindowSize(window_,
@@ -141,7 +143,9 @@ bool Visualizer::CreateVisualizerWindow(
         utility::LogWarning("Failed to create window");
         return false;
     }
-    glfwSetWindowPos(window_, left, top);
+    if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND) {
+        glfwSetWindowPos(window_, left, top);
+    }
     glfwSetWindowUserPointer(window_, this);
 
 #ifdef __APPLE__
