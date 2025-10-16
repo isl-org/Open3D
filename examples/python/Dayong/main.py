@@ -103,7 +103,7 @@ if __name__ == "__main__":
     normal_o = get_normal_at_point(shoe, o)
 
     # Get p and its normal
-    p = select_o_point_from_ratio(toy, 0.5, 1, 0.3)
+    p = select_o_point_from_ratio(toy, 0.5, 0.5, 0)
     visualize_point_on_mesh(toy, p, 0.1)
     normal_p = get_normal_at_point(toy, p)
 
