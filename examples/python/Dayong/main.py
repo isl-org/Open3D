@@ -70,50 +70,49 @@ def get_normal_at_point(mesh: o3d.geometry.TriangleMesh, point: np.ndarray) -> n
 
     return normal
 
+def get_rotation_matrix(from_vec, to_vec):
+    from_vec = from_vec / np.linalg.norm(from_vec)
+    to_vec = to_vec / np.linalg.norm(to_vec)
+    v = np.cross(from_vec, to_vec)
+    c = np.dot(from_vec, to_vec)
+    s = np.linalg.norm(v)
+    if s == 0:
+        return np.eye(3)
+    vx = np.array([[0, -v[2], v[1]],
+                   [v[2], 0, -v[0]],
+                   [-v[1], v[0], 0]])
+    R = np.eye(3) + vx + vx @ vx * ((1 - c) / (s ** 2))
+    return R
+
+
 if __name__ == "__main__":
     base_dir = os.path.dirname(__file__)
     shoe_path = os.path.join(base_dir, "STLs", "shoe.stl")
-    petal_path = os.path.join(base_dir, "STLs", "petal.stl")
+    toy_path = os.path.join(base_dir, "STLs", "badge.stl")
 
     # Generate mesh for each stl
     shoe = read_stl_to_mesh(shoe_path)
-    petal = read_stl_to_mesh(petal_path)
+    toy = read_stl_to_mesh(toy_path)
     shoe.paint_uniform_color([0.6, 0.8, 1.0]) # light blue
-    petal.paint_uniform_color([1.0, 0.6, 0.3]) # orange
-    o3d.visualization.draw_geometries([shoe, petal], mesh_show_back_face=True)
+    toy.paint_uniform_color([1.0, 0.6, 0.3]) # orange
+    o3d.visualization.draw_geometries([shoe, toy], mesh_show_back_face=True)
 
-    # 选取鞋面O点和法线
+    # Get o and its normal
     o = select_o_point_from_ratio(shoe, 0.5, 0.3, 0.9)
     visualize_point_on_mesh(shoe, o, 1.0)
     normal_o = get_normal_at_point(shoe, o)
 
-    # 选取petal的P点和法线
-    p = select_o_point_from_ratio(petal, 0.5, 0.5, 0.3)
-    visualize_point_on_mesh(petal, p, 0.1)
-    normal_p = get_normal_at_point(petal, p)
+    # Get p and its normal
+    p = select_o_point_from_ratio(toy, 0.5, 1, 0.3)
+    visualize_point_on_mesh(toy, p, 0.1)
+    normal_p = get_normal_at_point(toy, p)
 
-    # 平移配饰，使得 P 点和 O 点重合
+    # Rotate toy
+    R = get_rotation_matrix(from_vec=np.array([0, -1, 0]), to_vec=normal_o)
+    toy.rotate(R, center=p)  # ⬅️ 注意绕 toy 的选中点旋转
+
+    # move p to o
     offset = o - p
-    petal.translate(offset)
+    toy.translate(offset)
 
-    # 姿态对齐：使用 P 点的法线对齐 O 点法线
-    def get_rotation_matrix(from_vec, to_vec):
-        from_vec = from_vec / np.linalg.norm(from_vec)
-        to_vec = to_vec / np.linalg.norm(to_vec)
-        v = np.cross(from_vec, to_vec)
-        c = np.dot(from_vec, to_vec)
-        s = np.linalg.norm(v)
-        if s == 0:
-            return np.eye(3)
-        vx = np.array([[0, -v[2], v[1]],
-                       [v[2], 0, -v[0]],
-                       [-v[1], v[0], 0]])
-        R = np.eye(3) + vx + vx @ vx * ((1 - c) / (s ** 2))
-        return R
-
-    R = get_rotation_matrix(normal_p, normal_o)
-    # 以O点为中心旋转
-    petal.rotate(R, center=o)
-
-    # 可视化平移和旋转后的效果
-    o3d.visualization.draw_geometries([shoe, petal], mesh_show_back_face=True)
+    o3d.visualization.draw_geometries([shoe, toy], mesh_show_back_face=True)
