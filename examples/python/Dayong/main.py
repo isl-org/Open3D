@@ -108,11 +108,13 @@ if __name__ == "__main__":
     normal_p = get_normal_at_point(toy, p)
 
     # Rotate toy
-    R = get_rotation_matrix(from_vec=np.array([0, -1, 0]), to_vec=normal_o)
-    toy.rotate(R, center=p)  # ⬅️ 注意绕 toy 的选中点旋转
+    R = get_rotation_matrix(from_vec=-normal_p, to_vec=normal_o)
+    toy.rotate(R, center=p)  # rotate toy based on p
 
     # move p to o
     offset = o - p
     toy.translate(offset)
 
     o3d.visualization.draw_geometries([shoe, toy], mesh_show_back_face=True)
+
+
