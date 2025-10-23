@@ -84,6 +84,36 @@ def get_rotation_matrix(from_vec, to_vec):
     R = np.eye(3) + vx + vx @ vx * ((1 - c) / (s ** 2))
     return R
 
+def project_points_onto_mesh(points: np.ndarray,
+                             direction: np.ndarray,
+                             target_mesh: o3d.geometry.TriangleMesh) -> np.ndarray:
+    """
+    使用 ray casting 将多个点沿着指定方向投射到 target_mesh 上。
+    :param points: (N, 3) numpy array, 每个点是射线起点
+    :param direction: (3,) numpy array, 所有射线的统一方向
+    :param target_mesh: 被射线投射的目标 TriangleMesh
+    :return: 命中的新点 (N, 3)，若未命中则保留原点
+    """
+    # 转为 tensor mesh
+    target_t = o3d.t.geometry.TriangleMesh.from_legacy(target_mesh)
+    scene = o3d.t.geometry.RaycastingScene()
+    _ = scene.add_triangles(target_t)
+
+    # 构造射线数组 [N, 6] -> 每行 [x, y, z, dx, dy, dz]
+    rays_np = np.hstack((points, np.tile(direction, (points.shape[0], 1)))).astype(np.float32)
+    rays = o3d.core.Tensor(rays_np, dtype=o3d.core.Dtype.Float32)
+
+    # 执行 ray cast
+    ans = scene.cast_rays(rays)
+    t_hits = ans['t_hit'].numpy()
+
+    # 命中的点：origin + t * direction
+    hit_mask = np.isfinite(t_hits)
+    projected_points = np.copy(points)
+    projected_points[hit_mask] += direction * t_hits[hit_mask][:, np.newaxis]
+
+    return projected_points
+
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(__file__)
@@ -95,6 +125,7 @@ if __name__ == "__main__":
     toy = read_stl_to_mesh(toy_path)
     shoe.paint_uniform_color([0.6, 0.8, 1.0]) # light blue
     toy.paint_uniform_color([1.0, 0.6, 0.3]) # orange
+    toy = toy.scale(5.0, center=toy.get_center()) # scale to 2x size; temporary operation
     o3d.visualization.draw_geometries([shoe, toy], mesh_show_back_face=True)
 
     # Get o and its normal
@@ -115,6 +146,9 @@ if __name__ == "__main__":
     offset = o - p
     toy.translate(offset)
 
+    # Project the entire toy to the shoe
+    all_points = np.asarray(toy.vertices)
+    projected = project_points_onto_mesh(all_points, -normal_o, shoe)
+    toy.vertices = o3d.utility.Vector3dVector(projected)
+
     o3d.visualization.draw_geometries([shoe, toy], mesh_show_back_face=True)
-
-
