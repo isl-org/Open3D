@@ -1185,10 +1185,10 @@ public:
     }
 
     /// Convert the Tensor to DLManagedTensor.
-    DLManagedTensor* ToDLPack() const;
+    DLManagedTensorVersioned* ToDLPack() const;
 
     /// Convert DLManagedTensor to Tensor.
-    static Tensor FromDLPack(const DLManagedTensor* dlmt);
+    static Tensor FromDLPack(const DLManagedTensorVersioned* dlmt);
 
     /// Save tensor to numpy's npy format.
     void Save(const std::string& file_name) const;

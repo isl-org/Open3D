@@ -142,6 +142,8 @@ private:
                 const_cast<int64_t*>(o3d_tensor_.GetStridesRef().data());
         dl_tensor.byte_offset = 0;
 
+        dl_managed_tensor_.version.major = DLPACK_MAJOR_VERSION;
+        dl_managed_tensor_.version.minor = DLPACK_MINOR_VERSION;
         dl_managed_tensor_.manager_ctx = this;
         dl_managed_tensor_.deleter = &Open3DDLManagedTensor::Deleter;
         dl_managed_tensor_.dl_tensor = dl_tensor;
@@ -1784,7 +1786,12 @@ DLManagedTensor* Tensor::ToDLPack() const {
     return Open3DDLManagedTensor::Create(*this);
 }
 
-Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
+Tensor Tensor::FromDLPack(const DLManagedTensorVersioned* src) {
+    if (src->version.major != DLPACK_MAJOR_VERSION) {
+        utility::LogError("DLPack major version mismatch. Consumer (Open3D) is {}, but "
+                            "producer is {}.",
+                            DLPACK_MAJOR_VERSION, src->version.major);
+    }
     Device device;
     switch (src->dl_tensor.device.device_type) {
         case DLDeviceType::kDLCPU:
@@ -1807,7 +1814,7 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
     // Open3D Blob's expects an std::function<void(void*)> deleter.
     auto deleter = [src](void* dummy) -> void {
         if (src->deleter != nullptr) {
-            src->deleter(const_cast<DLManagedTensor*>(src));
+            src->deleter(const_cast<DLManagedTensorVersioned*>(src));
         }
     };
 
@@ -1815,6 +1822,10 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                      src->dl_tensor.shape + src->dl_tensor.ndim);
 
     SizeVector strides;
+    if (src->dl_tensor.ndim > 0 && src->dl_tensor.strides == nullptr) {
+        utility::LogError(
+                "DLPack tensor with ndim > 0 must have non-null strides.");
+    }
     if (src->dl_tensor.strides == nullptr) {
         strides = shape_util::DefaultStrides(shape);
     } else {
