@@ -152,7 +152,7 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
                                                             const char* title,
                                                             int flags) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // NOTE: Setting alpha and stencil bits to match GLX standard default
@@ -165,8 +165,8 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
 #endif
-    bool visible = !(flags & FLAG_HIDDEN);
-    glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
+    // bool visible = !(flags & FLAG_HIDDEN);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
     glfwWindowHint(GLFW_FLOATING,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
 
@@ -183,6 +183,22 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
     glfwSetCharCallback(glfw_window, CharCallback);
     glfwSetDropCallback(glfw_window, DragDropCallback);
     glfwSetWindowCloseCallback(glfw_window, CloseCallback);
+
+    // Ensure window size is properly set on Wayland
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+        glfwSetWindowSize(glfw_window, width, height);
+        glfwWaitEventsTimeout(0.1);
+    }
+    glfwShowWindow(glfw_window);
+    glfwMakeContextCurrent(glfw_window);
+    glfwSwapInterval(1);
+    //if (!visible) {
+    //    glfwHideWindow(glfw_window);
+    //} else {
+    //    glfwShowWindow(glfw_window);
+    //}
+    utility::LogInfo("[GLFW] Created window '{}' ({}x{})\n", title, width,
+                      height);
 
     return glfw_window;
 }
@@ -217,6 +233,10 @@ bool GLFWWindowSystem::IsActiveWindow(OSWindow w) const {
 
 Point GLFWWindowSystem::GetWindowPos(OSWindow w) const {
     int x, y;
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+        utility::LogDebug("[GLFW] getWindowPos() is not supported on Wayland.");
+        return Point(0, 0);
+    }
     glfwGetWindowPos((GLFWwindow*)w, &x, &y);
     return Point(x, y);
 }
