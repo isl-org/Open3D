@@ -152,3 +152,9 @@ if __name__ == "__main__":
     toy.vertices = o3d.utility.Vector3dVector(projected)
 
     o3d.visualization.draw_geometries([shoe, toy], mesh_show_back_face=True)
+
+    # Export to stl and ply
+    combined = shoe + toy
+    combined.compute_vertex_normals()
+    o3d.io.write_triangle_mesh("combined_output.stl", combined)
+    o3d.io.write_triangle_mesh("combined_output.ply", combined)  # or .glb
