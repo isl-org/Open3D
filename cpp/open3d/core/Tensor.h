@@ -1187,7 +1187,7 @@ public:
     /// Convert the Tensor to DLManagedTensor.
     DLManagedTensorVersioned* ToDLPack() const;
 
-    /// Convert DLManagedTensor to Tensor.
+    /// Convert DLManagedTensorVersioned to Tensor.
     static Tensor FromDLPack(const DLManagedTensorVersioned* dlmt);
 
     /// Save tensor to numpy's npy format.

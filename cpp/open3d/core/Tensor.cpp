@@ -49,6 +49,7 @@ static DLDataTypeCode DtypeToDLDataTypeCode(const Dtype& dtype) {
     if (dtype == core::UInt16) return DLDataTypeCode::kDLUInt;
     if (dtype == core::UInt32) return DLDataTypeCode::kDLUInt;
     if (dtype == core::UInt64) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::Bool) return DLDataTypeCode::kDLBool;
     utility::LogError("Unsupported data type");
     return DLDataTypeCode();
 }
@@ -59,6 +60,9 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
                           dltype.lanes);
     }
     switch (dltype.code) {
+        case DLDataTypeCode::kDLBool:
+            return core::Bool;
+            break;
         case DLDataTypeCode::kDLUInt:
             switch (dltype.bits) {
                 case 8:
@@ -142,25 +146,27 @@ private:
                 const_cast<int64_t*>(o3d_tensor_.GetStridesRef().data());
         dl_tensor.byte_offset = 0;
 
-        dl_managed_tensor_.version.major = DLPACK_MAJOR_VERSION;
-        dl_managed_tensor_.version.minor = DLPACK_MINOR_VERSION;
-        dl_managed_tensor_.manager_ctx = this;
-        dl_managed_tensor_.deleter = &Open3DDLManagedTensor::Deleter;
-        dl_managed_tensor_.dl_tensor = dl_tensor;
+        dl_managed_tensor_versioned_.flags = 0;
+        dl_managed_tensor_versioned_.version.major = DLPACK_MAJOR_VERSION;
+        dl_managed_tensor_versioned_.version.minor = DLPACK_MINOR_VERSION;
+        dl_managed_tensor_versioned_.manager_ctx = this;
+        dl_managed_tensor_versioned_.deleter = &Open3DDLManagedTensor::Deleter;
+        dl_managed_tensor_versioned_.dl_tensor = dl_tensor;
     }
 
     Tensor o3d_tensor_;
-    DLManagedTensor dl_managed_tensor_;
+    DLManagedTensorVersioned dl_managed_tensor_versioned_;
 
 public:
-    /// `DLManagedTensor* dmlt` is destroyed by calling `dmlt->deleter(dmlt)`.
-    /// The destruction happens when the DLPack python object goes out of scope,
-    /// and ultimately it decreases the reference count to the actual data
-    /// buffer (i.e. `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
-    static DLManagedTensor* Create(const Tensor& o3d_tensor) {
+    /// `DLManagedTensorVersioned* dmlt` is destroyed by calling
+    /// `dmlt->deleter(dmlt)`. The destruction happens when the DLPack python
+    /// object goes out of scope, and ultimately it decreases the reference
+    /// count to the actual data buffer (i.e.
+    /// `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
+    static DLManagedTensorVersioned* Create(const Tensor& o3d_tensor) {
         Open3DDLManagedTensor* o3d_dl_tensor =
                 new Open3DDLManagedTensor(o3d_tensor);
-        return &o3d_dl_tensor->dl_managed_tensor_;
+        return &o3d_dl_tensor->dl_managed_tensor_versioned_;
     }
 
     static std::pair<DLDeviceType, int> getDLPackDevice(
@@ -185,7 +191,7 @@ public:
         return std::make_pair(dl_device_type, device.GetID());
     }
 
-    static void Deleter(DLManagedTensor* arg) {
+    static void Deleter(DLManagedTensorVersioned* arg) {
         delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
     }
 };
@@ -1782,15 +1788,16 @@ Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
     return dst;
 }
 
-DLManagedTensor* Tensor::ToDLPack() const {
+DLManagedTensorVersioned* Tensor::ToDLPack() const {
     return Open3DDLManagedTensor::Create(*this);
 }
 
 Tensor Tensor::FromDLPack(const DLManagedTensorVersioned* src) {
     if (src->version.major != DLPACK_MAJOR_VERSION) {
-        utility::LogError("DLPack major version mismatch. Consumer (Open3D) is {}, but "
-                            "producer is {}.",
-                            DLPACK_MAJOR_VERSION, src->version.major);
+        utility::LogError(
+                "DLPack major version mismatch. Consumer (Open3D) is {}, but "
+                "producer is {}.",
+                DLPACK_MAJOR_VERSION, src->version.major);
     }
     Device device;
     switch (src->dl_tensor.device.device_type) {
@@ -1822,11 +1829,12 @@ Tensor Tensor::FromDLPack(const DLManagedTensorVersioned* src) {
                      src->dl_tensor.shape + src->dl_tensor.ndim);
 
     SizeVector strides;
-    if (src->dl_tensor.ndim > 0 && src->dl_tensor.strides == nullptr) {
-        utility::LogError(
-                "DLPack tensor with ndim > 0 must have non-null strides.");
-    }
-    if (src->dl_tensor.strides == nullptr) {
+    // if (src->dl_tensor.ndim > 0 && src->dl_tensor.strides == nullptr) {
+    //     utility::LogError(
+    //             "DLPack tensor with ndim > 0 must have non-null strides.");
+    // }
+    if (src->dl_tensor.strides ==
+        nullptr) {  // default row major contiguous strides
         strides = shape_util::DefaultStrides(shape);
     } else {
         strides = SizeVector(src->dl_tensor.strides,

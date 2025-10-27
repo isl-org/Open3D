@@ -121,7 +121,6 @@
     tensor.def(#py_name, [](const Tensor& self, double value) {           \
         return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
                 .cpp_name(self);                                          \
-    });                                                                   \
     tensor.def(#py_name, [](const Tensor& self, int8_t value) {           \
         return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
                 .cpp_name(self);                                          \
@@ -158,7 +157,6 @@
         return Tensor::Full({}, value, self.GetDtype(), self.GetDevice()) \
                 .cpp_name(self);                                          \
     });
-
 #define BIND_REDUCTION_OP(py_name, cpp_name)                                   \
     tensor.def(                                                                \
             #py_name,                                                          \
@@ -251,6 +249,12 @@ static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
             "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
             "device"_a = py::none());
 }
+
+py::enum_<DLDeviceType>(m, "DLDeviceType", py::arithmetic())
+        .value("kDLCPU", DLDeviceType::kDLCPU)
+        .value("kDLCUDA", DLDeviceType::kDLCUDA)
+        .value("kDLOneAPI", DLDeviceType::kDLOneAPI)
+        .export_values();
 
 void pybind_core_tensor_declarations(py::module& m) {
     py::class_<Tensor> tensor(
@@ -503,16 +507,19 @@ Example:
     });
 
     auto to_dlpack = [](const Tensor& tensor) {
-        DLManagedTensor* dl_managed_tensor = tensor.ToDLPack();
+        DLManagedTensorVersioned* dl_managed_tensor = tensor.ToDLPack();
         // See PyTorch's torch/csrc/Module.cpp
         auto capsule_destructor = [](PyObject* data) {
-            DLManagedTensor* dl_managed_tensor =
-                    (DLManagedTensor*)PyCapsule_GetPointer(data, "dltensor");
-            if (dl_managed_tensor) {
+            DLManagedTensorVersioned* dl_managed_tensor =
+                    (DLManagedTensorVersioned*)PyCapsule_GetPointer(data,
+                                                                    "dltensor");
+            if (dl_managed_tensor != nullptr &&
+                dl_managed_tensor->deleter != nullptr) {
                 // the dl_managed_tensor has not been consumed,
                 // call deleter ourselves
                 dl_managed_tensor->deleter(
-                        const_cast<DLManagedTensor*>(dl_managed_tensor));
+                        const_cast<DLManagedTensorVersioned*>(
+                                dl_managed_tensor));
             } else {
                 // The dl_managed_tensor has been consumed
                 // PyCapsule_GetPointer has set an error indicator
@@ -522,7 +529,14 @@ Example:
         return py::capsule(dl_managed_tensor, "dltensor", capsule_destructor);
     };
     tensor.def("to_dlpack", to_dlpack);
-    tensor.def("__dlpack__", to_dlpack);
+    tensor.def(
+            "__dlpack__",
+            [to_dlpack](const Tensor& tensor, py::object stream) {
+                (void)stream;
+                return to_dlpack(tensor);
+            },
+            py::arg("stream") = py::none());
+
     tensor.def("__dlpack_device__", [](const Tensor& tensor) {
         // &Open3DDLManagedTensor::getDLPackDevice
         // Prepare dl_device_type
@@ -546,12 +560,13 @@ Example:
     });
 
     auto from_dlpack = [](py::capsule data) {
-        DLManagedTensor* dl_managed_tensor =
-                static_cast<DLManagedTensor*>(data);
+        DLManagedTensorVersioned* dl_managed_tensor =
+                static_cast<DLManagedTensorVersioned*>(
+                        PyCapsule_GetPointer(data.ptr(), "dltensor"));
         if (!dl_managed_tensor) {
             utility::LogError(
                     "from_dlpack must receive "
-                    "DLManagedTensor PyCapsule.");
+                    "DLManagedTensorVersioned PyCapsule.");
         }
         // Make sure that the PyCapsule is not used again.
         // See:
@@ -559,15 +574,28 @@ Example:
         // https://github.com/cupy/cupy/pull/1445/files#diff-ddf01ff512087ef616db57ecab88c6ae
         Tensor t = Tensor::FromDLPack(dl_managed_tensor);
         PyCapsule_SetName(data.ptr(), "used_dltensor");
+        PyCapsule_SetDestructor(data.ptr(), nullptr);
         return t;
     };
     tensor.def_static("from_dlpack", from_dlpack);
-    tensor.def_static("from_dlpack", [](const py::object& ext_tensor) {
-        if (hasattr(ext_tensor, "__dlpack__")) {
-            return from_dlpack(ext_tensor.attr("__dlpack__")());
-        }
-        auto device = ext_tensor.attr("__dlpack_device__")();
-    });
+    tensor.def_static(
+            "from_dlpack",
+            [from_dlpack](const py::object& ext_tensor, py::object stream) {
+                if (!hasattr(ext_tensor, "__dlpack__")) {
+                    utility::LogError(
+                            "from_dlpack: object does not define __dlpack__.");
+                }
+                if (hasattr(ext_tensor, "__dlpack_device__")) {
+                    (void)ext_tensor.attr("__dlpack_device__")();
+                }
+                py::object capsule_obj =
+                        stream.is_none()
+                                ? ext_tensor.attr("__dlpack__")()
+                                : ext_tensor.attr("__dlpack__")(stream);
+                return from_dlpack(
+                        py::reinterpret_borrow<py::capsule>(capsule_obj));
+            },
+            py::arg("tensor"), py::arg("stream") = py::none());
 
     // Numpy IO.
     tensor.def("save", &Tensor::Save, "Save tensor to Numpy's npy format.",

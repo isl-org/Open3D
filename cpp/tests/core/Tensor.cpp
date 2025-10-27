@@ -3164,7 +3164,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ToDLPackFromDLPack) {
     EXPECT_EQ(src_t.ToFlatVector<float>(),
               std::vector<float>({12, 14, 20, 22}));
 
-    DLManagedTensor *dl_t = src_t.ToDLPack();
+    DLManagedTensorVersioned *dl_t = src_t.ToDLPack();
 
     core::Tensor dst_t = core::Tensor::FromDLPack(dl_t);
     EXPECT_EQ(dst_t.GetShape(), core::SizeVector({2, 2}));
