@@ -18,7 +18,6 @@ from open3d_test import list_devices_with_torch, torch_available
 
 if torch_available():
     import torch
-    import torch.utils.dlpack
 
 
 @pytest.mark.parametrize("device", list_devices_with_torch())
@@ -30,7 +29,7 @@ def test_tensor_to_pytorch_scope(device):
 
     def get_dst_t():
         o3d_t = o3c.Tensor(src_t, device=device)  # Copy
-        dst_t = torch.utils.dlpack.from_dlpack(o3d_t.to_dlpack())
+        dst_t = torch.from_dlpack(o3d_t)
         return dst_t
 
     dst_t = get_dst_t().cpu().numpy()
@@ -49,8 +48,8 @@ def test_tensor_from_to_pytorch(device):
     a = torch.ones((2, 2))
     if device_type == o3c.Device.DeviceType.CUDA:
         a = a.cuda(device_id)
-    b = o3c.Tensor.from_dlpack(torch.utils.dlpack.to_dlpack(a))
-    c = torch.utils.dlpack.from_dlpack(b.to_dlpack())
+    b = o3c.Tensor.from_dlpack(a)
+    c = torch.from_dlpack(b)
 
     a[0, 0] = 100
     c[0, 1] = 200
@@ -66,7 +65,7 @@ def test_tensor_from_to_pytorch(device):
     if device_type == o3c.Device.DeviceType.CUDA:
         th_t = th_t.cuda(device_id)
 
-    o3_t = o3c.Tensor.from_dlpack(torch.utils.dlpack.to_dlpack(th_t))
+    o3_t = o3c.Tensor.from_dlpack(th_t)
     np.testing.assert_equal(th_t.cpu().numpy(), o3_t.cpu().numpy())
 
     th_t[0, 0] = 100
@@ -76,8 +75,8 @@ def test_tensor_from_to_pytorch(device):
     for shape in [(), (0), (0, 0), (0, 3)]:
         np_t = np.ones(shape)
         th_t = torch.Tensor(np_t)
-        o3_t = o3c.Tensor.from_dlpack(torch.utils.dlpack.to_dlpack(th_t))
-        th_t_v2 = torch.utils.dlpack.from_dlpack(o3_t.to_dlpack())
+        o3_t = o3c.Tensor.from_dlpack(th_t)
+        th_t_v2 = torch.from_dlpack(o3_t)
         np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
         np.testing.assert_equal(th_t_v2.cpu().numpy(), np_t)
 
@@ -89,6 +88,7 @@ def test_tensor_numpy_to_open3d_to_pytorch():
     # Numpy -> Open3D -> PyTorch all share the same memory
     a = np.ones((2, 2))
     b = o3c.Tensor.from_numpy(a)
+    # Test old style use
     c = torch.utils.dlpack.from_dlpack(b.to_dlpack())
 
     a[0, 0] = 100
