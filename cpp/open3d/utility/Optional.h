@@ -33,17 +33,6 @@ using bad_optional_access = std::bad_optional_access;
 }  // namespace utility
 }  // namespace open3d
 
-// Provide std::hash specialization for open3d::utility::optional (aliased from std::optional)
-// This is not strictly necessary since std::hash<std::optional<T>> already exists,
-// but we provide it for compatibility with existing code that may use it.
-namespace std {
-template <typename T>
-struct hash<open3d::utility::optional<T>> {
-    typedef typename hash<T>::result_type result_type;
-    typedef open3d::utility::optional<T> argument_type;
-
-    constexpr result_type operator()(argument_type const& arg) const {
-        return arg ? std::hash<T>{}(*arg) : result_type{};
-    }
-};
-}  // namespace std
+// Note: std::hash<std::optional<T>> is already provided by the standard library.
+// Since open3d::utility::optional<T> is just a type alias for std::optional<T>,
+// no additional hash specialization is needed.
