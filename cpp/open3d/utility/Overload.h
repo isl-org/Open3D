@@ -37,7 +37,7 @@ Overloaded(Ts...) -> Overloaded<Ts...>;
 /// \endcode
 template <typename... Ts>
 Overloaded<Ts...> Overload(Ts... ts) {
-    return Overloaded<Ts...>{ts...};
+    return Overloaded{ts...};  // C++17 deduction guide makes <Ts...> redundant
 }
 
 }  // namespace utility
