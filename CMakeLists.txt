@@ -404,16 +404,8 @@ if(BUILD_CUDA_MODULE)
             # Set required nvcc flags before enable_language(CUDA), if they are not already set.
             # Note: CMake >=3.29.4 might be needed for CMAKE_CUDA_FLAGS to be passed correctly to
             # CMake's try_compile environment.
-            # Append -allow-unsupported-compiler (match - or --) if not already present:
-            if(NOT CMAKE_CUDA_FLAGS MATCHES "(^| )--?allow-unsupported-compiler($| )")
-              set(CMAKE_CUDA_FLAGS
-                  "${CMAKE_CUDA_FLAGS} -allow-unsupported-compiler"
-                  CACHE STRING "Flags for NVCC" FORCE)
-            endif()
-            # Append -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH if not already present:
-            if(NOT CMAKE_CUDA_FLAGS MATCHES "(^| )-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH($| )")
-              set(CMAKE_CUDA_FLAGS
-                  "${CMAKE_CUDA_FLAGS} -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
+            set(CMAKE_CUDA_FLAGS
+                  "${CMAKE_CUDA_FLAGS} -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
                   CACHE STRING "Flags for NVCC" FORCE)
             endif()
             message(WARNING "Using --allow-unsupported-compiler flag and -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH for nvcc<=12.4 with MSVC>=1940. "
