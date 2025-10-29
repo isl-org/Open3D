@@ -588,7 +588,7 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
 }
 
 Tensor Tensor::Append(const Tensor& other,
-                      const utility::optional<int64_t>& axis) const {
+                      const std::optional<int64_t>& axis) const {
     return core::Append(*this, other, axis);
 }
 
@@ -1735,7 +1735,7 @@ bool Tensor::IsNonZero() const {
     return rc;
 }
 
-Tensor Tensor::All(const utility::optional<SizeVector>& dims,
+Tensor Tensor::All(const std::optional<SizeVector>& dims,
                    bool keepdim) const {
     AssertTensorDtype(*this, core::Bool);
 
@@ -1754,7 +1754,7 @@ Tensor Tensor::All(const utility::optional<SizeVector>& dims,
     return dst;
 }
 
-Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
+Tensor Tensor::Any(const std::optional<SizeVector>& dims,
                    bool keepdim) const {
     AssertTensorDtype(*this, core::Bool);
 

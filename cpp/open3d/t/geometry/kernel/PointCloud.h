@@ -18,10 +18,10 @@ namespace kernel {
 namespace pointcloud {
 
 void Unproject(const core::Tensor& depth,
-               utility::optional<std::reference_wrapper<const core::Tensor>>
+               std::optional<std::reference_wrapper<const core::Tensor>>
                        image_colors,
                core::Tensor& points,
-               utility::optional<std::reference_wrapper<core::Tensor>> colors,
+               std::optional<std::reference_wrapper<core::Tensor>> colors,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                float depth_scale,
@@ -30,9 +30,9 @@ void Unproject(const core::Tensor& depth,
 
 void Project(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -51,10 +51,10 @@ void GetPointMaskWithinOBB(const core::Tensor& points,
 
 void UnprojectCPU(
         const core::Tensor& depth,
-        utility::optional<std::reference_wrapper<const core::Tensor>>
+        std::optional<std::reference_wrapper<const core::Tensor>>
                 image_colors,
         core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -63,9 +63,9 @@ void UnprojectCPU(
 
 void ProjectCPU(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -101,10 +101,10 @@ void ComputeBoundaryPointsCPU(const core::Tensor& points,
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
         const core::Tensor& depth,
-        utility::optional<std::reference_wrapper<const core::Tensor>>
+        std::optional<std::reference_wrapper<const core::Tensor>>
                 image_colors,
         core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -113,9 +113,9 @@ void UnprojectCUDA(
 
 void ProjectCUDA(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,

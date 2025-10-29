@@ -14,7 +14,7 @@
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Eigen.h"
-#include "open3d/utility/Optional.h"
+#include <optional>
 
 namespace open3d {
 

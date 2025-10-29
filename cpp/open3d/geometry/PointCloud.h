@@ -14,7 +14,7 @@
 
 #include "open3d/geometry/Geometry3D.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
-#include "open3d/utility/Optional.h"
+#include <optional>
 
 namespace open3d {
 

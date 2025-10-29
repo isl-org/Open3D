@@ -16,7 +16,7 @@
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Optional.h"
+#include <optional>
 #include "open3d/utility/Parallel.h"
 
 namespace open3d {
@@ -138,7 +138,7 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
     std::vector<double> proxy_intensity;
     int total_num_ = 0;
     int n_camera = int(opt_camera_trajectory.parameters_.size());
-    SetProxyIntensityForVertex(opt_mesh, images_gray, utility::nullopt,
+    SetProxyIntensityForVertex(opt_mesh, images_gray, std::nullopt,
                                opt_camera_trajectory,
                                visibility_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
@@ -195,14 +195,14 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
         } else {
             utility::LogDebug("Residual error : {:.6f}", residual);
         }
-        SetProxyIntensityForVertex(opt_mesh, images_gray, utility::nullopt,
+        SetProxyIntensityForVertex(opt_mesh, images_gray, std::nullopt,
                                    opt_camera_trajectory,
                                    visibility_vertex_to_image, proxy_intensity,
                                    option.image_boundary_margin_);
 
         if (!option.debug_output_dir_.empty()) {
             // Save opt_mesh.
-            SetGeometryColorAverage(opt_mesh, images_color, utility::nullopt,
+            SetGeometryColorAverage(opt_mesh, images_color, std::nullopt,
                                     opt_camera_trajectory,
                                     visibility_vertex_to_image,
                                     option.image_boundary_margin_,
@@ -222,7 +222,7 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
     }
 
     utility::LogDebug("[ColorMapOptimization] Set Mesh Color");
-    SetGeometryColorAverage(opt_mesh, images_color, utility::nullopt,
+    SetGeometryColorAverage(opt_mesh, images_color, std::nullopt,
                             opt_camera_trajectory, visibility_vertex_to_image,
                             option.image_boundary_margin_,
                             option.invisible_vertex_color_knn_);

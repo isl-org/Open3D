@@ -36,10 +36,10 @@ static std::tuple<float, float, float> Project3DPointAndGetUVDepth(
 template <typename T>
 static std::tuple<bool, T> QueryImageIntensity(
         const geometry::Image& img,
-        const utility::optional<ImageWarpingField>& optional_warping_field,
+        const std::optional<ImageWarpingField>& optional_warping_field,
         const Eigen::Vector3d& V,
         const camera::PinholeCameraParameters& camera_parameter,
-        utility::optional<int> channel,
+        std::optional<int> channel,
         int image_boundary_margin) {
     // We use double here for u, v such that it is consistent with 0.12 release
     // numerically, since double->float->int can be different from double->int.
@@ -185,7 +185,7 @@ CreateVertexAndImageVisibility(
 void SetProxyIntensityForVertex(
         const geometry::TriangleMesh& mesh,
         const std::vector<geometry::Image>& images_gray,
-        const utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const std::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         std::vector<double>& proxy_intensity,
@@ -207,11 +207,11 @@ void SetProxyIntensityForVertex(
                 std::tie(valid, gray) = QueryImageIntensity<float>(
                         images_gray[j], warping_fields.value()[j],
                         mesh.vertices_[i], camera_trajectory.parameters_[j],
-                        utility::nullopt, image_boundary_margin);
+                        std::nullopt, image_boundary_margin);
             } else {
                 std::tie(valid, gray) = QueryImageIntensity<float>(
-                        images_gray[j], utility::nullopt, mesh.vertices_[i],
-                        camera_trajectory.parameters_[j], utility::nullopt,
+                        images_gray[j], std::nullopt, mesh.vertices_[i],
+                        camera_trajectory.parameters_[j], std::nullopt,
                         image_boundary_margin);
             }
 
@@ -229,7 +229,7 @@ void SetProxyIntensityForVertex(
 void SetGeometryColorAverage(
         geometry::TriangleMesh& mesh,
         const std::vector<geometry::Image>& images_color,
-        const utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const std::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin,
@@ -249,11 +249,11 @@ void SetGeometryColorAverage(
             int j = visibility_vertex_to_image[i][iter];
             uint8_t r_temp, g_temp, b_temp;
             bool valid = false;
-            utility::optional<ImageWarpingField> optional_warping_field;
+            std::optional<ImageWarpingField> optional_warping_field;
             if (warping_fields.has_value()) {
                 optional_warping_field = warping_fields.value()[j];
             } else {
-                optional_warping_field = utility::nullopt;
+                optional_warping_field = std::nullopt;
             }
             std::tie(valid, r_temp) = QueryImageIntensity<uint8_t>(
                     images_color[j], optional_warping_field, mesh.vertices_[i],

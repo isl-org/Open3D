@@ -13,7 +13,7 @@
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/NanoFlannIndex.h"
-#include "open3d/utility/Optional.h"
+#include <optional>
 
 namespace open3d {
 namespace core {
@@ -54,12 +54,12 @@ public:
     ///
     /// \param radius optional radius parameter. required for gpu fixed radius
     /// index. \return Returns true if building index success, otherwise false.
-    bool FixedRadiusIndex(utility::optional<double> radius = {});
+    bool FixedRadiusIndex(std::optional<double> radius = {});
 
     /// Set index for hybrid search.
     ///
     /// \return Returns true if building index success, otherwise false.
-    bool HybridIndex(utility::optional<double> radius = {});
+    bool HybridIndex(std::optional<double> radius = {});
 
     /// Perform knn search.
     ///
