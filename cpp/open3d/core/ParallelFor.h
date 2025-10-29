@@ -61,8 +61,8 @@ void ParallelForCUDA_(const Device& device, int64_t n, const func_t& func) {
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
     ElementWiseKernel_<OPEN3D_PARFOR_BLOCK, OPEN3D_PARFOR_THREAD>
-            <<<grid_size, OPEN3D_PARFOR_BLOCK, 0, core::cuda::GetStream()>>>(
-                    n, func);
+            <<<grid_size, OPEN3D_PARFOR_BLOCK, 0,
+               CUDAStream::GetInstance().Get()>>>(n, func);
     OPEN3D_GET_LAST_CUDA_ERROR("ParallelFor failed.");
 }
 

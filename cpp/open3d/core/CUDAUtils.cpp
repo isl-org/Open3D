@@ -141,41 +141,55 @@ static void SetDevice(int device_id) {
     OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
 }
 
-class CUDAStream {
-public:
-    static CUDAStream& GetInstance() {
-        // The global stream state is given per thread like CUDA's internal
-        // device state.
-        static thread_local CUDAStream instance;
-        return instance;
-    }
-
-    cudaStream_t Get() { return stream_; }
-    void Set(cudaStream_t stream) { stream_ = stream; }
-
-    static cudaStream_t Default() { return static_cast<cudaStream_t>(0); }
-
-private:
-    CUDAStream() = default;
-    CUDAStream(const CUDAStream&) = delete;
-    CUDAStream& operator=(const CUDAStream&) = delete;
-
-    cudaStream_t stream_ = Default();
-};
-
-cudaStream_t GetStream() { return CUDAStream::GetInstance().Get(); }
-
-static void SetStream(cudaStream_t stream) {
-    CUDAStream::GetInstance().Set(stream);
+void Synchronize(const CUDAStream& stream) {
+    OPEN3D_CUDA_CHECK(cudaStreamSynchronize(stream.Get()));
 }
-
-cudaStream_t GetDefaultStream() { return CUDAStream::Default(); }
 
 #endif
 
 }  // namespace cuda
 
 #ifdef BUILD_CUDA_MODULE
+
+CUDAStream& CUDAStream::GetInstance() {
+    // The global stream state is given per thread like CUDA's internal
+    // device state.
+    thread_local CUDAStream instance = cuda::GetDefaultStream();
+    return instance;
+}
+
+CUDAStream CUDAStream::CreateNew() {
+    CUDAStream stream;
+    OPEN3D_CUDA_CHECK(cudaStreamCreate(&stream.stream_));
+    // Having async memcpy device->host is very dangerous if you don't know what
+    // you are doing.
+    stream.SetShouldSyncMemcpyFromDeviceToHost(true);
+    return stream;
+}
+
+void CUDAStream::SetShouldSyncMemcpyFromDeviceToHost(
+        bool sync_memcpy_device_to_host) {
+    OPEN3D_ASSERT(!IsDefaultStream());
+    sync_memcpy_from_device_to_host_ = sync_memcpy_device_to_host;
+}
+
+bool CUDAStream::ShouldSyncMemcpyFromDeviceToHost() const {
+    return sync_memcpy_from_device_to_host_;
+}
+
+bool CUDAStream::IsDefaultStream() const {
+    return stream_ == static_cast<cudaStream_t>(nullptr);
+}
+
+cudaStream_t CUDAStream::Get() const { return stream_; }
+
+void CUDAStream::Set(cudaStream_t stream) { stream_ = stream; }
+
+void CUDAStream::Destroy() {
+    OPEN3D_ASSERT(!IsDefaultStream());
+    OPEN3D_CUDA_CHECK(cudaStreamDestroy(stream_));
+    *this = cuda::GetDefaultStream();
+}
 
 CUDAScopedDevice::CUDAScopedDevice(int device_id)
     : prev_device_id_(cuda::GetDevice()) {
@@ -189,27 +203,22 @@ CUDAScopedDevice::CUDAScopedDevice(const Device& device)
 
 CUDAScopedDevice::~CUDAScopedDevice() { cuda::SetDevice(prev_device_id_); }
 
-constexpr CUDAScopedStream::CreateNewStreamTag
-        CUDAScopedStream::CreateNewStream;
-
-CUDAScopedStream::CUDAScopedStream(const CreateNewStreamTag&)
-    : prev_stream_(cuda::GetStream()), owns_new_stream_(true) {
-    OPEN3D_CUDA_CHECK(cudaStreamCreate(&new_stream_));
-    cuda::SetStream(new_stream_);
-}
-
-CUDAScopedStream::CUDAScopedStream(cudaStream_t stream)
-    : prev_stream_(cuda::GetStream()),
+CUDAScopedStream::CUDAScopedStream(CUDAStream stream, bool destroy_on_exit)
+    : prev_stream_(CUDAStream::GetInstance()),
       new_stream_(stream),
-      owns_new_stream_(false) {
-    cuda::SetStream(stream);
+      owns_new_stream_(destroy_on_exit) {
+    CUDAStream::GetInstance() = new_stream_;
 }
 
 CUDAScopedStream::~CUDAScopedStream() {
     if (owns_new_stream_) {
-        OPEN3D_CUDA_CHECK(cudaStreamDestroy(new_stream_));
+        OPEN3D_ASSERT((prev_stream_.Get() != new_stream_.Get()) &&
+                      "CUDAScopedStream destroy_on_exit would destroy the same "
+                      "stream which was in place before the scoped stream was "
+                      "created.");
+        new_stream_.Destroy();
     }
-    cuda::SetStream(prev_stream_);
+    CUDAStream::GetInstance() = prev_stream_;
 }
 
 CUDAState& CUDAState::GetInstance() {

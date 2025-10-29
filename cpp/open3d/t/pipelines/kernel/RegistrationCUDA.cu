@@ -102,7 +102,8 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                 kernel.type_, scalar_t, kernel.scaling_parameter_,
                 kernel.shape_parameter_, [&]() {
                     ComputePosePointToPlaneKernelCUDA<<<
-                            blocks, threads, 0, core::cuda::GetStream()>>>(
+                            blocks, threads, 0,
+                            core::CUDAStream::GetInstance().Get()>>>(
                             source_points.GetDataPtr<scalar_t>(),
                             target_points.GetDataPtr<scalar_t>(),
                             target_normals.GetDataPtr<scalar_t>(),
@@ -111,7 +112,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                 });
     });
 
-    core::cuda::Synchronize();
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
 
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
@@ -210,7 +211,8 @@ void ComputePoseColoredICPCUDA(const core::Tensor &source_points,
                 kernel.type_, scalar_t, kernel.scaling_parameter_,
                 kernel.shape_parameter_, [&]() {
                     ComputePoseColoredICPKernelCUDA<<<
-                            blocks, threads, 0, core::cuda::GetStream()>>>(
+                            blocks, threads, 0,
+                            core::CUDAStream::GetInstance().Get()>>>(
                             source_points.GetDataPtr<scalar_t>(),
                             source_colors.GetDataPtr<scalar_t>(),
                             target_points.GetDataPtr<scalar_t>(),
@@ -224,7 +226,7 @@ void ComputePoseColoredICPCUDA(const core::Tensor &source_points,
                 });
     });
 
-    core::cuda::Synchronize();
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
 
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
@@ -349,7 +351,7 @@ void ComputePoseDopplerICPCUDA(
                 sqrt_lambda_doppler / static_cast<scalar_t>(period);
 
         PreComputeForDopplerICPKernelCUDA<scalar_t>
-                <<<1, 1, 0, core::cuda::GetStream()>>>(
+                <<<1, 1, 0, core::CUDAStream::GetInstance().Get()>>>(
                         R_S_to_V.GetDataPtr<scalar_t>(),
                         r_v_to_s_in_V.GetDataPtr<scalar_t>(),
                         w_v_in_V.GetDataPtr<scalar_t>(),
@@ -361,7 +363,8 @@ void ComputePoseDopplerICPCUDA(
                 kernel_geometric.scaling_parameter_, kernel_doppler.type_,
                 kernel_doppler.scaling_parameter_, [&]() {
                     ComputePoseDopplerICPKernelCUDA<<<
-                            blocks, threads, 0, core::cuda::GetStream()>>>(
+                            blocks, threads, 0,
+                            core::CUDAStream::GetInstance().Get()>>>(
                             source_points.GetDataPtr<scalar_t>(),
                             source_dopplers.GetDataPtr<scalar_t>(),
                             source_directions.GetDataPtr<scalar_t>(),
@@ -382,7 +385,7 @@ void ComputePoseDopplerICPCUDA(
                 });
     });
 
-    core::cuda::Synchronize();
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
 
     DecodeAndSolve6x6(global_sum, output_pose, residual, inlier_count);
 }
@@ -446,13 +449,13 @@ void ComputeInformationMatrixCUDA(const core::Tensor &target_points,
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
 
-        ComputeInformationMatrixKernelCUDA<<<blocks, threads, 0,
-                                             core::cuda::GetStream()>>>(
+        ComputeInformationMatrixKernelCUDA<<<
+                blocks, threads, 0, core::CUDAStream::GetInstance().Get()>>>(
                 target_points.GetDataPtr<scalar_t>(),
                 correspondence_indices.GetDataPtr<int64_t>(), n,
                 global_sum_ptr);
 
-        core::cuda::Synchronize();
+        core::cuda::Synchronize(core::CUDAStream::GetInstance());
 
         core::Tensor global_sum_cpu =
                 global_sum.To(core::Device("CPU:0"), core::Float64);

@@ -288,8 +288,8 @@ void IntegrateCPU
         *weight_ptr = weight + 1;
     });
 
-#if defined(__CUDACC__)
-    core::cuda::Synchronize();
+#if defined(BUILD_CUDA_MODULE)
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
 #endif
 }
 
@@ -498,8 +498,8 @@ void EstimateRangeCPU
 #endif
             });
 
-#if defined(__CUDACC__)
-    core::cuda::Synchronize();
+#if defined(BUILD_CUDA_MODULE)
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
 #endif
 
     if (needed_frag_count != frag_count) {
@@ -1026,8 +1026,8 @@ void RayCastCPU
         }  // surface-found
     });
 
-#if defined(__CUDACC__)
-    core::cuda::Synchronize();
+#if defined(BUILD_CUDA_MODULE)
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
 #endif
 }
 
@@ -1284,7 +1284,7 @@ void ExtractPointCloudCPU
     valid_size = total_count;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    core::cuda::Synchronize();
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
 #endif
 }
 

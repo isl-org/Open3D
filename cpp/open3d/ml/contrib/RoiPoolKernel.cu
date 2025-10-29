@@ -325,8 +325,9 @@ void roipool3dLauncher(int batch_size,
     cudaFree(pts_assign);
     cudaFree(pts_idx);
 
-#ifdef DEBUG
-    core::cuda::Synchronize();  // for using printf in kernel function
+#if defined(DEBUG) && BUILD_CUDA_MODULE
+    core::cuda::Synchronize(
+            CUDAStream::GetInstance());  // for using printf in kernel function
 #endif
 }
 

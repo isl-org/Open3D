@@ -959,8 +959,9 @@ private:
                     std::make_unique<Blob>(config.SemaphoreSize(), device);
             buffer = buffer_blob->GetDataPtr();
             semaphores = semaphores_blob->GetDataPtr();
-            OPEN3D_CUDA_CHECK(
-                    cudaMemset(semaphores, 0, config.SemaphoreSize()));
+            OPEN3D_CUDA_CHECK(cudaMemsetAsync(semaphores, 0,
+                                              config.SemaphoreSize(),
+                                              CUDAStream::GetInstance().Get()));
         }
 
         OPEN3D_ASSERT(can_use_32bit_indexing);
@@ -979,8 +980,8 @@ private:
         int shared_memory = config.SharedMemorySize();
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
                 <<<config.GridDim(), config.BlockDim(), shared_memory,
-                   core::cuda::GetStream()>>>(reduce_op);
-        cuda::Synchronize();
+                   core::CUDAStream::GetInstance().Get()>>>(reduce_op);
+        cuda::Synchronize(CUDAStream::GetInstance());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 

@@ -74,8 +74,7 @@ private:
         std::string name;
         size_t start_index;
 
-        Obj(const std::string &n, size_t start)
-            : name(n), start_index(start) {};
+        Obj(const std::string &n, size_t start) : name(n), start_index(start){};
         bool IsValid() const { return !name.empty(); }
     };
 
