@@ -45,7 +45,7 @@ void CheckScopedStreamManually() {
     int current_device = core::cuda::GetDevice();
 
     ASSERT_EQ(core::CUDAStream::GetInstance().Get(),
-              core::cuda::GetDefaultStream().Get());
+              core::CUDAStream::Default().Get());
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 
     core::CUDAStream stream = core::CUDAStream::CreateNew();
@@ -68,7 +68,7 @@ void CheckScopedStreamAutomatically() {
     int current_device = core::cuda::GetDevice();
 
     ASSERT_EQ(core::CUDAStream::GetInstance().Get(),
-              core::cuda::GetDefaultStream());
+              core::CUDAStream::Default());
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 
     {
@@ -76,12 +76,12 @@ void CheckScopedStreamAutomatically() {
                 core::CUDAScopedStream::CreateNewStream);
 
         ASSERT_NE(core::CUDAStream::GetInstance().Get(),
-                  core::cuda::GetDefaultStream());
+                  core::CUDAStream::Default());
         ASSERT_EQ(core::cuda::GetDevice(), current_device);
     }
 
     ASSERT_EQ(core::CUDAStream::GetInstance().Get(),
-              core::cuda::GetDefaultStream());
+              core::CUDAStream::Default());
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 }
 
