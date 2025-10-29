@@ -401,7 +401,7 @@ if(BUILD_CUDA_MODULE)
         # Find CUDAToolkit first to get CUDAToolkit_VERSION:
         find_package(CUDAToolkit REQUIRED)
         if (CUDAToolkit_VERSION VERSION_LESS "12.5" AND MSVC_VERSION GREATER_EQUAL 1940)
-            # Set required nvcc flags before enable_language(CUDA), if they are not already set.
+            # Set required nvcc flags before enable_language(CUDA).
             # Note: CMake >=3.29.4 might be needed for CMAKE_CUDA_FLAGS to be passed correctly to
             # CMake's try_compile environment.
             set(CMAKE_CUDA_FLAGS
