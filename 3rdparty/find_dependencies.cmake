@@ -1918,27 +1918,27 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # embree
-#if(USE_SYSTEM_EMBREE)
-#    open3d_find_package_3rdparty_library(3rdparty_embree
-#        PACKAGE embree
-#        TARGETS embree
-#        VERSION 4.3.3 # for "rtcGetErrorString"
-#    )
-#    if(NOT 3rdparty_embree_FOUND)
-#        set(USE_SYSTEM_EMBREE OFF)
-#    endif()
-#endif()
-#if(NOT USE_SYSTEM_EMBREE)
-#    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-#    open3d_import_3rdparty_library(3rdparty_embree
-#        HIDDEN
-#        INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-#        LIB_DIR      ${EMBREE_LIB_DIR}
-#        LIBRARIES    ${EMBREE_LIBRARIES}
-#        DEPENDS      ext_embree
-#    )
-#endif()
-#list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
+if(USE_SYSTEM_EMBREE)
+    open3d_find_package_3rdparty_library(3rdparty_embree
+        PACKAGE embree
+        TARGETS embree
+        VERSION 4.3.3 # for "rtcGetErrorString"
+    )
+    if(NOT 3rdparty_embree_FOUND)
+        set(USE_SYSTEM_EMBREE OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_EMBREE)
+    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+    open3d_import_3rdparty_library(3rdparty_embree
+        HIDDEN
+        INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+        LIB_DIR      ${EMBREE_LIB_DIR}
+        LIBRARIES    ${EMBREE_LIBRARIES}
+        DEPENDS      ext_embree
+    )
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
 
 # WebRTC
 if(BUILD_WEBRTC)
