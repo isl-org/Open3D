@@ -506,6 +506,10 @@ if(WIN32)
         #
         # See: https://github.com/tensorflow/tensorflow/pull/10962
         add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj;/Ob2>")
+        # MSBuild adds /Zc:inline by default, but it needs to be added explicitly for other generators (e.g. Ninja),
+        # for Open3D to compile (the linker fails otherwise with a "fatal error LNK1189: library limit of 65535
+        # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

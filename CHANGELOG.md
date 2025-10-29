@@ -64,6 +64,7 @@
 -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
 -   Fix `deprecated-declarations` warnings when compiling code with C++20 standard (PR #7303)
 -   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
+-   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
 
 ## 0.13
 
