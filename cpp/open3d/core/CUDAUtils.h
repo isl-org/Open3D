@@ -70,6 +70,13 @@ public:
     /// calling Destroy().
     static CUDAStream CreateNew();
 
+    /// Explicitly constructs a default stream. The default constructor could be
+    /// used, but this is clearer and closer to the old API.
+    static CUDAStream Default() { return {}; }
+
+    /// Default constructor. Refers to the default CUDA stream.
+    CUDAStream() = default;
+
     /// Sets the flag indicating if all memory copy operations done within
     /// this stream from device -> host should be synchronized. True by
     /// default. The default CUDA stream is implicitly synchronized with every
@@ -311,7 +318,6 @@ bool SupportsMemoryPools(const Device& device);
 #ifdef BUILD_CUDA_MODULE
 
 int GetDevice();
-CUDAStream GetDefaultStream();
 
 /// Calls cudaStreamSynchronize() for the specified CUDA stream.
 /// \param stream The stream to be synchronized.

@@ -401,7 +401,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     // stdgpu initializes on the default stream. Set the current stream to
     // ensure correct behavior.
     {
-        CUDAScopedStream scoped_stream(cuda::GetDefaultStream());
+        CUDAScopedStream scoped_stream(CUDAStream::Default());
 
         impl_ = InternalStdGPUHashBackend<Key, Hash, Eq>::createDeviceObject(
                 this->capacity_,
@@ -419,7 +419,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Free() {
     // stdgpu initializes on the default stream. Set the current stream to
     // ensure correct behavior.
     {
-        CUDAScopedStream scoped_stream(cuda::GetDefaultStream());
+        CUDAScopedStream scoped_stream(CUDAStream::Default());
 
         InternalStdGPUHashBackend<Key, Hash, Eq>::destroyDeviceObject(impl_);
     }

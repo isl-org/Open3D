@@ -154,7 +154,7 @@ void Synchronize(const CUDAStream& stream) {
 CUDAStream& CUDAStream::GetInstance() {
     // The global stream state is given per thread like CUDA's internal
     // device state.
-    thread_local CUDAStream instance = cuda::GetDefaultStream();
+    thread_local CUDAStream instance = CUDAStream::Default();
     return instance;
 }
 
@@ -188,7 +188,7 @@ void CUDAStream::Set(cudaStream_t stream) { stream_ = stream; }
 void CUDAStream::Destroy() {
     OPEN3D_ASSERT(!IsDefaultStream());
     OPEN3D_CUDA_CHECK(cudaStreamDestroy(stream_));
-    *this = cuda::GetDefaultStream();
+    *this = CUDAStream::Default();
 }
 
 CUDAScopedDevice::CUDAScopedDevice(int device_id)
