@@ -44,41 +44,44 @@ TEST(CUDAUtils, InitState) {
 void CheckScopedStreamManually() {
     int current_device = core::cuda::GetDevice();
 
-    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::CUDAStream::GetInstance().Get(),
+              core::cuda::GetDefaultStream().Get());
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 
-    cudaStream_t stream;
-    OPEN3D_CUDA_CHECK(cudaStreamCreate(&stream));
+    core::CUDAStream stream = core::CUDAStream::CreateNew();
 
     {
         core::CUDAScopedStream scoped_stream(stream);
 
-        ASSERT_EQ(core::cuda::GetStream(), stream);
-        ASSERT_NE(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+        ASSERT_EQ(core::CUDAStream::GetInstance().Get(), stream.Get());
+        ASSERT_FALSE(core::CUDAStream::GetInstance().IsDefaultStream());
         ASSERT_EQ(core::cuda::GetDevice(), current_device);
     }
 
-    OPEN3D_CUDA_CHECK(cudaStreamDestroy(stream));
+    stream.Destroy();
 
-    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_TRUE(core::CUDAStream::GetInstance().IsDefaultStream());
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 }
 
 void CheckScopedStreamAutomatically() {
     int current_device = core::cuda::GetDevice();
 
-    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::CUDAStream::GetInstance().Get(),
+              core::cuda::GetDefaultStream());
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 
     {
         core::CUDAScopedStream scoped_stream(
                 core::CUDAScopedStream::CreateNewStream);
 
-        ASSERT_NE(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+        ASSERT_NE(core::CUDAStream::GetInstance().Get(),
+                  core::cuda::GetDefaultStream());
         ASSERT_EQ(core::cuda::GetDevice(), current_device);
     }
 
-    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::CUDAStream::GetInstance().Get(),
+              core::cuda::GetDefaultStream());
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 }
 

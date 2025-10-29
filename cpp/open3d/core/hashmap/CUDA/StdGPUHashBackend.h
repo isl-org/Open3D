@@ -200,10 +200,11 @@ void StdGPUHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
 
-    STDGPUFindKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+    STDGPUFindKernel<<<blocks, threads, 0,
+                       core::CUDAStream::GetInstance().Get()>>>(
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
             output_buf_indices, output_masks, count);
-    cuda::Synchronize(this->device_);
+    cuda::Synchronize(CUDAStream::GetInstance());
 }
 
 // Need an explicit kernel for non-const access to map
@@ -244,10 +245,11 @@ void StdGPUHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
     buf_index_t* output_buf_indices =
             static_cast<buf_index_t*>(toutput_buf_indices.GetDataPtr());
 
-    STDGPUEraseKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+    STDGPUEraseKernel<<<blocks, threads, 0,
+                        core::CUDAStream::GetInstance().Get()>>>(
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
             output_buf_indices, output_masks, count);
-    cuda::Synchronize(this->device_);
+    cuda::Synchronize(CUDAStream::GetInstance());
 }
 
 template <typename Key>
@@ -375,13 +377,14 @@ void StdGPUHashBackend<Key, Hash, Eq>::Insert(
     DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(
             buffer_accessor_.common_block_size_, [&]() {
                 STDGPUInsertKernel<Key, Hash, Eq, block_t>
-                        <<<blocks, threads, 0, core::cuda::GetStream()>>>(
+                        <<<blocks, threads, 0,
+                           core::CUDAStream::GetInstance().Get()>>>(
                                 impl_, buffer_accessor_,
                                 static_cast<const Key*>(input_keys),
                                 ptr_input_values_soa, output_buf_indices,
                                 output_masks, count, n_values);
             });
-    cuda::Synchronize(this->device_);
+    cuda::Synchronize(CUDAStream::GetInstance());
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -403,7 +406,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
         impl_ = InternalStdGPUHashBackend<Key, Hash, Eq>::createDeviceObject(
                 this->capacity_,
                 InternalStdGPUHashBackendAllocator<Key>(this->device_.GetID()));
-        cuda::Synchronize(this->device_);
+        cuda::Synchronize(CUDAStream::GetInstance());
     }
 }
 

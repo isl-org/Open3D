@@ -58,7 +58,9 @@ public:
         std::vector<uint8_t *> value_ptrs(n_values_);
         for (size_t i = 0; i < n_values_; ++i) {
             value_ptrs[i] = value_buffers[i].GetDataPtr<uint8_t>();
-            cudaMemset(value_ptrs[i], 0, capacity_ * value_dsizes_host[i]);
+            OPEN3D_CUDA_CHECK(cudaMemsetAsync(
+                    value_ptrs[i], 0, capacity_ * value_dsizes_host[i],
+                    core::CUDAStream::GetInstance().Get()));
         }
         values_ = static_cast<uint8_t **>(
                 MemoryManager::Malloc(n_values_ * sizeof(uint8_t *), device));
@@ -66,7 +68,7 @@ public:
                                       n_values_ * sizeof(uint8_t *));
 
         heap_top_ = hashmap_buffer.GetHeapTop().cuda.GetDataPtr<int>();
-        cuda::Synchronize();
+        cuda::Synchronize(CUDAStream::GetInstance());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 

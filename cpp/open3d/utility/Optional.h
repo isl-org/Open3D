@@ -165,7 +165,7 @@ union storage_t {
     unsigned char dummy_;
     T value_;
 
-    constexpr storage_t(trivial_init_t) noexcept : dummy_() {};
+    constexpr storage_t(trivial_init_t) noexcept : dummy_(){};
 
     template <class... Args>
     constexpr storage_t(Args&&... args)
@@ -179,7 +179,7 @@ union constexpr_storage_t {
     unsigned char dummy_;
     T value_;
 
-    constexpr constexpr_storage_t(trivial_init_t) noexcept : dummy_() {};
+    constexpr constexpr_storage_t(trivial_init_t) noexcept : dummy_(){};
 
     template <class... Args>
     constexpr constexpr_storage_t(Args&&... args)
@@ -193,8 +193,7 @@ struct optional_base {
     bool init_;
     storage_t<T> storage_;
 
-    constexpr optional_base() noexcept
-        : init_(false), storage_(trivial_init) {};
+    constexpr optional_base() noexcept : init_(false), storage_(trivial_init){};
 
     explicit constexpr optional_base(const T& v) : init_(true), storage_(v) {}
 
@@ -225,7 +224,7 @@ struct constexpr_optional_base {
     constexpr_storage_t<T> storage_;
 
     constexpr constexpr_optional_base() noexcept
-        : init_(false), storage_(trivial_init) {};
+        : init_(false), storage_(trivial_init){};
 
     explicit constexpr constexpr_optional_base(const T& v)
         : init_(true), storage_(v) {}
@@ -315,8 +314,8 @@ public:
     typedef T value_type;
 
     // 20.5.5.1, constructors
-    constexpr optional() noexcept : OptionalBase<T>() {};
-    constexpr optional(nullopt_t) noexcept : OptionalBase<T>() {};
+    constexpr optional() noexcept : OptionalBase<T>(){};
+    constexpr optional(nullopt_t) noexcept : OptionalBase<T>(){};
 
     optional(const optional& rhs) : OptionalBase<T>() {
         if (rhs.initialized()) {

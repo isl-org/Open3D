@@ -788,7 +788,8 @@ void VoxelizeCUDA(const cudaStream_t& stream,
     std::pair<int64_t*, size_t> num_voxels_per_batch =
             mem_temp.Alloc<int64_t>(batch_size);
     if (!get_temp_size) {
-        cudaMemset(num_voxels_per_batch.first, 0, batch_size * sizeof(int64_t));
+        cudaMemsetAsync(num_voxels_per_batch.first, 0,
+                        batch_size * sizeof(int64_t), stream);
         ComputeVoxelPerBatch(stream, num_voxels_per_batch.first,
                              unique_batches_count.first, unique_batches.first,
                              num_batches);

@@ -34,7 +34,7 @@ void KnnSearchCUDABruteForce(const Tensor& points,
                              OUTPUT_ALLOCATOR& output_allocator,
                              Tensor& query_neighbors_row_splits) {
     CUDAScopedDevice scoped_device(points.GetDevice());
-    const cudaStream_t stream = cuda::GetStream();
+    const cudaStream_t stream = CUDAStream::GetInstance().Get();
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
 
@@ -157,8 +157,8 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                 buf_distances.Slice(0, 0, num_queries_i);
         Tensor buf_indices_row_view = buf_indices.Slice(0, 0, num_queries_i);
         {
-            CUDAScopedStream scoped_stream(CUDAScopedStream::CreateNewStream);
-            cudaStream_t cur_stream = cuda::GetStream();
+            CUDAScopedStream scoped_stream(CUDAStream::CreateNew(), true);
+            cudaStream_t cur_stream = CUDAStream::GetInstance().Get();
             for (int j = 0; j < num_points; j += tile_cols) {
                 int num_points_j = std::min(tile_cols, num_points - j);
                 int col_j = j / tile_cols;
