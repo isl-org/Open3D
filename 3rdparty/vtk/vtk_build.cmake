@@ -6,8 +6,7 @@ else()
     set(VTK_LIB_SUFFIX "")
 endif()
 
-set(VTK_VERSION 9.5)
-set(VTK_VERSION_FULL 9.5.2)
+set(VTK_VERSION 9.1)
 
 set(VTK_LIBRARIES
     vtkFiltersGeneral-${VTK_VERSION}${VTK_LIB_SUFFIX}
@@ -37,8 +36,8 @@ if(BUILD_VTK_FROM_SOURCE)
     ExternalProject_Add(
         ext_vtk
         PREFIX vtk
-        URL https://www.vtk.org/files/release/${VTK_VERSION}/VTK-${VTK_VERSION_FULL}.tar.gz
-        URL_HASH SHA256=cee64b98d270ff7302daf1ef13458dff5d5ac1ecb45d47723835f7f7d562c989
+        URL https://www.vtk.org/files/release/${VTK_VERSION}/VTK-${VTK_VERSION}.0.tar.gz
+        URL_HASH SHA256=8fed42f4f8f1eb8083107b68eaa9ad71da07110161a3116ad807f43e5ca5ce96
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/vtk"
         # do not update
         UPDATE_COMMAND ""
