@@ -1092,6 +1092,14 @@ public:
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
 
+    /// Computes tangent space for the triangle mesh with MikkTSpace.
+    /// The mesh must have vertex positions, vertex normals, and texture UVs
+    /// (triangle attribute 'texture_uvs'). The computed tangents and bitangents
+    /// will be added as vertex attributes 'tangents' and 'bitangents'.
+    /// This function works on the CPU and will transfer data to the CPU if
+    /// necessary.
+    void ComputeTangentSpace();
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;

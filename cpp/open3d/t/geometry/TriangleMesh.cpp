@@ -55,6 +55,8 @@
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/ParallelScan.h"
+#include "open3d/t/geometry/kernel/mikktspace.h"
+
 
 namespace open3d {
 namespace t {
@@ -1900,8 +1902,8 @@ core::Tensor TriangleMesh::ComputeMetrics(const TriangleMesh &mesh2,
 }
 
 
-std::pair<Image, RaycastingScene> TriangleMesh::ComputeAmbientOcclusion(size_t tex_width,
-                                                         size_t n_rays, float max_hit_distance, optional<RaycastingScene> opt_rcs) {
+Image TriangleMesh::ComputeAmbientOcclusion(size_t tex_width,
+                                                         size_t n_rays, float max_hit_distance, RaycastingScene* opt_rcs) {
     if (!HasTriangleAttr("texture_uvs")) {
         utility::LogError(
                 "TriangleMesh does not contain 'texture_uvs'. Please compute "
@@ -1924,8 +1926,8 @@ std::pair<Image, RaycastingScene> TriangleMesh::ComputeAmbientOcclusion(size_t t
             baked_textures["normals"].To(GetDevice(), core::Float32);
 
     RaycastingScene rcs;
-    if (opt_rcs.has_value()) {
-        rcs = opt_rcs.value();
+    if (opt_rcs != nullptr) {
+        rcs = *opt_rcs;
     } else {
         rcs.AddTriangles(*this);
     }
@@ -2016,12 +2018,151 @@ std::pair<Image, RaycastingScene> TriangleMesh::ComputeAmbientOcclusion(size_t t
     Image final_image((denoised_ao_image.AsTensor() * 255.f).Clip_(0.f, 255.f).To(core::UInt8));
     GetMaterial().SetAOMap(final_image);
 
-    return [final_image, rcs];
+    return final_image;
 }
 
+namespace {
 
+struct MikkTSpaceContextData {
+    const core::Tensor* vertices = nullptr;
+    const core::Tensor* normals = nullptr;
+    const core::Tensor* uvs = nullptr;
+    const core::Tensor* indices = nullptr;
+    core::Tensor* tangents = nullptr;
+    core::Tensor* bitangents = nullptr;
+};
 
+int GetNumFaces(const SMikkTSpaceContext* pContext) {
+    auto* data = static_cast<MikkTSpaceContextData*>(pContext->m_pUserData);
+    return data->indices->GetLength();
 }
+
+int GetNumVerticesOfFace(const SMikkTSpaceContext* pContext, const int iFace) {
+    return 3;
+}
+
+void GetPosition(const SMikkTSpaceContext* pContext,
+                 float fvPosOut[],
+                 const int iFace,
+                 const int iVert) {
+    auto* data = static_cast<MikkTSpaceContextData*>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+    const float* vertex =
+            data->vertices->GetDataPtr<float>() + vertex_index * 3;
+    fvPosOut[0] = vertex[0];
+    fvPosOut[1] = vertex[1];
+    fvPosOut[2] = vertex[2];
+}
+
+void GetNormal(const SMikkTSpaceContext* pContext,
+               float fvNormOut[],
+               const int iFace,
+               const int iVert) {
+    auto* data = static_cast<MikkTSpaceContextData*>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+    const float* normal = data->normals->GetDataPtr<float>() + vertex_index * 3;
+    fvNormOut[0] = normal[0];
+    fvNormOut[1] = normal[1];
+    fvNormOut[2] = normal[2];
+}
+
+void GetTexCoord(const SMikkTSpaceContext* pContext,
+                 float fvTexcOut[],
+                 const int iFace,
+                 const int iVert) {
+    auto* data = static_cast<MikkTSpaceContextData*>(pContext->m_pUserData);
+    const float* uv = data->uvs->GetDataPtr<float>() + (iFace * 3 + iVert) * 2;
+    fvTexcOut[0] = uv[0];
+    fvTexcOut[1] = uv[1];
+}
+
+void SetTSpaceBasic(const SMikkTSpaceContext* pContext,
+                    const float fvTangent[],
+                    const float fSign,
+                    const int iFace,
+                    const int iVert) {
+    auto* data = static_cast<MikkTSpaceContextData*>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+
+    float* tangent_ptr =
+            data->tangents->GetDataPtr<float>() + vertex_index * 3;
+    tangent_ptr[0] = fvTangent[0];
+    tangent_ptr[1] = fvTangent[1];
+    tangent_ptr[2] = fvTangent[2];
+
+    const float* normal_ptr =
+            data->normals->GetDataPtr<float>() + vertex_index * 3;
+    
+    float* bitangent_ptr =
+            data->bitangents->GetDataPtr<float>() + vertex_index * 3;
+
+    // bitangent = fSign * cross(normal, tangent)
+    bitangent_ptr[0] = fSign * (normal_ptr[1] * fvTangent[2] - normal_ptr[2] * fvTangent[1]);
+    bitangent_ptr[1] = fSign * (normal_ptr[2] * fvTangent[0] - normal_ptr[0] * fvTangent[2]);
+    bitangent_ptr[2] = fSign * (normal_ptr[0] * fvTangent[1] - normal_ptr[1] * fvTangent[0]);
+}
+
+}  // namespace
+
+void TriangleMesh::ComputeTangentSpace() {
+    if (!HasVertexPositions() || !HasVertexNormals() ||
+        !HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "TriangleMesh must have vertex positions, vertex normals, and "
+                "texture UVs to compute tangent space.");
+        return;
+    }
+
+    core::Device cpu_device("CPU:0");
+    TriangleMesh cpu_mesh = this->To(cpu_device);
+
+    core::Tensor vertices = cpu_mesh.GetVertexPositions().To(core::Float32).Contiguous();
+    core::Tensor normals = cpu_mesh.GetVertexNormals().To(core::Float32).Contiguous();
+    core::Tensor uvs = cpu_mesh.GetTriangleAttr("texture_uvs")
+                               .To(core::Float32)
+                               .Contiguous()
+                               .Reshape({-1, 2});
+    core::Tensor indices = cpu_mesh.GetTriangleIndices().To(core::Int64).Contiguous();
+
+    int64_t num_vertices = vertices.GetLength();
+    core::Tensor tangents =
+            core::Tensor::Zeros({num_vertices, 3}, core::Float32, cpu_device);
+    core::Tensor bitangents =
+            core::Tensor::Zeros({num_vertices, 3}, core::Float32, cpu_device);
+
+    MikkTSpaceContextData context_data;
+    context_data.vertices = &vertices;
+    context_data.normals = &normals;
+    context_data.uvs = &uvs;
+    context_data.indices = &indices;
+    context_data.tangents = &tangents;
+    context_data.bitangents = &bitangents;
+
+    SMikkTSpaceInterface mikk_interface;
+    mikk_interface.m_getNumFaces = GetNumFaces;
+    mikk_interface.m_getNumVerticesOfFace = GetNumVerticesOfFace;
+    mikk_interface.m_getPosition = GetPosition;
+    mikk_interface.m_getNormal = GetNormal;
+    mikk_interface.m_getTexCoord = GetTexCoord;
+    mikk_interface.m_setTSpaceBasic = SetTSpaceBasic;
+    mikk_interface.m_setTSpace = nullptr;
+
+    SMikkTSpaceContext mikk_context;
+    mikk_context.m_pInterface = &mikk_interface;
+    mikk_context.m_pUserData = &context_data;
+
+    if (!genTangSpaceDefault(&mikk_context)) {
+        utility::LogError("Failed to generate tangent space.");
+        return;
+    }
+
+    SetVertexAttr("tangents", tangents.To(GetDevice()));
+    SetVertexAttr("bitangents", bitangents.To(GetDevice()));
+}
+
 
 }  // namespace geometry
 }  // namespace t
