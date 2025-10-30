@@ -16,11 +16,14 @@ concurrency:
 jobs:
   style-check:
     permissions:
-      contents: read
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
@@ -28,6 +31,17 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U -r python/requirements_style.txt
-      - name: Run style check
+      - name: Apply style formatting
         run: |
-          python util/check_style.py
+          python util/check_style.py --apply
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --staged --quiet; then
+            git commit -m "Apply automatic code formatting"
+            git push
+          else
+            echo "No formatting changes needed"
+          fi
