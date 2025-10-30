@@ -22,7 +22,7 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python version
         uses: actions/setup-python@v5
@@ -38,10 +38,10 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add -A
+          git add .
           if ! git diff --staged --quiet; then
             git commit -m "Apply automatic code formatting"
-            git push
+            git push || exit 1
           else
             echo "No formatting changes needed"
           fi
