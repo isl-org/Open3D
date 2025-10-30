@@ -407,7 +407,6 @@ if(BUILD_CUDA_MODULE)
             set(CMAKE_CUDA_FLAGS
                   "${CMAKE_CUDA_FLAGS} -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
                   CACHE STRING "Flags for NVCC" FORCE)
-            endif()
             message(WARNING "Using --allow-unsupported-compiler flag and -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH for nvcc<=12.4 with MSVC>=1940. "
             "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
         endif()
