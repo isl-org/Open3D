@@ -1,5 +1,4 @@
 name: Style Check
-permissions: {}
 
 on:
   workflow_dispatch:
@@ -40,7 +39,7 @@ jobs:
         run: |
           python util/check_style.py
       - name: Commit and push changes
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -48,6 +47,16 @@ jobs:
           if ! git diff --staged --quiet; then
             git commit -m "Apply automatic code formatting"
             git push || exit 1
+          else
+            echo "No formatting changes needed"
+          fi
+      - name: Check for formatting changes from fork
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          git add .
+          if ! git diff --staged --quiet; then
+            echo "::error::This PR requires formatting changes but is from a fork. Please run 'python util/check_style.py --apply' locally and push the changes."
+            exit 1
           else
             echo "No formatting changes needed"
           fi
