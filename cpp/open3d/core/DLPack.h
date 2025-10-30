@@ -732,7 +732,6 @@ struct formatter<DLDeviceType> {
             case kDLTrn:
                 text = "kDLTrn";
                 break;
-            
         }
         return format_to(ctx.out(), text);
     }
