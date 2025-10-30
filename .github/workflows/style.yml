@@ -32,9 +32,15 @@ jobs:
         run: |
           pip install -U -r python/requirements_style.txt
       - name: Apply style formatting
+        if: github.event_name == 'pull_request'
         run: |
           python util/check_style.py --apply
+      - name: Check style formatting
+        if: github.event_name != 'pull_request'
+        run: |
+          python util/check_style.py
       - name: Commit and push changes
+        if: github.event_name == 'pull_request'
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
