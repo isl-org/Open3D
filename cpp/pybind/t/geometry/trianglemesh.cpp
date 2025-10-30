@@ -764,7 +764,7 @@ Example:
         bunny = o3d.data.BunnyMesh()
         mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
         filled = mesh.fill_holes()
-        o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
+        o3d.visualization.draw([{'name': 'filled', 'geometry': filled}])
 )");
 
     triangle_mesh.def(
