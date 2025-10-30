@@ -1098,7 +1098,41 @@ public:
     /// will be added as vertex attributes 'tangents' and 'bitangents'.
     /// This function works on the CPU and will transfer data to the CPU if
     /// necessary.
-    void ComputeTangentSpace();
+    /// \param bake If true, the tangents, bitangents and normals will also be
+    /// baked to textures and saved to the material.
+    /// \param tex_width Baked texture size. Default 512.
+
+
+    /// Compute an ambient occlusion texture for the mesh. 
+    Image TriangleMesh::ComputeAmbientOcclusion(size_t tex_width,
+                                            size_t n_rays,
+                                            float max_hit_distance,
+                                            RaycastingScene *opt_rcs);
+
+    void ComputeTangentSpace(bool bake = true,
+                             int tex_width = 512);
+
+    /// \brief Converts a normal map between world and tangent space.
+    ///
+    /// The conversion is performed for each pixel of the map. The mesh must
+    /// have vertex normals, tangents, bitangents, and texture UVs.
+    /// The tangent space attributes can be computed with
+    /// `ComputeTangentSpace()`.
+    ///
+    /// \param normal_map The normal map to convert.
+    /// When converting to tangent space, this is the world-space normal map.
+    /// When converting to world space, this is the tangent-space normal map.
+    /// It is expected to have 3 channels with Float32 or Float64 data type,
+    /// with values in range [-1, 1], or UInt8 data type in the range [0, 255].
+    /// \param to_tangent_space If true, converts from world to tangent space.
+    /// If false, converts from tangent to world space.
+    /// \param update_material If true and we are converting to tangent space,
+    /// the mesh material will be updated to contain the new normal map.
+    /// \return The converted normal map as an Image. This will have 3 channels,
+    /// UInt8 data type, with values in range [0, 255].
+    Image TriangleMesh::TransformNormalMap(const Image &normal_map,
+                                           bool to_tangent_space = true,
+                                           bool update_material = false);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

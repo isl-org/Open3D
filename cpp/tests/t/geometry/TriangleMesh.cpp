@@ -1593,5 +1593,103 @@ TEST_P(TriangleMeshPermuteDevices, SamplePointsUniformly) {
     }
 }
 
+
+TEST(TriangleMeshPermuteDevices, ComputeTangentSpace) {
+    core::Device device("CPU:0");
+
+    // MikkTSpace and UVAtlas are CPU only.
+    core::Device cpu_device("CPU:0");
+    auto mesh = t::geometry::TriangleMesh::CreateSphere(1.0, 20, core::Float32,
+                                                        core::Int64, cpu_device);
+    mesh.ComputeVertexNormals();
+    mesh.ComputeUVAtlas();
+
+    mesh.ComputeTangentSpace(/*bake=*/true, /*tex_width=*/256);
+
+    EXPECT_TRUE(mesh.HasVertexAttr("tangents"));
+    EXPECT_TRUE(mesh.HasVertexAttr("bitangents"));
+    EXPECT_TRUE(mesh.GetMaterial().HasTextureMap("tangents"));
+    EXPECT_TRUE(mesh.GetMaterial().HasTextureMap("bitangents"));
+    EXPECT_TRUE(mesh.GetMaterial().HasTextureMap("normals"));
+
+    // Visual inspection.
+    // visualization::Draw({mesh.ToLegacy()}, "Mesh with TBN textures");
+}
+
+TEST(TriangleMeshPermuteDevices, TransformNormalMap) {
+    core::Device device("CPU:0");
+
+    // MikkTSpace and UVAtlas are CPU only.
+    core::Device cpu_device("CPU:0");
+    auto mesh = t::geometry::TriangleMesh::CreateSphere(1.0, 20, core::Float32,
+                                                        core::Int64, cpu_device);
+    mesh.ComputeVertexNormals();
+    mesh.ComputeUVAtlas();
+    mesh.ComputeTangentSpace(/*bake=*/false);
+
+    // Create a dummy world-space normal map (Float32, [-1, 1]).
+    // A simple gradient from (-1,-1,-1) to (1,1,1)
+    int tex_size = 256;
+    core::Tensor world_map_t = core::Tensor::Empty(
+            {tex_size, tex_size, 3}, core::Float32, cpu_device);
+    for (int i = 0; i < tex_size; ++i) {
+        for (int j = 0; j < tex_size; ++j) {
+            float u = static_cast<float>(j) / (tex_size - 1);
+            float v = static_cast<float>(i) / (tex_size - 1);
+            world_map_t[i][j][0] = 2.0f * u - 1.0f;
+            world_map_t[i][j][1] = 2.0f * v - 1.0f;
+            world_map_t[i][j][2] = 2.0f * (u + v) / 2.0f - 1.0f;
+        }
+    }
+    world_map_t = world_map_t / world_map_t.Norm({2}, true).Maximum(1e-6);
+    t::geometry::Image world_normal_map(world_map_t);
+
+    // 1. World to Tangent space.
+    auto tangent_normal_map =
+            mesh.TransformNormalMap(world_normal_map,
+                                    /*to_tangent_space=*/true,
+                                    /*update_material=*/true);
+
+    EXPECT_EQ(tangent_normal_map.GetDtype(), core::UInt8);
+    EXPECT_EQ(tangent_normal_map.GetNumOfChannels(), 3);
+    EXPECT_TRUE(mesh.GetMaterial().HasNormalMap());
+
+    // 2. Tangent to World space.
+    auto world_normal_map_restored =
+            mesh.TransformNormalMap(tangent_normal_map,
+                                    /*to_tangent_space=*/false);
+
+    EXPECT_EQ(world_normal_map_restored.GetDtype(), core::UInt8);
+    EXPECT_EQ(world_normal_map_restored.GetNumOfChannels(), 3);
+
+    // Visual inspection.
+    // visualization::Draw({std::make_shared<geometry::Image>(world_normal_map.ToLegacy())}, "Original World Map");
+    // visualization::Draw({std::make_shared<geometry::Image>(tangent_normal_map.ToLegacy())}, "Tangent Map");
+    // visualization::Draw({std::make_shared<geometry::Image>(world_normal_map_restored.ToLegacy())}, "Restored World Map");
+}
+
+TEST(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
+    core::Device device("CPU:0");
+
+    // UVAtlas is CPU only.
+    core::Device cpu_device("CPU:0");
+    auto mesh = t::geometry::TriangleMesh::CreateTorus(1.0, 0.3, 30, 20,
+                                                       core::Float32,
+                                                       core::Int64, cpu_device);
+    mesh.ComputeVertexNormals();
+    mesh.ComputeUVAtlas();
+
+    auto ao_map = mesh.ComputeAmbientOcclusion(
+            /*tex_width=*/256, /*n_rays=*/32, /*max_hit_distance=*/5.0f,
+            /*update_material=*/true);
+
+    EXPECT_EQ(ao_map.GetDtype(), core::UInt8);
+    EXPECT_EQ(ao_map.GetNumOfChannels(), 1);
+    EXPECT_TRUE(mesh.GetMaterial().HasAOMap());
+
+    // Visual inspection.
+    // visualization::Draw({mesh.ToLegacy()}, "Mesh with AO texture");
+}
+
 }  // namespace tests
 }  // namespace open3d
