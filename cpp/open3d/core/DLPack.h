@@ -726,6 +726,13 @@ struct formatter<DLDeviceType> {
             case kDLHexagon:
                 text = "kDLHexagon";
                 break;
+            case kDLMAIA:
+                text = "kDLMAIA";
+                break;
+            case kDLTrn:
+                text = "kDLTrn";
+                break;
+            
         }
         return format_to(ctx.out(), text);
     }
