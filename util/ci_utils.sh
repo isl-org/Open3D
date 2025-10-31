@@ -175,8 +175,7 @@ build_pip_package() {
     echo Building with CPU only...
     mkdir -p build
     pushd build # PWD=Open3D/build
-    cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
-        "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+    cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=ON"

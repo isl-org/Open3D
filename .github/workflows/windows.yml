@@ -311,7 +311,6 @@ jobs:
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
-            -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_AZURE_KINECT=ON `

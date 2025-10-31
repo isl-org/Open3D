@@ -245,6 +245,12 @@ if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
 
+# Python bindings require shared libraries to separate pybind module from libOpen3D
+if(BUILD_PYTHON_MODULE)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries (required for Python module)" FORCE)
+    message(STATUS "BUILD_SHARED_LIBS set to ON (required for BUILD_PYTHON_MODULE)")
+endif()
+
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
