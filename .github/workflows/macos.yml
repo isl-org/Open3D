@@ -75,21 +75,6 @@ jobs:
             ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
           fi
 
-          # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
-          # / arm64 big sur (11.0). Directly installing the Ruby formula will
-          # install for the current OS.
-          # https://github.com/microsoft/LightGBM/issues/4229
-          if [[ ${{ runner.arch}} == "X64"  ]]; then
-            # x64 catalina (10.15) bottle
-            export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          else # ARM64
-            # arm64 big_sur (11.0) bottle
-            export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
-          fi
-          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
-          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
-          brew install -f libomp-11.1.0.bottle.tar.gz
-
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -252,17 +237,6 @@ jobs:
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
           fi
 
-          # Install libomp 11.1.0. See comment above.
-          if [[ ${{ runner.arch}} == "X64"  ]]; then
-            # x64 catalina (10.15) bottle
-            export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          else # ARM64
-            # arm64 big_sur (11.0) bottle
-            export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
-          fi
-          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
-          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
-          brew install -f libomp-11.1.0.bottle.tar.gz
           brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 

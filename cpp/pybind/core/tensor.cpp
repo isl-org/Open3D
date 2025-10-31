@@ -7,10 +7,12 @@
 
 #include "open3d/core/Tensor.h"
 
+#include <optional>
 #include <vector>
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -255,7 +257,62 @@ void pybind_core_tensor_declarations(py::module& m) {
             m, "Tensor",
             "A Tensor is a view of a data Blob with shape, stride, data_ptr.");
     m.attr("capsule") = py::module_::import("typing").attr("Any");
+    // https://data-apis.org/array-api/latest/API_specification/generated/array_api.array.__dlpack_device__.html#array_api.array.__dlpack_device__
+    py::native_enum<DLDeviceType>(m, "DLDeviceType", "enum.Enum")
+            .value("CPU", DLDeviceType::kDLCPU)
+            .value("CUDA", DLDeviceType::kDLCUDA)
+            .value("CPU_PINNED", DLDeviceType::kDLCUDAHost)
+            .value("OPENCL", DLDeviceType::kDLOpenCL)
+            .value("VULKAN", DLDeviceType::kDLVulkan)
+            .value("METAL", DLDeviceType::kDLMetal)
+            .value("VPI", DLDeviceType::kDLVPI)
+            .value("ROCM", DLDeviceType::kDLROCM)
+            .value("CUDA_MANAGED", DLDeviceType::kDLCUDAManaged)
+            .value("ONE_API", DLDeviceType::kDLOneAPI)
+            .finalize();
 }
+
+namespace {
+Tensor maybeCopyTensor(const Tensor& data,
+                       std::optional<std::pair<DLDeviceType, int>>
+                               optional_dl_device = std::nullopt,
+                       std::optional<bool> copy = std::nullopt) {
+    bool force_copy = copy.has_value() && copy.value();
+    bool force_move = copy.has_value() && !copy.value();
+    if (optional_dl_device.has_value()) {
+        Device to_device;
+        switch (optional_dl_device.value().first) {
+            case DLDeviceType::kDLCPU:
+                to_device = Device("CPU:0");
+                break;
+            case DLDeviceType::kDLCUDA:
+                to_device = Device(fmt::format(
+                        "CUDA:{}", optional_dl_device.value().second));
+                break;
+            case DLDeviceType::kDLOneAPI:
+                to_device = Device(fmt::format(
+                        "SYCL:{}", optional_dl_device.value().second));
+                break;
+            default:
+                utility::LogError("DLPack: unsupported device type {}",
+                                  int(optional_dl_device.value().first));
+        }
+        if (to_device != data.GetDevice()) {
+            if (!force_move)
+                utility::LogError(
+                        " [DLPack] Cannot move (i.e. copy=False) tensor from "
+                        "{} to {} without copying.",
+                        data.GetDevice().ToString(), to_device.ToString());
+            return data.To(to_device);
+        }
+    }
+    if (force_copy) {
+        return data.Clone();
+    }
+    return data;
+}
+}  // namespace
+
 void pybind_core_tensor_definitions(py::module& m) {
     auto tensor = static_cast<py::class_<Tensor>>(m.attr("Tensor"));
     // o3c.Tensor(np.array([[0, 1, 2], [3, 4, 5]]), dtype=None, device=None).
@@ -500,42 +557,186 @@ Example:
         return core::PyArrayToTensor(np_array, /*inplace=*/true);
     });
 
-    tensor.def("to_dlpack", [](const Tensor& tensor) {
-        DLManagedTensor* dl_managed_tensor = tensor.ToDLPack();
-        // See PyTorch's torch/csrc/Module.cpp
-        auto capsule_destructor = [](PyObject* data) {
-            DLManagedTensor* dl_managed_tensor =
-                    (DLManagedTensor*)PyCapsule_GetPointer(data, "dltensor");
-            if (dl_managed_tensor) {
-                // the dl_managed_tensor has not been consumed,
-                // call deleter ourselves
-                dl_managed_tensor->deleter(
-                        const_cast<DLManagedTensor*>(dl_managed_tensor));
-            } else {
-                // The dl_managed_tensor has been consumed
-                // PyCapsule_GetPointer has set an error indicator
-                PyErr_Clear();
-            }
-        };
-        return py::capsule(dl_managed_tensor, "dltensor", capsule_destructor);
+    auto to_dlpack = [](const Tensor& tensor,
+                        std::optional<int> stream = std::nullopt,
+                        std::optional<std::pair<int, int>> max_version =
+                                std::nullopt,
+                        std::optional<std::pair<DLDeviceType, int>> dl_device =
+                                std::nullopt,
+                        std::optional<bool> copy = std::nullopt) {
+        bool versioned =
+                (max_version.has_value() && max_version.value().first > 0);
+        auto out_tensor = maybeCopyTensor(tensor, dl_device, copy);
+        if (versioned) {
+            auto capsule_destructor = [](PyObject* data) {
+                DLManagedTensorVersioned* dl_managed_tensor =
+                        (DLManagedTensorVersioned*)PyCapsule_GetPointer(
+                                data, "dltensor");
+                if (dl_managed_tensor != nullptr &&
+                    dl_managed_tensor->deleter != nullptr) {
+                    // the dl_managed_tensor has not been consumed,
+                    // call deleter ourselves
+                    dl_managed_tensor->deleter(
+                            const_cast<DLManagedTensorVersioned*>(
+                                    dl_managed_tensor));
+                } else {
+                    // The dl_managed_tensor has been consumed
+                    // PyCapsule_GetPointer has set an error indicator
+                    PyErr_Clear();
+                }
+            };
+            DLManagedTensorVersioned* dlmt = out_tensor.ToDLPackVersioned();
+            return py::capsule(dlmt, "dltensor", capsule_destructor);
+        } else {
+            auto capsule_destructor = [](PyObject* data) {
+                DLManagedTensor* dl_managed_tensor =
+                        (DLManagedTensor*)PyCapsule_GetPointer(data,
+                                                               "dltensor");
+                if (dl_managed_tensor != nullptr &&
+                    dl_managed_tensor->deleter != nullptr) {
+                    // the dl_managed_tensor has not been consumed,
+                    // call deleter ourselves
+                    dl_managed_tensor->deleter(
+                            const_cast<DLManagedTensor*>(dl_managed_tensor));
+                } else {
+                    // The dl_managed_tensor has been consumed
+                    // PyCapsule_GetPointer has set an error indicator
+                    PyErr_Clear();
+                }
+            };
+            DLManagedTensor* dlmt = out_tensor.ToDLPack();
+            return py::capsule(dlmt, "dltensor", capsule_destructor);
+        }
+    };
+    tensor.def(
+            "__dlpack__", to_dlpack, "stream"_a = py::none(),
+            "max_version"_a = py::none(), "dl_device"_a = py::none(),
+            "copy"_a = py::none(),
+            R"(Returns an opaque object (a "DLPack capsule") representing the tensor.
+
+.. note::
+  ``to_dlpack`` is a legacy DLPack interface. The capsule it returns
+  cannot be used for anything in Python other than use it as input to
+  ``from_dlpack``. The more idiomatic use of DLPack is to call
+  ``from_dlpack`` directly on the tensor object - this works when that
+  object has a ``__dlpack__`` method, which PyTorch and most other
+  libraries indeed have now.
+
+.. warning::
+  Only call ``from_dlpack`` once per capsule produced with ``to_dlpack``.
+  Behavior when a capsule is consumed multiple times is undefined.
+
+Args:
+    tensor: a tensor to be exported
+
+The DLPack capsule shares the tensor's memory.)");
+    tensor.attr("to_dlpack") = tensor.attr("__dlpack__");
+
+    tensor.def("__dlpack_device__", [](const Tensor& tensor) {
+        // &Open3DDLManagedTensor::getDLPackDevice
+        // Prepare dl_device_type
+        DLDeviceType dl_device_type;
+        Device device = tensor.GetDevice();
+        switch (device.GetType()) {
+            case Device::DeviceType::CPU:
+                dl_device_type = DLDeviceType::kDLCPU;
+                break;
+            case Device::DeviceType::CUDA:
+                dl_device_type = DLDeviceType::kDLCUDA;
+                break;
+            case Device::DeviceType::SYCL:
+                dl_device_type = DLDeviceType::kDLOneAPI;
+                break;
+            default:
+                utility::LogError("ToDLPack: unsupported device type {}",
+                                  device.ToString());
+        }
+        return std::make_pair(dl_device_type, device.GetID());
     });
 
-    tensor.def_static("from_dlpack", [](py::capsule data) {
-        DLManagedTensor* dl_managed_tensor =
-                static_cast<DLManagedTensor*>(data);
-        if (!dl_managed_tensor) {
-            utility::LogError(
-                    "from_dlpack must receive "
-                    "DLManagedTensor PyCapsule.");
+    auto from_dlpack_capsule = [](py::capsule data) {
+        auto invalid_capsule_err =
+                "from_dlpack received an invalid capsule. Note that "
+                "DLTensor capsules can be consumed only once, so you might "
+                "have already constructed a tensor from it once.";
+        Tensor t;
+        // check versioned
+        if (PyCapsule_IsValid(data, "dltensor_versioned")) {
+            DLManagedTensorVersioned* dl_managed_tensor =
+                    static_cast<DLManagedTensorVersioned*>(PyCapsule_GetPointer(
+                            data.ptr(), "dltensor_versioned"));
+            if (!dl_managed_tensor) {
+                utility::LogError(invalid_capsule_err);
+            }
+            if (dl_managed_tensor->version.major > DLPACK_MAJOR_VERSION) {
+                utility::LogError(
+                        "Received DLPack capsule with major version {} > {} "
+                        "(Max supported version).",
+                        dl_managed_tensor->version.major, DLPACK_MAJOR_VERSION);
+            }
+            // Make sure that the PyCapsule is not used again. See:
+            // torch/csrc/Module.cpp, and
+            // https://github.com/cupy/cupy/pull/1445/files#diff-ddf01ff512087ef616db57ecab88c6ae
+            t = Tensor::FromDLPackVersioned(dl_managed_tensor);
+            PyCapsule_SetName(data.ptr(), "used_dltensor_versioned");
+        } else {
+            DLManagedTensor* dl_managed_tensor = static_cast<DLManagedTensor*>(
+                    PyCapsule_GetPointer(data.ptr(), "dltensor"));
+            if (!dl_managed_tensor) {
+                utility::LogError(invalid_capsule_err);
+            }
+            t = Tensor::FromDLPack(dl_managed_tensor);
+            PyCapsule_SetName(data.ptr(), "used_dltensor");
         }
-        // Make sure that the PyCapsule is not used again.
-        // See:
-        // torch/csrc/Module.cpp, and
-        // https://github.com/cupy/cupy/pull/1445/files#diff-ddf01ff512087ef616db57ecab88c6ae
-        Tensor t = Tensor::FromDLPack(dl_managed_tensor);
-        PyCapsule_SetName(data.ptr(), "used_dltensor");
+        PyCapsule_SetDestructor(data.ptr(), nullptr);
         return t;
-    });
+    };
+    tensor.def_static("from_dlpack", from_dlpack_capsule, "dlpack_capsule"_a);
+    tensor.def_static(
+            "from_dlpack",
+            [from_dlpack_capsule](
+                    const py::object& ext_tensor,
+                    std::optional<core::Device> device = std::nullopt,
+                    std::optional<bool> copy = std::nullopt) {
+                if (!hasattr(ext_tensor, "__dlpack__")) {
+                    utility::LogError(
+                            "from_dlpack: object does not define __dlpack__.");
+                }
+                py::object capsule_obj = ext_tensor.attr("__dlpack__")();
+                auto t = from_dlpack_capsule(
+                        py::reinterpret_borrow<py::capsule>(capsule_obj));
+                return t;
+            },
+            "ext_tensor"_a, "device"_a = py::none(), "copy"_a = py::none(),
+            R"(Converts a tensor from an external library into an Open3D ``Tensor``.
+
+    The returned Open3D tensor will share the memory with the input tensor
+    (which may have come from another library). Note that in-place operations
+    will therefore also affect the data of the input tensor. This may lead to
+    unexpected issues (e.g., other libraries may have read-only flags or
+    immutable data structures), so the user should only do this if they know
+    for sure that this is fine.
+
+    Args:
+        ext_tensor (object with ``__dlpack__`` attribute, or a DLPack capsule):
+            The tensor or DLPack capsule to convert.
+
+            If ``ext_tensor`` is a tensor (or ndarray) object, it must support
+            the ``__dlpack__`` protocol (i.e., have a ``ext_tensor.__dlpack__``
+            method). Otherwise ``ext_tensor`` may be a DLPack capsule, which is
+            an opaque ``PyCapsule`` instance, typically produced by a
+            ``to_dlpack`` function or method.
+
+        device (open3d.core.device or None): An optional Open3D device
+            specifying where to place the new tensor. Only ``None`` is supported
+            (same device as ``ext_tensor``).
+
+        copy (bool or None): An optional boolean indicating whether or not to copy
+            ``self``. This is not supported yet and no copy is made.
+
+    Examples::
+
+        )");
 
     // Numpy IO.
     tensor.def("save", &Tensor::Save, "Save tensor to Numpy's npy format.",
@@ -590,7 +791,8 @@ Example:
                "Returns the upper triangular matrix of the 2D tensor, above "
                "the given diagonal index. [The value of diagonal = col - row, "
                "therefore 0 is the main diagonal (row = col), and it shifts "
-               "towards right for positive values (for diagonal = 1, col - row "
+               "towards right for positive values (for diagonal = 1, col - "
+               "row "
                "= 1), and towards left for negative values. The value of the "
                "diagonal parameter must be between [-m, n] for a {m,n} shaped "
                "tensor.",
@@ -605,32 +807,40 @@ Example:
                "Returns the lower triangular matrix of the 2D tensor, above "
                "the given diagonal index. [The value of diagonal = col - row, "
                "therefore 0 is the main diagonal (row = col), and it shifts "
-               "towards right for positive values (for diagonal = 1, col - row "
+               "towards right for positive values (for diagonal = 1, col - "
+               "row "
                "= 1), and towards left for negative values. The value of the "
-               "diagonal parameter must be between [-m, n] where {m, n} is the "
+               "diagonal parameter must be between [-m, n] where {m, n} is "
+               "the "
                "shape of input tensor.",
                "diagonal"_a = 0);
-    docstring::ClassMethodDocInject(
-            m, "Tensor", "tril",
-            {{"diagonal",
-              "Value of [col - row], below which the elements are to be taken "
-              "for lower triangular matrix."}});
+    docstring::ClassMethodDocInject(m, "Tensor", "tril",
+                                    {{"diagonal",
+                                      "Value of [col - row], below which "
+                                      "the elements are to be taken "
+                                      "for lower triangular matrix."}});
 
-    tensor.def(
-            "triul", &Tensor::Triul,
-            "Returns the tuple of upper and lower triangular matrix of the 2D "
-            "tensor, above and below the given diagonal index.  The diagonal "
-            "elements of lower triangular matrix are taken to be unity.  [The "
-            "value of diagonal = col - row, therefore 0 is the main diagonal "
-            "(row = col), and it shifts towards right for positive values (for "
-            "diagonal = 1, col - row = 1), and towards left for negative "
-            "values.  The value of the diagonal parameter must be between [-m, "
-            "n] where {m, n} is the shape of input tensor.",
-            "diagonal"_a = 0);
+    tensor.def("triul", &Tensor::Triul,
+               "Returns the tuple of upper and lower triangular matrix of the "
+               "2D "
+               "tensor, above and below the given diagonal index.  The "
+               "diagonal "
+               "elements of lower triangular matrix are taken to be unity.  "
+               "[The "
+               "value of diagonal = col - row, therefore 0 is the main "
+               "diagonal "
+               "(row = col), and it shifts towards right for positive values "
+               "(for "
+               "diagonal = 1, col - row = 1), and towards left for negative "
+               "values.  The value of the diagonal parameter must be between "
+               "[-m, "
+               "n] where {m, n} is the shape of input tensor.",
+               "diagonal"_a = 0);
     docstring::ClassMethodDocInject(
             m, "Tensor", "triul",
             {{"diagonal",
-              "Value of [col - row], above and below which the elements are to "
+              "Value of [col - row], above and below which the elements "
+              "are to "
               "be taken for upper (diag. included) and lower triangular "
               "matrix."}});
     tensor.def(
@@ -728,7 +938,8 @@ Ref:
               "The last dimension to flatten, starting from start_dim "
               "(inclusive)."}});
 
-    // See "emulating numeric types" section for Python built-in numeric ops.
+    // See "emulating numeric types" section for Python built-in numeric
+    // ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
     //
     // BinaryEW: add.
@@ -833,7 +1044,8 @@ Ref:
             [](Tensor& tensor) {
                 return py::make_iterator(tensor.begin(), tensor.end());
             },
-            py::keep_alive<0, 1>());  // Keep object alive while iterator exists
+            py::keep_alive<0, 1>());  // Keep object alive while iterator
+                                      // exists
 
     // Unary element-wise ops.
     tensor.def("sqrt", &Tensor::Sqrt);
@@ -880,19 +1092,20 @@ Ref:
               "If ``as_tuple`` is True, returns an int64 tensor of shape "
               "{num_dims, num_non_zeros}, where the i-th row contains the "
               "indices of the non-zero elements in i-th dimension of the "
-              "original tensor. If ``as_tuple`` is False, Returns a vector of "
+              "original tensor. If ``as_tuple`` is False, Returns a vector "
+              "of "
               "int64 Tensors, each containing the indices of the non-zero "
               "elements in each dimension."}});
-    tensor.def(
-            "all", &Tensor::All, py::call_guard<py::gil_scoped_release>(),
-            py::arg("dim") = py::none(), py::arg("keepdim") = false,
-            "Returns true if all elements in the tensor are true. Only works "
-            "for boolean tensors.");
-    tensor.def(
-            "any", &Tensor::Any, py::call_guard<py::gil_scoped_release>(),
-            py::arg("dim") = py::none(), py::arg("keepdim") = false,
-            "Returns true if any elements in the tensor are true. Only works "
-            "for boolean tensors.");
+    tensor.def("all", &Tensor::All, py::call_guard<py::gil_scoped_release>(),
+               py::arg("dim") = py::none(), py::arg("keepdim") = false,
+               "Returns true if all elements in the tensor are true. Only "
+               "works "
+               "for boolean tensors.");
+    tensor.def("any", &Tensor::Any, py::call_guard<py::gil_scoped_release>(),
+               py::arg("dim") = py::none(), py::arg("keepdim") = false,
+               "Returns true if any elements in the tensor are true. Only "
+               "works "
+               "for boolean tensors.");
 
     // Reduction ops.
     BIND_REDUCTION_OP(sum, Sum);
@@ -988,8 +1201,10 @@ Returns:
                         "python.");
                 return py::none();
             },
-            "Helper function to return the scalar value of a scalar tensor. "
-            "The tensor must be 0 - dimensional (i.e. have an empty shape).");
+            "Helper function to return the scalar value of a scalar "
+            "tensor. "
+            "The tensor must be 0 - dimensional (i.e. have an empty "
+            "shape).");
 }
 
 }  // namespace core

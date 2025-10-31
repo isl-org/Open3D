@@ -609,12 +609,12 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             rough_metal.AsTensor().SetItem(
                     {core::TensorKey::Slice(0, rows + 1, core::None),
                      core::TensorKey::Slice(0, cols + 1, core::None),
-                     core::TensorKey::Index(2)},
+                     core::TensorKey::Index(2)},  // metallic in blue
                     metal_channel);
             rough_metal.AsTensor().SetItem(
                     {core::TensorKey::Slice(0, rows + 1, core::None),
                      core::TensorKey::Slice(0, cols + 1, core::None),
-                     core::TensorKey::Index(1)},
+                     core::TensorKey::Index(1)},  // roughness in green
                     rough_channel);
             SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
                                        aiTextureType_UNKNOWN, rough_metal);

@@ -116,7 +116,7 @@ if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
         COMMAND cut "-d\ " -f2
         OUTPUT_VARIABLE libomp_ver OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(libomp_ver VERSION_GREATER_EQUAL 12.0.0)
-        message(SEND_ERROR "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
+        message(WARNING "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
     endif()
     file(GENERATE OUTPUT update_pybind_libomp.sh
         CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |

@@ -1184,11 +1184,18 @@ public:
         }
     }
 
-    /// Convert the Tensor to DLManagedTensor.
+    /// Convert the Tensor to DLManagedTensor (DLPack v0.x).
     DLManagedTensor* ToDLPack() const;
+    /// Convert the Tensor to DLManagedTensorVersioned (DLPack v1.x).
+    DLManagedTensorVersioned* ToDLPackVersioned() const;
 
-    /// Convert DLManagedTensor to Tensor.
-    static Tensor FromDLPack(const DLManagedTensor* dlmt);
+    /// Convert DLManagedTensor to Tensor (DLPack v0.x).
+    static Tensor FromDLPack(const DLManagedTensor* dlmt,
+                             std::function<void(void*)> deleter = nullptr);
+    /// Convert DLManagedTensorVersioned to Tensor (DLPack v1.x).
+    static Tensor FromDLPackVersioned(
+            const DLManagedTensorVersioned* dlmt,
+            std::function<void(void*)> deleter = nullptr);
 
     /// Save tensor to numpy's npy format.
     void Save(const std::string& file_name) const;

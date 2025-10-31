@@ -44,6 +44,9 @@ std::string GetDeviceType(const Device& device);
 /// Return a list of available SYCL devices.
 std::vector<Device> GetAvailableSYCLDevices();
 
+/// Return the number of available SYCL devices.
+inline size_t GetDeviceCount() { return GetAvailableSYCLDevices().size(); }
+
 /// Enables the JIT cache for SYCL. This sets an environment variable and will
 /// affect the entire process and any child processes.
 void enablePersistentJITCache();
