@@ -11,6 +11,8 @@
 #include "open3d/utility/Logging.h"
 
 #ifdef BUILD_CUDA_MODULE
+#include <unordered_set>
+
 #include "open3d/core/MemoryManager.h"
 #endif
 
@@ -161,20 +163,25 @@ CUDAStream& CUDAStream::GetInstance() {
 CUDAStream CUDAStream::CreateNew() {
     CUDAStream stream;
     OPEN3D_CUDA_CHECK(cudaStreamCreate(&stream.stream_));
-    // Having async memcpy device->host is very dangerous if you don't know what
-    // you are doing.
-    stream.SetShouldSyncMemcpyFromDeviceToHost(true);
     return stream;
 }
 
-void CUDAStream::SetShouldSyncMemcpyFromDeviceToHost(
-        bool sync_memcpy_device_to_host) {
+void CUDAStream::SetHostToDeviceMemcpyPolicy(CUDAMemoryCopyPolicy policy) {
     OPEN3D_ASSERT(!IsDefaultStream());
-    sync_memcpy_from_device_to_host_ = sync_memcpy_device_to_host;
+    memcpy_from_host_to_device_ = policy;
 }
 
-bool CUDAStream::ShouldSyncMemcpyFromDeviceToHost() const {
-    return sync_memcpy_from_device_to_host_;
+CUDAMemoryCopyPolicy CUDAStream::GetHostToDeviceMemcpyPolicy() const {
+    return memcpy_from_host_to_device_;
+}
+
+CUDAMemoryCopyPolicy CUDAStream::GetDeviceToHostMemcpyPolicy() const {
+    return memcpy_from_device_to_host_;
+}
+
+void CUDAStream::SetDeviceToHostMemcpyPolicy(CUDAMemoryCopyPolicy policy) {
+    OPEN3D_ASSERT(!IsDefaultStream());
+    memcpy_from_device_to_host_ = policy;
 }
 
 bool CUDAStream::IsDefaultStream() const {
@@ -313,10 +320,35 @@ size_t GetCUDACurrentTotalMemSize() {
 namespace open3d {
 namespace core {
 
+const std::unordered_set<cudaError_t> kProcessEndingErrors = {
+        cudaErrorAssert,
+        cudaErrorLaunchTimeout,
+        cudaErrorHardwareStackError,
+        cudaErrorIllegalInstruction,
+        cudaErrorMisalignedAddress,
+        cudaErrorInvalidAddressSpace,
+        cudaErrorInvalidPc,
+        cudaErrorTensorMemoryLeak,
+        cudaErrorMpsClientTerminated,
+        cudaErrorExternalDevice,
+        cudaErrorContained,
+        cudaErrorIllegalAddress,
+        cudaErrorLaunchFailure,
+        cudaErrorECCUncorrectable,
+        cudaErrorUnknown};
+
 void __OPEN3D_CUDA_CHECK(cudaError_t err, const char* file, const int line) {
     if (err != cudaSuccess) {
-        utility::LogError("{}:{} CUDA runtime error: {}", file, line,
-                          cudaGetErrorString(err));
+        if (kProcessEndingErrors.count(err)) {
+            utility::LogError(
+                    "{}:{} CUDA runtime error: {}. This is a process-ending "
+                    "error. All further operations will fail and the process "
+                    "needs to be relaunched to be able to use CUDA.",
+                    file, line, cudaGetErrorString(err));
+        } else {
+            utility::LogError("{}:{} CUDA runtime error: {}", file, line,
+                              cudaGetErrorString(err));
+        }
     }
 }
 
