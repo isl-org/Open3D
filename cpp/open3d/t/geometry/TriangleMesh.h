@@ -257,21 +257,21 @@ public:
     /// Set the value of the "positions" attribute in vertex_attr_.
     /// Convenience function.
     void SetVertexPositions(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetVertexAttr("positions", value);
     }
 
     /// Set the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
     void SetVertexColors(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetVertexAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute in vertex_attr_.
     /// This is a convenience function.
     void SetVertexNormals(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetVertexAttr("normals", value);
     }
 
@@ -287,21 +287,21 @@ public:
 
     /// Set the value of the "indices" attribute in triangle_attr_.
     void SetTriangleIndices(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetTriangleAttr("indices", value);
     }
 
     /// Set the value of the "normals" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleNormals(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetTriangleAttr("normals", value);
     }
 
     /// Set the value of the "colors" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleColors(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetTriangleAttr("colors", value);
     }
 

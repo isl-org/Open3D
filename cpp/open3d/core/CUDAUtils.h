@@ -22,9 +22,8 @@
 #include <cuda_runtime.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
-
-#include "open3d/utility/Optional.h"
 
 #define OPEN3D_FORCE_INLINE __forceinline__
 #define OPEN3D_HOST_DEVICE __host__ __device__

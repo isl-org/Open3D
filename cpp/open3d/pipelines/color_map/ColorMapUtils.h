@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "open3d/camera/PinholeCameraTrajectory.h"
@@ -16,7 +17,6 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/Eigen.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace pipelines {
@@ -46,7 +46,7 @@ CreateVertexAndImageVisibility(
 void SetProxyIntensityForVertex(
         const geometry::TriangleMesh& mesh,
         const std::vector<geometry::Image>& images_gray,
-        const utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const std::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         std::vector<double>& proxy_intensity,
@@ -55,7 +55,7 @@ void SetProxyIntensityForVertex(
 void SetGeometryColorAverage(
         geometry::TriangleMesh& mesh,
         const std::vector<geometry::Image>& images_color,
-        const utility::optional<std::vector<ImageWarpingField>>& warping_fields,
+        const std::optional<std::vector<ImageWarpingField>>& warping_fields,
         const camera::PinholeCameraTrajectory& camera_trajectory,
         const std::vector<std::vector<int>>& visibility_vertex_to_image,
         int image_boundary_margin = 10,

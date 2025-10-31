@@ -55,7 +55,7 @@ OrientedBoundingBox ComputeMinimumOBBJylanki(const core::Tensor& points_,
     // ------------------------------------------------------------
     // 0) Compute the convex hull of the input point cloud
     // ------------------------------------------------------------
-    core::AssertTensorShape(points_, {utility::nullopt, 3});
+    core::AssertTensorShape(points_, {std::nullopt, 3});
     if (points_.GetShape(0) == 0) {
         utility::LogError("Input point set is empty.");
         return OrientedBoundingBox();
@@ -1245,7 +1245,7 @@ OrientedBoundingBox ComputeMinimumOBBJylanki(const core::Tensor& points_,
 
 OrientedBoundingBox ComputeMinimumOBBApprox(const core::Tensor& points,
                                             bool robust) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     if (points.GetShape(0) == 0) {
         utility::LogError("Input point set is empty.");
         return OrientedBoundingBox();

@@ -215,7 +215,7 @@ public:
     /// Set the value of the "positions" attribute in point_attr_.
     /// Convenience function.
     void SetPointPositions(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetPointAttr("positions", value);
     }
 
@@ -231,14 +231,14 @@ public:
 
     /// Set the value of the "indices" attribute in line_attr_.
     void SetLineIndices(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 2});
+        core::AssertTensorShape(value, {std::nullopt, 2});
         SetLineAttr("indices", value);
     }
 
     /// Set the value of the "colors" attribute in line_attr_.
     /// This is a convenience function.
     void SetLineColors(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetLineAttr("colors", value);
     }
 

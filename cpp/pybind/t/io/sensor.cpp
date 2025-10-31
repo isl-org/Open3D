@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <filesystem>
 #include <memory>
 
 #include "open3d/geometry/RGBDImage.h"
@@ -17,6 +18,7 @@
 #endif
 #include "pybind/docstring.h"
 #include "pybind/t/io/io.h"
+namespace fs = std::filesystem;
 
 namespace open3d {
 namespace t {

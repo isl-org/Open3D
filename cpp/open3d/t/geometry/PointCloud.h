@@ -165,19 +165,19 @@ public:
 
     /// Set the value of the "positions" attribute. Convenience function.
     void SetPointPositions(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetPointAttr("positions", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetPointAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetPointAttr("normals", value);
     }
 
@@ -496,9 +496,8 @@ public:
     /// [Default = 30].
     /// \param radius [optional] Neighbor search radius parameter. [Recommended
     /// ~1.4x voxel size].
-    void EstimateNormals(
-            const utility::optional<int> max_nn = 30,
-            const utility::optional<double> radius = utility::nullopt);
+    void EstimateNormals(const std::optional<int> max_nn = 30,
+                         const std::optional<double> radius = std::nullopt);
 
     /// \brief Function to orient the normals of a point cloud.
     ///
@@ -547,8 +546,8 @@ public:
     /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateColorGradients(
-            const utility::optional<int> max_nn = 30,
-            const utility::optional<double> radius = utility::nullopt);
+            const std::optional<int> max_nn = 30,
+            const std::optional<double> radius = std::nullopt);
 
 public:
     /// \brief Factory function to create a point cloud from a depth image and a

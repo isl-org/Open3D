@@ -13,16 +13,16 @@ namespace open3d {
 namespace tests {
 
 TEST(DynamicSizeVector, Constructor) {
-    core::DynamicSizeVector dsv{utility::nullopt, 3};
+    core::DynamicSizeVector dsv{std::nullopt, 3};
     EXPECT_FALSE(dsv[0].has_value());
     EXPECT_EQ(dsv[1].value(), 3);
 }
 
 TEST(DynamicSizeVector, IsCompatible) {
     EXPECT_TRUE(core::SizeVector({}).IsCompatible({}));
-    EXPECT_FALSE(core::SizeVector({}).IsCompatible({utility::nullopt}));
-    EXPECT_TRUE(core::SizeVector({10, 3}).IsCompatible({utility::nullopt, 3}));
-    EXPECT_FALSE(core::SizeVector({10, 3}).IsCompatible({utility::nullopt, 5}));
+    EXPECT_FALSE(core::SizeVector({}).IsCompatible({std::nullopt}));
+    EXPECT_TRUE(core::SizeVector({10, 3}).IsCompatible({std::nullopt, 3}));
+    EXPECT_FALSE(core::SizeVector({10, 3}).IsCompatible({std::nullopt, 5}));
 }
 
 }  // namespace tests

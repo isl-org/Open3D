@@ -253,11 +253,12 @@ void pybind_image_definitions(py::module &m) {
             "device_id"_a = 0);
 
     // Conversion.
-    image.def("to",
-              py::overload_cast<core::Dtype, bool, utility::optional<double>,
-                                double>(&Image::To, py::const_),
-              "Returns an Image with the specified Dtype.", "dtype"_a,
-              "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
+    image.def(
+            "to",
+            py::overload_cast<core::Dtype, bool, std::optional<double>, double>(
+                    &Image::To, py::const_),
+            "Returns an Image with the specified Dtype.", "dtype"_a,
+            "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
     docstring::ClassMethodDocInject(
             m, "Image", "to",
             {{"dtype", "The targeted dtype to convert to."},

@@ -318,7 +318,7 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
 
     // Estimate normals using Radius Search.
-    pcd.EstimateNormals(utility::nullopt, 1.1);
+    pcd.EstimateNormals(std::nullopt, 1.1);
     EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
 }
 

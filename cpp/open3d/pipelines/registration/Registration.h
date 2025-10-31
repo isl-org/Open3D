@@ -8,13 +8,13 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <optional>
 #include <tuple>
 #include <vector>
 
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Eigen.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 

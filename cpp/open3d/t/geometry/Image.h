@@ -146,7 +146,7 @@ public:
     /// \param offset Optional shift value. Default 0.
     Image To(core::Dtype dtype,
              bool copy = false,
-             utility::optional<double> scale = utility::nullopt,
+             std::optional<double> scale = std::nullopt,
              double offset = 0.0) const;
 
     /// \brief Function to linearly transform pixel intensities in place.

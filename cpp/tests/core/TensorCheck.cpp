@@ -170,7 +170,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     // AssertTensorShapeCompatible with initializer_list.
     try {
         t = core::Tensor::Empty({10}, core::Float32, device);
-        core::AssertTensorShape(t, {4, utility::nullopt});
+        core::AssertTensorShape(t, {4, std::nullopt});
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(err.what(),
@@ -186,8 +186,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     // AssertTensorShapeCompatible with DynamicSizeVector instance.
     try {
         t = core::Tensor::Empty({10}, core::Float32, device);
-        core::AssertTensorShape(t,
-                                core::DynamicSizeVector({4, utility::nullopt}));
+        core::AssertTensorShape(t, core::DynamicSizeVector({4, std::nullopt}));
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(err.what(),

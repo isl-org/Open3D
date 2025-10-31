@@ -429,9 +429,8 @@ public:
     /// \return A copy of the tensor with `values` appended to axis. Note that
     /// append does not occur in-place: a new array is allocated and filled. If
     /// axis is None, out is a flattened tensor.
-    Tensor Append(
-            const Tensor& other,
-            const utility::optional<int64_t>& axis = utility::nullopt) const;
+    Tensor Append(const Tensor& other,
+                  const std::optional<int64_t>& axis = std::nullopt) const;
 
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
@@ -951,12 +950,12 @@ public:
 
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors.
-    Tensor All(const utility::optional<SizeVector>& dims = utility::nullopt,
+    Tensor All(const std::optional<SizeVector>& dims = std::nullopt,
                bool keepdim = false) const;
 
     /// Returns true if any elements in the tensor are true. Only works for
     /// boolean tensors.
-    Tensor Any(const utility::optional<SizeVector>& dims = utility::nullopt,
+    Tensor Any(const std::optional<SizeVector>& dims = std::nullopt,
                bool keepdim = false) const;
 
     /// Returns true if the two tensors are element-wise equal.

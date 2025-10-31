@@ -5,8 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <filesystem>
 #include <string>
 #include <unordered_map>
+namespace fs = std::filesystem;
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/camera/PinholeCameraTrajectory.h"

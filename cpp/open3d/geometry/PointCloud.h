@@ -9,12 +9,12 @@
 
 #include <Eigen/Core>
 #include <memory>
+#include <optional>
 #include <tuple>
 #include <vector>
 
 #include "open3d/geometry/Geometry3D.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 
