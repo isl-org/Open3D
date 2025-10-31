@@ -33,9 +33,10 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
+#include <optional>
+
 #include "open3d/pipelines/registration/PoseGraph.h"
 #include "open3d/utility/Eigen.h"
-#include "open3d/utility/Optional.h"
 
 // We include the type caster for tensor here because it must be included in
 // every compilation unit.

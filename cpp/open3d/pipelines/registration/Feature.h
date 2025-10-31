@@ -9,10 +9,10 @@
 
 #include <Eigen/Core>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "open3d/geometry/KDTreeSearchParam.h"
-#include <optional>
 
 namespace open3d {
 
@@ -66,8 +66,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeSearchParam &search_param =
                 geometry::KDTreeSearchParamKNN(),
-        const std::optional<std::vector<size_t>> &indices =
-                std::nullopt);
+        const std::optional<std::vector<size_t>> &indices = std::nullopt);
 
 /// \brief Function to find correspondences via 1-nearest neighbor feature
 /// matching. Target is used to construct a nearest neighbor search

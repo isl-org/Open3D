@@ -973,8 +973,8 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                            depth_max, stride);
     } else {
         core::Tensor points;
-        kernel::pointcloud::Unproject(depth.AsTensor(), std::nullopt,
-                                      points, std::nullopt, intrinsics_host,
+        kernel::pointcloud::Unproject(depth.AsTensor(), std::nullopt, points,
+                                      std::nullopt, intrinsics_host,
                                       extrinsics_host, depth_scale, depth_max,
                                       stride);
         return PointCloud(points);

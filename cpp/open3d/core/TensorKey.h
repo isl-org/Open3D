@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "open3d/utility/Logging.h"
 #include <optional>
+
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {

@@ -10,10 +10,10 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <limits>
+#include <optional>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Geometry.h"
-#include <optional>
 
 #pragma once
 

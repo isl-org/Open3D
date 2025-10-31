@@ -8,6 +8,7 @@
 #include "open3d/pipelines/color_map/RigidOptimizer.h"
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "open3d/io/ImageIO.h"
@@ -16,7 +17,6 @@
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/FileSystem.h"
-#include <optional>
 #include "open3d/utility/Parallel.h"
 
 namespace open3d {
@@ -202,11 +202,10 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
 
         if (!option.debug_output_dir_.empty()) {
             // Save opt_mesh.
-            SetGeometryColorAverage(opt_mesh, images_color, std::nullopt,
-                                    opt_camera_trajectory,
-                                    visibility_vertex_to_image,
-                                    option.image_boundary_margin_,
-                                    option.invisible_vertex_color_knn_);
+            SetGeometryColorAverage(
+                    opt_mesh, images_color, std::nullopt, opt_camera_trajectory,
+                    visibility_vertex_to_image, option.image_boundary_margin_,
+                    option.invisible_vertex_color_knn_);
             std::string file_name = fmt::format(
                     "{}/iter_{}.ply",
                     option.debug_output_dir_ + "/rigid/opt_mesh", itr);

@@ -496,9 +496,8 @@ public:
     /// [Default = 30].
     /// \param radius [optional] Neighbor search radius parameter. [Recommended
     /// ~1.4x voxel size].
-    void EstimateNormals(
-            const std::optional<int> max_nn = 30,
-            const std::optional<double> radius = std::nullopt);
+    void EstimateNormals(const std::optional<int> max_nn = 30,
+                         const std::optional<double> radius = std::nullopt);
 
     /// \brief Function to orient the normals of a point cloud.
     ///

@@ -429,9 +429,8 @@ public:
     /// \return A copy of the tensor with `values` appended to axis. Note that
     /// append does not occur in-place: a new array is allocated and filled. If
     /// axis is None, out is a flattened tensor.
-    Tensor Append(
-            const Tensor& other,
-            const std::optional<int64_t>& axis = std::nullopt) const;
+    Tensor Append(const Tensor& other,
+                  const std::optional<int64_t>& axis = std::nullopt) const;
 
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;

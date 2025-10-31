@@ -281,8 +281,7 @@ double Line3D::DistanceTo(const Line3D& other) const {
 Ray3D::Ray3D(const Eigen::Vector3d& origin, const Eigen::Vector3d& direction)
     : Line3D(origin, direction, LineType::Ray) {}
 
-std::optional<double> Ray3D::SlabAABB(
-        const AxisAlignedBoundingBox& box) const {
+std::optional<double> Ray3D::SlabAABB(const AxisAlignedBoundingBox& box) const {
     /* The ray case of the Line/AABB intersection allows for any intersection
      * along the positive direction of the line at any distance, in accordance
      * with the semantic meaning of a ray.

@@ -9,11 +9,11 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <optional>
 #include <tuple>
 #include <vector>
 
 #include "open3d/pipelines/registration/TransformationEstimation.h"
-#include <optional>
 
 namespace open3d {
 

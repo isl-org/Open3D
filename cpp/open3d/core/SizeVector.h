@@ -8,11 +8,11 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "open3d/core/SmallVector.h"
-#include <optional>
 
 namespace open3d {
 namespace core {

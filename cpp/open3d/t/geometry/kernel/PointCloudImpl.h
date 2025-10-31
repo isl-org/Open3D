@@ -43,8 +43,7 @@ void UnprojectCUDA
 void UnprojectCPU
 #endif
         (const core::Tensor& depth,
-         std::optional<std::reference_wrapper<const core::Tensor>>
-                 image_colors,
+         std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
          core::Tensor& points,
          std::optional<std::reference_wrapper<core::Tensor>> colors,
          const core::Tensor& intrinsics,

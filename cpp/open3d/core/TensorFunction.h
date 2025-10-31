@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "open3d/core/Tensor.h"
 #include <optional>
+
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace core {

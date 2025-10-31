@@ -10,12 +10,12 @@
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "open3d/utility/Logging.h"
-#include <optional>
 
 namespace open3d {
 namespace core {

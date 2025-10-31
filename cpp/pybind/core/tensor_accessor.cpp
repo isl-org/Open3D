@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <optional>
 #include <vector>
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorKey.h"
-#include "open3d/utility/Optional.h"
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif

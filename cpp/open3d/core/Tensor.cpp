@@ -1735,8 +1735,7 @@ bool Tensor::IsNonZero() const {
     return rc;
 }
 
-Tensor Tensor::All(const std::optional<SizeVector>& dims,
-                   bool keepdim) const {
+Tensor Tensor::All(const std::optional<SizeVector>& dims, bool keepdim) const {
     AssertTensorDtype(*this, core::Bool);
 
     Tensor dst;
@@ -1754,8 +1753,7 @@ Tensor Tensor::All(const std::optional<SizeVector>& dims,
     return dst;
 }
 
-Tensor Tensor::Any(const std::optional<SizeVector>& dims,
-                   bool keepdim) const {
+Tensor Tensor::Any(const std::optional<SizeVector>& dims, bool keepdim) const {
     AssertTensorDtype(*this, core::Bool);
 
     Tensor dst;

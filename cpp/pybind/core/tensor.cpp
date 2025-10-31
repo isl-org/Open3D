@@ -7,6 +7,7 @@
 
 #include "open3d/core/Tensor.h"
 
+#include <optional>
 #include <vector>
 
 #include "open3d/core/Blob.h"
@@ -17,7 +18,6 @@
 #include "open3d/core/Scalar.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
-#include "open3d/utility/Optional.h"
 #include "pybind/core/core.h"
 #include "pybind/core/tensor_converter.h"
 #include "pybind/core/tensor_type_caster.h"

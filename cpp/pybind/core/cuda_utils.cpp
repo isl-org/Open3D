@@ -5,8 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <optional>
+
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/utility/Optional.h"
 #include "pybind/core/core.h"
 
 namespace open3d {

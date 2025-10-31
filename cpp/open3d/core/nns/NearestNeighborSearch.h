@@ -7,13 +7,13 @@
 
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/NanoFlannIndex.h"
-#include <optional>
 
 namespace open3d {
 namespace core {

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "open3d/camera/PinholeCameraTrajectory.h"
@@ -16,7 +17,6 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/Eigen.h"
-#include <optional>
 
 namespace open3d {
 namespace pipelines {

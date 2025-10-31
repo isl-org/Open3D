@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <optional>
+
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Optional.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
