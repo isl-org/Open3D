@@ -31,14 +31,16 @@ template <>
 void PoseToTransformationCUDA<float>(float *transformation_ptr,
                                      const float *X_ptr) {
     PoseToTransformationKernel<float>
-            <<<1, 1, 0, core::cuda::GetStream()>>>(transformation_ptr, X_ptr);
+            <<<1, 1, 0, core::CUDAStream::GetInstance().Get()>>>(
+                    transformation_ptr, X_ptr);
 }
 
 template <>
 void PoseToTransformationCUDA<double>(double *transformation_ptr,
                                       const double *X_ptr) {
     PoseToTransformationKernel<double>
-            <<<1, 1, 0, core::cuda::GetStream()>>>(transformation_ptr, X_ptr);
+            <<<1, 1, 0, core::CUDAStream::GetInstance().Get()>>>(
+                    transformation_ptr, X_ptr);
 }
 
 template <typename scalar_t>
@@ -57,14 +59,16 @@ template <>
 void TransformationToPoseCUDA<float>(float *X_ptr,
                                      const float *transformation_ptr) {
     TransformationToPoseKernel<float>
-            <<<1, 1, 0, core::cuda::GetStream()>>>(X_ptr, transformation_ptr);
+            <<<1, 1, 0, core::CUDAStream::GetInstance().Get()>>>(
+                    X_ptr, transformation_ptr);
 }
 
 template <>
 void TransformationToPoseCUDA<double>(double *X_ptr,
                                       const double *transformation_ptr) {
     TransformationToPoseKernel<double>
-            <<<1, 1, 0, core::cuda::GetStream()>>>(X_ptr, transformation_ptr);
+            <<<1, 1, 0, core::CUDAStream::GetInstance().Get()>>>(
+                    X_ptr, transformation_ptr);
 }
 
 }  // namespace kernel

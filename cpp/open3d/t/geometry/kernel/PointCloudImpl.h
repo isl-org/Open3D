@@ -125,8 +125,8 @@ void UnprojectCPU
     int total_pts_count = (*count_ptr).load();
 #endif
 
-#ifdef __CUDACC__
-    core::cuda::Synchronize();
+#if BUILD_CUDA_MODULE
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
 #endif
     points = points.Slice(0, 0, total_pts_count);
     if (have_colors) {
@@ -601,7 +601,9 @@ void EstimateCovariancesUsingHybridSearchCPU
                 });
     });
 
-    core::cuda::Synchronize(points.GetDevice());
+#if BUILD_CUDA_MODULE
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
+#endif
 }
 
 #if defined(__CUDACC__)
@@ -650,7 +652,9 @@ void EstimateCovariancesUsingRadiusSearchCPU
                 });
     });
 
-    core::cuda::Synchronize(points.GetDevice());
+#if BUILD_CUDA_MODULE
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
+#endif
 }
 
 #if defined(__CUDACC__)
@@ -703,7 +707,9 @@ void EstimateCovariancesUsingKNNSearchCPU
                 });
     });
 
-    core::cuda::Synchronize(points.GetDevice());
+#if defined(BUILD_CUDA_MODULE)
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
+#endif
 }
 
 template <typename scalar_t>
@@ -1022,7 +1028,9 @@ void EstimateNormalsFromCovariancesCPU
                 });
     });
 
-    core::cuda::Synchronize(covariances.GetDevice());
+#if defined(BUILD_CUDA_MODULE)
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
+#endif
 }
 
 template <typename scalar_t>
@@ -1174,7 +1182,9 @@ void EstimateColorGradientsUsingHybridSearchCPU
                 });
     });
 
-    core::cuda::Synchronize(points.GetDevice());
+#if defined(BUILD_CUDA_MODULE)
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
+#endif
 }
 
 #if defined(__CUDACC__)
@@ -1229,7 +1239,9 @@ void EstimateColorGradientsUsingKNNSearchCPU
                 });
     });
 
-    core::cuda::Synchronize(points.GetDevice());
+#if defined(BUILD_CUDA_MODULE)
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
+#endif
 }
 
 #if defined(__CUDACC__)
@@ -1284,7 +1296,9 @@ void EstimateColorGradientsUsingRadiusSearchCPU
                 });
     });
 
-    core::cuda::Synchronize(points.GetDevice());
+#if defined(BUILD_CUDA_MODULE)
+    core::cuda::Synchronize(core::CUDAStream::GetInstance());
+#endif
 }
 
 }  // namespace pointcloud
