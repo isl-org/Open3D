@@ -58,8 +58,7 @@ std::vector<EigenVector> py_array_to_vectors_double(
 }
 
 template <typename EigenVector>
-std::vector<EigenVector> py_array_to_vectors_int(
-        py::array_t<int> array) {
+std::vector<EigenVector> py_array_to_vectors_int(py::array_t<int> array) {
     if (!(array.flags() & (py::array::c_style))) {
         array = py::array_t<int, py::array::c_style>(array);
     }
@@ -78,8 +77,7 @@ std::vector<EigenVector> py_array_to_vectors_int(
 template <typename EigenVector,
           typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
 std::vector<EigenVector, EigenAllocator>
-py_array_to_vectors_int_eigen_allocator(
-        py::array_t<int> array) {
+py_array_to_vectors_int_eigen_allocator(py::array_t<int> array) {
     if (!(array.flags() & (py::array::c_style))) {
         array = py::array_t<int, py::array::c_style>(array);
     }
@@ -98,8 +96,7 @@ py_array_to_vectors_int_eigen_allocator(
 template <typename EigenVector,
           typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
 std::vector<EigenVector, EigenAllocator>
-py_array_to_vectors_int64_eigen_allocator(
-        py::array_t<int64_t> array) {
+py_array_to_vectors_int64_eigen_allocator(py::array_t<int64_t> array) {
     if (!(array.flags() & (py::array::c_style))) {
         array = py::array_t<int64_t, py::array::c_style>(array);
     }
