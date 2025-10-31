@@ -160,7 +160,7 @@
 #define BIND_REDUCTION_OP(py_name, cpp_name)                                   \
     tensor.def(                                                                \
             #py_name,                                                          \
-            [](const Tensor& tensor, const utility::optional<SizeVector>& dim, \
+            [](const Tensor& tensor, const std::optional<SizeVector>& dim, \
                bool keepdim) {                                                 \
                 SizeVector reduction_dims;                                     \
                 if (dim.has_value()) {                                         \
@@ -180,7 +180,7 @@
     tensor.def(                                                      \
             #py_name,                                                \
             [](const Tensor& tensor,                                 \
-               const utility::optional<SizeVector>& dim) {           \
+               const std::optional<SizeVector>& dim) {           \
                 SizeVector reduction_dims;                           \
                 if (dim.has_value()) {                               \
                     reduction_dims = dim.value();                    \
@@ -221,8 +221,8 @@ static void BindTensorCreation(py::module& m,
                                func_t cpp_func) {
     tensor.def_static(
             py_name.c_str(),
-            [cpp_func](const SizeVector& shape, utility::optional<Dtype> dtype,
-                       utility::optional<Device> device) {
+            [cpp_func](const SizeVector& shape, std::optional<Dtype> dtype,
+                       std::optional<Device> device) {
                 return cpp_func(
                         shape,
                         dtype.has_value() ? dtype.value() : core::Float32,
@@ -239,8 +239,8 @@ static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
     tensor.def_static(
             "full",
             [](const SizeVector& shape, T fill_value,
-               utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
+               std::optional<Dtype> dtype,
+               std::optional<Device> device) {
                 return Tensor::Full<T>(
                         shape, fill_value,
                         dtype.has_value() ? dtype.value() : core::Float32,
@@ -260,8 +260,8 @@ void pybind_core_tensor_definitions(py::module& m) {
     auto tensor = static_cast<py::class_<Tensor>>(m.attr("Tensor"));
     // o3c.Tensor(np.array([[0, 1, 2], [3, 4, 5]]), dtype=None, device=None).
     tensor.def(py::init([](const py::array& np_array,
-                           utility::optional<Dtype> dtype,
-                           utility::optional<Device> device) {
+                           std::optional<Dtype> dtype,
+                           std::optional<Device> device) {
                    Tensor t = PyArrayToTensor(np_array, /*inplace=*/false);
                    if (dtype.has_value()) {
                        t = t.To(dtype.value());
@@ -276,8 +276,8 @@ void pybind_core_tensor_definitions(py::module& m) {
 
     // o3c.Tensor(True, dtype=None, device=None).
     // Default to Bool, CPU:0.
-    tensor.def(py::init([](bool scalar_value, utility::optional<Dtype> dtype,
-                           utility::optional<Device> device) {
+    tensor.def(py::init([](bool scalar_value, std::optional<Dtype> dtype,
+                           std::optional<Device> device) {
                    return BoolToTensor(scalar_value, dtype, device);
                }),
                "scalar_value"_a, "dtype"_a = py::none(),
@@ -285,8 +285,8 @@ void pybind_core_tensor_definitions(py::module& m) {
 
     // o3c.Tensor(1, dtype=None, device=None).
     // Default to Int64, CPU:0.
-    tensor.def(py::init([](int64_t scalar_value, utility::optional<Dtype> dtype,
-                           utility::optional<Device> device) {
+    tensor.def(py::init([](int64_t scalar_value, std::optional<Dtype> dtype,
+                           std::optional<Device> device) {
                    return IntToTensor(scalar_value, dtype, device);
                }),
                "scalar_value"_a, "dtype"_a = py::none(),
@@ -294,8 +294,8 @@ void pybind_core_tensor_definitions(py::module& m) {
 
     // o3c.Tensor(3.14, dtype=None, device=None).
     // Default to Float64, CPU:0.
-    tensor.def(py::init([](double scalar_value, utility::optional<Dtype> dtype,
-                           utility::optional<Device> device) {
+    tensor.def(py::init([](double scalar_value, std::optional<Dtype> dtype,
+                           std::optional<Device> device) {
                    return DoubleToTensor(scalar_value, dtype, device);
                }),
                "scalar_value"_a, "dtype"_a = py::none(),
@@ -303,8 +303,8 @@ void pybind_core_tensor_definitions(py::module& m) {
 
     // o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype=None, device=None).
     tensor.def(
-            py::init([](const py::list& shape, utility::optional<Dtype> dtype,
-                        utility::optional<Device> device) {
+            py::init([](const py::list& shape, std::optional<Dtype> dtype,
+                        std::optional<Device> device) {
                 return PyListToTensor(shape, dtype, device);
             }),
             "Initialize Tensor from a nested list.", "shape"_a,
@@ -312,8 +312,8 @@ void pybind_core_tensor_definitions(py::module& m) {
 
     // o3c.Tensor(((0, 1, 2), (3, 4, 5)), dtype=None, device=None).
     tensor.def(
-            py::init([](const py::tuple& shape, utility::optional<Dtype> dtype,
-                        utility::optional<Device> device) {
+            py::init([](const py::tuple& shape, std::optional<Dtype> dtype,
+                        std::optional<Device> device) {
                 return PyTupleToTensor(shape, dtype, device);
             }),
             "Initialize Tensor from a nested tuple.", "shape"_a,
@@ -372,8 +372,8 @@ void pybind_core_tensor_definitions(py::module& m) {
 
     tensor.def_static(
             "eye",
-            [](int64_t n, utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
+            [](int64_t n, std::optional<Dtype> dtype,
+               std::optional<Device> device) {
                 return Tensor::Eye(
                         n, dtype.has_value() ? dtype.value() : core::Float32,
                         device.has_value() ? device.value() : Device("CPU:0"));
@@ -385,8 +385,8 @@ void pybind_core_tensor_definitions(py::module& m) {
     // Tensor creation from arange for int.
     tensor.def_static(
             "arange",
-            [](int64_t stop, utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
+            [](int64_t stop, std::optional<Dtype> dtype,
+               std::optional<Device> device) {
                 return Tensor::Arange(
                         0, stop, 1,
                         dtype.has_value() ? dtype.value() : core::Int64,
@@ -398,9 +398,9 @@ void pybind_core_tensor_definitions(py::module& m) {
             "device"_a = py::none());
     tensor.def_static(
             "arange",
-            [](int64_t start, int64_t stop, utility::optional<int64_t> step,
-               utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
+            [](int64_t start, int64_t stop, std::optional<int64_t> step,
+               std::optional<Dtype> dtype,
+               std::optional<Device> device) {
                 return Tensor::Arange(
                         start, stop, step.has_value() ? step.value() : 1,
                         dtype.has_value() ? dtype.value() : core::Int64,
@@ -414,8 +414,8 @@ void pybind_core_tensor_definitions(py::module& m) {
     // Tensor creation from arange for float.
     tensor.def_static(
             "arange",
-            [](double stop, utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
+            [](double stop, std::optional<Dtype> dtype,
+               std::optional<Device> device) {
                 return Tensor::Arange(
                         0.0, stop, 1.0,
                         dtype.has_value() ? dtype.value() : core::Float64,
@@ -427,9 +427,9 @@ void pybind_core_tensor_definitions(py::module& m) {
             "device"_a = py::none());
     tensor.def_static(
             "arange",
-            [](double start, double stop, utility::optional<double> step,
-               utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
+            [](double start, double stop, std::optional<double> step,
+               std::optional<Dtype> dtype,
+               std::optional<Device> device) {
                 return Tensor::Arange(
                         start, stop, step.has_value() ? step.value() : 1.0,
                         dtype.has_value() ? dtype.value() : core::Float64,
@@ -443,7 +443,7 @@ void pybind_core_tensor_definitions(py::module& m) {
     tensor.def(
             "append",
             [](const Tensor& tensor, const Tensor& values,
-               const utility::optional<int64_t> axis) {
+               const std::optional<int64_t> axis) {
                 if (axis.has_value()) {
                     return tensor.Append(values, axis);
                 }

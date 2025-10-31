@@ -254,7 +254,7 @@ void pybind_image_definitions(py::module &m) {
 
     // Conversion.
     image.def("to",
-              py::overload_cast<core::Dtype, bool, utility::optional<double>,
+              py::overload_cast<core::Dtype, bool, std::optional<double>,
                                 double>(&Image::To, py::const_),
               "Returns an Image with the specified Dtype.", "dtype"_a,
               "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);

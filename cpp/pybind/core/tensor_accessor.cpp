@@ -31,15 +31,15 @@ static TensorKey ToTensorKey(const py::slice& key) {
     PySlice_Unpack(key.ptr(), &start, &stop, &step);
     PySliceObject* slice_key = reinterpret_cast<PySliceObject*>(key.ptr());
 
-    utility::optional<int64_t> start_opt = None;
+    std::optional<int64_t> start_opt = None;
     if (!py::detail::PyNone_Check(slice_key->start)) {
         start_opt = static_cast<int64_t>(start);
     }
-    utility::optional<int64_t> stop_opt = None;
+    std::optional<int64_t> stop_opt = None;
     if (!py::detail::PyNone_Check(slice_key->stop)) {
         stop_opt = static_cast<int64_t>(stop);
     }
-    utility::optional<int64_t> step_opt = None;
+    std::optional<int64_t> step_opt = None;
     if (!py::detail::PyNone_Check(slice_key->step)) {
         step_opt = static_cast<int64_t>(step);
     }
