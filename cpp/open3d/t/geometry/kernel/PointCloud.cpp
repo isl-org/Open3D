@@ -7,8 +7,6 @@
 
 #include "open3d/t/geometry/kernel/PointCloud.h"
 
-#include <vector>
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"

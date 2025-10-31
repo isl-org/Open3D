@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <optional>
 
 #include "open3d/core/Tensor.h"
 
