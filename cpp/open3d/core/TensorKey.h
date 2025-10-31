@@ -17,7 +17,7 @@ namespace core {
 class Tensor;
 
 // Same as std::nullopt. Provides a similar Python slicing API.
-constexpr std::nullopt_t None{std::nullopt_t::init()};
+constexpr std::nullopt_t None = std::nullopt;
 
 /// \brief TensorKey is used to represent single index, slice or advanced
 /// indexing on a Tensor.
