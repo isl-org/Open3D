@@ -106,10 +106,9 @@ set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
 endif()
-if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
+if (WITH_OPENMP AND APPLE)
 # Package libomp v11.1.0, if it is not installed. Later version cause crash on
-# x86_64 if PyTorch is already imported. Case of shared libopen3d.dylib is not
-# handled.
+# x86_64 if PyTorch is already imported.
 # https://github.com/microsoft/LightGBM/issues/4229
     list(APPEND PYTHON_EXTRA_LIBRARIES ${OpenMP_libomp_LIBRARY})
     execute_process(COMMAND brew list --versions libomp
