@@ -73,6 +73,11 @@ void MemoryManagerCUDA::Memcpy(void* dst_ptr,
         OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
                                           cudaMemcpyHostToDevice,
                                           current_stream.Get()));
+        if (!current_stream.IsDefaultStream() &&
+            current_stream.GetHostToDeviceMemcpyPolicy() ==
+                    CUDAMemoryCopyPolicy::Sync) {
+            OPEN3D_CUDA_CHECK(cudaStreamSynchronize(current_stream.Get()));
+        }
     } else if (dst_device.IsCPU() && src_device.IsCUDA()) {
         if (!IsCUDAPointer(src_ptr, src_device)) {
             utility::LogError("src_ptr is not a CUDA pointer.");
@@ -81,7 +86,9 @@ void MemoryManagerCUDA::Memcpy(void* dst_ptr,
         OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
                                           cudaMemcpyDeviceToHost,
                                           current_stream.Get()));
-        if (current_stream.ShouldSyncMemcpyFromDeviceToHost()) {
+        if (!current_stream.IsDefaultStream() &&
+            current_stream.GetDeviceToHostMemcpyPolicy() ==
+                    CUDAMemoryCopyPolicy::Sync) {
             OPEN3D_CUDA_CHECK(cudaStreamSynchronize(current_stream.Get()));
         }
     } else if (dst_device.IsCUDA() && src_device.IsCUDA()) {
@@ -103,20 +110,11 @@ void MemoryManagerCUDA::Memcpy(void* dst_ptr,
                     dst_ptr, dst_device.GetID(), src_ptr, src_device.GetID(),
                     num_bytes, current_stream.Get()));
         } else {
-            void* cpu_buf = MemoryManager::Malloc(num_bytes, Device("CPU:0"));
-            {
-                CUDAScopedDevice scoped_device(src_device);
-                OPEN3D_CUDA_CHECK(cudaMemcpyAsync(cpu_buf, src_ptr, num_bytes,
-                                                  cudaMemcpyDeviceToHost,
-                                                  current_stream.Get()));
-            }
-            {
-                CUDAScopedDevice scoped_device(dst_device);
-                OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, cpu_buf, num_bytes,
-                                                  cudaMemcpyHostToDevice,
-                                                  current_stream.Get()));
-            }
-            MemoryManager::Free(cpu_buf, Device("CPU:0"));
+            const Device cpu_device("CPU:0");
+            void* cpu_buf = MemoryManager::Malloc(num_bytes, cpu_device);
+            Memcpy(cpu_buf, cpu_device, src_ptr, src_device, num_bytes);
+            Memcpy(dst_ptr, dst_device, cpu_buf, cpu_device, num_bytes);
+            MemoryManager::Free(cpu_buf, cpu_device);
         }
     } else {
         utility::LogError("Wrong cudaMemcpyKind.");

@@ -45,5 +45,21 @@ TEST(ParallelFor, LambdaCUDA) {
     }
 }
 
+TEST(ParallelFor, LambdaCUDA_NonDefaultStream) {
+    const core::Device device("CUDA:0");
+    const size_t N = 10000000;
+
+    core::CUDAScopedStream s(core::CUDAStream::CreateNew(), true);
+
+    core::Tensor tensor({N, 1}, core::Int64, device);
+
+    RunParallelForOn(tensor);
+
+    core::Tensor tensor_cpu = tensor.To(core::Device("CPU:0"));
+    for (int64_t i = 0; i < tensor.NumElements(); ++i) {
+        ASSERT_EQ(tensor_cpu.GetDataPtr<int64_t>()[i], i);
+    }
+}
+
 }  // namespace tests
 }  // namespace open3d
