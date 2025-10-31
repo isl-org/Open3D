@@ -194,24 +194,18 @@ BENCHMARK_CAPTURE(LegacyComputeFPFHFeature,
 
 ENUM_FPFH_METHOD_DEVICE(
         CPU[0.01 | 100] Hybrid, 100, 0.01, std::nullopt, "CPU:0")
-ENUM_FPFH_METHOD_DEVICE(
-        CPU[0.02 | 50] Hybrid, 50, 0.02, std::nullopt, "CPU:0")
+ENUM_FPFH_METHOD_DEVICE(CPU[0.02 | 50] Hybrid, 50, 0.02, std::nullopt, "CPU:0")
 ENUM_FPFH_METHOD_DEVICE(
         CPU[0.02 | 100] Hybrid, 100, 0.02, std::nullopt, "CPU:0")
-ENUM_FPFH_METHOD_DEVICE(
-        CPU[50] KNN, 50, std::nullopt, std::nullopt, "CPU:0")
-ENUM_FPFH_METHOD_DEVICE(
-        CPU[100] KNN, 100, std::nullopt, std::nullopt, "CPU:0")
+ENUM_FPFH_METHOD_DEVICE(CPU[50] KNN, 50, std::nullopt, std::nullopt, "CPU:0")
+ENUM_FPFH_METHOD_DEVICE(CPU[100] KNN, 100, std::nullopt, std::nullopt, "CPU:0")
 ENUM_FPFH_METHOD_DEVICE(
         CPU[0.01] Radius, std::nullopt, 0.01, std::nullopt, "CPU:0")
 ENUM_FPFH_METHOD_DEVICE(
         CPU[0.02] Radius, std::nullopt, 0.02, std::nullopt, "CPU:0")
 
-ENUM_FPFH_METHOD_DEVICE(CPU[0.02 | 50 | null] Hybrid Indices,
-                        50,
-                        0.02,
-                        std::nullopt,
-                        "CPU:0")
+ENUM_FPFH_METHOD_DEVICE(
+        CPU[0.02 | 50 | null] Hybrid Indices, 50, 0.02, std::nullopt, "CPU:0")
 ENUM_FPFH_METHOD_DEVICE(
         CPU[0.02 | 50 | 0.0001] Hybrid Indices, 50, 0.02, 0.0001, "CPU:0")
 ENUM_FPFH_METHOD_DEVICE(
@@ -230,8 +224,7 @@ ENUM_FPFH_METHOD_DEVICE(
         CUDA[0.02 | 50] Hybrid, 50, 0.02, std::nullopt, "CUDA:0")
 ENUM_FPFH_METHOD_DEVICE(
         CUDA[0.02 | 100] Hybrid, 100, 0.02, std::nullopt, "CUDA:0")
-ENUM_FPFH_METHOD_DEVICE(
-        CUDA[50] KNN, 50, std::nullopt, std::nullopt, "CUDA:0")
+ENUM_FPFH_METHOD_DEVICE(CUDA[50] KNN, 50, std::nullopt, std::nullopt, "CUDA:0")
 ENUM_FPFH_METHOD_DEVICE(
         CUDA[100] KNN, 100, std::nullopt, std::nullopt, "CUDA:0")
 ENUM_FPFH_METHOD_DEVICE(
@@ -239,11 +232,8 @@ ENUM_FPFH_METHOD_DEVICE(
 ENUM_FPFH_METHOD_DEVICE(
         CUDA[0.02] Radius, std::nullopt, 0.02, std::nullopt, "CUDA:0")
 
-ENUM_FPFH_METHOD_DEVICE(CUDA[0.02 | 50 | null] Hybrid Indices,
-                        50,
-                        0.02,
-                        std::nullopt,
-                        "CUDA:0")
+ENUM_FPFH_METHOD_DEVICE(
+        CUDA[0.02 | 50 | null] Hybrid Indices, 50, 0.02, std::nullopt, "CUDA:0")
 ENUM_FPFH_METHOD_DEVICE(
         CUDA[0.02 | 50 | 0.0001] Hybrid Indices, 50, 0.02, 0.0001, "CUDA:0")
 ENUM_FPFH_METHOD_DEVICE(
