@@ -34,7 +34,7 @@ endif()
 include(CMakeDependentOption)
 
 # Open3D build options
-option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
+option(BUILD_SHARED_LIBS          "Build shared libraries"                   ON )
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
 option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
@@ -243,15 +243,6 @@ if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
 endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
-endif()
-
-# Python bindings require shared libraries to separate pybind module from libOpen3D
-if(BUILD_PYTHON_MODULE)
-    if(NOT BUILD_SHARED_LIBS)
-        message(STATUS "BUILD_SHARED_LIBS was OFF, forcing to ON (required for BUILD_PYTHON_MODULE)")
-        message(STATUS "Python bindings require libOpen3D as a shared library to separate pybind module from libOpen3D")
-    endif()
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries (required for Python module)" FORCE)
 endif()
 
 # Parse Open3D version number

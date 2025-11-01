@@ -132,7 +132,7 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build python wheel
-# Note: BUILD_SHARED_LIBS is automatically set to ON when BUILD_PYTHON_MODULE=ON
+# Note: BUILD_SHARED_LIBS defaults to ON, which is required for Python wheels
 RUN export NPROC=$(($(nproc)+2)) \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter \
