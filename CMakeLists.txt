@@ -247,8 +247,11 @@ endif()
 
 # Python bindings require shared libraries to separate pybind module from libOpen3D
 if(BUILD_PYTHON_MODULE)
+    if(NOT BUILD_SHARED_LIBS)
+        message(STATUS "BUILD_SHARED_LIBS was OFF, forcing to ON (required for BUILD_PYTHON_MODULE)")
+        message(STATUS "Python bindings require libOpen3D as a shared library to separate pybind module from libOpen3D")
+    endif()
     set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries (required for Python module)" FORCE)
-    message(STATUS "BUILD_SHARED_LIBS set to ON (required for BUILD_PYTHON_MODULE)")
 endif()
 
 # Parse Open3D version number
