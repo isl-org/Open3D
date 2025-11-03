@@ -72,6 +72,10 @@ public:
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
 
+    /// @brief Returns the 3D coordinates of all corners of every voxel in
+    /// the grid.
+    /// @return A std::vector of Eigen::Vector3d representing the corners of all
+    /// voxels.
     std::vector<Eigen::Vector3d> GetAllVoxelCorners() const;
     /// Creates the axis-aligned bounding box around the object.
     /// Further details in AxisAlignedBoundingBox::AxisAlignedBoundingBox()
