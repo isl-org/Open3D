@@ -100,7 +100,7 @@ static std::shared_ptr<geometry::TriangleMesh> CreateTriangleMeshFromVoxelGrid(
         const geometry::Voxel& voxel = it.second;
         // 8 vertices in a voxel
         const Eigen::Matrix3d scaled_rot =
-                voxel_grid.origin_rotation_ * voxel_grid.voxel_size_;
+                voxel_grid.rotation_ * voxel_grid.voxel_size_;
         Eigen::Vector3d base_vertex =
                 voxel_grid.origin_ +
                 scaled_rot * voxel.grid_index_.cast<double>();

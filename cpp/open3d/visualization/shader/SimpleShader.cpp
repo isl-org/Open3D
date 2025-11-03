@@ -538,8 +538,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
         const geometry::Voxel &voxel = it.second;
         // 8 vertices in a voxel
         const Eigen::Matrix3f scaled_rot =
-                voxel_grid.origin_rotation_.cast<float>() *
-                voxel_grid.voxel_size_;
+                voxel_grid.rotation_.cast<float>() * voxel_grid.voxel_size_;
         Eigen::Vector3f base_vertex =
                 voxel_grid.origin_.cast<float>() +
                 scaled_rot * voxel.grid_index_.cast<float>();
@@ -632,8 +631,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
         const geometry::Voxel &voxel = it.second;
         // 8 vertices in a voxel
         const Eigen::Matrix3f scaled_rot =
-                voxel_grid.origin_rotation_.cast<float>() *
-                voxel_grid.voxel_size_;
+                voxel_grid.rotation_.cast<float>() * voxel_grid.voxel_size_;
         Eigen::Vector3f base_vertex =
                 voxel_grid.origin_.cast<float>() +
                 scaled_rot * voxel.grid_index_.cast<float>();

@@ -24,7 +24,7 @@ VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
     : Geometry3D(Geometry::GeometryType::VoxelGrid),
       voxel_size_(src_voxel_grid.voxel_size_),
       origin_(src_voxel_grid.origin_),
-      origin_rotation_(src_voxel_grid.origin_rotation_),
+      rotation_(src_voxel_grid.rotation_),
       voxels_(src_voxel_grid.voxels_) {}
 
 VoxelGrid &VoxelGrid::Clear() {
@@ -78,13 +78,11 @@ std::vector<Eigen::Vector3d> VoxelGrid::GetAllVoxelCorners() const {
     for (const auto &it : voxels_) {
         const Eigen::Vector3i &grid_index = it.second.grid_index_;
         Eigen::Vector3d base =
-                origin_ +
-                origin_rotation_ * (grid_index.cast<double>() * voxel_size_);
+                origin_ + rotation_ * (grid_index.cast<double>() * voxel_size_);
 
         // Add all 8 corners directly without constructing temporary vectors
         for (const auto &off : offsets) {
-            voxel_corners.push_back(base +
-                                    origin_rotation_ * (off * voxel_size_));
+            voxel_corners.push_back(base + rotation_ * (off * voxel_size_));
         }
     }
 
@@ -104,7 +102,7 @@ Eigen::Vector3d VoxelGrid::GetCenter() const {
                   half_voxel_size;
     }
     center /= double(voxels_.size());
-    return origin_ + origin_rotation_ * center;
+    return origin_ + rotation_ * center;
 }
 
 AxisAlignedBoundingBox VoxelGrid::GetAxisAlignedBoundingBox() const {
@@ -125,10 +123,10 @@ OrientedBoundingBox VoxelGrid::GetMinimalOrientedBoundingBox(
 }
 
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
-    // Only update origin_ and origin_rotation_ (lazy transform)
+    // Only update origin_ and rotation_ (lazy transform)
     origin_ = (transformation.block<3, 3>(0, 0) * origin_) +
               transformation.block<3, 1>(0, 3);
-    origin_rotation_ = transformation.block<3, 3>(0, 0) * origin_rotation_;
+    rotation_ = transformation.block<3, 3>(0, 0) * rotation_;
     return *this;
 }
 
@@ -148,7 +146,7 @@ VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3d &R,
                              const Eigen::Vector3d &center) {
     // Rotate the origin and the orientation
     origin_ = R * (origin_ - center) + center;
-    origin_rotation_ = R * origin_rotation_;
+    rotation_ = R * rotation_;
     return *this;
 }
 
@@ -209,7 +207,7 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 
 Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3d &point) const {
     // Convert world point to local grid frame
-    Eigen::Vector3d local = origin_rotation_.transpose() * (point - origin_);
+    Eigen::Vector3d local = rotation_.transpose() * (point - origin_);
     Eigen::Vector3d voxel_f = local / voxel_size_;
     return (Eigen::floor(voxel_f.array())).cast<int>();
 }
@@ -219,14 +217,14 @@ std::vector<Eigen::Vector3d> VoxelGrid::GetVoxelBoundingPoints(
     double r = voxel_size_ / 2.0;
     auto x = GetVoxelCenterCoordinate(index);
     std::vector<Eigen::Vector3d> points(8);
-    points[0] = x + origin_rotation_ * Eigen::Vector3d(-r, -r, -r);
-    points[1] = x + origin_rotation_ * Eigen::Vector3d(-r, -r, r);
-    points[2] = x + origin_rotation_ * Eigen::Vector3d(r, -r, -r);
-    points[3] = x + origin_rotation_ * Eigen::Vector3d(r, -r, r);
-    points[4] = x + origin_rotation_ * Eigen::Vector3d(-r, r, -r);
-    points[5] = x + origin_rotation_ * Eigen::Vector3d(-r, r, r);
-    points[6] = x + origin_rotation_ * Eigen::Vector3d(r, r, -r);
-    points[7] = x + origin_rotation_ * Eigen::Vector3d(r, r, r);
+    points[0] = x + rotation_ * Eigen::Vector3d(-r, -r, -r);
+    points[1] = x + rotation_ * Eigen::Vector3d(-r, -r, r);
+    points[2] = x + rotation_ * Eigen::Vector3d(r, -r, -r);
+    points[3] = x + rotation_ * Eigen::Vector3d(r, -r, r);
+    points[4] = x + rotation_ * Eigen::Vector3d(-r, r, -r);
+    points[5] = x + rotation_ * Eigen::Vector3d(-r, r, r);
+    points[6] = x + rotation_ * Eigen::Vector3d(r, r, -r);
+    points[7] = x + rotation_ * Eigen::Vector3d(r, r, r);
     return points;
 }
 

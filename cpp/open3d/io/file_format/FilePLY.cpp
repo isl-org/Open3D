@@ -266,7 +266,7 @@ struct PLYReaderState {
     utility::ProgressBar *progress_bar;
     std::vector<geometry::Voxel> *voxelgrid_ptr;
     Eigen::Vector3d origin;
-    Eigen::Matrix3d origin_rotation;
+    Eigen::Matrix3d rotation;
     double voxel_size;
     long voxel_index;
     long voxel_num;
@@ -294,7 +294,7 @@ int ReadOriginRotationCallback(p_ply_argument argument) {
     double value = ply_get_argument_value(argument);
     int row = index / 3;
     int col = index % 3;
-    state_ptr->origin_rotation(row, col) = value;
+    state_ptr->rotation(row, col) = value;
     return 1;
 }
 
@@ -888,24 +888,24 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     ply_set_read_cb(ply_file, "origin", "x", ReadOriginCallback, &state, 0);
     ply_set_read_cb(ply_file, "origin", "y", ReadOriginCallback, &state, 1);
     ply_set_read_cb(ply_file, "origin", "z", ReadOriginCallback, &state, 2);
-    ply_set_read_cb(ply_file, "origin_rotation", "r00",
-                    ReadOriginRotationCallback, &state, 0);
-    ply_set_read_cb(ply_file, "origin_rotation", "r01",
-                    ReadOriginRotationCallback, &state, 1);
-    ply_set_read_cb(ply_file, "origin_rotation", "r02",
-                    ReadOriginRotationCallback, &state, 2);
-    ply_set_read_cb(ply_file, "origin_rotation", "r10",
-                    ReadOriginRotationCallback, &state, 3);
-    ply_set_read_cb(ply_file, "origin_rotation", "r11",
-                    ReadOriginRotationCallback, &state, 4);
-    ply_set_read_cb(ply_file, "origin_rotation", "r12",
-                    ReadOriginRotationCallback, &state, 5);
-    ply_set_read_cb(ply_file, "origin_rotation", "r20",
-                    ReadOriginRotationCallback, &state, 6);
-    ply_set_read_cb(ply_file, "origin_rotation", "r21",
-                    ReadOriginRotationCallback, &state, 7);
-    ply_set_read_cb(ply_file, "origin_rotation", "r22",
-                    ReadOriginRotationCallback, &state, 8);
+    ply_set_read_cb(ply_file, "rotation", "r00", ReadOriginRotationCallback,
+                    &state, 0);
+    ply_set_read_cb(ply_file, "rotation", "r01", ReadOriginRotationCallback,
+                    &state, 1);
+    ply_set_read_cb(ply_file, "rotation", "r02", ReadOriginRotationCallback,
+                    &state, 2);
+    ply_set_read_cb(ply_file, "rotation", "r10", ReadOriginRotationCallback,
+                    &state, 3);
+    ply_set_read_cb(ply_file, "rotation", "r11", ReadOriginRotationCallback,
+                    &state, 4);
+    ply_set_read_cb(ply_file, "rotation", "r12", ReadOriginRotationCallback,
+                    &state, 5);
+    ply_set_read_cb(ply_file, "rotation", "r20", ReadOriginRotationCallback,
+                    &state, 6);
+    ply_set_read_cb(ply_file, "rotation", "r21", ReadOriginRotationCallback,
+                    &state, 7);
+    ply_set_read_cb(ply_file, "rotation", "r22", ReadOriginRotationCallback,
+                    &state, 8);
     ply_set_read_cb(ply_file, "voxel_size", "val", ReadScaleCallback, &state,
                     0);
 
@@ -933,7 +933,7 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
             voxelgrid.AddVoxel(geometry::Voxel(it.grid_index_));
     }
     voxelgrid.origin_ = state.origin;
-    voxelgrid.origin_rotation_ = state.origin_rotation;
+    voxelgrid.rotation_ = state.rotation;
     voxelgrid.voxel_size_ = state.voxel_size;
 
     ply_close(ply_file);
@@ -963,7 +963,7 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "y", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "z", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
-    ply_add_element(ply_file, "origin_rotation", 1);
+    ply_add_element(ply_file, "rotation", 1);
     ply_add_property(ply_file, "r00", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "r01", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "r02", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
@@ -1003,16 +1003,16 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     ply_write(ply_file, origin(0));
     ply_write(ply_file, origin(1));
     ply_write(ply_file, origin(2));
-    const Eigen::Matrix3d &origin_rotation = voxelgrid.origin_rotation_;
-    ply_write(ply_file, origin_rotation(0, 0));
-    ply_write(ply_file, origin_rotation(0, 1));
-    ply_write(ply_file, origin_rotation(0, 2));
-    ply_write(ply_file, origin_rotation(1, 0));
-    ply_write(ply_file, origin_rotation(1, 1));
-    ply_write(ply_file, origin_rotation(1, 2));
-    ply_write(ply_file, origin_rotation(2, 0));
-    ply_write(ply_file, origin_rotation(2, 1));
-    ply_write(ply_file, origin_rotation(2, 2));
+    const Eigen::Matrix3d &rotation = voxelgrid.rotation_;
+    ply_write(ply_file, rotation(0, 0));
+    ply_write(ply_file, rotation(0, 1));
+    ply_write(ply_file, rotation(0, 2));
+    ply_write(ply_file, rotation(1, 0));
+    ply_write(ply_file, rotation(1, 1));
+    ply_write(ply_file, rotation(1, 2));
+    ply_write(ply_file, rotation(2, 0));
+    ply_write(ply_file, rotation(2, 1));
+    ply_write(ply_file, rotation(2, 2));
 
     ply_write(ply_file, voxelgrid.voxel_size_);
 

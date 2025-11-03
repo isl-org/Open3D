@@ -176,7 +176,7 @@ void pybind_voxelgrid_definitions(py::module &m) {
             .def_readwrite("origin", &VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coordinate of the "
                            "origin point.")
-            .def_readwrite("origin_rotation", &VoxelGrid::origin_rotation_,
+            .def_readwrite("rotation", &VoxelGrid::rotation_,
                            "``float64`` 3x3 matrix: Rotation matrix of the "
                            "origin point.")
             .def_readwrite("voxel_size", &VoxelGrid::voxel_size_,
