@@ -218,15 +218,15 @@ std::vector<Eigen::Vector3d> VoxelGrid::GetVoxelBoundingPoints(
         const Eigen::Vector3i &index) const {
     double r = voxel_size_ / 2.0;
     auto x = GetVoxelCenterCoordinate(index);
-    std::vector<Eigen::Vector3d> points;
-    points.push_back(x + origin_rotation_ * Eigen::Vector3d(-r, -r, -r));
-    points.push_back(x + origin_rotation_ * Eigen::Vector3d(-r, -r, r));
-    points.push_back(x + origin_rotation_ * Eigen::Vector3d(r, -r, -r));
-    points.push_back(x + origin_rotation_ * Eigen::Vector3d(r, -r, r));
-    points.push_back(x + origin_rotation_ * Eigen::Vector3d(-r, r, -r));
-    points.push_back(x + origin_rotation_ * Eigen::Vector3d(-r, r, r));
-    points.push_back(x + origin_rotation_ * Eigen::Vector3d(r, r, -r));
-    points.push_back(x + origin_rotation_ * Eigen::Vector3d(r, r, r));
+    std::vector<Eigen::Vector3d> points(8);
+    points[0] = x + origin_rotation_ * Eigen::Vector3d(-r, -r, -r);
+    points[1] = x + origin_rotation_ * Eigen::Vector3d(-r, -r, r);
+    points[2] = x + origin_rotation_ * Eigen::Vector3d(r, -r, -r);
+    points[3] = x + origin_rotation_ * Eigen::Vector3d(r, -r, r);
+    points[4] = x + origin_rotation_ * Eigen::Vector3d(-r, r, -r);
+    points[5] = x + origin_rotation_ * Eigen::Vector3d(-r, r, r);
+    points[6] = x + origin_rotation_ * Eigen::Vector3d(r, r, -r);
+    points[7] = x + origin_rotation_ * Eigen::Vector3d(r, r, r);
     return points;
 }
 

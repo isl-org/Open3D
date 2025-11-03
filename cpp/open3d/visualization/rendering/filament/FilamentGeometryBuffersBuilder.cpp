@@ -94,6 +94,7 @@ static std::shared_ptr<geometry::TriangleMesh> CreateTriangleMeshFromVoxelGrid(
 
     std::vector<Eigen::Vector3d>
             vertices;  // putting outside loop enables reuse
+    vertices.reserve(8);
     for (auto& it : voxel_grid.voxels_) {
         vertices.clear();
         const geometry::Voxel& voxel = it.second;
