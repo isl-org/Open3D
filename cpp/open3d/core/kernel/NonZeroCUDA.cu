@@ -60,8 +60,6 @@ Tensor NonZeroCUDA(const Tensor& src) {
     CUDAScopedDevice scoped_device(src.GetDevice());
     Tensor src_contiguous = src.Contiguous();
     const int64_t num_elements = src_contiguous.NumElements();
-    const int64_t num_bytes =
-            num_elements * src_contiguous.GetDtype().ByteSize();
 
     thrust::counting_iterator<int64_t> index_first(0);
     thrust::counting_iterator<int64_t> index_last = index_first + num_elements;
@@ -72,9 +70,10 @@ Tensor NonZeroCUDA(const Tensor& src) {
         thrust::device_ptr<const scalar_t> src_ptr(
                 static_cast<const scalar_t*>(src_contiguous.GetDataPtr()));
 
-        auto it = thrust::copy_if(index_first, index_last, src_ptr,
+        auto it = thrust::copy_if(thrust::cuda::par.on(CUDAStream::GetInstance().Get()), index_first, index_last, src_ptr,
                                   non_zero_indices.begin(),
                                   NonZeroFunctor<scalar_t>());
+        cuda::Synchronize(CUDAStream::GetInstance());
         non_zero_indices.resize(thrust::distance(non_zero_indices.begin(), it));
     });
 
@@ -88,13 +87,14 @@ Tensor NonZeroCUDA(const Tensor& src) {
     TensorIterator result_iter(result);
 
     index_last = index_first + num_non_zeros;
-    thrust::for_each(thrust::device,
+    thrust::for_each(thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
                      thrust::make_zip_iterator(thrust::make_tuple(
                              index_first, non_zero_indices.begin())),
                      thrust::make_zip_iterator(thrust::make_tuple(
                              index_last, non_zero_indices.end())),
                      FlatIndexTransformFunctor(result_iter, num_non_zeros,
                                                num_dims, shape));
+    cuda::Synchronize(CUDAStream::GetInstance());
 
     return result;
 }

@@ -253,7 +253,7 @@ public:
         const uint32_t num_super_blocks = kSuperBlocks;
 
         thrust::device_vector<uint32_t> slabs_per_superblock(kSuperBlocks);
-        thrust::fill(slabs_per_superblock.begin(), slabs_per_superblock.end(),
+        thrust::fill(thrust::cuda::par.on(CUDAStream::GetInstance().Get()), slabs_per_superblock.begin(), slabs_per_superblock.end(),
                      0);
 
         // Counting total number of allocated memory units.
@@ -264,13 +264,13 @@ public:
                 num_cuda_blocks, kThreadsPerBlock, 0,
                 core::CUDAStream::GetInstance().Get()>>>(
                 impl_, thrust::raw_pointer_cast(slabs_per_superblock.data()));
-        cuda::Synchronize(CUDAStream::GetInstance());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
 
         std::vector<int> result(num_super_blocks);
-        thrust::copy(slabs_per_superblock.begin(), slabs_per_superblock.end(),
-                     result.begin());
-
+        OPEN3D_CUDA_CHECK(cudaMemcpyAsync(result.data(), thrust::raw_pointer_cast(slabs_per_superblock.data()),num_super_blocks*sizeof(int),cudaMemcpyDeviceToHost, CUDAStream::GetInstance().Get()));
+        if (!CUDAStream::GetInstance().IsDefaultStream()) {
+            cuda::Synchronize(CUDAStream::GetInstance());
+        }
         return result;
     }
 

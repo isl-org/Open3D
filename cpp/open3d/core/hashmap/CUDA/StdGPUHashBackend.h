@@ -366,11 +366,12 @@ void StdGPUHashBackend<Key, Hash, Eq>::Insert(
     CUDAScopedDevice scoped_device(this->device_);
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
-
-    thrust::device_vector<const void*> input_values_soa_device(
-            input_values_soa.begin(), input_values_soa.end());
-
     int64_t n_values = input_values_soa.size();
+
+    thrust::device_vector<const void*> input_values_soa_device(n_values);
+    thrust::copy(thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
+            input_values_soa.begin(), input_values_soa.end(), input_values_soa_device.begin());
+
     const void* const* ptr_input_values_soa =
             thrust::raw_pointer_cast(input_values_soa_device.data());
 

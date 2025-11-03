@@ -963,9 +963,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
             cudaMemcpyAsync(&last_prefix_sum_entry,
                             query_neighbors_row_splits + num_queries,
                             sizeof(int64_t), cudaMemcpyDeviceToHost, stream);
-            // wait for the async copies
-            while (cudaErrorNotReady == cudaStreamQuery(stream)) { /*empty*/
-            }
+            cudaStreamSynchronize(stream);
         }
         mem_temp.Free(inclusive_scan_temp);
     }
