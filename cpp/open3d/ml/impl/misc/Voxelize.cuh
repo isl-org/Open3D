@@ -656,6 +656,11 @@ void VoxelizeCUDA(const cudaStream_t& stream,
         cub::DeviceRadixSort::SortPairs(
                 sort_pairs_temp.first, sort_pairs_temp.second, hashes_dbuf,
                 point_indices_dbuf, num_points, 0, sizeof(int64_t) * 8, stream);
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
         sort_pairs_temp = mem_temp.Alloc(sort_pairs_temp.second);
         if (!get_temp_size) {
             cub::DeviceRadixSort::SortPairs(sort_pairs_temp.first,
@@ -684,6 +689,12 @@ void VoxelizeCUDA(const cudaStream_t& stream,
                 unique_hashes.first, unique_hashes_count.first,
                 num_voxels_mem.first, num_points, stream);
 
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
+
         encode_temp = mem_temp.Alloc(encode_temp.second);
         if (!get_temp_size) {
             cub::DeviceRunLengthEncode::Encode(
@@ -700,8 +711,7 @@ void VoxelizeCUDA(const cudaStream_t& stream,
                             hashes_dbuf.Current() + hashes.second - 1,
                             sizeof(int64_t), cudaMemcpyDeviceToHost, stream);
             // wait for the async copies
-            while (cudaErrorNotReady == cudaStreamQuery(stream)) { /*empty*/
-            }
+            cudaStreamSynchronize(stream);
         }
         mem_temp.Free(encode_temp);
     }
@@ -723,6 +733,12 @@ void VoxelizeCUDA(const cudaStream_t& stream,
                 inclusive_scan_temp.first, inclusive_scan_temp.second,
                 unique_hashes_count.first, unique_hashes_count_prefix_sum.first,
                 unique_hashes_count.second, stream);
+
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
 
         inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
         if (!get_temp_size) {
@@ -766,6 +782,11 @@ void VoxelizeCUDA(const cudaStream_t& stream,
                 encode_temp.first, encode_temp.second, unique_hashes_batch_id,
                 unique_batches.first, unique_batches_count.first,
                 num_batches_mem.first, num_voxels, stream);
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
         encode_temp = mem_temp.Alloc(encode_temp.second);
         if (!get_temp_size) {
             cub::DeviceRunLengthEncode::Encode(
@@ -809,6 +830,12 @@ void VoxelizeCUDA(const cudaStream_t& stream,
                 num_voxels_per_batch.first, num_voxels_prefix_sum.first,
                 num_voxels_per_batch.second, stream);
 
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
+
         inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
         if (!get_temp_size) {
             if (num_voxels > max_voxels) {
@@ -844,6 +871,12 @@ void VoxelizeCUDA(const cudaStream_t& stream,
                 inclusive_scan_temp.first, inclusive_scan_temp.second,
                 num_voxels_per_batch.first, out_batch_splits + 1,
                 num_voxels_per_batch.second, stream);
+
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
 
         inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
 
@@ -912,6 +945,12 @@ void VoxelizeCUDA(const cudaStream_t& stream,
                 inclusive_scan_temp.first, inclusive_scan_temp.second,
                 points_count.first, out_voxel_row_splits + 1, num_valid_voxels,
                 stream);
+
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
 
         inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
         if (!get_temp_size) {

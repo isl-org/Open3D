@@ -370,7 +370,8 @@ void StdGPUHashBackend<Key, Hash, Eq>::Insert(
 
     thrust::device_vector<const void*> input_values_soa_device(n_values);
     thrust::copy(thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
-            input_values_soa.begin(), input_values_soa.end(), input_values_soa_device.begin());
+                 input_values_soa.begin(), input_values_soa.end(),
+                 input_values_soa_device.begin());
 
     const void* const* ptr_input_values_soa =
             thrust::raw_pointer_cast(input_values_soa_device.data());

@@ -70,9 +70,10 @@ Tensor NonZeroCUDA(const Tensor& src) {
         thrust::device_ptr<const scalar_t> src_ptr(
                 static_cast<const scalar_t*>(src_contiguous.GetDataPtr()));
 
-        auto it = thrust::copy_if(thrust::cuda::par.on(CUDAStream::GetInstance().Get()), index_first, index_last, src_ptr,
-                                  non_zero_indices.begin(),
-                                  NonZeroFunctor<scalar_t>());
+        auto it = thrust::copy_if(
+                thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
+                index_first, index_last, src_ptr, non_zero_indices.begin(),
+                NonZeroFunctor<scalar_t>());
         cuda::Synchronize(CUDAStream::GetInstance());
         non_zero_indices.resize(thrust::distance(non_zero_indices.begin(), it));
     });

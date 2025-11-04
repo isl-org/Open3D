@@ -200,7 +200,8 @@ template <typename Key, typename Hash, typename Eq>
 std::vector<int64_t> SlabHashBackend<Key, Hash, Eq>::BucketSizes() const {
     CUDAScopedDevice scoped_device(this->device_);
     thrust::device_vector<int64_t> elems_per_bucket(impl_.bucket_count_);
-    thrust::fill(thrust::cuda::par.on(CUDAStream::GetInstance().Get()), elems_per_bucket.begin(), elems_per_bucket.end(), 0);
+    thrust::fill(thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
+                 elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
     const int64_t num_blocks =
             (impl_.buffer_accessor_.capacity_ + kThreadsPerBlock - 1) /
@@ -212,7 +213,8 @@ std::vector<int64_t> SlabHashBackend<Key, Hash, Eq>::BucketSizes() const {
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
     std::vector<int64_t> result(impl_.bucket_count_);
-    thrust::copy(thrust::cuda::par.on(CUDAStream::GetInstance().Get()), elems_per_bucket.begin(), elems_per_bucket.end(),
+    thrust::copy(thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
+                 elems_per_bucket.begin(), elems_per_bucket.end(),
                  result.begin());
     cuda::Synchronize(CUDAStream::GetInstance());
     return result;
@@ -238,7 +240,10 @@ void SlabHashBackend<Key, Hash, Eq>::Insert(
     /// avoid atomicAdd in kernel.
     int prev_heap_top = this->buffer_->GetHeapTopIndex();
     int new_value = prev_heap_top + count;
-    thrust::fill_n(thrust::cuda::par.on(CUDAStream::GetInstance().Get()), thrust::device_pointer_cast(impl_.buffer_accessor_.heap_top_), 1, new_value);
+    thrust::fill_n(
+            thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
+            thrust::device_pointer_cast(impl_.buffer_accessor_.heap_top_), 1,
+            new_value);
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
@@ -249,9 +254,11 @@ void SlabHashBackend<Key, Hash, Eq>::Insert(
                         core::CUDAStream::GetInstance().Get()>>>(
             impl_, input_keys, output_buf_indices, output_masks, count);
 
-    thrust::device_vector<const void*> input_values_soa_device(input_values_soa.size());
+    thrust::device_vector<const void*> input_values_soa_device(
+            input_values_soa.size());
     thrust::copy(thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
-            input_values_soa.begin(), input_values_soa.end(), input_values_soa_device.begin());
+                 input_values_soa.begin(), input_values_soa.end(),
+                 input_values_soa_device.begin());
 
     int64_t n_values = input_values_soa.size();
     const void* const* ptr_input_values_soa =
