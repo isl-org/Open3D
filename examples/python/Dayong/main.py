@@ -5,6 +5,7 @@ import open3d as o3d
 from initialize import *
 from align import *
 from project import *
+from extrude import *
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(__file__)
@@ -38,13 +39,17 @@ if __name__ == "__main__":
     toy.translate(offset)
 
     # Project the entire toy to the shoe
-    all_points = np.asarray(toy.vertices)
-    projected = project_points_onto_mesh(all_points, -normal_o, shoe)
-    toy.vertices = o3d.utility.Vector3dVector(projected)
-
+    all_points = np.asarray(toy.vertices) + normal_o * 3
+    projected_points, hit_mask = project_points_onto_mesh(all_points, -normal_o, shoe)
+    toy.vertices = o3d.utility.Vector3dVector(projected_points)
     o3d.visualization.draw_geometries([shoe, toy], mesh_show_back_face=True)
 
-    # Export to stl and ply
-    combined = shoe + toy
-    combined.compute_vertex_normals()
-    o3d.io.write_triangle_mesh("output.stl", combined)
+    # Extrude
+    extruded_toy = extrude_with_original_top(original_mesh=toy, extrude_normal=normal_o, thickness=0.5)
+    o3d.visualization.draw_geometries([extruded_toy], mesh_show_back_face=True)
+    o3d.visualization.draw_geometries([shoe, extruded_toy], mesh_show_back_face=True)
+
+    # # Export to stl and ply
+    # combined = shoe + extruded_toy
+    # combined.compute_vertex_normals()
+    # o3d.io.write_triangle_mesh("output.stl", combined)
