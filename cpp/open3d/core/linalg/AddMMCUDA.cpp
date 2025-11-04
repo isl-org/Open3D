@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/AddMM.h"
 #include "open3d/core/linalg/BlasWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
@@ -29,6 +30,7 @@ void AddMMCUDA(void* A_data,
                Dtype dtype,
                const Device& device) {
     cublasHandle_t handle = CuBLASContext::GetInstance().GetHandle(device);
+    cublasSetStream(handle, CUDAStream::GetInstance().Get());
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha_ = scalar_t(alpha);
         scalar_t beta_ = scalar_t(beta);

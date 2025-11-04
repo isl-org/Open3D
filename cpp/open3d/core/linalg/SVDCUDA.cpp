@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Blob.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/SVD.h"
@@ -24,6 +25,7 @@ void SVDCUDA(const void* A_data,
              const Device& device) {
     cusolverDnHandle_t handle =
             CuSolverContext::GetInstance().GetHandle(device);
+    cusolverDnSetStream(handle, CUDAStream::GetInstance().Get());
 
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len;

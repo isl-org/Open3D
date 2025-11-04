@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/LUImpl.h"
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
@@ -20,6 +21,7 @@ void LUCUDA(void* A_data,
             const Device& device) {
     cusolverDnHandle_t handle =
             CuSolverContext::GetInstance().GetHandle(device);
+    cusolverDnSetStream(handle, CUDAStream::GetInstance().Get());
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len;
         OPEN3D_CUSOLVER_CHECK(

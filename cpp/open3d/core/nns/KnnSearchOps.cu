@@ -100,6 +100,7 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                             OUTPUT_ALLOCATOR& output_allocator,
                             Tensor& query_neighbors_row_splits) {
     CUDAScopedDevice scoped_device(points.GetDevice());
+    cudaStream_t stream = CUDAStream::GetInstance().Get();
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     int dim = points.GetShape(1);
@@ -183,7 +184,7 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                             output_allocator.NeighborsDistance_()
                                     .View({num_queries, knn})
                                     .Slice(0, i, i + num_queries_i);
-                    runL2SelectMin<T, TIndex>(cur_stream, temp_distances_view,
+                    runL2SelectMin<T, TIndex>(stream, temp_distances_view,
                                               point_norms_j, out_distances_view,
                                               out_indices_view, knn, num_cols,
                                               tile_cols);
@@ -191,7 +192,7 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                             query_norms_i.View({num_queries_i, 1}));
                 } else {
                     runL2SelectMin<T, TIndex>(
-                            cur_stream, temp_distances_view, point_norms_j,
+                            stream, temp_distances_view, point_norms_j,
                             buf_distances_col_view, buf_indices_col_view, knn,
                             num_cols, tile_cols);
                     buf_distances_col_view.Add_(
@@ -200,10 +201,10 @@ void KnnSearchCUDAOptimized(const Tensor& points,
             }
             // Write results to output tensor.
             if (tile_cols != num_points) {
-                runIncrementIndex<TIndex>(cur_stream, buf_indices_row_view, knn,
+                runIncrementIndex<TIndex>(stream, buf_indices_row_view, knn,
                                           tile_cols);
                 runBlockSelectPair(
-                        cur_stream, buf_distances_row_view.GetDataPtr<T>(),
+                        stream, buf_distances_row_view.GetDataPtr<T>(),
                         buf_indices_row_view.GetDataPtr<TIndex>(),
                         distances_ptr + knn * i, indices_ptr + knn * i, false,
                         knn, buf_distances_row_view.GetShape(1),
