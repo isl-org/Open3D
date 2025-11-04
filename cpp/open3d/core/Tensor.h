@@ -319,6 +319,27 @@ public:
                          const Dtype dtype = core::Int64,
                          const Device& device = core::Device("CPU:0"));
 
+    /// \brief Generates a tensor containing points from a quasirandom sequence.
+    ///
+    /// This function creates a tensor of shape {n, dims} where each row is a point
+    /// in a low-discrepancy quasirandom sequence (specifically, the generalized
+    /// golden ratio based R_n sequence). The 2D variant is the plastic
+    /// sequence. Such sequences are commonly used in numerical integration,
+    /// computer graphics and sampling tasks where uniform coverage of the space
+    /// is desired. See 
+    // https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+    // for more details.
+    /// 
+    /// \param n Number of points to generate (default: 16).
+    /// \param dims Number of dimensions for each point (default: 2).
+    /// \param dtype Data type of the output tensor (default: core::Float32).
+    /// \param device Device on which to allocate the tensor (default: CPU:0).
+    /// \return A tensor of shape {n, dims} containing quasirandom points.
+    static Tensor Quasirandom(int64_t n = 16,
+                              int64_t dims = 2,
+                              const Dtype dtype = core::Float32,
+                              const Device& device = Device("CPU:0"));
+
     /// Reverse a Tensor's elements by viewing the tensor as a 1D array.
     Tensor Reverse() const;
 
@@ -390,7 +411,7 @@ public:
     /// t = np.empty((4, 5), dtype=np.float32)
     /// t[2, 0:4:2] = np.empty((2, 5), dtype=np.float32)
     /// ```
-    ///
+    ///    Tensor Cross(const Tensor &b) const;
     /// The equivalent Open3D C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
@@ -611,6 +632,18 @@ public:
     /// \return returns the determinant of the matrix (double).
     double Det() const;
 
+    
+    /// \brief Computes the cross product of the current tensor with another tensor.
+    ///
+    /// The cross product is computed along the specified axis. The tensors must have compatible 
+    // (i.e. broadcastable) shape, and the size of the specified axis must be 3.
+    // If the axis is -1 (default), the last axis is used.
+    ///
+    /// \param other The second input tensor to compute the cross product with.
+    /// \param axis The axis along which to compute the cross product. Default is -1 (the last axis).
+    /// \return A tensor containing the cross product of the two input tensors along the specified axis.
+    Tensor Cross(const Tensor &other, int64_t axis=-1) const;
+
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// must have empty shape.
     template <typename T>
@@ -799,21 +832,36 @@ public:
     /// Element-wise trunc value of a tensor, returning a new tensor.
     Tensor Trunc() const;
 
-    /// Element-wise logical not of a tensor, returning a new boolean tensor.
+    /// Computes the norm of the tensor along given dimension(s).
     ///
-    /// If the tensor is not boolean, 0 will be treated as False, while non-zero
-    /// will be treated as True.
+    /// \param dims A list of dimensions to be reduced. The default (empty
+    /// SizeVector) means reduce all dimensions.
+    /// \param keepdim If true, the reduced dims are retained as dimensions
+    /// with size 1.
+    /// \param p The order of the norm. Default is 2.0 (L2 norm). Can be
+    /// positive infinity (L-infinity norm).
+    /// \return Tensor containing the computed norms. Dtype is
+    /// preserved for Float32 and Float64 for L2 norm, It is onverted to Float32
+    /// for all other cases.
+    Tensor Norm(const SizeVector& dims = {}, bool keepdim=false, float p=2.0) const;
+
+    /// Element-wise logical not of a tensor, returning a new boolean
+    /// tensor.
+    ///
+    /// If the tensor is not boolean, 0 will be treated as False, while
+    /// non-zero will be treated as True.
     Tensor LogicalNot() const;
 
     /// Element-wise logical not of a tensor, in-place. This operation won't
     /// change the tensor's dtype.
     ///
-    /// If the tensor is not boolean, 0 will be treated as False, while non-zero
-    /// will be treated as True. The tensor will be filled with 0 or 1 casted to
-    /// the tensor's dtype.
+    /// If the tensor is not boolean, 0 will be treated as False, while
+    /// non-zero will be treated as True. The tensor will be filled with 0
+    /// or 1 casted to the tensor's dtype.
     Tensor LogicalNot_();
 
-    /// Element-wise logical and of a tensor, returning a new boolean tensor.
+    /// Element-wise logical and of a tensor, returning a new boolean
+    /// tensor.
     ///
     /// If the tensor is not boolean, zero will be treated as False, while
     /// non-zero values will be treated as True.
@@ -824,9 +872,9 @@ public:
     /// Element-wise logical and of tensors, in-place. This operation won't
     /// change the tensor's dtype.
     ///
-    /// If the tensor is not boolean, 0 will be treated as False, while non-zero
-    /// will be treated as True. The tensor will be filled with 0 or 1 casted to
-    /// the tensor's dtype.
+    /// If the tensor is not boolean, 0 will be treated as False, while
+    /// non-zero will be treated as True. The tensor will be filled with 0
+    /// or 1 casted to the tensor's dtype.
     Tensor LogicalAnd_(const Tensor& value);
     Tensor LogicalAnd_(Scalar value);
 
@@ -841,30 +889,31 @@ public:
     /// Element-wise logical or of tensors, in-place. This operation won't
     /// change the tensor's dtype.
     ///
-    /// If the tensor is not boolean, 0 will be treated as False, while non-zero
-    /// will be treated as True. The tensor will be filled with 0 or 1 casted to
-    /// the tensor's dtype.
+    /// If the tensor is not boolean, 0 will be treated as False, while
+    /// non-zero will be treated as True. The tensor will be filled with 0
+    /// or 1 casted to the tensor's dtype.
     Tensor LogicalOr_(const Tensor& value);
     Tensor LogicalOr_(Scalar value);
 
-    /// Element-wise logical exclusive-or of tensors, returning a new boolean
-    /// tensor.
+    /// Element-wise logical exclusive-or of tensors, returning a new
+    /// boolean tensor.
     ///
     /// If the tensor is not boolean, zero will be treated as False, while
     /// non-zero values will be treated as True.
     Tensor LogicalXor(const Tensor& value) const;
     Tensor LogicalXor(Scalar value) const;
 
-    /// Element-wise logical exclusive-or of tensors, in-place. This operation
-    /// won't change the tensor's dtype.
+    /// Element-wise logical exclusive-or of tensors, in-place. This
+    /// operation won't change the tensor's dtype.
     ///
     /// If the tensor is not boolean, zero will be treated as False, while
-    /// non-zero values will be treated as True. The tensor will be filled with
-    /// 0 or 1 casted to the tensor's dtype.
+    /// non-zero values will be treated as True. The tensor will be filled
+    /// with 0 or 1 casted to the tensor's dtype.
     Tensor LogicalXor_(const Tensor& value);
     Tensor LogicalXor_(Scalar value);
 
-    /// Element-wise greater-than of tensors, returning a new boolean tensor.
+    /// Element-wise greater-than of tensors, returning a new boolean
+    /// tensor.
     Tensor Gt(const Tensor& value) const;
     Tensor operator>(const Tensor& value) const { return Gt(value); }
     Tensor Gt(Scalar value) const;
@@ -879,8 +928,8 @@ public:
     Tensor operator<(const Tensor& value) const { return Lt(value); }
     Tensor Lt(Scalar value) const;
 
-    /// Element-wise less-than of tensors, in-place. This operation won't change
-    /// the tensor's dtype.
+    /// Element-wise less-than of tensors, in-place. This operation won't
+    /// change the tensor's dtype.
     Tensor Lt_(const Tensor& value);
     Tensor Lt_(Scalar value);
 
@@ -895,14 +944,14 @@ public:
     Tensor Ge_(const Tensor& value);
     Tensor Ge_(Scalar value);
 
-    /// Element-wise less-than-or-equals-to of tensors, returning a new boolean
-    /// tensor.
+    /// Element-wise less-than-or-equals-to of tensors, returning a new
+    /// boolean tensor.
     Tensor Le(const Tensor& value) const;
     Tensor operator<=(const Tensor& value) const { return Le(value); }
     Tensor Le(Scalar value) const;
 
-    /// Element-wise less-than-or-equals-to of tensors, in-place. This operation
-    /// won't change the tensor's dtype.
+    /// Element-wise less-than-or-equals-to of tensors, in-place. This
+    /// operation won't change the tensor's dtype.
     Tensor Le_(const Tensor& value);
     Tensor Le_(Scalar value);
 
@@ -916,7 +965,8 @@ public:
     Tensor Eq_(const Tensor& value);
     Tensor Eq_(Scalar value);
 
-    /// Element-wise not-equals-to of tensors, returning a new boolean tensor.
+    /// Element-wise not-equals-to of tensors, returning a new boolean
+    /// tensor.
     Tensor Ne(const Tensor& value) const;
     Tensor operator!=(const Tensor& value) const { return Ne(value); }
     Tensor Ne(Scalar value) const;
@@ -926,25 +976,26 @@ public:
     Tensor Ne_(const Tensor& value);
     Tensor Ne_(Scalar value);
 
-    /// Find the indices of the elements that are non-zero. Returns a vector of
-    /// int64 Tensors, each containing the indices of the non-zero elements in
-    /// each dimension.
+    /// Find the indices of the elements that are non-zero. Returns a vector
+    /// of int64 Tensors, each containing the indices of the non-zero
+    /// elements in each dimension.
     std::vector<Tensor> NonZeroNumpy() const;
 
     /// Find the indices of the elements that are non-zero. Returns an int64
-    /// tensor of shape {num_dims, num_non_zeros}, where the i-th row contains
-    /// the indices of the non-zero elements in i-th dimension of the original
-    /// tensor.
+    /// tensor of shape {num_dims, num_non_zeros}, where the i-th row
+    /// contains the indices of the non-zero elements in i-th dimension of
+    /// the original tensor.
     Tensor NonZero() const;
 
-    /// Evaluate a single-element Tensor as a boolean value. This can be used to
-    /// implement Tensor.__bool__() in Python, e.g.
+    /// Evaluate a single-element Tensor as a boolean value. This can be
+    /// used to implement Tensor.__bool__() in Python, e.g.
     /// ```python
     /// assert Tensor([True])         # Passes.
     /// assert Tensor([123])          # Passes.
     /// assert Tensor([False])        # AssertionError.
     /// assert Tensor([0])            # AssertionError.
-    /// assert Tensor([True, False])  # ValueError: cannot be evaluated as bool.
+    /// assert Tensor([True, False])  # ValueError: cannot be evaluated as
+    /// bool.
     /// ```
     bool IsNonZero() const;
 
@@ -1000,8 +1051,8 @@ public:
     /// - For each element in the returned tensor:
     ///   abs(self - other) <= (atol + rtol * abs(other)).
     ///
-    /// The equation is not symmetrial, i.e. a.AllClose(b) might not be the same
-    /// as b.AllClose(a). Also see Numpy's documentation:
+    /// The equation is not symmetrial, i.e. a.AllClose(b) might not be the
+    /// same as b.AllClose(a). Also see Numpy's documentation:
     /// https://numpy.org/doc/stable/reference/generated/numpy.allclose.html.
     ///
     /// TODO: support nan
@@ -1014,9 +1065,9 @@ public:
                    double rtol = 1e-5,
                    double atol = 1e-8) const;
 
-    /// Returns true iff the tensor is the other tensor. This means that, the
-    /// two tensors have the same underlying memory, device, dtype, shape,
-    /// strides and etc.
+    /// Returns true iff the tensor is the other tensor. This means that,
+    /// the two tensors have the same underlying memory, device, dtype,
+    /// shape, strides and etc.
     bool IsSame(const Tensor& other) const;
 
     /// Retrieve all values as an std::vector, for debugging and testing
@@ -1030,15 +1081,16 @@ public:
         return values;
     }
 
-    /// Returns True if the underlying memory buffer is contiguous. A contiguous
-    /// Tensor's data_ptr_ does not need to point to the beginning of blob_.
+    /// Returns True if the underlying memory buffer is contiguous. A
+    /// contiguous Tensor's data_ptr_ does not need to point to the
+    /// beginning of blob_.
     inline bool IsContiguous() const {
         return shape_util::DefaultStrides(shape_) == strides_;
     }
 
-    /// Returns a contiguous Tensor containing the same data in the same device.
-    /// If self tensor is already contiguous, the same underlying memory will be
-    /// used.
+    /// Returns a contiguous Tensor containing the same data in the same
+    /// device. If self tensor is already contiguous, the same underlying
+    /// memory will be used.
     Tensor Contiguous() const;
 
     /// Computes matrix multiplication with *this and rhs and returns the
@@ -1066,61 +1118,63 @@ public:
     /// using A = P * L * U; where P is the permutation matrix, L is the
     /// lower-triangular matrix with diagonal elements as 1.0 and U is the
     /// upper-triangular matrix, and returns tuple `output` tensor of shape
-    /// {n,n} and `ipiv` tensor of shape {n}, where {n,n} is the shape of input
-    /// tensor. [ipiv, output = open3d.core.lu_ipiv(a)].
+    /// {n,n} and `ipiv` tensor of shape {n}, where {n,n} is the shape of
+    /// input tensor. [ipiv, output = open3d.core.lu_ipiv(a)].
     ///
-    /// \return Tuple {ipiv, output}. Where ipiv is a 1D integer pivort indices
-    /// tensor. It contains the pivot indices, indicating row i of the matrix
-    /// was interchanged with row ipiv(i)); and output it has L as
-    /// lower triangular values and U as upper triangle values including the
-    /// main diagonal (diagonal elements of L to be taken as unity).
+    /// \return Tuple {ipiv, output}. Where ipiv is a 1D integer pivort
+    /// indices tensor. It contains the pivot indices, indicating row i of
+    /// the matrix was interchanged with row ipiv(i)); and output it has L
+    /// as lower triangular values and U as upper triangle values including
+    /// the main diagonal (diagonal elements of L to be taken as unity).
     std::tuple<Tensor, Tensor> LUIpiv() const;
 
     /// \brief Returns the upper triangular matrix of the 2D tensor,
     /// above the given diagonal index. [The value of diagonal = col - row,
     /// therefore 0 is the main diagonal (row = col), and it shifts towards
-    /// right for positive values (for diagonal = 1, col - row = 1), and towards
-    /// left for negative values. The value of the diagonal parameter must be
-    /// between [-m, n] for a {m,n} shaped tensor.
+    /// right for positive values (for diagonal = 1, col - row = 1), and
+    /// towards left for negative values. The value of the diagonal
+    /// parameter must be between [-m, n] for a {m,n} shaped tensor.
     ///
-    /// \param diagonal value of [col - row], above which the elements are to be
-    /// taken for upper triangular matrix.
+    /// \param diagonal value of [col - row], above which the elements are
+    /// to be taken for upper triangular matrix.
     Tensor Triu(const int diagonal = 0) const;
 
     /// \brief Returns the lower triangular matrix of the 2D tensor,
     /// above the given diagonal index. [The value of diagonal = col - row,
     /// therefore 0 is the main diagonal (row = col), and it shifts towards
-    /// right for positive values (for diagonal = 1, col - row = 1), and towards
-    /// left for negative values. The value of the diagonal parameter must be
-    /// between [-m, n] where {m, n} is the shape of input tensor.
+    /// right for positive values (for diagonal = 1, col - row = 1), and
+    /// towards left for negative values. The value of the diagonal
+    /// parameter must be between [-m, n] where {m, n} is the shape of input
+    /// tensor.
     ///
-    /// \param diagonal value of [col - row], below which the elements are to be
-    /// taken for lower triangular matrix.
+    /// \param diagonal value of [col - row], below which the elements are
+    /// to be taken for lower triangular matrix.
     Tensor Tril(const int diagonal = 0) const;
 
     /// \brief Returns the tuple of upper and lower triangular matrix
     /// of the 2D tensor, above and below the given diagonal index.
-    /// The diagonal elements of lower triangular matrix are taken to be unity.
-    /// [The value of diagonal = col - row, therefore 0 is the main diagonal
-    /// (row = col), and it shifts towards right for positive values
-    /// (for diagonal = 1, col - row = 1), and towards left for negative values.
-    /// The value of the diagonal parameter must be between [-m, n] where {m, n}
-    /// is the shape of input tensor.
+    /// The diagonal elements of lower triangular matrix are taken to be
+    /// unity. [The value of diagonal = col - row, therefore 0 is the main
+    /// diagonal (row = col), and it shifts towards right for positive
+    /// values (for diagonal = 1, col - row = 1), and towards left for
+    /// negative values. The value of the diagonal parameter must be between
+    /// [-m, n] where {m, n} is the shape of input tensor.
     ///
-    /// \param diagonal value of [col - row], above and below which the elements
-    /// are to be taken for upper (diag. included) and lower triangular matrix.
+    /// \param diagonal value of [col - row], above and below which the
+    /// elements are to be taken for upper (diag. included) and lower
+    /// triangular matrix.
     std::tuple<Tensor, Tensor> Triul(const int diagonal = 0) const;
 
     /// Computes the matrix inversion of the square matrix *this with LU
     /// factorization and returns the result.
     Tensor Inverse() const;
 
-    /// Computes the matrix SVD decomposition A = U S VT and returns the result.
-    /// Note VT (V transpose) is returned instead of V.
+    /// Computes the matrix SVD decomposition A = U S VT and returns the
+    /// result. Note VT (V transpose) is returned instead of V.
     std::tuple<Tensor, Tensor, Tensor> SVD() const;
 
-    /// Returns the size of the first dimension. If NumDims() == 0, an exception
-    /// will be thrown.
+    /// Returns the size of the first dimension. If NumDims() == 0, an
+    /// exception will be thrown.
     inline int64_t GetLength() const { return GetShape().GetLength(); }
 
     inline SizeVector GetShape() const { return shape_; }
@@ -1208,12 +1262,12 @@ public:
         using difference_type = std::ptrdiff_t;
         using value_type = Tensor;
         using pointer = value_type*;
-        using reference = value_type;  // Typically Tensor&, but a tensor slice
-                                       // creates a new Tensor object with
-                                       // shared memory.
+        using reference = value_type;  // Typically Tensor&, but a tensor
+                                       // slice creates a new Tensor object
+                                       // with shared memory.
 
-        // Iterator must be constructible, copy-constructible, copy-assignable,
-        // destructible and swappable.
+        // Iterator must be constructible, copy-constructible,
+        // copy-assignable, destructible and swappable.
         Iterator(pointer tensor, int64_t index);
         Iterator(const Iterator&);
         ~Iterator();
@@ -1235,9 +1289,9 @@ public:
         using difference_type = std::ptrdiff_t;
         using value_type = const Tensor;
         using pointer = value_type*;
-        using reference = value_type;  // Typically Tensor&, but a tensor slice
-                                       // creates a new Tensor object with
-                                       // shared memory.
+        using reference = value_type;  // Typically Tensor&, but a tensor
+                                       // slice creates a new Tensor object
+                                       // with shared memory.
 
         // ConstIterator must be constructible, copy-constructible,
         // copy-assignable, destructible and swappable.
@@ -1256,36 +1310,36 @@ public:
         std::unique_ptr<Impl> impl_;
     };
 
-    /// Returns the beginning of the tensor iterator. The iterator iterates over
-    /// the first dimension of the tensor. The generated tensor slices share the
-    /// same memory with the original tensor.
+    /// Returns the beginning of the tensor iterator. The iterator iterates
+    /// over the first dimension of the tensor. The generated tensor slices
+    /// share the same memory with the original tensor.
     Iterator begin();
 
-    /// Returns the end of the tensor iterator. The iterator iterates over the
-    /// first dimension of the tensor. The generated tensor slices share the
-    /// same memory with the original tensor.
+    /// Returns the end of the tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share
+    /// the same memory with the original tensor.
     Iterator end();
 
     /// Returns the beginning of the const tensor iterator. The iterator
-    /// iterates over the first dimension of the tensor. The generated tensor
-    /// slices share the same memory with the original tensor.
+    /// iterates over the first dimension of the tensor. The generated
+    /// tensor slices share the same memory with the original tensor.
     ConstIterator cbegin() const;
 
-    /// Returns the end of the const tensor iterator. The iterator iterates over
-    /// the first dimension of the tensor. The generated tensor slices share the
-    /// same memory with the original tensor.
+    /// Returns the end of the const tensor iterator. The iterator iterates
+    /// over the first dimension of the tensor. The generated tensor slices
+    /// share the same memory with the original tensor.
     ConstIterator cend() const;
 
     /// Returns the beginning of the const tensor iterator. The iterator
-    /// iterates over the first dimension of the tensor. The generated tensor
-    /// slices share the same memory with the original tensor. This is
-    /// equivalent to Tensor::cbegin().
+    /// iterates over the first dimension of the tensor. The generated
+    /// tensor slices share the same memory with the original tensor. This
+    /// is equivalent to Tensor::cbegin().
     ConstIterator begin() const { return cbegin(); }
 
-    /// Returns the end of the const tensor iterator. The iterator iterates over
-    /// the first dimension of the tensor. The generated tensor slices share the
-    /// same memory with the original tensor. This is equivalent to
-    /// Tensor::cend().
+    /// Returns the end of the const tensor iterator. The iterator iterates
+    /// over the first dimension of the tensor. The generated tensor slices
+    /// share the same memory with the original tensor. This is equivalent
+    /// to Tensor::cend().
     ConstIterator end() const { return cend(); }
 
 protected:
@@ -1310,10 +1364,10 @@ protected:
     /// Stride of a Tensor.
     /// The stride of a n-dimensional tensor is also n-dimensional.
     /// Stride(i) is the number of elements (not bytes) to jump in a
-    /// continuous memory space before reaching the next element in dimension
-    /// i. For example, a 2x3x4 float32 dense tensor has shape(2, 3, 4) and
-    /// stride(12, 4, 1). A slicing operation performed on the tensor can
-    /// change the shape and stride.
+    /// continuous memory space before reaching the next element in
+    /// dimension i. For example, a 2x3x4 float32 dense tensor has shape(2,
+    /// 3, 4) and stride(12, 4, 1). A slicing operation performed on the
+    /// tensor can change the shape and stride.
     SizeVector strides_ = {1};
 
     /// Data pointer pointing to the beginning element of the Tensor.

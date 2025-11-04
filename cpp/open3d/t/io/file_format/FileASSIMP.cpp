@@ -554,6 +554,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
         int n_textures = 0;
         if (w_mesh.GetMaterial().HasAlbedoMap()) ++n_textures;
         if (w_mesh.GetMaterial().HasNormalMap()) ++n_textures;
+        if (w_mesh.GetMaterial().HasAOMap()) ++n_textures;
         if (w_mesh.GetMaterial().HasAORoughnessMetalMap()) {
             ++n_textures;
         } else if (w_mesh.GetMaterial().HasRoughnessMap() &&
@@ -579,6 +580,12 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
                                        aiTextureType_DIFFUSE, img);
             SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
                                        aiTextureType_BASE_COLOR, img);
+            ++current_idx;
+        }
+        if (w_mesh.GetMaterial().HasAOMap()) {
+            auto img = w_mesh.GetMaterial().GetAOMap();
+            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
+                                       aiTextureType_LIGHTMAP, img);
             ++current_idx;
         }
         if (w_mesh.GetMaterial().HasAORoughnessMetalMap()) {
