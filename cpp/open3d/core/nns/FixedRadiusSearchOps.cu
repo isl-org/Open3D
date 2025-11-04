@@ -135,7 +135,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
         Tensor distances_sorted = Tensor::Empty({num_indices}, dtype, device);
 
         // Determine temp_size for sorting
-        impl::SortPairs(temp_ptr, temp_size, texture_alignment, num_indices,
+        impl::SortPairs(stream, temp_ptr, temp_size, texture_alignment, num_indices,
                         num_segments,
                         neighbors_row_splits.GetDataPtr<int64_t>(),
                         indices_unsorted.GetDataPtr<TIndex>(),
@@ -147,7 +147,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
         temp_ptr = temp_tensor.GetDataPtr();
 
         // Actually run the sorting.
-        impl::SortPairs(temp_ptr, temp_size, texture_alignment, num_indices,
+        impl::SortPairs(stream, temp_ptr, temp_size, texture_alignment, num_indices,
                         num_segments,
                         neighbors_row_splits.GetDataPtr<int64_t>(),
                         indices_unsorted.GetDataPtr<TIndex>(),

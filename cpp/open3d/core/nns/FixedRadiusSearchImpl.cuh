@@ -853,17 +853,16 @@ void SortPairs(const cudaStream_t& stream,
 
     std::pair<void*, size_t> sort_temp(nullptr, 0);
 
-    // MUST synchronize non-default streams because InclusiveSum writes to the
-    // value we will be using
-    if (stream != nullptr) {
-        cudaStreamSynchronize(stream);
-    }
-
     cub::DeviceSegmentedRadixSort::SortPairs(
             sort_temp.first, sort_temp.second, distances_unsorted,
             distances_sorted, indices_unsorted, indices_sorted, num_indices,
             num_segments, query_neighbors_row_splits,
             query_neighbors_row_splits + 1, 0, sizeof(T) * 8, stream);
+    // MUST synchronize non-default streams because InclusiveSum writes to the
+    // value we will be using
+    if (stream != nullptr) {
+        cudaStreamSynchronize(stream);
+    }
     sort_temp = mem_temp.Alloc(sort_temp.second);
 
     if (!get_temp_size) {
