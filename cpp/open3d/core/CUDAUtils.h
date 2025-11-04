@@ -57,6 +57,124 @@ namespace core {
 
 #ifdef BUILD_CUDA_MODULE
 
+/// \enum CUDAMemoryCopyPolicy
+///
+/// Specifier for different behavior of memory copies between the host and
+/// device.
+///
+enum class CUDAMemoryCopyPolicy {
+    // Default.
+    // Ensure all memory copy operations are finished by synchronizing the CUDA
+    // stream on which the copy occurred.
+    Sync = 0,
+    // Asynchronous memory copies. Unmanaged.
+    // No memory safety at all - you are responsible for your own actions.
+    // There are no guaranteed about the lifetime of memory copied between the
+    // host and the device. If memory is freed before the copy finishes, you
+    // *will* have serious memory issues.
+    Async = 2
+};
+
+/// \class CUDAStream
+///
+/// An Open3D representation of a CUDA stream.
+///
+class CUDAStream {
+public:
+    static CUDAStream& GetInstance();
+
+    /// Creates a new CUDA stream.
+    /// The caller is responsible for eventually destroying the stream by
+    /// calling Destroy().
+    static CUDAStream CreateNew();
+
+    /// Explicitly constructs a default stream. The default constructor could be
+    /// used, but this is clearer and closer to the old API.
+    static CUDAStream Default() { return {}; }
+
+    /// Default constructor. Refers to the default CUDA stream.
+    CUDAStream() = default;
+
+    /// Sets the behavior of memory copy operations device->host.
+    /// Sync by default. The default CUDA stream is implicitly synchronized with
+    /// every other stream. As such, it is invalid to call this function on the
+    /// default stream.
+    /// \param policy The desired behavior.
+    ///
+    /// Having non-synchronous memory
+    /// copy from device to host can result in memory corruption and various
+    /// other problems if you do not know what you are doing. Example:
+    /// ```cpp
+    /// void pokingTheBear() {
+    ///     CUDAScopedStream scoped_stream(CUDAStream::CreateNew(), true);
+    ///     CUDAStream::GetInstance().SetDeviceToHostMemcpyPolicy(CUDAMemoryCopyPolicy::AsyncUnmanaged);
+    ///     Tensor foo = Tensor::Init<float>({0.f}, "CUDA:0");
+    ///     Tensor foo_cpu = foo.To("CPU:0"); // launches an async copy from
+    ///     device to cpu memory owned by foo_cpu. Until the async copy
+    ///     completes, the memory will be uninitialized (random garbage).
+    ///     // Any operations on foo_cpu will be undefined here, as you cannot
+    ///     be sure the async memcpy has finished or not
+    ///     cuda::Synchronize(CUDAStream::GetInstance()); // force a manual sync
+    ///     // It is now safe to perform operations on foo_cpu
+    /// }
+    /// ```
+    void SetDeviceToHostMemcpyPolicy(CUDAMemoryCopyPolicy policy);
+
+    /// Returns the current value of the memory synchronization flag for
+    /// device->host memory copies. The default stream will always return Sync,
+    /// because it is implicitly synchronized.
+    CUDAMemoryCopyPolicy GetDeviceToHostMemcpyPolicy() const;
+
+    /// Sets the behavior of memory copy operations host->device.
+    /// Sync by default. The default CUDA stream is implicitly synchronized with
+    /// every other stream. As such, it is invalid to call this function on the
+    /// default stream.
+    /// \param policy The desired behavior.
+    /// Having non-synchronous memory copy from host to device can result in
+    /// memory corruption and various other problems if you do not know what you
+    /// are doing. Example:
+    /// ```cpp
+    /// void pokingTheBear() {
+    ///     CUDAScopedStream scoped_stream(CUDAStream::CreateNew(), true);
+    ///     CUDAStream::GetInstance().SetHostToDeviceMemcpyPolicy(CUDAMemoryCopyPolicy::AsyncUnmanaged);
+    ///     Tensor foo;
+    ///     {
+    ///         Tensor foo_cpu = Tensor::Init<float>({-1.f});
+    ///         foo = foo_cpu.To("CUDA:0"); // launches async copy from foo_cpu
+    ///         to foo
+    ///     }
+    ///     // fo_cpu goes out of scope, no guarantee that the data will be
+    ///     // copied to the device memory pointed to by 'foo' before free is
+    ///     // called on the host. CUDA may throw an illegal memory access
+    ///     error.
+    /// }
+    /// ```
+    void SetHostToDeviceMemcpyPolicy(CUDAMemoryCopyPolicy policy);
+
+    /// Returns the current value of the memory synchronization flag for
+    /// host->device memory copies. The default stream will always return Sync,
+    /// because it is implicitly synchronized.
+    CUDAMemoryCopyPolicy GetHostToDeviceMemcpyPolicy() const;
+
+    /// Returns true if this refers to the default CUDA stream.
+    bool IsDefaultStream() const;
+
+    cudaStream_t Get() const;
+    void Set(cudaStream_t stream);
+
+    /// Destroys the underlying CUDA stream. It is invalid to call this on the
+    /// default stream. After this call, this object refers to the default
+    /// stream.
+    void Destroy();
+
+private:
+    cudaStream_t stream_ = static_cast<cudaStream_t>(nullptr);
+    CUDAMemoryCopyPolicy memcpy_from_device_to_host_ =
+            CUDAMemoryCopyPolicy::Sync;
+    CUDAMemoryCopyPolicy memcpy_from_host_to_device_ =
+            CUDAMemoryCopyPolicy::Sync;
+};
+
 /// \class CUDAScopedDevice
 ///
 /// Switch CUDA device id in the current scope. The device id will be reset
@@ -135,20 +253,8 @@ private:
 /// }
 /// ```
 class CUDAScopedStream {
-private:
-    struct CreateNewStreamTag {
-        CreateNewStreamTag(const CreateNewStreamTag&) = delete;
-        CreateNewStreamTag& operator=(const CreateNewStreamTag&) = delete;
-        CreateNewStreamTag(CreateNewStreamTag&&) = delete;
-        CreateNewStreamTag& operator=(CreateNewStreamTag&&) = delete;
-    };
-
 public:
-    constexpr static CreateNewStreamTag CreateNewStream = {};
-
-    explicit CUDAScopedStream(const CreateNewStreamTag&);
-
-    explicit CUDAScopedStream(cudaStream_t stream);
+    explicit CUDAScopedStream(CUDAStream stream, bool destroy_on_exit = false);
 
     ~CUDAScopedStream();
 
@@ -156,8 +262,8 @@ public:
     CUDAScopedStream& operator=(const CUDAScopedStream&) = delete;
 
 private:
-    cudaStream_t prev_stream_;
-    cudaStream_t new_stream_;
+    CUDAStream prev_stream_;
+    CUDAStream new_stream_;
     bool owns_new_stream_ = false;
 };
 
@@ -265,8 +371,10 @@ bool SupportsMemoryPools(const Device& device);
 #ifdef BUILD_CUDA_MODULE
 
 int GetDevice();
-cudaStream_t GetStream();
-cudaStream_t GetDefaultStream();
+
+/// Calls cudaStreamSynchronize() for the specified CUDA stream.
+/// \param stream The stream to be synchronized.
+void Synchronize(const CUDAStream& stream);
 
 #endif
 

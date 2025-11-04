@@ -30,8 +30,10 @@ void LeastSquaresCUDA(void* A_data,
                       const Device& device) {
     cusolverDnHandle_t cusolver_handle =
             CuSolverContext::GetInstance().GetHandle(device);
+    cusolverDnSetStream(cusolver_handle, CUDAStream::GetInstance().Get());
     cublasHandle_t cublas_handle =
             CuBLASContext::GetInstance().GetHandle(device);
+    cublasSetStream(cublas_handle, CUDAStream::GetInstance().Get());
 
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len_geqrf, len_ormqr, len;

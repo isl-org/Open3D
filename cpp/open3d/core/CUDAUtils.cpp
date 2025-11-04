@@ -11,6 +11,8 @@
 #include "open3d/utility/Logging.h"
 
 #ifdef BUILD_CUDA_MODULE
+#include <unordered_set>
+
 #include "open3d/core/MemoryManager.h"
 #endif
 
@@ -141,41 +143,60 @@ static void SetDevice(int device_id) {
     OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
 }
 
-class CUDAStream {
-public:
-    static CUDAStream& GetInstance() {
-        // The global stream state is given per thread like CUDA's internal
-        // device state.
-        static thread_local CUDAStream instance;
-        return instance;
-    }
-
-    cudaStream_t Get() { return stream_; }
-    void Set(cudaStream_t stream) { stream_ = stream; }
-
-    static cudaStream_t Default() { return static_cast<cudaStream_t>(0); }
-
-private:
-    CUDAStream() = default;
-    CUDAStream(const CUDAStream&) = delete;
-    CUDAStream& operator=(const CUDAStream&) = delete;
-
-    cudaStream_t stream_ = Default();
-};
-
-cudaStream_t GetStream() { return CUDAStream::GetInstance().Get(); }
-
-static void SetStream(cudaStream_t stream) {
-    CUDAStream::GetInstance().Set(stream);
+void Synchronize(const CUDAStream& stream) {
+    OPEN3D_CUDA_CHECK(cudaStreamSynchronize(stream.Get()));
 }
-
-cudaStream_t GetDefaultStream() { return CUDAStream::Default(); }
 
 #endif
 
 }  // namespace cuda
 
 #ifdef BUILD_CUDA_MODULE
+
+CUDAStream& CUDAStream::GetInstance() {
+    // The global stream state is given per thread like CUDA's internal
+    // device state.
+    thread_local CUDAStream instance = CUDAStream::Default();
+    return instance;
+}
+
+CUDAStream CUDAStream::CreateNew() {
+    CUDAStream stream;
+    OPEN3D_CUDA_CHECK(cudaStreamCreate(&stream.stream_));
+    return stream;
+}
+
+void CUDAStream::SetHostToDeviceMemcpyPolicy(CUDAMemoryCopyPolicy policy) {
+    OPEN3D_ASSERT(!IsDefaultStream());
+    memcpy_from_host_to_device_ = policy;
+}
+
+CUDAMemoryCopyPolicy CUDAStream::GetHostToDeviceMemcpyPolicy() const {
+    return memcpy_from_host_to_device_;
+}
+
+CUDAMemoryCopyPolicy CUDAStream::GetDeviceToHostMemcpyPolicy() const {
+    return memcpy_from_device_to_host_;
+}
+
+void CUDAStream::SetDeviceToHostMemcpyPolicy(CUDAMemoryCopyPolicy policy) {
+    OPEN3D_ASSERT(!IsDefaultStream());
+    memcpy_from_device_to_host_ = policy;
+}
+
+bool CUDAStream::IsDefaultStream() const {
+    return stream_ == static_cast<cudaStream_t>(nullptr);
+}
+
+cudaStream_t CUDAStream::Get() const { return stream_; }
+
+void CUDAStream::Set(cudaStream_t stream) { stream_ = stream; }
+
+void CUDAStream::Destroy() {
+    OPEN3D_ASSERT(!IsDefaultStream());
+    OPEN3D_CUDA_CHECK(cudaStreamDestroy(stream_));
+    *this = CUDAStream::Default();
+}
 
 CUDAScopedDevice::CUDAScopedDevice(int device_id)
     : prev_device_id_(cuda::GetDevice()) {
@@ -189,27 +210,22 @@ CUDAScopedDevice::CUDAScopedDevice(const Device& device)
 
 CUDAScopedDevice::~CUDAScopedDevice() { cuda::SetDevice(prev_device_id_); }
 
-constexpr CUDAScopedStream::CreateNewStreamTag
-        CUDAScopedStream::CreateNewStream;
-
-CUDAScopedStream::CUDAScopedStream(const CreateNewStreamTag&)
-    : prev_stream_(cuda::GetStream()), owns_new_stream_(true) {
-    OPEN3D_CUDA_CHECK(cudaStreamCreate(&new_stream_));
-    cuda::SetStream(new_stream_);
-}
-
-CUDAScopedStream::CUDAScopedStream(cudaStream_t stream)
-    : prev_stream_(cuda::GetStream()),
+CUDAScopedStream::CUDAScopedStream(CUDAStream stream, bool destroy_on_exit)
+    : prev_stream_(CUDAStream::GetInstance()),
       new_stream_(stream),
-      owns_new_stream_(false) {
-    cuda::SetStream(stream);
+      owns_new_stream_(destroy_on_exit) {
+    CUDAStream::GetInstance() = new_stream_;
 }
 
 CUDAScopedStream::~CUDAScopedStream() {
     if (owns_new_stream_) {
-        OPEN3D_CUDA_CHECK(cudaStreamDestroy(new_stream_));
+        OPEN3D_ASSERT((prev_stream_.Get() != new_stream_.Get()) &&
+                      "CUDAScopedStream destroy_on_exit would destroy the same "
+                      "stream which was in place before the scoped stream was "
+                      "created.");
+        new_stream_.Destroy();
     }
-    cuda::SetStream(prev_stream_);
+    CUDAStream::GetInstance() = prev_stream_;
 }
 
 CUDAState& CUDAState::GetInstance() {
@@ -304,10 +320,35 @@ size_t GetCUDACurrentTotalMemSize() {
 namespace open3d {
 namespace core {
 
+const std::unordered_set<cudaError_t> kProcessEndingErrors = {
+        cudaErrorAssert,
+        cudaErrorLaunchTimeout,
+        cudaErrorHardwareStackError,
+        cudaErrorIllegalInstruction,
+        cudaErrorMisalignedAddress,
+        cudaErrorInvalidAddressSpace,
+        cudaErrorInvalidPc,
+        cudaErrorTensorMemoryLeak,
+        cudaErrorMpsClientTerminated,
+        cudaErrorExternalDevice,
+        cudaErrorContained,
+        cudaErrorIllegalAddress,
+        cudaErrorLaunchFailure,
+        cudaErrorECCUncorrectable,
+        cudaErrorUnknown};
+
 void __OPEN3D_CUDA_CHECK(cudaError_t err, const char* file, const int line) {
     if (err != cudaSuccess) {
-        utility::LogError("{}:{} CUDA runtime error: {}", file, line,
-                          cudaGetErrorString(err));
+        if (kProcessEndingErrors.count(err)) {
+            utility::LogError(
+                    "{}:{} CUDA runtime error: {}. This is a process-ending "
+                    "error. All further operations will fail and the process "
+                    "needs to be relaunched to be able to use CUDA.",
+                    file, line, cudaGetErrorString(err));
+        } else {
+            utility::LogError("{}:{} CUDA runtime error: {}", file, line,
+                              cudaGetErrorString(err));
+        }
     }
 }
 

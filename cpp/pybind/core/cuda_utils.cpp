@@ -35,11 +35,13 @@ void pybind_cuda_utils_definitions(py::module& m) {
                     cuda::Synchronize();
                 }
             },
-            "Synchronizes CUDA devices. If no device is specified, all CUDA "
-            "devices will be synchronized. No effect if the specified device "
-            "is not a CUDA device. No effect if Open3D is not compiled with "
-            "CUDA support.",
-            "device"_a = py::none());
+            "Synchronizes a CUDA stream.");
+#if BUILD_CUDA_MODULE
+    m_cuda.def(
+            "synchronize_stream",
+            [](const CUDAStream& stream) { cuda::Synchronize(stream); },
+            "Synchronizes a CUDA stream.");
+#endif
 }
 
 }  // namespace core

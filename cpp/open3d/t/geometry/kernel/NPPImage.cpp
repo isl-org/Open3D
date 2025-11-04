@@ -23,7 +23,7 @@ namespace npp {
 
 static NppStreamContext MakeNPPContext() {
     NppStreamContext context;
-    context.hStream = core::cuda::GetStream();
+    context.hStream = core::CUDAStream::GetInstance().Get();
     context.nCudaDeviceId = core::cuda::GetDevice();
 
     cudaDeviceProp device_prop;
@@ -52,8 +52,7 @@ static NppStreamContext MakeNPPContext() {
 // to expose this member variable.
 #if NPP_VERSION >= 11100
     unsigned int stream_flags;
-    OPEN3D_CUDA_CHECK(
-            cudaStreamGetFlags(core::cuda::GetStream(), &stream_flags));
+    OPEN3D_CUDA_CHECK(cudaStreamGetFlags(context.hStream, &stream_flags));
     context.nStreamFlags = stream_flags;
 #endif
 

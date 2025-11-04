@@ -200,10 +200,11 @@ void StdGPUHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
 
-    STDGPUFindKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+    STDGPUFindKernel<<<blocks, threads, 0,
+                       core::CUDAStream::GetInstance().Get()>>>(
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
             output_buf_indices, output_masks, count);
-    cuda::Synchronize(this->device_);
+    cuda::Synchronize(CUDAStream::GetInstance());
 }
 
 // Need an explicit kernel for non-const access to map
@@ -244,10 +245,11 @@ void StdGPUHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
     buf_index_t* output_buf_indices =
             static_cast<buf_index_t*>(toutput_buf_indices.GetDataPtr());
 
-    STDGPUEraseKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+    STDGPUEraseKernel<<<blocks, threads, 0,
+                        core::CUDAStream::GetInstance().Get()>>>(
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
             output_buf_indices, output_masks, count);
-    cuda::Synchronize(this->device_);
+    cuda::Synchronize(CUDAStream::GetInstance());
 }
 
 template <typename Key>
@@ -364,24 +366,27 @@ void StdGPUHashBackend<Key, Hash, Eq>::Insert(
     CUDAScopedDevice scoped_device(this->device_);
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
-
-    thrust::device_vector<const void*> input_values_soa_device(
-            input_values_soa.begin(), input_values_soa.end());
-
     int64_t n_values = input_values_soa.size();
+
+    thrust::device_vector<const void*> input_values_soa_device(n_values);
+    thrust::copy(thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
+                 input_values_soa.begin(), input_values_soa.end(),
+                 input_values_soa_device.begin());
+
     const void* const* ptr_input_values_soa =
             thrust::raw_pointer_cast(input_values_soa_device.data());
 
     DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(
             buffer_accessor_.common_block_size_, [&]() {
                 STDGPUInsertKernel<Key, Hash, Eq, block_t>
-                        <<<blocks, threads, 0, core::cuda::GetStream()>>>(
+                        <<<blocks, threads, 0,
+                           core::CUDAStream::GetInstance().Get()>>>(
                                 impl_, buffer_accessor_,
                                 static_cast<const Key*>(input_keys),
                                 ptr_input_values_soa, output_buf_indices,
                                 output_masks, count, n_values);
             });
-    cuda::Synchronize(this->device_);
+    cuda::Synchronize(CUDAStream::GetInstance());
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -398,12 +403,12 @@ void StdGPUHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     // stdgpu initializes on the default stream. Set the current stream to
     // ensure correct behavior.
     {
-        CUDAScopedStream scoped_stream(cuda::GetDefaultStream());
+        CUDAScopedStream scoped_stream(CUDAStream::Default());
 
         impl_ = InternalStdGPUHashBackend<Key, Hash, Eq>::createDeviceObject(
                 this->capacity_,
                 InternalStdGPUHashBackendAllocator<Key>(this->device_.GetID()));
-        cuda::Synchronize(this->device_);
+        cuda::Synchronize(CUDAStream::GetInstance());
     }
 }
 
@@ -416,7 +421,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Free() {
     // stdgpu initializes on the default stream. Set the current stream to
     // ensure correct behavior.
     {
-        CUDAScopedStream scoped_stream(cuda::GetDefaultStream());
+        CUDAScopedStream scoped_stream(CUDAStream::Default());
 
         InternalStdGPUHashBackend<Key, Hash, Eq>::destroyDeviceObject(impl_);
     }

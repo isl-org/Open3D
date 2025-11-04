@@ -787,6 +787,12 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
                                       count_tmp.first, hash_table_cell_splits,
                                       count_tmp.second, stream);
 
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
+
         inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
 
         if (!get_temp_size) {
@@ -825,7 +831,8 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
 }
 
 template <class T, class TIndex>
-void SortPairs(void* temp,
+void SortPairs(const cudaStream_t& stream,
+               void* temp,
                size_t& temp_size,
                int texture_alignment,
                int64_t num_indices,
@@ -850,7 +857,12 @@ void SortPairs(void* temp,
             sort_temp.first, sort_temp.second, distances_unsorted,
             distances_sorted, indices_unsorted, indices_sorted, num_indices,
             num_segments, query_neighbors_row_splits,
-            query_neighbors_row_splits + 1);
+            query_neighbors_row_splits + 1, 0, sizeof(T) * 8, stream);
+    // MUST synchronize non-default streams because InclusiveSum writes to the
+    // value we will be using
+    if (stream != nullptr) {
+        cudaStreamSynchronize(stream);
+    }
     sort_temp = mem_temp.Alloc(sort_temp.second);
 
     if (!get_temp_size) {
@@ -858,7 +870,7 @@ void SortPairs(void* temp,
                 sort_temp.first, sort_temp.second, distances_unsorted,
                 distances_sorted, indices_unsorted, indices_sorted, num_indices,
                 num_segments, query_neighbors_row_splits,
-                query_neighbors_row_splits + 1);
+                query_neighbors_row_splits + 1, 0, sizeof(T) * 8, stream);
     }
     mem_temp.Free(sort_temp);
 
@@ -963,9 +975,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
             cudaMemcpyAsync(&last_prefix_sum_entry,
                             query_neighbors_row_splits + num_queries,
                             sizeof(int64_t), cudaMemcpyDeviceToHost, stream);
-            // wait for the async copies
-            while (cudaErrorNotReady == cudaStreamQuery(stream)) { /*empty*/
-            }
+            cudaStreamSynchronize(stream);
         }
         mem_temp.Free(inclusive_scan_temp);
     }

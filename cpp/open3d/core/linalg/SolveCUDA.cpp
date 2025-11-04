@@ -26,6 +26,7 @@ void SolveCUDA(void* A_data,
                const Device& device) {
     cusolverDnHandle_t handle =
             CuSolverContext::GetInstance().GetHandle(device);
+    cusolverDnSetStream(handle, CUDAStream::GetInstance().Get());
 
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len;

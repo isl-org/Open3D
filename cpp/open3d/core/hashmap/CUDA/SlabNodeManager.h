@@ -233,17 +233,19 @@ public:
     ~SlabNodeManager() { MemoryManager::Free(impl_.super_blocks_, device_); }
 
     void Reset() {
-        OPEN3D_CUDA_CHECK(cudaMemset(
+        OPEN3D_CUDA_CHECK(cudaMemsetAsync(
                 impl_.super_blocks_, 0xFF,
-                kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t)));
+                kUIntsPerSuperBlock * kSuperBlocks * sizeof(uint32_t),
+                CUDAStream::GetInstance().Get()));
 
         for (uint32_t i = 0; i < kSuperBlocks; i++) {
             // setting bitmaps into zeros:
-            OPEN3D_CUDA_CHECK(cudaMemset(
+            OPEN3D_CUDA_CHECK(cudaMemsetAsync(
                     impl_.super_blocks_ + i * kUIntsPerSuperBlock, 0x00,
-                    kBlocksPerSuperBlock * kSlabsPerBlock * sizeof(uint32_t)));
+                    kBlocksPerSuperBlock * kSlabsPerBlock * sizeof(uint32_t),
+                    CUDAStream::GetInstance().Get()));
         }
-        cuda::Synchronize();
+        cuda::Synchronize(CUDAStream::GetInstance());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 
@@ -251,23 +253,29 @@ public:
         const uint32_t num_super_blocks = kSuperBlocks;
 
         thrust::device_vector<uint32_t> slabs_per_superblock(kSuperBlocks);
-        thrust::fill(slabs_per_superblock.begin(), slabs_per_superblock.end(),
+        thrust::fill(thrust::cuda::par.on(CUDAStream::GetInstance().Get()),
+                     slabs_per_superblock.begin(), slabs_per_superblock.end(),
                      0);
 
         // Counting total number of allocated memory units.
         int num_mem_units = kBlocksPerSuperBlock * 32;
         int num_cuda_blocks =
                 (num_mem_units + kThreadsPerBlock - 1) / kThreadsPerBlock;
-        CountSlabsPerSuperblockKernel<<<num_cuda_blocks, kThreadsPerBlock, 0,
-                                        core::cuda::GetStream()>>>(
+        CountSlabsPerSuperblockKernel<<<
+                num_cuda_blocks, kThreadsPerBlock, 0,
+                core::CUDAStream::GetInstance().Get()>>>(
                 impl_, thrust::raw_pointer_cast(slabs_per_superblock.data()));
-        cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
 
         std::vector<int> result(num_super_blocks);
-        thrust::copy(slabs_per_superblock.begin(), slabs_per_superblock.end(),
-                     result.begin());
-
+        OPEN3D_CUDA_CHECK(cudaMemcpyAsync(
+                result.data(),
+                thrust::raw_pointer_cast(slabs_per_superblock.data()),
+                num_super_blocks * sizeof(int), cudaMemcpyDeviceToHost,
+                CUDAStream::GetInstance().Get()));
+        if (!CUDAStream::GetInstance().IsDefaultStream()) {
+            cuda::Synchronize(CUDAStream::GetInstance());
+        }
         return result;
     }
 

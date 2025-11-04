@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/BlasWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/Matmul.h"
@@ -22,6 +23,7 @@ void MatmulCUDA(void* A_data,
                 Dtype dtype,
                 const Device& device) {
     cublasHandle_t handle = CuBLASContext::GetInstance().GetHandle(device);
+    cublasSetStream(handle, CUDAStream::GetInstance().Get());
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha = 1, beta = 0;
         OPEN3D_CUBLAS_CHECK(

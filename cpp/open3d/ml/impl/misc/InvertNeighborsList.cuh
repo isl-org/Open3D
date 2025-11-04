@@ -274,6 +274,12 @@ void InvertNeighborsListCUDA(const cudaStream_t& stream,
                 tmp_neighbors_count.first, out_neighbors_row_splits + 1,
                 out_num_queries, stream);
 
+        // MUST synchronize non-default streams because InclusiveSum writes to
+        // the value we will be using
+        if (stream != nullptr) {
+            cudaStreamSynchronize(stream);
+        }
+
         inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
 
         if (!get_temp_size) {
