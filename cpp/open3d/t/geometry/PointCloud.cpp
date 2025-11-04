@@ -52,7 +52,7 @@ PointCloud::PointCloud(const core::Device &device)
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDevice()) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     SetPointPositions(points);
 }
 
@@ -65,7 +65,7 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
     }
     device_ = map_keys_to_tensors.at("positions").GetDevice();
     core::AssertTensorShape(map_keys_to_tensors.at("positions"),
-                            {utility::nullopt, 3});
+                            {std::nullopt, 3});
     point_attr_ = TensorMap("positions", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
@@ -616,8 +616,8 @@ std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
 }
 
 void PointCloud::EstimateNormals(
-        const utility::optional<int> max_knn /* = 30*/,
-        const utility::optional<double> radius /*= utility::nullopt*/) {
+        const std::optional<int> max_knn /* = 30*/,
+        const std::optional<double> radius /*= std::nullopt*/) {
     core::AssertTensorDtypes(this->GetPointPositions(),
                              {core::Float32, core::Float64});
 
@@ -777,8 +777,8 @@ void PointCloud::OrientNormalsConsistentTangentPlane(
 }
 
 void PointCloud::EstimateColorGradients(
-        const utility::optional<int> max_knn /* = 30*/,
-        const utility::optional<double> radius /*= utility::nullopt*/) {
+        const std::optional<int> max_knn /* = 30*/,
+        const std::optional<double> radius /*= std::nullopt*/) {
     if (!HasPointColors() || !HasPointNormals()) {
         utility::LogError(
                 "PointCloud must have colors and normals attribute "
@@ -973,8 +973,8 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                            depth_max, stride);
     } else {
         core::Tensor points;
-        kernel::pointcloud::Unproject(depth.AsTensor(), utility::nullopt,
-                                      points, utility::nullopt, intrinsics_host,
+        kernel::pointcloud::Unproject(depth.AsTensor(), std::nullopt, points,
+                                      std::nullopt, intrinsics_host,
                                       extrinsics_host, depth_scale, depth_max,
                                       stride);
         return PointCloud(points);
@@ -1025,8 +1025,8 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
 
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
-    kernel::pointcloud::Project(depth, utility::nullopt, GetPointPositions(),
-                                utility::nullopt, intrinsics, extrinsics,
+    kernel::pointcloud::Project(depth, std::nullopt, GetPointPositions(),
+                                std::nullopt, intrinsics, extrinsics,
                                 depth_scale, depth_max);
     return geometry::Image(depth);
 }

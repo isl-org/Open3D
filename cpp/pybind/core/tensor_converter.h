@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <optional>
+
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Optional.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
@@ -54,8 +55,8 @@ Tensor PyArrayToTensor(py::array array, bool inplace);
 ///
 /// The dtype will be inferred from the value of the list.
 Tensor PyListToTensor(const py::list& list,
-                      utility::optional<Dtype> dtype = utility::nullopt,
-                      utility::optional<Device> device = utility::nullopt);
+                      std::optional<Dtype> dtype = std::nullopt,
+                      std::optional<Device> device = std::nullopt);
 
 /// Convert py::tuple to Tensor.
 ///
@@ -65,29 +66,29 @@ Tensor PyListToTensor(const py::list& list,
 ///
 /// The dtype will be inferred from the value of the tuple.
 Tensor PyTupleToTensor(const py::tuple& tuple,
-                       utility::optional<Dtype> dtype = utility::nullopt,
-                       utility::optional<Device> device = utility::nullopt);
+                       std::optional<Dtype> dtype = std::nullopt,
+                       std::optional<Device> device = std::nullopt);
 
 /// Convert scalar double value to Tensor.
 ///
 /// The default dtype is Float64, unless specified.
 Tensor DoubleToTensor(double scalar_value,
-                      utility::optional<Dtype> dtype = utility::nullopt,
-                      utility::optional<Device> device = utility::nullopt);
+                      std::optional<Dtype> dtype = std::nullopt,
+                      std::optional<Device> device = std::nullopt);
 
 /// Convert scalar int value to Tensor.
 ///
 /// The default dtype is Int64, unless specified.
 Tensor IntToTensor(int64_t scalar_value,
-                   utility::optional<Dtype> dtype = utility::nullopt,
-                   utility::optional<Device> device = utility::nullopt);
+                   std::optional<Dtype> dtype = std::nullopt,
+                   std::optional<Device> device = std::nullopt);
 
 /// Convert scalar bool value to Tensor.
 ///
 /// The default dtype is Bool, unless specified.
 Tensor BoolToTensor(bool scalar_value,
-                    utility::optional<Dtype> dtype = utility::nullopt,
-                    utility::optional<Device> device = utility::nullopt);
+                    std::optional<Dtype> dtype = std::nullopt,
+                    std::optional<Device> device = std::nullopt);
 
 /// Convert supported python types to Tensor.
 ///
@@ -101,8 +102,8 @@ Tensor BoolToTensor(bool scalar_value,
 ///
 /// An exception will be thrown if the type is not supported.
 Tensor PyHandleToTensor(const py::handle& handle,
-                        utility::optional<Dtype> dtype = utility::nullopt,
-                        utility::optional<Device> device = utility::nullopt,
+                        std::optional<Dtype> dtype = std::nullopt,
+                        std::optional<Device> device = std::nullopt,
                         bool force_copy = false);
 
 }  // namespace core

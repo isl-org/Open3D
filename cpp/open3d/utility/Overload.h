@@ -13,31 +13,15 @@ namespace utility {
 /// Generic functor for overloading (lambda) functions.
 /// See Overload(...) function on how to use it.
 ///
-/// \note In C++17, this could be simplified to:
-///
-/// \code
-/// template <typename... Ts>
-/// struct Overloaded : Ts... {
-///     using Ts::operator()...;
-/// };
-/// \endcode
+/// Uses C++17 parameter pack expansion in using declarations.
 template <typename... Ts>
-struct Overloaded;
-
-template <typename T1, typename... Ts>
-struct Overloaded<T1, Ts...> : T1, Overloaded<Ts...> {
-    Overloaded(T1 t1, Ts... ts) : T1(t1), Overloaded<Ts...>(ts...) {}
-
-    using T1::operator();
-    using Overloaded<Ts...>::operator();
+struct Overloaded : Ts... {
+    using Ts::operator()...;
 };
 
-template <typename T1>
-struct Overloaded<T1> : T1 {
-    Overloaded(T1 t1) : T1(t1) {}
-
-    using T1::operator();
-};
+// C++17 deduction guide
+template <typename... Ts>
+Overloaded(Ts...) -> Overloaded<Ts...>;
 
 /// Overloads an arbitrary set of (lambda) functions.
 ///
@@ -53,7 +37,7 @@ struct Overloaded<T1> : T1 {
 /// \endcode
 template <typename... Ts>
 Overloaded<Ts...> Overload(Ts... ts) {
-    return Overloaded<Ts...>(ts...);
+    return Overloaded{ts...};  // C++17 deduction guide makes <Ts...> redundant
 }
 
 }  // namespace utility
