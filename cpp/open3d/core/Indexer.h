@@ -106,7 +106,11 @@ struct TensorRef {
     // The default copy constructor works on __device__ as well so we don't
     // define it explicitly. shape_[MAX_DIMS] and strides[MAX_DIMS] will be
     // copied fully.
-    TensorRef() : data_ptr_(nullptr), ndims_(0), dtype_byte_size_(0) {}
+    TensorRef()
+        : data_ptr_(nullptr),
+          ndims_(0),
+          dtype_byte_size_(0),
+          total_byte_size_(0) {}
 
     TensorRef(const Tensor& t) {
         if (t.NumDims() > MAX_DIMS) {
@@ -116,6 +120,7 @@ struct TensorRef {
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
         ndims_ = t.NumDims();
         dtype_byte_size_ = t.GetDtype().ByteSize();
+        total_byte_size_ = t.NumElements() * dtype_byte_size_;
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
@@ -192,6 +197,7 @@ struct TensorRef {
     void* data_ptr_;
     int64_t ndims_ = 0;
     int64_t dtype_byte_size_ = 0;
+    int64_t total_byte_size_ = 0;
     int64_t shape_[MAX_DIMS];
     int64_t byte_strides_[MAX_DIMS];
 };
@@ -546,18 +552,21 @@ protected:
         if (workload_idx < 0) {
             return nullptr;
         }
+
+        int64_t offset = 0;
         if (tr_contiguous) {
-            return static_cast<char*>(tr.data_ptr_) +
-                   workload_idx * tr.dtype_byte_size_;
+            offset = workload_idx * tr.dtype_byte_size_;
         } else {
-            int64_t offset = 0;
             for (int64_t i = 0; i < ndims_; ++i) {
                 offset += workload_idx / primary_strides_[i] *
                           tr.byte_strides_[i];
                 workload_idx = workload_idx % primary_strides_[i];
             }
-            return static_cast<char*>(tr.data_ptr_) + offset;
         }
+
+        OPEN3D_ASSERT(offset >= 0 && offset < tr.total_byte_size_ &&
+                      "Index operation data pointer is out of range.");
+        return static_cast<char*>(tr.data_ptr_) + offset;
     }
 
     /// Get data pointer from a TensorRef with \p workload_idx.
@@ -638,7 +647,7 @@ protected:
 class IndexerIterator {
 public:
     struct Iterator {
-        Iterator() {};
+        Iterator(){};
         Iterator(const Indexer& indexer);
         Iterator(Iterator&& other) = default;
 
