@@ -157,8 +157,6 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                 buf_distances.Slice(0, 0, num_queries_i);
         Tensor buf_indices_row_view = buf_indices.Slice(0, 0, num_queries_i);
         {
-            CUDAScopedStream scoped_stream(CUDAStream::CreateNew(), true);
-            cudaStream_t cur_stream = CUDAStream::GetInstance().Get();
             for (int j = 0; j < num_points; j += tile_cols) {
                 int num_points_j = std::min(tile_cols, num_points - j);
                 int col_j = j / tile_cols;
