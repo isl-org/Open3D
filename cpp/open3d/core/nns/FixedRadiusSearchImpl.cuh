@@ -870,7 +870,7 @@ void SortPairs(const cudaStream_t& stream,
                 sort_temp.first, sort_temp.second, distances_unsorted,
                 distances_sorted, indices_unsorted, indices_sorted, num_indices,
                 num_segments, query_neighbors_row_splits,
-                query_neighbors_row_splits + 1);
+                query_neighbors_row_splits + 1, 0, sizeof(T) * 8, stream);
     }
     mem_temp.Free(sort_temp);
 
