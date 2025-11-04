@@ -537,13 +537,15 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
     for (auto &it : voxel_grid.voxels_) {
         const geometry::Voxel &voxel = it.second;
         // 8 vertices in a voxel
+        const Eigen::Matrix3f scaled_rot =
+                voxel_grid.rotation_.cast<float>() * voxel_grid.voxel_size_;
         Eigen::Vector3f base_vertex =
                 voxel_grid.origin_.cast<float>() +
-                voxel.grid_index_.cast<float>() * voxel_grid.voxel_size_;
+                scaled_rot * voxel.grid_index_.cast<float>();
         std::vector<Eigen::Vector3f> vertices;
         for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
-            vertices.push_back(base_vertex + vertex_offset.cast<float>() *
-                                                     voxel_grid.voxel_size_);
+            vertices.push_back(base_vertex +
+                               scaled_rot * vertex_offset.cast<float>());
         }
 
         // Voxel color (applied to all points)
@@ -628,13 +630,15 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
     for (auto &it : voxel_grid.voxels_) {
         const geometry::Voxel &voxel = it.second;
         // 8 vertices in a voxel
+        const Eigen::Matrix3f scaled_rot =
+                voxel_grid.rotation_.cast<float>() * voxel_grid.voxel_size_;
         Eigen::Vector3f base_vertex =
                 voxel_grid.origin_.cast<float>() +
-                voxel.grid_index_.cast<float>() * voxel_grid.voxel_size_;
+                scaled_rot * voxel.grid_index_.cast<float>();
         std::vector<Eigen::Vector3f> vertices;
         for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
-            vertices.push_back(base_vertex + vertex_offset.cast<float>() *
-                                                     voxel_grid.voxel_size_);
+            vertices.push_back(base_vertex +
+                               scaled_rot * vertex_offset.cast<float>());
         }
 
         // Voxel color (applied to all points)
