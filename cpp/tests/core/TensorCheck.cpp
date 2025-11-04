@@ -7,6 +7,7 @@
 
 #include "open3d/core/TensorCheck.h"
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/utility/Helper.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
@@ -201,5 +202,40 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     }
 }
 
+#if BUILD_CUDA_MODULE
+class TensorCheckPermuteDevicesDeathTest : public TensorCheckPermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorCheckPermuteDevicesDeathTest,
+        testing::ValuesIn(TensorCheckPermuteDevicesDeathTest::TestCases()));
+
+TEST_P(TensorCheckPermuteDevicesDeathTest, AssertTensorIndexOps) {
+    GTEST_FLAG_SET(death_test_style, "threadsafe");
+    core::Device device = GetParam();
+    core::Tensor idx = core::Tensor::Init<int64_t>(
+            {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, device);
+    core::Tensor t = core::Tensor::Zeros({10}, core::Float32, device);
+    core::Tensor val =
+            core::Tensor::Ones({idx.GetLength()}, core::Float32, device);
+    if (device.IsCUDA()) {
+        // for CUDA, this is the best we can do
+        try {
+            t.IndexAdd_(0, idx, val);
+            core::cuda::Synchronize();
+            core::OPEN3D_GET_LAST_CUDA_ERROR("Index operation failed");
+            FAIL() << "Should not reach here.";
+        } catch (std::runtime_error const& err) {
+            EXPECT_TRUE(utility::ContainsString(
+                    err.what(),
+                    "CUDA runtime error: device-side assert triggered"));
+        } catch (...) {
+            FAIL() << "std::runtime_error not thrown.";
+        }
+    } else {
+        EXPECT_DEATH(t.IndexAdd_(0, idx, val),
+                     "Index operation data pointer is out of range.");
+    }
+}
+#endif
 }  // namespace tests
 }  // namespace open3d

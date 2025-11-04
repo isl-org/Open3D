@@ -564,8 +564,12 @@ protected:
             }
         }
 
+#if defined(__CUDACC__)
+        assert(offset >= 0 && offset < tr.total_byte_size_);
+#else
         OPEN3D_ASSERT(offset >= 0 && offset < tr.total_byte_size_ &&
                       "Index operation data pointer is out of range.");
+#endif
         return static_cast<char*>(tr.data_ptr_) + offset;
     }
 
