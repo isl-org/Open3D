@@ -26,6 +26,7 @@ namespace geometry {
 
 class LineSet;
 class PointCloud;
+class RaycastingScene;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -1092,6 +1093,12 @@ public:
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
 
+    /// Compute an ambient occlusion texture for the mesh.
+    Image ComputeAmbientOcclusion(int tex_width,
+                                  int n_rays,
+                                  float max_hit_distance = 0,
+                                  bool update_material = true);
+
     /// Computes tangent space for the triangle mesh with MikkTSpace.
     /// The mesh must have vertex positions, vertex normals, and texture UVs
     /// (triangle attribute 'texture_uvs'). The computed tangents and bitangents
@@ -1101,16 +1108,7 @@ public:
     /// \param bake If true, the tangents, bitangents and normals will also be
     /// baked to textures and saved to the material.
     /// \param tex_width Baked texture size. Default 512.
-
-
-    /// Compute an ambient occlusion texture for the mesh. 
-    Image TriangleMesh::ComputeAmbientOcclusion(size_t tex_width,
-                                            size_t n_rays,
-                                            float max_hit_distance,
-                                            RaycastingScene *opt_rcs);
-
-    void ComputeTangentSpace(bool bake = true,
-                             int tex_width = 512);
+    void ComputeTangentSpace(bool bake = true, int tex_width = 512);
 
     /// \brief Converts a normal map between world and tangent space.
     ///
@@ -1130,9 +1128,9 @@ public:
     /// the mesh material will be updated to contain the new normal map.
     /// \return The converted normal map as an Image. This will have 3 channels,
     /// UInt8 data type, with values in range [0, 255].
-    Image TriangleMesh::TransformNormalMap(const Image &normal_map,
-                                           bool to_tangent_space = true,
-                                           bool update_material = false);
+    Image TransformNormalMap(const Image &normal_map,
+                             bool to_tangent_space = true,
+                             bool update_material = false);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

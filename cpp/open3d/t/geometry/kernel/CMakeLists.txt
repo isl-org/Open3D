@@ -17,6 +17,7 @@ target_sources(tgeometry_kernel PRIVATE
     UVUnwrapping.cpp
     VoxelBlockGrid.cpp
     VoxelBlockGridCPU.cpp
+    mikktspace.c
 )
 
 if (BUILD_CUDA_MODULE)
