@@ -25,7 +25,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
                                Tensor& hash_table_index,
                                Tensor& hash_table_cell_splits) {
     CUDAScopedDevice scoped_device(points.GetDevice());
-    const cudaStream_t stream = 0;
+    cudaStream_t stream = CUDAStream::GetInstance().Get();
     int texture_alignment = 512;
 
     void* temp_ptr = nullptr;
@@ -74,7 +74,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
                            Tensor& neighbors_row_splits,
                            Tensor& neighbors_distance) {
     CUDAScopedDevice scoped_device(points.GetDevice());
-    const cudaStream_t stream = 0;
+    cudaStream_t stream = CUDAStream::GetInstance().Get();
     int texture_alignment = 512;
 
     Device device = points.GetDevice();
@@ -135,8 +135,8 @@ void FixedRadiusSearchCUDA(const Tensor& points,
         Tensor distances_sorted = Tensor::Empty({num_indices}, dtype, device);
 
         // Determine temp_size for sorting
-        impl::SortPairs(stream, temp_ptr, temp_size, texture_alignment, num_indices,
-                        num_segments,
+        impl::SortPairs(stream, temp_ptr, temp_size, texture_alignment,
+                        num_indices, num_segments,
                         neighbors_row_splits.GetDataPtr<int64_t>(),
                         indices_unsorted.GetDataPtr<TIndex>(),
                         distances_unsorted.GetDataPtr<T>(),
@@ -147,8 +147,8 @@ void FixedRadiusSearchCUDA(const Tensor& points,
         temp_ptr = temp_tensor.GetDataPtr();
 
         // Actually run the sorting.
-        impl::SortPairs(stream, temp_ptr, temp_size, texture_alignment, num_indices,
-                        num_segments,
+        impl::SortPairs(stream, temp_ptr, temp_size, texture_alignment,
+                        num_indices, num_segments,
                         neighbors_row_splits.GetDataPtr<int64_t>(),
                         indices_unsorted.GetDataPtr<TIndex>(),
                         distances_unsorted.GetDataPtr<T>(),
@@ -174,7 +174,7 @@ void HybridSearchCUDA(const Tensor& points,
                       Tensor& neighbors_count,
                       Tensor& neighbors_distance) {
     CUDAScopedDevice scoped_device(points.GetDevice());
-    const cudaStream_t stream = 0;
+    cudaStream_t stream = CUDAStream::GetInstance().Get();
 
     Device device = points.GetDevice();
 
