@@ -106,11 +106,7 @@ struct TensorRef {
     // The default copy constructor works on __device__ as well so we don't
     // define it explicitly. shape_[MAX_DIMS] and strides[MAX_DIMS] will be
     // copied fully.
-    TensorRef()
-        : data_ptr_(nullptr),
-          ndims_(0),
-          dtype_byte_size_(0),
-          total_byte_size_(0) {}
+    TensorRef() : data_ptr_(nullptr) {}
 
     TensorRef(const Tensor& t) {
         if (t.NumDims() > MAX_DIMS) {
@@ -120,10 +116,17 @@ struct TensorRef {
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
         ndims_ = t.NumDims();
         dtype_byte_size_ = t.GetDtype().ByteSize();
-        total_byte_size_ = t.NumElements() * dtype_byte_size_;
+        total_byte_size_ = 0;
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
+            // The end of the buffer should be at the end of the largest strided
+            // dimension block This way, we can compute the total buffer size in
+            // both cases (when tensor is contiguous and when it is not) If it
+            // is not contiguous, the actual "end" of the buffer may not be
+            // simply NumElements() * dtype_byte_size_
+            total_byte_size_ =
+                    std::max(total_byte_size_, shape_[i] * byte_strides_[i]);
         }
     }
 
