@@ -592,23 +592,11 @@ protected:
     OPEN3D_HOST_DEVICE T* GetWorkloadDataPtr(const TensorRef& tr,
                                              bool tr_contiguous,
                                              int64_t workload_idx) const {
-        // For 0-sized input reduction op, the output Tensor
-        // workload_idx == 1 > NumWorkloads() == 0.
-        if (workload_idx < 0) {
-            return nullptr;
-        }
-        if (tr_contiguous) {
-            return static_cast<T*>(tr.data_ptr_) + workload_idx;
-        } else {
-            int64_t offset = 0;
-            for (int64_t i = 0; i < ndims_; ++i) {
-                offset += workload_idx / primary_strides_[i] *
-                          tr.byte_strides_[i];
-                workload_idx = workload_idx % primary_strides_[i];
-            }
-            return static_cast<T*>(static_cast<void*>(
-                    static_cast<char*>(tr.data_ptr_) + offset));
-        }
+        // See note of this function.
+        // If sizeof(T) == tr.dtype_byte_size_, then we can just static cast the
+        // byte pointer.
+        return static_cast<T*>(static_cast<void*>(
+                GetWorkloadDataPtr(tr, tr_contiguous, workload_idx)));
     }
 
     /// Number of input and output Tensors.
