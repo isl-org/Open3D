@@ -180,6 +180,7 @@ struct TensorRef {
         rc = rc && (data_ptr_ == other.data_ptr_);
         rc = rc && (ndims_ == other.ndims_);
         rc = rc && (dtype_byte_size_ == other.dtype_byte_size_);
+        rc = rc && (total_byte_size_ == other.total_byte_size_);
         for (int64_t i = 0; i < ndims_; ++i) {
             rc = rc && (shape_[i] == other.shape_[i]);
             rc = rc && (byte_strides_[i] == other.byte_strides_[i]);
@@ -248,6 +249,14 @@ public:
                       input_.byte_strides_[i];
             workload_idx = workload_idx % input_.byte_strides_[i];
         }
+
+#if defined(__CUDACC__)
+        assert(offset >= 0 && offset < input_.total_byte_size_);
+#else
+        OPEN3D_ASSERT(offset >= 0 && offset < input_.total_byte_size_ &&
+                      "TensorIterator operation data pointer is out of range.");
+#endif
+
         return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
                                   offset);
     }
