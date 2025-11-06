@@ -5,8 +5,12 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-import open3d as o3d
+import copy
+
 import numpy as np
+import pytest
+
+import open3d as o3d
 
 
 class TestSymmetricICP:
@@ -239,8 +243,6 @@ class TestSymmetricICP:
         true_transformation[0, 3] = 0.1  # Small translation in x
         true_transformation[1, 3] = 0.05  # Small translation in y
 
-        import copy
-
         target = copy.deepcopy(source)
         target.transform(true_transformation)
 
@@ -258,8 +260,6 @@ class TestSymmetricICP:
 
     def test_registration_symmetric_icp_requires_normals(self):
         """Test that symmetric ICP requires normals."""
-        import pytest
-
         source = o3d.geometry.PointCloud()
         target = o3d.geometry.PointCloud()
 

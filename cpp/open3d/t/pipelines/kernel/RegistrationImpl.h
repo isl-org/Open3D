@@ -227,6 +227,24 @@ template bool GetJacobianPointToPlane(int64_t workload_idx,
                                       double *J_ij,
                                       double &r);
 
+/// \brief Computes Jacobian and residuals for symmetric ICP.
+///
+/// Symmetric ICP minimizes both source-to-target and target-to-source
+/// point-to-plane distances. This function computes two Jacobians and two
+/// residuals for a single correspondence pair.
+///
+/// \param workload_idx Index of the correspondence to process.
+/// \param source_points_ptr Pointer to source point positions (3N elements).
+/// \param target_points_ptr Pointer to target point positions (3N elements).
+/// \param source_normals_ptr Pointer to source point normals (3N elements).
+/// \param target_normals_ptr Pointer to target point normals (3N elements).
+/// \param correspondence_indices Pointer to correspondence indices.
+/// \param J_ij Output array for Jacobians (must have space for 12 elements:
+///             elements 0-5 for source-to-target Jacobian,
+///             elements 6-11 for target-to-source Jacobian).
+/// \param r1 Output residual for source-to-target point-to-plane distance.
+/// \param r2 Output residual for target-to-source point-to-plane distance.
+/// \return true if correspondence is valid, false if correspondence is -1.
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline bool GetJacobianSymmetric(
         int64_t workload_idx,
