@@ -58,7 +58,7 @@ public:
     /// String reprentation for printing.
     std::string ToString() const;
 
-    /// Returns the texture map map
+    /// Returns the texture maps 
     const TextureMaps &GetTextureMaps() const { return texture_maps_; }
 
     /// Get images (texture maps) of this Material. Throws exception if the

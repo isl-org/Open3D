@@ -595,36 +595,26 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             ++current_idx;
         } else if (w_mesh.GetMaterial().HasRoughnessMap() &&
                    w_mesh.GetMaterial().HasMetallicMap()) {
-            auto rough = w_mesh.GetMaterial().GetRoughnessMap();
-            auto metal = w_mesh.GetMaterial().GetMetallicMap();
-            auto rows = rough.GetRows();
-            auto cols = rough.GetCols();
-            auto rough_metal =
-                    geometry::Image(rows, cols, 4, core::Dtype::UInt8);
-            rough_metal.AsTensor() =
-                    core::Tensor::Ones(rough_metal.AsTensor().GetShape(),
-                                       core::Dtype::UInt8) *
-                    255;
-            auto metal_channel = metal.AsTensor().GetItem(
-                    {core::TensorKey::Slice(0, rows + 1, core::None),
-                     core::TensorKey::Slice(0, cols + 1, core::None),
-                     core::TensorKey::Index(0)});
-            auto rough_channel = rough.AsTensor().GetItem(
-                    {core::TensorKey::Slice(0, rows + 1, core::None),
-                     core::TensorKey::Slice(0, cols + 1, core::None),
-                     core::TensorKey::Index(0)});
-            rough_metal.AsTensor().SetItem(
-                    {core::TensorKey::Slice(0, rows + 1, core::None),
-                     core::TensorKey::Slice(0, cols + 1, core::None),
-                     core::TensorKey::Index(2)},
-                    metal_channel);
-            rough_metal.AsTensor().SetItem(
-                    {core::TensorKey::Slice(0, rows + 1, core::None),
-                     core::TensorKey::Slice(0, cols + 1, core::None),
-                     core::TensorKey::Index(1)},
-                    rough_channel);
+            auto rough = w_mesh.GetMaterial().GetRoughnessMap().AsTensor();
+            auto metal = w_mesh.GetMaterial().GetMetallicMap().AsTensor();
+            if (rough.GetShape() != metal.GetShape()) {
+                utility::LogError(
+                        "RoughnessMap (shape={}) and MetallicMap (shape={}) "
+                        "must have the same shape.",
+                        rough.GetShape(), metal.GetShape());
+            }
+            auto rows = rough.GetShape(0);
+            auto cols = rough.GetShape(1);
+            auto rough_metal = core::Tensor::Full({rows, cols, 4}, 255,
+                                                  core::Dtype::UInt8);
+            rough_metal.Slice(2, 2, 3) =
+                    metal.Slice(2, 0, 1);  // blue channel is metal
+            rough_metal.Slice(2, 1, 2) =
+                    rough.Slice(2, 0, 1);  // green channel is roughness
+
+            geometry::Image rough_metal_img(rough_metal);
             SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                       aiTextureType_UNKNOWN, rough_metal);
+                                       aiTextureType_UNKNOWN, rough_metal_img);
             ++current_idx;
         } else {
             if (w_mesh.GetMaterial().HasRoughnessMap()) {

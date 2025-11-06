@@ -1093,11 +1093,27 @@ public:
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
 
-    /// Compute an ambient occlusion texture for the mesh.
-    Image ComputeAmbientOcclusion(int tex_width,
-                                  int n_rays,
-                                  float max_hit_distance = 0,
-                                  bool update_material = true);
+    /// \brief Computes an ambient occlusion texture for the mesh.
+    ///
+    /// This method generates an ambient occlusion map by casting rays from the surface
+    /// of the mesh and measuring occlusion. The mesh must have texture coordinates
+    /// ("texture_uvs" triangle attribute). The resulting texture is a single-channel
+    /// grayscale image with values in [0, 255], where 0 is fully occluded and 255 is
+    /// fully exposed.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param tex_width The width and height of the output texture in pixels (square).
+    /// \param n_rays The number of rays to cast per texel for occlusion estimation.
+    /// \param max_hit_distance The maximum distance for ray intersection. The
+    ///         default is INFINITY, i.e. very far occlusions also count.
+    /// \param update_material If true, updates the mesh material with the computed
+    ///        ambient occlusion texture.
+    /// \return The computed ambient occlusion texture as an Image (single channel, UInt8).
+    Image ComputeAmbientOcclusion(int tex_width = 256,
+                                    int n_rays = 32,
+                                    float max_hit_distance = INFINITY,
+                                    bool update_material = true);
 
     /// Computes tangent space for the triangle mesh with MikkTSpace.
     /// The mesh must have vertex positions, vertex normals, and texture UVs
