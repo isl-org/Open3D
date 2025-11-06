@@ -430,10 +430,15 @@ Tensor Tensor::Arange(const Scalar start,
     return kernel::Arange(t_start, t_stop, t_step);
 }
 
-Tensor Tensor::Quasirandom(int64_t n, int64_t dims, const Dtype dtype, const Device& device) {
-    // Implements a simple quasirandom (low-discrepancy) sequence generator using the method from
+Tensor Tensor::Quasirandom(int64_t n,
+                           int64_t dims,
+                           const Dtype dtype,
+                           const Device& device) {
+    // Implements a simple quasirandom (low-discrepancy) sequence generator
+    // using the method from
     // https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
-    // Uses the fractional part of multiples of the generalized golden ratio for each dimension.
+    // Uses the fractional part of multiples of the generalized golden ratio for
+    // each dimension.
 
     // Validate input
     if (n <= 0) {
@@ -443,27 +448,27 @@ Tensor Tensor::Quasirandom(int64_t n, int64_t dims, const Dtype dtype, const Dev
         utility::LogError("Quasirandom: dims must be positive, got {}", dims);
     }
     if (!(dtype == core::Float32 || dtype == core::Float64)) {
-        utility::LogError("Quasirandom: dtype must be Float32 or Float64, got {}", dtype.ToString());
+        utility::LogError(
+                "Quasirandom: dtype must be Float32 or Float64, got {}",
+                dtype.ToString());
     }
 
     // Compute generalized golden ratio for each dimension
-    std::vector<double> alpha(dims);
+    std::vector<double> alpha(dims + 1);
     // Use the recurrence: phi_1 = 1, phi_{d+1} = (1 + sqrt(1 + 4*phi_d)) / 2
     alpha[0] = 1.0;
-    for (int64_t d = 1; d < dims; ++d) {
+    for (int64_t d = 1; d < dims + 1; ++d) {
         alpha[d] = (1.0 + std::sqrt(1.0 + 4.0 * alpha[d - 1])) / 2.0;
+        alpha[d - 1] = 1. / alpha[d - 1];  // Each dimension basis is 1/phi^d
     }
-    // Use 1/phi for each dimension
-    for (int64_t d = 0; d < dims; ++d) {
-        alpha[d] = 1.0 / alpha[d];
-    }
+    alpha[dims] = 1. / alpha[dims];
     Tensor out({n, dims}, dtype, Device("CPU:0"));  // on the CPU for now.
     // Fill tensor with quasirandom values
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t* data = static_cast<scalar_t*>(out.GetDataPtr());
         for (int64_t i = 0; i < n; ++i) {
             for (int64_t d = 0; d < dims; ++d) {
-                double val = std::fmod(0.5 + alpha[d] * (i + 1), 1.0);
+                double val = std::fmod(0.5 + alpha[d + 1] * (i + 1), 1.0);
                 data[i * dims + d] = static_cast<scalar_t>(val);
             }
         }

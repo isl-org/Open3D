@@ -1895,6 +1895,7 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
                                             int n_rays,
                                             float max_hit_distance,
                                             bool update_material) {
+    using core::Tensor;
     if (!HasTriangleAttr("texture_uvs")) {
         utility::LogError(
                 "TriangleMesh does not contain 'texture_uvs'. Please compute "
@@ -1913,9 +1914,9 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
     auto baked_textures =
             BakeVertexAttrTextures(tex_width, {"positions", "normals"}, margin,
                                    /*fill=*/0.0, /*update_material=*/false);
-    core::Tensor position_map =
+    Tensor position_map =
             baked_textures["positions"].To(GetDevice(), core::Float32);
-    core::Tensor normal_map =
+    Tensor normal_map =
             baked_textures["normals"].To(GetDevice(), core::Float32);
 
     RaycastingScene rcs;
@@ -1924,78 +1925,72 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
     const int64_t n_pixels = tex_width * tex_width;
 
     // Reshape maps and create masks for valid pixels (not in the margin).
-    core::Tensor positions = position_map.Reshape({n_pixels, 3});
-    core::Tensor normals = normal_map.Reshape({n_pixels, 3});
-    core::Tensor valid_mask = positions.Abs().Sum({1}).Ne(0);
-    core::Tensor valid_indices = valid_mask.NonZero().Flatten();
+    Tensor positions = position_map.Reshape({n_pixels, 3});
+    Tensor normals = normal_map.Reshape({n_pixels, 3});
+    Tensor valid_mask = positions.Abs().Sum({1}).Ne(0);
+    Tensor valid_indices = valid_mask.NonZero().Flatten();
     const int64_t n_valid_pixels = valid_indices.GetLength();
 
     if (n_valid_pixels == 0) {
         utility::LogWarning("No valid pixels found to compute AO on.");
-        return Image(
-                core::Tensor::Ones({(int64_t)tex_width, (int64_t)tex_width, 1},
-                                   core::UInt8, GetDevice()) *
-                255);
+        return Image(Tensor::Ones({(int64_t)tex_width, (int64_t)tex_width, 1},
+                                  core::UInt8, GetDevice()) *
+                     255);
     }
 
     // Get origins and normals for valid pixels.
-    core::Tensor valid_positions = positions.IndexGet({valid_indices});
-    core::Tensor valid_normals = normals.IndexGet({valid_indices});
+    Tensor valid_positions = positions.IndexGet({valid_indices});
+    Tensor valid_normals = normals.IndexGet({valid_indices});
 
-    core::Tensor origins = valid_positions.Expand({n_rays, n_valid_pixels, 3});
+    Tensor origins = valid_positions.Expand({n_rays, n_valid_pixels, 3});
 
     // Hemisphere sampling using 2D quasirandom numbers.
-    core::Tensor qr =
-            core::Tensor::Quasirandom(n_rays, 2, core::Float32, GetDevice());
-    core::Tensor r1 = qr.Slice(1, 0, 1);
-    core::Tensor r2 = qr.Slice(1, 1, 2);
-    core::Tensor r = r1.Sqrt();
-    core::Tensor theta = r2 * 2.0 * M_PI;
-    core::Tensor sampled_dirs =
-            core::Tensor::Empty({n_rays, 3}, core::Float32, GetDevice());
+    Tensor qr = Tensor::Quasirandom(n_rays, 2, core::Float32, GetDevice());
+    Tensor r1 = qr.Slice(1, 0, 1);
+    Tensor r = r1.Sqrt();
+    Tensor r2 = qr.Slice(1, 1, 2);
+    Tensor theta = r2 * 2.0 * M_PI;
+    Tensor sampled_dirs =
+            Tensor::Empty({n_rays, 3}, core::Float32, GetDevice());
     sampled_dirs.Slice(1, 0, 1) = r * theta.Cos();  // X
     sampled_dirs.Slice(1, 1, 2) = r * theta.Sin();  // Y
-    sampled_dirs.Slice(1, 2, 3) =
-            (core::Tensor::Ones({1, 1}, core::Float32, GetDevice()) - r1)
-                    .Sqrt();  // Z
+    sampled_dirs.Slice(1, 2, 3) = (1.f - r1).Sqrt();  // Z >= 0
     sampled_dirs =
             sampled_dirs.Expand({n_valid_pixels, n_rays, 3}).Transpose(0, 1);
 
     // Rotate (0, 0, 1) to align with normal
     // Create basis from normals to transform sampled directions.
-    core::Tensor t = valid_normals.Expand({n_rays, n_valid_pixels, 3});
-    core::Tensor up1 = core::Tensor::Init<float>({0, 0, 1}, GetDevice());
-    core::Tensor up2 = core::Tensor::Init<float>({1, 0, 0}, GetDevice());
-    core::Tensor up = up1.Expand({n_rays, n_valid_pixels, 3});
-    core::Tensor abs_dot = t.Mul(up).Sum({-1}).Abs();
+    Tensor t = valid_normals.Expand({n_rays, n_valid_pixels, 3});
+    Tensor up1 = Tensor::Init<float>({0, 0, 1}, GetDevice());
+    Tensor up2 = Tensor::Init<float>({1, 0, 0}, GetDevice());
+    Tensor up = up1.Expand({n_rays, n_valid_pixels, 3});
+    Tensor abs_dot = t.Mul(up).Sum({-1}).Abs();
     up.IndexSet({abs_dot.Ge(1.0 - 1e-6)}, up2);
     // Compute b = normalize(cross(t, up))
-    core::Tensor b = t.Cross(up);
+    Tensor b = t.Cross(up);
     b = b / b.Norm({-1}, true).Clip_(1e-6, INFINITY);
     // Transform directions to world space.
-    core::Tensor directions = sampled_dirs.Slice(-1, 0, 1) * t.Cross(b) +
-                              sampled_dirs.Slice(-1, 1, 2) * b +
-                              sampled_dirs.Slice(-1, 2, 3) * t;
+    Tensor directions = sampled_dirs.Slice(-1, 0, 1) * t.Cross(b) +
+                        sampled_dirs.Slice(-1, 1, 2) * b +
+                        sampled_dirs.Slice(-1, 2, 3) * t;
 
     // Cast all rays at once.
-    core::Tensor rays = origins.Append(directions, -1);
-    core::Tensor occlusion = rcs.TestOcclusions(
+    Tensor rays = origins.Append(directions, -1);
+    Tensor occlusion = rcs.TestOcclusions(
             rays, 1e-5f,  // tnear > 0 to prevent self-occlusions
-            max_hit_distance).To(core::Float32);
+            max_hit_distance);
 
-    core::Tensor ao_texture =
-            core::Tensor::Ones({n_pixels}, core::Float32, GetDevice());
-    ao_texture.IndexSet({valid_indices}, 1.0f - occlusion.Mean({0}));
+    Tensor ao_texture = Tensor::Ones({n_pixels}, core::Float32, GetDevice());
+    ao_texture.IndexSet({valid_indices}, 1.0f - occlusion.To(core::Float32).Mean({0}));
     ao_texture = ao_texture.View({(int64_t)tex_width, (int64_t)tex_width, 1});
 
     // Denoise with bilateral filter.
     Image ao_image(ao_texture);
-    // Image position_image(position_map);
-    // Image denoised_ao_image = ao_image.FilterBilateral(
-    //         /*kernel_size*/ 5, /*value_sigma*/ 0.1, /*distance_sigma*/ 3.0);
+    Image denoised_ao_image = ao_image.FilterBilateral(
+            /*kernel_size*/ 3, /*value_sigma*/ 2./n_rays, /*distance_sigma*/ 3.0);
 
     // Convert to an 8-bit image and update material.
-    Image final_image(ao_image.To(core::UInt8, false, 255.f, 0.f));
+    Image final_image(denoised_ao_image.To(core::UInt8, false, 255.f, 0.f));
     if (update_material) {
         if (!HasMaterial()) {
             SetMaterial(visualization::rendering::Material());

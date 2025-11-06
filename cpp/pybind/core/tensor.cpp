@@ -439,6 +439,27 @@ void pybind_core_tensor_definitions(py::module& m) {
             "interval.",
             "start"_a, "stop"_a, "step"_a = py::none(), "dtype"_a = py::none(),
             py::kw_only(), "device"_a = py::none());
+    tensor.def_static(
+            "quasirandom", Tensor::Quasirandom, "n"_a = 16, "dims"_a = 2,
+            "dtype"_a = Float32, "device"_a = Device("CPU:0"),
+            R"(Generates a tensor containing points from a quasirandom sequence.
+ 
+ This function creates a tensor of shape (n, dims) where each row is a point in
+ a low-discrepancy quasirandom sequence (specifically, the generalized golden
+ ratio based R_n sequence). The 2D variant is the plastic sequence.  Such
+ sequences are commonly used in numerical integration, computer graphics and
+ sampling tasks where uniform coverage of the space is desired.  See
+ https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+ for more details.
+ 
+ Args:
+     n: Number of points to generate (default: 16).
+     dims: Number of dimensions for each point (default: 2).
+     dtype: Data type of the output tensor (default: Float32).
+     device: Device on which to allocate the tensor (default: CPU:0).
+
+ Returns:
+     A tensor of shape (n, dims) containing quasirandom points.)");
 
     tensor.def(
             "append",
@@ -570,6 +591,19 @@ Example:
     tensor.def("__matmul__", &Tensor::Matmul,
                "Computes matrix multiplication of a"
                " 2D tensor with another tensor of compatible shape.");
+    tensor.def("cross", &Tensor::Cross, "other"_a, "axis"_a = -1, R"(
+ Computes the (batched) cross product of the current tensor with another tensor
+ of compatible (i.e. broadcastable) shape, and the size of the specified axis
+ must be 3. If the axis is -1 (default), the last axis is used.
+
+ Args:
+    other The second input tensor to compute the cross product with.
+    axis The axis along which to compute the cross product. Default is -1 (the
+        last axis).
+
+ Returns:
+    A tensor containing the cross product of the two input tensors along the
+    specified axis.)");
     tensor.def("lstsq", &Tensor::LeastSquares,
                "Solves the linear system AX = B with QR decomposition and "
                "returns X. A is a (m, n) matrix with m >= n.",

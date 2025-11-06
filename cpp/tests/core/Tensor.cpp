@@ -267,6 +267,31 @@ TEST_P(TensorPermuteDevicesWithSYCL, Arange) {
                  std::runtime_error);
 }
 
+TEST_P(TensorPermuteDevicesWithSYCL, Quasirandom) {
+    core::Device device = GetParam();
+
+    // Basic functionality
+    core::Tensor qr_ref = core::Tensor::Init<float>({{0.11803399, 0.035687387},
+                                               {0.73606795, 0.5713748},
+                                               {0.35410196, 0.10706216},
+                                               {0.97213596, 0.64274955},
+                                               {0.59016997, 0.17843693},
+                                               {0.20820393, 0.7141243},
+                                               {0.8262379, 0.24981171},
+                                               {0.44427192, 0.7854991}});
+    core::Tensor qr = core::Tensor::Quasirandom(8, 2, core::Float32, device);
+    EXPECT_EQ(qr.GetShape(), core::SizeVector({8, 2}));
+    EXPECT_EQ(qr.GetDtype(), core::Float32);
+    EXPECT_EQ(qr.GetDevice(), device);
+    EXPECT_TRUE(qr.To(core::Device("CPU:0")).AllClose(qr_ref));
+
+    // Test error conditions
+    EXPECT_ANY_THROW(core::Tensor::Quasirandom(0, 2));   // n <= 0
+    EXPECT_ANY_THROW(core::Tensor::Quasirandom(10, 0));  // dims <= 0
+    EXPECT_ANY_THROW(
+            core::Tensor::Quasirandom(10, 2, core::Int32));  // wrong dtype
+}
+
 TEST_P(TensorPermuteDevicesWithSYCL, Fill) {
     core::Device device = GetParam();
     core::Tensor t(std::vector<float>(2 * 3, 0), {2, 3}, core::Float32, device);
@@ -1556,6 +1581,33 @@ TEST_P(TensorPermuteDevicesWithSYCL, Det) {
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Det());
     EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Det());
     EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Det());
+}
+
+TEST_P(TensorPermuteDevicesWithSYCL, Cross) {
+    core::Device device = GetParam();
+    core::Tensor a = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+    core::Tensor b =
+            core::Tensor::Init<float>({{7, 8, 9}, {10, 11, 12}}, device);
+
+    core::Tensor c = a.Cross(b);   // axis=-1
+    core::Tensor c_ref =
+            core::Tensor::Init<float>({{-6, 12, -6}, {-6, 12, -6}}, device);
+    EXPECT_TRUE(c.AllClose(c_ref));
+
+    // Test with axis=0
+    c = a.T().Cross(b.T(), 0);
+    EXPECT_TRUE(c.AllClose(c_ref.T()));
+
+    // Test with broadcast
+    a = core::Tensor::Init<float>({1, 2, 3}, device);
+    b = core::Tensor::Init<float>({{7, 8, 9}, {10, 11, 12}}, device);
+    c = a.Cross(b);
+    c_ref = core::Tensor::Init<float>({{-6, 12, -6}, {-9, 18, -9}}, device);
+    EXPECT_TRUE(c.AllClose(c_ref));
+
+    // Test error conditions
+    core::Tensor bad_shape = core::Tensor::Ones({2, 2}, core::Float32, device);
+    EXPECT_ANY_THROW(a.Cross(bad_shape));
 }
 
 TEST_P(TensorPermuteDevicesWithSYCL, ShallowCopyConstructor) {

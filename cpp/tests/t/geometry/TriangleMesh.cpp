@@ -1677,19 +1677,19 @@ TEST_P(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
 
     // UVAtlas is CPU only.
     core::Device cpu_device("CPU:0");
-    //     auto mesh = t::geometry::TriangleMesh::CreateText(
-    //             "Open3D", 1.0, core::Float32, core::Int64, cpu_device);
     auto mesh = t::geometry::TriangleMesh::CreateTorus(
-            1.0, 0.6, 30, 20, core::Float32, core::Int64, cpu_device);
+           1.0, 0.6, 30, 20, core::Float32, core::Int64, cpu_device);
+    // auto box1 = t::geometry::TriangleMesh::CreateBox(1.f, 1.f, 1.f);
+    // auto mesh = box1.BooleanDifference(box1.Clone().Translate(core::Tensor::Init({0.1, 0.1, 0.1})));
     mesh.ComputeVertexNormals();
     mesh.ComputeUVAtlas();
 
     auto ao_map = mesh.ComputeAmbientOcclusion(
-            /*tex_width=*/256, /*n_rays=*/32, /*max_hit_distance=*/INFINITY,
+            /*tex_width=*/256, /*n_rays=*/8, /*max_hit_distance=*/INFINITY,
             /*update_material=*/true);
 
     EXPECT_EQ(ao_map.GetDtype(), core::UInt8);
-    //     EXPECT_EQ(ao_map.AsTensor().GetShape(), ElementsAre(256, 256, 1));
+    EXPECT_THAT(ao_map.AsTensor().GetShape(), ElementsAre(256, 256, 1));
     EXPECT_TRUE(mesh.GetMaterial().HasAOMap());
 
     t::io::WriteTriangleMesh("torus_ao.glb", mesh);
