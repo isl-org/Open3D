@@ -106,7 +106,7 @@ struct TensorRef {
     // The default copy constructor works on __device__ as well so we don't
     // define it explicitly. shape_[MAX_DIMS] and strides[MAX_DIMS] will be
     // copied fully.
-    TensorRef() : data_ptr_(nullptr), ndims_(0), dtype_byte_size_(0) {}
+    TensorRef() : data_ptr_(nullptr) {}
 
     TensorRef(const Tensor& t) {
         if (t.NumDims() > MAX_DIMS) {
@@ -116,9 +116,17 @@ struct TensorRef {
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
         ndims_ = t.NumDims();
         dtype_byte_size_ = t.GetDtype().ByteSize();
+        total_byte_size_ = 0;
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
+            // The end of the buffer should be at the end of the largest strided
+            // dimension block This way, we can compute the total buffer size in
+            // both cases (when tensor is contiguous and when it is not) If it
+            // is not contiguous, the actual "end" of the buffer may not be
+            // simply NumElements() * dtype_byte_size_
+            total_byte_size_ =
+                    std::max(total_byte_size_, shape_[i] * byte_strides_[i]);
         }
     }
 
@@ -175,6 +183,7 @@ struct TensorRef {
         rc = rc && (data_ptr_ == other.data_ptr_);
         rc = rc && (ndims_ == other.ndims_);
         rc = rc && (dtype_byte_size_ == other.dtype_byte_size_);
+        rc = rc && (total_byte_size_ == other.total_byte_size_);
         for (int64_t i = 0; i < ndims_; ++i) {
             rc = rc && (shape_[i] == other.shape_[i]);
             rc = rc && (byte_strides_[i] == other.byte_strides_[i]);
@@ -192,6 +201,7 @@ struct TensorRef {
     void* data_ptr_;
     int64_t ndims_ = 0;
     int64_t dtype_byte_size_ = 0;
+    int64_t total_byte_size_ = 0;
     int64_t shape_[MAX_DIMS];
     int64_t byte_strides_[MAX_DIMS];
 };
@@ -242,6 +252,14 @@ public:
                       input_.byte_strides_[i];
             workload_idx = workload_idx % input_.byte_strides_[i];
         }
+
+#if defined(__CUDACC__)
+        assert(offset >= 0 && offset < input_.total_byte_size_);
+#else
+        OPEN3D_ASSERT(offset >= 0 && offset < input_.total_byte_size_ &&
+                      "TensorIterator operation data pointer is out of range.");
+#endif
+
         return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
                                   offset);
     }
@@ -546,18 +564,25 @@ protected:
         if (workload_idx < 0) {
             return nullptr;
         }
+
+        int64_t offset = 0;
         if (tr_contiguous) {
-            return static_cast<char*>(tr.data_ptr_) +
-                   workload_idx * tr.dtype_byte_size_;
+            offset = workload_idx * tr.dtype_byte_size_;
         } else {
-            int64_t offset = 0;
             for (int64_t i = 0; i < ndims_; ++i) {
                 offset += workload_idx / primary_strides_[i] *
                           tr.byte_strides_[i];
                 workload_idx = workload_idx % primary_strides_[i];
             }
-            return static_cast<char*>(tr.data_ptr_) + offset;
         }
+
+#if defined(__CUDACC__)
+        assert(offset >= 0 && offset < tr.total_byte_size_);
+#else
+        OPEN3D_ASSERT(offset >= 0 && offset < tr.total_byte_size_ &&
+                      "Index operation data pointer is out of range.");
+#endif
+        return static_cast<char*>(tr.data_ptr_) + offset;
     }
 
     /// Get data pointer from a TensorRef with \p workload_idx.
@@ -570,23 +595,11 @@ protected:
     OPEN3D_HOST_DEVICE T* GetWorkloadDataPtr(const TensorRef& tr,
                                              bool tr_contiguous,
                                              int64_t workload_idx) const {
-        // For 0-sized input reduction op, the output Tensor
-        // workload_idx == 1 > NumWorkloads() == 0.
-        if (workload_idx < 0) {
-            return nullptr;
-        }
-        if (tr_contiguous) {
-            return static_cast<T*>(tr.data_ptr_) + workload_idx;
-        } else {
-            int64_t offset = 0;
-            for (int64_t i = 0; i < ndims_; ++i) {
-                offset += workload_idx / primary_strides_[i] *
-                          tr.byte_strides_[i];
-                workload_idx = workload_idx % primary_strides_[i];
-            }
-            return static_cast<T*>(static_cast<void*>(
-                    static_cast<char*>(tr.data_ptr_) + offset));
-        }
+        // See note of this function.
+        // If sizeof(T) == tr.dtype_byte_size_, then we can just static cast the
+        // byte pointer.
+        return static_cast<T*>(static_cast<void*>(
+                GetWorkloadDataPtr(tr, tr_contiguous, workload_idx)));
     }
 
     /// Number of input and output Tensors.
@@ -638,7 +651,7 @@ protected:
 class IndexerIterator {
 public:
     struct Iterator {
-        Iterator() {};
+        Iterator(){};
         Iterator(const Indexer& indexer);
         Iterator(Iterator&& other) = default;
 
