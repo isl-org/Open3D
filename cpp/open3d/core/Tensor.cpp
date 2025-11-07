@@ -8,6 +8,7 @@
 #include "open3d/core/Tensor.h"
 
 #include <numeric>
+#include <optional>
 #include <sstream>
 
 #include "open3d/core/AdvancedIndexing.h"
@@ -35,7 +36,6 @@
 #include "open3d/core/linalg/Tri.h"
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
