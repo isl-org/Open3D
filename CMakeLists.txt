@@ -125,9 +125,9 @@ option(USE_SYSTEM_VTK             "Use system pre-installed VTK"             OFF
 option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
-else()
-    option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                OFF)
-endif()
+ else()
+     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                OFF)
+ endif()
 if(LINUX_AARCH64)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
 else()
@@ -395,14 +395,21 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_mod
 
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
-    # Suppress nvcc unsupported compiler error for MSVC 2022 with CUDA 11.7 to 12.4
-    # https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12
-    if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
-        # Set this before any CUDA checks
-        add_compile_definitions(_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
-        set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
-        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
-        "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+    if(MSVC)
+        # Handle/suppress nvcc unsupported compiler error for MSVC>=1940 with CUDA 11.7 to 12.4:
+        # (https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12)
+        # Find CUDAToolkit first to get CUDAToolkit_VERSION:
+        find_package(CUDAToolkit REQUIRED)
+        if (CUDAToolkit_VERSION VERSION_LESS "12.5" AND MSVC_VERSION GREATER_EQUAL 1940)
+            # Set required nvcc flags before enable_language(CUDA).
+            # Note: CMake >=3.29.4 might be needed for CMAKE_CUDA_FLAGS to be passed correctly to
+            # CMake's try_compile environment.
+            set(CMAKE_CUDA_FLAGS
+                  "${CMAKE_CUDA_FLAGS} -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
+                  CACHE STRING "Flags for NVCC" FORCE)
+            message(WARNING "Using --allow-unsupported-compiler flag and -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH for nvcc<=12.4 with MSVC>=1940. "
+            "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+        endif()
     endif()
     if (CMAKE_CUDA_ARCHITECTURES)
         message(STATUS "Building with user-provided CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
@@ -498,6 +505,10 @@ if(WIN32)
         #
         # See: https://github.com/tensorflow/tensorflow/pull/10962
         add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj;/Ob2>")
+        # MSBuild adds /Zc:inline by default, but it needs to be added explicitly for other generators (e.g. Ninja),
+        # for Open3D to compile (the linker fails otherwise with a "fatal error LNK1189: library limit of 65535
+        # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

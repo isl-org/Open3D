@@ -44,10 +44,12 @@ def list_devices_with_torch():
     if torch_available():
         import open3d as o3d
         import torch
-        if (o3d.core.cuda.device_count() > 0 and torch.cuda.is_available() and
-                torch.cuda.device_count() > 0):
-            return [o3d.core.Device("CPU:0"), o3d.core.Device("CUDA:0")]
-        else:
-            return [o3d.core.Device("CPU:0")]
+        devices = [o3d.core.Device("CPU:0")]
+        if (o3d.core.cuda.device_count() > 0 and torch.cuda.device_count() > 0):
+            devices += [o3d.core.Device("CUDA:0")]
+        # Last SYCL device is CPU, so there must be 2+ devices in Open3D here.
+        if (o3d.core.sycl.device_count() > 1 and torch.xpu.device_count() > 0):
+            devices += [o3d.core.Device("SYCL:0")]
+        return devices
     else:
         return []

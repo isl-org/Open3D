@@ -69,8 +69,8 @@ Tensor NonZeroCUDA(const Tensor& src) {
     // Get flattened non-zero indices.
     thrust::device_vector<int64_t> non_zero_indices(num_elements);
     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src.GetDtype(), [&]() {
-        thrust::device_ptr<const scalar_t> src_ptr(static_cast<const scalar_t*>(
-                src_contiguous.GetBlob()->GetDataPtr()));
+        thrust::device_ptr<const scalar_t> src_ptr(
+                static_cast<const scalar_t*>(src_contiguous.GetDataPtr()));
 
         auto it = thrust::copy_if(index_first, index_last, src_ptr,
                                   non_zero_indices.begin(),

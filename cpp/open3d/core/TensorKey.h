@@ -7,8 +7,9 @@
 
 #pragma once
 
+#include <optional>
+
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
@@ -16,8 +17,8 @@ namespace core {
 // Avoids circular include.
 class Tensor;
 
-// Same as utility::nullopt. Provides a similar Python slicing API.
-constexpr utility::nullopt_t None{utility::nullopt_t::init()};
+// Same as std::nullopt. Provides a similar Python slicing API.
+constexpr std::nullopt_t None = std::nullopt;
 
 /// \brief TensorKey is used to represent single index, slice or advanced
 /// indexing on a Tensor.
@@ -47,9 +48,9 @@ public:
     /// \param start: Start index. None means starting from the 0-th element.
     /// \param stop: Stop index. None means stopping at the last element.
     /// \param step: Step size. None means step size 1.
-    static TensorKey Slice(utility::optional<int64_t> start,
-                           utility::optional<int64_t> stop,
-                           utility::optional<int64_t> step);
+    static TensorKey Slice(std::optional<int64_t> start,
+                           std::optional<int64_t> stop,
+                           std::optional<int64_t> step);
 
     /// Instantiates a TensorKey with tensor-index (advanced indexing) mode.
     ///

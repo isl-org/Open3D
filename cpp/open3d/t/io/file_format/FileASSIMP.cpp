@@ -597,18 +597,22 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
                    w_mesh.GetMaterial().HasMetallicMap()) {
             auto rough = w_mesh.GetMaterial().GetRoughnessMap().AsTensor();
             auto metal = w_mesh.GetMaterial().GetMetallicMap().AsTensor();
+            bool badshape = false;
             if (rough.GetShape() != metal.GetShape()) {
-                utility::LogError(
+                utility::LogWarning(
                         "RoughnessMap (shape={}) and MetallicMap (shape={}) "
-                        "must have the same shape.",
+                        "must have the same shape. Not saving MetallicMap!",
                         rough.GetShape(), metal.GetShape());
+                badshape = true;
             }
             auto rows = rough.GetShape(0);
             auto cols = rough.GetShape(1);
             auto rough_metal = core::Tensor::Full({rows, cols, 4}, 255,
                                                   core::Dtype::UInt8);
-            rough_metal.Slice(2, 2, 3) =
-                    metal.Slice(2, 0, 1);  // blue channel is metal
+            if (!badshape) {
+                rough_metal.Slice(2, 2, 3) =
+                        metal.Slice(2, 0, 1);  // blue channel is metal
+            }
             rough_metal.Slice(2, 1, 2) =
                     rough.Slice(2, 0, 1);  // green channel is roughness
 
