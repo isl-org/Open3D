@@ -38,6 +38,13 @@ if(APPLE)
     else()
         set(lib_dir lib/x86_64)
     endif()
+elseif(UNIX AND NOT APPLE)
+    # Linux: handle ARM64 builds
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+        set(lib_dir lib/aarch64)
+    else()
+        set(lib_dir lib/x86_64)
+    endif()
 endif()
 
 set(lib_byproducts ${filament_LIBRARIES})
@@ -53,8 +60,8 @@ endif()
 ExternalProject_Add(
     ext_filament
     PREFIX filament
-    URL https://github.com/google/filament/archive/refs/tags/v1.54.0.tar.gz
-    URL_HASH SHA256=f4cb4eb81e3a5d66a9612ac131d16183e118b694f4f34c051506c523a8389e8d
+    URL https://github.com/google/filament/archive/refs/tags/v1.58.2.tar.gz
+    URL_HASH SHA256=1e2c78afded61e6b32c1d443f0b03884f646c32708a01e8467cdc278f3209123
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
