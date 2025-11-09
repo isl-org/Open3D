@@ -146,7 +146,7 @@ build_pip_package() {
         BUILD_FILAMENT_FROM_SOURCE=ON
     else
         echo "Building for x86_64 architecture"
-        BUILD_FILAMENT_FROM_SOURCE=OFF
+        BUILD_FILAMENT_FROM_SOURCE=ON
     fi
     set +u
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
