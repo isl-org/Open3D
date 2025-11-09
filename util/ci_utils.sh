@@ -106,10 +106,82 @@ build_all() {
     mkdir -p build
     cd build
 
+    # Determine if we need to use Clang for Filament
+    # BUILD_FILAMENT_FROM_SOURCE defaults to ON for Linux x86_64 and aarch64
+    AARCH="$(uname -m)"
+    USE_CLANG_FOR_FILAMENT=OFF
+    if [[ "$OSTYPE" == "linux-gnu"* ]] && [[ "$AARCH" == "x86_64" || "$AARCH" == "aarch64" ]]; then
+        # Check if BUILD_FILAMENT_FROM_SOURCE is explicitly set to OFF
+        if [[ "${BUILD_FILAMENT_FROM_SOURCE:-ON}" != "OFF" ]]; then
+            USE_CLANG_FOR_FILAMENT=ON
+        fi
+    fi
+
+    # Find appropriate Clang version if needed
+    CMAKE_C_COMPILER="${CMAKE_C_COMPILER:-gcc}"
+    CMAKE_CXX_COMPILER="${CMAKE_CXX_COMPILER:-g++}"
+    if [[ "$USE_CLANG_FOR_FILAMENT" == "ON" ]]; then
+        CLANG_FOUND=OFF
+        # Try to find Clang version based on Ubuntu version first
+        if [[ -n "${UBUNTU_VERSION:-}" ]]; then
+            case "$UBUNTU_VERSION" in
+                focal)
+                    CLANG_VER="10"
+                    ;;
+                jammy)
+                    CLANG_VER="11"
+                    ;;
+                noble)
+                    CLANG_VER="14"
+                    ;;
+                *)
+                    CLANG_VER=""
+                    ;;
+            esac
+
+            if [[ -n "$CLANG_VER" ]] && command -v "clang-$CLANG_VER" >/dev/null 2>&1 && command -v "clang++-$CLANG_VER" >/dev/null 2>&1; then
+                CMAKE_C_COMPILER="clang-$CLANG_VER"
+                CMAKE_CXX_COMPILER="clang++-$CLANG_VER"
+                CLANG_FOUND=ON
+                echo "Using Clang $CLANG_VER for Filament build: $CMAKE_CXX_COMPILER"
+            fi
+        fi
+
+        # If not found yet, try common Clang versions (14, 13, 12, 11, 10, 9, 8, 7)
+        if [[ "$CLANG_FOUND" == "OFF" ]]; then
+            for ver in 14 13 12 11 10 9 8 7; do
+                if command -v "clang-$ver" >/dev/null 2>&1 && command -v "clang++-$ver" >/dev/null 2>&1; then
+                    CMAKE_C_COMPILER="clang-$ver"
+                    CMAKE_CXX_COMPILER="clang++-$ver"
+                    CLANG_FOUND=ON
+                    echo "Using Clang $ver for Filament build: $CMAKE_CXX_COMPILER"
+                    break
+                fi
+            done
+        fi
+
+        # If still not found, try default Clang
+        if [[ "$CLANG_FOUND" == "OFF" ]]; then
+            if command -v clang >/dev/null 2>&1 && command -v clang++ >/dev/null 2>&1; then
+                CMAKE_C_COMPILER="clang"
+                CMAKE_CXX_COMPILER="clang++"
+                CLANG_FOUND=ON
+                echo "Using default Clang for Filament build: $CMAKE_CXX_COMPILER"
+            fi
+        fi
+
+        if [[ "$CLANG_FOUND" == "OFF" ]]; then
+            echo "Warning: Clang not found, but Filament may need it. CMake will try to find it automatically."
+            echo "If build fails, ensure Clang is installed (e.g., via install_deps_ubuntu.sh)"
+        fi
+    fi
+
     cmakeOptions=(
         -DDEVELOPER_BUILD="$DEVELOPER_BUILD"
         -DBUILD_SHARED_LIBS="$BUILD_SHARED_LIBS"
         -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_C_COMPILER="$CMAKE_C_COMPILER"
+        -DCMAKE_CXX_COMPILER="$CMAKE_CXX_COMPILER"
         -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
         -DBUILD_COMMON_CUDA_ARCHS=ON
