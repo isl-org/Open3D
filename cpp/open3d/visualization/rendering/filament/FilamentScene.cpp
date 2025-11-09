@@ -257,8 +257,9 @@ ViewHandle FilamentScene::AddView(std::int32_t x,
     if (!background_image_ && background_color_.w() > 0.0f) {
         auto* native_view = views_[handle].view->GetNativeView();
         if (native_view) {
-            native_view->setClearColor({background_color_.x(), background_color_.y(),
-                                       background_color_.z(), background_color_.w()});
+            native_view->setClearColor(
+                    {background_color_.x(), background_color_.y(),
+                     background_color_.z(), background_color_.w()});
         }
     }
 
@@ -1777,12 +1778,14 @@ void FilamentScene::SetBackground(
     background_color_ = color;
 
     // Set clear color on all views when there's no background image
-    // This ensures the background color is visible even when geometry doesn't cover the entire viewport
+    // This ensures the background color is visible even when geometry doesn't
+    // cover the entire viewport
     if (!new_image) {
         for (auto& pair : views_) {
             auto* view = pair.second.view->GetNativeView();
             if (view) {
-                view->setClearColor({color.x(), color.y(), color.z(), color.w()});
+                view->setClearColor(
+                        {color.x(), color.y(), color.z(), color.w()});
             }
         }
     }
