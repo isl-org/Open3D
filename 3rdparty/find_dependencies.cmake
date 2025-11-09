@@ -1344,7 +1344,15 @@ if(BUILD_GUI)
             LIBRARIES ${filament_LIBRARIES}
             DEPENDS ext_filament
         )
-        set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
+        # Use built matc if available (for Linux GLIBC compatibility), otherwise use pre-compiled
+        if(UNIX AND NOT APPLE AND NOT BUILD_FILAMENT_FROM_SOURCE AND DEFINED FILAMENT_MATC_BUILT)
+            set(FILAMENT_MATC "${FILAMENT_MATC_BUILT}")
+            if(TARGET ext_filament_matc)
+                add_dependencies(3rdparty_filament ext_filament_matc)
+            endif()
+        else()
+            set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
+        endif()
         target_link_libraries(3rdparty_filament INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
         if(UNIX AND NOT APPLE)
             # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.

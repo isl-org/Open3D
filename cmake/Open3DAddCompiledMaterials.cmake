@@ -41,6 +41,12 @@ function(open3d_add_compiled_materials target)
     get_filename_component(OUTPUT_DIRECTORY_FULL_PATH "${ARG_OUTPUT_DIRECTORY}" ABSOLUTE)
 
     # Build compiled materials
+    # Determine dependencies - include matc build target if it exists
+    set(material_depends Open3D::3rdparty_filament)
+    if(TARGET ext_filament_matc)
+        list(APPEND material_depends ext_filament_matc)
+    endif()
+    
     foreach (mat IN LISTS ARG_SOURCES)
         get_filename_component(MATERIAL_FULL_PATH "${mat}" ABSOLUTE)
 
@@ -53,7 +59,7 @@ function(open3d_add_compiled_materials target)
             OUTPUT ${COMPILED_MATERIAL_FULL_PATH}
             COMMAND ${FILAMENT_MATC} ${FILAMENT_MATC_ARGS} -o ${COMPILED_MATERIAL_FULL_PATH} ${MATERIAL_FULL_PATH}
             COMMENT "Building Material object ${COMPILED_MATERIAL_RELATIVE_PATH}"
-            MAIN_DEPENDENCY ${mat} DEPENDS Open3D::3rdparty_filament
+            MAIN_DEPENDENCY ${mat} DEPENDS ${material_depends}
             VERBATIM
         )
 
