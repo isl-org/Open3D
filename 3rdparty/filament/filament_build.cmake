@@ -54,7 +54,7 @@ ExternalProject_Add(
     ext_filament
     PREFIX filament
     URL https://github.com/google/filament/archive/refs/tags/v1.58.2.tar.gz
-    URL_HASH SHA256=1e2c78afded61e6b32c1d443f0b03884f646c32708a01e8467cdc278f3209123
+    URL_HASH SHA256=8fbb35db77f34138e0c0536866d0de81e49b3ba2a3bd2d75e6de834779515cda
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
