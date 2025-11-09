@@ -38,13 +38,6 @@ if(APPLE)
     else()
         set(lib_dir lib/x86_64)
     endif()
-elseif(UNIX AND NOT APPLE)
-    # Linux: handle ARM64 builds
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
-        set(lib_dir lib/aarch64)
-    else()
-        set(lib_dir lib/x86_64)
-    endif()
 endif()
 
 set(lib_byproducts ${filament_LIBRARIES})
