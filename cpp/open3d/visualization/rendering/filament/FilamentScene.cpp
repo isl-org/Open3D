@@ -152,6 +152,8 @@ FilamentScene::FilamentScene(filament::Engine& engine,
     : Scene(renderer), engine_(engine), resource_mgr_(resource_mgr) {
     scene_ = engine_.createScene();
     CreateSunDirectionalLight();
+    // Initialize background color to white (default)
+    background_color_ = Eigen::Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
     // Note: can't set background color, because ImguiFilamentBridge
     // creates a Scene, and it needs to not have anything drawing, or it
     // covers up any SceneWidgets in the window.

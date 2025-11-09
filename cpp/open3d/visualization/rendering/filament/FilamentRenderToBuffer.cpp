@@ -32,6 +32,8 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
+#include <cstring>
+
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
@@ -161,6 +163,33 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     FilamentRenderToBuffer* self;
     BufferReadyCallback callback;
     std::tie(self, callback) = *params;
+
+    // Filament's readPixels returns data with Y=0 at bottom (OpenGL convention),
+    // but most image formats and display systems expect Y=0 at top.
+    // Flip the Y-axis to match the behavior of Open3DViewer (VisualizerRender).
+    if (self->buffer_ && self->width_ > 0 && self->height_ > 0) {
+        const std::size_t bytes_per_pixel = self->depth_image_ 
+            ? sizeof(std::float_t) 
+            : self->n_channels_ * sizeof(std::uint8_t);
+        const std::size_t bytes_per_line = self->width_ * bytes_per_pixel;
+        const std::size_t total_bytes = bytes_per_line * self->height_;
+        
+        // Allocate temporary buffer for flipped data
+        std::uint8_t* flipped_buffer = static_cast<std::uint8_t*>(malloc(total_bytes));
+        if (flipped_buffer) {
+            // Copy rows in reverse order
+            for (std::size_t i = 0; i < self->height_; i++) {
+                std::size_t src_row = self->height_ - i - 1;
+                std::memcpy(flipped_buffer + bytes_per_line * i,
+                           self->buffer_ + bytes_per_line * src_row,
+                           bytes_per_line);
+            }
+            
+            // Replace buffer with flipped data
+            std::memcpy(self->buffer_, flipped_buffer, total_bytes);
+            free(flipped_buffer);
+        }
+    }
 
     callback({self->width_, self->height_, self->n_channels_, self->buffer_,
               self->buffer_size_});
