@@ -34,7 +34,7 @@ public:
     //     system.
     //               // (Linux only)
     // };
-    BitmapWindowSystem(Rendering mode = Rendering::NORMAL);
+    BitmapWindowSystem();
     ~BitmapWindowSystem();
 
     void Initialize() override;
