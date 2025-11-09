@@ -254,8 +254,8 @@ ViewHandle FilamentScene::AddView(std::int32_t x,
 
     // Set clear color on the renderer if background color has been set
     // and there's no background image. This ensures the background color
-    // is visible even if the background geometry doesn't cover the entire viewport.
-    // Note: In Filament v1.58+, setClearColor was removed from View.
+    // is visible even if the background geometry doesn't cover the entire
+    // viewport. Note: In Filament v1.58+, setClearColor was removed from View.
     // Clear color is now set via Renderer::setClearOptions().
     if (!background_image_ && background_color_.w() > 0.0f) {
         renderer_.SetClearColor(background_color_);
