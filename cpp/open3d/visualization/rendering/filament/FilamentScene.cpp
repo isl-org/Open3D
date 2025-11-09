@@ -252,15 +252,13 @@ ViewHandle FilamentScene::AddView(std::int32_t x,
     c.view = std::move(view);
     views_.emplace(handle, std::move(c));
 
-    // Set clear color on the new view if background color has been set
-    // and there's no background image
+    // Set clear color on the renderer if background color has been set
+    // and there's no background image. This ensures the background color
+    // is visible even if the background geometry doesn't cover the entire viewport.
+    // Note: In Filament v1.58+, setClearColor was removed from View.
+    // Clear color is now set via Renderer::setClearOptions().
     if (!background_image_ && background_color_.w() > 0.0f) {
-        auto* native_view = views_[handle].view->GetNativeView();
-        if (native_view) {
-            native_view->setClearColor(
-                    {background_color_.x(), background_color_.y(),
-                     background_color_.z(), background_color_.w()});
-        }
+        renderer_.SetClearColor(background_color_);
     }
 
     return handle;
@@ -1777,17 +1775,13 @@ void FilamentScene::SetBackground(
     background_image_ = new_image;
     background_color_ = color;
 
-    // Set clear color on all views when there's no background image
+    // Set clear color on the renderer when there's no background image.
     // This ensures the background color is visible even when geometry doesn't
-    // cover the entire viewport
+    // cover the entire viewport.
+    // Note: In Filament v1.58+, setClearColor was removed from View.
+    // Clear color is now set via Renderer::setClearOptions().
     if (!new_image) {
-        for (auto& pair : views_) {
-            auto* view = pair.second.view->GetNativeView();
-            if (view) {
-                view->setClearColor(
-                        {color.x(), color.y(), color.z(), color.w()});
-            }
-        }
+        renderer_.SetClearColor(color);
     }
 }
 

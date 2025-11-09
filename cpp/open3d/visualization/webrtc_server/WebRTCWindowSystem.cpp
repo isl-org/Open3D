@@ -114,13 +114,7 @@ std::shared_ptr<WebRTCWindowSystem> WebRTCWindowSystem::GetInstance() {
 }
 
 WebRTCWindowSystem::WebRTCWindowSystem()
-    : BitmapWindowSystem(
-#if !defined(__APPLE__) && !defined(_WIN32) && !defined(_WIN64)
-              BitmapWindowSystem::Rendering::HEADLESS
-#else
-              BitmapWindowSystem::Rendering::NORMAL
-#endif
-              ),
+    : BitmapWindowSystem(),
       impl_(new WebRTCWindowSystem::Impl()) {
 
     // impl_->web_root_ is filled at StartWebRTCServer. It relies on
