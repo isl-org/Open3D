@@ -5,6 +5,12 @@ set_target_properties(visualization_impl PROPERTIES CXX_VISIBILITY_PRESET hidden
 # filament uses C++20 designated initializers
 set_property(TARGET visualization_impl visualization PROPERTY CXX_STANDARD 20)
 
+# Workaround for Filament header naming conflict with GCC
+# MaterialInstance.h has a using declaration that conflicts with enum class TransparencyMode
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(visualization_impl PRIVATE -fpermissive)
+endif()
+
 target_sources(visualization_impl PRIVATE
     shader/GeometryRenderer.cpp
     shader/ImageMaskShader.cpp
