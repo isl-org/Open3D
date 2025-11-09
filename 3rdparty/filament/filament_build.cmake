@@ -48,6 +48,11 @@ set(filament_cxx_flags "${CMAKE_CXX_FLAGS} -Wno-deprecated" "-Wno-pass-failed=tr
 if(NOT WIN32)
     # Issue Open3D#1909, filament#2146
     set(filament_cxx_flags "${filament_cxx_flags} -fno-builtin")
+    # Use libstdc++ instead of libc++ to avoid -fPIC issues with static libc++
+    # This prevents linker errors when building shared libraries
+    if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+        set(filament_cxx_flags "${filament_cxx_flags} -stdlib=libstdc++")
+    endif()
 endif()
 
 ExternalProject_Add(
@@ -69,7 +74,7 @@ ExternalProject_Add(
         -DCMAKE_CXX_FLAGS:STRING=${filament_cxx_flags}
         -DCMAKE_INSTALL_PREFIX=${FILAMENT_ROOT}
         -DUSE_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
-        -DUSE_STATIC_LIBCXX=ON
+        -DUSE_STATIC_LIBCXX=OFF
         -DFILAMENT_SKIP_SDL2=ON
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
