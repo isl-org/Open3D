@@ -5,9 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/visualizer/Visualizer.h"
-
+#include <filesystem>
+namespace fs = std::filesystem;
 #include "open3d/geometry/Image.h"
+#include "open3d/visualization/visualizer/Visualizer.h"
 #include "open3d/visualization/visualizer/VisualizerWithEditing.h"
 #include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"
