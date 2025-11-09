@@ -1,5 +1,4 @@
 name: Style Check
-permissions: {}
 
 on:
   workflow_dispatch:
@@ -16,11 +15,14 @@ concurrency:
 jobs:
   style-check:
     permissions:
-      contents: read
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
@@ -28,6 +30,33 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U -r python/requirements_style.txt
-      - name: Run style check
+      - name: Apply style formatting
+        if: github.event_name == 'pull_request'
+        run: |
+          python util/check_style.py --apply
+      - name: Check style formatting
+        if: github.event_name != 'pull_request'
         run: |
           python util/check_style.py
+      - name: Commit and push changes
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -u
+          if ! git diff --staged --quiet; then
+            git commit -m "Apply automatic code formatting"
+            git push || exit 1
+          else
+            echo "No formatting changes needed"
+          fi
+      - name: Check for formatting changes from fork
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          git add -u
+          if ! git diff --staged --quiet; then
+            echo "::error::This PR requires formatting changes but is from a fork. Please run 'python util/check_style.py --apply' locally and push the changes."
+            exit 1
+          else
+            echo "No formatting changes needed"
+          fi
