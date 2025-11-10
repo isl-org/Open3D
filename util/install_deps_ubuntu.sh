@@ -56,9 +56,9 @@ if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
     deps=("${deps[@]/libc++abi-dev/libc++abi-10-dev}")
 fi
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
-    deps=("${deps[@]/clang/clang-14}")
-    deps=("${deps[@]/libc++-dev/libc++-14-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-14-dev}")
+    deps=("${deps[@]/clang/clang-11}")
+    deps=("${deps[@]/libc++-dev/libc++-11-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-11-dev}")
 fi
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "24.04" ]; then
     deps=("${deps[@]/clang/clang-14}")

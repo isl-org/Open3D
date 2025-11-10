@@ -136,7 +136,7 @@ if(LINUX_AARCH64 OR APPLE_AARCH64)
      option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"               OFF)
  endif()
 
-if(LINUX_AARCH64)
+if(LINUX_AARCH64 OR LINUX_X86_64)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"          ON )
  else()
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"          OFF)
