@@ -166,6 +166,30 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
     vec.def("__deepcopy__", [](std::vector<EigenVector> &v, py::dict &memo) {
         return std::vector<EigenVector>(v);
     });
+    vec.def(py::pickle(
+            [](const std::vector<EigenVector> &v) {
+                const size_t n = v.size();
+                if (n == 0) {
+                    return py::make_tuple(py::bytes(""), 0);
+                }
+
+                const size_t rows = EigenVector::RowsAtCompileTime;
+                const char *raw = reinterpret_cast<const char *>(v[0].data());
+                return py::make_tuple(py::bytes(raw, n * rows * sizeof(Scalar)),
+                                      n);
+            },
+            [](py::tuple t) {
+                auto buffer = t[0].cast<std::string>();
+                auto n = t[1].cast<size_t>();
+                std::vector<EigenVector> p;
+                if (n == 0) {
+                    return p;
+                }
+
+                p.resize(n);
+                std::memcpy(p[0].data(), buffer.data(), buffer.size());
+                return p;
+            }));
 
     // py::detail must be after custom constructor
     using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
@@ -290,6 +314,31 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_matrix(
             [](std::vector<EigenMatrix, EigenAllocator> &v, py::dict &memo) {
                 return std::vector<EigenMatrix, EigenAllocator>(v);
             });
+    vec.def(py::pickle(
+            [](const std::vector<EigenMatrix, EigenAllocator> &v) {
+                const size_t n = v.size();
+                if (n == 0) {
+                    return py::make_tuple(py::bytes(""), 0);
+                }
+
+                const char *raw = reinterpret_cast<const char *>(v[0].data());
+                return py::make_tuple(
+                        py::bytes(raw, n * v[0].rows() * v[0].cols() *
+                                               sizeof(Scalar)),
+                        n);
+            },
+            [](py::tuple t) {
+                auto buffer = t[0].cast<std::string>();
+                auto n = t[1].cast<size_t>();
+                std::vector<EigenMatrix, EigenAllocator> p;
+                if (n == 0) {
+                    return p;
+                }
+
+                p.resize(n);
+                std::memcpy(p[0].data(), buffer.data(), buffer.size());
+                return p;
+            }));
 
     // py::detail must be after custom constructor
     using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
