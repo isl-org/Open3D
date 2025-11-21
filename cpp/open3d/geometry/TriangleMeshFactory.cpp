@@ -163,7 +163,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromOrientedBoundingEllipsoid(
     t.block<3, 3>(0, 0) = obel.R_;
     t.block<3, 1>(0, 3) = obel.center_;
     mesh->Transform(t);
-    // mesh->PaintUniformColor(obel.color_);
+    mesh->PaintUniformColor(obel.color_);
     return mesh;
 }
 

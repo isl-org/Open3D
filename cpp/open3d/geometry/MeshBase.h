@@ -22,6 +22,7 @@ namespace geometry {
 
 class PointCloud;
 class TriangleMesh;
+class OrientedBoundingEllipsoid;
 
 /// \class MeshBase
 ///

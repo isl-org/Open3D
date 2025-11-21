@@ -17,17 +17,12 @@ namespace geometry {
 class AxisAlignedBoundingBox;
 class OrientedBoundingBox;
 
-/// \class OrientedBoundingEllipsoid
-///
-/// \brief A bounding ellipsoid oriented along an arbitrary frame of reference.
-///
-/// The oriented bounding ellipsoid is defined by its center position, rotation
-/// matrix and radii.
+
 class OrientedBoundingEllipsoid : public Geometry3D {
 public:
     /// \brief Default constructor.
     ///
-    /// Creates an empty OrientedBoundingEllipsoid.
+    /// Creates an empty Oriented Bounding Ellipsoid.
     OrientedBoundingEllipsoid()
         : Geometry3D(Geometry::GeometryType::OrientedBoundingEllipsoid),
           center_(0, 0, 0),
@@ -47,7 +42,8 @@ public:
         : Geometry3D(Geometry::GeometryType::OrientedBoundingEllipsoid),
           center_(center),
           R_(R),
-          radii_(radii) {}
+          radii_(radii),
+          color_(1, 1, 1) {}
     ~OrientedBoundingEllipsoid() override {}
 
 public:
@@ -57,13 +53,13 @@ public:
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
 
-    /// Creates an axis-aligned bounding box around the ellipsoid.
+    /// Creates an axis-aligned bounding box around the object.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
 
     /// Returns an oriented bounding box around the ellipsoid.
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust) const override;
-
+    
     /// Returns an oriented bounding box around the ellipsoid.
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust) const override;
@@ -113,17 +109,11 @@ public:
     std::vector<size_t> GetPointIndicesWithinBoundingEllipsoid(
             const std::vector<Eigen::Vector3d>& points) const;
 
-    /// Creates an oriented bounding ellipsoid using an iterative algorithm.
-    /// Initially, the algorithm treats every point of the point cloud as equally 
-    /// important by assigning them the same weight. It creates an initial 
-    /// ellipsoid guess based on these weights. Then it checks which point is the 
-    /// worst fit, the one that sticks out the most from the ellipsoid. The algorithm 
-    /// slightly increases the weight of that problematic point and slightly decreases
-    /// the weights of the others. This update makes the ellipsoid expand a bit around 
-    /// the troublesome dot, improving the overall fit. It keeps doing this, 
-    /// recalculating the ellipsoid and adjusting weights, until the changes become 
-    /// very small, meaning the ellipsoid is "almost" as tight as possible around all 
-    /// the dots.
+    /// Creates an oriented bounding ellipsoid using a PCA.
+    /// Note, that this is only an approximation to the minimum oriented
+    /// bounding box that could be computed for example with O'Rourke's
+    /// algorithm (cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf,
+    /// https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
     /// \param points The input points
     /// \param robust If set to true uses a more robust method which works
     ///               in degenerate cases but introduces noise to the points
@@ -333,14 +323,15 @@ public:
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const override;
 
-    /// Returns an oriented bounding ellipsoid encapsulating the object
-    virtual OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
-            bool robust) const override;
-
     /// Returns an oriented bounding box with the same dimensions
     /// and orientation as the object
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
+
+    /// Returns an oriented bounding ellipsoid encapsulating the object
+    virtual OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust) const override;
+
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual AxisAlignedBoundingBox& Translate(

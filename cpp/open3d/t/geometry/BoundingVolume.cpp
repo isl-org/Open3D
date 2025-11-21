@@ -10,7 +10,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorFunction.h"
 #include "open3d/t/geometry/kernel/MinimumOBB.h"
-#include "open3d/t/geometry/kernel/MinimumOBEL.h"
+#include "open3d/t/geometry/kernel/MinimumOBE.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 
 namespace open3d {
@@ -595,14 +595,6 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
             return OrientedBoundingBox();
     }
 }
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------------------------
 
 OrientedBoundingEllipsoid::OrientedBoundingEllipsoid(const core::Device &device)
     : Geometry(Geometry::GeometryType::OrientedBoundingEllipsoid, 3),
@@ -642,7 +634,7 @@ OrientedBoundingEllipsoid::OrientedBoundingEllipsoid(
         !rotation_.T().AllClose(rotation.Inverse(), 1e-5, 1e-5)) {
         utility::LogError(
                 "Invalid oriented bounding ellipsoid. Please make sure the "
-                "values of extent are all positive and the rotation matrix is "
+                "values of radii are all positive and the rotation matrix is "
                 "orthogonal.");
     }
 }
@@ -683,8 +675,8 @@ void OrientedBoundingEllipsoid::SetRadii(const core::Tensor &radii) {
 
     if (radii.Min({0}).To(core::Float64).Item<double>() <= 0) {
         utility::LogError(
-                "Invalid oriented bounding box. Please make sure the values of "
-                "extent are all positive.");
+                "Invalid oriented bounding ellipsoid. Please make sure the "
+                "values of radii are all positive.");
     }
 
     radii_ = radii.To(GetDtype());
@@ -697,8 +689,8 @@ void OrientedBoundingEllipsoid::SetRotation(const core::Tensor &rotation) {
 
     if (!rotation.T().AllClose(rotation.Inverse(), 1e-5, 1e-5)) {
         utility::LogWarning(
-                "Invalid oriented bounding box. Please make sure the rotation "
-                "matrix is orthogonal.");
+                "Invalid oriented bounding ellipsoid. Please make sure the "
+                "rotation matrix is orthogonal.");
     } else {
         rotation_ = rotation.To(GetDtype());
     }
@@ -727,15 +719,39 @@ core::Tensor OrientedBoundingEllipsoid::GetMaxBound() const {
     return GetEllipsoidPoints().Max({0});
 }
 
-core::Tensor OrientedBoundingEllipsoid::GetEllipsoidPoints() const {
-    const core::Tensor extent_3x3 =
-            core::Tensor::Eye(3, GetDtype(), GetDevice())
-                    .Mul(GetRadii().Reshape({3, 1}));
+double OrientedBoundingEllipsoid::Volume() const {
+    core::Tensor radii_prod = GetRadii().Prod({0}).To(core::Float64);
+    return 4.0 * M_PI * radii_prod.Item<double>() / 3.0;
+}
 
-    return core::Concatenate({min_bound_.Reshape({1, 3}),
-                              min_bound_.Reshape({1, 3}) + extent_3x3,
-                              max_bound_.Reshape({1, 3}),
-                              max_bound_.Reshape({1, 3}) - extent_3x3});
+core::Tensor OrientedBoundingEllipsoid::GetEllipsoidPoints() const {
+    // Create six critical points along the principal axes
+    // Extract radii values
+    core::Tensor radii_vals = GetRadii();
+    double r0 = radii_vals.GetItem({core::TensorKey::Index(0)}).Item<double>();
+    double r1 = radii_vals.GetItem({core::TensorKey::Index(1)}).Item<double>();
+    double r2 = radii_vals.GetItem({core::TensorKey::Index(2)}).Item<double>();
+
+    core::Tensor x_axis = GetRotation().Matmul(
+            core::Tensor(std::vector<double>{r0, 0.0, 0.0}, 
+                        {3}, GetDtype(), GetDevice()));
+    core::Tensor y_axis = GetRotation().Matmul(
+            core::Tensor(std::vector<double>{0.0, r1, 0.0}, 
+                        {3}, GetDtype(), GetDevice()));
+    core::Tensor z_axis = GetRotation().Matmul(
+            core::Tensor(std::vector<double>{0.0, 0.0, r2}, 
+                        {3}, GetDtype(), GetDevice()));
+
+    // Create the six critical points
+    std::vector<core::Tensor> points;
+    points.push_back(GetCenter() + x_axis);
+    points.push_back(GetCenter() - x_axis);
+    points.push_back(GetCenter() + y_axis);
+    points.push_back(GetCenter() - y_axis);
+    points.push_back(GetCenter() + z_axis);
+    points.push_back(GetCenter() - z_axis);
+
+    return core::Concatenate(points).Reshape({6, 3});
 }
 
 OrientedBoundingEllipsoid &OrientedBoundingEllipsoid::Translate(
@@ -755,7 +771,7 @@ OrientedBoundingEllipsoid &OrientedBoundingEllipsoid::Translate(
 
 OrientedBoundingEllipsoid &OrientedBoundingEllipsoid::Rotate(
         const core::Tensor &rotation,
-        const utility::optional<core::Tensor> &center) {
+        const std::optional<core::Tensor> &center) {
     core::AssertTensorDevice(rotation, GetDevice());
     core::AssertTensorShape(rotation, {3, 3});
     core::AssertTensorDtypes(rotation, {core::Float32, core::Float64});
@@ -782,24 +798,8 @@ OrientedBoundingEllipsoid &OrientedBoundingEllipsoid::Rotate(
     return *this;
 }
 
-OrientedBoundingEllipsoid &OrientedBoundingEllipsoid::Transform(
-        const core::Tensor &transformation) {
-    core::AssertTensorDevice(transformation, GetDevice());
-    core::AssertTensorShape(transformation, {4, 4});
-    core::AssertTensorDtypes(transformation, {core::Float32, core::Float64});
-
-    const core::Tensor transformation_d = transformation.To(GetDtype());
-    Rotate(transformation_d.GetItem({core::TensorKey::Slice(0, 3, 1),
-                                     core::TensorKey::Slice(0, 3, 1)}));
-    Translate(transformation_d
-                      .GetItem({core::TensorKey::Slice(0, 3, 1),
-                                core::TensorKey::Index(3)})
-                      .Flatten());
-    return *this;
-}
-
 OrientedBoundingEllipsoid &OrientedBoundingEllipsoid::Scale(
-        const double scale, const utility::optional<core::Tensor> &center) {
+        const double scale, const std::optional<core::Tensor> &center) {
     radii_ *= scale;
     if (center.has_value()) {
         core::Tensor center_d = center.value();
@@ -816,23 +816,25 @@ OrientedBoundingEllipsoid &OrientedBoundingEllipsoid::Scale(
 core::Tensor OrientedBoundingEllipsoid::GetPointIndicesWithinBoundingEllipsoid(
         const core::Tensor &points) const {
     core::AssertTensorDevice(points, GetDevice());
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
 
-    core::Tensor mask =
-            core::Tensor::Zeros({points.GetLength()}, core::Bool, GetDevice());
-    // Convert center, rotation and same to the same dtype as points.
-    kernel::pointcloud::GetPointMaskWithinOBB(
-            points, center_.To(points.GetDtype()),
-            rotation_.To(points.GetDtype()), radii_.To(points.GetDtype()),
-            mask);
+    // Transform points to ellipsoid's local frame
+    core::Tensor local_points = (points - GetCenter()).Matmul(GetRotation());
+
+    // Normalize by radii
+    core::Tensor normalized = local_points / GetRadii();
+
+    // Check if norm squared is <= 1
+    core::Tensor norm_squared = (normalized * normalized).Sum({1});
+    core::Tensor mask = norm_squared.Le(1.0);
 
     return mask.NonZero().Flatten();
 }
 
 std::string OrientedBoundingEllipsoid::ToString() const {
-    return fmt::format("OrientedBoundingBox[{}, {}]", GetDtype().ToString(),
-                       GetDevice().ToString());
+    return fmt::format("OrientedBoundingEllipsoid[{}, {}]",
+                       GetDtype().ToString(), GetDevice().ToString());
 }
 
 open3d::geometry::OrientedBoundingEllipsoid
@@ -853,19 +855,9 @@ OrientedBoundingEllipsoid::ToLegacy() const {
     return legacy_ellipsoid;
 }
 
-AxisAlignedBoundingBox OrientedBoundingEllipsoid::GetAxisAlignedBoundingBox()
-        const {
+AxisAlignedBoundingBox
+OrientedBoundingEllipsoid::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetEllipsoidPoints());
-}
-
-OrientedBoundingEllipsoid
-OrientedBoundingEllipsoid::CreateFromAxisAlignedBoundingBox(
-        const AxisAlignedBoundingBox &aabb) {
-    OrientedBoundingEllipsoid box(
-            aabb.GetCenter(),
-            core::Tensor::Eye(3, aabb.GetDtype(), aabb.GetDevice()),
-            aabb.GetExtent());
-    return box;
 }
 
 OrientedBoundingEllipsoid OrientedBoundingEllipsoid::FromLegacy(
@@ -883,8 +875,8 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::FromLegacy(
             core::eigen_converter::EigenMatrixToTensor(ellipsoid.center_)
                     .Flatten()
                     .To(device, dtype),
-            core::eigen_converter::EigenMatrixToTensor(ellipsoid.R_)
-                    .To(device, dtype),
+            core::eigen_converter::EigenMatrixToTensor(ellipsoid.R_).To(device,
+                                                                        dtype),
             core::eigen_converter::EigenMatrixToTensor(ellipsoid.radii_)
                     .Flatten()
                     .To(device, dtype));
@@ -897,20 +889,13 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::FromLegacy(
 }
 
 OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
-        const core::Tensor &points, bool robust, MethodOBELCreate method) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+        const core::Tensor &points, bool robust) {
+    core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
-    switch (method) {
-        case MethodOBELCreate::MINIMAL_APPROX:
-            return kernel::minimum_obb::ComputeMinimumOBELApprox(points,
-                                                                 robust);                                  
-        default:
-            utility::LogError(
-                    "Invalid method for computing oriented bounding "
-                    "box. The only supported method is for now "
-                    "MINIMAL_APPROX.");
-            return OrientedBoundingEllipsoid();
+    if (points.GetShape(0) < 4) {
+        utility::LogError("Input point set has less than 4 points.");
     }
+    return kernel::minimum_obe::ComputeMinimumOBEKhachiyan(points, robust);
 }
 
 }  // namespace geometry

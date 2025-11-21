@@ -357,7 +357,7 @@ void pybind_trianglemesh_definitions(py::module &m) {
                     "Factory function to create a solid oriented bounding box.",
                     "obox"_a, "scale"_a = Eigen::Vector3d::Ones(),
                     "create_uv_map"_a = false)
-            .def_static("create_from_oriented_bounding_box",
+            .def_static("create_from_oriented_bounding_ellipsoid",
                         &TriangleMesh::CreateFromOrientedBoundingEllipsoid,
                         "Factory function to create a solid oriented bounding "
                         "ellipsoid.",

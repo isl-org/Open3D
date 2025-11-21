@@ -15,7 +15,7 @@
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/MinimumOBB.h"
-#include "open3d/t/geometry/kernel/MinimumOBEL.h"
+#include "open3d/t/geometry/kernel/MinimumOBE.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -119,8 +119,8 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points, bool robust) {
     auto tpoints = core::eigen_converter::EigenVector3dVectorToTensor(
             points, core::Float64, core::Device());
-    return t::geometry::kernel::minimum_obel::ComputeMinimumOBELApprox(tpoints,
-                                                                       robust)
+    return t::geometry::kernel::minimum_obe::ComputeMinimumOBEKhachiyan(
+                   tpoints, robust)
             .ToLegacy();
 }
 
@@ -342,6 +342,11 @@ OrientedBoundingBox AxisAlignedBoundingBox::GetMinimalOrientedBoundingBox(
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 
+OrientedBoundingEllipsoid AxisAlignedBoundingBox::GetOrientedBoundingEllipsoid(
+        bool) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(GetBoxPoints());
+}
+
 AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
                                                const Eigen::Vector3d& max_bound)
     : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
@@ -358,11 +363,6 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,
         max_bound_ = max_bound.cwiseMax(min_bound);
         min_bound_ = max_bound.cwiseMin(min_bound);
     }
-}
-
-OrientedBoundingEllipsoid AxisAlignedBoundingBox::GetOrientedBoundingEllipsoid(
-        bool) const {
-    return OrientedBoundingEllipsoid::CreateFromPoints(GetBoxPoints());
 }
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(
