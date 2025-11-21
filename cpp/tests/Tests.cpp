@@ -11,12 +11,8 @@ namespace open3d {
 namespace tests {
 
 void NotImplemented() {
-    std::cout << "\033[0;32m"
-              << "[          ] "
-              << "\033[0;0m";
-    std::cout << "\033[0;31m"
-              << "Not implemented."
-              << "\033[0;0m" << std::endl;
+    std::cout << "\033[0;32m" << "[          ] " << "\033[0;0m";
+    std::cout << "\033[0;31m" << "Not implemented." << "\033[0;0m" << std::endl;
 
     GTEST_NONFATAL_FAILURE_("Not implemented");
 }

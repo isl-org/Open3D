@@ -6,7 +6,7 @@ Cross-platform GPU support (SYCL)
 From v0.19, Open3D provides an experimental SYCL backend for cross-platform GPU
 support. This backend allows Open3D operations to run on many different GPUs,
 including integrated GPUs and discrete GPUs from Intel, Nvidia and AMD. We
-provide pre-built C++ binaries and Python 3.10 wheels for Linux (Ubuntu 22.04+).
+provide pre-built C++ binaries and Python wheels for Linux (Ubuntu 22.04+).
 
 Enabled features
 -----------------
@@ -57,6 +57,8 @@ PyTorch:
 .. code-block:: shell
 
     pip install torch==2.2.2+cpu.cxx11.abi -i https://download.pytorch.org/whl/cpu/
+
+PyTorch v2.7+ uses the new CXX11 ABI by default.
 
 Some GPUs do not have native double precision support. For Intel GPUs, you can
 emulate support with these environment variables:

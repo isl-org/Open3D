@@ -28,7 +28,7 @@ As an alternative, you can modify 3rdparty/zeromq/zeromq_build.cmake to fetch
 zeromq from our fork
 https://github.com/isl-org/libzmq
 --------------------------------------------------------------------------------
-curl                        7.88.0                                  Curl license
+curl                        8.14.1                                  Curl license
 Curl is a command-line tool for transferring data specified with URL syntax.
 https://github.com/curl/curl
 --------------------------------------------------------------------------------
@@ -80,11 +80,11 @@ libjpeg-turbo                2.1.5.1                           BSD-style license
 A widely used C library for reading and writing JPEG image files
 https://github.com/libjpeg-turbo/libjpeg-turbo
 --------------------------------------------------------------------------------
-libpng                      1.6.37                                libpng license
+libpng                      1.6.49                                libpng license
 The free reference library for reading and writing PNGs
 http://www.libpng.org/
 --------------------------------------------------------------------------------
-librealsense                2.44.0                               Apache-2 license
+librealsense                2.54.2                               Apache-2 license
 A cross-platform library for capturing data from the Intel RealSense F200,
 SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
@@ -105,7 +105,7 @@ PoissonReco                 12.0                                     BSD license
 Poisson Surface Reconstruction
 https://github.com/mkazhdan/PoissonRecon
 --------------------------------------------------------------------------------
-pybind11                    v2.13.1                                  BSD license
+pybind11                    v3.00.0                                  BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
 --------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ vtk                            9.1                                   BSD license
 The Visualization Toolkit (VTK)
 https://gitlab.kitware.com/vtk/vtk
 --------------------------------------------------------------------------------
-zlib                        1.2.13                                   zlib license
+zlib                        1.3.1                                   zlib license
 A lossless data-compression library used by libpng
 http://www.zlib.net/
 --------------------------------------------------------------------------------

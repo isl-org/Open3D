@@ -28,13 +28,14 @@ void pybind_voxelgrid_declarations(py::module &m) {
             voxelgrid(m, "VoxelGrid",
                       "VoxelGrid is a collection of voxels which are aligned "
                       "in grid.");
-    py::enum_<VoxelGrid::VoxelPoolingMode>(
-            voxelgrid, "VoxelPoolingMode",
+    py::native_enum<VoxelGrid::VoxelPoolingMode>(
+            voxelgrid, "VoxelPoolingMode", "enum.Enum",
             "Mode of determining color for each voxel.")
             .value("AVG", VoxelGrid::VoxelPoolingMode::AVG)
             .value("MIN", VoxelGrid::VoxelPoolingMode::MIN)
             .value("MAX", VoxelGrid::VoxelPoolingMode::MAX)
-            .value("SUM", VoxelGrid::VoxelPoolingMode::SUM);
+            .value("SUM", VoxelGrid::VoxelPoolingMode::SUM)
+            .finalize();
 }
 void pybind_voxelgrid_definitions(py::module &m) {
     auto voxel = static_cast<py::class_<Voxel, std::shared_ptr<Voxel>>>(
@@ -174,6 +175,9 @@ void pybind_voxelgrid_definitions(py::module &m) {
                     "input"_a, "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_readwrite("origin", &VoxelGrid::origin_,
                            "``float64`` vector of length 3: Coordinate of the "
+                           "origin point.")
+            .def_readwrite("rotation", &VoxelGrid::rotation_,
+                           "``float64`` 3x3 matrix: Rotation matrix of the "
                            "origin point.")
             .def_readwrite("voxel_size", &VoxelGrid::voxel_size_,
                            "``float64`` Size of the voxel.");

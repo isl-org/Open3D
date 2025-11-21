@@ -48,7 +48,9 @@ private:
     void *ptr_;
 };
 
-static_assert(std::is_pod<TestObject>(), "TestObject must be a POD.");
+static_assert(std::is_standard_layout<TestObject>::value &&
+                      std::is_trivial<TestObject>::value,
+              "TestObject must be a StandardLayout and TrivialType type.");
 static const int64_t byte_size = sizeof(TestObject);
 static const std::string class_name = "TestObject";
 

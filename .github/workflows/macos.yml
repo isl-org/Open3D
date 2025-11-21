@@ -23,6 +23,7 @@ env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  BUILD_CUDA_MODULE: OFF
 
 jobs:
   MacOS:
@@ -38,9 +39,9 @@ jobs:
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
-      BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
-      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
+      # Tensorflow 2.19, PyTorch 2.7 are only available for Apple Silicon (macos-14)
+      BUILD_TENSORFLOW_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
       LOW_MEM_USAGE: ON
     steps:
       - name: Checkout source code
@@ -70,23 +71,9 @@ jobs:
 
           if [[ ${{ runner.arch }} == "ARM64"  ]]; then
             # Fix gfortran not found issue
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
+            brew install gcc
+            ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
           fi
-
-          # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
-          # / arm64 big sur (11.0). Directly installing the Ruby formula will
-          # install for the current OS.
-          # https://github.com/microsoft/LightGBM/issues/4229
-          if [[ ${{ runner.arch}} == "X64"  ]]; then
-            # x64 catalina (10.15) bottle
-            export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          else # ARM64
-            # arm64 big_sur (11.0) bottle
-            export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
-          fi
-          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
-          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
-          brew install -f libomp-11.1.0.bottle.tar.gz
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
@@ -187,28 +174,22 @@ jobs:
         # macos-13 is Intel runner, macos-14 is Apple Silicon
         # https://github.com/actions/runner-images
         os: [macos-13, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          # TODO: remove macos-14 excludes when https://github.com/actions/setup-python/issues/808 is fixed
-          - os: macos-14
-            python_version: '3.8'
-          - os: macos-14
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
 
     env:
-      BUILD_CUDA_MODULE: OFF
-      # TensorFlow v2.16 does not support Python 3.8
-      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version == '3.8' && 'OFF' || 'ON' }}
+      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
+      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version == '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
+      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
+      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
@@ -218,6 +199,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
@@ -255,17 +237,6 @@ jobs:
             ln -s $(which gfortran-13) /usr/local/bin/gfortran
           fi
 
-          # Install libomp 11.1.0. See comment above.
-          if [[ ${{ runner.arch}} == "X64"  ]]; then
-            # x64 catalina (10.15) bottle
-            export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          else # ARM64
-            # arm64 big_sur (11.0) bottle
-            export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
-          fi
-          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
-          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
-          brew install -f libomp-11.1.0.bottle.tar.gz
           brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
@@ -286,14 +257,6 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-      - name: Update devel release (x86_64 only wheels)
-        if: ${{ github.ref == 'refs/heads/main' && (matrix.python_version == '3.8' || matrix.python_version == '3.9') }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
-
 
   fuse-wheel:
     name: Fuse universal2 wheel
@@ -305,7 +268,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -313,6 +276,8 @@ jobs:
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
     steps:
       - name: Checkout source code  # for gh release upload
         uses: actions/checkout@v4
@@ -371,25 +336,23 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-13, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - os: macos-14
-            python_version: '3.8'
-          - os: macos-14
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
+      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version == '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
+      # PyTorch 2.7 only supports macOS-14 (Apple Silicon)
+      BUILD_PYTORCH_OPS: ${{ matrix.os == 'macos-13' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

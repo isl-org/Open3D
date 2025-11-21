@@ -58,13 +58,15 @@ void pybind_image_declarations(py::module &m) {
             image(m, "Image", py::buffer_protocol(),
                   "The Image class stores image with customizable rols, cols, "
                   "channels, dtype and device.");
-    py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
+    py::native_enum<Image::InterpType>(m, "InterpType", "enum.Enum",
+                                       "Interpolation type.")
             .value("Nearest", Image::InterpType::Nearest)
             .value("Linear", Image::InterpType::Linear)
             .value("Cubic", Image::InterpType::Cubic)
             .value("Lanczos", Image::InterpType::Lanczos)
             .value("Super", Image::InterpType::Super)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
                Geometry>
             rgbd_image(
@@ -251,11 +253,12 @@ void pybind_image_definitions(py::module &m) {
             "device_id"_a = 0);
 
     // Conversion.
-    image.def("to",
-              py::overload_cast<core::Dtype, bool, utility::optional<double>,
-                                double>(&Image::To, py::const_),
-              "Returns an Image with the specified Dtype.", "dtype"_a,
-              "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
+    image.def(
+            "to",
+            py::overload_cast<core::Dtype, bool, std::optional<double>, double>(
+                    &Image::To, py::const_),
+            "Returns an Image with the specified Dtype.", "dtype"_a,
+            "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
     docstring::ClassMethodDocInject(
             m, "Image", "to",
             {{"dtype", "The targeted dtype to convert to."},

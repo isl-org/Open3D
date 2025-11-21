@@ -94,16 +94,19 @@ static std::shared_ptr<geometry::TriangleMesh> CreateTriangleMeshFromVoxelGrid(
 
     std::vector<Eigen::Vector3d>
             vertices;  // putting outside loop enables reuse
+    vertices.reserve(8);
     for (auto& it : voxel_grid.voxels_) {
         vertices.clear();
         const geometry::Voxel& voxel = it.second;
         // 8 vertices in a voxel
+        const Eigen::Matrix3d scaled_rot =
+                voxel_grid.rotation_ * voxel_grid.voxel_size_;
         Eigen::Vector3d base_vertex =
                 voxel_grid.origin_ +
-                voxel.grid_index_.cast<double>() * voxel_grid.voxel_size_;
+                scaled_rot * voxel.grid_index_.cast<double>();
         for (const Eigen::Vector3i& vertex_offset : kCuboidVertexOffsets) {
-            vertices.push_back(base_vertex + vertex_offset.cast<double>() *
-                                                     voxel_grid.voxel_size_);
+            vertices.push_back(base_vertex +
+                               scaled_rot * vertex_offset.cast<double>());
         }
 
         // Voxel color (applied to all points)

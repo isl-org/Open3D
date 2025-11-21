@@ -7,6 +7,7 @@
 
 #include "open3d/core/hashmap/HashMap.h"
 
+#include <optional>
 #include <random>
 #include <unordered_map>
 
@@ -16,7 +17,6 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Optional.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
@@ -367,8 +367,8 @@ TEST_P(HashMapPermuteDevices, Clear) {
 
 class int3 {
 public:
-    int3() : x_(0), y_(0), z_(0){};
-    int3(int k) : x_(k), y_(k * 2), z_(k * 4){};
+    int3() : x_(0), y_(0), z_(0) {};
+    int3(int k) : x_(k), y_(k * 2), z_(k * 4) {};
     bool operator==(const int3 &other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }

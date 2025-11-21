@@ -92,7 +92,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     // Only Float32, Float64 type dataset_points are supported.
     AssertTensorDtype(query_points, dtype);
     AssertTensorDevice(query_points, device);
-    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {std::nullopt, GetDimension()});
     AssertTensorDtype(queries_row_splits, Int64);
     AssertTensorDevice(queries_row_splits, Device("CPU:0"));
 

@@ -64,10 +64,10 @@ else()
 endif()
 option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
 if(BUILD_SYCL_MODULE)
-    set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING 
+    set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING
     "SYCL targets: spir64 for JIT, or another for AOT compilation. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
 )
-    set(OPEN3D_SYCL_TARGET_BACKEND_OPTIONS "" CACHE STRING 
+    set(OPEN3D_SYCL_TARGET_BACKEND_OPTIONS "" CACHE STRING
     "SYCL target backend options, e.g. to compile for a specific device. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
 )
     set(BUILD_ISPC_MODULE OFF CACHE BOOL "Build the ISPC module" FORCE)
@@ -94,7 +94,11 @@ else()
     option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
 endif()
 option(USE_SYSTEM_ASSIMP          "Use system pre-installed assimp"          OFF)
-option(USE_SYSTEM_CURL            "Use system pre-installed curl"            OFF)
+if (APPLE)
+    option(USE_SYSTEM_CURL            "Use system pre-installed curl"         ON)
+else()
+    option(USE_SYSTEM_CURL            "Use system pre-installed curl"        OFF)
+endif()
 option(USE_SYSTEM_CUTLASS         "Use system pre-installed cutlass"         OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
 option(USE_SYSTEM_EMBREE          "Use system pre-installed Embree"          OFF)
@@ -121,9 +125,9 @@ option(USE_SYSTEM_VTK             "Use system pre-installed VTK"             OFF
 option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
-else()
-    option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                OFF)
-endif()
+ else()
+     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                OFF)
+ endif()
 if(LINUX_AARCH64)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
 else()
@@ -391,13 +395,21 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_mod
 
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
-    # Suppress nvcc unsupported compiler error for MSVC 2022 with CUDA 11.7 to 12.4
-    # https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12
-    if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
-        # Set this before any CUDA checks
-        set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
-        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
-        "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+    if(MSVC)
+        # Handle/suppress nvcc unsupported compiler error for MSVC>=1940 with CUDA 11.7 to 12.4:
+        # (https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12)
+        # Find CUDAToolkit first to get CUDAToolkit_VERSION:
+        find_package(CUDAToolkit REQUIRED)
+        if (CUDAToolkit_VERSION VERSION_LESS "12.5" AND MSVC_VERSION GREATER_EQUAL 1940)
+            # Set required nvcc flags before enable_language(CUDA).
+            # Note: CMake >=3.29.4 might be needed for CMAKE_CUDA_FLAGS to be passed correctly to
+            # CMake's try_compile environment.
+            set(CMAKE_CUDA_FLAGS
+                  "${CMAKE_CUDA_FLAGS} -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
+                  CACHE STRING "Flags for NVCC" FORCE)
+            message(WARNING "Using --allow-unsupported-compiler flag and -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH for nvcc<=12.4 with MSVC>=1940. "
+            "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+        endif()
     endif()
     if (CMAKE_CUDA_ARCHITECTURES)
         message(STATUS "Building with user-provided CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
@@ -475,13 +487,16 @@ endif()
 
 # OS specific settings
 if(WIN32)
+    # Set oldest supported Windows version to Windows 10 (10.0, 0x0A00)
+    # https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
+    add_compile_definitions(WINVER=0x0A00 _WIN32_WINNT=0x0A00)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explicitly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
         # MSVC standards-compliant mode: Error in PoissonRecon 3rd party header
-        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)   
+        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members
@@ -490,6 +505,10 @@ if(WIN32)
         #
         # See: https://github.com/tensorflow/tensorflow/pull/10962
         add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj;/Ob2>")
+        # MSBuild adds /Zc:inline by default, but it needs to be added explicitly for other generators (e.g. Ninja),
+        # for Open3D to compile (the linker fails otherwise with a "fatal error LNK1189: library limit of 65535
+        # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

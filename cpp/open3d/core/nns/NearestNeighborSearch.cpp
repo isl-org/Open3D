@@ -13,7 +13,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-NearestNeighborSearch::~NearestNeighborSearch(){};
+NearestNeighborSearch::~NearestNeighborSearch() {};
 
 bool NearestNeighborSearch::SetIndex() {
     nanoflann_index_.reset(new NanoFlannIndex());
@@ -37,7 +37,7 @@ bool NearestNeighborSearch::KnnIndex() {
 
 bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
 
-bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
+bool NearestNeighborSearch::FixedRadiusIndex(std::optional<double> radius) {
     if (dataset_points_.IsCUDA()) {
         if (!radius.has_value())
             utility::LogError("radius is required for GPU FixedRadiusIndex.");
@@ -57,7 +57,7 @@ bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
     }
 }
 
-bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
+bool NearestNeighborSearch::HybridIndex(std::optional<double> radius) {
     if (dataset_points_.IsCUDA()) {
         if (!radius.has_value())
             utility::LogError("radius is required for GPU HybridIndex.");

@@ -33,22 +33,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
-      CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-ci-ccache
+      CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
@@ -61,18 +59,14 @@ jobs:
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
-          if [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py38_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py39_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+          if [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py310_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py311_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.12" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py312_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py38
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py313_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py39
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
@@ -81,6 +75,8 @@ jobs:
             docker/docker_build.sh cuda_wheel_py311
           elif [ "${{ env.PYTHON_VERSION }}" = "3.12" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py312
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py313
           fi
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
@@ -94,6 +90,14 @@ jobs:
             ${{ env.PIP_PKG_NAME }}
             ${{ env.PIP_CPU_PKG_NAME }}
           if-no-files-found: error
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload main-devel ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
+          ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }} --clobber
+          gh release view main-devel
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: 'google-github-actions/auth@v2'
@@ -110,36 +114,26 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.xz gs://open3d-ci-cache/
-      - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload main-devel ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
-          ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }} --clobber
-          gh release view main-devel
 
   test-wheel-cpu:
     name: Test wheel CPU
     permissions:
       contents: read
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
           - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
-          - is_main: false
             python_version: '3.10'
           - is_main: false
             python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -153,6 +147,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
       - name: Download wheels
         uses: actions/download-artifact@v4

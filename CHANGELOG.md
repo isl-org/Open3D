@@ -1,4 +1,5 @@
 ## Main
+-   Corrected documentation for Link Open3D in C++ projects (broken links).
 -   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
 -   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
@@ -57,7 +58,14 @@
 -   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
 -   Add select_by_index method to Feature class (PR #7039)
 -   Add optional indices arg for fast computation of a small subset of FPFH features (PR #7118).
-
+-   Fix CMake configuration summary incorrectly reporting `no` for system BLAS. (PR #7230)
+-   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
+-   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
+-   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
+-   Fix `deprecated-declarations` warnings when compiling code with C++20 standard (PR #7303)
+-   Fix advanced indexing bug with sliced boolean masks on CUDA devices (PR #7340)
+-   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
+-   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
 
 ## 0.13
 

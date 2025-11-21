@@ -92,8 +92,12 @@ if(NOT Pytorch_FOUND)
         # remove flags that nvcc does not understand
         get_target_property( iface_compile_options torch INTERFACE_COMPILE_OPTIONS )
         set_target_properties( torch PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
-        set_target_properties( torch_cuda PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
-        set_target_properties( torch_cpu PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
+        if (TARGET torch_cuda)
+            set_target_properties( torch_cuda PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
+        endif()
+        if (TARGET torch_cpu)
+            set_target_properties( torch_cpu PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
+        endif()
     endif()
 
     # If MKL is installed in the system level (e.g. for oneAPI Toolkit),
