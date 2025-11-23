@@ -17,7 +17,6 @@ namespace geometry {
 class AxisAlignedBoundingBox;
 class OrientedBoundingBox;
 
-
 class OrientedBoundingEllipsoid : public Geometry3D {
 public:
     /// \brief Default constructor.
@@ -59,7 +58,7 @@ public:
     /// Returns an oriented bounding box around the ellipsoid.
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust) const override;
-    
+
     /// Returns an oriented bounding box around the ellipsoid.
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust) const override;

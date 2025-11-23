@@ -40,9 +40,8 @@ struct EigenOBE {
     operator OrientedBoundingEllipsoid() const {
         OrientedBoundingEllipsoid obe;
         obe.SetRotation(core::eigen_converter::EigenMatrixToTensor(R_));
-        obe.SetRadii(
-                core::eigen_converter::EigenMatrixToTensor(radii_).Reshape(
-                        {3}));
+        obe.SetRadii(core::eigen_converter::EigenMatrixToTensor(radii_).Reshape(
+                {3}));
         obe.SetCenter(
                 core::eigen_converter::EigenMatrixToTensor(center_).Reshape(
                         {3}));
@@ -190,8 +189,7 @@ double KhachiyanAlgorithm(const Eigen::MatrixXd& A,
     Eigen::Matrix3d toInvert = PN - M3;  // 3 x 3
     Eigen::LDLT<Eigen::Matrix3d> ldltOfToInvert(toInvert);
     if (ldltOfToInvert.info() != Eigen::Success) {
-        throw std::runtime_error(
-                "LDLT decomposition failed in final step.");
+        throw std::runtime_error("LDLT decomposition failed in final step.");
     }
 
     // Q = (toInvert)^{-1} / 3   => shape matrix of the ellipsoid
@@ -206,8 +204,7 @@ double KhachiyanAlgorithm(const Eigen::MatrixXd& A,
 }  // namespace
 
 OrientedBoundingEllipsoid ComputeMinimumOBEKhachiyan(
-        const core::Tensor& points_,
-        bool robust) {
+        const core::Tensor& points_, bool robust) {
     // ------------------------------------------------------------
     // 0) Compute the convex hull of the input point cloud
     // ------------------------------------------------------------

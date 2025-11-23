@@ -59,7 +59,7 @@ public:
     ///               coordinates.
     geometry::OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const final;
-        
+
     /// If point cloud does not exist, creates an oriented bounding ellipsoid
     /// form its default constructor. If point cloud exists, creates an
     /// oriented bounding ellipsoid around it.
@@ -68,7 +68,7 @@ public:
     ///               in degenerate cases but introduces noise to the points
     ///               coordinates.
     geometry::OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
-        bool robust = false) const final;
+            bool robust = false) const final;
 
     PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
     PointCloudPicker& Translate(const Eigen::Vector3d& translation,

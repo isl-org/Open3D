@@ -66,18 +66,18 @@ void pybind_boundingvolume_definitions(py::module &m) {
                        << r.z() << ")";
                      return s.str();
                  })
-          //   .def_static("create_from_axis_aligned_bounding_box",
-          //               &OrientedBoundingEllipsoid::
-          //                       CreateFromAxisAlignedBoundingBox,
-          //               "Returns an oriented bounding ellipsoid from the "
-          //               "AxisAlignedBoundingBox.",
-          //               "aabox"_a)
-          //   .def_static(
-          //           "create_from_oriented_bounding_box",
-          //           &OrientedBoundingEllipsoid::CreateFromOrientedBoundingBox,
-          //           "Returns an oriented bounding ellipsoid from the "
-          //           "OrientedBoundingBox.",
-          //           "obb"_a)
+            //   .def_static("create_from_axis_aligned_bounding_box",
+            //               &OrientedBoundingEllipsoid::
+            //                       CreateFromAxisAlignedBoundingBox,
+            //               "Returns an oriented bounding ellipsoid from the "
+            //               "AxisAlignedBoundingBox.",
+            //               "aabox"_a)
+            //   .def_static(
+            //           "create_from_oriented_bounding_box",
+            //           &OrientedBoundingEllipsoid::CreateFromOrientedBoundingBox,
+            //           "Returns an oriented bounding ellipsoid from the "
+            //           "OrientedBoundingBox.",
+            //           "obb"_a)
             .def_static("create_from_points",
                         &OrientedBoundingEllipsoid::CreateFromPoints,
                         "points"_a, "robust"_a = false,
@@ -98,7 +98,7 @@ Returns:
      bounding box is oriented such that the axes are ordered with respect to
      the principal components.
 )doc")
-         
+
             .def("volume", &OrientedBoundingEllipsoid::Volume,
                  "Returns the volume of the bounding ellipsoid.")
             .def_readwrite("center", &OrientedBoundingEllipsoid::center_,
@@ -110,11 +110,12 @@ Returns:
             .def_readwrite("color", &OrientedBoundingEllipsoid::color_,
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "OrientedBoundingEllipsoid", "volume");
-//     docstring::ClassMethodDocInject(
-//             m, "OrientedBoundingEllipsoid", "create_from_axis_aligned_bounding_box",
-//             {{"aabox",
-//               "AxisAlignedBoundingBox object from which OrientedBoundingEllipsoid is "
-//               "created."}});
+    //     docstring::ClassMethodDocInject(
+    //             m, "OrientedBoundingEllipsoid",
+    //             "create_from_axis_aligned_bounding_box",
+    //             {{"aabox",
+    //               "AxisAlignedBoundingBox object from which
+    //               OrientedBoundingEllipsoid is " "created."}});
 
     auto oriented_bounding_box = static_cast<
             py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,

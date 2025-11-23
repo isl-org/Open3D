@@ -224,9 +224,10 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
             return std::make_unique<TemporaryLineSetBuilder>(lines);
         }
         case GT::OrientedBoundingEllipsoid: {
-            auto obel =
-                    static_cast<const geometry::OrientedBoundingEllipsoid&>(geometry);
-            auto lines = geometry::LineSet::CreateFromOrientedBoundingEllipsoid(obel);
+            auto obel = static_cast<const geometry::OrientedBoundingEllipsoid&>(
+                    geometry);
+            auto lines = geometry::LineSet::CreateFromOrientedBoundingEllipsoid(
+                    obel);
             lines->PaintUniformColor(obel.color_);
             return std::make_unique<TemporaryLineSetBuilder>(lines);
         }

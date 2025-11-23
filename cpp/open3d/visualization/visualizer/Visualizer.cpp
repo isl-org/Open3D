@@ -401,7 +401,8 @@ bool Visualizer::AddGeometry(
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::OrientedBoundingEllipsoid) {
-        renderer_ptr = std::make_shared<glsl::OrientedBoundingEllipsoidRenderer>();
+        renderer_ptr =
+                std::make_shared<glsl::OrientedBoundingEllipsoidRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }

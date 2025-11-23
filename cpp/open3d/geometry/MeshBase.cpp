@@ -54,7 +54,8 @@ OrientedBoundingBox MeshBase::GetMinimalOrientedBoundingBox(bool robust) const {
     return OrientedBoundingBox::CreateFromPointsMinimal(vertices_, robust);
 }
 
-OrientedBoundingEllipsoid MeshBase::GetOrientedBoundingEllipsoid(bool robust) const {
+OrientedBoundingEllipsoid MeshBase::GetOrientedBoundingEllipsoid(
+        bool robust) const {
     return OrientedBoundingEllipsoid::CreateFromPoints(vertices_, robust);
 }
 

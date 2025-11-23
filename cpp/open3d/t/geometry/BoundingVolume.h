@@ -696,8 +696,8 @@ public:
     /// degenerate cases but introduces noise to the points coordinates.
     /// \return OrientedBoundingEllipsoid with same data type and device as
     /// input points.
-    static OrientedBoundingEllipsoid CreateFromPoints(const core::Tensor &points,
-                                                      bool robust = false);
+    static OrientedBoundingEllipsoid CreateFromPoints(
+            const core::Tensor &points, bool robust = false);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

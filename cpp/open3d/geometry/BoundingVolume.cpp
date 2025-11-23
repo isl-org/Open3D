@@ -119,8 +119,8 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points, bool robust) {
     auto tpoints = core::eigen_converter::EigenVector3dVectorToTensor(
             points, core::Float64, core::Device());
-    return t::geometry::kernel::minimum_obe::ComputeMinimumOBEKhachiyan(
-                   tpoints, robust)
+    return t::geometry::kernel::minimum_obe::ComputeMinimumOBEKhachiyan(tpoints,
+                                                                        robust)
             .ToLegacy();
 }
 

@@ -732,15 +732,12 @@ core::Tensor OrientedBoundingEllipsoid::GetEllipsoidPoints() const {
     double r1 = radii_vals.GetItem({core::TensorKey::Index(1)}).Item<double>();
     double r2 = radii_vals.GetItem({core::TensorKey::Index(2)}).Item<double>();
 
-    core::Tensor x_axis = GetRotation().Matmul(
-            core::Tensor(std::vector<double>{r0, 0.0, 0.0}, 
-                        {3}, GetDtype(), GetDevice()));
-    core::Tensor y_axis = GetRotation().Matmul(
-            core::Tensor(std::vector<double>{0.0, r1, 0.0}, 
-                        {3}, GetDtype(), GetDevice()));
-    core::Tensor z_axis = GetRotation().Matmul(
-            core::Tensor(std::vector<double>{0.0, 0.0, r2}, 
-                        {3}, GetDtype(), GetDevice()));
+    core::Tensor x_axis = GetRotation().Matmul(core::Tensor(
+            std::vector<double>{r0, 0.0, 0.0}, {3}, GetDtype(), GetDevice()));
+    core::Tensor y_axis = GetRotation().Matmul(core::Tensor(
+            std::vector<double>{0.0, r1, 0.0}, {3}, GetDtype(), GetDevice()));
+    core::Tensor z_axis = GetRotation().Matmul(core::Tensor(
+            std::vector<double>{0.0, 0.0, r2}, {3}, GetDtype(), GetDevice()));
 
     // Create the six critical points
     std::vector<core::Tensor> points;
@@ -855,8 +852,8 @@ OrientedBoundingEllipsoid::ToLegacy() const {
     return legacy_ellipsoid;
 }
 
-AxisAlignedBoundingBox
-OrientedBoundingEllipsoid::GetAxisAlignedBoundingBox() const {
+AxisAlignedBoundingBox OrientedBoundingEllipsoid::GetAxisAlignedBoundingBox()
+        const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetEllipsoidPoints());
 }
 
@@ -875,8 +872,8 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::FromLegacy(
             core::eigen_converter::EigenMatrixToTensor(ellipsoid.center_)
                     .Flatten()
                     .To(device, dtype),
-            core::eigen_converter::EigenMatrixToTensor(ellipsoid.R_).To(device,
-                                                                        dtype),
+            core::eigen_converter::EigenMatrixToTensor(ellipsoid.R_)
+                    .To(device, dtype),
             core::eigen_converter::EigenMatrixToTensor(ellipsoid.radii_)
                     .Flatten()
                     .To(device, dtype));

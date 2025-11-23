@@ -212,7 +212,7 @@ OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
-OrientedBoundingEllipsoid LineSet::GetOrientedBoundingEllipsoid() const{
+OrientedBoundingEllipsoid LineSet::GetOrientedBoundingEllipsoid() const {
     return OrientedBoundingEllipsoid::CreateFromPoints(GetPointPositions());
 }
 
