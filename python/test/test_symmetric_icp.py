@@ -227,7 +227,6 @@ class TestSymmetricICP:
 
         # Create a more complex test case
         source = o3d.geometry.PointCloud()
-        target = o3d.geometry.PointCloud()
 
         # Generate random points with normals
         num_points = 50

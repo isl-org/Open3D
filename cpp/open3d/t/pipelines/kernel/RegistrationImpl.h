@@ -240,8 +240,8 @@ template bool GetJacobianPointToPlane(int64_t workload_idx,
 /// \param target_normals_ptr Pointer to target point normals (3N elements).
 /// \param correspondence_indices Pointer to correspondence indices.
 /// \param J_ij Output array for Jacobians (must have space for 12 elements:
-///             elements 0-5 for source-to-target Jacobian,
-///             elements 6-11 for target-to-source Jacobian).
+///             elements 0-5 for Jacobian using target normal,
+///             elements 6-11 for Jacobian using source normal).
 /// \param r1 Output residual for source-to-target point-to-plane distance.
 /// \param r2 Output residual for target-to-source point-to-plane distance.
 /// \return true if correspondence is valid, false if correspondence is -1.
