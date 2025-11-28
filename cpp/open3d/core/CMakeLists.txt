@@ -48,6 +48,7 @@ target_sources(core PRIVATE
     linalg/LeastSquares.cpp
     linalg/LU.cpp
     linalg/Matmul.cpp
+    linalg/Gramian.cpp
     linalg/Solve.cpp
     linalg/SVD.cpp
     linalg/Tri.cpp
@@ -83,6 +84,7 @@ target_sources(core_impl PRIVATE
     linalg/LeastSquaresCPU.cpp
     linalg/LUCPU.cpp
     linalg/MatmulCPU.cpp
+    linalg/GramianCPU.cpp
     linalg/SolveCPU.cpp
     linalg/SVDCPU.cpp
     linalg/TriCPU.cpp
@@ -102,6 +104,7 @@ open3d_sycl_target_sources(core_impl PRIVATE
     linalg/LeastSquaresSYCL.cpp
     linalg/LUSYCL.cpp
     linalg/MatmulSYCL.cpp
+    linalg/GramianSYCL.cpp
     linalg/SolveSYCL.cpp
     linalg/SVDSYCL.cpp
     linalg/TriSYCL.cpp
@@ -129,6 +132,7 @@ if (BUILD_CUDA_MODULE)
         linalg/LinalgUtils.cpp
         linalg/LUCUDA.cpp
         linalg/MatmulCUDA.cpp
+        linalg/GramianCUDA.cpp
         linalg/SolveCUDA.cpp
         linalg/SVDCUDA.cpp
         linalg/TriCUDA.cu
