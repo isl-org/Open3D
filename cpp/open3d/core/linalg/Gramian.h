@@ -20,41 +20,33 @@ void RowGram(const Tensor& A, Tensor& B);
 
 #ifdef BUILD_SYCL_MODULE
 void GramSYCL(void* A_data,
-                void* B_data,
-                int64_t m,
-                int64_t n,
-                Dtype dtype,
-                const Device& device);
+              void* B_data,
+              int64_t m,
+              int64_t n,
+              Dtype dtype,
+              const Device& device);
 void RowGramSYCL(void* A_data,
-                void* B_data,
-                int64_t m,
-                int64_t n,
-                Dtype dtype,
-                const Device& device);
+                 void* B_data,
+                 int64_t m,
+                 int64_t n,
+                 Dtype dtype,
+                 const Device& device);
 #endif
 #ifdef BUILD_CUDA_MODULE
 void GramCUDA(void* A_data,
-                void* B_data,
-                int64_t m,
-                int64_t n,
-                Dtype dtype,
-                const Device& device);
+              void* B_data,
+              int64_t m,
+              int64_t n,
+              Dtype dtype,
+              const Device& device);
 void RowGramCUDA(void* A_data,
-                void* B_data,
-                int64_t m,
-                int64_t n,
-                Dtype dtype,
-                const Device& device);
+                 void* B_data,
+                 int64_t m,
+                 int64_t n,
+                 Dtype dtype,
+                 const Device& device);
 #endif
-void GramCPU(void* A_data,
-               void* B_data,
-               int64_t m,
-               int64_t n,
-               Dtype dtype);
-void RowGramCPU(void* A_data,
-               void* B_data,
-               int64_t m,
-               int64_t n,
-               Dtype dtype);
+void GramCPU(void* A_data, void* B_data, int64_t m, int64_t n, Dtype dtype);
+void RowGramCPU(void* A_data, void* B_data, int64_t m, int64_t n, Dtype dtype);
 }  // namespace core
 }  // namespace open3d

@@ -89,6 +89,13 @@ TEST_P(LinalgPermuteDevices, Gram) {
         EXPECT_NEAR(B_data[i], B_gt[i], EPSILON);
     }
 
+    // Gram matrix must equal the operation A.T @ A
+    core::Tensor C = A.T().Matmul(A);
+    std::vector<float> C_data = C.ToFlatVector<float>();
+    for (int i = 0; i < 9; ++i) {
+        EXPECT_NEAR(C_data[i], B_gt[i], EPSILON);
+    }
+
     // Non-contiguous Gram test.
     core::Tensor A_slice = A.Slice(1, 0, 3, 2);
     core::Tensor B_slice = A_slice.Gram();
@@ -120,6 +127,13 @@ TEST_P(LinalgPermuteDevices, RowGram) {
     std::vector<float> B_gt = {14, 32, 32, 77};
     for (int i = 0; i < 4; ++i) {
         EXPECT_NEAR(B_data[i], B_gt[i], EPSILON);
+    }
+
+    // Row gram matrix must equal the operation A @ A.T
+    core::Tensor C = A.Matmul(A.T());
+    std::vector<float> C_data = C.ToFlatVector<float>();
+    for (int i = 0; i < 4; ++i) {
+        EXPECT_NEAR(C_data[i], B_gt[i], EPSILON);
     }
 
     // Non-contiguous RowGram test.
