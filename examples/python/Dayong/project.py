@@ -1,5 +1,4 @@
 import numpy as np
-import os
 import open3d as o3d
 
 
@@ -7,8 +6,8 @@ def project_points_onto_mesh(points: np.ndarray,
                              direction: np.ndarray,
                              target_mesh: o3d.geometry.TriangleMesh) -> tuple[np.ndarray, np.ndarray]:
     """
-    使用 Open3D 的 RaycastingScene 将点沿 direction 投影到 target_mesh 表面。
-    自动忽略 miss 掉的点（t_hit = inf）。
+    Use RayCasting to project points onto mesh
+    Ignore points that missed
     """
     # Create Tensor Mesh
     target_t = o3d.t.geometry.TriangleMesh.from_legacy(target_mesh)

@@ -6,11 +6,12 @@ from initialize import *
 from align import *
 from project import *
 from extrude import *
+from utils import *
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(__file__)
     shoe_path = os.path.join(base_dir, "STLs", "shoe.stl")
-    toy_path = os.path.join(base_dir, "STLs", "badge.stl")
+    toy_path = os.path.join(base_dir, "STLs", "fish.stl")
 
     # Generate mesh for each stl
     shoe = read_stl_to_mesh(shoe_path)
@@ -27,8 +28,8 @@ if __name__ == "__main__":
     normal_o = get_normal_at_point(shoe, o)
 
     # Get p and its normal
-    p = select_o_point_from_ratio(toy, 0.5, 0.5, 0) # badge
-    # p = select_o_point_from_ratio(toy, 0.5, 1, 0.5) # fish
+    # p = select_o_point_from_ratio(toy, 0.5, 0.5, 0) # badge
+    p = select_o_point_from_ratio(toy, 0.5, 1, 0.5) # fish
     visualize_point_on_mesh(toy, p, 0.1)
     normal_p = get_normal_at_point(toy, p)
 
@@ -49,14 +50,23 @@ if __name__ == "__main__":
     toy.compute_triangle_normals()
     toy.compute_vertex_normals()
 
-    # Extrude
-    # extruded_toy = extrude_with_original_top(original_mesh=toy, extrude_normal=normal_o, thickness=0.5)
+    toy = clean_mesh(toy, weld_eps=1e-5)
+    toy.compute_triangle_normals()
+    toy.compute_vertex_normals()
 
-    extruded_toy = extrude_along_normals(toy, thickness=0.06)
+    thickness = 0.2
+    extruded_toy = extrude_shell(toy, thickness)
+    extruded_toy.paint_uniform_color([1.0, 0.6, 0.3])
+
     o3d.visualization.draw_geometries([extruded_toy], mesh_show_back_face=True)
     o3d.visualization.draw_geometries([shoe, extruded_toy], mesh_show_back_face=True)
 
-    # # Export to stl and ply
-    combined = shoe + extruded_toy
-    combined.compute_vertex_normals()
-    o3d.io.write_triangle_mesh("output.stl", combined)
+    # Extrude
+    # extruded_toy = extrude_along_normals(toy, thickness=0.06)
+    # o3d.visualization.draw_geometries([extruded_toy], mesh_show_back_face=True)
+    # o3d.visualization.draw_geometries([shoe, extruded_toy], mesh_show_back_face=True)
+
+    # Export to stl and ply
+    # combined = shoe + extruded_toy
+    # combined.compute_vertex_normals()
+    # o3d.io.write_triangle_mesh("output.stl", combined)
