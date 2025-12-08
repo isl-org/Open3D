@@ -44,6 +44,21 @@ public:
                  const std::vector<Eigen::Vector3i> &triangles)
         : MeshBase(Geometry::GeometryType::TriangleMesh, vertices),
           triangles_(triangles) {}
+    /// \brief Copy Constructor.
+    ///
+    /// \param mesh other mesh to copy.
+    TriangleMesh(const TriangleMesh &mesh)
+        : MeshBase(Geometry::GeometryType::TriangleMesh, mesh.vertices_),
+          // vertex_normals_(mesh.vertex_normals_),
+          // vertex_colors_(mesh.vertex_colors_),
+          triangles_(mesh.triangles_),
+          triangle_normals_(mesh.triangle_normals_),
+          adjacency_list_(mesh.adjacency_list_),
+          triangle_uvs_(mesh.triangle_uvs_),
+          materials_(mesh.materials_),
+          triangle_material_ids_(mesh.triangle_material_ids_),
+          textures_(mesh.textures_)
+          {}
     ~TriangleMesh() override {}
 
 public:
@@ -56,6 +71,7 @@ public:
 public:
     TriangleMesh &operator+=(const TriangleMesh &mesh);
     TriangleMesh operator+(const TriangleMesh &mesh) const;
+    bool operator==(const TriangleMesh &mesh) const;
 
     /// Returns `true` if the mesh contains triangles.
     bool HasTriangles() const {
