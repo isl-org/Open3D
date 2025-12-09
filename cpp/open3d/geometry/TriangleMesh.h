@@ -59,6 +59,7 @@ public:
           triangle_material_ids_(mesh.triangle_material_ids_),
           textures_(mesh.textures_)
           {}
+    TriangleMesh& operator=(const TriangleMesh&) = default;
     ~TriangleMesh() override {}
 
 public:
