@@ -122,7 +122,7 @@ bool TriangleMesh::operator==(const TriangleMesh &mesh) const {
     }
 
     for(unsigned long i=0; i<triangles_.size(); ++i){
-        if(!triangles_[i].isApprox(mesh.triangles_[i])) return false;
+        if(triangles_[i] != mesh.triangles_[i]) return false;
     }
 
     return true;
