@@ -774,9 +774,10 @@ endif()
 
 # jsoncpp
 if(USE_SYSTEM_JSONCPP)
+    # Try JsonCpp::JsonCpp first (vcpkg), then jsoncpp_lib (system)
     open3d_find_package_3rdparty_library(3rdparty_jsoncpp
         PACKAGE jsoncpp
-        TARGETS jsoncpp_lib
+        TARGETS JsonCpp::JsonCpp jsoncpp_lib
     )
     if(NOT 3rdparty_jsoncpp_FOUND)
         set(USE_SYSTEM_JSONCPP OFF)
@@ -864,9 +865,17 @@ endif()
 # - openssl.cmake needs to be included before curl.cmake, for the
 #   BORINGSSL_ROOT_DIR variable.
 if(USE_SYSTEM_CURL)
-    open3d_pkg_config_3rdparty_library(3rdparty_curl
-        SEARCH_ARGS libcurl
+    # Prefer find_package over pkg-config for better vcpkg compatibility
+    open3d_find_package_3rdparty_library(3rdparty_curl
+        PACKAGE CURL
+        TARGETS CURL::libcurl
     )
+    if(NOT 3rdparty_curl_FOUND)
+        # Fallback to pkg-config if find_package fails
+        open3d_pkg_config_3rdparty_library(3rdparty_curl
+            SEARCH_ARGS libcurl
+        )
+    endif()
     if(NOT 3rdparty_curl_FOUND)
         set(USE_SYSTEM_CURL OFF)
     endif()
@@ -1153,10 +1162,20 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_poisson
 
 # Minizip
 if(WITH_MINIZIP)
-    open3d_pkg_config_3rdparty_library(3rdparty_minizip
-        SEARCH_ARGS minizip
+    # Prefer find_package over pkg-config for better vcpkg compatibility
+    open3d_find_package_3rdparty_library(3rdparty_minizip
+        PACKAGE unofficial-minizip
+        TARGETS unofficial::minizip::minizip
     )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+    if(NOT 3rdparty_minizip_FOUND)
+        # Fallback to pkg-config
+        open3d_pkg_config_3rdparty_library(3rdparty_minizip
+            SEARCH_ARGS minizip
+        )
+    endif()
+    if(3rdparty_minizip_FOUND)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+    endif()
 endif()
 
 # Googletest
@@ -1443,9 +1462,17 @@ list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_opengl)
 # RPC interface
 # zeromq
 if(USE_SYSTEM_ZEROMQ)
-    open3d_pkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
+    # Prefer find_package over pkg-config for better vcpkg compatibility
+    open3d_find_package_3rdparty_library(3rdparty_zeromq
+        PACKAGE ZeroMQ
+        TARGETS libzmq
+    )
     if(NOT 3rdparty_zeromq_FOUND)
-        set(USE_USE_SYSTEM_ZEROMQ OFF)
+        # Fallback to pkg-config if find_package fails
+        open3d_pkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
+    endif()
+    if(NOT 3rdparty_zeromq_FOUND)
+        set(USE_SYSTEM_ZEROMQ OFF)
     endif()
 endif()
 if(NOT USE_SYSTEM_ZEROMQ)
