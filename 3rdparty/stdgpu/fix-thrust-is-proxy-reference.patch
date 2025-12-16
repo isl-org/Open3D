@@ -1,0 +1,25 @@
+diff --git a/src/stdgpu/impl/iterator_detail.h b/src/stdgpu/impl/iterator_detail.h
+index 0000000..1111111 100644
+--- a/src/stdgpu/impl/iterator_detail.h
++++ b/src/stdgpu/impl/iterator_detail.h
+@@ -393,15 +393,15 @@ THRUST_NAMESPACE_BEGIN
+ {
+ 
+ template <typename Container>
+-struct is_proxy_reference<stdgpu::detail::back_insert_iterator_proxy<Container>> : public thrust::detail::true_type
++struct is_wrapped_reference<stdgpu::detail::back_insert_iterator_proxy<Container>> : public thrust::detail::true_type
+ {
+ };
+ 
+ template <typename Container>
+-struct is_proxy_reference<stdgpu::detail::front_insert_iterator_proxy<Container>> : public thrust::detail::true_type
++struct is_wrapped_reference<stdgpu::detail::front_insert_iterator_proxy<Container>> : public thrust::detail::true_type
+ {
+ };
+ 
+ template <typename Container>
+-struct is_proxy_reference<stdgpu::detail::insert_iterator_proxy<Container>> : public thrust::detail::true_type
++struct is_wrapped_reference<stdgpu::detail::insert_iterator_proxy<Container>> : public thrust::detail::true_type
+ {
+ };
+
