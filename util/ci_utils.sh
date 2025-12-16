@@ -172,7 +172,15 @@ build_pip_package() {
     if [[ "build_jupyter" =~ ^($options)$ ]]; then
         echo "Building Jupyter extension in Python wheel."
         BUILD_JUPYTER_EXTENSION=ON
-        BUILD_WEBRTC_FROM_SOURCE=ON
+        # WebRTC is not supported on ARM Linux
+        AARCH="$(uname -m)"
+        if [[ "$AARCH" == "aarch64" ]]; then
+            echo "ARM Linux detected: BUILD_WEBRTC disabled (not supported on ARM)"
+            BUILD_WEBRTC_FROM_SOURCE=OFF
+            BUILD_JUPYTER_EXTENSION=OFF
+        else
+            BUILD_WEBRTC_FROM_SOURCE=ON
+        fi
     else
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
@@ -237,6 +245,36 @@ build_pip_package() {
 # Usage: test_wheel wheel_path
 test_wheel() {
     wheel_path="$1"
+    # Expand glob pattern if it contains wildcards
+    if [[ "$wheel_path" == *"*"* ]] || [[ "$wheel_path" == *"?"* ]]; then
+        # Use shopt to enable nullglob so unmatched patterns expand to empty string
+        shopt -s nullglob
+        # Expand the glob pattern
+        expanded_files=($wheel_path)
+        shopt -u nullglob
+        if [ ${#expanded_files[@]} -eq 0 ]; then
+            echo "ERROR: No wheel file found matching pattern: $wheel_path"
+            echo "Current directory: $(pwd)"
+            echo "Available wheel files:"
+            ls -la *.whl 2>/dev/null || echo "  (none found)"
+            exit 1
+        elif [ ${#expanded_files[@]} -gt 1 ]; then
+            echo "ERROR: Multiple wheel files found matching pattern: $wheel_path"
+            printf '  %s\n' "${expanded_files[@]}"
+            exit 1
+        else
+            wheel_path="${expanded_files[0]}"
+            echo "Expanded glob pattern to: $wheel_path"
+        fi
+    fi
+    # Verify the file exists
+    if [ ! -f "$wheel_path" ]; then
+        echo "ERROR: Wheel file not found: $wheel_path"
+        echo "Current directory: $(pwd)"
+        echo "Available wheel files:"
+        ls -la *.whl 2>/dev/null || echo "  (none found)"
+        exit 1
+    fi
     python -m venv open3d_test.venv
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
