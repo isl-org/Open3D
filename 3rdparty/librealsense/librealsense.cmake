@@ -10,10 +10,6 @@ ExternalProject_Add(
     URL_HASH SHA256=3e82f9b545d9345fd544bb65f8bf7943969fb40bcfc73d983e7c2ffcdc05eaeb
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
-    # Patch for libusb static build failure on Linux
-    PATCH_COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
-        <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
     # Patch for CRT mismatch in CUDA code (Windows)
     COMMAND ${GIT_EXECUTABLE} -C <SOURCE_DIR> init
     COMMAND ${GIT_EXECUTABLE} -C <SOURCE_DIR> apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
@@ -53,7 +49,7 @@ set(LIBREALSENSE_INCLUDE_DIR "${INSTALL_DIR}/include/") # "/" is critical.
 set(LIBREALSENSE_LIB_DIR "${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR}")
 set(LIBREALSENSE_LIBRARIES realsense2 fw realsense-file rsutils) # The order is critical.
 if (NOT MSVC)
-	list(APPEND LIBREALSENSE_LIBRARIES usb)
+	list(APPEND LIBREALSENSE_LIBRARIES usb-1.0)
 endif()
 if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is no-op
     ExternalProject_Add_Step(ext_librealsense rename_debug_libs
@@ -64,14 +60,4 @@ if(MSVC)    # Rename debug libs to ${LIBREALSENSE_LIBRARIES}. rem (comment) is n
         WORKING_DIRECTORY "${LIBREALSENSE_LIB_DIR}"
         DEPENDEES install
     )
-endif()
-
-if (NOT MSVC)
-	ExternalProject_Add_Step(ext_librealsense copy_libusb_to_lib_folder
-	    COMMAND ${CMAKE_COMMAND} -E copy
-	    "<BINARY_DIR>/libusb_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}usb${CMAKE_STATIC_LIBRARY_SUFFIX}"
-	    "${LIBREALSENSE_LIB_DIR}"
-	    DEPENDEES install
-	    BYPRODUCTS "${LIBREALSENSE_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}usb${CMAKE_STATIC_LIBRARY_SUFFIX}"
-	    )
 endif()
