@@ -46,6 +46,7 @@ RUN apt-get update && apt-get install -y \
     libbz2-dev \
     libreadline-dev \
     libsqlite3-dev \
+    libusb-1.0-0-dev \
     curl \
     git \
     libncursesw5-dev \
