@@ -15,10 +15,10 @@ ExternalProject_Add(
         ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
         <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
     # Patch for CRT mismatch in CUDA code (Windows)
-    COMMAND ${GIT_EXECUTABLE} init
-    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
+    COMMAND ${GIT_EXECUTABLE} -C <SOURCE_DIR> init
+    COMMAND ${GIT_EXECUTABLE} -C <SOURCE_DIR> apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
     # Patch to include the <chrono> header for the system_clock type
-    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch
+    COMMAND ${GIT_EXECUTABLE} -C <SOURCE_DIR> apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
