@@ -1,12 +1,3 @@
-From e937d96e1a355d222b6af355e748f3150039c1f5 Mon Sep 17 00:00:00 2001
-From: Cyril Kaiser <cyril.kaiser2@gmail.com>
-Date: Sun, 14 Mar 2021 17:02:34 +0000
-Subject: [PATCH] Update CUDA compute capabilities for CUDA 13+ and set static/dynamic crt in CMAKE_CUDA_FLAGS.
-
----
- CMake/cuda_config.cmake | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
-
 diff --git a/CMake/cuda_config.cmake b/CMake/cuda_config.cmake
 index 711839b22..86edf63c4 100644
 --- a/CMake/cuda_config.cmake
