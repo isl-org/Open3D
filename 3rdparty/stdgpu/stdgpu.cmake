@@ -4,6 +4,14 @@
 
 include(ExternalProject)
 
+# In CUDA 13.0+, Thrust moved from include/thrust/ to include/cccl/thrust/
+# Set the appropriate include directory based on CUDA version
+if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "13.0")
+    set(THRUST_INCLUDE_DIR_PATH "${CUDAToolkit_LIBRARY_ROOT}/include/cccl")
+else()
+    set(THRUST_INCLUDE_DIR_PATH "${CUDAToolkit_LIBRARY_ROOT}/include")
+endif()
+
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
@@ -19,7 +27,7 @@ ExternalProject_Add(
         -DSTDGPU_BUILD_TESTS=OFF
         -DSTDGPU_BUILD_BENCHMARKS=OFF
         -DSTDGPU_ENABLE_CONTRACT_CHECKS=OFF
-        -DTHRUST_INCLUDE_DIR=${CUDAToolkit_INCLUDE_DIRS}
+        -DTHRUST_INCLUDE_DIR=${THRUST_INCLUDE_DIR_PATH}
         ${ExternalProject_CMAKE_ARGS_hidden}
     CMAKE_CACHE_ARGS    # Lists must be passed via CMAKE_CACHE_ARGS
         -DCMAKE_CUDA_ARCHITECTURES:STRING=${CMAKE_CUDA_ARCHITECTURES}

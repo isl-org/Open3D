@@ -160,10 +160,14 @@ jobs:
           repository: isl-org/Open3D-ML
           ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
+      - name: Set artifact name
+        run: |
+          PYTHON_VERSION="${{ matrix.python_version }}"
+          echo "ARTIFACT_NAME=open3d-wheel-py${PYTHON_VERSION//./}" >> $GITHUB_ENV
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: open3d*-manylinux*.whl
+          name: ${{ env.ARTIFACT_NAME }}
           merge-multiple: true
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -174,7 +178,7 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel open3d-[0-9]*-"$pi_tag"-*.whl
+          test_wheel open3d-*-"$pi_tag"-*.whl
       - name: Run Python unit tests
         run: |
           source util/ci_utils.sh
@@ -187,7 +191,7 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel open3d_cpu*-"$pi_tag"-*.whl
+          test_wheel open3d_cpu-*-"$pi_tag"-*.whl
       - name: Run Python unit tests (CPU)
         run: |
           source util/ci_utils.sh

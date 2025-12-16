@@ -5,22 +5,23 @@ find_package(Git QUIET REQUIRED)
 ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
-    URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.54.2.tar.gz #  2023 Sep 28
+    URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.57.4.tar.gz #  2023 Sep 28
     # Future versions after v2.54.2 may not support L515 and SR300
-    URL_HASH SHA256=e3a767337ff40ae41000049a490ab84bd70b00cbfef65e8cdbadf17fd2e1e5a8
+    URL_HASH SHA256=3e82f9b545d9345fd544bb65f8bf7943969fb40bcfc73d983e7c2ffcdc05eaeb
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
     # Patch for libusb static build failure on Linux
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
         <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
-    # Patch for CRT mismatch in CUDA code (Windows)
+    # Initialize git repository for patching
     COMMAND ${GIT_EXECUTABLE} init
-    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
-        ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
-        ${CMAKE_CURRENT_LIST_DIR}/fix_mac_apple_silicon_build.patch
-        # Patch to include the <chrono> header for the system_clock type
-        ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch
+    # Patch for Mac Apple Silicon build - apply separately to avoid concatenation issues
+    COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix_mac_apple_silicon_build.patch
+    # Patch to include the <chrono> header for the system_clock type
+    COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch
+    # Patch for CRT mismatch in CUDA code (Windows only - skip on other platforms if patch doesn't apply)
+    COMMAND bash -c "${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch 2>/dev/null || true"
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
