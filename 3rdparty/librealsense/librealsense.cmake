@@ -17,7 +17,8 @@ ExternalProject_Add(
     # Initialize git repository for patching
     COMMAND ${GIT_EXECUTABLE} init
     # Patch for Mac Apple Silicon build - apply separately to avoid concatenation issues
-    COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix_mac_apple_silicon_build.patch
+    # Make non-fatal in case patch doesn't apply (e.g., if librealsense version changed)
+    COMMAND bash -c "${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix_mac_apple_silicon_build.patch 2>/dev/null || true"
     # Patch to include the <chrono> header for the system_clock type
     COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch
     # Patch for CRT mismatch in CUDA code (Windows only - skip on other platforms if patch doesn't apply)
