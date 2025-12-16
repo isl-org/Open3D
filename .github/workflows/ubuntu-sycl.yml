@@ -46,6 +46,9 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /opt/hostedtoolcache/CodeQL
+          # Clean up Docker to free more space
+          docker system prune -af --volumes || true
+          df -h .
       - name: Set up swap space
         if: runner.os == 'Linux'
         uses: pierotofy/set-swap-space@v1.0

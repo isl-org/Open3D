@@ -221,6 +221,15 @@ RUN ccache -s \
  && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
  && if [[ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
+ && df -h . \
+ && echo "Cleaning up build directory and other large files to free space..." \
+ && rm -rf /root/Open3D/build \
+ && rm -rf /root/Open3D-ML \
+ && rm -rf /root/.pyenv/versions/*/lib/python*/test \
+ && rm -rf /root/.pyenv/versions/*/share \
+ && rm -rf /tmp/* \
+ && rm -rf /var/tmp/* \
+ && df -h . \
  && ls -alh /
 
 RUN echo "Docker build done."
