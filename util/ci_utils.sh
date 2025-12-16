@@ -27,8 +27,8 @@ BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
-TENSORFLOW_VER="2.20.0"
-TORCH_VER="2.9.1"
+TENSORFLOW_VER="2.21.0"
+TORCH_VER="2.10.0"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="25.3"
