@@ -182,52 +182,29 @@ if (BUILD_PYTORCH_OPS)
 endif()
 
 if (BUNDLE_OPEN3D_ML)
-    # Check if OPEN3D_ML_ROOT is set (from -D or env var)
-    if(NOT OPEN3D_ML_ROOT)
-        set(OPEN3D_ML_ROOT $ENV{OPEN3D_ML_ROOT})
-    endif()
+    find_path(
+        OPEN3D_ML_ROOT
+        NAMES set_open3d_ml_root.sh
+        HINTS $ENV{OPEN3D_ML_ROOT}
+        DOC "Path to the Open3D-ML repo. This should be set if BUNDLE_OPEN3D_ML is enabled. Alternatively set an env var with the same name to populate this var."
+        REQUIRED
+        NO_DEFAULT_PATH
+    )
 
-    # Check if it's a URL (starts with http://, https://, or git@)
-    if(OPEN3D_ML_ROOT MATCHES "^https?://" OR OPEN3D_ML_ROOT MATCHES "^git@")
-        # It's a URL, use it directly for git clone
-        ExternalProject_Add(
-            open3d_ml
-            PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
-            GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
-            GIT_TAG origin/main
-            GIT_SHALLOW ON
-            BUILD_IN_SOURCE ON
-            # do not configure
-            CONFIGURE_COMMAND ""
-            # do not build
-            BUILD_COMMAND ""
-            # do not install
-            INSTALL_COMMAND ""
+    ExternalProject_Add(
+        open3d_ml
+        PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
+        GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
+        GIT_TAG origin/main
+        GIT_SHALLOW
+        BUILD_IN_SOURCE ON
+        # do not configure
+        CONFIGURE_COMMAND ""
+        # do not build
+        BUILD_COMMAND ""
+        # do not install
+        INSTALL_COMMAND ""
         )
-    else()
-        # It's a path, try to find the directory
-        find_path(
-            OPEN3D_ML_ROOT
-            NAMES set_open3d_ml_root.sh
-            HINTS ${OPEN3D_ML_ROOT} $ENV{OPEN3D_ML_ROOT}
-            DOC "Path to the Open3D-ML repo. This should be set if BUNDLE_OPEN3D_ML is enabled. Alternatively set an env var with the same name to populate this var."
-            REQUIRED
-            NO_DEFAULT_PATH
-        )
-        # Use existing directory
-        ExternalProject_Add(
-            open3d_ml
-            PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
-            SOURCE_DIR "${OPEN3D_ML_ROOT}"
-            BUILD_IN_SOURCE ON
-            # do not configure
-            CONFIGURE_COMMAND ""
-            # do not build
-            BUILD_COMMAND ""
-            # do not install
-            INSTALL_COMMAND ""
-        )
-    endif()
     list(APPEND GENERATED_OUTPUTS open3d_ml)
 endif()
 
