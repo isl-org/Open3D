@@ -852,6 +852,10 @@ if (BUILD_LIBREALSENSE)
             find_library(UDEV_LIBRARY udev REQUIRED
                 DOC "Library provided by the deb package libudev-dev")
             target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+            # Link system libusb-1.0 (required when USE_EXTERNAL_USB=ON)
+            find_library(USB1_LIBRARY usb-1.0 REQUIRED
+                DOC "Library provided by the deb package libusb-1.0-dev")
+            target_link_libraries(3rdparty_librealsense INTERFACE ${USB1_LIBRARY})
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_librealsense)
     else()
