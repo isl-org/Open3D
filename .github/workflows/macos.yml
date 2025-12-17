@@ -65,7 +65,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config
+          brew install ccache pkg-config libusb
 
           if [[ ${{ runner.arch }} == "ARM64"  ]]; then
             # Fix gfortran not found issue
