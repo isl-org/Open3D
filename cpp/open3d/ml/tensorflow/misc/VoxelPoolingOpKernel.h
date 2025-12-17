@@ -9,11 +9,11 @@
 
 #include <cstdint>
 
+#include "absl/status/status.h"
 #include "open3d/ml/impl/misc/VoxelPooling.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
-#include "absl/status/status.h"
 
 /// @cond
 // namespace for code that is common for all kernels
@@ -85,9 +85,9 @@ public:
         using namespace tensorflow;
         using namespace open3d::ml::impl;
         const Tensor& positions = context->input(0);
-        OP_REQUIRES(
-                context, positions.shape().dims() == 2,
-                absl::InvalidArgumentError("positions must be a rank 2 tensor"));
+        OP_REQUIRES(context, positions.shape().dims() == 2,
+                    absl::InvalidArgumentError(
+                            "positions must be a rank 2 tensor"));
 
         const Tensor& features = context->input(1);
         OP_REQUIRES(
@@ -95,10 +95,10 @@ public:
                 absl::InvalidArgumentError("features must be a rank 2 tensor"));
 
         const Tensor& voxel_size = context->input(2);
-        OP_REQUIRES(
-                context, TensorShapeUtils::IsScalar(voxel_size.shape()),
-                absl::InvalidArgumentError("voxel_size must be a scalar, but is ",
-                                        voxel_size.shape().DebugString()));
+        OP_REQUIRES(context, TensorShapeUtils::IsScalar(voxel_size.shape()),
+                    absl::InvalidArgumentError(
+                            "voxel_size must be a scalar, but is ",
+                            voxel_size.shape().DebugString()));
 
         Kernel(context, positions, features, voxel_size);
     }
