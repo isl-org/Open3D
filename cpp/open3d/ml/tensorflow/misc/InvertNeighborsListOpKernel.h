@@ -10,10 +10,10 @@
 #include <cstdint>
 
 #include "../TensorFlowHelper.h"
+#include "absl/status/status.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
-#include "absl/status/status.h"
 
 /// @cond
 // namespace for code that is common for all kernels
@@ -32,11 +32,11 @@ public:
                       "int64_t type is not compatible");
 
         const Tensor& num_points_tensor = context->input(0);
-        OP_REQUIRES(context,
-                    TensorShapeUtils::IsScalar(num_points_tensor.shape()),
-                    absl::InvalidArgumentError(
-                            std::string("num_points must be scalar, got shape ") +
-                            num_points_tensor.shape().DebugString()));
+        OP_REQUIRES(
+                context, TensorShapeUtils::IsScalar(num_points_tensor.shape()),
+                absl::InvalidArgumentError(
+                        std::string("num_points must be scalar, got shape ") +
+                        num_points_tensor.shape().DebugString()));
         const int64_t num_points = num_points_tensor.scalar<int64_t>()();
 
         const Tensor& inp_neighbors_index = context->input(1);

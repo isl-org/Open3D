@@ -9,11 +9,11 @@
 
 #include <cstdint>
 
+#include "absl/status/status.h"
 #include "open3d/ml/impl/continuous_conv/ContinuousConvTypes.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
-#include "absl/status/status.h"
 
 template <class TIndex>
 class ContinuousConvTransposeBackpropFilterOpKernel
@@ -69,19 +69,21 @@ public:
                     absl::InvalidArgumentError("Too many output points"));
 
         const Tensor& out_importance = context->input(2);
-        OP_REQUIRES(context,
-                    out_importance.shape().dim_size(0) == 0 ||
-                            out_importance.shape().dim_size(0) ==
-                                    out_positions.shape().dim_size(0),
-                    absl::InvalidArgumentError("length of out_importance must "
-                                            "match the number of output points "
-                                            "or must be 0"));
+        OP_REQUIRES(
+                context,
+                out_importance.shape().dim_size(0) == 0 ||
+                        out_importance.shape().dim_size(0) ==
+                                out_positions.shape().dim_size(0),
+                absl::InvalidArgumentError("length of out_importance must "
+                                           "match the number of output points "
+                                           "or must be 0"));
 
         const Tensor& extents = context->input(3);
 
         const Tensor& offset = context->input(4);
-        OP_REQUIRES(context, offset.shape().dims() == 1,
-                    absl::InvalidArgumentError("offset must be a rank 1 tensor"));
+        OP_REQUIRES(
+                context, offset.shape().dims() == 1,
+                absl::InvalidArgumentError("offset must be a rank 1 tensor"));
         OP_REQUIRES(context, offset.shape().dim_size(0) == 3,
                     absl::InvalidArgumentError("offset length must be 3"));
 
@@ -105,27 +107,29 @@ public:
 
         const Tensor& out_features_gradient = context->input(12);
 
-        OP_REQUIRES(context, extents.shape().dims() == 2,
-                    absl::InvalidArgumentError("extents must be a rank 2 tensor"));
-        OP_REQUIRES(context,
-                    extents.shape().dim_size(0) ==
-                                    inp_positions.shape().dim_size(0) ||
-                            extents.shape().dim_size(0) == 1,
-                    absl::InvalidArgumentError("number of extents must match the "
-                                            "number of inp_positions or must "
-                                            "be 1"));
+        OP_REQUIRES(
+                context, extents.shape().dims() == 2,
+                absl::InvalidArgumentError("extents must be a rank 2 tensor"));
+        OP_REQUIRES(
+                context,
+                extents.shape().dim_size(0) ==
+                                inp_positions.shape().dim_size(0) ||
+                        extents.shape().dim_size(0) == 1,
+                absl::InvalidArgumentError("number of extents must match the "
+                                           "number of inp_positions or must "
+                                           "be 1"));
         OP_REQUIRES(context,
                     extents.shape().dim_size(1) == 3 ||
                             extents.shape().dim_size(1) == 1,
                     absl::InvalidArgumentError(
                             "number of components for extents must be 3 or 1"));
 
-        OP_REQUIRES(
-                context,
-                inp_positions.shape().dim_size(0) ==
-                        inp_features.shape().dim_size(0),
-                absl::InvalidArgumentError("first dim of inp_positions does not "
-                                        "match the first dim of inp_features"));
+        OP_REQUIRES(context,
+                    inp_positions.shape().dim_size(0) ==
+                            inp_features.shape().dim_size(0),
+                    absl::InvalidArgumentError(
+                            "first dim of inp_positions does not "
+                            "match the first dim of inp_features"));
 
         OP_REQUIRES(
                 context,
@@ -136,35 +140,37 @@ public:
                         "first dim of inp_neighbors_importance_sum does not "
                         "match the first dim of inp_positions"));
 
-        OP_REQUIRES(context,
-                    out_positions.shape().dim_size(0) ==
-                                    out_importance.shape().dim_size(0) ||
-                            out_importance.shape().dim_size(0) == 0,
-                    absl::InvalidArgumentError("first dim of out_positions does "
-                                            "not match the first dim of "
-                                            "out_importance"));
+        OP_REQUIRES(
+                context,
+                out_positions.shape().dim_size(0) ==
+                                out_importance.shape().dim_size(0) ||
+                        out_importance.shape().dim_size(0) == 0,
+                absl::InvalidArgumentError("first dim of out_positions does "
+                                           "not match the first dim of "
+                                           "out_importance"));
 
-        OP_REQUIRES(context,
-                    neighbors_importance.shape().dim_size(0) ==
-                                    neighbors_index.shape().dim_size(0) ||
-                            neighbors_importance.shape().dim_size(0) == 0,
-                    absl::InvalidArgumentError("first dim of neighbors_importance "
-                                            "does not match the first dim of "
-                                            "neighbors_index"));
+        OP_REQUIRES(
+                context,
+                neighbors_importance.shape().dim_size(0) ==
+                                neighbors_index.shape().dim_size(0) ||
+                        neighbors_importance.shape().dim_size(0) == 0,
+                absl::InvalidArgumentError("first dim of neighbors_importance "
+                                           "does not match the first dim of "
+                                           "neighbors_index"));
 
         OP_REQUIRES(
                 context,
                 filter.shape().dim_size(3) == inp_features.shape().dim_size(1),
                 absl::InvalidArgumentError("number of input channels in filter "
-                                        "and inp_features does not match"));
+                                           "and inp_features does not match"));
 
         OP_REQUIRES(context,
                     out_features_gradient.shape().dim_size(0) ==
                             out_positions.shape().dim_size(0),
                     absl::InvalidArgumentError(
                             std::string("first dim of out_positions, does "
-                                       "not match the first dim of "
-                                       "out_features_gradient")));
+                                        "not match the first dim of "
+                                        "out_features_gradient")));
 
         TensorShape filter_backprop_shape(filter.shape());
         Tensor* filter_backprop = nullptr;

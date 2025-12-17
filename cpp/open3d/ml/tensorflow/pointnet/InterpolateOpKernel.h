@@ -24,8 +24,9 @@ public:
         OP_REQUIRES(
                 context,
                 inp_tensor.dims() == 3 && inp_tensor.shape().dim_size(2) == 3,
-                absl::InvalidArgumentError("ThreeNN expects "
-                                        "(batch_size,num_points,3) inp shape"));
+                absl::InvalidArgumentError(
+                        "ThreeNN expects "
+                        "(batch_size,num_points,3) inp shape"));
         int batch_size = inp_tensor.shape().dim_size(0);
         int pts_num_out = inp_tensor.shape().dim_size(1);
         auto inp_flat = inp_tensor.flat<float>();
@@ -82,10 +83,10 @@ public:
         using namespace tensorflow;
 
         const Tensor& inp_tensor = context->input(0);
-        OP_REQUIRES(
-                context, inp_tensor.dims() == 3,
-                absl::InvalidArgumentError("ThreeInterpolate expects "
-                                        "(batch_size,num_points,3) inp shape"));
+        OP_REQUIRES(context, inp_tensor.dims() == 3,
+                    absl::InvalidArgumentError(
+                            "ThreeInterpolate expects "
+                            "(batch_size,num_points,3) inp shape"));
         int batch_size = inp_tensor.shape().dim_size(0);
         int C = inp_tensor.shape().dim_size(1);
         int M = inp_tensor.shape().dim_size(2);
@@ -93,10 +94,10 @@ public:
         const float* inp = &(inp_flat(0));
 
         const Tensor& idx_tensor = context->input(1);
-        OP_REQUIRES(
-                context, idx_tensor.dims() == 3,
-                absl::InvalidArgumentError("ThreeInterpolate expects "
-                                        "(batch_size,num_points,3) idx shape"));
+        OP_REQUIRES(context, idx_tensor.dims() == 3,
+                    absl::InvalidArgumentError(
+                            "ThreeInterpolate expects "
+                            "(batch_size,num_points,3) idx shape"));
         int N = idx_tensor.shape().dim_size(1);
         auto idx_flat = idx_tensor.flat<int>();
         const int* idx = &(idx_flat(0));
@@ -142,10 +143,10 @@ public:
         using namespace tensorflow;
 
         const Tensor& inp_tensor = context->input(0);
-        OP_REQUIRES(
-                context, inp_tensor.dims() == 3,
-                absl::InvalidArgumentError("ThreeInterpolateGrad expects "
-                                        "(batch_size,num_points,3) inp shape"));
+        OP_REQUIRES(context, inp_tensor.dims() == 3,
+                    absl::InvalidArgumentError(
+                            "ThreeInterpolateGrad expects "
+                            "(batch_size,num_points,3) inp shape"));
         int batch_size = inp_tensor.shape().dim_size(0);
         int C = inp_tensor.shape().dim_size(1);
         int N = inp_tensor.shape().dim_size(2);
@@ -153,10 +154,10 @@ public:
         const float* inp = &(inp_flat(0));
 
         const Tensor& idx_tensor = context->input(1);
-        OP_REQUIRES(
-                context, idx_tensor.dims() == 3,
-                absl::InvalidArgumentError("ThreeInterpolateGrad expects "
-                                        "(batch_size,num_points,3) idx shape"));
+        OP_REQUIRES(context, idx_tensor.dims() == 3,
+                    absl::InvalidArgumentError(
+                            "ThreeInterpolateGrad expects "
+                            "(batch_size,num_points,3) idx shape"));
         auto idx_flat = idx_tensor.flat<int>();
         const int* idx = &(idx_flat(0));
 

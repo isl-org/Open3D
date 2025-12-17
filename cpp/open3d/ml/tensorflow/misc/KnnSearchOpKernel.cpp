@@ -108,8 +108,9 @@ public:
                         3 * queries_row_splits.flat<int64_t>()(i);
                 size_t num_points_i = points_row_splits.flat<int64_t>()(i + 1) -
                                       points_row_splits.flat<int64_t>()(i);
-                size_t num_queries_i = queries_row_splits.flat<int64_t>()(i + 1) -
-                                       queries_row_splits.flat<int64_t>()(i);
+                size_t num_queries_i =
+                        queries_row_splits.flat<int64_t>()(i + 1) -
+                        queries_row_splits.flat<int64_t>()(i);
 
                 int64_t* neighbors_row_splits_i =
                         (int64_t*)(query_neighbors_row_splits.flat<int64_t>()
