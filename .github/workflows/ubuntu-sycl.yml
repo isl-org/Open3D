@@ -32,28 +32,34 @@ jobs:
       matrix:
         BUILD_SHARED_LIBS: [ON, OFF]
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
-      - name: Free up disk space
-        if: ${{ runner.os == 'Linux' }}
-        # https://github.com/easimon/maximize-build-space/blob/master/action.yml
-        # https://github.com/easimon/maximize-build-space/tree/test-report
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          # Clean up Docker to free more space
-          docker system prune -af --volumes || true
-          df -h .
-      - name: Set up swap space
-        if: runner.os == 'Linux'
-        uses: pierotofy/set-swap-space@v1.0
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
         with:
-          swap-size-gb: 10
+          root-reserve-mb: 256
+          temp-reserve-mb: 50
+          swap-size-mb: 10240
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+      - name: Remove additional tools
+        if: runner.os == 'Linux'
+        run: |
+          # Remove AGENT_TOOLSDIRECTORY (not covered by maximize-build-space)
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
+          # Additional cleanup for more space
+          sudo rm -rf /usr/local/share/boost || true
+          sudo rm -rf /usr/local/share/boost-* || true
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          df -h .
+      - name: Checkout source code
+        uses: actions/checkout@v4
       - name: Docker build
         run: |
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
