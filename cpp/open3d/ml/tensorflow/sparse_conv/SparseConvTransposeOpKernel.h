@@ -7,11 +7,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <tensorflow/core/framework/op.h>
 #include <tensorflow/core/framework/op_kernel.h>
 #include <tensorflow/core/lib/core/errors.h>
-
-#include <cstdint>
 
 #include "open3d/ml/tensorflow/TensorFlowHelper.h"
 

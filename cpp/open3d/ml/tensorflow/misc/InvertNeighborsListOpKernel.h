@@ -10,10 +10,10 @@
 #include <cstdint>
 
 #include "../TensorFlowHelper.h"
-#include "absl/status/status.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
+#include "absl/status/status.h"
 
 /// @cond
 // namespace for code that is common for all kernels
@@ -35,7 +35,7 @@ public:
         OP_REQUIRES(context,
                     TensorShapeUtils::IsScalar(num_points_tensor.shape()),
                     absl::InvalidArgumentError(
-                            "num_points must be scalar, got shape ",
+                            std::string("num_points must be scalar, got shape ") +
                             num_points_tensor.shape().DebugString()));
         const int64_t num_points = num_points_tensor.scalar<int64_t>()();
 

@@ -8,11 +8,10 @@
 #pragma once
 
 #include <cstdint>
-
-#include "absl/status/status.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
+#include "absl/status/status.h"
 
 /// @cond
 // namespace for code that is common for all kernels
@@ -31,9 +30,8 @@ public:
                       "int64_t type is not compatible");
 
         const Tensor& values = context->input(0);
-        OP_REQUIRES(
-                context, values.shape().dims() == 1,
-                absl::InvalidArgumentError("values must be a rank 1 tensor"));
+        OP_REQUIRES(context, values.shape().dims() == 1,
+                    absl::InvalidArgumentError("values must be a rank 1 tensor"));
 
         const Tensor& row_splits = context->input(1);
         OP_REQUIRES(

@@ -33,10 +33,10 @@ public:
 
         const Tensor& points = context->input(0);
         const Tensor& radius = context->input(1);
-        OP_REQUIRES(
-                context, TensorShapeUtils::IsScalar(radius.shape()),
-                absl::InvalidArgumentError("radius must be scalar, got shape ",
-                                           radius.shape().DebugString()));
+        OP_REQUIRES(context, TensorShapeUtils::IsScalar(radius.shape()),
+                    absl::InvalidArgumentError(
+                            std::string("radius must be scalar, got shape ") +
+                            radius.shape().DebugString()));
 
         const Tensor& points_row_splits = context->input(2);
 
