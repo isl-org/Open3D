@@ -96,7 +96,7 @@ jobs:
           fi
       - name: Docker test
         run: |
-          du -hs $PWD
+          du -hs --exclude=.docker-root --exclude=.tmp . || true
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_test.sh sycl-shared
           else
