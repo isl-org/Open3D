@@ -23,7 +23,7 @@ public:
         OP_REQUIRES_OK(construction, construction->GetAttr("radius", &radius));
         OP_REQUIRES(
                 construction, nsample > 0,
-                errors::InvalidArgument("BallQuery expects positive nsample"));
+                absl::InvalidArgumentError("BallQuery expects positive nsample"));
     }
 
     void Compute(tensorflow::OpKernelContext* context) override {
@@ -33,7 +33,7 @@ public:
         OP_REQUIRES(
                 context,
                 inp_tensor.dims() == 3 && inp_tensor.shape().dim_size(2) == 3,
-                errors::InvalidArgument("BallQuery expects "
+                absl::InvalidArgumentError("BallQuery expects "
                                         "(batch_size,num_points,3) inp shape"));
         int batch_size = inp_tensor.shape().dim_size(0);
         int pts_size = inp_tensor.shape().dim_size(1);
@@ -44,7 +44,7 @@ public:
         OP_REQUIRES(context,
                     center_tensor.dims() == 3 &&
                             center_tensor.shape().dim_size(2) == 3,
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "BallQuery expects "
                             "(batch_size,num_points,3) center shape"));
         int ball_size = center_tensor.shape().dim_size(1);

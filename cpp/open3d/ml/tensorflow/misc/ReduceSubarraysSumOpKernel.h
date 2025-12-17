@@ -7,9 +7,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
+#include "absl/status/status.h"
 
 /// @cond
 // namespace for code that is common for all kernels
@@ -24,12 +26,12 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 type is not compatible");
+        static_assert(sizeof(int64_t) == sizeof(int64_t),
+                      "int64_t type is not compatible");
 
         const Tensor& values = context->input(0);
         OP_REQUIRES(context, values.shape().dims() == 1,
-                    errors::InvalidArgument("values must be a rank 1 tensor"));
+                    absl::InvalidArgumentError("values must be a rank 1 tensor"));
 
         const Tensor& row_splits = context->input(1);
         OP_REQUIRES(

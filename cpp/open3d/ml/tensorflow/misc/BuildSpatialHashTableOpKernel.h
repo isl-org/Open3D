@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "../TensorFlowHelper.h"
 #include "open3d/core/nns/FixedRadiusSearchImpl.h"
 #include "tensorflow/core/framework/op.h"
@@ -32,7 +34,7 @@ public:
         const Tensor& points = context->input(0);
         const Tensor& radius = context->input(1);
         OP_REQUIRES(context, TensorShapeUtils::IsScalar(radius.shape()),
-                    errors::InvalidArgument("radius must be scalar, got shape ",
+                    absl::InvalidArgumentError("radius must be scalar, got shape ",
                                             radius.shape().DebugString()));
 
         const Tensor& points_row_splits = context->input(2);
@@ -55,8 +57,8 @@ public:
 
         std::vector<uint32_t> hash_table_splits(batch_size.value() + 1, 0);
         for (int i = 0; i < batch_size.value(); ++i) {
-            int64_t num_points_i = points_row_splits.flat<int64>()(i + 1) -
-                                   points_row_splits.flat<int64>()(i);
+            int64_t num_points_i = points_row_splits.flat<int64_t>()(i + 1) -
+                                   points_row_splits.flat<int64_t>()(i);
 
             int64_t hash_table_size = std::min<int64_t>(
                     std::max<int64_t>(hash_table_size_factor * num_points_i, 1),
