@@ -26,6 +26,7 @@ jobs:
   ubuntu-sycl:
     permissions:
       contents: write  # Release upload
+      actions: write   # Artifact uploads
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -35,14 +36,23 @@ jobs:
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
         with:
-          root-reserve-mb: 256
-          temp-reserve-mb: 50
+          root-reserve-mb: 20480  # 20GB for / (Docker + /tmp + logs)
+          temp-reserve-mb: 4096   # 4GB for /mnt
           swap-size-mb: 10240
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
+      - name: Move Docker storage to workspace volume
+        if: runner.os == 'Linux'
+        run: |
+          set -euxo pipefail
+          sudo mkdir -p "$GITHUB_WORKSPACE/.docker-root"
+          echo "{\"data-root\":\"$GITHUB_WORKSPACE/.docker-root\"}" | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker || sudo service docker restart
+          docker info | grep -E "Docker Root Dir|Storage Driver"
+          df -h / "$GITHUB_WORKSPACE"
       - name: Remove additional tools
         if: runner.os == 'Linux'
         run: |
@@ -57,7 +67,7 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Maximize build space
+      - name: Maximize build space (Open3D helper)
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
