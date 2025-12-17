@@ -22,7 +22,7 @@ public:
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("sample_size", &sample_size));
         OP_REQUIRES(construction, sample_size > 0,
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "FurthestPointSampling expects positive npoint"));
     }
 

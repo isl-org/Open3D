@@ -7,11 +7,14 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "../TensorFlowHelper.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
+#include "absl/status/status.h"
 
 /// @cond
 // namespace for code that is common for all kernels
@@ -41,15 +44,15 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 type is not compatible");
+        static_assert(sizeof(int64_t) == sizeof(int64_t),
+                      "int64_t type is not compatible");
 
         const Tensor& points = context->input(0);
         const Tensor& queries = context->input(1);
         const Tensor& k_tensor = context->input(2);
         const TensorShape k_shape(k_tensor.shape());
         OP_REQUIRES(context, k_shape.dims() == 0,
-                    errors::InvalidArgument("k must be a rank 0 tensor"));
+                    absl::InvalidArgumentError("k must be a rank 0 tensor"));
         const int k = k_tensor.scalar<int32_t>()();
         const Tensor& points_row_splits = context->input(3);
         const Tensor& queries_row_splits = context->input(4);

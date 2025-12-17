@@ -7,10 +7,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "../TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
+#include "absl/status/status.h"
 
 /// @cond
 // namespace for code that is common for all kernels
@@ -25,16 +28,16 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 type is not compatible");
+        static_assert(sizeof(int64_t) == sizeof(int64_t),
+                      "int64_t type is not compatible");
 
         const Tensor& num_points_tensor = context->input(0);
         OP_REQUIRES(context,
                     TensorShapeUtils::IsScalar(num_points_tensor.shape()),
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "num_points must be scalar, got shape ",
                             num_points_tensor.shape().DebugString()));
-        const int64 num_points = num_points_tensor.scalar<int64>()();
+        const int64_t num_points = num_points_tensor.scalar<int64_t>()();
 
         const Tensor& inp_neighbors_index = context->input(1);
 

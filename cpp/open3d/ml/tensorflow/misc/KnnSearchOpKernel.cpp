@@ -89,7 +89,7 @@ public:
                             points.shape().dim_size(1), metric);
             impl::KnnSearchCPU<T, TIndex>(
                     holder.get(),
-                    (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
+                    (int64_t*)query_neighbors_row_splits.flat<int64_t>().data(),
                     points.shape().dim_size(0), points.flat<T>().data(),
                     queries.shape().dim_size(0), queries.flat<T>().data(), 3, k,
                     metric, ignore_query_point, return_distances,
@@ -102,19 +102,19 @@ public:
             for (int i = 0; i < batch_size; ++i) {
                 const T* const points_i =
                         points.flat<T>().data() +
-                        3 * points_row_splits.flat<int64>()(i);
+                        3 * points_row_splits.flat<int64_t>()(i);
                 const T* const queries_i =
                         queries.flat<T>().data() +
-                        3 * queries_row_splits.flat<int64>()(i);
-                size_t num_points_i = points_row_splits.flat<int64>()(i + 1) -
-                                      points_row_splits.flat<int64>()(i);
-                size_t num_queries_i = queries_row_splits.flat<int64>()(i + 1) -
-                                       queries_row_splits.flat<int64>()(i);
+                        3 * queries_row_splits.flat<int64_t>()(i);
+                size_t num_points_i = points_row_splits.flat<int64_t>()(i + 1) -
+                                      points_row_splits.flat<int64_t>()(i);
+                size_t num_queries_i = queries_row_splits.flat<int64_t>()(i + 1) -
+                                       queries_row_splits.flat<int64_t>()(i);
 
                 int64_t* neighbors_row_splits_i =
-                        (int64_t*)(query_neighbors_row_splits.flat<int64>()
+                        (int64_t*)(query_neighbors_row_splits.flat<int64_t>()
                                            .data() +
-                                   queries_row_splits.flat<int64>()(i));
+                                   queries_row_splits.flat<int64_t>()(i));
                 std::unique_ptr<NanoFlannIndexHolderBase> holder =
                         impl::BuildKdTree<T, TIndex>(num_points_i, points_i,
                                                      points.shape().dim_size(1),
@@ -161,7 +161,7 @@ public:
                 if (a.index.size()) {
                     for (const auto index : a.index) {
                         neighbors_index_data_ptr[0] =
-                                index + points_row_splits.flat<int64>()(i);
+                                index + points_row_splits.flat<int64_t>()(i);
                         ++neighbors_index_data_ptr;
                     }
                 }
