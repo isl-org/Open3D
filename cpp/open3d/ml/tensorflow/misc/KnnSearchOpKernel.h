@@ -10,11 +10,11 @@
 #include <cstdint>
 
 #include "../TensorFlowHelper.h"
+#include "absl/status/status.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
-#include "absl/status/status.h"
 
 /// @cond
 // namespace for code that is common for all kernels
