@@ -33,10 +33,6 @@ jobs:
         BUILD_SHARED_LIBS: [ON, OFF]
     steps:
       - name: Maximize build space
-        run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-      - name: Maximize build space
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 256
@@ -60,6 +56,11 @@ jobs:
           df -h .
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
       - name: Docker build
         run: |
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
