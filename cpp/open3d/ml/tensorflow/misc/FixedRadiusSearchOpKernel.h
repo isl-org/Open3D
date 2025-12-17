@@ -86,9 +86,10 @@ public:
         const Tensor& queries = context->input(1);
 
         const Tensor& radius = context->input(2);
-        OP_REQUIRES(context, TensorShapeUtils::IsScalar(radius.shape()),
-                    absl::InvalidArgumentError("radius must be scalar, got shape ",
-                                            radius.shape().DebugString()));
+        OP_REQUIRES(
+                context, TensorShapeUtils::IsScalar(radius.shape()),
+                absl::InvalidArgumentError("radius must be scalar, got shape ",
+                                           radius.shape().DebugString()));
 
         const Tensor& points_row_splits = context->input(3);
         const Tensor& queries_row_splits = context->input(4);

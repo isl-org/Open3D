@@ -10,8 +10,8 @@
 #include <tensorflow/core/framework/shape_inference.h>
 #include <tensorflow/core/framework/tensor.h>
 #include <tensorflow/core/lib/core/errors.h>
-#include "absl/status/status.h"
 
+#include "absl/status/status.h"
 #include "open3d/ml/ShapeChecking.h"
 
 inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
@@ -148,7 +148,7 @@ template <class TDimX, class... TArgs>
         std::tie(cs_success_, cs_errstr_) =                                  \
                 CheckShape(ctx, shape_handle, __VA_ARGS__);                  \
         if (TF_PREDICT_FALSE(!cs_success_)) {                                \
-            return absl::InvalidArgumentError(                      \
+            return absl::InvalidArgumentError(                               \
                     "invalid shape for '" #shape_handle "', " + cs_errstr_); \
         }                                                                    \
     } while (0)
@@ -161,7 +161,7 @@ template <class TDimX, class... TArgs>
                 CheckShape<CSOpt::COMBINE_FIRST_DIMS>(ctx, shape_handle,     \
                                                       __VA_ARGS__);          \
         if (TF_PREDICT_FALSE(!cs_success_)) {                                \
-            return absl::InvalidArgumentError(                      \
+            return absl::InvalidArgumentError(                               \
                     "invalid shape for '" #shape_handle "', " + cs_errstr_); \
         }                                                                    \
     } while (0)
@@ -174,7 +174,7 @@ template <class TDimX, class... TArgs>
                 CheckShape<CSOpt::IGNORE_FIRST_DIMS>(ctx, shape_handle,      \
                                                      __VA_ARGS__);           \
         if (TF_PREDICT_FALSE(!cs_success_)) {                                \
-            return absl::InvalidArgumentError(                      \
+            return absl::InvalidArgumentError(                               \
                     "invalid shape for '" #shape_handle "', " + cs_errstr_); \
         }                                                                    \
     } while (0)
@@ -187,7 +187,7 @@ template <class TDimX, class... TArgs>
                 CheckShape<CSOpt::COMBINE_LAST_DIMS>(ctx, shape_handle,      \
                                                      __VA_ARGS__);           \
         if (TF_PREDICT_FALSE(!cs_success_)) {                                \
-            return absl::InvalidArgumentError(                      \
+            return absl::InvalidArgumentError(                               \
                     "invalid shape for '" #shape_handle "', " + cs_errstr_); \
         }                                                                    \
     } while (0)
@@ -200,7 +200,7 @@ template <class TDimX, class... TArgs>
                 CheckShape<CSOpt::IGNORE_LAST_DIMS>(ctx, shape_handle,       \
                                                     __VA_ARGS__);            \
         if (TF_PREDICT_FALSE(!cs_success_)) {                                \
-            return absl::InvalidArgumentError(                      \
+            return absl::InvalidArgumentError(                               \
                     "invalid shape for '" #shape_handle "', " + cs_errstr_); \
         }                                                                    \
     } while (0)
@@ -233,7 +233,7 @@ template <class TDimX, class... TArgs>
         std::tie(cs_success_, cs_errstr_) = CheckShape(tensor, __VA_ARGS__); \
         OP_REQUIRES(                                                         \
                 ctx, cs_success_,                                            \
-                absl::InvalidArgumentError(                         \
+                absl::InvalidArgumentError(                                  \
                         "invalid shape for '" #tensor "', " + cs_errstr_));  \
     } while (0)
 
@@ -245,7 +245,7 @@ template <class TDimX, class... TArgs>
                 CheckShape<CSOpt::COMBINE_FIRST_DIMS>(tensor, __VA_ARGS__); \
         OP_REQUIRES(                                                        \
                 ctx, cs_success_,                                           \
-                absl::InvalidArgumentError(                        \
+                absl::InvalidArgumentError(                                 \
                         "invalid shape for '" #tensor "', " + cs_errstr_)); \
     } while (0)
 
@@ -257,7 +257,7 @@ template <class TDimX, class... TArgs>
                 CheckShape<CSOpt::IGNORE_FIRST_DIMS>(tensor, __VA_ARGS__);  \
         OP_REQUIRES(                                                        \
                 ctx, cs_success_,                                           \
-                absl::InvalidArgumentError(                        \
+                absl::InvalidArgumentError(                                 \
                         "invalid shape for '" #tensor "', " + cs_errstr_)); \
     } while (0)
 
@@ -269,7 +269,7 @@ template <class TDimX, class... TArgs>
                 CheckShape<CSOpt::COMBINE_LAST_DIMS>(tensor, __VA_ARGS__);  \
         OP_REQUIRES(                                                        \
                 ctx, cs_success_,                                           \
-                absl::InvalidArgumentError(                        \
+                absl::InvalidArgumentError(                                 \
                         "invalid shape for '" #tensor "', " + cs_errstr_)); \
     } while (0)
 
@@ -281,6 +281,6 @@ template <class TDimX, class... TArgs>
                 CheckShape<CSOpt::IGNORE_LAST_DIMS>(tensor, __VA_ARGS__);   \
         OP_REQUIRES(                                                        \
                 ctx, cs_success_,                                           \
-                absl::InvalidArgumentError(                        \
+                absl::InvalidArgumentError(                                 \
                         "invalid shape for '" #tensor "', " + cs_errstr_)); \
     } while (0)
