@@ -1,5 +1,8 @@
 # Dayong
 *.stl
+*.glb
+*.ply
+*.png
 
 *.whl
 
