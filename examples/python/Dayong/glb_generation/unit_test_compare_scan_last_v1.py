@@ -2090,12 +2090,10 @@ Step 6: output the glb file with color information
 import os
 from pathlib import Path
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-
 cur_dir = Path(__file__).resolve().parent
 dayong_dir = cur_dir.parent
-stationary_case_path = os.path.join(dayong_dir, "scans", "GLBs")
-mobile_case_path = os.path.join(dayong_dir, "scans", "GLBs")
+stationary_case_path = os.path.join(dayong_dir, "scans", "STLs")
+mobile_case_path = os.path.join(dayong_dir, "scans", "STLs")
 
 # stationary_case_path = os.path.join("../", base_dir, "scans","GLBs")
 # mobile_case_path = os.path.join("../", base_dir, "scans", "GLBs")

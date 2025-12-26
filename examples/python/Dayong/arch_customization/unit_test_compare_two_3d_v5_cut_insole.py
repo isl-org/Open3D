@@ -2696,36 +2696,33 @@ def close_all_plots():
 #foot_id = "right"
 foot_id = "left"
 
+import os
+from pathlib import Path
+
+cur_dir = Path(__file__).resolve().parent
+dayong_dir = cur_dir.parent
+
+stationary_case = '/Justin_Kamp_550013_000006_R'
+stationary_case_path = os.path.join(dayong_dir, "scans", "STLs")
+mobile_case_path = os.path.join(dayong_dir, "scans", "STLs")
+
+
 #stationary_case = 'Yujun _Wang_550013_000009'   ### correct one
 #stationary_case = 'Yujun_Wang_550013_000036' #'Justin_Kamp_550013_000006'
 #stationary_case = 'Bryan_Kleinman Full Weight_550013_000018'
 # mobile_case = 'Yujun_left_foot_mesh' #'Justin/24Apr03'
 #stationary_case = 'TC_Crofford Chair_550013_000020'
-stationary_case = 'Justin_Kamp_550013_000006_R'
+# stationary_case = 'Justin_Kamp_550013_000006_R'
 #stationary_case = 'Louisa_Ben_550013_000025'
 #stationary_case = 'melissa_test_550013_000023'
 #stationary_case = 'bin_kou_550013_000032'
 #stationary_case = 'Jian_Gong FullWeight3_550013_000026'
-
-#stationary_case_path = '/Users/nic_gong/Documents/StationaryScanData/StationaryScanValidationData/'+stationary_case+'/'
-#stationary_case_path = '/Users/yujunwang/Downloads/OneDrive_2_10-11-2025/Yujun _Wang_550013_000009/'#+stationary_case+'/'
-#stationary_case_path = '/Users/yujunwang/Downloads/OneDrive_2_10-12-2025/Bryan_Kleinman Full Weight_550013_000018/'#+stationary_case+'/'
-#stationary_case_path = '/Users/yujunwang/Downloads/OneDrive_2_10-12-2025/TC_Crofford Chair_550013_000020/'
-stationary_case_path = '/Users/yujunwang/Documents/2025Folder/Coding Work/stationaryData/Justin_Kamp_550013_000006/'
-#stationary_case_path = '/Users/yujunwang/Downloads/OneDrive_1_10-25-2025/Louisa_Ben_550013_000025/'
-#stationary_case_path = '/Users/yujunwang/Downloads/OneDrive_1_10-25-2025/melissa_test_550013_000023/'
-#stationary_case_path = '/Users/yujunwang/Downloads/OneDrive_1_10-25-2025/bin_kou_550013_000032/'
-#stationary_case_path = '/Users/yujunwang/Downloads/Jian_Gong FullWeight3_550013_000026/'
 
 #/Users/yujunwang/Downloads/OneDrive_2_10-11-2025/Yujun _Wang_550013_000009
 # Bryan_Kleinman Full Weight_550013_000018
 # TC_Crofford Chair_550013_000020
 # Justin_Kamp_550013_000006
 # Jian_Gong_550013_000004
-
-# mobile_case_path = '/Users/nic_gong/Documents/FootDataAnalysis/UserDataSet/'+mobile_case+'/'
-mobile_case_path = '/Users/yujunwang/Documents/2024Folder/AppCode/TestResults/Yujun-July092024toPrint/'
-#mobile_case_path = '/Users/yujunwang/Documents/2025Folder/Coding Work/data/Bryan_CAB9/'
 
 # Bryan/CAB9/DepthData
 # TC/2AC2/DepthData
@@ -2751,7 +2748,7 @@ stationary_o3d_mesh = o3d.io.read_triangle_mesh(stationary_scan_path)
 # load mobile scanned mesh
 # scan_mesh_path = mobile_case_path + '_'+stl_foot_id+".stl"
 # scan_mesh_path = mobile_case_path + foot_id +"_foot_mesh_refine.stl"
-scan_mesh_path = mobile_case_path + foot_id +"_foot_mesh.stl"
+scan_mesh_path = mobile_case_path + "/" + foot_id +"_foot_mesh.stl"
 
 scan_o3d_mesh = o3d.io.read_triangle_mesh(scan_mesh_path)
 scan_o3d_mesh.scale(1000.0, center=scan_o3d_mesh.get_center())
