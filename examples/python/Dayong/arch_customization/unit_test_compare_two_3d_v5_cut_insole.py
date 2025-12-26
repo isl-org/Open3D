@@ -1,12 +1,15 @@
 import open3d as o3d
 import numpy as np
-from scripts.mesh_process import mesh_measure_methods
-from scripts.mesh_process import mesh_smooth_methods
-from scripts.mesh_process import mesh_common_methods
+# from scripts.mesh_process import mesh_measure_methods
+# from scripts.mesh_process import mesh_smooth_methods
+# from scripts.mesh_process import mesh_common_methods
 
 
-import open3d.visualization.gui as gui
-import open3d.visualization.rendering as rendering
+from open3d.visualization import gui as gui
+from open3d.visualization import rendering as rendering
+# import open3d.visualization.gui as gui
+# import open3d.visualization.rendering as rendering
+
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
@@ -1507,8 +1510,8 @@ def visualize_with_custom_renderer(pcd1, pcd2):
     """
     Use Open3D's advanced rendering for better transparency
     """
-    import open3d.visualization.gui as gui
-    import open3d.visualization.rendering as rendering
+    # import open3d.visualization.gui as gui
+    # import open3d.visualization.rendering as rendering
 
     app = gui.Application.instance
     app.initialize()
@@ -2730,7 +2733,7 @@ mobile_case_path = '/Users/yujunwang/Documents/2024Folder/AppCode/TestResults/Yu
 # Jian/4495
 
 # load methods
-mesh_meas = mesh_measure_methods.MeshMeasureMethods()
+# mesh_meas = mesh_measure_methods.MeshMeasureMethods()
 
 
 # load stationary mesh
