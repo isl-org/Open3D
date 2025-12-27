@@ -145,7 +145,7 @@ public:
     /// \brief Factory function to create a LineSet from an
     /// OrientedBoundingEllipsoid.
     ///
-    /// \param box The input bounding box.
+    /// \param ellipsoid The input bounding ellipsoid.
     static std::shared_ptr<LineSet> CreateFromOrientedBoundingEllipsoid(
             const OrientedBoundingEllipsoid &ellipsoid);
 
