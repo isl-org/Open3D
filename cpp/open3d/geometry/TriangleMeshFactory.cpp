@@ -147,7 +147,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromOrientedBoundingBox(
     auto mesh = CreateBox(origin.x(), origin.y(), origin.z(), create_uv_map);
     mesh->Rotate(obox.R_, origin / 2.);
     mesh->Translate(obox.center_ - origin / 2.);
-    // mesh->PaintUniformColor(obox.color_);
     return mesh;
 }
 
