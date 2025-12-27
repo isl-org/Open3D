@@ -50,7 +50,7 @@ void pybind_boundingvolume_definitions(py::module &m) {
     oriented_bounding_ellipsoid
             .def(py::init<const Eigen::Vector3d &, const Eigen::Matrix3d &,
                           const Eigen::Vector3d &>(),
-                 "Create OrientedBoudingEllipsoid from center, rotation R and "
+                 "Create OrientedBoundingEllipsoid from center, rotation R and "
                  "radii "
                  "in x, y and z "
                  "direction",
