@@ -106,8 +106,8 @@ std::vector<Eigen::Vector3d> OrientedBoundingEllipsoid::GetEllipsoidPoints()
     Eigen::Vector3d y_axis = R_ * Eigen::Vector3d(0, radii_(1), 0);
     Eigen::Vector3d z_axis = R_ * Eigen::Vector3d(0, 0, radii_(2));
     std::vector<Eigen::Vector3d> points(6);
-    points[0] = center_ + R_ * x_axis;
-    points[1] = center_ - R_ * x_axis;
+    points[0] = center_ + x_axis;
+    points[1] = center_ - x_axis;
     points[2] = center_ + y_axis;
     points[3] = center_ - y_axis;
     points[4] = center_ + z_axis;
