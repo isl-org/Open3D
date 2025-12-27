@@ -632,7 +632,7 @@ public:
             bool create_uv_map = false);
 
     /// Factory function to create an ellipsoid mesh (TriangleMeshFactory.cpp)
-    /// The ellipsoid with will be centered at (0, 0, 0).
+    /// The ellipsoid will be centered at (0, 0, 0).
     /// \param radius_x defines first radii of the ellipsoid.
     /// \param radius_y defines second radii of the ellipsoid.
     /// \param radius_z defines third radii of the ellipsoid.
