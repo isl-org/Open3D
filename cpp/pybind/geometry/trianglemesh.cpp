@@ -744,9 +744,9 @@ void pybind_trianglemesh_definitions(py::module &m) {
              {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_ellipsoid",
-            {{"radius_x", "The first radii of the ellipsoid."},
-             {"radius_y", "The second radii of the ellipsoid."},
-             {"radius_z", "The third radii of the ellipsoid."},
+            {{"radius_x", "The first radius of the ellipsoid."},
+             {"radius_y", "The second radius of the ellipsoid."},
+             {"radius_z", "The third radius of the ellipsoid."},
              {"resolution",
               "The resolution of the sphere. The longitues will be split into "
               "``resolution`` segments (i.e. there are ``resolution + 1`` "
