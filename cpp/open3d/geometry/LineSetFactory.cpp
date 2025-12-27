@@ -67,8 +67,8 @@ std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingEllipsoid(
             geometry::TriangleMesh::CreateEllipsoid(ellipsoid.radii_(0),
                                                     ellipsoid.radii_(1),
                                                     ellipsoid.radii_(2));
-    obel->Translate(ellipsoid.R_.transpose() * ellipsoid.center_);
     obel->Rotate(ellipsoid.R_, Eigen::Vector3d::Zero());
+    obel->Translate(ellipsoid.center_);
     auto line_set = CreateFromTriangleMesh(*obel);
     line_set->PaintUniformColor(ellipsoid.color_);
     return line_set;
