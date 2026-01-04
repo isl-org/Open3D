@@ -2702,35 +2702,19 @@ from pathlib import Path
 cur_dir = Path(__file__).resolve().parent
 dayong_dir = cur_dir.parent
 
-stationary_case = '/Justin_Kamp_550013_000006_R'
-stationary_case_path = os.path.join(dayong_dir, "scans", "STLs")
+stationary_case = '/left_foot_mesh_j'
+stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "iPhoneScans")
 mobile_case_path = os.path.join(dayong_dir, "scans", "STLs")
 
+# Scanner:
+# stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "Scanner")
+# stationary_case = '/Louisa_Ben_550013_000025_L'
+# stationary_case = '/Jian_Gong FullWeight3_550013_000026_L'
 
-#stationary_case = 'Yujun _Wang_550013_000009'   ### correct one
-#stationary_case = 'Yujun_Wang_550013_000036' #'Justin_Kamp_550013_000006'
-#stationary_case = 'Bryan_Kleinman Full Weight_550013_000018'
-# mobile_case = 'Yujun_left_foot_mesh' #'Justin/24Apr03'
-#stationary_case = 'TC_Crofford Chair_550013_000020'
-# stationary_case = 'Justin_Kamp_550013_000006_R'
-#stationary_case = 'Louisa_Ben_550013_000025'
-#stationary_case = 'melissa_test_550013_000023'
-#stationary_case = 'bin_kou_550013_000032'
-#stationary_case = 'Jian_Gong FullWeight3_550013_000026'
-
-#/Users/yujunwang/Downloads/OneDrive_2_10-11-2025/Yujun _Wang_550013_000009
-# Bryan_Kleinman Full Weight_550013_000018
-# TC_Crofford Chair_550013_000020
-# Justin_Kamp_550013_000006
-# Jian_Gong_550013_000004
-
-# Bryan/CAB9/DepthData
-# TC/2AC2/DepthData
-# Justin/24Apr03
-# Jian/4495
-
-# load methods
-# mesh_meas = mesh_measure_methods.MeshMeasureMethods()
+# iPhoneScans:
+# stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "iPhoneScans")
+# stationary_case = '/left_foot_mesh_j'
+# stationary_case = '/right_foot_mesh_j'
 
 
 # load stationary mesh
