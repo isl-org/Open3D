@@ -2699,23 +2699,41 @@ foot_id = "left"
 import os
 from pathlib import Path
 
+# Dayong Starts
+
+def normalize_mesh_to_mm(mesh: o3d.geometry.TriangleMesh, print_log=True):
+    """
+    Normalize mesh units to millimeters (m -> mm).
+    - If bbox max extent < 1.0  -> assume meters, scale * 1000
+    - Else keep as-is
+    """
+    bbox = mesh.get_axis_aligned_bounding_box()
+    extent = np.asarray(bbox.get_extent())  # (dx, dy, dz)
+    max_extent = float(np.max(extent))
+
+    if print_log:
+        print(f"[normalize_mesh_to_mm] extent = {extent}, max = {max_extent}")
+
+    if max_extent < 1.0:  # likely meters
+        mesh.scale(1000.0, center=mesh.get_center())
+        if print_log:
+            bbox2 = mesh.get_axis_aligned_bounding_box()
+            extent2 = np.asarray(bbox2.get_extent())
+            print(f"[normalize_mesh_to_mm] scaled to mm. new extent = {extent2}")
+    return mesh
+
 cur_dir = Path(__file__).resolve().parent
 dayong_dir = cur_dir.parent
 
-stationary_case = '/left_foot_mesh_j'
-stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "iPhoneScans")
-mobile_case_path = os.path.join(dayong_dir, "scans", "STLs")
-
-# Scanner:
-# stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "Scanner")
+# Scanner's Scans
 # stationary_case = '/Louisa_Ben_550013_000025_L'
-# stationary_case = '/Jian_Gong FullWeight3_550013_000026_L'
+# stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "Scanner")
 
-# iPhoneScans:
-# stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "iPhoneScans")
-# stationary_case = '/left_foot_mesh_j'
-# stationary_case = '/right_foot_mesh_j'
+# iPhone's Scans
+stationary_case = '/left_foot_mesh_k'
+stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "iPhoneScans")
 
+mobile_case_path = os.path.join(dayong_dir, "scans", "STLs")
 
 # load stationary mesh
 if foot_id == 'left':
@@ -2727,6 +2745,7 @@ else:
 stationary_scan_path = stationary_case_path+stationary_case +'.stl' ### +'_'+stl_foot_id
 print(stationary_scan_path)
 stationary_o3d_mesh = o3d.io.read_triangle_mesh(stationary_scan_path)
+stationary_o3d_mesh = normalize_mesh_to_mm(stationary_o3d_mesh)
 
 ### load the file
 # load mobile scanned mesh
@@ -2766,7 +2785,7 @@ o3d.visualization.draw_geometries([
 ### ------ cut the foot to get the oritentation right
 # Method 1: Filter from min Z with specific distance
 print("\n--- Method 1: Filter from min Z + distance ---")
-distance = 30.0  # Keep 2.0 units from the bottom
+distance = 20.0  # Keep 2.0 units from the bottom
 filtered_pcd1 = filter_from_min_z_with_distance(pcd1_points, distance_from_min=distance)
 filtered_pcd2 = filter_from_min_z_with_distance(pcd2_points, distance_from_min=distance)
 
