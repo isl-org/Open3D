@@ -1,6 +1,6 @@
 # Dayong
-*.stl
-*.glb
+#*.stl
+#*.glb
 *.ply
 *.png
 
