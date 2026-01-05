@@ -102,7 +102,9 @@ bool Visualizer::CreateVisualizerWindow(
     if (window_) {  // window already created
         utility::LogDebug("[Visualizer] Reusing window.");
         UpdateWindowTitle();
-        glfwSetWindowPos(window_, left, top);
+        if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND) {
+            glfwSetWindowPos(window_, left, top);
+        }
         glfwSetWindowSize(window_, width, height);
 #ifdef __APPLE__
         glfwSetWindowSize(window_,
@@ -141,7 +143,9 @@ bool Visualizer::CreateVisualizerWindow(
         utility::LogWarning("Failed to create window");
         return false;
     }
-    glfwSetWindowPos(window_, left, top);
+    if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND) {
+        glfwSetWindowPos(window_, left, top);
+    }
     glfwSetWindowUserPointer(window_, this);
 
 #ifdef __APPLE__
@@ -480,13 +484,20 @@ bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::SetFullScreen(bool fullscreen) {
     if (!fullscreen) {
+        // Wayland ignores window position
         glfwSetWindowMonitor(window_, NULL, saved_window_pos_(0),
                              saved_window_pos_(1), saved_window_size_(0),
                              saved_window_size_(1), GLFW_DONT_CARE);
     } else {
         glfwGetWindowSize(window_, &saved_window_size_(0),
                           &saved_window_size_(1));
-        glfwGetWindowPos(window_, &saved_window_pos_(0), &saved_window_pos_(1));
+        if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+            saved_window_pos_[0] = 0;
+            saved_window_pos_[1] = 0;
+        } else {
+            glfwGetWindowPos(window_, &saved_window_pos_(0),
+                             &saved_window_pos_(1));
+        }
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
         if (const GLFWvidmode *mode = glfwGetVideoMode(monitor)) {
             glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width,

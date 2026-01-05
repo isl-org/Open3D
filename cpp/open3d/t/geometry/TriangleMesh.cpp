@@ -25,21 +25,15 @@
 #include <mutex>
 #include <string>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
-#include "open3d/core/ParallelFor.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorKey.h"
-#include "open3d/core/linalg/AddMM.h"
-#include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
@@ -48,12 +42,10 @@
 #include "open3d/t/geometry/kernel/IPPImage.h"
 #include "open3d/t/geometry/kernel/Metrics.h"
 #include "open3d/t/geometry/kernel/PCAPartition.h"
-#include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/geometry/kernel/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/UVUnwrapping.h"
-#include "open3d/t/io/ImageIO.h"
-#include "open3d/t/io/NumpyIO.h"
+#include "open3d/t/geometry/kernel/mikktspace.h"
 #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
@@ -137,7 +129,12 @@ std::string TriangleMesh::ToString() const {
         triangles_attr_str[triangles_attr_str.size() - 1] = '.';
     }
 
-    return str + vertices_attr_str + triangles_attr_str;
+    std::string material_str;
+    if (HasMaterial()) {
+        material_str = '\n' + GetMaterial().ToString();
+    }
+
+    return str + vertices_attr_str + triangles_attr_str + material_str;
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
@@ -1004,7 +1001,7 @@ TriangleMesh::BakeVertexAttrTextures(
                 });
     }
     if (update_material) {
-        UpdateMaterialTextures(result, this->GetMaterial());
+        UpdateMaterialTextures(result, GetMaterial());
     }
 
     return result;
@@ -1892,6 +1889,385 @@ core::Tensor TriangleMesh::ComputeMetrics(const TriangleMesh &mesh2,
     core::Tensor distance12 = scene2.ComputeDistance(points1);
 
     return ComputeMetricsCommon(distance12, distance21, metrics, params);
+}
+
+Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
+                                            int n_rays,
+                                            float max_hit_distance,
+                                            bool update_material) {
+    using core::Tensor;
+    if (!HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "TriangleMesh does not contain 'texture_uvs'. Please compute "
+                "it with ComputeUVAtlas() first.");
+    }
+    if (!HasVertexNormals()) {
+        utility::LogWarning(
+                "TriangleMesh does not have vertex normals. Computing them "
+                "now.");
+        ComputeVertexNormals(true);
+    }
+
+    // Bake positions and normals into textures.
+    const float margin =
+            (tex_width + 511.f) / 512.f;  // = ceil(tex_width / 512)
+    auto baked_textures =
+            BakeVertexAttrTextures(tex_width, {"positions", "normals"}, margin,
+                                   /*fill=*/0.0, /*update_material=*/false);
+    Tensor position_map =
+            baked_textures["positions"].To(GetDevice(), core::Float32);
+    Tensor normal_map =
+            baked_textures["normals"].To(GetDevice(), core::Float32);
+
+    RaycastingScene rcs;
+    rcs.AddTriangles(*this);
+
+    const int64_t n_pixels = tex_width * tex_width;
+
+    // Reshape maps and create masks for valid pixels (not in the margin).
+    Tensor positions = position_map.Reshape({n_pixels, 3});
+    Tensor normals = normal_map.Reshape({n_pixels, 3});
+    Tensor valid_mask = positions.Abs().Sum({1}).Ne(0);
+    Tensor valid_indices = valid_mask.NonZero().Flatten();
+    const int64_t n_valid_pixels = valid_indices.GetLength();
+
+    if (n_valid_pixels == 0) {
+        utility::LogWarning("No valid pixels found to compute AO on.");
+        return Image(Tensor::Ones({(int64_t)tex_width, (int64_t)tex_width, 1},
+                                  core::UInt8, GetDevice()) *
+                     255);
+    }
+
+    // Get origins and normals for valid pixels.
+    Tensor valid_positions = positions.IndexGet({valid_indices});
+    Tensor valid_normals = normals.IndexGet({valid_indices});
+
+    Tensor origins = valid_positions.Expand({n_rays, n_valid_pixels, 3});
+
+    // Hemisphere sampling using 2D quasirandom numbers.
+    Tensor qr = Tensor::Quasirandom(n_rays, 2, core::Float32, GetDevice());
+    Tensor r1 = qr.Slice(1, 0, 1);
+    Tensor r = r1.Sqrt();
+    Tensor r2 = qr.Slice(1, 1, 2);
+    Tensor theta = r2 * 2.0 * M_PI;
+    Tensor sampled_dirs =
+            Tensor::Empty({n_rays, 3}, core::Float32, GetDevice());
+    sampled_dirs.Slice(1, 0, 1) = r * theta.Cos();  // X
+    sampled_dirs.Slice(1, 1, 2) = r * theta.Sin();  // Y
+    sampled_dirs.Slice(1, 2, 3) = (1.f - r1).Sqrt();  // Z >= 0
+    sampled_dirs =
+            sampled_dirs.Expand({n_valid_pixels, n_rays, 3}).Transpose(0, 1);
+
+    // Rotate (0, 0, 1) to align with normal
+    // Create basis from normals to transform sampled directions.
+    Tensor t = valid_normals.Expand({n_rays, n_valid_pixels, 3});
+    Tensor up1 = Tensor::Init<float>({0, 0, 1}, GetDevice());
+    Tensor up2 = Tensor::Init<float>({1, 0, 0}, GetDevice());
+    Tensor up = up1.Expand({n_rays, n_valid_pixels, 3});
+    Tensor abs_dot = t.Mul(up).Sum({-1}).Abs();
+    up.IndexSet({abs_dot.Ge(1.0 - 1e-6)}, up2);
+    // Compute b = normalize(cross(t, up))
+    Tensor b = t.Cross(up);
+    b = b / b.Norm({-1}, true).Clip_(1e-6, INFINITY);
+    // Transform directions to world space.
+    Tensor directions = sampled_dirs.Slice(-1, 0, 1) * t.Cross(b) +
+                        sampled_dirs.Slice(-1, 1, 2) * b +
+                        sampled_dirs.Slice(-1, 2, 3) * t;
+
+    // Cast all rays at once.
+    Tensor rays = origins.Append(directions, -1);
+    Tensor occlusion = rcs.TestOcclusions(
+            rays, 1e-5f,  // tnear > 0 to prevent self-occlusions
+            max_hit_distance);
+
+    Tensor ao_texture = Tensor::Ones({n_pixels}, core::Float32, GetDevice());
+    ao_texture.IndexSet({valid_indices}, 1.0f - occlusion.To(core::Float32).Mean({0}));
+    ao_texture = ao_texture.View({(int64_t)tex_width, (int64_t)tex_width, 1});
+
+    // Denoise with bilateral filter.
+    Image ao_image(ao_texture);
+    Image denoised_ao_image = ao_image.FilterBilateral(
+            /*kernel_size*/ 3, /*value_sigma*/ 2./n_rays, /*distance_sigma*/ 3.0);
+
+    // Convert to an 8-bit image and update material.
+    Image final_image(denoised_ao_image.To(core::UInt8, false, 255.f, 0.f));
+    if (update_material) {
+        if (!HasMaterial()) {
+            SetMaterial(visualization::rendering::Material());
+            GetMaterial().SetDefaultProperties();  // defaultUnlit
+        }
+        GetMaterial().SetAOMap(final_image);
+    }
+
+    return final_image;
+}
+
+namespace {
+
+struct MikkTSpaceContextData {
+    const core::Tensor *vertices = nullptr;
+    const core::Tensor *normals = nullptr;
+    const core::Tensor *uvs = nullptr;
+    const core::Tensor *indices = nullptr;
+    core::Tensor *tangents = nullptr;
+    core::Tensor *bitangents = nullptr;
+};
+
+int GetNumFaces(const SMikkTSpaceContext *pContext) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    return data->indices->GetLength();
+}
+
+int GetNumVerticesOfFace(const SMikkTSpaceContext *pContext, const int iFace) {
+    return 3;
+}
+
+void GetPosition(const SMikkTSpaceContext *pContext,
+                 float fvPosOut[],
+                 const int iFace,
+                 const int iVert) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+    const float *vertex =
+            data->vertices->GetDataPtr<float>() + vertex_index * 3;
+    fvPosOut[0] = vertex[0];
+    fvPosOut[1] = vertex[1];
+    fvPosOut[2] = vertex[2];
+}
+
+void GetNormal(const SMikkTSpaceContext *pContext,
+               float fvNormOut[],
+               const int iFace,
+               const int iVert) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+    const float *normal = data->normals->GetDataPtr<float>() + vertex_index * 3;
+    fvNormOut[0] = normal[0];
+    fvNormOut[1] = normal[1];
+    fvNormOut[2] = normal[2];
+}
+
+void GetTexCoord(const SMikkTSpaceContext *pContext,
+                 float fvTexcOut[],
+                 const int iFace,
+                 const int iVert) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    const float *uv = data->uvs->GetDataPtr<float>() + (iFace * 3 + iVert) * 2;
+    fvTexcOut[0] = uv[0];
+    fvTexcOut[1] = uv[1];
+}
+
+void SetTSpaceBasic(const SMikkTSpaceContext *pContext,
+                    const float fvTangent[],
+                    const float fSign,
+                    const int iFace,
+                    const int iVert) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+
+    float *tangent_ptr = data->tangents->GetDataPtr<float>() + vertex_index * 4;
+    tangent_ptr[0] = fvTangent[0];
+    tangent_ptr[1] = fvTangent[1];
+    tangent_ptr[2] = fvTangent[2];
+    tangent_ptr[3] = fSign;
+}
+
+}  // namespace
+
+// Implementation from http://www.mikktspace.com/
+void TriangleMesh::ComputeTangentSpace(bool bake /*=true*/,
+                                       int tex_width /*=512*/) {
+    if (!HasVertexPositions() || !HasVertexNormals() ||
+        !HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "TriangleMesh must have vertex positions, vertex normals, and "
+                "texture UVs to compute tangent space.");
+        return;
+    }
+
+    core::Device cpu_device("CPU:0");
+    TriangleMesh cpu_mesh = To(cpu_device);
+
+    core::Tensor vertices =
+            cpu_mesh.GetVertexPositions().To(core::Float32).Contiguous();
+    core::Tensor normals =
+            cpu_mesh.GetVertexNormals().To(core::Float32).Contiguous();
+    core::Tensor uvs = cpu_mesh.GetTriangleAttr("texture_uvs")
+                               .To(core::Float32)
+                               .Contiguous();
+    core::Tensor indices =
+            cpu_mesh.GetTriangleIndices().To(core::Int64).Contiguous();
+
+    int64_t num_vertices = vertices.GetLength();
+    core::Tensor tangents =
+            core::Tensor::Zeros({num_vertices, 4}, core::Float32, cpu_device);
+
+    MikkTSpaceContextData context_data;
+    context_data.vertices = &vertices;
+    context_data.normals = &normals;
+    context_data.uvs = &uvs;
+    context_data.indices = &indices;
+    context_data.tangents = &tangents;
+
+    SMikkTSpaceInterface mikk_interface;
+    mikk_interface.m_getNumFaces = GetNumFaces;
+    mikk_interface.m_getNumVerticesOfFace = GetNumVerticesOfFace;
+    mikk_interface.m_getPosition = GetPosition;
+    mikk_interface.m_getNormal = GetNormal;
+    mikk_interface.m_getTexCoord = GetTexCoord;
+    mikk_interface.m_setTSpaceBasic = SetTSpaceBasic;
+    mikk_interface.m_setTSpace = nullptr;
+
+    SMikkTSpaceContext mikk_context;
+    mikk_context.m_pInterface = &mikk_interface;
+    mikk_context.m_pUserData = &context_data;
+
+    if (!genTangSpaceDefault(&mikk_context)) {
+        utility::LogError("Failed to generate tangent space.");
+        return;
+    }
+
+    SetVertexAttr("tangents", tangents.To(GetDevice()));  // normalized
+    if (bake) {
+        utility::LogDebug("Baking normals and tangents as textures...");
+        if (!HasMaterial()) {
+            SetMaterial(visualization::rendering::Material());
+            GetMaterial().SetDefaultProperties();  // defaultLit
+        }
+        cpu_mesh.SetVertexAttr("tangents", tangents);
+        const float margin = (tex_width + 511.f) / 512.f;
+        auto baked_textures = cpu_mesh.BakeVertexAttrTextures(
+                tex_width, {"normals", "tangents"}, margin,
+                /*fill=*/0.0, /*bake=*/false);
+        // Baked (interpolated) normals and tangents are NOT normalized.
+        GetMaterial().SetTextureMap("normals",
+                                    baked_textures["normals"].To(GetDevice()));
+        GetMaterial().SetTextureMap("tangents",
+                                    baked_textures["tangents"].To(GetDevice()));
+    }
+}
+
+Image TriangleMesh::TransformNormalMap(const Image &normal_map,
+                                       bool to_tangent_space /*=true*/,
+                                       bool update_material /*=false*/) {
+    if (!HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "Mesh must have triangle attribute 'texture_uvs'. "
+                "Use ComputeUVAtlas() to compute it.");
+    }
+    if (!HasVertexNormals() || !HasVertexAttr("tangents")) {
+        utility::LogError(
+                "Mesh must have vertex normals and tangents. "
+                "Use ComputeVertexNormals() and ComputeTangentSpace() to "
+                "compute them.");
+    }
+
+    if (normal_map.GetChannels() != 3) {
+        utility::LogError("Normal map must have 3 channels, but has {}.",
+                          normal_map.GetChannels());
+    }
+
+    int tex_width = normal_map.GetCols();
+    int tex_height = normal_map.GetRows();
+    if (tex_width != tex_height) {
+        utility::LogWarning(
+                "Normal map width {} and height {} are not equal. Using width "
+                "as texture size.",
+                tex_width, tex_height);
+    }
+
+    // Bake TBN vectors into textures.
+    const float margin =
+            (tex_width + 511.f) / 512.f;  // = ceil(tex_width / 512)
+    if (!HasMaterial()) {
+        SetMaterial(visualization::rendering::Material());
+        GetMaterial().SetDefaultProperties();  // defaultLit
+    }
+
+    std::unordered_map<std::string, core::Tensor> baked_textures;
+    if (!(GetMaterial().HasTextureMap("normals") &&
+          GetMaterial().HasTextureMap("tangents"))) {
+        baked_textures = To(core::Device("CPU:0"))
+                                 .BakeVertexAttrTextures(
+                                         tex_width, {"normals", "tangents"},
+                                         margin, /*fill=*/0.0, false);
+    } else {
+        baked_textures["normals"] =
+                GetMaterial().GetTextureMap("normals").AsTensor().To(
+                        core::Device("CPU:0"));
+        baked_textures["tangents"] = GetMaterial()
+                                             .GetTextureMap("tangents")
+                                             .AsTensor()
+                                             .To(core::Device("CPU:0"));
+    }
+
+    // Baked (Interpolated) TBN vectors are NOT normalized.
+    core::Tensor tbn_N = baked_textures.at("normals").To(core::Float32);
+    core::Tensor tbn_T = baked_textures.at("tangents").To(core::Float32);
+    // 4th element of T is the sign for B
+    // bitangent = Sign * cross(normal, tangent)
+    core::Tensor tbn_B =
+            tbn_T.Slice(2, 3, 4) * tbn_N.Cross(tbn_T.Slice(2, 0, 3));
+    tbn_T = tbn_T.Slice(2, 0, 3);
+
+    core::Tensor input_normals_t = normal_map.AsTensor();
+    if (!(input_normals_t.GetDtype() == core::Float32 ||
+          input_normals_t.GetDtype() == core::Float64)) {
+        // Integer: Decode from [0, 255] to [-1, 1]
+        input_normals_t =
+                (input_normals_t.To(core::Float32) / 255.0f) * 2.0f - 1.0f;
+    }
+    input_normals_t = input_normals_t.To(core::Float32);
+
+    if (to_tangent_space) {
+        // World -> Tangent
+        // N_t = transpose(TBN) * N_w
+        core::Tensor tangent_normals_t =
+                core::Tensor::Empty({tex_height, tex_width, 3}, core::Float32);
+
+        tangent_normals_t.Slice(2, 0, 1) =
+                (input_normals_t * tbn_T).Sum({2}, true);
+        tangent_normals_t.Slice(2, 1, 2) =
+                (input_normals_t * tbn_B).Sum({2}, true);
+        tangent_normals_t.Slice(2, 2, 3) =
+                (input_normals_t * tbn_N).Sum({2}, true);
+
+        // Normalize and encode from [-1, 1] to [0, 255]
+        tangent_normals_t =
+                tangent_normals_t /
+                tangent_normals_t.Norm({2}, true).Clip_(1e-6, INFINITY);
+        tangent_normals_t = (tangent_normals_t + 1.0f) * 127.5f;
+
+        auto out = Image(tangent_normals_t.To(core::UInt8));
+        if (update_material) {
+            GetMaterial().SetNormalMap(out);
+        }
+        return out;
+    } else {
+        // Tangent -> World
+        core::Tensor tangent_normals_t = input_normals_t;
+
+        // N_w = TBN * N_t
+        core::Tensor world_normals_t =
+                tbn_T * tangent_normals_t.Slice(2, 0, 1) +
+                tbn_B * tangent_normals_t.Slice(2, 1, 2) +
+                tbn_N * tangent_normals_t.Slice(2, 2, 3);
+
+        // Normalize
+        world_normals_t = world_normals_t /
+                          world_normals_t.Norm({2}, true).Clip_(1e-6, INFINITY);
+        world_normals_t = (world_normals_t + 1.0f) * 127.5f;
+
+        if (update_material) {
+            utility::LogWarning(
+                    "Ignoring update_material, since output normal map is not "
+                    "in tangent space.");
+        }
+        return Image(world_normals_t.To(core::UInt8));
+    }
 }
 
 }  // namespace geometry

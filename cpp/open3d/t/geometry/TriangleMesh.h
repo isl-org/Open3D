@@ -26,6 +26,7 @@ namespace geometry {
 
 class LineSet;
 class PointCloud;
+class RaycastingScene;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -1091,6 +1092,61 @@ public:
             const TriangleMesh &mesh2,
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
+
+    /// \brief Computes an ambient occlusion texture for the mesh.
+    ///
+    /// This method generates an ambient occlusion map by casting rays from the surface
+    /// of the mesh and measuring occlusion. The mesh must have texture coordinates
+    /// ("texture_uvs" triangle attribute). The resulting texture is a single-channel
+    /// grayscale image with values in [0, 255], where 0 is fully occluded and 255 is
+    /// fully exposed.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param tex_width The width and height of the output texture in pixels (square).
+    /// \param n_rays The number of rays to cast per texel for occlusion estimation.
+    /// \param max_hit_distance The maximum distance for ray intersection. The
+    ///         default is INFINITY, i.e. very far occlusions also count.
+    /// \param update_material If true, updates the mesh material with the computed
+    ///        ambient occlusion texture.
+    /// \return The computed ambient occlusion texture as an Image (single channel, UInt8).
+    Image ComputeAmbientOcclusion(int tex_width = 256,
+                                    int n_rays = 32,
+                                    float max_hit_distance = INFINITY,
+                                    bool update_material = true);
+
+    /// Computes tangent space for the triangle mesh with MikkTSpace.
+    /// The mesh must have vertex positions, vertex normals, and texture UVs
+    /// (triangle attribute 'texture_uvs'). The computed tangents and bitangents
+    /// will be added as vertex attributes 'tangents' and 'bitangents'.
+    /// This function works on the CPU and will transfer data to the CPU if
+    /// necessary.
+    /// \param bake If true, the tangents, bitangents and normals will also be
+    /// baked to textures and saved to the material.
+    /// \param tex_width Baked texture size. Default 512.
+    void ComputeTangentSpace(bool bake = true, int tex_width = 512);
+
+    /// \brief Converts a normal map between world and tangent space.
+    ///
+    /// The conversion is performed for each pixel of the map. The mesh must
+    /// have vertex normals, tangents, bitangents, and texture UVs.
+    /// The tangent space attributes can be computed with
+    /// `ComputeTangentSpace()`.
+    ///
+    /// \param normal_map The normal map to convert.
+    /// When converting to tangent space, this is the world-space normal map.
+    /// When converting to world space, this is the tangent-space normal map.
+    /// It is expected to have 3 channels with Float32 or Float64 data type,
+    /// with values in range [-1, 1], or UInt8 data type in the range [0, 255].
+    /// \param to_tangent_space If true, converts from world to tangent space.
+    /// If false, converts from tangent to world space.
+    /// \param update_material If true and we are converting to tangent space,
+    /// the mesh material will be updated to contain the new normal map.
+    /// \return The converted normal map as an Image. This will have 3 channels,
+    /// UInt8 data type, with values in range [0, 255].
+    Image TransformNormalMap(const Image &normal_map,
+                             bool to_tangent_space = true,
+                             bool update_material = false);
 
 protected:
     core::Device device_ = core::Device("CPU:0");
