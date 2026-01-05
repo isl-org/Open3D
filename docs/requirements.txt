@@ -7,6 +7,6 @@ nbsphinx==0.9.3
 sphinx==7.1.2
 sphinx-tabs==3.4.7
 sphinx-copybutton==0.5.2
-nbconvert==6.5.4
+nbconvert==7.16.6
 lxml==5.2.1
 lxml_html_clean==0.4.0
