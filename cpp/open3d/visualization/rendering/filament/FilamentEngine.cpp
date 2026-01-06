@@ -7,6 +7,8 @@
 
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 
+#include "open3d/utility/Logging.h"
+
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -32,7 +34,7 @@ namespace {
 static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
-EngineInstance::RenderingType EngineInstance::type_ = RenderingType::kDefault;
+RenderingType EngineInstance::type_ = RenderingType::kDefault;
 std::string EngineInstance::resource_path_ = "";
 
 void EngineInstance::SelectBackend(RenderingType type) { type_ = type; }
@@ -90,6 +92,20 @@ EngineInstance::EngineInstance() {
 
     engine_ = filament::Engine::create(backend);
     resource_manager_ = new FilamentResourceManager(*engine_);
+    // Query and record the backend selected by filament for future use (e.g.
+    // for ImGui)
+    switch (engine_->getBackend()) {
+        case filament::backend::Backend::OPENGL:
+            type_ = RenderingType::kOpenGL;
+            break;
+        case filament::backend::Backend::VULKAN:
+            type_ = RenderingType::kVulkan;
+            break;
+        case filament::backend::Backend::METAL:
+            type_ = RenderingType::kMetal;
+            break;
+        default:;  // no update
+    }
 }
 
 }  // namespace rendering

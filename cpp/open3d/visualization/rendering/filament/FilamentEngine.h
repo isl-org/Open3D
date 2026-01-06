@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include "open3d/visualization/rendering/Renderer.h"
+
 namespace filament {
 class Engine;
 }
@@ -21,8 +23,6 @@ class FilamentResourceManager;
 
 class EngineInstance {
 public:
-    enum class RenderingType { kDefault, kOpenGL, kVulkan, kMetal };
-
     // Selects backend to use.
     // Should be called before instance usage.
     // If not called, platform available default backend will be used.
@@ -35,6 +35,8 @@ public:
 
     static filament::Engine& GetInstance();
     static FilamentResourceManager& GetResourceManager();
+
+    static RenderingType GetBackendType() { return type_; }
 
     /// Destroys the singleton instance, to force Filament cleanup at a
     /// specific time. Calling GetInstance() after this will re-create
