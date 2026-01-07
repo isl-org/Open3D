@@ -193,7 +193,17 @@ void GLFWWindowSystem::DestroyWindow(OSWindow w) {
 }
 
 void GLFWWindowSystem::PostRedrawEvent(OSWindow w) {
+#if __APPLE__
+    // Layer-backed Metal views do not trigger GLFW's refresh callback when
+    // marked dirty. Call the draw callback directly so we actually render.
+    GLFWwindow* window = static_cast<GLFWwindow*>(w);
+    if (!window || glfwWindowShouldClose(window)) {
+        return;
+    }
+    DrawCallback(window);
+#else
     PostNativeExposeEvent((GLFWwindow*)w);
+#endif
 }
 
 bool GLFWWindowSystem::GetWindowIsVisible(OSWindow w) const {
