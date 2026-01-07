@@ -17,7 +17,7 @@ void pybind_core_tensor_function_definitions(py::module& m) {
     m.def(
             "concatenate",
             [](const std::vector<Tensor>& tensors,
-               const utility::optional<int64_t>& axis) {
+               const std::optional<int64_t>& axis) {
                 if (axis.has_value()) {
                     return core::Concatenate(tensors, axis);
                 }
@@ -53,7 +53,7 @@ Example:
     m.def(
             "append",
             [](const Tensor& self, const Tensor& values,
-               const utility::optional<int64_t>& axis) {
+               const std::optional<int64_t>& axis) {
                 if (axis.has_value()) {
                     return core::Append(self, values, axis);
                 }

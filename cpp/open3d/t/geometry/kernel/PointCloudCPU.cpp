@@ -17,9 +17,9 @@ using std::round;
 
 void ProjectCPU(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,

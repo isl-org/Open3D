@@ -7,6 +7,7 @@
 
 #include "open3d/core/hashmap/HashMap.h"
 
+#include <optional>
 #include <random>
 #include <unordered_map>
 
@@ -16,7 +17,6 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Optional.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

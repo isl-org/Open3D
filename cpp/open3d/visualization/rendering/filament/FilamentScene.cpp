@@ -1930,6 +1930,9 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
 
     manager.Destroy(mat.mat_instance);
 
+    // Destroy filament entity
+    utils::EntityManager::get().destroy(filament_entity);
+
     filament_entity.clear();
 }
 

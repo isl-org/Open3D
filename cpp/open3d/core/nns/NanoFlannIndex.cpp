@@ -62,7 +62,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 
     core::AssertTensorDevice(query_points, device);
     core::AssertTensorDtype(query_points, dtype);
-    core::AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    core::AssertTensorShape(query_points, {std::nullopt, GetDimension()});
 
     if (knn <= 0) {
         utility::LogError("knn should be larger than 0.");
@@ -108,7 +108,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
     // Check shapes.
     int64_t num_query_points = query_points.GetShape(0);
-    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {std::nullopt, GetDimension()});
     AssertTensorShape(radii, {num_query_points});
 
     // Check if the radii has negative values.
@@ -162,7 +162,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 
     AssertTensorDevice(query_points, device);
     AssertTensorDtype(query_points, dtype);
-    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {std::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
         utility::LogError("max_knn should be larger than 0.");

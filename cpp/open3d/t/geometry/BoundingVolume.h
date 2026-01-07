@@ -143,7 +143,7 @@ public:
     /// {3,}, type float32 or float64, device same as the box.
     AxisAlignedBoundingBox &Scale(
             double scale,
-            const utility::optional<core::Tensor> &center = utility::nullopt);
+            const std::optional<core::Tensor> &center = std::nullopt);
 
     /// \brief Add operation for axis-aligned bounding box.
     /// The device of other box must be the same as the device of the current
@@ -357,7 +357,7 @@ public:
     /// center of the box as rotation center.
     OrientedBoundingBox &Rotate(
             const core::Tensor &rotation,
-            const utility::optional<core::Tensor> &center = utility::nullopt);
+            const std::optional<core::Tensor> &center = std::nullopt);
 
     /// \brief Transform the oriented box by the given transformation matrix.
     ///
@@ -378,7 +378,7 @@ public:
     /// {3,}, type float32 or float64, device same as the box.
     OrientedBoundingBox &Scale(
             double scale,
-            const utility::optional<core::Tensor> &center = utility::nullopt);
+            const std::optional<core::Tensor> &center = std::nullopt);
 
     /// Returns the volume of the bounding box.
     double Volume() const {
