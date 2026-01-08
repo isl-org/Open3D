@@ -240,10 +240,6 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
             break;
     }
 
-    // Tone mapping is not supported in Filament's ColorGrading::Builder API.
-    // The toneMapping() method was removed/deprecated in newer versions of
-    // Filament, so this code is commented out. The ToneMapping parameter in
-    // ColorGradingParams is kept for API compatibility but is not applied.
     // filament::ColorGrading::ToneMapping tm =
     //         filament::ColorGrading::ToneMapping::LINEAR;
     // switch (color_grading.GetToneMapping()) {

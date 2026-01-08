@@ -40,10 +40,6 @@ Camera::Transform FilamentToCameraTransform(const filament::math::mat4& ft) {
     return Camera::Transform(m);
 }
 
-// This mat4f overload is not needed because Filament's Camera API methods
-// (getModelMatrix(), getViewMatrix(), getCullingProjectionMatrix()) return
-// mat4 (double precision), not mat4f (float precision). The mat4 overload
-// above handles all current use cases.
 // Camera::Transform FilamentToCameraTransform(const filament::math::mat4f& ft)
 // {
 //     Camera::Transform::MatrixType m;

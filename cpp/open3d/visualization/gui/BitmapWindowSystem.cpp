@@ -128,7 +128,7 @@ struct BitmapWindowSystem::Impl {
     BitmapEventQueue event_queue_;
 };
 
-BitmapWindowSystem::BitmapWindowSystem()
+BitmapWindowSystem::BitmapWindowSystem(Rendering mode /*= Rendering::NORMAL*/)
     : impl_(new BitmapWindowSystem::Impl()) {}
 
 BitmapWindowSystem::~BitmapWindowSystem() {}

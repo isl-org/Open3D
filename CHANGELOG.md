@@ -66,7 +66,9 @@
 -   Fix advanced indexing bug with sliced boolean masks on CUDA devices (PR #7340)
 -   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
 -   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
--   Fix arm builds upgrading some external libraries.
+-   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
+-   macOS x86_64 not longer supported, only macOS arm64 is supported.
+
 
 ## 0.13
 
