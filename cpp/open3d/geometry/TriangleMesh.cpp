@@ -293,16 +293,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
             std::swap(mesh->vertex_colors_, prev_vertex_colors);
         }
     }
-    if (filter_vertex) {
-        const double epsilon = 1e-15;
-        for (auto &vertex : mesh->vertices_) {
-            for (int i = 0; i < 3; ++i) {
-                if (std::abs(vertex(i)) < epsilon) {
-                    vertex(i) = 0.0;
-                }
-            }
-        }
-    }
     return mesh;
 }
 
@@ -396,16 +386,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
             std::swap(mesh->vertex_colors_, prev_vertex_colors);
         }
     }
-    if (filter_vertex) {
-        const double epsilon = 1e-15;
-        for (auto &vertex : mesh->vertices_) {
-            for (int i = 0; i < 3; ++i) {
-                if (std::abs(vertex(i)) < epsilon) {
-                    vertex(i) = 0.0;
-                }
-            }
-        }
-    }
     return mesh;
 }
 
@@ -452,16 +432,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
             std::swap(mesh->vertices_, prev_vertices);
             std::swap(mesh->vertex_normals_, prev_vertex_normals);
             std::swap(mesh->vertex_colors_, prev_vertex_colors);
-        }
-    }
-    if (filter_vertex) {
-        const double epsilon = 1e-15;
-        for (auto &vertex : mesh->vertices_) {
-            for (int i = 0; i < 3; ++i) {
-                if (std::abs(vertex(i)) < epsilon) {
-                    vertex(i) = 0.0;
-                }
-            }
         }
     }
     return mesh;
