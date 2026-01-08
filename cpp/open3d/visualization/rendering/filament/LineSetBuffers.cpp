@@ -181,7 +181,6 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructThinLines() {
                                             VertexBuffer::AttributeType::FLOAT3,
                                             ColoredVertex::GetPositionOffset(),
                                             sizeof(ColoredVertex))
-                                 .normalized(VertexAttribute::COLOR)
                                  .attribute(VertexAttribute::COLOR, 0,
                                             VertexBuffer::AttributeType::FLOAT4,
                                             ColoredVertex::GetColorOffset(),
@@ -303,7 +302,6 @@ LineSetBuffersBuilder::Buffers LineSetBuffersBuilder::ConstructBuffers() {
                                             VertexBuffer::AttributeType::FLOAT4,
                                             ColoredVertex::GetNextOffset(),
                                             sizeof(ColoredVertex))
-                                 .normalized(VertexAttribute::COLOR)
                                  .attribute(VertexAttribute::COLOR, 0,
                                             VertexBuffer::AttributeType::FLOAT4,
                                             ColoredVertex::GetColorOffset(),
