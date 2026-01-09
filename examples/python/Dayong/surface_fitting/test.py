@@ -1,87 +1,189 @@
-from initialize import *
-from examples.python.Dayong.surface_fitting.align import *
-from extrude import *
-from examples.python.Dayong.surface_fitting.cut import *
+import pyvista as pv
+import numpy as np
+from scipy.interpolate import RBFInterpolator
+import os
+from pathlib import Path
 
-def get_rotation_matrix(from_vec, to_vec):
-    from_vec = from_vec / np.linalg.norm(from_vec)
-    to_vec = to_vec / np.linalg.norm(to_vec)
-    v = np.cross(from_vec, to_vec)
-    c = np.dot(from_vec, to_vec)
-    s = np.linalg.norm(v)
-    if s == 0:
-        return np.eye(3)
-    vx = np.array([
-        [0, -v[2], v[1]],
-        [v[2], 0, -v[0]],
-        [-v[1], v[0], 0]
-    ])
-    R = np.eye(3) + vx + vx @ vx * ((1 - c) / (s ** 2))
-    return R
 
-def create_plane_patch(center: np.ndarray,
-                       width: float,
-                       height: float,
-                       thickness: float,
-                       normal: np.ndarray) -> o3d.geometry.TriangleMesh:
+# -----------------------------
+# Utility
+# -----------------------------
+
+def ensure_normals(mesh):
+    if "Normals" not in mesh.point_data:
+        mesh.compute_normals(
+            inplace=True,
+            point_normals=True,
+            cell_normals=False,
+            auto_orient_normals=True
+        )
+
+
+def closest_point_with_normal(surface: pv.PolyData, points):
     """
-    创建一个中心为 center、有厚度的平面 patch（其实是薄盒子），朝向 normal。
+    Vectorized closest-point query using VTK locator
     """
-    plane = o3d.geometry.TriangleMesh.create_box(width, height, thickness)
-    plane.translate(-plane.get_center())  # 移动到原点中心
-    R = get_rotation_matrix(np.array([0, 0, 1]), normal)
-    plane.rotate(R, center=(0, 0, 0))
-    plane.translate(center)
-    return plane
+    locator = pv._vtk.vtkStaticCellLocator()
+    locator.SetDataSet(surface)
+    locator.BuildLocator()
+
+    ensure_normals(surface)
+
+    hits = []
+    normals = []
+
+    for p in points:
+        closest = [0.0, 0.0, 0.0]
+        cid = pv._vtk.reference(0)
+        sid = pv._vtk.reference(0)
+        dist2 = pv._vtk.reference(0.0)
+
+        locator.FindClosestPoint(p, closest, cid, sid, dist2)
+        hit = np.array(closest)
+        hits.append(hit)
+
+        idx = surface.find_closest_point(hit)
+        normals.append(surface.point_data["Normals"][idx])
+
+    return np.asarray(hits), np.asarray(normals)
+
+
+# -----------------------------
+# Main algorithm
+# -----------------------------
+
+def attach_badge(
+    shoe: pv.PolyData,
+    badge: pv.PolyData,
+    shoe_normal,
+    offset=0.05,
+    bottom_percent=85,
+    max_ctrl=1200,
+    rbf_smoothing=0.001,
+    n_iters=3,
+):
+    """
+    Robust surface attachment using:
+    - closest-point projection
+    - hard bottom constraints
+    - RBF displacement propagation
+    """
+
+    ensure_normals(shoe)
+    ensure_normals(badge)
+
+    warped = badge.copy()
+
+    for it in range(n_iters):
+        print(f"\n--- Iteration {it+1} ---")
+
+        # -------------------------
+        # 1. find bottom region
+        # -------------------------
+        center = warped.points.mean(axis=0)
+        dots = np.dot(warped.points - center, -shoe_normal)
+        thr = np.percentile(dots, bottom_percent)
+        bottom_idx = np.where(dots > thr)[0]
+
+        print(f"Bottom candidates: {len(bottom_idx)}")
+
+        # -------------------------
+        # 2. compute gap
+        # -------------------------
+        d = warped.compute_implicit_distance(shoe)
+        gap = np.abs(d.point_data["implicit_distance"])
+        gap_bottom = gap[bottom_idx]
+
+        # pick worst-floating points
+        k = min(max_ctrl, len(bottom_idx))
+        worst = bottom_idx[np.argsort(-gap_bottom)[:k]]
+
+        ctrl_pts = warped.points[worst]
+
+        # -------------------------
+        # 3. closest-point targets
+        # -------------------------
+        targets, normals = closest_point_with_normal(shoe, ctrl_pts)
+        targets = targets + normals * offset
+
+        # -------------------------
+        # 4. RBF warp
+        # -------------------------
+        disp = targets - ctrl_pts
+
+        rbf = RBFInterpolator(
+            ctrl_pts,
+            disp,
+            kernel="linear",
+            smoothing=rbf_smoothing
+        )
+
+        delta = rbf(warped.points)
+
+        # weight: bottom moves more, top less
+        w = np.clip((dots - thr) / (dots.max() - thr + 1e-9), 0, 1)
+        warped.points += delta * w[:, None]
+
+        # -------------------------
+        # 5. HARD SNAP bottom
+        # -------------------------
+        warped_d2 = warped.compute_implicit_distance(shoe)
+        gap2 = np.abs(warped_d2.point_data["implicit_distance"])
+
+        snap_idx = bottom_idx[gap2[bottom_idx] > offset * 2]
+
+        print(f"Hard snapping {len(snap_idx)} vertices")
+
+        snap_pts = warped.points[snap_idx]
+        snap_hits, snap_normals = closest_point_with_normal(shoe, snap_pts)
+        warped.points[snap_idx] = snap_hits + snap_normals * offset
+
+        print(
+            f"gap max={gap2.max():.3f}, "
+            f"p95={np.percentile(gap2,95):.3f}"
+        )
+
+    return warped
+
+
+# -----------------------------
+# Entry
+# -----------------------------
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(__file__)
-    toy_path = os.path.join(base_dir, "STLs", "fish.stl")
+    cur_dir = Path(__file__).resolve().parent
+    dayong_dir = cur_dir.parent
+    shoe_path = os.path.join(dayong_dir, "scans", "STLs", "shoe.stl")
+    toy_path = os.path.join(dayong_dir, "scans", "STLs", "badge.stl")
 
-    # Read and center badge mesh
-    toy = read_stl_to_mesh(toy_path)
-    toy.paint_uniform_color([1.0, 0.6, 0.3])  # orange
-    # o3d.visualization.draw_geometries([toy], mesh_show_back_face=True)
+    shoe = pv.read(shoe_path).triangulate().clean()
+    badge = pv.read(toy_path).triangulate().clean()
 
-    # 构造平面
-    bbox = toy.get_axis_aligned_bounding_box()
-    center = bbox.get_center()
-    extent = bbox.get_extent()
-    plane = create_plane_patch(center=center,
-                               width=extent[0] * 2,
-                               height=extent[1] * 2,
-                               thickness=3,
-                               normal=np.array([0, 0, 1]))
-    plane.paint_uniform_color([0.6, 0.8, 1.0])
-    # o3d.visualization.draw_geometries([plane, toy], mesh_show_back_face=True)
+    # scale test
+    badge.scale(2.0, inplace=True)
 
-    # Get o and its normal
-    o = np.array([0, 0, 1])
-    visualize_point_on_mesh(plane, o, 1.0)
-    normal_o = np.array([0, 0, 1])
+    # choose a representative shoe normal (e.g. toe area)
+    ensure_normals(shoe)
+    anchor_idx = shoe.n_points // 2
+    shoe_normal = shoe.point_data["Normals"][anchor_idx]
 
-    p = select_o_point_from_ratio(toy, 0.5, 1, 0.5)  # fish背面
-    visualize_point_on_mesh(toy, p, 0.1)
-    normal_p = get_normal_at_point(toy, p)
+    warped_badge = attach_badge(
+        shoe,
+        badge,
+        shoe_normal=shoe_normal,
+        offset=0.03,
+        bottom_percent=85,
+        max_ctrl=1500,
+        n_iters=4,
+    )
 
-    # Rotate toy
-    R = get_rotation_matrix(from_vec=-normal_p, to_vec=normal_o) # 背面
-    toy.rotate(R, center=p)  # rotate toy based on p
+    # visualize
+    p = pv.Plotter()
+    p.add_mesh(shoe, opacity=0.5, color="lightblue")
+    p.add_mesh(warped_badge, color="orange")
+    p.show()
 
-    # Move p to o
-    offset = o - p
-    toy.translate(offset)
-
-    # # ray casting 投影：从平面外沿 -normal 方向投射到平面上
-    # all_points = np.asarray(toy.vertices) + normal_o * 5.0  # 往法线方向偏移一段距离
-    # projected_points, hit_mask = project_points_onto_mesh(all_points, -normal_o, plane)
-    #
-    # toy.vertices = o3d.utility.Vector3dVector(projected_points)
-    # o3d.visualization.draw_geometries([plane, toy], mesh_show_back_face=True)
-    #
-    # thickness = 1
-    # extruded_toy = extrude_shell(toy, thickness)
-    # extruded_toy.paint_uniform_color([1.0, 0.6, 0.3])
-    #
-    # o3d.visualization.draw_geometries([extruded_toy], mesh_show_back_face=True)
-    # o3d.visualization.draw_geometries([plane, extruded_toy], mesh_show_back_face=True)
+    # export
+    out = shoe.merge(warped_badge)
+    out.save("shoe_with_badge.stl")
+    print("Exported shoe_with_badge.stl")
