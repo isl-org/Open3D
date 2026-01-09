@@ -2,6 +2,7 @@ import pyvista as pv
 import numpy as np
 from scipy.interpolate import RBFInterpolator
 import os
+from pathlib import Path
 
 # Pick an anchor point on a mesh using bbox ratios
 def get_point_by_ratio(mesh, x_ratio, y_ratio, z_ratio):
@@ -156,9 +157,10 @@ def apply_non_rigid_warp(shoe, toy, shoe_normal, show_steps=True, offset=0.5,
     return warped
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    shoe_path = os.path.join(base_dir, "STLs", "shoe.stl")
-    toy_path = os.path.join(base_dir, "STLs", "badge.stl")
+    cur_dir = Path(__file__).resolve().parent
+    dayong_dir = cur_dir.parent
+    shoe_path = os.path.join(dayong_dir, "scans", "STLs", "shoe.stl")
+    toy_path = os.path.join(dayong_dir, "scans", "STLs", "badge.stl")
 
     if not os.path.exists(shoe_path) or not os.path.exists(toy_path):
         print("Error: Files not found.")

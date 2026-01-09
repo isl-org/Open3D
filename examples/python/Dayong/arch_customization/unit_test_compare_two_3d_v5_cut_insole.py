@@ -30,8 +30,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-
-
 def fit_surface_to_knife(knife_points, n_neighbors=20):
     """
     Fit a surface representation to the knife point cloud.
@@ -1063,6 +1061,77 @@ def align_pointcloud_to_pca(pcd, pca_result):
     return pcd_aligned
 
 
+# def align_major_axis_to_axis(pcd, target_axis='y', pca_result=None):
+#     """
+#     Align the major principal axis (PC1) to a specific world axis
+#
+#     Args:
+#         pcd: Original point cloud
+#         target_axis: Target axis ('x', 'y', or 'z')
+#         pca_result: Pre-computed PCA result (will compute if None)
+#
+#     Returns:
+#         Aligned point cloud
+#     """
+#     # Convert mesh to point cloud if needed
+#     if isinstance(pcd, o3d.geometry.TriangleMesh):
+#         pcd_aligned = pcd.sample_points_uniformly(number_of_points=50000)
+#     else:
+#         pcd_aligned = o3d.geometry.PointCloud(pcd)
+#
+#     # Compute PCA if not provided
+#     if pca_result is None:
+#         pca_result = compute_pca_orientation(pcd)
+#
+#     center = pca_result['center']
+#     eigenvectors = pca_result['eigenvectors']
+#     major_axis = eigenvectors[:, 0]  # PC1 - major axis
+#
+#     # Define target direction
+#     target_vectors = {
+#         'x': np.array([1, 0, 0]),
+#         'y': np.array([0, 1, 0]),
+#         'z': np.array([0, 0, 1])
+#     }
+#     target_vec = target_vectors[target_axis.lower()]
+#
+#     # Compute rotation to align major_axis with target_vec
+#     # Using Rodrigues' rotation formula
+#     v = np.cross(major_axis, target_vec)
+#     s = np.linalg.norm(v)
+#     c = np.dot(major_axis, target_vec)
+#
+#     if s < 1e-6:  # Already aligned or opposite
+#         if c > 0:  # Already aligned
+#             R = np.eye(3)
+#         else:  # Opposite direction, rotate 180 degrees
+#             # Find perpendicular axis for 180 degree rotation
+#             if abs(major_axis[0]) < 0.9:
+#                 perp = np.array([1, 0, 0])
+#             else:
+#                 perp = np.array([0, 1, 0])
+#             perp = perp - np.dot(perp, major_axis) * major_axis
+#             perp = perp / np.linalg.norm(perp)
+#             R = 2 * np.outer(perp, perp) - np.eye(3)
+#     else:
+#         # Rotation matrix using Rodrigues' formula
+#         vx = np.array([[0, -v[2], v[1]],
+#                        [v[2], 0, -v[0]],
+#                        [-v[1], v[0], 0]])
+#         R = np.eye(3) + vx + vx @ vx * ((1 - c) / (s ** 2))
+#
+#     # Create full transformation matrix
+#     T = np.eye(4)
+#     T[:3, :3] = R
+#     T[:3, 3] = -R @ center
+#
+#     # Apply transformation
+#     pcd_aligned.transform(T)
+#
+#     print(f"Point cloud aligned: Major axis (PC1) → {target_axis.upper()}-axis")
+#
+#     return pcd_aligned
+
 def align_major_axis_to_axis(pcd, target_axis='y', pca_result=None):
     """
     Align the major principal axis (PC1) to a specific world axis
@@ -1073,7 +1142,9 @@ def align_major_axis_to_axis(pcd, target_axis='y', pca_result=None):
         pca_result: Pre-computed PCA result (will compute if None)
 
     Returns:
-        Aligned point cloud
+        tuple: (pcd_aligned, T)
+            - pcd_aligned: aligned point cloud
+            - T: 4x4 transform applied to pcd_aligned (so you can apply the same T to a mesh)
     """
     # Convert mesh to point cloud if needed
     if isinstance(pcd, o3d.geometry.TriangleMesh):
@@ -1132,7 +1203,7 @@ def align_major_axis_to_axis(pcd, target_axis='y', pca_result=None):
 
     print(f"Point cloud aligned: Major axis (PC1) → {target_axis.upper()}-axis")
 
-    return pcd_aligned
+    return pcd_aligned, T
 
 
 def align_axis_to_axis(pcd, source_axis='pc1', target_axis='y', pca_result=None):
@@ -2700,40 +2771,24 @@ import os
 from pathlib import Path
 
 # Dayong Starts
-
-def normalize_mesh_to_mm(mesh: o3d.geometry.TriangleMesh, print_log=True):
-    """
-    Normalize mesh units to millimeters (m -> mm).
-    - If bbox max extent < 1.0  -> assume meters, scale * 1000
-    - Else keep as-is
-    """
-    bbox = mesh.get_axis_aligned_bounding_box()
-    extent = np.asarray(bbox.get_extent())  # (dx, dy, dz)
-    max_extent = float(np.max(extent))
-
-    if print_log:
-        print(f"[normalize_mesh_to_mm] extent = {extent}, max = {max_extent}")
-
-    if max_extent < 1.0:  # likely meters
-        mesh.scale(1000.0, center=mesh.get_center())
-        if print_log:
-            bbox2 = mesh.get_axis_aligned_bounding_box()
-            extent2 = np.asarray(bbox2.get_extent())
-            print(f"[normalize_mesh_to_mm] scaled to mm. new extent = {extent2}")
-    return mesh
+import copy
+from helper import *
 
 cur_dir = Path(__file__).resolve().parent
 dayong_dir = cur_dir.parent
 
 # Scanner's Scans
-# stationary_case = '/Louisa_Ben_550013_000025_L'
-# stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "Scanner")
+stationary_case = '/Jian_Gong FullWeight3_550013_000026_R'
+stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "Scanner")
 
 # iPhone's Scans
-stationary_case = '/left_foot_mesh_k'
-stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "iPhoneScans")
+# stationary_case = '/right_foot_mesh_j'
+# stationary_case_path = os.path.join(dayong_dir, "scans", "STLs", "iPhoneScans")
 
 mobile_case_path = os.path.join(dayong_dir, "scans", "STLs")
+
+# insole path
+insole_path = os.path.join(dayong_dir, "scans", "STLs", "iPhoneScans", "hd-0215.stl")
 
 # load stationary mesh
 if foot_id == 'left':
@@ -2746,6 +2801,10 @@ stationary_scan_path = stationary_case_path+stationary_case +'.stl' ### +'_'+stl
 print(stationary_scan_path)
 stationary_o3d_mesh = o3d.io.read_triangle_mesh(stationary_scan_path)
 stationary_o3d_mesh = normalize_mesh_to_mm(stationary_o3d_mesh)
+
+# insole mesh
+insole_mesh = o3d.io.read_triangle_mesh(insole_path)
+insole_mesh = normalize_mesh_to_mm(insole_mesh)
 
 ### load the file
 # load mobile scanned mesh
@@ -2761,6 +2820,8 @@ scan_o3d_mesh.scale(1000.0, center=scan_o3d_mesh.get_center())
 # pcd2.transform(transformation_matrix)
 pcd1 = stationary_o3d_mesh
 pcd2 = scan_o3d_mesh
+insole_copy = copy.deepcopy(insole_mesh)
+insole_copy.compute_vertex_normals()
 
 n_points = 10000 * 18     ### number of points to analyze
 # Convert meshes to point clouds
@@ -2774,6 +2835,12 @@ if isinstance(pcd2, o3d.geometry.TriangleMesh):
 else:
     pcd2_points = pcd2
 
+# insole pcd
+if isinstance(insole_copy, o3d.geometry.TriangleMesh):
+    insole_points = insole_copy.sample_points_uniformly(number_of_points=n_points)
+else:
+    insole_points = insole_copy
+
 # visualize the results
 # show the results
 o3d.visualization.draw_geometries([
@@ -2781,8 +2848,12 @@ o3d.visualization.draw_geometries([
     #pcd2_points.paint_uniform_color([0, 1, 0]),
     ], window_name="check read STL files Stationary and phone")
 
+# view the insole
+o3d.visualization.draw_geometries([
+    insole_points.paint_uniform_color([1, 0, 0]),
+    ], window_name="Visualize the pcd of the insole")
 
-### ------ cut the foot to get the oritentation right
+### ------ cut the foot to get the orientation right
 # Method 1: Filter from min Z with specific distance
 print("\n--- Method 1: Filter from min Z + distance ---")
 distance = 20.0  # Keep 2.0 units from the bottom
@@ -2803,11 +2874,49 @@ cut_pcd2 = filter_from_min_z_with_distance(pcd2_points, distance_from_min=distan
 # get rotation right for pcd1
 pca_result1 = compute_pca_orientation(filtered_pcd1)
 print("\n--- Aligning Major Axis to Y-axis ---PCD1")
-aligned_to_y_bot1 = align_major_axis_to_axis(filtered_pcd1, target_axis='y', pca_result=pca_result1)
-aligned_to_y1 = align_major_axis_to_axis(cut_pcd1, target_axis='y', pca_result=pca_result1)
+aligned_to_y_bot1, _ = align_major_axis_to_axis(filtered_pcd1, target_axis='y', pca_result=pca_result1)
+aligned_to_y1, _ = align_major_axis_to_axis(cut_pcd1, target_axis='y', pca_result=pca_result1)
+
+# get rotation right for the insole
+pca_insole = compute_pca_orientation(insole_points)
+print("\n--- Aligning Major Axis to Y-axis ---PCD Insole")
+aligned_to_y_insole, insole_align_T = align_major_axis_to_axis(insole_points, target_axis='y', pca_result=pca_insole)
 
 aligned_to_y_bot1.paint_uniform_color([0, 0.5, 0])
 aligned_to_y1.paint_uniform_color([1, 0.5, 0])
+
+# paint the insole
+aligned_to_y_insole.paint_uniform_color([1, 0.5, 0])
+
+# Flip point cloud by 180 degrees around given axis (x/y/z)
+def flip_pointcloud_180(pcd, axis='x'):
+    if axis == 'x':
+        R = np.array([
+            [1,  0,  0],
+            [0, -1,  0],
+            [0,  0, -1]
+        ])
+    elif axis == 'y':
+        R = np.array([
+            [-1, 0,  0],
+            [ 0, 1,  0],
+            [ 0, 0, -1]
+        ])
+    elif axis == 'z':
+        R = np.array([
+            [-1, 0, 0],
+            [ 0,-1, 0],
+            [ 0, 0, 1]
+        ])
+    else:
+        raise ValueError("axis must be 'x', 'y', or 'z'")
+
+    c = pcd.get_center()  # 注意：这是“当前 pcd”中心
+    t_flip = get_translation_matrix_from_rotation(R, c)
+    pcd.transform(t_flip)
+    return pcd, t_flip
+
+aligned_to_y_insole, insole_flip_T = flip_pointcloud_180(aligned_to_y_insole, axis='y')
 
 # o3d.visualization.draw_geometries(
 #             [aligned_to_y1, aligned_to_y_bot1, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
@@ -2823,6 +2932,26 @@ o3d.visualization.draw_geometries(
             height=900
         )
 
+# view the insole
+o3d.visualization.draw_geometries(
+            [aligned_to_y_insole, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
+            window_name="Aligned to Y-axis: insole",
+            width=1400,
+            height=900
+        )
+
+# insole - foot alignment
+# aligned_to_y_insole, aligned_to_y_bot1 = align_min_xyz(aligned_to_y_insole, aligned_to_y_bot1)
+aligned_to_y_insole, tx = align_min_x(aligned_to_y_insole, aligned_to_y_bot1)
+aligned_to_y_insole, ty = align_min_y(aligned_to_y_insole, aligned_to_y_bot1)
+aligned_to_y_insole, tz = align_z(aligned_to_y_insole, aligned_to_y_bot1, 13)
+
+o3d.visualization.draw_geometries(
+            [aligned_to_y_insole, aligned_to_y_bot1, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
+            window_name="Aligned to Y-axis: insole",
+            width=1400,
+            height=900
+        )
 
 ### project into the XY plane
 xyz_points = aligned_to_y_bot1.points
@@ -2970,22 +3099,6 @@ o3d.visualization.draw_geometries(
             height=900
         )
 
-
-# # Create Open3D point cloud from shrunken_3d
-# shrunken_pcd = o3d.geometry.PointCloud()
-# shrunken_pcd.points = o3d.utility.Vector3dVector(shrunken_3d)
-#
-# # Optional: Add color (e.g., red)
-# shrunken_pcd.paint_uniform_color([1, 0, 0])  # RGB: red
-#
-# o3d.visualization.draw_geometries(
-#             [shrunken_pcd, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
-#             window_name="Aligned to Y-axis: Stationary",
-#             width=1400,
-#             height=900
-#         )
-
-
 #### ------------------------- main code region ---------------------
 
 # Assign different colors to each point cloud
@@ -3016,22 +3129,6 @@ y_min = min_y + (max_y-min_y)*0.01  # Your minimum Y value
 y_max = min_y + (max_y-min_y)*0.8  # Your maximum Y value
 
 cleaned_pcd = extract_points_by_y_range(remain_pcd1, y_min, y_max)
-
-
-# Usage, remove bridges
-
-# # Usage
-# cleaned_pcd = remove_bridges_complete(
-#     remain_pcd1,
-#     radius=2.0,
-#     density_percentile=30,  # Remove bottom 30% density points
-#     min_cluster_size=100,
-#     visualize=True
-# )
-
-# breakpoint()
-
-
 # Usage
 #largest_piece = get_largest_cluster_auto(remain_pcd1, min_points=50)
 largest_piece = get_largest_cluster_auto(cleaned_pcd, min_points=50)
@@ -3077,21 +3174,54 @@ y_max = min_y + (max_y-min_y)*0.7  # Your maximum Y value
 filtered_pcd = extract_points_by_y_range(arch_raw, y_min, y_max)
 filtered_pcd = get_largest_cluster_auto(filtered_pcd, min_points=50)
 pcd5_vis = filtered_pcd.paint_uniform_color([1, 0, 1])  # Magenta
-# Visualize
 o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
 
+# visualize the foot and the insole
+o3d.visualization.draw_geometries([filtered_pcd, aligned_to_y_insole], window_name="arch - insole visualization")
+# arch = crop_pcd_to_aabb_strict(filtered_pcd, aligned_to_y_insole)
+# o3d.visualization.draw_geometries([arch, aligned_to_y_insole], window_name="arch (cropped) - insole visualization")
 
+arch_mesh = pcd_to_mesh_bpa(filtered_pcd)
+# o3d.visualization.draw_geometries([arch_mesh], window_name="arch (cropped) - insole visualization", mesh_show_back_face = True)
+
+# ----------------- Apply insole transforms to the ORIGINAL insole mesh -----------------
+# We have tracked every step as a 4x4 transform T (pcd stays the same; mesh must be synced).
+# Order matters: the later transform in code is applied later, so the total is:
+#   T_total = T_last @ ... @ T_first
+
+# If your align_min_* helpers return T (as 4x4 matrices), then tx/ty/tz are those T's.
+# Total insole transform (PCA-align -> flip -> min-x -> min-y -> z-align)
+t_insole = tz @ ty @ tx @ insole_flip_T @ insole_align_T
+
+# Apply to a COPY of the original insole mesh (keep original mesh intact)
+insole_mesh_aligned = copy.deepcopy(insole_mesh)
+insole_mesh_aligned.compute_vertex_normals()
+insole_mesh_aligned.transform(t_insole)
+
+# Optional coloring for visualization
+insole_mesh_aligned.paint_uniform_color([1.0, 1.0, 0.0])  # Yellow insole
+arch_mesh.paint_uniform_color([1.0, 0.0, 1.0])  # Magenta arch
+
+# Visualize arch mesh + transformed original insole mesh together
+# NOTE: mesh_show_back_face=True helps for thin sheet-like meshes.
+o3d.visualization.draw_geometries(
+    [arch_mesh, insole_mesh_aligned, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
+    window_name="arch_mesh + insole_mesh_aligned",
+    width=1400,
+    height=900,
+    mesh_show_back_face=True
+)
 
 
 # Visualize
-o3d.visualization.draw_geometries([pcd4_vis, pcd5_vis],
-                                  window_name="Red=Plane, Blue=Non-plane")
-
-o3d.visualization.draw_geometries([plane_pcd, non_plane_pcd, pcd4_vis, pcd5_vis],
-                                  window_name="Red=Plane, Blue=Non-plane")
-
-o3d.visualization.draw_geometries([pcd1, pcd5_vis],
-                                  window_name="foot vs arch")
+# o3d.visualization.draw_geometries([pcd4_vis, pcd5_vis],
+#                                   window_name="Red=Plane, Blue=Non-plane")
+#
+# o3d.visualization.draw_geometries([plane_pcd, non_plane_pcd, pcd4_vis, pcd5_vis],
+#                                   window_name="Red=Plane, Blue=Non-plane")
+#
+# o3d.visualization.draw_geometries([pcd1, pcd5_vis],
+#                                   window_name="foot vs arch")
 
 
 
