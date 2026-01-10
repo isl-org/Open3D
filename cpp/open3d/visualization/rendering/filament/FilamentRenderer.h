@@ -12,6 +12,7 @@
 #include <unordered_set>
 
 #include "open3d/visualization/rendering/Renderer.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 
 /// @cond
 namespace filament {
@@ -100,6 +101,10 @@ public:
     FilamentScene* GetGuiScene() const { return gui_scene_.get(); }
 
     filament::Renderer* GetNative() { return renderer_; }
+
+    RenderingType GetBackendType() override {
+        return EngineInstance::GetBackendType();
+    }
 
 private:
     friend class FilamentRenderToBuffer;

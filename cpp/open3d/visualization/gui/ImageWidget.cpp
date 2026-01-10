@@ -12,6 +12,7 @@
 #include "open3d/geometry/Image.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
+#include "open3d/visualization/rendering/Renderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -103,9 +104,15 @@ Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
                 reinterpret_cast<ImTextureID>(params.texture.GetId());
         ImGui::SetCursorScreenPos(
                 ImVec2(params.pos_x, params.pos_y - ImGui::GetScrollY()));
-        ImGui::Image(image_id, ImVec2(params.width, params.height),
-                     ImVec2(params.u0, params.v0),
-                     ImVec2(params.u1, params.v1));
+        ImVec2 uv0 = ImVec2{params.u0, params.v0},
+               uv1 = ImVec2{params.u1, params.v1};
+        // Switch to Y down for Vulkand and Metal backends
+        if (context.renderer.GetBackendType() !=
+            rendering::RenderingType::kOpenGL) {
+            uv0.y = params.v1;
+            uv1.y = params.v0;
+        }
+        ImGui::Image(image_id, ImVec2(params.width, params.height), uv0, uv1);
     } else {
         // Draw error message if we don't have an image, instead of
         // quietly failing or something.
