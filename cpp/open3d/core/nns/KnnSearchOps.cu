@@ -50,17 +50,19 @@ __global__ void MarkSelectedIndices(
 // points.
 template <typename T>
 __global__ void ApplyMaskToDistances(
-        T* distances,         // Shape: (num_queries_tile, tile_cols)
+        T* distances,         // Shape: (num_queries_tile, distance_row_stride)
         const uint8_t* mask,  // Shape: (num_queries, num_points)
         int num_queries_tile,
-        int tile_cols,
-        int query_offset,  // Starting query index in the mask
-        int point_offset,  // Starting point index in the mask
-        int num_points) {  // Total number of points
+        int64_t distance_row_stride,  // Stride between rows
+        int num_points_tile,  // Actual number of valid points in this tile
+        int query_offset,     // Starting query index in the mask
+        int point_offset,     // Starting point index in the mask
+        int num_points) {     // Total number of points
     int query_local = blockIdx.y;
     int point_local = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (query_local >= num_queries_tile || point_local >= tile_cols) return;
+    if (query_local >= num_queries_tile || point_local >= num_points_tile)
+        return;
 
     int query_global = query_offset + query_local;
     int point_global = point_offset + point_local;
@@ -68,8 +70,8 @@ __global__ void ApplyMaskToDistances(
     if (point_global >= num_points) return;
 
     if (mask[query_global * num_points + point_global]) {
-        distances[query_local * tile_cols + point_local] =
-                static_cast<T>(INFINITY);
+        distances[query_local * distance_row_stride + point_local] =
+                static_cast<T>(std::numeric_limits<float>::max());
     }
 }
 
@@ -165,8 +167,10 @@ void KnnSearchCUDASinglePass(const Tensor& points,
     int num_cols = utility::DivUp(num_points, tile_cols);
 
     // Get pointers from allocator for use in runBlockSelectPair
-    TIndex* indices_ptr = const_cast<TIndex*>(output_allocator.IndicesPtr());
-    T* distances_ptr = const_cast<T*>(output_allocator.DistancesPtr());
+    TIndex* indices_ptr = static_cast<TIndex*>(
+            output_allocator.NeighborsIndex_().GetDataPtr());
+    T* distances_ptr =
+            static_cast<T*>(output_allocator.NeighborsDistance_().GetDataPtr());
 
     // Allocate temporary memory space.
     Tensor temp_distances =
@@ -338,7 +342,8 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
 
                     // Apply mask: set already-selected distances to infinity
                     if (total_found > 0) {
-                        int64_t temp_stride = temp_distances_view.GetStride(0);
+                        int64_t distance_row_stride =
+                                temp_distances_view.GetStride(0);
                         int block_size = 256;
                         dim3 block(block_size);
                         dim3 grid(utility::DivUp(num_points_j, block_size),
@@ -346,7 +351,7 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
                         ApplyMaskToDistances<T><<<grid, block, 0, cur_stream>>>(
                                 temp_distances_view.GetDataPtr<T>(),
                                 mask.GetDataPtr<uint8_t>(), num_queries_i,
-                                static_cast<int>(temp_stride), i, j,
+                                distance_row_stride, num_points_j, i, j,
                                 num_points);
                     }
 
@@ -357,6 +362,8 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
                                 cur_stream, temp_distances_view, point_norms_j,
                                 chunk_out_distances, chunk_out_indices, chunk_k,
                                 1, tile_cols);
+                        chunk_out_distances.Add_(
+                                query_norms_i.View({num_queries_i, 1}));
                     } else {
                         // Multi-tile case: output to buffer
                         Tensor buf_distances_col_view =
@@ -397,10 +404,14 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
 
                     // Copy to final output
                     TIndex* indices_ptr =
-                            const_cast<TIndex*>(output_allocator.IndicesPtr()) +
+                            static_cast<TIndex*>(
+                                    output_allocator.NeighborsIndex_()
+                                            .GetDataPtr()) +
                             (i * knn + total_found);
                     T* distances_ptr =
-                            const_cast<T*>(output_allocator.DistancesPtr()) +
+                            static_cast<T*>(
+                                    output_allocator.NeighborsDistance_()
+                                            .GetDataPtr()) +
                             (i * knn + total_found);
 
                     for (int q = 0; q < num_queries_i; ++q) {
@@ -439,10 +450,6 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
                             output_allocator.NeighborsDistance_().View(
                                     {num_queries, knn});
 
-                    // Add query norms
-                    chunk_out_distances.Add_(
-                            query_norms_i.View({num_queries_i, 1}));
-
                     for (int q = 0; q < num_queries_i; ++q) {
                         int global_query_idx = i + q;
 
@@ -457,7 +464,7 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
                                                   .Slice(1, total_found,
                                                          total_found + chunk_k)
                                                   .Flatten();
-                        dst_dist.AsRvalue() = src_dist.To(device);
+                        dst_dist.AsRvalue() = src_dist;
 
                         Tensor dst_idx = out_indices_full
                                                  .Slice(0, global_query_idx,
@@ -465,7 +472,7 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
                                                  .Slice(1, total_found,
                                                         total_found + chunk_k)
                                                  .Flatten();
-                        dst_idx.AsRvalue() = src_idx.To(device);
+                        dst_idx.AsRvalue() = src_idx;
                     }
 
                     // Update mask for next pass
