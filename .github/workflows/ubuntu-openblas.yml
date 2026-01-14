@@ -34,10 +34,42 @@ jobs:
       - name: Docker test
         run: docker/docker_test.sh openblas-amd64-py312-dev
 
-  openblas-arm64:
+  build-lib-arm64:
+    name: Build Lib ARM64
     permissions:
       contents: read
     runs-on: ubuntu-24.04-arm   # latest
+    env:
+      DEVELOPER_BUILD: 'ON'
+      OPEN3D_CPU_RENDERING: true
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
+      - name: Docker build lib
+        run: |
+          # Use py310 as dummy
+          docker/docker_build.sh openblas-arm64-py310-dev build-lib
+          # Image name open3d-ci:openblas-arm64-py310-dev (check valid tag in script)
+          docker tag open3d-ci:openblas-arm64-py310-dev open3d-lib-arm64:latest
+          docker save open3d-lib-arm64:latest | gzip > open3d-lib-arm64.tar.gz
+
+      - name: Upload Lib Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-lib-arm64
+          path: open3d-lib-arm64.tar.gz
+
+  build-wheel-arm64:
+    name: Build Wheel ARM64
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04-arm
+    needs: build-lib-arm64
     strategy:
       fail-fast: false
       matrix:
@@ -63,6 +95,16 @@ jobs:
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
 
+      - name: Download Lib Image
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-lib-arm64
+          path: .
+      
+      - name: Load Lib Image
+        run: |
+          gunzip -c open3d-lib-arm64.tar.gz | docker load
+
       - name: Compute Docker tag for this matrix entry
         run: |
           # Strip the dot: 3.8 ➜ 38, 3.10 ➜ 310 …
@@ -73,6 +115,7 @@ jobs:
 
       - name: Docker build
         run: |
+          export BASE_IMAGE=open3d-lib-arm64:latest
           docker/docker_build.sh "${DOCKER_TAG}"
 
       - name: Docker test

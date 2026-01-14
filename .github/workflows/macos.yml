@@ -26,7 +26,7 @@ env:
   BUILD_CUDA_MODULE: OFF
 
 jobs:
-  MacOS:
+  build-lib:
     permissions:
       contents: write  # upload
     runs-on: ${{ matrix.os }}
@@ -78,9 +78,21 @@ jobs:
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
+          export BUILD_PYTHON_MODULE=OFF
           ./util/run_ci.sh
           DEVEL_PKG_NAME="$(basename build/package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
+          
+          # Compress build directory for reuse (exclude some large potentially unnecessary files if needed)
+          # We need 'build' directory.
+          tar -caf build.tar.xz build
+
+      - name: Upload build artifact
+        if: ${{ matrix.CONFIG == 'OFF' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-build-${{ matrix.os }}
+          path: build.tar.xz
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
@@ -117,6 +129,7 @@ jobs:
           if-no-files-found: error
 
   build-wheel:
+    needs: build-lib
     name: Build wheel
     permissions:
       contents: write  # upload
@@ -153,6 +166,15 @@ jobs:
           repository: isl-org/Open3D-ML
           ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-build-${{ matrix.os }}
+      
+      - name: Unpack build artifact
+        run: |
+            tar -xaf build.tar.xz
 
       - name: Setup cache
         uses: actions/cache@v4

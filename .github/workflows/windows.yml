@@ -35,7 +35,7 @@ env:
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
-  windows:
+  build-lib:
     permissions:
       contents: write  # upload
     runs-on: windows-2022
@@ -129,6 +129,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
+            -DBUILD_PYTHON_MODULE=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
@@ -230,23 +231,18 @@ jobs:
             .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           }
           Remove-Item "C:\Program Files\Open3D" -Recurse
-      - name: Install Open3D python build requirements
-        working-directory: ${{ env.SOURCE_DIR }}
+      - name: Compress build directory
+        working-directory: "C:/"
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -r python/requirements_build.txt
-      - name: Install Python package
-        working-directory: ${{ env.BUILD_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
-      - name: Import python package
-        # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}  # FIXME
-        run: |
-          python -c "import open3d; print('Imported:', open3d)"
-          python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+           Compress-Archive -Path "${{ env.BUILD_DIR }}" -DestinationPath "${{ env.SRC_DIR }}/open3d_build.zip"
+
+      - name: Upload build artifact
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-build-windows
+          path: ${{ env.SRC_DIR }}/open3d_build.zip
       - name: Disk space used
         run: Get-PSDrive
 
@@ -255,6 +251,7 @@ jobs:
     permissions:
       contents: write  # upload
     runs-on: windows-2022
+    needs: build-lib
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -299,6 +296,17 @@ jobs:
             -r python/requirements_jupyter_build.txt `
             -r open3d_ml/requirements-torch.txt
 
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-build-windows
+          path: ${{ env.SRC_DIR }}
+
+      - name: Unpack build artifact
+        run: |
+          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory -Force
+          Expand-Archive -Path ${{ env.SRC_DIR }}\open3d_build.zip -DestinationPath "C:\Open3D\" -Force
 
       - name: Config
         run: |

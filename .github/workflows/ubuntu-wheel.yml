@@ -25,7 +25,36 @@ env:
   BUILD_TENSORFLOW_OPS: 'OFF'   # Turn ON when cxx11_abi is same for TF and PyTorch
 
 jobs:
+  build-lib:
+    name: Build Lib
+    runs-on: ubuntu-latest
+    env:
+      DEVELOPER_BUILD: 'ON'
+      CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
+      OPEN3D_CPU_RENDERING: true
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Docker build lib
+        run: |
+          # Use py310 as dummy
+          docker/docker_build.sh cuda_wheel_py310_dev build-lib
+          # The image is tagged open3d-ci:wheel by default in docker_build.sh (cuda_wheel_build)
+          docker tag open3d-ci:wheel open3d-lib:latest
+          docker save open3d-lib:latest | gzip > open3d-lib.tar.gz
+
+      - name: Upload Lib Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-lib-image
+          path: open3d-lib.tar.gz
+
   build-wheel:
+    needs: build-lib
     permissions:
       contents: write  # Release upload
     name: Build wheel
@@ -55,10 +84,24 @@ jobs:
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
+      
+      - name: Download Lib Image
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-lib-image
+          path: .
+      
+      - name: Load Lib Image
+        run: |
+          gunzip -c open3d-lib.tar.gz | docker load
+          # Should restore open3d-lib:latest
+
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
+          export BASE_IMAGE=open3d-lib:latest
+          
           if [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py310_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then

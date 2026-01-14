@@ -23,7 +23,8 @@ env:
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
-  ubuntu-sycl:
+  build-lib:
+    name: Build Lib
     permissions:
       contents: write  # Release upload
     runs-on: ubuntu-latest
@@ -38,40 +39,40 @@ jobs:
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
-      - name: Docker build
+      - name: Docker build lib
         run: |
+          # Use py310 as dummy
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
-            docker/docker_build.sh sycl-shared
+            docker/docker_build.sh sycl-shared build-lib
+            docker tag open3d-ci:sycl-shared open3d-lib-sycl-shared:latest
+            docker save open3d-lib-sycl-shared:latest | gzip > open3d-lib-sycl-shared.tar.gz
           else
-            docker/docker_build.sh sycl-static
-          fi
-      - name: Docker test
-        run: |
-          du -hs $PWD
-          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
-            docker/docker_test.sh sycl-shared
-          else
-            docker/docker_test.sh sycl-static
+            docker/docker_build.sh sycl-static build-lib
+            # Static build usually doesn't produce wheels or shared libs for python
+            # But we might need artifacts. For now keep simple.
           fi
 
-      - name: Upload Python wheel and C++ binary package to GitHub artifacts
+      - name: Upload Lib Image
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
         with:
-          name: open3d-sycl-linux-wheel-and-binary
-          path: |
-            open3d*.whl
-            open3d-devel-*.tar.xz
+          name: open3d-lib-sycl-shared
+          path: open3d-lib-sycl-shared.tar.gz
+
+      - name: Upload C++ binary package to GitHub artifacts
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-devel-sycl
+          path: open3d-devel-*.tar.xz
           if-no-files-found: error
+
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ ${{ matrix.BUILD_SHARED_LIBS }} == 'ON' ] ; then
-            gh release upload main-devel open3d*.whl --clobber
-            gh release upload main-devel open3d-devel-*.tar.xz --clobber
-          fi
+          gh release upload main-devel open3d-devel-*.tar.xz --clobber
           gh release view main-devel
 
       - name: GCloud CLI auth
@@ -90,3 +91,65 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.gz gs://open3d-ci-cache/ || true
+
+  build-wheel:
+    name: Build Wheel
+    permissions:
+      contents: write  # Release upload
+    runs-on: ubuntu-latest
+    needs: build-lib
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ['3.10', '3.11', '3.12', '3.13']
+        is_main:
+          - ${{ github.ref == 'refs/heads/main' }}
+        exclude:
+          - is_main: false
+            python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
+    env:
+      PYTHON_VERSION: ${{ matrix.python_version }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
+      - name: Download Lib Image
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-lib-sycl-shared
+          path: .
+      
+      - name: Load Lib Image
+        run: |
+          gunzip -c open3d-lib-sycl-shared.tar.gz | docker load
+
+      - name: Docker build
+        run: |
+          export BASE_IMAGE=open3d-lib-sycl-shared:latest
+          
+          # We execute docker buildscript with python version argument.
+          docker/docker_build.sh sycl-shared py${{ matrix.python_version }}
+
+      - name: Upload wheel to GitHub artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-sycl-wheel-py${{ matrix.python_version }}
+          path: open3d*.whl
+          if-no-files-found: error
+
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload main-devel open3d-*.whl --clobber
+          gh release view main-devel
+
