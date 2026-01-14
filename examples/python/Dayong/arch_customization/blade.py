@@ -592,7 +592,6 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
 
     # 5. Cut the pcd with the blade
     remain_pcd1 = call_surface_cut(pcd1, pcd2)  ### pcd1: target; pcd2: knift. Point Cloud
-    # remain_pcd2 = call_surface_cut(pcd2, pcd1)  ### pcd1: target; pcd2: knift. Point Cloud
 
     # Get bounding box bounds
     min_bound = pcd1.get_min_bound()
@@ -610,39 +609,37 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
     cleaned_pcd = extract_points_by_y_range(remain_pcd1, y_min, y_max)
     largest_piece = get_largest_cluster_auto(cleaned_pcd, min_points=50)
 
-    pcd1_vis = remain_pcd1.paint_uniform_color([1, 0, 0])  # Red
-    pcd2_vis = largest_piece.paint_uniform_color([0, 0, 1])  # Blue
-
     # Visualize original clouds with box
     o3d.visualization.draw_geometries([largest_piece],
                                       window_name="Processed - Blue")
+    return largest_piece
 
-    # 7. Use the largest_piece as the plane; non_plane_pcd contains the arch
-    plane_pcd, non_plane_pcd, plane_model = segment_plane_ransac(
-        largest_piece,
-        distance_threshold=1.5,  # Adjust based on your data
-        ransac_n=3,
-        num_iterations=200
-    )
-
-    arch_raw = get_largest_cluster_auto(non_plane_pcd, min_points=50)
-    pcd4_vis = arch_raw.paint_uniform_color([0, 1, 0])  # Green
-
-    ###   cut the arch region
-    # Get bounding box bounds
-    min_bound = pcd1.get_min_bound()
-    max_bound = pcd1.get_max_bound()
-
-    min_y = min_bound[1]  # Y is index 1
-    max_y = max_bound[1]
-
-    y_min = min_y + (max_y - min_y) * 0.2  # Your minimum Y value
-    y_max = min_y + (max_y - min_y) * 0.7  # Your maximum Y value
-
-    # filtered_pcd is the arch extracted from arch_raw (set some y limits)
-    filtered_pcd = extract_points_by_y_range(arch_raw, y_min, y_max)
-    filtered_pcd = get_largest_cluster_auto(filtered_pcd, min_points=50)
-    pcd5_vis = filtered_pcd.paint_uniform_color([1, 0, 1])  # Magenta
-    o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
-
-    return filtered_pcd
+    # # 7. Use the largest_piece as the plane; non_plane_pcd contains the arch
+    # plane_pcd, non_plane_pcd, plane_model = segment_plane_ransac(
+    #     largest_piece,
+    #     distance_threshold=1.5,  # Adjust based on your data
+    #     ransac_n=3,
+    #     num_iterations=200
+    # )
+    #
+    # arch_raw = get_largest_cluster_auto(non_plane_pcd, min_points=50)
+    # pcd4_vis = arch_raw.paint_uniform_color([0, 1, 0])  # Green
+    #
+    # ###   cut the arch region
+    # # Get bounding box bounds
+    # min_bound = pcd1.get_min_bound()
+    # max_bound = pcd1.get_max_bound()
+    #
+    # min_y = min_bound[1]  # Y is index 1
+    # max_y = max_bound[1]
+    #
+    # y_min = min_y + (max_y - min_y) * 0.2  # Your minimum Y value
+    # y_max = min_y + (max_y - min_y) * 0.7  # Your maximum Y value
+    #
+    # # filtered_pcd is the arch extracted from arch_raw (set some y limits)
+    # filtered_pcd = extract_points_by_y_range(arch_raw, y_min, y_max)
+    # filtered_pcd = get_largest_cluster_auto(filtered_pcd, min_points=50)
+    # pcd5_vis = filtered_pcd.paint_uniform_color([1, 0, 1])  # Magenta
+    # o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
+    #
+    # return filtered_pcd

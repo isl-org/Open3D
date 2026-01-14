@@ -2125,38 +2125,68 @@ o3d.visualization.draw_geometries(
 from blade import *
 
 # Workflow - Insole
-
+# upper_insole_pcd = get_bottom_surface(aligned_to_y_insole, 5.0)
 
 # Workflow - Foot
-# bottom_foot_pcd = get_bottom_surface(aligned_to_y_bot1, 5.0)
-#
-# # visualize the foot and the insole
-# o3d.visualization.draw_geometries([bottom_foot_pcd, aligned_to_y_insole], window_name="arch - insole visualization")
-#
-# arch_mesh = pcd_to_mesh_bpa(bottom_foot_pcd)
-#
-# # ----------------- Apply insole transforms to the ORIGINAL insole mesh -----------------
-# # We have tracked every step as a 4x4 transform T (pcd stays the same; mesh must be synced).
-# t_insole = tz @ ty @ tx @ insole_flip_T @ insole_align_T
-#
-# # Apply to a COPY of the original insole mesh (keep original mesh intact)
-# insole_mesh_aligned = copy.deepcopy(insole_mesh)
-# insole_mesh_aligned.compute_vertex_normals()
-# insole_mesh_aligned.transform(t_insole)
-#
-# # Optional coloring for visualization
-# insole_mesh_aligned.paint_uniform_color([1.0, 1.0, 0.0])  # Yellow insole
-# arch_mesh.paint_uniform_color([1.0, 0.0, 1.0])  # Magenta arch
-#
-# # Visualize arch mesh + transformed original insole mesh together
-# # NOTE: mesh_show_back_face=True helps for thin sheet-like meshes.
-# o3d.visualization.draw_geometries(
-#     [arch_mesh, insole_mesh_aligned, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
-#     window_name="arch_mesh + insole_mesh_aligned",
-#     width=1400,
-#     height=900,
-#     mesh_show_back_face=True
-# )
+def get_arch(bottom_foot_pcd: o3d.geometry.PointCloud, entire_foot_pcd: o3d.geometry.PointCloud):
+    # 7. Use the largest_piece as the plane; non_plane_pcd contains the arch
+    plane_pcd, non_plane_pcd, plane_model = segment_plane_ransac(
+        bottom_foot_pcd,
+        distance_threshold=1.5,  # Adjust based on your data
+        ransac_n=3,
+        num_iterations=200
+    )
+
+    arch_raw = get_largest_cluster_auto(non_plane_pcd, min_points=50)
+
+    ###   cut the arch region
+    # Get bounding box bounds
+    min_bound = entire_foot_pcd.get_min_bound()
+    max_bound = entire_foot_pcd.get_max_bound()
+
+    min_y = min_bound[1]  # Y is index 1
+    max_y = max_bound[1]
+
+    y_min = min_y + (max_y - min_y) * 0.2  # Your minimum Y value
+    y_max = min_y + (max_y - min_y) * 0.7  # Your maximum Y value
+
+    # filtered_pcd is the arch extracted from arch_raw (set some y limits)
+    filtered_pcd = extract_points_by_y_range(arch_raw, y_min, y_max)
+    filtered_pcd = get_largest_cluster_auto(filtered_pcd, min_points=50)
+    o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
+
+    return filtered_pcd
+
+bottom_foot = get_bottom_surface(aligned_to_y_bot1, 5.0)
+arch = get_arch(bottom_foot, aligned_to_y_bot1)
+
+# visualize the foot and the insole
+o3d.visualization.draw_geometries([arch, aligned_to_y_insole], window_name="arch - insole visualization")
+
+arch_mesh = pcd_to_mesh_bpa(arch)
+
+# ----------------- Apply insole transforms to the ORIGINAL insole mesh -----------------
+# We have tracked every step as a 4x4 transform T (pcd stays the same; mesh must be synced).
+t_insole = tz @ ty @ tx @ insole_flip_T @ insole_align_T
+
+# Apply to a COPY of the original insole mesh (keep original mesh intact)
+insole_mesh_aligned = copy.deepcopy(insole_mesh)
+insole_mesh_aligned.compute_vertex_normals()
+insole_mesh_aligned.transform(t_insole)
+
+# Optional coloring for visualization
+insole_mesh_aligned.paint_uniform_color([1.0, 1.0, 0.0])  # Yellow insole
+arch_mesh.paint_uniform_color([1.0, 0.0, 1.0])  # Magenta arch
+
+# Visualize arch mesh + transformed original insole mesh together
+# NOTE: mesh_show_back_face=True helps for thin sheet-like meshes.
+o3d.visualization.draw_geometries(
+    [arch_mesh, insole_mesh_aligned, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
+    window_name="arch_mesh + insole_mesh_aligned",
+    width=1400,
+    height=900,
+    mesh_show_back_face=True
+)
 
 clean_up()
 close_all_plots()
