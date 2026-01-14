@@ -8,11 +8,13 @@
 #include "open3d/core/Tensor.h"
 
 #include <numeric>
+#include <optional>
 #include <sstream>
 
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Blob.h"
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/DLPack.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -49,6 +51,7 @@ static DLDataTypeCode DtypeToDLDataTypeCode(const Dtype& dtype) {
     if (dtype == core::UInt16) return DLDataTypeCode::kDLUInt;
     if (dtype == core::UInt32) return DLDataTypeCode::kDLUInt;
     if (dtype == core::UInt64) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::Bool) return DLDataTypeCode::kDLBool;
     utility::LogError("Unsupported data type");
     return DLDataTypeCode();
 }
@@ -59,6 +62,9 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
                           dltype.lanes);
     }
     switch (dltype.code) {
+        case DLDataTypeCode::kDLBool:
+            return core::Bool;
+            break;
         case DLDataTypeCode::kDLUInt:
             switch (dltype.bits) {
                 case 8:
@@ -106,31 +112,30 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
     return core::Undefined;
 }
 
+namespace {
+// Adds version information for DLManagedTensorVersioned.
+// This is a no-op for the other types.
+template <class T>
+void fillVersion(T& tensor) {}
+
+template <>
+void fillVersion<DLManagedTensorVersioned>(DLManagedTensorVersioned& tensor) {
+    tensor.flags = 0;
+    tensor.version.major = DLPACK_MAJOR_VERSION;
+    tensor.version.minor = DLPACK_MINOR_VERSION;
+}
+
+}  // namespace
+
 /// Open3D DLPack Tensor manager.
+template <typename DLMT>
 class Open3DDLManagedTensor {
 private:
     Open3DDLManagedTensor(const Tensor& o3d_tensor) {
         o3d_tensor_ = o3d_tensor;
 
-        // Prepare dl_device_type
-        DLDeviceType dl_device_type;
-        Device device = o3d_tensor_.GetDevice();
-        switch (device.GetType()) {
-            case Device::DeviceType::CPU:
-                dl_device_type = DLDeviceType::kDLCPU;
-                break;
-            case Device::DeviceType::CUDA:
-                dl_device_type = DLDeviceType::kDLGPU;
-                break;
-            default:
-                utility::LogError("ToDLPack: unsupported device type {}",
-                                  device.ToString());
-        }
-
-        // Prepare dl_context
-        DLContext dl_context;
-        dl_context.device_type = dl_device_type;
-        dl_context.device_id = device.GetID();
+        // Prepare dl_device
+        DLDevice dl_device = getDLPackDevice(o3d_tensor_);
 
         // Prepare dl_data_type
         DLDataType dl_data_type;
@@ -140,12 +145,12 @@ private:
         dl_data_type.bits = static_cast<uint8_t>(dtype.ByteSize() * 8);
         dl_data_type.lanes = 1;
 
-        // Prepare dl_tensor, this uses dl_device_type, dl_context and
+        // Prepare dl_tensor, this uses dl_device_type, dl_device and
         // dl_data_type prepared above.
         DLTensor dl_tensor;
         // Not Blob's data pointer.
         dl_tensor.data = const_cast<void*>(o3d_tensor_.GetDataPtr());
-        dl_tensor.ctx = dl_context;
+        dl_tensor.device = dl_device;
         dl_tensor.ndim = static_cast<int>(o3d_tensor_.GetShape().size());
         dl_tensor.dtype = dl_data_type;
         // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
@@ -157,29 +162,55 @@ private:
                 const_cast<int64_t*>(o3d_tensor_.GetStridesRef().data());
         dl_tensor.byte_offset = 0;
 
+        fillVersion(dl_managed_tensor_);
         dl_managed_tensor_.manager_ctx = this;
         dl_managed_tensor_.deleter = &Open3DDLManagedTensor::Deleter;
         dl_managed_tensor_.dl_tensor = dl_tensor;
     }
 
     Tensor o3d_tensor_;
-    DLManagedTensor dl_managed_tensor_;
+    DLMT dl_managed_tensor_;
 
 public:
-    /// `DLManagedTensor* dmlt` is destroyed by calling `dmlt->deleter(dmlt)`.
-    /// The destruction happens when the DLPack python object goes out of scope,
-    /// and ultimately it decreases the reference count to the actual data
-    /// buffer (i.e. `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
-    static DLManagedTensor* Create(const Tensor& o3d_tensor) {
+    /// `DLManagedTensorVersioned* dmlt` is destroyed by calling
+    /// `dmlt->deleter(dmlt)`. The destruction happens when the DLPack python
+    /// object goes out of scope, and ultimately it decreases the reference
+    /// count to the actual data buffer (i.e.
+    /// `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
+    static DLMT* Create(const Tensor& o3d_tensor) {
         Open3DDLManagedTensor* o3d_dl_tensor =
                 new Open3DDLManagedTensor(o3d_tensor);
         return &o3d_dl_tensor->dl_managed_tensor_;
     }
 
-    static void Deleter(DLManagedTensor* arg) {
+    static DLDevice getDLPackDevice(const Tensor& o3d_tensor) {
+        // Prepare dl_device_type
+        DLDeviceType dl_device_type;
+        Device device = o3d_tensor.GetDevice();
+        switch (device.GetType()) {
+            case Device::DeviceType::CPU:
+                dl_device_type = DLDeviceType::kDLCPU;
+                break;
+            case Device::DeviceType::CUDA:
+                dl_device_type = DLDeviceType::kDLCUDA;
+                break;
+            case Device::DeviceType::SYCL:
+                dl_device_type = DLDeviceType::kDLOneAPI;
+                break;
+            default:
+                utility::LogError("ToDLPack: unsupported device type {}",
+                                  device.ToString());
+        }
+        return DLDevice{dl_device_type, device.GetID()};
+    }
+
+    static void Deleter(DLMT* arg) {
         delete static_cast<Open3DDLManagedTensor*>(arg->manager_ctx);
     }
 };
+// Explicitly instantiate the template above for both classes.
+template class Open3DDLManagedTensor<DLManagedTensor>;           // DLPack v0.x
+template class Open3DDLManagedTensor<DLManagedTensorVersioned>;  // DLPack v1.x
 
 struct Tensor::Iterator::Impl {
     Tensor* tensor_;
@@ -588,7 +619,7 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
 }
 
 Tensor Tensor::Append(const Tensor& other,
-                      const utility::optional<int64_t>& axis) const {
+                      const std::optional<int64_t>& axis) const {
     return core::Append(*this, other, axis);
 }
 
@@ -1735,8 +1766,7 @@ bool Tensor::IsNonZero() const {
     return rc;
 }
 
-Tensor Tensor::All(const utility::optional<SizeVector>& dims,
-                   bool keepdim) const {
+Tensor Tensor::All(const std::optional<SizeVector>& dims, bool keepdim) const {
     AssertTensorDtype(*this, core::Bool);
 
     Tensor dst;
@@ -1754,8 +1784,7 @@ Tensor Tensor::All(const utility::optional<SizeVector>& dims,
     return dst;
 }
 
-Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
-                   bool keepdim) const {
+Tensor Tensor::Any(const std::optional<SizeVector>& dims, bool keepdim) const {
     AssertTensorDtype(*this, core::Bool);
 
     Tensor dst;
@@ -1774,44 +1803,56 @@ Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
 }
 
 DLManagedTensor* Tensor::ToDLPack() const {
-    return Open3DDLManagedTensor::Create(*this);
+    return Open3DDLManagedTensor<DLManagedTensor>::Create(*this);
+}
+DLManagedTensorVersioned* Tensor::ToDLPackVersioned() const {
+    return Open3DDLManagedTensor<DLManagedTensorVersioned>::Create(*this);
 }
 
-Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
-    Device device;
-    switch (src->dl_tensor.ctx.device_type) {
+namespace {
+template <typename DLMT>
+Tensor FromDLPackImpl(const DLMT* src, std::function<void(void*)> deleter) {
+    Device src_device;
+    switch (src->dl_tensor.device.device_type) {
         case DLDeviceType::kDLCPU:
-            device = Device("CPU", src->dl_tensor.ctx.device_id);
+            src_device = Device("CPU", src->dl_tensor.device.device_id);
             break;
-        case DLDeviceType::kDLGPU:
-            device = Device("CUDA", src->dl_tensor.ctx.device_id);
+        case DLDeviceType::kDLCUDA:
+            src_device = Device("CUDA", src->dl_tensor.device.device_id);
+            break;
+        case DLDeviceType::kDLOneAPI:
+            src_device = Device("SYCL", src->dl_tensor.device.device_id);
             break;
         default:
-            utility::LogError("Unsupported device_type {}",
-                              src->dl_tensor.ctx.device_type);
+            utility::LogError(
+                    "Unsupported device_type {}",
+                    static_cast<int>(src->dl_tensor.device.device_type));
     }
 
     Dtype dtype = DLDataTypeToDtype(src->dl_tensor.dtype);
 
     // Open3D Blob's expects an std::function<void(void*)> deleter.
-    auto deleter = [src](void* dummy) -> void {
-        if (src->deleter != nullptr) {
-            src->deleter(const_cast<DLManagedTensor*>(src));
-        }
-    };
+    if (!deleter) {
+        deleter = [src](void* dummy) -> void {
+            if (src->deleter != nullptr) {
+                src->deleter(const_cast<DLMT*>(src));
+            }
+        };
+    }
 
     SizeVector shape(src->dl_tensor.shape,
                      src->dl_tensor.shape + src->dl_tensor.ndim);
 
     SizeVector strides;
-    if (src->dl_tensor.strides == nullptr) {
+    if (!src->dl_tensor.strides) {  // default row major contiguous strides
         strides = shape_util::DefaultStrides(shape);
     } else {
         strides = SizeVector(src->dl_tensor.strides,
                              src->dl_tensor.strides + src->dl_tensor.ndim);
     }
 
-    auto blob = std::make_shared<Blob>(device, src->dl_tensor.data, deleter);
+    auto blob =
+            std::make_shared<Blob>(src_device, src->dl_tensor.data, deleter);
 
     // src->dl_tensor.byte_offset is ignored in PyTorch and MXNet, but
     // according to dlpack.h, we added the offset here.
@@ -1819,6 +1860,15 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                   reinterpret_cast<char*>(blob->GetDataPtr()) +
                           src->dl_tensor.byte_offset,
                   dtype, blob);
+}
+}  // namespace
+Tensor Tensor::FromDLPack(const DLManagedTensor* src,
+                          std::function<void(void*)> deleter) {
+    return FromDLPackImpl<DLManagedTensor>(src, std::move(deleter));
+}
+Tensor Tensor::FromDLPackVersioned(const DLManagedTensorVersioned* src,
+                                   std::function<void(void*)> deleter) {
+    return FromDLPackImpl<DLManagedTensorVersioned>(src, std::move(deleter));
 }
 
 void Tensor::Save(const std::string& file_name) const {

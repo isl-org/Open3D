@@ -128,7 +128,7 @@ bounding box, and \f$s\f$ and \f$c\f$ are the provided scaling factor and
 center respectively, then the new min_bound and max_bound are given by
 \f$mi = c + s (mi - c)\f$ and \f$ma = c + s (ma - c)\f$.
 The scaling center will be the box center if it is not specified.)",
-             "scale"_a, "center"_a = utility::nullopt);
+             "scale"_a, "center"_a = std::nullopt);
 
     aabb.def("get_extent", &AxisAlignedBoundingBox::GetExtent,
              "Get the extent/length of the bounding box in x, y, and z "
@@ -280,7 +280,7 @@ translation.)",
             R"(Rotate the oriented box by the given rotation matrix. If the
 rotation matrix is not orthogonal, the rotation will no be applied.
 The rotation center will be the box center if it is not specified.)",
-            "rotation"_a, "center"_a = utility::nullopt);
+            "rotation"_a, "center"_a = std::nullopt);
     obb.def("transform", &OrientedBoundingBox::Transform,
             "Transform the oriented box by the given transformation matrix.",
             "transformation"_a);
@@ -291,7 +291,7 @@ bounding box, and \f$s\f$ and \f$c\f$ are the provided scaling factor and
 center respectively, then the new min_bound and max_bound are given by
 \f$mi = c + s (mi - c)\f$ and \f$ma = c + s (ma - c)\f$.
 The scaling center will be the box center if it is not specified.)",
-            "scale"_a, "center"_a = utility::nullopt);
+            "scale"_a, "center"_a = std::nullopt);
 
     obb.def("volume", &OrientedBoundingBox::Volume,
             "Returns the volume of the bounding box.");

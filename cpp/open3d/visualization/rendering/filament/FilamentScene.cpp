@@ -13,6 +13,7 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
+#include <cstring>
 #include <unordered_set>
 
 #ifdef _MSC_VER
@@ -659,12 +660,21 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         }
 
         // Update the geometry to reflect new geometry count
+        // ******** NOTE ******** setGeometryAt changed - this code path needs
+        // to be tested!!!!
         if (geometry_update_needed) {
             auto& renderable_mgr = engine_.getRenderableManager();
             auto inst = renderable_mgr.getInstance(g->filament_entity);
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnonnull"
+#endif
             renderable_mgr.setGeometryAt(
                     inst, 0, filament::RenderableManager::PrimitiveType::POINTS,
-                    0, n_vertices);
+                    nullptr, nullptr, 0, n_vertices);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         }
     }
 }

@@ -59,6 +59,9 @@ else()
         NativeLinux.cpp
     )
 endif()
+# filament uses C++20 designated initializers
+set_property(TARGET GUI PROPERTY CXX_STANDARD 20)
+
 
 open3d_show_and_abort_on_warning(GUI)
 open3d_set_global_properties(GUI)
