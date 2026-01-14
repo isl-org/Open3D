@@ -19,7 +19,7 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_pointcloud_declarations(py::module &m) {
+void pybind_pointcloud_declarations(py::module& m) {
     py::class_<PointCloud, PyGeometry3D<PointCloud>,
                std::shared_ptr<PointCloud>, Geometry3D>
             pointcloud(m, "PointCloud",
@@ -28,7 +28,7 @@ void pybind_pointcloud_declarations(py::module &m) {
                        "normals.");
 }
 
-void pybind_pointcloud_definitions(py::module &m) {
+void pybind_pointcloud_definitions(py::module& m) {
     auto pointcloud =
             static_cast<py::class_<PointCloud, PyGeometry3D<PointCloud>,
                                    std::shared_ptr<PointCloud>, Geometry3D>>(
@@ -36,10 +36,10 @@ void pybind_pointcloud_definitions(py::module &m) {
     py::detail::bind_default_constructor<PointCloud>(pointcloud);
     py::detail::bind_copy_functions<PointCloud>(pointcloud);
     pointcloud
-            .def(py::init<const std::vector<Eigen::Vector3d> &>(),
+            .def(py::init<const std::vector<Eigen::Vector3d>&>(),
                  "Create a PointCloud from points", "points"_a)
             .def("__repr__",
-                 [](const PointCloud &pcd) {
+                 [](const PointCloud& pcd) {
                      return std::string("PointCloud with ") +
                             std::to_string(pcd.points_.size()) + " points.";
                  })
@@ -73,6 +73,10 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "Also records point cloud index before downsampling",
                  "voxel_size"_a, "min_bound"_a, "max_bound"_a,
                  "approximate_class"_a = false)
+            .def("smooth", &PointCloud::Smooth,
+                 "Smooth point cloud using the chosen method.",
+                 py::arg("method") = "MLS", py::arg("radius") = 0.05,
+                 py::arg("k") = 30)
             .def("uniform_down_sample", &PointCloud::UniformDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud uniformly. The sample is performed in the order "
@@ -96,14 +100,14 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "input pointcloud.",
                  "start_index"_a = 0)
             .def("crop",
-                 (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const AxisAlignedBoundingBox &, bool) const) &
+                 (std::shared_ptr<PointCloud> (PointCloud::*)(
+                         const AxisAlignedBoundingBox&, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
             .def("crop",
-                 (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const OrientedBoundingBox &, bool) const) &
+                 (std::shared_ptr<PointCloud> (PointCloud::*)(
+                         const OrientedBoundingBox&, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
@@ -289,6 +293,11 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             {{"voxel_size", "Voxel size to downsample into."},
              {"min_bound", "Minimum coordinate of voxel boundaries"},
              {"max_bound", "Maximum coordinate of voxel boundaries"}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth",
+            {{"method", "Smoothing method, e.g., 'MLS'."},
+             {"radius", "Neighborhood radius used for smoothing."},
+             {"k", "Number of neighbors used in smoothing."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "uniform_down_sample",
             {{"every_k_points",

@@ -24,7 +24,7 @@
 namespace open3d {
 namespace geometry {
 
-PointCloud &PointCloud::Clear() {
+PointCloud& PointCloud::Clear() {
     points_.clear();
     normals_.clear();
     colors_.clear();
@@ -57,34 +57,34 @@ OrientedBoundingBox PointCloud::GetMinimalOrientedBoundingBox(
     return OrientedBoundingBox::CreateFromPointsMinimal(points_, robust);
 }
 
-PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
+PointCloud& PointCloud::Transform(const Eigen::Matrix4d& transformation) {
     TransformPoints(transformation, points_);
     TransformNormals(transformation, normals_);
     TransformCovariances(transformation, covariances_);
     return *this;
 }
 
-PointCloud &PointCloud::Translate(const Eigen::Vector3d &translation,
+PointCloud& PointCloud::Translate(const Eigen::Vector3d& translation,
                                   bool relative) {
     TranslatePoints(translation, points_, relative);
     return *this;
 }
 
-PointCloud &PointCloud::Scale(const double scale,
-                              const Eigen::Vector3d &center) {
+PointCloud& PointCloud::Scale(const double scale,
+                              const Eigen::Vector3d& center) {
     ScalePoints(scale, points_, center);
     return *this;
 }
 
-PointCloud &PointCloud::Rotate(const Eigen::Matrix3d &R,
-                               const Eigen::Vector3d &center) {
+PointCloud& PointCloud::Rotate(const Eigen::Matrix3d& R,
+                               const Eigen::Vector3d& center) {
     RotatePoints(R, points_, center);
     RotateNormals(R, normals_);
     RotateCovariances(R, covariances_);
     return *this;
 }
 
-PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
+PointCloud& PointCloud::operator+=(const PointCloud& cloud) {
     // We do not use std::vector::insert to combine std::vector because it will
     // crash if the pointcloud is added to itself.
     if (cloud.IsEmpty()) return (*this);
@@ -118,12 +118,12 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     return (*this);
 }
 
-PointCloud PointCloud::operator+(const PointCloud &cloud) const {
+PointCloud PointCloud::operator+(const PointCloud& cloud) const {
     return (PointCloud(*this) += cloud);
 }
 
 std::vector<double> PointCloud::ComputePointCloudDistance(
-        const PointCloud &target) {
+        const PointCloud& target) {
     std::vector<double> distances(points_.size());
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
@@ -144,7 +144,7 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     return distances;
 }
 
-PointCloud &PointCloud::RemoveDuplicatedPoints() {
+PointCloud& PointCloud::RemoveDuplicatedPoints() {
     const bool has_normals = HasNormals();
     const bool has_colors = HasColors();
     const bool has_covariances = HasCovariances();
@@ -179,7 +179,7 @@ PointCloud &PointCloud::RemoveDuplicatedPoints() {
     return *this;
 }
 
-PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
+PointCloud& PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
     bool has_normal = HasNormals();
     bool has_color = HasColors();
@@ -215,7 +215,7 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
 }
 
 std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
-        const std::vector<size_t> &indices, bool invert /* = false */) const {
+        const std::vector<size_t>& indices, bool invert /* = false */) const {
     auto output = std::make_shared<PointCloud>();
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
@@ -246,7 +246,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
 namespace {
 class AccumulatedPoint {
 public:
-    void AddPoint(const PointCloud &cloud, int index) {
+    void AddPoint(const PointCloud& cloud, int index) {
         point_ += cloud.points_[index];
         if (cloud.HasNormals()) {
             if (!std::isnan(cloud.normals_[index](0)) &&
@@ -297,7 +297,7 @@ public:
 
 class AccumulatedPointForTrace : public AccumulatedPoint {
 public:
-    void AddPoint(const PointCloud &cloud,
+    void AddPoint(const PointCloud& cloud,
                   size_t index,
                   int cubic_index,
                   bool approximate_class) {
@@ -403,8 +403,8 @@ std::tuple<std::shared_ptr<PointCloud>,
            Eigen::MatrixXi,
            std::vector<std::vector<int>>>
 PointCloud::VoxelDownSampleAndTrace(double voxel_size,
-                                    const Eigen::Vector3d &min_bound,
-                                    const Eigen::Vector3d &max_bound,
+                                    const Eigen::Vector3d& min_bound,
+                                    const Eigen::Vector3d& max_bound,
                                     bool approximate_class) const {
     auto output = std::make_shared<PointCloud>();
     Eigen::MatrixXi cubic_id;
@@ -530,7 +530,7 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
     size_t farthest_index = start_index;
     for (size_t i = 0; i < num_samples; i++) {
         selected_indices.push_back(farthest_index);
-        const Eigen::Vector3d &selected = points_[farthest_index];
+        const Eigen::Vector3d& selected = points_[farthest_index];
         double max_dist = 0;
         for (size_t j = 0; j < num_points; j++) {
             double dist = (points_[j] - selected).squaredNorm();
@@ -544,7 +544,7 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
     return SelectByIndex(selected_indices);
 }
 
-std::shared_ptr<PointCloud> PointCloud::Crop(const AxisAlignedBoundingBox &bbox,
+std::shared_ptr<PointCloud> PointCloud::Crop(const AxisAlignedBoundingBox& bbox,
                                              bool invert) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
@@ -554,7 +554,7 @@ std::shared_ptr<PointCloud> PointCloud::Crop(const AxisAlignedBoundingBox &bbox,
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_),
                          invert);
 }
-std::shared_ptr<PointCloud> PointCloud::Crop(const OrientedBoundingBox &bbox,
+std::shared_ptr<PointCloud> PointCloud::Crop(const OrientedBoundingBox& bbox,
                                              bool invert) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
@@ -563,6 +563,16 @@ std::shared_ptr<PointCloud> PointCloud::Crop(const OrientedBoundingBox &bbox,
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_),
                          invert);
+}
+
+PointCloud PointCloud::Smooth(const std::string& method,
+                              double radius,
+                              int k) const {
+    utility::LogWarning(
+            "PointCloud::Smooth: smoothing feature not yet implemented.");
+    throw std::runtime_error("PointCloud smoothing not implemented yet.");
+
+    return PointCloud();
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
@@ -629,7 +639,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         if (dist.size() > 0u) {
             valid_distances++;
             std::for_each(dist.begin(), dist.end(),
-                          [](double &d) { d = std::sqrt(d); });
+                          [](double& d) { d = std::sqrt(d); });
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }
         avg_distances[i] = mean;
@@ -641,12 +651,12 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     }
     double cloud_mean = std::accumulate(
             avg_distances.begin(), avg_distances.end(), 0.0,
-            [](double const &x, double const &y) { return y > 0 ? x + y : x; });
+            [](double const& x, double const& y) { return y > 0 ? x + y : x; });
     cloud_mean /= valid_distances;
     double sq_sum = std::inner_product(
             avg_distances.begin(), avg_distances.end(), avg_distances.begin(),
-            0.0, [](double const &x, double const &y) { return x + y; },
-            [cloud_mean](double const &x, double const &y) {
+            0.0, [](double const& x, double const& y) { return x + y; },
+            [cloud_mean](double const& x, double const& y) {
                 return x > 0 ? (x - cloud_mean) * (y - cloud_mean) : 0;
             });
     // Bessel's correction
@@ -661,9 +671,9 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
 }
 
 std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
-        const PointCloud &input,
-        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
-    const auto &points = input.points_;
+        const PointCloud& input,
+        const KDTreeSearchParam& search_param /* = KDTreeSearchParamKNN()*/) {
+    const auto& points = input.points_;
     std::vector<Eigen::Matrix3d> covariances;
     covariances.resize(points.size());
 
@@ -687,7 +697,7 @@ std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
     return covariances;
 }
 void PointCloud::EstimateCovariances(
-        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+        const KDTreeSearchParam& search_param /* = KDTreeSearchParamKNN()*/) {
     this->covariances_ = EstimatePerPointCovariances(*this, search_param);
 }
 
@@ -747,7 +757,7 @@ PointCloud::ComputeConvexHull(bool joggle_inputs) const {
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
+PointCloud::HiddenPointRemoval(const Eigen::Vector3d& camera_location,
                                const double radius) const {
     if (radius <= 0) {
         utility::LogError("radius must be larger than zero.");
