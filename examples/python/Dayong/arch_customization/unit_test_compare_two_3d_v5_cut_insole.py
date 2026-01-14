@@ -17,7 +17,6 @@ from matplotlib.colors import Normalize
 
 ### --------------------- Function Region ----------------------
 
-import numpy as np
 from scipy.spatial import KDTree
 from sklearn.decomposition import PCA
 from scipy.interpolate import Rbf
@@ -25,10 +24,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 
-import open3d as o3d
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 def fit_surface_to_knife(knife_points, n_neighbors=20):
     """
@@ -2303,10 +2298,7 @@ class PointCloudSlicer:
         return ax.figure
 
 
-import numpy as np
 from scipy.spatial import Delaunay
-import matplotlib.pyplot as plt
-
 
 def alpha_shape_boundary(points, alpha):
     """
@@ -2382,10 +2374,6 @@ def alpha_shape_boundary(points, alpha):
 
     return boundary_points
 
-
-import numpy as np
-
-
 def shrink_boundary(boundary, shrink_ratio=0.01):
     """
     Shrink boundary by moving each point toward the centroid.
@@ -2460,8 +2448,6 @@ def resample_boundary_equal_distance(boundary, num_points=1000):
     return resampled_boundary[:-1]  # Remove duplicate closing point
 
 
-import numpy as np
-import open3d as o3d
 from sklearn.neighbors import NearestNeighbors
 
 
@@ -2888,35 +2874,7 @@ aligned_to_y1.paint_uniform_color([1, 0.5, 0])
 # paint the insole
 aligned_to_y_insole.paint_uniform_color([1, 0.5, 0])
 
-# Flip point cloud by 180 degrees around given axis (x/y/z)
-def flip_pointcloud_180(pcd, axis='x'):
-    if axis == 'x':
-        R = np.array([
-            [1,  0,  0],
-            [0, -1,  0],
-            [0,  0, -1]
-        ])
-    elif axis == 'y':
-        R = np.array([
-            [-1, 0,  0],
-            [ 0, 1,  0],
-            [ 0, 0, -1]
-        ])
-    elif axis == 'z':
-        R = np.array([
-            [-1, 0, 0],
-            [ 0,-1, 0],
-            [ 0, 0, 1]
-        ])
-    else:
-        raise ValueError("axis must be 'x', 'y', or 'z'")
-
-    c = pcd.get_center()  # 注意：这是“当前 pcd”中心
-    t_flip = get_translation_matrix_from_rotation(R, c)
-    pcd.transform(t_flip)
-    return pcd, t_flip
-
-aligned_to_y_insole, insole_flip_T = flip_pointcloud_180(aligned_to_y_insole, axis='y')
+aligned_to_y_insole, insole_flip_T = flip_point_cloud_180(aligned_to_y_insole, axis='y')
 
 # o3d.visualization.draw_geometries(
 #             [aligned_to_y1, aligned_to_y_bot1, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
@@ -2967,221 +2925,16 @@ plt.axis('equal')  # Equal aspect ratio
 plt.title('XY Point Cloud')
 plt.show()
 
-
-###  ----- find the boundary -----------------
-# from scipy.spatial import ConvexHull
-#
-# hull = ConvexHull(xy_points)
-# boundary = xy_points[hull.vertices]
-#
-# plt.scatter(xy_points[:, 0], xy_points[:, 1], s=0.5, c='blue', alpha=0.3)
-# plt.plot(boundary[:, 0], boundary[:, 1], 'r-', linewidth=2)
-# plt.plot([boundary[-1, 0], boundary[0, 0]],
-#          [boundary[-1, 1], boundary[0, 1]], 'r-', linewidth=2)  # Close the loop
-# plt.axis('equal')
-# plt.show()
-
-# # Usage
-# alpha = 5.0  # Adjust this value based on your data
-# boundary_pts, _ = alpha_shape(xy_points, alpha)
-#
-# plt.scatter(xy_points[:, 0], xy_points[:, 1], s=0.5, c='blue', alpha=0.3)
-# plt.scatter(boundary_pts[:, 0], boundary_pts[:, 1], s=2, c='red')
-# plt.axis('equal')
-# plt.show()
-
-# Usage
-alpha = 5.0  # Adjust based on your data scale
-boundary = alpha_shape_boundary(xy_points, alpha)
-
-# Plot
-plt.figure(figsize=(12, 10))
-plt.scatter(xy_points[:, 0], xy_points[:, 1], s=0.5, c='lightblue', alpha=0.3, label='All points')
-plt.plot(boundary[:, 0], boundary[:, 1], 'r', linewidth=2, label='Boundary') ### r-
-plt.plot([boundary[-1, 0], boundary[0, 0]],
-         [boundary[-1, 1], boundary[0, 1]], 'r-', linewidth=2)  # Close the loop
-plt.axis('equal')
-plt.legend()
-plt.title('Continuous Alpha Shape Boundary')
-plt.show()
-
-print(f"Boundary has {len(boundary)} points")
-
-
-### ------------- line equal distance --------------------
-# Usage
-equal_boundary = resample_boundary_equal_distance(boundary, num_points=1000)
-
-# Verify spacing
-distances = np.sqrt(np.sum(np.diff(equal_boundary, axis=0) ** 2, axis=1))
-print(f"Mean distance: {distances.mean():.6f}")
-print(f"Std distance: {distances.std():.6f}")
-print(f"Min distance: {distances.min():.6f}")
-print(f"Max distance: {distances.max():.6f}")
-
-# Plot
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(12, 10))
-plt.plot(boundary[:, 0], boundary[:, 1], 'b-', alpha=0.3, label='Original')
-plt.scatter(equal_boundary[:, 0], equal_boundary[:, 1], s=2, c='red', label='Equal spacing')
-plt.axis('equal')
-plt.legend()
-plt.title('Resampled Boundary with Equal Spacing')
-plt.show()
-
-### breakpoint()
-
-
-### ------------- shrink the boundary line ----------------
-# Usage
-shrunken = shrink_boundary(equal_boundary, shrink_ratio=0.01)  # 1% or 5% shrink
-
-# Plot comparison
-plt.figure(figsize=(12, 10))
-plt.scatter(xy_points[:, 0], xy_points[:, 1], s=0.5, c='lightblue', alpha=0.3, label='Points')
-plt.plot(boundary[:, 0], boundary[:, 1], 'b-', linewidth=2, label='Original boundary')
-plt.plot(shrunken[:, 0], shrunken[:, 1], 'r-', linewidth=2, label='Shrunken 1%')
-plt.plot([shrunken[-1, 0], shrunken[0, 0]],
-         [shrunken[-1, 1], shrunken[0, 1]], 'r-', linewidth=2)
-plt.axis('equal')
-plt.legend()
-plt.title('Boundary Shrinkage')
-plt.show()
-
-### ------------- prepare the cutting plane ----------------
-# Get minimum bound of the point cloud
-min_bound = aligned_to_y_bot1.get_min_bound()
-min_z = min_bound[2]  # Z is the third component
-print(f"Minimum Z value: {min_z}")
-
-max_z = min_z + 30
-
-#import numpy as np
-
-# # Add constant Z value
-# z_value = min_z  # or any constant value
-# shrunken_3d = np.column_stack([shrunken, np.full(len(shrunken), z_value)])
-#
-# print(f"Original shape: {shrunken.shape}")      # (N, 2)
-# print(f"3D shape: {shrunken_3d.shape}")         # (N, 3)
-#
-# # import open3d as o3d
-# # import numpy as np
-
-# -------------------- populate the cutting plane -----------------
-
-# Create multiple shrunken boundaries at different Z heights
-z_layers = []
-num_layers = 30
-z_start = min_z
-z_end = max_z
-z_values = np.linspace(z_start, z_end, num_layers)
-
-for i, z_value in enumerate(z_values):
-    # Create 3D points with current Z value
-    shrunken_3d = np.column_stack([shrunken, np.full(len(shrunken), z_value)])
-    z_layers.append(shrunken_3d)
-    print(f"Layer {i}: Z = {z_value:.4f}, Points = {len(shrunken_3d)}")
-
-# Stack all layers into one array
-all_layers = np.vstack(z_layers)
-print(f"\nTotal points across all layers: {len(all_layers)}")
-
-# Create point cloud from all layers
-layers_pcd = o3d.geometry.PointCloud()
-layers_pcd.points = o3d.utility.Vector3dVector(all_layers)
-
-o3d.visualization.draw_geometries(
-            [layers_pcd, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
-            window_name="Aligned to Y-axis: Stationary",
-            width=1400,
-            height=900
-        )
-
-#### ------------------------- main code region ---------------------
-
-# Assign different colors to each point cloud
-pcd1 = aligned_to_y_bot1
-pcd2 = layers_pcd
-
-pcd11_vis = pcd1.paint_uniform_color([1, 0, 0])  # Red
-pcd22_vis = pcd2.paint_uniform_color([0, 0, 1])  # Blue
-
-# Visualize original clouds with box
-o3d.visualization.draw_geometries([pcd11_vis, pcd22_vis],
-                                      window_name="Original - Red: pcd1, Blue: pcd2")
-
-print("\nSurface Processing...")
-### cut the foot by the artificial knife
-remain_pcd1 = call_surface_cut(pcd1, pcd2)  ### pcd1: target; pcd2: knift. Point Cloud
-#remain_pcd2 = call_surface_cut(pcd2, pcd1)  ### pcd1: target; pcd2: knift. Point Cloud
-
-# Get bounding box bounds
-min_bound = pcd1.get_min_bound()
-max_bound = pcd1.get_max_bound()
-
-min_y = min_bound[1]  # Y is index 1
-max_y = max_bound[1]
-
-# Usage
-y_min = min_y + (max_y-min_y)*0.01  # Your minimum Y value
-y_max = min_y + (max_y-min_y)*0.8  # Your maximum Y value
-
-cleaned_pcd = extract_points_by_y_range(remain_pcd1, y_min, y_max)
-# Usage
-#largest_piece = get_largest_cluster_auto(remain_pcd1, min_points=50)
-largest_piece = get_largest_cluster_auto(cleaned_pcd, min_points=50)
-
-pcd1_vis = remain_pcd1.paint_uniform_color([1, 0, 0])  # Red
-pcd2_vis = largest_piece.paint_uniform_color([0, 0, 1])  # Blue
-# pcd3_vis = largest_cluster_M1.paint_uniform_color([1, 0, 1])  # Magenta
-# pcd4_vis = largest_cluster_M3.paint_uniform_color([0, 1, 0])  # Green
-
-# Visualize original clouds with box
-o3d.visualization.draw_geometries([largest_piece],
-                                      window_name="Processed - Blue")
-
-# o3d.visualization.draw_geometries([pcd1_vis, pcd2_vis],
-#                                       window_name="Processed - Red: pcd1, Blue: pcd2")
-
-# o3d.visualization.draw_geometries([pcd1_vis],
-#                                       window_name="Processed - Red: pcd1, Blue: pcd2")
-
-# Usage
-plane_pcd, non_plane_pcd, plane_model = segment_plane_ransac(
-    largest_piece,
-    distance_threshold=1.5,  # Adjust based on your data
-    ransac_n=3,
-    num_iterations=200
-)
-
-arch_raw = get_largest_cluster_auto(non_plane_pcd, min_points=50)
-pcd4_vis = arch_raw.paint_uniform_color([0, 1, 0])  # Green
-
-###   cut the arch region
-# Get bounding box bounds
-min_bound = pcd1.get_min_bound()
-max_bound = pcd1.get_max_bound()
-
-min_y = min_bound[1]  # Y is index 1
-max_y = max_bound[1]
-
-# Usage
-y_min = min_y + (max_y-min_y)*0.2  # Your minimum Y value
-y_max = min_y + (max_y-min_y)*0.7  # Your maximum Y value
-
-filtered_pcd = extract_points_by_y_range(arch_raw, y_min, y_max)
-filtered_pcd = get_largest_cluster_auto(filtered_pcd, min_points=50)
-pcd5_vis = filtered_pcd.paint_uniform_color([1, 0, 1])  # Magenta
-o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
+# Use blade to find the bottom surface of the foot
+from blade import *
+bottom_foot_pcd = get_bottom_surface(aligned_to_y_bot1, 5.0)
 
 # visualize the foot and the insole
-o3d.visualization.draw_geometries([filtered_pcd, aligned_to_y_insole], window_name="arch - insole visualization")
+o3d.visualization.draw_geometries([bottom_foot_pcd, aligned_to_y_insole], window_name="arch - insole visualization")
 # arch = crop_pcd_to_aabb_strict(filtered_pcd, aligned_to_y_insole)
 # o3d.visualization.draw_geometries([arch, aligned_to_y_insole], window_name="arch (cropped) - insole visualization")
 
-arch_mesh = pcd_to_mesh_bpa(filtered_pcd)
+arch_mesh = pcd_to_mesh_bpa(bottom_foot_pcd)
 # o3d.visualization.draw_geometries([arch_mesh], window_name="arch (cropped) - insole visualization", mesh_show_back_face = True)
 
 # ----------------- Apply insole transforms to the ORIGINAL insole mesh -----------------
@@ -3211,6 +2964,24 @@ o3d.visualization.draw_geometries(
     height=900,
     mesh_show_back_face=True
 )
+
+# Now seal the gap between the arch and the insole
+# ----------------- Export intermediate meshes -----------------
+out_dir = os.path.join(dayong_dir, "outputs")
+os.makedirs(out_dir, exist_ok=True)
+
+insole_stl = os.path.join(out_dir, "insole_aligned.stl")
+arch_stl = os.path.join(out_dir, "arch_mesh.stl")
+final_stl = os.path.join(out_dir, "insole_with_arch_sealed.stl")
+
+o3d.io.write_triangle_mesh(insole_stl, insole_mesh_aligned, write_ascii=False)
+o3d.io.write_triangle_mesh(arch_stl, arch_mesh, write_ascii=False)
+
+print(f"[Saved] {insole_stl}")
+print(f"[Saved] {arch_stl}")
+
+print("[tri counts] insole:", np.asarray(insole_mesh_aligned.triangles).shape[0])
+print("[tri counts] arch  :", np.asarray(arch_mesh.triangles).shape[0])
 
 
 # Visualize

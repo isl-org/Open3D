@@ -126,31 +126,33 @@ def get_translation_matrix_from_rotation(R: np.ndarray, center: np.ndarray) -> n
     T[:3, 3] = center - R @ center
     return T
 
-def crop_pcd_to_aabb_strict(
-    target_arch: o3d.geometry.PointCloud,
-    source_insole: o3d.geometry.PointCloud,
-) -> o3d.geometry.PointCloud:
-    """
-    Strictly crop target_arch so that ALL remaining points satisfy:
-        insole_min <= point <= insole_max   (for x,y,z)
-    i.e. arch is guaranteed to be fully inside the insole AABB.
-    """
-    insole_min = source_insole.get_min_bound()
-    insole_max = source_insole.get_max_bound()
+# Flip point cloud by 180 degrees around given axis (x/y/z)
+def flip_point_cloud_180(pcd, axis='x'):
+    if axis == 'x':
+        R = np.array([
+            [1,  0,  0],
+            [0, -1,  0],
+            [0,  0, -1]
+        ])
+    elif axis == 'y':
+        R = np.array([
+            [-1, 0,  0],
+            [ 0, 1,  0],
+            [ 0, 0, -1]
+        ])
+    elif axis == 'z':
+        R = np.array([
+            [-1, 0, 0],
+            [ 0,-1, 0],
+            [ 0, 0, 1]
+        ])
+    else:
+        raise ValueError("axis must be 'x', 'y', or 'z'")
 
-    pts = np.asarray(target_arch.points)
-    mask = (
-        (pts[:, 0] >= insole_min[0]) & (pts[:, 0] <= insole_max[0]) &
-        (pts[:, 1] >= insole_min[1]) & (pts[:, 1] <= insole_max[1]) &
-        (pts[:, 2] >= insole_min[2]) & (pts[:, 2] <= insole_max[2])
-    )
-    idx = np.where(mask)[0]
-    cropped = target_arch.select_by_index(idx)
-
-    print(f"[crop_pcd_to_aabb_strict] insole_min = {insole_min}, insole_max = {insole_max}")
-    print(f"[crop_pcd_to_aabb_strict] arch points: {len(target_arch.points)} -> {len(cropped.points)} (kept {len(cropped.points)/max(1,len(target_arch.points))*100:.1f}%)")
-
-    return cropped
+    c = pcd.get_center()  # 注意：这是“当前 pcd”中心
+    t_flip = get_translation_matrix_from_rotation(R, c)
+    pcd.transform(t_flip)
+    return pcd, t_flip
 
 def pcd_to_mesh_bpa(
     arch_pcd: o3d.geometry.PointCloud,
