@@ -1991,13 +1991,6 @@ def close_all_plots():
 
 
 ### ------------- end of function region --------------------------
-
-
-### ---------------------------------------------------------------
-
-
-
-### ------------------------------------------------
 ### ----------- main code ---------------------
 # *********** load mesh from file ***********
 #foot_id = "right"
@@ -2042,20 +2035,8 @@ stationary_o3d_mesh = normalize_mesh_to_mm(stationary_o3d_mesh)
 insole_mesh = o3d.io.read_triangle_mesh(insole_path)
 insole_mesh = normalize_mesh_to_mm(insole_mesh)
 
-### load the file
-# load mobile scanned mesh
-# scan_mesh_path = mobile_case_path + '_'+stl_foot_id+".stl"
-# scan_mesh_path = mobile_case_path + foot_id +"_foot_mesh_refine.stl"
-scan_mesh_path = mobile_case_path + "/" + foot_id +"_foot_mesh.stl"
-
-scan_o3d_mesh = o3d.io.read_triangle_mesh(scan_mesh_path)
-scan_o3d_mesh.scale(1000.0, center=scan_o3d_mesh.get_center())
-
-
 # Align point clouds first if needed
-# pcd2.transform(transformation_matrix)
 pcd1 = stationary_o3d_mesh
-pcd2 = scan_o3d_mesh
 insole_copy = copy.deepcopy(insole_mesh)
 insole_copy.compute_vertex_normals()
 
@@ -2065,11 +2046,6 @@ if isinstance(pcd1, o3d.geometry.TriangleMesh):
     pcd1_points = pcd1.sample_points_uniformly(number_of_points=n_points)
 else:
     pcd1_points = pcd1
-
-if isinstance(pcd2, o3d.geometry.TriangleMesh):
-    pcd2_points = pcd2.sample_points_uniformly(number_of_points=n_points)
-else:
-    pcd2_points = pcd2
 
 # insole pcd
 if isinstance(insole_copy, o3d.geometry.TriangleMesh):
@@ -2094,17 +2070,9 @@ o3d.visualization.draw_geometries([
 print("\n--- Method 1: Filter from min Z + distance ---")
 distance = 20.0  # Keep 2.0 units from the bottom
 filtered_pcd1 = filter_from_min_z_with_distance(pcd1_points, distance_from_min=distance)
-filtered_pcd2 = filter_from_min_z_with_distance(pcd2_points, distance_from_min=distance)
 
 distance = 100.0  # Keep 2.0 units from the bottom
 cut_pcd1 = filter_from_min_z_with_distance(pcd1_points, distance_from_min=distance)
-cut_pcd2 = filter_from_min_z_with_distance(pcd2_points, distance_from_min=distance)
-
-# # Visualize
-# print("------pcd1------")
-# visualize_filtered_comparison(pcd1_points, filtered_pcd1)
-# print("------pcd2------")
-# visualize_filtered_comparison(pcd2_points, filtered_pcd2)
 
 ### ------------ rotate the orientation ----------------------
 # get rotation right for pcd1
@@ -2123,15 +2091,7 @@ aligned_to_y1.paint_uniform_color([1, 0.5, 0])
 
 # paint the insole
 aligned_to_y_insole.paint_uniform_color([1, 0.5, 0])
-
 aligned_to_y_insole, insole_flip_T = flip_point_cloud_180(aligned_to_y_insole, axis='y')
-
-# o3d.visualization.draw_geometries(
-#             [aligned_to_y1, aligned_to_y_bot1, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
-#             window_name="Aligned to Y-axis: Stationary",
-#             width=1400,
-#             height=900
-#         )
 
 o3d.visualization.draw_geometries(
             [aligned_to_y_bot1, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
@@ -2161,491 +2121,42 @@ o3d.visualization.draw_geometries(
             height=900
         )
 
-### project into the XY plane
-xyz_points = aligned_to_y_bot1.points
-xy_points = np.asarray(xyz_points)[:, 0:2]
-
-#import matplotlib.pyplot as plt
-
-plt.figure(figsize=(10, 8))
-plt.scatter(xy_points[:, 0], xy_points[:, 1], s=1, c='blue', alpha=0.5)
-plt.xlabel('X')
-plt.ylabel('Y')
-plt.axis('equal')  # Equal aspect ratio
-plt.title('XY Point Cloud')
-plt.show()
-
-# Use blade to find the bottom surface of the foot
+# Use the blade to find the bottom surface of the foot
 from blade import *
-bottom_foot_pcd = get_bottom_surface(aligned_to_y_bot1, 5.0)
 
-# visualize the foot and the insole
-o3d.visualization.draw_geometries([bottom_foot_pcd, aligned_to_y_insole], window_name="arch - insole visualization")
-# arch = crop_pcd_to_aabb_strict(filtered_pcd, aligned_to_y_insole)
-# o3d.visualization.draw_geometries([arch, aligned_to_y_insole], window_name="arch (cropped) - insole visualization")
-
-arch_mesh = pcd_to_mesh_bpa(bottom_foot_pcd)
-# o3d.visualization.draw_geometries([arch_mesh], window_name="arch (cropped) - insole visualization", mesh_show_back_face = True)
-
-# ----------------- Apply insole transforms to the ORIGINAL insole mesh -----------------
-# We have tracked every step as a 4x4 transform T (pcd stays the same; mesh must be synced).
-# Order matters: the later transform in code is applied later, so the total is:
-#   T_total = T_last @ ... @ T_first
-
-# If your align_min_* helpers return T (as 4x4 matrices), then tx/ty/tz are those T's.
-# Total insole transform (PCA-align -> flip -> min-x -> min-y -> z-align)
-t_insole = tz @ ty @ tx @ insole_flip_T @ insole_align_T
-
-# Apply to a COPY of the original insole mesh (keep original mesh intact)
-insole_mesh_aligned = copy.deepcopy(insole_mesh)
-insole_mesh_aligned.compute_vertex_normals()
-insole_mesh_aligned.transform(t_insole)
-
-# Optional coloring for visualization
-insole_mesh_aligned.paint_uniform_color([1.0, 1.0, 0.0])  # Yellow insole
-arch_mesh.paint_uniform_color([1.0, 0.0, 1.0])  # Magenta arch
-
-# Visualize arch mesh + transformed original insole mesh together
-# NOTE: mesh_show_back_face=True helps for thin sheet-like meshes.
-o3d.visualization.draw_geometries(
-    [arch_mesh, insole_mesh_aligned, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
-    window_name="arch_mesh + insole_mesh_aligned",
-    width=1400,
-    height=900,
-    mesh_show_back_face=True
-)
-
-# Now seal the gap between the arch and the insole
-# ----------------- Export intermediate meshes -----------------
-out_dir = os.path.join(dayong_dir, "outputs")
-os.makedirs(out_dir, exist_ok=True)
-
-insole_stl = os.path.join(out_dir, "insole_aligned.stl")
-arch_stl = os.path.join(out_dir, "arch_mesh.stl")
-final_stl = os.path.join(out_dir, "insole_with_arch_sealed.stl")
-
-o3d.io.write_triangle_mesh(insole_stl, insole_mesh_aligned, write_ascii=False)
-o3d.io.write_triangle_mesh(arch_stl, arch_mesh, write_ascii=False)
-
-print(f"[Saved] {insole_stl}")
-print(f"[Saved] {arch_stl}")
-
-print("[tri counts] insole:", np.asarray(insole_mesh_aligned.triangles).shape[0])
-print("[tri counts] arch  :", np.asarray(arch_mesh.triangles).shape[0])
+# Workflow - Insole
 
 
-# Visualize
-# o3d.visualization.draw_geometries([pcd4_vis, pcd5_vis],
-#                                   window_name="Red=Plane, Blue=Non-plane")
+# Workflow - Foot
+# bottom_foot_pcd = get_bottom_surface(aligned_to_y_bot1, 5.0)
 #
-# o3d.visualization.draw_geometries([plane_pcd, non_plane_pcd, pcd4_vis, pcd5_vis],
-#                                   window_name="Red=Plane, Blue=Non-plane")
+# # visualize the foot and the insole
+# o3d.visualization.draw_geometries([bottom_foot_pcd, aligned_to_y_insole], window_name="arch - insole visualization")
 #
-# o3d.visualization.draw_geometries([pcd1, pcd5_vis],
-#                                   window_name="foot vs arch")
-
-
+# arch_mesh = pcd_to_mesh_bpa(bottom_foot_pcd)
+#
+# # ----------------- Apply insole transforms to the ORIGINAL insole mesh -----------------
+# # We have tracked every step as a 4x4 transform T (pcd stays the same; mesh must be synced).
+# t_insole = tz @ ty @ tx @ insole_flip_T @ insole_align_T
+#
+# # Apply to a COPY of the original insole mesh (keep original mesh intact)
+# insole_mesh_aligned = copy.deepcopy(insole_mesh)
+# insole_mesh_aligned.compute_vertex_normals()
+# insole_mesh_aligned.transform(t_insole)
+#
+# # Optional coloring for visualization
+# insole_mesh_aligned.paint_uniform_color([1.0, 1.0, 0.0])  # Yellow insole
+# arch_mesh.paint_uniform_color([1.0, 0.0, 1.0])  # Magenta arch
+#
+# # Visualize arch mesh + transformed original insole mesh together
+# # NOTE: mesh_show_back_face=True helps for thin sheet-like meshes.
+# o3d.visualization.draw_geometries(
+#     [arch_mesh, insole_mesh_aligned, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
+#     window_name="arch_mesh + insole_mesh_aligned",
+#     width=1400,
+#     height=900,
+#     mesh_show_back_face=True
+# )
 
 clean_up()
 close_all_plots()
-
-"""
-breakpoint()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### ------------------------ <<<<<<<<<<<<<<<<<<<< ------------------------------------------
-
-
-# get rotation right for pcd2
-pca_result2 = compute_pca_orientation(filtered_pcd2)
-print("\n--- Aligning Major Axis to Y-axis ---PCD2")
-aligned_to_y_bot2 = align_major_axis_to_axis(filtered_pcd2, target_axis='y', pca_result=pca_result2)
-aligned_to_y2 = align_major_axis_to_axis(cut_pcd2, target_axis='y', pca_result=pca_result2)
-
-### further rotation
-# Convert 5 degrees to radians
-
-phone_rotation_degree = 0
-#print("phone_rotation_degree: %.2f", phone_rotation_degree)
-print("---------------phone_rotation_degree------------------")
-print(f"phone_rotation_degree: {phone_rotation_degree:.2f}")
-theta = np.deg2rad(phone_rotation_degree)
-#breakpoint()
-
-# Define rotation matrix around Z-axis
-R = np.array([
-    [np.cos(theta), -np.sin(theta), 0],
-    [np.sin(theta),  np.cos(theta), 0],
-    [0,              0,             1]
-])
-
-# Rotate the point cloud around its center
-aligned_to_y2.rotate(R, center=aligned_to_y2.get_center())  # or use aligned_to_y2.get_center() if you want to rotate around its center
-
-
-
-
-aligned_to_y_bot2.paint_uniform_color([0, 0.5, 0])
-aligned_to_y2.paint_uniform_color([1, 0.5, 0])
-
-o3d.visualization.draw_geometries(
-            [aligned_to_y2, aligned_to_y_bot2, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
-            window_name="Aligned to Y-axis: phone",
-            width=1400,
-            height=900
-        )
-
-
-
-# Example usage:
-if __name__ == "__main__":
-    # Load two point clouds
-    pcd1 = aligned_to_y1 #o3d.io.read_point_cloud("pointcloud1.ply")
-    pcd2 = aligned_to_y2 #o3d.io.read_point_cloud("pointcloud2.ply")
-
-    # Check original bounds
-    get_bounding_box_info(pcd1, "Point Cloud 1 (Original)")
-    get_bounding_box_info(pcd2, "Point Cloud 2 (Original)")
-
-    # Method 1: Align both to the same minimum
-    print("\n--- Method 1: Align both to same minimum ---")
-    #aligned_pcd1, aligned_pcd2 = align_min_xyz(pcd1.clone(), pcd2.clone())
-    aligned_pcd1, aligned_pcd2 = align_min_xyz(pcd1, pcd2)
-
-    get_bounding_box_info(aligned_pcd1, "Point Cloud 1 (Aligned)")
-    get_bounding_box_info(aligned_pcd2, "Point Cloud 2 (Aligned)")
-
-    # Visualize
-    aligned_pcd1.paint_uniform_color([1, 0, 0])  # Red
-    aligned_pcd2.paint_uniform_color([0, 0, 1])  # Blue
-    #o3d.visualization.draw_geometries([aligned_pcd1, aligned_pcd2])
-    o3d.visualization.draw_geometries(
-        [aligned_pcd1, aligned_pcd2, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
-        window_name="Aligned stationary and phone",
-        width=1400,
-        height=900
-    )
-
-#breakpoint()
-
-### -------------- get the metrics of the point cloud -----------------
-
-# If using Open3D PointCloud objects, convert them to numpy arrays:
-# import open3d as o3d
-# If pc1 and pc2 are Open3D PointCloud objects:
-pc1_points = np.asarray(aligned_to_y1.points)
-pc2_points = np.asarray(aligned_to_y2.points)
-
-# Compute AABBs
-min1, max1, dims1, center1 = compute_aabb(pc1_points)
-min2, max2, dims2, center2 = compute_aabb(pc2_points)
-
-# Get corners
-corners1 = get_aabb_corners(min1, max1)
-corners2 = get_aabb_corners(min2, max2)
-
-# Visualization
-fig = plt.figure(figsize=(14, 6))
-
-# 3D plot
-ax1 = fig.add_subplot(121, projection='3d')
-
-# Plot point clouds
-ax1.scatter(*pc1_points.T, c='blue', alpha=0.3, s=1, label='Point Cloud 1')
-ax1.scatter(*pc2_points.T, c='red', alpha=0.3, s=1, label='Point Cloud 2')
-
-# Plot AABBs
-plot_aabb(ax1, corners1, 'blue', 'AABB 1')
-plot_aabb(ax1, corners2, 'red', 'AABB 2')
-
-ax1.set_xlabel('X')
-ax1.set_ylabel('Y')
-ax1.set_zlabel('Z')
-ax1.set_title('Point Clouds with Axis-Aligned Bounding Boxes')
-ax1.legend()
-ax1.set_aspect('equal')
-
-# Dimensions comparison
-ax2 = fig.add_subplot(122)
-
-categories = ['X (Width)', 'Y (Length)', 'Z (Height)']
-x = np.arange(len(categories))
-width = 0.35
-
-bars1 = ax2.bar(x - width / 2, dims1, width, label='Point Cloud 1', color='blue', alpha=0.2)
-bars2 = ax2.bar(x + width / 2, dims2, width, label='Point Cloud 2', color='red', alpha=0.7)
-
-# Add value labels on bars
-for bars in [bars1, bars2]:
-    for bar in bars:
-        height = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width() / 2., height,
-                 f'{height:.2f}', ha='center', va='bottom', fontsize=9)
-
-ax2.set_xlabel('Dimension')
-ax2.set_ylabel('Size')
-ax2.set_title('AABB Dimensions Comparison')
-ax2.set_xticks(x)
-ax2.set_xticklabels(categories)
-ax2.legend()
-ax2.grid(axis='y', alpha=0.3)
-
-plt.tight_layout()
-plt.show()
-
-# Print dimensions
-print("Point Cloud 1 AABB Dimensions:")
-print(f"  X (Width): {dims1[0]:.3f}")
-print(f"  Y (Length):  {dims1[1]:.3f}")
-print(f"  Z (Height): {dims1[2]:.3f}")
-print(f"  Center: ({center1[0]:.3f}, {center1[1]:.3f}, {center1[2]:.3f})")
-print(f"  Min corner: ({min1[0]:.3f}, {min1[1]:.3f}, {min1[2]:.3f})")
-print(f"  Max corner: ({max1[0]:.3f}, {max1[1]:.3f}, {max1[2]:.3f})")
-
-print("\nPoint Cloud 2 AABB Dimensions:")
-print(f"  X (Width): {dims2[0]:.3f}")
-print(f"  Y (Length):  {dims2[1]:.3f}")
-print(f"  Z (Height): {dims2[2]:.3f}")
-print(f"  Center: ({center2[0]:.3f}, {center2[1]:.3f}, {center2[2]:.3f})")
-print(f"  Min corner: ({min2[0]:.3f}, {min2[1]:.3f}, {min2[2]:.3f})")
-print(f"  Max corner: ({max2[0]:.3f}, {max2[1]:.3f}, {max2[2]:.3f})")
-
-### breakpoint()
-### get the girth data
-# Create two slightly different cylinders
-pc1 = np.asarray(aligned_to_y1.points) #create_cylinder_cloud(radius=1.0, height=5.0, num_points=5000, noise=0.02)
-pc2 = np.asarray(aligned_to_y2.points) #create_cylinder_cloud(radius=1.02, height=5.0, num_points=5000, noise=0.02)
-
-# Initialize slicer
-slicer = PointCloudSlicer(tolerance=1)   ### all the points within 1 mm near the plane
-
-# Define cutting plane (horizontal plane at z=2.5)
-plane_origin = np.array([0, 0, 0])     ### points on the plane
-plane_normal = np.array([0, 1, 0])     ### normal vector of plane
-
-# Compare girths using CONVEX HULL method
-results = slicer.compare_girths(pc1, pc2, plane_origin, plane_normal,
-                                method='convex_hull')
-
-print("Girth Comparison Results (Convex Hull Method):")
-print(f"  Point Cloud 1 Girth: {results['girth1']:.4f}")
-print(f"  Point Cloud 2 Girth: {results['girth2']:.4f}")
-print(f"  Difference: {results['difference']:.4f}")
-print(f"  Percent Change: {results['percent_change']:.2f}%")
-
-# Dense boundary method - better matches actual data points
-results_dense = slicer.compare_girths(pc1, pc2, plane_origin, plane_normal,
-                                      method='dense_boundary')
-
-print("\nGirth Comparison Results (Dense Boundary Method - Better Match):")
-print(f"  Point Cloud 1 Girth: {results_dense['girth1']:.4f}")
-print(f"  Point Cloud 2 Girth: {results_dense['girth2']:.4f}")
-print(f"  Difference: {results_dense['difference']:.4f}")
-print(f"  Percent Change: {results_dense['percent_change']:.2f}%")
-
-# Also calculate with fitted_curve method for comparison
-results_fitted = slicer.compare_girths(pc1, pc2, plane_origin, plane_normal,
-                                       method='fitted_curve')
-
-print("\nGirth Comparison Results (Fitted Curve Method - Smoothest):")
-print(f"  Point Cloud 1 Girth: {results_fitted['girth1']:.4f}")
-print(f"  Point Cloud 2 Girth: {results_fitted['girth2']:.4f}")
-print(f"  Difference: {results_fitted['difference']:.4f}")
-print(f"  Percent Change: {results_fitted['percent_change']:.2f}%")
-
-# Visualize 3D with cutting plane - shows WHOLE point cloud
-print("\n3D Visualization with cutting plane (showing whole point cloud)...")
-_, _, slice1_idx = slicer.slice_with_plane(pc1, plane_origin, plane_normal)
-_, _, slice2_idx = slicer.slice_with_plane(pc2, plane_origin, plane_normal)
-
-# Side-by-side 3D comparison - WHOLE point clouds visible
-fig_3d = slicer.visualize_comparison_3d(pc1, pc2, plane_origin, plane_normal,
-                                        slice1_idx, slice2_idx)
-plt.savefig('3d_comparison_with_plane.png', dpi=150, bbox_inches='tight')
-print("3D visualization saved as '3d_comparison_with_plane.png'")
-
-# 2D slice profiles with multiple methods
-fig2, axes = plt.subplots(2, 3, figsize=(20, 13))
-
-# Top row: Different methods for PC1
-slicer.visualize_slice(results['slice1_2d'], results['boundary1'],
-                       f"PC1 - Convex Hull (G={results['girth1']:.3f})",
-                       ax=axes[0, 0])
-
-slicer.visualize_slice(results_dense['slice1_2d'], results_dense['boundary1'],
-                       f"PC1 - Dense Boundary (G={results_dense['girth1']:.3f})",
-                       ax=axes[0, 1])
-
-slicer.visualize_slice(results_fitted['slice1_2d'], results_fitted['boundary1'],
-                       f"PC1 - Fitted Curve (G={results_fitted['girth1']:.3f})",
-                       ax=axes[0, 2])
-
-# Bottom row: Different methods for PC2
-slicer.visualize_slice(results['slice2_2d'], results['boundary2'],
-                       f"PC2 - Convex Hull (G={results['girth2']:.3f})",
-                       ax=axes[1, 0])
-
-slicer.visualize_slice(results_dense['slice2_2d'], results_dense['boundary2'],
-                       f"PC2 - Dense Boundary (G={results_dense['girth2']:.3f})",
-                       ax=axes[1, 1])
-
-slicer.visualize_slice(results_fitted['slice2_2d'], results_fitted['boundary2'],
-                       f"PC2 - Fitted Curve (G={results_fitted['girth2']:.3f})",
-                       ax=axes[1, 2])
-
-plt.tight_layout()
-plt.savefig('2d_slice_profiles_comparison.png', dpi=150, bbox_inches='tight')
-print("2D profiles comparison saved as '2d_slice_profiles_comparison.png'")
-print("\nNote: Dense Boundary (middle) follows actual points better than Convex Hull (left)")
-print("      Fitted Curve (right) is smoothest")
-
-# Create overlay comparison plot (Plot 4)
-fig4, axes4 = plt.subplots(1, 3, figsize=(24, 7))
-
-# Overlay with Convex Hull
-slicer.visualize_slice_overlay(results['slice1_2d'], results['boundary1'],
-                               results['slice2_2d'], results['boundary2'],
-                               results['girth1'], results['girth2'],
-                               title="Overlay - Convex Hull",
-                               ax=axes4[0])
-
-# Overlay with Dense Boundary
-slicer.visualize_slice_overlay(results_dense['slice1_2d'], results_dense['boundary1'],
-                               results_dense['slice2_2d'], results_dense['boundary2'],
-                               results_dense['girth1'], results_dense['girth2'],
-                               title="Overlay - Dense Boundary",
-                               ax=axes4[1])
-
-# Overlay with Fitted Curve
-slicer.visualize_slice_overlay(results_fitted['slice1_2d'], results_fitted['boundary1'],
-                               results_fitted['slice2_2d'], results_fitted['boundary2'],
-                               results_fitted['girth1'], results_fitted['girth2'],
-                               title="Overlay - Fitted Curve",
-                               ax=axes4[2])
-
-plt.tight_layout()
-plt.savefig('overlay_comparison.png', dpi=150, bbox_inches='tight')
-print("Overlay comparison saved as 'overlay_comparison.png'")
-
-plt.show()
-
-### breakpoint()
-
-
-### ------- new method of comparison
-
-# Example usage:
-if __name__ == "__main__":
-    # # # Example: Create two similar meshes for demonstration
-    # mesh1 = o3d.geometry.TriangleMesh.create_sphere(radius=1.0)
-    # mesh1.compute_vertex_normals()
-    #
-    # # Create slightly different mesh
-    # mesh2 = o3d.geometry.TriangleMesh.create_sphere(radius=1.0)
-    # mesh2.compute_vertex_normals()
-    # vertices = np.asarray(mesh2.vertices)
-    # vertices += np.random.normal(0, 0.01, vertices.shape)  # Add small noise
-    # mesh2.vertices = o3d.utility.Vector3dVector(vertices)
-    #
-    # # # Method 1: GUI with side panel (more complex but has legend in window)
-    # # print("Method 1: Custom GUI with legend panel")
-    # # compare_point_clouds_with_legend(mesh1, mesh2, cmap_name='jet')
-    #
-    # # Method 2: Simple viewer with detailed console output (recommended)
-    # print("\nMethod 2: Simple viewer with console stats")
-    # simple_comparison_with_stats(mesh1, mesh2, cmap_name='jet')
-
-    # Or use your own meshes:
-    mesh1 = aligned_pcd1 #o3d.io.read_triangle_mesh("your_mesh1.ply")
-    mesh2 = aligned_pcd2 #o3d.io.read_triangle_mesh("your_mesh2.ply")
-    compare_point_clouds_with_legend(mesh1, mesh2, cmap_name='jet')
-    simple_comparison_with_stats(mesh1, mesh2, cmap_name='jet')
-
-#breakpoint()
-
-### visualize the difference
-# Example usage:
-if __name__ == "__main__":
-    # Load your point clouds
-    pcd1 = aligned_pcd1 #o3d.io.read_point_cloud("pointcloud1.ply")
-    pcd2 = aligned_pcd2 #o3d.io.read_point_cloud("pointcloud2.ply")
-
-    # Method 1: Simple transparency simulation
-    print("Method 1: Simple transparency")
-    visualize_with_transparency(pcd1, pcd2,
-                                color1=[1, 0, 0], color2=[0, 0, 1],
-                                alpha1=0.2, alpha2=0.2)
-
-    # # Method 2: Advanced renderer (true transparency)
-    # print("\nMethod 2: Advanced renderer with transparency")
-    # visualize_with_custom_renderer(pcd1, pcd2)
-
-    # Method 3: Difference heatmap
-    print("\nMethod 3: Difference heatmap")
-    visualize_difference_heatmap(pcd1, pcd2)
-
-    # Method 4: Alternating/mixed points
-    print("\nMethod 4: Mixed points")
-    visualize_alternating(pcd1, pcd2, sample_rate=0.5)
-
-
-
-
-
-#breakpoint()
-
-
-# # show the results,  Previous code
-
-# setup up cut distance for better visualization
-z_threshold = 100 # unit mm
-mobile_mesh_cut = scan_o3d_mesh # mesh_meas.cut_mesh_at_z(scan_o3d_mesh, z_threshold)
-stationary_mesh_cut = stationary_o3d_mesh # mesh_meas.cut_mesh_at_z(stationary_o3d_mesh, z_threshold)
-
-# o3d.visualization.draw_geometries([mobile_mesh_cut,stationary_mesh_cut])
-
-# ############ comparing meshes ############
-# overlay_meshes(scan_o3d_mesh,stationary_o3d_mesh,alpha=0.1,copy_inputs=False)
-# compare_meshes(stationary_o3d_mesh,scan_o3d_mesh)
-
-compare_meshes_transparent(stationary_o3d_mesh,scan_o3d_mesh, alpha=0.05)
-#compare_meshes_transparent(stationary_mesh_cut,mobile_mesh_cut, alpha=0.05)
-#compare_meshes_transparent(aligned_pcd1,aligned_pcd2, alpha=0.15)
-# mesh_common_methods.compare_ply_files(stationary_o3d_mesh, scan_o3d_mesh)
-# mesh_common_methods.compare_ply_files(scan_mesh_path,stationary_scan_path,side_by_side=False)
-
-# o3d.visualization.draw_geometries([scan_o3d_mesh, stationary_o3d_mesh])
-print('finished comparison')
-### ----------- end of main code --------------
-
-"""

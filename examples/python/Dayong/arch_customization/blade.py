@@ -328,7 +328,7 @@ def cut_point_cloud(target_points, knife_points, n_neighbors=20, k_classify=10,
 
     return piece1, piece2, signed_distances
 
-def call_surface_cut(pcd_target, pcd_knife):
+def call_surface_cut(pcd_target: o3d.geometry.PointCloud, pcd_knife):
     target_points = np.asarray(pcd_target.points)  # generate_curved_surface(n_points=3000, surface_type='complex_target')
     knife_points =  np.asarray(pcd_knife.points)  # generate_curved_surface(n_points=1500, surface_type='wavy_knife')
 
@@ -353,7 +353,7 @@ def call_surface_cut(pcd_target, pcd_knife):
 
     return saved_M1
 
-def extract_points_by_y_range(pcd, y_min, y_max):
+def extract_points_by_y_range(pcd: o3d.geometry.PointCloud, y_min, y_max):
     """
     Extract points within a Y range.
 
@@ -391,7 +391,7 @@ def extract_points_by_y_range(pcd, y_min, y_max):
 
     return filtered_pcd
 
-def estimate_eps(pcd, k=10):
+def estimate_eps(pcd: o3d.geometry.PointCloud, k=10):
     """
     Estimate good eps value using k-nearest neighbors.
     """
@@ -411,7 +411,7 @@ def estimate_eps(pcd, k=10):
 
     return suggested_eps
 
-def get_largest_cluster_auto(pcd, min_points=10):
+def get_largest_cluster_auto(pcd: o3d.geometry.PointCloud, min_points=10):
     """
     Automatically estimate eps and find largest cluster.
     """
@@ -439,7 +439,7 @@ def get_largest_cluster_auto(pcd, min_points=10):
 
     return largest_pcd
 
-def segment_plane_ransac(pcd, distance_threshold=0.01, ransac_n=3, num_iterations=1000):
+def segment_plane_ransac(pcd: o3d.geometry.PointCloud, distance_threshold=0.01, ransac_n=3, num_iterations=1000):
     """
     Segment plane using RANSAC algorithm.
 
@@ -487,16 +487,22 @@ def segment_plane_ransac(pcd, distance_threshold=0.01, ransac_n=3, num_iteration
     return plane_pcd, non_plane_pcd, plane_model
 
 def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
+    # 1. Project the pcd to the XY plane and get the boundary
     xyz_points = pcd.points
     xy_points = np.asarray(xyz_points)[:, 0:2]
-    boundary = alpha_shape_boundary(xy_points, alpha)
+    plt.figure(figsize=(10, 8))
+    plt.scatter(xy_points[:, 0], xy_points[:, 1], s=1, c='blue', alpha=0.5)
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.axis('equal')  # Equal aspect ratio
+    plt.title('XY Point Cloud')
+    plt.show()
 
-    # Plot
+    boundary = alpha_shape_boundary(xy_points, alpha)
     plt.figure(figsize=(12, 10))
     plt.scatter(xy_points[:, 0], xy_points[:, 1], s=0.5, c='lightblue', alpha=0.3, label='All points')
     plt.plot(boundary[:, 0], boundary[:, 1], 'r', linewidth=2, label='Boundary')  ### r-
-    plt.plot([boundary[-1, 0], boundary[0, 0]],
-             [boundary[-1, 1], boundary[0, 1]], 'r-', linewidth=2)  # Close the loop
+    plt.plot([boundary[-1, 0], boundary[0, 0]], [boundary[-1, 1], boundary[0, 1]], 'r-', linewidth=2)  # Close the loop
     plt.axis('equal')
     plt.legend()
     plt.title('Continuous Alpha Shape Boundary')
@@ -504,8 +510,7 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
 
     print(f"Boundary has {len(boundary)} points")
 
-    ### ------------- line equal distance --------------------
-    # Usage
+    # 2. Resample points on the boundary to the same distance
     equal_boundary = resample_boundary_equal_distance(boundary, num_points=1000)
 
     # Verify spacing
@@ -523,13 +528,9 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
     plt.title('Resampled Boundary with Equal Spacing')
     plt.show()
 
-    ### breakpoint()
-
-    ### ------------- shrink the boundary line ----------------
-    # Usage
+    # 3. Shrink the boundary by shrink_ratio
     shrunken = shrink_boundary(equal_boundary, shrink_ratio=0.01)  # 1% or 5% shrink
 
-    # Plot comparison
     plt.figure(figsize=(12, 10))
     plt.scatter(xy_points[:, 0], xy_points[:, 1], s=0.5, c='lightblue', alpha=0.3, label='Points')
     plt.plot(boundary[:, 0], boundary[:, 1], 'b-', linewidth=2, label='Original boundary')
@@ -541,26 +542,13 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
     plt.title('Boundary Shrinkage')
     plt.show()
 
-    ### ------------- prepare the cutting plane ----------------
-    # Get minimum bound of the point cloud
+    # 4. Stack the points of the boundary along the Z axis (i.e. form the blade)
     min_bound = pcd.get_min_bound()
     min_z = min_bound[2]  # Z is the third component
     print(f"Minimum Z value: {min_z}")
 
     max_z = min_z + 30
-
-    # # Add constant Z value
-    # z_value = min_z  # or any constant value
-    # shrunken_3d = np.column_stack([shrunken, np.full(len(shrunken), z_value)])
-    #
-    # print(f"Original shape: {shrunken.shape}")      # (N, 2)
-    # print(f"3D shape: {shrunken_3d.shape}")         # (N, 3)
-    #
-    # # import open3d as o3d
-    # # import numpy as np
-
     # -------------------- populate the cutting plane -----------------
-
     # Create multiple shrunken boundaries at different Z heights
     z_layers = []
     num_layers = 30
@@ -589,8 +577,6 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
         height=900
     )
 
-    #### ------------------------- main code region ---------------------
-
     # Assign different colors to each point cloud
     pcd1 = pcd
     pcd2 = layers_pcd
@@ -603,7 +589,8 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
                                       window_name="Original - Red: pcd1, Blue: pcd2")
 
     print("\nSurface Processing...")
-    ### cut the foot by the artificial knife
+
+    # 5. Cut the pcd with the blade
     remain_pcd1 = call_surface_cut(pcd1, pcd2)  ### pcd1: target; pcd2: knift. Point Cloud
     # remain_pcd2 = call_surface_cut(pcd2, pcd1)  ### pcd1: target; pcd2: knift. Point Cloud
 
@@ -618,27 +605,19 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
     y_min = min_y + (max_y - min_y) * 0.01  # Your minimum Y value
     y_max = min_y + (max_y - min_y) * 0.8  # Your maximum Y value
 
+    # 6. First cut the front and back part of the foot (trivial part);
+    # then use DBSCAN to get the largest connected component
     cleaned_pcd = extract_points_by_y_range(remain_pcd1, y_min, y_max)
-    # Usage
-    # largest_piece = get_largest_cluster_auto(remain_pcd1, min_points=50)
     largest_piece = get_largest_cluster_auto(cleaned_pcd, min_points=50)
 
     pcd1_vis = remain_pcd1.paint_uniform_color([1, 0, 0])  # Red
     pcd2_vis = largest_piece.paint_uniform_color([0, 0, 1])  # Blue
-    # pcd3_vis = largest_cluster_M1.paint_uniform_color([1, 0, 1])  # Magenta
-    # pcd4_vis = largest_cluster_M3.paint_uniform_color([0, 1, 0])  # Green
 
     # Visualize original clouds with box
     o3d.visualization.draw_geometries([largest_piece],
                                       window_name="Processed - Blue")
 
-    # o3d.visualization.draw_geometries([pcd1_vis, pcd2_vis],
-    #                                       window_name="Processed - Red: pcd1, Blue: pcd2")
-
-    # o3d.visualization.draw_geometries([pcd1_vis],
-    #                                       window_name="Processed - Red: pcd1, Blue: pcd2")
-
-    # Usage
+    # 7. Use the largest_piece as the plane; non_plane_pcd contains the arch
     plane_pcd, non_plane_pcd, plane_model = segment_plane_ransac(
         largest_piece,
         distance_threshold=1.5,  # Adjust based on your data
@@ -657,10 +636,10 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
     min_y = min_bound[1]  # Y is index 1
     max_y = max_bound[1]
 
-    # Usage
     y_min = min_y + (max_y - min_y) * 0.2  # Your minimum Y value
     y_max = min_y + (max_y - min_y) * 0.7  # Your maximum Y value
 
+    # filtered_pcd is the arch extracted from arch_raw (set some y limits)
     filtered_pcd = extract_points_by_y_range(arch_raw, y_min, y_max)
     filtered_pcd = get_largest_cluster_auto(filtered_pcd, min_points=50)
     pcd5_vis = filtered_pcd.paint_uniform_color([1, 0, 1])  # Magenta
