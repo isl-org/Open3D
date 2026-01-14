@@ -189,8 +189,8 @@ void EstimateNormals(benchmark::State& state,
                      const core::Device& device,
                      const core::Dtype& dtype,
                      const double voxel_size,
-                     const utility::optional<int> max_nn,
-                     const utility::optional<double> radius) {
+                     const std::optional<int> max_nn,
+                     const std::optional<double> radius) {
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
 
@@ -496,7 +496,7 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   core::Float32,
                   0.02,
                   30,
-                  utility::nullopt)
+                  std::nullopt)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
                   CPU F64 KNN[0.02 | 30],
@@ -504,14 +504,14 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   core::Float64,
                   0.02,
                   30,
-                  utility::nullopt)
+                  std::nullopt)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
                   CPU F32 Radius[0.02 | 0.06],
                   core::Device("CPU:0"),
                   core::Float32,
                   0.02,
-                  utility::nullopt,
+                  std::nullopt,
                   0.06)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
@@ -519,7 +519,7 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   core::Device("CPU:0"),
                   core::Float64,
                   0.02,
-                  utility::nullopt,
+                  std::nullopt,
                   0.06)
         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
@@ -545,7 +545,7 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   core::Float32,
                   0.02,
                   30,
-                  utility::nullopt)
+                  std::nullopt)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
                   CUDA F64 KNN[0.02 | 30],
@@ -553,14 +553,14 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   core::Float64,
                   0.02,
                   30,
-                  utility::nullopt)
+                  std::nullopt)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
                   CUDA F32 Radius[0.02 | 0.06],
                   core::Device("CUDA:0"),
                   core::Float32,
                   0.02,
-                  utility::nullopt,
+                  std::nullopt,
                   0.06)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
@@ -568,7 +568,7 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   core::Device("CUDA:0"),
                   core::Float64,
                   0.02,
-                  utility::nullopt,
+                  std::nullopt,
                   0.06)
         ->Unit(benchmark::kMillisecond);
 #endif

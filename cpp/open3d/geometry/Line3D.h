@@ -10,10 +10,10 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <limits>
+#include <optional>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Geometry.h"
-#include "open3d/utility/Optional.h"
 
 #pragma once
 
@@ -103,7 +103,7 @@ public:
     /// plane taking into account line semantics. Returns an empty result if
     /// there is no intersection. On a Line3D this returns the same result as
     /// .Line().intersectionParameter(plane)
-    virtual utility::optional<double> IntersectionParameter(
+    virtual std::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const;
 
     /// \brief Calculates the parameter of a point projected onto the line
@@ -150,7 +150,7 @@ public:
     /// \warning A line that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    virtual utility::optional<double> SlabAABB(
+    virtual std::optional<double> SlabAABB(
             const AxisAlignedBoundingBox& box) const;
 
     /// \brief Returns the lower intersection parameter for a line with an
@@ -175,7 +175,7 @@ public:
     /// is important.  In such cases if performance is important, a simple
     /// custom implementation based on the problem directionality will likely
     /// outperform even the slab method.
-    virtual utility::optional<double> ExactAABB(
+    virtual std::optional<double> ExactAABB(
             const AxisAlignedBoundingBox& box) const;
 
     /// \brief Computes the two corresponding parameters of the closest distance
@@ -259,7 +259,7 @@ public:
     /// there is no intersection. On a Ray3D this means that intersections
     /// behind the origin are invalid, so the return value will always be
     /// positive.
-    utility::optional<double> IntersectionParameter(
+    std::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const override;
 
     /// \brief Returns the lower intersection parameter for a ray with an
@@ -282,7 +282,7 @@ public:
     /// \warning A ray that lies exactly in one of the AABB's planes within the
     /// double floating point precision will not intersect correctly by this
     /// method
-    utility::optional<double> SlabAABB(
+    std::optional<double> SlabAABB(
             const AxisAlignedBoundingBox& box) const override;
 
     /// \brief Clamps/bounds a parameter value to the closest valid place where
@@ -358,7 +358,7 @@ public:
     /// plane taking into account segment semantics. Returns an empty result if
     /// there is no intersection. On a Segment3D this means that intersections
     /// behind the origin and beyond the endpoint are invalid.
-    utility::optional<double> IntersectionParameter(
+    std::optional<double> IntersectionParameter(
             const Eigen::Hyperplane<double, 3>& plane) const override;
 
     /// \brief Returns the lower intersection parameter for a segment with an
@@ -383,7 +383,7 @@ public:
     /// \warning A segment that lies exactly in one of the AABB's planes within
     /// the double floating point precision will not intersect correctly by this
     /// method
-    utility::optional<double> SlabAABB(
+    std::optional<double> SlabAABB(
             const AxisAlignedBoundingBox& box) const override;
 
     /// \brief Returns the lower intersection parameter for a segment with an
@@ -405,7 +405,7 @@ public:
     /// intersection is important.  In such cases if performance is important, a
     /// simple custom implementation based on the problem directionality will
     /// likely outperform even the slab method.
-    utility::optional<double> ExactAABB(
+    std::optional<double> ExactAABB(
             const AxisAlignedBoundingBox& box) const override;
 
     /// \brief Clamps/bounds a parameter value to the closest valid place where

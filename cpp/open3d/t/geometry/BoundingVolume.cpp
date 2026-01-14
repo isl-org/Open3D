@@ -142,7 +142,7 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Translate(
 }
 
 AxisAlignedBoundingBox &AxisAlignedBoundingBox::Scale(
-        double scale, const utility::optional<core::Tensor> &center) {
+        double scale, const std::optional<core::Tensor> &center) {
     core::Tensor center_d;
     if (!center.has_value()) {
         center_d = GetCenter();
@@ -210,7 +210,7 @@ core::Tensor AxisAlignedBoundingBox::GetBoxPoints() const {
 core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
         const core::Tensor &points) const {
     core::AssertTensorDevice(points, GetDevice());
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
 
     core::Tensor mask =
@@ -232,7 +232,7 @@ std::string AxisAlignedBoundingBox::ToString() const {
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const core::Tensor &points) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
     if (points.GetLength() <= 0) {
         utility::LogWarning(
@@ -433,7 +433,7 @@ OrientedBoundingBox &OrientedBoundingBox::Translate(
 
 OrientedBoundingBox &OrientedBoundingBox::Rotate(
         const core::Tensor &rotation,
-        const utility::optional<core::Tensor> &center) {
+        const std::optional<core::Tensor> &center) {
     core::AssertTensorDevice(rotation, GetDevice());
     core::AssertTensorShape(rotation, {3, 3});
     core::AssertTensorDtypes(rotation, {core::Float32, core::Float64});
@@ -477,7 +477,7 @@ OrientedBoundingBox &OrientedBoundingBox::Transform(
 }
 
 OrientedBoundingBox &OrientedBoundingBox::Scale(
-        const double scale, const utility::optional<core::Tensor> &center) {
+        const double scale, const std::optional<core::Tensor> &center) {
     extent_ *= scale;
     if (center.has_value()) {
         core::Tensor center_d = center.value();
@@ -494,7 +494,7 @@ OrientedBoundingBox &OrientedBoundingBox::Scale(
 core::Tensor OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
         const core::Tensor &points) const {
     core::AssertTensorDevice(points, GetDevice());
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
 
     core::Tensor mask =
@@ -568,7 +568,7 @@ OrientedBoundingBox OrientedBoundingBox::FromLegacy(
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
         const core::Tensor &points, bool robust, MethodOBBCreate method) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
     switch (method) {
         case MethodOBBCreate::PCA:

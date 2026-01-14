@@ -1,4 +1,5 @@
 ## Main
+-   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
 -   Corrected documentation for Link Open3D in C++ projects (broken links).
 -   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
 -   Fix MSAA sample count not being copied when FilamentView is copied
@@ -66,6 +67,9 @@
 -   Fix advanced indexing bug with sliced boolean masks on CUDA devices (PR #7340)
 -   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
 -   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
+-   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
+-   macOS x86_64 not longer supported, only macOS arm64 is supported.
+
 
 ## 0.13
 

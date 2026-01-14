@@ -69,7 +69,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ ${{ matrix.BUILD_SHARED_LIBS }} == 'ON' ] ; then
-            gh release upload main-devel open3d-*.whl --clobber
+            gh release upload main-devel open3d*.whl --clobber
             gh release upload main-devel open3d-devel-*.tar.xz --clobber
           fi
           gh release view main-devel

@@ -28,16 +28,8 @@
 #include <unistd.h>
 #endif
 
-#ifdef _WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
 #include <filesystem>
-namespace fs = std::__fs::filesystem;
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
+namespace fs = std::filesystem;
 
 #include "open3d/utility/Logging.h"
 
