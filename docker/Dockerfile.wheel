@@ -138,7 +138,7 @@ WORKDIR /root/Open3D
 RUN export NPROC=$(($(nproc)+2)) \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter \
- && if [ ${CI:-}a != a ]; then cd /root/Open3D/build/ && ls | grep -Ev '^lib$' | xargs rm -rf ; fi
+ && if [ ${CI:-}a != a ]; then rm -rf build_cpu build_cuda && if [ -d build ]; then find build -mindepth 1 -maxdepth 1 -not -name lib -exec rm -rf {} +; fi; fi
  # remove build folder (except lib) to save CI space on Github
 
 # Compress ccache folder, move to / directory

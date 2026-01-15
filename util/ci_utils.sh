@@ -134,7 +134,9 @@ build_all() {
     if [[ "$BUILD_SHARED_LIBS" == "ON" ]]; then
         make package
     fi
-    make VERBOSE=1 install-pip-package -j"$NPROC"
+    if [[ "$BUILD_PYTHON_MODULE" == "ON" ]]; then
+        make VERBOSE=1 install-pip-package -j"$NPROC"
+    fi
     echo
 }
 
