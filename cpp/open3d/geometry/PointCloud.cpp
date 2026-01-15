@@ -568,11 +568,81 @@ std::shared_ptr<PointCloud> PointCloud::Crop(const OrientedBoundingBox& bbox,
 PointCloud PointCloud::Smooth(const std::string& method,
                               double radius,
                               int k) const {
-    utility::LogWarning(
-            "PointCloud::Smooth: smoothing feature not yet implemented.");
-    throw std::runtime_error("PointCloud smoothing not implemented yet.");
+    if (method != "weighted_mls") {
+        utility::LogError(
+            "Only 'weighted_mls' smoothing method is currently supported.");
+    }
 
-    return PointCloud();
+    if (points_.empty()) {
+        utility::LogWarning("PointCloud::Smooth called on empty cloud.");
+        return PointCloud();
+    }
+
+    PointCloud smoothed_cloud;
+    smoothed_cloud.points_.resize(points_.size());
+    bool has_normals = HasNormals();
+    if (has_normals) {
+        smoothed_cloud.normals_.resize(normals_.size());
+    }
+
+    KDTreeFlann kdtree;
+    kdtree.SetGeometry(*this);
+
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+    for (int i = 0; i < (int)points_.size(); i++) {
+        const Eigen::Vector3d &p = points_[i];
+
+        std::vector<int> indices;
+        std::vector<double> distances;
+        int nb_neighbors = 0;
+
+        if (k > 0) {
+            nb_neighbors = kdtree.SearchKNN(p, k, indices, distances);
+        } else {
+            nb_neighbors = kdtree.SearchRadius(p, radius, indices, distances);
+        }
+
+        if (nb_neighbors < 3) {
+            smoothed_cloud.points_[i] = p;
+            if (has_normals) smoothed_cloud.normals_[i] = (has_normals ? normals_[i] : Eigen::Vector3d::Zero());
+            continue;
+        }
+
+        // Weighted centroid
+        Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
+        std::vector<double> w(nb_neighbors);
+        double sum_w = 0.0;
+
+        for (int j = 0; j < nb_neighbors; j++) {
+            double d2 = distances[j];
+            w[j] = std::exp(-d2 / (radius * radius));  // Gaussian weight
+            centroid += w[j] * points_[indices[j]];
+            sum_w += w[j];
+        }
+        centroid /= sum_w;
+
+        // Weighted covariance
+        Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
+        for (int j = 0; j < nb_neighbors; j++) {
+            Eigen::Vector3d diff = points_[indices[j]] - centroid;
+            C += w[j] * diff * diff.transpose();
+        }
+
+        // PCA: smallest eigenvector = normal
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(C);
+        Eigen::Vector3d normal = solver.eigenvectors().col(0);
+
+        // Project point onto plane
+        Eigen::Vector3d proj = p - normal * ((p - centroid).dot(normal));
+        smoothed_cloud.points_[i] = proj;
+
+        if (has_normals) {
+            smoothed_cloud.normals_[i] = normal.normalized();
+        }
+    }
+
+    return smoothed_cloud;
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
