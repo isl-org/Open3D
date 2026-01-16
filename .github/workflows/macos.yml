@@ -173,8 +173,7 @@ jobs:
           name: open3d-build-${{ matrix.os }}
       
       - name: Unpack build artifact
-        run: |
-            tar -xaf build.tar.xz
+        run: tar -xf build.tar.xz
 
       - name: Setup cache
         uses: actions/cache@v4
@@ -187,8 +186,7 @@ jobs:
           # Restore any ccache cache entry, if none for
           # ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }} exists.
           # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-ccache
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-ccache
 
       - name: Set up Python
         uses: actions/setup-python@v5

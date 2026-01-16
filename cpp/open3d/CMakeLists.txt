@@ -33,17 +33,22 @@ if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
                 -Wl,-exported_symbols_list
                 "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
         elseif (UNIX)   # Linux
-            file(GENERATE OUTPUT libOpen3D.map CONTENT
-                [=[{
+            # On ARM64 with shared libs, using the version script hides BoringSSL symbols
+            # needed by the examples (which link via 3rdparty_curl/openssl logic).
+            # We disable the version script on ARM64 to allow these symbols to be resolved.
+            if(NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND BUILD_SHARED_LIBS))
+                file(GENERATE OUTPUT libOpen3D.map CONTENT
+                    [=[{
     global:
         *open3d*;
         extern "C++" {
-             open3d::*;
+            open3d::*;
         };
     local: *;
 };]=])
-            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
-                "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
+                target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+                    "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
+            endif()
         elseif (WIN32)
             # TODO(Sameer): Only export open3d symbols
         endif()
