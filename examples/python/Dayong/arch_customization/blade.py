@@ -416,7 +416,8 @@ def get_largest_cluster_auto(pcd: o3d.geometry.PointCloud, min_points=10):
     Automatically estimate eps and find largest cluster.
     """
     # Estimate eps
-    eps = estimate_eps(pcd, k=min_points)
+    # eps = estimate_eps(pcd, k=min_points)
+    eps = 0.001
 
     print(f"\nUsing eps={eps:.4f}, min_points={min_points}")
 
@@ -486,7 +487,7 @@ def segment_plane_ransac(pcd: o3d.geometry.PointCloud, distance_threshold=0.01, 
 
     return plane_pcd, non_plane_pcd, plane_model
 
-def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
+def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0, y_min_ratio: float = 0.0, y_max_ratio: float = 1.0):
     # 1. Project the pcd to the XY plane and get the boundary
     xyz_points = pcd.points
     xy_points = np.asarray(xyz_points)[:, 0:2]
@@ -601,8 +602,8 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
     max_y = max_bound[1]
 
     # Usage
-    y_min = min_y + (max_y - min_y) * 0.01  # Your minimum Y value
-    y_max = min_y + (max_y - min_y) * 0.8  # Your maximum Y value
+    y_min = min_y + (max_y - min_y) * y_min_ratio  # Your minimum Y value 0.01
+    y_max = min_y + (max_y - min_y) * y_max_ratio  # Your maximum Y value 0.8
 
     # 6. First cut the front and back part of the foot (trivial part);
     # then use DBSCAN to get the largest connected component
@@ -643,3 +644,68 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0):
     # o3d.visualization.draw_geometries([filtered_pcd], window_name="Filtered Point Cloud")
     #
     # return filtered_pcd
+
+def extract_surface_dense_from_grid(
+        pcd: o3d.geometry.PointCloud,
+        grid_size: float = 2.0,  # mm, grid cell size
+        dz_below: float = 0.8,  # mm, keep points up to this much below the upper surface
+        dz_above: float = 0.2,  # mm, (optional) allow a bit above due to noise
+        min_points_per_cell: int = 1
+) -> o3d.geometry.PointCloud:
+    """
+    Use grid to estimate the upper_z (= max z) if each cell,
+    then keep all the points that are within [upper_z - dz_below, upper_z + dz_above].
+
+    Works for both insole and foot.
+    """
+
+    pts = np.asarray(pcd.points)
+    if len(pts) == 0:
+        raise ValueError("Empty point cloud")
+
+    x, y, z = pts[:, 0], pts[:, 1], pts[:, 2]
+    x0, y0 = x.min(), y.min()
+    ix = np.floor((x - x0) / grid_size).astype(np.int32)
+    iy = np.floor((y - y0) / grid_size).astype(np.int32)
+
+    big = int(iy.max() + 10)
+    key = ix * big + iy
+
+    # sort by key then by z so we can get max z per cell quickly
+    order = np.lexsort((z, key))
+    key_sorted = key[order]
+    z_sorted = z[order]
+
+    change = np.where(np.diff(key_sorted) != 0)[0] + 1
+    starts = np.concatenate(([0], change))
+    ends = np.concatenate((change, [len(key_sorted)]))
+
+    # cell -> upper_z
+    upper_z_map = {}
+    valid_keys = set()
+
+    for s, e in zip(starts, ends):
+        if e - s < min_points_per_cell:
+            continue
+        k = int(key_sorted[s])
+        upper_z_map[k] = float(z_sorted[e - 1])  # max z in this cell
+        valid_keys.add(k)
+
+    # now filter original points by z gate relative to their cell's upper_z
+    keep = np.zeros(len(pts), dtype=bool)
+    for i in range(len(pts)):
+        k = int(key[i])
+        if k not in valid_keys:
+            continue
+        uz = upper_z_map[k]
+        if (uz - dz_below) <= z[i] <= (uz + dz_above):
+            keep[i] = True
+
+    dense_pts = pts[keep]
+    out = o3d.geometry.PointCloud()
+    out.points = o3d.utility.Vector3dVector(dense_pts)
+    return out
+
+def clean_pcd_statistical(pcd, nb_neighbors=20, std_ratio=1.0):
+    cl, ind = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors, std_ratio=std_ratio)
+    return pcd.select_by_index(ind)
