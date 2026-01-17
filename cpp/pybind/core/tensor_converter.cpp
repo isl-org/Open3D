@@ -20,8 +20,8 @@ namespace open3d {
 namespace core {
 
 static Tensor CastOptionalDtypeDevice(const Tensor& t,
-                                      utility::optional<Dtype> dtype,
-                                      utility::optional<Device> device) {
+                                      std::optional<Dtype> dtype,
+                                      std::optional<Device> device) {
     Tensor t_cast = t;
     if (dtype.has_value()) {
         t_cast = t_cast.To(dtype.value());
@@ -122,8 +122,8 @@ Tensor PyArrayToTensor(py::array array, bool inplace) {
 }
 
 Tensor PyListToTensor(const py::list& list,
-                      utility::optional<Dtype> dtype,
-                      utility::optional<Device> device) {
+                      std::optional<Dtype> dtype,
+                      std::optional<Device> device) {
     py::object numpy = py::module::import("numpy");
     py::array np_array = numpy.attr("array")(list);
     Tensor t = PyArrayToTensor(np_array, false);
@@ -131,8 +131,8 @@ Tensor PyListToTensor(const py::list& list,
 }
 
 Tensor PyTupleToTensor(const py::tuple& tuple,
-                       utility::optional<Dtype> dtype,
-                       utility::optional<Device> device) {
+                       std::optional<Dtype> dtype,
+                       std::optional<Device> device) {
     py::object numpy = py::module::import("numpy");
     py::array np_array = numpy.attr("array")(tuple);
     Tensor t = PyArrayToTensor(np_array, false);
@@ -140,8 +140,8 @@ Tensor PyTupleToTensor(const py::tuple& tuple,
 }
 
 Tensor DoubleToTensor(double scalar_value,
-                      utility::optional<Dtype> dtype,
-                      utility::optional<Device> device) {
+                      std::optional<Dtype> dtype,
+                      std::optional<Device> device) {
     Dtype dtype_value = core::Float64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
@@ -156,8 +156,8 @@ Tensor DoubleToTensor(double scalar_value,
 }
 
 Tensor IntToTensor(int64_t scalar_value,
-                   utility::optional<Dtype> dtype,
-                   utility::optional<Device> device) {
+                   std::optional<Dtype> dtype,
+                   std::optional<Device> device) {
     Dtype dtype_value = core::Int64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
@@ -172,8 +172,8 @@ Tensor IntToTensor(int64_t scalar_value,
 }
 
 Tensor BoolToTensor(bool scalar_value,
-                    utility::optional<Dtype> dtype,
-                    utility::optional<Device> device) {
+                    std::optional<Dtype> dtype,
+                    std::optional<Device> device) {
     Dtype dtype_value = core::Bool;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
@@ -187,8 +187,8 @@ Tensor BoolToTensor(bool scalar_value,
 }
 
 Tensor PyHandleToTensor(const py::handle& handle,
-                        utility::optional<Dtype> dtype,
-                        utility::optional<Device> device,
+                        std::optional<Dtype> dtype,
+                        std::optional<Device> device,
                         bool force_copy) {
     // 1) bool
     // 2) int

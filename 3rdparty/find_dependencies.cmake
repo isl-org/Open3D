@@ -161,6 +161,7 @@ endfunction()
 # CMake arguments for configuring ExternalProjects. Use the second _hidden
 # version by default.
 set(ExternalProject_CMAKE_ARGS
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5      # for VTK 9.1
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
@@ -1315,21 +1316,24 @@ if(BUILD_GUI)
         else()
             message(STATUS "Using prebuilt third-party library Filament")
             include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
-            # Set lib directory for filament v1.9.9 on Windows.
-            # Assume newer version if FILAMENT_PRECOMPILED_ROOT is set.
-            if (WIN32 AND NOT FILAMENT_PRECOMPILED_ROOT)
-                if (STATIC_WINDOWS_RUNTIME)
-                    set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
-                else()
-                    set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
-                endif()
-            endif()
         endif()
-        if (APPLE)
+        if (UNIX AND NOT APPLE)
+            if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+                set(FILAMENT_RUNTIME_VER aarch64)
+            else()
+                set(FILAMENT_RUNTIME_VER x86_64)
+            endif()
+        elseif (APPLE)
             if (APPLE_AARCH64)
                 set(FILAMENT_RUNTIME_VER arm64)
             else()
                 set(FILAMENT_RUNTIME_VER x86_64)
+            endif()
+        else()  # WIN32
+            if (STATIC_WINDOWS_RUNTIME)
+                set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+            else()
+                set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
             endif()
         endif()
         open3d_import_3rdparty_library(3rdparty_filament

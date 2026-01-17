@@ -49,10 +49,51 @@ void MacTransformIntoApp() {
     TransformProcessType(&psn, kProcessTransformToForegroundApplication);
 }
 
+void SetupMetalLayer(void* nativeView) {
+    NSView* view = (NSView*) nativeView;
+    [view setWantsLayer:YES];
+    [view setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
+    [view setLayerContentsPlacement:NSViewLayerContentsPlacementScaleProportionallyToFill];
+    
+    CAMetalLayer* metalLayer = [CAMetalLayer layer];
+    metalLayer.bounds = view.bounds;
+    metalLayer.frame = NSRectToCGRect(view.frame);
+    if (view.window) {
+        metalLayer.contentsScale = view.window.backingScaleFactor;
+    } else {
+        metalLayer.contentsScale = [NSScreen mainScreen].backingScaleFactor;
+    }
+
+    // It's important to set the drawableSize to the actual backing pixels. When rendering
+    // full-screen, we can skip the macOS compositor if the size matches the display size.
+    metalLayer.drawableSize = [view convertSizeToBacking:view.bounds.size];
+
+    // This is set to NO by default, but is also important to ensure we can bypass the compositor
+    // in full-screen mode
+    // See "Direct to Display" http://metalkit.org/2017/06/30/introducing-metal-2.html.
+    metalLayer.opaque = YES;
+    [view setLayer:metalLayer];
+    // return metalLayer;
+}
+
+// void ResizeNativeWindow(GLFWwindow* glfw_window) {
+//     NSWindow* win = glfwGetCocoaWindow(glfw_window);
+//     NSView* view = [win contentView];
+//     CAMetalLayer* metalLayer = (CAMetalLayer*)view.layer;
+//     if (metalLayer) {
+//         metalLayer.contentsScale = view.window.backingScaleFactor;
+//         metalLayer.frame = NSRectToCGRect(view.frame);
+//         metalLayer.drawableSize = [view convertSizeToBacking:view.bounds.size];
+//     }
+// }
+
 void* GetNativeDrawable(GLFWwindow* glfw_window) {
     NSWindow* win = glfwGetCocoaWindow(glfw_window);
     NSView* view = [win contentView];
-    return view;
+    if (![view.layer isKindOfClass:[CAMetalLayer class]]) {
+        SetupMetalLayer(view);
+    }
+    return view.layer;
 }
 
 void PostNativeExposeEvent(GLFWwindow* glfw_window) {
@@ -81,33 +122,6 @@ void ShowNativeAlert(const char *message) {
     [alert runModal];
 }
 
-/*void* SetupMetalLayer(void* nativeView) {
-    NSView* view = (NSView*) nativeView;
-    [view setWantsLayer:YES];
-    CAMetalLayer* metalLayer = [CAMetalLayer layer];
-    metalLayer.bounds = view.bounds;
-
-    // It's important to set the drawableSize to the actual backing pixels. When rendering
-    // full-screen, we can skip the macOS compositor if the size matches the display size.
-    metalLayer.drawableSize = [view convertSizeToBacking:view.bounds.size];
-
-    // This is set to NO by default, but is also important to ensure we can bypass the compositor
-    // in full-screen mode
-    // See "Direct to Display" http://metalkit.org/2017/06/30/introducing-metal-2.html.
-    metalLayer.opaque = YES;
-
-    [view setLayer:metalLayer];
-
-    return metalLayer;
-}
-
-void* ResizeMetalLayer(void* nativeView) {
-    NSView* view = (NSView*) nativeView;
-    CAMetalLayer* metalLayer = (CAMetalLayer*)view.layer;
-    metalLayer.drawableSize = [view convertSizeToBacking:view.bounds.size];
-    return metalLayer;
-}
-*/
 
 void SetNativeMenubar(void* menubar) {
     NSMenu *menu = (NSMenu*)menubar;

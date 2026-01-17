@@ -429,9 +429,8 @@ public:
     /// \return A copy of the tensor with `values` appended to axis. Note that
     /// append does not occur in-place: a new array is allocated and filled. If
     /// axis is None, out is a flattened tensor.
-    Tensor Append(
-            const Tensor& other,
-            const utility::optional<int64_t>& axis = utility::nullopt) const;
+    Tensor Append(const Tensor& other,
+                  const std::optional<int64_t>& axis = std::nullopt) const;
 
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
@@ -951,12 +950,12 @@ public:
 
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors.
-    Tensor All(const utility::optional<SizeVector>& dims = utility::nullopt,
+    Tensor All(const std::optional<SizeVector>& dims = std::nullopt,
                bool keepdim = false) const;
 
     /// Returns true if any elements in the tensor are true. Only works for
     /// boolean tensors.
-    Tensor Any(const utility::optional<SizeVector>& dims = utility::nullopt,
+    Tensor Any(const std::optional<SizeVector>& dims = std::nullopt,
                bool keepdim = false) const;
 
     /// Returns true if the two tensors are element-wise equal.
@@ -1184,11 +1183,18 @@ public:
         }
     }
 
-    /// Convert the Tensor to DLManagedTensor.
+    /// Convert the Tensor to DLManagedTensor (DLPack v0.x).
     DLManagedTensor* ToDLPack() const;
+    /// Convert the Tensor to DLManagedTensorVersioned (DLPack v1.x).
+    DLManagedTensorVersioned* ToDLPackVersioned() const;
 
-    /// Convert DLManagedTensor to Tensor.
-    static Tensor FromDLPack(const DLManagedTensor* dlmt);
+    /// Convert DLManagedTensor to Tensor (DLPack v0.x).
+    static Tensor FromDLPack(const DLManagedTensor* dlmt,
+                             std::function<void(void*)> deleter = nullptr);
+    /// Convert DLManagedTensorVersioned to Tensor (DLPack v1.x).
+    static Tensor FromDLPackVersioned(
+            const DLManagedTensorVersioned* dlmt,
+            std::function<void(void*)> deleter = nullptr);
 
     /// Save tensor to numpy's npy format.
     void Save(const std::string& file_name) const;

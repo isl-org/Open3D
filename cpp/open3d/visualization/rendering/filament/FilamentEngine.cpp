@@ -7,6 +7,8 @@
 
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 
+#include "open3d/utility/Logging.h"
+
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -32,13 +34,10 @@ namespace {
 static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
-EngineInstance::RenderingType EngineInstance::type_ = RenderingType::kDefault;
-bool EngineInstance::is_headless_ = false;
+RenderingType EngineInstance::type_ = RenderingType::kDefault;
 std::string EngineInstance::resource_path_ = "";
 
 void EngineInstance::SelectBackend(RenderingType type) { type_ = type; }
-
-void EngineInstance::EnableHeadless() { is_headless_ = true; }
 
 void EngineInstance::SetResourcePath(const std::string& resource_path) {
     resource_path_ = resource_path;
@@ -74,10 +73,6 @@ EngineInstance& EngineInstance::Get() {
 
 void EngineInstance::DestroyInstance() { g_instance.reset(); }
 
-/// external function defined in custom Filament EGL backend for headless
-/// rendering
-extern "C" filament::backend::Platform* CreateEGLHeadlessPlatform();
-
 EngineInstance::EngineInstance() {
     filament::backend::Backend backend = filament::backend::Backend::DEFAULT;
     switch (type_) {
@@ -95,18 +90,22 @@ EngineInstance::EngineInstance() {
             break;
     }
 
-    filament::backend::Platform* custom_platform = nullptr;
-    if (is_headless_) {
-#ifdef __linux__
-        utility::LogInfo("EGL headless mode enabled.");
-        custom_platform = CreateEGLHeadlessPlatform();
-#else
-        utility::LogError("EGL Headless is not supported on this platform.");
-#endif
-    }
-
-    engine_ = filament::Engine::create(backend, custom_platform);
+    engine_ = filament::Engine::create(backend);
     resource_manager_ = new FilamentResourceManager(*engine_);
+    // Query and record the backend selected by filament for future use (e.g.
+    // for ImGui)
+    switch (engine_->getBackend()) {
+        case filament::backend::Backend::OPENGL:
+            type_ = RenderingType::kOpenGL;
+            break;
+        case filament::backend::Backend::VULKAN:
+            type_ = RenderingType::kVulkan;
+            break;
+        case filament::backend::Backend::METAL:
+            type_ = RenderingType::kMetal;
+            break;
+        default:;  // no update
+    }
 }
 
 }  // namespace rendering

@@ -33,8 +33,7 @@
 #include <filament/Skybox.h>
 #include <filament/Texture.h>
 #include <filament/TextureSampler.h>
-#include <image/KtxBundle.h>
-#include <image/KtxUtility.h>
+#include <ktxreader/Ktx1Reader.h>
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -596,8 +595,10 @@ RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
     }
 
     auto rt = RenderTarget::Builder()
-                      .texture(RenderTarget::COLOR, color_tex.get())
-                      .texture(RenderTarget::DEPTH, depth_tex.get())
+                      .texture(RenderTarget::AttachmentPoint::COLOR,
+                               color_tex.get())
+                      .texture(RenderTarget::AttachmentPoint::DEPTH,
+                               depth_tex.get())
                       .build(engine_);
     handle = RegisterResource<RenderTargetHandle>(engine_, rt, render_targets_);
     return handle;
@@ -615,11 +616,11 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
                                                &error_str)) {
             using namespace filament;
             // will be destroyed later by image::ktx::createTexture
-            auto* ibl_ktx = new image::KtxBundle(
+            auto* ibl_ktx = new image::Ktx1Bundle(
                     reinterpret_cast<std::uint8_t*>(ibl_data.data()),
                     std::uint32_t(ibl_data.size()));
-            auto* ibl_texture =
-                    image::ktx::createTexture(&engine_, ibl_ktx, false);
+            auto* ibl_texture = ktxreader::Ktx1Reader::createTexture(
+                    &engine_, ibl_ktx, false);
 
             filament::math::float3 bands[9] = {};
             if (!ibl_ktx->getSphericalHarmonics(bands)) {
@@ -684,11 +685,11 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
                                                &error_str)) {
             using namespace filament;
             // will be destroyed later by image::ktx::createTexture
-            auto* sky_ktx = new image::KtxBundle(
+            auto* sky_ktx = new image::Ktx1Bundle(
                     reinterpret_cast<std::uint8_t*>(sky_data.data()),
                     std::uint32_t(sky_data.size()));
-            auto* sky_texture =
-                    image::ktx::createTexture(&engine_, sky_ktx, false);
+            auto* sky_texture = ktxreader::Ktx1Reader::createTexture(
+                    &engine_, sky_ktx, false);
 
             auto skybox = Skybox::Builder()
                                   .environment(sky_texture)

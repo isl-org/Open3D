@@ -54,6 +54,8 @@ public:
     ErrorCallback error_callback_;
 };
 
+enum class RenderingType { kDefault, kOpenGL, kVulkan, kMetal };
+
 class Renderer {
 public:
     virtual ~Renderer() = default;
@@ -109,6 +111,9 @@ public:
     virtual void RemoveSkybox(const SkyboxHandle& id) = 0;
 
     virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
+
+    /// Return if the rendering backend is OpenGL, Vulkan or Metal.
+    virtual RenderingType GetBackendType() = 0;
 
     void RenderToImage(
             View* view,
