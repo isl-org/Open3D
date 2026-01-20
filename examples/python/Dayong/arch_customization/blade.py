@@ -3,6 +3,7 @@ import open3d as o3d
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
 from scipy.spatial import KDTree
+from scipy.spatial import cKDTree
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
@@ -645,7 +646,7 @@ def get_bottom_surface(pcd: o3d.geometry.PointCloud, alpha: float = 5.0, y_min_r
     #
     # return filtered_pcd
 
-def extract_surface_dense_from_grid(
+def extract_surface_from_grid(
         pcd: o3d.geometry.PointCloud,
         grid_size: float = 2.0,  # mm, grid cell size
         dz_below: float = 0.8,  # mm, keep points up to this much below the upper surface
@@ -709,3 +710,45 @@ def extract_surface_dense_from_grid(
 def clean_pcd_statistical(pcd, nb_neighbors=20, std_ratio=1.0):
     cl, ind = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors, std_ratio=std_ratio)
     return pcd.select_by_index(ind)
+
+def expand_surface_by_kdtree(
+    original_pcd: o3d.geometry.PointCloud,
+    seed_surface_pcd: o3d.geometry.PointCloud,
+    search_radius: float = 1.2,     # mm, neighborhood radius
+    z_tolerance: float = 0.6,      # mm, keep neighbors close in Z to seed points
+    max_neighbors: int = 200 # safety cap per seed (avoid huge blow-up)
+) -> o3d.geometry.PointCloud:
+    """
+    Use seed surface points (from grid z-gate) to pull back nearby points
+    from the original point cloud using KDTree, with a Z consistency guard.
+
+    Returns a denser surface point cloud.
+    """
+    P = np.asarray(original_pcd.points)
+    S = np.asarray(seed_surface_pcd.points)
+    if len(P) == 0 or len(S) == 0:
+        raise ValueError("Empty input pcd")
+
+    tree = cKDTree(P[:, :3])
+
+    keep_idx = set()
+
+    # Query neighbors around each seed point
+    for s in S:
+        idxs = tree.query_ball_point(s, r=search_radius)
+
+        if len(idxs) > max_neighbors:
+            # If too many, take closest max_neighbors
+            d = np.linalg.norm(P[idxs] - s[None, :], axis=1)
+            idxs = list(np.array(idxs)[np.argsort(d)[:max_neighbors]])
+
+        # Z-gate relative to the seed point
+        z0 = s[2]
+        for i in idxs:
+            if abs(P[i, 2] - z0) <= z_tolerance:
+                keep_idx.add(i)
+
+    keep_idx = np.array(sorted(list(keep_idx)), dtype=np.int64)
+    out = o3d.geometry.PointCloud()
+    out.points = o3d.utility.Vector3dVector(P[keep_idx])
+    return out

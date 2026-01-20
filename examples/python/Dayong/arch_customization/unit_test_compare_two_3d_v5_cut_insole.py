@@ -2125,17 +2125,32 @@ o3d.visualization.draw_geometries(
 from blade import *
 
 # Workflow - Insole
-# upper_insole_pcd = get_bottom_surface(aligned_to_y_insole, 5.0, 0.0, 1.0) # the blade method (not suitable here)
+# upper_insole_blade = get_bottom_surface(aligned_to_y_insole, 5.0, 0.0, 1.0) # the blade method (not suitable here)
 
-upper_dense = extract_surface_dense_from_grid(
+upper_insole = extract_surface_from_grid(
     aligned_to_y_insole,
     grid_size=1.0,
-    dz_below=0.8,
-    dz_above=1.0,
+    dz_below=0,
+    dz_above=0,
     min_points_per_cell=1
 )
-upper_dense = clean_pcd_statistical(upper_dense)
-o3d.visualization.draw_geometries([upper_dense], window_name="upper surface (dense)")
+upper_insole = clean_pcd_statistical(upper_insole)
+o3d.visualization.draw_geometries([upper_insole], window_name="upper surface (dense)")
+
+# Expand using KDTree from the ORIGINAL aligned point cloud
+upper_insole_expanded = expand_surface_by_kdtree(
+    original_pcd=aligned_to_y_insole,
+    seed_surface_pcd=upper_insole,
+    search_radius=2.0,   # mm
+    z_tolerance=1.0     # mm
+)
+# upper_insole_expanded = clean_pcd_statistical(upper_insole_expanded, 30, 2.0)
+o3d.visualization.draw_geometries(
+    [upper_insole_expanded], window_name="Upper surface: seed (red) vs expanded (green)")
+
+# print(len(upper_insole_blade.points))
+print(len(upper_insole.points))
+print(len(upper_insole_expanded.points))
 
 
 
