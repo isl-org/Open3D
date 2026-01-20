@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import open3d as o3d
 import numpy as np
 # from scripts.mesh_process import mesh_measure_methods
@@ -2114,6 +2116,14 @@ aligned_to_y_insole, tx = align_min_x(aligned_to_y_insole, aligned_to_y_bot1)
 aligned_to_y_insole, ty = align_min_y(aligned_to_y_insole, aligned_to_y_bot1)
 aligned_to_y_insole, tz = align_z(aligned_to_y_insole, aligned_to_y_bot1, 13)
 
+# estimate normals of aligned_to_y_insole
+aligned_to_y_insole.estimate_normals(
+    search_param=o3d.geometry.KDTreeSearchParamHybrid(
+        radius=3.0,   # mm, try 2-5
+        max_nn=30
+    )
+)
+
 o3d.visualization.draw_geometries(
             [aligned_to_y_insole, aligned_to_y_bot1, o3d.geometry.TriangleMesh.create_coordinate_frame(size=200.0)],
             window_name="Aligned to Y-axis: insole",
@@ -2121,12 +2131,45 @@ o3d.visualization.draw_geometries(
             height=900
         )
 
-# Use the blade to find the bottom surface of the foot
-from blade import *
-
 # Workflow - Insole
-# upper_insole_blade = get_bottom_surface(aligned_to_y_insole, 5.0, 0.0, 1.0) # the blade method (not suitable here)
+# Now we want to get the top, bottom, and side surfaces of aligned_to_y_insole
+from blade import *
+from extract_surfaces import *
 
+# Method 1: use the [blade method] to get the top surface (not suitable here)
+# upper_insole_blade = get_bottom_surface(aligned_to_y_insole, 5.0, 0.0, 1.0)
+
+# Method 2: use the [normal directions] to separate the three surfaces
+# For example, the angle between the normal of a point on the top surface and pos-Z should be within [0, 90] degrees
+
+# visualize all the normals first
+o3d.visualization.draw_geometries([aligned_to_y_insole], point_show_normal=True, window_name="Insole with normals of all points")
+
+normals = np.asarray(aligned_to_y_insole.normals) # [nx, ny, nz] is a unit vector
+nz = normals[:, 2] # nz is cos(angle between normal and pos_z), so 1 is straight up, 0 is horizontal, -1 is straight down
+colors = np.zeros_like(normals)
+colors[:, 0] = (nz + 1) / 2   # red = up
+colors[:, 2] = (1 - nz) / 2   # blue = down
+aligned_to_y_insole.colors = o3d.utility.Vector3dVector(colors)
+o3d.visualization.draw_geometries([aligned_to_y_insole], window_name="Normals visualized by Z direction (red=up, blue=down)")
+
+upper_normals, side_and_bottom = extract_top(aligned_to_y_insole, min_dot=0.2)
+upper_normals.paint_uniform_color([1, 0, 0])        # red
+side_and_bottom.paint_uniform_color([0.6, 0.6, 0.6]) # gray
+
+o3d.visualization.draw_geometries([upper_normals],window_name="Normal-based surface split")
+o3d.visualization.draw_geometries([side_and_bottom],window_name="Normal-based surface split")
+
+side = extract_side(aligned_to_y_insole)
+o3d.visualization.draw_geometries([side],window_name="Side")
+
+bottom = extract_bottom(aligned_to_y_insole)
+o3d.visualization.draw_geometries([bottom],window_name="Side")
+
+print(len(upper_normals.points))
+print(len(side_and_bottom.points))
+
+# Method 3: use the grid method to get the top surface (but with down sampled effect); then use KDTree to add the points back
 upper_insole = extract_surface_from_grid(
     aligned_to_y_insole,
     grid_size=1.0,
