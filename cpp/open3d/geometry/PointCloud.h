@@ -200,12 +200,38 @@ public:
     std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox& bbox,
                                      bool invert = false) const;
 
-    /// \brief Smooth the point cloud using a specified method (stub).
-    ///
-    /// Currently not implemented.
-    PointCloud Smooth(const std::string& method = "MLS",
-                      double radius = 0.05,
-                      int k = 30) const;
+    /// \brief Smooth point cloud using weighted Moving Least Squares (MLS).
+    /// \param search_param KDTree search parameters for neighborhood search.
+    /// \return Smoothed point cloud.
+    PointCloud SmoothMLS(const KDTreeSearchParam& search_param =
+                                 KDTreeSearchParamHybrid(0.05, 30)) const;
+
+    /// \brief Smooth point cloud using Laplacian smoothing.
+    /// \param iterations Number of smoothing iterations.
+    /// \param lambda     Smoothing factor in (0, 1).
+    /// \return Smoothed point cloud.
+    PointCloud SmoothLaplacian(size_t iterations = 10,
+                               double lambda = 0.5) const;
+
+    /// \brief Smooth point cloud using Taubin smoothing (Laplacian + inverse
+    /// Laplacian).
+    /// \param iterations Number of smoothing iterations.
+    /// \param lambda     Positive smoothing factor.
+    /// \param mu         Negative smoothing factor (typically around -0.53).
+    /// \return Smoothed point cloud.
+    PointCloud SmoothTaubin(size_t iterations = 10,
+                            double lambda = 0.5,
+                            double mu = -0.53) const;
+
+    /// \brief Smooth point cloud using bilateral filtering.
+    /// \param search_param KDTree search parameters for neighborhood search.
+    /// \param sigma_s      Spatial Gaussian sigma.
+    /// \param sigma_r      Range Gaussian sigma.
+    /// \return Smoothed point cloud.
+    PointCloud SmoothBilateral(const KDTreeSearchParam& search_param =
+                                       KDTreeSearchParamHybrid(0.05, 30),
+                               double sigma_s = 0.05,
+                               double sigma_r = 0.05) const;
 
     /// \brief Function to remove points that have less than \p nb_points in a
     /// sphere of a given radius.

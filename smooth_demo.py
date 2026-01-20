@@ -52,7 +52,7 @@ print(np.asarray(pcd_before.points)[:5])
 # 3. Apply Weighted MLS smoothing
 # =========================
 # Open3D >= 0.17 required for smooth() method
-pcd_after = pcd_before.smooth("weighted_mls", radius=0.4)
+pcd_after = pcd_before.smooth_mls(o3d.geometry.KDTreeSearchParamRadius(radius=0.6))
 
 # Print first few points after smoothing
 points_after = np.asarray(pcd_after.points)

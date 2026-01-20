@@ -73,10 +73,6 @@ void pybind_pointcloud_definitions(py::module& m) {
                  "Also records point cloud index before downsampling",
                  "voxel_size"_a, "min_bound"_a, "max_bound"_a,
                  "approximate_class"_a = false)
-            .def("smooth", &PointCloud::Smooth,
-                 "Smooth point cloud using the chosen method.",
-                 py::arg("method") = "MLS", py::arg("radius") = 0.05,
-                 py::arg("k") = 30)
             .def("uniform_down_sample", &PointCloud::UniformDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud uniformly. The sample is performed in the order "
@@ -100,13 +96,13 @@ void pybind_pointcloud_definitions(py::module& m) {
                  "input pointcloud.",
                  "start_index"_a = 0)
             .def("crop",
-                 (std::shared_ptr<PointCloud> (PointCloud::*)(
+                 (std::shared_ptr<PointCloud>(PointCloud::*)(
                          const AxisAlignedBoundingBox&, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
             .def("crop",
-                 (std::shared_ptr<PointCloud> (PointCloud::*)(
+                 (std::shared_ptr<PointCloud>(PointCloud::*)(
                          const OrientedBoundingBox&, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
@@ -142,6 +138,21 @@ void pybind_pointcloud_definitions(py::module& m) {
                  "normals exist",
                  "search_param"_a = KDTreeSearchParamKNN(),
                  "fast_normal_computation"_a = true)
+            .def("smooth_mls", &PointCloud::SmoothMLS,
+                 "Smooth point cloud using weighted Moving Least Squares "
+                 "(MLS).",
+                 "search_param"_a = KDTreeSearchParamHybrid(0.05, 30))
+            .def("smooth_laplacian", &PointCloud::SmoothLaplacian,
+                 "Smooth point cloud using Laplacian smoothing.",
+                 "iterations"_a = 10, "lambda"_a = 0.5)
+            .def("smooth_taubin", &PointCloud::SmoothTaubin,
+                 "Smooth point cloud using Taubin smoothing (Laplacian + "
+                 "inverse Laplacian).",
+                 "iterations"_a = 10, "lambda"_a = 0.5, "mu"_a = -0.53)
+            .def("smooth_bilateral", &PointCloud::SmoothBilateral,
+                 "Smooth point cloud using bilateral filtering.",
+                 "search_param"_a = KDTreeSearchParamHybrid(0.05, 30),
+                 "sigma_s"_a = 0.05, "sigma_r"_a = 0.05)
             .def("orient_normals_to_align_with_direction",
                  &PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
@@ -294,11 +305,6 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
              {"min_bound", "Minimum coordinate of voxel boundaries"},
              {"max_bound", "Maximum coordinate of voxel boundaries"}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "smooth",
-            {{"method", "Smoothing method, e.g., 'MLS'."},
-             {"radius", "Neighborhood radius used for smoothing."},
-             {"k", "Number of neighbors used in smoothing."}});
-    docstring::ClassMethodDocInject(
             m, "PointCloud", "uniform_down_sample",
             {{"every_k_points",
               "Sample rate, the selected point indices are [0, k, 2k, ...]"}});
@@ -336,6 +342,28 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "If true, the normal estimation uses a non-iterative method to "
               "extract the eigenvector from the covariance matrix. This is "
               "faster, but is not as numerical stable."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_mls",
+            {{"search_param",
+              "KDTree search parameters for neighborhood search. "
+              "Supports Radius, KNN, or Hybrid search."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_laplacian",
+            {{"iterations", "Number of smoothing iterations."},
+             {"lambda", "Smoothing parameter."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_taubin",
+            {{"iterations", "Number of smoothing iterations."},
+             {"lambda", "Smoothing parameter for the Laplacian operator."},
+             {"mu",
+              "Smoothing parameter for the inverse Laplacian operator."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_bilateral",
+            {{"search_param",
+              "KDTree search parameters for neighborhood search. "
+              "Supports Radius, KNN, or Hybrid search."},
+             {"sigma_s", "Spatial standard deviation."},
+             {"sigma_r", "Range standard deviation."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "orient_normals_to_align_with_direction",
             {{"orientation_reference",
