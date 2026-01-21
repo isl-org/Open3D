@@ -85,6 +85,8 @@ public:
                                 rendering::FilamentRenderer* renderer) = 0;
 
     virtual MenuBase* CreateOSMenu() = 0;
+
+    virtual void SetFullScreen(OSWindow w, bool bFullScreen) = 0;
 };
 
 }  // namespace gui

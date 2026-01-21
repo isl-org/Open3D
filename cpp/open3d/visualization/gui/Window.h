@@ -162,6 +162,8 @@ public:
     /// WebRTCWindowSystem.
     std::string GetWebRTCUID() const;
 
+    void SetFullScreen(bool bFullScreen);
+
 protected:
     /// Returns the preferred size of the window. The window is not
     /// obligated to honor this size. If all children of the window

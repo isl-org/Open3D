@@ -676,6 +676,11 @@ void Window::ShowMenu(bool show) {
     SetNeedsLayout();
 }
 
+void Window::SetFullScreen(bool bFullScreen) {
+    auto& ws = Application::GetInstance().GetWindowSystem();
+    ws.SetFullScreen(GetOSWindow(), bFullScreen);
+}
+
 LayoutContext Window::GetLayoutContext() { return {GetTheme(), impl_->imgui_}; }
 
 void Window::Layout(const LayoutContext& context) {
