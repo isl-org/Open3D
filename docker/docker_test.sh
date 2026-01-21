@@ -230,6 +230,11 @@ openblas-amd64-py313-dev)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-amd64-py314-dev)
+    openblas_export_env amd64 py314 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 openblas-amd64-py310)
     openblas_export_env amd64 py310
     openblas_print_env
@@ -247,6 +252,11 @@ openblas-amd64-py312)
     ;;
 openblas-amd64-py313)
     openblas_export_env amd64 py313
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py314)
+    openblas_export_env amd64 py314
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -272,6 +282,11 @@ openblas-arm64-py313-dev)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-arm64-py314-dev)
+    openblas_export_env arm64 py314 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 openblas-arm64-py310)
     openblas_export_env arm64 py310
     openblas_print_env
@@ -292,6 +307,10 @@ openblas-arm64-py313)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-arm64-py314)
+    openblas_export_env arm64 py314
+    openblas_print_env
+    cpp_python_linking_uninstall_test
 
 # CPU CI
 cpu-static)

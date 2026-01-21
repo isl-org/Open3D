@@ -449,6 +449,10 @@ function main() {
         openblas_export_env amd64 py313 dev
         openblas_build
         ;;
+    openblas-amd64-py314-dev)
+        openblas_export_env amd64 py314 dev
+        openblas_build
+        ;;
     openblas-amd64-py310)
         openblas_export_env amd64 py310
         openblas_build
@@ -463,6 +467,10 @@ function main() {
         ;;
     openblas-amd64-py313)
         openblas_export_env amd64 py313
+        openblas_build
+        ;;
+    openblas-amd64-py314)
+        openblas_export_env amd64 py314
         openblas_build
         ;;
 
@@ -483,6 +491,10 @@ function main() {
         openblas_export_env arm64 py313 dev
         openblas_build
         ;;
+    openblas-arm64-py314-dev)
+        openblas_export_env arm64 py314 dev
+        openblas_build
+        ;;
     openblas-arm64-py310)
         openblas_export_env arm64 py310
         openblas_build
@@ -497,6 +509,10 @@ function main() {
         ;;
     openblas-arm64-py313)
         openblas_export_env arm64 py313
+        openblas_build
+        ;;
+    openblas-arm64-py314)
+        openblas_export_env arm64 py314
         openblas_build
         ;;
 
@@ -541,6 +557,9 @@ function main() {
     cuda_wheel_py313_dev)
         cuda_wheel_build py313 dev
         ;;
+    cuda_wheel_py314_dev)
+        cuda_wheel_build py314 dev
+        ;;
     cuda_wheel_py310)
         cuda_wheel_build py310
         ;;
@@ -552,6 +571,9 @@ function main() {
         ;;
     cuda_wheel_py313)
         cuda_wheel_build py313
+        ;;
+    cuda_wheel_py314)
+        cuda_wheel_build py314
         ;;
 
     # ML CIs
