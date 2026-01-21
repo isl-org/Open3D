@@ -126,7 +126,7 @@ jobs:
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         os: [macos-14]
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -136,6 +136,8 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
 
     env:
       # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
@@ -219,7 +221,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-14]
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -229,6 +231,8 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
