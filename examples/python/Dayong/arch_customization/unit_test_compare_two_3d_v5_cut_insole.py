@@ -26,6 +26,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 
+from examples.python.Dayong.arch_customization.get_pre_cut_line_test import get_line
+
+
 ### --------------------- end of cut function ----------------------------------
 
 class PointCloudViewerWithLegend:
@@ -2143,31 +2146,31 @@ from extract_surfaces import *
 # For example, the angle between the normal of a point on the top surface and pos-Z should be within [0, 90] degrees
 
 # visualize all the normals first
-o3d.visualization.draw_geometries([aligned_to_y_insole], point_show_normal=True, window_name="Insole with normals of all points")
-
-normals = np.asarray(aligned_to_y_insole.normals) # [nx, ny, nz] is a unit vector
-nz = normals[:, 2] # nz is cos(angle between normal and pos_z), so 1 is straight up, 0 is horizontal, -1 is straight down
-colors = np.zeros_like(normals)
-colors[:, 0] = (nz + 1) / 2   # red = up
-colors[:, 2] = (1 - nz) / 2   # blue = down
-aligned_to_y_insole.colors = o3d.utility.Vector3dVector(colors)
-o3d.visualization.draw_geometries([aligned_to_y_insole], window_name="Normals visualized by Z direction (red=up, blue=down)")
-
-top_normals, side_and_bottom_normals = extract_top(aligned_to_y_insole, min_dot=0.2)
-top_normals.paint_uniform_color([1, 0, 0])        # red
-side_and_bottom_normals.paint_uniform_color([0.6, 0.6, 0.6]) # gray
-
-o3d.visualization.draw_geometries([top_normals], window_name="Normal-based surface split")
-o3d.visualization.draw_geometries([side_and_bottom_normals], window_name="Normal-based surface split")
-
-side_normals = extract_side(aligned_to_y_insole)
-o3d.visualization.draw_geometries([side_normals], window_name="Side")
-
-bottom_normals = extract_bottom(aligned_to_y_insole)
-o3d.visualization.draw_geometries([bottom_normals], window_name="Side")
-
-print(len(top_normals.points))
-print(len(side_and_bottom_normals.points))
+# o3d.visualization.draw_geometries([aligned_to_y_insole], point_show_normal=True, window_name="Insole with normals of all points")
+#
+# normals = np.asarray(aligned_to_y_insole.normals) # [nx, ny, nz] is a unit vector
+# nz = normals[:, 2] # nz is cos(angle between normal and pos_z), so 1 is straight up, 0 is horizontal, -1 is straight down
+# colors = np.zeros_like(normals)
+# colors[:, 0] = (nz + 1) / 2   # red = up
+# colors[:, 2] = (1 - nz) / 2   # blue = down
+# aligned_to_y_insole.colors = o3d.utility.Vector3dVector(colors)
+# o3d.visualization.draw_geometries([aligned_to_y_insole], window_name="Normals visualized by Z direction (red=up, blue=down)")
+#
+# top_normals, side_and_bottom_normals = extract_top(aligned_to_y_insole, min_dot=0.2)
+# top_normals.paint_uniform_color([1, 0, 0])        # red
+# side_and_bottom_normals.paint_uniform_color([0.6, 0.6, 0.6]) # gray
+#
+# o3d.visualization.draw_geometries([top_normals], window_name="Normal-based surface split")
+# o3d.visualization.draw_geometries([side_and_bottom_normals], window_name="Normal-based surface split")
+#
+# side_normals = extract_side(aligned_to_y_insole)
+# o3d.visualization.draw_geometries([side_normals], window_name="Side")
+#
+# bottom_normals = extract_bottom(aligned_to_y_insole)
+# o3d.visualization.draw_geometries([bottom_normals], window_name="Side")
+#
+# print(len(top_normals.points))
+# print(len(side_and_bottom_normals.points))
 
 # Method 3: use the grid method to get the top surface (but with down sampled effect); then use KDTree to add the points back
 top_grid = extract_surface_from_grid(
@@ -2195,7 +2198,8 @@ o3d.visualization.draw_geometries(
 print(len(top_grid.points))
 print(len(top_grid_kdtree.points))
 
-
+from test import *
+cut = get_line(top_grid_kdtree)
 
 # Workflow - Foot
 # def get_arch(bottom_foot_pcd: o3d.geometry.PointCloud, entire_foot_pcd: o3d.geometry.PointCloud):
