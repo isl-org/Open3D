@@ -29,18 +29,10 @@ ENV SUDO=command
 
 SHELL ["/bin/bash", "-c"]
 
-# Fix Nvidia repo key rotation issue
-# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
-# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
-# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
-RUN export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn \
- && apt-key del 7fa2af80 \
- && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub \
- && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
-
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
     wget \
+    ca-certificates \
     ccache \
     build-essential \
     libssl-dev \
@@ -58,6 +50,11 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
+
+# Install NVIDIA repository keyring package
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb \
+ && dpkg -i cuda-keyring_1.1-1_all.deb \
+ && rm cuda-keyring_1.1-1_all.deb
 
 # Dependencies: cmake
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
@@ -98,7 +95,7 @@ RUN curl https://pyenv.run | bash \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
-RUN python --version && pip --version \
+RUN python --version && pip --version
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag

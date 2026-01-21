@@ -45,7 +45,9 @@ jobs:
           docker/docker_build.sh cuda_wheel_py310_dev build-lib
           # The image is tagged open3d-ci:wheel by default in docker_build.sh (cuda_wheel_build)
           docker tag open3d-ci:wheel open3d-lib:latest
-          docker save open3d-lib:latest | gzip > open3d-lib.tar.gz
+          docker save open3d-lib:latest -o open3d-lib.tar
+          gzip open3d-lib.tar
+          ls -lhs open3d-lib.tar.gz
 
       - name: Upload Lib Image
         uses: actions/upload-artifact@v4
@@ -92,9 +94,7 @@ jobs:
           path: .
       
       - name: Load Lib Image
-        run: |
-          gunzip -c open3d-lib.tar.gz | docker load
-          # Should restore open3d-lib:latest
+        run: docker load -i open3d-lib.tar.gz # Restore open3d-lib:latest
 
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.

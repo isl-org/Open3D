@@ -283,6 +283,17 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-build-windows
+          path: ${{ env.SRC_DIR }}
+
+      - name: Unpack build artifact
+        run: |
+          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory -Force
+          Expand-Archive -Path ${{ env.SRC_DIR }}\open3d_build.zip -DestinationPath "C:\Open3D\" -Force
+
       - name: Install Python dependencies
         working-directory: ${{ env.SRC_DIR }}
         run: |
@@ -296,18 +307,6 @@ jobs:
             -r python/requirements_jupyter_build.txt `
             -r open3d_ml/requirements-torch.txt
 
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: open3d-build-windows
-          path: ${{ env.SRC_DIR }}
-
-      - name: Unpack build artifact
-        run: |
-          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory -Force
-          Expand-Archive -Path ${{ env.SRC_DIR }}\open3d_build.zip -DestinationPath "C:\Open3D\" -Force
-
       - name: Config
         run: |
           $ErrorActionPreference = 'Stop'
@@ -315,10 +314,11 @@ jobs:
           if ($Env:DEVELOPER_BUILD -ne "OFF") {
             $Env:DEVELOPER_BUILD = "ON"
           }
-          cmake -G "Visual Studio 17 2022" -A x64 `
+          cmake --fresh -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DBUILD_COMMON_ISPC_ISAS=ON `
+            -DBUILD_PYTHON_MODULE=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=ON `

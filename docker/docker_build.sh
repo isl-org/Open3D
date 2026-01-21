@@ -392,20 +392,10 @@ sycl-shared_export_env() {
 
     options="$(echo "$@" | tr ' ' '|')"
 
-    if [[ "py37" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.7
-    elif [[ "py38" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.8
-    elif [[ "py39" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.9
-    elif [[ "py310" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.10
-    elif [[ "py311" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.11
-    elif [[ "py312" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.12
-    elif [[ "py313" =~ ^($options)$ ]]; then
-        PYTHON_VERSION=3.13
+    if [[ "$options" =~ py3(7|8|9|10|11|12|13) ]]; then
+        PYTHON_VERSION=${BASH_REMATCH[0]#py}
+        PYTHON_VERSION="${PYTHON_VERSION:0:1}.${PYTHON_VERSION:1}"
+        export BUILD_PYTHON_MODULE=ON
     fi
 
     # https://hub.docker.com/r/intel/oneapi-basekit
@@ -421,11 +411,9 @@ sycl-shared_export_env() {
     export BUILD_PYTORCH_OPS=ON
 
     if [[ "build-lib" =~ ^($options)$ ]]; then
-        export BUILD_PYTHON_MODULE=OFF
-        export PACKAGE=OFF
-    else
-        export BUILD_PYTHON_MODULE=ON
         export PACKAGE=ON
+    else
+        export PACKAGE=OFF
     fi
 
     export BUILD_SYCL_MODULE=ON

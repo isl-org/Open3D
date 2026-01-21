@@ -102,8 +102,7 @@ jobs:
           path: .
       
       - name: Load Lib Image
-        run: |
-          gunzip -c open3d-lib-arm64.tar.gz | docker load
+        run: docker load -i open3d-lib-arm64.tar.gz  # Restore open3d-lib-arm64:latest
 
       - name: Compute Docker tag for this matrix entry
         run: |
