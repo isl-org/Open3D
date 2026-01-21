@@ -2153,47 +2153,47 @@ colors[:, 2] = (1 - nz) / 2   # blue = down
 aligned_to_y_insole.colors = o3d.utility.Vector3dVector(colors)
 o3d.visualization.draw_geometries([aligned_to_y_insole], window_name="Normals visualized by Z direction (red=up, blue=down)")
 
-upper_normals, side_and_bottom = extract_top(aligned_to_y_insole, min_dot=0.2)
-upper_normals.paint_uniform_color([1, 0, 0])        # red
-side_and_bottom.paint_uniform_color([0.6, 0.6, 0.6]) # gray
+top_normals, side_and_bottom_normals = extract_top(aligned_to_y_insole, min_dot=0.2)
+top_normals.paint_uniform_color([1, 0, 0])        # red
+side_and_bottom_normals.paint_uniform_color([0.6, 0.6, 0.6]) # gray
 
-o3d.visualization.draw_geometries([upper_normals],window_name="Normal-based surface split")
-o3d.visualization.draw_geometries([side_and_bottom],window_name="Normal-based surface split")
+o3d.visualization.draw_geometries([top_normals], window_name="Normal-based surface split")
+o3d.visualization.draw_geometries([side_and_bottom_normals], window_name="Normal-based surface split")
 
-side = extract_side(aligned_to_y_insole)
-o3d.visualization.draw_geometries([side],window_name="Side")
+side_normals = extract_side(aligned_to_y_insole)
+o3d.visualization.draw_geometries([side_normals], window_name="Side")
 
-bottom = extract_bottom(aligned_to_y_insole)
-o3d.visualization.draw_geometries([bottom],window_name="Side")
+bottom_normals = extract_bottom(aligned_to_y_insole)
+o3d.visualization.draw_geometries([bottom_normals], window_name="Side")
 
-print(len(upper_normals.points))
-print(len(side_and_bottom.points))
+print(len(top_normals.points))
+print(len(side_and_bottom_normals.points))
 
 # Method 3: use the grid method to get the top surface (but with down sampled effect); then use KDTree to add the points back
-upper_insole = extract_surface_from_grid(
+top_grid = extract_surface_from_grid(
     aligned_to_y_insole,
     grid_size=1.0,
     dz_below=0,
     dz_above=0,
     min_points_per_cell=1
 )
-upper_insole = clean_pcd_statistical(upper_insole)
-o3d.visualization.draw_geometries([upper_insole], window_name="upper surface (dense)")
+top_grid = clean_pcd_statistical(top_grid)
+o3d.visualization.draw_geometries([top_grid], window_name="upper surface (dense)")
 
 # Expand using KDTree from the ORIGINAL aligned point cloud
-upper_insole_expanded = expand_surface_by_kdtree(
+top_grid_kdtree = expand_surface_by_kdtree(
     original_pcd=aligned_to_y_insole,
-    seed_surface_pcd=upper_insole,
+    seed_surface_pcd=top_grid,
     search_radius=2.0,   # mm
     z_tolerance=1.0     # mm
 )
 # upper_insole_expanded = clean_pcd_statistical(upper_insole_expanded, 30, 2.0)
 o3d.visualization.draw_geometries(
-    [upper_insole_expanded], window_name="Upper surface: seed (red) vs expanded (green)")
+    [top_grid_kdtree], window_name="Upper surface: seed (red) vs expanded (green)")
 
 # print(len(upper_insole_blade.points))
-print(len(upper_insole.points))
-print(len(upper_insole_expanded.points))
+print(len(top_grid.points))
+print(len(top_grid_kdtree.points))
 
 
 
