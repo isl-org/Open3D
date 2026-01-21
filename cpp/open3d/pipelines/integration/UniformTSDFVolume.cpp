@@ -264,11 +264,10 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
             per_thread_voxels;
 
     int num_threads = utility::EstimateMaxThreads();
+    per_thread_voxels.resize(num_threads);
 
 #pragma omp parallel num_threads(num_threads)
     {
-#pragma omp single
-        { per_thread_voxels.resize(num_threads); }
         auto &thread_voxels = per_thread_voxels[utility::GetThreadNum()];
 
 #ifdef _WIN32
