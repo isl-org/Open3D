@@ -187,6 +187,7 @@ setup_args = dict(
     classifiers=classifiers,
     keywords="3D reconstruction point cloud mesh RGB-D visualization",
     license="MIT",
+    license_files=["LICENSE.txt"],
     description="@PROJECT_DESCRIPTION@",
     long_description=long_description,
     long_description_content_type="text/x-rst",

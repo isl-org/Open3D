@@ -104,7 +104,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          ref: refs/pull/687/head   # main # TODO revert before merge
           path: open3d_ml
 
       - name: Install PyTorch requirements
@@ -278,7 +278,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          ref: refs/pull/687/head   # main # TODO revert before merge
           path: open3d_ml
 
       - name: Set up Python
@@ -372,7 +372,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          ref: refs/pull/687/head   # main # TODO revert before merge
           path: open3d_ml
 
       - name: Download wheels
