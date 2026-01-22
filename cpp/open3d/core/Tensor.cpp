@@ -869,8 +869,6 @@ Tensor Tensor::Slice(int64_t dim,
         utility::LogError("Step size cannot be 0.");
     }
 
-    int64_t abs_step = step;
-
     if (step > 0) {
         // Positive step: forward traversal
         // Wrap start. Out-of-range slice is valid and produces empty Tensor.
@@ -916,13 +914,12 @@ Tensor Tensor::Slice(int64_t dim,
         if (stop >= shape_[dim]) {
             stop = shape_[dim] - 1;
         }
-        abs_step = -step;
     }
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
                          start * strides_[dim] * dtype_.ByteSize();
     SizeVector new_shape = shape_;
     SizeVector new_strides = strides_;
-    new_shape[dim] = (start - stop + abs_step - 1) / abs_step;
+    new_shape[dim] = (start - stop + std::abs(step) - 1) / std::abs(step);
     new_strides[dim] = strides_[dim] * step;
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
 }
