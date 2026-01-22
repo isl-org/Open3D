@@ -311,6 +311,7 @@ openblas-arm64-py314)
     openblas_export_env arm64 py314
     openblas_print_env
     cpp_python_linking_uninstall_test
+    ;;
 
 # CPU CI
 cpu-static)

@@ -50,6 +50,7 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python_version }}
       CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
+      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' ) && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
