@@ -879,8 +879,9 @@ TEST_P(TensorPermuteDevicesWithSYCL, Slice) {
     EXPECT_EQ(t_10.GetDataPtr(), static_cast<const char *>(blob_head) +
                                          core::Float32.ByteSize() * 1 * 3 * 4);
     EXPECT_EQ(t_10.ToFlatVector<float>(),
-              std::vector<float>({12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-                                  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
+              std::vector<float>({12, 13, 14, 15, 16, 17, 18, 19,
+                                  20, 21, 22, 23, 0,  1,  2,  3,
+                                  4,  5,  6,  7,  8,  9,  10, 11}));
 }
 
 TEST_P(TensorPermuteDevicesWithSYCL, GetItem) {

@@ -65,8 +65,7 @@ public:
         }
         return std::make_shared<SliceImpl>(
                 start_.has_value() ? start_.value() : start_default,
-                stop_.has_value() ? stop_.value() : stop_default,
-                step);
+                stop_.has_value() ? stop_.value() : stop_default, step);
     }
     int64_t GetStart() const {
         if (start_.has_value()) {

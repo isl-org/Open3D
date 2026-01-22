@@ -2020,4 +2020,3 @@ std::tuple<Tensor, Tensor, Tensor> Tensor::SVD() const {
 
 }  // namespace core
 }  // namespace open3d
-
