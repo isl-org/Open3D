@@ -137,7 +137,6 @@ public:
     void Expand(ItemId);
     void Collapse(ItemId);
 
-
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
