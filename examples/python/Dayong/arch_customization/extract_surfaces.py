@@ -39,7 +39,7 @@ def extract_top(
 
 def extract_bottom(
     pcd: o3d.geometry.PointCloud,
-    max_dot: float = -0.2
+    max_dot: float = -0.2 # 101.5° – 180°
 ):
     normals = np.asarray(pcd.normals)
     nz = normals[:, 2]
@@ -49,7 +49,7 @@ def extract_bottom(
 
 def extract_side(
     pcd: o3d.geometry.PointCloud,
-    abs_dot_max: float = 0.2
+    abs_dot_max: float = 0.2 # 78.5° - 101.5°
 ):
     normals = np.asarray(pcd.normals)
     nz = normals[:, 2]

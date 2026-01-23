@@ -417,8 +417,7 @@ def get_largest_cluster_auto(pcd: o3d.geometry.PointCloud, min_points=10):
     Automatically estimate eps and find largest cluster.
     """
     # Estimate eps
-    # eps = estimate_eps(pcd, k=min_points)
-    eps = 0.001
+    eps = estimate_eps(pcd, k=min_points)
 
     print(f"\nUsing eps={eps:.4f}, min_points={min_points}")
 
