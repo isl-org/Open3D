@@ -3,7 +3,7 @@ requires = [
     "ipywidgets>=8.0.4",
     "pygments>=2.7.4",
     "jupyter_packaging~=0.12",
-    "jupyterlab>=3.0.0,==3.*",
+    "jupyterlab==4.*",
     "setuptools>=67.3.2",
     "wheel==0.38.4",
 ]
