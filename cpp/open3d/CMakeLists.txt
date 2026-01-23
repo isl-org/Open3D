@@ -59,6 +59,12 @@ configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
 
 add_library(Open3D)
 
+if (BUILD_PYTORCH_OPS)
+    target_compile_definitions(Open3D PUBLIC OPEN3D_BUILD_PYTORCH_OPS=1)
+else()
+    target_compile_definitions(Open3D PUBLIC OPEN3D_BUILD_PYTORCH_OPS=0)
+endif()
+
 add_subdirectory(camera)
 add_subdirectory(core)
 add_subdirectory(data)
