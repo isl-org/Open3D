@@ -1,10 +1,8 @@
-#include <thread>
-#include <chrono>
-
 #include "open3d/visualization/gui/Application.h"
-#include "open3d/visualization/gui/Window.h"
-#include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/Layout.h"
+#include "open3d/visualization/gui/TreeView.h"
+#include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/gui/Button.h"
 
 using namespace open3d::visualization::gui;
 
@@ -12,33 +10,35 @@ int main() {
     auto& app = Application::GetInstance();
     app.Initialize();
 
-    auto window = std::make_shared<Window>("TreeView GUI Test", 400, 300);
+    auto window = std::make_shared<Window>(
+        "TreeView Expand / Collapse Demo", 400, 300);
 
-    // Layout
-    auto layout = std::make_shared<Vert>(10);  // spacing = 10
-
-    // TreeView
+    auto layout = std::make_shared<Vert>(8);
     auto tree = std::make_shared<TreeView>();
+
     auto root = tree->GetRootItem();
-    tree->AddTextItem(root, "Item A");
-    tree->AddTextItem(root, "Item B");
+    auto item_a = tree->AddTextItem(root, "Item A");
+    auto item_b = tree->AddTextItem(root, "Item B");
 
-    layout->AddChild(tree);
-    window->AddChild(layout);
+        auto child_a1 = tree->AddTextItem(item_a, "Child A1");
+        auto child_a2 = tree->AddTextItem(item_a, "Child A2");
 
-    app.AddWindow(window);
-
-    // Close automatically after 2 seconds
-    app.PostToMainThread(nullptr, []() {
-        // NOTE:
-        // This is a GUI smoke test.
-        // The window is shown briefly to ensure TreeView can be
-        // created, attached, and rendered without crashing.
-        // The application exits automatically to avoid blocking CI.
-
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-        Application::GetInstance().Quit();
+    auto btn_expand = std::make_shared<Button>("Expand A");
+    btn_expand->SetOnClicked([tree, item_a]() {
+        tree->Expand(item_a);
     });
+
+    auto btn_collapse = std::make_shared<Button>("Collapse A");
+    btn_collapse->SetOnClicked([tree, item_a]() {
+        tree->Collapse(item_a);
+    });
+
+    layout->AddChild(btn_expand);
+    layout->AddChild(btn_collapse);
+    layout->AddChild(tree);
+
+    window->AddChild(layout);
+    app.AddWindow(window);
 
     app.Run();
     return 0;

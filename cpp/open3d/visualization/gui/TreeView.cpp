@@ -11,9 +11,9 @@
 
 #include <cmath>
 #include <list>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
-#include <optional>
 
 #include "open3d/visualization/gui/Checkbox.h"
 #include "open3d/visualization/gui/ColorEdit.h"
