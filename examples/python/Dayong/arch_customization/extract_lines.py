@@ -1,10 +1,9 @@
 import open3d as o3d
 import numpy as np
 
-def get_line(pcd: o3d.geometry.PointCloud):
+def get_boundary_lines(pcd: o3d.geometry.PointCloud):
     points = np.asarray(pcd.points)
-    pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(
-        radius=0.5, max_nn=30))
+    pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30))
     normals = np.asarray(pcd.normals)
 
     # Build KD-tree for neighborhood searches
@@ -22,17 +21,25 @@ def get_line(pcd: o3d.geometry.PointCloud):
         neighbor_points = points[idx[1:], :]
         neighbor_normals = normals[idx[1:], :]
 
+        # Compute 3 signals from the neighborhood：
+
         # Height variation (Z-direction)
+        # High when the neighborhood has a “step”, “ridge”, or sharp shape change
         height_std = np.std(neighbor_points[:, 2])
 
         # Normal variation (direction change)
+        # High when normals change quickly around that point (creases/edges)
         normal_variation = 1 - np.abs(np.dot(normals[i], neighbor_normals.T).mean())
 
-        # Verticality of normal (cliffs are steep)
-        verticality = np.abs(normals[i][2])  # How horizontal the normal is
+        # Vertical of normal (cliffs are steep).
+        # vertical = abs(nz)
+        # This term is meant to boost “cliff edges”, because on a cliff the normals are more horizontal,
+        # so |nz| is smaller, making (1 - |nz|) larger.
+        vertical = np.abs(normals[i][2])  # How horizontal the normal is
 
         # Combined score
-        cliff_score = height_std * normal_variation * (1 - verticality)
+        # cliff_score = height_std * normal_variation * (1 - abs(nz))
+        cliff_score = height_std * normal_variation * (1 - vertical)
         cliff_scores.append(cliff_score)
 
     # Extract cliff points

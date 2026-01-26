@@ -3,6 +3,7 @@ import numpy as np
 from scipy.interpolate import RBFInterpolator
 import os
 from pathlib import Path
+import scipy.spatial
 
 
 # -----------------------------------------------------------------------------
@@ -96,9 +97,121 @@ def project_points_along_vector(target_mesh, origins, direction):
     return hits, hit_normals, valid_mask
 
 
-# -----------------------------------------------------------------------------
-# Logic
-# -----------------------------------------------------------------------------
+# --- Surface closest-point helpers (triangle-surface accurate) ---
+
+def build_surface_locator(polydata: pv.PolyData):
+    """Build a fast locator that returns closest points on the *surface* (not just nearest vertex)."""
+    locator = pv._vtk.vtkStaticCellLocator()
+    locator.SetDataSet(polydata)
+    locator.BuildLocator()
+    return locator
+
+
+def closest_points_on_surface(locator, query_points: np.ndarray) -> np.ndarray:
+    """Vectorized-ish wrapper around VTK FindClosestPoint (loop in Python, but still fast enough)."""
+    out = np.zeros_like(query_points)
+    tmp = [0.0, 0.0, 0.0]
+    cell_id = pv._vtk.reference(0)
+    sub_id = pv._vtk.reference(0)
+    dist2 = pv._vtk.reference(0.0)
+
+    for i, pt in enumerate(query_points):
+        locator.FindClosestPoint(pt, tmp, cell_id, sub_id, dist2)
+        out[i] = np.array(tmp, dtype=float)
+    return out
+
+
+def refine_floating_features(
+    shoe: pv.PolyData,
+    toy_warped: pv.PolyData,
+    shoe_normal: np.ndarray,
+    tol: float = 0.25,
+    max_refine: int = 1500,
+    offset: float = 0.05,
+    smoothing: float = 0.0,
+) -> pv.PolyData:
+    """
+    Second-pass refinement to pull remaining 'floating' thin features (edges/antenna tips)
+    onto the shoe, without globally warping the whole toy.
+
+    Strategy:
+      1) Find toy points still above the shoe by implicit distance (> tol)
+      2) Prefer boundary points + largest gaps
+      3) Compute closest points on the shoe surface
+      4) Fit a small TPS warp and apply ONLY to those floating points
+
+    This typically fixes the last few % contact (e.g., sword tips) while preserving texture.
+    """
+    print("\n[Refine Phase]")
+
+    # Use a slightly smoothed shoe proxy for more stable closest-point targets
+    shoe_smooth = shoe.copy().smooth(n_iter=10, relaxation_factor=0.1)
+
+    # Ensure normals exist on the shoe (for a small outward offset)
+    if "Normals" not in shoe_smooth.point_data:
+        shoe_smooth.compute_normals(inplace=True, point_normals=True, cell_normals=False, auto_orient_normals=True)
+
+    locator = build_surface_locator(shoe_smooth)
+
+    # Signed implicit distance (positive usually means outside/above)
+    tmp = toy_warped.compute_implicit_distance(shoe_smooth)
+    d = tmp.point_data["implicit_distance"]
+
+    floating_idx = np.where(d > tol)[0]
+    if floating_idx.size == 0:
+        print(f"  -> No floating points > {tol}. Skipping refine.")
+        return toy_warped
+
+    # Boundary heuristic: low edge-incidence points tend to be boundary/thin features
+    edges = toy_warped.extract_all_edges()
+    if edges.n_points > 0 and edges.lines.size > 0:
+        counts = np.bincount(edges.lines.reshape(-1, 3)[:, 1:].ravel(), minlength=toy_warped.n_points)
+        nonzero = counts[counts > 0]
+        if nonzero.size > 0:
+            boundary = counts <= np.percentile(nonzero, 20)
+        else:
+            boundary = np.zeros(toy_warped.n_points, dtype=bool)
+    else:
+        boundary = np.zeros(toy_warped.n_points, dtype=bool)
+
+    # Score = gap, with boundary boost
+    scores = d.copy()
+    scores[boundary] *= 2.0
+
+    order = np.argsort(-scores[floating_idx])
+    floating_idx = floating_idx[order[: min(max_refine, floating_idx.size)]]
+
+    src = toy_warped.points[floating_idx]
+
+    # Closest point on surface for each src point
+    hit = closest_points_on_surface(locator, src)
+
+    # Approximate hit normals using nearest shoe vertex normal
+    hit_n = np.array([get_normal_at_point(shoe_smooth, p) for p in hit])
+    tgt = hit + hit_n * offset
+
+    disp = tgt - src
+
+    print(f"  -> Floating pts: {floating_idx.size} (tol={tol}).")
+    print("  -> Fitting local TPS warp for refinement...")
+
+    rbf = RBFInterpolator(
+        src,
+        disp,
+        kernel="thin_plate_spline",
+        smoothing=smoothing,
+    )
+
+    out = toy_warped.copy()
+    out.points[floating_idx] += rbf(out.points[floating_idx])
+
+    # Quick post metric
+    tmp2 = out.compute_implicit_distance(shoe_smooth)
+    d2 = tmp2.point_data["implicit_distance"][floating_idx]
+    print(f"  -> After refine: mean_gap={float(np.mean(np.clip(d2, 0, None))):.4f}, max_gap={float(np.max(np.clip(d2, 0, None))):.4f}")
+
+    return out
+
 
 def align_toy_to_shoe(shoe, toy, o_ratio, p_ratio):
     print("\n[Alignment Phase]")
@@ -208,7 +321,7 @@ def apply_non_rigid_warp(shoe, toy, shoe_normal, offset=0.2,
     hit_ratio = np.sum(valid) / len(anchor_pts)
     if hit_ratio < 0.5:
         print("[Error] Too many rays missed. Check alignment.")
-        return toy
+        return toy, cand_idx
 
     final_sources = anchor_pts[valid]
     final_hits = hits[valid]
@@ -273,14 +386,14 @@ if __name__ == "__main__":
         print_mesh_stats(shoe_mesh, "Shoe")
         print_mesh_stats(toy_mesh, "Toy (Badge)")
 
+        # 2. Alignment
+        o, p = align_toy_to_shoe(shoe_mesh, toy_mesh, (0., 0.2, 0.9), (0.5, 0.5, 0.0))
+
         p1 = pv.Plotter()
-        p1.add_text("Final Result", font_size=10)
-        # p1.add_mesh(shoe_mesh, color="lightblue", opacity=0.8)
+        p1.add_text("Pre-warp (Aligned)", font_size=10)
+        p1.add_mesh(shoe_mesh, color="lightblue", opacity=0.8)
         p1.add_mesh(toy_mesh, color="orange")
         p1.show()
-
-        # 2. Alignment
-        o, p = align_toy_to_shoe(shoe_mesh, toy_mesh, (0.5, 0.2, 0.9), (0.5, 0.5, 0.0))
 
         # 3. Warp
         warped_toy, bottom_indices = apply_non_rigid_warp(
@@ -291,32 +404,25 @@ if __name__ == "__main__":
             preserve_volume=True
         )
 
+        # 3.5 Refinement: fix thin features that may still be floating (e.g., sword tips)
+        warped_toy = refine_floating_features(
+            shoe_mesh,
+            warped_toy,
+            p,
+            tol=0.25,        # increase to be less aggressive; decrease to pull more
+            max_refine=1500, # increase if you have many thin protrusions
+            offset=0.05,     # small outward offset to reduce penetration risk
+            smoothing=0.0
+        )
+
         # 4. Final Quality Report
         print("\n" + "=" * 60)
         print("FINAL QUALITY CHECK")
         print("=" * 60)
         print_mesh_stats(warped_toy, "Warped Toy")
 
-        # Calculate gaps specifically for the bottom surface (the part that should stick)
-        # We reuse the bottom_indices found during warp to check only the relevant interface
-        # bottom_subset = warped_toy.extract_points(bottom_indices)
-        # bottom_subset.compute_implicit_distance(shoe_mesh, inplace=True)
-        # gaps = np.abs(bottom_subset.point_data["implicit_distance"])
-        #
-        # print(f"Interface Fit Metrics (Bottom Surface to Shoe):")
-        # print(f"  Max Gap:      {np.max(gaps):.4f} mm")
-        # print(f"  Mean Gap:     {np.mean(gaps):.4f} mm")
-        # print(f"  Median Gap:   {np.median(gaps):.4f} mm")
-
-        # if np.mean(gaps) < 0.05:
-        #     print("  -> STATUS: PASS (Excellent Fit)")
-        # elif np.mean(gaps) < 0.2:
-        #     print("  -> STATUS: ACCEPTABLE (Good Fit)")
-        # else:
-        #     print("  -> STATUS: WARNING (Gap too large, check alignment)")
-
         p4 = pv.Plotter()
-        p4.add_text("Final Result", font_size=10)
+        p4.add_text("Final Result (Warp + Refine)", font_size=10)
         p4.add_mesh(shoe_mesh, color="lightblue", opacity=0.8)
         p4.add_mesh(warped_toy, color="orange")
         p4.show()
