@@ -162,6 +162,13 @@ public:
     /// WebRTCWindowSystem.
     std::string GetWebRTCUID() const;
 
+    /// Injects a key event into the window as if the user pressed a key.
+    /// This is thread-safe and will be processed on the GUI thread.
+    void PostKeyEvent(const KeyEvent& e);
+    /// Injects a mouse event into the window as if the user moved/clicked the mouse.
+    /// This is thread-safe and will be processed on the GUI thread.
+    void PostMouseEvent(const MouseEvent& e);
+
 protected:
     /// Returns the preferred size of the window. The window is not
     /// obligated to honor this size. If all children of the window

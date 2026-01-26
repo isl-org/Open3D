@@ -806,6 +806,12 @@ void pybind_gui_definitions(py::module &m) {
                  "show_menu(show): shows or hides the menu in the window, "
                  "except on macOS since the menubar is not in the window "
                  "and all applications must have a menubar.")
+            .def("post_key_event", &PyWindow::PostKeyEvent,
+                 "Injects a key event into the window as if the user "
+                 "pressed a key. This is thread-safe.")
+            .def("post_mouse_event", &PyWindow::PostMouseEvent,
+                 "Injects a mouse event into the window as if the user "
+                 "moved/clicked the mouse. This is thread-safe.")
             .def_property_readonly(
                     "renderer", &PyWindow::GetRenderer,
                     "Gets the rendering.Renderer object for the Window");
