@@ -67,7 +67,7 @@ jobs:
 
       - name: Compute Docker tag for this matrix entry
         run: |
-          # Strip the dot: 3.8 ➜ 38, 3.10 ➜ 310 …
+          # Strip the dot: 3.12 ➜ 312, 3.14 ➜ 314 …
           PY_NO_DOT="${PYTHON_VERSION//./}"
           # Add “-dev” only when requested
           DEV_SUFFIX=$([ "${DEVELOPER_BUILD}" = "ON" ] && echo "-dev")
