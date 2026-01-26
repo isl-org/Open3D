@@ -50,7 +50,7 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python_version }}
       CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
-      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' ) && 'OFF' || 'ON' }}
+      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' ) && 'OFF' || 'ON' }} # Only torch>=2.9 supports py3.14
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -143,6 +143,7 @@ jobs:
             python_version: '3.13'
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' ) && 'OFF' || 'ON' }} # Used here to disable GPU tests for py3.14 until torch supports it
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

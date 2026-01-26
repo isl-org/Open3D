@@ -373,7 +373,9 @@ jobs:
             python_version: '3.12'
           - is_main: false
             python_version: '3.13'
-
+    env:
+      # PyTorch 2.7 supports python 3.10-3.13. PyTorch 2.9 supports python 3.14.
+      BUILD_PYTORCH_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -404,8 +406,10 @@ jobs:
           open3d_test_venv\Scripts\Activate.ps1
           python -m pip install -U pip==${{ env.PIP_VER }}
           python -m pip install -U -r python/requirements_build.txt `
-            -r python/requirements_test.txt `
-            -r open3d_ml/requirements-torch.txt
+            -r python/requirements_test.txt
+          if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
+            python -m pip install -U -r open3d_ml/requirements-torch.txt
+          }
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
@@ -424,5 +428,10 @@ jobs:
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-          python -m pytest python/test/
+          $pytest_args = @("python/test/")
+          if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'OFF') {
+            echo "Testing ML Ops disabled"
+            $pytest_args += "--ignore=python/test/ml_ops/"
+          }
+          python -m pytest @pytest_args
           deactivate
