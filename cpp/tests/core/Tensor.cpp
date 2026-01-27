@@ -849,12 +849,12 @@ TEST_P(TensorPermuteDevicesWithSYCL, Slice) {
     EXPECT_EQ(t_6.ToFlatVector<float>(),
               std::vector<float>({8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3}));
 
-    //t_7: Negative step with stop out-of-bounds (-5)
+    // t_7: Negative step with stop out-of-bounds (-5)
     core::Tensor t_7 = t[0].Slice(0, 2, -5, -1);
     EXPECT_EQ(t_7.GetShape(), core::SizeVector({3, 4}));
     EXPECT_EQ(t_7.GetStrides(), core::SizeVector({-4, 1}));
     EXPECT_EQ(t_7.GetDataPtr(), static_cast<const char *>(blob_head) +
-                                         core::Float32.ByteSize() * 2 * 4);
+                                        core::Float32.ByteSize() * 2 * 4);
     EXPECT_EQ(t_7.ToFlatVector<float>(),
               std::vector<float>({8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3}));
 
