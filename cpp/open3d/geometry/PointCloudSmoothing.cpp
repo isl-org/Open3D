@@ -369,8 +369,6 @@ PointCloud PointCloud::SmoothBilateral(const KDTreeSearchParam& search_param,
                 kdtree.Search(points_[i], search_param, indices, dists2);
 
         if (nb_neighbors > 1) {
-            double weight_sum = 0.0;
-            Eigen::Vector3d point_sum = Eigen::Vector3d::Zero();
             const Eigen::Vector3d& p_i = points_[i];
             const Eigen::Vector3d& n_i = smoothed_cloud.normals_[i];
 
