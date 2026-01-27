@@ -1,5 +1,6 @@
 ## Main
 -   Add point cloud smoothing algorithms: Moving Least Squares (MLS), Laplacian, Taubin, and bilateral smoothing. These methods provide flexible noise reduction for point clouds with different preservation characteristics (PR #7419).
+-   Upgrade stdgpu third-party library to commit d7c07d0.
 -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
 -   Corrected documentation for Link Open3D in C++ projects (broken links).
 -   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
@@ -65,6 +66,7 @@
 -   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
 -   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
 -   Fix `deprecated-declarations` warnings when compiling code with C++20 standard (PR #7303)
+-   Fix thread safety of UniformTSDFVolume::ExtractVoxelGrid (PR #7315)
 -   Fix advanced indexing bug with sliced boolean masks on CUDA devices (PR #7340)
 -   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
 -   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
