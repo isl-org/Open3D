@@ -17,7 +17,8 @@
 namespace open3d {
 namespace geometry {
 namespace {
-// Helper functions for point cloud smoothing
+// Helper functions for point cloud smoothing algorithms
+// These functions are used internally for point cloud filtering operations
 Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
                                 const std::vector<int>& indices) {
     Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
