@@ -16,6 +16,7 @@
 namespace open3d {
 namespace geometry {
 namespace {
+// Helper functions for point cloud smoothing
 Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
                                 const std::vector<int>& indices) {
     Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
@@ -38,7 +39,7 @@ Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
     return centroid;
 }
 
-Eigen::Vector3d ComputeWeightedCentroid(const open3d::geometry::PointCloud& pcd,
+Eigen::Vector3d ComputeWeightedCentroid(const PointCloud& pcd,
                                         const std::vector<int>& indices,
                                         const std::vector<double>& weights) {
     Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
@@ -78,11 +79,10 @@ Eigen::Vector3d ComputeWeightedCentroid(const open3d::geometry::PointCloud& pcd,
 /// - Invalid indices are skipped.
 /// - If input sizes mismatch or no valid points exist, a zero matrix is
 /// returned.
-Eigen::Matrix3d ComputeWeightedCovariance(
-        const open3d::geometry::PointCloud& pcd,
-        const std::vector<int>& indices,
-        const std::vector<double>& weights,
-        const Eigen::Vector3d& centroid) {
+Eigen::Matrix3d ComputeWeightedCovariance(const PointCloud& pcd,
+                                          const std::vector<int>& indices,
+                                          const std::vector<double>& weights,
+                                          const Eigen::Vector3d& centroid) {
     Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
 
     // ----------------------------
@@ -117,9 +117,9 @@ Eigen::Vector3d ProjectOntoPlane(const Eigen::Vector3d& p,
                                  const Eigen::Vector3d& normal) {
     return p - normal * ((p - centroid).dot(normal));
 }
-
 }  // namespace
 
+// Smoothing functions
 PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
     if (points_.empty()) {
         utility::LogWarning(

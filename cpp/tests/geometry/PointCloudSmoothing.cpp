@@ -15,6 +15,94 @@
 namespace open3d {
 namespace tests {
 
+namespace {
+// Helper functions for point cloud smoothing tests
+Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
+                                const std::vector<int>& indices) {
+    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
+    if (indices.empty()) {
+        return centroid;
+    }
+
+    const int n_points = static_cast<int>(points.size());
+    int valid_count = 0;
+    for (int idx : indices) {
+        if (idx < 0 || idx >= n_points) {
+            continue;
+        }
+        centroid += points[idx];
+        ++valid_count;
+    }
+    if (valid_count > 0) {
+        centroid /= static_cast<double>(valid_count);
+    }
+    return centroid;
+}
+
+Eigen::Vector3d ComputeWeightedCentroid(const open3d::geometry::PointCloud& pcd,
+                                        const std::vector<int>& indices,
+                                        const std::vector<double>& weights) {
+    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
+
+    if (indices.size() != weights.size() || indices.empty()) {
+        return centroid;
+    }
+
+    double sum_w = 0.0;
+    const int n_points = static_cast<int>(pcd.points_.size());
+
+    for (size_t i = 0; i < indices.size(); ++i) {
+        int idx = indices[i];
+        if (idx < 0 || idx >= n_points) {
+            continue;
+        }
+
+        const double w = weights[i];
+        centroid += w * pcd.points_[idx];
+        sum_w += w;
+    }
+
+    if (sum_w > 0.0) {
+        centroid /= sum_w;
+    }
+
+    return centroid;
+}
+
+Eigen::Matrix3d ComputeWeightedCovariance(
+        const open3d::geometry::PointCloud& pcd,
+        const std::vector<int>& indices,
+        const std::vector<double>& weights,
+        const Eigen::Vector3d& centroid) {
+    Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
+
+    if (indices.size() != weights.size() || indices.empty()) {
+        return C;
+    }
+
+    const int n_points = static_cast<int>(pcd.points_.size());
+
+    for (size_t i = 0; i < indices.size(); ++i) {
+        const int idx = indices[i];
+
+        if (idx < 0 || idx >= n_points) {
+            continue;
+        }
+
+        const Eigen::Vector3d diff = pcd.points_[idx] - centroid;
+        C.noalias() += weights[i] * diff * diff.transpose();
+    }
+
+    return C;
+}
+
+Eigen::Vector3d ProjectOntoPlane(const Eigen::Vector3d& p,
+                                 const Eigen::Vector3d& centroid,
+                                 const Eigen::Vector3d& normal) {
+    return p - normal * ((p - centroid).dot(normal));
+}
+}  // namespace
+
 // A point cloud that is a plane with some noise.
 static geometry::PointCloud CreateNoisyPlane(size_t n_points = 100,
                                              double noise_std = 0.01) {
@@ -43,86 +131,6 @@ static double AveragePlaneDistance(const geometry::PointCloud& pcd) {
     }
     return total_dist / pcd.points_.size();
 }
-
-namespace {
-// Helper functions copied from PointCloudSmoothing.cpp for testing.
-Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
-                                const std::vector<int>& indices) {
-    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-    if (indices.empty()) {
-        return centroid;
-    }
-    int valid_count = 0;
-    for (int idx : indices) {
-        if (idx < 0 || idx >= static_cast<int>(points.size())) {
-            continue;
-        }
-        centroid += points[idx];
-        ++valid_count;
-    }
-    if (valid_count > 0) {
-        centroid /= static_cast<double>(valid_count);
-    }
-    return centroid;
-}
-
-Eigen::Vector3d ComputeWeightedCentroid(const open3d::geometry::PointCloud& pcd,
-                                        const std::vector<int>& indices,
-                                        const std::vector<double>& weights) {
-    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-
-    if (indices.size() != weights.size() || indices.empty()) {
-        return centroid;
-    }
-
-    double sum_w = 0.0;
-    const size_t n_points = pcd.points_.size();
-
-    for (size_t i = 0; i < indices.size(); ++i) {
-        int idx = indices[i];
-        if (idx < 0 || idx >= static_cast<int>(n_points)) {
-            continue;
-        }
-
-        const double w = weights[i];
-        centroid += w * pcd.points_[idx];
-        sum_w += w;
-    }
-
-    if (sum_w > 0.0) {
-        centroid /= sum_w;
-    }
-
-    return centroid;
-}
-
-Eigen::Matrix3d ComputeWeightedCovariance(
-        const open3d::geometry::PointCloud& pcd,
-        const std::vector<int>& indices,
-        const std::vector<double>& weights,
-        const Eigen::Vector3d& centroid) {
-    Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
-    if (indices.size() != weights.size() || indices.empty()) {
-        return C;
-    }
-    const size_t n_points = pcd.points_.size();
-    for (size_t i = 0; i < indices.size(); ++i) {
-        const int idx = indices[i];
-        if (idx < 0 || idx >= static_cast<int>(n_points)) {
-            continue;
-        }
-        const Eigen::Vector3d diff = pcd.points_[idx] - centroid;
-        C.noalias() += weights[i] * diff * diff.transpose();
-    }
-    return C;
-}
-
-Eigen::Vector3d ProjectOntoPlane(const Eigen::Vector3d& p,
-                                 const Eigen::Vector3d& centroid,
-                                 const Eigen::Vector3d& normal) {
-    return p - normal * ((p - centroid).dot(normal));
-}
-}  // namespace
 
 TEST(PointCloudSmoothingHelpers, ComputeCentroid) {
     std::vector<Eigen::Vector3d> points = {
