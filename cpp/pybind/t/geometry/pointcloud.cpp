@@ -25,7 +25,7 @@ namespace geometry {
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"rgbd_image",
-                 "The input RGBD image should have a uint16_t depth image and "
+                 "The input RGBD image should have a uint16_t depth image and  "
                  "RGB image with any DType and the same size."},
                 {"depth", "The input depth image should be a uint16_t image."},
                 {"intrinsics", "Intrinsic parameters of the camera."},
@@ -261,10 +261,9 @@ Example:
                    "non-negative number less than number of points in the "
                    "input pointcloud.",
                    "start_index"_a = 0);
-    pointcloud.def(
-            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
-            "nb_points"_a, "search_radius"_a,
-            R"(Remove points that have less than nb_points neighbors in a
+    pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+                   "nb_points"_a, "search_radius"_a,
+                   R"(Remove points that have less than nb_points neighbors in a
 sphere of a given search radius.
 
 Args:
