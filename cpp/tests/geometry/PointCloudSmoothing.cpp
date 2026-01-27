@@ -52,13 +52,18 @@ Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
     if (indices.empty()) {
         return centroid;
     }
+    int valid_count = 0;
     for (int idx : indices) {
         if (idx < 0 || idx >= static_cast<int>(points.size())) {
             continue;
         }
         centroid += points[idx];
+        ++valid_count;
     }
-    return centroid / static_cast<double>(indices.size());
+    if (valid_count > 0) {
+        centroid /= static_cast<double>(valid_count);
+    }
+    return centroid;
 }
 
 Eigen::Vector3d ComputeWeightedCentroid(const open3d::geometry::PointCloud& pcd,
@@ -135,12 +140,12 @@ TEST(PointCloudSmoothingHelpers, ComputeCentroid_EmptyIndices) {
 }
 
 TEST(PointCloudSmoothingHelpers,
-     ComputeCentroid_InvalidIndices) {  // TODO: may fix function
+     ComputeCentroid_InvalidIndices) {
     std::vector<Eigen::Vector3d> points = {{1, 1, 1}};
     std::vector<int> indices = {0, -1, 100};
     // It should only average the valid index 0
     Eigen::Vector3d centroid = ComputeCentroid(points, indices);
-    ExpectEQ(centroid, (Eigen::Vector3d(1, 1, 1) / 3.0).eval());
+    ExpectEQ(centroid, Eigen::Vector3d(1, 1, 1));
 }
 
 TEST(PointCloudSmoothingHelpers, ComputeWeightedCentroid) {

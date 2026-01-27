@@ -24,13 +24,18 @@ Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
     }
 
     const int n_points = static_cast<int>(points.size());
+    int valid_count = 0;
     for (int idx : indices) {
         if (idx < 0 || idx >= n_points) {
             continue;
         }
         centroid += points[idx];
+        ++valid_count;
     }
-    return centroid / static_cast<double>(indices.size());
+    if (valid_count > 0) {
+        centroid /= static_cast<double>(valid_count);
+    }
+    return centroid;
 }
 
 Eigen::Vector3d ComputeWeightedCentroid(const open3d::geometry::PointCloud& pcd,
