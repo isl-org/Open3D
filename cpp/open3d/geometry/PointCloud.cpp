@@ -290,18 +290,6 @@ public:
     Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Zero();
 };
 
-Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
-                                const std::vector<int>& indices) {
-    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-    if (indices.empty()) {
-        return centroid;
-    }
-    for (int idx : indices) {
-        centroid += points[idx];
-    }
-    return centroid / static_cast<double>(indices.size());
-}
-
 class point_cubic_id {
 public:
     size_t point_id;

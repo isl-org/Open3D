@@ -5,25 +5,29 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Eigen/Eigenvalues>
+
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
-#include <Eigen/Eigenvalues>
 
 namespace open3d {
 namespace geometry {
-
 namespace {
-
 Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
                                 const std::vector<int>& indices) {
     Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
     if (indices.empty()) {
         return centroid;
     }
+
+    const int n_points = static_cast<int>(points.size());
     for (int idx : indices) {
+        if (idx < 0 || idx >= n_points) {
+            continue;
+        }
         centroid += points[idx];
     }
     return centroid / static_cast<double>(indices.size());
@@ -33,25 +37,73 @@ Eigen::Vector3d ComputeWeightedCentroid(const open3d::geometry::PointCloud& pcd,
                                         const std::vector<int>& indices,
                                         const std::vector<double>& weights) {
     Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-    double sum_w = 0.0;
-    for (size_t i = 0; i < indices.size(); ++i) {
-        centroid += weights[i] * pcd.points_[indices[i]];
-        sum_w += weights[i];
+
+    if (indices.size() != weights.size() || indices.empty()) {
+        return centroid;
     }
-    if (sum_w > 0.0) centroid /= sum_w;
+
+    double sum_w = 0.0;
+    const int n_points = static_cast<int>(pcd.points_.size());
+
+    for (size_t i = 0; i < indices.size(); ++i) {
+        int idx = indices[i];
+        if (idx < 0 || idx >= n_points) {
+            continue;
+        }
+
+        const double w = weights[i];
+        centroid += w * pcd.points_[idx];
+        sum_w += w;
+    }
+
+    if (sum_w > 0.0) {
+        centroid /= sum_w;
+    }
+
     return centroid;
 }
 
+/// \brief Compute weighted (unnormalized) covariance matrix around a centroid.
+///
+/// Computes:
+///     C = sum_i w_i * (p_i - centroid) * (p_i - centroid)^T
+///
+/// Notes:
+/// - The covariance matrix is NOT normalized by the sum of weights.
+/// - Invalid indices are skipped.
+/// - If input sizes mismatch or no valid points exist, a zero matrix is
+/// returned.
 Eigen::Matrix3d ComputeWeightedCovariance(
         const open3d::geometry::PointCloud& pcd,
         const std::vector<int>& indices,
         const std::vector<double>& weights,
         const Eigen::Vector3d& centroid) {
     Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
-    for (size_t i = 0; i < indices.size(); ++i) {
-        Eigen::Vector3d diff = pcd.points_[indices[i]] - centroid;
-        C += weights[i] * diff * diff.transpose();
+
+    // ----------------------------
+    // 1. Validate input sizes
+    // ----------------------------
+    if (indices.size() != weights.size() || indices.empty()) {
+        return C;
     }
+
+    const int n_points = static_cast<int>(pcd.points_.size());
+
+    // ----------------------------
+    // 2. Accumulate covariance
+    // ----------------------------
+    for (size_t i = 0; i < indices.size(); ++i) {
+        const int idx = indices[i];
+
+        // Skip invalid indices
+        if (idx < 0 || idx >= n_points) {
+            continue;
+        }
+
+        const Eigen::Vector3d diff = pcd.points_[idx] - centroid;
+        C.noalias() += weights[i] * diff * diff.transpose();
+    }
+
     return C;
 }
 
@@ -78,11 +130,11 @@ PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
         radius = r->radius_;
     } else if (auto* knn = dynamic_cast<const KDTreeSearchParamKNN*>(
                        &search_param)) {
-        k = (int)knn->knn_;
+        k = knn->knn_;
     } else if (auto* hybrid = dynamic_cast<const KDTreeSearchParamHybrid*>(
                        &search_param)) {
         radius = hybrid->radius_;
-        k = (int)hybrid->max_nn_;
+        k = hybrid->max_nn_;
     } else {
         utility::LogError("Unsupported search param type.");
     }
@@ -90,19 +142,9 @@ PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
     // ----------------------------
     // 1. Parameter validation
     // ----------------------------
-    if (radius <= 0.0 && k <= 0) {
-        utility::LogWarning(
-                "Both radius and k are non-positive. Returning copy.");
+    if (radius <= 0.0 && k <= 0.0) {
+        utility::LogWarning("Both radius and k are invalid. Returning copy.");
         return *this;
-    }
-
-    if (radius <= 0.0 && k > 0) {
-        utility::LogWarning(
-                "Radius is non-positive. Using k-nearest neighbors only.");
-    }
-
-    if (radius > 0.0 && k <= 0) {
-        utility::LogWarning("k is non-positive. Using radius search only.");
     }
 
     // ----------------------------
@@ -159,7 +201,7 @@ PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
         // 5. Compute weights
         // ----------------------------
         std::vector<double> w(nb_neighbors);
-        for (int j = 0; j < nb_neighbors; j++) {
+        for (int j = 0; j < nb_neighbors; ++j) {
             w[j] = std::exp(-distances2[j] * inv_sigma2);
         }
 
@@ -196,13 +238,15 @@ PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
     return smoothed_cloud;
 }
 
-PointCloud PointCloud::SmoothLaplacian(size_t iterations, double lambda) const {
+PointCloud PointCloud::SmoothLaplacian(size_t iterations,
+                                       double lambda,
+                                       int knn) const {
     if (points_.empty() || iterations == 0) {
         return *this;
     }
 
     PointCloud smoothed_cloud = *this;
-    const int knn = 20;  // Default number of neighbors
+    int n_points = static_cast<int>(smoothed_cloud.points_.size());
 
     for (size_t i = 0; i < iterations; ++i) {
         PointCloud temp_cloud = smoothed_cloud;
@@ -212,7 +256,7 @@ PointCloud PointCloud::SmoothLaplacian(size_t iterations, double lambda) const {
 
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
-        for (int j = 0; j < (int)temp_cloud.points_.size(); ++j) {
+        for (int j = 0; j < n_points; ++j) {
             std::vector<int> indices;
             std::vector<double> dists;
             if (kdtree.SearchKNN(temp_cloud.points_[j], knn, indices, dists) >
@@ -230,13 +274,14 @@ PointCloud PointCloud::SmoothLaplacian(size_t iterations, double lambda) const {
 
 PointCloud PointCloud::SmoothTaubin(size_t iterations,
                                     double lambda,
-                                    double mu) const {
+                                    double mu,
+                                    int knn) const {
     if (points_.empty() || iterations == 0) {
         return *this;
     }
 
     PointCloud smoothed_cloud = *this;
-    const int knn = 20;  // Default number of neighbors
+    int n_points = static_cast<int>(smoothed_cloud.points_.size());
 
     for (size_t i = 0; i < iterations; ++i) {
         // Lambda pass
@@ -246,7 +291,7 @@ PointCloud PointCloud::SmoothTaubin(size_t iterations,
             std::vector<Eigen::Vector3d> next_points = smoothed_cloud.points_;
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
-            for (int j = 0; j < (int)temp_cloud.points_.size(); ++j) {
+            for (int j = 0; j < n_points; ++j) {
                 std::vector<int> indices;
                 std::vector<double> dists;
                 if (kdtree.SearchKNN(temp_cloud.points_[j], knn, indices,
@@ -267,7 +312,7 @@ PointCloud PointCloud::SmoothTaubin(size_t iterations,
             std::vector<Eigen::Vector3d> next_points = smoothed_cloud.points_;
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
-            for (int j = 0; j < (int)temp_cloud.points_.size(); ++j) {
+            for (int j = 0; j < n_points; ++j) {
                 std::vector<int> indices;
                 std::vector<double> dists;
                 if (kdtree.SearchKNN(temp_cloud.points_[j], knn, indices,
@@ -292,7 +337,6 @@ PointCloud PointCloud::SmoothBilateral(const KDTreeSearchParam& search_param,
     }
     if (sigma_s <= 0 || sigma_r <= 0) {
         utility::LogError("Sigma values must be positive.");
-        return *this;
     }
 
     PointCloud smoothed_cloud = *this;
@@ -309,9 +353,11 @@ PointCloud PointCloud::SmoothBilateral(const KDTreeSearchParam& search_param,
     double inv_sigma_s2 = 1.0 / (2 * sigma_s * sigma_s);
     double inv_sigma_r2 = 1.0 / (2 * sigma_r * sigma_r);
 
+    int n_points = static_cast<int>(points_.size());
+
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)points_.size(); ++i) {
+    for (int i = 0; i < n_points; ++i) {
         std::vector<int> indices;
         std::vector<double> dists2;
         int nb_neighbors =
@@ -323,23 +369,23 @@ PointCloud PointCloud::SmoothBilateral(const KDTreeSearchParam& search_param,
             const Eigen::Vector3d& p_i = points_[i];
             const Eigen::Vector3d& n_i = smoothed_cloud.normals_[i];
 
+            std::vector<double> weights(nb_neighbors);
+
             for (int k = 0; k < nb_neighbors; ++k) {
                 const Eigen::Vector3d& p_k = points_[indices[k]];
                 double spatial_weight = std::exp(-dists2[k] * inv_sigma_s2);
                 double range_dist = (p_i - p_k).dot(n_i);
                 double range_weight =
                         std::exp(-(range_dist * range_dist) * inv_sigma_r2);
-                double w = spatial_weight * range_weight;
-
-                weight_sum += w;
-                point_sum += w * p_k;
+                weights[k] = spatial_weight * range_weight;
             }
 
-            if (weight_sum > 0) {
-                smoothed_cloud.points_[i] = point_sum / weight_sum;
-            }
+            Eigen::Vector3d new_point =
+                    ComputeWeightedCentroid(*this, indices, weights);
+            smoothed_cloud.points_[i] = new_point;
         }
     }
+
     return smoothed_cloud;
 }
 

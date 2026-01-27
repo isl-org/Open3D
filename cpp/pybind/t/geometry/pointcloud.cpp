@@ -25,7 +25,7 @@ namespace geometry {
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"rgbd_image",
-                 "The input RGBD image should have a uint16_t depth image and  "
+                 "The input RGBD image should have a uint16_t depth image and "
                  "RGB image with any DType and the same size."},
                 {"depth", "The input depth image should be a uint16_t image."},
                 {"intrinsics", "Intrinsic parameters of the camera."},

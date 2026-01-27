@@ -210,8 +210,9 @@ public:
     /// \param iterations Number of smoothing iterations.
     /// \param lambda     Smoothing factor in (0, 1).
     /// \return Smoothed point cloud.
-    PointCloud SmoothLaplacian(size_t iterations = 10,
-                               double lambda = 0.5) const;
+    PointCloud SmoothLaplacian(size_t iterations,
+                               double lambda,
+                               int knn = 20) const;
 
     /// \brief Smooth point cloud using Taubin smoothing (Laplacian + inverse
     /// Laplacian).
@@ -221,7 +222,8 @@ public:
     /// \return Smoothed point cloud.
     PointCloud SmoothTaubin(size_t iterations = 10,
                             double lambda = 0.5,
-                            double mu = -0.53) const;
+                            double mu = -0.53,
+                            int knn = 20) const;
 
     /// \brief Smooth point cloud using bilateral filtering.
     /// \param search_param KDTree search parameters for neighborhood search.
