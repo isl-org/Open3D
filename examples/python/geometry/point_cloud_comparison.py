@@ -11,7 +11,7 @@ def preprocess_point_cloud(pcd, voxel_size):
     radius_normal = voxel_size * 2
     pcd_down.estimate_normals(
         o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30))
-    
+
     radius_feature = voxel_size * 5
     pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
@@ -46,16 +46,16 @@ def run_comparison(source_path, target_path, is_target_mesh=False):
         target = mesh.sample_points_poisson_disk(number_of_points=50000)
     else:
         target = o3d.io.read_point_cloud(target_path)
-    
+
     source = o3d.io.read_point_cloud(source_path)
-    
+
     # 2. Pre-processing & Global Registration
     voxel_size = 0.05
     print(":: Performing Global Registration (RANSAC)...")
     source_down, source_fpfh = preprocess_point_cloud(source, voxel_size)
     target_down, target_fpfh = preprocess_point_cloud(target, voxel_size)
-    
-    global_result = execute_global_registration(source_down, target_down, 
+
+    global_result = execute_global_registration(source_down, target_down,
                                                source_fpfh, target_fpfh, voxel_size)
     source.transform(global_result.transformation)
 
@@ -71,7 +71,7 @@ def run_comparison(source_path, target_path, is_target_mesh=False):
     # 4. Heatmap Computation
     distances = source.compute_point_cloud_distance(target)
     dist_array = np.asarray(distances)
-    
+
     # Dynamic coloring based on mean distance
     max_dist = dist_array.mean() * 2
     colors = plt.get_cmap("jet")(dist_array / max_dist)[:, :3]
@@ -94,3 +94,4 @@ if __name__ == "__main__":
         knot = o3d.data.KnotMesh()
         demo_pcd = o3d.data.DemoICPPointClouds()
         run_comparison(demo_pcd.paths[0], knot.path, is_target_mesh=True)
+        
