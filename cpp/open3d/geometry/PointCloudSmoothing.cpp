@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+// cppcheck-suppress missingIncludeSystem
 #include <Eigen/Eigenvalues>
 
 #include "open3d/geometry/KDTreeFlann.h"

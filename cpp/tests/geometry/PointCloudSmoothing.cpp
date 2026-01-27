@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+// cppcheck-suppress missingIncludeSystem
 #include <random>
 
 #include "Eigen/Eigenvalues"
