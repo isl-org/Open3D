@@ -139,8 +139,7 @@ TEST(PointCloudSmoothingHelpers, ComputeCentroid_EmptyIndices) {
     ExpectEQ(centroid, Eigen::Vector3d::Zero().eval());
 }
 
-TEST(PointCloudSmoothingHelpers,
-     ComputeCentroid_InvalidIndices) {
+TEST(PointCloudSmoothingHelpers, ComputeCentroid_InvalidIndices) {
     std::vector<Eigen::Vector3d> points = {{1, 1, 1}};
     std::vector<int> indices = {0, -1, 100};
     // It should only average the valid index 0
