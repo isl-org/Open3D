@@ -41,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -51,6 +51,8 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
@@ -65,7 +67,7 @@ jobs:
 
       - name: Compute Docker tag for this matrix entry
         run: |
-          # Strip the dot: 3.8 ➜ 38, 3.10 ➜ 310 …
+          # Strip the dot: 3.12 ➜ 312, 3.14 ➜ 314 …
           PY_NO_DOT="${PYTHON_VERSION//./}"
           # Add “-dev” only when requested
           DEV_SUFFIX=$([ "${DEVELOPER_BUILD}" = "ON" ] && echo "-dev")

@@ -71,6 +71,7 @@
 -   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
 -   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
+-   Python 3.13+3.14 support
 
 
 ## 0.13
