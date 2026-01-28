@@ -23,6 +23,7 @@ BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
+BUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE:-ON}
 
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
@@ -120,6 +121,7 @@ build_all() {
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
         -DBUILD_EXAMPLES=OFF
+        -DBUILD_PYTHON_MODULE="$BUILD_PYTHON_MODULE"
     )
 
     echo
@@ -132,7 +134,9 @@ build_all() {
     if [[ "$BUILD_SHARED_LIBS" == "ON" ]]; then
         make package
     fi
-    make VERBOSE=1 install-pip-package -j"$NPROC"
+    if [[ "$BUILD_PYTHON_MODULE" == "ON" ]]; then
+        make VERBOSE=1 install-pip-package -j"$NPROC"
+    fi
     echo
 }
 
@@ -182,10 +186,9 @@ build_pip_package() {
 
     echo
     echo Building with CPU only...
-    mkdir -p build
-    pushd build # PWD=Open3D/build
-    cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
-        "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+    mkdir -p build_cpu
+    pushd build_cpu # PWD=Open3D/build_cpu
+    cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=ON"
@@ -201,13 +204,23 @@ build_pip_package() {
         "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
     )
     set -x # Echo commands on
-    cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
+    if [ ! -f CMakeCache.txt ]; then
+        cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" "${cmakeOptions[@]}" ..
+    fi
     set +x # Echo commands off
     echo
 
-    echo "Packaging Open3D CPU pip package..."
-    make VERBOSE=1 -j"$NPROC" pip-package
-    mv lib/python_package/pip_package/open3d*.whl . # save CPU wheel
+    if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
+        echo "Building Open3D C++ Core only..."
+        make VERBOSE=1 -j"$NPROC"
+        # make install? Not strictly necessary unless we want to use installed libs.
+        # But for 'build-lib', we want to keep the build directory populated.
+        # make VERBOSE=1 -j"$NPROC" install
+    else
+        echo "Packaging Open3D CPU pip package..."
+        make VERBOSE=1 -j"$NPROC" pip-package
+    fi
+    popd
 
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
@@ -215,22 +228,35 @@ build_pip_package() {
         install_python_dependencies with-cuda purge-cache
         echo
         echo Building with CUDA...
-        rebuild_list=(bin lib/Release/*.a lib/_build_config.py cpp lib/ml)
-        echo
-        echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
-        rm -r "${rebuild_list[@]}" || true
+        
+        mkdir -p build_cuda
+        pushd build_cuda
+        
         set -x # Echo commands on
-        cmake -DBUILD_CUDA_MODULE=ON \
-            -DBUILD_COMMON_CUDA_ARCHS=ON \
-            "${cmakeOptions[@]}" ..
+        if [ ! -f CMakeCache.txt ]; then
+            cmake -DBUILD_CUDA_MODULE=ON \
+                -DBUILD_COMMON_CUDA_ARCHS=ON \
+                -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
+                "${cmakeOptions[@]}" ..
+        fi
         set +x # Echo commands off
+        
+        if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
+             make VERBOSE=1 -j"$NPROC"
+        else
+             make VERBOSE=1 -j"$NPROC" pip-package
+        fi
+        popd
     fi
     echo
 
-    echo "Packaging Open3D full pip package..."
-    make VERBOSE=1 -j"$NPROC" pip-package
-    mv open3d*.whl lib/python_package/pip_package/ # restore CPU wheel
-    popd                                           # PWD=Open3D
+    if [ "$BUILD_PYTHON_MODULE" != "OFF" ]; then
+        mkdir -p build/lib/python_package/pip_package
+        cp build_cpu/lib/python_package/pip_package/open3d*.whl build/lib/python_package/pip_package/ || true
+        if [ "$BUILD_CUDA_MODULE" == ON ]; then
+            cp build_cuda/lib/python_package/pip_package/open3d*.whl build/lib/python_package/pip_package/ || true
+        fi
+    fi
 }
 
 # Test wheel in blank virtual environment

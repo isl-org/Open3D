@@ -9,6 +9,7 @@ ARG CMAKE_VERSION
 ARG PYTHON_VERSION
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
+ARG BUILD_PYTHON_MODULE
 ARG CI
 
 # Forward all ARG to ENV
@@ -19,6 +20,7 @@ ENV CMAKE_VERSION=${CMAKE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+ENV BUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -27,18 +29,10 @@ ENV SUDO=command
 
 SHELL ["/bin/bash", "-c"]
 
-# Fix Nvidia repo key rotation issue
-# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
-# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
-# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
-RUN export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn \
- && apt-key del 7fa2af80 \
- && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub \
- && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
-
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
     wget \
+    ca-certificates \
     ccache \
     build-essential \
     libssl-dev \
@@ -56,6 +50,11 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
+
+# Install NVIDIA repository keyring package
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb \
+ && dpkg -i cuda-keyring_1.1-1_all.deb \
+ && rm cuda-keyring_1.1-1_all.deb
 
 # Dependencies: cmake
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
@@ -96,7 +95,7 @@ RUN curl https://pyenv.run | bash \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
-RUN python --version && pip --version \
+RUN python --version && pip --version
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
@@ -132,11 +131,11 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build python wheel
+# Note: BUILD_SHARED_LIBS defaults to ON, which is required for Python wheels
 RUN export NPROC=$(($(nproc)+2)) \
- && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter \
- && if [ ${CI:-}a != a ]; then cd /root/Open3D/build/ && ls | grep -Ev '^lib$' | xargs rm -rf ; fi
+ && if [ ${CI:-}a != a ]; then rm -rf build_cpu build_cuda && if [ -d build ]; then find build -mindepth 1 -maxdepth 1 -not -name lib -exec rm -rf {} +; fi; fi
  # remove build folder (except lib) to save CI space on Github
 
 # Compress ccache folder, move to / directory
