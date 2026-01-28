@@ -43,4 +43,3 @@ bool IsPyTorchRuntimeEnabled();
 
 }  // namespace ml
 }  // namespace open3d
-
