@@ -61,7 +61,8 @@ public:
     /// Function to integrate an RGB-D image into the volume.
     virtual void Integrate(const geometry::RGBDImage &image,
                            const camera::PinholeCameraIntrinsic &intrinsic,
-                           const Eigen::Matrix4d &extrinsic) = 0;
+                           const Eigen::Matrix4d &extrinsic,
+                           bool deintegrate = false) = 0;
 
     /// Function to extract a point cloud with normals.
     virtual std::shared_ptr<geometry::PointCloud> ExtractPointCloud() = 0;

@@ -24,9 +24,10 @@ public:
     void Reset() override { PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, ); }
     void Integrate(const geometry::RGBDImage &image,
                    const camera::PinholeCameraIntrinsic &intrinsic,
-                   const Eigen::Matrix4d &extrinsic) override {
+                   const Eigen::Matrix4d &extrinsic,
+                   bool deintegrate = false) override {
         PYBIND11_OVERLOAD_PURE(void, TSDFVolumeBase, image, intrinsic,
-                               extrinsic);
+                               extrinsic, deintegrate);
     }
     std::shared_ptr<geometry::PointCloud> ExtractPointCloud() override {
         PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::PointCloud>,
@@ -99,8 +100,10 @@ void pybind_integration_definitions(py::module &m) {
             .def("reset", &TSDFVolume::Reset,
                  "Function to reset the TSDFVolume")
             .def("integrate", &TSDFVolume::Integrate,
-                 "Function to integrate an RGB-D image into the volume",
-                 "image"_a, "intrinsic"_a, "extrinsic"_a)
+                 "Function to integrate/deintegrate an RGB-D image into the "
+                 "volume",
+                 "image"_a, "intrinsic"_a, "extrinsic"_a,
+                 "deintegrate"_a = false)
             .def("extract_point_cloud", &TSDFVolume::ExtractPointCloud,
                  "Function to extract a point cloud with normals")
             .def("extract_triangle_mesh", &TSDFVolume::ExtractTriangleMesh,
@@ -119,9 +122,12 @@ void pybind_integration_definitions(py::module &m) {
                                     "extract_triangle_mesh");
     docstring::ClassMethodDocInject(
             m_integration, "TSDFVolume", "integrate",
-            {{"image", "RGBD image."},
-             {"intrinsic", "Pinhole camera intrinsic parameters."},
-             {"extrinsic", "Extrinsic parameters."}});
+            {
+                    {"image", "RGBD image."},
+                    {"intrinsic", "Pinhole camera intrinsic parameters."},
+                    {"extrinsic", "Extrinsic parameters."},
+                    {"deintegrate", "Deintegrate flag."},
+            });
     docstring::ClassMethodDocInject(m_integration, "TSDFVolume", "reset");
 
     // open3d.integration.UniformTSDFVolume: open3d.integration.TSDFVolume
