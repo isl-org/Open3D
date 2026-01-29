@@ -113,6 +113,21 @@ TriangleMesh TriangleMesh::operator+(const TriangleMesh &mesh) const {
     return (TriangleMesh(*this) += mesh);
 }
 
+bool TriangleMesh::operator==(const TriangleMesh &mesh) const {
+    if (vertices_.size() != mesh.vertices_.size()) return false;
+    if (triangles_.size() != mesh.triangles_.size()) return false;
+
+    for (unsigned long i = 0; i < vertices_.size(); ++i) {
+        if (!vertices_[i].isApprox(mesh.vertices_[i])) return false;
+    }
+
+    for (unsigned long i = 0; i < triangles_.size(); ++i) {
+        if (triangles_[i] != mesh.triangles_[i]) return false;
+    }
+
+    return true;
+}
+
 TriangleMesh &TriangleMesh::ComputeTriangleNormals(
         bool normalized /* = true*/) {
     triangle_normals_.resize(triangles_.size());
