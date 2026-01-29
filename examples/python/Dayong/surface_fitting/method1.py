@@ -3,11 +3,13 @@ from examples.python.Dayong.surface_fitting.align import *
 from project import *
 from extrude import *
 from utils import *
+from pathlib import Path
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(__file__)
-    shoe_path = os.path.join(base_dir, "STLs", "shoe.stl")
-    toy_path = os.path.join(base_dir, "STLs", "badge.stl")
+    cur_dir = Path(__file__).resolve().parent
+    dayong_dir = cur_dir.parent
+    shoe_path = os.path.join(dayong_dir, "scans", "STLs", "Toys", "shoe.stl")
+    toy_path = os.path.join(dayong_dir, "scans", "STLs", "Toys", "badge.stl")
 
     # Generate mesh for each stl
     shoe = read_stl_to_mesh(shoe_path)

@@ -1,0 +1,17 @@
+shoe.stl
+[0.5, 0.2, 0.9] front
+[0.5, 0.9, 0.5] back
+
+badge.stl
+toy_mesh.scale(2, inplace=True)
+[0.5, 0.5, 1]
+
+viking.stl
+toy_mesh.scale(0.1, inplace=True)
+[0.5, 0.5, 1]
+
+rose.stl
+[0.5, 0.5, 0.5]
+
+fish.stl
+[0.5, 1, 0.5]
