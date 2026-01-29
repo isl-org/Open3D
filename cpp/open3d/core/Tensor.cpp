@@ -27,6 +27,7 @@
 #include "open3d/core/kernel/IndexReduction.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/core/linalg/Det.h"
+#include "open3d/core/linalg/Gramian.h"
 #include "open3d/core/linalg/Inverse.h"
 #include "open3d/core/linalg/LU.h"
 #include "open3d/core/linalg/LeastSquares.h"
@@ -1085,6 +1086,40 @@ Tensor Tensor::T() const {
         utility::LogError(
                 "Tensor::T() expects a Tensor with <= 2 dimensions, but the "
                 "Tensor as {} dimensions.");
+    }
+}
+
+Tensor Tensor::Gram() const {
+    int64_t n_dims = NumDims();
+    if (n_dims <= 0) {
+        return *this;
+    } else if (n_dims == 1) {
+        return Reshape({-1, 1}).Gram();
+    } else if (n_dims == 2) {
+        Tensor output;
+        core::Gram(*this, output);
+        return output;
+    } else {
+        utility::LogError(
+                "Tensor::Gram() expects a Tensor with <= 2 dimensions, but the "
+                "Tensor has {} dimensions.");
+    }
+}
+
+Tensor Tensor::RowGram() const {
+    int64_t n_dims = NumDims();
+    if (n_dims <= 0) {
+        return *this;
+    } else if (n_dims == 1) {
+        return Reshape({-1, 1}).RowGram();
+    } else if (n_dims == 2) {
+        Tensor output;
+        core::RowGram(*this, output);
+        return output;
+    } else {
+        utility::LogError(
+                "Tensor::RowGram() expects a Tensor with <= 2 dimensions, but "
+                "the Tensor has {} dimensions.");
     }
 }
 

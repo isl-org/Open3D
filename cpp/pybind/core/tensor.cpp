@@ -764,6 +764,13 @@ Example:
     tensor.def("__matmul__", &Tensor::Matmul,
                "Computes matrix multiplication of a"
                " 2D tensor with another tensor of compatible shape.");
+    tensor.def("gram", &Tensor::Gram,
+               "Computes the Gram matrix of a given <=2D tensor. 1D tensors of "
+               "shape {n} are expanded to 2D by reshaping them to {1, n}.");
+    tensor.def(
+            "row_gram", &Tensor::RowGram,
+            "Computes the Row Gram matrix of a given <=2D tensor. 1D tensors "
+            "of shape {n} are expanded to 2D by reshaping them to {1, n}.");
     tensor.def("lstsq", &Tensor::LeastSquares,
                "Solves the linear system AX = B with QR decomposition and "
                "returns X. A is a (m, n) matrix with m >= n.",

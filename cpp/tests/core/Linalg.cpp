@@ -72,6 +72,86 @@ TEST_P(LinalgPermuteDevices, Matmul) {
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({2, 4}, dtype)));
 }
 
+TEST_P(LinalgPermuteDevices, Gram) {
+    const float EPSILON = 1e-8;
+
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Float32;
+
+    // Gram test.
+    core::Tensor A = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+
+    core::Tensor B = A.Gram();
+    EXPECT_EQ(B.GetShape(), core::SizeVector({3, 3}));
+    std::vector<float> B_data = B.ToFlatVector<float>();
+    std::vector<float> B_gt = {17, 22, 27, 22, 29, 36, 27, 36, 45};
+    for (int i = 0; i < 9; ++i) {
+        EXPECT_NEAR(B_data[i], B_gt[i], EPSILON);
+    }
+
+    // Gram matrix must equal the operation A.T @ A
+    core::Tensor C = A.T().Matmul(A);
+    std::vector<float> C_data = C.ToFlatVector<float>();
+    for (int i = 0; i < 9; ++i) {
+        EXPECT_NEAR(C_data[i], B_gt[i], EPSILON);
+    }
+
+    // Non-contiguous Gram test.
+    core::Tensor A_slice = A.Slice(1, 0, 3, 2);
+    core::Tensor B_slice = A_slice.Gram();
+    EXPECT_EQ(B_slice.GetShape(), core::SizeVector({2, 2}));
+
+    std::vector<float> B_slice_data = B_slice.ToFlatVector<float>();
+    std::vector<float> B_slice_gt = {17, 27, 27, 45};
+    for (int i = 0; i < 4; ++i) {
+        EXPECT_NEAR(B_slice_data[i], B_slice_gt[i], EPSILON);
+    }
+
+    // Incompatible shape test.
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 0}, dtype, device).Gram());
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3, 3}, dtype, device).Gram());
+}
+
+TEST_P(LinalgPermuteDevices, RowGram) {
+    const float EPSILON = 1e-8;
+
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Float32;
+
+    // RowGram test.
+    core::Tensor A = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+
+    core::Tensor B = A.RowGram();
+    EXPECT_EQ(B.GetShape(), core::SizeVector({2, 2}));
+    std::vector<float> B_data = B.ToFlatVector<float>();
+    std::vector<float> B_gt = {14, 32, 32, 77};
+    for (int i = 0; i < 4; ++i) {
+        EXPECT_NEAR(B_data[i], B_gt[i], EPSILON);
+    }
+
+    // Row gram matrix must equal the operation A @ A.T
+    core::Tensor C = A.Matmul(A.T());
+    std::vector<float> C_data = C.ToFlatVector<float>();
+    for (int i = 0; i < 4; ++i) {
+        EXPECT_NEAR(C_data[i], B_gt[i], EPSILON);
+    }
+
+    // Non-contiguous RowGram test.
+    core::Tensor A_slice = A.Slice(1, 0, 3, 2);
+    core::Tensor B_slice = A_slice.RowGram();
+    EXPECT_EQ(B_slice.GetShape(), core::SizeVector({2, 2}));
+
+    std::vector<float> B_slice_data = B_slice.ToFlatVector<float>();
+    std::vector<float> B_slice_gt = {10, 22, 22, 52};
+    for (int i = 0; i < 4; ++i) {
+        EXPECT_NEAR(B_slice_data[i], B_slice_gt[i], EPSILON);
+    }
+
+    // Incompatible shape test.
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 0}, dtype, device).RowGram());
+    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3, 3}, dtype, device).RowGram());
+}
+
 TEST_P(LinalgPermuteDevices, AddMM) {
     const float EPSILON = 1e-8;
 
