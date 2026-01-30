@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -43,11 +43,14 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
       CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
+      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' ) && 'OFF' || 'ON' }} # Only torch>=2.9 supports py3.14
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -67,8 +70,8 @@ jobs:
             docker/docker_build.sh cuda_wheel_py312_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py313_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py39
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.14" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py314_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py310
           elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
@@ -77,6 +80,8 @@ jobs:
             docker/docker_build.sh cuda_wheel_py312
           elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py313
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.14" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py314
           fi
           # Find the actual wheel files using proper glob expansion
           # Search in workspace root (where docker copies the wheels)
@@ -135,7 +140,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -145,8 +150,11 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' ) && 'OFF' || 'ON' }} # Used here to disable GPU tests for py3.14 until torch supports it
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
