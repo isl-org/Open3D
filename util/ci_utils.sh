@@ -186,6 +186,7 @@ build_pip_package() {
     else
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
+        BUILD_WEBRTC_FROM_SOURCE=OFF
     fi
     set -u
 
