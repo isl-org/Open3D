@@ -182,19 +182,10 @@ build_pip_package() {
     if [[ "build_jupyter" =~ ^($options)$ ]]; then
         echo "Building Jupyter extension in Python wheel."
         BUILD_JUPYTER_EXTENSION=ON
-        # WebRTC is not supported on ARM Linux
-        AARCH="$(uname -m)"
-        if [[ "$AARCH" == "aarch64" ]]; then
-            echo "ARM Linux detected: BUILD_WEBRTC disabled (not supported on ARM)"
-            BUILD_WEBRTC_FROM_SOURCE=OFF
-            BUILD_JUPYTER_EXTENSION=OFF
-        else
-            BUILD_WEBRTC_FROM_SOURCE=ON
-        fi
+        BUILD_WEBRTC_FROM_SOURCE=ON
     else
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
-        BUILD_WEBRTC_FROM_SOURCE=OFF
     fi
     set -u
 
