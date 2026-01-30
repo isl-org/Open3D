@@ -38,7 +38,7 @@ public:
         const Tensor& row_splits = context->input(1);
         OP_REQUIRES(
                 context, row_splits.shape().dims() == 1,
-                errors::InvalidArgument("row_splits must be a rank 1 tensor"));
+                absl::InvalidArgumentError("row_splits must be a rank 1 tensor"));
 
         // special treatment for empty values vector
         if (values.shape().dim_size(0) == 0) {

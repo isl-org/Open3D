@@ -112,8 +112,8 @@ public:
                 context,
                 inp_positions.shape().dim_size(0) ==
                         inp_features.shape().dim_size(0),
-                errors::InvalidArgument("first dim of inp_positions does not "
-                                        "match the first dim of inp_features"));
+                absl::InvalidArgumentError("first dim of inp_positions does not "
+                                           "match the first dim of inp_features"));
 
         OP_REQUIRES(
                 context,
@@ -136,8 +136,8 @@ public:
         OP_REQUIRES(
                 context,
                 filter.shape().dim_size(3) == inp_features.shape().dim_size(1),
-                errors::InvalidArgument("number of input channels in filter "
-                                        "and inp_features does not match"));
+                absl::InvalidArgumentError("number of input channels in filter "
+                                           "and inp_features does not match"));
 
         TensorShape out_features_shape({out_positions.shape().dim_size(0),
                                         filter.shape().dim_size(4)});

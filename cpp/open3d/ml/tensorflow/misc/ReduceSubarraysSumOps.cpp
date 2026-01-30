@@ -33,7 +33,7 @@ REGISTER_OP("Open3DReduceSubarraysSum")
             sums_shape = c->MakeShape({sums_size});
             c->set_output(0, sums_shape);
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Computes the sum for each subarray in a flat vector of arrays.
