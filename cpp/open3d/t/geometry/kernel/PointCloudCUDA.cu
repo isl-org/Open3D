@@ -36,11 +36,9 @@ void ProjectCUDA(
 
     // buffer for id and depth
     core::Tensor index_buffer = core::Tensor::Full(
-        {height, width}, 
-        0xFFFFFFFFFFFFFFFF, // The largest possible 64-bit number
-        core::UInt64, 
-        depth.GetDevice()
-    );
+            {height, width},
+            0xFFFFFFFFFFFFFFFF,  // The largest possible 64-bit number
+            core::UInt64, depth.GetDevice());
 
     uint64_t* index_buffer_ptr = index_buffer.GetDataPtr<uint64_t>();
 
@@ -79,14 +77,16 @@ void ProjectCUDA(
                 int64_t col = static_cast<int64_t>(u);
 
                 // Get the specific address for this pixel (u, v)
-                uint64_t* pixel_address = index_buffer_ptr + (row * width + col);
+                uint64_t* pixel_address =
+                        index_buffer_ptr + (row * width + col);
 
                 // Prepare the packed value of id and depth
                 uint32_t d_as_uint = __float_as_uint(d);
-                uint64_t val = (static_cast<uint64_t>(d_as_uint) << 32) | (uint32_t)workload_idx;
+                uint64_t val = (static_cast<uint64_t>(d_as_uint) << 32) |
+                               (uint32_t)workload_idx;
 
                 atomicMin(reinterpret_cast<unsigned long long*>(pixel_address),
-                         static_cast<unsigned long long>(val));
+                          static_cast<unsigned long long>(val));
             });
 
     // Pass 2: color map
@@ -105,16 +105,19 @@ void ProjectCUDA(
 
                 // coordinate in image (in pixel)
                 transform_indexer.Project(xc, yc, zc, &u, &v);
-                u = round(u); v = round(v);
+                u = round(u);
+                v = round(v);
 
                 if (!depth_indexer.InBoundary(u, v) || zc <= 0 ||
                     zc > depth_max) {
                     return;
                 }
 
-                int64_t pu = static_cast<int64_t>(u), pv = static_cast<int64_t>(v);
+                int64_t pu = static_cast<int64_t>(u),
+                        pv = static_cast<int64_t>(v);
                 uint64_t final_val = index_buffer_ptr[pv * width + pu];
-                uint32_t winning_idx = static_cast<uint32_t>(final_val & 0xFFFFFFFF);
+                uint32_t winning_idx =
+                        static_cast<uint32_t>(final_val & 0xFFFFFFFF);
 
                 if (winning_idx == (uint32_t)workload_idx) {
                     float* color_ptr = color_indexer.GetDataPtr<float>(u, v);
