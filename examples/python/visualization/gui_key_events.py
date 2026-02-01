@@ -71,17 +71,22 @@ def main():
         
         # Verify we got expected events
         time.sleep(0.5)
-        if len(received_events) >= 4:
+        if len(received_events) == 4:
             status.text = "✅ Demo completed successfully"
             
-            # Specific validation instead of just count
+            # Specific validation
             assert received_events[0].key == gui.KeyName.A
             assert received_events[0].type == gui.KeyEvent.Type.DOWN
+            assert received_events[0].is_repeat == False
+            assert received_events[1].key == gui.KeyName.A
             assert received_events[1].type == gui.KeyEvent.Type.UP
             assert received_events[2].key == gui.KeyName.SPACE
+            assert received_events[2].type == gui.KeyEvent.Type.DOWN
+            assert received_events[3].key == gui.KeyName.SPACE
+            assert received_events[3].type == gui.KeyEvent.Type.UP
             
         else:
-            status.text = f"❌ Expected 4+ events, got {len(received_events)}"
+            status.text = f"❌ Expected exactly 4 events, got {len(received_events)}"
     
     threading.Thread(target=demo, daemon=True).start()
     app.run()

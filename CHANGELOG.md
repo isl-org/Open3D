@@ -1,4 +1,5 @@
 ## Main
+-   Add KeyEvent and MouseEvent creation and injection API for programmatic GUI testing. Includes `gui.KeyEvent()` constructor, `gui.MouseEvent.move()`, `gui.MouseEvent.button_down()`, `gui.MouseEvent.button_up()`, `gui.MouseEvent.wheel()` factory methods, and `Window.post_key_event()`, `Window.post_mouse_event()` thread-safe injection methods (issue #7346)(PR #XXXX).
 -   Upgrade stdgpu third-party library to commit d7c07d0.
 -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
 -   Corrected documentation for Link Open3D in C++ projects (broken links).

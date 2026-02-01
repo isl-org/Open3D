@@ -77,18 +77,25 @@ def main():
         
         # Verify we got expected events
         time.sleep(0.5)
-        if len(received_events) >= 4:
+        if len(received_events) == 4:
             status.text = "✅ Demo completed successfully"
             
-            # Specific validation instead of just count
+            # Specific validation
             assert received_events[0].type == gui.MouseEvent.Type.MOVE
             assert received_events[0].x == 100
+            assert received_events[0].y == 100
             assert received_events[1].type == gui.MouseEvent.Type.BUTTON_DOWN
+            assert received_events[1].x == 100
+            assert received_events[1].is_button_down(gui.MouseButton.LEFT)
             assert received_events[2].type == gui.MouseEvent.Type.BUTTON_UP
+            assert received_events[2].x == 100
             assert received_events[3].type == gui.MouseEvent.Type.WHEEL
+            assert received_events[3].x == 150
+            assert received_events[3].y == 150
+            assert received_events[3].wheel_dy == 1
             
         else:
-            status.text = f"❌ Expected 4+ events, got {len(received_events)}"
+            status.text = f"❌ Expected exactly 4 events, got {len(received_events)}"
     
     threading.Thread(target=demo, daemon=True).start()
     app.run()
