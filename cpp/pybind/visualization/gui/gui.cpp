@@ -806,6 +806,28 @@ void pybind_gui_definitions(py::module &m) {
                  "show_menu(show): shows or hides the menu in the window, "
                  "except on macOS since the menubar is not in the window "
                  "and all applications must have a menubar.")
+            .def("post_key_event", &PyWindow::PostKeyEvent,
+                 "Injects a KeyEvent into the window programmatically. "
+                 "The event will be processed on the GUI thread as if it "
+                 "came from user input. This is thread-safe and can be "
+                 "called from background threads.\n\n"
+                 "Args:\n"
+                 "    event (KeyEvent): The key event to inject\n\n"
+                 "Example:\n"
+                 "    event = gui.KeyEvent(gui.KeyEvent.Type.DOWN, "
+                 "gui.KeyName.A, False)\n"
+                 "    window.post_key_event(event)")
+            .def("post_mouse_event", &PyWindow::PostMouseEvent,
+                 "Injects a MouseEvent into the window programmatically. "
+                 "The event will be processed on the GUI thread as if it "
+                 "came from user input. This is thread-safe and can be "
+                 "called from background threads.\n\n"
+                 "Args:\n"
+                 "    event (MouseEvent): The mouse event to inject\n\n"
+                 "Example:\n"
+                 "    event = gui.MouseEvent.button_down(100, 100, "
+                 "gui.MouseButton.LEFT)\n"
+                 "    window.post_mouse_event(event)")
             .def_property_readonly(
                     "renderer", &PyWindow::GetRenderer,
                     "Gets the rendering.Renderer object for the Window");

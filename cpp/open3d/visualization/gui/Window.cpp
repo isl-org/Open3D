@@ -1223,6 +1223,18 @@ void Window::OnTickEvent(const TickEvent& e) {
 
 void Window::OnDragDropped(const char* path) {}
 
+void Window::PostKeyEvent(const KeyEvent& e) {
+    Application::GetInstance().PostToMainThread([this, e]() {
+        OnKeyEvent(e);
+    });
+}
+
+void Window::PostMouseEvent(const MouseEvent& e) {
+    Application::GetInstance().PostToMainThread([this, e]() {
+        OnMouseEvent(e);
+    });
+}
+
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d
