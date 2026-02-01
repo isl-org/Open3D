@@ -103,16 +103,16 @@ if "@BUNDLE_OPEN3D_ML@" == "ON":
     with open("@OPEN3D_ML_ROOT@/requirements.txt", "r") as f:
         install_requires += [line.strip() for line in f.readlines() if line]
 
-entry_points = {
-    "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
-}
-if sys.platform != "darwin":  # Remove check when off main thread GUI works
-    entry_points.update({
-        "tensorboard_plugins": [
-            "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
-            ".plugin:Open3DPlugin",
-        ]
-    })
+# entry_points = {
+#     "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
+# }
+# if sys.platform != "darwin":  # Remove check when off main thread GUI works
+#     entry_points.update({
+#         "tensorboard_plugins": [
+#             "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
+#             ".plugin:Open3DPlugin",
+#         ]
+#     })
 classifiers = [
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     "Development Status :: 3 - Alpha",
@@ -148,7 +148,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Utilities",
 ]
-name = "@PYPI_PACKAGE_NAME@"
+name = 'open3d-dev'
 with open("README.rst") as readme:
     long_description = readme.read()
 # open3d-cpu wheel for Linux x86_64
@@ -168,12 +168,13 @@ elif "@BUILD_SYCL_MODULE@" == "ON":
 
 setup_args = dict(
     name=name,
-    version="@PROJECT_VERSION@",
+    # version="@PROJECT_VERSION@",
+    version='0.19.0.dev0',
     python_requires=">=3.8",
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),
-    entry_points=entry_points,
+    # entry_points=entry_points,
     zip_safe=False,
     cmdclass=cmdclass,
     author="Open3D Team",

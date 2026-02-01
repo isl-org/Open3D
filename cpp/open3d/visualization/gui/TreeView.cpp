@@ -368,7 +368,6 @@ void TreeView::Expand(ItemId id) {
     if (it != impl_->id2item_.end()) {
         it->second->expanded = true;
     }
-    // Invalidate();
 }
 
 void TreeView::Collapse(ItemId id) {
