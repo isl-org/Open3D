@@ -284,7 +284,6 @@ def test_project_to_rgbd_image_cpu_cuda_consistent(device):
     """When both CPU and CUDA are available, RGBD projection should match."""
     if o3c.cuda.device_count() == 0:
         pytest.skip("CUDA not available")
-    dtype = o3c.float32
     width, height = 16, 16
     np.random.seed(42)
     n = 50

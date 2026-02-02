@@ -822,6 +822,62 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
     EXPECT_TRUE(pcd_out.GetPointNormals().AllClose(t_normal_ref));
 }
 
+TEST_P(PointCloudPermuteDevices, ProjectToDepthImage) {
+    core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+
+    const int width = 8, height = 8;
+    float depth_scale = 1.f, depth_max = 10.f;
+    core::Tensor positions = core::Tensor::Init<float>(
+            {{0.f, 0.f, 1.f}, {0.1f, 0.1f, 1.f}}, device);
+    t::geometry::PointCloud pcd(positions);
+    core::Tensor intrinsics = core::Tensor::Init<double>(
+            {{10., 0., 4.}, {0., 10., 4.}, {0., 0., 1.}}, device);
+    core::Tensor extrinsics = core::Tensor::Eye(4, core::Float64, device);
+
+    t::geometry::Image depth_img = pcd.ProjectToDepthImage(
+            width, height, intrinsics, extrinsics, depth_scale, depth_max);
+
+    EXPECT_EQ(depth_img.AsTensor().GetShape(),
+              core::SizeVector({height, width, 1}));
+    std::vector<float> depth_flat = depth_img.AsTensor().ToFlatVector<float>();
+    EXPECT_GT(*std::max_element(depth_flat.begin(), depth_flat.end()), 0.f);
+}
+
+TEST_P(PointCloudPermuteDevices, ProjectToRGBDImage) {
+    using ::testing::ElementsAre;
+
+    core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+
+    const int width = 8, height = 8;
+    float depth_scale = 1.f, depth_max = 10.f;
+    core::Tensor positions = core::Tensor::Init<float>(
+            {{0.f, 0.f, 1.f}, {0.1f, 0.f, 1.f}, {0.f, 0.1f, 1.f}}, device);
+    core::Tensor colors = core::Tensor::Init<float>(
+            {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}, device);
+    t::geometry::PointCloud pcd(device);
+    pcd.SetPointPositions(positions);
+    pcd.SetPointColors(colors);
+    core::Tensor intrinsics = core::Tensor::Init<double>(
+            {{10., 0., 4.}, {0., 10., 4.}, {0., 0., 1.}}, device);
+    core::Tensor extrinsics = core::Tensor::Eye(4, core::Float64, device);
+
+    t::geometry::RGBDImage rgbd = pcd.ProjectToRGBDImage(
+            width, height, intrinsics, extrinsics, depth_scale, depth_max);
+
+    EXPECT_THAT(rgbd.depth_.AsTensor().GetShape(),
+                ElementsAre(height, width, 1));
+    EXPECT_THAT(rgbd.color_.AsTensor().GetShape(),
+                ElementsAre(height, width, 3));
+    std::vector<float> depth_flat =
+            rgbd.depth_.AsTensor().ToFlatVector<float>();
+    std::vector<float> color_flat =
+            rgbd.color_.AsTensor().ToFlatVector<float>();
+    EXPECT_GT(*std::max_element(depth_flat.begin(), depth_flat.end()), 0.f);
+    EXPECT_GT(*std::max_element(color_flat.begin(), color_flat.end()), 0.f);
+}
+
 TEST_P(PointCloudPermuteDevices, SelectByMask) {
     core::Device device = GetParam();
 
