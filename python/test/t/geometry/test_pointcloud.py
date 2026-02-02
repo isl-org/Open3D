@@ -229,9 +229,12 @@ def test_project_to_depth_image(device):
                             o3c.float64)
     extrinsics = o3c.Tensor(np.eye(4), o3c.float64)
 
-    depth_img = pcd.project_to_depth_image(
-        width, height, intrinsics, extrinsics,
-        depth_scale=1.0, depth_max=10.0)
+    depth_img = pcd.project_to_depth_image(width,
+                                           height,
+                                           intrinsics,
+                                           extrinsics,
+                                           depth_scale=1.0,
+                                           depth_max=10.0)
 
     depth_tensor = depth_img.as_tensor()
     assert depth_tensor.shape == (height, width, 1)
@@ -246,10 +249,10 @@ def test_project_to_rgbd_image(device):
     """Project colored point cloud to RGBD image; check shapes and content."""
     dtype = o3c.float32
     width, height = 8, 8
-    positions = o3c.Tensor(
-        [[0.0, 0.0, 1.0], [0.1, 0.0, 1.0], [0.0, 0.1, 1.0]], dtype, device)
-    colors = o3c.Tensor(
-        [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype, device)
+    positions = o3c.Tensor([[0.0, 0.0, 1.0], [0.1, 0.0, 1.0], [0.0, 0.1, 1.0]],
+                           dtype, device)
+    colors = o3c.Tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
+                        dtype, device)
     pcd = o3d.t.geometry.PointCloud(positions)
     pcd.point.colors = colors
     pcd = pcd.to(device)
@@ -257,9 +260,12 @@ def test_project_to_rgbd_image(device):
                             o3c.float64)
     extrinsics = o3c.Tensor(np.eye(4), o3c.float64)
 
-    rgbd = pcd.project_to_rgbd_image(
-        width, height, intrinsics, extrinsics,
-        depth_scale=1.0, depth_max=10.0)
+    rgbd = pcd.project_to_rgbd_image(width,
+                                     height,
+                                     intrinsics,
+                                     extrinsics,
+                                     depth_scale=1.0,
+                                     depth_max=10.0)
 
     assert rgbd.depth.as_tensor().shape == (height, width, 1)
     assert rgbd.color.as_tensor().shape == (height, width, 3)
@@ -291,20 +297,26 @@ def test_project_to_rgbd_image_cpu_cuda_consistent(device):
 
     pcd_cpu = o3d.t.geometry.PointCloud(o3c.Tensor(positions_np))
     pcd_cpu.point.colors = o3c.Tensor(colors_np)
-    rgbd_cpu = pcd_cpu.project_to_rgbd_image(
-        width, height, intrinsics, extrinsics,
-        depth_scale=1.0, depth_max=5.0)
+    rgbd_cpu = pcd_cpu.project_to_rgbd_image(width,
+                                             height,
+                                             intrinsics,
+                                             extrinsics,
+                                             depth_scale=1.0,
+                                             depth_max=5.0)
 
     pcd_cuda = pcd_cpu.to(o3c.Device("CUDA:0"))
-    rgbd_cuda = pcd_cuda.project_to_rgbd_image(
-        width, height, intrinsics, extrinsics,
-        depth_scale=1.0, depth_max=5.0)
+    rgbd_cuda = pcd_cuda.project_to_rgbd_image(width,
+                                               height,
+                                               intrinsics,
+                                               extrinsics,
+                                               depth_scale=1.0,
+                                               depth_max=5.0)
 
-    np.testing.assert_allclose(
-        rgbd_cpu.depth.as_tensor().cpu().numpy(),
-        rgbd_cuda.depth.as_tensor().cpu().numpy(),
-        rtol=1e-5, atol=1e-5)
-    np.testing.assert_allclose(
-        rgbd_cpu.color.as_tensor().cpu().numpy(),
-        rgbd_cuda.color.as_tensor().cpu().numpy(),
-        rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(rgbd_cpu.depth.as_tensor().cpu().numpy(),
+                               rgbd_cuda.depth.as_tensor().cpu().numpy(),
+                               rtol=1e-5,
+                               atol=1e-5)
+    np.testing.assert_allclose(rgbd_cpu.color.as_tensor().cpu().numpy(),
+                               rgbd_cuda.color.as_tensor().cpu().numpy(),
+                               rtol=1e-5,
+                               atol=1e-5)
