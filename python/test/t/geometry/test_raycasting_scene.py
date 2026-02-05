@@ -460,3 +460,171 @@ def test_sphere_wrong_occupancy():
     # we should get the same result with more samples
     occupancy_3samples = scene.compute_occupancy(query_points, nsamples=3)
     np.testing.assert_equal(occupancy_3samples.numpy(), expected)
+
+
+# --- Tests for copy constructor and copy semantics. ---
+# These require Open3D built from source with the copy constructor binding.
+# INVALID_ID is a property (no parentheses). Use .item() for scalar comparison.
+
+
+def _raycasting_scene_copy_available():
+    """True if RaycastingScene(scene) copy constructor is available (built from source)."""
+    try:
+        scene = o3d.t.geometry.RaycastingScene(device=o3d.core.Device("CPU:0"))
+        o3d.t.geometry.RaycastingScene(scene)
+        return True
+    except TypeError:
+        return False
+
+
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
+def test_copy_constructor_empty_scene(device):
+    if not _raycasting_scene_copy_available():
+        pytest.skip(
+            "RaycastingScene copy constructor not available "
+            "(requires Open3D built from source with copy support)"
+        )
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene_copy = o3d.t.geometry.RaycastingScene(scene)
+    rays = o3d.core.Tensor([[0, 0, 1, 0, 0, -1]],
+                           dtype=o3d.core.float32,
+                           device=device)
+    ans_orig = scene.cast_rays(rays)
+    ans_copy = scene_copy.cast_rays(rays)
+    invalid_id = o3d.t.geometry.RaycastingScene.INVALID_ID
+    assert ans_orig["geometry_ids"][0].cpu().item() == invalid_id
+    assert ans_copy["geometry_ids"][0].cpu().item() == invalid_id
+    assert np.isinf(ans_orig["t_hit"][0].item())
+    assert np.isinf(ans_copy["t_hit"][0].item())
+
+
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
+def test_copy_constructor_scene_with_geometry(device):
+    """Copy of a scene with geometry yields same cast_rays and compute_* results (tests clone)."""
+    if not _raycasting_scene_copy_available():
+        pytest.skip(
+            "RaycastingScene copy constructor not available "
+            "(requires Open3D built from source with copy support)"
+        )
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.float32,
+                               device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]],
+                                dtype=o3d.core.uint32,
+                                device=device)
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene.add_triangles(vertices, triangles)
+
+    scene_copy = o3d.t.geometry.RaycastingScene(scene)
+
+    rays = o3d.core.Tensor(
+        [[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
+    ans_orig = scene.cast_rays(rays)
+    ans_copy = scene_copy.cast_rays(rays)
+
+    np.testing.assert_allclose(ans_orig["t_hit"].numpy(),
+                               ans_copy["t_hit"].numpy())
+    np.testing.assert_array_equal(ans_orig["geometry_ids"].numpy(),
+                                  ans_copy["geometry_ids"].numpy())
+
+    query = o3d.core.Tensor([[0.2, 0.1, 1], [10, 10, 10]],
+                            dtype=o3d.core.float32,
+                            device=device)
+    closest_orig = scene.compute_closest_points(query)
+    closest_copy = scene_copy.compute_closest_points(query)
+    np.testing.assert_allclose(closest_orig["points"].numpy(),
+                               closest_copy["points"].numpy())
+    np.testing.assert_array_equal(closest_orig["geometry_ids"].numpy(),
+                                  closest_copy["geometry_ids"].numpy())
+
+    dist_orig = scene.compute_distance(query)
+    dist_copy = scene_copy.compute_distance(query)
+    np.testing.assert_allclose(dist_orig.numpy(), dist_copy.numpy())
+
+
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
+def test_copy_independence(device):
+    """Copy is independent: adding geometry to one does not affect the other."""
+    if not _raycasting_scene_copy_available():
+        pytest.skip(
+            "RaycastingScene copy constructor not available "
+            "(requires Open3D built from source with copy support)"
+        )
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.float32,
+                               device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]],
+                                dtype=o3d.core.uint32,
+                                device=device)
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene.add_triangles(vertices, triangles)
+    scene_copy = o3d.t.geometry.RaycastingScene(scene)
+
+    # Add another triangle only to the copy
+    v2 = o3d.core.Tensor([[0, 0, 1], [1, 0, 1], [0, 1, 1]],
+                         dtype=o3d.core.float32,
+                         device=device)
+    t2 = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32, device=device)
+    scene_copy.add_triangles(v2, t2)
+
+    invalid_id = o3d.t.geometry.RaycastingScene.INVALID_ID
+    # Ray hitting first triangle: both should hit
+    rays_one = o3d.core.Tensor(
+        [[0.2, 0.1, 0.5, 0, 0, -1]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
+    ans_orig = scene.cast_rays(rays_one)
+    ans_copy = scene_copy.cast_rays(rays_one)
+    assert ans_orig["geometry_ids"][0].cpu().item() != invalid_id
+    assert ans_copy["geometry_ids"][0].cpu().item() != invalid_id
+
+    # Ray that would hit second triangle (only in copy): miss in original, hit in copy
+    rays_two = o3d.core.Tensor(
+        [[0.2, 0.1, 0.5, 0, 0, 1]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
+    ans_orig2 = scene.cast_rays(rays_two)
+    ans_copy2 = scene_copy.cast_rays(rays_two)
+    assert ans_orig2["geometry_ids"][0].cpu().item() == invalid_id
+    assert ans_copy2["geometry_ids"][0].cpu().item() != invalid_id
+
+
+@pytest.mark.parametrize("device",
+                         list_devices(enable_cuda=False, enable_sycl=True))
+def test_copy_module_copy(device):
+    """copy.copy(scene) works and produces an independent copy."""
+    if not _raycasting_scene_copy_available():
+        pytest.skip(
+            "RaycastingScene copy constructor not available "
+            "(requires Open3D built from source with copy support)"
+        )
+    import copy as copy_module
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.float32,
+                               device=device)
+    triangles = o3d.core.Tensor([[0, 1, 2]],
+                                dtype=o3d.core.uint32,
+                                device=device)
+    scene = o3d.t.geometry.RaycastingScene(device=device)
+    scene.add_triangles(vertices, triangles)
+    scene_copy = copy_module.copy(scene)
+
+    rays = o3d.core.Tensor(
+        [[0.2, 0.1, 1, 0, 0, -1]],
+        dtype=o3d.core.float32,
+        device=device,
+    )
+    ans_orig = scene.cast_rays(rays)
+    ans_copy = scene_copy.cast_rays(rays)
+    np.testing.assert_allclose(ans_orig["t_hit"].numpy(),
+                               ans_copy["t_hit"].numpy())
+    assert ans_orig["geometry_ids"][0].cpu().item() == ans_copy[
+        "geometry_ids"][0].cpu().item()
