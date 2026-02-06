@@ -1,8 +1,23 @@
 import open3d as o3d
 import numpy as np
+from sklearn.cluster import DBSCAN
+import math
+from typing import Dict, Tuple, Optional, List
+from matplotlib.path import Path
 
-def get_boundary_lines(pcd: o3d.geometry.PointCloud):
+def extract_boundary_lines(
+    pcd: o3d.geometry.PointCloud,
+    percentage=96,
+    return_indices: bool = False,
+    base_indices: Optional[np.ndarray] = None,
+):
     points = np.asarray(pcd.points)
+    if base_indices is None:
+        base_indices = np.arange(len(points), dtype=int)
+    else:
+        base_indices = np.asarray(base_indices, dtype=int)
+        if len(base_indices) != len(points):
+            raise ValueError("base_indices must have same length as pcd points")
     pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.5, max_nn=30))
     normals = np.asarray(pcd.normals)
 
@@ -24,7 +39,7 @@ def get_boundary_lines(pcd: o3d.geometry.PointCloud):
         # Compute 3 signals from the neighborhood：
 
         # Height variation (Z-direction)
-        # High when the neighborhood has a “step”, “ridge”, or sharp shape change
+        # High when the neighborhood has a “step”, “ridge”, or shape change
         height_std = np.std(neighbor_points[:, 2])
 
         # Normal variation (direction change)
@@ -37,23 +52,20 @@ def get_boundary_lines(pcd: o3d.geometry.PointCloud):
         # so |nz| is smaller, making (1 - |nz|) larger.
         vertical = np.abs(normals[i][2])  # How horizontal the normal is
 
-        # Combined score
-        # cliff_score = height_std * normal_variation * (1 - abs(nz))
-        cliff_score = height_std * normal_variation * (1 - vertical)
+        # cliff_score = height_std * normal_variation * (1 - vertical)
+        cliff_score = 1 - vertical
         cliff_scores.append(cliff_score)
 
     # Extract cliff points
     cliff_scores = np.array(cliff_scores)
-    threshold = np.percentile(cliff_scores, 98)
+    threshold = np.percentile(cliff_scores, percentage)
     cliff_indices = np.where(cliff_scores > threshold)[0]
+    cliff_base_idx = base_indices[cliff_indices]
 
     # Visualize
     cliff_pcd = pcd.select_by_index(cliff_indices)
-    cliff_pcd.paint_uniform_color([1, 0, 0])  # Red for cliff edge
-    o3d.visualization.draw_geometries([cliff_pcd.paint_uniform_color([1.0, 1.0, 0.0])], mesh_show_back_face=True)
-
+    # cliff_pcd.paint_uniform_color([1, 0, 0])  # Red for cliff edge
+    o3d.visualization.draw_geometries([cliff_pcd.paint_uniform_color([1.0, 1.0, 0.0])], mesh_show_back_face=True, window_name="All Boundaries")
+    if return_indices:
+        return cliff_pcd, cliff_base_idx
     return cliff_pcd
-
-
-
-

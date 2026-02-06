@@ -26,9 +26,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 
-from examples.python.Dayong.arch_customization.get_pre_cut_line_test import get_line
-
-
 ### --------------------- end of cut function ----------------------------------
 
 class PointCloudViewerWithLegend:
@@ -1884,8 +1881,8 @@ class PointCloudSlicer:
 
         ax.scatter(slice_2d[:, 0], slice_2d[:, 1],
                    c='lightblue', s=20, alpha=0.6, label='Slice points')
-        ax.plot(np.append(boundary[:, 0], boundary[0, 0]),
-                np.append(boundary[:, 1], boundary[0, 1]),
+        ax.plot(np.append(all_boundaries[:, 0], all_boundaries[0, 0]),
+                np.append(all_boundaries[:, 1], all_boundaries[0, 1]),
                 'r-', linewidth=2, label='Boundary')
         ax.set_aspect('equal', adjustable='box')  # Equal aspect ratio
         ax.grid(True, alpha=0.3)
@@ -2145,61 +2142,164 @@ from extract_surfaces import *
 # Method 2: use the [normal directions] to separate the three surfaces
 # For example, the angle between the normal of a point on the top surface and pos-Z should be within [0, 90] degrees
 
+insole_copy = deepcopy(aligned_to_y_insole)
+
 # visualize all the normals first
-# o3d.visualization.draw_geometries([aligned_to_y_insole], point_show_normal=True, window_name="Insole with normals of all points")
-#
-# normals = np.asarray(aligned_to_y_insole.normals) # [nx, ny, nz] is a unit vector
-# nz = normals[:, 2] # nz is cos(angle between normal and pos_z), so 1 is straight up, 0 is horizontal, -1 is straight down
-# colors = np.zeros_like(normals)
-# colors[:, 0] = (nz + 1) / 2   # red = up
-# colors[:, 2] = (1 - nz) / 2   # blue = down
-# aligned_to_y_insole.colors = o3d.utility.Vector3dVector(colors)
-# o3d.visualization.draw_geometries([aligned_to_y_insole], window_name="Normals visualized by Z direction (red=up, blue=down)")
-#
-# top_normals, side_and_bottom_normals = extract_top(aligned_to_y_insole, min_dot=0.2)
-# top_normals.paint_uniform_color([1, 0, 0])        # red
-# side_and_bottom_normals.paint_uniform_color([0.6, 0.6, 0.6]) # gray
-#
-# o3d.visualization.draw_geometries([top_normals], window_name="Normal-based surface split")
-# o3d.visualization.draw_geometries([side_and_bottom_normals], window_name="Normal-based surface split")
-#
-# side_normals = extract_side(aligned_to_y_insole)
-# o3d.visualization.draw_geometries([side_normals], window_name="Side")
-#
-# bottom_normals = extract_bottom(aligned_to_y_insole)
-# o3d.visualization.draw_geometries([bottom_normals], window_name="Side")
-#
-# print(len(top_normals.points))
-# print(len(side_and_bottom_normals.points))
+o3d.visualization.draw_geometries([insole_copy], point_show_normal=True, window_name="Insole with normals of all points")
+
+normals = np.asarray(insole_copy.normals) # [nx, ny, nz] is a unit vector
+nz = normals[:, 2] # nz is cos(angle between normal and pos_z), so 1 is straight up, 0 is horizontal, -1 is straight down
+colors = np.zeros_like(normals)
+colors[:, 0] = (nz + 1) / 2   # red = up
+colors[:, 2] = (1 - nz) / 2   # blue = down
+insole_copy.colors = o3d.utility.Vector3dVector(colors)
+o3d.visualization.draw_geometries([insole_copy], window_name="Normals visualized by Z direction (red=up, blue=down)")
+
+top_normals, side_and_bottom_normals = extract_top(insole_copy, min_dot=0.2)
+top_normals.paint_uniform_color([1, 0, 0])        # red
+o3d.visualization.draw_geometries([top_normals], window_name="Normal-based surface split")
+
+print(len(top_normals.points))
+print(len(side_and_bottom_normals.points))
 
 # Method 3: use the grid method to get the top surface (but with down sampled effect); then use KDTree to add the points back
-top_grid = extract_surface_from_grid(
-    aligned_to_y_insole,
-    grid_size=1.0,
-    dz_below=0,
-    dz_above=0,
-    min_points_per_cell=1
+# top_grid = extract_surface_from_grid(
+#     aligned_to_y_insole,
+#     grid_size=1.0,
+#     dz_below=0,
+#     dz_above=0,
+#     min_points_per_cell=1
+# )
+# top_grid = clean_pcd_statistical(top_grid)
+# # o3d.visualization.draw_geometries([top_grid], window_name="top_grid")
+#
+# # Expand using KDTree from the ORIGINAL aligned point cloud
+# top_grid_kdtree = expand_surface_by_kdtree(
+#     original_pcd=aligned_to_y_insole,
+#     seed_surface_pcd=top_grid,
+#     search_radius=2.0,   # mm
+#     z_tolerance=1.0     # mm
+# )
+# # upper_insole_expanded = clean_pcd_statistical(upper_insole_expanded, 30, 2.0)
+# o3d.visualization.draw_geometries([top_grid_kdtree], window_name="top_grid_kdtree")
+#
+# # print(len(upper_insole_blade.points))
+# print(len(top_grid.points))
+# print(len(top_grid_kdtree.points))
+
+# Now we want to get the pre-cut line and the area it encloses
+from extract_lines import *
+from clean import *
+
+# Get the boundaries from the top surface (insole boundary + pre-cut line + the square)
+top_boundaries, top_boundaries_indices = extract_boundary_lines(
+    top_normals,
+    percentage=96,
+    return_indices=True
 )
-top_grid = clean_pcd_statistical(top_grid)
-o3d.visualization.draw_geometries([top_grid], window_name="upper surface (dense)")
 
-# Expand using KDTree from the ORIGINAL aligned point cloud
-top_grid_kdtree = expand_surface_by_kdtree(
-    original_pcd=aligned_to_y_insole,
-    seed_surface_pcd=top_grid,
-    search_radius=2.0,   # mm
-    z_tolerance=1.0     # mm
+# Now we want to get rid of the insole boundary
+from sklearn.cluster import DBSCAN
+from sklearn.neighbors import KDTree
+
+top_boundaries_pts = np.asarray(top_boundaries.points)
+top_boundaries_pts_xy  = top_boundaries_pts[:, :2]
+
+# 1) (important) focus on "outer-ish" points first, so the hull isn't polluted by the interior lines
+#    Use distance-to-centroid to pick a ring of likely outer boundary points.
+c = top_boundaries_pts_xy.mean(axis=0)
+r = np.linalg.norm(top_boundaries_pts_xy - c[None, :], axis=1)
+
+# keep top X% the farthest points as candidate outer boundary
+outer_percent = 20  # try 15~30
+thr = np.percentile(r, 100 - outer_percent)
+outer_xy = top_boundaries_pts_xy[r >= thr]
+
+# 2) convex hull gives an ordered closed outer polygon (very stable)
+hull = ConvexHull(outer_xy)
+poly_xy = outer_xy[hull.vertices]   # ordered loop vertices
+
+# 3) shrink the polygon toward its centroid
+shrink_ratio = 0.05
+cent = poly_xy.mean(axis=0)
+poly_shrunk = cent + (poly_xy - cent) * (1.0 - shrink_ratio)
+
+# 4) keep points INSIDE shrunken polygon  (this removes the boundary ring)
+path = Path(poly_shrunk)
+inside_mask = path.contains_points(top_boundaries_pts_xy)
+keep_local_idx = np.where(inside_mask)[0]
+
+pre_cut_and_square = top_boundaries.select_by_index(keep_local_idx)
+
+# 5) visualize
+o3d.visualization.draw_geometries([pre_cut_and_square.paint_uniform_color([0.0, 1.0, 0.0])], window_name="pre_cut_and_square")
+visualize_extracted_pcd(
+    top_boundaries,
+    keep_local_idx,
+    window_name="pre_cut_and_square and top_boundaries",
 )
-# upper_insole_expanded = clean_pcd_statistical(upper_insole_expanded, 30, 2.0)
-o3d.visualization.draw_geometries(
-    [top_grid_kdtree], window_name="Upper surface: seed (red) vs expanded (green)")
 
-# print(len(upper_insole_blade.points))
-print(len(top_grid.points))
-print(len(top_grid_kdtree.points))
+print("cut1 points:", len(top_boundaries.points))
+print("cut1_no_outer points:", len(pre_cut_and_square.points))
 
-from test import *
-cut = get_line(top_grid_kdtree)
+# 6) get the indices into top_grid_kdtree/top_normals
+pre_cut_and_square_indices = top_boundaries_indices[keep_local_idx]
+
+# Now we want to clean the outliers
+pre_cut_and_square, radius_local_idx = pre_cut_and_square.remove_radius_outlier(nb_points=20, radius=15.0)
+
+# get the indices into top_grid_kdtree/top_normals
+pre_cut_and_square_radius_indices = pre_cut_and_square_indices[radius_local_idx]
+
+o3d.visualization.draw_geometries([pre_cut_and_square.paint_uniform_color([0.0, 1.0, 0.0])], window_name="pre_cut_and_square after remove_radius_outlier")
+visualize_extracted_pcd(
+    top_boundaries,
+    keep_local_idx[radius_local_idx], # indices into top_boundaries
+    window_name="pre_cut_and_square after remove_radius_outlier and top_boundaries",
+)
+
+# Now we want to remove the square
+pre_cut_line, pre_cut_line_indices = trim_by_y_range(
+    pre_cut_and_square,
+    y_min_ratio=0.17,
+    y_max_ratio=1.00,
+    return_indices=True
+)
+
+print("Before:", len(pre_cut_and_square.points))
+print("After :", len(pre_cut_line.points))
+
+o3d.visualization.draw_geometries([pre_cut_line.paint_uniform_color([0.0, 1.0, 0.0])], window_name="pre_cut_line")
+visualize_extracted_pcd(
+    pre_cut_and_square,
+    pre_cut_line_indices,
+    window_name="pre_cut_line (after removing the square)",
+)
+
+# get the indices into top_grid_kdtree/top_normals
+pre_cut_line_indices = pre_cut_and_square_radius_indices[pre_cut_line_indices]
+
+
+
+# Now we want to extract the pre-cut region
+from extract_regions import *
+top_pcd = top_normals                      # o3d.geometry.PointCloud
+precut_pcd = pre_cut_line                  # o3d.geometry.PointCloud
+outer_boundary_xy = np.asarray(top_pcd.points)[:, :2]   # IMPORTANT: outer boundary ONLY
+
+region_pcd, region_idx, extended_curve_xy, polygon_xy = extract_precut_region(
+    top_pcd=top_pcd,
+    pre_cut_line_pcd=precut_pcd,
+    outer_boundary_xy=outer_boundary_xy,
+    alpha=12.0,          # tune if needed
+    extend_margin=6.0,   # tune if needed
+    visualize=True,
+)
+
+print("Final pre-cut region points:", len(region_pcd.points))
+
+
+
 
 # Workflow - Foot
 # def get_arch(bottom_foot_pcd: o3d.geometry.PointCloud, entire_foot_pcd: o3d.geometry.PointCloud):

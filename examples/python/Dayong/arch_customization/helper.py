@@ -154,6 +154,31 @@ def flip_point_cloud_180(pcd, axis='x'):
     pcd.transform(t_flip)
     return pcd, t_flip
 
+def visualize_extracted_pcd(
+    original_pcd: o3d.geometry.PointCloud,
+    kept_idx: np.ndarray,
+    window_name: str = "Y-percentile trim",
+):
+    """
+    Gray = removed
+    Red  = kept
+    """
+    vis = o3d.geometry.PointCloud(original_pcd)
+    n = len(vis.points)
+
+    colors = np.full((n, 3), 0.6)  # gray
+    colors[kept_idx] = np.array([1.0, 0.0, 0.0])  # red
+
+    vis.colors = o3d.utility.Vector3dVector(colors)
+
+    o3d.visualization.draw_geometries(
+        [vis],
+        window_name=window_name,
+        width=1400,
+        height=900,
+        mesh_show_back_face=True,
+    )
+
 def pcd_to_mesh_bpa(
     arch_pcd: o3d.geometry.PointCloud,
     normal_radius: float = 6.0,
