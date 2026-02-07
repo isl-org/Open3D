@@ -547,15 +547,25 @@ public:
     /// estimate the positions of iso-vertices.
     /// \param n_threads Number of threads used for reconstruction. Set to -1 to
     /// automatically determine it.
+    /// \param full_depth Minimum depth for density estimation. Below this depth,
+    /// the octree is complete.
+    /// \param samples_per_node Minimum number of sample points per octree node.
+    /// \param point_weight Importance of point interpolation constraints (2.0 * FEM degree).
+    /// \param confidence Confidence exponent for normal length-based weighting (0 = no weighting).
+    /// \param exact_interpolation If true, use exact point interpolation constraints.
     /// \return The estimated TriangleMesh, and per vertex density values that
-    /// can be used to to trim the mesh.
     static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
     CreateFromPointCloudPoisson(const PointCloud &pcd,
                                 size_t depth = 8,
                                 float width = 0.0f,
                                 float scale = 1.1f,
                                 bool linear_fit = false,
-                                int n_threads = -1);
+                                int n_threads = -1,
+                                int full_depth = 5,
+                                float samples_per_node = 1.5f,
+                                float point_weight = 4.0f,
+                                float confidence = 0.0f,
+                                bool exact_interpolation = false);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \p radius defines the

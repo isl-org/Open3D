@@ -350,7 +350,10 @@ void pybind_trianglemesh_definitions(py::module &m) {
                         "This function uses the original implementation by "
                         "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
                         "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
-                        "linear_fit"_a = false, "n_threads"_a = -1)
+                        "linear_fit"_a = false, "n_threads"_a = -1,
+                        "full_depth"_a = 5, "samples_per_node"_a = 1.5f,
+                        "point_weight"_a = 4.0f, "confidence"_a = 0.0f,
+                        "exact_interpolation"_a = false)
             .def_static(
                     "create_from_oriented_bounding_box",
                     &TriangleMesh::CreateFromOrientedBoundingBox,

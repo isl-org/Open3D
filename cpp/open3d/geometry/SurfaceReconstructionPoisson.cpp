@@ -400,6 +400,11 @@ void Execute(const open3d::geometry::PointCloud& pcd,
              float width,
              float scale,
              bool linear_fit,
+             int full_depth,
+             float samples_per_node,
+             float point_weight,
+             float confidence,
+             bool exact_interpolation,
              UIntPack<FEMSigs...>) {
     static const int Dim = sizeof...(FEMSigs);
     typedef UIntPack<FEMSigs...> Sigs;
@@ -417,17 +422,16 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     XForm<Real, Dim + 1> xForm, iXForm;
     xForm = XForm<Real, Dim + 1>::Identity();
 
+    // Keep hardcoded internal parameters
     float datax = 32.f;
     int base_depth = 0;
     int base_v_cycles = 1;
-    float confidence = 0.f;
-    float point_weight = 2.f * DEFAULT_FEM_DEGREE;
     float confidence_bias = 0.f;
-    float samples_per_node = 1.5f;
     float cg_solver_accuracy = 1e-3f;
-    int full_depth = 5;
     int iters = 8;
-    bool exact_interpolation = false;
+    
+    // Parameters are now passed as function arguments:
+    // full_depth, samples_per_node, point_weight, confidence, exact_interpolation
 
     double startTime = Time();
     Real isoValue = 0;
@@ -721,7 +725,12 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           float width,
                                           float scale,
                                           bool linear_fit,
-                                          int n_threads) {
+                                          int n_threads,
+                                          int full_depth,
+                                          float samples_per_node,
+                                          float point_weight,
+                                          float confidence,
+                                          bool exact_interpolation) {
     static const BoundaryType BType = DEFAULT_FEM_BOUNDARY;
     typedef IsotropicUIntPack<
             DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
@@ -746,7 +755,8 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
     auto mesh = std::make_shared<TriangleMesh>();
     std::vector<double> densities;
     Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale,
-                   linear_fit, FEMSigs());
+                   linear_fit, full_depth, samples_per_node, point_weight,
+                   confidence, exact_interpolation, FEMSigs());
 
     ThreadPool::Terminate();
 
