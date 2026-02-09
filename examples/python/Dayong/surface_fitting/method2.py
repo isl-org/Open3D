@@ -578,6 +578,37 @@ def refine_floating_features(
 
     return out
 
+def visualize_backside_contact(
+        shoe: pv.PolyData,
+        toy_warped: pv.PolyData,
+        cand_idx: np.ndarray,
+):
+    """Visualize backside/contact points only
+
+    This is a quick qualitative check: we render only the backside points in a single
+    color so teammates can visually inspect whether the patch hugs the shoe.
+    """
+    # Slight smoothing makes the shoe look cleaner, but we are not computing distances here.
+    shoe_smooth = shoe.copy().smooth(n_iter=10, relaxation_factor=0.1)
+
+    # Backside/contact point cloud
+    pts = toy_warped.points[cand_idx]
+    back_cloud = pv.PolyData(pts)
+
+    p = pv.Plotter()
+    p.add_text("Backside Contact (Qualitative)", font_size=10)
+    p.add_mesh(shoe_smooth, color="lightblue")
+
+    # Render backside points as purple spheres (no scalar bar / legend)
+    p.add_mesh(
+        back_cloud,
+        color="purple",
+        render_points_as_spheres=True,
+        point_size=6,
+    )
+
+    p.show()
+
 
 # -----------------------------------------------------------------------------
 # Main
@@ -586,14 +617,14 @@ if __name__ == "__main__":
     cur_dir = Path(__file__).resolve().parent
     dayong_dir = cur_dir.parent
     shoe_path = os.path.join(dayong_dir, "scans", "STLs", "Toys", "shoe.stl")
-    toy_path = os.path.join(dayong_dir, "scans", "STLs", "Toys", "badge.stl")
+    toy_path = os.path.join(dayong_dir, "scans", "STLs", "Toys", "bitcoin.stl")
 
     if not os.path.exists(shoe_path) or not os.path.exists(toy_path):
         print("Error: Files not found.")
     else:
         shoe_mesh = pv.read(shoe_path)
         toy_mesh = pv.read(toy_path)
-        toy_mesh.scale(2, inplace=True)
+        toy_mesh.scale(0.5, inplace=True)
 
         # 1. Print Initial Stats
         print("INITIAL GEOMETRY REPORT")
@@ -605,7 +636,7 @@ if __name__ == "__main__":
             shoe_mesh,
             toy_mesh,
             (0.5, 0.2, 0.9),
-            (0.5, 0.5, 1),
+            (0.5, 0.5, 0.5),
         )
 
         p1 = pv.Plotter()
@@ -642,7 +673,7 @@ if __name__ == "__main__":
         # 3. Warp
         warped_toy, bottom_indices = apply_non_rigid_warp(
             shoe_mesh, toy_mesh, normal_o,
-            offset=0.2,
+            offset=0.0,
             bottom_percent=50,
             max_samples=800,
             preserve_volume=True
@@ -658,6 +689,9 @@ if __name__ == "__main__":
             offset=0.05,     # small outward offset to reduce penetration risk
             smoothing=0.0
         )
+
+        # Visualize the attachment quality of the backside points
+        visualize_backside_contact(shoe_mesh, warped_toy, bottom_indices)
 
         # 5. Final Quality Report
         print("\n" + "=" * 60)

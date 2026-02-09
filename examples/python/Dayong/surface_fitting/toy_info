@@ -1,16 +1,25 @@
 shoe.stl
 [0.5, 0.2, 0.9] front
-[0.5, 0.9, 0.5] back
+[0.6, 1.0, 0.8] back
+[1.0, 0.3, 0.7] left
+[0.1, 0.5, 0.7] right
 
 badge.stl
 toy_mesh.scale(2, inplace=True)
 [0.5, 0.5, 1]
 
 viking.stl
-toy_mesh.scale(0.1, inplace=True)
+toy_mesh.scale(0.05, inplace=True)
 [0.5, 0.5, 1]
 
 rose.stl
+[0.5, 0.5, 0.5]
+
+bitcoin.stl
+toy_mesh.scale(0.5, inplace=True)
+[0.5, 0.5, 0.5]
+
+wing.stl
 [0.5, 0.5, 0.5]
 
 fish.stl
