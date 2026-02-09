@@ -463,28 +463,12 @@ def test_sphere_wrong_occupancy():
 
 
 # --- Tests for copy constructor and copy semantics. ---
-# These require Open3D built from source with the copy constructor binding.
 # INVALID_ID is a property (no parentheses). Use .item() for scalar comparison.
-
-
-def _raycasting_scene_copy_available():
-    """True if RaycastingScene(scene) copy constructor is available (built from source)."""
-    try:
-        scene = o3d.t.geometry.RaycastingScene(device=o3d.core.Device("CPU:0"))
-        o3d.t.geometry.RaycastingScene(scene)
-        return True
-    except TypeError:
-        return False
 
 
 @pytest.mark.parametrize("device",
                          list_devices(enable_cuda=False, enable_sycl=True))
 def test_copy_constructor_empty_scene(device):
-    if not _raycasting_scene_copy_available():
-        pytest.skip(
-            "RaycastingScene copy constructor not available "
-            "(requires Open3D built from source with copy support)"
-        )
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene_copy = o3d.t.geometry.RaycastingScene(scene)
     rays = o3d.core.Tensor([[0, 0, 1, 0, 0, -1]],
@@ -503,11 +487,6 @@ def test_copy_constructor_empty_scene(device):
                          list_devices(enable_cuda=False, enable_sycl=True))
 def test_copy_constructor_scene_with_geometry(device):
     """Copy of a scene with geometry yields same cast_rays and compute_* results (tests clone)."""
-    if not _raycasting_scene_copy_available():
-        pytest.skip(
-            "RaycastingScene copy constructor not available "
-            "(requires Open3D built from source with copy support)"
-        )
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
                                device=device)
@@ -551,11 +530,6 @@ def test_copy_constructor_scene_with_geometry(device):
                          list_devices(enable_cuda=False, enable_sycl=True))
 def test_copy_independence(device):
     """Copy is independent: adding geometry to one does not affect the other."""
-    if not _raycasting_scene_copy_available():
-        pytest.skip(
-            "RaycastingScene copy constructor not available "
-            "(requires Open3D built from source with copy support)"
-        )
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
                                device=device)
@@ -599,13 +573,8 @@ def test_copy_independence(device):
 
 @pytest.mark.parametrize("device",
                          list_devices(enable_cuda=False, enable_sycl=True))
-def test_copy_module_copy(device):
-    """copy.copy(scene) works and produces an independent copy."""
-    if not _raycasting_scene_copy_available():
-        pytest.skip(
-            "RaycastingScene copy constructor not available "
-            "(requires Open3D built from source with copy support)"
-        )
+def test_copy_module_deepcopy(device):
+    """copy.deepcopy(scene) works and produces an independent copy."""
     import copy as copy_module
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.float32,
@@ -615,7 +584,7 @@ def test_copy_module_copy(device):
                                 device=device)
     scene = o3d.t.geometry.RaycastingScene(device=device)
     scene.add_triangles(vertices, triangles)
-    scene_copy = copy_module.copy(scene)
+    scene_copy = copy_module.deepcopy(scene)
 
     rays = o3d.core.Tensor(
         [[0.2, 0.1, 1, 0, 0, -1]],

@@ -74,10 +74,6 @@ Args:
     other (open3d.t.geometry.RaycastingScene): The scene to copy.
 )doc");
 
-    raycasting_scene.def("__copy__",
-                         [](const RaycastingScene& self) {
-                             return RaycastingScene(self);
-                         });
     raycasting_scene.def("__deepcopy__",
                          [](const RaycastingScene& self,
                             py::dict /* memo */) {

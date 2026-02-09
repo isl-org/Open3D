@@ -826,7 +826,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
 
     std::unique_ptr<Impl> Clone() const override {
         auto copy = std::make_unique<SYCLImpl>();
-        const_cast<SYCLImpl*>(copy.get())->InitializeDevice();
+        copy->InitializeDevice();
         copy->tensor_device_ = tensor_device_;
         rtcSetDeviceErrorFunction(copy->device_, ErrorFunction, NULL);
         copy->scene_ = rtcNewScene(copy->device_);
