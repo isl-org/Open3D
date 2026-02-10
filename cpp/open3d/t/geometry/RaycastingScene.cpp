@@ -1278,19 +1278,21 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
             const size_t num_triangles = geometry_sizes_[geom_id].second;
 
             RTCGeometry src_geom = rtcGetGeometry(scene_, geom_id);
-            const float* vb_src = (const float*)rtcGetGeometryBufferData(
-                    src_geom, RTC_BUFFER_TYPE_VERTEX, 0);
-            const uint32_t* ib_src = (const uint32_t*)rtcGetGeometryBufferData(
-                    src_geom, RTC_BUFFER_TYPE_INDEX, 0);
+            const float* vb_src = reinterpret_cast<const float*>(
+                    rtcGetGeometryBufferData(src_geom, RTC_BUFFER_TYPE_VERTEX,
+                                             0));
+            const uint32_t* ib_src = reinterpret_cast<const uint32_t*>(
+                    rtcGetGeometryBufferData(src_geom, RTC_BUFFER_TYPE_INDEX,
+                                             0));
 
             RTCGeometry geom =
                     rtcNewGeometry(copy->device_, RTC_GEOMETRY_TYPE_TRIANGLE);
-            float* vertex_buffer = (float*)rtcSetNewGeometryBuffer(
+            float* vertex_buffer = reinterpret_cast<float*>(rtcSetNewGeometryBuffer(
                     geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3,
-                    3 * sizeof(float), num_vertices);
-            uint32_t* index_buffer = (uint32_t*)rtcSetNewGeometryBuffer(
+                    3 * sizeof(float), num_vertices));
+            uint32_t* index_buffer = reinterpret_cast<uint32_t*>(rtcSetNewGeometryBuffer(
                     geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3,
-                    3 * sizeof(uint32_t), num_triangles);
+                    3 * sizeof(uint32_t), num_triangles));
 
             std::memcpy(vertex_buffer, vb_src,
                         3 * sizeof(float) * num_vertices);
