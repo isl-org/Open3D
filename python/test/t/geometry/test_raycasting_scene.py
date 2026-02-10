@@ -595,5 +595,5 @@ def test_copy_module_deepcopy(device):
     ans_copy = scene_copy.cast_rays(rays)
     np.testing.assert_allclose(ans_orig["t_hit"].numpy(),
                                ans_copy["t_hit"].numpy())
-    assert ans_orig["geometry_ids"][0].cpu().item() == ans_copy[
-        "geometry_ids"][0].cpu().item()
+    assert ans_orig["geometry_ids"][0].cpu().item(
+    ) == ans_copy["geometry_ids"][0].cpu().item()

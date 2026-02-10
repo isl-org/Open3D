@@ -75,8 +75,7 @@ Args:
 )doc");
 
     raycasting_scene.def("__deepcopy__",
-                         [](const RaycastingScene& self,
-                            py::dict /* memo */) {
+                         [](const RaycastingScene& self, py::dict /* memo */) {
                              return RaycastingScene(self);
                          });
 
