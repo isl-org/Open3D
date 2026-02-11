@@ -463,7 +463,6 @@ def test_sphere_wrong_occupancy():
 
 
 # --- Tests for copy constructor and copy semantics. ---
-# INVALID_ID is a property (no parentheses). Use .item() for scalar comparison.
 
 
 @pytest.mark.parametrize("device",
