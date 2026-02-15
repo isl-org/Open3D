@@ -62,11 +62,6 @@ endif()
 # filament uses C++20 designated initializers
 set_property(TARGET GUI PROPERTY CXX_STANDARD 20)
 
-# Workaround for Filament header naming conflict with GCC
-# MaterialInstance.h has a using declaration that conflicts with enum class TransparencyMode
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(GUI PRIVATE -fpermissive)
-endif()
 
 open3d_show_and_abort_on_warning(GUI)
 open3d_set_global_properties(GUI)

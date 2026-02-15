@@ -152,8 +152,6 @@ FilamentScene::FilamentScene(filament::Engine& engine,
     : Scene(renderer), engine_(engine), resource_mgr_(resource_mgr) {
     scene_ = engine_.createScene();
     CreateSunDirectionalLight();
-    // Initialize background color to white (default)
-    background_color_ = Eigen::Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
     // Note: can't set background color, because ImguiFilamentBridge
     // creates a Scene, and it needs to not have anything drawing, or it
     // covers up any SceneWidgets in the window.
@@ -251,15 +249,6 @@ ViewHandle FilamentScene::AddView(std::int32_t x,
     ViewContainer c;
     c.view = std::move(view);
     views_.emplace(handle, std::move(c));
-
-    // Set clear color on the renderer if background color has been set
-    // and there's no background image. This ensures the background color
-    // is visible even if the background geometry doesn't cover the entire
-    // viewport. Note: In Filament v1.58+, setClearColor was removed from View.
-    // Clear color is now set via Renderer::setClearOptions().
-    if (!background_image_ && background_color_.w() > 0.0f) {
-        renderer_.SetClearColor(background_color_);
-    }
 
     return handle;
 }
@@ -1773,16 +1762,6 @@ void FilamentScene::SetBackground(
     }
     OverrideMaterial(kBackgroundName, m);
     background_image_ = new_image;
-    background_color_ = color;
-
-    // Set clear color on the renderer when there's no background image.
-    // This ensures the background color is visible even when geometry doesn't
-    // cover the entire viewport.
-    // Note: In Filament v1.58+, setClearColor was removed from View.
-    // Clear color is now set via Renderer::setClearOptions().
-    if (!new_image) {
-        renderer_.SetClearColor(color);
-    }
 }
 
 void FilamentScene::SetBackground(TextureHandle image) {

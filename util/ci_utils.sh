@@ -30,7 +30,6 @@ BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
 TENSORFLOW_VER="2.20.0"
 TORCH_VER="2.10"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
-TORCH_REPO_URL_TEST="https://download.pytorch.org/whl/test/torch/"
 # Python
 PIP_VER="25.3"
 PROTOBUF_VER="6.31.1"
@@ -73,23 +72,14 @@ install_python_dependencies() {
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
         # TF happily installs both CPU and GPU versions at the same time, so remove the other
         python -m pip uninstall --yes "$TF_ARCH_DISABLE_NAME"
-        # Determine fallback name: tensorflow -> tf-nightly, tensorflow-cpu -> tf-nightly-cpu
-        if [[ "$TF_ARCH_NAME" == "tensorflow-cpu" ]]; then
-            TF_FALLBACK_NAME="tf-nightly-cpu"
-        else
-            TF_FALLBACK_NAME="tf-nightly"
-        fi
-        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" || \
-            python -m pip install -U "$TF_FALLBACK_NAME" # ML/requirements-tensorflow.txt
+        python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" # ML/requirements-tensorflow.txt
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" || \
-                python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL_TEST"
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard || \
-                python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL_TEST" tensorboard
+            python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard
         else
             echo "unknown OS $OSTYPE"
             exit 1
@@ -156,7 +146,7 @@ build_pip_package() {
         BUILD_FILAMENT_FROM_SOURCE=ON
     else
         echo "Building for x86_64 architecture"
-        BUILD_FILAMENT_FROM_SOURCE=ON
+        BUILD_FILAMENT_FROM_SOURCE=OFF
     fi
     set +u
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
@@ -247,36 +237,6 @@ build_pip_package() {
 # Usage: test_wheel wheel_path
 test_wheel() {
     wheel_path="$1"
-    # Expand glob pattern if it contains wildcards
-    if [[ "$wheel_path" == *"*"* ]] || [[ "$wheel_path" == *"?"* ]]; then
-        # Use shopt to enable nullglob so unmatched patterns expand to empty string
-        shopt -s nullglob
-        # Expand the glob pattern
-        expanded_files=($wheel_path)
-        shopt -u nullglob
-        if [ ${#expanded_files[@]} -eq 0 ]; then
-            echo "ERROR: No wheel file found matching pattern: $wheel_path"
-            echo "Current directory: $(pwd)"
-            echo "Available wheel files:"
-            ls -la *.whl 2>/dev/null || echo "  (none found)"
-            exit 1
-        elif [ ${#expanded_files[@]} -gt 1 ]; then
-            echo "ERROR: Multiple wheel files found matching pattern: $wheel_path"
-            printf '  %s\n' "${expanded_files[@]}"
-            exit 1
-        else
-            wheel_path="${expanded_files[0]}"
-            echo "Expanded glob pattern to: $wheel_path"
-        fi
-    fi
-    # Verify the file exists
-    if [ ! -f "$wheel_path" ]; then
-        echo "ERROR: Wheel file not found: $wheel_path"
-        echo "Current directory: $(pwd)"
-        echo "Available wheel files:"
-        ls -la *.whl 2>/dev/null || echo "  (none found)"
-        exit 1
-    fi
     python -m venv open3d_test.venv
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate

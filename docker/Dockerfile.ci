@@ -194,7 +194,6 @@ RUN \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
-          -DCMAKE_CUDA_FLAGS="-Xcompiler=-Wno-error=deprecated-copy -Xcompiler=-Wno-deprecated-copy" \
           -DBUILD_COMMON_ISPC_ISAS=${BUILD_ISPC_MODULE} \
           -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
           -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \

@@ -26,64 +26,15 @@ jobs:
   ubuntu-sycl:
     permissions:
       contents: write  # Release upload
-      actions: write   # Artifact uploads
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         BUILD_SHARED_LIBS: [ON, OFF]
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 20480  # 20GB for / (Docker + /tmp + logs)
-          temp-reserve-mb: 4096   # 4GB for /mnt
-          swap-size-mb: 10240
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
-      - name: Remove additional tools
-        if: runner.os == 'Linux'
-        run: |
-          # Remove AGENT_TOOLSDIRECTORY (not covered by maximize-build-space)
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
-          # Additional cleanup for more space
-          sudo rm -rf /usr/local/share/boost || true
-          sudo rm -rf /usr/local/share/boost-* || true
-          sudo apt-get clean || true
-          sudo rm -rf /var/lib/apt/lists/* || true
-          df -h .
       - name: Checkout source code
         uses: actions/checkout@v4
-        with:
-          clean: true
-      - name: Set TMPDIR to workspace volume
-        if: runner.os == 'Linux'
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/.tmp"
-          echo "TMPDIR=$GITHUB_WORKSPACE/.tmp" >> $GITHUB_ENV
-      - name: Move Docker storage to workspace volume
-        if: runner.os == 'Linux'
-        run: |
-          set -euxo pipefail
-          sudo mkdir -p "$GITHUB_WORKSPACE/.docker-root"
-          # Change ownership so Docker build context can read it (Docker daemon as root can still write)
-          sudo chown -R runner:runner "$GITHUB_WORKSPACE/.docker-root"
-          echo "{\"data-root\":\"$GITHUB_WORKSPACE/.docker-root\"}" | sudo tee /etc/docker/daemon.json
-          sudo systemctl restart docker || sudo service docker restart
-          docker info | grep -E "Docker Root Dir|Storage Driver"
-          df -h / "$GITHUB_WORKSPACE"
-      - name: Exclude docker root and tmp from Docker build context
-        if: runner.os == 'Linux'
-        run: |
-          set -euxo pipefail
-          # Ensure .dockerignore exists and exclude directories that shouldn't be in build context
-          touch .dockerignore
-          grep -qxF '.docker-root' .dockerignore || echo '.docker-root' >> .dockerignore
-          grep -qxF '.tmp' .dockerignore || echo '.tmp' >> .dockerignore
-      - name: Maximize build space (Open3D helper)
+      - name: Maximize build space
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
@@ -96,7 +47,7 @@ jobs:
           fi
       - name: Docker test
         run: |
-          du -hs --exclude=.docker-root --exclude=.tmp . || true
+          du -hs $PWD
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_test.sh sycl-shared
           else
@@ -139,8 +90,3 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.gz gs://open3d-ci-cache/ || true
-      - name: Cleanup Docker root dir
-        if: always()
-        run: |
-          sudo systemctl stop docker || true
-          sudo rm -rf "$GITHUB_WORKSPACE/.docker-root" || true
