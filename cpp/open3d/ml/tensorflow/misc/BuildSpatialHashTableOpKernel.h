@@ -46,7 +46,8 @@ public:
                 TensorShapeUtils::IsScalar(
                         hash_table_size_factor_tensor.shape()),
                 absl::InvalidArgumentError(
-                        std::string("hash_table_size_factor must be scalar, got shape ") +
+                        std::string("hash_table_size_factor must be scalar, "
+                                    "got shape ") +
                         hash_table_size_factor_tensor.shape().DebugString()));
         const double hash_table_size_factor =
                 hash_table_size_factor_tensor.scalar<double>()();

@@ -160,6 +160,10 @@ if (TARGET Open3D::3rdparty_onedpl)
     )
 endif()
 
+if (MSVC) # Similar to https://github.com/microsoft/vcpkg/issues/42965, but from pytorch->fmt
+    target_compile_options(open3d_torch_ops PRIVATE "/utf-8")
+endif()
+
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE
         Open3D::3rdparty_cutlass

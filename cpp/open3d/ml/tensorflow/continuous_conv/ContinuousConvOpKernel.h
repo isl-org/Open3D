@@ -108,12 +108,12 @@ public:
 
         const Tensor& neighbors_row_splits = context->input(9);
 
-        OP_REQUIRES(
-                context,
-                inp_positions.shape().dim_size(0) ==
-                        inp_features.shape().dim_size(0),
-                absl::InvalidArgumentError("first dim of inp_positions does not "
-                                           "match the first dim of inp_features"));
+        OP_REQUIRES(context,
+                    inp_positions.shape().dim_size(0) ==
+                            inp_features.shape().dim_size(0),
+                    absl::InvalidArgumentError(
+                            "first dim of inp_positions does not "
+                            "match the first dim of inp_features"));
 
         OP_REQUIRES(
                 context,

@@ -81,8 +81,8 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 AARCH="$(uname -m)"
 # do cmake pending on the architecture
 CMAKE_VERSION=cmake-3.31.8-linux-${AARCH}
-CUDA_VERSION=13.0.2-cudnn
-CUDA_VERSION_LATEST=13.0.2-cudnn
+CUDA_VERSION=12.6.3-cudnn
+CUDA_VERSION_LATEST=12.6.3-cudnn
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"

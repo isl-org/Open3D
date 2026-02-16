@@ -551,14 +551,10 @@ Example:
     });
 
     auto to_dlpack = [](const Tensor& tensor,
-                        std::optional<int> stream = std::nullopt,
-                        std::optional<std::pair<int, int>> max_version =
-                                std::nullopt,
-                        std::optional<std::pair<DLDeviceType, int>> dl_device =
-                                std::nullopt,
-                        std::optional<bool> copy = std::nullopt) {
-        bool versioned =
-                (max_version.has_value() && max_version.value().first > 0);
+                        std::optional<int> stream = std::nullopt) {
+        bool versioned = false;
+        std::optional<std::pair<DLDeviceType, int>> dl_device = std::nullopt;
+        std::optional<bool> copy = std::nullopt;
         auto out_tensor = maybeCopyTensor(tensor, dl_device, copy);
         if (versioned) {
             auto capsule_destructor = [](PyObject* data) {
@@ -603,8 +599,6 @@ Example:
     };
     tensor.def(
             "__dlpack__", to_dlpack, "stream"_a = py::none(),
-            "max_version"_a = py::none(), "dl_device"_a = py::none(),
-            "copy"_a = py::none(),
             R"(Returns an opaque object (a "DLPack capsule") representing the tensor.
 
 .. note::
