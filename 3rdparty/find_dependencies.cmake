@@ -1119,7 +1119,6 @@ if(NOT USE_SYSTEM_FMT)
         DEPENDS      ext_fmt
     )
     # FMT 6.0, newer versions may require different flags
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=0)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)

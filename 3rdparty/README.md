@@ -54,7 +54,7 @@ A high-level C++ library of template headers for linear algebra, matrix and
 vector operations, numerical solvers and related algorithms
 http://eigen.tuxfamily.org/
 --------------------------------------------------------------------------------
-embree                      4.3.1                               Apache-2 license
+embree                      4.4.0                               Apache-2 license
 Embree is a collection of high-performance ray tracing kernels
 https://github.com/embree/embree
 --------------------------------------------------------------------------------
@@ -67,7 +67,7 @@ GLEW                        2.1.0                                    MIT License
 A cross-platform open-source C/C++ extension loading library
 http://glew.sourceforge.net/
 --------------------------------------------------------------------------------
-GLFW                        3.3.0 (dev)                      zlib/libpng license
+GLFW                        3.4.0                            zlib/libpng license
 A cross-platform library for creating windows with OpenGL contexts and receiving
 input and events
 http://www.glfw.org/
@@ -84,7 +84,7 @@ libpng                      1.6.49                                libpng license
 The free reference library for reading and writing PNGs
 http://www.libpng.org/
 --------------------------------------------------------------------------------
-librealsense                2.54.2                               Apache-2 license
+librealsense                2.57.4                               Apache-2 license
 A cross-platform library for capturing data from the Intel RealSense F200,
 SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
@@ -113,7 +113,7 @@ RPly                        1.1.3                                    MIT license
 A library to read and write PLY files
 http://w3.impa.br/~diego/software/rply/
 --------------------------------------------------------------------------------
-stdgpu                       1b6a3319                         Apache-2.0 license
+stdgpu                       d7c07d05                         Apache-2.0 license
 Efficient STL-like Data Structures on the GPU
 https://github.com/stotko/stdgpu/
 --------------------------------------------------------------------------------
