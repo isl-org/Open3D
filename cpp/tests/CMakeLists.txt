@@ -35,7 +35,8 @@ else()
 endif()
 
 target_link_libraries(tests PRIVATE
-    Open3D::Open3D
+    Open3D::Open3D 
+    Open3D::3rdparty_fmt
     Open3D::3rdparty_jsoncpp
     Open3D::3rdparty_googletest
     Open3D::3rdparty_threads

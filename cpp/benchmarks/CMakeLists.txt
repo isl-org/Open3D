@@ -9,7 +9,7 @@ add_subdirectory(t/geometry)
 add_subdirectory(t/io)
 add_subdirectory(t/pipelines)
 
-target_link_libraries(benchmarks PRIVATE Open3D::Open3D)
+target_link_libraries(benchmarks PRIVATE Open3D::Open3D Open3D::3rdparty_fmt)
 if (BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
     target_link_libraries(benchmarks PRIVATE CUDA::cudart)

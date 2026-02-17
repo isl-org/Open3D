@@ -97,7 +97,7 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-RUN wget -qO- https://pyenv.run | bash \
+RUN wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash \
         && pyenv update \
         && pyenv install $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \

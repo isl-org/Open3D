@@ -1112,7 +1112,7 @@ endif()
 if(NOT USE_SYSTEM_FMT)
     include(${Open3D_3RDPARTY_DIR}/fmt/fmt.cmake)
     open3d_import_3rdparty_library(3rdparty_fmt
-        HEADER
+        PUBLIC
         INCLUDE_DIRS ${FMT_INCLUDE_DIRS}
         LIB_DIR      ${FMT_LIB_DIR}
         LIBRARIES    ${FMT_LIBRARIES}
@@ -1120,7 +1120,7 @@ if(NOT USE_SYSTEM_FMT)
     )
     if (WIN32)
         target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
-        target_compile_options(3rdparty_fmt INTERFACE $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:CXX>>:"/utf-8">)
+        target_compile_options(3rdparty_fmt INTERFACE $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:CXX>>:/utf-8>)
     endif()
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)
