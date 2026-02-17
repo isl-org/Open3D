@@ -60,7 +60,7 @@ RUN apt-get update && apt-get install -y \
 
 # Dependencies: cmake
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
- && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && wget -nv https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -xf ${CMAKE_VERSION}.tar.gz \
  && cp -ar ${CMAKE_VERSION} ${HOME}
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
@@ -76,8 +76,8 @@ RUN ccache --version \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && if [ -f ${CCACHE_TAR_NAME}.tar.?z ]; then tar -xf ${CCACHE_TAR_NAME}.tar.?z; fi
+ && (wget -nv https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && { tar -xf ${CCACHE_TAR_NAME}.tar.?z || true; }
 # We need to set ccache size explicitly with -M, otherwise the default size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN ccache -M 4G \
@@ -137,7 +137,7 @@ RUN export NPROC=$(($(nproc)+2)) \
  && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter \
- && if [ ${CI:-}a != a ]; then cd /root/Open3D/build/ && ls | grep -Ev '^lib$' | xargs rm -rf ; fi
+ && if [ ${CI:-}a != a ]; then find /root/Open3D/build -maxdepth 1 ! -name 'lib' -exec rm -rf {} + ; fi
  # remove build folder (except lib) to save CI space on Github
 
 # Compress ccache folder, move to / directory

@@ -1,5 +1,3 @@
-add_subdirectory(ManuallyAlignPointCloud)
-
 macro(open3d_add_tool TOOL_NAME)
     add_executable(${TOOL_NAME})
 
@@ -20,3 +18,19 @@ open3d_add_tool(GLInfo                  Open3D::3rdparty_opengl Open3D::3rdparty
 open3d_add_tool(ManuallyCropGeometry)
 open3d_add_tool(MergeMesh)
 open3d_add_tool(ViewGeometry)
+
+add_executable(ManuallyAlignPointCloud)
+target_sources(ManuallyAlignPointCloud PRIVATE
+    ManuallyAlignPointCloud/ManuallyAlignPointCloud.cpp
+    ManuallyAlignPointCloud/AlignmentSession.cpp
+    ManuallyAlignPointCloud/VisualizerForAlignment.cpp
+)
+target_link_libraries(ManuallyAlignPointCloud PRIVATE
+    Open3D::Open3D
+    Open3D::3rdparty_fmt
+    Open3D::3rdparty_jsoncpp
+    Open3D::3rdparty_tinyfiledialogs
+)
+set_target_properties(ManuallyAlignPointCloud PROPERTIES FOLDER "Tools")
+open3d_show_and_abort_on_warning(ManuallyAlignPointCloud)
+open3d_set_global_properties(ManuallyAlignPointCloud)
