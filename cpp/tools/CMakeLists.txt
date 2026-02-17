@@ -4,7 +4,11 @@ macro(open3d_add_tool TOOL_NAME)
     add_executable(${TOOL_NAME})
 
     target_sources(${TOOL_NAME} PRIVATE "${TOOL_NAME}.cpp")
-    target_link_libraries(${TOOL_NAME} PRIVATE Open3D::Open3D ${ARGN})
+    target_link_libraries(${TOOL_NAME} PRIVATE 
+            Open3D::Open3D 
+            Open3D::3rdparty_fmt
+            ${ARGN}
+        )
 
     set_target_properties(${TOOL_NAME} PROPERTIES FOLDER "Tools")
     open3d_show_and_abort_on_warning(${TOOL_NAME})

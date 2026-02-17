@@ -1118,8 +1118,10 @@ if(NOT USE_SYSTEM_FMT)
         LIBRARIES    ${FMT_LIBRARIES}
         DEPENDS      ext_fmt
     )
-    # FMT 6.0, newer versions may require different flags
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+    if (WIN32)
+        target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+        target_compile_options(3rdparty_fmt INTERFACE "/utf-8")
+    endif()
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)
 else()
