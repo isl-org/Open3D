@@ -128,7 +128,8 @@ public:
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param transformation The 4x4 transformation matrix to transform
+/// distance.
+/// \param transformation The 4x4 transformation matrix to transform
 /// source to target. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.],
 /// [0., 0., 1., 0.], [0., 0., 0., 1.]]).
 RegistrationResult EvaluateRegistration(
@@ -142,7 +143,8 @@ RegistrationResult EvaluateRegistration(
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param init Initial transformation estimation.
+/// distance.
+/// \param init Initial transformation estimation.
 ///  Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
 ///  [0., 0., 0., 1.]])
 /// \param estimation Estimation method.
@@ -212,7 +214,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 /// \param source The source point cloud.
 /// \param target The target point cloud.
 /// \param max_correspondence_distance Maximum correspondence points-pair
-/// distance. \param transformation The 4x4 transformation matrix to transform
+/// distance.
+/// \param transformation The 4x4 transformation matrix to transform
 /// `source` to `target`.
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
         const geometry::PointCloud &source,
