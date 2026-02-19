@@ -159,8 +159,8 @@ if (TARGET Open3D::3rdparty_onedpl)
     )
 endif()
 
-if (MSVC) # Similar to https://github.com/microsoft/vcpkg/issues/42965, but from pytorch->fmt
-    target_compile_options(open3d_torch_ops PRIVATE "/utf-8")
+if (WIN32) # Similar to https://github.com/microsoft/vcpkg/issues/42965, but from pytorch->fmt
+    target_compile_options(open3d_torch_ops PRIVATE  $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:CXX>>:/utf-8>)
 endif()
 
 if (BUILD_CUDA_MODULE)

@@ -12,8 +12,8 @@ function(open3d_set_open3d_lib_properties target)
     if(NOT BUILD_SHARED_LIBS)
         target_compile_definitions(${target} PUBLIC OPEN3D_STATIC)
     endif()
-    if (MSVC) # fmt 12+ requires UTF-8 encoding support with MSVC. Also propagate to consumers of Open3D.
-        target_compile_options(${target} PUBLIC /utf-8)
+    if (WIN32) # fmt 12+ requires UTF-8 encoding support with MSVC. Also propagate to consumers of Open3D.
+        target_compile_options(${target} PUBLIC $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:CXX>>:/utf-8>)
     endif()
     if (arg_HIDDEN)
         set_target_properties(${target} PROPERTIES
