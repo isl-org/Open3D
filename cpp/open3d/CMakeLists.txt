@@ -12,6 +12,9 @@ function(open3d_set_open3d_lib_properties target)
     if(NOT BUILD_SHARED_LIBS)
         target_compile_definitions(${target} PUBLIC OPEN3D_STATIC)
     endif()
+    if (MSVC) # fmt 12+ requires UTF-8 encoding support with MSVC. Also propagate to consumers of Open3D.
+        target_compile_options(${target} PUBLIC /utf-8)
+    endif()
     if (arg_HIDDEN)
         set_target_properties(${target} PROPERTIES
                         CXX_VISIBILITY_PRESET hidden
@@ -21,14 +24,14 @@ function(open3d_set_open3d_lib_properties target)
         target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
     endif()
 
-# Hide all 3rd party symbols, e.g. from header libraries.
-get_target_property(TARGET_TYPE ${target} TYPE)
-if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
+    # Hide all 3rd party symbols, e.g. from header libraries.
+    get_target_property(TARGET_TYPE ${target} TYPE)
+    if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
         if (APPLE)
             file(GENERATE OUTPUT libOpen3D.map CONTENT
                 [=[*open3d*
-                   *Open3D*
-                ]=])
+*Open3D*
+]=])
             target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
                 -Wl,-exported_symbols_list
                 "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
@@ -38,7 +41,7 @@ if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
     global:
         *open3d*;
         extern "C++" {
-             open3d::*;
+            open3d::*;
         };
     local: *;
 };]=])
@@ -135,6 +138,7 @@ open3d_show_and_abort_on_warning(Open3D)
 open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
+
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond

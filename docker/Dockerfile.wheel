@@ -47,7 +47,6 @@ RUN apt-get update && apt-get install -y \
     libreadline-dev \
     libsqlite3-dev \
     libusb-1.0-0-dev \
-    curl \
     git \
     libncursesw5-dev \
     xz-utils \
@@ -91,13 +90,13 @@ RUN ccache -M 4G \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-RUN curl https://pyenv.run | bash \
+RUN wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash \
         && pyenv update \
         && pyenv install $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
-RUN python --version && pip --version \
+RUN python --version && pip --version
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
@@ -120,11 +119,16 @@ RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-jupyter
 
 # Open3D Jupyter dependencies
-RUN curl -fsSL https://deb.nodesource.com/setup_25.x | bash - \
+RUN mkdir -p /etc/apt/keyrings \
+ && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_25.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
- && node --version
-RUN npm install -g yarn \
+ && node --version \
+ && npm install -g yarn \
  && yarn --version
 
 # Open3D repo

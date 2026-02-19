@@ -169,7 +169,6 @@ RUN mkdir -p /etc/apt/keyrings \
  && npm install -g yarn \
  && yarn --version
 
-
 # Build all
 RUN \
     if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
