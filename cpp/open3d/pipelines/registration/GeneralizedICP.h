@@ -81,7 +81,9 @@ private:
 /// \param max_distance Maximum correspondence points-pair distance.
 /// \param init Initial transformation estimation.
 /// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
-/// [0., 0., 0., 1.]]). \param criteria  Convergence criteria. \param
+/// [0., 0., 0., 1.]]).
+/// \param estimation Estimation method for transformation.
+/// \param criteria Convergence criteria.
 RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

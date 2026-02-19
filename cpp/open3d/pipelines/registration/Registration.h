@@ -38,10 +38,10 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param relative_fitness If relative change (difference) of fitness score
-    /// is lower than relative_fitness, the iteration stops. \param
-    /// relative_rmse If relative change (difference) of inliner RMSE score is
-    /// lower than relative_rmse, the iteration stops. \param max_iteration
-    /// Maximum iteration before iteration stops.
+    /// is lower than relative_fitness, the iteration stops.
+    /// \param relative_rmse If relative change (difference) of inliner RMSE score is
+    /// lower than relative_rmse, the iteration stops.
+    /// \param max_iteration Maximum iteration before iteration stops.
     ICPConvergenceCriteria(double relative_fitness = 1e-6,
                            double relative_rmse = 1e-6,
                            int max_iteration = 30)
