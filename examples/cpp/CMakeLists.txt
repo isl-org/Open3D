@@ -4,7 +4,7 @@ macro(open3d_add_example EXAMPLE_CPP_NAME)
     add_executable(${EXAMPLE_CPP_NAME})
 
     target_sources(${EXAMPLE_CPP_NAME} PRIVATE "${EXAMPLE_CPP_NAME}.cpp")
-    target_link_libraries(${EXAMPLE_CPP_NAME} PRIVATE Open3D::Open3D Open3D::3rdparty_fmt ${ARGN})
+    target_link_libraries(${EXAMPLE_CPP_NAME} PRIVATE Open3D::Open3D ${ARGN})
 
     # Don't use open3d_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
     # Unlike benchmarks, examples are intended as standalone apps that link

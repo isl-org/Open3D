@@ -163,7 +163,6 @@ target_include_directories(open3d_tf_ops SYSTEM PRIVATE
 target_link_libraries(open3d_tf_ops PRIVATE
     ${Tensorflow_FRAMEWORK_LIB}
     Open3D::Open3D
-    Open3D::3rdparty_fmt
     Open3D::3rdparty_nanoflann
     TBB::tbb
 )

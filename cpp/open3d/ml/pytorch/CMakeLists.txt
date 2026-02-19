@@ -145,7 +145,6 @@ target_link_libraries(open3d_torch_ops PRIVATE
     torch_cpu
     Open3D::Open3D
     Open3D::3rdparty_eigen3
-    Open3D::3rdparty_fmt
     Open3D::3rdparty_nanoflann
     TBB::tbb
 )

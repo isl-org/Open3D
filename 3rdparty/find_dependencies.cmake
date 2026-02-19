@@ -1112,7 +1112,7 @@ endif()
 if(NOT USE_SYSTEM_FMT)
     include(${Open3D_3RDPARTY_DIR}/fmt/fmt.cmake)
     open3d_import_3rdparty_library(3rdparty_fmt
-        PUBLIC
+        HEADER
         INCLUDE_DIRS ${FMT_INCLUDE_DIRS}
         LIB_DIR      ${FMT_LIB_DIR}
         LIBRARIES    ${FMT_LIBRARIES}
@@ -1122,6 +1122,7 @@ if(NOT USE_SYSTEM_FMT)
         target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
         target_compile_options(3rdparty_fmt INTERFACE $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:CXX>>:/utf-8>)
     endif()
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)
 else()
@@ -1351,15 +1352,7 @@ if(BUILD_GUI)
             LIBRARIES ${filament_LIBRARIES}
             DEPENDS ext_filament
         )
-        # Use built matc if available (for Linux GLIBC compatibility), otherwise use pre-compiled
-        if(UNIX AND NOT APPLE AND NOT BUILD_FILAMENT_FROM_SOURCE AND DEFINED FILAMENT_MATC_BUILT)
-            set(FILAMENT_MATC "${FILAMENT_MATC_BUILT}")
-            if(TARGET ext_filament_matc)
-                add_dependencies(3rdparty_filament ext_filament_matc)
-            endif()
-        else()
-            set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
-        endif()
+        set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
         target_link_libraries(3rdparty_filament INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
         if(UNIX AND NOT APPLE)
             # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.
@@ -1942,7 +1935,7 @@ if(USE_SYSTEM_EMBREE)
     open3d_find_package_3rdparty_library(3rdparty_embree
         PACKAGE embree
         TARGETS embree
-        VERSION 4.4.0 # for "rtcGetErrorString"
+        VERSION 4.4.0
     )
     if(NOT 3rdparty_embree_FOUND)
         set(USE_SYSTEM_EMBREE OFF)

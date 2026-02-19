@@ -4,7 +4,6 @@ macro(open3d_add_tool TOOL_NAME)
     target_sources(${TOOL_NAME} PRIVATE "${TOOL_NAME}.cpp")
     target_link_libraries(${TOOL_NAME} PRIVATE 
             Open3D::Open3D 
-            Open3D::3rdparty_fmt
             ${ARGN}
         )
 
@@ -27,7 +26,6 @@ target_sources(ManuallyAlignPointCloud PRIVATE
 )
 target_link_libraries(ManuallyAlignPointCloud PRIVATE
     Open3D::Open3D
-    Open3D::3rdparty_fmt
     Open3D::3rdparty_jsoncpp
     Open3D::3rdparty_tinyfiledialogs
 )
