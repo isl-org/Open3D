@@ -104,9 +104,9 @@ protected:
 };
 
 /// \struct DataDescriptor
-/// \brief Infomation about a file to be downloaded.
+/// \brief Information about a file to be downloaded.
 struct DataDescriptor {
-    /// \brief Constructor a list of url mirrors.
+    /// \brief Constructor that takes a list of url mirrors.
     /// \param urls URL mirrors of the file.
     /// \param md5 MD5 checksum of the file.
     /// \param extract_in_subdir Subdirectory to extract the file. If empty, the
@@ -116,7 +116,7 @@ struct DataDescriptor {
                    const std::string& extract_in_subdir = "")
         : urls_(urls), md5_(md5), extract_in_subdir_(extract_in_subdir) {}
 
-    /// \brief Constructor a download url.
+    /// \brief Constructor that takes a download url.
     /// \param url URL of the file.
     /// \param md5 MD5 checksum of the file.
     /// \param extract_in_subdir Subdirectory to extract the file. If empty, the
@@ -753,10 +753,10 @@ private:
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
-/// \class RedwoodIndoorLivingRoom1 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
-/// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-/// sequence, and ground-truth camera trajectory.
+/// \class RedwoodIndoorLivingRoom1
+/// \brief Data class for `RedwoodIndoorLivingRoom1` (Augmented ICL-NUIM Dataset),
+/// containing dense point cloud, rgb sequence, clean depth sequence, noisy depth
+/// sequence, oni sequence, and ground-truth camera trajectory.
 ///
 ///     RedwoodIndoorLivingRoom1
 ///     ├── colors
@@ -809,10 +809,10 @@ private:
     std::string noise_model_path_;
 };
 
-/// \class RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorLivingRoom2`, containing dense point
-/// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-/// sequence, and ground-truth camera trajectory.
+/// \class RedwoodIndoorLivingRoom2
+/// \brief Data class for `RedwoodIndoorLivingRoom2` (Augmented ICL-NUIM Dataset),
+/// containing dense point cloud, rgb sequence, clean depth sequence, noisy depth
+/// sequence, oni sequence, and ground-truth camera trajectory.
 ///
 ///     RedwoodIndoorLivingRoom2
 ///     ├── colors
@@ -865,10 +865,10 @@ private:
     std::string noise_model_path_;
 };
 
-/// \class RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorOffice1`, containing dense point
-/// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-/// sequence, and ground-truth camera trajectory.
+/// \class RedwoodIndoorOffice1
+/// \brief Data class for `RedwoodIndoorOffice1` (Augmented ICL-NUIM Dataset),
+/// containing dense point cloud, rgb sequence, clean depth sequence, noisy depth
+/// sequence, oni sequence, and ground-truth camera trajectory.
 ///
 ///     RedwoodIndoorOffice1
 ///     ├── colors
@@ -921,10 +921,10 @@ private:
     std::string noise_model_path_;
 };
 
-/// \class RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
-/// \brief Data class for `RedwoodIndoorOffice2`, containing dense point
-/// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
-/// sequence, and ground-truth camera trajectory.
+/// \class RedwoodIndoorOffice2
+/// \brief Data class for `RedwoodIndoorOffice2` (Augmented ICL-NUIM Dataset),
+/// containing dense point cloud, rgb sequence, clean depth sequence, noisy depth
+/// sequence, oni sequence, and ground-truth camera trajectory.
 ///
 ///     RedwoodIndoorOffice2
 ///     ├── colors
