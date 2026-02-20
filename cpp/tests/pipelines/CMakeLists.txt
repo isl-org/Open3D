@@ -19,5 +19,6 @@ target_sources(tests PRIVATE
     registration/GlobalOptimizationConvergenceCriteria.cpp
     registration/PoseGraph.cpp
     registration/Registration.cpp
+    registration/SymmetricICP.cpp
     registration/TransformationEstimation.cpp
 )
