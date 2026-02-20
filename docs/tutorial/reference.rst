@@ -11,6 +11,7 @@ Reference
 .. [Curless1996] B. Curless and M. Levoy. A volumetric method for building complex models from range images. In SIGGRAPH, 1996.
 .. [Edelsbrunner1983] H. Edelsbrunner and D. G. Kirkpatrick and R. Seidel: On the shape of a set of points in the plane, IEEE Transactions on Information Theory, 29 (4): 551–559, 1983
 .. [Ester1996] M. Ester and H.-P. Kriegel and J Sander and X. Xu, A density-based algorithm for discovering clusters in large spatial databases with noise, KDD, 1996.
+.. [Hexsel2022] B. Hexsel and H. Vhavle and Y. Chen, DICP: Doppler Iterative Closest Point Algorithm, RSS, 2022.
 .. [Katz2007] S. Katz and A. Tal and R. Basri, Direct visibility of point sets, SIGGRAPH, 2007.
 .. [Kazhdan2006] M. Kazhdan and M. Bolitho and H. Hoppe: Poisson surface reconstruction, Eurographics, 2006.
 .. [Knapitsch2017] A. Knapitsch and J. Park and Q. Zhou and V. Koltun: Tanks and Temples: Benchmarking Large-Scale Scene Reconstruction, ACM Transactions on Graphics, vol 36 (4), 2017
