@@ -21,21 +21,22 @@ public:
         OP_REQUIRES_OK(context, context->GetAttr("resolution", &r));
         OP_REQUIRES_OK(context, context->GetAttr("is_training", &is_training));
         OP_REQUIRES(context, r > 0,
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "TrilinearDevoxelize expects positive resolution"));
     }
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
         const Tensor& coords = context->input(0);
-        OP_REQUIRES(
-                context, coords.dims() == 3 && coords.shape().dim_size(1) == 3,
-                errors::InvalidArgument("TrilinearDevoxelize expects "
-                                        "(batch_size, 3, N) coordinate shape"));
+        OP_REQUIRES(context,
+                    coords.dims() == 3 && coords.shape().dim_size(1) == 3,
+                    absl::InvalidArgumentError(
+                            "TrilinearDevoxelize expects "
+                            "(batch_size, 3, N) coordinate shape"));
         const Tensor& feat = context->input(1);
         OP_REQUIRES(context, feat.dims() == 5,
-                    errors::InvalidArgument("TrilinearDevoxelize expects "
-                                            "5 dimensions for features"));
+                    absl::InvalidArgumentError("TrilinearDevoxelize expects "
+                                               "5 dimensions for features"));
 
         int batch_size = coords.shape().dim_size(0);
         int num_points = coords.shape().dim_size(2);
@@ -106,27 +107,27 @@ public:
         OP_REQUIRES_OK(context, context->GetAttr("resolution", &r));
         OP_REQUIRES(
                 context, r > 0,
-                errors::InvalidArgument(
+                absl::InvalidArgumentError(
                         "TrilinearDevoxelizeGrad expects positive resolution"));
     }
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
         const Tensor& grad_y = context->input(0);
-        OP_REQUIRES(
-                context, grad_y.dims() == 3,
-                errors::InvalidArgument("TrilinearDevoxelizeGrad expects "
-                                        "(batch_size, C, N) gradient shape"));
+        OP_REQUIRES(context, grad_y.dims() == 3,
+                    absl::InvalidArgumentError(
+                            "TrilinearDevoxelizeGrad expects "
+                            "(batch_size, C, N) gradient shape"));
         const Tensor& inds = context->input(1);
         OP_REQUIRES(
                 context, inds.dims() == 3 && inds.shape().dim_size(1) == 8,
-                errors::InvalidArgument("TrilinearDevoxelizeGrad expects "
-                                        "(batch_size, 8, N) indices shape"));
+                absl::InvalidArgumentError("TrilinearDevoxelizeGrad expects "
+                                           "(batch_size, 8, N) indices shape"));
         const Tensor& wgts = context->input(2);
         OP_REQUIRES(
                 context, wgts.dims() == 3 && wgts.shape().dim_size(1) == 8,
-                errors::InvalidArgument("TrilinearDevoxelizeGrad expects "
-                                        "(batch_size, 8, N) weights shape"));
+                absl::InvalidArgumentError("TrilinearDevoxelizeGrad expects "
+                                           "(batch_size, 8, N) weights shape"));
 
         int batch_size = grad_y.shape().dim_size(0);
         int num_points = grad_y.shape().dim_size(2);

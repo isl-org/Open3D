@@ -273,8 +273,7 @@ jobs:
             python_version: '3.13'
 
     env:
-      # PyTorch 2.7 supports python 3.10-3.13. PyTorch 2.9 supports python 3.14.
-      BUILD_PYTORCH_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
+      BUILD_PYTORCH_OPS: 'ON'
 
     steps:
       - name: Checkout source code
@@ -374,8 +373,7 @@ jobs:
           - is_main: false
             python_version: '3.13'
     env:
-      # PyTorch 2.7 supports python 3.10-3.13. PyTorch 2.9 supports python 3.14.
-      BUILD_PYTORCH_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
+      BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

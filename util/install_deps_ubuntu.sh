@@ -33,6 +33,7 @@ deps=(
     libosmesa6-dev
     # RealSense
     libudev-dev
+    libusb-1.0-0-dev
     autoconf
     libtool
 )

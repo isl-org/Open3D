@@ -37,10 +37,8 @@ jobs:
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
-      # Tensorflow 2.19, PyTorch 2.7 are only available for Apple Silicon (macos-14)
-      BUILD_TENSORFLOW_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
-      LOW_MEM_USAGE: ON
+      BUILD_TENSORFLOW_OPS: 'ON'
+      BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -65,7 +63,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config
+          brew install ccache pkg-config libusb
 
           if [[ ${{ runner.arch }} == "ARM64"  ]]; then
             # Fix gfortran not found issue
@@ -140,10 +138,10 @@ jobs:
             python_version: '3.13'
 
     env:
-      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
-      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version >= '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
-      # PyTorch 2.7 only supports macOS-14 (Apple Silicon) and python 3.9-3.13 (only torch>=2.9 supports python 3.14)
-      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
+      # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
+      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
@@ -235,11 +233,11 @@ jobs:
             python_version: '3.13'
 
     env:
+      # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
+      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
-      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version >= '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
-      # PyTorch 2.7 only supports macOS-14 (Apple Silicon) and python 3.9-3.13 (only torch>=2.9 supports python 3.14)
-      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

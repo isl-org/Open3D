@@ -388,10 +388,10 @@ sycl-shared_export_env() {
 
     # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-22.04
-    export BASE_IMAGE=intel/oneapi-basekit:2024.1.1-devel-ubuntu22.04
+    export BASE_IMAGE=intel/cpp-essentials:2025.3.1-0-devel-ubuntu22.04
     export DEVELOPER_BUILD=${DEVELOPER_BUILD:-ON}
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=${PYTHON_VERSION:-3.10}
+    export PYTHON_VERSION=${PYTHON_VERSION:-3.12}
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
@@ -409,10 +409,10 @@ sycl-static_export_env() {
 
     # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-22.04
-    export BASE_IMAGE=intel/oneapi-basekit:2024.1.1-devel-ubuntu22.04
+    export BASE_IMAGE=intel/cpp-essentials:2025.3.1-0-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=3.10
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF

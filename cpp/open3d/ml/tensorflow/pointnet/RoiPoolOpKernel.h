@@ -28,8 +28,9 @@ public:
         OP_REQUIRES(
                 context,
                 inp_tensor.dims() == 3 && inp_tensor.shape().dim_size(2) == 3,
-                errors::InvalidArgument("RoiPool expects "
-                                        "(batch_size,num_points,3) inp shape"));
+                absl::InvalidArgumentError(
+                        "RoiPool expects "
+                        "(batch_size,num_points,3) inp shape"));
         int batch_size = inp_tensor.shape().dim_size(0);
         int pts_num = inp_tensor.shape().dim_size(1);
         auto inp_flat = inp_tensor.flat<float>();
@@ -39,7 +40,7 @@ public:
         OP_REQUIRES(context,
                     boxes3d_tensor.dims() == 3 &&
                             boxes3d_tensor.shape().dim_size(2) == 7,
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "RoiPool expects "
                             "(batch_size,num_boxes,7) boxes3d shape"));
         int boxes_num = boxes3d_tensor.shape().dim_size(1);
@@ -50,7 +51,7 @@ public:
         OP_REQUIRES(context,
                     feats_tensor.dims() == 3 &&
                             feats_tensor.shape().dim_size(1) == pts_num,
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "RoiPool expects "
                             "(batch_size,num_points,feats) feats shape"));
         int feature_in_len = feats_tensor.shape().dim_size(2);

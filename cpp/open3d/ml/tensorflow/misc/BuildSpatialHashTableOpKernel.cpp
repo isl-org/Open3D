@@ -29,7 +29,7 @@ public:
         open3d::core::nns::impl::BuildSpatialHashTableCPU(
                 points.shape().dim_size(0), points.flat<T>().data(),
                 radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
-                (int64_t*)points_row_splits.flat<int64>().data(),
+                (int64_t*)points_row_splits.flat<int64_t>().data(),
                 hash_table_splits.data(),
                 hash_table_cell_splits.shape().dim_size(0),
                 hash_table_cell_splits.flat<uint32_t>().data(),

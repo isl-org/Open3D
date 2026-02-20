@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <cstdint>
+
+#include "absl/status/status.h"
 #include "open3d/ml/impl/continuous_conv/ContinuousConvTypes.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -54,38 +57,40 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 type is not compatible");
+        static_assert(sizeof(int64_t) == sizeof(int64_t),
+                      "int64_t type is not compatible");
         const Tensor& filter = context->input(0);
 
         const Tensor& out_positions = context->input(1);
         OP_REQUIRES(context,
                     out_positions.shape().dim_size(0) <=
                             std::numeric_limits<TIndex>::max(),
-                    errors::InvalidArgument("Too many output points"));
+                    absl::InvalidArgumentError("Too many output points"));
 
         const Tensor& out_importance = context->input(2);
-        OP_REQUIRES(context,
-                    out_importance.shape().dim_size(0) == 0 ||
-                            out_importance.shape().dim_size(0) ==
-                                    out_positions.shape().dim_size(0),
-                    errors::InvalidArgument("length of out_importance must "
-                                            "match the number of output points "
-                                            "or must be 0"));
+        OP_REQUIRES(
+                context,
+                out_importance.shape().dim_size(0) == 0 ||
+                        out_importance.shape().dim_size(0) ==
+                                out_positions.shape().dim_size(0),
+                absl::InvalidArgumentError("length of out_importance must "
+                                           "match the number of output points "
+                                           "or must be 0"));
 
         const Tensor& extents = context->input(3);
 
         const Tensor& offset = context->input(4);
-        OP_REQUIRES(context, offset.shape().dims() == 1,
-                    errors::InvalidArgument("offset must be a rank 1 tensor"));
+        OP_REQUIRES(
+                context, offset.shape().dims() == 1,
+                absl::InvalidArgumentError("offset must be a rank 1 tensor"));
         OP_REQUIRES(context, offset.shape().dim_size(0) == 3,
-                    errors::InvalidArgument("offset length must be 3"));
+                    absl::InvalidArgumentError("offset length must be 3"));
 
         const Tensor& inp_positions = context->input(5);
         OP_REQUIRES(context,
                     inp_positions.shape().dim_size(0) <=
                             std::numeric_limits<TIndex>::max(),
-                    errors::InvalidArgument("Too many input points"));
+                    absl::InvalidArgumentError("Too many input points"));
 
         const Tensor& inp_features = context->input(6);
 
@@ -102,60 +107,62 @@ public:
 
         const Tensor& neighbors_row_splits = context->input(12);
 
-        OP_REQUIRES(context, extents.shape().dims() == 2,
-                    errors::InvalidArgument("extents must be a rank 2 tensor"));
-        OP_REQUIRES(context,
-                    extents.shape().dim_size(0) ==
-                                    inp_positions.shape().dim_size(0) ||
-                            extents.shape().dim_size(0) == 1,
-                    errors::InvalidArgument("number of extents must match the "
-                                            "number of inp_positions or must "
-                                            "be 1"));
+        OP_REQUIRES(
+                context, extents.shape().dims() == 2,
+                absl::InvalidArgumentError("extents must be a rank 2 tensor"));
+        OP_REQUIRES(
+                context,
+                extents.shape().dim_size(0) ==
+                                inp_positions.shape().dim_size(0) ||
+                        extents.shape().dim_size(0) == 1,
+                absl::InvalidArgumentError("number of extents must match the "
+                                           "number of inp_positions or must "
+                                           "be 1"));
         OP_REQUIRES(context,
                     extents.shape().dim_size(1) == 3 ||
                             extents.shape().dim_size(1) == 1,
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "number of components for extents must be 3 or 1"));
 
-        OP_REQUIRES(
-                context,
-                inp_positions.shape().dim_size(0) ==
-                        inp_features.shape().dim_size(0),
-                errors::InvalidArgument("first dim of inp_positions does not "
-                                        "match the first dim of inp_features"));
+        OP_REQUIRES(context,
+                    inp_positions.shape().dim_size(0) ==
+                            inp_features.shape().dim_size(0),
+                    absl::InvalidArgumentError(
+                            "first dim of inp_positions does not "
+                            "match the first dim of inp_features"));
 
         OP_REQUIRES(
                 context,
                 inp_neighbors_importance_sum.shape().dim_size(0) ==
                                 inp_positions.shape().dim_size(0) ||
                         inp_neighbors_importance_sum.shape().dim_size(0) == 0,
-                errors::InvalidArgument(
+                absl::InvalidArgumentError(
                         "first dim of inp_neighbors_importance_sum does not "
-                        "match the first dim of inp_positions",
-                        inp_neighbors_importance_sum.shape().dim_size(0), "  ",
-                        inp_positions.shape().dim_size(0)));
+                        "match the first dim of inp_positions"));
 
-        OP_REQUIRES(context,
-                    out_positions.shape().dim_size(0) ==
-                                    out_importance.shape().dim_size(0) ||
-                            out_importance.shape().dim_size(0) == 0,
-                    errors::InvalidArgument("first dim of out_positions does "
-                                            "not match the first dim of "
-                                            "out_importance"));
+        OP_REQUIRES(
+                context,
+                out_positions.shape().dim_size(0) ==
+                                out_importance.shape().dim_size(0) ||
+                        out_importance.shape().dim_size(0) == 0,
+                absl::InvalidArgumentError("first dim of out_positions does "
+                                           "not match the first dim of "
+                                           "out_importance"));
 
-        OP_REQUIRES(context,
-                    neighbors_importance.shape().dim_size(0) ==
-                                    neighbors_index.shape().dim_size(0) ||
-                            neighbors_importance.shape().dim_size(0) == 0,
-                    errors::InvalidArgument("first dim of neighbors_importance "
-                                            "does not match the first dim of "
-                                            "neighbors_index"));
+        OP_REQUIRES(
+                context,
+                neighbors_importance.shape().dim_size(0) ==
+                                neighbors_index.shape().dim_size(0) ||
+                        neighbors_importance.shape().dim_size(0) == 0,
+                absl::InvalidArgumentError("first dim of neighbors_importance "
+                                           "does not match the first dim of "
+                                           "neighbors_index"));
 
         OP_REQUIRES(
                 context,
                 filter.shape().dim_size(3) == inp_features.shape().dim_size(1),
-                errors::InvalidArgument("number of input channels in filter "
-                                        "and inp_features does not match"));
+                absl::InvalidArgumentError("number of input channels in filter "
+                                           "and inp_features does not match"));
 
         TensorShape out_features_shape({out_positions.shape().dim_size(0),
                                         filter.shape().dim_size(4)});

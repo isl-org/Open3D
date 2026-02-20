@@ -46,7 +46,7 @@ RUN apt-get update && apt-get install -y \
     libbz2-dev \
     libreadline-dev \
     libsqlite3-dev \
-    curl \
+    libusb-1.0-0-dev \
     git \
     libncursesw5-dev \
     xz-utils \
@@ -59,7 +59,7 @@ RUN apt-get update && apt-get install -y \
 
 # Dependencies: cmake
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
- && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && wget -nv https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -xf ${CMAKE_VERSION}.tar.gz \
  && cp -ar ${CMAKE_VERSION} ${HOME}
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
@@ -75,8 +75,8 @@ RUN ccache --version \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && if [ -f ${CCACHE_TAR_NAME}.tar.?z ]; then tar -xf ${CCACHE_TAR_NAME}.tar.?z; fi
+ && (wget -nv https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && { tar -xf ${CCACHE_TAR_NAME}.tar.?z || true; }
 # We need to set ccache size explicitly with -M, otherwise the default size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN ccache -M 4G \
@@ -90,13 +90,13 @@ RUN ccache -M 4G \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-RUN curl https://pyenv.run | bash \
+RUN wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash \
         && pyenv update \
         && pyenv install $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
         && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
-RUN python --version && pip --version \
+RUN python --version && pip --version
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
@@ -119,11 +119,16 @@ RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-jupyter
 
 # Open3D Jupyter dependencies
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+RUN mkdir -p /etc/apt/keyrings \
+ && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_25.x nodistro main" \
+ | tee /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
- && node --version
-RUN npm install -g yarn \
+ && node --version \
+ && npm install -g yarn \
  && yarn --version
 
 # Open3D repo
@@ -136,7 +141,7 @@ RUN export NPROC=$(($(nproc)+2)) \
  && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter \
- && if [ ${CI:-}a != a ]; then cd /root/Open3D/build/ && ls | grep -Ev '^lib$' | xargs rm -rf ; fi
+ && if [ ${CI:-}a != a ]; then find /root/Open3D/build -mindepth 1 -maxdepth 1 ! -name 'lib' -exec rm -rf {} + ; fi
  # remove build folder (except lib) to save CI space on Github
 
 # Compress ccache folder, move to / directory
