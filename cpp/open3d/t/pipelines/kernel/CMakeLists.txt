@@ -22,6 +22,16 @@ if (BUILD_CUDA_MODULE)
     )
 endif()
 
+if (BUILD_SYCL_MODULE)
+    target_sources(tpipelines_kernel PRIVATE
+        RegistrationSYCL.cpp
+        FillInLinearSystemSYCL.cpp
+        RGBDOdometrySYCL.cpp
+        TransformationConverterSYCL.cpp
+        FeatureSYCL.cpp
+    )
+endif()
+
 open3d_show_and_abort_on_warning(tpipelines_kernel)
 open3d_set_global_properties(tpipelines_kernel)
 # The kernels are used in the unit tests, so they cannot be hidden for now.

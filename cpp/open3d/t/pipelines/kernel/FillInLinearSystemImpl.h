@@ -13,6 +13,7 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+#ifndef OPEN3D_SKIP_FILL_IN_LS_MAIN
 #if defined(__CUDACC__)
 void FillInRigidAlignmentTermCUDA
 #else
@@ -471,6 +472,7 @@ void FillInSLACRegularizerTermCPU
                 }
             });
 }
+#endif  // OPEN3D_SKIP_FILL_IN_LS_MAIN
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

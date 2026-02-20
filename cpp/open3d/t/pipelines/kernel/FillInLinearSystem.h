@@ -131,6 +131,47 @@ void FillInSLACRegularizerTermCUDA(core::Tensor &AtA,
                                    int anchor_idx);
 
 #endif
+#ifdef BUILD_SYCL_MODULE
+void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
+                                   core::Tensor &Atb,
+                                   core::Tensor &residual,
+                                   const core::Tensor &Ti_qs,
+                                   const core::Tensor &Tj_qs,
+                                   const core::Tensor &Ri_normal_ps,
+                                   int i,
+                                   int j,
+                                   float threshold);
+
+void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
+                                  core::Tensor &Atb,
+                                  core::Tensor &residual,
+                                  const core::Tensor &Ti_qs,
+                                  const core::Tensor &Tj_qs,
+                                  const core::Tensor &normal_ps,
+                                  const core::Tensor &Ri_normal_ps,
+                                  const core::Tensor &RjT_Ri_normal_ps,
+                                  const core::Tensor &cgrid_idx_ps,
+                                  const core::Tensor &cgrid_idx_qs,
+                                  const core::Tensor &cgrid_ratio_qs,
+                                  const core::Tensor &cgrid_ratio_ps,
+                                  int i,
+                                  int j,
+                                  int n,
+                                  float threshold);
+
+void FillInSLACRegularizerTermSYCL(core::Tensor &AtA,
+                                    core::Tensor &Atb,
+                                    core::Tensor &residual,
+                                    const core::Tensor &grid_idx,
+                                    const core::Tensor &grid_nbs_idx,
+                                    const core::Tensor &grid_nbs_mask,
+                                    const core::Tensor &positions_init,
+                                    const core::Tensor &positions_curr,
+                                    float weight,
+                                    int n,
+                                    int anchor_idx);
+
+#endif
 
 }  // namespace kernel
 }  // namespace pipelines

@@ -41,6 +41,16 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                   target_points.Contiguous(), target_normals.Contiguous(),
                   correspondence_indices.Contiguous(), pose, residual,
                   inlier_count, source_points.GetDtype(), device, kernel);
+    } else if (source_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputePosePointToPlaneSYCL(
+                source_points.Contiguous(), target_points.Contiguous(),
+                target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), pose, residual,
+                inlier_count, source_points.GetDtype(), device, kernel);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -85,6 +95,18 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                   correspondence_indices.Contiguous(), pose, residual,
                   inlier_count, source_points.GetDtype(), device, kernel,
                   lambda_geometric);
+    } else if (source_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputePoseColoredICPSYCL(
+                source_points.Contiguous(), source_colors.Contiguous(),
+                target_points.Contiguous(), target_normals.Contiguous(),
+                target_colors.Contiguous(), target_color_gradients.Contiguous(),
+                correspondence_indices.Contiguous(), pose, residual,
+                inlier_count, source_points.GetDtype(), device, kernel,
+                lambda_geometric);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -191,6 +213,21 @@ core::Tensor ComputePoseDopplerICP(
                   v_v_in_V.Contiguous(), period, reject_outliers,
                   doppler_outlier_threshold, kernel_geometric, kernel_doppler,
                   lambda_doppler);
+    } else if (device_type == core::Device::DeviceType::SYCL) {
+#ifdef BUILD_SYCL_MODULE
+        ComputePoseDopplerICPSYCL(
+                source_points.Contiguous(), source_dopplers.Contiguous(),
+                source_directions.Contiguous(), target_points.Contiguous(),
+                target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), output_pose, residual,
+                inlier_count, dtype, device, R_S_to_V.Contiguous(),
+                r_v_to_s_in_V.Contiguous(), w_v_in_V.Contiguous(),
+                v_v_in_V.Contiguous(), period, reject_outliers,
+                doppler_outlier_threshold, kernel_geometric, kernel_doppler,
+                lambda_doppler);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -271,6 +308,51 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
+    } else if (source_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        // Use tensor operations which work on SYCL devices.
+        core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
+
+        if (valid.GetLength() == 0) {
+            utility::LogError("No valid correspondence present.");
+        }
+
+        core::Tensor source_indices =
+                core::Tensor::Arange(0, source_points.GetShape()[0], 1,
+                                     core::Int64, device)
+                        .IndexGet({valid});
+        core::Tensor target_indices =
+                correspondence_indices.IndexGet({valid}).Reshape({-1});
+
+        inlier_count = source_indices.GetLength();
+
+        core::Tensor source_select = source_points.IndexGet({source_indices});
+        core::Tensor target_select = target_points.IndexGet({target_indices});
+
+        core::Tensor mean_s = source_select.Mean({0}, true);
+        core::Tensor mean_t = target_select.Mean({0}, true);
+
+        core::Device host("CPU:0");
+        core::Tensor Sxy = (target_select - mean_t)
+                                   .T()
+                                   .Matmul(source_select - mean_s)
+                                   .Div_(static_cast<float>(inlier_count))
+                                   .To(host, core::Float64);
+
+        mean_s = mean_s.To(host, core::Float64);
+        mean_t = mean_t.To(host, core::Float64);
+
+        core::Tensor U, D, VT;
+        std::tie(U, D, VT) = Sxy.SVD();
+        core::Tensor S = core::Tensor::Eye(3, core::Float64, host);
+        if (U.Det() * (VT.T()).Det() < 0) {
+            S[-1][-1] = -1;
+        }
+        R = U.Matmul(S.Matmul(VT));
+        t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -294,6 +376,15 @@ core::Tensor ComputeInformationMatrix(
         CUDA_CALL(ComputeInformationMatrixCUDA, target_points.Contiguous(),
                   correspondence_indices.Contiguous(), information_matrix,
                   target_points.GetDtype(), device);
+    } else if (target_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputeInformationMatrixSYCL(target_points.Contiguous(),
+                                     correspondence_indices.Contiguous(),
+                                     information_matrix,
+                                     target_points.GetDtype(), device);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }

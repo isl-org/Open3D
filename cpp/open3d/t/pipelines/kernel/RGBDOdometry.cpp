@@ -58,6 +58,15 @@ void ComputeOdometryResultPointToPlane(
                   target_vertex_map, target_normal_map, intrinsics_d, trans_d,
                   delta, inlier_residual, inlier_count, depth_outlier_trunc,
                   depth_huber_delta);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputeOdometryResultPointToPlaneSYCL(
+                source_vertex_map, target_vertex_map, target_normal_map,
+                intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
+                depth_outlier_trunc, depth_huber_delta);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -118,6 +127,16 @@ void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
                   target_intensity_dx, target_intensity_dy, source_vertex_map,
                   intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
                   depth_outlier_trunc, intensity_huber_delta);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputeOdometryResultIntensitySYCL(
+                source_depth, target_depth, source_intensity, target_intensity,
+                target_intensity_dx, target_intensity_dy, source_vertex_map,
+                intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
+                depth_outlier_trunc, intensity_huber_delta);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -187,6 +206,17 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
                   source_vertex_map, intrinsics_d, trans_d, delta,
                   inlier_residual, inlier_count, depth_outlier_trunc,
                   depth_huber_delta, intensity_huber_delta);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputeOdometryResultHybridSYCL(
+                source_depth, target_depth, source_intensity, target_intensity,
+                target_depth_dx, target_depth_dy, target_intensity_dx,
+                target_intensity_dy, source_vertex_map, intrinsics_d, trans_d,
+                delta, inlier_residual, inlier_count, depth_outlier_trunc,
+                depth_huber_delta, intensity_huber_delta);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -222,6 +252,15 @@ void ComputeOdometryInformationMatrix(const core::Tensor &source_vertex_map,
         CUDA_CALL(ComputeOdometryInformationMatrixCUDA, source_vertex_map,
                   target_vertex_map, intrinsic, source_to_target,
                   square_dist_thr, information);
+    } else if (device.GetType() == core::Device::DeviceType::SYCL) {
+#ifdef BUILD_SYCL_MODULE
+        ComputeOdometryInformationMatrixSYCL(source_vertex_map,
+                                             target_vertex_map, intrinsic,
+                                             source_to_target, square_dist_thr,
+                                             information);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
