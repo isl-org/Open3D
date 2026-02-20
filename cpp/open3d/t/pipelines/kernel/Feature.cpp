@@ -44,10 +44,19 @@ void ComputeFPFHFeature(
     if (points_d.IsCPU()) {
         ComputeFPFHFeatureCPU(points_d, normals_d, indices, distance2, counts_d,
                               fpfhs, mask, map_info_idx_to_point_idx);
-    } else {
+    } else if (points_d.IsCUDA()) {
         core::CUDAScopedDevice scoped_device(points.GetDevice());
         CUDA_CALL(ComputeFPFHFeatureCUDA, points_d, normals_d, indices,
                   distance2, counts_d, fpfhs, mask, map_info_idx_to_point_idx);
+    } else if (points_d.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputeFPFHFeatureSYCL(points_d, normals_d, indices, distance2,
+                               counts_d, fpfhs, mask, map_info_idx_to_point_idx);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device.");
     }
     utility::LogDebug(
             "[ComputeFPFHFeature] Computed {:d} features from "

@@ -149,6 +149,63 @@ void ComputeInformationMatrixCUDA(const core::Tensor &target_points,
                                   const core::Device &device);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
+                                  const core::Tensor &target_points,
+                                  const core::Tensor &target_normals,
+                                  const core::Tensor &correspondence_indices,
+                                  core::Tensor &pose,
+                                  float &residual,
+                                  int &inlier_count,
+                                  const core::Dtype &dtype,
+                                  const core::Device &device,
+                                  const registration::RobustKernel &kernel);
+
+void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
+                                const core::Tensor &source_colors,
+                                const core::Tensor &target_points,
+                                const core::Tensor &target_normals,
+                                const core::Tensor &target_colors,
+                                const core::Tensor &target_color_gradients,
+                                const core::Tensor &correspondence_indices,
+                                core::Tensor &pose,
+                                float &residual,
+                                int &inlier_count,
+                                const core::Dtype &dtype,
+                                const core::Device &device,
+                                const registration::RobustKernel &kernel,
+                                const double &lambda_geometric);
+
+void ComputePoseDopplerICPSYCL(
+        const core::Tensor &source_points,
+        const core::Tensor &source_dopplers,
+        const core::Tensor &source_directions,
+        const core::Tensor &target_points,
+        const core::Tensor &target_normals,
+        const core::Tensor &correspondence_indices,
+        core::Tensor &output_pose,
+        float &residual,
+        int &inlier_count,
+        const core::Dtype &dtype,
+        const core::Device &device,
+        const core::Tensor &R_S_to_V,
+        const core::Tensor &r_v_to_s_in_V,
+        const core::Tensor &w_v_in_V,
+        const core::Tensor &v_v_in_V,
+        const double period,
+        const bool reject_dynamic_outliers,
+        const double doppler_outlier_threshold,
+        const registration::RobustKernel &kernel_geometric,
+        const registration::RobustKernel &kernel_doppler,
+        const double lambda_doppler);
+
+void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
+                                   const core::Tensor &correspondence_indices,
+                                   core::Tensor &information_matrix,
+                                   const core::Dtype &dtype,
+                                   const core::Device &device);
+#endif
+
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         int64_t workload_idx,
