@@ -159,11 +159,6 @@ if (TARGET Open3D::3rdparty_onedpl)
     )
 endif()
 
-if (MSVC) # fmt 12+ requires UTF-8 encoding support with MSVC. Also propagate to consumers of Open3D.
-    target_compile_options(3rdparty_fmt INTERFACE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
-    target_compile_options(3rdparty_fmt INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8>)
-endif()
-
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE
         Open3D::3rdparty_cutlass

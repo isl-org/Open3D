@@ -509,6 +509,9 @@ if(WIN32)
         # for Open3D to compile (the linker fails otherwise with a "fatal error LNK1189: library limit of 65535
         # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
         add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
+        
+        # fmt 12+ requires UTF-8 encoding support with MSVC. Required for both Open3D and any consumers.
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/utf-8> $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8>)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
