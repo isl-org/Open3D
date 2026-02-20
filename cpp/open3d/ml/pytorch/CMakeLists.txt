@@ -159,8 +159,9 @@ if (TARGET Open3D::3rdparty_onedpl)
     )
 endif()
 
-if (WIN32) # Similar to https://github.com/microsoft/vcpkg/issues/42965, but from pytorch->fmt
-    target_compile_options(open3d_torch_ops PRIVATE  $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<COMPILE_LANGUAGE:CXX>>:/utf-8>)
+if (MSVC) # fmt 12+ requires UTF-8 encoding support with MSVC. Also propagate to consumers of Open3D.
+    target_compile_options(3rdparty_fmt INTERFACE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
+    target_compile_options(3rdparty_fmt INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8>)
 endif()
 
 if (BUILD_CUDA_MODULE)
