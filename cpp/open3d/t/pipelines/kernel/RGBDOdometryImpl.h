@@ -129,7 +129,7 @@ void ComputeOdometryInformationMatrixCUDA(const core::Tensor& source_depth,
 void ComputeOdometryResultPointToPlaneSYCL(
         const core::Tensor& source_vertex_map,
         const core::Tensor& target_vertex_map,
-        const core::Tensor& source_normal_map,
+        const core::Tensor& target_normal_map,
         const core::Tensor& intrinsics,
         const core::Tensor& init_source_to_target,
         core::Tensor& delta,
