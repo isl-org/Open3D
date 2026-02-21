@@ -40,12 +40,12 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param points Points coordinates.
-    PointCloud(const std::vector<Eigen::Vector3d> &points)
+    PointCloud(const std::vector<Eigen::Vector3d>& points)
         : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
     ~PointCloud() override {}
 
 public:
-    PointCloud &Clear() override;
+    PointCloud& Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
@@ -55,16 +55,16 @@ public:
             bool robust = false) const override;
     OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
-    PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
-    PointCloud &Translate(const Eigen::Vector3d &translation,
+    PointCloud& Transform(const Eigen::Matrix4d& transformation) override;
+    PointCloud& Translate(const Eigen::Vector3d& translation,
                           bool relative = true) override;
-    PointCloud &Scale(const double scale,
-                      const Eigen::Vector3d &center) override;
-    PointCloud &Rotate(const Eigen::Matrix3d &R,
-                       const Eigen::Vector3d &center) override;
+    PointCloud& Scale(const double scale,
+                      const Eigen::Vector3d& center) override;
+    PointCloud& Rotate(const Eigen::Matrix3d& R,
+                       const Eigen::Vector3d& center) override;
 
-    PointCloud &operator+=(const PointCloud &cloud);
-    PointCloud operator+(const PointCloud &cloud) const;
+    PointCloud& operator+=(const PointCloud& cloud);
+    PointCloud operator+(const PointCloud& cloud) const;
 
     /// Returns 'true' if the point cloud contains points.
     bool HasPoints() const { return points_.size() > 0; }
@@ -85,7 +85,7 @@ public:
     }
 
     /// Normalize point normals to length 1.
-    PointCloud &NormalizeNormals() {
+    PointCloud& NormalizeNormals() {
         for (size_t i = 0; i < normals_.size(); i++) {
             normals_[i].normalize();
         }
@@ -95,7 +95,7 @@ public:
     /// Assigns each point in the PointCloud the same color.
     ///
     /// \param color  RGB colors of points.
-    PointCloud &PaintUniformColor(const Eigen::Vector3d &color) {
+    PointCloud& PaintUniformColor(const Eigen::Vector3d& color) {
         ResizeAndPaintUniformColor(colors_, points_.size(), color);
         return *this;
     }
@@ -108,7 +108,7 @@ public:
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
-    PointCloud &RemoveNonFinitePoints(bool remove_nan = true,
+    PointCloud& RemoveNonFinitePoints(bool remove_nan = true,
                                       bool remove_infinite = true);
 
     /// \brief Removes duplicated points, i.e., points that have identical
@@ -116,7 +116,7 @@ public:
     /// with the non-finite point such as normals, covariances and color
     /// entries. It doesn't re-computes these attributes after removing
     /// duplicated points.
-    PointCloud &RemoveDuplicatedPoints();
+    PointCloud& RemoveDuplicatedPoints();
 
     /// \brief Selects points from \p input pointcloud, with indices in \p
     /// indices, and returns a new point-cloud with selected points.
@@ -124,7 +124,7 @@ public:
     /// \param indices Indices of points to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
     std::shared_ptr<PointCloud> SelectByIndex(
-            const std::vector<size_t> &indices, bool invert = false) const;
+            const std::vector<size_t>& indices, bool invert = false) const;
 
     /// \brief Downsample input pointcloud with a voxel, and return a new
     /// point-cloud. Normals, covariances and colors are averaged if they exist.
@@ -145,8 +145,8 @@ public:
                Eigen::MatrixXi,
                std::vector<std::vector<int>>>
     VoxelDownSampleAndTrace(double voxel_size,
-                            const Eigen::Vector3d &min_bound,
-                            const Eigen::Vector3d &max_bound,
+                            const Eigen::Vector3d& min_bound,
+                            const Eigen::Vector3d& max_bound,
                             bool approximate_class = false) const;
 
     /// \brief Function to downsample input pointcloud into output pointcloud
@@ -187,7 +187,7 @@ public:
     ///
     /// \param bbox AxisAlignedBoundingBox to crop points.
     /// \param invert Optional boolean to invert cropping.
-    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox,
+    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox& bbox,
                                      bool invert = false) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
@@ -197,8 +197,43 @@ public:
     ///
     /// \param bbox OrientedBoundingBox to crop points.
     /// \param invert Optional boolean to invert cropping.
-    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox,
+    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox& bbox,
                                      bool invert = false) const;
+
+    /// \brief Smooth point cloud using weighted Moving Least Squares (MLS).
+    /// \param search_param KDTree search parameters for neighborhood search.
+    /// \return Smoothed point cloud.
+    PointCloud SmoothMLS(const KDTreeSearchParam& search_param =
+                                 KDTreeSearchParamHybrid(0.05, 30)) const;
+
+    /// \brief Smooth point cloud using Laplacian smoothing.
+    /// \param iterations Number of smoothing iterations.
+    /// \param lambda     Smoothing factor in (0, 1).
+    /// \return Smoothed point cloud.
+    PointCloud SmoothLaplacian(size_t iterations,
+                               double lambda,
+                               int knn = 20) const;
+
+    /// \brief Smooth point cloud using Taubin smoothing (Laplacian + inverse
+    /// Laplacian).
+    /// \param iterations Number of smoothing iterations.
+    /// \param lambda     Positive smoothing factor.
+    /// \param mu         Negative smoothing factor (typically around -0.53).
+    /// \return Smoothed point cloud.
+    PointCloud SmoothTaubin(size_t iterations = 10,
+                            double lambda = 0.5,
+                            double mu = -0.53,
+                            int knn = 20) const;
+
+    /// \brief Smooth point cloud using bilateral filtering.
+    /// \param search_param KDTree search parameters for neighborhood search.
+    /// \param sigma_s      Spatial Gaussian sigma.
+    /// \param sigma_r      Range Gaussian sigma.
+    /// \return Smoothed point cloud.
+    PointCloud SmoothBilateral(const KDTreeSearchParam& search_param =
+                                       KDTreeSearchParamHybrid(0.05, 30),
+                               double sigma_s = 0.05,
+                               double sigma_r = 0.05) const;
 
     /// \brief Function to remove points that have less than \p nb_points in a
     /// sphere of a given radius.
@@ -232,7 +267,7 @@ public:
     /// uses a non-iterative method to extract the eigenvector from the
     /// covariance matrix. This is faster, but is not as numerical stable.
     void EstimateNormals(
-            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN(),
+            const KDTreeSearchParam& search_param = KDTreeSearchParamKNN(),
             bool fast_normal_computation = true);
 
     /// \brief Function to orient the normals of a point cloud.
@@ -240,7 +275,7 @@ public:
     /// \param orientation_reference Normals are oriented with respect to
     /// orientation_reference.
     void OrientNormalsToAlignWithDirection(
-            const Eigen::Vector3d &orientation_reference =
+            const Eigen::Vector3d& orientation_reference =
                     Eigen::Vector3d(0.0, 0.0, 1.0));
 
     /// \brief Function to orient the normals of a point cloud.
@@ -248,7 +283,7 @@ public:
     /// \param camera_location Normals are oriented with towards the
     /// camera_location.
     void OrientNormalsTowardsCameraLocation(
-            const Eigen::Vector3d &camera_location = Eigen::Vector3d::Zero());
+            const Eigen::Vector3d& camera_location = Eigen::Vector3d::Zero());
 
     /// \brief Function to consistently orient estimated normals based on
     /// consistent tangent planes as described in Hoppe et al., "Surface
@@ -273,7 +308,7 @@ public:
     /// \p target point cloud.
     ///
     /// \param target The target point cloud.
-    std::vector<double> ComputePointCloudDistance(const PointCloud &target);
+    std::vector<double> ComputePointCloudDistance(const PointCloud& target);
 
     /// \brief Static function to compute the covariance matrix for each point
     /// of a point cloud. Doesn't change the input PointCloud, just outputs the
@@ -283,8 +318,8 @@ public:
     /// \param input PointCloud to use for covariance computation \param
     /// search_param The KDTree search parameters for neighborhood search.
     static std::vector<Eigen::Matrix3d> EstimatePerPointCovariances(
-            const PointCloud &input,
-            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+            const PointCloud& input,
+            const KDTreeSearchParam& search_param = KDTreeSearchParamKNN());
 
     /// \brief Function to compute the covariance matrix for each point of a
     /// point cloud.
@@ -293,7 +328,7 @@ public:
     /// \param search_param The KDTree search parameters for neighborhood
     /// search.
     void EstimateCovariances(
-            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+            const KDTreeSearchParam& search_param = KDTreeSearchParamKNN());
 
     /// Function to compute the mean and covariance matrix
     /// of a point cloud.
@@ -329,7 +364,7 @@ public:
     /// \param camera_location All points not visible from that location will be
     /// removed. \param radius The radius of the spherical projection.
     std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-    HiddenPointRemoval(const Eigen::Vector3d &camera_location,
+    HiddenPointRemoval(const Eigen::Vector3d& camera_location,
                        const double radius) const;
 
     /// \brief Cluster PointCloud using the DBSCAN algorithm
@@ -397,7 +432,7 @@ public:
             double outlier_ratio = 0.75,
             double min_plane_edge_length = 0.0,
             size_t min_num_points = 0,
-            const geometry::KDTreeSearchParam &search_param =
+            const geometry::KDTreeSearchParam& search_param =
                     geometry::KDTreeSearchParamKNN()) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
@@ -420,9 +455,9 @@ public:
     /// have nan point. If the value is false, return point cloud, which has
     /// a point for each pixel, whereas invalid depth results in NaN points.
     static std::shared_ptr<PointCloud> CreateFromDepthImage(
-            const Image &depth,
-            const camera::PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
+            const Image& depth,
+            const camera::PinholeCameraIntrinsic& intrinsic,
+            const Eigen::Matrix4d& extrinsic = Eigen::Matrix4d::Identity(),
             double depth_scale = 1000.0,
             double depth_trunc = 1000.0,
             int stride = 1,
@@ -445,9 +480,9 @@ public:
     /// have nan point. If the value is false, return point cloud, which has
     /// a point for each pixel, whereas invalid depth results in NaN points.
     static std::shared_ptr<PointCloud> CreateFromRGBDImage(
-            const RGBDImage &image,
-            const camera::PinholeCameraIntrinsic &intrinsic,
-            const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
+            const RGBDImage& image,
+            const camera::PinholeCameraIntrinsic& intrinsic,
+            const Eigen::Matrix4d& extrinsic = Eigen::Matrix4d::Identity(),
             bool project_valid_depth_only = true);
 
     /// \brief Factory Function to create a PointCloud from a VoxelGrid.
@@ -457,7 +492,7 @@ public:
     ///
     /// \param voxel_grid The input VoxelGrid.
     static std::shared_ptr<PointCloud> CreateFromVoxelGrid(
-            const VoxelGrid &voxel_grid);
+            const VoxelGrid& voxel_grid);
 
 public:
     /// Points coordinates.

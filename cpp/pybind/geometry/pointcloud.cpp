@@ -19,7 +19,7 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_pointcloud_declarations(py::module &m) {
+void pybind_pointcloud_declarations(py::module& m) {
     py::class_<PointCloud, PyGeometry3D<PointCloud>,
                std::shared_ptr<PointCloud>, Geometry3D>
             pointcloud(m, "PointCloud",
@@ -28,7 +28,7 @@ void pybind_pointcloud_declarations(py::module &m) {
                        "normals.");
 }
 
-void pybind_pointcloud_definitions(py::module &m) {
+void pybind_pointcloud_definitions(py::module& m) {
     auto pointcloud =
             static_cast<py::class_<PointCloud, PyGeometry3D<PointCloud>,
                                    std::shared_ptr<PointCloud>, Geometry3D>>(
@@ -36,10 +36,10 @@ void pybind_pointcloud_definitions(py::module &m) {
     py::detail::bind_default_constructor<PointCloud>(pointcloud);
     py::detail::bind_copy_functions<PointCloud>(pointcloud);
     pointcloud
-            .def(py::init<const std::vector<Eigen::Vector3d> &>(),
+            .def(py::init<const std::vector<Eigen::Vector3d>&>(),
                  "Create a PointCloud from points", "points"_a)
             .def("__repr__",
-                 [](const PointCloud &pcd) {
+                 [](const PointCloud& pcd) {
                      return std::string("PointCloud with ") +
                             std::to_string(pcd.points_.size()) + " points.";
                  })
@@ -97,13 +97,13 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "start_index"_a = 0)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const AxisAlignedBoundingBox &, bool) const) &
+                         const AxisAlignedBoundingBox&, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const OrientedBoundingBox &, bool) const) &
+                         const OrientedBoundingBox&, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
@@ -138,6 +138,22 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "normals exist",
                  "search_param"_a = KDTreeSearchParamKNN(),
                  "fast_normal_computation"_a = true)
+            .def("smooth_mls", &PointCloud::SmoothMLS,
+                 "Smooth point cloud using weighted Moving Least Squares "
+                 "(MLS).",
+                 "search_param"_a = KDTreeSearchParamHybrid(0.05, 30))
+            .def("smooth_laplacian", &PointCloud::SmoothLaplacian,
+                 "Smooth point cloud using Laplacian smoothing.",
+                 "iterations"_a = 10, "lambda"_a = 0.5, "knn"_a = 20)
+            .def("smooth_taubin", &PointCloud::SmoothTaubin,
+                 "Smooth point cloud using Taubin smoothing (Laplacian + "
+                 "inverse Laplacian).",
+                 "iterations"_a = 10, "lambda"_a = 0.5, "mu"_a = -0.53,
+                 "knn"_a = 20)
+            .def("smooth_bilateral", &PointCloud::SmoothBilateral,
+                 "Smooth point cloud using bilateral filtering.",
+                 "search_param"_a = KDTreeSearchParamHybrid(0.05, 30),
+                 "sigma_s"_a = 0.05, "sigma_r"_a = 0.05)
             .def("orient_normals_to_align_with_direction",
                  &PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
@@ -327,6 +343,28 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "If true, the normal estimation uses a non-iterative method to "
               "extract the eigenvector from the covariance matrix. This is "
               "faster, but is not as numerical stable."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_mls",
+            {{"search_param",
+              "KDTree search parameters for neighborhood search. "
+              "Supports Radius, KNN, or Hybrid search."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_laplacian",
+            {{"iterations", "Number of smoothing iterations."},
+             {"lambda", "Smoothing parameter."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_taubin",
+            {{"iterations", "Number of smoothing iterations."},
+             {"lambda", "Smoothing parameter for the Laplacian operator."},
+             {"mu",
+              "Smoothing parameter for the inverse Laplacian operator."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_bilateral",
+            {{"search_param",
+              "KDTree search parameters for neighborhood search. "
+              "Supports Radius, KNN, or Hybrid search."},
+             {"sigma_s", "Spatial standard deviation."},
+             {"sigma_r", "Range standard deviation."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "orient_normals_to_align_with_direction",
             {{"orientation_reference",
