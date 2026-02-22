@@ -208,6 +208,16 @@ if (BUNDLE_OPEN3D_ML)
     list(APPEND GENERATED_OUTPUTS open3d_ml)
 endif()
 
+# pybind*.so must be install to change the rpath such that it can find the 
+# installed libOpen3D.so after install to python environment.
+if (BUILD_SHARED_LIBS)
+    set(BUILD_TYPE "cpu")
+    if(BUILD_CUDA_MODULE)
+        set(BUILD_TYPE "cuda")
+    endif()
+    install(TARGETS pybind DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/${BUILD_TYPE})
+endif()
+
 configure_file("_build_config.py.in"
                "${CMAKE_BINARY_DIR}/lib/_build_config.py.in")
 file(GENERATE
@@ -242,6 +252,9 @@ add_custom_target(python-package
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
+    COMMAND ${CMAKE_COMMAND} --install
+            ${CMAKE_BINARY_DIR} 
+            --prefix ${PYTHON_PACKAGE_DST_DIR}/open3d
     VERBATIM
     DEPENDS ${GENERATED_OUTPUTS}
 )
