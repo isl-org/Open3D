@@ -1164,7 +1164,12 @@ if(WITH_MINIZIP)
     open3d_pkg_config_3rdparty_library(3rdparty_minizip
         SEARCH_ARGS minizip
     )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+    if(3rdparty_minizip_FOUND)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+    else()
+        message(WARNING "Minizip no found. Support will be disabled.")
+        set(WITH_MINIZIP OFF)
+    endif()
 endif()
 
 # Googletest
