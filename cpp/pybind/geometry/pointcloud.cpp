@@ -45,6 +45,21 @@ void pybind_pointcloud_definitions(py::module &m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
+            .def(py::pickle(
+                    [](const PointCloud &pcd) {
+                        return py::make_tuple(pcd.points_, pcd.normals_,
+                                              pcd.colors_, pcd.covariances_);
+                    },
+                    [](py::tuple t) {
+                        PointCloud pcd;
+                        pcd.points_ = t[0].cast<std::vector<Eigen::Vector3d>>();
+                        pcd.normals_ =
+                                t[1].cast<std::vector<Eigen::Vector3d>>();
+                        pcd.colors_ = t[2].cast<std::vector<Eigen::Vector3d>>();
+                        pcd.covariances_ =
+                                t[3].cast<std::vector<Eigen::Matrix3d>>();
+                        return pcd;
+                    }))
             .def("has_points", &PointCloud::HasPoints,
                  "Returns ``True`` if the point cloud contains points.")
             .def("has_normals", &PointCloud::HasNormals,
