@@ -52,6 +52,8 @@ public:
         OrientedBoundingBox = 11,
         /// AxisAlignedBoundingBox
         AxisAlignedBoundingBox = 12,
+        /// OrientedBoundingEllipsoid
+        OrientedBoundingEllipsoid = 13,
     };
 
 public:
@@ -119,6 +121,10 @@ enum class MethodOBBCreate {
     PCA,             ///< Principal Component Analysis
     MINIMAL_APPROX,  ///< Minimal OBB approximation
     MINIMAL_JYLANKI  ///< Minimal OBB by Jylanki
+};
+
+enum class MethodOBELCreate {
+    MINIMAL_APPROX,  ///< Minimal OBEL approximation
 };
 
 }  // namespace geometry

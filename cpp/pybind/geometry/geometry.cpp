@@ -130,6 +130,22 @@ Returns:
      open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
      bounding box is oriented such that its volume is minimized.
 )doc")
+            .def("get_oriented_bounding_ellipsoid",
+                 &Geometry3D::GetOrientedBoundingEllipsoid, "robust"_a = false,
+                 R"doc(
+Returns the oriented bounding ellipsoid for the geometry.
+
+Computes the minimum volume enclosing ellipsoid using Khachiyan's algorithm.
+The returned ellipsoid is the smallest volume ellipsoid that contains all points.
+
+Args:
+     robust (bool): If set to true uses a more robust method which works in
+          degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+     open3d.geometry.OrientedBoundingEllipsoid: The oriented bounding ellipsoid.
+     The ellipsoid is defined by its center, radii, and rotation matrix.
+)doc")
             .def("transform", &Geometry3D::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")

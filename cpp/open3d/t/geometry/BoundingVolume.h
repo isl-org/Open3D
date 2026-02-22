@@ -482,6 +482,232 @@ protected:
     core::Tensor color_;
 };
 
+/// \class OrientedBoundingEllipsoid
+/// \brief A bounding ellipsoid oriented along an arbitrary frame of reference.
+///
+/// - (center, rotation, radii): The oriented bounding ellipsoid is defined by
+/// its center position, rotation matrix and radii along the three principal
+/// axes.
+///     - Usage
+///         - OrientedBoundingEllipsoid::GetCenter()
+///         - OrientedBoundingEllipsoid::SetCenter(const core::Tensor &center)
+///         - OrientedBoundingEllipsoid::GetRotation()
+///         - OrientedBoundingEllipsoid::SetRotation(const core::Tensor
+///         &rotation)
+///         - OrientedBoundingEllipsoid::GetRadii()
+///         - OrientedBoundingEllipsoid::SetRadii(const core::Tensor &radii)
+///     - Value tensor of center and radii must have shape {3,}.
+///     - Value tensor of rotation must have shape {3, 3}.
+///     - Value tensor must have the same data type and device.
+///     - Value tensor can only be float32 (default) or float64.
+///     - The device of the tensor determines the device of the ellipsoid.
+///
+/// - color: Color of the bounding ellipsoid.
+///     - Usage
+///         - OrientedBoundingEllipsoid::GetColor()
+///         - OrientedBoundingEllipsoid::SetColor(const core::Tensor &color)
+///     - Value tensor must have shape {3,}.
+///     - Value tensor can only be float32 (default) or float64.
+///     - Value tensor can only be range [0.0, 1.0].
+class OrientedBoundingEllipsoid : public Geometry, public DrawableGeometry {
+public:
+    /// \brief Construct an empty OrientedBoundingEllipsoid on the provided
+    /// device.
+    OrientedBoundingEllipsoid(
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// \brief Construct an OrientedBoundingEllipsoid from center, rotation and
+    /// radii.
+    ///
+    /// The OrientedBoundingEllipsoid will be created on the device of the
+    /// given tensors, which must be on the same device and have the same data
+    /// type.
+    /// \param center Center of the bounding ellipsoid. Tensor of shape {3,},
+    /// and type float32 or float64.
+    /// \param rotation Rotation matrix of the bounding ellipsoid. Tensor of
+    /// shape {3, 3}, and type float32 or float64.
+    /// \param radii Radii of the bounding ellipsoid along the three principal
+    /// axes. Tensor of shape {3,}, and type float32 or float64.
+    OrientedBoundingEllipsoid(const core::Tensor &center,
+                              const core::Tensor &rotation,
+                              const core::Tensor &radii);
+
+    virtual ~OrientedBoundingEllipsoid() override {}
+
+    /// \brief Returns the device attribute of this OrientedBoundingEllipsoid.
+    core::Device GetDevice() const override { return device_; }
+
+    /// \brief Returns the data type attribute of this
+    /// OrientedBoundingEllipsoid.
+    core::Dtype GetDtype() const { return dtype_; }
+
+    /// Transfer the OrientedBoundingEllipsoid to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new OrientedBoundingEllipsoid is always created;
+    /// if false, the copy is avoided when the original
+    /// OrientedBoundingEllipsoid is already on the targeted device.
+    OrientedBoundingEllipsoid To(const core::Device &device,
+                                 bool copy = false) const;
+
+    /// Returns copy of the OrientedBoundingEllipsoid on the same device.
+    OrientedBoundingEllipsoid Clone() const {
+        return To(GetDevice(), /*copy=*/true);
+    }
+
+    OrientedBoundingEllipsoid &Clear() override;
+
+    bool IsEmpty() const override { return Volume() == 0; }
+
+    /// \brief Set the center of the ellipsoid.
+    /// If the data type of the given tensor differs from the data type of the
+    /// ellipsoid, an exception will be thrown.
+    ///
+    /// \param center Tensor with {3,} shape, and type float32 or float64.
+    void SetCenter(const core::Tensor &center);
+
+    /// \brief Set the rotation matrix of the ellipsoid.
+    /// If the data type of the given tensor differs from the data type of the
+    /// ellipsoid, an exception will be thrown.
+    ///
+    /// \param rotation Tensor with {3, 3} shape, and type float32 or float64.
+    void SetRotation(const core::Tensor &rotation);
+
+    /// \brief Set the radii of the ellipsoid.
+    /// If the data type of the given tensor differs from the data type of the
+    /// ellipsoid, an exception will be thrown.
+    ///
+    /// \param radii Tensor with {3,} shape, and type float32 or float64.
+    void SetRadii(const core::Tensor &radii);
+
+    /// \brief Set the color of the ellipsoid.
+    ///
+    /// \param color Tensor with {3,} shape, and type float32 or float64,
+    /// with values in range [0.0, 1.0].
+    void SetColor(const core::Tensor &color);
+
+public:
+    core::Tensor GetMinBound() const;
+
+    core::Tensor GetMaxBound() const;
+
+    core::Tensor GetColor() const { return color_; }
+
+    core::Tensor GetCenter() const { return center_; }
+
+    core::Tensor GetRotation() const { return rotation_; }
+
+    core::Tensor GetRadii() const { return radii_; }
+
+    /// \brief Translate the oriented ellipsoid by the given translation.
+    /// If relative is true, the translation is added to the center of the
+    /// ellipsoid. If false, the center will be assigned to the translation.
+    ///
+    /// \param translation Translation tensor of shape {3,}, type float32 or
+    /// float64, device same as the ellipsoid.
+    /// \param relative Whether to perform relative translation.
+    OrientedBoundingEllipsoid &Translate(const core::Tensor &translation,
+                                         bool relative = true);
+
+    /// \brief Rotate the oriented ellipsoid by the given rotation matrix. If
+    /// the rotation matrix is not orthogonal, the rotation will not be applied.
+    /// The rotation center will be the ellipsoid center if it is not specified.
+    ///
+    /// \param rotation Rotation matrix of shape {3, 3}, type float32 or
+    /// float64, device same as the ellipsoid.
+    /// \param center Center of the rotation, default is null, which means use
+    /// center of the ellipsoid as rotation center.
+    OrientedBoundingEllipsoid &Rotate(
+            const core::Tensor &rotation,
+            const std::optional<core::Tensor> &center = std::nullopt);
+
+    /// \brief Scale the oriented ellipsoid.
+    /// The scaling center will be the ellipsoid center if it is not specified.
+    ///
+    /// \param scale The scale parameter.
+    /// \param center Center used for the scaling operation. Tensor of shape
+    /// {3,}, type float32 or float64, device same as the ellipsoid.
+    OrientedBoundingEllipsoid &Scale(
+            double scale,
+            const std::optional<core::Tensor> &center = std::nullopt);
+
+    /// Returns the volume of the bounding ellipsoid.
+    double Volume() const;
+
+    /// \brief Returns the six critical points of the bounding ellipsoid.
+    ///
+    /// The Return tensor has shape {6, 3} and data type same as the ellipsoid.
+    ///
+    /// \verbatim
+    ///      ------- x
+    ///     /|
+    ///    / |
+    ///   /  | z
+    ///  y
+    ///                            2
+    ///                         .--|---.
+    ///                    .--'    |     '--.
+    ///               .--'         |          '--.
+    ///            .'              |   4           '.
+    ///           /                |  /              \
+    ///          /                 | /                \
+    ///       0 |------------------|-------------------| 1
+    ///          \               / |                  /
+    ///           \             /  |                 /
+    ///            '.         5    |               .'
+    ///               '--.         |          .--'
+    ///                    '--.    |     .--'
+    ///                         '--|---'
+    ///                            3
+    /// \endverbatim
+    core::Tensor GetEllipsoidPoints() const;
+
+    /// \brief Indices to points that are within the bounding ellipsoid.
+    ///
+    /// \param points Tensor with {N, 3} shape, and type float32 or float64.
+    core::Tensor GetPointIndicesWithinBoundingEllipsoid(
+            const core::Tensor &points) const;
+
+    /// Text description.
+    std::string ToString() const;
+
+    /// Convert to a legacy Open3D oriented bounding ellipsoid.
+    open3d::geometry::OrientedBoundingEllipsoid ToLegacy() const;
+
+    /// Convert to an axis-aligned box.
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Create an OrientedBoundingEllipsoid from a legacy Open3D oriented
+    /// bounding ellipsoid.
+    ///
+    /// \param ellipsoid Legacy OrientedBoundingEllipsoid.
+    /// \param dtype The data type of the ellipsoid for center, radii and color.
+    /// The default is float32.
+    /// \param device The device of the ellipsoid. The default is CPU:0.
+    static OrientedBoundingEllipsoid FromLegacy(
+            const open3d::geometry::OrientedBoundingEllipsoid &ellipsoid,
+            const core::Dtype &dtype = core::Float32,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Creates the oriented bounding ellipsoid with the smallest volume using
+    /// Khachiyan's algorithm.
+    /// \param points A list of points with data type of float32 or float64 (N x
+    /// 3 tensor, where N must be larger than 3).
+    /// \param robust If set to true uses a more robust method which works in
+    /// degenerate cases but introduces noise to the points coordinates.
+    /// \return OrientedBoundingEllipsoid with same data type and device as
+    /// input points.
+    static OrientedBoundingEllipsoid CreateFromPoints(
+            const core::Tensor &points, bool robust = false);
+
+protected:
+    core::Device device_ = core::Device("CPU:0");
+    core::Dtype dtype_ = core::Float32;
+    core::Tensor center_;
+    core::Tensor rotation_;
+    core::Tensor radii_;
+    core::Tensor color_;
+};
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

@@ -183,6 +183,28 @@ bool TetraMeshRenderer::UpdateGeometry() {
     return true;
 }
 
+bool OrientedBoundingEllipsoidRenderer::Render(const RenderOption &option,
+                                               const ViewControl &view) {
+    if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;
+    return simple_oriented_bounding_ellipsoid_shader_.Render(*geometry_ptr_,
+                                                             option, view);
+}
+
+bool OrientedBoundingEllipsoidRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::OrientedBoundingEllipsoid) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool OrientedBoundingEllipsoidRenderer::UpdateGeometry() {
+    simple_oriented_bounding_ellipsoid_shader_.InvalidateGeometry();
+    return true;
+}
+
 bool OrientedBoundingBoxRenderer::Render(const RenderOption &option,
                                          const ViewControl &view) {
     if (!is_visible_ || geometry_ptr_->IsEmpty()) return true;

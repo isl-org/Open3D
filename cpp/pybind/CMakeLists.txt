@@ -48,22 +48,38 @@ if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
     # TODO(Sameer): Only export PyInit_pybind, open3d_core_cuda_device_count
 elseif (APPLE)
-    file(GENERATE OUTPUT pybind.map CONTENT
-        [=[_PyInit_pybind
+    if (BUILD_CUDA_MODULE)
+        file(GENERATE OUTPUT pybind.map CONTENT
+            [=[_PyInit_pybind
 open3d_core_cuda_device_count
-        ]=])
+            ]=])
+    else()
+        file(GENERATE OUTPUT pybind.map CONTENT
+            [=[_PyInit_pybind
+            ]=])
+    endif()
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         -Wl,-exported_symbols_list
         "${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
 elseif (UNIX)   # Linux
-    file(GENERATE OUTPUT pybind.map CONTENT
-        [=[{
+    if (BUILD_CUDA_MODULE)
+        file(GENERATE OUTPUT pybind.map CONTENT
+            [=[{
     global:
         PyInit_pybind;
         open3d_core_cuda_device_count;
     local:
         *;
 };]=])
+    else()
+        file(GENERATE OUTPUT pybind.map CONTENT
+            [=[{
+    global:
+        PyInit_pybind;
+    local:
+        *;
+};]=])
+    endif()
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
     target_link_options(pybind PRIVATE "-flto=auto")

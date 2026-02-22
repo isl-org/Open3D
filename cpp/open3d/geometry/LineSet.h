@@ -17,6 +17,7 @@ namespace open3d {
 namespace geometry {
 
 class PointCloud;
+class OrientedBoundingEllipsoid;
 class OrientedBoundingBox;
 class AxisAlignedBoundingBox;
 class TriangleMesh;
@@ -69,6 +70,14 @@ public:
     ///               in degenerate cases but introduces noise to the points
     ///               coordinates.
     OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
+
+    /// Creates an oriented bounding ellipsoid around the points of the object.
+    /// Further details in OrientedBoundingEllipsoid::CreateFromPoints()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
             bool robust = false) const override;
 
     LineSet &Transform(const Eigen::Matrix4d &transformation) override;
@@ -132,6 +141,13 @@ public:
     /// \param box The input bounding box.
     static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox &box);
+
+    /// \brief Factory function to create a LineSet from an
+    /// OrientedBoundingEllipsoid.
+    ///
+    /// \param ellipsoid The input bounding ellipsoid.
+    static std::shared_ptr<LineSet> CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &ellipsoid);
 
     /// Factory function to create a LineSet from edges of a triangle mesh.
     ///

@@ -293,6 +293,14 @@ public:
     OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
 
+    /// Creates an oriented bounding ellipsoid around the points of the object.
+    /// Further details in OrientedBoundingEllipsoid::CreateFromPoints()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust = false) const override;
+
     Octree& Transform(const Eigen::Matrix4d& transformation) override;
     Octree& Translate(const Eigen::Vector3d& translation,
                       bool relative = true) override;

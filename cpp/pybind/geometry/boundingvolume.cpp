@@ -30,8 +30,93 @@ void pybind_boundingvolume_declarations(py::module &m) {
                                       "geometries, The axis aligned bounding "
                                       "box uses the coordinate axes for "
                                       "bounding box generation.");
+    py::class_<OrientedBoundingEllipsoid,
+               PyGeometry3D<OrientedBoundingEllipsoid>,
+               std::shared_ptr<OrientedBoundingEllipsoid>, Geometry3D>
+            oriented_bounding_ellipsoid(
+                    m, "OrientedBoundingEllipsoid",
+                    "Class that defines an oriented ellipsoid that can "
+                    "be computed from 3D geometries.");
 }
 void pybind_boundingvolume_definitions(py::module &m) {
+    auto oriented_bounding_ellipsoid = static_cast<py::class_<
+            OrientedBoundingEllipsoid, PyGeometry3D<OrientedBoundingEllipsoid>,
+            std::shared_ptr<OrientedBoundingEllipsoid>, Geometry3D>>(
+            m.attr("OrientedBoundingEllipsoid"));
+    py::detail::bind_default_constructor<OrientedBoundingEllipsoid>(
+            oriented_bounding_ellipsoid);
+    py::detail::bind_copy_functions<OrientedBoundingEllipsoid>(
+            oriented_bounding_ellipsoid);
+    oriented_bounding_ellipsoid
+            .def(py::init<const Eigen::Vector3d &, const Eigen::Matrix3d &,
+                          const Eigen::Vector3d &>(),
+                 "Create OrientedBoundingEllipsoid from center, rotation R and "
+                 "radii "
+                 "in x, y and z "
+                 "direction",
+                 "center"_a, "R"_a, "radii"_a)
+            .def("__repr__",
+                 [](const OrientedBoundingEllipsoid &ellipsoid) {
+                     std::stringstream s;
+                     auto c = ellipsoid.center_;
+                     auto r = ellipsoid.radii_;
+                     s << "OrientedBoundingEllipsoid: center: (" << c.x()
+                       << ", " << c.y() << ", " << c.z()
+                       << "), radii: " << r.x() << ", " << r.y() << ", "
+                       << r.z() << ")";
+                     return s.str();
+                 })
+            //   .def_static("create_from_axis_aligned_bounding_box",
+            //               &OrientedBoundingEllipsoid::
+            //                       CreateFromAxisAlignedBoundingBox,
+            //               "Returns an oriented bounding ellipsoid from the "
+            //               "AxisAlignedBoundingBox.",
+            //               "aabox"_a)
+            //   .def_static(
+            //           "create_from_oriented_bounding_box",
+            //           &OrientedBoundingEllipsoid::CreateFromOrientedBoundingBox,
+            //           "Returns an oriented bounding ellipsoid from the "
+            //           "OrientedBoundingBox.",
+            //           "obb"_a)
+            .def_static("create_from_points",
+                        &OrientedBoundingEllipsoid::CreateFromPoints,
+                        "points"_a, "robust"_a = false,
+                        R"doc(
+Creates the oriented bounding ellipsoid that encloses the set of points.
+
+Computes the oriented bounding box based on the Khachiyan algorithm.
+https://ecommons.cornell.edu/server/api/core/bitstreams/2b9e302e-e31c-45c9-b292-64a1c0d70bef/content
+The returned bounding ellipsoid is the minimal volume bounding ellipsoid.
+
+Args:
+     points (open3d.utility.Vector3dVector): Input points.
+     robust (bool): If set to true uses a more robust method which works in
+          degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+     open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
+     bounding box is oriented such that the axes are ordered with respect to
+     the principal components.
+)doc")
+
+            .def("volume", &OrientedBoundingEllipsoid::Volume,
+                 "Returns the volume of the bounding ellipsoid.")
+            .def_readwrite("center", &OrientedBoundingEllipsoid::center_,
+                           "``float64`` array of shape ``(3, )``")
+            .def_readwrite("R", &OrientedBoundingEllipsoid::R_,
+                           "``float64`` array of shape ``(3,3 )``")
+            .def_readwrite("radii", &OrientedBoundingEllipsoid::radii_,
+                           "``float64`` array of shape ``(3, )``")
+            .def_readwrite("color", &OrientedBoundingEllipsoid::color_,
+                           "``float64`` array of shape ``(3, )``");
+    docstring::ClassMethodDocInject(m, "OrientedBoundingEllipsoid", "volume");
+    //     docstring::ClassMethodDocInject(
+    //             m, "OrientedBoundingEllipsoid",
+    //             "create_from_axis_aligned_bounding_box",
+    //             {{"aabox",
+    //               "AxisAlignedBoundingBox object from which
+    //               OrientedBoundingEllipsoid is " "created."}});
+
     auto oriented_bounding_box = static_cast<
             py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,
                        std::shared_ptr<OrientedBoundingBox>, Geometry3D>>(

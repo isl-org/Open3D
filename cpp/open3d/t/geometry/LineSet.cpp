@@ -212,6 +212,10 @@ OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
+OrientedBoundingEllipsoid LineSet::GetOrientedBoundingEllipsoid() const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(GetPointPositions());
+}
+
 LineSet &LineSet::PaintUniformColor(const core::Tensor &color) {
     core::AssertTensorShape(color, {3});
     core::Tensor clipped_color = color.To(GetDevice());

@@ -147,7 +147,22 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromOrientedBoundingBox(
     auto mesh = CreateBox(origin.x(), origin.y(), origin.z(), create_uv_map);
     mesh->Rotate(obox.R_, origin / 2.);
     mesh->Translate(obox.center_ - origin / 2.);
-    mesh->PaintUniformColor(obox.color_);
+    return mesh;
+}
+
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromOrientedBoundingEllipsoid(
+        const OrientedBoundingEllipsoid &obel,
+        const Eigen::Vector3d &scale /*= Eigen::Vector3d::Ones()*/,
+        int resolution /* = 20 */,
+        bool create_uv_map /*= false*/) {
+    Eigen::Vector3d origin = scale.asDiagonal() * obel.radii_;
+    auto mesh = CreateEllipsoid(origin.x(), origin.y(), origin.z(), resolution,
+                                create_uv_map);
+    Eigen::Matrix4d t = Eigen::Matrix4d::Identity();
+    t.block<3, 3>(0, 0) = obel.R_;
+    t.block<3, 1>(0, 3) = obel.center_;
+    mesh->Transform(t);
+    mesh->PaintUniformColor(obel.color_);
     return mesh;
 }
 
@@ -355,6 +370,232 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
 
             // UV coordinates mapped to triangles for non-polar region with
             // cut-vertices.
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                    map_vertices_to_uv[base2 + 2 * resolution - 1].first,
+                    map_vertices_to_uv[base2 + 2 * resolution - 1].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_cut_vertices_to_uv[base1].first,
+                                    map_cut_vertices_to_uv[base1].second));
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                    map_vertices_to_uv[base1 + 2 * resolution - 1].first,
+                    map_vertices_to_uv[base1 + 2 * resolution - 1].second));
+
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                    map_vertices_to_uv[base2 + 2 * resolution - 1].first,
+                    map_vertices_to_uv[base2 + 2 * resolution - 1].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_cut_vertices_to_uv[base2].first,
+                                    map_cut_vertices_to_uv[base2].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_cut_vertices_to_uv[base1].first,
+                                    map_cut_vertices_to_uv[base1].second));
+        }
+    }
+
+    return mesh;
+}
+
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateEllipsoid(
+        double radius_x /* = 1.0 */,
+        double radius_y /* = 1.0 */,
+        double radius_z /* = 1.0 */,
+        int resolution /* = 20 */,
+        bool create_uv_map /* = false*/) {
+    auto mesh = std::make_shared<TriangleMesh>();
+
+    // Basic parameter checks
+    if (radius_x <= 0) {
+        utility::LogError("radius_x must be > 0, but got {}", radius_x);
+    }
+    if (radius_y <= 0) {
+        utility::LogError("radius_y must be > 0, but got {}", radius_y);
+    }
+    if (radius_z <= 0) {
+        utility::LogError("radius_z must be > 0, but got {}", radius_z);
+    }
+    if (resolution <= 0) {
+        utility::LogError("resolution <= 0");
+    }
+
+    // We use the same vertex count formula as the sphere:
+    // 2 poles + (resolution - 1) "rings" * (2 * resolution) points per ring
+    mesh->vertices_.resize(2 * resolution * (resolution - 1) + 2);
+
+    // Maps for UV coordinates (only used if create_uv_map == true)
+    std::unordered_map<int64_t, std::pair<double, double>> map_vertices_to_uv;
+    std::unordered_map<int64_t, std::pair<double, double>>
+            map_cut_vertices_to_uv;
+
+    // Define the top and bottom poles
+    // Top pole at (0, 0, +radius_z), bottom at (0, 0, -radius_z)
+    mesh->vertices_[0] = Eigen::Vector3d(0.0, 0.0, radius_z);
+    mesh->vertices_[1] = Eigen::Vector3d(0.0, 0.0, -radius_z);
+
+    // Generate intermediate "rings" between the poles
+    double step = M_PI / (double)resolution;  // step for polar angle
+    for (int i = 1; i < resolution; i++) {
+        double alpha = step * i;  // polar angle
+        double uv_row = (1.0 / resolution) * i;
+        int base = 2 + 2 * resolution * (i - 1);
+
+        for (int j = 0; j < 2 * resolution; j++) {
+            double theta = step * j;  // azimuthal angle
+            double uv_col = (1.0 / (2.0 * resolution)) * j;
+
+            // Similar to sphere but scaled by radius_x, radius_y, radius_z
+            double x = std::sin(alpha) * std::cos(theta) * radius_x;
+            double y = std::sin(alpha) * std::sin(theta) * radius_y;
+            double z = std::cos(alpha) * radius_z;
+
+            mesh->vertices_[base + j] = Eigen::Vector3d(x, y, z);
+
+            // Store UV if requested
+            if (create_uv_map) {
+                map_vertices_to_uv[base + j] = std::make_pair(uv_row, uv_col);
+            }
+        }
+
+        // We store the "cut" vertex to handle the seam in the UV map
+        if (create_uv_map) {
+            // The first vertex in each ring is assigned a UV of (row, 1.0) as
+            // the seam
+            map_cut_vertices_to_uv[base] = std::make_pair(uv_row, 1.0);
+        }
+    }
+
+    //----------------------------------------------------------------------
+    // Now we create the triangles. The topology is identical to the sphere:
+    // 1) Triangles connecting the top pole
+    // 2) Triangles connecting the bottom pole
+    // 3) Triangles connecting each intermediate ring
+    //----------------------------------------------------------------------
+
+    //
+    // 1) Triangles for poles
+    //
+    for (int j = 0; j < 2 * resolution; j++) {
+        int j1 = (j + 1) % (2 * resolution);
+
+        // Connect top pole (index 0)
+        int base_top = 2;
+        mesh->triangles_.push_back(
+                Eigen::Vector3i(0, base_top + j, base_top + j1));
+
+        // Connect bottom pole (index 1)
+        int base_bottom = 2 + 2 * resolution * (resolution - 2);
+        mesh->triangles_.push_back(
+                Eigen::Vector3i(1, base_bottom + j1, base_bottom + j));
+    }
+
+    // 1a) UV coordinates for poles
+    if (create_uv_map) {
+        for (int j = 0; j < 2 * resolution - 1; j++) {
+            int j1 = (j + 1) % (2 * resolution);
+            int base_top = 2;
+            double width = 1.0 / (2.0 * resolution);
+            double base_offset = width / 2.0;
+            double uv_col = base_offset + width * j;
+
+            // Triangle for top pole
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, uv_col));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base_top + j].first,
+                                    map_vertices_to_uv[base_top + j].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base_top + j1].first,
+                                    map_vertices_to_uv[base_top + j1].second));
+
+            // Triangle for bottom pole
+            int base_bottom = 2 + 2 * resolution * (resolution - 2);
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, uv_col));
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                    map_vertices_to_uv[base_bottom + j1].first,
+                    map_vertices_to_uv[base_bottom + j1].second));
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                    map_vertices_to_uv[base_bottom + j].first,
+                    map_vertices_to_uv[base_bottom + j].second));
+        }
+
+        // Handle the seam case (cut vertices) for the pole triangles
+        int j = 2 * resolution - 1;
+        double width = 1.0 / (2.0 * resolution);
+        double base_offset = width / 2.0;
+        double uv_col = base_offset + width * j;
+
+        // top pole with cut seam
+        {
+            int base_top = 2;
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(0.0, uv_col));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_vertices_to_uv[base_top + j].first,
+                                    map_vertices_to_uv[base_top + j].second));
+            mesh->triangle_uvs_.push_back(
+                    Eigen::Vector2d(map_cut_vertices_to_uv[base_top].first,
+                                    map_cut_vertices_to_uv[base_top].second));
+        }
+        // bottom pole with cut seam
+        {
+            int base_bottom = 2 + 2 * resolution * (resolution - 2);
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(1.0, uv_col));
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                    map_cut_vertices_to_uv[base_bottom].first,
+                    map_cut_vertices_to_uv[base_bottom].second));
+            mesh->triangle_uvs_.push_back(Eigen::Vector2d(
+                    map_vertices_to_uv[base_bottom + j].first,
+                    map_vertices_to_uv[base_bottom + j].second));
+        }
+    }
+
+    //
+    // 2) Triangles for non-polar region
+    //
+    for (int i = 1; i < resolution - 1; i++) {
+        int base1 = 2 + 2 * resolution * (i - 1);
+        int base2 = base1 + 2 * resolution;
+
+        for (int j = 0; j < 2 * resolution; j++) {
+            int j1 = (j + 1) % (2 * resolution);
+            // Two triangles per quad
+            mesh->triangles_.push_back(
+                    Eigen::Vector3i(base2 + j, base1 + j1, base1 + j));
+            mesh->triangles_.push_back(
+                    Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1));
+        }
+    }
+
+    // UV mapping for the non-polar region
+    if (create_uv_map) {
+        for (int i = 1; i < resolution - 1; i++) {
+            int base1 = 2 + 2 * resolution * (i - 1);
+            int base2 = base1 + 2 * resolution;
+
+            for (int j = 0; j < 2 * resolution - 1; j++) {
+                int j1 = (j + 1) % (2 * resolution);
+
+                // Upper triangle
+                mesh->triangle_uvs_.push_back(
+                        Eigen::Vector2d(map_vertices_to_uv[base2 + j].first,
+                                        map_vertices_to_uv[base2 + j].second));
+                mesh->triangle_uvs_.push_back(
+                        Eigen::Vector2d(map_vertices_to_uv[base1 + j1].first,
+                                        map_vertices_to_uv[base1 + j1].second));
+                mesh->triangle_uvs_.push_back(
+                        Eigen::Vector2d(map_vertices_to_uv[base1 + j].first,
+                                        map_vertices_to_uv[base1 + j].second));
+
+                // Lower triangle
+                mesh->triangle_uvs_.push_back(
+                        Eigen::Vector2d(map_vertices_to_uv[base2 + j].first,
+                                        map_vertices_to_uv[base2 + j].second));
+                mesh->triangle_uvs_.push_back(
+                        Eigen::Vector2d(map_vertices_to_uv[base2 + j1].first,
+                                        map_vertices_to_uv[base2 + j1].second));
+                mesh->triangle_uvs_.push_back(
+                        Eigen::Vector2d(map_vertices_to_uv[base1 + j1].first,
+                                        map_vertices_to_uv[base1 + j1].second));
+            }
+
+            // Handle seam for non-polar region
             mesh->triangle_uvs_.push_back(Eigen::Vector2d(
                     map_vertices_to_uv[base2 + 2 * resolution - 1].first,
                     map_vertices_to_uv[base2 + 2 * resolution - 1].second));

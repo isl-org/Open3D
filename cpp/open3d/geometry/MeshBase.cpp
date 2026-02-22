@@ -54,6 +54,11 @@ OrientedBoundingBox MeshBase::GetMinimalOrientedBoundingBox(bool robust) const {
     return OrientedBoundingBox::CreateFromPointsMinimal(vertices_, robust);
 }
 
+OrientedBoundingEllipsoid MeshBase::GetOrientedBoundingEllipsoid(
+        bool robust) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(vertices_, robust);
+}
+
 MeshBase &MeshBase::Transform(const Eigen::Matrix4d &transformation) {
     TransformPoints(transformation, vertices_);
     TransformNormals(transformation, vertex_normals_);

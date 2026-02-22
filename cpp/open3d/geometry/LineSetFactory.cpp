@@ -17,9 +17,9 @@ namespace open3d {
 namespace geometry {
 
 std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondences(
-        const PointCloud &cloud0,
-        const PointCloud &cloud1,
-        const std::vector<std::pair<int, int>> &correspondences) {
+        const PointCloud& cloud0,
+        const PointCloud& cloud1,
+        const std::vector<std::pair<int, int>>& correspondences) {
     auto lineset_ptr = std::make_shared<LineSet>();
     size_t point0_size = cloud0.points_.size();
     size_t point1_size = cloud1.points_.size();
@@ -39,7 +39,7 @@ std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondences(
 }
 
 std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
-        const TriangleMesh &mesh) {
+        const TriangleMesh& mesh) {
     auto line_set = std::make_shared<LineSet>();
     line_set->points_ = mesh.vertices_;
 
@@ -52,7 +52,7 @@ std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
             line_set->lines_.push_back(Eigen::Vector2i(vidx0, vidx1));
         }
     };
-    for (const auto &triangle : mesh.triangles_) {
+    for (const auto& triangle : mesh.triangles_) {
         InsertEdge(triangle(0), triangle(1));
         InsertEdge(triangle(1), triangle(2));
         InsertEdge(triangle(2), triangle(0));
@@ -61,8 +61,21 @@ std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
     return line_set;
 }
 
+std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingEllipsoid(
+        const OrientedBoundingEllipsoid& ellipsoid) {
+    std::shared_ptr<TriangleMesh> obel =
+            geometry::TriangleMesh::CreateEllipsoid(ellipsoid.radii_(0),
+                                                    ellipsoid.radii_(1),
+                                                    ellipsoid.radii_(2));
+    obel->Rotate(ellipsoid.R_, Eigen::Vector3d::Zero());
+    obel->Translate(ellipsoid.center_);
+    auto line_set = CreateFromTriangleMesh(*obel);
+    line_set->PaintUniformColor(ellipsoid.color_);
+    return line_set;
+}
+
 std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
-        const OrientedBoundingBox &box) {
+        const OrientedBoundingBox& box) {
     auto line_set = std::make_shared<LineSet>();
     line_set->points_ = box.GetBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
@@ -82,7 +95,7 @@ std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
 }
 
 std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
-        const AxisAlignedBoundingBox &box) {
+        const AxisAlignedBoundingBox& box) {
     auto line_set = std::make_shared<LineSet>();
     line_set->points_ = box.GetBoxPoints();
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
@@ -101,7 +114,7 @@ std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
     return line_set;
 }
 
-std::shared_ptr<LineSet> LineSet::CreateFromTetraMesh(const TetraMesh &mesh) {
+std::shared_ptr<LineSet> LineSet::CreateFromTetraMesh(const TetraMesh& mesh) {
     auto line_set = std::make_shared<LineSet>();
     line_set->points_ = mesh.vertices_;
 
@@ -114,7 +127,7 @@ std::shared_ptr<LineSet> LineSet::CreateFromTetraMesh(const TetraMesh &mesh) {
             line_set->lines_.push_back(Eigen::Vector2i(vidx0, vidx1));
         }
     };
-    for (const auto &tetra : mesh.tetras_) {
+    for (const auto& tetra : mesh.tetras_) {
         InsertEdge(tetra(0), tetra(1));
         InsertEdge(tetra(1), tetra(2));
         InsertEdge(tetra(2), tetra(0));
@@ -129,8 +142,8 @@ std::shared_ptr<LineSet> LineSet::CreateFromTetraMesh(const TetraMesh &mesh) {
 std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
         int view_width_px,
         int view_height_px,
-        const Eigen::Matrix3d &intrinsic,
-        const Eigen::Matrix4d &extrinsic,
+        const Eigen::Matrix3d& intrinsic,
+        const Eigen::Matrix4d& extrinsic,
         double scale) {
     Eigen::Matrix4d intrinsic4;
     intrinsic4 << intrinsic(0, 0), intrinsic(0, 1), intrinsic(0, 2), 0.0,
@@ -140,8 +153,8 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
     Eigen::Matrix4d m = (intrinsic4 * extrinsic).inverse();
     auto lines = std::make_shared<geometry::LineSet>();
 
-    auto mult = [](const Eigen::Matrix4d &m,
-                   const Eigen::Vector3d &v) -> Eigen::Vector3d {
+    auto mult = [](const Eigen::Matrix4d& m,
+                   const Eigen::Vector3d& v) -> Eigen::Vector3d {
         Eigen::Vector4d v4(v.x(), v.y(), v.z(), 1.0);
         auto result = m * v4;
         return Eigen::Vector3d{result.x() / result.w(), result.y() / result.w(),
