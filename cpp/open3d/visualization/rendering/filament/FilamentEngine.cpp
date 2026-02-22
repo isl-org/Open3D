@@ -34,7 +34,13 @@ namespace {
 static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
+#ifdef _WIN32
+// Default for Windows is Vulkan, but this sometimes selects the Direct3D12
+// emulated backend, which is not fully functional. Force OpenGL instead.
+RenderingType EngineInstance::type_ = RenderingType::kOpenGL;
+#else
 RenderingType EngineInstance::type_ = RenderingType::kDefault;
+#endif
 std::string EngineInstance::resource_path_ = "";
 
 void EngineInstance::SelectBackend(RenderingType type) { type_ = type; }

@@ -46,6 +46,9 @@ target_include_directories(Open3DHelper INTERFACE "${INSTALL_DIR}/include" "${IN
 target_link_directories(Open3DHelper INTERFACE "${INSTALL_DIR}/lib")
 target_link_libraries(Open3DHelper INTERFACE Open3D)
 add_library(Open3D::Open3D ALIAS Open3DHelper)
+if (MSVC)
+    add_compile_options(/utf-8)  # fmt 12+ requires /utf-8 with MSVC
+endif()
 
 add_executable(Draw)
 target_sources(Draw PRIVATE Draw.cpp)

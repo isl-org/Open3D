@@ -36,7 +36,7 @@ jobs:
 
   openblas-arm64:
     permissions:
-      contents: read
+      contents: write  # Release upload
     runs-on: ubuntu-24.04-arm   # latest
     strategy:
       fail-fast: false
@@ -76,6 +76,9 @@ jobs:
       - name: Docker build
         run: |
           docker/docker_build.sh "${DOCKER_TAG}"
+          shopt -s failglob
+          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Docker test
         run: docker/docker_test.sh "${DOCKER_TAG}"
@@ -83,7 +86,8 @@ jobs:
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: open3d-*.whl
+          path: ${{ env.PIP_PKG_NAME }}
+          name: ${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
       - name: Update devel release
@@ -91,5 +95,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-*.whl --clobber
+          gh release upload main-devel ${{ env.PIP_PKG_NAME }} --clobber
           gh release view main-devel
