@@ -10,16 +10,13 @@ import numpy as np
 import pytest
 
 
-@pytest.fixture
-def sample_point_cloud():
-    """Create a simple point cloud for testing."""
+def _create_point_cloud(num_points=100):
+    """Helper to create a point cloud with normals."""
+    np.random.seed(42)  # Fixed seed for reproducible tests
     pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(
-        np.random.rand(100, 3) - 0.5
-    )
+    pcd.points = o3d.utility.Vector3dVector(np.random.rand(num_points, 3) - 0.5)
     pcd.normals = o3d.utility.Vector3dVector(
-        np.random.rand(100, 3) - 0.5
-    )
+        np.random.rand(num_points, 3) - 0.5)
     pcd.normalize_normals()
     return pcd
 
@@ -32,62 +29,63 @@ def _assert_valid_mesh(mesh, densities):
     assert len(densities) == len(mesh.vertices)
 
 
+@pytest.fixture
+def sample_point_cloud():
+    """Fixture that returns a simple point cloud for testing."""
+    return _create_point_cloud()
+
+
 def test_poisson_default_parameters(sample_point_cloud):
     """Test Poisson reconstruction with default parameters."""
     mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-        sample_point_cloud, depth=6
-    )
+        sample_point_cloud, depth=6)
     _assert_valid_mesh(mesh, densities)
 
 
-@pytest.mark.parametrize("params,expected_valid", [
-    ({"depth": 6, "full_depth": 4, "samples_per_node": 2.0, 
-      "point_weight": 5.0, "confidence": 0.5, "exact_interpolation": True}, True),
-    ({"depth": 6, "full_depth": 3}, True),
-    ({"depth": 6, "full_depth": 5}, True),
-    ({"depth": 5, "samples_per_node": 1.0}, True),
-    ({"depth": 5, "samples_per_node": 3.0}, True),
+@pytest.mark.parametrize("params", [
+    {
+        "depth": 6,
+        "full_depth": 4,
+        "samples_per_node": 2.0,
+        "point_weight": 5.0
+    },
+    {
+        "depth": 6,
+        "full_depth": 3
+    },
+    {
+        "depth": 6,
+        "full_depth": 5
+    },
+    {
+        "depth": 5,
+        "samples_per_node": 1.0
+    },
+    {
+        "depth": 5,
+        "samples_per_node": 3.0
+    },
+    {
+        "depth": 5,
+        "point_weight": 4.0
+    },
+    {
+        "depth": 5,
+        "point_weight": 10.0
+    },
 ])
-def test_poisson_with_various_parameters(sample_point_cloud, params, expected_valid):
+def test_poisson_with_various_parameters(sample_point_cloud, params):
     """Test Poisson reconstruction with various parameter combinations."""
     mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-        sample_point_cloud, **params
-    )
-    if expected_valid:
-        _assert_valid_mesh(mesh, densities)
-
-
-def test_poisson_parameter_variation(sample_point_cloud):
-    """Test that different parameters produce different results."""
-    # Run with default point_weight
-    mesh1, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-        sample_point_cloud, depth=5, point_weight=4.0
-    )
-    
-    # Run with higher point_weight (should produce different result)
-    mesh2, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-        sample_point_cloud, depth=5, point_weight=10.0
-    )
-    
-    # Meshes should be different (different vertex counts or positions)
-    # We just check they both succeeded and have positive vertex counts
-    assert len(mesh1.vertices) > 0
-    assert len(mesh2.vertices) > 0
+        sample_point_cloud, **params)
+    _assert_valid_mesh(mesh, densities)
 
 
 def test_poisson_backward_compatibility():
     """Test that old API calls still work (backward compatibility)."""
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(
-        np.random.rand(50, 3) - 0.5
-    )
-    pcd.normals = o3d.utility.Vector3dVector(
-        np.random.rand(50, 3) - 0.5
-    )
-    pcd.normalize_normals()
-    
+    pcd = _create_point_cloud(num_points=50)
+
     # Old-style call without new parameters
     mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
-        pcd, depth=5, scale=1.1, linear_fit=False
-    )
+        pcd, depth=5, scale=1.1, linear_fit=False)
     _assert_valid_mesh(mesh, densities)

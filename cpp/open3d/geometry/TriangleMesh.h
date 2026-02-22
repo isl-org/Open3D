@@ -547,13 +547,24 @@ public:
     /// estimate the positions of iso-vertices.
     /// \param n_threads Number of threads used for reconstruction. Set to -1 to
     /// automatically determine it.
-    /// \param full_depth Minimum depth for density estimation. Below this depth,
-    /// the octree is complete.
-    /// \param samples_per_node Minimum number of sample points per octree node.
-    /// \param point_weight Importance of point interpolation constraints (2.0 * FEM degree).
-    /// \param confidence Confidence exponent for normal length-based weighting (0 = no weighting).
-    /// \param exact_interpolation If true, use exact point interpolation constraints.
+    /// \param full_depth Minimum depth for density estimation (default: 5).
+    /// Below this depth, the octree is complete (fully subdivided).
+    /// Higher values provide more stability in sparse regions but consume more
+    /// memory.
+    /// Recommended range: 3-7. Use higher values (6-7) if your point cloud has
+    /// sparse regions.
+    /// \param samples_per_node Minimum number of sample points per octree node
+    /// (default: 1.5). Controls adaptive octree refinement based on local point
+    /// density. Lower values (e.g., 1.0) allow finer subdivision and capture
+    /// more detail but may increase noise. Higher values (e.g., 3.0) suppress
+    /// noise but may lose fine details. Recommended range: 1.0-3.0.
+    /// \param point_weight Importance of point interpolation constraints
+    /// (default: 4.0). Controls the trade-off between data fidelity and surface
+    /// smoothness. Higher values (e.g., 10.0) prioritize fitting input points
+    /// exactly, resulting in surfaces closer to the data. Lower values produce
+    /// smoother surfaces. Recommended range: 2.0-10.0.
     /// \return The estimated TriangleMesh, and per vertex density values that
+    /// can be used to trim the mesh.
     static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
     CreateFromPointCloudPoisson(const PointCloud &pcd,
                                 size_t depth = 8,
@@ -563,9 +574,7 @@ public:
                                 int n_threads = -1,
                                 int full_depth = 5,
                                 float samples_per_node = 1.5f,
-                                float point_weight = 4.0f,
-                                float confidence = 0.0f,
-                                bool exact_interpolation = false);
+                                float point_weight = 4.0f);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \p radius defines the
