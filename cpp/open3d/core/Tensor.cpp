@@ -867,36 +867,64 @@ Tensor Tensor::Slice(int64_t dim,
     }
     if (step == 0) {
         utility::LogError("Step size cannot be 0.");
-    } else if (step < 0) {
-        // TODO: support negative step sizes
-        utility::LogError("Step size cannot be < 0.");
     }
+    uint64_t new_dim = 0;
+    if (step > 0) {
+        // Positive step: forward traversal
+        // Wrap start. Out-of-range slice is valid and produces empty Tensor.
+        if (start < 0) {
+            start += shape_[dim];
+        }
+        if (start < 0) {
+            start = 0;
+        } else if (start >= shape_[dim]) {
+            start = shape_[dim];
+        }
 
-    // Wrap start. Out-of-range slice is valid and produces empty Tensor.
-    if (start < 0) {
-        start += shape_[dim];
-    }
-    if (start < 0) {
-        start = 0;
-    } else if (start >= shape_[dim]) {
-        start = shape_[dim];
-    }
+        // Wrap stop. Out-of-range slice is valid and produces empty Tensor.
+        if (stop < 0) {
+            stop += shape_[dim];
+        }
+        if (stop < start) {
+            stop = start;
+        } else if (stop >= shape_[dim]) {
+            stop = shape_[dim];
+        }
+        new_dim = (stop - start + step - 1) / step;
+    } else {
+        // Negative step: reverse traversal
+        // Wrap start. Out-of-range slice is valid and produces empty Tensor.
+        if (start < 0) {
+            start += shape_[dim];
+        }
+        if (start < 0) {
+            start = 0;
+        }
+        if (start >= shape_[dim]) {
+            start = shape_[dim] - 1;
+        }
 
-    // Wrap stop. Out-of-range slice is valid and produces empty Tensor.
-    if (stop < 0) {
-        stop += shape_[dim];
+        // Handle stop: -1 means "before index 0"
+        // Other negative values wrap around
+        if (stop != -1 && stop < 0) {
+            stop += shape_[dim];
+        }
+        if (stop < -1) {
+            stop = -1;
+        }
+        if (stop >= shape_[dim]) {
+            stop = shape_[dim] - 1;
+        }
+        if (stop > start) {
+            stop = start;
+        }
+        new_dim = (start - stop + (-step) - 1) / (-step);
     }
-    if (stop < start) {
-        stop = start;
-    } else if (stop >= shape_[dim]) {
-        stop = shape_[dim];
-    }
-
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
                          start * strides_[dim] * dtype_.ByteSize();
     SizeVector new_shape = shape_;
     SizeVector new_strides = strides_;
-    new_shape[dim] = (stop - start + step - 1) / step;
+    new_shape[dim] = new_dim;
     new_strides[dim] = strides_[dim] * step;
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
 }

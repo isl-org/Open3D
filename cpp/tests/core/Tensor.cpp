@@ -838,6 +838,59 @@ TEST_P(TensorPermuteDevicesWithSYCL, Slice) {
     EXPECT_EQ(t_5.GetDataPtr(), static_cast<const char *>(blob_head) +
                                         core::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(t_5.ToFlatVector<float>(), std::vector<float>({12, 16}));
+
+    // Negative step tests
+    // t_6 = t[0, ::-1, :] reverses the middle dimension
+    core::Tensor t_6 = t[0].Slice(0, 2, -1, -1);
+    EXPECT_EQ(t_6.GetShape(), core::SizeVector({3, 4}));
+    EXPECT_EQ(t_6.GetStrides(), core::SizeVector({-4, 1}));
+    EXPECT_EQ(t_6.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                        core::Float32.ByteSize() * 2 * 4);
+    EXPECT_EQ(t_6.ToFlatVector<float>(),
+              std::vector<float>({8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3}));
+
+    // t_7: Negative step with stop out-of-bounds (-5)
+    core::Tensor t_7 = t[0].Slice(0, 2, -5, -1);
+    EXPECT_EQ(t_7.GetShape(), core::SizeVector({3, 4}));
+    EXPECT_EQ(t_7.GetStrides(), core::SizeVector({-4, 1}));
+    EXPECT_EQ(t_7.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                        core::Float32.ByteSize() * 2 * 4);
+    EXPECT_EQ(t_7.ToFlatVector<float>(),
+              std::vector<float>({8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3}));
+
+    // t_8 = t[0, 1::-1, :] gives indices 1, 0 (start=1, stop=-1 means before 0)
+    core::Tensor t_8 = t[0].Slice(0, 1, -1, -1);
+    EXPECT_EQ(t_8.GetShape(), core::SizeVector({2, 4}));
+    EXPECT_EQ(t_8.GetStrides(), core::SizeVector({-4, 1}));
+    EXPECT_EQ(t_8.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                        core::Float32.ByteSize() * 1 * 4);
+    EXPECT_EQ(t_8.ToFlatVector<float>(),
+              std::vector<float>({4, 5, 6, 7, 0, 1, 2, 3}));
+
+    // t_9 = t[0, ::-2, :] reverses with step -2
+    core::Tensor t_9 = t[0].Slice(0, 2, -1, -2);
+    EXPECT_EQ(t_9.GetShape(), core::SizeVector({2, 4}));
+    EXPECT_EQ(t_9.GetStrides(), core::SizeVector({-8, 1}));
+    EXPECT_EQ(t_9.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                        core::Float32.ByteSize() * 2 * 4);
+    EXPECT_EQ(t_9.ToFlatVector<float>(),
+              std::vector<float>({8, 9, 10, 11, 0, 1, 2, 3}));
+
+    // t_10 = empty slice with negative step (stop >= start)
+    core::Tensor t_10 = t[0].Slice(0, 0, 1, -1);
+    EXPECT_EQ(t_10.GetShape(), core::SizeVector({0, 4}));
+    EXPECT_EQ(t_10.GetStrides(), core::SizeVector({-4, 1}));
+
+    // t_11 = negative step on first dimension
+    core::Tensor t_11 = t.Slice(0, 1, -1, -1);
+    EXPECT_EQ(t_11.GetShape(), core::SizeVector({2, 3, 4}));
+    EXPECT_EQ(t_11.GetStrides(), core::SizeVector({-12, 4, 1}));
+    EXPECT_EQ(t_11.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                         core::Float32.ByteSize() * 1 * 3 * 4);
+    EXPECT_EQ(t_11.ToFlatVector<float>(),
+              std::vector<float>({12, 13, 14, 15, 16, 17, 18, 19,
+                                  20, 21, 22, 23, 0,  1,  2,  3,
+                                  4,  5,  6,  7,  8,  9,  10, 11}));
 }
 
 TEST_P(TensorPermuteDevicesWithSYCL, GetItem) {
