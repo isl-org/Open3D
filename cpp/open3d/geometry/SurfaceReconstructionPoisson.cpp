@@ -420,8 +420,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     XForm<Real, Dim + 1> xForm, iXForm;
     xForm = XForm<Real, Dim + 1>::Identity();
 
-    // Keep other internal parameters hardcoded
-    float datax = 32.f;
+    // Other internal parameters remain hardcoded
     int base_depth = 0;
     int base_v_cycles = 1;
     float confidence_bias = 0.f;
@@ -601,29 +600,17 @@ void Execute(const open3d::geometry::PointCloud& pcd,
         // Add the interpolation constraints
         if (point_weight > 0) {
             profiler.start();
-            // Use approximate interpolation (default behavior)
-            if (false) {
-                iInfo = FEMTree<Dim, Real>::
-                        template InitializeExactPointInterpolationInfo<Real, 0>(
-                                tree, samples,
-                                ConstraintDual<Dim, Real>(
-                                        targetValue,
-                                        (Real)point_weight * pointWeightSum),
-                                SystemDual<Dim, Real>((Real)point_weight *
-                                                      pointWeightSum),
-                                true, false);
-            } else {
-                iInfo = FEMTree<Dim, Real>::
-                        template InitializeApproximatePointInterpolationInfo<
-                                Real, 0>(
-                                tree, samples,
-                                ConstraintDual<Dim, Real>(
-                                        targetValue,
-                                        (Real)point_weight * pointWeightSum),
-                                SystemDual<Dim, Real>((Real)point_weight *
-                                                      pointWeightSum),
-                                true, 1);
-            }
+            // Use approximate interpolation (always)
+            iInfo = FEMTree<Dim, Real>::
+                    template InitializeApproximatePointInterpolationInfo<
+                            Real, 0>(
+                            tree, samples,
+                            ConstraintDual<Dim, Real>(
+                                    targetValue,
+                                    (Real)point_weight * pointWeightSum),
+                            SystemDual<Dim, Real>((Real)point_weight *
+                                                  pointWeightSum),
+                            true, 1);
             tree.addInterpolationConstraints(constraints, solveDepth, *iInfo);
             profiler.dumpOutput("#Set point constraints:");
         }
