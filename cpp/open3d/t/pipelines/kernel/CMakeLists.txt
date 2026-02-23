@@ -23,7 +23,7 @@ if (BUILD_CUDA_MODULE)
 endif()
 
 if (BUILD_SYCL_MODULE)
-    target_sources(tpipelines_kernel PRIVATE
+    open3d_sycl_target_sources(tpipelines_kernel PRIVATE
         RegistrationSYCL.cpp
         FillInLinearSystemSYCL.cpp
         RGBDOdometrySYCL.cpp
