@@ -1,6 +1,6 @@
 include(FetchContent)
 
-set(filament_LIBRARIES filameshio filament filaflat filabridge geometry backend bluegl bluevk ibl image ktxreader meshoptimizer smol-v utils vkshaders)
+set(filament_LIBRARIES filameshio filament filaflat filabridge geometry backend bluegl bluevk ibl image ktxreader meshoptimizer smol-v utils shaders)
 
 if (FILAMENT_PRECOMPILED_ROOT)
     if (EXISTS "${FILAMENT_PRECOMPILED_ROOT}")
@@ -13,31 +13,33 @@ else()
     set(lib_dir lib)
     # Setup download links
     if(WIN32)
-        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.58.0/filament-v1.58.0-windows.tgz)
-        set(FILAMENT_SHA256 b1a018cd6380abd345661dbb22bf13b8ebb86c6df8672267615ca2aa724aa1d0)
+        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.69.3/filament-v1.69.3-windows.tgz)
+        set(FILAMENT_SHA256 8f6ff209a46918d2a3c627adfffbdd0c0310fc000f5aae8e64ee3bb722eaf346)
         if (STATIC_WINDOWS_RUNTIME)
             string(APPEND lib_dir /x86_64/mt)
         else()
             string(APPEND lib_dir /x86_64/md)
         endif()
     elseif(APPLE)
-        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.58.0/filament-v1.58.0-mac.tgz)
-        set(FILAMENT_SHA256 810b37b35716432ffefa7a262b005201dab4773393c15caa946914df88058cab)
-    else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
+        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.69.3/filament-v1.69.3-mac.tgz)
+        set(FILAMENT_SHA256 866f0b1a6ea5039a9f7e0b31589abfccdfbd436410fe1d779eec8068eb9724fe)
+    else()      # Linux: Check glibc version to select compatible Filament binary
         execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
         string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
-        if(${glibc_version} VERSION_LESS "2.33")
+        if(${glibc_version} VERSION_LESS "2.38")
             set(FILAMENT_URL
-                    https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.49.1-ubuntu20.04.tgz)
-            set(FILAMENT_SHA256 f4ba020f0ca63540e2f86b36d1728a1ea063ddd5eb55b0ba6fc621ee815a60a7)
+                    https://github.com/google/filament/releases/download/v1.54.0/filament-v1.54.0-linux.tgz)
+            set(FILAMENT_SHA256 f07fbe8fcb6422a682f429d95fa2e097c538d0d900c62f0a835f595ab3909e8e)
+            list(REMOVE_ITEM filament_LIBRARIES shaders)
+            list(APPEND filament_LIBRARIES vkshaders)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
-                    "Open3D built Filament binary for Ubuntu 20.04.")
+                    "Filament v1.54.0 binary (compatible with glibc < 2.38).")
         else()
             set(FILAMENT_URL
-                    https://github.com/google/filament/releases/download/v1.58.0/filament-v1.58.0-linux.tgz)
-            set(FILAMENT_SHA256 71a0ffd9577ae510151792c28d9ba841d67e20757730dae00ecd5b0b3e108b79)
+                    https://github.com/google/filament/releases/download/v1.69.3/filament-v1.69.3-linux.tgz)
+            set(FILAMENT_SHA256 2a503ff80edef11556c9729a8f3de21f72cd8fca9624ea11aeb447337f1556f7)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
-                    "Google Filament binary.")
+                    "Google Filament v1.69.3 binary.")
         endif()
     endif()
 

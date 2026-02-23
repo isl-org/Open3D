@@ -27,7 +27,7 @@ set(filament_LIBRARIES
         meshoptimizer
         smol-v
         utils
-        vkshaders
+        shaders
 )
 
 # Locate byproducts
@@ -53,8 +53,8 @@ endif()
 ExternalProject_Add(
     ext_filament
     PREFIX filament
-    URL https://github.com/google/filament/archive/refs/tags/v1.58.0.tar.gz
-    URL_HASH SHA256=05203ebcc58b4df012cd1de8e1916313f2db46020ad08ff8bb5c12f35cf094a4
+    URL https://github.com/google/filament/archive/refs/tags/v1.69.3.tar.gz
+    URL_HASH SHA256=a65696e7acc9f5c272aae5a730853febef63f328a863021fd3bb2caf2594fa5b
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
