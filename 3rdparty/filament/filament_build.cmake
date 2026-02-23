@@ -74,5 +74,7 @@ ExternalProject_Add(
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
         -DSPIRV_WERROR=OFF
+        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${FILAMENT_BUILD_TYPE} --target install
+        INSTALL_COMMAND ""
         BUILD_BYPRODUCTS ${lib_byproducts}
 )
