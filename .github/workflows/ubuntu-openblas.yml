@@ -95,5 +95,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel ${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh ${{ env.PIP_PKG_NAME }}

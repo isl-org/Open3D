@@ -103,8 +103,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload main-devel build/package/${{ env.DEVEL_PKG_NAME }} --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh build/package/${{ env.DEVEL_PKG_NAME }}
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
