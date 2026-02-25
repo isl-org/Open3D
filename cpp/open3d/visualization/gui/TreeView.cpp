@@ -11,9 +11,9 @@
 
 #include <cmath>
 #include <list>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
-#include <optional>
 
 #include "open3d/visualization/gui/Checkbox.h"
 #include "open3d/visualization/gui/ColorEdit.h"
@@ -363,19 +363,20 @@ void TreeView::Layout(const LayoutContext &context) {
     // to defer layout to Draw().
 }
 
-void TreeView::Expand(ItemId id) {
-    auto it = impl_->id2item_.find(id);
-    if (it != impl_->id2item_.end()) {
-        it->second->expanded = true;
+bool TreeView::IsItemExpanded(ItemId item_id) const {
+    auto it = impl_->id2item_.find(item_id);
+    if (it == impl_->id2item_.end()) {
+        return false;
     }
-    // Invalidate();
+    return it->second->expanded.value_or(true);
 }
 
-void TreeView::Collapse(ItemId id) {
-    auto it = impl_->id2item_.find(id);
-    if (it != impl_->id2item_.end()) {
-        it->second->expanded = false;
+void TreeView::SetItemExpanded(ItemId item_id, bool expanded) {
+    auto it = impl_->id2item_.find(item_id);
+    if (it == impl_->id2item_.end()) {
+        return;
     }
+    it->second->expanded = expanded;
 }
 
 Widget::DrawResult TreeView::Draw(const DrawContext &context) {

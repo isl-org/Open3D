@@ -134,8 +134,8 @@ public:
     void SetOnSelectionChanged(
             std::function<void(ItemId)> on_selection_changed);
 
-    void Expand(ItemId);
-    void Collapse(ItemId);
+    bool IsItemExpanded(ItemId item_id) const;
+    void SetItemExpanded(ItemId item_id, bool expanded);
 
 private:
     struct Impl;
