@@ -68,9 +68,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ ${{ matrix.BUILD_SHARED_LIBS }} == 'ON' ] ; then
-            .github/workflows/update_release.sh open3d*.whl open3d-devel-*.tar.xz
-          fi
+          .github/workflows/update_release.sh open3d*.whl open3d-devel-*.tar.xz
 
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}

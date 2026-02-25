@@ -179,7 +179,6 @@ jobs:
         shell: bash
         run: |
           .github/workflows/update_release.sh ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
-          gh release view main-devel
 
       - name: Viewer App
         working-directory: ${{ env.BUILD_DIR }}
@@ -208,7 +207,6 @@ jobs:
           Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
             "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
           bash .github/workflows/update_release.sh "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
-          gh release view main-devel
 
       - name: Run C++ unit tests
         if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
@@ -345,7 +343,7 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with wheel
-        if: ${{ github.ref == 'refs/heads/main' }}
+        #if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
