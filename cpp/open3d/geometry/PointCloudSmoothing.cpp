@@ -119,6 +119,64 @@ Eigen::Vector3d ProjectOntoPlane(const Eigen::Vector3d& p,
                                  const Eigen::Vector3d& normal) {
     return p - normal * ((p - centroid).dot(normal));
 }
+
+int SearchKNNWithoutSelf(const KDTreeFlann& kdtree,
+                         const std::vector<Eigen::Vector3d>& points,
+                         int point_index,
+                         int knn,
+                         std::vector<int>& indices) {
+    std::vector<double> distances2;
+    const int candidate_count =
+            kdtree.SearchKNN(points[point_index], knn + 1, indices, distances2);
+    if (candidate_count <= 0) {
+        indices.clear();
+        return 0;
+    }
+
+    size_t write_index = 0;
+    const size_t max_neighbors = static_cast<size_t>(knn);
+    for (int read_index = 0;
+         read_index < candidate_count && write_index < max_neighbors;
+         ++read_index) {
+        if (indices[read_index] == point_index) {
+            continue;
+        }
+        indices[write_index++] = indices[read_index];
+    }
+    indices.resize(write_index);
+    return static_cast<int>(write_index);
+}
+
+std::vector<Eigen::Vector3d> ApplyLaplacianPass(
+        const std::vector<Eigen::Vector3d>& current_points,
+        double factor,
+        int knn) {
+    std::vector<Eigen::Vector3d> next_points = current_points;
+
+    // TODO(open3d): If we add an approximation mode with fixed neighborhoods,
+    // cache the k-NN adjacency across passes to avoid rebuilding the KD-tree.
+    // The exact neighborhoods change as points move, so the current behavior
+    // rebuilds the search index for each pass.
+    const PointCloud point_only_cloud(current_points);
+    const KDTreeFlann kdtree(point_only_cloud);
+
+    const int n_points = static_cast<int>(current_points.size());
+
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+    for (int point_index = 0; point_index < n_points; ++point_index) {
+        std::vector<int> indices;
+        if (SearchKNNWithoutSelf(kdtree, current_points, point_index, knn,
+                                 indices) > 0) {
+            const Eigen::Vector3d centroid =
+                    ComputeCentroid(current_points, indices);
+            next_points[point_index] +=
+                    factor * (centroid - current_points[point_index]);
+        }
+    }
+
+    return next_points;
+}
 }  // namespace
 
 // Smoothing functions
@@ -157,12 +215,12 @@ PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
     // ----------------------------
     // 2. Prepare output cloud
     // ----------------------------
-    PointCloud smoothed_cloud;
+    PointCloud smoothed_cloud = *this;
     smoothed_cloud.points_.resize(points_.size());
 
     const bool has_normals = HasNormals();
-    if (has_normals) {
-        smoothed_cloud.normals_.resize(normals_.size());
+    if (!has_normals) {
+        smoothed_cloud.normals_.clear();
     }
 
     KDTreeFlann kdtree;
@@ -248,32 +306,14 @@ PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
 PointCloud PointCloud::SmoothLaplacian(size_t iterations,
                                        double lambda,
                                        int knn) const {
-    if (points_.empty() || iterations == 0) {
+    if (points_.empty() || iterations == 0 || knn <= 0) {
         return *this;
     }
 
     PointCloud smoothed_cloud = *this;
-    int n_points = static_cast<int>(smoothed_cloud.points_.size());
-
     for (size_t i = 0; i < iterations; ++i) {
-        PointCloud temp_cloud = smoothed_cloud;
-        KDTreeFlann kdtree(temp_cloud);
-
-        std::vector<Eigen::Vector3d> next_points = smoothed_cloud.points_;
-
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int j = 0; j < n_points; ++j) {
-            std::vector<int> indices;
-            std::vector<double> dists;
-            if (kdtree.SearchKNN(temp_cloud.points_[j], knn, indices, dists) >
-                1) {
-                Eigen::Vector3d centroid =
-                        ComputeCentroid(temp_cloud.points_, indices);
-                next_points[j] += lambda * (centroid - temp_cloud.points_[j]);
-            }
-        }
-        smoothed_cloud.points_ = next_points;
+        smoothed_cloud.points_ =
+                ApplyLaplacianPass(smoothed_cloud.points_, lambda, knn);
     }
 
     return smoothed_cloud;
@@ -283,54 +323,17 @@ PointCloud PointCloud::SmoothTaubin(size_t iterations,
                                     double lambda,
                                     double mu,
                                     int knn) const {
-    if (points_.empty() || iterations == 0) {
+    if (points_.empty() || iterations == 0 || knn <= 0) {
         return *this;
     }
 
     PointCloud smoothed_cloud = *this;
-    int n_points = static_cast<int>(smoothed_cloud.points_.size());
 
     for (size_t i = 0; i < iterations; ++i) {
-        // Lambda pass
-        {
-            PointCloud temp_cloud = smoothed_cloud;
-            KDTreeFlann kdtree(temp_cloud);
-            std::vector<Eigen::Vector3d> next_points = smoothed_cloud.points_;
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-            for (int j = 0; j < n_points; ++j) {
-                std::vector<int> indices;
-                std::vector<double> dists;
-                if (kdtree.SearchKNN(temp_cloud.points_[j], knn, indices,
-                                     dists) > 1) {
-                    Eigen::Vector3d centroid =
-                            ComputeCentroid(temp_cloud.points_, indices);
-                    next_points[j] +=
-                            lambda * (centroid - temp_cloud.points_[j]);
-                }
-            }
-            smoothed_cloud.points_ = next_points;
-        }
-
-        // Mu pass
-        {
-            PointCloud temp_cloud = smoothed_cloud;
-            KDTreeFlann kdtree(temp_cloud);
-            std::vector<Eigen::Vector3d> next_points = smoothed_cloud.points_;
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-            for (int j = 0; j < n_points; ++j) {
-                std::vector<int> indices;
-                std::vector<double> dists;
-                if (kdtree.SearchKNN(temp_cloud.points_[j], knn, indices,
-                                     dists) > 1) {
-                    Eigen::Vector3d centroid =
-                            ComputeCentroid(temp_cloud.points_, indices);
-                    next_points[j] += mu * (centroid - temp_cloud.points_[j]);
-                }
-            }
-            smoothed_cloud.points_ = next_points;
-        }
+        smoothed_cloud.points_ =
+                ApplyLaplacianPass(smoothed_cloud.points_, lambda, knn);
+        smoothed_cloud.points_ =
+                ApplyLaplacianPass(smoothed_cloud.points_, mu, knn);
     }
 
     return smoothed_cloud;
@@ -372,7 +375,12 @@ PointCloud PointCloud::SmoothBilateral(const KDTreeSearchParam& search_param,
 
         if (nb_neighbors > 1) {
             const Eigen::Vector3d& p_i = points_[i];
-            const Eigen::Vector3d& n_i = smoothed_cloud.normals_[i];
+            const double normal_norm = smoothed_cloud.normals_[i].norm();
+            if (normal_norm <= 0.0) {
+                continue;
+            }
+            const Eigen::Vector3d n_i =
+                    smoothed_cloud.normals_[i] / normal_norm;
 
             std::vector<double> weights(nb_neighbors);
 

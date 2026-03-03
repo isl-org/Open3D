@@ -232,6 +232,12 @@ static geometry::PointCloud CreateCloudWithOutliers(size_t n_points = 100,
     return pcd;
 }
 
+static geometry::PointCloud CreateTwoPointLine() {
+    geometry::PointCloud pcd;
+    pcd.points_ = {{0.0, 0.0, 0.0}, {10.0, 0.0, 0.0}};
+    return pcd;
+}
+
 TEST(PointCloudSmoothing, SmoothLaplacian) {
     auto pcd = CreateNoisyPlane();
     double initial_noise = AveragePlaneDistance(pcd);
@@ -241,6 +247,17 @@ TEST(PointCloudSmoothing, SmoothLaplacian) {
 
     EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
     EXPECT_LT(final_noise, initial_noise);
+}
+
+TEST(PointCloudSmoothing, SmoothLaplacianExcludesSelfNeighbor) {
+    auto pcd = CreateTwoPointLine();
+    auto pcd_smoothed = pcd.SmoothLaplacian(1, 0.5, 1);
+
+    std::vector<Eigen::Vector3d> expected_points = {
+            {5.0, 0.0, 0.0},
+            {5.0, 0.0, 0.0},
+    };
+    ExpectEQ(pcd_smoothed.points_, expected_points);
 }
 
 TEST(PointCloudSmoothing, SmoothLaplacianEmpty) {
@@ -265,6 +282,17 @@ TEST(PointCloudSmoothing, SmoothTaubin) {
 
     EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
     EXPECT_LT(final_noise, initial_noise);
+}
+
+TEST(PointCloudSmoothing, SmoothTaubinExcludesSelfNeighbor) {
+    auto pcd = CreateTwoPointLine();
+    auto pcd_smoothed = pcd.SmoothTaubin(1, 0.5, -0.5, 1);
+
+    std::vector<Eigen::Vector3d> expected_points = {
+            {5.0, 0.0, 0.0},
+            {5.0, 0.0, 0.0},
+    };
+    ExpectEQ(pcd_smoothed.points_, expected_points);
 }
 
 TEST(PointCloudSmoothing, SmoothTaubinEmpty) {
@@ -355,6 +383,20 @@ TEST(PointCloudSmoothing, SmoothMLS_HandlesOutliers) {
     EXPECT_LT(final_noise, initial_noise);
 }
 
+TEST(PointCloudSmoothing, SmoothMLS_PreservesPerPointAttributes) {
+    auto pcd = CreateNoisyPlane(100, 0.1);
+    pcd.colors_.resize(pcd.points_.size(), Eigen::Vector3d(0.1, 0.2, 0.3));
+    pcd.covariances_.resize(pcd.points_.size(), Eigen::Matrix3d::Identity());
+
+    auto pcd_smoothed = pcd.SmoothMLS(geometry::KDTreeSearchParamKNN(20));
+
+    EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
+    EXPECT_FALSE(pcd_smoothed.HasNormals());
+    EXPECT_TRUE(pcd_smoothed.normals_.empty());
+    ExpectEQ(pcd.colors_, pcd_smoothed.colors_);
+    ExpectEQ(pcd.covariances_, pcd_smoothed.covariances_);
+}
+
 TEST(PointCloudSmoothing, SmoothBilateral) {
     auto pcd = CreateNoisyPlane(200, 0.1);
     double initial_noise = AveragePlaneDistance(pcd);
@@ -426,6 +468,23 @@ TEST(PointCloudSmoothing, SmoothBilateral_NoNormals) {
 
     EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
     EXPECT_LT(final_noise, initial_noise);
+}
+
+TEST(PointCloudSmoothing, SmoothBilateral_NormalScaleInvariant) {
+    auto pcd = CreateNoisyPlane(200, 0.1);
+    pcd.EstimateNormals();
+
+    auto scaled_normal_pcd = pcd;
+    for (auto& normal : scaled_normal_pcd.normals_) {
+        normal *= 7.0;
+    }
+
+    auto pcd_smoothed = pcd.SmoothBilateral(
+            geometry::KDTreeSearchParamHybrid(0.2, 30), 0.1, 0.1);
+    auto scaled_pcd_smoothed = scaled_normal_pcd.SmoothBilateral(
+            geometry::KDTreeSearchParamHybrid(0.2, 30), 0.1, 0.1);
+
+    ExpectEQ(pcd_smoothed.points_, scaled_pcd_smoothed.points_, 1e-9);
 }
 
 TEST(PointCloudSmoothing, SmoothBilateral_Empty) {
