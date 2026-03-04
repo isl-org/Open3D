@@ -139,7 +139,8 @@ public:
     ~TransformationEstimationPointToPlane() override {}
 
     /// \brief Constructor that takes as input a RobustKernel.
-    /// \param kernel Any of the implemented statistical robust kernel for outlier rejection.
+    /// \param kernel Any of the implemented statistical robust kernel for
+    /// outlier rejection.
     explicit TransformationEstimationPointToPlane(
             std::shared_ptr<RobustKernel> kernel)
         : kernel_(std::move(kernel)) {}
