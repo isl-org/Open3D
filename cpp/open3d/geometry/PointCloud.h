@@ -209,21 +209,27 @@ public:
     /// \brief Smooth point cloud using Laplacian smoothing.
     /// \param iterations Number of smoothing iterations.
     /// \param lambda     Smoothing factor in (0, 1).
+    /// \param use_fixed_neighborhoods If true, reuse the initial k-NN graph
+    ///        across all passes for better performance at the cost of quality.
     /// \return Smoothed point cloud.
     PointCloud SmoothLaplacian(size_t iterations,
                                double lambda,
-                               int knn = 20) const;
+                               int knn = 20,
+                               bool use_fixed_neighborhoods = false) const;
 
     /// \brief Smooth point cloud using Taubin smoothing (Laplacian + inverse
     /// Laplacian).
     /// \param iterations Number of smoothing iterations.
     /// \param lambda     Positive smoothing factor.
     /// \param mu         Negative smoothing factor (typically around -0.53).
+    /// \param use_fixed_neighborhoods If true, reuse the initial k-NN graph
+    ///        across all passes for better performance at the cost of quality.
     /// \return Smoothed point cloud.
     PointCloud SmoothTaubin(size_t iterations = 10,
                             double lambda = 0.5,
                             double mu = -0.53,
-                            int knn = 20) const;
+                            int knn = 20,
+                            bool use_fixed_neighborhoods = false) const;
 
     /// \brief Smooth point cloud using bilateral filtering.
     /// \param search_param KDTree search parameters for neighborhood search.

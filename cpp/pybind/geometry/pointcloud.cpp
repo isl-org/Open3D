@@ -144,12 +144,13 @@ void pybind_pointcloud_definitions(py::module& m) {
                  "search_param"_a = KDTreeSearchParamHybrid(0.05, 30))
             .def("smooth_laplacian", &PointCloud::SmoothLaplacian,
                  "Smooth point cloud using Laplacian smoothing.",
-                 "iterations"_a = 10, "lambda_"_a = 0.5, "knn"_a = 20)
+                 "iterations"_a = 10, "lambda_"_a = 0.5, "knn"_a = 20,
+                 "use_fixed_neighborhoods"_a = false)
             .def("smooth_taubin", &PointCloud::SmoothTaubin,
                  "Smooth point cloud using Taubin smoothing (Laplacian + "
                  "inverse Laplacian).",
                  "iterations"_a = 10, "lambda_"_a = 0.5, "mu"_a = -0.53,
-                 "knn"_a = 20)
+                 "knn"_a = 20, "use_fixed_neighborhoods"_a = false)
             .def("smooth_bilateral", &PointCloud::SmoothBilateral,
                  "Smooth point cloud using bilateral filtering.",
                  "search_param"_a = KDTreeSearchParamHybrid(0.05, 30),
@@ -352,14 +353,20 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             m, "PointCloud", "smooth_laplacian",
             {{"iterations", "Number of smoothing iterations."},
              {"lambda_", "Smoothing parameter."},
-             {"knn", "Number of nearest neighbors used for smoothing."}});
+             {"knn", "Number of nearest neighbors used for smoothing."},
+             {"use_fixed_neighborhoods",
+              "If true, reuse the initial k-NN graph for better performance "
+              "at the cost of quality."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "smooth_taubin",
             {{"iterations", "Number of smoothing iterations."},
              {"lambda_", "Smoothing parameter for the Laplacian operator."},
              {"mu",
               "Smoothing parameter for the inverse Laplacian operator."},
-             {"knn", "Number of nearest neighbors used for smoothing."}});
+             {"knn", "Number of nearest neighbors used for smoothing."},
+             {"use_fixed_neighborhoods",
+              "If true, reuse the initial k-NN graph for better performance "
+              "at the cost of quality."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "smooth_bilateral",
             {{"search_param",

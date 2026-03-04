@@ -260,6 +260,17 @@ TEST(PointCloudSmoothing, SmoothLaplacianExcludesSelfNeighbor) {
     ExpectEQ(pcd_smoothed.points_, expected_points);
 }
 
+TEST(PointCloudSmoothing, SmoothLaplacianFixedNeighborhoodsExcludesSelfNeighbor) {
+    auto pcd = CreateTwoPointLine();
+    auto pcd_smoothed = pcd.SmoothLaplacian(1, 0.5, 1, true);
+
+    std::vector<Eigen::Vector3d> expected_points = {
+            {5.0, 0.0, 0.0},
+            {5.0, 0.0, 0.0},
+    };
+    ExpectEQ(pcd_smoothed.points_, expected_points);
+}
+
 TEST(PointCloudSmoothing, SmoothLaplacianEmpty) {
     geometry::PointCloud pcd;
     auto pcd_smoothed = pcd.SmoothLaplacian(1, 0.5);
@@ -287,6 +298,17 @@ TEST(PointCloudSmoothing, SmoothTaubin) {
 TEST(PointCloudSmoothing, SmoothTaubinExcludesSelfNeighbor) {
     auto pcd = CreateTwoPointLine();
     auto pcd_smoothed = pcd.SmoothTaubin(1, 0.5, -0.5, 1);
+
+    std::vector<Eigen::Vector3d> expected_points = {
+            {5.0, 0.0, 0.0},
+            {5.0, 0.0, 0.0},
+    };
+    ExpectEQ(pcd_smoothed.points_, expected_points);
+}
+
+TEST(PointCloudSmoothing, SmoothTaubinFixedNeighborhoodsExcludesSelfNeighbor) {
+    auto pcd = CreateTwoPointLine();
+    auto pcd_smoothed = pcd.SmoothTaubin(1, 0.5, -0.5, 1, true);
 
     std::vector<Eigen::Vector3d> expected_points = {
             {5.0, 0.0, 0.0},

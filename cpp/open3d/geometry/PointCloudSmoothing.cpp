@@ -150,7 +150,7 @@ int SearchKNNWithoutSelf(const KDTreeFlann& kdtree,
 }
 
 struct FixedKNNNeighborhoods {
-    int knn;
+    int knn = 0;
     std::vector<int> counts;
     std::vector<int> indices;
 };
@@ -231,9 +231,9 @@ std::vector<Eigen::Vector3d> ApplyLaplacianPass(
         std::vector<int> indices;
         if (SearchKNNWithoutSelf(kdtree, current_points, point_index, knn,
                                  indices) > 0) {
-            const Eigen::Vector3d centroid =
-                    ComputeCentroid(current_points, indices.data(),
-                                    static_cast<int>(indices.size()));
+            const Eigen::Vector3d centroid = ComputeCentroid(
+                    current_points, indices.data(),
+                    static_cast<int>(indices.size()));
             next_points[point_index] +=
                     factor * (centroid - current_points[point_index]);
         }
@@ -369,17 +369,23 @@ PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
 
 PointCloud PointCloud::SmoothLaplacian(size_t iterations,
                                        double lambda,
-                                       int knn) const {
+                                       int knn,
+                                       bool use_fixed_neighborhoods) const {
     if (points_.empty() || iterations == 0 || knn <= 0) {
         return *this;
     }
 
     PointCloud smoothed_cloud = *this;
-    const FixedKNNNeighborhoods fixed_neighborhoods =
-            BuildFixedKNNNeighborhoods(points_, knn);
+    FixedKNNNeighborhoods fixed_neighborhoods;
+    const FixedKNNNeighborhoods* fixed_neighborhoods_ptr = nullptr;
+    if (use_fixed_neighborhoods) {
+        fixed_neighborhoods = BuildFixedKNNNeighborhoods(points_, knn);
+        fixed_neighborhoods_ptr = &fixed_neighborhoods;
+    }
+
     for (size_t i = 0; i < iterations; ++i) {
         smoothed_cloud.points_ = ApplyLaplacianPass(
-                smoothed_cloud.points_, lambda, knn, &fixed_neighborhoods);
+                smoothed_cloud.points_, lambda, knn, fixed_neighborhoods_ptr);
     }
 
     return smoothed_cloud;
@@ -388,20 +394,25 @@ PointCloud PointCloud::SmoothLaplacian(size_t iterations,
 PointCloud PointCloud::SmoothTaubin(size_t iterations,
                                     double lambda,
                                     double mu,
-                                    int knn) const {
+                                    int knn,
+                                    bool use_fixed_neighborhoods) const {
     if (points_.empty() || iterations == 0 || knn <= 0) {
         return *this;
     }
 
     PointCloud smoothed_cloud = *this;
-    const FixedKNNNeighborhoods fixed_neighborhoods =
-            BuildFixedKNNNeighborhoods(points_, knn);
+    FixedKNNNeighborhoods fixed_neighborhoods;
+    const FixedKNNNeighborhoods* fixed_neighborhoods_ptr = nullptr;
+    if (use_fixed_neighborhoods) {
+        fixed_neighborhoods = BuildFixedKNNNeighborhoods(points_, knn);
+        fixed_neighborhoods_ptr = &fixed_neighborhoods;
+    }
 
     for (size_t i = 0; i < iterations; ++i) {
         smoothed_cloud.points_ = ApplyLaplacianPass(
-                smoothed_cloud.points_, lambda, knn, &fixed_neighborhoods);
+                smoothed_cloud.points_, lambda, knn, fixed_neighborhoods_ptr);
         smoothed_cloud.points_ = ApplyLaplacianPass(
-                smoothed_cloud.points_, mu, knn, &fixed_neighborhoods);
+                smoothed_cloud.points_, mu, knn, fixed_neighborhoods_ptr);
     }
 
     return smoothed_cloud;
