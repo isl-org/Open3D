@@ -20,15 +20,17 @@ namespace {
 // Helper functions for point cloud smoothing algorithms
 // These functions are used internally for point cloud filtering operations
 Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
-                                const std::vector<int>& indices) {
+                                const int* indices,
+                                int count) {
     Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-    if (indices.empty()) {
+    if (count <= 0 || indices == nullptr) {
         return centroid;
     }
 
     const int n_points = static_cast<int>(points.size());
     int valid_count = 0;
-    for (int idx : indices) {
+    for (int i = 0; i < count; ++i) {
+        const int idx = indices[i];
         if (idx < 0 || idx >= n_points) {
             continue;
         }
@@ -147,20 +149,81 @@ int SearchKNNWithoutSelf(const KDTreeFlann& kdtree,
     return static_cast<int>(write_index);
 }
 
+struct FixedKNNNeighborhoods {
+    int knn;
+    std::vector<int> counts;
+    std::vector<int> indices;
+};
+
+FixedKNNNeighborhoods BuildFixedKNNNeighborhoods(
+        const std::vector<Eigen::Vector3d>& points,
+        int knn) {
+    FixedKNNNeighborhoods neighborhoods;
+    neighborhoods.knn = knn;
+
+    const int n_points = static_cast<int>(points.size());
+    neighborhoods.counts.assign(n_points, 0);
+    neighborhoods.indices.assign(
+            static_cast<size_t>(n_points) * static_cast<size_t>(knn), -1);
+
+    const PointCloud point_only_cloud(points);
+    const KDTreeFlann kdtree(point_only_cloud);
+
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+    for (int point_index = 0; point_index < n_points; ++point_index) {
+        std::vector<int> local_indices;
+        const int neighbor_count =
+                SearchKNNWithoutSelf(kdtree, points, point_index, knn,
+                                     local_indices);
+        neighborhoods.counts[point_index] = neighbor_count;
+
+        const size_t offset =
+                static_cast<size_t>(point_index) * static_cast<size_t>(knn);
+        for (int neighbor_index = 0; neighbor_index < neighbor_count;
+             ++neighbor_index) {
+            neighborhoods.indices[offset + static_cast<size_t>(neighbor_index)] =
+                    local_indices[neighbor_index];
+        }
+    }
+
+    return neighborhoods;
+}
+
 std::vector<Eigen::Vector3d> ApplyLaplacianPass(
         const std::vector<Eigen::Vector3d>& current_points,
         double factor,
-        int knn) {
+        int knn,
+        const FixedKNNNeighborhoods* fixed_neighborhoods = nullptr) {
     std::vector<Eigen::Vector3d> next_points = current_points;
 
-    // TODO(open3d): If we add an approximation mode with fixed neighborhoods,
-    // cache the k-NN adjacency across passes to avoid rebuilding the KD-tree.
-    // The exact neighborhoods change as points move, so the current behavior
-    // rebuilds the search index for each pass.
+    const int n_points = static_cast<int>(current_points.size());
+
+    if (fixed_neighborhoods != nullptr) {
+        const int cached_knn = fixed_neighborhoods->knn;
+
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+        for (int point_index = 0; point_index < n_points; ++point_index) {
+            const int neighbor_count = fixed_neighborhoods->counts[point_index];
+            if (neighbor_count <= 0) {
+                continue;
+            }
+
+            const size_t offset = static_cast<size_t>(point_index) *
+                                  static_cast<size_t>(cached_knn);
+            const Eigen::Vector3d centroid = ComputeCentroid(
+                    current_points, &fixed_neighborhoods->indices[offset],
+                    neighbor_count);
+            next_points[point_index] +=
+                    factor * (centroid - current_points[point_index]);
+        }
+
+        return next_points;
+    }
+
     const PointCloud point_only_cloud(current_points);
     const KDTreeFlann kdtree(point_only_cloud);
-
-    const int n_points = static_cast<int>(current_points.size());
 
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
@@ -169,7 +232,8 @@ std::vector<Eigen::Vector3d> ApplyLaplacianPass(
         if (SearchKNNWithoutSelf(kdtree, current_points, point_index, knn,
                                  indices) > 0) {
             const Eigen::Vector3d centroid =
-                    ComputeCentroid(current_points, indices);
+                    ComputeCentroid(current_points, indices.data(),
+                                    static_cast<int>(indices.size()));
             next_points[point_index] +=
                     factor * (centroid - current_points[point_index]);
         }
@@ -311,9 +375,11 @@ PointCloud PointCloud::SmoothLaplacian(size_t iterations,
     }
 
     PointCloud smoothed_cloud = *this;
+    const FixedKNNNeighborhoods fixed_neighborhoods =
+            BuildFixedKNNNeighborhoods(points_, knn);
     for (size_t i = 0; i < iterations; ++i) {
-        smoothed_cloud.points_ =
-                ApplyLaplacianPass(smoothed_cloud.points_, lambda, knn);
+        smoothed_cloud.points_ = ApplyLaplacianPass(
+                smoothed_cloud.points_, lambda, knn, &fixed_neighborhoods);
     }
 
     return smoothed_cloud;
@@ -328,12 +394,14 @@ PointCloud PointCloud::SmoothTaubin(size_t iterations,
     }
 
     PointCloud smoothed_cloud = *this;
+    const FixedKNNNeighborhoods fixed_neighborhoods =
+            BuildFixedKNNNeighborhoods(points_, knn);
 
     for (size_t i = 0; i < iterations; ++i) {
-        smoothed_cloud.points_ =
-                ApplyLaplacianPass(smoothed_cloud.points_, lambda, knn);
-        smoothed_cloud.points_ =
-                ApplyLaplacianPass(smoothed_cloud.points_, mu, knn);
+        smoothed_cloud.points_ = ApplyLaplacianPass(
+                smoothed_cloud.points_, lambda, knn, &fixed_neighborhoods);
+        smoothed_cloud.points_ = ApplyLaplacianPass(
+                smoothed_cloud.points_, mu, knn, &fixed_neighborhoods);
     }
 
     return smoothed_cloud;
