@@ -238,6 +238,19 @@ static geometry::PointCloud CreateTwoPointLine() {
     return pcd;
 }
 
+static geometry::PointCloud CreateNoisyPlaneWithPerPointAttributes(
+        size_t n_points = 100, double noise_std = 0.01) {
+    geometry::PointCloud pcd = CreateNoisyPlane(n_points, noise_std);
+    pcd.colors_.resize(n_points);
+    pcd.covariances_.resize(n_points);
+    for (size_t i = 0; i < n_points; ++i) {
+        const double value = static_cast<double>(i);
+        pcd.colors_[i] = Eigen::Vector3d(value, value + 1.0, value + 2.0);
+        pcd.covariances_[i] = Eigen::Matrix3d::Identity() * (value + 1.0);
+    }
+    return pcd;
+}
+
 TEST(PointCloudSmoothing, SmoothLaplacian) {
     auto pcd = CreateNoisyPlane();
     double initial_noise = AveragePlaneDistance(pcd);
@@ -284,6 +297,17 @@ TEST(PointCloudSmoothing, SmoothLaplacianZeroIterations) {
     ExpectEQ(pcd.points_, pcd_smoothed.points_);
 }
 
+TEST(PointCloudSmoothing, SmoothLaplacianPreservesPerPointAttributes) {
+    auto pcd = CreateNoisyPlaneWithPerPointAttributes(80, 0.05);
+    auto pcd_smoothed = pcd.SmoothLaplacian(5, 0.5, 20, true);
+    auto pcd_smoothed_again = pcd.SmoothLaplacian(5, 0.5, 20, true);
+
+    EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
+    ExpectEQ(pcd.colors_, pcd_smoothed.colors_);
+    ExpectEQ(pcd.covariances_, pcd_smoothed.covariances_);
+    ExpectEQ(pcd_smoothed.points_, pcd_smoothed_again.points_);
+}
+
 TEST(PointCloudSmoothing, SmoothTaubin) {
     auto pcd = CreateNoisyPlane();
     double initial_noise = AveragePlaneDistance(pcd);
@@ -328,6 +352,17 @@ TEST(PointCloudSmoothing, SmoothTaubinZeroIterations) {
     auto pcd_smoothed = pcd.SmoothTaubin(0, 0.5, -0.5);
     EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
     ExpectEQ(pcd.points_, pcd_smoothed.points_);
+}
+
+TEST(PointCloudSmoothing, SmoothTaubinPreservesPerPointAttributes) {
+    auto pcd = CreateNoisyPlaneWithPerPointAttributes(80, 0.05);
+    auto pcd_smoothed = pcd.SmoothTaubin(5, 0.5, -0.53, 20, true);
+    auto pcd_smoothed_again = pcd.SmoothTaubin(5, 0.5, -0.53, 20, true);
+
+    EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
+    ExpectEQ(pcd.colors_, pcd_smoothed.colors_);
+    ExpectEQ(pcd.covariances_, pcd_smoothed.covariances_);
+    ExpectEQ(pcd_smoothed.points_, pcd_smoothed_again.points_);
 }
 
 TEST(PointCloudSmoothing, SmoothMLS_KNN) {

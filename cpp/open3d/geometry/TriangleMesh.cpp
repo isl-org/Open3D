@@ -17,6 +17,7 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
+#include "open3d/geometry/Smoothing.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/Random.h"
@@ -296,58 +297,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
     return mesh;
 }
 
-void TriangleMesh::FilterSmoothLaplacianHelper(
-        std::shared_ptr<TriangleMesh> &mesh,
-        const std::vector<Eigen::Vector3d> &prev_vertices,
-        const std::vector<Eigen::Vector3d> &prev_vertex_normals,
-        const std::vector<Eigen::Vector3d> &prev_vertex_colors,
-        const std::vector<std::unordered_set<int>> &adjacency_list,
-        double lambda_filter,
-        bool filter_vertex,
-        bool filter_normal,
-        bool filter_color) const {
-    for (size_t vidx = 0; vidx < mesh->vertices_.size(); ++vidx) {
-        Eigen::Vector3d vertex_sum(0, 0, 0);
-        Eigen::Vector3d normal_sum(0, 0, 0);
-        Eigen::Vector3d color_sum(0, 0, 0);
-        double total_weight = 0;
-        for (int nbidx : mesh->adjacency_list_[vidx]) {
-            auto diff = prev_vertices[vidx] - prev_vertices[nbidx];
-            double dist = diff.norm();
-            double weight = 1. / (dist + 1e-12);
-            total_weight += weight;
-
-            if (filter_vertex) {
-                vertex_sum += weight * prev_vertices[nbidx];
-            }
-            if (filter_normal) {
-                normal_sum += weight * prev_vertex_normals[nbidx];
-            }
-            if (filter_color) {
-                color_sum += weight * prev_vertex_colors[nbidx];
-            }
-        }
-
-        if (filter_vertex) {
-            mesh->vertices_[vidx] = prev_vertices[vidx] +
-                                    lambda_filter * (vertex_sum / total_weight -
-                                                     prev_vertices[vidx]);
-        }
-        if (filter_normal) {
-            mesh->vertex_normals_[vidx] =
-                    prev_vertex_normals[vidx] +
-                    lambda_filter * (normal_sum / total_weight -
-                                     prev_vertex_normals[vidx]);
-        }
-        if (filter_color) {
-            mesh->vertex_colors_[vidx] =
-                    prev_vertex_colors[vidx] +
-                    lambda_filter * (color_sum / total_weight -
-                                     prev_vertex_colors[vidx]);
-        }
-    }
-}
-
 std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
         int number_of_iterations,
         double lambda_filter,
@@ -375,11 +324,34 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
         mesh->ComputeAdjacencyList();
     }
 
+    const auto for_each_neighbor = [&mesh](int vidx, const auto &fn) {
+        for (int nbidx : mesh->adjacency_list_[vidx]) {
+            fn(nbidx);
+        }
+    };
+    const auto inverse_distance_weight =
+            [](int vidx, int nbidx,
+               const std::vector<Eigen::Vector3d> &positions) {
+                const double distance = (positions[vidx] - positions[nbidx]).norm();
+                return 1.0 / (distance + 1e-12);
+            };
+
     for (int iter = 0; iter < number_of_iterations; ++iter) {
-        FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
-                                    prev_vertex_colors, mesh->adjacency_list_,
-                                    lambda_filter, filter_vertex, filter_normal,
-                                    filter_color);
+        if (filter_vertex) {
+            smoothing::ApplyIndexedLaplacianUpdate(
+                    prev_vertices, prev_vertices, mesh->vertices_,
+                    lambda_filter, for_each_neighbor, inverse_distance_weight);
+        }
+        if (filter_normal) {
+            smoothing::ApplyIndexedLaplacianUpdate(
+                    prev_vertices, prev_vertex_normals, mesh->vertex_normals_,
+                    lambda_filter, for_each_neighbor, inverse_distance_weight);
+        }
+        if (filter_color) {
+            smoothing::ApplyIndexedLaplacianUpdate(
+                    prev_vertices, prev_vertex_colors, mesh->vertex_colors_,
+                    lambda_filter, for_each_neighbor, inverse_distance_weight);
+        }
         if (iter < number_of_iterations - 1) {
             std::swap(mesh->vertices_, prev_vertices);
             std::swap(mesh->vertex_normals_, prev_vertex_normals);
@@ -416,18 +388,42 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     if (!mesh->HasAdjacencyList()) {
         mesh->ComputeAdjacencyList();
     }
+
+    const auto for_each_neighbor = [&mesh](int vidx, const auto &fn) {
+        for (int nbidx : mesh->adjacency_list_[vidx]) {
+            fn(nbidx);
+        }
+    };
+    const auto inverse_distance_weight =
+            [](int vidx, int nbidx,
+               const std::vector<Eigen::Vector3d> &positions) {
+                const double distance = (positions[vidx] - positions[nbidx]).norm();
+                return 1.0 / (distance + 1e-12);
+            };
+    const auto apply_laplacian_pass = [&](double factor) {
+        if (filter_vertex) {
+            smoothing::ApplyIndexedLaplacianUpdate(
+                    prev_vertices, prev_vertices, mesh->vertices_, factor,
+                    for_each_neighbor, inverse_distance_weight);
+        }
+        if (filter_normal) {
+            smoothing::ApplyIndexedLaplacianUpdate(
+                    prev_vertices, prev_vertex_normals, mesh->vertex_normals_,
+                    factor, for_each_neighbor, inverse_distance_weight);
+        }
+        if (filter_color) {
+            smoothing::ApplyIndexedLaplacianUpdate(
+                    prev_vertices, prev_vertex_colors, mesh->vertex_colors_,
+                    factor, for_each_neighbor, inverse_distance_weight);
+        }
+    };
+
     for (int iter = 0; iter < number_of_iterations; ++iter) {
-        FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
-                                    prev_vertex_colors, mesh->adjacency_list_,
-                                    lambda_filter, filter_vertex, filter_normal,
-                                    filter_color);
+        apply_laplacian_pass(lambda_filter);
         std::swap(mesh->vertices_, prev_vertices);
         std::swap(mesh->vertex_normals_, prev_vertex_normals);
         std::swap(mesh->vertex_colors_, prev_vertex_colors);
-        FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
-                                    prev_vertex_colors, mesh->adjacency_list_,
-                                    mu, filter_vertex, filter_normal,
-                                    filter_color);
+        apply_laplacian_pass(mu);
         if (iter < number_of_iterations - 1) {
             std::swap(mesh->vertices_, prev_vertices);
             std::swap(mesh->vertex_normals_, prev_vertex_normals);

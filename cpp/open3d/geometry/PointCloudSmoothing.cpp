@@ -11,38 +11,13 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/Smoothing.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
 namespace {
-// Helper functions for point cloud smoothing algorithms
-// These functions are used internally for point cloud filtering operations
-Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
-                                const int* indices,
-                                int count) {
-    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-    if (count <= 0 || indices == nullptr) {
-        return centroid;
-    }
-
-    const int n_points = static_cast<int>(points.size());
-    int valid_count = 0;
-    for (int i = 0; i < count; ++i) {
-        const int idx = indices[i];
-        if (idx < 0 || idx >= n_points) {
-            continue;
-        }
-        centroid += points[idx];
-        ++valid_count;
-    }
-    if (valid_count > 0) {
-        centroid /= static_cast<double>(valid_count);
-    }
-    return centroid;
-}
-
 Eigen::Vector3d ComputeWeightedCentroid(const PointCloud& pcd,
                                         const std::vector<int>& indices,
                                         const std::vector<double>& weights) {
@@ -195,50 +170,49 @@ std::vector<Eigen::Vector3d> ApplyLaplacianPass(
         double factor,
         int knn,
         const FixedKNNNeighborhoods* fixed_neighborhoods = nullptr) {
-    std::vector<Eigen::Vector3d> next_points = current_points;
-
-    const int n_points = static_cast<int>(current_points.size());
+    std::vector<Eigen::Vector3d> next_points;
+    const auto uniform_weight = [](int /*point_index*/, int /*neighbor_index*/,
+                                   const std::vector<Eigen::Vector3d>&
+                                   /*positions*/) { return 1.0; };
 
     if (fixed_neighborhoods != nullptr) {
         const int cached_knn = fixed_neighborhoods->knn;
-
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int point_index = 0; point_index < n_points; ++point_index) {
-            const int neighbor_count = fixed_neighborhoods->counts[point_index];
-            if (neighbor_count <= 0) {
-                continue;
-            }
-
-            const size_t offset = static_cast<size_t>(point_index) *
-                                  static_cast<size_t>(cached_knn);
-            const Eigen::Vector3d centroid = ComputeCentroid(
-                    current_points, &fixed_neighborhoods->indices[offset],
-                    neighbor_count);
-            next_points[point_index] +=
-                    factor * (centroid - current_points[point_index]);
-        }
-
+        const auto for_each_neighbor =
+                [&fixed_neighborhoods, cached_knn](int point_index,
+                                                   const auto& fn) {
+                    const int neighbor_count =
+                            fixed_neighborhoods->counts[point_index];
+                    const size_t offset = static_cast<size_t>(point_index) *
+                                          static_cast<size_t>(cached_knn);
+                    for (int neighbor_index = 0; neighbor_index < neighbor_count;
+                         ++neighbor_index) {
+                        fn(fixed_neighborhoods
+                                   ->indices[offset +
+                                             static_cast<size_t>(neighbor_index)]);
+                    }
+                };
+        smoothing::ApplyIndexedLaplacianUpdate(
+                current_points, current_points, next_points, factor,
+                for_each_neighbor, uniform_weight);
         return next_points;
     }
 
     const PointCloud point_only_cloud(current_points);
     const KDTreeFlann kdtree(point_only_cloud);
-
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int point_index = 0; point_index < n_points; ++point_index) {
+    const auto for_each_neighbor = [&kdtree, &current_points,
+                                    knn](int point_index, const auto& fn) {
         std::vector<int> indices;
-        if (SearchKNNWithoutSelf(kdtree, current_points, point_index, knn,
-                                 indices) > 0) {
-            const Eigen::Vector3d centroid = ComputeCentroid(
-                    current_points, indices.data(),
-                    static_cast<int>(indices.size()));
-            next_points[point_index] +=
-                    factor * (centroid - current_points[point_index]);
+        const int neighbor_count = SearchKNNWithoutSelf(
+                kdtree, current_points, point_index, knn, indices);
+        for (int neighbor_index = 0; neighbor_index < neighbor_count;
+             ++neighbor_index) {
+            fn(indices[neighbor_index]);
         }
-    }
+    };
 
+    smoothing::ApplyIndexedLaplacianUpdate(current_points, current_points,
+                                           next_points, factor,
+                                           for_each_neighbor, uniform_weight);
     return next_points;
 }
 }  // namespace
