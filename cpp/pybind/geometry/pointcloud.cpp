@@ -145,12 +145,13 @@ void pybind_pointcloud_definitions(py::module& m) {
             .def("smooth_laplacian", &PointCloud::SmoothLaplacian,
                  "Smooth point cloud using Laplacian smoothing.",
                  "iterations"_a = 10, "lambda_"_a = 0.5, "knn"_a = 20,
-                 "use_fixed_neighborhoods"_a = false)
+                 py::arg_v("use_fixed_neighborhoods", false, "False"))
             .def("smooth_taubin", &PointCloud::SmoothTaubin,
                  "Smooth point cloud using Taubin smoothing (Laplacian + "
                  "inverse Laplacian).",
                  "iterations"_a = 10, "lambda_"_a = 0.5, "mu"_a = -0.53,
-                 "knn"_a = 20, "use_fixed_neighborhoods"_a = false)
+                 "knn"_a = 20,
+                 py::arg_v("use_fixed_neighborhoods", false, "False"))
             .def("smooth_bilateral", &PointCloud::SmoothBilateral,
                  "Smooth point cloud using bilateral filtering.",
                  "search_param"_a = KDTreeSearchParamHybrid(0.05, 30),
