@@ -7,8 +7,10 @@
 
 #pragma once
 
+// cppcheck-suppress missingIncludeSystem
 #include <Eigen/Core>
 
+// cppcheck-suppress missingIncludeSystem
 #include <vector>
 
 #include "open3d/utility/Parallel.h"
