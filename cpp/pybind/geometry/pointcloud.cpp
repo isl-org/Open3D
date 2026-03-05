@@ -362,8 +362,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             m, "PointCloud", "smooth_taubin",
             {{"iterations", "Number of smoothing iterations."},
              {"lambda_", "Smoothing parameter for the Laplacian operator."},
-             {"mu",
-              "Smoothing parameter for the inverse Laplacian operator."},
+             {"mu", "Smoothing parameter for the inverse Laplacian operator."},
              {"knn", "Number of nearest neighbors used for smoothing."},
              {"use_fixed_neighborhoods",
               "If true, reuse the initial k-NN graph for better performance "

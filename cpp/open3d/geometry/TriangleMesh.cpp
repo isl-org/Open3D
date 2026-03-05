@@ -332,7 +332,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
     const auto inverse_distance_weight =
             [](int vidx, int nbidx,
                const std::vector<Eigen::Vector3d> &positions) {
-                const double distance = (positions[vidx] - positions[nbidx]).norm();
+                const double distance =
+                        (positions[vidx] - positions[nbidx]).norm();
                 return 1.0 / (distance + 1e-12);
             };
 
@@ -397,7 +398,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     const auto inverse_distance_weight =
             [](int vidx, int nbidx,
                const std::vector<Eigen::Vector3d> &positions) {
-                const double distance = (positions[vidx] - positions[nbidx]).norm();
+                const double distance =
+                        (positions[vidx] - positions[nbidx]).norm();
                 return 1.0 / (distance + 1e-12);
             };
     const auto apply_laplacian_pass = [&](double factor) {

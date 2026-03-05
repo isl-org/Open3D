@@ -131,8 +131,7 @@ struct FixedKNNNeighborhoods {
 };
 
 FixedKNNNeighborhoods BuildFixedKNNNeighborhoods(
-        const std::vector<Eigen::Vector3d>& points,
-        int knn) {
+        const std::vector<Eigen::Vector3d>& points, int knn) {
     FixedKNNNeighborhoods neighborhoods;
     neighborhoods.knn = knn;
 
@@ -148,16 +147,16 @@ FixedKNNNeighborhoods BuildFixedKNNNeighborhoods(
         num_threads(utility::EstimateMaxThreads())
     for (int point_index = 0; point_index < n_points; ++point_index) {
         std::vector<int> local_indices;
-        const int neighbor_count =
-                SearchKNNWithoutSelf(kdtree, points, point_index, knn,
-                                     local_indices);
+        const int neighbor_count = SearchKNNWithoutSelf(
+                kdtree, points, point_index, knn, local_indices);
         neighborhoods.counts[point_index] = neighbor_count;
 
         const size_t offset =
                 static_cast<size_t>(point_index) * static_cast<size_t>(knn);
         for (int neighbor_index = 0; neighbor_index < neighbor_count;
              ++neighbor_index) {
-            neighborhoods.indices[offset + static_cast<size_t>(neighbor_index)] =
+            neighborhoods
+                    .indices[offset + static_cast<size_t>(neighbor_index)] =
                     local_indices[neighbor_index];
         }
     }
@@ -177,20 +176,19 @@ std::vector<Eigen::Vector3d> ApplyLaplacianPass(
 
     if (fixed_neighborhoods != nullptr) {
         const int cached_knn = fixed_neighborhoods->knn;
-        const auto for_each_neighbor =
-                [&fixed_neighborhoods, cached_knn](int point_index,
-                                                   const auto& fn) {
-                    const int neighbor_count =
-                            fixed_neighborhoods->counts[point_index];
-                    const size_t offset = static_cast<size_t>(point_index) *
-                                          static_cast<size_t>(cached_knn);
-                    for (int neighbor_index = 0; neighbor_index < neighbor_count;
-                         ++neighbor_index) {
-                        fn(fixed_neighborhoods
-                                   ->indices[offset +
-                                             static_cast<size_t>(neighbor_index)]);
-                    }
-                };
+        const auto for_each_neighbor = [&fixed_neighborhoods, cached_knn](
+                                               int point_index,
+                                               const auto& fn) {
+            const int neighbor_count = fixed_neighborhoods->counts[point_index];
+            const size_t offset = static_cast<size_t>(point_index) *
+                                  static_cast<size_t>(cached_knn);
+            for (int neighbor_index = 0; neighbor_index < neighbor_count;
+                 ++neighbor_index) {
+                fn(fixed_neighborhoods
+                           ->indices[offset +
+                                     static_cast<size_t>(neighbor_index)]);
+            }
+        };
         smoothing::ApplyIndexedLaplacianUpdate(
                 current_points, current_points, next_points, factor,
                 for_each_neighbor, uniform_weight);
@@ -199,8 +197,8 @@ std::vector<Eigen::Vector3d> ApplyLaplacianPass(
 
     const PointCloud point_only_cloud(current_points);
     const KDTreeFlann kdtree(point_only_cloud);
-    const auto for_each_neighbor = [&kdtree, &current_points,
-                                    knn](int point_index, const auto& fn) {
+    const auto for_each_neighbor = [&kdtree, &current_points, knn](
+                                           int point_index, const auto& fn) {
         std::vector<int> indices;
         const int neighbor_count = SearchKNNWithoutSelf(
                 kdtree, current_points, point_index, knn, indices);

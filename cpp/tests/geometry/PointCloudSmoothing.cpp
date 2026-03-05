@@ -273,7 +273,8 @@ TEST(PointCloudSmoothing, SmoothLaplacianExcludesSelfNeighbor) {
     ExpectEQ(pcd_smoothed.points_, expected_points);
 }
 
-TEST(PointCloudSmoothing, SmoothLaplacianFixedNeighborhoodsExcludesSelfNeighbor) {
+TEST(PointCloudSmoothing,
+     SmoothLaplacianFixedNeighborhoodsExcludesSelfNeighbor) {
     auto pcd = CreateTwoPointLine();
     auto pcd_smoothed = pcd.SmoothLaplacian(1, 0.5, 1, true);
 
