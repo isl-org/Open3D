@@ -592,7 +592,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     std::vector<double> dists2;
 
     auto ComputePointWeight = [&](int pidx0) {
-        kdtree.SearchRadius(pcl->points_[pidx0], r_max, nbs, dists2);
+        kdtree.SearchRadius(pcl->points_[pidx0], r_max, nbs, dists2, false);
         double weight = 0;
         for (size_t nbidx = 0; nbidx < nbs.size(); ++nbidx) {
             int pidx1 = nbs[nbidx];
@@ -640,7 +640,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         // its neighbors instead of recomputing each neighbor's weight from
         // scratch (which would require an additional KD-tree query per
         // neighbor). This matches the reference algorithm in the paper.
-        kdtree.SearchRadius(pcl->points_[pidx], r_max, nbs, dists2);
+        kdtree.SearchRadius(pcl->points_[pidx], r_max, nbs, dists2, false);
         for (size_t nbidx = 0; nbidx < nbs.size(); ++nbidx) {
             int nb = nbs[nbidx];
             if (deleted[nb] || nb == pidx) {

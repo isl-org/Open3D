@@ -1110,6 +1110,74 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     }
 }
 
+TEST(TriangleMesh, SamplePointsPoissonDisk) {
+    // Empty mesh should throw
+    auto mesh_empty = geometry::TriangleMesh();
+    EXPECT_THROW(mesh_empty.SamplePointsPoissonDisk(100), std::runtime_error);
+
+    // Simple triangle mesh in z=0 plane: (0,0,0), (1,0,0), (0,1,0)
+    std::vector<Eigen::Vector3d> vertices = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}};
+    std::vector<Eigen::Vector3i> triangles = {{0, 1, 2}};
+
+    auto mesh_simple = geometry::TriangleMesh();
+    mesh_simple.vertices_ = vertices;
+    mesh_simple.triangles_ = triangles;
+
+    size_t n_points = 100;
+    auto pcd = mesh_simple.SamplePointsPoissonDisk(n_points);
+    EXPECT_EQ(pcd->points_.size(), n_points);
+    EXPECT_TRUE(pcd->colors_.size() == 0);
+    EXPECT_TRUE(pcd->normals_.size() == 0);
+
+    // All points must lie on the triangle surface (z=0, x>=0, y>=0, x+y<=1)
+    for (size_t i = 0; i < pcd->points_.size(); ++i) {
+        const auto &p = pcd->points_[i];
+        EXPECT_NEAR(p(2), 0.0, 1e-10);
+        EXPECT_GE(p(0), -1e-10);
+        EXPECT_GE(p(1), -1e-10);
+        EXPECT_LE(p(0) + p(1), 1.0 + 1e-10);
+    }
+
+    // Poisson disk property: minimum pairwise distance should be > 0
+    // (points are spread apart, not clustered)
+    double min_dist = std::numeric_limits<double>::max();
+    for (size_t i = 0; i < pcd->points_.size(); ++i) {
+        for (size_t j = i + 1; j < pcd->points_.size(); ++j) {
+            double d = (pcd->points_[i] - pcd->points_[j]).norm();
+            min_dist = std::min(min_dist, d);
+        }
+    }
+    // For 100 points on a triangle with area 0.5, the theoretical Poisson disk
+    // radius is r = 2*sqrt(area/n / (2*sqrt(3))) ≈ 0.057. After sample
+    // elimination the actual minimum distance should be a meaningful fraction
+    // of that. We just check it's not degenerate (> 0.01).
+    EXPECT_GT(min_dist, 0.01);
+
+    // With vertex colors and normals
+    std::vector<Eigen::Vector3d> colors = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}};
+    std::vector<Eigen::Vector3d> normals = {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}};
+    mesh_simple.vertex_colors_ = colors;
+    mesh_simple.vertex_normals_ = normals;
+    pcd = mesh_simple.SamplePointsPoissonDisk(n_points);
+    EXPECT_EQ(pcd->points_.size(), n_points);
+    EXPECT_EQ(pcd->colors_.size(), n_points);
+    EXPECT_EQ(pcd->normals_.size(), n_points);
+
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(pcd->colors_[pidx], Eigen::Vector3d(1, 0, 0));
+        ExpectEQ(pcd->normals_[pidx], Eigen::Vector3d(0, 1, 0));
+    }
+
+    // With triangle normals
+    pcd = mesh_simple.SamplePointsPoissonDisk(n_points, 5, nullptr, true);
+    EXPECT_EQ(pcd->points_.size(), n_points);
+    EXPECT_EQ(pcd->normals_.size(), n_points);
+
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(pcd->normals_[pidx], Eigen::Vector3d(0, 0, 1));
+    }
+}
+
 TEST(TriangleMesh, FilterSharpen) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
