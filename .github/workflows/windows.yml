@@ -176,9 +176,9 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          gh release upload main-devel ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }} --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
 
       - name: Viewer App
         working-directory: ${{ env.BUILD_DIR }}
@@ -206,8 +206,7 @@ jobs:
           $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
           Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
             "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
-          gh release upload main-devel "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" --clobber
-          gh release view main-devel
+          bash .github/workflows/update_release.sh "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
 
       - name: Run C++ unit tests
         if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
@@ -347,9 +346,9 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          gh release upload main-devel ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
   test-wheel:
     name: Test wheel
