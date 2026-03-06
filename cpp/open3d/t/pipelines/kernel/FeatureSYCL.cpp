@@ -116,109 +116,86 @@ void ComputeFPFHFeatureSYCL(
                 map_point_idx_to_spfh_idx.GetDataPtr<int64_t>();
 
         // Compute SPFH features for the points.
-        queue.parallel_for(
-                     sycl::range<1>{(size_t)n_spfh},
-                     [=](sycl::id<1> id) {
-                         int64_t workload_idx = id[0];
-                         int64_t workload_point_idx =
-                                 filter_fpfh
-                                         ? map_spfh_info_idx_to_point_idx_ptr
-                                                   [workload_idx]
-                                         : workload_idx;
-                         int64_t idx = 3 * workload_point_idx;
-                         const scalar_t *point = points_ptr + idx;
-                         const scalar_t *normal = normals_ptr + idx;
+        queue.parallel_for(sycl::range<1>{(size_t)n_spfh}, [=](sycl::id<1> id) {
+                 int64_t workload_idx = id[0];
+                 int64_t workload_point_idx =
+                         filter_fpfh ? map_spfh_info_idx_to_point_idx_ptr
+                                               [workload_idx]
+                                     : workload_idx;
+                 int64_t idx = 3 * workload_point_idx;
+                 const scalar_t *point = points_ptr + idx;
+                 const scalar_t *normal = normals_ptr + idx;
 
-                         const int indice_size =
+                 const int indice_size =
+                         is_radius_search ? (counts_ptr[workload_idx + 1] -
+                                             counts_ptr[workload_idx])
+                                          : counts_ptr[workload_idx];
+
+                 if (indice_size > 1) {
+                     const scalar_t hist_incr =
+                             100.0 / static_cast<scalar_t>(indice_size - 1);
+                     for (int i = 1; i < indice_size; i++) {
+                         const int point_idx =
                                  is_radius_search
-                                         ? (counts_ptr[workload_idx + 1] -
-                                            counts_ptr[workload_idx])
-                                         : counts_ptr[workload_idx];
+                                         ? indices_ptr[i +
+                                                       counts_ptr[workload_idx]]
+                                         : indices_ptr[workload_idx * nn_size +
+                                                       i];
 
-                         if (indice_size > 1) {
-                             const scalar_t hist_incr =
-                                     100.0 / static_cast<scalar_t>(
-                                                     indice_size - 1);
-                             for (int i = 1; i < indice_size; i++) {
-                                 const int point_idx =
-                                         is_radius_search
-                                                 ? indices_ptr
-                                                           [i +
-                                                            counts_ptr
-                                                                    [workload_idx]]
-                                                 : indices_ptr[workload_idx *
-                                                                       nn_size +
-                                                               i];
-
-                                 const scalar_t *point_ref =
-                                         points_ptr + 3 * point_idx;
-                                 const scalar_t *normal_ref =
-                                         normals_ptr + 3 * point_idx;
-                                 scalar_t fea[4] = {0};
-                                 ComputePairFeature<scalar_t>(
-                                         point, normal, point_ref, normal_ref,
-                                         fea);
-                                 UpdateSPFHFeature<scalar_t>(
-                                         fea, workload_idx, hist_incr,
-                                         spfhs_ptr);
-                             }
-                         }
-                     })
-                .wait_and_throw();
+                         const scalar_t *point_ref = points_ptr + 3 * point_idx;
+                         const scalar_t *normal_ref =
+                                 normals_ptr + 3 * point_idx;
+                         scalar_t fea[4] = {0};
+                         ComputePairFeature<scalar_t>(point, normal, point_ref,
+                                                      normal_ref, fea);
+                         UpdateSPFHFeature<scalar_t>(fea, workload_idx,
+                                                     hist_incr, spfhs_ptr);
+                     }
+                 }
+             }).wait_and_throw();
 
         // Compute FPFH features for the points.
-        queue.parallel_for(
-                     sycl::range<1>{(size_t)n_fpfh},
-                     [=](sycl::id<1> id) {
-                         int64_t workload_idx = id[0];
-                         int64_t workload_spfh_idx =
-                                 filter_fpfh
-                                         ? map_point_idx_to_spfh_idx_ptr
-                                                   [map_fpfh_idx_to_point_idx_ptr
-                                                            [workload_idx]]
-                                         : workload_idx;
-                         const int indice_size =
+        queue.parallel_for(sycl::range<1>{(size_t)n_fpfh}, [=](sycl::id<1> id) {
+                 int64_t workload_idx = id[0];
+                 int64_t workload_spfh_idx =
+                         filter_fpfh ? map_point_idx_to_spfh_idx_ptr
+                                               [map_fpfh_idx_to_point_idx_ptr
+                                                        [workload_idx]]
+                                     : workload_idx;
+                 const int indice_size =
+                         is_radius_search ? (counts_ptr[workload_spfh_idx + 1] -
+                                             counts_ptr[workload_spfh_idx])
+                                          : counts_ptr[workload_spfh_idx];
+                 if (indice_size > 1) {
+                     scalar_t sum[3] = {0.0, 0.0, 0.0};
+                     for (int i = 1; i < indice_size; i++) {
+                         const int idx =
                                  is_radius_search
-                                         ? (counts_ptr[workload_spfh_idx + 1] -
-                                            counts_ptr[workload_spfh_idx])
-                                         : counts_ptr[workload_spfh_idx];
-                         if (indice_size > 1) {
-                             scalar_t sum[3] = {0.0, 0.0, 0.0};
-                             for (int i = 1; i < indice_size; i++) {
-                                 const int idx =
-                                         is_radius_search
-                                                 ? i +
-                                                           counts_ptr
-                                                                   [workload_spfh_idx]
-                                                 : workload_spfh_idx * nn_size +
-                                                           i;
-                                 const scalar_t dist = distance2_ptr[idx];
-                                 if (dist == 0.0) continue;
-                                 const int32_t spfh_idx =
-                                         filter_fpfh
-                                                 ? map_point_idx_to_spfh_idx_ptr
-                                                           [indices_ptr[idx]]
-                                                 : indices_ptr[idx];
-                                 for (int j = 0; j < 33; j++) {
-                                     const scalar_t val =
-                                             spfhs_ptr[spfh_idx * 33 + j] /
-                                             dist;
-                                     sum[j / 11] += val;
-                                     fpfhs_ptr[workload_idx * 33 + j] += val;
-                                 }
-                             }
-                             for (int j = 0; j < 3; j++) {
-                                 sum[j] = sum[j] != 0.0 ? 100.0 / sum[j] : 0.0;
-                             }
-                             for (int j = 0; j < 33; j++) {
-                                 fpfhs_ptr[workload_idx * 33 + j] *=
-                                         sum[j / 11];
-                                 fpfhs_ptr[workload_idx * 33 + j] +=
-                                         spfhs_ptr[workload_spfh_idx * 33 + j];
-                             }
+                                         ? i + counts_ptr[workload_spfh_idx]
+                                         : workload_spfh_idx * nn_size + i;
+                         const scalar_t dist = distance2_ptr[idx];
+                         if (dist == 0.0) continue;
+                         const int32_t spfh_idx =
+                                 filter_fpfh ? map_point_idx_to_spfh_idx_ptr
+                                                       [indices_ptr[idx]]
+                                             : indices_ptr[idx];
+                         for (int j = 0; j < 33; j++) {
+                             const scalar_t val =
+                                     spfhs_ptr[spfh_idx * 33 + j] / dist;
+                             sum[j / 11] += val;
+                             fpfhs_ptr[workload_idx * 33 + j] += val;
                          }
-                     })
-                .wait_and_throw();
+                     }
+                     for (int j = 0; j < 3; j++) {
+                         sum[j] = sum[j] != 0.0 ? 100.0 / sum[j] : 0.0;
+                     }
+                     for (int j = 0; j < 33; j++) {
+                         fpfhs_ptr[workload_idx * 33 + j] *= sum[j / 11];
+                         fpfhs_ptr[workload_idx * 33 + j] +=
+                                 spfhs_ptr[workload_spfh_idx * 33 + j];
+                     }
+                 }
+             }).wait_and_throw();
     });
 }
 

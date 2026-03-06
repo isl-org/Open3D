@@ -378,10 +378,9 @@ core::Tensor ComputeInformationMatrix(
                   target_points.GetDtype(), device);
     } else if (target_points.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
-        ComputeInformationMatrixSYCL(target_points.Contiguous(),
-                                     correspondence_indices.Contiguous(),
-                                     information_matrix,
-                                     target_points.GetDtype(), device);
+        ComputeInformationMatrixSYCL(
+                target_points.Contiguous(), correspondence_indices.Contiguous(),
+                information_matrix, target_points.GetDtype(), device);
 #else
         utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif

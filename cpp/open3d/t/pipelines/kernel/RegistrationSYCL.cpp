@@ -18,19 +18,19 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-static constexpr int kReduceDim = 29;  // 21 (JtJ) + 6 (Jtr) + 1 (r) + 1 (inlier)
+static constexpr int kReduceDim =
+        29;  // 21 (JtJ) + 6 (Jtr) + 1 (r) + 1 (inlier)
 
-void ComputePosePointToPlaneSYCL(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const core::Tensor &correspondence_indices,
-        core::Tensor &pose,
-        float &residual,
-        int &inlier_count,
-        const core::Dtype &dtype,
-        const core::Device &device,
-        const registration::RobustKernel &kernel) {
+void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
+                                 const core::Tensor &target_points,
+                                 const core::Tensor &target_normals,
+                                 const core::Tensor &correspondence_indices,
+                                 core::Tensor &pose,
+                                 float &residual,
+                                 int &inlier_count,
+                                 const core::Dtype &dtype,
+                                 const core::Device &device,
+                                 const registration::RobustKernel &kernel) {
     const int n = source_points.GetLength();
 
     core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
@@ -113,21 +113,20 @@ void ComputePosePointToPlaneSYCL(
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 
-void ComputePoseColoredICPSYCL(
-        const core::Tensor &source_points,
-        const core::Tensor &source_colors,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const core::Tensor &target_colors,
-        const core::Tensor &target_color_gradients,
-        const core::Tensor &correspondence_indices,
-        core::Tensor &pose,
-        float &residual,
-        int &inlier_count,
-        const core::Dtype &dtype,
-        const core::Device &device,
-        const registration::RobustKernel &kernel,
-        const double &lambda_geometric) {
+void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
+                               const core::Tensor &source_colors,
+                               const core::Tensor &target_points,
+                               const core::Tensor &target_normals,
+                               const core::Tensor &target_colors,
+                               const core::Tensor &target_color_gradients,
+                               const core::Tensor &correspondence_indices,
+                               core::Tensor &pose,
+                               float &residual,
+                               int &inlier_count,
+                               const core::Dtype &dtype,
+                               const core::Device &device,
+                               const registration::RobustKernel &kernel,
+                               const double &lambda_geometric) {
     const int n = source_points.GetLength();
 
     core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
@@ -197,8 +196,7 @@ void ComputePoseColoredICPSYCL(
                                                          sycl::memory_scope::
                                                                  device>(
                                                          global_sum_ptr[i]) +=
-                                                         J_G[j] * w_G *
-                                                                 J_G[k] +
+                                                         J_G[j] * w_G * J_G[k] +
                                                          J_I[j] * w_I * J_I[k];
                                                  ++i;
                                              }
@@ -280,8 +278,8 @@ void ComputePoseDopplerICPSYCL(
             scalar_t *v_s_in_S_ptr = v_s_in_S.GetDataPtr<scalar_t>();
             queue.single_task([=]() {
                      PreComputeForDopplerICP(R_S_to_V_ptr, r_v_to_s_in_V_ptr,
-                                            w_v_in_V_ptr, v_v_in_V_ptr,
-                                            v_s_in_S_ptr);
+                                             w_v_in_V_ptr, v_v_in_V_ptr,
+                                             v_s_in_S_ptr);
                  }).wait_and_throw();
         }
 
@@ -317,25 +315,23 @@ void ComputePoseDopplerICPSYCL(
                                      scalar_t J_G[6] = {0}, J_D[6] = {0};
                                      scalar_t r_G = 0, r_D = 0;
 
-                                     const bool valid =
-                                             GetJacobianDopplerICP<scalar_t>(
-                                                     workload_idx,
-                                                     source_points_ptr,
-                                                     source_dopplers_ptr,
-                                                     source_directions_ptr,
-                                                     target_points_ptr,
-                                                     target_normals_ptr,
-                                                     correspondence_indices_ptr,
-                                                     R_S_to_V_ptr,
-                                                     r_v_to_s_in_V_ptr,
-                                                     v_s_in_S_ptr,
-                                                     reject_dynamic_outliers,
-                                                     static_cast<scalar_t>(
-                                                             doppler_outlier_threshold),
-                                                     sqrt_lambda_geometric,
-                                                     sqrt_lambda_doppler,
-                                                     sqrt_lambda_doppler_by_dt,
-                                                     J_G, J_D, r_G, r_D);
+                                     const bool valid = GetJacobianDopplerICP<
+                                             scalar_t>(
+                                             workload_idx, source_points_ptr,
+                                             source_dopplers_ptr,
+                                             source_directions_ptr,
+                                             target_points_ptr,
+                                             target_normals_ptr,
+                                             correspondence_indices_ptr,
+                                             R_S_to_V_ptr, r_v_to_s_in_V_ptr,
+                                             v_s_in_S_ptr,
+                                             reject_dynamic_outliers,
+                                             static_cast<scalar_t>(
+                                                     doppler_outlier_threshold),
+                                             sqrt_lambda_geometric,
+                                             sqrt_lambda_doppler,
+                                             sqrt_lambda_doppler_by_dt, J_G,
+                                             J_D, r_G, r_D);
 
                                      if (valid) {
                                          const scalar_t w_G =
@@ -355,8 +351,7 @@ void ComputePoseDopplerICPSYCL(
                                                          sycl::memory_scope::
                                                                  device>(
                                                          global_sum_ptr[i]) +=
-                                                         J_G[j] * w_G *
-                                                                 J_G[k] +
+                                                         J_G[j] * w_G * J_G[k] +
                                                          J_D[j] * w_D * J_D[k];
                                                  ++i;
                                              }
@@ -391,12 +386,11 @@ void ComputePoseDopplerICPSYCL(
     DecodeAndSolve6x6(global_sum, output_pose, residual, inlier_count);
 }
 
-void ComputeInformationMatrixSYCL(
-        const core::Tensor &target_points,
-        const core::Tensor &correspondence_indices,
-        core::Tensor &information_matrix,
-        const core::Dtype &dtype,
-        const core::Device &device) {
+void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
+                                  const core::Tensor &correspondence_indices,
+                                  core::Tensor &information_matrix,
+                                  const core::Dtype &dtype,
+                                  const core::Device &device) {
     const int n = correspondence_indices.GetLength();
 
     core::Tensor global_sum = core::Tensor::Zeros({21}, dtype, device);
@@ -411,33 +405,28 @@ void ComputeInformationMatrixSYCL(
         const int64_t *correspondence_indices_ptr =
                 correspondence_indices.GetDataPtr<int64_t>();
 
-        queue.parallel_for(
-                     sycl::range<1>{(size_t)n},
-                     [=](sycl::id<1> id) {
-                         const int workload_idx = id[0];
-                         scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
-                         const bool valid = GetInformationJacobians<scalar_t>(
-                                 workload_idx, target_points_ptr,
-                                 correspondence_indices_ptr, J_x, J_y, J_z);
+        queue.parallel_for(sycl::range<1>{(size_t)n}, [=](sycl::id<1> id) {
+                 const int workload_idx = id[0];
+                 scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
+                 const bool valid = GetInformationJacobians<scalar_t>(
+                         workload_idx, target_points_ptr,
+                         correspondence_indices_ptr, J_x, J_y, J_z);
 
-                         if (valid) {
-                             int i = 0;
-                             for (int j = 0; j < 6; ++j) {
-                                 for (int k = 0; k <= j; ++k) {
-                                     sycl::atomic_ref<
-                                             scalar_t,
-                                             sycl::memory_order::acq_rel,
-                                             sycl::memory_scope::device>(
-                                             global_sum_ptr[i]) +=
-                                             J_x[j] * J_x[k] +
-                                             J_y[j] * J_y[k] +
-                                             J_z[j] * J_z[k];
-                                     ++i;
-                                 }
-                             }
+                 if (valid) {
+                     int i = 0;
+                     for (int j = 0; j < 6; ++j) {
+                         for (int k = 0; k <= j; ++k) {
+                             sycl::atomic_ref<scalar_t,
+                                              sycl::memory_order::acq_rel,
+                                              sycl::memory_scope::device>(
+                                     global_sum_ptr[i]) += J_x[j] * J_x[k] +
+                                                           J_y[j] * J_y[k] +
+                                                           J_z[j] * J_z[k];
+                             ++i;
                          }
-                     })
-                .wait_and_throw();
+                     }
+                 }
+             }).wait_and_throw();
 
         const core::Device host(core::Device("CPU:0"));
         core::Tensor global_sum_cpu = global_sum.To(host, core::Float64);

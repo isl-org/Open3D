@@ -254,10 +254,9 @@ void ComputeOdometryInformationMatrix(const core::Tensor &source_vertex_map,
                   square_dist_thr, information);
     } else if (device.GetType() == core::Device::DeviceType::SYCL) {
 #ifdef BUILD_SYCL_MODULE
-        ComputeOdometryInformationMatrixSYCL(source_vertex_map,
-                                             target_vertex_map, intrinsic,
-                                             source_to_target, square_dist_thr,
-                                             information);
+        ComputeOdometryInformationMatrixSYCL(
+                source_vertex_map, target_vertex_map, intrinsic,
+                source_to_target, square_dist_thr, information);
 #else
         utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif

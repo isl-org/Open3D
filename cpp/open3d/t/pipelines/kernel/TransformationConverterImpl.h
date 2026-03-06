@@ -84,8 +84,8 @@ void TransformationToPoseCUDA(scalar_t *pose_ptr,
 /// the parent function PoseToTransformation.
 template <typename scalar_t>
 void PoseToTransformationSYCL(scalar_t *transformation_ptr,
-                               const scalar_t *pose_ptr,
-                               const core::Device &device);
+                              const scalar_t *pose_ptr,
+                              const core::Device &device);
 
 /// \brief Helper function for TransformationToPoseSYCL.
 /// Do not call this independently, as it only sets the rotation part in the
@@ -93,8 +93,8 @@ void PoseToTransformationSYCL(scalar_t *transformation_ptr,
 /// TransformationToPose.
 template <typename scalar_t>
 void TransformationToPoseSYCL(scalar_t *pose_ptr,
-                               const scalar_t *transformation_ptr,
-                               const core::Device &device);
+                              const scalar_t *transformation_ptr,
+                              const core::Device &device);
 #endif
 
 }  // namespace kernel

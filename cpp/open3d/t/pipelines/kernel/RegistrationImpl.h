@@ -151,30 +151,30 @@ void ComputeInformationMatrixCUDA(const core::Tensor &target_points,
 
 #ifdef BUILD_SYCL_MODULE
 void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
-                                  const core::Tensor &target_points,
-                                  const core::Tensor &target_normals,
-                                  const core::Tensor &correspondence_indices,
-                                  core::Tensor &pose,
-                                  float &residual,
-                                  int &inlier_count,
-                                  const core::Dtype &dtype,
-                                  const core::Device &device,
-                                  const registration::RobustKernel &kernel);
+                                 const core::Tensor &target_points,
+                                 const core::Tensor &target_normals,
+                                 const core::Tensor &correspondence_indices,
+                                 core::Tensor &pose,
+                                 float &residual,
+                                 int &inlier_count,
+                                 const core::Dtype &dtype,
+                                 const core::Device &device,
+                                 const registration::RobustKernel &kernel);
 
 void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
-                                const core::Tensor &source_colors,
-                                const core::Tensor &target_points,
-                                const core::Tensor &target_normals,
-                                const core::Tensor &target_colors,
-                                const core::Tensor &target_color_gradients,
-                                const core::Tensor &correspondence_indices,
-                                core::Tensor &pose,
-                                float &residual,
-                                int &inlier_count,
-                                const core::Dtype &dtype,
-                                const core::Device &device,
-                                const registration::RobustKernel &kernel,
-                                const double &lambda_geometric);
+                               const core::Tensor &source_colors,
+                               const core::Tensor &target_points,
+                               const core::Tensor &target_normals,
+                               const core::Tensor &target_colors,
+                               const core::Tensor &target_color_gradients,
+                               const core::Tensor &correspondence_indices,
+                               core::Tensor &pose,
+                               float &residual,
+                               int &inlier_count,
+                               const core::Dtype &dtype,
+                               const core::Device &device,
+                               const registration::RobustKernel &kernel,
+                               const double &lambda_geometric);
 
 void ComputePoseDopplerICPSYCL(
         const core::Tensor &source_points,
@@ -200,10 +200,10 @@ void ComputePoseDopplerICPSYCL(
         const double lambda_doppler);
 
 void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
-                                   const core::Tensor &correspondence_indices,
-                                   core::Tensor &information_matrix,
-                                   const core::Dtype &dtype,
-                                   const core::Device &device);
+                                  const core::Tensor &correspondence_indices,
+                                  core::Tensor &information_matrix,
+                                  const core::Dtype &dtype,
+                                  const core::Device &device);
 #endif
 
 template <typename scalar_t>

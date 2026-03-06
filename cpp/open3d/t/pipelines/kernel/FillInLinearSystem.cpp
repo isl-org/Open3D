@@ -134,10 +134,9 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
 #endif
     } else if (AtA.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
-        FillInSLACAlignmentTermSYCL(AtA, Atb, residual, Ti_ps, Tj_qs,
-                                    normal_ps, Ri_normal_ps,
-                                    RjT_Ri_normal_ps, cgrid_idx_ps,
-                                    cgrid_idx_qs, cgrid_ratio_ps,
+        FillInSLACAlignmentTermSYCL(AtA, Atb, residual, Ti_ps, Tj_qs, normal_ps,
+                                    Ri_normal_ps, RjT_Ri_normal_ps,
+                                    cgrid_idx_ps, cgrid_idx_qs, cgrid_ratio_ps,
                                     cgrid_ratio_qs, i, j, n, threshold);
 #else
         utility::LogError("Not compiled with SYCL, but SYCL device is used.");
@@ -183,10 +182,9 @@ void FillInSLACRegularizerTerm(core::Tensor &AtA,
 #endif
     } else if (AtA.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
-        FillInSLACRegularizerTermSYCL(AtA, Atb, residual, grid_idx,
-                                      grid_nbs_idx, grid_nbs_mask,
-                                      positions_init, positions_curr, weight, n,
-                                      anchor_idx);
+        FillInSLACRegularizerTermSYCL(
+                AtA, Atb, residual, grid_idx, grid_nbs_idx, grid_nbs_mask,
+                positions_init, positions_curr, weight, n, anchor_idx);
 #else
         utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif

@@ -51,7 +51,8 @@ void ComputeFPFHFeature(
     } else if (points_d.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
         ComputeFPFHFeatureSYCL(points_d, normals_d, indices, distance2,
-                               counts_d, fpfhs, mask, map_info_idx_to_point_idx);
+                               counts_d, fpfhs, mask,
+                               map_info_idx_to_point_idx);
 #else
         utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif

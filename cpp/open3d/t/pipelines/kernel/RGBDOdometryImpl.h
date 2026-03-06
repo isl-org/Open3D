@@ -155,29 +155,29 @@ void ComputeOdometryResultIntensitySYCL(
         const float intensity_huber_delta);
 
 void ComputeOdometryResultHybridSYCL(const core::Tensor& source_depth,
-                                      const core::Tensor& target_depth,
-                                      const core::Tensor& source_intensity,
-                                      const core::Tensor& target_intensity,
-                                      const core::Tensor& target_depth_dx,
-                                      const core::Tensor& target_depth_dy,
-                                      const core::Tensor& target_intensity_dx,
-                                      const core::Tensor& target_intensity_dy,
-                                      const core::Tensor& source_vertex_map,
-                                      const core::Tensor& intrinsics,
-                                      const core::Tensor& init_source_to_target,
-                                      core::Tensor& delta,
-                                      float& inlier_residual,
-                                      int& inlier_count,
-                                      const float depth_outlier_trunc,
-                                      const float depth_huber_delta,
-                                      const float intensity_huber_delta);
+                                     const core::Tensor& target_depth,
+                                     const core::Tensor& source_intensity,
+                                     const core::Tensor& target_intensity,
+                                     const core::Tensor& target_depth_dx,
+                                     const core::Tensor& target_depth_dy,
+                                     const core::Tensor& target_intensity_dx,
+                                     const core::Tensor& target_intensity_dy,
+                                     const core::Tensor& source_vertex_map,
+                                     const core::Tensor& intrinsics,
+                                     const core::Tensor& init_source_to_target,
+                                     core::Tensor& delta,
+                                     float& inlier_residual,
+                                     int& inlier_count,
+                                     const float depth_outlier_trunc,
+                                     const float depth_huber_delta,
+                                     const float intensity_huber_delta);
 
 void ComputeOdometryInformationMatrixSYCL(const core::Tensor& source_depth,
-                                           const core::Tensor& target_depth,
-                                           const core::Tensor& intrinsic,
-                                           const core::Tensor& source_to_target,
-                                           const float square_dist_thr,
-                                           core::Tensor& information);
+                                          const core::Tensor& target_depth,
+                                          const core::Tensor& intrinsic,
+                                          const core::Tensor& source_to_target,
+                                          const float square_dist_thr,
+                                          core::Tensor& information);
 #endif
 
 }  // namespace odometry

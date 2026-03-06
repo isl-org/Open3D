@@ -17,8 +17,8 @@ namespace kernel {
 
 template <typename scalar_t>
 void PoseToTransformationSYCL(scalar_t *transformation_ptr,
-                               const scalar_t *pose_ptr,
-                               const core::Device &device) {
+                              const scalar_t *pose_ptr,
+                              const core::Device &device) {
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
     queue.single_task([=]() {
@@ -28,8 +28,8 @@ void PoseToTransformationSYCL(scalar_t *transformation_ptr,
 
 template <typename scalar_t>
 void TransformationToPoseSYCL(scalar_t *pose_ptr,
-                               const scalar_t *transformation_ptr,
-                               const core::Device &device) {
+                              const scalar_t *transformation_ptr,
+                              const core::Device &device) {
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
     queue.single_task([=]() {
