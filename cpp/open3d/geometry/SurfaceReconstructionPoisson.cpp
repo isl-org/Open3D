@@ -43,6 +43,9 @@ namespace {
 
 // The order of the B-Spline used to splat in data for color interpolation
 static const int DATA_DEGREE = 0;
+// Default pull factor for color/auxiliary data interpolation (PoissonRecon
+// --data default)
+static const float DEFAULT_DATAX = 32.f;
 // The order of the B-Spline used to splat in the weights for density estimation
 static const int WEIGHT_DEGREE = 2;
 // The order of the B-Spline used to splat in the normals for constructing the
@@ -426,6 +429,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     float confidence_bias = 0.f;
     float cg_solver_accuracy = 1e-3f;
     int iters = 8;
+    float datax = DEFAULT_DATAX;
 
     // Parameters are now passed as function arguments:
     // full_depth, samples_per_node, point_weight
@@ -602,8 +606,8 @@ void Execute(const open3d::geometry::PointCloud& pcd,
             profiler.start();
             // Use approximate interpolation (always)
             iInfo = FEMTree<Dim, Real>::
-                    template InitializeApproximatePointInterpolationInfo<
-                            Real, 0>(
+                    template InitializeApproximatePointInterpolationInfo<Real,
+                                                                         0>(
                             tree, samples,
                             ConstraintDual<Dim, Real>(
                                     targetValue,
