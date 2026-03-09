@@ -350,9 +350,8 @@ void pybind_trianglemesh_definitions(py::module &m) {
                         "This function uses the original implementation by "
                         "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
                         "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
-                        "linear_fit"_a = false,
-                        "use_normal_length_as_confidence"_a = false,
-                        "n_threads"_a = -1)
+                        "linear_fit"_a = false, "n_threads"_a = -1,
+                        "use_normal_length_as_confidence"_a = false)
             .def_static(
                     "create_from_oriented_bounding_box",
                     &TriangleMesh::CreateFromOrientedBoundingBox,
@@ -694,12 +693,12 @@ void pybind_trianglemesh_definitions(py::module &m) {
              {"linear_fit",
               "If true, the reconstructor will use linear interpolation to "
               "estimate the positions of iso-vertices."},
-             {"use_normal_length_as_confidence",
-              "If true, use the length (norm) of normal vectors as "
-              "point confidence"},
              {"n_threads",
               "Number of threads used for reconstruction. Set to -1 to "
-              "automatically determine it."}});
+              "automatically determine it."},
+             {"use_normal_length_as_confidence",
+              "If true, use the length (norm) of normal vectors as a per-point "
+              "confidence."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_oriented_bounding_box",
             {{"obox", "OrientedBoundingBox object to create mesh of."},

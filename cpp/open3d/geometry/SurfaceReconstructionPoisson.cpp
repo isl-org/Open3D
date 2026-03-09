@@ -720,13 +720,14 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 }  // namespace
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
-TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
-                                          size_t depth,
-                                          float width,
-                                          float scale,
-                                          bool linear_fit,
-                                          bool use_normal_length_as_confidence,
-                                          int n_threads) {
+TriangleMesh::CreateFromPointCloudPoisson(
+        const PointCloud& pcd,
+        size_t depth,
+        float width,
+        float scale,
+        bool linear_fit,
+        int n_threads,
+        bool use_normal_length_as_confidence) {
     static const BoundaryType BType = DEFAULT_FEM_BOUNDARY;
     typedef IsotropicUIntPack<
             DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
