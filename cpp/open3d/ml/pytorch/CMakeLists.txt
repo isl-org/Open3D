@@ -8,7 +8,7 @@ find_package(Pytorch REQUIRED)
 
 if (Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1.8.0)
     message(FATAL_ERROR "Please update to PyTorch 1.8.0+ to build PyTorch Ops "
-    "with Python 3.9 to prevent a segmentation fault. See "
+    "with Python >=3.9 to prevent a segmentation fault. See "
     "https://github.com/pytorch/pytorch/issues/50014 for details")
 endif()
 
@@ -117,6 +117,11 @@ endif()
 open3d_show_and_abort_on_warning(open3d_torch_ops)
 open3d_set_global_properties(open3d_torch_ops)
 
+if (MSVC)
+    # PyTorch's bundled fmt (v11+) requires /utf-8 for Unicode support on MSVC.
+    target_compile_options(open3d_torch_ops PRIVATE /utf-8)
+endif()
+
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TORCH_OPS_DIR open3d_torch_ops LIBRARY_OUTPUT_DIRECTORY)
 set(TORCH_OPS_ARCH_DIR
@@ -145,7 +150,6 @@ target_link_libraries(open3d_torch_ops PRIVATE
     torch_cpu
     Open3D::Open3D
     Open3D::3rdparty_eigen3
-    Open3D::3rdparty_fmt
     Open3D::3rdparty_nanoflann
     TBB::tbb
 )

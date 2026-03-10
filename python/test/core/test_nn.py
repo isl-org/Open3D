@@ -75,6 +75,37 @@ def test_knn_search(device):
                                rtol=1e-5,
                                atol=0)
 
+    # Test knn search with large k (>2048)
+    dataset_points_np = np.random.randn(5000, 3).astype(np.float32) * 100
+    dataset_points = o3c.Tensor(dataset_points_np, dtype=dtype, device=device)
+    nns = o3c.nns.NearestNeighborSearch(dataset_points)
+    nns.knn_index()
+
+    query_point_np = np.array([[0.0, 0.0, 0.0]], dtype=np.float32)
+    query_point = o3c.Tensor(query_point_np, dtype=dtype, device=device)
+
+    knn = 3100
+    indices, distances = nns.knn_search(query_point, knn)
+
+    indices_np = indices.cpu().numpy()
+    distances_np = distances.cpu().numpy()
+
+    # Compute ground truth using brute force
+    gt_distances = np.sum((dataset_points_np - query_point_np[0])**2, axis=1)
+    gt_sorted_indices = np.argsort(gt_distances)[:knn]
+    gt_sorted_distances = gt_distances[gt_sorted_indices]
+
+    # Check for duplicate indices
+    np.testing.assert_equal(len(set(indices_np[0])), knn)
+    # verify idx values are in valid range
+    np.testing.assert_array_less(indices_np[0], dataset_points.shape[0])
+    np.testing.assert_array_less(-1, indices_np[0])
+    # Verify distances match ground truth
+    np.testing.assert_allclose(distances_np[0],
+                               gt_sorted_distances,
+                               atol=1e-4,
+                               rtol=1e-5)
+
 
 @pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])

@@ -21,9 +21,11 @@ public:
     /// \param max_correspondence_distance Identifies which distance value is
     /// used for finding neighboring points when making information matrix.
     /// According to [Choi et al 2015], this distance is used for determining
-    /// $\mu$, a line process weight. \param edge_prune_threshold According to
+    /// $\mu$, a line process weight.
+    /// \param edge_prune_threshold According to
     /// [Choi et al 2015], line_process weight < edge_prune_threshold (0.25) is
-    /// pruned. \param preference_loop_closure odometry vs loop-closure. [0,1]
+    /// pruned.
+    /// \param preference_loop_closure odometry vs loop-closure. [0,1]
     /// -> try to unchange odometry edges, [1) -> try to utilize loop-closure.
     /// Recommendation: 0.1 for RGBD Odometry, 2.0 for fragment registration.
     /// \param reference_node The pose of this node is unchanged after
@@ -76,11 +78,12 @@ public:
     /// \param max_iteration Maximum iteration number.
     /// \param min_relative_increment Minimum relative increments.
     /// \param min_relative_residual_increment Minimum relative residual
-    /// increments. \param min_right_term Minimum right term value. \param
-    /// min_residual Minimum residual value. \param max_iteration_lm Maximum
-    /// iteration number for Levenberg Marquardt method. \param
-    /// upper_scale_factor Upper scale factor value. \param lower_scale_factor
-    /// Lower scale factor value.
+    /// increments.
+    /// \param min_right_term Minimum right term value.
+    /// \param min_residual Minimum residual value.
+    /// \param max_iteration_lm Maximum iteration number for Levenberg Marquardt method.
+    /// \param upper_scale_factor Upper scale factor value.
+    /// \param lower_scale_factor Lower scale factor value.
     GlobalOptimizationConvergenceCriteria(
             int max_iteration = 100,
             double min_relative_increment = 1e-6,

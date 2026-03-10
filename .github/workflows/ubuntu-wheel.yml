@@ -21,8 +21,6 @@ concurrency:
 env:
   GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
   BUILD_CUDA_MODULE: 'ON'
-  BUILD_PYTORCH_OPS: 'ON'
-  BUILD_TENSORFLOW_OPS: 'OFF'   # Turn ON when cxx11_abi is same for TF and PyTorch
 
 jobs:
   build-lib:
@@ -64,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -74,11 +72,16 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
       CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
+      BUILD_PYTORCH_OPS: 'ON'
+      # TensorFlow v2.20 only supports python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -110,8 +113,8 @@ jobs:
             docker/docker_build.sh cuda_wheel_py312_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py313_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py39
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.14" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py314_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py310
           elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
@@ -120,7 +123,10 @@ jobs:
             docker/docker_build.sh cuda_wheel_py312
           elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py313
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.14" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py314
           fi
+          shopt -s failglob
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
@@ -138,9 +144,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
-          ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }} --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} \
+          ${GITHUB_WORKSPACE}/${{ env.PIP_CPU_PKG_NAME }}
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: 'google-github-actions/auth@v2'
@@ -167,7 +172,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -177,8 +182,13 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      BUILD_PYTORCH_OPS: 'ON'
+      # TensorFlow v2.20 only supports python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

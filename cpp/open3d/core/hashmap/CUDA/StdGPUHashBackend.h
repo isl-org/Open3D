@@ -139,8 +139,8 @@ public:
 
     InternalStdGPUHashBackend<Key, Hash, Eq> GetImpl() const { return impl_; }
 
-    void Allocate(int64_t capacity);
-    void Free();
+    void Allocate(int64_t capacity) override;
+    void Free() override;
 
 protected:
     // Use reference, since the structure itself is implicitly handled as a

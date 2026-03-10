@@ -1,6 +1,7 @@
-pytest==7.1.2
+pytest==9.0.2
 pytest-randomly==3.8.0
-scipy==1.15.3
+scipy==1.15.3; python_version < "3.14"
+scipy==1.17.0; python_version >= "3.14"
 tensorboard==2.19.0
 oauthlib==3.2.2
 certifi

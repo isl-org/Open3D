@@ -1,3 +1,4 @@
 .. _tensorboard_plugin:
 
-.. mdinclude:: ../../tensorboard.md
+.. include:: ../../tensorboard.md
+   :parser: myst_parser.sphinx_

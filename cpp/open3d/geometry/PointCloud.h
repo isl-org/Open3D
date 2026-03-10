@@ -280,8 +280,8 @@ public:
     /// covariance matrices.
     ///
     ///
-    /// \param input PointCloud to use for covariance computation \param
-    /// search_param The KDTree search parameters for neighborhood search.
+    /// \param input PointCloud to use for covariance computation.
+    /// \param search_param The KDTree search parameters for neighborhood search.
     static std::vector<Eigen::Matrix3d> EstimatePerPointCovariances(
             const PointCloud &input,
             const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
@@ -327,7 +327,8 @@ public:
     /// Noisy Point Cloud Data', 2010.
     ///
     /// \param camera_location All points not visible from that location will be
-    /// removed. \param radius The radius of the spherical projection.
+    /// removed.
+    /// \param radius The radius of the spherical projection.
     std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
     HiddenPointRemoval(const Eigen::Vector3d &camera_location,
                        const double radius) const;
@@ -369,23 +370,29 @@ public:
     ///
     /// \param normal_variance_threshold_deg Planes having point normals with
     /// high variance are rejected. The default value is 60 deg. Larger values
-    /// would allow more noisy planes to be detected. \param coplanarity_deg The
+    /// would allow more noisy planes to be detected.
+    /// \param coplanarity_deg The
     /// curvature of plane detections are scored using the angle between the
     /// plane's normal vector and an auxiliary vector. An ideal plane would have
     /// a score of 90 deg. The default value for this threshold is 75 deg, and
     /// detected planes with scores lower than this are rejected. Large
     /// threshold values encourage a tighter distribution of points around the
-    /// detected plane, i.e., less curvature. \param outlier_ratio Maximum
+    /// detected plane, i.e., less curvature.
+    /// \param outlier_ratio Maximum
     /// allowable ratio of outliers in associated plane points before plane is
-    /// rejected. \param min_plane_edge_length A patch's largest edge must
+    /// rejected.
+    /// \param min_plane_edge_length A patch's largest edge must
     /// greater than this value to be considered a true planar patch. If set to
-    /// 0, defaults to 1% of largest span of point cloud. \param min_num_points
+    /// 0, defaults to 1% of largest span of point cloud.
+    /// \param min_num_points
     /// Determines how deep the associated octree becomes and how many points
     /// must be used for estimating a plane. If set to 0, defaults to 0.1% of
-    /// the number of points in point cloud. \param search_param Point neighbors
+    /// the number of points in point cloud.
+    /// \param search_param Point neighbors
     /// are used to grow and merge detected planes. Neighbors are found with
     /// KDTree search using these params. More neighbors results in higher
-    /// quality patches at the cost of compute. \return Returns a list of
+    /// quality patches at the cost of compute.
+    /// \return Returns a list of
     /// detected planar patches, represented as OrientedBoundingBox objects,
     /// with the third column (z) of R indicating the planar patch normal
     /// vector. The extent in the z direction is non-zero so that the
@@ -408,7 +415,8 @@ public:
     /// / fy\n
     ///
     /// \param depth The input depth image can be either a float image, or a
-    /// uint16_t image. \param intrinsic Intrinsic parameters of the camera.
+    /// uint16_t image.
+    /// \param intrinsic Intrinsic parameters of the camera.
     /// \param extrinsic Extrinsic parameters of the camera.
     /// \param depth_scale The depth is scaled by 1 / \p depth_scale.
     /// \param depth_trunc Truncated at \p depth_trunc distance.

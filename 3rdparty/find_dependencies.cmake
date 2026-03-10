@@ -853,6 +853,13 @@ if (BUILD_LIBREALSENSE)
                 DOC "Library provided by the deb package libudev-dev")
             target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
         endif()
+        # Link system libusb-1.0 (required when USE_EXTERNAL_USB=ON)
+        # Required on both Linux and macOS
+        if (UNIX)
+            find_library(USB1_LIBRARY usb-1.0 REQUIRED
+                DOC "Library provided by the deb package libusb-1.0-dev (Linux) or Homebrew libusb (macOS)")
+            target_link_libraries(3rdparty_librealsense INTERFACE ${USB1_LIBRARY})
+        endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_librealsense)
     else()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_librealsense)
@@ -1111,9 +1118,10 @@ if(NOT USE_SYSTEM_FMT)
         LIBRARIES    ${FMT_LIBRARIES}
         DEPENDS      ext_fmt
     )
-    # FMT 6.0, newer versions may require different flags
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=0)
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+    if (WIN32)
+        target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+    endif()
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)
 else()
@@ -1926,7 +1934,7 @@ if(USE_SYSTEM_EMBREE)
     open3d_find_package_3rdparty_library(3rdparty_embree
         PACKAGE embree
         TARGETS embree
-        VERSION 4.3.3 # for "rtcGetErrorString"
+        VERSION 4.4.0
     )
     if(NOT 3rdparty_embree_FOUND)
         set(USE_SYSTEM_EMBREE OFF)

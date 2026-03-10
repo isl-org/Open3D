@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <thrust/copy.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/for_each.h>
@@ -72,10 +73,10 @@ Tensor NonZeroCUDA(const Tensor& src) {
         thrust::device_ptr<const scalar_t> src_ptr(
                 static_cast<const scalar_t*>(src_contiguous.GetDataPtr()));
 
-        auto it = thrust::copy_if(index_first, index_last, src_ptr,
-                                  non_zero_indices.begin(),
+        auto it = thrust::copy_if(thrust::device, index_first, index_last,
+                                  src_ptr, non_zero_indices.begin(),
                                   NonZeroFunctor<scalar_t>());
-        non_zero_indices.resize(thrust::distance(non_zero_indices.begin(), it));
+        non_zero_indices.resize(it - non_zero_indices.begin());
     });
 
     // Transform flattened indices to indices in each dimension.

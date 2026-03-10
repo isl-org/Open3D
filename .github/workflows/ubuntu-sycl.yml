@@ -74,8 +74,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-devel-*.tar.xz --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh open3d*.whl open3d-devel-*.tar.xz
 
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}

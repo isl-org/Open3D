@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "../TensorFlowHelper.h"
 #include "open3d/core/nns/FixedRadiusSearchImpl.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
@@ -77,16 +79,17 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 type is not compatible");
+        static_assert(sizeof(int64_t) == sizeof(int64_t),
+                      "int64_t type is not compatible");
 
         const Tensor& points = context->input(0);
         const Tensor& queries = context->input(1);
 
         const Tensor& radius = context->input(2);
         OP_REQUIRES(context, TensorShapeUtils::IsScalar(radius.shape()),
-                    errors::InvalidArgument("radius must be scalar, got shape ",
-                                            radius.shape().DebugString()));
+                    absl::InvalidArgumentError(
+                            std::string("radius must be scalar, got shape ") +
+                            radius.shape().DebugString()));
 
         const Tensor& points_row_splits = context->input(3);
         const Tensor& queries_row_splits = context->input(4);

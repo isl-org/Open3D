@@ -177,9 +177,9 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          gh release upload main-devel ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }} --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
 
       - name: Viewer App
         working-directory: ${{ env.BUILD_DIR }}
@@ -207,8 +207,7 @@ jobs:
           $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
           Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
             "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
-          gh release upload main-devel "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" --clobber
-          gh release view main-devel
+          bash .github/workflows/update_release.sh "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
 
       - name: Run C++ unit tests
         if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
@@ -256,7 +255,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -266,6 +265,11 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
+
+    env:
+      BUILD_PYTORCH_OPS: 'ON'
 
     steps:
       - name: Checkout source code
@@ -304,8 +308,10 @@ jobs:
           python -m pip install maturin==1.7.8
           python -m pip install -U -r python/requirements.txt `
             -r python/requirements_build.txt `
-            -r python/requirements_jupyter_build.txt `
-            -r open3d_ml/requirements-torch.txt
+            -r python/requirements_jupyter_build.txt
+          if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
+            python -m pip install -U -r open3d_ml/requirements-torch.txt
+          }
 
       - name: Config
         run: |
@@ -323,7 +329,7 @@ jobs:
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
-            -DBUILD_PYTORCH_OPS=ON `
+            -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
@@ -345,9 +351,9 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          gh release upload main-devel ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
   test-wheel:
     name: Test wheel
@@ -358,7 +364,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -368,7 +374,10 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
-
+          - is_main: false
+            python_version: '3.13'
+    env:
+      BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -399,8 +408,10 @@ jobs:
           open3d_test_venv\Scripts\Activate.ps1
           python -m pip install -U pip==${{ env.PIP_VER }}
           python -m pip install -U -r python/requirements_build.txt `
-            -r python/requirements_test.txt `
-            -r open3d_ml/requirements-torch.txt
+            -r python/requirements_test.txt
+          if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
+            python -m pip install -U -r open3d_ml/requirements-torch.txt
+          }
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
@@ -419,5 +430,10 @@ jobs:
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-          python -m pytest python/test/
+          $pytest_args = @("python/test/")
+          if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'OFF') {
+            echo "Testing ML Ops disabled"
+            $pytest_args += "--ignore=python/test/ml_ops/"
+          }
+          python -m pytest @pytest_args
           deactivate

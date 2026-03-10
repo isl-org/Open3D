@@ -12,9 +12,9 @@ Collect all release artifacts in the [Github draft release page](https://github.
 -   [ ] Build Open3D C++ libraries (Linux, macOS, Windows x86_64)  (CI)
 -   [ ] Build docs (CI) and push to [Open3d_website repo](https://github.com/isl-org/Open3D_website)
 -   [ ] Build arm64 wheels (with ML Ops):
-    -   [ ] macOS 12. Python 3.8+ (desktop):
+    -   [ ] macOS 12. Python 3.10+ (desktop):
 
-        Configure: `cmake -DCMAKE_BUILD_TYPE=Release -DDEVELOPER_BUILD=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
+        Configure: `cmake -DCMAKE_BUILD_TYPE=Release -DDEVELOPER_BUILD=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
                     -DBUILD_TENSORFLOW_OPS=ON -DBUILD_PYTORCH_OPS=ON -DBUNDLE_OPEN3D_ML=ON  ..`
 
     -   [ ] Ubuntu 20.04 Python (all versions) (follow docs/arm.rst) (desktop)

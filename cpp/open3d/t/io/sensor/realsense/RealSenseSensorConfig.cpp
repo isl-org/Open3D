@@ -258,10 +258,11 @@ Json::Value RealSenseSensorConfig::GetMetadataJson(
                 value["fps"], rs_depth.fps());
     }
     if (rs_device.is<rs2::playback>()) {
-        value["stream_length_usec"] =
+        const int64_t stream_length_usec =
                 std::chrono::duration_cast<std::chrono::microseconds>(
                         rs_device.as<rs2::playback>().get_duration())
                         .count();
+        value["stream_length_usec"] = Json::Value(stream_length_usec);
     }
 
     return value;

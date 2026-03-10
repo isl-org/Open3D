@@ -37,7 +37,7 @@ jobs:
   build-lib-arm64:
     name: Build Lib ARM64
     permissions:
-      contents: read
+      contents: write  # Release upload
     runs-on: ubuntu-24.04-arm   # latest
     env:
       DEVELOPER_BUILD: 'ON'
@@ -73,7 +73,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -83,6 +83,8 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
@@ -106,7 +108,7 @@ jobs:
 
       - name: Compute Docker tag for this matrix entry
         run: |
-          # Strip the dot: 3.8 ➜ 38, 3.10 ➜ 310 …
+          # Strip the dot: 3.12 ➜ 312, 3.14 ➜ 314 …
           PY_NO_DOT="${PYTHON_VERSION//./}"
           # Add “-dev” only when requested
           DEV_SUFFIX=$([ "${DEVELOPER_BUILD}" = "ON" ] && echo "-dev")
@@ -116,6 +118,9 @@ jobs:
         run: |
           export BASE_IMAGE=open3d-lib-arm64:latest
           docker/docker_build.sh "${DOCKER_TAG}"
+          shopt -s failglob
+          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Docker test
         run: docker/docker_test.sh "${DOCKER_TAG}"
@@ -123,7 +128,8 @@ jobs:
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: open3d-*.whl
+          path: ${{ env.PIP_PKG_NAME }}
+          name: ${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
       - name: Update devel release
@@ -131,5 +137,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-*.whl --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh ${{ env.PIP_PKG_NAME }}
