@@ -151,6 +151,12 @@ void pybind_registration_declarations(py::module &m) {
                  "normals. It considers vertex normal affinity of any "
                  "correspondences. It computes dot product of two normal "
                  "vectors. It takes radian value for the threshold.");
+    py::class_<CorrespondenceCheckerBasedOnSourceRotation,
+                 PyCorrespondenceChecker<CorrespondenceCheckerBasedOnSourceRotation>,
+                 CorrespondenceChecker>
+             cc_r(m_registration, "CorrespondenceCheckerBasedOnSourceRotation",
+                   R"(Class to limit the rotation of the source object. 
+                   It checks if the transformation is rotated too much from the desired value.)");
     py::class_<FastGlobalRegistrationOption> fgr_option(
             m_registration, "FastGlobalRegistrationOption",
             "Options for FastGlobalRegistration.");
@@ -503,6 +509,33 @@ must hold true for all edges.)");
                            &CorrespondenceCheckerBasedOnNormal::
                                    normal_angle_threshold_,
                            "Radian value for angle threshold.");
+
+    // open3d.registration.CorrespondenceCheckerBasedOnSourceRotation:
+    // CorrespondenceChecker
+    auto cc_r = static_cast<py::class_<
+            CorrespondenceCheckerBasedOnSourceRotation,
+            PyCorrespondenceChecker<CorrespondenceCheckerBasedOnSourceRotation>,
+            CorrespondenceChecker>>(m_registration.attr("CorrespondenceCheckerBasedOnSourceRotation"));
+    py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnSourceRotation>(cc_r);
+    cc_r.def(py::init([](const Eigen::Vector3d &rotation_threshold) {
+                 return new CorrespondenceCheckerBasedOnSourceRotation(
+                         rotation_threshold);
+             }),
+             "rotation_threshold"_a)
+             .def("__repr__",
+                 [](const CorrespondenceCheckerBasedOnSourceRotation &c) {
+                     return fmt::format(
+                             ""
+                             "CorrespondenceCheckerBasedOnSourceRotation with "
+                             "rotation_threshold={:f}, {:f}, {:f} radians.",
+                             c.rotation_threshold_[0], 
+                             c.rotation_threshold_[1],
+                             c.rotation_threshold_[2]);
+                  })
+             .def_readwrite("rotation_threshold",
+                            &CorrespondenceCheckerBasedOnSourceRotation::
+                                    rotation_threshold_,
+                            "Radian value array for rotation angle thresholds.");
 
     // open3d.registration.FastGlobalRegistrationOption:
     auto fgr_option = static_cast<py::class_<FastGlobalRegistrationOption>>(

@@ -143,6 +143,33 @@ public:
     double normal_angle_threshold_;
 };
 
+/// \class CorrespondenceCheckerBasedOnRotation
+///
+/// \brief Check if the transformation is rotated too much from the desired value
+class CorrespondenceCheckerBasedOnSourceRotation : public CorrespondenceChecker {
+    public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param rotation_threshold specifies the threshold in radians within the transformation.
+    /// Rotations are checked by cartesian angles.
+    /// If a rotation threshold is set to -1, it is not checked (free to rotate).
+    CorrespondenceCheckerBasedOnSourceRotation(const Eigen::Vector3d &rotation_threshold = Eigen::Vector3d(-1, -1, -1))
+        : CorrespondenceChecker(false),
+          rotation_threshold_(rotation_threshold)
+        {}
+    ~CorrespondenceCheckerBasedOnSourceRotation() override {}
+
+    public:
+        bool Check(const geometry::PointCloud &source,
+                    const geometry::PointCloud &target,
+                    const CorrespondenceSet &corres,
+                    const Eigen::Matrix4d &transformation) const override;
+    
+    public:
+        Eigen::Vector3d rotation_threshold_;
+        double zLock_;
+};
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace open3d
