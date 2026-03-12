@@ -177,8 +177,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
+        working-directory: ${{ env.BUILD_DIR }}
         run: |
-          .github/workflows/update_release.sh ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
+          .github/workflows/update_release.sh package/${{ env.DEVEL_PKG_NAME }}
 
       - name: Viewer App
         working-directory: ${{ env.BUILD_DIR }}
@@ -347,8 +348,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
+        working-directory: ${{ env.BUILD_DIR }}
         run: |
-          .github/workflows/update_release.sh ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+          .github/workflows/update_release.sh lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
   test-wheel:
     name: Test wheel
