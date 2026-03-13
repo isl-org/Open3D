@@ -11,4 +11,8 @@ if (BUILD_PYTORCH_OPS)
     add_subdirectory(pytorch)
 endif()
 
+target_sources(Open3D PRIVATE
+    Model.cpp
+)
+
 add_subdirectory(contrib)
