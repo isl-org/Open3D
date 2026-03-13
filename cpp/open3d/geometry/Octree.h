@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "open3d/geometry/Geometry3D.h"
@@ -77,6 +78,14 @@ public:
     /// Factory function to construct an OctreeNode by parsing the json value.
     static std::shared_ptr<OctreeNode> ConstructFromJsonValue(
             const Json::Value& value);
+    /// Factory function to construct an OctreeNode by reading from a binary
+    /// stream.
+    static std::shared_ptr<OctreeNode> ConstructFromBinaryStream(
+            const std::string& in, size_t& offset);
+
+    virtual bool SerializeToBinaryStream(std::string& out) const = 0;
+    virtual bool DeserializeFromBinaryStream(const std::string& in,
+                                             size_t& offset) = 0;
 };
 
 /// \class OctreeInternalNode
@@ -121,6 +130,8 @@ public:
 
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
+    bool SerializeToBinaryStream(std::string& out) const;
+    bool DeserializeFromBinaryStream(const std::string& in, size_t& offset);
 
 public:
     /// Use vector instead of C-array for Pybind11, otherwise, need to define
@@ -156,6 +167,8 @@ public:
 
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
+    bool SerializeToBinaryStream(std::string& out) const;
+    bool DeserializeFromBinaryStream(const std::string& in, size_t& offset);
 
 public:
     /// Indices of points associated with any children of this node
@@ -199,6 +212,8 @@ public:
 
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
+    bool SerializeToBinaryStream(std::string& out) const;
+    bool DeserializeFromBinaryStream(const std::string& in, size_t& offset);
     /// TODO: flexible data, with lambda function for handling node
     /// Color of the node.
     Eigen::Vector3d color_ = Eigen::Vector3d(0, 0, 0);
@@ -233,6 +248,8 @@ public:
 
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
+    bool SerializeToBinaryStream(std::string& out) const;
+    bool DeserializeFromBinaryStream(const std::string& in, size_t& offset);
 
     /// Associated point indices with this node.
     std::vector<size_t> indices_;
@@ -301,6 +318,8 @@ public:
                    const Eigen::Vector3d& center) override;
     bool ConvertToJsonValue(Json::Value& value) const override;
     bool ConvertFromJsonValue(const Json::Value& value) override;
+    bool SerializeToBinaryStream(std::string& out) const;
+    bool DeserializeFromBinaryStream(const std::string& in);
 
 public:
     /// \brief Convert octree from point cloud.
