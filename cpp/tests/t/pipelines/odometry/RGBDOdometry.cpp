@@ -21,10 +21,10 @@
 namespace open3d {
 namespace tests {
 
-class OdometryPermuteDevices : public PermuteDevices {};
+class OdometryPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(Odometry,
                          OdometryPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+                         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 core::Tensor CreateIntrisicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(

@@ -26,10 +26,10 @@ namespace l_reg = open3d::pipelines::registration;
 namespace open3d {
 namespace tests {
 
-class RegistrationPermuteDevices : public PermuteDevices {};
+class RegistrationPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(Registration,
                          RegistrationPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+                         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
     // Constructor.
