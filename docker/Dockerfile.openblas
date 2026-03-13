@@ -10,6 +10,7 @@ ARG CONDA_SUFFIX
 ARG CMAKE_VERSION
 ARG PYTHON_VERSION
 ARG DEVELOPER_BUILD
+ARG BUILD_PYTHON_MODULE=ON
 RUN if [ -z "${CONDA_SUFFIX}"    ]; then echo "Error: ARG CONDA_SUFFIX    not specified."; exit 1; fi \
  && if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi \
  && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
@@ -105,9 +106,10 @@ RUN mkdir build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
+    -DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE} \
     .. \
  && export NPROC=$(($(nproc)+2)) \
  && make -j$NPROC \
- && make install-pip-package -j$NPROC \
+ && if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then make install-pip-package -j$NPROC; fi \
  && make install -j$NPROC
-RUN cp build/lib/python_package/pip_package/*.whl /
+RUN if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then cp build/lib/python_package/pip_package/*.whl /; fi
