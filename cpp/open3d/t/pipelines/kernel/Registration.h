@@ -36,6 +36,32 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_positions,
                                      const core::Tensor &correspondence_indices,
                                      const registration::RobustKernel &kernel);
 
+/// \brief Computes pose for symmetric ICP registration method.
+///
+/// Symmetric ICP minimizes the sum of source-to-target and target-to-source
+/// point-to-plane distances, providing more symmetric and robust registration.
+///
+/// \param source_positions source point positions of Float32 or Float64 dtype.
+/// \param target_positions target point positions of same dtype as source point
+/// positions.
+/// \param source_normals source point normals of same dtype as source point
+/// positions.
+/// \param target_normals target point normals of same dtype as source point
+/// positions.
+/// \param correspondence_indices Tensor of type Int64 containing indices of
+/// corresponding target positions, where the value is the target index and the
+/// index of the value itself is the source index. It contains -1 as value at
+/// index with no correspondence.
+/// \param kernel statistical robust kernel for outlier rejection.
+/// \return Pose [alpha beta gamma, tx, ty, tz], a shape {6} tensor of dtype
+/// Float64, where alpha, beta, gamma are the Euler angles in the ZYX order.
+core::Tensor ComputePoseSymmetric(const core::Tensor &source_positions,
+                                  const core::Tensor &target_positions,
+                                  const core::Tensor &source_normals,
+                                  const core::Tensor &target_normals,
+                                  const core::Tensor &correspondence_indices,
+                                  const registration::RobustKernel &kernel);
+
 /// \brief Computes pose for colored-icp registration method.
 ///
 /// \param source_positions source point positions of Float32 or Float64 dtype.
