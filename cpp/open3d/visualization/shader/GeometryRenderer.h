@@ -123,6 +123,20 @@ protected:
     SimpleShaderForTetraMesh simple_tetramesh_shader_;
 };
 
+class OrientedBoundingEllipsoidRenderer : public GeometryRenderer {
+public:
+    ~OrientedBoundingEllipsoidRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForOrientedBoundingEllipsoid
+            simple_oriented_bounding_ellipsoid_shader_;
+};
 class OrientedBoundingBoxRenderer : public GeometryRenderer {
 public:
     ~OrientedBoundingBoxRenderer() override {}

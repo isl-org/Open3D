@@ -520,6 +520,12 @@ OrientedBoundingBox Octree::GetMinimalOrientedBoundingBox(bool robust) const {
             GetAxisAlignedBoundingBox());
 }
 
+OrientedBoundingEllipsoid Octree::GetOrientedBoundingEllipsoid(
+        bool robust) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(
+            GetAxisAlignedBoundingBox().GetBoxPoints());
+}
+
 Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
     utility::LogError("Not implemented");
     return *this;

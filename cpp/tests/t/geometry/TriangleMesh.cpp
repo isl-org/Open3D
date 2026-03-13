@@ -644,6 +644,47 @@ TEST_P(TriangleMeshPermuteDevices, CreateSphere) {
             triangle_indices_custom));
 }
 
+TEST_P(TriangleMeshPermuteDevices, CreateEllipsoid) {
+    core::Device device = GetParam();
+    core::Dtype float_dtype_custom = core::Float64;
+    core::Dtype int_dtype_custom = core::Int32;
+
+    // Test with custom parameters.
+    t::geometry::TriangleMesh ellipsoid_custom =
+            t::geometry::TriangleMesh::CreateEllipsoid(
+                    1, 1, 1, 3, float_dtype_custom, int_dtype_custom, device);
+
+    core::Tensor vertex_positions_custom =
+            core::Tensor::Init<double>({{0.0, 0.0, 1.0},
+                                        {0.0, 0.0, -1.0},
+                                        {0.866025, 0, 0.5},
+                                        {0.433013, 0.75, 0.5},
+                                        {-0.433013, 0.75, 0.5},
+                                        {-0.866025, 0.0, 0.5},
+                                        {-0.433013, -0.75, 0.5},
+                                        {0.433013, -0.75, 0.5},
+                                        {0.866025, 0.0, -0.5},
+                                        {0.433013, 0.75, -0.5},
+                                        {-0.433013, 0.75, -0.5},
+                                        {-0.866025, 0.0, -0.5},
+                                        {-0.433013, -0.75, -0.5},
+                                        {0.433013, -0.75, -0.5}},
+                                       device);
+
+    core::Tensor triangle_indices_custom = core::Tensor::Init<int32_t>(
+            {{0, 2, 3},   {1, 9, 8},   {0, 3, 4},   {1, 10, 9}, {0, 4, 5},
+             {1, 11, 10}, {0, 5, 6},   {1, 12, 11}, {0, 6, 7},  {1, 13, 12},
+             {0, 7, 2},   {1, 8, 13},  {8, 3, 2},   {8, 9, 3},  {9, 4, 3},
+             {9, 10, 4},  {10, 5, 4},  {10, 11, 5}, {11, 6, 5}, {11, 12, 6},
+             {12, 7, 6},  {12, 13, 7}, {13, 2, 7},  {13, 8, 2}},
+            device);
+
+    EXPECT_TRUE(ellipsoid_custom.GetVertexPositions().AllClose(
+            vertex_positions_custom));
+    EXPECT_TRUE(ellipsoid_custom.GetTriangleIndices().AllClose(
+            triangle_indices_custom));
+}
+
 TEST_P(TriangleMeshPermuteDevices, CreateTetrahedron) {
     core::Device device = GetParam();
     core::Dtype float_dtype_custom = core::Float64;
