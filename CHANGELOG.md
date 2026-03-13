@@ -72,6 +72,7 @@
 -   Implement CUDA multipass for KNN > `GPU_MAX_SELECTION_K` (PR #7381)
 -   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
+-   Add point cloud to mesh/cloud comparison example with RANSAC global registration, ICP fine alignment, and distance-based heatmap visualization. (PR #7416)
 -   Python 3.13+3.14 support
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
 
