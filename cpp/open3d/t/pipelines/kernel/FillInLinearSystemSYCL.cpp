@@ -76,13 +76,12 @@ void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
                              const float *normal_p_prime =
                                      Ri_normal_ps_ptr + 3 * gid;
 
-                             float r =
-                                     (p_prime[0] - q_prime[0]) *
-                                             normal_p_prime[0] +
-                                     (p_prime[1] - q_prime[1]) *
-                                             normal_p_prime[1] +
-                                     (p_prime[2] - q_prime[2]) *
-                                             normal_p_prime[2];
+                             float r = (p_prime[0] - q_prime[0]) *
+                                               normal_p_prime[0] +
+                                       (p_prime[1] - q_prime[1]) *
+                                               normal_p_prime[1] +
+                                       (p_prime[2] - q_prime[2]) *
+                                               normal_p_prime[2];
 
                              if (sycl::fabs(r) <= threshold) {
                                  float J_ij[12];
@@ -109,8 +108,7 @@ void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
                                      local_sum[kLocalDim12 + i_local] +=
                                              J_ij[i_local] * r;
                                  }
-                                 local_sum[kLocalDim12 + kLocalDimAtb] +=
-                                         r * r;
+                                 local_sum[kLocalDim12 + kLocalDimAtb] += r * r;
                              }
                          }
 
@@ -121,9 +119,9 @@ void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
                              float gv = sycl::reduce_over_group(
                                      grp, local_sum[k], sycl::plus<float>{});
                              if (item.get_local_id(0) == 0) {
-                                 sycl::atomic_ref<
-                                         float, sycl::memory_order::acq_rel,
-                                         sycl::memory_scope::device>(
+                                 sycl::atomic_ref<float,
+                                                  sycl::memory_order::acq_rel,
+                                                  sycl::memory_scope::device>(
                                          AtA_local_ptr[k]) += gv;
                              }
                          }
@@ -132,21 +130,20 @@ void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
                                      grp, local_sum[kLocalDim12 + k],
                                      sycl::plus<float>{});
                              if (item.get_local_id(0) == 0) {
-                                 sycl::atomic_ref<
-                                         float, sycl::memory_order::acq_rel,
-                                         sycl::memory_scope::device>(
+                                 sycl::atomic_ref<float,
+                                                  sycl::memory_order::acq_rel,
+                                                  sycl::memory_scope::device>(
                                          Atb_local_ptr[k]) += gv;
                              }
                          }
                          {
                              float gv = sycl::reduce_over_group(
-                                     grp,
-                                     local_sum[kLocalDim12 + kLocalDimAtb],
+                                     grp, local_sum[kLocalDim12 + kLocalDimAtb],
                                      sycl::plus<float>{});
                              if (item.get_local_id(0) == 0) {
-                                 sycl::atomic_ref<
-                                         float, sycl::memory_order::acq_rel,
-                                         sycl::memory_scope::device>(
+                                 sycl::atomic_ref<float,
+                                                  sycl::memory_order::acq_rel,
+                                                  sycl::memory_scope::device>(
                                          *residual_ptr) += gv;
                              }
                          }

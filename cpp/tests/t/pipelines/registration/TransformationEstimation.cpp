@@ -16,9 +16,10 @@ namespace open3d {
 namespace tests {
 
 class TransformationEstimationPermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(TransformationEstimation,
-                         TransformationEstimationPermuteDevices,
-                         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+INSTANTIATE_TEST_SUITE_P(
+        TransformationEstimation,
+        TransformationEstimationPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 static std::
         tuple<t::geometry::PointCloud, t::geometry::PointCloud, core::Tensor>

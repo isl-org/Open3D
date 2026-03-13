@@ -34,8 +34,8 @@ static inline void GroupReduceAndAdd(sycl::nd_item<1> item,
                                      float *global_sum_ptr) {
     auto grp = item.get_group();
     for (int k = 0; k < N; ++k) {
-        float grp_val = sycl::reduce_over_group(grp, local_sum[k],
-                                                sycl::plus<float>{});
+        float grp_val =
+                sycl::reduce_over_group(grp, local_sum[k], sycl::plus<float>{});
         if (item.get_local_id(0) == 0) {
             sycl::atomic_ref<float, sycl::memory_order::acq_rel,
                              sycl::memory_scope::device>(global_sum_ptr[k]) +=
@@ -113,8 +113,8 @@ void ComputeOdometryResultPointToPlaneSYCL(
                              }
                          }
 
-                         GroupReduceAndAdd<kReduceDimOdometry>(
-                                 item, local_sum, global_sum_ptr);
+                         GroupReduceAndAdd<kReduceDimOdometry>(item, local_sum,
+                                                               global_sum_ptr);
                      });
          }).wait_and_throw();
 
@@ -192,8 +192,7 @@ void ComputeOdometryResultIntensitySYCL(
                                  int offset = 0;
                                  for (int i = 0; i < 6; ++i) {
                                      for (int j = 0; j <= i; ++j) {
-                                         local_sum[offset++] +=
-                                                 J_I[i] * J_I[j];
+                                         local_sum[offset++] += J_I[i] * J_I[j];
                                      }
                                      local_sum[21 + i] += J_I[i] * d_huber;
                                  }
@@ -202,32 +201,31 @@ void ComputeOdometryResultIntensitySYCL(
                              }
                          }
 
-                         GroupReduceAndAdd<kReduceDimOdometry>(
-                                 item, local_sum, global_sum_ptr);
+                         GroupReduceAndAdd<kReduceDimOdometry>(item, local_sum,
+                                                               global_sum_ptr);
                      });
          }).wait_and_throw();
 
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
-void ComputeOdometryResultHybridSYCL(
-        const core::Tensor &source_depth,
-        const core::Tensor &target_depth,
-        const core::Tensor &source_intensity,
-        const core::Tensor &target_intensity,
-        const core::Tensor &target_depth_dx,
-        const core::Tensor &target_depth_dy,
-        const core::Tensor &target_intensity_dx,
-        const core::Tensor &target_intensity_dy,
-        const core::Tensor &source_vertex_map,
-        const core::Tensor &intrinsics,
-        const core::Tensor &init_source_to_target,
-        core::Tensor &delta,
-        float &inlier_residual,
-        int &inlier_count,
-        const float depth_outlier_trunc,
-        const float depth_huber_delta,
-        const float intensity_huber_delta) {
+void ComputeOdometryResultHybridSYCL(const core::Tensor &source_depth,
+                                     const core::Tensor &target_depth,
+                                     const core::Tensor &source_intensity,
+                                     const core::Tensor &target_intensity,
+                                     const core::Tensor &target_depth_dx,
+                                     const core::Tensor &target_depth_dy,
+                                     const core::Tensor &target_intensity_dx,
+                                     const core::Tensor &target_intensity_dy,
+                                     const core::Tensor &source_vertex_map,
+                                     const core::Tensor &intrinsics,
+                                     const core::Tensor &init_source_to_target,
+                                     core::Tensor &delta,
+                                     float &inlier_residual,
+                                     int &inlier_count,
+                                     const float depth_outlier_trunc,
+                                     const float depth_huber_delta,
+                                     const float intensity_huber_delta) {
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
     NDArrayIndexer source_intensity_indexer(source_intensity, 2);
@@ -290,11 +288,14 @@ void ComputeOdometryResultHybridSYCL(
                                                  J_D[i] * J_D[j];
                                      }
                                      local_sum[21 + i] +=
-                                             J_I[i] * HuberDeriv(
-                                                              r_I,
-                                                              intensity_huber_delta) +
-                                             J_D[i] * HuberDeriv(r_D,
-                                                                  depth_huber_delta);
+                                             J_I[i] *
+                                                     HuberDeriv(
+                                                             r_I,
+                                                             intensity_huber_delta) +
+                                             J_D[i] *
+                                                     HuberDeriv(
+                                                             r_D,
+                                                             depth_huber_delta);
                                  }
                                  local_sum[27] +=
                                          HuberLoss(r_I, intensity_huber_delta) +
@@ -303,21 +304,20 @@ void ComputeOdometryResultHybridSYCL(
                              }
                          }
 
-                         GroupReduceAndAdd<kReduceDimOdometry>(
-                                 item, local_sum, global_sum_ptr);
+                         GroupReduceAndAdd<kReduceDimOdometry>(item, local_sum,
+                                                               global_sum_ptr);
                      });
          }).wait_and_throw();
 
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
-void ComputeOdometryInformationMatrixSYCL(
-        const core::Tensor &source_vertex_map,
-        const core::Tensor &target_vertex_map,
-        const core::Tensor &intrinsic,
-        const core::Tensor &source_to_target,
-        const float square_dist_thr,
-        core::Tensor &information) {
+void ComputeOdometryInformationMatrixSYCL(const core::Tensor &source_vertex_map,
+                                          const core::Tensor &target_vertex_map,
+                                          const core::Tensor &intrinsic,
+                                          const core::Tensor &source_to_target,
+                                          const float square_dist_thr,
+                                          core::Tensor &information) {
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
     NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
 

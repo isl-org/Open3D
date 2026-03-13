@@ -79,22 +79,19 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
                              cgh.parallel_for(
                                      sycl::nd_range<1>{num_groups * wgs, wgs},
                                      [=](sycl::nd_item<1> item) {
-                                         const int gid =
-                                                 item.get_global_id(0);
+                                         const int gid = item.get_global_id(0);
                                          scalar_t local_sum[kReduceDim] = {};
 
                                          if (gid < n) {
                                              scalar_t J_ij[6] = {0};
                                              scalar_t r = 0;
-                                             const bool valid =
-                                                     GetJacobianPointToPlane<
-                                                             scalar_t>(
-                                                             gid,
-                                                             source_points_ptr,
-                                                             target_points_ptr,
-                                                             target_normals_ptr,
-                                                             correspondence_indices_ptr,
-                                                             J_ij, r);
+                                             const bool valid = GetJacobianPointToPlane<
+                                                     scalar_t>(
+                                                     gid, source_points_ptr,
+                                                     target_points_ptr,
+                                                     target_normals_ptr,
+                                                     correspondence_indices_ptr,
+                                                     J_ij, r);
 
                                              if (valid) {
                                                  const scalar_t w =
@@ -112,8 +109,7 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
                                                              J_ij[j] * w * r;
                                                  }
                                                  local_sum[27] += r;
-                                                 local_sum[28] +=
-                                                         scalar_t(1);
+                                                 local_sum[28] += scalar_t(1);
                                              }
                                          }
 
@@ -182,8 +178,7 @@ void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
                              cgh.parallel_for(
                                      sycl::nd_range<1>{num_groups * wgs, wgs},
                                      [=](sycl::nd_item<1> item) {
-                                         const int gid =
-                                                 item.get_global_id(0);
+                                         const int gid = item.get_global_id(0);
                                          scalar_t local_sum[kReduceDim] = {};
 
                                          if (gid < n) {
@@ -191,21 +186,18 @@ void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
                                                       J_I[6] = {0};
                                              scalar_t r_G = 0, r_I = 0;
 
-                                             const bool valid =
-                                                     GetJacobianColoredICP<
-                                                             scalar_t>(
-                                                             gid,
-                                                             source_points_ptr,
-                                                             source_colors_ptr,
-                                                             target_points_ptr,
-                                                             target_normals_ptr,
-                                                             target_colors_ptr,
-                                                             target_color_gradients_ptr,
-                                                             correspondence_indices_ptr,
-                                                             sqrt_lambda_geometric,
-                                                             sqrt_lambda_photometric,
-                                                             J_G, J_I, r_G,
-                                                             r_I);
+                                             const bool valid = GetJacobianColoredICP<
+                                                     scalar_t>(
+                                                     gid, source_points_ptr,
+                                                     source_colors_ptr,
+                                                     target_points_ptr,
+                                                     target_normals_ptr,
+                                                     target_colors_ptr,
+                                                     target_color_gradients_ptr,
+                                                     correspondence_indices_ptr,
+                                                     sqrt_lambda_geometric,
+                                                     sqrt_lambda_photometric,
+                                                     J_G, J_I, r_G, r_I);
 
                                              if (valid) {
                                                  const scalar_t w_G =
@@ -281,125 +273,205 @@ void ComputePoseDopplerICPSYCL(
     const size_t wgs = device_props.max_work_group_size;
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        const scalar_t sqrt_lambda_geometric =
-                sqrt(1.0 - static_cast<scalar_t>(lambda_doppler));
-        const scalar_t sqrt_lambda_doppler = sqrt(lambda_doppler);
-        const scalar_t sqrt_lambda_doppler_by_dt =
-                sqrt_lambda_doppler / static_cast<scalar_t>(period);
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype,
+                                     [&]() {
+                                         const scalar_t sqrt_lambda_geometric =
+                                                 sqrt(1.0 -
+                                                      static_cast<scalar_t>(
+                                                              lambda_doppler));
+                                         const scalar_t sqrt_lambda_doppler =
+                                                 sqrt(lambda_doppler);
+                                         const scalar_t
+                                                 sqrt_lambda_doppler_by_dt =
+                                                         sqrt_lambda_doppler /
+                                                         static_cast<scalar_t>(
+                                                                 period);
 
-        // Pre-compute v_s_in_S using a single-task kernel.
-        {
-            const scalar_t *R_S_to_V_ptr = R_S_to_V.GetDataPtr<scalar_t>();
-            const scalar_t *r_v_to_s_in_V_ptr =
-                    r_v_to_s_in_V.GetDataPtr<scalar_t>();
-            const scalar_t *w_v_in_V_ptr = w_v_in_V.GetDataPtr<scalar_t>();
-            const scalar_t *v_v_in_V_ptr = v_v_in_V.GetDataPtr<scalar_t>();
-            scalar_t *v_s_in_S_ptr = v_s_in_S.GetDataPtr<scalar_t>();
-            queue.single_task([=]() {
-                     PreComputeForDopplerICP(R_S_to_V_ptr, r_v_to_s_in_V_ptr,
-                                            w_v_in_V_ptr, v_v_in_V_ptr,
-                                            v_s_in_S_ptr);
-                 }).wait_and_throw();
-        }
-
-        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
-
-        DISPATCH_DUAL_ROBUST_KERNEL_FUNCTION(
-                scalar_t, kernel_geometric.type_,
-                kernel_geometric.scaling_parameter_, kernel_doppler.type_,
-                kernel_doppler.scaling_parameter_, [&]() {
-                    const scalar_t *source_points_ptr =
-                            source_points.GetDataPtr<scalar_t>();
-                    const scalar_t *source_dopplers_ptr =
-                            source_dopplers.GetDataPtr<scalar_t>();
-                    const scalar_t *source_directions_ptr =
-                            source_directions.GetDataPtr<scalar_t>();
-                    const scalar_t *target_points_ptr =
-                            target_points.GetDataPtr<scalar_t>();
-                    const scalar_t *target_normals_ptr =
-                            target_normals.GetDataPtr<scalar_t>();
-                    const int64_t *correspondence_indices_ptr =
-                            correspondence_indices.GetDataPtr<int64_t>();
-                    const scalar_t *R_S_to_V_ptr =
-                            R_S_to_V.GetDataPtr<scalar_t>();
-                    const scalar_t *r_v_to_s_in_V_ptr =
-                            r_v_to_s_in_V.GetDataPtr<scalar_t>();
-                    const scalar_t *v_s_in_S_ptr =
-                            v_s_in_S.GetDataPtr<scalar_t>();
-
-                    queue.submit([&](sycl::handler &cgh) {
-                             cgh.parallel_for(
-                                     sycl::nd_range<1>{num_groups * wgs, wgs},
-                                     [=](sycl::nd_item<1> item) {
-                                         const int gid =
-                                                 item.get_global_id(0);
-                                         scalar_t local_sum[kReduceDim] = {};
-
-                                         if (gid < n) {
-                                             scalar_t J_G[6] = {0},
-                                                      J_D[6] = {0};
-                                             scalar_t r_G = 0, r_D = 0;
-
-                                             const bool valid =
-                                                     GetJacobianDopplerICP<
-                                                             scalar_t>(
-                                                             gid,
-                                                             source_points_ptr,
-                                                             source_dopplers_ptr,
-                                                             source_directions_ptr,
-                                                             target_points_ptr,
-                                                             target_normals_ptr,
-                                                             correspondence_indices_ptr,
-                                                             R_S_to_V_ptr,
-                                                             r_v_to_s_in_V_ptr,
-                                                             v_s_in_S_ptr,
-                                                             reject_dynamic_outliers,
-                                                             static_cast<scalar_t>(
-                                                                     doppler_outlier_threshold),
-                                                             sqrt_lambda_geometric,
-                                                             sqrt_lambda_doppler,
-                                                             sqrt_lambda_doppler_by_dt,
-                                                             J_G, J_D, r_G,
-                                                             r_D);
-
-                                             if (valid) {
-                                                 const scalar_t w_G =
-                                                         GetWeightFromRobustKernelFirst(
-                                                                 r_G);
-                                                 const scalar_t w_D =
-                                                         GetWeightFromRobustKernelSecond(
-                                                                 r_D);
-
-                                                 int i = 0;
-                                                 for (int j = 0; j < 6; ++j) {
-                                                     for (int k = 0; k <= j;
-                                                          ++k) {
-                                                         local_sum[i++] +=
-                                                                 J_G[j] * w_G *
-                                                                         J_G[k] +
-                                                                 J_D[j] * w_D *
-                                                                         J_D[k];
-                                                     }
-                                                     local_sum[21 + j] +=
-                                                             J_G[j] * w_G *
-                                                                     r_G +
-                                                             J_D[j] * w_D * r_D;
-                                                 }
-                                                 local_sum[27] +=
-                                                         r_G * r_G + r_D * r_D;
-                                                 local_sum[28] += scalar_t(1);
-                                             }
+                                         // Pre-compute v_s_in_S using a
+                                         // single-task kernel.
+                                         {
+                                             const scalar_t *R_S_to_V_ptr =
+                                                     R_S_to_V.GetDataPtr<
+                                                             scalar_t>();
+                                             const scalar_t *r_v_to_s_in_V_ptr =
+                                                     r_v_to_s_in_V.GetDataPtr<
+                                                             scalar_t>();
+                                             const scalar_t *w_v_in_V_ptr =
+                                                     w_v_in_V.GetDataPtr<
+                                                             scalar_t>();
+                                             const scalar_t *v_v_in_V_ptr =
+                                                     v_v_in_V.GetDataPtr<
+                                                             scalar_t>();
+                                             scalar_t *v_s_in_S_ptr =
+                                                     v_s_in_S.GetDataPtr<
+                                                             scalar_t>();
+                                             queue.single_task([=]() {
+                                                      PreComputeForDopplerICP(
+                                                              R_S_to_V_ptr,
+                                                              r_v_to_s_in_V_ptr,
+                                                              w_v_in_V_ptr,
+                                                              v_v_in_V_ptr,
+                                                              v_s_in_S_ptr);
+                                                  }).wait_and_throw();
                                          }
 
-                                         GroupReduceAndAdd<kReduceDim,
-                                                           scalar_t>(
-                                                 item, local_sum,
-                                                 global_sum_ptr);
+                                         scalar_t *global_sum_ptr =
+                                                 global_sum.GetDataPtr<
+                                                         scalar_t>();
+
+                                         DISPATCH_DUAL_ROBUST_KERNEL_FUNCTION(scalar_t,
+                                                                              kernel_geometric
+                                                                                      .type_,
+                                                                              kernel_geometric
+                                                                                      .scaling_parameter_,
+                                                                              kernel_doppler
+                                                                                      .type_,
+                                                                              kernel_doppler
+                                                                                      .scaling_parameter_,
+                                                                              [&]() {
+                                                                                  const scalar_t *source_points_ptr =
+                                                                                          source_points
+                                                                                                  .GetDataPtr<
+                                                                                                          scalar_t>();
+                                                                                  const scalar_t *source_dopplers_ptr =
+                                                                                          source_dopplers
+                                                                                                  .GetDataPtr<
+                                                                                                          scalar_t>();
+                                                                                  const scalar_t *source_directions_ptr =
+                                                                                          source_directions
+                                                                                                  .GetDataPtr<
+                                                                                                          scalar_t>();
+                                                                                  const scalar_t *target_points_ptr =
+                                                                                          target_points
+                                                                                                  .GetDataPtr<
+                                                                                                          scalar_t>();
+                                                                                  const scalar_t *target_normals_ptr =
+                                                                                          target_normals
+                                                                                                  .GetDataPtr<
+                                                                                                          scalar_t>();
+                                                                                  const int64_t *correspondence_indices_ptr =
+                                                                                          correspondence_indices
+                                                                                                  .GetDataPtr<
+                                                                                                          int64_t>();
+                                                                                  const scalar_t *R_S_to_V_ptr =
+                                                                                          R_S_to_V.GetDataPtr<
+                                                                                                  scalar_t>();
+                                                                                  const scalar_t *r_v_to_s_in_V_ptr =
+                                                                                          r_v_to_s_in_V
+                                                                                                  .GetDataPtr<
+                                                                                                          scalar_t>();
+                                                                                  const scalar_t *v_s_in_S_ptr =
+                                                                                          v_s_in_S.GetDataPtr<
+                                                                                                  scalar_t>();
+
+                                                                                  queue
+                                                                                          .submit([&](sycl::handler
+                                                                                                              &cgh) {
+                                                                                              cgh.parallel_for(
+                                                                                                      sycl::nd_range<
+                                                                                                              1>{
+                                                                                                              num_groups *
+                                                                                                                      wgs,
+                                                                                                              wgs},
+                                                                                                      [=](sycl::nd_item<
+                                                                                                              1> item) {
+                                                                                                          const int gid =
+                                                                                                                  item.get_global_id(
+                                                                                                                          0);
+                                                                                                          scalar_t local_sum
+                                                                                                                  [kReduceDim] =
+                                                                                                                          {};
+
+                                                                                                          if (gid <
+                                                                                                              n) {
+                                                                                                              scalar_t J_G
+                                                                                                                      [6] = {0},
+                                                                                                                   J_D[6] = {
+                                                                                                                           0};
+                                                                                                              scalar_t
+                                                                                                                      r_G = 0,
+                                                                                                                      r_D = 0;
+
+                                                                                                              const bool valid = GetJacobianDopplerICP<
+                                                                                                                      scalar_t>(
+                                                                                                                      gid,
+                                                                                                                      source_points_ptr,
+                                                                                                                      source_dopplers_ptr,
+                                                                                                                      source_directions_ptr,
+                                                                                                                      target_points_ptr,
+                                                                                                                      target_normals_ptr,
+                                                                                                                      correspondence_indices_ptr,
+                                                                                                                      R_S_to_V_ptr,
+                                                                                                                      r_v_to_s_in_V_ptr,
+                                                                                                                      v_s_in_S_ptr,
+                                                                                                                      reject_dynamic_outliers,
+                                                                                                                      static_cast<
+                                                                                                                              scalar_t>(
+                                                                                                                              doppler_outlier_threshold),
+                                                                                                                      sqrt_lambda_geometric,
+                                                                                                                      sqrt_lambda_doppler,
+                                                                                                                      sqrt_lambda_doppler_by_dt,
+                                                                                                                      J_G,
+                                                                                                                      J_D,
+                                                                                                                      r_G,
+                                                                                                                      r_D);
+
+                                                                                                              if (valid) {
+                                                                                                                  const scalar_t
+                                                                                                                          w_G = GetWeightFromRobustKernelFirst(
+                                                                                                                                  r_G);
+                                                                                                                  const scalar_t
+                                                                                                                          w_D = GetWeightFromRobustKernelSecond(
+                                                                                                                                  r_D);
+
+                                                                                                                  int i = 0;
+                                                                                                                  for (int j = 0;
+                                                                                                                       j <
+                                                                                                                       6;
+                                                                                                                       ++j) {
+                                                                                                                      for (int k = 0;
+                                                                                                                           k <=
+                                                                                                                           j;
+                                                                                                                           ++k) {
+                                                                                                                          local_sum
+                                                                                                                                  [i++] +=
+                                                                                                                                  J_G[j] *
+                                                                                                                                          w_G *
+                                                                                                                                          J_G[k] +
+                                                                                                                                  J_D[j] *
+                                                                                                                                          w_D *
+                                                                                                                                          J_D[k];
+                                                                                                                      }
+                                                                                                                      local_sum
+                                                                                                                              [21 +
+                                                                                                                               j] +=
+                                                                                                                              J_G[j] *
+                                                                                                                                      w_G *
+                                                                                                                                      r_G +
+                                                                                                                              J_D[j] *
+                                                                                                                                      w_D *
+                                                                                                                                      r_D;
+                                                                                                                  }
+                                                                                                                  local_sum
+                                                                                                                          [27] +=
+                                                                                                                          r_G * r_G +
+                                                                                                                          r_D * r_D;
+                                                                                                                  local_sum[28] += scalar_t(
+                                                                                                                          1);
+                                                                                                              }
+                                                                                                          }
+
+                                                                                                          GroupReduceAndAdd<
+                                                                                                                  kReduceDim,
+                                                                                                                  scalar_t>(
+                                                                                                                  item,
+                                                                                                                  local_sum,
+                                                                                                                  global_sum_ptr);
+                                                                                                      });
+                                                                                          })
+                                                                                          .wait_and_throw();
+                                                                              });
                                      });
-                         }).wait_and_throw();
-                });
-    });
 
     DecodeAndSolve6x6(global_sum, output_pose, residual, inlier_count);
 }
@@ -446,10 +518,9 @@ void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
                                      int i = 0;
                                      for (int j = 0; j < 6; ++j) {
                                          for (int k = 0; k <= j; ++k) {
-                                             local_sum[i++] +=
-                                                     J_x[j] * J_x[k] +
-                                                     J_y[j] * J_y[k] +
-                                                     J_z[j] * J_z[k];
+                                             local_sum[i++] += J_x[j] * J_x[k] +
+                                                               J_y[j] * J_y[k] +
+                                                               J_z[j] * J_z[k];
                                          }
                                      }
                                  }
