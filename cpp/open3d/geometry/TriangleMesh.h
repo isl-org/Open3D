@@ -545,6 +545,8 @@ public:
     /// for reconstruction and the diameter of the samples' bounding cube.
     /// \param linear_fit If true, the reconstructor use linear interpolation to
     /// estimate the positions of iso-vertices.
+    /// \param use_normal_length_as_confidence If true, use the length (norm)
+    /// of normal vectors as point confidence.
     /// \param n_threads Number of threads used for reconstruction. Set to -1 to
     /// automatically determine it.
     /// \return The estimated TriangleMesh, and per vertex density values that
@@ -555,7 +557,8 @@ public:
                                 float width = 0.0f,
                                 float scale = 1.1f,
                                 bool linear_fit = false,
-                                int n_threads = -1);
+                                int n_threads = -1,
+                                bool use_normal_length_as_confidence = false);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \p radius defines the
