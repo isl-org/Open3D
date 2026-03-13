@@ -21,6 +21,25 @@ namespace kernel {
 static constexpr int kReduceDim =
         29;  // 21 (JtJ) + 6 (Jtr) + 1 (r) + 1 (inlier)
 
+/// Perform a group reduction over a fixed-size private array using
+/// sycl::reduce_over_group, then have work item 0 atomically accumulate each
+/// group partial sum into the device-side global buffer.
+template <int N, typename scalar_t>
+static inline void GroupReduceAndAdd(sycl::nd_item<1> item,
+                                     const scalar_t (&local_sum)[N],
+                                     scalar_t *global_sum_ptr) {
+    auto grp = item.get_group();
+    for (int k = 0; k < N; ++k) {
+        scalar_t grp_val = sycl::reduce_over_group(grp, local_sum[k],
+                                                   sycl::plus<scalar_t>{});
+        if (item.get_local_id(0) == 0) {
+            sycl::atomic_ref<scalar_t, sycl::memory_order::acq_rel,
+                             sycl::memory_scope::device>(global_sum_ptr[k]) +=
+                    grp_val;
+        }
+    }
+}
+
 void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
                                  const core::Tensor &target_points,
                                  const core::Tensor &target_normals,
@@ -35,8 +54,11 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
 
     core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto device_props =
+            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
+    sycl::queue queue = device_props.queue;
+    const size_t wgs = device_props.max_work_group_size;
+    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
@@ -53,60 +75,54 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
                     const int64_t *correspondence_indices_ptr =
                             correspondence_indices.GetDataPtr<int64_t>();
 
-                    queue.parallel_for(
-                                 sycl::range<1>{(size_t)n},
-                                 [=](sycl::id<1> id) {
-                                     const int workload_idx = id[0];
-                                     scalar_t J_ij[6] = {0};
-                                     scalar_t r = 0;
-                                     const bool valid =
-                                             GetJacobianPointToPlane<scalar_t>(
-                                                     workload_idx,
-                                                     source_points_ptr,
-                                                     target_points_ptr,
-                                                     target_normals_ptr,
-                                                     correspondence_indices_ptr,
-                                                     J_ij, r);
+                    queue.submit([&](sycl::handler &cgh) {
+                             cgh.parallel_for(
+                                     sycl::nd_range<1>{num_groups * wgs, wgs},
+                                     [=](sycl::nd_item<1> item) {
+                                         const int gid =
+                                                 item.get_global_id(0);
+                                         scalar_t local_sum[kReduceDim] = {};
 
-                                     if (valid) {
-                                         const scalar_t w =
-                                                 GetWeightFromRobustKernel(r);
-                                         int i = 0;
-                                         for (int j = 0; j < 6; ++j) {
-                                             for (int k = 0; k <= j; ++k) {
-                                                 sycl::atomic_ref<
-                                                         scalar_t,
-                                                         sycl::memory_order::
-                                                                 acq_rel,
-                                                         sycl::memory_scope::
-                                                                 device>(
-                                                         global_sum_ptr[i]) +=
-                                                         J_ij[j] * w * J_ij[k];
-                                                 ++i;
+                                         if (gid < n) {
+                                             scalar_t J_ij[6] = {0};
+                                             scalar_t r = 0;
+                                             const bool valid =
+                                                     GetJacobianPointToPlane<
+                                                             scalar_t>(
+                                                             gid,
+                                                             source_points_ptr,
+                                                             target_points_ptr,
+                                                             target_normals_ptr,
+                                                             correspondence_indices_ptr,
+                                                             J_ij, r);
+
+                                             if (valid) {
+                                                 const scalar_t w =
+                                                         GetWeightFromRobustKernel(
+                                                                 r);
+                                                 int i = 0;
+                                                 for (int j = 0; j < 6; ++j) {
+                                                     for (int k = 0; k <= j;
+                                                          ++k) {
+                                                         local_sum[i++] +=
+                                                                 J_ij[j] * w *
+                                                                 J_ij[k];
+                                                     }
+                                                     local_sum[21 + j] +=
+                                                             J_ij[j] * w * r;
+                                                 }
+                                                 local_sum[27] += r;
+                                                 local_sum[28] +=
+                                                         scalar_t(1);
                                              }
-                                             sycl::atomic_ref<
-                                                     scalar_t,
-                                                     sycl::memory_order::
-                                                             acq_rel,
-                                                     sycl::memory_scope::
-                                                             device>(
-                                                     global_sum_ptr[21 + j]) +=
-                                                     J_ij[j] * w * r;
                                          }
-                                         sycl::atomic_ref<
-                                                 scalar_t,
-                                                 sycl::memory_order::acq_rel,
-                                                 sycl::memory_scope::device>(
-                                                 global_sum_ptr[27]) += r;
-                                         sycl::atomic_ref<
-                                                 scalar_t,
-                                                 sycl::memory_order::acq_rel,
-                                                 sycl::memory_scope::device>(
-                                                 global_sum_ptr[28]) +=
-                                                 scalar_t(1);
-                                     }
-                                 })
-                            .wait_and_throw();
+
+                                         GroupReduceAndAdd<kReduceDim,
+                                                           scalar_t>(
+                                                 item, local_sum,
+                                                 global_sum_ptr);
+                                     });
+                         }).wait_and_throw();
                 });
     });
 
@@ -131,8 +147,11 @@ void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
 
     core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto device_props =
+            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
+    sycl::queue queue = device_props.queue;
+    const size_t wgs = device_props.max_work_group_size;
+    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t sqrt_lambda_geometric =
@@ -159,72 +178,70 @@ void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
                     const int64_t *correspondence_indices_ptr =
                             correspondence_indices.GetDataPtr<int64_t>();
 
-                    queue.parallel_for(
-                                 sycl::range<1>{(size_t)n},
-                                 [=](sycl::id<1> id) {
-                                     const int workload_idx = id[0];
-                                     scalar_t J_G[6] = {0}, J_I[6] = {0};
-                                     scalar_t r_G = 0, r_I = 0;
+                    queue.submit([&](sycl::handler &cgh) {
+                             cgh.parallel_for(
+                                     sycl::nd_range<1>{num_groups * wgs, wgs},
+                                     [=](sycl::nd_item<1> item) {
+                                         const int gid =
+                                                 item.get_global_id(0);
+                                         scalar_t local_sum[kReduceDim] = {};
 
-                                     const bool valid =
-                                             GetJacobianColoredICP<scalar_t>(
-                                                     workload_idx,
-                                                     source_points_ptr,
-                                                     source_colors_ptr,
-                                                     target_points_ptr,
-                                                     target_normals_ptr,
-                                                     target_colors_ptr,
-                                                     target_color_gradients_ptr,
-                                                     correspondence_indices_ptr,
-                                                     sqrt_lambda_geometric,
-                                                     sqrt_lambda_photometric,
-                                                     J_G, J_I, r_G, r_I);
+                                         if (gid < n) {
+                                             scalar_t J_G[6] = {0},
+                                                      J_I[6] = {0};
+                                             scalar_t r_G = 0, r_I = 0;
 
-                                     if (valid) {
-                                         const scalar_t w_G =
-                                                 GetWeightFromRobustKernel(r_G);
-                                         const scalar_t w_I =
-                                                 GetWeightFromRobustKernel(r_I);
+                                             const bool valid =
+                                                     GetJacobianColoredICP<
+                                                             scalar_t>(
+                                                             gid,
+                                                             source_points_ptr,
+                                                             source_colors_ptr,
+                                                             target_points_ptr,
+                                                             target_normals_ptr,
+                                                             target_colors_ptr,
+                                                             target_color_gradients_ptr,
+                                                             correspondence_indices_ptr,
+                                                             sqrt_lambda_geometric,
+                                                             sqrt_lambda_photometric,
+                                                             J_G, J_I, r_G,
+                                                             r_I);
 
-                                         int i = 0;
-                                         for (int j = 0; j < 6; ++j) {
-                                             for (int k = 0; k <= j; ++k) {
-                                                 sycl::atomic_ref<
-                                                         scalar_t,
-                                                         sycl::memory_order::
-                                                                 acq_rel,
-                                                         sycl::memory_scope::
-                                                                 device>(
-                                                         global_sum_ptr[i]) +=
-                                                         J_G[j] * w_G * J_G[k] +
-                                                         J_I[j] * w_I * J_I[k];
-                                                 ++i;
+                                             if (valid) {
+                                                 const scalar_t w_G =
+                                                         GetWeightFromRobustKernel(
+                                                                 r_G);
+                                                 const scalar_t w_I =
+                                                         GetWeightFromRobustKernel(
+                                                                 r_I);
+
+                                                 int i = 0;
+                                                 for (int j = 0; j < 6; ++j) {
+                                                     for (int k = 0; k <= j;
+                                                          ++k) {
+                                                         local_sum[i++] +=
+                                                                 J_G[j] * w_G *
+                                                                         J_G[k] +
+                                                                 J_I[j] * w_I *
+                                                                         J_I[k];
+                                                     }
+                                                     local_sum[21 + j] +=
+                                                             J_G[j] * w_G *
+                                                                     r_G +
+                                                             J_I[j] * w_I * r_I;
+                                                 }
+                                                 local_sum[27] +=
+                                                         r_G * r_G + r_I * r_I;
+                                                 local_sum[28] += scalar_t(1);
                                              }
-                                             sycl::atomic_ref<
-                                                     scalar_t,
-                                                     sycl::memory_order::
-                                                             acq_rel,
-                                                     sycl::memory_scope::
-                                                             device>(
-                                                     global_sum_ptr[21 + j]) +=
-                                                     J_G[j] * w_G * r_G +
-                                                     J_I[j] * w_I * r_I;
                                          }
-                                         sycl::atomic_ref<
-                                                 scalar_t,
-                                                 sycl::memory_order::acq_rel,
-                                                 sycl::memory_scope::device>(
-                                                 global_sum_ptr[27]) +=
-                                                 r_G * r_G + r_I * r_I;
-                                         sycl::atomic_ref<
-                                                 scalar_t,
-                                                 sycl::memory_order::acq_rel,
-                                                 sycl::memory_scope::device>(
-                                                 global_sum_ptr[28]) +=
-                                                 scalar_t(1);
-                                     }
-                                 })
-                            .wait_and_throw();
+
+                                         GroupReduceAndAdd<kReduceDim,
+                                                           scalar_t>(
+                                                 item, local_sum,
+                                                 global_sum_ptr);
+                                     });
+                         }).wait_and_throw();
                 });
     });
 
@@ -258,8 +275,11 @@ void ComputePoseDopplerICPSYCL(
     core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
     core::Tensor v_s_in_S = core::Tensor::Zeros({3}, dtype, device);
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto device_props =
+            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
+    sycl::queue queue = device_props.queue;
+    const size_t wgs = device_props.max_work_group_size;
+    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t sqrt_lambda_geometric =
@@ -278,8 +298,8 @@ void ComputePoseDopplerICPSYCL(
             scalar_t *v_s_in_S_ptr = v_s_in_S.GetDataPtr<scalar_t>();
             queue.single_task([=]() {
                      PreComputeForDopplerICP(R_S_to_V_ptr, r_v_to_s_in_V_ptr,
-                                             w_v_in_V_ptr, v_v_in_V_ptr,
-                                             v_s_in_S_ptr);
+                                            w_v_in_V_ptr, v_v_in_V_ptr,
+                                            v_s_in_S_ptr);
                  }).wait_and_throw();
         }
 
@@ -308,78 +328,76 @@ void ComputePoseDopplerICPSYCL(
                     const scalar_t *v_s_in_S_ptr =
                             v_s_in_S.GetDataPtr<scalar_t>();
 
-                    queue.parallel_for(
-                                 sycl::range<1>{(size_t)n},
-                                 [=](sycl::id<1> id) {
-                                     const int workload_idx = id[0];
-                                     scalar_t J_G[6] = {0}, J_D[6] = {0};
-                                     scalar_t r_G = 0, r_D = 0;
+                    queue.submit([&](sycl::handler &cgh) {
+                             cgh.parallel_for(
+                                     sycl::nd_range<1>{num_groups * wgs, wgs},
+                                     [=](sycl::nd_item<1> item) {
+                                         const int gid =
+                                                 item.get_global_id(0);
+                                         scalar_t local_sum[kReduceDim] = {};
 
-                                     const bool valid = GetJacobianDopplerICP<
-                                             scalar_t>(
-                                             workload_idx, source_points_ptr,
-                                             source_dopplers_ptr,
-                                             source_directions_ptr,
-                                             target_points_ptr,
-                                             target_normals_ptr,
-                                             correspondence_indices_ptr,
-                                             R_S_to_V_ptr, r_v_to_s_in_V_ptr,
-                                             v_s_in_S_ptr,
-                                             reject_dynamic_outliers,
-                                             static_cast<scalar_t>(
-                                                     doppler_outlier_threshold),
-                                             sqrt_lambda_geometric,
-                                             sqrt_lambda_doppler,
-                                             sqrt_lambda_doppler_by_dt, J_G,
-                                             J_D, r_G, r_D);
+                                         if (gid < n) {
+                                             scalar_t J_G[6] = {0},
+                                                      J_D[6] = {0};
+                                             scalar_t r_G = 0, r_D = 0;
 
-                                     if (valid) {
-                                         const scalar_t w_G =
-                                                 GetWeightFromRobustKernelFirst(
-                                                         r_G);
-                                         const scalar_t w_D =
-                                                 GetWeightFromRobustKernelSecond(
-                                                         r_D);
+                                             const bool valid =
+                                                     GetJacobianDopplerICP<
+                                                             scalar_t>(
+                                                             gid,
+                                                             source_points_ptr,
+                                                             source_dopplers_ptr,
+                                                             source_directions_ptr,
+                                                             target_points_ptr,
+                                                             target_normals_ptr,
+                                                             correspondence_indices_ptr,
+                                                             R_S_to_V_ptr,
+                                                             r_v_to_s_in_V_ptr,
+                                                             v_s_in_S_ptr,
+                                                             reject_dynamic_outliers,
+                                                             static_cast<scalar_t>(
+                                                                     doppler_outlier_threshold),
+                                                             sqrt_lambda_geometric,
+                                                             sqrt_lambda_doppler,
+                                                             sqrt_lambda_doppler_by_dt,
+                                                             J_G, J_D, r_G,
+                                                             r_D);
 
-                                         int i = 0;
-                                         for (int j = 0; j < 6; ++j) {
-                                             for (int k = 0; k <= j; ++k) {
-                                                 sycl::atomic_ref<
-                                                         scalar_t,
-                                                         sycl::memory_order::
-                                                                 acq_rel,
-                                                         sycl::memory_scope::
-                                                                 device>(
-                                                         global_sum_ptr[i]) +=
-                                                         J_G[j] * w_G * J_G[k] +
-                                                         J_D[j] * w_D * J_D[k];
-                                                 ++i;
+                                             if (valid) {
+                                                 const scalar_t w_G =
+                                                         GetWeightFromRobustKernelFirst(
+                                                                 r_G);
+                                                 const scalar_t w_D =
+                                                         GetWeightFromRobustKernelSecond(
+                                                                 r_D);
+
+                                                 int i = 0;
+                                                 for (int j = 0; j < 6; ++j) {
+                                                     for (int k = 0; k <= j;
+                                                          ++k) {
+                                                         local_sum[i++] +=
+                                                                 J_G[j] * w_G *
+                                                                         J_G[k] +
+                                                                 J_D[j] * w_D *
+                                                                         J_D[k];
+                                                     }
+                                                     local_sum[21 + j] +=
+                                                             J_G[j] * w_G *
+                                                                     r_G +
+                                                             J_D[j] * w_D * r_D;
+                                                 }
+                                                 local_sum[27] +=
+                                                         r_G * r_G + r_D * r_D;
+                                                 local_sum[28] += scalar_t(1);
                                              }
-                                             sycl::atomic_ref<
-                                                     scalar_t,
-                                                     sycl::memory_order::
-                                                             acq_rel,
-                                                     sycl::memory_scope::
-                                                             device>(
-                                                     global_sum_ptr[21 + j]) +=
-                                                     J_G[j] * w_G * r_G +
-                                                     J_D[j] * w_D * r_D;
                                          }
-                                         sycl::atomic_ref<
-                                                 scalar_t,
-                                                 sycl::memory_order::acq_rel,
-                                                 sycl::memory_scope::device>(
-                                                 global_sum_ptr[27]) +=
-                                                 r_G * r_G + r_D * r_D;
-                                         sycl::atomic_ref<
-                                                 scalar_t,
-                                                 sycl::memory_order::acq_rel,
-                                                 sycl::memory_scope::device>(
-                                                 global_sum_ptr[28]) +=
-                                                 scalar_t(1);
-                                     }
-                                 })
-                            .wait_and_throw();
+
+                                         GroupReduceAndAdd<kReduceDim,
+                                                           scalar_t>(
+                                                 item, local_sum,
+                                                 global_sum_ptr);
+                                     });
+                         }).wait_and_throw();
                 });
     });
 
@@ -395,8 +413,11 @@ void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
 
     core::Tensor global_sum = core::Tensor::Zeros({21}, dtype, device);
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto device_props =
+            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
+    sycl::queue queue = device_props.queue;
+    const size_t wgs = device_props.max_work_group_size;
+    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
@@ -405,27 +426,38 @@ void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
         const int64_t *correspondence_indices_ptr =
                 correspondence_indices.GetDataPtr<int64_t>();
 
-        queue.parallel_for(sycl::range<1>{(size_t)n}, [=](sycl::id<1> id) {
-                 const int workload_idx = id[0];
-                 scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
-                 const bool valid = GetInformationJacobians<scalar_t>(
-                         workload_idx, target_points_ptr,
-                         correspondence_indices_ptr, J_x, J_y, J_z);
+        queue.submit([&](sycl::handler &cgh) {
+                 cgh.parallel_for(
+                         sycl::nd_range<1>{num_groups * wgs, wgs},
+                         [=](sycl::nd_item<1> item) {
+                             const int gid = item.get_global_id(0);
+                             scalar_t local_sum[21] = {};
 
-                 if (valid) {
-                     int i = 0;
-                     for (int j = 0; j < 6; ++j) {
-                         for (int k = 0; k <= j; ++k) {
-                             sycl::atomic_ref<scalar_t,
-                                              sycl::memory_order::acq_rel,
-                                              sycl::memory_scope::device>(
-                                     global_sum_ptr[i]) += J_x[j] * J_x[k] +
-                                                           J_y[j] * J_y[k] +
-                                                           J_z[j] * J_z[k];
-                             ++i;
-                         }
-                     }
-                 }
+                             if (gid < n) {
+                                 scalar_t J_x[6] = {0}, J_y[6] = {0},
+                                          J_z[6] = {0};
+                                 const bool valid =
+                                         GetInformationJacobians<scalar_t>(
+                                                 gid, target_points_ptr,
+                                                 correspondence_indices_ptr,
+                                                 J_x, J_y, J_z);
+
+                                 if (valid) {
+                                     int i = 0;
+                                     for (int j = 0; j < 6; ++j) {
+                                         for (int k = 0; k <= j; ++k) {
+                                             local_sum[i++] +=
+                                                     J_x[j] * J_x[k] +
+                                                     J_y[j] * J_y[k] +
+                                                     J_z[j] * J_z[k];
+                                         }
+                                     }
+                                 }
+                             }
+
+                             GroupReduceAndAdd<21, scalar_t>(item, local_sum,
+                                                             global_sum_ptr);
+                         });
              }).wait_and_throw();
 
         const core::Device host(core::Device("CPU:0"));

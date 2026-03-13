@@ -36,7 +36,12 @@ void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
                 "Unable to setup linear system: input length mismatch.");
     }
 
-    // First fill in a small 12 x 12 linear system.
+    // First fill in a small 12 x 12 linear system using group reduction.
+    // kLocalDim = 12*12 + 12 + 1 = 157 elements.
+    static constexpr int kLocalDim12 = 144;  // 12*12
+    static constexpr int kLocalDimAtb = 12;
+    static constexpr int kLocalDimTotal = kLocalDim12 + kLocalDimAtb + 1;
+
     core::Tensor AtA_local =
             core::Tensor::Zeros({12, 12}, core::Float32, device);
     core::Tensor Atb_local = core::Tensor::Zeros({12}, core::Float32, device);
@@ -50,47 +55,102 @@ void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
     const float *Ri_normal_ps_ptr =
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(sycl::range<1>{(size_t)n}, [=](sycl::id<1> id) {
-             int64_t workload_idx = id[0];
-             const float *p_prime = Ti_ps_ptr + 3 * workload_idx;
-             const float *q_prime = Tj_qs_ptr + 3 * workload_idx;
-             const float *normal_p_prime = Ri_normal_ps_ptr + 3 * workload_idx;
+    auto device_props =
+            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
+    sycl::queue queue = device_props.queue;
+    const size_t wgs = device_props.max_work_group_size;
+    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
-             float r = (p_prime[0] - q_prime[0]) * normal_p_prime[0] +
-                       (p_prime[1] - q_prime[1]) * normal_p_prime[1] +
-                       (p_prime[2] - q_prime[2]) * normal_p_prime[2];
-             if (sycl::fabs(r) > threshold) return;
+    queue.submit([&](sycl::handler &cgh) {
+             cgh.parallel_for(
+                     sycl::nd_range<1>{num_groups * wgs, wgs},
+                     [=](sycl::nd_item<1> item) {
+                         const int gid = item.get_global_id(0);
+                         // Private accumulation buffer: [AtA_local(144) |
+                         // Atb_local(12) | residual(1)]
+                         float local_sum[kLocalDimTotal] = {};
 
-             float J_ij[12];
-             J_ij[0] = -q_prime[2] * normal_p_prime[1] +
-                       q_prime[1] * normal_p_prime[2];
-             J_ij[1] = q_prime[2] * normal_p_prime[0] -
-                       q_prime[0] * normal_p_prime[2];
-             J_ij[2] = -q_prime[1] * normal_p_prime[0] +
-                       q_prime[0] * normal_p_prime[1];
-             J_ij[3] = normal_p_prime[0];
-             J_ij[4] = normal_p_prime[1];
-             J_ij[5] = normal_p_prime[2];
-             for (int k = 0; k < 6; ++k) {
-                 J_ij[k + 6] = -J_ij[k];
-             }
+                         if (gid < n) {
+                             const float *p_prime = Ti_ps_ptr + 3 * gid;
+                             const float *q_prime = Tj_qs_ptr + 3 * gid;
+                             const float *normal_p_prime =
+                                     Ri_normal_ps_ptr + 3 * gid;
 
-             for (int i_local = 0; i_local < 12; ++i_local) {
-                 for (int j_local = 0; j_local < 12; ++j_local) {
-                     sycl::atomic_ref<float, sycl::memory_order::acq_rel,
-                                      sycl::memory_scope::device>(
-                             AtA_local_ptr[i_local * 12 + j_local]) +=
-                             J_ij[i_local] * J_ij[j_local];
-                 }
-                 sycl::atomic_ref<float, sycl::memory_order::acq_rel,
-                                  sycl::memory_scope::device>(
-                         Atb_local_ptr[i_local]) += J_ij[i_local] * r;
-             }
-             sycl::atomic_ref<float, sycl::memory_order::acq_rel,
-                              sycl::memory_scope::device>(*residual_ptr) +=
-                     r * r;
+                             float r =
+                                     (p_prime[0] - q_prime[0]) *
+                                             normal_p_prime[0] +
+                                     (p_prime[1] - q_prime[1]) *
+                                             normal_p_prime[1] +
+                                     (p_prime[2] - q_prime[2]) *
+                                             normal_p_prime[2];
+
+                             if (sycl::fabs(r) <= threshold) {
+                                 float J_ij[12];
+                                 J_ij[0] = -q_prime[2] * normal_p_prime[1] +
+                                           q_prime[1] * normal_p_prime[2];
+                                 J_ij[1] = q_prime[2] * normal_p_prime[0] -
+                                           q_prime[0] * normal_p_prime[2];
+                                 J_ij[2] = -q_prime[1] * normal_p_prime[0] +
+                                           q_prime[0] * normal_p_prime[1];
+                                 J_ij[3] = normal_p_prime[0];
+                                 J_ij[4] = normal_p_prime[1];
+                                 J_ij[5] = normal_p_prime[2];
+                                 for (int k = 0; k < 6; ++k) {
+                                     J_ij[k + 6] = -J_ij[k];
+                                 }
+
+                                 for (int i_local = 0; i_local < 12;
+                                      ++i_local) {
+                                     for (int j_local = 0; j_local < 12;
+                                          ++j_local) {
+                                         local_sum[i_local * 12 + j_local] +=
+                                                 J_ij[i_local] * J_ij[j_local];
+                                     }
+                                     local_sum[kLocalDim12 + i_local] +=
+                                             J_ij[i_local] * r;
+                                 }
+                                 local_sum[kLocalDim12 + kLocalDimAtb] +=
+                                         r * r;
+                             }
+                         }
+
+                         // Group-reduce each element and atomically add to
+                         // the device-side local system buffers.
+                         auto grp = item.get_group();
+                         for (int k = 0; k < kLocalDim12; ++k) {
+                             float gv = sycl::reduce_over_group(
+                                     grp, local_sum[k], sycl::plus<float>{});
+                             if (item.get_local_id(0) == 0) {
+                                 sycl::atomic_ref<
+                                         float, sycl::memory_order::acq_rel,
+                                         sycl::memory_scope::device>(
+                                         AtA_local_ptr[k]) += gv;
+                             }
+                         }
+                         for (int k = 0; k < kLocalDimAtb; ++k) {
+                             float gv = sycl::reduce_over_group(
+                                     grp, local_sum[kLocalDim12 + k],
+                                     sycl::plus<float>{});
+                             if (item.get_local_id(0) == 0) {
+                                 sycl::atomic_ref<
+                                         float, sycl::memory_order::acq_rel,
+                                         sycl::memory_scope::device>(
+                                         Atb_local_ptr[k]) += gv;
+                             }
+                         }
+                         {
+                             float gv = sycl::reduce_over_group(
+                                     grp,
+                                     local_sum[kLocalDim12 + kLocalDimAtb],
+                                     sycl::plus<float>{});
+                             if (item.get_local_id(0) == 0) {
+                                 sycl::atomic_ref<
+                                         float, sycl::memory_order::acq_rel,
+                                         sycl::memory_scope::device>(
+                                         *residual_ptr) += gv;
+                             }
+                         }
+                     });
          }).wait_and_throw();
 
     // Then fill-in the large linear system.
