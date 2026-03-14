@@ -31,11 +31,19 @@ static RegistrationResult ComputeRegistrationResult(
     RegistrationResult result(
             transformation.To(core::Device("CPU:0"), core::Float64));
 
+    // NNS does not support SYCL devices. When source is on a SYCL device,
+    // move the query to the NNS dataset device (CPU) and move results back.
+    const core::Device src_device = source.GetPointPositions().GetDevice();
+    const core::Device nns_device = target_nns.GetDatasetDevice();
+    const core::Tensor query = source.GetPointPositions().To(nns_device);
+
     core::Tensor distances, counts;
     std::tie(result.correspondences_, distances, counts) =
-            target_nns.HybridSearch(source.GetPointPositions(),
-                                    max_correspondence_distance, 1);
-    result.correspondences_ = result.correspondences_.To(core::Int64);
+            target_nns.HybridSearch(query, max_correspondence_distance, 1);
+
+    // Move NNS results back to the source device.
+    result.correspondences_ =
+            result.correspondences_.To(src_device).To(core::Int64);
     double num_correspondences =
             counts.Sum({0}).To(core::Float64).Item<double>();
 
@@ -77,7 +85,12 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
     geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation);
 
-    core::nns::NearestNeighborSearch target_nns(target.GetPointPositions());
+    // NNS does not support SYCL devices. Use CPU for the NNS index.
+    const core::Device cpu_device("CPU:0");
+    const core::Device nns_device =
+            source.GetDevice().IsSYCL() ? cpu_device : source.GetDevice();
+    core::nns::NearestNeighborSearch target_nns(
+            target.GetPointPositions().To(nns_device));
 
     bool check = target_nns.HybridIndex(max_correspondence_distance);
     if (!check) {
@@ -381,12 +394,17 @@ RegistrationResult MultiScaleICP(
     RegistrationResult result(transformation);
 
     int iteration_count = 0;
+    // NNS does not support SYCL devices. Use CPU for the NNS index.
+    const core::Device cpu_device("CPU:0");
+    const core::Device nns_device = device.IsSYCL() ? cpu_device : device;
+
     // ---- Iterating over different resolution scale START -------------------
     for (int64_t scale_idx = 0; scale_idx < num_scales; ++scale_idx) {
         source_down_pyramid[scale_idx].Transform(result.transformation_);
         // Initialize Neighbor Search.
         core::nns::NearestNeighborSearch target_nns(
-                target_down_pyramid[scale_idx].GetPointPositions());
+                target_down_pyramid[scale_idx].GetPointPositions().To(
+                        nns_device));
         bool check =
                 target_nns.HybridIndex(max_correspondence_distances[scale_idx]);
         if (!check) {
@@ -443,16 +461,23 @@ core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
     geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation);
 
-    core::nns::NearestNeighborSearch target_nns(target.GetPointPositions());
+    // NNS does not support SYCL devices. Use CPU for the NNS index.
+    const core::Device device = source.GetDevice();
+    const core::Device cpu_device("CPU:0");
+    const core::Device nns_device = device.IsSYCL() ? cpu_device : device;
+    core::nns::NearestNeighborSearch target_nns(
+            target.GetPointPositions().To(nns_device));
 
     target_nns.HybridIndex(max_correspondence_distance);
 
     core::Tensor correspondences, distances, counts;
     std::tie(correspondences, distances, counts) =
-            target_nns.HybridSearch(source_transformed.GetPointPositions(),
-                                    max_correspondence_distance, 1);
+            target_nns.HybridSearch(
+                    source_transformed.GetPointPositions().To(nns_device),
+                    max_correspondence_distance, 1);
 
-    correspondences = correspondences.To(core::Int64);
+    // Move correspondences back to the original device.
+    correspondences = correspondences.To(device).To(core::Int64);
     int32_t num_correspondences = counts.Sum({0}).Item<int32_t>();
 
     if (num_correspondences == 0) {

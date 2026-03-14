@@ -118,6 +118,11 @@ public:
                                                     const double radius,
                                                     const int max_knn) const;
 
+    /// Get the device of the dataset points.
+    core::Device GetDatasetDevice() const {
+        return dataset_points_.GetDevice();
+    }
+
 private:
     bool SetIndex();
 
