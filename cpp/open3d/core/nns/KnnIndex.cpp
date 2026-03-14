@@ -135,7 +135,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
         });
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
+                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3D with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else if (device.IsSYCL()) {
