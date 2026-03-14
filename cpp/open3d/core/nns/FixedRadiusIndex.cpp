@@ -107,6 +107,14 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        return true;
+#else
+        utility::LogError(
+                "-DBUILD_SYCL_MODULE=OFF. Please compile Open3D with "
+                "-DBUILD_SYCL_MODULE=ON.");
+#endif
     } else {
         CALL_BUILD(float, BuildSpatialHashTableCPU)
         CALL_BUILD(double, BuildSpatialHashTableCPU)
@@ -173,6 +181,16 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            FixedRadiusSearchSYCL<scalar_t, int_t>(RADIUS_PARAMETERS);
+        });
+#else
+        utility::LogError(
+                "-DBUILD_SYCL_MODULE=OFF. Please compile Open3D with "
+                "-DBUILD_SYCL_MODULE=ON.");
 #endif
     } else {
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
@@ -242,6 +260,16 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            HybridSearchSYCL<scalar_t, int_t>(HYBRID_PARAMETERS);
+        });
+#else
+        utility::LogError(
+                "-DBUILD_SYCL_MODULE=OFF. Please compile Open3D with "
+                "-DBUILD_SYCL_MODULE=ON.");
 #endif
     } else {
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
