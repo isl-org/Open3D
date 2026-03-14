@@ -39,8 +39,11 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
     const core::Dtype dtype = input.GetPointPositions().GetDtype();
     const core::Device device = input.GetPointPositions().GetDevice();
 
-    core::nns::NearestNeighborSearch tree(input.GetPointPositions(),
-                                          core::Int32);
+    // NNS does not support SYCL devices. Use CPU for the NNS index.
+    const core::Device cpu_device("CPU:0");
+    const core::Device nns_device = device.IsSYCL() ? cpu_device : device;
+    core::nns::NearestNeighborSearch tree(
+            input.GetPointPositions().To(nns_device), core::Int32);
     bool tree_set = false;
 
     const bool filter_fpfh = indices.has_value();
@@ -69,6 +72,8 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
                                   core::Tensor::Ones({1}, core::Bool, device));
         const core::Tensor query_point_positions =
                 input.GetPointPositions().IndexGet({mask_fpfh_points});
+        // Convert query to NNS device (CPU for SYCL).
+        const core::Tensor query_nns = query_point_positions.To(nns_device);
         core::Tensor p_indices, p_distance2, p_counts;
         if (radius.has_value() && max_nn.has_value()) {
             tree_set = tree.HybridIndex(radius.value());
@@ -76,30 +81,34 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
                 utility::LogError("Building HybridIndex failed.");
             }
             std::tie(p_indices, p_distance2, p_counts) = tree.HybridSearch(
-                    query_point_positions, radius.value(), max_nn.value());
+                    query_nns, radius.value(), max_nn.value());
         } else if (!radius.has_value() && max_nn.has_value()) {
             tree_set = tree.KnnIndex();
             if (!tree_set) {
                 utility::LogError("Building KnnIndex failed.");
             }
             std::tie(p_indices, p_distance2) =
-                    tree.KnnSearch(query_point_positions, max_nn.value());
+                    tree.KnnSearch(query_nns, max_nn.value());
 
             // Make counts full with min(max_nn, num_points).
             const int fill_value =
                     max_nn.value() > num_points ? num_points : max_nn.value();
-            p_counts = core::Tensor::Full({query_point_positions.GetLength()},
-                                          fill_value, core::Int32, device);
+            p_counts = core::Tensor::Full({query_nns.GetLength()},
+                                          fill_value, core::Int32, nns_device);
         } else if (radius.has_value() && !max_nn.has_value()) {
             tree_set = tree.FixedRadiusIndex(radius.value());
             if (!tree_set) {
                 utility::LogError("Building RadiusIndex failed.");
             }
             std::tie(p_indices, p_distance2, p_counts) = tree.FixedRadiusSearch(
-                    query_point_positions, radius.value());
+                    query_nns, radius.value());
         } else {
             utility::LogError("Both max_nn and radius are none.");
         }
+        // Move NNS results back to the original device.
+        p_indices = p_indices.To(device);
+        p_distance2 = p_distance2.To(device);
+        p_counts = p_counts.To(device);
 
         core::Tensor mask_required_points =
                 core::Tensor::Zeros({num_points}, core::Bool, device);
@@ -175,6 +184,8 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
     const core::Tensor query_point_positions =
             filter_fpfh ? input.GetPointPositions().IndexGet({mask_spfh_points})
                         : input.GetPointPositions();
+    // Convert query to NNS device (CPU for SYCL).
+    const core::Tensor query_nns = query_point_positions.To(nns_device);
 
     // Compute nearest neighbors and squared distances.
     core::Tensor p_indices, p_distance2, p_counts;
@@ -187,7 +198,7 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
             }
         }
         std::tie(p_indices, p_distance2, p_counts) = tree.HybridSearch(
-                query_point_positions, radius.value(), max_nn.value());
+                query_nns, radius.value(), max_nn.value());
         utility::LogDebug(
                 "Use HybridSearch [max_nn: {} | radius {}] for computing FPFH "
                 "feature.",
@@ -201,21 +212,21 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
         }
 
         // tree.KnnSearch complains if the query point cloud is empty.
-        if (query_point_positions.GetLength() > 0) {
+        if (query_nns.GetLength() > 0) {
             std::tie(p_indices, p_distance2) =
-                    tree.KnnSearch(query_point_positions, max_nn.value());
+                    tree.KnnSearch(query_nns, max_nn.value());
 
             const int fill_value =
                     max_nn.value() > num_points ? num_points : max_nn.value();
 
-            p_counts = core::Tensor::Full({query_point_positions.GetLength()},
-                                          fill_value, core::Int32, device);
+            p_counts = core::Tensor::Full({query_nns.GetLength()},
+                                          fill_value, core::Int32, nns_device);
         } else {
             p_indices = core::Tensor::Zeros({0, max_nn.value()}, core::Int32,
-                                            device);
+                                            nns_device);
             p_distance2 =
-                    core::Tensor::Zeros({0, max_nn.value()}, dtype, device);
-            p_counts = core::Tensor::Zeros({0}, core::Int32, device);
+                    core::Tensor::Zeros({0, max_nn.value()}, dtype, nns_device);
+            p_counts = core::Tensor::Zeros({0}, core::Int32, nns_device);
         }
 
         utility::LogDebug(
@@ -229,13 +240,17 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
             }
         }
         std::tie(p_indices, p_distance2, p_counts) =
-                tree.FixedRadiusSearch(query_point_positions, radius.value());
+                tree.FixedRadiusSearch(query_nns, radius.value());
         utility::LogDebug(
                 "Use RadiusSearch [radius: {}] for computing FPFH feature.",
                 radius.value());
     } else {
         utility::LogError("Both max_nn and radius are none.");
     }
+    // Move NNS results back to the original device.
+    p_indices = p_indices.To(device);
+    p_distance2 = p_distance2.To(device);
+    p_counts = p_counts.To(device);
 
     core::Tensor fpfh;
     if (filter_fpfh) {
@@ -288,15 +303,22 @@ core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
     const int kOuterThreads = std::min(kMaxThreads, num_searches);
     (void)kOuterThreads;  // Avoids compiler warning if OpenMP is disabled
 
+    // NNS does not support SYCL devices. Use CPU for the NNS index.
+    const core::Device src_device = source_features.GetDevice();
+    const core::Device cpu_device("CPU:0");
+    const core::Device nns_device =
+            src_device.IsSYCL() ? cpu_device : src_device;
+
     // corres[0]: corres_ij, corres[1]: corres_ji
 #pragma omp parallel for num_threads(kOuterThreads)
     for (int i = 0; i < num_searches; ++i) {
-        core::nns::NearestNeighborSearch nns(features[1 - i],
+        core::nns::NearestNeighborSearch nns(features[1 - i].To(nns_device),
                                              core::Dtype::Int64);
         nns.KnnIndex();
-        auto result = nns.KnnSearch(features[i], 1);
+        auto result = nns.KnnSearch(features[i].To(nns_device), 1);
 
-        corres[i] = result.first.View({-1});
+        // Move result back to the original device.
+        corres[i] = result.first.To(src_device).View({-1});
     }
 
     auto corres_ij = corres[0];

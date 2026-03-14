@@ -27,10 +27,11 @@
 namespace open3d {
 namespace tests {
 
-class SLACPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(SLAC,
-                         SLACPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class SLACPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        SLAC,
+        SLACPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 // PointCloud is similar if fitness is higher and rmse is lower than tolerance
 // threshold.

@@ -429,7 +429,12 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
                 "Illegal input parameters, number of points and radius must be "
                 "positive");
     }
-    core::nns::NearestNeighborSearch target_nns(GetPointPositions());
+    // NNS does not support SYCL devices. Use CPU for the NNS index.
+    const core::Device device = GetDevice();
+    const core::Device cpu_device("CPU:0");
+    const core::Device nns_device = device.IsSYCL() ? cpu_device : device;
+    const core::Tensor positions_nns = GetPointPositions().To(nns_device);
+    core::nns::NearestNeighborSearch target_nns(positions_nns);
 
     const bool check = target_nns.FixedRadiusIndex(search_radius);
     if (!check) {
@@ -437,9 +442,9 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     }
 
     core::Tensor indices, distance, row_splits;
-    std::tie(indices, distance, row_splits) = target_nns.FixedRadiusSearch(
-            GetPointPositions(), search_radius, false);
-    row_splits = row_splits.To(GetDevice());
+    std::tie(indices, distance, row_splits) =
+            target_nns.FixedRadiusSearch(positions_nns, search_radius, false);
+    row_splits = row_splits.To(device);
 
     const int64_t size = row_splits.GetLength();
     const core::Tensor num_neighbors =
@@ -462,15 +467,22 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveStatisticalOutliers(
                                core::Tensor({0}, core::Bool, GetDevice()));
     }
 
-    core::nns::NearestNeighborSearch nns(GetPointPositions().Contiguous());
+    // NNS does not support SYCL devices. Use CPU for the NNS index.
+    const core::Device device = GetDevice();
+    const core::Device cpu_device("CPU:0");
+    const core::Device nns_device = device.IsSYCL() ? cpu_device : device;
+    const core::Tensor positions_nns =
+            GetPointPositions().Contiguous().To(nns_device);
+    core::nns::NearestNeighborSearch nns(positions_nns);
     const bool check = nns.KnnIndex();
     if (!check) {
         utility::LogError("Knn search index is not set.");
     }
 
     core::Tensor indices, distance2;
-    std::tie(indices, distance2) =
-            nns.KnnSearch(GetPointPositions(), nb_neighbors);
+    std::tie(indices, distance2) = nns.KnnSearch(positions_nns, nb_neighbors);
+    // Move results back to original device for further tensor operations.
+    distance2 = distance2.To(device);
 
     core::Tensor avg_distances = distance2.Sqrt().Mean({1});
     const double cloud_mean =
@@ -587,15 +599,22 @@ std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
     const core::Tensor normals_d = GetPointNormals().Contiguous();
 
     // Compute nearest neighbors.
+    // NNS does not support SYCL devices. Use CPU for the NNS index.
+    const core::Device cpu_device("CPU:0");
+    const core::Device nns_device = device.IsSYCL() ? cpu_device : device;
+    const core::Tensor points_nns = points_d.To(nns_device);
     core::Tensor indices, distance2, counts;
-    core::nns::NearestNeighborSearch tree(points_d, core::Int32);
+    core::nns::NearestNeighborSearch tree(points_nns, core::Int32);
 
     bool check = tree.HybridIndex(radius);
     if (!check) {
         utility::LogError("Building HybridIndex failed.");
     }
     std::tie(indices, distance2, counts) =
-            tree.HybridSearch(points_d, radius, max_nn);
+            tree.HybridSearch(points_nns, radius, max_nn);
+    // Move NNS results back to the original device.
+    indices = indices.To(device);
+    counts = counts.To(device);
     utility::LogDebug(
             "Use HybridSearch [max_nn: {} | radius {}] for computing "
             "boundary points.",
@@ -608,6 +627,18 @@ std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::ComputeBoundaryPointsCUDA, points_d,
                   normals_d, indices, counts, mask, angle_threshold);
+    } else if (IsSYCL()) {
+        // No SYCL kernel; use the CPU kernel with CPU tensors.
+        const core::Tensor points_cpu = points_d.To(cpu_device);
+        const core::Tensor normals_cpu = normals_d.To(cpu_device);
+        const core::Tensor indices_cpu = indices.To(cpu_device);
+        const core::Tensor counts_cpu = counts.To(cpu_device);
+        core::Tensor mask_cpu =
+                core::Tensor::Zeros({num_points}, core::Bool, cpu_device);
+        kernel::pointcloud::ComputeBoundaryPointsCPU(points_cpu, normals_cpu,
+                                                     indices_cpu, counts_cpu,
+                                                     mask_cpu, angle_threshold);
+        mask = mask_cpu.To(device);
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -623,6 +654,8 @@ void PointCloud::EstimateNormals(
 
     const core::Dtype dtype = this->GetPointPositions().GetDtype();
     const core::Device device = GetDevice();
+    // CPU device for SYCL fallback (NNS is not supported on SYCL devices).
+    const core::Device cpu_device("CPU:0");
 
     const bool has_normals = HasPointNormals();
 
@@ -655,6 +688,16 @@ void PointCloud::EstimateNormals(
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value(),
                       max_knn.value());
+        } else if (IsSYCL()) {
+            // NNS is not supported on SYCL; use the CPU kernel with CPU data.
+            core::Tensor points_cpu =
+                    this->GetPointPositions().Contiguous().To(cpu_device);
+            core::Tensor covariances_cpu =
+                    this->GetPointAttr("covariances").To(cpu_device);
+            kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
+                    points_cpu, covariances_cpu, radius.value(),
+                    max_knn.value());
+            this->SetPointAttr("covariances", covariances_cpu.To(device));
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -669,12 +712,20 @@ void PointCloud::EstimateNormals(
             CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), max_knn.value());
+        } else if (IsSYCL()) {
+            core::Tensor points_cpu =
+                    this->GetPointPositions().Contiguous().To(cpu_device);
+            core::Tensor covariances_cpu =
+                    this->GetPointAttr("covariances").To(cpu_device);
+            kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
+                    points_cpu, covariances_cpu, max_knn.value());
+            this->SetPointAttr("covariances", covariances_cpu.To(device));
         } else {
             utility::LogError("Unimplemented device");
         }
     } else if (!max_knn.has_value() && radius.has_value()) {
         utility::LogDebug("Using Radius Search for computing covariances");
-        // Computes and sets `covariances` attribute using KNN Search method.
+        // Computes and sets `covariances` attribute using Radius Search method.
         if (IsCPU()) {
             kernel::pointcloud::EstimateCovariancesUsingRadiusSearchCPU(
                     this->GetPointPositions().Contiguous(),
@@ -684,6 +735,14 @@ void PointCloud::EstimateNormals(
                               EstimateCovariancesUsingRadiusSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value());
+        } else if (IsSYCL()) {
+            core::Tensor points_cpu =
+                    this->GetPointPositions().Contiguous().To(cpu_device);
+            core::Tensor covariances_cpu =
+                    this->GetPointAttr("covariances").To(cpu_device);
+            kernel::pointcloud::EstimateCovariancesUsingRadiusSearchCPU(
+                    points_cpu, covariances_cpu, radius.value());
+            this->SetPointAttr("covariances", covariances_cpu.To(device));
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -700,6 +759,14 @@ void PointCloud::EstimateNormals(
         CUDA_CALL(kernel::pointcloud::EstimateNormalsFromCovariancesCUDA,
                   this->GetPointAttr("covariances"), this->GetPointNormals(),
                   has_normals);
+    } else if (IsSYCL()) {
+        // NNS is not supported on SYCL; use the CPU kernel with CPU data.
+        core::Tensor covariances_cpu =
+                this->GetPointAttr("covariances").To(cpu_device);
+        core::Tensor normals_cpu = this->GetPointNormals().To(cpu_device);
+        kernel::pointcloud::EstimateNormalsFromCovariancesCPU(
+                covariances_cpu, normals_cpu, has_normals);
+        this->SetPointNormals(normals_cpu.To(device));
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -789,9 +856,10 @@ void PointCloud::EstimateColorGradients(
 
     const core::Dtype dtype = this->GetPointColors().GetDtype();
     const core::Device device = GetDevice();
+    // CPU device for SYCL fallback (NNS is not supported on SYCL devices).
+    const core::Device cpu_device("CPU:0");
 
     if (!this->HasPointAttr("color_gradients")) {
-        this->SetPointAttr(
                 "color_gradients",
                 core::Tensor::Empty({GetPointPositions().GetLength(), 3}, dtype,
                                     device));
@@ -823,6 +891,16 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value(),
                       max_knn.value());
+        } else if (IsSYCL()) {
+            // NNS is not supported on SYCL; use the CPU kernel with CPU data.
+            core::Tensor grad_cpu =
+                    this->GetPointAttr("color_gradients").To(cpu_device);
+            kernel::pointcloud::EstimateColorGradientsUsingHybridSearchCPU(
+                    this->GetPointPositions().Contiguous().To(cpu_device),
+                    this->GetPointNormals().Contiguous().To(cpu_device),
+                    this->GetPointColors().Contiguous().To(cpu_device), grad_cpu,
+                    radius.value(), max_knn.value());
+            this->SetPointAttr("color_gradients", grad_cpu.To(device));
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -841,6 +919,15 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), max_knn.value());
+        } else if (IsSYCL()) {
+            core::Tensor grad_cpu =
+                    this->GetPointAttr("color_gradients").To(cpu_device);
+            kernel::pointcloud::EstimateColorGradientsUsingKNNSearchCPU(
+                    this->GetPointPositions().Contiguous().To(cpu_device),
+                    this->GetPointNormals().Contiguous().To(cpu_device),
+                    this->GetPointColors().Contiguous().To(cpu_device), grad_cpu,
+                    max_knn.value());
+            this->SetPointAttr("color_gradients", grad_cpu.To(device));
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -859,6 +946,15 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value());
+        } else if (IsSYCL()) {
+            core::Tensor grad_cpu =
+                    this->GetPointAttr("color_gradients").To(cpu_device);
+            kernel::pointcloud::EstimateColorGradientsUsingRadiusSearchCPU(
+                    this->GetPointPositions().Contiguous().To(cpu_device),
+                    this->GetPointNormals().Contiguous().To(cpu_device),
+                    this->GetPointColors().Contiguous().To(cpu_device), grad_cpu,
+                    radius.value());
+            this->SetPointAttr("color_gradients", grad_cpu.To(device));
         } else {
             utility::LogError("Unimplemented device");
         }

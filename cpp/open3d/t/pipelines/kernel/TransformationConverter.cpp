@@ -64,6 +64,13 @@ static void PoseToTransformationDevice(
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
+    } else if (device_type == core::Device::DeviceType::SYCL) {
+#ifdef BUILD_SYCL_MODULE
+        PoseToTransformationSYCL<scalar_t>(transformation_ptr, pose_ptr,
+                                           transformation.GetDevice());
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -109,6 +116,13 @@ static void TransformationToPoseDevice(
         TransformationToPoseCUDA<scalar_t>(pose_ptr, transformation_ptr);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else if (device_type == core::Device::DeviceType::SYCL) {
+#ifdef BUILD_SYCL_MODULE
+        TransformationToPoseSYCL<scalar_t>(pose_ptr, transformation_ptr,
+                                           pose.GetDevice());
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device.");
