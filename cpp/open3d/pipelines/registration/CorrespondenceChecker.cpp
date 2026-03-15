@@ -87,20 +87,23 @@ bool CorrespondenceCheckerBasedOnSourceRotation::Check(
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres,
         const Eigen::Matrix4d &transformation) const {
-            Eigen::Vector6d transform_6d = 
+    Eigen::Vector6d transform_6d =
             open3d::utility::TransformMatrix4dToVector6d(transformation);
 
-            if (rotation_threshold_[0] != -1 && std::abs(transform_6d[0]) > rotation_threshold_[0]){
-                return false;
-            }
-            if (rotation_threshold_[1] != -1 && std::abs(transform_6d[1]) > rotation_threshold_[1]){
-                return false;
-            }
-            if (rotation_threshold_[2] != -1 && std::abs(transform_6d[2]) > rotation_threshold_[2]){
-                return false;
-            }
+    if (rotation_threshold_[0] != -1 &&
+        std::abs(transform_6d[0]) > rotation_threshold_[0]) {
+        return false;
+    }
+    if (rotation_threshold_[1] != -1 &&
+        std::abs(transform_6d[1]) > rotation_threshold_[1]) {
+        return false;
+    }
+    if (rotation_threshold_[2] != -1 &&
+        std::abs(transform_6d[2]) > rotation_threshold_[2]) {
+        return false;
+    }
 
-            return true;
+    return true;
 }
 
 }  // namespace registration
