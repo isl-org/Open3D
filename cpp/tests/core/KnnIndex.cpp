@@ -24,9 +24,17 @@ using namespace std;
 namespace open3d {
 namespace tests {
 
-TEST(KnnIndex, KnnSearch) {
+class KnnIndexPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(KnnIndex,
+                         KnnIndexPermuteDevices,
+                         testing::ValuesIn(KnnIndexPermuteDevices::TestCases()));
+
+TEST_P(KnnIndexPermuteDevices, KnnSearch) {
     // Define test data.
-    core::Device device = core::Device("CUDA:0");
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "KnnIndex does not support CPU device.";
+    }
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
                                                              {0.0, 0.0, 0.1},
                                                              {0.0, 0.0, 0.2},
@@ -149,9 +157,12 @@ TEST(KnnIndex, KnnSearch) {
     EXPECT_TRUE(distances.AllClose(gt_distances));
 }
 
-TEST(KnnIndex, KnnSearchHighdim) {
+TEST_P(KnnIndexPermuteDevices, KnnSearchHighdim) {
     // Define test data.
-    core::Device device = core::Device("CUDA:0");
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "KnnIndex does not support CPU device.";
+    }
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
                                                              {0.0, 0.0, 0.1},
                                                              {0.0, 0.0, 0.2},
@@ -231,9 +242,12 @@ TEST(KnnIndex, KnnSearchHighdim) {
     EXPECT_TRUE(distances64.AllClose(gt_distances));
 }
 
-TEST(KnnIndex, KnnSearchBatch) {
+TEST_P(KnnIndexPermuteDevices, KnnSearchBatch) {
     // Define test data.
-    core::Device device = core::Device("CUDA:0");
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "KnnIndex does not support CPU device.";
+    }
     core::Tensor dataset_points = core::Tensor::Init<float>(
             {{0.719, 0.128, 0.431}, {0.764, 0.970, 0.678},
              {0.692, 0.786, 0.211}, {0.692, 0.969, 0.942},
@@ -303,8 +317,8 @@ TEST(KnnIndex, KnnSearchBatch) {
             index32.SearchKnn(query_points, queries_row_splits, 3);
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
-    EXPECT_TRUE(indices.AllClose(gt_indices));
-    EXPECT_TRUE(distances.AllClose(gt_distances, 1e-5, 1e-3));
+    EXPECT_TRUE(indices.AllClose(gt_indices)) << indices.ToString();
+    EXPECT_TRUE(distances.AllClose(gt_distances, 1e-5, 1e-3)) << distances.ToString();
 
     // int64
     // Set up Knn index.
@@ -327,8 +341,8 @@ TEST(KnnIndex, KnnSearchBatch) {
             index64.SearchKnn(query_points, queries_row_splits, 3);
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
-    EXPECT_TRUE(indices.AllClose(gt_indices));
-    EXPECT_TRUE(distances.AllClose(gt_distances, 1e-5, 1e-3));
+    EXPECT_TRUE(indices.AllClose(gt_indices)) << indices.ToString();
+    EXPECT_TRUE(distances.AllClose(gt_distances, 1e-5, 1e-3)) << distances.ToString();
 }
 
 }  // namespace tests
