@@ -29,14 +29,28 @@ void KnnSearchCUDA(const Tensor& points,
                    Tensor& neighbors_distance);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+template <class T, class TIndex>
+void KnnSearchSYCL(const Tensor& points,
+                   const Tensor& points_row_splits,
+                   const Tensor& queries,
+                   const Tensor& queries_row_splits,
+                   int knn,
+                   Tensor& neighbors_index,
+                   Tensor& neighbors_row_splits,
+                   Tensor& neighbors_distance);
+#endif
+
 class KnnIndex : public NNSIndex {
 public:
     KnnIndex();
 
     /// \brief Parameterized Constructor.
     ///
-    /// \param dataset_points Provides a set of data points as Tensor for KDTree
-    /// construction.
+    /// \param dataset_points Provides a set of data points as Tensor for
+    /// nearest neighbor search. CPU tensors use NanoFlann through
+    /// open3d::core::nns::NearestNeighborSearch, while CUDA and SYCL tensors
+    /// are handled by this class.
     KnnIndex(const Tensor& dataset_points);
     KnnIndex(const Tensor& dataset_points, const Dtype& index_dtype);
     ~KnnIndex();

@@ -68,6 +68,17 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                 "GPU Tensor is not supported when -DBUILD_CUDA_MODULE=OFF. "
                 "Please recompile Open3d With -DBUILD_CUDA_MODULE=ON.");
 #endif
+    } else if (dataset_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        dataset_points_ = dataset_points.Contiguous();
+        points_row_splits_ = points_row_splits.Contiguous();
+        index_dtype_ = index_dtype;
+        return true;
+#else
+        utility::LogError(
+                "SYCL Tensor is not supported when -DBUILD_SYCL_MODULE=OFF. "
+                "Please recompile Open3D with -DBUILD_SYCL_MODULE=ON.");
+#endif
     } else {
         utility::LogError(
                 "CPU Tensor is not supported in KnnIndex. Please use "
@@ -124,13 +135,24 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
         });
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
+                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3D with "
                 "-DBUILD_CUDA_MODULE=ON.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        const Dtype index_dtype = GetIndexDtype();
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            KnnSearchSYCL<scalar_t, int_t>(KNN_PARAMETERS);
+        });
+#else
+        utility::LogError(
+                "-DBUILD_SYCL_MODULE=OFF. Please compile Open3D with "
+                "-DBUILD_SYCL_MODULE=ON.");
 #endif
     } else {
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
-                "-DBUILD_CUDA_MODULE=ON.");
+                "KnnIndex only supports CUDA and SYCL tensors. Please use "
+                "NanoFlannIndex instead for CPU tensors.");
     }
     return std::make_pair(neighbors_index, neighbors_distance);
 }
