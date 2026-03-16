@@ -171,7 +171,6 @@ public:
 
 public:
     Eigen::Vector3d rotation_threshold_;
-    double zLock_;
 };
 
 }  // namespace registration
