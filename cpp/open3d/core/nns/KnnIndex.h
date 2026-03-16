@@ -47,10 +47,10 @@ public:
 
     /// \brief Parameterized Constructor.
     ///
-    /// \param dataset_points Provides a set of data points as Tensor for nearest
-    /// neighbor search. CPU tensors use NanoFlann through
-    /// open3d::core::nns::NearestNeighborSearch, while CUDA and SYCL tensors are
-    /// handled by this class.
+    /// \param dataset_points Provides a set of data points as Tensor for
+    /// nearest neighbor search. CPU tensors use NanoFlann through
+    /// open3d::core::nns::NearestNeighborSearch, while CUDA and SYCL tensors
+    /// are handled by this class.
     KnnIndex(const Tensor& dataset_points);
     KnnIndex(const Tensor& dataset_points, const Dtype& index_dtype);
     ~KnnIndex();

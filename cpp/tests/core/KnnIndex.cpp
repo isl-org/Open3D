@@ -25,9 +25,10 @@ namespace open3d {
 namespace tests {
 
 class KnnIndexPermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(KnnIndex,
-                         KnnIndexPermuteDevices,
-                         testing::ValuesIn(KnnIndexPermuteDevices::TestCases()));
+INSTANTIATE_TEST_SUITE_P(
+        KnnIndex,
+        KnnIndexPermuteDevices,
+        testing::ValuesIn(KnnIndexPermuteDevices::TestCases()));
 
 TEST_P(KnnIndexPermuteDevices, KnnSearch) {
     // Define test data.
@@ -318,7 +319,8 @@ TEST_P(KnnIndexPermuteDevices, KnnSearchBatch) {
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
     EXPECT_TRUE(indices.AllClose(gt_indices)) << indices.ToString();
-    EXPECT_TRUE(distances.AllClose(gt_distances, 1e-5, 1e-3)) << distances.ToString();
+    EXPECT_TRUE(distances.AllClose(gt_distances, 1e-5, 1e-3))
+            << distances.ToString();
 
     // int64
     // Set up Knn index.
@@ -342,7 +344,8 @@ TEST_P(KnnIndexPermuteDevices, KnnSearchBatch) {
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
     EXPECT_TRUE(indices.AllClose(gt_indices)) << indices.ToString();
-    EXPECT_TRUE(distances.AllClose(gt_distances, 1e-5, 1e-3)) << distances.ToString();
+    EXPECT_TRUE(distances.AllClose(gt_distances, 1e-5, 1e-3))
+            << distances.ToString();
 }
 
 }  // namespace tests

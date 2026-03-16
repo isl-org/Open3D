@@ -52,12 +52,12 @@ bool NearestNeighborSearch::FixedRadiusIndex(std::optional<double> radius) {
     } else {
         if (dataset_points_.IsSYCL()) {
             if (!radius.has_value()) {
-                utility::LogError("radius is required for SYCL FixedRadiusIndex.");
+                utility::LogError(
+                        "radius is required for SYCL FixedRadiusIndex.");
             }
             fixed_radius_index_.reset(new nns::FixedRadiusIndex());
-            return fixed_radius_index_->SetTensorData(dataset_points_,
-                                                      radius.value(),
-                                                      index_dtype_);
+            return fixed_radius_index_->SetTensorData(
+                    dataset_points_, radius.value(), index_dtype_);
         }
         return SetIndex();
     }
@@ -83,9 +83,8 @@ bool NearestNeighborSearch::HybridIndex(std::optional<double> radius) {
                 utility::LogError("radius is required for SYCL HybridIndex.");
             }
             fixed_radius_index_.reset(new nns::FixedRadiusIndex());
-            return fixed_radius_index_->SetTensorData(dataset_points_,
-                                                      radius.value(),
-                                                      index_dtype_);
+            return fixed_radius_index_->SetTensorData(
+                    dataset_points_, radius.value(), index_dtype_);
         }
         return SetIndex();
     }
