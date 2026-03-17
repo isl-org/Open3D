@@ -1,5 +1,4 @@
 ## Main
-
 - Fix a typo in t_geometry/pointcloud
 - Upgrade stdgpu third-party library to commit d7c07d0.
 - Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
