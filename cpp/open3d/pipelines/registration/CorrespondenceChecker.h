@@ -143,10 +143,13 @@ public:
     double normal_angle_threshold_;
 };
 
-/// \class CorrespondenceCheckerBasedOnRotation
+/// \class CorrespondenceCheckerBasedOnSourceRotation
 ///
-/// \brief Check if the transformation is rotated too much from the desired
-/// value
+/// \brief Class to limit the rotation of the source object.
+///
+/// It checks if the transformation is rotated too much from a desired value.
+/// Rotations are checked by extracting the Euler angles from the estimated
+/// transformation using the XYZ intrinsic convention. 
 class CorrespondenceCheckerBasedOnSourceRotation
     : public CorrespondenceChecker {
 public:
@@ -164,12 +167,20 @@ public:
     ~CorrespondenceCheckerBasedOnSourceRotation() override {}
 
 public:
+    /// \brief Function to check if two points can be aligned.
+    ///
+    /// \param source Source point cloud.
+    /// \param target Target point cloud.
+    /// \param corres Correspondence set between source and target point cloud.
+    /// \param transformation The estimated transformation (inplace).
     bool Check(const geometry::PointCloud &source,
                const geometry::PointCloud &target,
                const CorrespondenceSet &corres,
                const Eigen::Matrix4d &transformation) const override;
 
 public:
+    /// \brief 3-element vector [rx, ry, rz] representing the rotation angle 
+    /// thresholds in radians. A value of -1 means unconstrained.
     Eigen::Vector3d rotation_threshold_;
 };
 

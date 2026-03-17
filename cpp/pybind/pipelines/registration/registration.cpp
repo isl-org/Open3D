@@ -156,8 +156,12 @@ void pybind_registration_declarations(py::module &m) {
             PyCorrespondenceChecker<CorrespondenceCheckerBasedOnSourceRotation>,
             CorrespondenceChecker>
             cc_r(m_registration, "CorrespondenceCheckerBasedOnSourceRotation",
-                 R"(Class to limit the rotation of the source object. 
-                   It checks if the transformation is rotated too much from the desired value.)");
+                 "Class to limit the rotation of the source object.\n"
+                 "It checks if the transformation is rotated too much from its "
+                 "desired value.\n"
+                 "Rotations are checked by extracting the Euler angles from "
+                 "the estimated transformation using the XYZ intrinsic "
+                 "convention.");
     py::class_<FastGlobalRegistrationOption> fgr_option(
             m_registration, "FastGlobalRegistrationOption",
             "Options for FastGlobalRegistration.");
@@ -537,7 +541,11 @@ must hold true for all edges.)");
             .def_readwrite("rotation_threshold",
                            &CorrespondenceCheckerBasedOnSourceRotation::
                                    rotation_threshold_,
-                           "Radian value array for rotation angle thresholds.");
+                           "Float64 numpy array of shape (3,) representing "
+                           "the maximum allowed rotation angles [rx, ry, rz] "
+                           "in radians. Rotations are checked by extracting "
+                           "the XYZ intrinsic Euler angles from the "
+                           "transformation. A value of -1 means unconstrained.");
 
     // open3d.registration.FastGlobalRegistrationOption:
     auto fgr_option = static_cast<py::class_<FastGlobalRegistrationOption>>(
@@ -649,7 +657,8 @@ must hold true for all edges.)");
                      "clouds can be aligned. One of "
                      "(``CorrespondenceCheckerBasedOnEdgeLength``, "
                      "``CorrespondenceCheckerBasedOnDistance``, "
-                     "``CorrespondenceCheckerBasedOnNormal``)"},
+                     "``CorrespondenceCheckerBasedOnNormal``, "
+                     "``CorrespondenceCheckerBasedOnSourceRotation``)"},
                     {"confidence",
                      "Desired probability of success for RANSAC. Used for "
                      "estimating early termination by k = log(1 - "
