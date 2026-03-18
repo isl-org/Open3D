@@ -70,6 +70,7 @@ public:
     void EnableViewCaching(bool enable) override;
     bool IsCached() const override;
     TextureHandle GetColorBuffer() override;
+    TextureHandle GetDepthBuffer() override;
 
     Camera* GetCamera() const override;
 

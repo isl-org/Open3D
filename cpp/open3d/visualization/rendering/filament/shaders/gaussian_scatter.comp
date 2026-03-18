@@ -1,0 +1,100 @@
+// Gaussian splat tile scatter pass.
+//
+// This pass expands the projected splat descriptors into compact tile-local
+// entry lists that can be sorted and composited without revisiting the full
+// input attribute buffers.
+
+#version 450
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+struct ProjectedGaussian {
+	vec4 center_depth_alpha;
+	vec4 color;
+	vec4 inv_basis;
+	vec4 axis_basis;
+	uvec4 tile_rect;
+	uvec4 metadata;
+};
+
+struct TileEntry {
+	uint depth_key;
+	uint splat_index;
+	uint stable_index;
+	uint reserved;
+};
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+	mat4 world_from_model;
+	mat4 view_from_world;
+	mat4 clip_from_view;
+	vec4 camera_position_and_near;
+	vec4 viewport_origin_and_size;
+	uvec4 scene;
+	uvec4 tiles;
+	vec4 depth_range_and_flags;
+} view_params;
+
+layout(std430, binding = 6) readonly buffer ProjectedGaussians {
+	ProjectedGaussian projected[];
+};
+
+layout(std430, binding = 8) readonly buffer TileOffsets {
+	uint tile_offsets[];
+};
+
+layout(std430, binding = 9) buffer TileWriteHeads {
+	uint tile_write_heads[];
+};
+
+layout(std430, binding = 11) buffer TileEntries {
+	TileEntry tile_entries[];
+};
+
+uint GetSplatCount() {
+	return view_params.scene.x;
+}
+
+uvec2 GetTileCount2D() {
+	return max(view_params.tiles.zw, uvec2(1u));
+}
+
+uint LinearTileIndex(uvec2 tile) {
+	uvec2 tile_count = GetTileCount2D();
+	return tile.y * tile_count.x + tile.x;
+}
+
+uint DepthToSortableKey(float depth) {
+	return floatBitsToUint(max(depth, 0.0));
+}
+
+void ScatterGaussian(uint splat_index) {
+	if (projected[splat_index].metadata.x == 0u) {
+		return;
+	}
+
+	uvec2 tile_min = projected[splat_index].tile_rect.xy;
+	uvec2 tile_max = projected[splat_index].tile_rect.zw;
+	uint depth_key = DepthToSortableKey(projected[splat_index].center_depth_alpha.z);
+
+	for (uint tile_y = tile_min.y; tile_y <= tile_max.y; ++tile_y) {
+		for (uint tile_x = tile_min.x; tile_x <= tile_max.x; ++tile_x) {
+			uint tile_index = LinearTileIndex(uvec2(tile_x, tile_y));
+			uint write_index = atomicAdd(tile_write_heads[tile_index], 1u);
+			tile_entries[write_index].depth_key = depth_key;
+			tile_entries[write_index].splat_index = splat_index;
+			tile_entries[write_index].stable_index = splat_index;
+			tile_entries[write_index].reserved = tile_offsets[tile_index];
+		}
+	}
+}
+
+void main() {
+	uint global_index = gl_GlobalInvocationID.x;
+	uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	uint splat_count = GetSplatCount();
+	for (uint splat_index = global_index; splat_index < splat_count;
+		 splat_index += max(total_invocations, 1u)) {
+		ScatterGaussian(splat_index);
+	}
+}

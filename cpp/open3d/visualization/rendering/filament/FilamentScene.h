@@ -29,6 +29,8 @@
 #endif  // _MSC_VER
 
 #include <Eigen/Geometry>
+#include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -126,6 +128,7 @@ public:
     void OverrideMaterial(const std::string& object_name,
                           const MaterialRecord& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
+    std::uint64_t GetGeometryChangeId() const;
 
     void OverrideMaterialAll(const MaterialRecord& material,
                              bool shader_only = true) override;
@@ -208,6 +211,12 @@ public:
             std::function<void(std::shared_ptr<geometry::Image>)> callback)
             override;
 
+    void ForEachActiveView(const std::function<void(FilamentView&)>& callback);
+    bool HasGaussianSplatGeometry() const;
+    bool UsesGaussianComputeOutput(const FilamentView& view) const;
+    TextureHandle GetColorBufferForView(const FilamentView& view) const;
+    TextureHandle GetDepthBufferForView(const FilamentView& view) const;
+
     void Draw(filament::Renderer& renderer);
 
     // NOTE: This method is to work around Filament limitation when rendering to
@@ -220,6 +229,8 @@ public:
     filament::Scene* GetNativeScene() const { return scene_; }
 
 private:
+    void MarkGeometryChanged();
+
     MaterialInstanceHandle AssignMaterialToFilamentGeometry(
             filament::RenderableManager::Builder& builder,
             const MaterialRecord& material);
@@ -236,6 +247,7 @@ private:
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
     filament::Scene* scene_ = nullptr;
+    std::uint64_t geometry_change_id_ = 1;
 
     struct TextureMaps {
         rendering::TextureHandle albedo_map =

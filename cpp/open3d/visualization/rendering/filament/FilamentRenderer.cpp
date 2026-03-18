@@ -42,6 +42,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
+#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -56,6 +57,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
+    gaussian_compute_renderer_ =
+            std::make_unique<GaussianComputeRenderer>(engine_, resource_mgr_);
 }
 
 FilamentRenderer::FilamentRenderer(filament::Engine& engine,
@@ -68,6 +71,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
+    gaussian_compute_renderer_ =
+            std::make_unique<GaussianComputeRenderer>(engine_, resource_mgr_);
 }
 
 FilamentRenderer::~FilamentRenderer() {
@@ -96,6 +101,26 @@ Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
 
 void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
+}
+
+bool FilamentRenderer::HasGaussianComputeOutput(
+        const FilamentView& view) const {
+    return gaussian_compute_renderer_ &&
+           gaussian_compute_renderer_->HasOutput(view);
+}
+
+TextureHandle FilamentRenderer::GetGaussianComputeColorTexture(
+        const FilamentView& view) const {
+    return gaussian_compute_renderer_
+                   ? gaussian_compute_renderer_->GetColorTexture(view)
+                   : TextureHandle();
+}
+
+TextureHandle FilamentRenderer::GetGaussianComputeDepthTexture(
+        const FilamentView& view) const {
+    return gaussian_compute_renderer_
+                   ? gaussian_compute_renderer_->GetDepthTexture(view)
+                   : TextureHandle();
 }
 
 void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
@@ -143,13 +168,25 @@ void FilamentRenderer::BeginFrame() {
         buffer_renderers_.clear();  // Cleanup
     }
 
+    if (gaussian_compute_renderer_) {
+        gaussian_compute_renderer_->BeginFrame();
+    }
+
     frame_started_ = renderer_->beginFrame(swap_chain_);
 }
 
 void FilamentRenderer::Draw() {
     if (frame_started_) {
+        std::unordered_set<const FilamentView*> live_gaussian_views;
+
         // Draw 3D scenes into textures
         for (const auto& pair : scenes_) {
+            if (gaussian_compute_renderer_) {
+                pair.second->ForEachActiveView([&](FilamentView& view) {
+                    live_gaussian_views.insert(&view);
+                    gaussian_compute_renderer_->RenderView(view, *pair.second);
+                });
+            }
             pair.second->Draw(*renderer_);
         }
 
@@ -158,6 +195,10 @@ void FilamentRenderer::Draw() {
         // current frame's content from above.
         if (gui_scene_) {
             gui_scene_->Draw(*renderer_);
+        }
+
+        if (gaussian_compute_renderer_) {
+            gaussian_compute_renderer_->PruneOutputs(live_gaussian_views);
         }
 
         if (on_after_draw_) {

@@ -146,6 +146,12 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+void FilamentScene::MarkGeometryChanged() { ++geometry_change_id_; }
+
+std::uint64_t FilamentScene::GetGeometryChangeId() const {
+    return geometry_change_id_;
+}
+
 FilamentScene::FilamentScene(filament::Engine& engine,
                              FilamentResourceManager& resource_mgr,
                              Renderer& renderer)
@@ -262,6 +268,67 @@ View* FilamentScene::GetView(const ViewHandle& view_id) const {
     return nullptr;
 }
 
+void FilamentScene::ForEachActiveView(
+        const std::function<void(FilamentView&)>& callback) {
+    for (auto& pair : views_) {
+        auto& container = pair.second;
+        if (!container.is_active || !container.view) {
+            continue;
+        }
+        callback(*container.view);
+    }
+}
+
+bool FilamentScene::HasGaussianSplatGeometry() const {
+    for (const auto& pair : geometries_) {
+        if (pair.second.mat.properties.shader == "gaussianSplat") {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FilamentScene::UsesGaussianComputeOutput(const FilamentView& view) const {
+    auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
+    if (!renderer || !renderer->HasGaussianComputeOutput(view)) {
+        return false;
+    }
+
+    bool saw_visible_gaussian = false;
+    for (const auto& pair : geometries_) {
+        const auto& geometry = pair.second;
+        if (!geometry.visible) {
+            continue;
+        }
+
+        if (!pair.first.empty() && pair.first[0] == '_') {
+            continue;
+        }
+
+        if (geometry.mat.properties.shader != "gaussianSplat") {
+            return false;
+        }
+
+        saw_visible_gaussian = true;
+    }
+
+    return saw_visible_gaussian;
+}
+
+TextureHandle FilamentScene::GetColorBufferForView(
+        const FilamentView& view) const {
+    auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
+    return renderer ? renderer->GetGaussianComputeColorTexture(view)
+                    : TextureHandle();
+}
+
+TextureHandle FilamentScene::GetDepthBufferForView(
+        const FilamentView& view) const {
+    auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
+    return renderer ? renderer->GetGaussianComputeDepthTexture(view)
+                    : TextureHandle();
+}
+
 void FilamentScene::SetViewActive(const ViewHandle& view_id, bool is_active) {
     auto found = views_.find(view_id);
     if (found != views_.end()) {
@@ -363,6 +430,9 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
                     "Internal error: could not create downsampled point cloud");
         }
     }
+    if (success) {
+        MarkGeometryChanged();
+    }
     return success;
 }
 
@@ -422,6 +492,9 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
                                        vb, ib, material, BufferReuse::kYes);
         }
     }
+    if (success) {
+        MarkGeometryChanged();
+    }
     return success;
 }
 
@@ -464,6 +537,8 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         mesh_object_names.push_back(derived_name);
     }
     model_geometries_[object_name] = mesh_object_names;
+
+    MarkGeometryChanged();
 
     return true;
 }
@@ -676,35 +751,49 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
 #pragma clang diagnostic pop
 #endif
         }
+
+        MarkGeometryChanged();
     }
 }
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
+    bool removed_geometry = false;
     auto geoms = GetGeometry(object_name, false);
     if (!geoms.empty()) {
         for (auto* g : geoms) {
             scene_->remove(g->filament_entity);
             g->ReleaseResources(engine_, resource_mgr_);
             geometries_.erase(g->name);
+            removed_geometry = true;
         }
     }
 
     if (GeometryIsModel(object_name)) {
         model_geometries_.erase(object_name);
+        removed_geometry = true;
+    }
+
+    if (removed_geometry) {
+        MarkGeometryChanged();
     }
 }
 
 void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         if (g->visible != show) {
             g->visible = show;
+            changed = true;
             if (show) {
                 scene_->addEntity(g->filament_entity);
             } else {
                 scene_->remove(g->filament_entity);
             }
         }
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -736,6 +825,7 @@ FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
 
 void FilamentScene::SetGeometryTransform(const std::string& object_name,
                                          const Transform& transform) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         auto itransform = GetGeometryTransformInstance(g);
@@ -745,7 +835,11 @@ void FilamentScene::SetGeometryTransform(const std::string& object_name,
             transform_mgr.setTransform(
                     itransform,
                     converters::FilamentMatrixFromEigenMatrix(ematrix));
+            changed = true;
         }
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -789,6 +883,7 @@ geometry::AxisAlignedBoundingBox FilamentScene::GetGeometryBoundingBox(
 void FilamentScene::GeometryShadows(const std::string& object_name,
                                     bool cast_shadows,
                                     bool receive_shadows) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         auto& renderable_mgr = engine_.getRenderableManager();
@@ -796,11 +891,16 @@ void FilamentScene::GeometryShadows(const std::string& object_name,
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCastShadows(inst, cast_shadows);
         renderable_mgr.setReceiveShadows(inst, receive_shadows);
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
 void FilamentScene::SetGeometryCulling(const std::string& object_name,
                                        bool enable) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         auto& renderable_mgr = engine_.getRenderableManager();
@@ -808,11 +908,16 @@ void FilamentScene::SetGeometryCulling(const std::string& object_name,
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCulling(inst, enable);
         g->culling_enabled = enable;
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
 void FilamentScene::SetGeometryPriority(const std::string& object_name,
                                         uint8_t priority) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         auto& renderable_mgr = engine_.getRenderableManager();
@@ -820,6 +925,10 @@ void FilamentScene::SetGeometryPriority(const std::string& object_name,
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setPriority(inst, priority);
         g->priority = (int)priority;
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -1234,9 +1343,14 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
 
 void FilamentScene::OverrideMaterial(const std::string& object_name,
                                      const MaterialRecord& material) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         OverrideMaterialInternal(g, material);
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -1248,11 +1362,16 @@ void FilamentScene::QueryGeometry(std::vector<std::string>& geometry) {
 
 void FilamentScene::OverrideMaterialAll(const MaterialRecord& material,
                                         bool shader_only) {
+    bool changed = false;
     for (auto& ge : geometries_) {
         if (ge.first == kBackgroundName) {
             continue;
         }
         OverrideMaterialInternal(&ge.second, material, shader_only);
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 

@@ -1,0 +1,118 @@
+// Gaussian splat tile allocation pass.
+//
+// This first functional version computes per-tile counts and offsets from the
+// projected splat descriptors with a single control invocation. It is
+// correctness-oriented and will be parallelized when the full Vulkan resource
+// path is wired up.
+
+#version 450
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+struct ProjectedGaussian {
+	vec4 center_depth_alpha;
+	vec4 color;
+	vec4 inv_basis;
+	vec4 axis_basis;
+	uvec4 tile_rect;
+	uvec4 metadata;
+};
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+	mat4 world_from_model;
+	mat4 view_from_world;
+	mat4 clip_from_view;
+	vec4 camera_position_and_near;
+	vec4 viewport_origin_and_size;
+	uvec4 scene;
+	uvec4 tiles;
+	vec4 depth_range_and_flags;
+} view_params;
+
+layout(std430, binding = 6) readonly buffer ProjectedGaussians {
+	ProjectedGaussian projected[];
+};
+
+layout(std430, binding = 7) buffer TileCounts {
+	uint tile_counts[];
+};
+
+layout(std430, binding = 8) buffer TileOffsets {
+	uint tile_offsets[];
+};
+
+layout(std430, binding = 9) buffer TileWriteHeads {
+	uint tile_write_heads[];
+};
+
+layout(std430, binding = 10) buffer GaussianGlobalCounters {
+	uint global_counters[];
+};
+
+uint GetSplatCount() {
+	return view_params.scene.x;
+}
+
+uvec2 GetTileCount2D() {
+	return max(view_params.tiles.zw, uvec2(1u));
+}
+
+uint GetTileCount1D() {
+	uvec2 tile_count = GetTileCount2D();
+	return tile_count.x * tile_count.y;
+}
+
+uint LinearTileIndex(uvec2 tile) {
+	uvec2 tile_count = GetTileCount2D();
+	return tile.y * tile_count.x + tile.x;
+}
+
+void main() {
+	if (gl_GlobalInvocationID.x != 0u) {
+		return;
+	}
+
+	uint tile_count = GetTileCount1D();
+	for (uint tile_index = 0u; tile_index < tile_count; ++tile_index) {
+		tile_counts[tile_index] = 0u;
+		tile_offsets[tile_index] = 0u;
+		tile_write_heads[tile_index] = 0u;
+	}
+
+	uint valid_splats = 0u;
+	uint splat_count = GetSplatCount();
+	for (uint splat_index = 0u; splat_index < splat_count; ++splat_index) {
+		if (projected[splat_index].metadata.x == 0u) {
+			continue;
+		}
+		++valid_splats;
+		uvec2 tile_min = projected[splat_index].tile_rect.xy;
+		uvec2 tile_max = projected[splat_index].tile_rect.zw;
+		for (uint tile_y = tile_min.y; tile_y <= tile_max.y; ++tile_y) {
+			for (uint tile_x = tile_min.x; tile_x <= tile_max.x; ++tile_x) {
+				uint tile_index = LinearTileIndex(uvec2(tile_x, tile_y));
+				tile_counts[tile_index] += 1u;
+			}
+		}
+	}
+
+	uint running_offset = 0u;
+	for (uint tile_index = 0u; tile_index < tile_count; ++tile_index) {
+		tile_offsets[tile_index] = running_offset;
+		tile_write_heads[tile_index] = running_offset;
+		running_offset += tile_counts[tile_index];
+	}
+
+	if (global_counters.length() > 0) {
+		global_counters[0] = running_offset;
+	}
+	if (global_counters.length() > 1) {
+		global_counters[1] = valid_splats;
+	}
+	if (global_counters.length() > 2) {
+		global_counters[2] = tile_count;
+	}
+	if (global_counters.length() > 3) {
+		global_counters[3] = splat_count;
+	}
+}

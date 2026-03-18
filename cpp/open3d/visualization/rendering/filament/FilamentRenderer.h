@@ -31,6 +31,7 @@ namespace rendering {
 class FilamentMaterialModifier;
 class FilamentRenderToBuffer;
 class FilamentResourceManager;
+class GaussianComputeRenderer;
 class FilamentScene;
 class FilamentView;
 
@@ -100,6 +101,12 @@ public:
     void ConvertToGuiScene(const SceneHandle& id);
     FilamentScene* GetGuiScene() const { return gui_scene_.get(); }
 
+    bool HasGaussianComputeOutput(const FilamentView& view) const;
+    TextureHandle GetGaussianComputeColorTexture(
+            const FilamentView& view) const;
+    TextureHandle GetGaussianComputeDepthTexture(
+            const FilamentView& view) const;
+
     filament::Renderer* GetNative() { return renderer_; }
 
     RenderingType GetBackendType() override {
@@ -119,6 +126,7 @@ private:
     std::unique_ptr<FilamentScene> gui_scene_;
 
     std::unique_ptr<FilamentMaterialModifier> materials_modifier_;
+    std::unique_ptr<GaussianComputeRenderer> gaussian_compute_renderer_;
     FilamentResourceManager& resource_mgr_;
 
     std::unordered_set<std::shared_ptr<FilamentRenderToBuffer>>

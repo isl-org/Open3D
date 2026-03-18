@@ -1,0 +1,131 @@
+// Gaussian splat composite pass.
+//
+// Pixels traverse the sorted tile-local splat list, accumulate front-to-back
+// premultiplied color, and store a nearest-hit depth that Filament can later
+// use during scene composition.
+
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+struct ProjectedGaussian {
+	vec4 center_depth_alpha;
+	vec4 color;
+	vec4 inv_basis;
+	vec4 axis_basis;
+	uvec4 tile_rect;
+	uvec4 metadata;
+};
+
+struct TileEntry {
+	uint depth_key;
+	uint splat_index;
+	uint stable_index;
+	uint reserved;
+};
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+	mat4 world_from_model;
+	mat4 view_from_world;
+	mat4 clip_from_view;
+	vec4 camera_position_and_near;
+	vec4 viewport_origin_and_size;
+	uvec4 scene;
+	uvec4 tiles;
+	vec4 depth_range_and_flags;
+} view_params;
+
+layout(std430, binding = 6) readonly buffer ProjectedGaussians {
+	ProjectedGaussian projected[];
+};
+
+layout(std430, binding = 7) readonly buffer TileCounts {
+	uint tile_counts[];
+};
+
+layout(std430, binding = 8) readonly buffer TileOffsets {
+	uint tile_offsets[];
+};
+
+layout(std430, binding = 11) readonly buffer TileEntries {
+	TileEntry tile_entries[];
+};
+
+layout(binding = 12, rgba16f) uniform writeonly image2D out_color;
+layout(binding = 13, r32f) uniform writeonly image2D out_depth;
+
+uvec2 GetTileSize() {
+	return max(view_params.tiles.xy, uvec2(1u));
+}
+
+uvec2 GetTileCount2D() {
+	return max(view_params.tiles.zw, uvec2(1u));
+}
+
+ivec2 GetViewportSize() {
+	return ivec2(max(view_params.viewport_origin_and_size.zw, vec2(1.0)));
+}
+
+uint LinearTileIndex(uvec2 tile) {
+	uvec2 tile_count = GetTileCount2D();
+	return tile.y * tile_count.x + tile.x;
+}
+
+void main() {
+	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 viewport_size = GetViewportSize();
+	if (pixel.x >= viewport_size.x || pixel.y >= viewport_size.y) {
+		return;
+	}
+
+	uvec2 tile_size = GetTileSize();
+	uvec2 tile = min(uvec2(pixel) / tile_size, GetTileCount2D() - uvec2(1u));
+	uint tile_index = LinearTileIndex(tile);
+	uint tile_count = tile_counts[tile_index];
+	uint tile_offset = tile_offsets[tile_index];
+
+	vec3 accum_color = vec3(0.0);
+	float transmittance = 1.0;
+	float out_linear_depth = view_params.depth_range_and_flags.y;
+	bool depth_written = false;
+	vec2 pixel_center = vec2(pixel) + vec2(0.5);
+
+	for (uint i = 0u; i < tile_count; ++i) {
+		ProjectedGaussian gaussian =
+			projected[tile_entries[tile_offset + i].splat_index];
+		if (gaussian.metadata.x == 0u) {
+			continue;
+		}
+
+		vec2 delta_pixels = pixel_center - gaussian.center_depth_alpha.xy;
+		vec2 gaussian_uv = vec2(
+			dot(gaussian.inv_basis.xy, delta_pixels),
+			dot(gaussian.inv_basis.zw, delta_pixels));
+		float power = -dot(gaussian_uv, gaussian_uv);
+		if (power < -4.0) {
+			continue;
+		}
+
+		float alpha = exp(power) * gaussian.center_depth_alpha.w;
+		if (alpha <= 1.0 / 65535.0) {
+			continue;
+		}
+
+		float contribution = transmittance * alpha;
+		accum_color += contribution * gaussian.color.rgb;
+		if (!depth_written && contribution > 1.0 / 4096.0) {
+			out_linear_depth = gaussian.center_depth_alpha.z;
+			depth_written = true;
+		}
+
+		transmittance *= (1.0 - alpha);
+		if (transmittance <= 1.0 / 4096.0) {
+			transmittance = 0.0;
+			break;
+		}
+	}
+
+	float out_alpha = 1.0 - transmittance;
+	imageStore(out_color, pixel, vec4(accum_color, out_alpha));
+	imageStore(out_depth, pixel, vec4(out_linear_depth, 0.0, 0.0, 0.0));
+}

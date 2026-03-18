@@ -7,13 +7,17 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "open3d/visualization/rendering/Renderer.h"
 
 namespace filament {
 class Engine;
-}
+namespace backend {
+class Platform;
+}  // namespace backend
+}  // namespace filament
 
 namespace open3d {
 namespace visualization {
@@ -32,9 +36,12 @@ public:
     // instance usage, or default path will be used.
     static void SetResourcePath(const std::string& resource_path);
     static const std::string& GetResourcePath();
+    static void SetSharedContext(void* shared_context);
+    static void* GetSharedContext();
 
     static filament::Engine& GetInstance();
     static FilamentResourceManager& GetResourceManager();
+    static filament::backend::Platform* GetPlatform();
 
     static RenderingType GetBackendType() { return type_; }
 
@@ -52,8 +59,10 @@ private:
 
     static RenderingType type_;
     static std::string resource_path_;
+    static void* shared_context_;
     filament::Engine* engine_;
     FilamentResourceManager* resource_manager_;
+    std::unique_ptr<filament::backend::Platform> platform_;
 };
 
 }  // namespace rendering

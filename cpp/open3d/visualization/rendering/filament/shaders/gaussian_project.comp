@@ -1,0 +1,321 @@
+// Gaussian splat projection pass.
+//
+// This pass reconstructs the anisotropic Gaussian in screen space, evaluates
+// the view-dependent SH color once per splat, and stores a compact projected
+// descriptor for the later tile passes.
+
+#version 450
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+struct ProjectedGaussian {
+	vec4 center_depth_alpha;
+	vec4 color;
+	vec4 inv_basis;
+	vec4 axis_basis;
+	uvec4 tile_rect;
+	uvec4 metadata;
+};
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+	mat4 world_from_model;
+	mat4 view_from_world;
+	mat4 clip_from_view;
+	vec4 camera_position_and_near;
+	vec4 viewport_origin_and_size;
+	uvec4 scene;
+	uvec4 tiles;
+	vec4 depth_range_and_flags;
+} view_params;
+
+layout(std430, binding = 1) readonly buffer GaussianPositions {
+	vec4 positions[];
+};
+
+layout(std430, binding = 2) readonly buffer GaussianLogScales {
+	vec4 log_scales[];
+};
+
+layout(std430, binding = 3) readonly buffer GaussianRotations {
+	vec4 rotations[];
+};
+
+layout(std430, binding = 4) readonly buffer GaussianDcOpacity {
+	vec4 dc_opacity[];
+};
+
+layout(std430, binding = 5) readonly buffer GaussianShCoefficients {
+	vec4 sh_coeffs[];
+};
+
+layout(std430, binding = 6) writeonly buffer ProjectedGaussians {
+	ProjectedGaussian projected[];
+};
+
+const float kMinDeterminant = 1e-8;
+const float kMinEigenValue = 1e-6;
+const float kMinAlpha = 1.0 / 65535.0;
+
+uint GetSplatCount() {
+	return view_params.scene.x;
+}
+
+uint GetShDegree() {
+	return min(view_params.scene.y, 2u);
+}
+
+uvec2 GetTileSize() {
+	return max(view_params.tiles.xy, uvec2(1u));
+}
+
+uvec2 GetTileCount() {
+	return max(view_params.tiles.zw, uvec2(1u));
+}
+
+vec2 GetViewportSize() {
+	return max(view_params.viewport_origin_and_size.zw, vec2(1.0));
+}
+
+float Sigmoid(float x) {
+	return 1.0 / (1.0 + exp(-x));
+}
+
+mat3 QuaternionToRotation(vec4 quat) {
+	vec4 q = normalize(quat);
+	float w = q.x;
+	float x = q.y;
+	float y = q.z;
+	float z = q.w;
+
+	float xx = x * x;
+	float yy = y * y;
+	float zz = z * z;
+	float xy = x * y;
+	float xz = x * z;
+	float yz = y * z;
+	float wx = w * x;
+	float wy = w * y;
+	float wz = w * z;
+
+	return mat3(
+		1.0 - 2.0 * (yy + zz), 2.0 * (xy + wz), 2.0 * (xz - wy),
+		2.0 * (xy - wz), 1.0 - 2.0 * (xx + zz), 2.0 * (yz + wx),
+		2.0 * (xz + wy), 2.0 * (yz - wx), 1.0 - 2.0 * (xx + yy));
+}
+
+vec4 LoadShVec4(uint splat_index, uint local_vec4_index) {
+	const uint kMaxShVec4PerSplat = 6u;
+	return sh_coeffs[splat_index * kMaxShVec4PerSplat + local_vec4_index];
+}
+
+vec3 EvaluateShDegree1(vec3 dir, uint splat_index) {
+	vec4 buffer1 = LoadShVec4(splat_index, 0u);
+	vec4 buffer2 = LoadShVec4(splat_index, 1u);
+	vec4 buffer3 = LoadShVec4(splat_index, 2u);
+
+	float coeffs[9] = float[9](
+		buffer1.x, buffer1.y, buffer1.z, buffer1.w,
+		buffer2.x, buffer2.y, buffer2.z, buffer2.w,
+		buffer3.x);
+
+	const float c1 = 0.4886025119;
+	return c1 * vec3(
+		coeffs[0] * dir.y + coeffs[1] * dir.z + coeffs[2] * dir.x,
+		coeffs[3] * dir.y + coeffs[4] * dir.z + coeffs[5] * dir.x,
+		coeffs[6] * dir.y + coeffs[7] * dir.z + coeffs[8] * dir.x);
+}
+
+vec3 EvaluateShDegree2(vec3 dir, uint splat_index) {
+	vec4 buffer3 = LoadShVec4(splat_index, 2u);
+	vec4 buffer4 = LoadShVec4(splat_index, 3u);
+	vec4 buffer5 = LoadShVec4(splat_index, 4u);
+	vec4 buffer6 = LoadShVec4(splat_index, 5u);
+
+	float coeffs[15] = float[15](
+		buffer3.y, buffer3.z, buffer3.w,
+		buffer4.x, buffer4.y, buffer4.z, buffer4.w,
+		buffer5.x, buffer5.y, buffer5.z, buffer5.w,
+		buffer6.x, buffer6.y, buffer6.z, buffer6.w);
+
+	float x = dir.x;
+	float y = dir.y;
+	float z = dir.z;
+
+	const float c0 = 1.0925484306;
+	const float c1 = 1.0925484306;
+	const float c2 = 0.3153915653;
+	const float c3 = 1.0925484306;
+	const float c4 = 0.5462742153;
+
+	vec3 basis0 = vec3(c0 * x * y, c1 * y * z, c2 * (3.0 * z * z - 1.0));
+	vec3 basis1 = vec3(c3 * x * z, c4 * (x * x - y * y), 0.0);
+
+	vec3 color = vec3(0.0);
+	color.r = coeffs[0] * basis0.x + coeffs[1] * basis0.y +
+			  coeffs[2] * basis0.z + coeffs[3] * basis1.x +
+			  coeffs[4] * basis1.y;
+	color.g = coeffs[5] * basis0.x + coeffs[6] * basis0.y +
+			  coeffs[7] * basis0.z + coeffs[8] * basis1.x +
+			  coeffs[9] * basis1.y;
+	color.b = coeffs[10] * basis0.x + coeffs[11] * basis0.y +
+			  coeffs[12] * basis0.z + coeffs[13] * basis1.x +
+			  coeffs[14] * basis1.y;
+	return color;
+}
+
+vec3 EvaluateShColor(uint splat_index, vec3 view_dir) {
+	vec4 dc = dc_opacity[splat_index];
+	const float sh0 = 0.2820947918;
+	vec3 color = vec3(0.5) + sh0 * dc.xyz;
+
+	uint sh_degree = GetShDegree();
+	if (sh_degree >= 1u) {
+		color += EvaluateShDegree1(view_dir, splat_index);
+	}
+	if (sh_degree >= 2u) {
+		color += EvaluateShDegree2(view_dir, splat_index);
+	}
+
+	return max(color, vec3(0.0));
+}
+
+void WriteInvalidProjection(uint splat_index) {
+	projected[splat_index].center_depth_alpha = vec4(0.0);
+	projected[splat_index].color = vec4(0.0);
+	projected[splat_index].inv_basis = vec4(0.0);
+	projected[splat_index].axis_basis = vec4(0.0);
+	projected[splat_index].tile_rect = uvec4(0u);
+	projected[splat_index].metadata = uvec4(0u);
+}
+
+void ProjectGaussian(uint splat_index) {
+	vec3 position = positions[splat_index].xyz;
+	vec4 world_position4 = view_params.world_from_model * vec4(position, 1.0);
+	vec3 world_position = world_position4.xyz / max(world_position4.w, 1e-8);
+	vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
+	vec4 clip_center = view_params.clip_from_view * view_center;
+
+	vec4 dc = dc_opacity[splat_index];
+	float alpha = Sigmoid(dc.w);
+	if (alpha <= kMinAlpha || clip_center.w <= 0.0) {
+		WriteInvalidProjection(splat_index);
+		return;
+	}
+
+	vec3 log_scale = log_scales[splat_index].xyz;
+	vec3 scale = exp(clamp(log_scale, vec3(-20.0), vec3(20.0)));
+	mat3 scale_matrix = mat3(
+		scale.x, 0.0, 0.0,
+		0.0, scale.y, 0.0,
+		0.0, 0.0, scale.z);
+	mat3 rotation = QuaternionToRotation(rotations[splat_index]);
+	mat3 covariance_model = rotation * scale_matrix * scale_matrix *
+							transpose(rotation);
+	mat3 view_from_model = mat3(view_params.view_from_world *
+								view_params.world_from_model);
+	mat3 covariance_view = view_from_model * covariance_model *
+						   transpose(view_from_model);
+
+	vec3 clip_row0 = vec3(view_params.clip_from_view[0].x,
+						  view_params.clip_from_view[1].x,
+						  view_params.clip_from_view[2].x);
+	vec3 clip_row1 = vec3(view_params.clip_from_view[0].y,
+						  view_params.clip_from_view[1].y,
+						  view_params.clip_from_view[2].y);
+	vec3 clip_row3 = vec3(view_params.clip_from_view[0].w,
+						  view_params.clip_from_view[1].w,
+						  view_params.clip_from_view[2].w);
+
+	float inv_w_sq = 1.0 / (clip_center.w * clip_center.w);
+	vec2 resolution = GetViewportSize();
+	vec3 jacobian_x = 0.5 * resolution.x *
+					  (clip_row0 * clip_center.w - clip_row3 * clip_center.x) *
+					  inv_w_sq;
+	vec3 jacobian_y = 0.5 * resolution.y *
+					  (clip_row1 * clip_center.w - clip_row3 * clip_center.y) *
+					  inv_w_sq;
+
+	vec3 cov_jx = covariance_view * jacobian_x;
+	vec3 cov_jy = covariance_view * jacobian_y;
+	float cov_xx = dot(jacobian_x, cov_jx) + 0.3;
+	float cov_xy = dot(jacobian_x, cov_jy);
+	float cov_yy = dot(jacobian_y, cov_jy) + 0.3;
+
+	float mid = 0.5 * (cov_xx + cov_yy);
+	float radius = length(vec2(0.5 * (cov_xx - cov_yy), cov_xy));
+	float lambda1 = max(mid + radius, kMinEigenValue);
+	float lambda2 = max(mid - radius, kMinEigenValue);
+
+	vec2 major_dir = radius > 1e-6 ? normalize(vec2(cov_xy, lambda1 - cov_xx))
+								   : vec2(1.0, 0.0);
+	vec2 minor_dir = vec2(major_dir.y, -major_dir.x);
+	vec2 major_axis = sqrt(2.0 * lambda1) * major_dir;
+	vec2 minor_axis = sqrt(2.0 * lambda2) * minor_dir;
+
+	float bbox_half_x = 2.0 * length(vec2(major_axis.x, minor_axis.x));
+	float bbox_half_y = 2.0 * length(vec2(major_axis.y, minor_axis.y));
+	vec2 bbox_half_extent = max(vec2(bbox_half_x, bbox_half_y), vec2(0.5));
+
+	float basis_det = major_axis.x * minor_axis.y - minor_axis.x * major_axis.y;
+	if (abs(basis_det) < kMinDeterminant) {
+		WriteInvalidProjection(splat_index);
+		return;
+	}
+
+	vec2 center_ndc = clip_center.xy / clip_center.w;
+	vec2 center_pixel = (center_ndc * 0.5 + 0.5) * resolution;
+	vec2 min_pixel = floor(center_pixel - bbox_half_extent);
+	vec2 max_pixel = ceil(center_pixel + bbox_half_extent);
+
+	if (max_pixel.x < 0.0 || max_pixel.y < 0.0 || min_pixel.x >= resolution.x ||
+		min_pixel.y >= resolution.y) {
+		WriteInvalidProjection(splat_index);
+		return;
+	}
+
+	uvec2 tile_size = GetTileSize();
+	uvec2 tile_count = GetTileCount();
+	ivec2 clamped_min_pixel = ivec2(max(min_pixel, vec2(0.0)));
+	ivec2 clamped_max_pixel = ivec2(min(max_pixel, resolution - vec2(1.0)));
+	uvec2 tile_min = uvec2(clamped_min_pixel) / tile_size;
+	uvec2 tile_max = uvec2(clamped_max_pixel) / tile_size;
+	tile_min = min(tile_min, tile_count - uvec2(1u));
+	tile_max = min(tile_max, tile_count - uvec2(1u));
+
+	uint tile_width = tile_max.x - tile_min.x + 1u;
+	uint tile_height = tile_max.y - tile_min.y + 1u;
+	uint tile_overlap_count = tile_width * tile_height;
+
+	float inv_basis_det = 1.0 / basis_det;
+	vec4 inv_basis = vec4(
+		minor_axis.y * inv_basis_det,
+		-minor_axis.x * inv_basis_det,
+		-major_axis.y * inv_basis_det,
+		major_axis.x * inv_basis_det);
+
+	vec3 view_dir = world_position - view_params.camera_position_and_near.xyz;
+	float view_dir_length_sq = dot(view_dir, view_dir);
+	if (view_dir_length_sq > 0.0) {
+		view_dir *= inversesqrt(view_dir_length_sq);
+	} else {
+		view_dir = vec3(0.0, 0.0, 1.0);
+	}
+
+	projected[splat_index].center_depth_alpha =
+		vec4(center_pixel, -view_center.z, alpha);
+	projected[splat_index].color = vec4(EvaluateShColor(splat_index, view_dir), 1.0);
+	projected[splat_index].inv_basis = inv_basis;
+	projected[splat_index].axis_basis = vec4(major_axis, minor_axis);
+	projected[splat_index].tile_rect = uvec4(tile_min, tile_max);
+	projected[splat_index].metadata = uvec4(1u, tile_overlap_count, 0u, 0u);
+}
+
+void main() {
+	uint global_index = gl_GlobalInvocationID.x;
+	uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	uint splat_count = GetSplatCount();
+	for (uint splat_index = global_index; splat_index < splat_count;
+		 splat_index += max(total_invocations, 1u)) {
+		ProjectGaussian(splat_index);
+	}
+}
