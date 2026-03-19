@@ -1130,6 +1130,18 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     ImGui::Image(image_id, ImVec2(f.width, f.height), ImVec2(0.0f, 1.0f),
                  ImVec2(1.0f, 0.0f));
 
+    // Overlay Gaussian splat compute output.  The compute composite
+    // shader outputs straight-alpha RGBA so standard ImGui blending
+    // (SrcAlpha, 1-SrcAlpha) composites correctly over the Filament
+    // scene rendered above.
+    auto gs_tex = impl_->scene_->GetView()->GetGaussianComputeOverlay();
+    if (gs_tex) {
+        ImGui::SetCursorPos(ImVec2(0, 0));
+        ImTextureID gs_id = reinterpret_cast<ImTextureID>(gs_tex.GetId());
+        ImGui::Image(gs_id, ImVec2(f.width, f.height), ImVec2(0.0f, 1.0f),
+                     ImVec2(1.0f, 0.0f));
+    }
+
     if (!impl_->labels_3d_.empty()) {
         // Draw each text label
         for (const auto& l : impl_->labels_3d_) {

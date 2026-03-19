@@ -21,8 +21,22 @@ struct MetalComputePipelineHandle {
     bool valid = false;
 };
 
+struct MetalBufferHandle {
+    std::uintptr_t buffer = 0;
+    std::size_t size = 0;
+    void* mapped = nullptr;
+    bool valid = false;
+};
+
+struct MetalBufferBinding {
+    std::uint32_t index = 0;
+    MetalBufferHandle buffer;
+    std::size_t offset = 0;
+};
+
 struct MetalComputeDispatch {
     MetalComputePipelineHandle pipeline;
+    std::vector<MetalBufferBinding> buffers;
     std::uint32_t group_count_x = 1;
     std::uint32_t group_count_y = 1;
     std::uint32_t group_count_z = 1;
@@ -44,6 +58,26 @@ bool DispatchMetalComputePipelines(
         std::uintptr_t command_queue_handle,
         const std::vector<MetalComputeDispatch>& dispatches,
         std::string* error_message);
+
+// Metal shared buffer management (host-visible, coherent).
+MetalBufferHandle CreateMetalSharedBuffer(std::uintptr_t device_handle,
+                                          std::size_t size,
+                                          const std::string& label,
+                                          std::string* error_message);
+
+void DestroyMetalSharedBuffer(MetalBufferHandle handle);
+
+bool UploadMetalSharedBuffer(const MetalBufferHandle& handle,
+                             const void* data,
+                             std::size_t size,
+                             std::size_t offset,
+                             std::string* error_message);
+
+bool DownloadMetalSharedBuffer(const MetalBufferHandle& handle,
+                               void* data,
+                               std::size_t size,
+                               std::size_t offset,
+                               std::string* error_message);
 
 }  // namespace rendering
 }  // namespace visualization

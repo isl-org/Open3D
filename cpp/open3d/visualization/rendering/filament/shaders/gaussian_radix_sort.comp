@@ -1,0 +1,141 @@
+// Gaussian radix sort — scatter pass (key-value).
+//
+// Performs a single-digit (8-bit) radix scatter of key-value pairs.
+// Keys are sorted by the 8-bit digit at `g_shift`, and values (indices)
+// are permuted in the same order.
+//
+// Adapted from VkRadixSort by Mirco Werner (MIT license):
+//   https://github.com/MircoWerner/VkRadixSort
+// Based on Intel Embree's GPU sort kernel.
+
+#version 450
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_shuffle : enable
+
+#define WORKGROUP_SIZE 256
+#define RADIX_SORT_BINS 256
+#define SUBGROUP_SIZE 32
+
+layout(local_size_x = WORKGROUP_SIZE) in;
+
+layout(push_constant, std430) uniform PushConstants {
+	uint g_num_elements;
+	uint g_shift;
+	uint g_num_workgroups;
+	uint g_num_blocks_per_workgroup;
+};
+
+layout(std430, binding = 0) buffer KeysIn {
+	uint g_keys_in[];
+};
+
+layout(std430, binding = 1) buffer KeysOut {
+	uint g_keys_out[];
+};
+
+layout(std430, binding = 2) buffer Histograms {
+	uint g_histograms[];
+};
+
+layout(std430, binding = 3) buffer ValuesIn {
+	uint g_values_in[];
+};
+
+layout(std430, binding = 4) buffer ValuesOut {
+	uint g_values_out[];
+};
+
+shared uint sums[RADIX_SORT_BINS / SUBGROUP_SIZE];
+shared uint global_offsets[RADIX_SORT_BINS];
+
+struct BinFlags {
+	uint flags[WORKGROUP_SIZE / 32];
+};
+shared BinFlags bin_flags[RADIX_SORT_BINS];
+
+void main() {
+	uint lID = gl_LocalInvocationID.x;
+	uint wID = gl_WorkGroupID.x;
+	uint sID = gl_SubgroupID;
+	uint lsID = gl_SubgroupInvocationID;
+
+	uint local_histogram = 0u;
+	uint prefix_sum = 0u;
+	uint histogram_count = 0u;
+
+	if (lID < RADIX_SORT_BINS) {
+		uint count = 0u;
+		for (uint j = 0u; j < g_num_workgroups; j++) {
+			uint t = g_histograms[RADIX_SORT_BINS * j + lID];
+			local_histogram = (j == wID) ? count : local_histogram;
+			count += t;
+		}
+		histogram_count = count;
+
+		uint sum = subgroupAdd(histogram_count);
+		prefix_sum = subgroupExclusiveAdd(histogram_count);
+		if (subgroupElect()) {
+			sums[sID] = sum;
+		}
+	}
+	barrier();
+
+	if (lID < RADIX_SORT_BINS) {
+		uint sums_prefix_sum = subgroupShuffle(
+				subgroupExclusiveAdd(sums[lsID]), sID);
+		uint global_histogram = sums_prefix_sum + prefix_sum;
+		global_offsets[lID] = global_histogram + local_histogram;
+	}
+
+	// Scatter keys+values according to global offsets.
+	uint flags_bin = lID / 32u;
+	uint flags_bit = 1u << (lID % 32u);
+
+	for (uint index = 0u; index < g_num_blocks_per_workgroup; index++) {
+		uint elementId = wID * g_num_blocks_per_workgroup * WORKGROUP_SIZE
+		               + index * WORKGROUP_SIZE + lID;
+
+		// Initialize bin flags.
+		if (lID < RADIX_SORT_BINS) {
+			for (uint i = 0u; i < WORKGROUP_SIZE / 32u; i++) {
+				bin_flags[lID].flags[i] = 0u;
+			}
+		}
+		barrier();
+
+		uint key_in = 0u;
+		uint val_in = 0u;
+		uint binID = 0u;
+		uint binOffset = 0u;
+		if (elementId < g_num_elements) {
+			key_in = g_keys_in[elementId];
+			val_in = g_values_in[elementId];
+			binID = (key_in >> g_shift) & uint(RADIX_SORT_BINS - 1);
+			binOffset = global_offsets[binID];
+			atomicAdd(bin_flags[binID].flags[flags_bin], flags_bit);
+		}
+		barrier();
+
+		if (elementId < g_num_elements) {
+			uint prefix = 0u;
+			uint count = 0u;
+			for (uint i = 0u; i < WORKGROUP_SIZE / 32u; i++) {
+				uint bits = bin_flags[binID].flags[i];
+				uint full_count = bitCount(bits);
+				uint partial_count = bitCount(bits & (flags_bit - 1u));
+				prefix += (i < flags_bin) ? full_count : 0u;
+				prefix += (i == flags_bin) ? partial_count : 0u;
+				count += full_count;
+			}
+			g_keys_out[binOffset + prefix] = key_in;
+			g_values_out[binOffset + prefix] = val_in;
+			if (prefix == count - 1u) {
+				atomicAdd(global_offsets[binID], count);
+			}
+		}
+
+		barrier();
+	}
+}

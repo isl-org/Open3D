@@ -341,23 +341,18 @@ void FilamentView::EnableViewCaching(bool enable) {
 bool FilamentView::IsCached() const { return caching_enabled_; }
 
 TextureHandle FilamentView::GetColorBuffer() {
-    if (scene_ && scene_->UsesGaussianComputeOutput(*this)) {
-        TextureHandle texture = scene_->GetColorBufferForView(*this);
-        if (texture) {
-            return texture;
-        }
-    }
     return color_buffer_;
 }
 
 TextureHandle FilamentView::GetDepthBuffer() {
-    if (scene_ && scene_->UsesGaussianComputeOutput(*this)) {
-        TextureHandle texture = scene_->GetDepthBufferForView(*this);
-        if (texture) {
-            return texture;
-        }
-    }
     return depth_buffer_;
+}
+
+TextureHandle FilamentView::GetGaussianComputeOverlay() {
+    if (scene_ && scene_->UsesGaussianComputeOutput(*this)) {
+        return scene_->GetColorBufferForView(*this);
+    }
+    return {};
 }
 
 void FilamentView::SetRenderTarget(const RenderTargetHandle render_target) {

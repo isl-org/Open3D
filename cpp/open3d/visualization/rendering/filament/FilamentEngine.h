@@ -62,7 +62,6 @@ private:
     static void* shared_context_;
     filament::Engine* engine_;
     FilamentResourceManager* resource_manager_;
-    std::unique_ptr<filament::backend::Platform> platform_;
 };
 
 }  // namespace rendering

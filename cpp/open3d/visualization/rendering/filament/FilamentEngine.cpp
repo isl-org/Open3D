@@ -7,8 +7,6 @@
 
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 
-#include <memory>
-
 #include "open3d/utility/Logging.h"
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
@@ -23,16 +21,6 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#if !defined(__APPLE__) && __has_include(<backend/platforms/VulkanPlatform.h>)
-#include <backend/platforms/VulkanPlatform.h>
-#define OPEN3D_HAS_FILAMENT_VULKAN_PLATFORM 1
-#endif
-
-#if __has_include(<backend/platforms/PlatformMetal.h>)
-#include <backend/platforms/PlatformMetal.h>
-#define OPEN3D_HAS_FILAMENT_METAL_PLATFORM 1
-#endif
-
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
 
 #include "open3d/utility/FileSystem.h"
@@ -44,52 +32,6 @@ namespace rendering {
 
 namespace {
 static std::shared_ptr<EngineInstance> g_instance = nullptr;
-
-std::unique_ptr<filament::backend::Platform> CreateBackendPlatform(
-        RenderingType type) {
-    if (type == RenderingType::kDefault) {
-#if defined(__APPLE__) && defined(OPEN3D_HAS_FILAMENT_METAL_PLATFORM)
-        return std::unique_ptr<filament::backend::Platform>(
-                new filament::backend::PlatformMetal());
-#elif defined(OPEN3D_HAS_FILAMENT_VULKAN_PLATFORM)
-        return std::unique_ptr<filament::backend::Platform>(
-                new filament::backend::VulkanPlatform());
-#else
-        return nullptr;
-#endif
-    }
-
-    switch (type) {
-        case RenderingType::kDefault:
-            break;
-#if defined(__APPLE__)
-        case RenderingType::kVulkan:
-            utility::LogWarning(
-                    "Filament Vulkan backend is disabled on macOS while "
-                    "Gaussian "
-                    "compute uses Metal-only interop. Falling back to Metal.");
-#if defined(OPEN3D_HAS_FILAMENT_METAL_PLATFORM)
-            return std::unique_ptr<filament::backend::Platform>(
-                    new filament::backend::PlatformMetal());
-#else
-            return nullptr;
-#endif
-#endif
-#if defined(OPEN3D_HAS_FILAMENT_VULKAN_PLATFORM)
-        case RenderingType::kVulkan:
-            return std::unique_ptr<filament::backend::Platform>(
-                    new filament::backend::VulkanPlatform());
-#endif
-#if defined(OPEN3D_HAS_FILAMENT_METAL_PLATFORM)
-        case RenderingType::kMetal:
-            return std::unique_ptr<filament::backend::Platform>(
-                    new filament::backend::PlatformMetal());
-#endif
-        case RenderingType::kOpenGL:
-            break;
-    }
-    return nullptr;
-}
 }  // namespace
 
 #ifdef _WIN32
@@ -127,7 +69,7 @@ FilamentResourceManager& EngineInstance::GetResourceManager() {
 }
 
 filament::backend::Platform* EngineInstance::GetPlatform() {
-    return Get().platform_.get();
+    return Get().engine_->getPlatform();
 }
 
 EngineInstance::~EngineInstance() {
@@ -152,44 +94,20 @@ EngineInstance::EngineInstance() {
     filament::backend::Backend backend = filament::backend::Backend::DEFAULT;
     switch (type_) {
         case RenderingType::kDefault:
-#if defined(__APPLE__) && defined(OPEN3D_HAS_FILAMENT_METAL_PLATFORM)
-            backend = filament::backend::Backend::METAL;
-#else
             backend = filament::backend::Backend::DEFAULT;
-#endif
             break;
         case RenderingType::kOpenGL:
             backend = filament::backend::Backend::OPENGL;
             break;
         case RenderingType::kVulkan:
-#if defined(__APPLE__) && defined(OPEN3D_HAS_FILAMENT_METAL_PLATFORM)
-            utility::LogWarning(
-                    "Filament Vulkan backend is disabled on macOS while "
-                    "Gaussian compute uses Metal-only interop. Falling back "
-                    "to Metal.");
-            type_ = RenderingType::kMetal;
-            backend = filament::backend::Backend::METAL;
-#else
             backend = filament::backend::Backend::VULKAN;
-#endif
             break;
         case RenderingType::kMetal:
             backend = filament::backend::Backend::METAL;
             break;
     }
 
-    platform_ = CreateBackendPlatform(type_);
-
-    filament::Engine::Builder builder;
-    builder.backend(backend);
-    if (platform_) {
-        builder.platform(platform_.get());
-    }
-    if (shared_context_) {
-        builder.sharedContext(shared_context_);
-    }
-
-    engine_ = builder.build();
+    engine_ = filament::Engine::create(backend, nullptr, shared_context_);
     if (!engine_) {
         utility::LogError("Failed to create Filament engine.");
     }

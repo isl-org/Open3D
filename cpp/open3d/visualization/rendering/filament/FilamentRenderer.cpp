@@ -170,6 +170,22 @@ void FilamentRenderer::BeginFrame() {
 
     if (gaussian_compute_renderer_) {
         gaussian_compute_renderer_->BeginFrame();
+
+        // Flush any pending Filament work so the GPU queue is idle before
+        // our compute dispatches.  Without this, vkQueueSubmit can fail
+        // because Filament still has commands in flight on the same queue.
+        engine_.flushAndWait();
+
+        // Dispatch Gaussian compute before Filament's beginFrame so our
+        // vkQueueSubmit calls don't conflict with Filament's frame.
+        std::unordered_set<const FilamentView*> live_views;
+        for (const auto& pair : scenes_) {
+            pair.second->ForEachActiveView([&](FilamentView& view) {
+                live_views.insert(&view);
+                gaussian_compute_renderer_->RenderView(view, *pair.second);
+            });
+        }
+        gaussian_compute_renderer_->PruneOutputs(live_views);
     }
 
     frame_started_ = renderer_->beginFrame(swap_chain_);
@@ -177,16 +193,8 @@ void FilamentRenderer::BeginFrame() {
 
 void FilamentRenderer::Draw() {
     if (frame_started_) {
-        std::unordered_set<const FilamentView*> live_gaussian_views;
-
         // Draw 3D scenes into textures
         for (const auto& pair : scenes_) {
-            if (gaussian_compute_renderer_) {
-                pair.second->ForEachActiveView([&](FilamentView& view) {
-                    live_gaussian_views.insert(&view);
-                    gaussian_compute_renderer_->RenderView(view, *pair.second);
-                });
-            }
             pair.second->Draw(*renderer_);
         }
 
@@ -195,10 +203,6 @@ void FilamentRenderer::Draw() {
         // current frame's content from above.
         if (gui_scene_) {
             gui_scene_->Draw(*renderer_);
-        }
-
-        if (gaussian_compute_renderer_) {
-            gaussian_compute_renderer_->PruneOutputs(live_gaussian_views);
         }
 
         if (on_after_draw_) {

@@ -1,0 +1,45 @@
+// Gaussian radix sort — key preparation pass.
+//
+// Creates composite sort keys from tile entries: key = (tile_index << 20) | (depth_key >> 12).
+// Also initializes the value array with identity indices.
+
+#version 450
+
+#define WORKGROUP_SIZE 256
+
+layout(local_size_x = WORKGROUP_SIZE) in;
+
+layout(push_constant, std430) uniform PushConstants {
+	uint g_num_elements;
+};
+
+struct TileEntry {
+	uint depth_key;
+	uint splat_index;
+	uint stable_index;
+	uint tile_index;  // stored in 'reserved' field
+};
+
+layout(std430, binding = 0) readonly buffer TileEntries {
+	TileEntry g_entries[];
+};
+
+layout(std430, binding = 1) writeonly buffer SortKeys {
+	uint g_sort_keys[];
+};
+
+layout(std430, binding = 2) writeonly buffer SortValues {
+	uint g_sort_values[];
+};
+
+void main() {
+	uint gID = gl_GlobalInvocationID.x;
+	if (gID >= g_num_elements) {
+		return;
+	}
+	uint tile_index = g_entries[gID].tile_index;
+	uint depth_key = g_entries[gID].depth_key;
+	// Pack: 12 bits tile_index (up to 4096 tiles), 20 bits depth.
+	g_sort_keys[gID] = (tile_index << 20u) | (depth_key >> 12u);
+	g_sort_values[gID] = gID;
+}

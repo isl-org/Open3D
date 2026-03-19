@@ -24,7 +24,8 @@ functionality is out of scope.
 - Read the relevant C++ / Python / docs files together and identify whether bindings, docs, and tests must change with the source change.
 - Avoid duplicate implementations when similar functionality already exists - refactor and reuse instead.
 - Keep changes focused and small. Avoid broad refactors unless requested.
-- Document the code with brief comments (Why and What is the code doing?), typically for each function and file. Update `docs`, Doxygen docs in C++ headers and Google Sphinx RST docs in Python bindings for new / changed code behavior.  Add / update an example function use snippet in the docs.
+- Developer docs: Document the code with brief comments (Why and What is the code doing?), typically for each function and file. Ensure code and docs are consistent.
+- User docs: Update `docs`, Doxygen docs in C++ headers and Google Sphinx RST docs in Python bindings for new / changed code behavior.  Add / update an example function use snippet in the docs.
 - For new functionality, prefer Tensor implementations that work on CPU+CUDA+SYCL. 
 - Use the Eigen library for Math operations and oneAPI TBB for multithreading. Avoid: OpenMP, stdgpu.
 - Check whether Python bindings in `cpp/pybind/` also need updates.

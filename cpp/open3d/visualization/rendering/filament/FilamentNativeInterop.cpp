@@ -6,6 +6,7 @@
 
 #include "open3d/visualization/rendering/filament/FilamentNativeInterop.h"
 
+#include <functional>  // required by std::function in VulkanPlatform.h
 #if !defined(__APPLE__) && __has_include(<backend/platforms/VulkanPlatform.h>)
 #include <backend/platforms/VulkanPlatform.h>
 #define OPEN3D_HAS_FILAMENT_VULKAN_PLATFORM 1

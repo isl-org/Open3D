@@ -76,6 +76,10 @@ set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_scatter.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_sort.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_composite.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_histograms.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_keygen.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_payload.comp
 )
 
 # copy GUI/Resources -> <output>/resources

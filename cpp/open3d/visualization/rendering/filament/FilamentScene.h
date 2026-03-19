@@ -31,6 +31,7 @@
 #include <Eigen/Geometry>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -62,6 +63,7 @@ class FilamentView;
 class GeometryBuffersBuilder;
 class Renderer;
 class View;
+struct GaussianSplatSourceData;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
@@ -216,6 +218,7 @@ public:
     bool UsesGaussianComputeOutput(const FilamentView& view) const;
     TextureHandle GetColorBufferForView(const FilamentView& view) const;
     TextureHandle GetDepthBufferForView(const FilamentView& view) const;
+    const GaussianSplatSourceData* GetGaussianSplatSourceData() const;
 
     void Draw(filament::Renderer& renderer);
 
@@ -349,6 +352,8 @@ private:
     IndirectLightHandle ibl_handle_;
     SkyboxHandle skybox_handle_;
     LightEntity sun_;
+    std::unique_ptr<GaussianSplatSourceData> gaussian_splat_source_;
+    void CacheGaussianSplatData(const t::geometry::PointCloud& cloud);
 };
 
 }  // namespace rendering

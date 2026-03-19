@@ -126,6 +126,10 @@ void main() {
 	}
 
 	float out_alpha = 1.0 - transmittance;
-	imageStore(out_color, pixel, vec4(accum_color, out_alpha));
+	// Convert premultiplied RGB to straight alpha for ImGui compositing
+	// which uses standard (SrcAlpha, 1-SrcAlpha) blending.
+	vec3 straight_color = (out_alpha > 0.0) ? accum_color / out_alpha
+	                                        : vec3(0.0);
+	imageStore(out_color, pixel, vec4(straight_color, out_alpha));
 	imageStore(out_depth, pixel, vec4(out_linear_depth, 0.0, 0.0, 0.0));
 }

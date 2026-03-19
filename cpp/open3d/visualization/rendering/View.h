@@ -82,6 +82,10 @@ public:
     virtual TextureHandle GetColorBuffer() = 0;
     virtual TextureHandle GetDepthBuffer() = 0;
 
+    /// Returns the Gaussian compute overlay texture (premultiplied alpha),
+    /// or an invalid handle if no compute output is available.
+    virtual TextureHandle GetGaussianComputeOverlay() { return {}; }
+
     virtual Camera* GetCamera() const = 0;
 };
 

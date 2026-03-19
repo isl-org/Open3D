@@ -67,6 +67,7 @@
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
+#include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
 
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
@@ -294,6 +295,8 @@ bool FilamentScene::UsesGaussianComputeOutput(const FilamentView& view) const {
         return false;
     }
 
+    // Check that at least one visible Gaussian splat geometry exists.
+    // Other geometry types (grid, axes, etc.) are allowed to coexist.
     bool saw_visible_gaussian = false;
     for (const auto& pair : geometries_) {
         const auto& geometry = pair.second;
@@ -305,11 +308,9 @@ bool FilamentScene::UsesGaussianComputeOutput(const FilamentView& view) const {
             continue;
         }
 
-        if (geometry.mat.properties.shader != "gaussianSplat") {
-            return false;
+        if (geometry.mat.properties.shader == "gaussianSplat") {
+            saw_visible_gaussian = true;
         }
-
-        saw_visible_gaussian = true;
     }
 
     return saw_visible_gaussian;
@@ -327,6 +328,85 @@ TextureHandle FilamentScene::GetDepthBufferForView(
     auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
     return renderer ? renderer->GetGaussianComputeDepthTexture(view)
                     : TextureHandle();
+}
+
+const GaussianSplatSourceData* FilamentScene::GetGaussianSplatSourceData()
+        const {
+    return gaussian_splat_source_.get();
+}
+
+void FilamentScene::CacheGaussianSplatData(
+        const t::geometry::PointCloud& cloud) {
+    auto src = std::make_unique<GaussianSplatSourceData>();
+
+    const auto& points = cloud.GetPointPositions();
+    const size_t n = points.GetLength();
+    src->splat_count = static_cast<std::uint32_t>(n);
+
+    // Positions: 3 floats per splat.
+    {
+        auto pts = points.To(core::Float32).Contiguous();
+        src->positions.resize(n * 3);
+        std::memcpy(src->positions.data(), pts.GetDataPtr(),
+                    n * 3 * sizeof(float));
+    }
+
+    // Scale (log): 3 floats per splat.
+    if (cloud.HasPointAttr("scale")) {
+        auto attr = cloud.GetPointAttr("scale").To(core::Float32).Contiguous();
+        src->log_scales.resize(n * 3);
+        std::memcpy(src->log_scales.data(), attr.GetDataPtr(),
+                    n * 3 * sizeof(float));
+    } else {
+        src->log_scales.resize(n * 3, 0.f);
+    }
+
+    // Rotation: 4 floats per splat (quaternion).
+    if (cloud.HasPointAttr("rot")) {
+        auto attr = cloud.GetPointAttr("rot").To(core::Float32).Contiguous();
+        src->rotations.resize(n * 4);
+        std::memcpy(src->rotations.data(), attr.GetDataPtr(),
+                    n * 4 * sizeof(float));
+    } else {
+        src->rotations.resize(n * 4, 0.f);
+        for (size_t i = 0; i < n; ++i) {
+            src->rotations[i * 4] = 1.f;  // identity quaternion
+        }
+    }
+
+    // DC color + opacity: 4 floats per splat.
+    if (cloud.HasPointAttr("f_dc") && cloud.HasPointAttr("opacity")) {
+        auto f_dc =
+                cloud.GetPointAttr("f_dc").To(core::Float32).Contiguous();
+        auto opacity =
+                cloud.GetPointAttr("opacity").To(core::Float32).Contiguous();
+        src->dc_opacity.resize(n * 4);
+        const float* f_dc_ptr = f_dc.GetDataPtr<float>();
+        const float* opacity_ptr = opacity.GetDataPtr<float>();
+        for (size_t i = 0; i < n; ++i) {
+            src->dc_opacity[i * 4 + 0] = f_dc_ptr[i * 3 + 0];
+            src->dc_opacity[i * 4 + 1] = f_dc_ptr[i * 3 + 1];
+            src->dc_opacity[i * 4 + 2] = f_dc_ptr[i * 3 + 2];
+            src->dc_opacity[i * 4 + 3] = opacity_ptr[i];
+        }
+    } else {
+        src->dc_opacity.resize(n * 4, 0.f);
+    }
+
+    // SH coefficients.
+    int sh_degree = cloud.GaussianSplatGetSHOrder();
+    src->sh_degree = std::min(sh_degree, 2);
+    if (src->sh_degree >= 1 && cloud.HasPointAttr("f_rest")) {
+        auto f_rest =
+                cloud.GetPointAttr("f_rest").To(core::Float32).Contiguous();
+        const int coeffs_per_splat =
+                src->sh_degree * (src->sh_degree + 2) * 3;
+        src->sh_rest.resize(n * coeffs_per_splat);
+        std::memcpy(src->sh_rest.data(), f_rest.GetDataPtr(),
+                    n * coeffs_per_splat * sizeof(float));
+    }
+
+    gaussian_splat_source_ = std::move(src);
 }
 
 void FilamentScene::SetViewActive(const ViewHandle& view_id, bool is_active) {
@@ -494,6 +574,14 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
     if (success) {
         MarkGeometryChanged();
+        // Cache Gaussian splat source data for the compute renderer.
+        if (internal_material.shader == "gaussianSplat") {
+            auto* pcloud =
+                    dynamic_cast<const t::geometry::PointCloud*>(&geometry);
+            if (pcloud) {
+                CacheGaussianSplatData(*pcloud);
+            }
+        }
     }
     return success;
 }
@@ -2065,9 +2153,29 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
             continue;
         }
 
+        // When the compute shader produces Gaussian splat output for
+        // this view, temporarily hide the original point-cloud
+        // renderables so Filament doesn't draw them on top.
+        std::vector<utils::Entity> hidden_entities;
+        if (UsesGaussianComputeOutput(*container.view)) {
+            for (auto& geom_pair : geometries_) {
+                auto& geom = geom_pair.second;
+                if (geom.visible &&
+                    geom.mat.properties.shader == "gaussianSplat") {
+                    scene_->remove(geom.filament_entity);
+                    hidden_entities.push_back(geom.filament_entity);
+                }
+            }
+        }
+
         container.view->PreRender();
         renderer.render(container.view->GetNativeView());
         container.view->PostRender();
+
+        // Restore hidden Gaussian splat entities.
+        for (auto entity : hidden_entities) {
+            scene_->addEntity(entity);
+        }
     }
 }
 

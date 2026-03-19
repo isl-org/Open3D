@@ -84,7 +84,7 @@ void ScatterGaussian(uint splat_index) {
 			tile_entries[write_index].depth_key = depth_key;
 			tile_entries[write_index].splat_index = splat_index;
 			tile_entries[write_index].stable_index = splat_index;
-			tile_entries[write_index].reserved = tile_offsets[tile_index];
+			tile_entries[write_index].reserved = tile_index;
 		}
 	}
 }

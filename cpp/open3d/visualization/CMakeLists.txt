@@ -74,6 +74,8 @@ if (BUILD_GUI)
     target_sources(visualization_impl PRIVATE
         rendering/filament/FilamentCamera.cpp
         rendering/filament/GaussianComputeRenderer.cpp
+        rendering/filament/GaussianComputeDataPacking.cpp
+        rendering/filament/GaussianComputeVulkanPipeline.cpp
         rendering/filament/FilamentNativeInterop.cpp
         rendering/filament/FilamentEntitiesMods.cpp
         rendering/filament/FilamentGeometryBuffersBuilder.cpp

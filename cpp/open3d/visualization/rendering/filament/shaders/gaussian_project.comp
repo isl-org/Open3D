@@ -231,7 +231,11 @@ void ProjectGaussian(uint splat_index) {
 	vec3 jacobian_x = 0.5 * resolution.x *
 					  (clip_row0 * clip_center.w - clip_row3 * clip_center.x) *
 					  inv_w_sq;
-	vec3 jacobian_y = 0.5 * resolution.y *
+	// Negate jacobian_y because Vulkan image coordinates have Y=0 at the
+	// top, while OpenGL NDC has Y increasing upward.  The negation ensures
+	// the projected 2D covariance axes match the top-left-origin pixel
+	// coordinate system used by the composite shader.
+	vec3 jacobian_y = -0.5 * resolution.y *
 					  (clip_row1 * clip_center.w - clip_row3 * clip_center.y) *
 					  inv_w_sq;
 
@@ -263,7 +267,11 @@ void ProjectGaussian(uint splat_index) {
 	}
 
 	vec2 center_ndc = clip_center.xy / clip_center.w;
-	vec2 center_pixel = (center_ndc * 0.5 + 0.5) * resolution;
+	// Convert NDC to pixel coordinates with Vulkan top-left origin (Y=0 top).
+	// OpenGL NDC Y goes up, but Vulkan image Y goes down, so flip Y.
+	vec2 center_pixel = vec2(
+		(center_ndc.x * 0.5 + 0.5) * resolution.x,
+		(1.0 - (center_ndc.y * 0.5 + 0.5)) * resolution.y);
 	vec2 min_pixel = floor(center_pixel - bbox_half_extent);
 	vec2 max_pixel = ceil(center_pixel + bbox_half_extent);
 

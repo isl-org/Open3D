@@ -55,11 +55,11 @@ function(open3d_add_compute_shaders target)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     ${SHADER_FULL_PATH} ${STAGED_SHADER_FULL_PATH}
             COMMAND ${OPEN3D_GLSLANG_VALIDATOR}
-                    -V -S comp ${SHADER_FULL_PATH}
+                    -V -S comp --target-env vulkan1.1 ${SHADER_FULL_PATH}
                     -o ${STAGED_SPIRV_FULL_PATH}
-            COMMAND ${OPEN3D_SPIRV_CROSS}
+            COMMAND ${OPEN3D_SPIRV_CROSS}   # Only for APPLE
                     ${STAGED_SPIRV_FULL_PATH}
-                    --msl
+                    --msl --msl-version 20100
                     --rename-entry-point main ${SHADER_BASENAME}_main comp
                     --output ${STAGED_METAL_FULL_PATH}
             COMMENT "Staging compute shader ${STAGED_SHADER_RELATIVE_PATH}, compiling ${STAGED_SPIRV_RELATIVE_PATH}, transpiling ${STAGED_METAL_RELATIVE_PATH}"

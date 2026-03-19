@@ -1,9 +1,9 @@
 // Gaussian splat tile allocation pass.
 //
-// This first functional version computes per-tile counts and offsets from the
-// projected splat descriptors with a single control invocation. It is
-// correctness-oriented and will be parallelized when the full Vulkan resource
-// path is wired up.
+// Phase 1 (all threads): each invocation processes a chunk of splats via
+// grid-stride loop, atomically incrementing per-tile counts.
+// Phase 2 (thread 0 only): exclusive prefix sum over tile_counts to compute
+// tile_offsets and total entry count stored in global_counters[0].
 
 #version 450
 
@@ -68,20 +68,26 @@ uint LinearTileIndex(uvec2 tile) {
 }
 
 void main() {
-	if (gl_GlobalInvocationID.x != 0u) {
-		return;
-	}
-
+	uint global_index = gl_GlobalInvocationID.x;
+	uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 	uint tile_count = GetTileCount1D();
-	for (uint tile_index = 0u; tile_index < tile_count; ++tile_index) {
-		tile_counts[tile_index] = 0u;
-		tile_offsets[tile_index] = 0u;
-		tile_write_heads[tile_index] = 0u;
+	uint splat_count = GetSplatCount();
+
+	// Phase 0 (all threads): zero tile counts in parallel.
+	for (uint t = global_index; t < tile_count; t += total_invocations) {
+		tile_counts[t] = 0u;
+		tile_offsets[t] = 0u;
+		tile_write_heads[t] = 0u;
 	}
 
+	// Global memory barrier so all zeroing is visible.
+	memoryBarrierBuffer();
+	barrier();
+
+	// Phase 1 (all threads): count per-tile splat overlaps.
 	uint valid_splats = 0u;
-	uint splat_count = GetSplatCount();
-	for (uint splat_index = 0u; splat_index < splat_count; ++splat_index) {
+	for (uint splat_index = global_index; splat_index < splat_count;
+		 splat_index += total_invocations) {
 		if (projected[splat_index].metadata.x == 0u) {
 			continue;
 		}
@@ -91,28 +97,35 @@ void main() {
 		for (uint tile_y = tile_min.y; tile_y <= tile_max.y; ++tile_y) {
 			for (uint tile_x = tile_min.x; tile_x <= tile_max.x; ++tile_x) {
 				uint tile_index = LinearTileIndex(uvec2(tile_x, tile_y));
-				tile_counts[tile_index] += 1u;
+				atomicAdd(tile_counts[tile_index], 1u);
 			}
 		}
 	}
 
-	uint running_offset = 0u;
-	for (uint tile_index = 0u; tile_index < tile_count; ++tile_index) {
-		tile_offsets[tile_index] = running_offset;
-		tile_write_heads[tile_index] = running_offset;
-		running_offset += tile_counts[tile_index];
-	}
+	// Barrier so all tile_counts are written.
+	memoryBarrierBuffer();
+	barrier();
 
-	if (global_counters.length() > 0) {
-		global_counters[0] = running_offset;
-	}
-	if (global_counters.length() > 1) {
-		global_counters[1] = valid_splats;
-	}
-	if (global_counters.length() > 2) {
-		global_counters[2] = tile_count;
-	}
-	if (global_counters.length() > 3) {
-		global_counters[3] = splat_count;
+	// Phase 2 (thread 0): exclusive prefix sum over tiles.
+	if (global_index == 0u) {
+		uint running_offset = 0u;
+		for (uint t = 0u; t < tile_count; ++t) {
+			tile_offsets[t] = running_offset;
+			tile_write_heads[t] = running_offset;
+			running_offset += tile_counts[t];
+		}
+
+		if (global_counters.length() > 0) {
+			global_counters[0] = running_offset;
+		}
+		if (global_counters.length() > 1) {
+			global_counters[1] = 0u;  // Not tracked in parallel version.
+		}
+		if (global_counters.length() > 2) {
+			global_counters[2] = tile_count;
+		}
+		if (global_counters.length() > 3) {
+			global_counters[3] = splat_count;
+		}
 	}
 }
