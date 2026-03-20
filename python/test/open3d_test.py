@@ -6,6 +6,9 @@
 # ----------------------------------------------------------------------------
 
 
+import os
+
+
 def torch_available():
     try:
         import torch
@@ -15,20 +18,33 @@ def torch_available():
     return True
 
 
-def list_devices(enable_cuda=True, enable_sycl=False):
+def _use_sycl_cpu_fallback_for_ci(num_sycl_devices,
+                                  use_sycl_cpu_fallback_in_ci):
+    return (use_sycl_cpu_fallback_in_ci and os.getenv("CI") is not None and
+            num_sycl_devices == 1)
+
+
+def list_devices(enable_cuda=True,
+                 enable_sycl=False,
+                 use_sycl_cpu_fallback_in_ci=True):
     """
     Returns a list of devices that are available for Open3D to use:
     - Device("CPU:0")
     - Device("CUDA:0") if built with CUDA support and a CUDA device is available.
     - Device("SYCL:0") if built with SYCL support and a SYCL GPU device is available.
+    - Device("SYCL:0") in CI when the SYCL CPU fallback is the only SYCL device,
+      unless the caller disables that fallback for hardware-specific tests.
     """
     import open3d as o3d
 
     devices = [o3d.core.Device("CPU:0")]
     if enable_cuda and o3d.core.cuda.device_count() > 0:
         devices.append(o3d.core.Device("CUDA:0"))
-    # Ignore fallback SYCL CPU device
-    if enable_sycl and len(o3d.core.sycl.get_available_devices()) > 1:
+    num_sycl_devices = len(o3d.core.sycl.get_available_devices())
+    if enable_sycl and (num_sycl_devices > 1 or
+                        _use_sycl_cpu_fallback_for_ci(
+                                num_sycl_devices,
+                                use_sycl_cpu_fallback_in_ci)):
         devices.append(o3d.core.Device("SYCL:0"))
     return devices
 
