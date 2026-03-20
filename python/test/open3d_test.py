@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-
 import os
 
 
@@ -41,10 +40,8 @@ def list_devices(enable_cuda=True,
     if enable_cuda and o3d.core.cuda.device_count() > 0:
         devices.append(o3d.core.Device("CUDA:0"))
     num_sycl_devices = len(o3d.core.sycl.get_available_devices())
-    if enable_sycl and (num_sycl_devices > 1 or
-                        _use_sycl_cpu_fallback_for_ci(
-                                num_sycl_devices,
-                                use_sycl_cpu_fallback_in_ci)):
+    if enable_sycl and (num_sycl_devices > 1 or _use_sycl_cpu_fallback_for_ci(
+            num_sycl_devices, use_sycl_cpu_fallback_in_ci)):
         devices.append(o3d.core.Device("SYCL:0"))
     return devices
 
