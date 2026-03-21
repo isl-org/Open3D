@@ -148,8 +148,10 @@ public:
 /// \brief Class to limit the rotation of the source object.
 ///
 /// It checks if the transformation is rotated too much from a desired value.
-/// Rotations are checked by extracting the Euler angles from the estimated
-/// transformation using the XYZ intrinsic convention. 
+/// Rotations are checked by comparing the components of the angle-axis 
+/// representation (SO(3) log vector) of the estimated transformation 
+/// to the given thresholds. It is assumed that the user is aware of the 
+/// x, y, z axes of the source object when setting these tolerances. 
 class CorrespondenceCheckerBasedOnSourceRotation
     : public CorrespondenceChecker {
 public:

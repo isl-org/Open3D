@@ -159,9 +159,11 @@ void pybind_registration_declarations(py::module &m) {
                  "Class to limit the rotation of the source object.\n"
                  "It checks if the transformation is rotated too much from its "
                  "desired value.\n"
-                 "Rotations are checked by extracting the Euler angles from "
-                 "the estimated transformation using the XYZ intrinsic "
-                 "convention.");
+                 "Rotations are checked by comparing the components of the "
+                 "angle-axis representation (SO(3) log vector) of the "
+                 "estimated transformation to the given thresholds. It is "
+                 "assumed that the user is aware of the x, y, z axes of the "
+                 "source object when setting these tolerances.");
     py::class_<FastGlobalRegistrationOption> fgr_option(
             m_registration, "FastGlobalRegistrationOption",
             "Options for FastGlobalRegistration.");
@@ -542,10 +544,10 @@ must hold true for all edges.)");
                            &CorrespondenceCheckerBasedOnSourceRotation::
                                    rotation_threshold_,
                            "Float64 numpy array of shape (3,) representing "
-                           "the maximum allowed rotation angles [rx, ry, rz] "
-                           "in radians. Rotations are checked by extracting "
-                           "the XYZ intrinsic Euler angles from the "
-                           "transformation. A value of -1 means unconstrained.");
+                           "the maximum allowed thresholds [rx, ry, rz] "
+                           "in radians for the angle-axis representation components. "
+                           "It is assumed the user is aware of the x, y, z axes "
+                           "of the source object. A value of -1 means unconstrained.");
 
     // open3d.registration.FastGlobalRegistrationOption:
     auto fgr_option = static_cast<py::class_<FastGlobalRegistrationOption>>(
