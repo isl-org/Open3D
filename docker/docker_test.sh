@@ -122,6 +122,9 @@ cpp_python_linking_uninstall_test() {
     fi
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
         docker_run="${docker_run} --device=/dev/dri"
+        if [ -n "${CI:-}" ]; then
+            docker_run="${docker_run} --env CI=${CI}"
+        fi
     fi
 
     # Config-dependent argument: pytest_args
