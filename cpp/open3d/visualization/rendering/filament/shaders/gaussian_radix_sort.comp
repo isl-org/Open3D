@@ -16,11 +16,10 @@
 
 #define WORKGROUP_SIZE 256
 #define RADIX_SORT_BINS 256
-#define SUBGROUP_SIZE 32
 
 layout(local_size_x = WORKGROUP_SIZE) in;
 
-layout(push_constant, std430) uniform PushConstants {
+layout(std140, binding = 14) uniform RadixSortParams {
 	uint g_num_elements;
 	uint g_shift;
 	uint g_num_workgroups;
@@ -47,7 +46,7 @@ layout(std430, binding = 4) buffer ValuesOut {
 	uint g_values_out[];
 };
 
-shared uint sums[RADIX_SORT_BINS / SUBGROUP_SIZE];
+shared uint sums[WORKGROUP_SIZE]; // max subgroup count = WORKGROUP_SIZE/gl_SubgroupSize
 shared uint global_offsets[RADIX_SORT_BINS];
 
 struct BinFlags {

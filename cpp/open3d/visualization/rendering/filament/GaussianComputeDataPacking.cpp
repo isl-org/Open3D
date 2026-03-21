@@ -247,6 +247,42 @@ bool UploadOutputTextures(
     return true;
 }
 
+bool UploadOutputTexturesHalf(
+        FilamentResourceManager& resource_mgr,
+        const void* half_rgba_data,
+        std::size_t half_data_size,
+        std::uint32_t width,
+        std::uint32_t height,
+        GaussianComputeRenderer::OutputTargets& targets) {
+    if (width == 0 || height == 0 || !half_rgba_data || half_data_size == 0) {
+        return false;
+    }
+
+    auto& engine = EngineInstance::GetInstance();
+
+    auto tex_weak = resource_mgr.GetTexture(targets.color);
+    auto tex = tex_weak.lock();
+    if (!tex) {
+        utility::LogWarning(
+                "Gaussian compute output: invalid color texture handle.");
+        return false;
+    }
+
+    // Allocate a copy of the half data that Filament can own and free.
+    auto* owned_data = static_cast<uint16_t*>(std::malloc(half_data_size));
+    if (!owned_data) return false;
+    std::memcpy(owned_data, half_rgba_data, half_data_size);
+
+    filament::Texture::PixelBufferDescriptor desc(
+            owned_data, half_data_size, filament::Texture::Format::RGBA,
+            filament::Texture::Type::HALF,
+            [](void* buf, size_t, void*) { std::free(buf); });
+    tex->setImage(engine, 0, std::move(desc));
+
+    targets.has_valid_output = true;
+    return true;
+}
+
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

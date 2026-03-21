@@ -3,18 +3,21 @@
 // This pass expands the projected splat descriptors into compact tile-local
 // entry lists that can be sorted and composited without revisiting the full
 // input attribute buffers.
+//
+// Opt4: Updated ProjectedGaussian struct (48 bytes).
 
 #version 450
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
+// 48-byte projected splat descriptor (matches gaussian_project output).
 struct ProjectedGaussian {
 	vec4 center_depth_alpha;
-	vec4 color;
+	uint packed_color;
+	uint tile_count_overlap;
+	uint tile_rect_min;
+	uint tile_rect_max;
 	vec4 inv_basis;
-	vec4 axis_basis;
-	uvec4 tile_rect;
-	uvec4 metadata;
 };
 
 struct TileEntry {
@@ -68,13 +71,17 @@ uint DepthToSortableKey(float depth) {
 	return floatBitsToUint(max(depth, 0.0));
 }
 
+uvec2 UnpackTileCoord(uint packed) {
+	return uvec2(packed & 0xFFFFu, packed >> 16u);
+}
+
 void ScatterGaussian(uint splat_index) {
-	if (projected[splat_index].metadata.x == 0u) {
+	if (projected[splat_index].tile_count_overlap == 0u) {
 		return;
 	}
 
-	uvec2 tile_min = projected[splat_index].tile_rect.xy;
-	uvec2 tile_max = projected[splat_index].tile_rect.zw;
+	uvec2 tile_min = UnpackTileCoord(projected[splat_index].tile_rect_min);
+	uvec2 tile_max = UnpackTileCoord(projected[splat_index].tile_rect_max);
 	uint depth_key = DepthToSortableKey(projected[splat_index].center_depth_alpha.z);
 
 	for (uint tile_y = tile_min.y; tile_y <= tile_max.y; ++tile_y) {

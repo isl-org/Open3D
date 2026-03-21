@@ -1,7 +1,9 @@
 // Gaussian splat per-tile sort pass.
 //
 // Each invocation handles one or more tiles and sorts the compact entry range
-// front-to-back. Stable ordering falls back to the original splat index.
+// front-to-back by depth_key (and stable_index for ties).
+// Uses Shell sort with Ciura's gap sequence — O(n^(4/3)) worst case, in-place,
+// avoiding the O(n^2) pitfall of insertion sort on large tiles.
 
 #version 450
 
@@ -60,6 +62,12 @@ bool TileEntryLess(TileEntry lhs, TileEntry rhs) {
 	return false;
 }
 
+// Ciura's gap sequence extended for up to ~100K elements.
+const uint kGaps[12] = uint[12](
+	57377u, 23490u, 10267u, 4580u, 1750u, 701u,
+	301u,   132u,   57u,    23u,   10u,   1u
+);
+
 void SortTile(uint tile_index) {
 	uint count = tile_counts[tile_index];
 	if (count <= 1u) {
@@ -67,14 +75,22 @@ void SortTile(uint tile_index) {
 	}
 
 	uint offset = tile_offsets[tile_index];
-	for (uint i = 1u; i < count; ++i) {
-		TileEntry key = tile_entries[offset + i];
-		uint j = i;
-		while (j > 0u && TileEntryLess(key, tile_entries[offset + j - 1u])) {
-			tile_entries[offset + j] = tile_entries[offset + j - 1u];
-			--j;
+
+	// Shell sort with Ciura's gap sequence.
+	for (int gi = 0; gi < 12; ++gi) {
+		uint gap = kGaps[gi];
+		if (gap >= count) continue;
+
+		for (uint i = gap; i < count; ++i) {
+			TileEntry tmp = tile_entries[offset + i];
+			uint j = i;
+			while (j >= gap &&
+				   TileEntryLess(tmp, tile_entries[offset + j - gap])) {
+				tile_entries[offset + j] = tile_entries[offset + j - gap];
+				j -= gap;
+			}
+			tile_entries[offset + j] = tmp;
 		}
-		tile_entries[offset + j] = key;
 	}
 }
 

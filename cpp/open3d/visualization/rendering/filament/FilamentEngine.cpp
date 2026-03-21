@@ -25,6 +25,9 @@
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
+#if !defined(__APPLE__)
+#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
+#endif
 
 namespace open3d {
 namespace visualization {
@@ -34,11 +37,14 @@ namespace {
 static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
-#ifdef _WIN32
-// Default for Windows is Vulkan, but this sometimes selects the Direct3D12
-// emulated backend, which is not fully functional. Force OpenGL instead.
+#if defined(_WIN32) || defined(__linux__)
+// Default for Windows/Linux is Vulkan, but this sometimes selects the Direct3D12
+// emulated backend on Windows or has issues with Vulkan on Linux.
+// Force OpenGL instead. OpenGL also enables compute-based Gaussian splatting
+// with zero-copy output via Filament's import() API.
 RenderingType EngineInstance::type_ = RenderingType::kOpenGL;
 #else
+// macOS uses Metal via kDefault.
 RenderingType EngineInstance::type_ = RenderingType::kDefault;
 #endif
 std::string EngineInstance::resource_path_ = "";
@@ -79,6 +85,10 @@ EngineInstance::~EngineInstance() {
 
     filament::Engine::destroy(engine_);
     engine_ = nullptr;
+
+#if !defined(__APPLE__)
+    GaussianComputeOpenGLContext::GetInstance().Shutdown();
+#endif
 }
 
 EngineInstance& EngineInstance::Get() {

@@ -3,18 +3,28 @@
 // This pass reconstructs the anisotropic Gaussian in screen space, evaluates
 // the view-dependent SH color once per splat, and stores a compact projected
 // descriptor for the later tile passes.
+//
+// Opt4: Compact ProjectedGaussian — 48 bytes (was 96).
+//       Removed axis_basis, packed color as RGBA8 uint, merged
+//       tile_rect/metadata into 4 scalars.
+// Opt8: Early cull: behind-camera and negligible-alpha reject before
+//       expensive covariance/SH math.  NDC frustum cull removed because
+//       splat screen-space extent is unknown before covariance projection;
+//       per-tile bounding-box cull handles frustum clipping correctly.
 
 #version 450
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
+// 48-byte projected splat descriptor (std430):
+//   vec4(16) + 4×uint(16) + vec4(16) = 48 bytes.
 struct ProjectedGaussian {
-	vec4 center_depth_alpha;
-	vec4 color;
-	vec4 inv_basis;
-	vec4 axis_basis;
-	uvec4 tile_rect;
-	uvec4 metadata;
+	vec4 center_depth_alpha;   // xy=pixel center, z=linear depth, w=alpha
+	uint packed_color;         // RGBA8 packed color
+	uint tile_count_overlap;   // tile overlap count; 0 = culled/invalid
+	uint tile_rect_min;        // packed: (tile_min.y << 16) | tile_min.x
+	uint tile_rect_max;        // packed: (tile_max.y << 16) | tile_max.x
+	vec4 inv_basis;            // 2×2 inverse basis matrix for Gaussian eval
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
@@ -78,6 +88,15 @@ vec2 GetViewportSize() {
 
 float Sigmoid(float x) {
 	return 1.0 / (1.0 + exp(-x));
+}
+
+uint PackColorRGBA8(vec3 color) {
+	uvec3 c = uvec3(clamp(color * 255.0 + 0.5, vec3(0.0), vec3(255.0)));
+	return c.r | (c.g << 8u) | (c.b << 16u) | (255u << 24u);
+}
+
+uint PackTileCoord(uvec2 tile) {
+	return (tile.y << 16u) | tile.x;
 }
 
 mat3 QuaternionToRotation(vec4 quat) {
@@ -181,11 +200,11 @@ vec3 EvaluateShColor(uint splat_index, vec3 view_dir) {
 
 void WriteInvalidProjection(uint splat_index) {
 	projected[splat_index].center_depth_alpha = vec4(0.0);
-	projected[splat_index].color = vec4(0.0);
+	projected[splat_index].packed_color = 0u;
+	projected[splat_index].tile_count_overlap = 0u;
+	projected[splat_index].tile_rect_min = 0u;
+	projected[splat_index].tile_rect_max = 0u;
 	projected[splat_index].inv_basis = vec4(0.0);
-	projected[splat_index].axis_basis = vec4(0.0);
-	projected[splat_index].tile_rect = uvec4(0u);
-	projected[splat_index].metadata = uvec4(0u);
 }
 
 void ProjectGaussian(uint splat_index) {
@@ -195,6 +214,7 @@ void ProjectGaussian(uint splat_index) {
 	vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
 	vec4 clip_center = view_params.clip_from_view * view_center;
 
+	// Opt8: Early reject — behind camera or negligible alpha.
 	vec4 dc = dc_opacity[splat_index];
 	float alpha = Sigmoid(dc.w);
 	if (alpha <= kMinAlpha || clip_center.w <= 0.0) {
@@ -311,11 +331,12 @@ void ProjectGaussian(uint splat_index) {
 
 	projected[splat_index].center_depth_alpha =
 		vec4(center_pixel, -view_center.z, alpha);
-	projected[splat_index].color = vec4(EvaluateShColor(splat_index, view_dir), 1.0);
+	projected[splat_index].packed_color =
+		PackColorRGBA8(EvaluateShColor(splat_index, view_dir));
+	projected[splat_index].tile_count_overlap = tile_overlap_count;
+	projected[splat_index].tile_rect_min = PackTileCoord(tile_min);
+	projected[splat_index].tile_rect_max = PackTileCoord(tile_max);
 	projected[splat_index].inv_basis = inv_basis;
-	projected[splat_index].axis_basis = vec4(major_axis, minor_axis);
-	projected[splat_index].tile_rect = uvec4(tile_min, tile_max);
-	projected[splat_index].metadata = uvec4(1u, tile_overlap_count, 0u, 0u);
 }
 
 void main() {

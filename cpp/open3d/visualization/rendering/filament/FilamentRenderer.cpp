@@ -178,10 +178,15 @@ void FilamentRenderer::BeginFrame() {
 
         // Dispatch Gaussian compute before Filament's beginFrame so our
         // vkQueueSubmit calls don't conflict with Filament's frame.
+        // Build live_views from ALL views (including cached-but-inactive
+        // ones) so PruneOutputs only removes outputs for truly deleted
+        // views, not views that are merely inactive due to scene caching.
         std::unordered_set<const FilamentView*> live_views;
         for (const auto& pair : scenes_) {
-            pair.second->ForEachActiveView([&](FilamentView& view) {
+            pair.second->ForEachView([&](FilamentView& view) {
                 live_views.insert(&view);
+            });
+            pair.second->ForEachActiveView([&](FilamentView& view) {
                 gaussian_compute_renderer_->RenderView(view, *pair.second);
             });
         }

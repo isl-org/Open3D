@@ -17,7 +17,10 @@
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeMetalShaders.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeVulkanPipeline.h"
+#if !defined(__APPLE__)
+#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
+#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLPipeline.h"
+#endif
 
 namespace open3d {
 namespace visualization {
@@ -40,15 +43,23 @@ public:
 namespace {
 
 #if defined(OPEN3D_BUILD_GAUSSIAN_SPLAT_COMPUTE)
+bool ReadSPIRVFile(const std::string& path,
+                   std::vector<std::uint8_t>* contents) {
+    std::vector<char> bytes;
+    std::string error;
+    if (!utility::filesystem::FReadToBuffer(path, bytes, &error)) {
+        utility::LogWarning("Failed to read SPIR-V shader {}: {}",
+                            path, error);
+        return false;
+    }
+    contents->assign(bytes.begin(), bytes.end());
+    return true;
+}
+
+// Used by the Metal backend to load .metal shader source text.
 struct LoadedShaderSource {
     std::string path;
     std::string source;
-    bool loaded = false;
-};
-
-struct LoadedShaderBinary {
-    std::string path;
-    std::vector<char> bytes;
     bool loaded = false;
 };
 
@@ -56,22 +67,10 @@ bool ReadTextFile(const std::string& path, std::string* contents) {
     std::vector<char> bytes;
     std::string error;
     if (!utility::filesystem::FReadToBuffer(path, bytes, &error)) {
-        utility::LogWarning("Failed to read Gaussian compute shader {}: {}",
-                            path, error);
+        utility::LogWarning("Failed to read shader {}: {}", path, error);
         return false;
     }
-
     contents->assign(bytes.begin(), bytes.end());
-    return true;
-}
-
-bool ReadBinaryFile(const std::string& path, std::vector<char>* bytes) {
-    std::string error;
-    if (!utility::filesystem::FReadToBuffer(path, *bytes, &error)) {
-        utility::LogWarning("Failed to read Gaussian compute shader {}: {}",
-                            path, error);
-        return false;
-    }
     return true;
 }
 
@@ -108,21 +107,57 @@ private:
     std::unordered_set<const FilamentView*> logged_views_;
 };
 
-class GaussianComputeVulkanBackend final
+#if !defined(__APPLE__)
+// Radix sort dispatch constants.
+static constexpr std::uint32_t kRadixWorkgroupSize = 256;
+static constexpr std::uint32_t kRadixSortBins = 256;
+static constexpr std::uint32_t kRadixTargetBlocksPerWG = 32;
+
+// RadixSortParams matches the std140 UBO at binding 14 in the radix
+// sort shaders.
+struct RadixSortParams {
+    std::uint32_t g_num_elements;
+    std::uint32_t g_shift;
+    std::uint32_t g_num_workgroups;
+    std::uint32_t g_num_blocks_per_workgroup;
+};
+
+// Program indices matching kShaderSPVFiles[] in EnsureProgramsReady.
+enum ProgramIndex {
+    kProgProject = 0,
+    kProgPrefixSum = 1,
+    kProgScatter = 2,
+    kProgShellSort = 3,  // Legacy, retained but unused with radix sort.
+    kProgComposite = 4,
+    kProgRadixKeygen = 5,
+    kProgRadixHistograms = 6,
+    kProgRadixScatter = 7,
+    kProgRadixPayload = 8,
+};
+
+// OpenGL compute backend for Linux and Windows.
+// Uses GLX on X11, EGL on Wayland, and GL 4.5 compute shaders.
+class GaussianComputeOpenGLBackend final
     : public GaussianComputeRenderer::Backend {
 public:
-    GaussianComputeVulkanBackend(
+    GaussianComputeOpenGLBackend(
             FilamentResourceManager& resource_mgr,
             const GaussianComputeRenderer::RenderConfig& config)
         : resource_mgr_(resource_mgr), config_(config) {}
 
-    ~GaussianComputeVulkanBackend() override { Cleanup(); }
+    ~GaussianComputeOpenGLBackend() override { Cleanup(); }
 
-    const char* GetName() const override { return "Vulkan"; }
+    const char* GetName() const override { return "OpenGL"; }
 
     void BeginFrame(std::uint64_t) override {}
 
-    void ForgetView(const FilamentView&) override {}
+    void ForgetView(const FilamentView& view) override {
+        auto it = view_states_.find(&view);
+        if (it != view_states_.end()) {
+            DestroyViewState(it->second);
+            view_states_.erase(it);
+        }
+    }
 
     bool Render(const FilamentView& view,
                 const FilamentScene& scene,
@@ -130,729 +165,491 @@ public:
                 const std::vector<GaussianComputeRenderer::PassDispatch>&
                         dispatches,
                 GaussianComputeRenderer::OutputTargets& targets) override {
-        if (!EnsureContextReady()) {
-            return false;
-        }
-        if (!EnsurePipelinesReady()) {
+        utility::LogDebug("GS OpenGL Render: begin frame {}x{}",
+                        targets.width, targets.height);
+        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        if (!gl_ctx.IsValid() && !gl_ctx.Initialize()) {
+            utility::LogWarning(
+                    "Gaussian compute OpenGL backend: GL context not "
+                    "available.");
             return false;
         }
 
-        // Get cached splat source data from the scene.
+        if (!gl_ctx.MakeCurrent()) {
+            utility::LogWarning("GS OpenGL: MakeCurrent failed");
+            return false;
+        }
+
+        if (!EnsureProgramsReady()) {
+            utility::LogWarning("GS OpenGL: shader compilation failed");
+            gl_ctx.ReleaseCurrent();
+            return false;
+        }
+
         const GaussianSplatSourceData* source =
                 scene.GetGaussianSplatSourceData();
         if (!source || source->splat_count == 0) {
+            utility::LogWarning("GS OpenGL: no splat source data");
+            gl_ctx.ReleaseCurrent();
             return false;
         }
+        utility::LogDebug("GS OpenGL: {} splats, {} dispatches",
+                        source->splat_count, dispatches.size());
 
-        PackedGaussianScene packed =
-                PackGaussianSceneInputs(*source, render_data, config_,
-                                        dispatches);
+        PackedGaussianScene packed = PackGaussianSceneInputs(
+                *source, render_data, config_, dispatches);
         if (!packed.valid) {
+            utility::LogWarning("GS OpenGL: PackGaussianSceneInputs failed");
+            gl_ctx.ReleaseCurrent();
             return false;
         }
+        utility::LogDebug("GS OpenGL: packed {} splats, {} tiles",
+                        packed.splat_count, packed.tile_count);
 
-        return DispatchAllPasses(packed, dispatches, targets);
-    }
+        auto& vs = view_states_[&view];
 
-private:
-    bool EnsureContextReady() {
-        if (vk_context_.valid) {
-            return true;
-        }
+        // Check whether scene data changed.
+        const std::uint64_t scene_id = scene.GetGeometryChangeId();
+        const bool scene_changed =
+                (scene_id != vs.cached_scene_id ||
+                 source->splat_count != vs.cached_splat_count);
 
-        const FilamentVulkanNativeHandles handles =
-                GetFilamentVulkanNativeHandles(EngineInstance::GetPlatform());
-        if (!handles.valid) {
-            utility::LogWarning(
-                    "Gaussian compute Vulkan backend: could not query "
-                    "Filament native Vulkan handles.");
-            return false;
-        }
-
-        std::string error;
-        vk_context_ = CreateVulkanComputeContext(
-                handles.physical_device, handles.device,
-                handles.graphics_queue, handles.graphics_queue_family_index,
-                &error);
-        if (!vk_context_.valid) {
-            utility::LogWarning(
-                    "Gaussian compute Vulkan: context creation failed: {}",
-                    error);
-            return false;
-        }
-
-        utility::LogInfo(
-                "Gaussian compute Vulkan backend initialized on "
-                "device={} queue_family={}",
-                handles.device, handles.graphics_queue_family_index);
-        return true;
-    }
-
-    bool EnsurePipelinesReady() {
-        if (!pipelines_.empty()) {
-            return true;
-        }
-
-        static const std::pair<GaussianComputeRenderer::PassType, const char*>
-                kPassFiles[] = {
-                        {GaussianComputeRenderer::PassType::kProjection,
-                         "gaussian_project.spv"},
-                        {GaussianComputeRenderer::PassType::kTilePrefixSum,
-                         "gaussian_prefix_sum.spv"},
-                        {GaussianComputeRenderer::PassType::kTileScatter,
-                         "gaussian_scatter.spv"},
-                        {GaussianComputeRenderer::PassType::kTileSort,
-                         "gaussian_sort.spv"},
-                        {GaussianComputeRenderer::PassType::kComposite,
-                         "gaussian_composite.spv"},
-                };
-
-        const std::string shader_root =
-                EngineInstance::GetResourcePath() + "/gaussian_compute/";
-        bool all_ok = true;
-        for (const auto& pass : kPassFiles) {
-            LoadedShaderBinary spirv;
-            spirv.path = shader_root + pass.second;
-            spirv.loaded = ReadBinaryFile(spirv.path, &spirv.bytes);
-            if (!spirv.loaded) {
-                utility::LogWarning(
-                        "Gaussian compute Vulkan: failed to load {}",
-                        spirv.path);
-                all_ok = false;
-                continue;
-            }
-
-            std::string error;
-            auto pipeline = CreateVulkanComputePipeline(
-                    vk_context_, spirv.bytes, spirv.path, &error);
-            if (!pipeline.valid) {
-                utility::LogWarning(
-                        "Gaussian compute Vulkan: pipeline creation "
-                        "failed for {}: {}",
-                        spirv.path, error);
-                all_ok = false;
-                continue;
-            }
-            pipelines_.emplace(pass.first, pipeline);
-        }
-
-        if (!all_ok) {
-            utility::LogWarning(
-                    "Gaussian compute Vulkan: only {}/{} pipelines created",
-                    pipelines_.size(), 5);
-        } else {
-            utility::LogInfo(
-                    "Gaussian compute Vulkan: all 5 compute pipelines "
-                    "created successfully.");
-        }
-
-        // Load radix sort pipelines (push constant pipelines).
-        if (!LoadRadixSortPipelines(shader_root)) {
-            utility::LogWarning(
-                    "Gaussian compute Vulkan: radix sort pipeline creation "
-                    "failed — falling back to insertion sort.");
-        }
-
-        return !pipelines_.empty();
-    }
-
-    bool LoadRadixSortPipelines(const std::string& shader_root) {
-        struct RadixShaderInfo {
-            const char* filename;
-            std::uint32_t push_size;
-            std::uint32_t num_bindings;
-            VulkanComputePipelineHandle* target;
-        };
-
-        // Histogram: push(4*uint), bindings: keys_in(0), histograms(1)
-        // Sort:      push(4*uint), bindings: keys_in(0), keys_out(1),
-        //            histograms(2), values_in(3), values_out(4)
-        // Keygen:    push(1*uint), bindings: entries(0), keys(1), values(2)
-        // Payload:   push(1*uint), bindings: indices(0), src(1), dst(2)
-        const RadixShaderInfo shaders[] = {
-                {"gaussian_radix_sort_histograms.spv", 16, 2,
-                 &radix_histogram_pipeline_},
-                {"gaussian_radix_sort.spv", 16, 5, &radix_sort_pipeline_},
-                {"gaussian_radix_sort_keygen.spv", 4, 3,
-                 &radix_keygen_pipeline_},
-                {"gaussian_radix_sort_payload.spv", 4, 3,
-                 &radix_payload_pipeline_},
-        };
-
-        bool all_ok = true;
-        for (const auto& info : shaders) {
-            LoadedShaderBinary spirv;
-            spirv.path = shader_root + info.filename;
-            spirv.loaded = ReadBinaryFile(spirv.path, &spirv.bytes);
-            if (!spirv.loaded) {
-                utility::LogWarning(
-                        "Gaussian compute Vulkan: failed to load {}",
-                        spirv.path);
-                all_ok = false;
-                continue;
-            }
-
-            std::string error;
-            *info.target = CreateVulkanComputePipelineWithPushConstants(
-                    vk_context_, spirv.bytes, info.push_size,
-                    info.num_bindings, spirv.path, &error);
-            if (!info.target->valid) {
-                utility::LogWarning(
-                        "Gaussian compute Vulkan: radix pipeline creation "
-                        "failed for {}: {}",
-                        spirv.path, error);
-                all_ok = false;
-            }
-        }
-        return all_ok;
-    }
-
-    bool DispatchAllPasses(
-            const PackedGaussianScene& packed,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&
-                    dispatches,
-            GaussianComputeRenderer::OutputTargets& targets) {
-        // Track all temporary buffers for cleanup.
-        std::vector<VulkanBufferHandle> temp_buffers;
-        // Extra buffers created by radix sort.
-        std::vector<VulkanBufferHandle> radix_buffers;
-        auto cleanup = [&]() {
-            for (auto& buf : temp_buffers) {
-                DestroyVulkanBuffer(vk_context_, buf);
-            }
-            for (auto& buf : radix_buffers) {
-                DestroyVulkanBuffer(vk_context_, buf);
-            }
-        };
-        auto cleanup_extra = [&](VulkanBufferHandle& buf) {
-            radix_buffers.push_back(buf);
-        };
-
-        auto create_buf = [&](const std::string& label, std::size_t size,
-                              const void* data,
-                              bool uniform) -> VulkanBufferHandle {
-            std::string error;
-            size = std::max<std::size_t>(size, 16u);
-            auto buf = CreateVulkanHostBuffer(vk_context_, size, uniform,
-                                              label, &error);
-            if (!buf.valid) {
-                utility::LogWarning("Gaussian Vulkan: buffer '{}' failed: {}",
-                                    label, error);
-                return buf;
-            }
-            temp_buffers.push_back(buf);
-            if (data) {
-                UploadVulkanBuffer(buf, data, size, 0);
-            } else {
-                // Zero-fill.
-                std::vector<uint8_t> zeros(size, 0);
-                UploadVulkanBuffer(buf, zeros.data(), size, 0);
-            }
-            return buf;
-        };
-
+        // --- Allocate / resize persistent GPU buffers ---
         const std::size_t projected_size =
                 packed.splat_count * sizeof(PackedProjectedGaussian);
         const std::size_t tile_scalar_size =
                 packed.tile_count * sizeof(std::uint32_t);
 
-        // Create all input/intermediate buffers.
-        auto view_params_buf = create_buf(
-                "view_params", sizeof(PackedGaussianViewParams),
-                &packed.view_params, true);
-        auto positions_buf = create_buf(
-                "positions",
-                packed.positions.size() * sizeof(Std430Vec4),
-                packed.positions.data(), false);
-        auto scales_buf = create_buf(
-                "log_scales",
-                packed.log_scales.size() * sizeof(Std430Vec4),
-                packed.log_scales.data(), false);
-        auto rotations_buf = create_buf(
-                "rotations",
-                packed.rotations.size() * sizeof(Std430Vec4),
-                packed.rotations.data(), false);
-        auto dc_opacity_buf = create_buf(
-                "dc_opacity",
-                packed.dc_opacity.size() * sizeof(Std430Vec4),
-                packed.dc_opacity.data(), false);
-        auto sh_buf = create_buf(
-                "sh_coeffs",
-                packed.sh_coefficients.size() * sizeof(Std430Vec4),
-                packed.sh_coefficients.data(), false);
-        auto projected_buf =
-                create_buf("projected", projected_size, nullptr, false);
-        auto tile_counts_buf =
-                create_buf("tile_counts", tile_scalar_size, nullptr, false);
-        auto tile_offsets_buf =
-                create_buf("tile_offsets", tile_scalar_size, nullptr, false);
-        auto tile_heads_buf =
-                create_buf("tile_heads", tile_scalar_size, nullptr, false);
+        vs.view_params_buf = ResizeGLBuffer(vs.view_params_buf,
+                                            sizeof(PackedGaussianViewParams));
+        vs.counters_buf = ResizeGLBuffer(
+                vs.counters_buf,
+                kGaussianCounterCount * sizeof(std::uint32_t));
 
-        std::array<std::uint32_t, kGaussianCounterCount> counters = {
-                0u, 0u, 0u, 0u};
-        auto counters_buf = create_buf("counters", sizeof(counters),
-                                       counters.data(), false);
-
-        if (!view_params_buf.valid || !positions_buf.valid ||
-            !scales_buf.valid || !rotations_buf.valid ||
-            !dc_opacity_buf.valid || !sh_buf.valid ||
-            !projected_buf.valid || !tile_counts_buf.valid ||
-            !tile_offsets_buf.valid || !tile_heads_buf.valid ||
-            !counters_buf.valid) {
-            cleanup();
-            return false;
+        if (scene_changed) {
+            vs.positions_buf = ResizeGLBuffer(
+                    vs.positions_buf,
+                    packed.positions.size() * sizeof(Std430Vec4));
+            vs.scales_buf = ResizeGLBuffer(
+                    vs.scales_buf,
+                    packed.log_scales.size() * sizeof(Std430Vec4));
+            vs.rotations_buf = ResizeGLBuffer(
+                    vs.rotations_buf,
+                    packed.rotations.size() * sizeof(Std430Vec4));
+            vs.dc_opacity_buf = ResizeGLBuffer(
+                    vs.dc_opacity_buf,
+                    packed.dc_opacity.size() * sizeof(Std430Vec4));
+            vs.sh_buf = ResizeGLBuffer(
+                    vs.sh_buf,
+                    packed.sh_coefficients.size() * sizeof(Std430Vec4));
         }
 
-        auto find_dispatch =
-                [&](GaussianComputeRenderer::PassType type)
+        vs.projected_buf = ResizeGLBuffer(vs.projected_buf, projected_size);
+        vs.tile_counts_buf = ResizeGLBuffer(vs.tile_counts_buf,
+                                            tile_scalar_size);
+        vs.tile_offsets_buf = ResizeGLBuffer(vs.tile_offsets_buf,
+                                             tile_scalar_size);
+        vs.tile_heads_buf = ResizeGLBuffer(vs.tile_heads_buf,
+                                           tile_scalar_size);
+
+        // --- Upload data to GPU ---
+        UploadGLBuffer(vs.view_params_buf, &packed.view_params,
+                       sizeof(PackedGaussianViewParams), 0);
+
+        if (scene_changed) {
+            UploadGLBuffer(vs.positions_buf, packed.positions.data(),
+                           packed.positions.size() * sizeof(Std430Vec4), 0);
+            UploadGLBuffer(vs.scales_buf, packed.log_scales.data(),
+                           packed.log_scales.size() * sizeof(Std430Vec4), 0);
+            UploadGLBuffer(vs.rotations_buf, packed.rotations.data(),
+                           packed.rotations.size() * sizeof(Std430Vec4), 0);
+            UploadGLBuffer(vs.dc_opacity_buf, packed.dc_opacity.data(),
+                           packed.dc_opacity.size() * sizeof(Std430Vec4), 0);
+            UploadGLBuffer(vs.sh_buf, packed.sh_coefficients.data(),
+                           packed.sh_coefficients.size() * sizeof(Std430Vec4),
+                           0);
+            vs.cached_scene_id = scene_id;
+            vs.cached_splat_count = source->splat_count;
+        }
+
+        // Clear counters.
+        ClearGLBuffer(vs.counters_buf);
+
+        // --- Find dispatches ---
+        auto find_dispatch = [&](GaussianComputeRenderer::PassType type)
                 -> const GaussianComputeRenderer::PassDispatch* {
             for (const auto& d : dispatches) {
-                if (d.type == type) return &d;
+                if (d.type == type) {
+                    return &d;
+                }
             }
             return nullptr;
         };
 
-        auto dispatch = [&](GaussianComputeRenderer::PassType type,
-                            std::vector<VulkanBufferBinding> buf_bindings,
-                            std::vector<VulkanImageBinding> img_bindings = {},
-                            int group_count_override = 0)
-                -> bool {
+        // --- Pass 1: Projection ---
+        auto dispatch_pass =
+                [&](GaussianComputeRenderer::PassType type,
+                    const GLComputeProgram& prog,
+                    const char* name) -> bool {
             const auto* d = find_dispatch(type);
-            auto it = pipelines_.find(type);
-            if (!d || it == pipelines_.end() || !it->second.valid) {
-                return false;
-            }
-            int gx = group_count_override > 0 ? group_count_override
-                                               : d->group_count.x();
-            std::string error;
-            if (!DispatchVulkanCompute(
-                        vk_context_, it->second, buf_bindings, img_bindings,
-                        std::max(1, gx),
-                        std::max(1, d->group_count.y()),
-                        std::max(1, d->group_count.z()), &error)) {
+            if (!d || !prog.valid) {
                 utility::LogWarning(
-                        "Gaussian Vulkan: pass {} dispatch ({},{},{}) "
-                        "failed: {}",
-                        static_cast<int>(type), gx, d->group_count.y(),
-                        d->group_count.z(), error);
+                        "GS OpenGL: dispatch_pass {} skipped "
+                        "(dispatch={}, prog_valid={})",
+                        name, d != nullptr, prog.valid);
                 return false;
             }
+            UseProgram(prog);
+            DispatchCompute(std::max(1, d->group_count.x()),
+                            std::max(1, d->group_count.y()),
+                            std::max(1, d->group_count.z()));
             return true;
         };
 
-        // Pass 1: Projection.  Dispatch enough workgroups to cover all
-        // splats rather than just tiles, so that each thread processes a
-        // manageable number of splats and avoids GPU timeout (TDR).
-        const int projection_groups = static_cast<int>(
-                (packed.splat_count + 63) / 64);
-        if (!dispatch(GaussianComputeRenderer::PassType::kProjection,
-                      {{0, view_params_buf, 0, 0, true},
-                       {1, positions_buf, 0, 0, false},
-                       {2, scales_buf, 0, 0, false},
-                       {3, rotations_buf, 0, 0, false},
-                       {4, dc_opacity_buf, 0, 0, false},
-                       {5, sh_buf, 0, 0, false},
-                       {6, projected_buf, 0, 0, false}},
-                      /*img_bindings=*/{},
-                      projection_groups)) {
-            cleanup();
+        // Bind shared resources for projection.
+        BindUBO(0, vs.view_params_buf);
+        BindSSBO(1, vs.positions_buf);
+        BindSSBO(2, vs.scales_buf);
+        BindSSBO(3, vs.rotations_buf);
+        BindSSBO(4, vs.dc_opacity_buf);
+        BindSSBO(5, vs.sh_buf);
+        BindSSBO(6, vs.projected_buf);
+
+        // --- Pass 1: Projection ---
+        if (!dispatch_pass(GaussianComputeRenderer::PassType::kProjection,
+                           programs_[kProgProject], "Projection")) {
+            gl_ctx.ReleaseCurrent();
             return false;
         }
+        GLComputeFullBarrier();
+        DrainGLErrors("after Projection");
 
-        // Pass 2: Tile prefix sum.  Must dispatch exactly 1 workgroup since
-        // the shader uses barrier() between count and prefix-sum phases.
-        if (!dispatch(GaussianComputeRenderer::PassType::kTilePrefixSum,
-                      {{0, view_params_buf, 0, 0, true},
-                       {6, projected_buf, 0, 0, false},
-                       {7, tile_counts_buf, 0, 0, false},
-                       {8, tile_offsets_buf, 0, 0, false},
-                       {9, tile_heads_buf, 0, 0, false},
-                       {10, counters_buf, 0, 0, false}},
-                      /*img_bindings=*/{},
-                      /*group_count_override=*/1)) {
-            cleanup();
+        // --- Pass 2: Prefix Sum ---
+        BindSSBO(7, vs.tile_counts_buf);
+        BindSSBO(8, vs.tile_offsets_buf);
+        BindSSBO(9, vs.tile_heads_buf);
+        BindSSBO(10, vs.counters_buf);
+
+        if (!dispatch_pass(GaussianComputeRenderer::PassType::kTilePrefixSum,
+                           programs_[kProgPrefixSum], "PrefixSum")) {
+            gl_ctx.ReleaseCurrent();
             return false;
         }
+        GLComputeFullBarrier();
+        DrainGLErrors("after PrefixSum");
 
-        // Read counters to know total tile entries.
-        if (!DownloadVulkanBuffer(counters_buf, counters.data(),
-                                  sizeof(counters), 0)) {
-            cleanup();
-            return false;
-        }
-
+        // Read back counter[0] = total_entries.
+        std::array<std::uint32_t, kGaussianCounterCount> counters = {};
+        DownloadGLBuffer(vs.counters_buf, counters.data(), sizeof(counters), 0);
         const std::uint32_t total_entries = counters[0];
-        auto tile_entries_buf = create_buf(
-                "tile_entries",
+
+        // Allocate tile entries buffer.
+        vs.tile_entries_buf = ResizeGLBuffer(
+                vs.tile_entries_buf,
                 std::max<std::size_t>(sizeof(PackedTileEntry),
-                                      total_entries * sizeof(PackedTileEntry)),
-                nullptr, false);
+                                      total_entries *
+                                              sizeof(PackedTileEntry)));
 
-        // Create output images for color (rgba16f) and depth (r32f).
-        std::string img_error;
-        VulkanImageHandle color_image = CreateVulkanStorageImage(
-                vk_context_, targets.width, targets.height,
-                97 /* VK_FORMAT_R16G16B16A16_SFLOAT */,
-                "out_color", &img_error);
-        VulkanImageHandle depth_image = CreateVulkanStorageImage(
-                vk_context_, targets.width, targets.height,
-                100 /* VK_FORMAT_R32_SFLOAT */,
-                "out_depth", &img_error);
+        // --- Pass 3: Scatter ---
+        BindSSBO(11, vs.tile_entries_buf);
 
-        if (!tile_entries_buf.valid || !color_image.valid ||
-            !depth_image.valid) {
-            if (color_image.valid) DestroyVulkanImage(vk_context_, color_image);
-            if (depth_image.valid) DestroyVulkanImage(vk_context_, depth_image);
-            cleanup();
+        if (!dispatch_pass(GaussianComputeRenderer::PassType::kTileScatter,
+                           programs_[kProgScatter], "Scatter")) {
+            gl_ctx.ReleaseCurrent();
             return false;
         }
+        GLComputeFullBarrier();
+        DrainGLErrors("after Scatter");
 
-        // Pass 3: Tile scatter (per-splat, grid-stride loop).
-        const int scatter_groups = static_cast<int>(
-                (packed.splat_count + 63) / 64);
-        if (!dispatch(GaussianComputeRenderer::PassType::kTileScatter,
-                      {{0, view_params_buf, 0, 0, true},
-                       {6, projected_buf, 0, 0, false},
-                       {8, tile_offsets_buf, 0, 0, false},
-                       {9, tile_heads_buf, 0, 0, false},
-                       {11, tile_entries_buf, 0, 0, false}},
-                      /*img_bindings=*/{},
-                      scatter_groups)) {
-            DestroyVulkanImage(vk_context_, color_image);
-            DestroyVulkanImage(vk_context_, depth_image);
-            cleanup();
-            return false;
-        }
+        // --- Pass 4: Radix Sort ---
+        // Compute radix sort work distribution.
+        const std::uint32_t radix_num_wg = std::max(
+                1u, (total_entries + kRadixWorkgroupSize *
+                                             kRadixTargetBlocksPerWG -
+                                     1) /
+                            (kRadixWorkgroupSize * kRadixTargetBlocksPerWG));
+        const std::uint32_t radix_blocks_per_wg = std::max(
+                1u,
+                (total_entries + radix_num_wg * kRadixWorkgroupSize - 1) /
+                        (radix_num_wg * kRadixWorkgroupSize));
 
-        // Pass 4: Sort tile entries.
-        if (radix_histogram_pipeline_.valid && radix_sort_pipeline_.valid &&
-            radix_keygen_pipeline_.valid && radix_payload_pipeline_.valid &&
-            total_entries > 0) {
-            // GPU radix sort.
-            if (!DispatchRadixSort(tile_entries_buf, total_entries,
-                                   create_buf, cleanup_extra)) {
-                DestroyVulkanImage(vk_context_, color_image);
-                DestroyVulkanImage(vk_context_, depth_image);
-                cleanup();
-                return false;
+        // Allocate radix sort temporary buffers.
+        {
+            const std::size_t key_size = std::max<std::size_t>(
+                    4, total_entries * sizeof(std::uint32_t));
+            for (int i = 0; i < 2; ++i) {
+                vs.sort_keys_buf[i] =
+                        ResizeGLBuffer(vs.sort_keys_buf[i], key_size);
+                vs.sort_values_buf[i] =
+                        ResizeGLBuffer(vs.sort_values_buf[i], key_size);
             }
-        } else if (total_entries > 0) {
-            // Fallback: old insertion sort (may TDR on large data).
-            if (!dispatch(GaussianComputeRenderer::PassType::kTileSort,
-                          {{0, view_params_buf, 0, 0, true},
-                           {7, tile_counts_buf, 0, 0, false},
-                           {8, tile_offsets_buf, 0, 0, false},
-                           {11, tile_entries_buf, 0, 0, false}})) {
-                DestroyVulkanImage(vk_context_, color_image);
-                DestroyVulkanImage(vk_context_, depth_image);
-                cleanup();
-                return false;
-            }
+            vs.histogram_buf = ResizeGLBuffer(
+                    vs.histogram_buf,
+                    std::max<std::size_t>(
+                            4, radix_num_wg * kRadixSortBins *
+                                       sizeof(std::uint32_t)));
+            vs.radix_params_buf = ResizeGLBuffer(vs.radix_params_buf,
+                                                 sizeof(RadixSortParams));
+            vs.sorted_entries_buf = ResizeGLBuffer(
+                    vs.sorted_entries_buf,
+                    std::max<std::size_t>(
+                            sizeof(PackedTileEntry),
+                            total_entries * sizeof(PackedTileEntry)));
         }
 
-        // Pass 5: Composite (writes to images).
-        if (!dispatch(
-                    GaussianComputeRenderer::PassType::kComposite,
-                    {{0, view_params_buf, 0, 0, true},
-                     {6, projected_buf, 0, 0, false},
-                     {7, tile_counts_buf, 0, 0, false},
-                     {8, tile_offsets_buf, 0, 0, false},
-                     {11, tile_entries_buf, 0, 0, false}},
-                    {{12, color_image}, {13, depth_image}})) {
-            DestroyVulkanImage(vk_context_, color_image);
-            DestroyVulkanImage(vk_context_, depth_image);
-            cleanup();
+        if (total_entries > 0) {
+            // Keygen: create composite sort keys from tile entries.
+            {
+                RadixSortParams params{total_entries, 0, 0, 0};
+                UploadGLBuffer(vs.radix_params_buf, &params,
+                               sizeof(params), 0);
+                BindUBO(14, vs.radix_params_buf);
+                BindSSBO(0, vs.tile_entries_buf);
+                BindSSBO(1, vs.sort_keys_buf[0]);
+                BindSSBO(2, vs.sort_values_buf[0]);
+                UseProgram(programs_[kProgRadixKeygen]);
+                DispatchCompute(
+                        (total_entries + kRadixWorkgroupSize - 1) /
+                                kRadixWorkgroupSize,
+                        1, 1);
+                GLComputeFullBarrier();
+            }
+
+            // 4 passes of histogram + scatter (8 bits per pass).
+            int src = 0;
+            for (std::uint32_t shift = 0; shift < 32; shift += 8) {
+                const int dst = 1 - src;
+                RadixSortParams params{total_entries, shift, radix_num_wg,
+                                       radix_blocks_per_wg};
+                UploadGLBuffer(vs.radix_params_buf, &params,
+                               sizeof(params), 0);
+                BindUBO(14, vs.radix_params_buf);
+
+                ClearGLBuffer(vs.histogram_buf);
+                GLComputeFullBarrier();
+
+                // Histogram pass.
+                BindSSBO(0, vs.sort_keys_buf[src]);
+                BindSSBO(1, vs.histogram_buf);
+                UseProgram(programs_[kProgRadixHistograms]);
+                DispatchCompute(radix_num_wg, 1, 1);
+                GLComputeFullBarrier();
+
+                // Scatter pass.
+                BindSSBO(0, vs.sort_keys_buf[src]);
+                BindSSBO(1, vs.sort_keys_buf[dst]);
+                BindSSBO(2, vs.histogram_buf);
+                BindSSBO(3, vs.sort_values_buf[src]);
+                BindSSBO(4, vs.sort_values_buf[dst]);
+                UseProgram(programs_[kProgRadixScatter]);
+                DispatchCompute(radix_num_wg, 1, 1);
+                GLComputeFullBarrier();
+
+                src = dst;
+            }
+
+            // After 4 passes (even swap count), result is in buf[0].
+            // Payload: rearrange TileEntry structs by sorted indices.
+            {
+                RadixSortParams params{total_entries, 0, 0, 0};
+                UploadGLBuffer(vs.radix_params_buf, &params,
+                               sizeof(params), 0);
+                BindUBO(14, vs.radix_params_buf);
+                BindSSBO(0, vs.sort_values_buf[src]);
+                BindSSBO(1, vs.tile_entries_buf);
+                BindSSBO(2, vs.sorted_entries_buf);
+                UseProgram(programs_[kProgRadixPayload]);
+                DispatchCompute(
+                        (total_entries + kRadixWorkgroupSize - 1) /
+                                kRadixWorkgroupSize,
+                        1, 1);
+                GLComputeFullBarrier();
+            }
+            DrainGLErrors("after RadixSort");
+        }
+
+        // Rebind sorted entries for composite (radix sort reused
+        // binding points 0-4).
+        BindUBO(0, vs.view_params_buf);
+        BindSSBO(6, vs.projected_buf);
+        BindSSBO(11, vs.sorted_entries_buf);
+
+        // --- Pass 5: Composite ---
+        // Create / resize output textures.
+        vs.color_tex = ResizeGLTexture2D(vs.color_tex, targets.width,
+                                         targets.height, kGL_RGBA16F);
+        vs.depth_tex = ResizeGLTexture2D(vs.depth_tex, targets.width,
+                                         targets.height, kGL_R32F);
+
+        if (!vs.color_tex.valid || !vs.depth_tex.valid) {
+            utility::LogWarning(
+                    "Gaussian compute OpenGL: Failed to create output "
+                    "textures.");
+            gl_ctx.ReleaseCurrent();
             return false;
         }
 
-        // Download color image to CPU.
+        BindImage(12, vs.color_tex, kGL_RGBA16F, kGL_WRITE_ONLY);
+        BindImage(13, vs.depth_tex, kGL_R32F, kGL_WRITE_ONLY);
+        DrainGLErrors("after BindImage for composite");
+
+        if (!dispatch_pass(GaussianComputeRenderer::PassType::kComposite,
+                           programs_[kProgComposite], "Composite")) {
+            gl_ctx.ReleaseCurrent();
+            return false;
+        }
+        GLComputeFullBarrier();
+        DrainGLErrors("after Composite");
+
+        // --- Read back output to CPU ---
         const std::size_t pixel_count =
                 static_cast<std::size_t>(targets.width) * targets.height;
-        // RGBA16F = 8 bytes per pixel.
-        const std::size_t color_bytes = pixel_count * 8;
-        std::vector<uint16_t> color_half(pixel_count * 4);
-        if (!DownloadVulkanImage(vk_context_, color_image, color_half.data(),
-                                 color_bytes, &img_error)) {
-            utility::LogWarning(
-                    "Gaussian Vulkan: color readback failed: {}", img_error);
-            DestroyVulkanImage(vk_context_, color_image);
-            DestroyVulkanImage(vk_context_, depth_image);
-            cleanup();
-            return false;
-        }
-
-        // Convert half-float to float for UploadOutputTextures.
-        auto half_to_float = [](uint16_t h) -> float {
-            uint32_t sign = (h & 0x8000) << 16;
-            uint32_t exponent = (h >> 10) & 0x1F;
-            uint32_t mantissa = h & 0x03FF;
-            if (exponent == 0) {
-                if (mantissa == 0) {
-                    uint32_t result = sign;
-                    float f;
-                    std::memcpy(&f, &result, 4);
-                    return f;
-                }
-                // Subnormal.
-                while (!(mantissa & 0x0400)) {
-                    mantissa <<= 1;
-                    exponent--;
-                }
-                exponent++;
-                mantissa &= ~0x0400;
-            } else if (exponent == 31) {
-                uint32_t result = sign | 0x7F800000 | (mantissa << 13);
-                float f;
-                std::memcpy(&f, &result, 4);
-                return f;
-            }
-            exponent = exponent + (127 - 15);
-            uint32_t result = sign | (exponent << 23) | (mantissa << 13);
-            float f;
-            std::memcpy(&f, &result, 4);
-            return f;
-        };
-
         std::vector<Std430Vec4> color_pixels(pixel_count);
-        for (std::size_t i = 0; i < pixel_count; ++i) {
-            color_pixels[i].x = half_to_float(color_half[i * 4 + 0]);
-            color_pixels[i].y = half_to_float(color_half[i * 4 + 1]);
-            color_pixels[i].z = half_to_float(color_half[i * 4 + 2]);
-            color_pixels[i].w = half_to_float(color_half[i * 4 + 3]);
-        }
+        DownloadGLTexture2D(vs.color_tex, color_pixels.data(), kGL_RGBA);
 
-        // Download depth.
+        // Depth readback is not needed for current compositing (ImGui overlay).
         std::vector<float> depth_pixels(pixel_count, 0.0f);
-        const std::size_t depth_bytes = pixel_count * sizeof(float);
-        DownloadVulkanImage(vk_context_, depth_image, depth_pixels.data(),
-                            depth_bytes, &img_error);
 
-        DestroyVulkanImage(vk_context_, color_image);
-        DestroyVulkanImage(vk_context_, depth_image);
-        cleanup();
+        // Ensure all GL work completes before Filament uses the context.
+        gl_ctx.Finish();
+        gl_ctx.ReleaseCurrent();
 
+        // Upload to Filament textures (CPU → Filament).
         return UploadOutputTextures(resource_mgr_, color_pixels, depth_pixels,
                                     targets.width, targets.height, targets);
     }
 
-    // GPU radix sort: keygen -> 4x(histogram + scatter) -> payload rearrange.
-    bool DispatchRadixSort(
-            const VulkanBufferHandle& tile_entries_buf,
-            std::uint32_t total_entries,
-            std::function<VulkanBufferHandle(const std::string&, std::size_t,
-                                             const void*, bool)>
-                    create_buf,
-            std::function<void(VulkanBufferHandle&)> cleanup_extra) {
-        constexpr uint32_t WORKGROUP_SIZE = 256;
-        constexpr uint32_t RADIX_SORT_BINS = 256;
+private:
+    struct ViewState {
+        GLBufferHandle view_params_buf;
+        GLBufferHandle positions_buf;
+        GLBufferHandle scales_buf;
+        GLBufferHandle rotations_buf;
+        GLBufferHandle dc_opacity_buf;
+        GLBufferHandle sh_buf;
+        GLBufferHandle projected_buf;
+        GLBufferHandle tile_counts_buf;
+        GLBufferHandle tile_offsets_buf;
+        GLBufferHandle tile_heads_buf;
+        GLBufferHandle counters_buf;
+        GLBufferHandle tile_entries_buf;
+        // Radix sort temporary buffers.
+        GLBufferHandle sort_keys_buf[2];
+        GLBufferHandle sort_values_buf[2];
+        GLBufferHandle histogram_buf;
+        GLBufferHandle radix_params_buf;
+        GLBufferHandle sorted_entries_buf;
+        GLTextureHandle color_tex;
+        GLTextureHandle depth_tex;
+        std::uint64_t cached_scene_id = 0;
+        std::uint32_t cached_splat_count = 0;
+    };
 
-        // Choose num_workgroups so each workgroup handles ~32 blocks of 256
-        // elements.  This is the sweet spot from VkRadixSort benchmarks.
-        constexpr uint32_t TARGET_BLOCKS_PER_WG = 32;
-        const uint32_t total_blocks =
-                (total_entries + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
-        uint32_t num_workgroups =
-                std::max(1u, (total_blocks + TARGET_BLOCKS_PER_WG - 1) /
-                                     TARGET_BLOCKS_PER_WG);
-        const uint32_t num_blocks_per_workgroup =
-                std::max(1u, (total_blocks + num_workgroups - 1) /
-                                     num_workgroups);
-
-        // Temp buffer sizes.
-        const std::size_t key_buf_size = total_entries * sizeof(uint32_t);
-        const std::size_t val_buf_size = total_entries * sizeof(uint32_t);
-        const std::size_t hist_buf_size =
-                num_workgroups * RADIX_SORT_BINS * sizeof(uint32_t);
-        const std::size_t entries_buf_size =
-                total_entries * sizeof(PackedTileEntry);
-
-        // Create temporary buffers.
-        auto keys0 = create_buf("radix_keys0", key_buf_size, nullptr, false);
-        auto keys1 = create_buf("radix_keys1", key_buf_size, nullptr, false);
-        auto vals0 = create_buf("radix_vals0", val_buf_size, nullptr, false);
-        auto vals1 = create_buf("radix_vals1", val_buf_size, nullptr, false);
-        auto hist_buf =
-                create_buf("radix_hist", hist_buf_size, nullptr, false);
-        auto entries_copy =
-                create_buf("radix_entries_copy", entries_buf_size,
-                           nullptr, false);
-
-        if (!keys0.valid || !keys1.valid || !vals0.valid || !vals1.valid ||
-            !hist_buf.valid || !entries_copy.valid) {
-            cleanup_extra(keys0);
-            cleanup_extra(keys1);
-            cleanup_extra(vals0);
-            cleanup_extra(vals1);
-            cleanup_extra(hist_buf);
-            cleanup_extra(entries_copy);
-            return false;
+    bool EnsureProgramsReady() {
+        if (programs_loaded_) {
+            return programs_valid_;
         }
+        programs_loaded_ = true;
+        programs_valid_ = false;
 
-        // Register all for cleanup (they weren't added to the main
-        // temp_buffers list since they use create_buf which does add them).
-        // Actually create_buf already pushes to temp_buffers, so these
-        // will be cleaned up automatically.  We only use cleanup_extra
-        // for error paths where we want to explicitly track them.
-
-        std::string error;
-
-        // Step 0: Copy tile_entries into entries_copy (source for payload
-        // rearrange at the end).  We do this by dispatching the payload
-        // shader with identity permutation — but it's simpler to just
-        // use a memcpy via a small buffer upload/download roundtrip.
-        // Instead, dispatch keygen which reads tile_entries, then later
-        // the payload shader reads from entries_copy.
-        // We'll copy tile_entries -> entries_copy via a GPU copy dispatch.
-        // Simplest: just read tile_entries back to CPU and upload.
-        {
-            std::vector<uint8_t> entries_data(entries_buf_size);
-            if (!DownloadVulkanBuffer(tile_entries_buf, entries_data.data(),
-                                      entries_buf_size, 0)) {
-                utility::LogWarning(
-                        "Gaussian Vulkan: radix sort entries download "
-                        "failed");
-                return false;
-            }
-            if (!UploadVulkanBuffer(entries_copy, entries_data.data(),
-                                    entries_buf_size, 0)) {
-                utility::LogWarning(
-                        "Gaussian Vulkan: radix sort entries upload failed");
-                return false;
-            }
-        }
-
-        const uint32_t keygen_groups =
-                (total_entries + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
-
-        // Step 1: Generate composite sort keys and identity value indices.
-        struct KeygenPush {
-            uint32_t num_elements;
-        } keygen_push = {total_entries};
-
-        if (!DispatchVulkanComputeWithPushConstants(
-                    vk_context_, radix_keygen_pipeline_,
-                    {{0, tile_entries_buf, 0, 0, false},
-                     {1, keys0, 0, 0, false},
-                     {2, vals0, 0, 0, false}},
-                    &keygen_push, sizeof(keygen_push),
-                    keygen_groups, 1, 1, &error)) {
-            utility::LogWarning(
-                    "Gaussian Vulkan: radix keygen failed: {}", error);
-            return false;
-        }
-
-        // Step 2: Four iterations of histogram + scatter (8-bit digits).
-        struct RadixPush {
-            uint32_t num_elements;
-            uint32_t shift;
-            uint32_t num_workgroups;
-            uint32_t num_blocks_per_workgroup;
+        // All shaders are loaded from pre-compiled SPIR-V (.spv) files.
+        // The CMake target gaussian_compute_shaders compiles .comp -> .spv
+        // with glslangValidator -V --target-env vulkan1.1.
+        static const char* kShaderSPVFiles[] = {
+                "gaussian_project.spv",
+                "gaussian_prefix_sum.spv",
+                "gaussian_scatter.spv",
+                "gaussian_sort.spv",
+                "gaussian_composite.spv",
+                "gaussian_radix_sort_keygen.spv",
+                "gaussian_radix_sort_histograms.spv",
+                "gaussian_radix_sort.spv",
+                "gaussian_radix_sort_payload.spv",
         };
+        static_assert(sizeof(kShaderSPVFiles) / sizeof(kShaderSPVFiles[0]) ==
+                              kNumPrograms,
+                      "Shader file list must match kNumPrograms");
 
-        VulkanBufferHandle* keys_in = &keys0;
-        VulkanBufferHandle* keys_out = &keys1;
-        VulkanBufferHandle* vals_in = &vals0;
-        VulkanBufferHandle* vals_out = &vals1;
-
-        for (uint32_t iteration = 0; iteration < 4; ++iteration) {
-            const uint32_t shift = iteration * 8;
-            RadixPush push = {total_entries, shift, num_workgroups,
-                              num_blocks_per_workgroup};
-
-            // Zero the histogram buffer before each iteration.
-            std::vector<uint8_t> hist_zeros(hist_buf_size, 0);
-            UploadVulkanBuffer(hist_buf, hist_zeros.data(), hist_buf_size, 0);
-
-            // Histogram pass.
-            if (!DispatchVulkanComputeWithPushConstants(
-                        vk_context_, radix_histogram_pipeline_,
-                        {{0, *keys_in, 0, 0, false},
-                         {1, hist_buf, 0, 0, false}},
-                        &push, sizeof(push),
-                        num_workgroups, 1, 1, &error)) {
+        const std::string shader_root =
+                EngineInstance::GetResourcePath() + "/gaussian_compute/";
+        for (int i = 0; i < kNumPrograms; ++i) {
+            std::vector<std::uint8_t> spirv;
+            std::string path = shader_root + kShaderSPVFiles[i];
+            if (!ReadSPIRVFile(path, &spirv)) {
                 utility::LogWarning(
-                        "Gaussian Vulkan: radix histogram (iter {}) "
-                        "failed: {}",
-                        iteration, error);
+                        "Gaussian compute OpenGL: Failed to read "
+                        "SPIR-V shader {}",
+                        path);
                 return false;
             }
-
-            // Scatter pass (sort).
-            if (!DispatchVulkanComputeWithPushConstants(
-                        vk_context_, radix_sort_pipeline_,
-                        {{0, *keys_in, 0, 0, false},
-                         {1, *keys_out, 0, 0, false},
-                         {2, hist_buf, 0, 0, false},
-                         {3, *vals_in, 0, 0, false},
-                         {4, *vals_out, 0, 0, false}},
-                        &push, sizeof(push),
-                        num_workgroups, 1, 1, &error)) {
-                utility::LogWarning(
-                        "Gaussian Vulkan: radix scatter (iter {}) "
-                        "failed: {}",
-                        iteration, error);
+            programs_[i] =
+                    LoadGLComputeProgramSPIRV(spirv, kShaderSPVFiles[i]);
+            if (!programs_[i].valid) {
                 return false;
             }
-
-            // Ping-pong: output becomes input for next iteration.
-            std::swap(keys_in, keys_out);
-            std::swap(vals_in, vals_out);
         }
 
-        // After 4 iterations with swaps, sorted results are in
-        // keys_in/vals_in (which point to the last output buffers).
-
-        // Step 3: Payload rearrange — use sorted value indices to
-        // reorder the original tile entries.
-        struct PayloadPush {
-            uint32_t num_elements;
-        } payload_push = {total_entries};
-
-        const uint32_t payload_groups =
-                (total_entries + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE;
-
-        if (!DispatchVulkanComputeWithPushConstants(
-                    vk_context_, radix_payload_pipeline_,
-                    {{0, *vals_in, 0, 0, false},
-                     {1, entries_copy, 0, 0, false},
-                     {2, tile_entries_buf, 0, 0, false}},
-                    &payload_push, sizeof(payload_push),
-                    payload_groups, 1, 1, &error)) {
-            utility::LogWarning(
-                    "Gaussian Vulkan: radix payload rearrange failed: {}",
-                    error);
-            return false;
-        }
-
+        programs_valid_ = true;
         return true;
     }
 
-    void Cleanup() {
-        for (auto& pair : pipelines_) {
-            DestroyVulkanComputePipeline(vk_context_, pair.second);
+    void DestroyViewState(ViewState& vs) {
+        // Need GL context current to destroy GL objects.
+        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        bool ctx_ok = gl_ctx.MakeCurrent();
+        if (ctx_ok) {
+            DestroyGLBuffer(vs.view_params_buf);
+            DestroyGLBuffer(vs.positions_buf);
+            DestroyGLBuffer(vs.scales_buf);
+            DestroyGLBuffer(vs.rotations_buf);
+            DestroyGLBuffer(vs.dc_opacity_buf);
+            DestroyGLBuffer(vs.sh_buf);
+            DestroyGLBuffer(vs.projected_buf);
+            DestroyGLBuffer(vs.tile_counts_buf);
+            DestroyGLBuffer(vs.tile_offsets_buf);
+            DestroyGLBuffer(vs.tile_heads_buf);
+            DestroyGLBuffer(vs.counters_buf);
+            DestroyGLBuffer(vs.tile_entries_buf);
+            for (int i = 0; i < 2; ++i) {
+                DestroyGLBuffer(vs.sort_keys_buf[i]);
+                DestroyGLBuffer(vs.sort_values_buf[i]);
+            }
+            DestroyGLBuffer(vs.histogram_buf);
+            DestroyGLBuffer(vs.radix_params_buf);
+            DestroyGLBuffer(vs.sorted_entries_buf);
+            DestroyGLTexture(vs.color_tex);
+            DestroyGLTexture(vs.depth_tex);
+            gl_ctx.ReleaseCurrent();
         }
-        pipelines_.clear();
-        DestroyVulkanComputePipeline(vk_context_, radix_histogram_pipeline_);
-        DestroyVulkanComputePipeline(vk_context_, radix_sort_pipeline_);
-        DestroyVulkanComputePipeline(vk_context_, radix_keygen_pipeline_);
-        DestroyVulkanComputePipeline(vk_context_, radix_payload_pipeline_);
-        DestroyVulkanComputeContext(vk_context_);
+    }
+
+    void Cleanup() {
+        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        bool ctx_ok = gl_ctx.MakeCurrent();
+        if (ctx_ok) {
+            for (auto& pair : view_states_) {
+                DestroyViewState(pair.second);
+            }
+            for (auto& prog : programs_) {
+                DestroyGLComputeProgram(prog);
+            }
+            gl_ctx.ReleaseCurrent();
+        }
+        view_states_.clear();
+        programs_loaded_ = false;
+        programs_valid_ = false;
     }
 
     FilamentResourceManager& resource_mgr_;
     const GaussianComputeRenderer::RenderConfig& config_;
-    VulkanComputeContext vk_context_;
-    std::unordered_map<GaussianComputeRenderer::PassType,
-                       VulkanComputePipelineHandle>
-            pipelines_;
-
-    // Radix sort pipelines (created with push constant support).
-    VulkanComputePipelineHandle radix_histogram_pipeline_;
-    VulkanComputePipelineHandle radix_sort_pipeline_;
-    VulkanComputePipelineHandle radix_keygen_pipeline_;
-    VulkanComputePipelineHandle radix_payload_pipeline_;
+    std::unordered_map<const FilamentView*, ViewState> view_states_;
+    static constexpr int kNumPrograms = 9;
+    GLComputeProgram programs_[kNumPrograms] = {};
+    bool programs_loaded_ = false;
+    bool programs_valid_ = false;
 };
+#endif  // !defined(__APPLE__)
+
 
 class GaussianComputeMetalBackend final
     : public GaussianComputeRenderer::Backend {
@@ -1208,17 +1005,21 @@ std::unique_ptr<GaussianComputeRenderer::Backend> CreateBackend(
         FilamentResourceManager& resource_mgr,
         const GaussianComputeRenderer::RenderConfig& config) {
     switch (backend) {
-        case RenderingType::kVulkan:
-            return std::unique_ptr<GaussianComputeRenderer::Backend>(
-                    new GaussianComputeVulkanBackend(resource_mgr, config));
         case RenderingType::kMetal:
             return std::unique_ptr<GaussianComputeRenderer::Backend>(
                     new GaussianComputeMetalBackend(resource_mgr, config));
-        case RenderingType::kDefault:
-            return std::unique_ptr<GaussianComputeRenderer::Backend>(
-                    new GaussianComputePlaceholderBackend("Default"));
         case RenderingType::kOpenGL:
-            break;
+#if !defined(__APPLE__)
+            return std::unique_ptr<GaussianComputeRenderer::Backend>(
+                    new GaussianComputeOpenGLBackend(resource_mgr, config));
+#else
+            return std::unique_ptr<GaussianComputeRenderer::Backend>(
+                    new GaussianComputePlaceholderBackend("OpenGL"));
+#endif
+        case RenderingType::kDefault:
+        case RenderingType::kVulkan:
+            return std::unique_ptr<GaussianComputeRenderer::Backend>(
+                    new GaussianComputePlaceholderBackend("Unsupported"));
     }
     return nullptr;
 }
@@ -1248,11 +1049,16 @@ bool GaussianComputeBackendSupported(RenderingType backend) {
     }
 
     switch (backend) {
-        case RenderingType::kDefault:
-        case RenderingType::kVulkan:
         case RenderingType::kMetal:
             return true;
         case RenderingType::kOpenGL:
+#if !defined(__APPLE__)
+            return true;
+#else
+            return false;
+#endif
+        case RenderingType::kDefault:
+        case RenderingType::kVulkan:
             return false;
     }
     return false;
@@ -1366,6 +1172,13 @@ void GaussianComputeRenderer::BeginFrame() {
 void GaussianComputeRenderer::RenderView(FilamentView& view,
                                          const FilamentScene& scene) {
     if (!enabled_ || !scene.HasGaussianSplatGeometry()) {
+        static bool logged_once = false;
+        if (!logged_once) {
+            utility::LogDebug(
+                    "GS RenderView: skip (enabled={}, hasGS={})",
+                    enabled_, scene.HasGaussianSplatGeometry());
+            logged_once = true;
+        }
         return;
     }
 
@@ -1384,6 +1197,12 @@ void GaussianComputeRenderer::RenderView(FilamentView& view,
     if (!targets.needs_render) {
         return;
     }
+
+    utility::LogDebug(
+            "GS RenderView: rendering (view_changed={}, dispatch_changed={},"
+            " scene_changed={}, backend={}, has_render_data={})",
+            view_changed, dispatch_changed, scene_changed,
+            backend_ != nullptr, targets.has_render_data);
 
     bool rendered = false;
     if (backend_ && targets.has_render_data) {
@@ -1429,9 +1248,23 @@ bool GaussianComputeRenderer::IsSupported() const {
 
 bool GaussianComputeRenderer::HasOutput(const FilamentView& view) const {
     auto found = outputs_.find(&view);
-    return found != outputs_.end() && found->second.color &&
-           found->second.depth && found->second.render_target &&
-           found->second.has_valid_output;
+    bool has = found != outputs_.end() && found->second.color &&
+              found->second.depth && found->second.render_target &&
+              found->second.has_valid_output;
+    static int has_log = 0;
+    if (has_log < 10) {
+        utility::LogDebug(
+                "GS HasOutput: found={} color={} depth={} rt={} "
+                "valid={} => {}",
+                found != outputs_.end(),
+                found != outputs_.end() && found->second.color,
+                found != outputs_.end() && found->second.depth,
+                found != outputs_.end() && found->second.render_target,
+                found != outputs_.end() && found->second.has_valid_output,
+                has);
+        ++has_log;
+    }
+    return has;
 }
 
 const GaussianComputeRenderer::ViewRenderData*
@@ -1516,9 +1349,7 @@ GaussianComputeRenderer::BuildPassDispatches(const FilamentView& view) const {
              tile_count},
             {PassType::kTilePrefixSum,
              Eigen::Vector3i(render_config_.prefix_sum_group_size, 1, 1),
-             Eigen::Vector3i(
-                     CeilDiv(total_tiles, render_config_.prefix_sum_group_size),
-                     1, 1),
+             Eigen::Vector3i(1, 1, 1),
              tile_count},
             {PassType::kTileScatter,
              Eigen::Vector3i(render_config_.scatter_group_size, 1, 1),

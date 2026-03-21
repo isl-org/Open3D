@@ -75,7 +75,6 @@ if (BUILD_GUI)
         rendering/filament/FilamentCamera.cpp
         rendering/filament/GaussianComputeRenderer.cpp
         rendering/filament/GaussianComputeDataPacking.cpp
-        rendering/filament/GaussianComputeVulkanPipeline.cpp
         rendering/filament/FilamentNativeInterop.cpp
         rendering/filament/FilamentEntitiesMods.cpp
         rendering/filament/FilamentGeometryBuffersBuilder.cpp
@@ -97,6 +96,8 @@ if (BUILD_GUI)
     else()
         target_sources(visualization_impl PRIVATE
             rendering/filament/GaussianComputeMetalShaders.cpp
+            rendering/filament/GaussianComputeOpenGLContext.cpp
+            rendering/filament/GaussianComputeOpenGLPipeline.cpp
         )
     endif()
 

@@ -10,8 +10,11 @@
 
 layout(local_size_x = WORKGROUP_SIZE) in;
 
-layout(push_constant, std430) uniform PushConstants {
+layout(std140, binding = 14) uniform RadixSortParams {
 	uint g_num_elements;
+	uint g_shift;
+	uint g_num_workgroups;
+	uint g_num_blocks_per_workgroup;
 };
 
 struct TileEntry {

@@ -280,6 +280,15 @@ void FilamentScene::ForEachActiveView(
     }
 }
 
+void FilamentScene::ForEachView(
+        const std::function<void(FilamentView&)>& callback) const {
+    for (const auto& pair : views_) {
+        if (pair.second.view) {
+            callback(*pair.second.view);
+        }
+    }
+}
+
 bool FilamentScene::HasGaussianSplatGeometry() const {
     for (const auto& pair : geometries_) {
         if (pair.second.mat.properties.shader == "gaussianSplat") {

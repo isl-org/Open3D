@@ -54,15 +54,18 @@ struct alignas(16) PackedGaussianViewParams {
     float depth_range_and_flags[4];
 };
 
-/// Matches the ProjectedGaussian struct in the shaders (6 × vec4 = 96 bytes).
-struct PackedProjectedGaussian {
+/// Matches the ProjectedGaussian struct in the compute shaders (48 bytes).
+/// Layout (std430): vec4(16) + 4×uint(16) + vec4(16) = 48 bytes.
+struct alignas(16) PackedProjectedGaussian {
     Std430Vec4 center_depth_alpha;
-    Std430Vec4 color;
+    std::uint32_t packed_color;
+    std::uint32_t tile_count_overlap;
+    std::uint32_t tile_rect_min;
+    std::uint32_t tile_rect_max;
     Std430Vec4 inv_basis;
-    Std430Vec4 axis_basis;
-    std::uint32_t tile_rect[4];
-    std::uint32_t metadata[4];
 };
+static_assert(sizeof(PackedProjectedGaussian) == 48,
+              "PackedProjectedGaussian must be 48 bytes to match GLSL layout");
 
 /// Matches TileEntry struct in the shaders (4 × uint = 16 bytes).
 struct PackedTileEntry {
@@ -119,6 +122,15 @@ bool UploadOutputTextures(
         FilamentResourceManager& resource_mgr,
         const std::vector<Std430Vec4>& color_pixels,
         const std::vector<float>& depth_pixels,
+        std::uint32_t width,
+        std::uint32_t height,
+        GaussianComputeRenderer::OutputTargets& targets);
+
+/// Upload half-float RGBA data directly (avoiding half→float→half roundtrip).
+bool UploadOutputTexturesHalf(
+        FilamentResourceManager& resource_mgr,
+        const void* half_rgba_data,
+        std::size_t half_data_size,
         std::uint32_t width,
         std::uint32_t height,
         GaussianComputeRenderer::OutputTargets& targets);

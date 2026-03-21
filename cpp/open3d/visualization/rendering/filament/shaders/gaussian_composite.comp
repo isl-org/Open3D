@@ -3,18 +3,27 @@
 // Pixels traverse the sorted tile-local splat list, accumulate front-to-back
 // premultiplied color, and store a nearest-hit depth that Filament can later
 // use during scene composition.
+//
+// Opt1: Zero-copy output — the VkImage written here is imported directly
+//       into Filament via Texture::Builder::import(), eliminating the
+//       staging-buffer round-trip.
+// Opt4: Updated ProjectedGaussian struct (48 bytes).
+// Opt7: Shared-memory cooperative tile loading — the workgroup loads batches
+//       of splat data into shared memory, then all 256 threads evaluate from
+//       shared memory instead of 256 independent global reads.
 
 #version 450
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
+// 48-byte projected splat descriptor (matches gaussian_project output).
 struct ProjectedGaussian {
 	vec4 center_depth_alpha;
-	vec4 color;
+	uint packed_color;
+	uint tile_count_overlap;
+	uint tile_rect_min;
+	uint tile_rect_max;
 	vec4 inv_basis;
-	vec4 axis_basis;
-	uvec4 tile_rect;
-	uvec4 metadata;
 };
 
 struct TileEntry {
@@ -71,18 +80,50 @@ uint LinearTileIndex(uvec2 tile) {
 	return tile.y * tile_count.x + tile.x;
 }
 
+vec3 UnpackColorRGBA8(uint packed) {
+	return vec3(float(packed & 0xFFu),
+				float((packed >> 8u) & 0xFFu),
+				float((packed >> 16u) & 0xFFu)) / 255.0;
+}
+
+// Opt7: Shared memory arrays for cooperative tile loading.
+// 256 entries × (8+4+4+16+4) = 9216 bytes.
+const uint BATCH_SIZE = 256u;
+shared vec2 s_center[BATCH_SIZE];
+shared float s_alpha[BATCH_SIZE];
+shared float s_depth[BATCH_SIZE];
+shared uint s_color[BATCH_SIZE];
+shared vec4 s_inv_basis[BATCH_SIZE];
+
+// Workgroup-uniform tile entry count (broadcast from thread 0 so that
+// ALL threads — including those outside the viewport — iterate the same
+// number of batches and hit every barrier()).
+shared uint wg_tile_count;
+shared uint wg_tile_offset;
+
 void main() {
 	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 viewport_size = GetViewportSize();
-	if (pixel.x >= viewport_size.x || pixel.y >= viewport_size.y) {
-		return;
-	}
+	// All threads must participate in barrier() calls below, so we cannot
+	// exit early for out-of-viewport pixels.  Instead, flag them and skip
+	// per-pixel work and the final imageStore.
+	bool pixel_active = (pixel.x < viewport_size.x && pixel.y < viewport_size.y);
 
+	uint local_index = gl_LocalInvocationIndex;  // 0..255 for 16×16
 	uvec2 tile_size = GetTileSize();
 	uvec2 tile = min(uvec2(pixel) / tile_size, GetTileCount2D() - uvec2(1u));
 	uint tile_index = LinearTileIndex(tile);
-	uint tile_count = tile_counts[tile_index];
-	uint tile_offset = tile_offsets[tile_index];
+
+	// Broadcast from thread 0 so every thread in the workgroup iterates
+	// the same number of batches (required for uniform barrier() calls).
+	if (local_index == 0u) {
+		wg_tile_count = tile_counts[tile_index];
+		wg_tile_offset = tile_offsets[tile_index];
+	}
+	barrier();
+
+	uint my_tile_count = wg_tile_count;
+	uint my_tile_offset = wg_tile_offset;
 
 	vec3 accum_color = vec3(0.0);
 	float transmittance = 1.0;
@@ -90,46 +131,72 @@ void main() {
 	bool depth_written = false;
 	vec2 pixel_center = vec2(pixel) + vec2(0.5);
 
-	for (uint i = 0u; i < tile_count; ++i) {
-		ProjectedGaussian gaussian =
-			projected[tile_entries[tile_offset + i].splat_index];
-		if (gaussian.metadata.x == 0u) {
-			continue;
-		}
+	// Opt7: process tile entries in batches of BATCH_SIZE.
+	// ALL threads must iterate the same number of batches to keep barrier()
+	// calls uniform.  Per-pixel early saturation skips computation but
+	// still participates in barriers.
+	for (uint batch_start = 0u; batch_start < my_tile_count;
+		 batch_start += BATCH_SIZE) {
+		uint batch_end = min(batch_start + BATCH_SIZE, my_tile_count);
+		uint batch_count = batch_end - batch_start;
 
-		vec2 delta_pixels = pixel_center - gaussian.center_depth_alpha.xy;
-		vec2 gaussian_uv = vec2(
-			dot(gaussian.inv_basis.xy, delta_pixels),
-			dot(gaussian.inv_basis.zw, delta_pixels));
-		float power = -dot(gaussian_uv, gaussian_uv);
-		if (power < -4.0) {
-			continue;
+		// Cooperative load: each thread loads one entry into shared memory.
+		if (local_index < batch_count) {
+			uint entry_idx = my_tile_offset + batch_start + local_index;
+			uint splat_idx = tile_entries[entry_idx].splat_index;
+			ProjectedGaussian g = projected[splat_idx];
+			s_center[local_index] = g.center_depth_alpha.xy;
+			s_alpha[local_index] = g.center_depth_alpha.w;
+			s_depth[local_index] = g.center_depth_alpha.z;
+			s_color[local_index] = g.packed_color;
+			s_inv_basis[local_index] = g.inv_basis;
 		}
+		barrier();
 
-		float alpha = exp(power) * gaussian.center_depth_alpha.w;
-		if (alpha <= 1.0 / 65535.0) {
-			continue;
-		}
+		// Per-pixel evaluation from shared memory.
+		// Skip if this pixel is outside the viewport or already saturated.
+		if (pixel_active) {
+			for (uint i = 0u; i < batch_count; ++i) {
+				vec2 delta_pixels = pixel_center - s_center[i];
+				vec2 gaussian_uv = vec2(
+					dot(s_inv_basis[i].xy, delta_pixels),
+					dot(s_inv_basis[i].zw, delta_pixels));
+				float power = -dot(gaussian_uv, gaussian_uv);
+				if (power < -4.0) {
+					continue;
+				}
 
-		float contribution = transmittance * alpha;
-		accum_color += contribution * gaussian.color.rgb;
-		if (!depth_written && contribution > 1.0 / 4096.0) {
-			out_linear_depth = gaussian.center_depth_alpha.z;
-			depth_written = true;
-		}
+				float alpha = exp(power) * s_alpha[i];
+				if (alpha <= 1.0 / 65535.0) {
+					continue;
+				}
 
-		transmittance *= (1.0 - alpha);
-		if (transmittance <= 1.0 / 4096.0) {
-			transmittance = 0.0;
-			break;
+				float contribution = transmittance * alpha;
+				accum_color += contribution * UnpackColorRGBA8(s_color[i]);
+				if (!depth_written && contribution > 1.0 / 4096.0) {
+					out_linear_depth = s_depth[i];
+					depth_written = true;
+				}
+
+				transmittance *= (1.0 - alpha);
+				if (transmittance <= 1.0 / 4096.0) {
+					transmittance = 0.0;
+					pixel_active = false;  // saturated — skip future batches
+					break;
+				}
+			}
 		}
+		barrier();
 	}
 
-	float out_alpha = 1.0 - transmittance;
-	// Convert premultiplied RGB to straight alpha for ImGui compositing
-	// which uses standard (SrcAlpha, 1-SrcAlpha) blending.
-	vec3 straight_color = (out_alpha > 0.0) ? accum_color / out_alpha
-	                                        : vec3(0.0);
-	imageStore(out_color, pixel, vec4(straight_color, out_alpha));
-	imageStore(out_depth, pixel, vec4(out_linear_depth, 0.0, 0.0, 0.0));
+	if (pixel.x < viewport_size.x && pixel.y < viewport_size.y) {
+		float out_alpha = 1.0 - transmittance;
+		// Convert premultiplied RGB to straight alpha for ImGui compositing
+		// which uses standard (SrcAlpha, 1-SrcAlpha) blending.
+		vec3 straight_color = (out_alpha > 0.0) ? accum_color / out_alpha
+		                                        : vec3(0.0);
+
+		imageStore(out_color, pixel, vec4(straight_color, out_alpha));
+		imageStore(out_depth, pixel, vec4(out_linear_depth, 0.0, 0.0, 0.0));
+	}
 }
