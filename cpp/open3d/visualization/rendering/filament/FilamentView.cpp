@@ -314,6 +314,14 @@ void FilamentView::EnableViewCaching(bool enable) {
 
     if (caching_enabled_) {
         if (render_target_) {
+            // Tear down the GS render target BEFORE freeing color_buffer_.
+            // The GS RT uses color_buffer_ as its Filament color attachment;
+            // if color_buffer_ is freed first, Filament's handle allocator
+            // finds the attachment handle already freed and panics with a
+            // use-after-free assertion (e.g. on window maximize / resize).
+            if (scene_) {
+                scene_->InvalidateGaussianComputeOutput(*this);
+            }
             resource_mgr_.Destroy(render_target_);
             resource_mgr_.Destroy(color_buffer_);
             resource_mgr_.Destroy(depth_buffer_);

@@ -339,6 +339,13 @@ TextureHandle FilamentScene::GetDepthBufferForView(
                     : TextureHandle();
 }
 
+void FilamentScene::InvalidateGaussianComputeOutput(FilamentView& view) {
+    auto* fr = dynamic_cast<FilamentRenderer*>(&renderer_);
+    if (fr) {
+        fr->InvalidateGaussianComputeOutput(view);
+    }
+}
+
 const GaussianSplatSourceData* FilamentScene::GetGaussianSplatSourceData()
         const {
     return gaussian_splat_source_.get();

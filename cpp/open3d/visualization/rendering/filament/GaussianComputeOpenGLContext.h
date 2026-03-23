@@ -33,6 +33,16 @@ public:
     /// Returns true on success.
     bool Initialize();
 
+    /// Creates a standalone (non-shared) GL context, meant to be called
+    /// BEFORE the Filament engine so it can be passed to Engine::create()
+    /// as the shared context.  When Filament starts with this as the
+    /// shared context it creates its own context sharing our GL namespace.
+    bool InitializeStandalone();
+
+    /// Returns the native GL context handle (GLXContext* or EGLContext*),
+    /// suitable for passing to EngineInstance::SetSharedContext().
+    void* GetNativeContext() const;
+
     /// Destroys the context and associated resources.
     void Shutdown();
 
@@ -63,14 +73,16 @@ public:
 private:
 
     bool InitializeGLX();
+    bool InitializeGLXStandalone();  // creates context without sharing
     bool InitializeEGL();
 
     Backend backend_ = Backend::kNone;
 
-    // GLX state (X11). GLXContext is a pointer; GLXPbuffer is XID (ulong).
+    // GLX state (X11). GLXContext is a pointer; Window is XID (ulong).
     void* x_display_ = nullptr;
     void* glx_context_ = nullptr;
     unsigned long glx_drawable_ = 0;
+    bool owns_display_ = true;  // false when Display* is borrowed from GLFW
 
     // EGL state (Wayland). All stored as void* to avoid header pollution.
     void* egl_display_ = nullptr;

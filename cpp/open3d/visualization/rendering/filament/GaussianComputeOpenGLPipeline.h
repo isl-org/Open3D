@@ -24,14 +24,19 @@ namespace rendering {
 // GL constants used by the pipeline API, defined here so callers don't
 // need to include GL headers directly.
 // clang-format off
-constexpr std::uint32_t kGL_RGBA16F     = 0x881A;
-constexpr std::uint32_t kGL_R32F        = 0x822E;
-constexpr std::uint32_t kGL_RGBA8       = 0x8058;
-constexpr std::uint32_t kGL_RGBA        = 0x1908;
-constexpr std::uint32_t kGL_RED         = 0x1903;
-constexpr std::uint32_t kGL_READ_ONLY   = 0x88B8;
-constexpr std::uint32_t kGL_WRITE_ONLY  = 0x88B9;
-constexpr std::uint32_t kGL_READ_WRITE  = 0x88BA;
+constexpr std::uint32_t kGL_RGBA16F             = 0x881A;
+constexpr std::uint32_t kGL_R32F                = 0x822E;
+constexpr std::uint32_t kGL_RGBA8               = 0x8058;
+constexpr std::uint32_t kGL_RGBA                = 0x1908;
+constexpr std::uint32_t kGL_RED                 = 0x1903;
+constexpr std::uint32_t kGL_DEPTH_COMPONENT32F  = 0x8CAC;
+constexpr std::uint32_t kGL_DEPTH_COMPONENT     = 0x1902;
+constexpr std::uint32_t kGL_TEXTURE_2D          = 0x0DE1;
+constexpr std::uint32_t kGL_NEAREST             = 0x2600;
+constexpr std::uint32_t kGL_CLAMP_TO_EDGE       = 0x812F;
+constexpr std::uint32_t kGL_READ_ONLY           = 0x88B8;
+constexpr std::uint32_t kGL_WRITE_ONLY          = 0x88B9;
+constexpr std::uint32_t kGL_READ_WRITE          = 0x88BA;
 // clang-format on
 
 // --- Handle types (wrapping GLuint) ---
@@ -139,6 +144,10 @@ void BindImage(std::uint32_t binding,
                const GLTextureHandle& texture,
                std::uint32_t format,
                std::uint32_t access);
+
+/// Bind a GL texture to a texture unit for sampler access in a compute shader.
+/// For SPIR-V shaders, `layout(binding = N)` maps to texture unit N.
+void BindSamplerTexture(std::uint32_t unit, const GLTextureHandle& texture);
 
 /// Use a compute program.
 void UseProgram(const GLComputeProgram& program);

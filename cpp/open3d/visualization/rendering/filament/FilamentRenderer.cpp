@@ -123,6 +123,12 @@ TextureHandle FilamentRenderer::GetGaussianComputeDepthTexture(
                    : TextureHandle();
 }
 
+void FilamentRenderer::InvalidateGaussianComputeOutput(FilamentView& view) {
+    if (gaussian_compute_renderer_) {
+        gaussian_compute_renderer_->InvalidateOutputForView(view);
+    }
+}
+
 void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
     filament::Renderer::ClearOptions co;
     co.clearColor.r = color.x();
@@ -187,7 +193,7 @@ void FilamentRenderer::BeginFrame() {
                 live_views.insert(&view);
             });
             pair.second->ForEachActiveView([&](FilamentView& view) {
-                gaussian_compute_renderer_->RenderView(view, *pair.second);
+                gaussian_compute_renderer_->RenderGeometryStage(view, *pair.second);
             });
         }
         gaussian_compute_renderer_->PruneOutputs(live_views);
@@ -201,6 +207,16 @@ void FilamentRenderer::Draw() {
         // Draw 3D scenes into textures
         for (const auto& pair : scenes_) {
             pair.second->Draw(*renderer_);
+        }
+
+        // Wait for Filament meshes to finish generating depth
+        if (gaussian_compute_renderer_) {
+            engine_.flushAndWait();
+            for (const auto& pair : scenes_) {
+                pair.second->ForEachActiveView([&](FilamentView& view) {
+                    gaussian_compute_renderer_->RenderCompositeStage(view);
+                });
+            }
         }
 
         // Draw the UI. This should come after the 3D scene(s), as SceneWidget

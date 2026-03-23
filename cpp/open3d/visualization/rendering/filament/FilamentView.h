@@ -84,9 +84,9 @@ public:
 
     void PreRender();
     void PostRender();
+    void SetRenderTarget(const RenderTargetHandle render_target);
 
 private:
-    void SetRenderTarget(const RenderTargetHandle render_target);
 
     std::unique_ptr<FilamentCamera> camera_;
     Mode mode_ = Mode::Color;

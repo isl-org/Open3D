@@ -63,7 +63,7 @@ layout(std430, binding = 11) readonly buffer TileEntries {
 layout(binding = 12, rgba16f) uniform writeonly image2D out_color;
 layout(binding = 13, r32f) uniform writeonly image2D out_depth;
 
-// Scene depth from Filament's render pass (reversed-Z, non-linear).
+// Scene depth from Filament's previous frame (reversed-Z, non-linear).
 // Bound only when depth_range_and_flags.w > 0.5.
 layout(binding = 14) uniform sampler2D scene_depth;
 
@@ -84,10 +84,10 @@ uint LinearTileIndex(uvec2 tile) {
 	return tile.y * tile_count.x + tile.x;
 }
 
-vec3 UnpackColorRGBA8(uint packed) {
-	return vec3(float(packed & 0xFFu),
-				float((packed >> 8u) & 0xFFu),
-				float((packed >> 16u) & 0xFFu)) / 255.0;
+vec3 UnpackColorRGBA8(uint packed_val) {
+	return vec3(float(packed_val & 0xFFu),
+				float((packed_val >> 8u) & 0xFFu),
+				float((packed_val >> 16u) & 0xFFu)) / 255.0;
 }
 
 // Opt7: Shared memory arrays for cooperative tile loading.
@@ -136,7 +136,7 @@ void main() {
 	vec2 pixel_center = vec2(pixel) + vec2(0.5);
 
 	// Linearize scene depth from Filament's reversed-Z depth buffer.
-	// Filament uses reversed-Z: near -> 1.0, far -> 0.0.
+	// Filament uses reversed-Z: near → 1.0, far → 0.0.
 	// Linear depth = near * far / (near + z_ndc * (far - near)).
 	float scene_linear_depth = view_params.depth_range_and_flags.y;  // far
 	bool use_scene_depth = (view_params.depth_range_and_flags.w > 0.5)

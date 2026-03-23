@@ -1,6 +1,11 @@
 // Gaussian radix sort — key preparation pass.
 //
-// Creates composite sort keys from tile entries: key = (tile_index << 20) | (depth_key >> 12).
+// Creates composite sort keys from tile entries:
+//   key = (tile_index << 16) | (depth_key >> 16)
+// This gives 16 bits for tile index and 16 bits for depth, supporting
+// up to 65535 tiles (e.g. 4K at 16×16 tiles = 240×135 = 32400 tiles).
+// The previous 12/20 split capped at 4096 tiles, corrupting rendering on
+// windows larger than ~1280×720 at the default 16×16 tile size.
 // Also initializes the value array with identity indices.
 
 #version 450
@@ -42,7 +47,7 @@ void main() {
 	}
 	uint tile_index = g_entries[gID].tile_index;
 	uint depth_key = g_entries[gID].depth_key;
-	// Pack: 12 bits tile_index (up to 4096 tiles), 20 bits depth.
-	g_sort_keys[gID] = (tile_index << 20u) | (depth_key >> 12u);
+	// Pack: 16 bits tile_index (up to 65535 tiles), 16 bits depth.
+	g_sort_keys[gID] = (tile_index << 16u) | (depth_key >> 16u);
 	g_sort_values[gID] = gID;
 }

@@ -117,6 +117,30 @@ EngineInstance::EngineInstance() {
             break;
     }
 
+    // On Linux (X11/GLX), create our compute GL context BEFORE the Filament
+    // engine so we can pass it as the sharedGLContext.  Filament's
+    // PlatformGLX will then create its own context sharing our GL namespace,
+    // enabling zero-copy texture import() between the two contexts.
+    // This must happen before Engine::create() because GLX context sharing
+    // can only be established at context creation time.
+#if !defined(__APPLE__) && !defined(_WIN32)
+    if ((backend == filament::backend::Backend::OPENGL ||
+         backend == filament::backend::Backend::DEFAULT) &&
+        !shared_context_) {
+        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        if (!gl_ctx.IsValid()) {
+            gl_ctx.InitializeStandalone();
+        }
+        if (gl_ctx.IsValid()) {
+            shared_context_ = gl_ctx.GetNativeContext();
+            utility::LogDebug(
+                    "EngineInstance: passing GS compute context to Filament "
+                    "as sharedGLContext ({:p}).",
+                    shared_context_);
+        }
+    }
+#endif
+
     engine_ = filament::Engine::create(backend, nullptr, shared_context_);
     if (!engine_) {
         utility::LogError("Failed to create Filament engine.");

@@ -88,6 +88,8 @@ public:
         RenderTargetHandle render_target;
         std::uint32_t width = 0;
         std::uint32_t height = 0;
+        std::uint32_t scene_depth_gl_handle = 0;  // GL texture for depth
+        std::uint32_t color_gl_handle = 0;  // GL texture for GS color output
         ViewRenderData render_data;
         std::vector<PassDispatch> pass_dispatches;
         bool has_render_data = false;
@@ -102,9 +104,17 @@ public:
     ~GaussianComputeRenderer();
 
     void BeginFrame();
-    void RenderView(FilamentView& view, const FilamentScene& scene);
+    void RenderGeometryStage(FilamentView& view, const FilamentScene& scene);
+    void RenderCompositeStage(FilamentView& view);
     void PruneOutputs(
             const std::unordered_set<const FilamentView*>& live_views);
+
+    /// Destroys GS output targets for a specific view immediately, clearing
+    /// the view's render target first.  Must be called before any Filament
+    /// texture used as an attachment is freed (e.g. on window resize before
+    /// FilamentView::color_buffer_ is destroyed) to prevent a
+    /// use-after-free crash in Filament's handle validation.
+    void InvalidateOutputForView(FilamentView& view);
 
     bool IsEnabled() const;
     void SetEnabled(bool enabled);
@@ -113,6 +123,9 @@ public:
     bool HasOutput(const FilamentView& view) const;
     TextureHandle GetColorTexture(const FilamentView& view) const;
     TextureHandle GetDepthTexture(const FilamentView& view) const;
+    /// Returns the GL texture handle for the scene depth texture
+    /// that Filament should render into (shared via import).
+    std::uint32_t GetSceneDepthGLHandle(const FilamentView& view) const;
     const ViewRenderData* GetViewRenderData(const FilamentView& view) const;
     const std::vector<PassDispatch>* GetPassDispatches(
             const FilamentView& view) const;
@@ -128,7 +141,7 @@ public:
 private:
     using ViewKey = const FilamentView*;
 
-    OutputTargets& PrepareOutputTargets(const FilamentView& view);
+    OutputTargets& PrepareOutputTargets(FilamentView& view);
     void ResetOutputTargets(OutputTargets& targets);
     ViewRenderData ExtractViewRenderData(const FilamentView& view) const;
     bool UpdateViewRenderData(OutputTargets& targets, const FilamentView& view);

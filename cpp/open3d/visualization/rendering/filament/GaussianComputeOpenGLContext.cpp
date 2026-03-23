@@ -83,6 +83,11 @@ bool GaussianComputeOpenGLContext::Initialize() {
         return true;
     }
 
+    // Called from RenderGeometryStage (after Filament engine exists).
+    // InitializeStandalone() should already have been called from
+    // FilamentEngine.cpp *before* Engine::create(), making this a no-op.
+    // If not (e.g. non-GL backend path), fall back to GLX/EGL independent
+    // init for compute-only work.
     backend_ = DetectBackend();
     if (backend_ == Backend::kGLX) {
         if (InitializeGLX()) {
@@ -95,40 +100,118 @@ bool GaussianComputeOpenGLContext::Initialize() {
     return InitializeEGL();
 }
 
+bool GaussianComputeOpenGLContext::InitializeStandalone() {
+    // Creates a standalone GL context (no Filament sharing required), meant
+    // to be called BEFORE Filament's Engine::create() so the context can be
+    // passed as the sharedGLContext.  Filament will then create its own
+    // context sharing our GL namespace (same GLX_FBCONFIG_ID, same Display).
+    if (initialized_) {
+        return true;
+    }
+    backend_ = DetectBackend();
+    if (backend_ == Backend::kGLX) {
+        if (InitializeGLXStandalone()) {
+            return true;
+        }
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: GLX standalone init failed, "
+                "trying EGL.");
+        backend_ = Backend::kEGL;
+    }
+    return InitializeEGL();
+}
+
+void* GaussianComputeOpenGLContext::GetNativeContext() const {
+    if (!initialized_) {
+        return nullptr;
+    }
+    // Return the underlying native context handle so it can be passed to
+    // Filament's Engine::create() as the shared GL context.
+    if (backend_ == Backend::kGLX) {
+        return glx_context_;  // GLXContext (opaque pointer)
+    } else {
+        return egl_context_;  // EGLContext (opaque pointer)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // GLX backend (X11)
 // ---------------------------------------------------------------------------
 bool GaussianComputeOpenGLContext::InitializeGLX() {
-    Display* dpy = XOpenDisplay(nullptr);
-    if (!dpy) {
+    // Create a GLX context that SHARES Filament's GL object namespace.
+    // This is required so that GL textures created in our context are
+    // visible to Filament (for zero-copy import()) and vice-versa.
+    //
+    // Strategy: Filament's context must be current when this is called
+    // (after engine creation + flushAndWait).  We query its FBConfig ID,
+    // find the matching GLXFBConfig, and create our context sharing with it.
+    // This is exactly what Filament's own PlatformGLX does when it receives
+    // a sharedGLContext argument.
+
+    // 1. Get Filament's current context and display.
+    GLXContext filament_ctx = glXGetCurrentContext();
+    Display* dpy = glXGetCurrentDisplay();
+    if (!filament_ctx || !dpy) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: XOpenDisplay failed.");
+                "GaussianComputeOpenGLContext: No current GLX context — "
+                "Filament must be initialized and its context current.");
         return false;
     }
 
-    // Choose an FBConfig that supports pbuffer + RGBA.
-    // clang-format off
-    const int fb_attribs[] = {
-        GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
-        GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-        GLX_RED_SIZE,      8,
-        GLX_GREEN_SIZE,    8,
-        GLX_BLUE_SIZE,     8,
-        None
-    };
-    // clang-format on
-
-    int fb_count = 0;
-    GLXFBConfig* fbc =
-            glXChooseFBConfig(dpy, DefaultScreen(dpy), fb_attribs, &fb_count);
-    if (!fbc || fb_count == 0) {
+    // 2. Query the FBConfig ID that Filament's context uses.
+    int used_fb_id = -1;
+    if (glXQueryContext(dpy, filament_ctx, GLX_FBCONFIG_ID, &used_fb_id) !=
+                0 ||
+        used_fb_id < 0) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: glXChooseFBConfig failed.");
-        XCloseDisplay(dpy);
+                "GaussianComputeOpenGLContext: Failed to query "
+                "GLX_FBCONFIG_ID from Filament's context.");
         return false;
     }
 
-    // Load glXCreateContextAttribsARB (GLX_ARB_create_context extension).
+    // 3. Find the matching FBConfig from all available configs.
+    int num_configs = 0;
+    GLXFBConfig* all_configs =
+            glXGetFBConfigs(dpy, DefaultScreen(dpy), &num_configs);
+    if (!all_configs || num_configs == 0) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: glXGetFBConfigs failed.");
+        return false;
+    }
+
+    GLXFBConfig matched_config = nullptr;
+    for (int i = 0; i < num_configs; ++i) {
+        int fb_id = -1;
+        if (glXGetFBConfigAttrib(dpy, all_configs[i], GLX_FBCONFIG_ID,
+                                 &fb_id) == 0 &&
+            fb_id == used_fb_id) {
+            matched_config = all_configs[i];
+            break;
+        }
+    }
+    XFree(all_configs);
+
+    if (!matched_config) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: No FBConfig matches "
+                "Filament's GLX_FBCONFIG_ID={}.",
+                used_fb_id);
+        return false;
+    }
+
+    // Log the matched FBConfig's capabilities.
+    {
+        int depth_size = 0, drawable_type = 0;
+        glXGetFBConfigAttrib(dpy, matched_config, GLX_DEPTH_SIZE, &depth_size);
+        glXGetFBConfigAttrib(dpy, matched_config, GLX_DRAWABLE_TYPE,
+                             &drawable_type);
+        utility::LogDebug(
+                "GaussianComputeOpenGLContext: Matched FBConfig id={} "
+                "depth={} drawable_type=0x{:X}",
+                used_fb_id, depth_size, drawable_type);
+    }
+
+    // 4. Load glXCreateContextAttribsARB.
     using CreateContextAttribsARB = GLXContext (*)(Display*, GLXFBConfig,
                                                    GLXContext, Bool,
                                                    const int*);
@@ -139,13 +222,11 @@ bool GaussianComputeOpenGLContext::InitializeGLX() {
     if (!glXCreateContextAttribsARB) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: "
-                "glXCreateContextAttribsARB not available.");
-        XFree(fbc);
-        XCloseDisplay(dpy);
+                "glXCreateContextAttribsARB unavailable.");
         return false;
     }
 
-    // Request an OpenGL 4.5 core profile context.
+    // 5. Create an OpenGL 4.5 core-profile context SHARED with Filament.
     // clang-format off
     const int ctx_attribs[] = {
         GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
@@ -155,25 +236,160 @@ bool GaussianComputeOpenGLContext::InitializeGLX() {
     };
     // clang-format on
 
-    GLXContext ctx = glXCreateContextAttribsARB(dpy, fbc[0], nullptr, True,
-                                                ctx_attribs);
+    GLXContext ctx = glXCreateContextAttribsARB(
+            dpy, matched_config, filament_ctx, True, ctx_attribs);
     if (!ctx) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: GLX context creation failed.");
-        XFree(fbc);
+                "GaussianComputeOpenGLContext: Shared GLX context "
+                "creation failed.");
+        return false;
+    }
+
+    // 6. Create a small offscreen X11 window as the GLX drawable.
+    // Using a window (not a deprecated PBuffer) with the matched FBConfig's
+    // visual.  The window is never mapped/displayed; it only provides a
+    // valid GLX drawable for glXMakeContextCurrent.
+    XVisualInfo* vis = glXGetVisualFromFBConfig(dpy, matched_config);
+    Window drawable = 0;
+    if (vis) {
+        XSetWindowAttributes swa;
+        swa.colormap = XCreateColormap(dpy, RootWindow(dpy, vis->screen),
+                                       vis->visual, AllocNone);
+        swa.border_pixel = 0;
+        drawable = XCreateWindow(
+                dpy, RootWindow(dpy, vis->screen),
+                0, 0, 1, 1, 0,
+                vis->depth, InputOutput, vis->visual,
+                CWColormap | CWBorderPixel, &swa);
+        XFree(vis);
+    }
+
+    if (!drawable) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: "
+                "Failed to create offscreen X11 window.");
+        glXDestroyContext(dpy, ctx);
+        return false;
+    }
+
+    // We borrow the Display* from Filament/GLFW — do NOT XCloseDisplay it.
+    x_display_ = dpy;
+    glx_context_ = ctx;
+    glx_drawable_ = drawable;
+    owns_display_ = false;
+    initialized_ = true;
+
+    utility::LogDebug(
+            "GaussianComputeOpenGLContext: Created shared GLX context "
+            "(FBConfig ID={}).",
+            used_fb_id);
+    return true;
+}
+
+bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
+    // Called BEFORE Filament's Engine::create().  Creates our compute context
+    // independently (no shareContext), then passes it to Filament so Filament
+    // creates its own context sharing ours — establishing a shared GL object
+    // namespace for zero-copy texture import().
+    //
+    // FBConfig requirements:
+    //  • GLX_WINDOW_BIT  – Filament renders to the GLFW window; the FBConfig
+    //    must be window-compatible so glXMakeContextCurrent(…, window, …)
+    //    succeeds after Filament matches our config.
+    //  • GLX_PBUFFER_BIT – Filament creates a dummy PBuffer for its idle
+    //    surface; PlatformGLX::createDriver requires this.
+    //  • DOUBLEBUFFER, DEPTH_SIZE 24 – standard rendering requirements that
+    //    match Filament's own defaults.
+
+    Display* dpy = XOpenDisplay(nullptr);
+    if (!dpy) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: XOpenDisplay failed "
+                "(standalone GLX init).");
+        return false;
+    }
+
+    // clang-format off
+    const int fb_attribs[] = {
+        GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT | GLX_PBUFFER_BIT,
+        GLX_RENDER_TYPE,   GLX_RGBA_BIT,
+        // GLX_DOUBLEBUFFER,  True,  // Slows down rendering significantly
+        GLX_RED_SIZE,      8,
+        GLX_GREEN_SIZE,    8,
+        GLX_BLUE_SIZE,     8,
+        GLX_DEPTH_SIZE,    24,
+        None
+    };
+    // clang-format on
+
+    int num_configs = 0;
+    GLXFBConfig* configs = glXChooseFBConfig(dpy, DefaultScreen(dpy),
+                                             fb_attribs, &num_configs);
+    if (!configs || num_configs == 0) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: glXChooseFBConfig failed "
+                "(standalone GLX init).");
+        XCloseDisplay(dpy);
+        return false;
+    }
+    GLXFBConfig chosen_config = configs[0];
+
+    // Log the config ID so we can verify PlatformGLX matches it.
+    int fb_id = -1;
+    glXGetFBConfigAttrib(dpy, chosen_config, GLX_FBCONFIG_ID, &fb_id);
+    utility::LogDebug(
+            "GaussianComputeOpenGLContext: Standalone GLX FBConfig ID={}.",
+            fb_id);
+    XFree(configs);
+
+    // Load glXCreateContextAttribsARB.
+    using CreateContextAttribsARB = GLXContext (*)(Display*, GLXFBConfig,
+                                                   GLXContext, Bool,
+                                                   const int*);
+    auto glXCreateContextAttribsARB =
+            reinterpret_cast<CreateContextAttribsARB>(glXGetProcAddressARB(
+                    reinterpret_cast<const GLubyte*>(
+                            "glXCreateContextAttribsARB")));
+    if (!glXCreateContextAttribsARB) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: "
+                "glXCreateContextAttribsARB unavailable "
+                "(standalone GLX init).");
         XCloseDisplay(dpy);
         return false;
     }
 
-    // Create a 1×1 GLX pbuffer (needed to make context current).
-    const int pbuf_attribs[] = {GLX_PBUFFER_WIDTH, 1, GLX_PBUFFER_HEIGHT, 1,
-                                None};
-    GLXPbuffer pbuf = glXCreatePbuffer(dpy, fbc[0], pbuf_attribs);
-    XFree(fbc);
+    // Create an OpenGL 4.5 core-profile context — no sharing yet.
+    // Filament will create ITS context sharing with THIS one.
+    // clang-format off
+    const int ctx_attribs[] = {
+        GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 5,
+        GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+        None
+    };
+    // clang-format on
 
+    GLXContext ctx = glXCreateContextAttribsARB(dpy, chosen_config,
+                                                nullptr,  // no share context
+                                                True, ctx_attribs);
+    if (!ctx) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: GL 4.5 context creation "
+                "failed (standalone GLX init).");
+        XCloseDisplay(dpy);
+        return false;
+    }
+
+    // Create a 1×1 PBuffer as our offscreen drawable.
+    const int pbuf_attribs[] = {GLX_PBUFFER_WIDTH, 1, GLX_PBUFFER_HEIGHT, 1,
+                                 None};
+    GLXPbuffer pbuf =
+            glXCreatePbuffer(dpy, chosen_config, pbuf_attribs);
     if (!pbuf) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: glXCreatePbuffer failed.");
+                "GaussianComputeOpenGLContext: PBuffer creation failed "
+                "(standalone GLX init).");
         glXDestroyContext(dpy, ctx);
         XCloseDisplay(dpy);
         return false;
@@ -182,10 +398,13 @@ bool GaussianComputeOpenGLContext::InitializeGLX() {
     x_display_ = dpy;
     glx_context_ = ctx;
     glx_drawable_ = pbuf;
+    owns_display_ = true;  // we opened this display, close it on Shutdown
     initialized_ = true;
 
     utility::LogDebug(
-            "GaussianComputeOpenGLContext: Created GLX context (X11).");
+            "GaussianComputeOpenGLContext: Standalone GLX context created "
+            "(FBConfig ID={}).  Pass to Filament as sharedContext.",
+            fb_id);
     return true;
 }
 
@@ -287,17 +506,25 @@ void GaussianComputeOpenGLContext::Shutdown() {
         auto dpy = static_cast<Display*>(x_display_);
         glXMakeContextCurrent(dpy, None, None, nullptr);
         if (glx_drawable_) {
-            glXDestroyPbuffer(dpy, glx_drawable_);
+            if (owns_display_) {
+                // Standalone init: drawable is a PBuffer.
+                glXDestroyPbuffer(dpy,
+                                  static_cast<GLXPbuffer>(glx_drawable_));
+            } else {
+                // Shared init: drawable is an offscreen X11 window.
+                XDestroyWindow(dpy, static_cast<Window>(glx_drawable_));
+            }
             glx_drawable_ = 0;
         }
         if (glx_context_) {
             glXDestroyContext(dpy, static_cast<GLXContext>(glx_context_));
             glx_context_ = nullptr;
         }
-        if (dpy) {
+        // Only close the display if we opened it ourselves.
+        if (dpy && owns_display_) {
             XCloseDisplay(dpy);
-            x_display_ = nullptr;
         }
+        x_display_ = nullptr;
     } else {
         auto display = static_cast<EGLDisplay>(egl_display_);
         eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE,

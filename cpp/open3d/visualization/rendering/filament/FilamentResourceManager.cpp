@@ -580,6 +580,26 @@ TextureHandle FilamentResourceManager::CreateDepthAttachmentTexture(
     return handle;
 }
 
+TextureHandle FilamentResourceManager::CreateImportedTexture(
+        std::uint32_t gl_handle,
+        int width,
+        int height,
+        int format,
+        int usage) {
+    using namespace filament;
+    auto texture = Texture::Builder()
+                           .width(width)
+                           .height(height)
+                           .levels(1)
+                           .format(static_cast<Texture::InternalFormat>(format))
+                           .usage(static_cast<Texture::Usage>(usage))
+                           .import(static_cast<intptr_t>(gl_handle))
+                           .build(engine_);
+    TextureHandle handle;
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+
 RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
         TextureHandle color, TextureHandle depth) {
     using namespace filament;

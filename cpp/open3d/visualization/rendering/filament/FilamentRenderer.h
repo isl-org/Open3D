@@ -106,6 +106,10 @@ public:
             const FilamentView& view) const;
     TextureHandle GetGaussianComputeDepthTexture(
             const FilamentView& view) const;
+    /// Invalidates GS outputs for the given view; see
+    /// GaussianComputeRenderer::InvalidateOutputForView for why this is
+    /// needed before FilamentView::color_buffer_ is destroyed on resize.
+    void InvalidateGaussianComputeOutput(FilamentView& view);
 
     filament::Renderer* GetNative() { return renderer_; }
 

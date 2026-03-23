@@ -23,8 +23,8 @@ void PrintUsage() {
     utility::LogInfo("Usage: GaussianSplat <filename.[ply|splat]>");
 }
 
-int main(int argc, char **argv) {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+int main(int argc, char** argv) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     if (argc != 2 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintUsage();
@@ -36,6 +36,20 @@ int main(int argc, char **argv) {
         utility::LogWarning("Failed to read file {}", argv[1]);
         return 1;
     }
-    visualization::Draw({visualization::DrawObject(argv[1], gsplat)},
-                        "Gaussian Splat");
+
+    // Create a test sphere mesh for depth compositing testing.
+    auto sphere = t::geometry::TriangleMesh::CreateSphere(0.2, 20);
+    sphere.ComputeVertexNormals();
+    auto colors = core::Tensor::Init<float>({{1.0f, 0.2f, 0.2f}})
+                          .Expand(sphere.GetVertexPositions().GetShape());
+    sphere.SetVertexColors(colors);  // Red: shape {1,3}
+    // Position the sphere at the 3DGS scene center.
+    auto bbox = gsplat->GetAxisAlignedBoundingBox();
+    auto center = bbox.GetCenter();
+    sphere.Translate(center, /*relative=*/false);
+    auto p_sphere = std::make_shared<t::geometry::TriangleMesh>(sphere);
+
+    visualization::Draw({visualization::DrawObject(argv[1], gsplat),
+                         visualization::DrawObject("test_sphere", p_sphere)},
+                        "Gaussian Splat + Mesh Depth Test");
 }

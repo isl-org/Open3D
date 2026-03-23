@@ -94,6 +94,16 @@ public:
     // Creates a texture for use as a depth attachment to a RenderTarget
     TextureHandle CreateDepthAttachmentTexture(int width, int height);
 
+    // Creates a Filament texture that wraps an externally-owned GL texture.
+    // The caller retains ownership of the GL texture — Filament will not
+    // delete it.  `format` is a Filament InternalFormat, `usage` is a
+    // combination of Filament TextureUsage flags.
+    TextureHandle CreateImportedTexture(std::uint32_t gl_handle,
+                                        int width,
+                                        int height,
+                                        int format,
+                                        int usage);
+
     RenderTargetHandle CreateRenderTarget(TextureHandle color,
                                           TextureHandle depth);
 

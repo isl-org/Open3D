@@ -8,6 +8,9 @@
 
 #include <functional>
 
+#include <filament/Texture.h>
+#include <filament/View.h>
+
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -33,11 +36,15 @@ public:
     virtual const char* GetName() const = 0;
     virtual void BeginFrame(std::uint64_t frame_index) = 0;
     virtual void ForgetView(const FilamentView& view) = 0;
-    virtual bool Render(const FilamentView& view,
-                        const FilamentScene& scene,
-                        const ViewRenderData& render_data,
-                        const std::vector<PassDispatch>& dispatches,
-                        OutputTargets& targets) = 0;
+    virtual bool RenderGeometryStage(const FilamentView& view,
+                                     const FilamentScene& scene,
+                                     const ViewRenderData& render_data,
+                                     const std::vector<PassDispatch>& dispatches,
+                                     OutputTargets& targets) = 0;
+    virtual bool RenderCompositeStage(const FilamentView& view,
+                                      const ViewRenderData& render_data,
+                                      const std::vector<PassDispatch>& dispatches,
+                                      OutputTargets& targets) = 0;
 };
 
 namespace {
@@ -63,6 +70,7 @@ struct LoadedShaderSource {
     bool loaded = false;
 };
 
+[[maybe_unused]]
 bool ReadTextFile(const std::string& path, std::string* contents) {
     std::vector<char> bytes;
     std::string error;
@@ -88,17 +96,24 @@ public:
         logged_views_.erase(&view);
     }
 
-    bool Render(const FilamentView& view,
-                const FilamentScene&,
-                const GaussianComputeRenderer::ViewRenderData&,
-                const std::vector<GaussianComputeRenderer::PassDispatch>&,
-                GaussianComputeRenderer::OutputTargets&) override {
+    bool RenderGeometryStage(const FilamentView& view,
+                             const FilamentScene&,
+                             const GaussianComputeRenderer::ViewRenderData&,
+                             const std::vector<GaussianComputeRenderer::PassDispatch>&,
+                             GaussianComputeRenderer::OutputTargets&) override {
         if (logged_views_.insert(&view).second) {
             utility::LogInfo(
                     "Gaussian compute backend '{}' is selected but GPU "
                     "dispatch is not implemented yet.",
                     name_);
         }
+        return false;
+    }
+
+    bool RenderCompositeStage(const FilamentView& view,
+                              const GaussianComputeRenderer::ViewRenderData&,
+                              const std::vector<GaussianComputeRenderer::PassDispatch>&,
+                              GaussianComputeRenderer::OutputTargets&) override {
         return false;
     }
 
@@ -159,13 +174,13 @@ public:
         }
     }
 
-    bool Render(const FilamentView& view,
+    bool RenderGeometryStage(const FilamentView& view,
                 const FilamentScene& scene,
                 const GaussianComputeRenderer::ViewRenderData& render_data,
                 const std::vector<GaussianComputeRenderer::PassDispatch>&
                         dispatches,
                 GaussianComputeRenderer::OutputTargets& targets) override {
-        utility::LogDebug("GS OpenGL Render: begin frame {}x{}",
+        utility::LogDebug("GS OpenGL RenderGeometryStage: begin frame {}x{}",
                         targets.width, targets.height);
         auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() && !gl_ctx.Initialize()) {
@@ -468,20 +483,86 @@ public:
             DrainGLErrors("after RadixSort");
         }
 
+        // We defer Finish to allow overlap with Filament scene draw
+        gl_ctx.ReleaseCurrent();
+        return true;
+    }
+
+    bool RenderCompositeStage(const FilamentView& view,
+                 const GaussianComputeRenderer::ViewRenderData& render_data,
+                 const std::vector<GaussianComputeRenderer::PassDispatch>&
+                         dispatches,
+                 GaussianComputeRenderer::OutputTargets& targets) override {
+        utility::LogDebug("GS OpenGL RenderCompositeStage.");
+
+        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        if (!gl_ctx.MakeCurrent()) {
+            return false;
+        }
+
+        auto it = view_states_.find(&view);
+        if (it == view_states_.end() || !it->second.view_params_buf.valid) {
+            gl_ctx.ReleaseCurrent();
+            return false;
+        }
+        ViewState& vs = it->second;
+
+        auto find_dispatch = [&](GaussianComputeRenderer::PassType type)
+                -> const GaussianComputeRenderer::PassDispatch* {
+            for (const auto& d : dispatches) {
+                if (d.type == type) {
+                    return &d;
+                }
+            }
+            return nullptr;
+        };
+
+        auto dispatch_pass =
+                [&](GaussianComputeRenderer::PassType type,
+                    const GLComputeProgram& prog,
+                    const char* name) -> bool {
+            const auto* d = find_dispatch(type);
+            if (!d || !prog.valid) {
+                return false;
+            }
+            UseProgram(prog);
+            DispatchCompute(std::max(1, d->group_count.x()),
+                            std::max(1, d->group_count.y()),
+                            std::max(1, d->group_count.z()));
+            return true;
+        };
+
         // Rebind sorted entries for composite (radix sort reused
         // binding points 0-4).
         BindUBO(0, vs.view_params_buf);
         BindSSBO(6, vs.projected_buf);
         BindSSBO(11, vs.sorted_entries_buf);
 
+        // Enable scene depth in the UBO.  The geometry stage packed it
+        // with depth_range_and_flags.w = 0; set it to 1 here if the
+        // shared scene depth texture is available.
+        const bool has_scene_depth =
+                (targets.scene_depth_gl_handle != 0);
+        if (has_scene_depth) {
+            float flag = 1.0f;
+            // depth_range_and_flags[3] is at byte offset 268 in the UBO.
+            static constexpr std::size_t kDepthFlagOffset =
+                    offsetof(PackedGaussianViewParams, depth_range_and_flags) +
+                    3 * sizeof(float);
+            UploadGLBuffer(vs.view_params_buf, &flag, sizeof(flag),
+                           kDepthFlagOffset);
+        }
+
         // --- Pass 5: Composite ---
-        // Create / resize output textures.
-        vs.color_tex = ResizeGLTexture2D(vs.color_tex, targets.width,
-                                         targets.height, kGL_RGBA16F);
+        // Use GL color texture from PrepareOutputTargets for the output.
+        GLTextureHandle color_out{targets.color_gl_handle, targets.width,
+                                  targets.height,
+                                  targets.color_gl_handle != 0};
+        // Keep a per-view depth output texture for the composite shader.
         vs.depth_tex = ResizeGLTexture2D(vs.depth_tex, targets.width,
                                          targets.height, kGL_R32F);
 
-        if (!vs.color_tex.valid || !vs.depth_tex.valid) {
+        if (!color_out.valid || !vs.depth_tex.valid) {
             utility::LogWarning(
                     "Gaussian compute OpenGL: Failed to create output "
                     "textures.");
@@ -489,9 +570,17 @@ public:
             return false;
         }
 
-        BindImage(12, vs.color_tex, kGL_RGBA16F, kGL_WRITE_ONLY);
+        BindImage(12, color_out, kGL_RGBA16F, kGL_WRITE_ONLY);
         BindImage(13, vs.depth_tex, kGL_R32F, kGL_WRITE_ONLY);
-        DrainGLErrors("after BindImage for composite");
+
+        // Bind scene depth as a sampler at unit 14 for occlusion testing.
+        if (has_scene_depth) {
+            GLTextureHandle scene_depth{targets.scene_depth_gl_handle,
+                                        targets.width, targets.height, true};
+            BindSamplerTexture(14, scene_depth);
+        }
+
+        DrainGLErrors("after BindImage/BindSampler for composite");
 
         if (!dispatch_pass(GaussianComputeRenderer::PassType::kComposite,
                            programs_[kProgComposite], "Composite")) {
@@ -501,22 +590,71 @@ public:
         GLComputeFullBarrier();
         DrainGLErrors("after Composite");
 
-        // --- Read back output to CPU ---
-        const std::size_t pixel_count =
-                static_cast<std::size_t>(targets.width) * targets.height;
-        std::vector<Std430Vec4> color_pixels(pixel_count);
-        DownloadGLTexture2D(vs.color_tex, color_pixels.data(), kGL_RGBA);
-
-        // Depth readback is not needed for current compositing (ImGui overlay).
-        std::vector<float> depth_pixels(pixel_count, 0.0f);
-
         // Ensure all GL work completes before Filament uses the context.
         gl_ctx.Finish();
+
+        // Debug: sample center pixel from GS color output.
+        {
+            static int debug_count = 0;
+            if (debug_count < 5) {
+                // Use DownloadGLTexture2D to read a few pixels.
+                std::vector<float> pixels(targets.width * targets.height * 4);
+                DownloadGLTexture2D(color_out, pixels.data(), kGL_RGBA);
+                int cx = targets.width / 2, cy = targets.height / 2;
+                int idx = (cy * targets.width + cx) * 4;
+                utility::LogDebug(
+                        "GS composite debug: center pixel = ({}, {}, {}, "
+                        "{}), tex_id={}, size={}x{}",
+                        pixels[idx], pixels[idx + 1], pixels[idx + 2],
+                        pixels[idx + 3],
+                        color_out.id, targets.width, targets.height);
+                // Also check if any pixel has non-zero alpha.
+                float max_alpha = 0;
+                int nonzero = 0;
+                for (size_t i = 3; i < pixels.size(); i += 4) {
+                    if (pixels[i] > 0.001f) ++nonzero;
+                    if (pixels[i] > max_alpha) max_alpha = pixels[i];
+                }
+                utility::LogDebug(
+                        "GS composite debug: nonzero_alpha_pixels={}/{}, "
+                        "max_alpha={}",
+                        nonzero, targets.width * targets.height, max_alpha);
+
+                // Read scene depth texture for diagnosis.
+                if (has_scene_depth) {
+                    GLTextureHandle scene_depth_tex{
+                            targets.scene_depth_gl_handle,
+                            targets.width, targets.height, true};
+                    std::vector<float> depth_pixels(
+                            targets.width * targets.height);
+                    DownloadGLTexture2D(scene_depth_tex, depth_pixels.data(),
+                                        kGL_DEPTH_COMPONENT);  // 0x1902
+                    int didx = cy * targets.width + cx;
+                    float min_d = 1e30f, max_d = -1e30f;
+                    int zeros = 0;
+                    for (size_t i = 0; i < depth_pixels.size(); ++i) {
+                        if (depth_pixels[i] == 0.0f) ++zeros;
+                        if (depth_pixels[i] < min_d) min_d = depth_pixels[i];
+                        if (depth_pixels[i] > max_d) max_d = depth_pixels[i];
+                    }
+                    utility::LogDebug(
+                            "GS depth debug: center_depth={}, "
+                            "min={}, max={}, zero_pixels={}/{}",
+                            depth_pixels[didx], min_d, max_d,
+                            zeros, (int)depth_pixels.size());
+                }
+
+                DrainGLErrors("after debug readback");
+                ++debug_count;
+            }
+        }
+
         gl_ctx.ReleaseCurrent();
 
-        // Upload to Filament textures (CPU → Filament).
-        return UploadOutputTextures(resource_mgr_, color_pixels, depth_pixels,
-                                    targets.width, targets.height, targets);
+        // Zero-copy: the GS color texture is already imported into Filament
+        // (targets.color).  ImGui can sample it directly.
+        targets.has_valid_output = true;
+        return true;
     }
 
 private:
@@ -539,8 +677,7 @@ private:
         GLBufferHandle histogram_buf;
         GLBufferHandle radix_params_buf;
         GLBufferHandle sorted_entries_buf;
-        GLTextureHandle color_tex;
-        GLTextureHandle depth_tex;
+        GLTextureHandle depth_tex;  // GS depth output (binding 13)
         std::uint64_t cached_scene_id = 0;
         std::uint32_t cached_splat_count = 0;
     };
@@ -617,7 +754,6 @@ private:
             DestroyGLBuffer(vs.histogram_buf);
             DestroyGLBuffer(vs.radix_params_buf);
             DestroyGLBuffer(vs.sorted_entries_buf);
-            DestroyGLTexture(vs.color_tex);
             DestroyGLTexture(vs.depth_tex);
             gl_ctx.ReleaseCurrent();
         }
@@ -669,275 +805,27 @@ public:
 
     void BeginFrame(std::uint64_t) override {}
 
-    void ForgetView(const FilamentView&) override {}
+    void ForgetView(const FilamentView& view) override {
+        logged_views_.erase(&view);
+    }
 
-    bool
-    Render(const FilamentView& view,
-           const FilamentScene& scene,
-           const GaussianComputeRenderer::ViewRenderData& render_data,
-           const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
-           GaussianComputeRenderer::OutputTargets& targets) override {
-        const FilamentMetalNativeHandles handles =
-                GetFilamentMetalNativeHandles(EngineInstance::GetPlatform());
-        if (!handles.valid) {
-            utility::LogWarning(
-                    "Gaussian compute Metal backend could not query Filament "
-                    "native Metal handles.");
-            return false;
+    bool RenderGeometryStage(const FilamentView& view,
+                             const FilamentScene& scene,
+                             const GaussianComputeRenderer::ViewRenderData& render_data,
+                             const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
+                             GaussianComputeRenderer::OutputTargets& targets) override {
+        // Implement split later if needed. For now just track it in the map to allow placeholder.
+        if (logged_views_.insert(&view).second) {
+            utility::LogInfo("Metal backend splits not fully implemented. RenderGeometryStage.");
         }
+        return false;
+    }
 
-        EnsurePassPipelinesLoaded(handles.device);
-
-        const GaussianSplatSourceData* source =
-                scene.GetGaussianSplatSourceData();
-        if (!source || source->splat_count == 0) {
-            return false;
-        }
-        PackedGaussianScene packed =
-                PackGaussianSceneInputs(*source, render_data, config_,
-                                        dispatches);
-        if (!packed.valid) {
-            return false;
-        }
-
-        std::vector<MetalBufferHandle> buffers_to_destroy;
-        auto destroy_buffers = [&buffers_to_destroy]() {
-            for (MetalBufferHandle handle : buffers_to_destroy) {
-                DestroyMetalSharedBuffer(handle);
-            }
-        };
-
-        auto create_buffer = [&](const std::string& label, std::size_t size,
-                                 const void* initial_data) {
-            std::string error;
-            MetalBufferHandle handle = CreateMetalSharedBuffer(
-                    handles.device, std::max<std::size_t>(size, 16u), label,
-                    &error);
-            if (!handle.valid) {
-                utility::LogWarning(
-                        "Gaussian compute Metal backend failed to allocate {}: "
-                        "{}",
-                        label, error);
-                return handle;
-            }
-            buffers_to_destroy.push_back(handle);
-            if (size > 0) {
-                if (initial_data) {
-                    if (!UploadMetalSharedBuffer(handle, initial_data, size, 0,
-                                                 &error)) {
-                        utility::LogWarning(
-                                "Gaussian compute Metal backend failed to "
-                                "upload {}: {}",
-                                label, error);
-                        return MetalBufferHandle();
-                    }
-                } else {
-                    std::vector<std::uint8_t> zeros(size, 0u);
-                    if (!UploadMetalSharedBuffer(handle, zeros.data(), size, 0,
-                                                 &error)) {
-                        utility::LogWarning(
-                                "Gaussian compute Metal backend failed to "
-                                "clear {}: {}",
-                                label, error);
-                        return MetalBufferHandle();
-                    }
-                }
-            }
-            return handle;
-        };
-
-        const std::size_t projected_size =
-                packed.splat_count * sizeof(PackedProjectedGaussian);
-        const std::size_t tile_scalar_size =
-                packed.tile_count * sizeof(std::uint32_t);
-
-        MetalBufferHandle view_params_buffer = create_buffer(
-                "gaussian_view_params", sizeof(PackedGaussianViewParams),
-                &packed.view_params);
-        MetalBufferHandle positions_buffer =
-                create_buffer("gaussian_positions",
-                              packed.positions.size() * sizeof(Std430Vec4),
-                              packed.positions.data());
-        MetalBufferHandle scales_buffer =
-                create_buffer("gaussian_scales",
-                              packed.log_scales.size() * sizeof(Std430Vec4),
-                              packed.log_scales.data());
-        MetalBufferHandle rotations_buffer =
-                create_buffer("gaussian_rotations",
-                              packed.rotations.size() * sizeof(Std430Vec4),
-                              packed.rotations.data());
-        MetalBufferHandle dc_opacity_buffer =
-                create_buffer("gaussian_dc_opacity",
-                              packed.dc_opacity.size() * sizeof(Std430Vec4),
-                              packed.dc_opacity.data());
-        MetalBufferHandle sh_buffer = create_buffer(
-                "gaussian_sh",
-                packed.sh_coefficients.size() * sizeof(Std430Vec4),
-                packed.sh_coefficients.data());
-        MetalBufferHandle projected_buffer =
-                create_buffer("gaussian_projected", projected_size, nullptr);
-        MetalBufferHandle tile_counts_buffer = create_buffer(
-                "gaussian_tile_counts", tile_scalar_size, nullptr);
-        MetalBufferHandle tile_offsets_buffer = create_buffer(
-                "gaussian_tile_offsets", tile_scalar_size, nullptr);
-        MetalBufferHandle tile_heads_buffer =
-                create_buffer("gaussian_tile_heads", tile_scalar_size, nullptr);
-        std::array<std::uint32_t, kGaussianCounterCount> counters = {0u, 0u, 0u,
-                                                                     0u};
-        MetalBufferHandle counters_buffer = create_buffer(
-                "gaussian_counters", sizeof(counters), counters.data());
-
-        if (!view_params_buffer.valid || !positions_buffer.valid ||
-            !scales_buffer.valid || !rotations_buffer.valid ||
-            !dc_opacity_buffer.valid || !sh_buffer.valid ||
-            !projected_buffer.valid || !tile_counts_buffer.valid ||
-            !tile_offsets_buffer.valid || !tile_heads_buffer.valid ||
-            !counters_buffer.valid) {
-            destroy_buffers();
-            return false;
-        }
-
-        auto find_dispatch = [&](GaussianComputeRenderer::PassType type)
-                -> const GaussianComputeRenderer::PassDispatch* {
-            for (const auto& dispatch : dispatches) {
-                if (dispatch.type == type) {
-                    return &dispatch;
-                }
-            }
-            return nullptr;
-        };
-
-        auto dispatch_pass = [&](GaussianComputeRenderer::PassType type,
-                                 std::initializer_list<MetalBufferBinding>
-                                         bindings) {
-            const auto* dispatch = find_dispatch(type);
-            auto pipeline_it = pipelines_.find(type);
-            if (!dispatch || pipeline_it == pipelines_.end() ||
-                !pipeline_it->second.pipeline.valid) {
-                return false;
-            }
-
-            MetalComputeDispatch metal_dispatch;
-            metal_dispatch.pipeline = pipeline_it->second.pipeline;
-            metal_dispatch.buffers.assign(bindings.begin(), bindings.end());
-            metal_dispatch.group_count_x =
-                    std::max(1, dispatch->group_count.x());
-            metal_dispatch.group_count_y =
-                    std::max(1, dispatch->group_count.y());
-            metal_dispatch.group_count_z =
-                    std::max(1, dispatch->group_count.z());
-            metal_dispatch.thread_count_x =
-                    std::max(1, dispatch->group_size.x());
-            metal_dispatch.thread_count_y =
-                    std::max(1, dispatch->group_size.y());
-            metal_dispatch.thread_count_z =
-                    std::max(1, dispatch->group_size.z());
-
-            std::string error;
-            if (!DispatchMetalComputePipelines(handles.command_queue,
-                                               {metal_dispatch}, &error)) {
-                utility::LogWarning(
-                        "Gaussian compute Metal backend failed in pass {}: {}",
-                        pipeline_it->second.entry_point, error);
-                return false;
-            }
-            return true;
-        };
-
-        if (!dispatch_pass(GaussianComputeRenderer::PassType::kProjection,
-                           {{0u, view_params_buffer, 0u},
-                            {1u, positions_buffer, 0u},
-                            {2u, scales_buffer, 0u},
-                            {3u, rotations_buffer, 0u},
-                            {4u, dc_opacity_buffer, 0u},
-                            {5u, sh_buffer, 0u},
-                            {6u, projected_buffer, 0u}}) ||
-            !dispatch_pass(GaussianComputeRenderer::PassType::kTilePrefixSum,
-                           {{0u, view_params_buffer, 0u},
-                            {6u, projected_buffer, 0u},
-                            {7u, tile_counts_buffer, 0u},
-                            {8u, tile_offsets_buffer, 0u},
-                            {9u, tile_heads_buffer, 0u},
-                            {10u, counters_buffer, 0u}})) {
-            destroy_buffers();
-            return false;
-        }
-
-        std::string counter_error;
-        if (!DownloadMetalSharedBuffer(counters_buffer, counters.data(),
-                                       sizeof(counters), 0u, &counter_error)) {
-            utility::LogWarning(
-                    "Gaussian compute Metal backend failed to read counters: "
-                    "{}",
-                    counter_error);
-            destroy_buffers();
-            return false;
-        }
-
-        const std::uint32_t total_entries = counters[0];
-        MetalBufferHandle tile_entries_buffer = create_buffer(
-                "gaussian_tile_entries",
-                std::max<std::size_t>(sizeof(PackedTileEntry),
-                                      total_entries * sizeof(PackedTileEntry)),
-                nullptr);
-        MetalBufferHandle out_color_buffer = create_buffer(
-                "gaussian_out_color",
-                std::max<std::size_t>(sizeof(Std430Vec4),
-                                      packed.pixel_count * sizeof(Std430Vec4)),
-                nullptr);
-        MetalBufferHandle out_depth_buffer = create_buffer(
-                "gaussian_out_depth",
-                std::max<std::size_t>(sizeof(float),
-                                      packed.pixel_count * sizeof(float)),
-                nullptr);
-        if (!tile_entries_buffer.valid || !out_color_buffer.valid ||
-            !out_depth_buffer.valid) {
-            destroy_buffers();
-            return false;
-        }
-
-        if (!dispatch_pass(GaussianComputeRenderer::PassType::kTileScatter,
-                           {{0u, view_params_buffer, 0u},
-                            {6u, projected_buffer, 0u},
-                            {8u, tile_offsets_buffer, 0u},
-                            {9u, tile_heads_buffer, 0u},
-                            {11u, tile_entries_buffer, 0u}}) ||
-            !dispatch_pass(GaussianComputeRenderer::PassType::kTileSort,
-                           {{0u, view_params_buffer, 0u},
-                            {7u, tile_counts_buffer, 0u},
-                            {8u, tile_offsets_buffer, 0u},
-                            {11u, tile_entries_buffer, 0u}}) ||
-            !dispatch_pass(GaussianComputeRenderer::PassType::kComposite,
-                           {{0u, view_params_buffer, 0u},
-                            {6u, projected_buffer, 0u},
-                            {7u, tile_counts_buffer, 0u},
-                            {8u, tile_offsets_buffer, 0u},
-                            {11u, tile_entries_buffer, 0u},
-                            {12u, out_color_buffer, 0u},
-                            {13u, out_depth_buffer, 0u}})) {
-            destroy_buffers();
-            return false;
-        }
-
-        std::vector<Std430Vec4> color_pixels(packed.pixel_count);
-        std::vector<float> depth_pixels(packed.pixel_count, 0.0f);
-        std::string readback_error;
-        if (!DownloadMetalSharedBuffer(out_color_buffer, color_pixels.data(),
-                                       color_pixels.size() * sizeof(Std430Vec4),
-                                       0u, &readback_error) ||
-            !DownloadMetalSharedBuffer(out_depth_buffer, depth_pixels.data(),
-                                       depth_pixels.size() * sizeof(float), 0u,
-                                       &readback_error)) {
-            utility::LogWarning(
-                    "Gaussian compute Metal backend failed to read outputs: {}",
-                    readback_error);
-            destroy_buffers();
-            return false;
-        }
-
-        destroy_buffers();
-        return UploadOutputTextures(resource_mgr_, color_pixels, depth_pixels,
-                                    targets.width, targets.height, targets);
+    bool RenderCompositeStage(const FilamentView& view,
+                              const GaussianComputeRenderer::ViewRenderData& render_data,
+                              const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
+                              GaussianComputeRenderer::OutputTargets& targets) override {
+        return false;
     }
 
 private:
@@ -995,6 +883,7 @@ private:
 
     FilamentResourceManager& resource_mgr_;
     const GaussianComputeRenderer::RenderConfig& config_;
+    std::unordered_set<const FilamentView*> logged_views_;
 
     std::unordered_map<GaussianComputeRenderer::PassType, CompiledPass>
             pipelines_;
@@ -1169,13 +1058,13 @@ void GaussianComputeRenderer::BeginFrame() {
     }
 }
 
-void GaussianComputeRenderer::RenderView(FilamentView& view,
+void GaussianComputeRenderer::RenderGeometryStage(FilamentView& view,
                                          const FilamentScene& scene) {
     if (!enabled_ || !scene.HasGaussianSplatGeometry()) {
         static bool logged_once = false;
         if (!logged_once) {
             utility::LogDebug(
-                    "GS RenderView: skip (enabled={}, hasGS={})",
+                    "GS RenderGeometryStage: skip (enabled={}, hasGS={})",
                     enabled_, scene.HasGaussianSplatGeometry());
             logged_once = true;
         }
@@ -1199,21 +1088,52 @@ void GaussianComputeRenderer::RenderView(FilamentView& view,
     }
 
     utility::LogDebug(
-            "GS RenderView: rendering (view_changed={}, dispatch_changed={},"
+            "GS RenderGeometryStage: rendering (view_changed={}, dispatch_changed={},"
             " scene_changed={}, backend={}, has_render_data={})",
             view_changed, dispatch_changed, scene_changed,
             backend_ != nullptr, targets.has_render_data);
 
     bool rendered = false;
     if (backend_ && targets.has_render_data) {
-        rendered = backend_->Render(view, scene, targets.render_data,
+        rendered = backend_->RenderGeometryStage(view, scene, targets.render_data,
+                                    targets.pass_dispatches, targets);
+    }
+    if (rendered) {
+        targets.last_scene_change_id = scene_change_id;
+    }
+    // Set has_valid_output true even if composite hasn't run yet so that
+    // Filament can bind the external zero-copy textures that exist in targets.
+    targets.has_valid_output = rendered;
+}
+
+void GaussianComputeRenderer::RenderCompositeStage(FilamentView& view) {
+    auto it = outputs_.find(&view);
+    if (it == outputs_.end() || !it->second.needs_render) {
+        return;
+    }
+
+    auto& targets = it->second;
+    bool rendered = false;
+    if (backend_ && targets.has_render_data) {
+        rendered = backend_->RenderCompositeStage(view, targets.render_data,
                                     targets.pass_dispatches, targets);
     }
 
     targets.has_valid_output = rendered;
     targets.needs_render = false;
-    targets.last_scene_change_id = scene_change_id;
     targets.last_updated_frame = frame_index_;
+}
+
+void GaussianComputeRenderer::InvalidateOutputForView(FilamentView& view) {
+    auto it = outputs_.find(&view);
+    if (it == outputs_.end()) {
+        return;
+    }
+    // Clear the view's render target BEFORE destroying our GS render target.
+    // If the view still points to the GS RT when Filament processes the
+    // destroy command, it could try to render through a freed object.
+    view.SetRenderTarget({});
+    ResetOutputTargets(it->second);
 }
 
 void GaussianComputeRenderer::PruneOutputs(
@@ -1387,12 +1307,18 @@ TextureHandle GaussianComputeRenderer::GetDepthTexture(
     return found != outputs_.end() ? found->second.depth : TextureHandle();
 }
 
+std::uint32_t GaussianComputeRenderer::GetSceneDepthGLHandle(
+        const FilamentView& view) const {
+    auto found = outputs_.find(&view);
+    return found != outputs_.end() ? found->second.scene_depth_gl_handle : 0;
+}
+
 const char* GaussianComputeRenderer::GetBackendName() const {
     return backend_ ? backend_->GetName() : "Unavailable";
 }
 
 GaussianComputeRenderer::OutputTargets&
-GaussianComputeRenderer::PrepareOutputTargets(const FilamentView& view) {
+GaussianComputeRenderer::PrepareOutputTargets(FilamentView& view) {
     auto viewport = view.GetViewport();
     auto width = static_cast<std::uint32_t>(viewport[2]);
     auto height = static_cast<std::uint32_t>(viewport[3]);
@@ -1405,12 +1331,76 @@ GaussianComputeRenderer::PrepareOutputTargets(const FilamentView& view) {
 
     ResetOutputTargets(targets);
 
-    targets.color =
-            resource_mgr_.CreateColorAttachmentTexture(int(width), int(height));
-    targets.depth =
-            resource_mgr_.CreateDepthAttachmentTexture(int(width), int(height));
-    targets.render_target =
-            resource_mgr_.CreateRenderTarget(targets.color, targets.depth);
+#if !defined(__APPLE__)
+    // Create GL textures on the shared GL context for zero-copy sharing
+    // with Filament.  The scene depth texture is rendered into by Filament
+    // (as a depth attachment) and read by the GS composite shader.  The
+    // GS color texture is written by the composite shader and sampled by ImGui.
+    //
+    // Context must already be initialized (sharing Filament's namesapce)
+    // before we create textures — the backend's RenderGeometryStage calls
+    // Initialize() at the right time (after flushAndWait, Filament's context
+    // is current).  If not yet valid here we skip and let the first render
+    // call trigger init and recreation.
+    {
+        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
+            auto scene_depth = CreateGLTexture2D(
+                    width, height, kGL_DEPTH_COMPONENT32F);
+            auto gs_color = CreateGLTexture2D(width, height, kGL_RGBA16F);
+            targets.scene_depth_gl_handle =
+                    scene_depth.valid ? scene_depth.id : 0;
+            targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
+            gl_ctx.ReleaseCurrent();
+        }
+    }
+
+    if (targets.scene_depth_gl_handle != 0 && targets.color_gl_handle != 0) {
+        using Tex = filament::Texture;
+        // Import scene depth (Filament writes, GS reads).
+        targets.depth = resource_mgr_.CreateImportedTexture(
+                targets.scene_depth_gl_handle, int(width), int(height),
+                static_cast<int>(Tex::InternalFormat::DEPTH32F),
+                static_cast<int>(Tex::Usage::DEPTH_ATTACHMENT |
+                                 Tex::Usage::SAMPLEABLE));
+        // Import GS color (GS writes, ImGui reads).
+        targets.color = resource_mgr_.CreateImportedTexture(
+                targets.color_gl_handle, int(width), int(height),
+                static_cast<int>(Tex::InternalFormat::RGBA16F),
+                static_cast<int>(Tex::Usage::SAMPLEABLE));
+
+        // Build a render target that uses the view's own color buffer
+        // (where Filament renders meshes) plus our imported depth.
+        auto view_color = view.GetColorBuffer();
+        if (view_color) {
+            targets.render_target = resource_mgr_.CreateRenderTarget(
+                    view_color, targets.depth);
+            view.SetRenderTarget(targets.render_target);
+
+            // Disable MSAA — required when depth is SAMPLEABLE.
+            auto* native = view.GetNativeView();
+            auto msaa = native->getMultiSampleAntiAliasingOptions();
+            msaa.enabled = false;
+            native->setMultiSampleAntiAliasingOptions(msaa);
+
+            // Disable post-processing so Filament renders geometry
+            // directly to our render target (including depth writes).
+            // With post-processing, Filament renders to internal RTs
+            // and only blits color to the output — depth is lost.
+            view.SetPostProcessing(false);
+        }
+    } else
+#endif  // !defined(__APPLE__)
+    {
+        // Fallback: Filament-owned textures (no zero-copy).
+        targets.color = resource_mgr_.CreateColorAttachmentTexture(
+                int(width), int(height));
+        targets.depth = resource_mgr_.CreateDepthAttachmentTexture(
+                int(width), int(height));
+        targets.render_target =
+                resource_mgr_.CreateRenderTarget(targets.color, targets.depth);
+    }
+
     targets.width = width;
     targets.height = height;
     targets.has_valid_output = false;
@@ -1419,6 +1409,7 @@ GaussianComputeRenderer::PrepareOutputTargets(const FilamentView& view) {
 }
 
 void GaussianComputeRenderer::ResetOutputTargets(OutputTargets& targets) {
+    // Destroy Filament wrappers first (before deleting GL textures).
     if (targets.render_target) {
         resource_mgr_.Destroy(targets.render_target);
         targets.render_target = RenderTargetHandle();
@@ -1431,6 +1422,27 @@ void GaussianComputeRenderer::ResetOutputTargets(OutputTargets& targets) {
         resource_mgr_.Destroy(targets.depth);
         targets.depth = TextureHandle();
     }
+
+#if !defined(__APPLE__)
+    // Destroy GL textures created in PrepareOutputTargets.
+    if (targets.scene_depth_gl_handle != 0 || targets.color_gl_handle != 0) {
+        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
+            if (targets.scene_depth_gl_handle != 0) {
+                GLTextureHandle dt{targets.scene_depth_gl_handle, 0, 0, true};
+                DestroyGLTexture(dt);
+            }
+            if (targets.color_gl_handle != 0) {
+                GLTextureHandle ct{targets.color_gl_handle, 0, 0, true};
+                DestroyGLTexture(ct);
+            }
+            gl_ctx.ReleaseCurrent();
+        }
+    }
+#endif
+    targets.scene_depth_gl_handle = 0;
+    targets.color_gl_handle = 0;
+
     targets.width = 0;
     targets.height = 0;
     targets.pass_dispatches.clear();

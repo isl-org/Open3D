@@ -20,13 +20,17 @@ functionality is out of scope.
 
 ## Code change
 
+- For any change, first research existing code and prepare a plan with definite goal, requirements, implementation steps, test method, risks and mitigations. **Lock the goal, requirements and test method, and keep the implementation steps with a log of status and decisions made.** Add a plan summary to the PR description. 
+- Store intermediate live research and progress reports with important findings in .md files and refer to them as needed.
+- Use subagents for major steps. 
+- Create new git branches when you explore implementation options - go back to previous code as required. 
 - Prioritize human readability and maintainability.
 - Read the relevant C++ / Python / docs files together and identify whether bindings, docs, and tests must change with the source change.
 - Avoid duplicate implementations when similar functionality already exists - refactor and reuse instead.
 - Keep changes focused and small. Avoid broad refactors unless requested.
 - Developer docs: Document the code with brief comments (Why and What is the code doing?), typically for each function and file. Ensure code and docs are consistent.
 - User docs: Update `docs`, Doxygen docs in C++ headers and Google Sphinx RST docs in Python bindings for new / changed code behavior.  Add / update an example function use snippet in the docs.
-- For new functionality, prefer Tensor implementations that work on CPU+CUDA+SYCL. 
+- For new functionality, docs and examples, prefer Tensor implementations that work on CPU+CUDA+SYCL. 
 - Use the Eigen library for Math operations and oneAPI TBB for multithreading. Avoid: OpenMP, stdgpu.
 - Check whether Python bindings in `cpp/pybind/` also need updates.
 - Add unit tests for new behavior and bug fixes (if needed).  Add or update both C++ and Python tests when the feature is exposed in both layers.

@@ -336,6 +336,12 @@ void BindImage(std::uint32_t binding,
     glBindImageTexture(binding, texture.id, 0, GL_FALSE, 0, access, format);
 }
 
+void BindSamplerTexture(std::uint32_t unit, const GLTextureHandle& texture) {
+    if (!texture.valid) return;
+    // GL 4.5 direct state access: binds texture to texture unit.
+    glBindTextureUnit(unit, texture.id);
+}
+
 void UseProgram(const GLComputeProgram& program) {
     if (program.valid) {
         glUseProgram(program.id);

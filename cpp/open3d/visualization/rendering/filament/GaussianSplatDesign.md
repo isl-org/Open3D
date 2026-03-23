@@ -4,10 +4,12 @@
 
 Open3D supports real-time 3D Gaussian Splatting (3DGS) rendering through a GPU compute pipeline
 that runs alongside the Filament-based visualization engine. The compute pipeline projects,
-sorts, and composites Gaussian splats into color and depth images that are then composited with
-the normal Filament-rendered scene using depth-based per-pixel selection.
+sorts, and composites Gaussian splats into a color image. A shared GL depth texture allows
+the composite shader to reject splats behind Filament-rendered mesh geometry, producing
+correct per-splat depth occlusion.
 
-**Supported platforms**: Linux (OpenGL), Windows (OpenGL), macOS (Metal).
+**Supported platforms**: Linux X11/GLX (operational), Linux Wayland/EGL (context created,
+not tested end-to-end), Windows/WGL (planned), macOS/Metal (placeholder only).
 
 ---
 
@@ -15,480 +17,344 @@ the normal Filament-rendered scene using depth-based per-pixel selection.
 
 ### Rendering Pipeline
 
+The pipeline is split into two stages: a heavy geometry stage (projection + sort) that can
+overlap with Filament mesh rasterization on the GPU, and a lightweight composite stage that
+runs after Filament completes (because it needs the scene depth).
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Per-frame rendering (FilamentRenderer::BeginFrame)             │
+│  BeginFrame (FilamentRenderer::BeginFrame)                      │
 │                                                                 │
 │  1. engine_.flushAndWait()   — Filament GPU idle                │
-│  2. GS Compute Pipeline      — 5-pass GPU compute              │
+│  2. GS Stage A (geometry)    — 4-pass GPU compute               │
 │     ├─ Projection            — splat → screen space             │
 │     ├─ Tile Prefix Sum       — per-tile entry counts            │
 │     ├─ Tile Scatter          — splats → tile buckets            │
-│     ├─ Tile Sort             — radix sort by depth              │
-│     └─ Composite             — write color + depth images       │
-│  3. renderer_->beginFrame()  — Filament renders scene           │
+│     └─ Radix Sort (4 passes) — sort by (tile_id<<16|depth>>16)  │
+│     (no glFinish — GPU work overlaps with Filament)             │
+│  3. renderer_->beginFrame()  — Filament starts frame            │
+├─────────────────────────────────────────────────────────────────┤
+│  Draw (FilamentRenderer::Draw)                                  │
 │                                                                 │
-│  Compositing (depth-based):                                     │
-│  4. Custom Filament material reads both scene depth and         │
-│     GS depth, picks nearer pixel for final output               │
+│  4. Filament scene draw      — meshes render into cached view   │
+│     (depth writes to shared GL DEPTH_COMPONENT32F texture)      │
+│  5. engine_.flushAndWait()   — GPU idle, depth is ready         │
+│  6. GS Stage B (composite)   — 1-pass GPU compute               │
+│     └─ Composite             — per-splat depth test vs scene    │
+│        (writes color to imported GL RGBA16F texture)            │
+│  7. GUI draw (ImGui)         — base image + GS overlay          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Backend Abstraction
+### Depth-Aware Compositing (Zero-Copy)
 
-The compute pipeline uses an abstract `Backend` interface with platform-specific implementations:
+The GS compute context and Filament share the same GLX context group. GL textures created
+in our context are visible in Filament's context by handle — no copies required.
+
+**Shared depth texture**: `PrepareOutputTargets` creates a `GL_DEPTH_COMPONENT32F` texture,
+imports it into Filament as `DEPTH_ATTACHMENT | SAMPLEABLE`, and sets it as the depth
+attachment on the view's render target. Filament writes depth during mesh rendering.
+After `flushAndWait()`, the composite shader reads this same texture as `sampler2D` at
+binding 14 and performs per-splat depth rejection.
+
+**Shared color texture**: A `GL_RGBA16F` texture is imported into Filament as `SAMPLEABLE`.
+The composite shader writes to it via `imageStore`. ImGui displays it as an overlay using
+standard alpha blending (SrcAlpha, 1-SrcAlpha) over the Filament scene color buffer.
+
+**MSAA constraint**: Filament asserts `!msaa.enabled || !renderTarget->hasSampleableDepth()`
+(`View.h:210`). MSAA is disabled for views using the shared sampleable depth texture.
+This is acceptable because 3DGS uses Gaussian kernel anti-aliasing.
+
+### Shared GL Context Strategy
+
+The compute context is created **before** Filament's `Engine::create()`. This is the only
+window when context sharing can be established — GLX/EGL sharing is set at context creation
+time and cannot be added retroactively.
+
+1. `FilamentEngine.cpp` calls `GaussianComputeOpenGLContext::GetInstance().InitializeStandalone()`
+2. `InitializeStandalone()` → `InitializeGLXStandalone()` on X11 or `InitializeEGL()` on Wayland
+3. The resulting native context handle is passed to `Engine::create()` as `sharedGLContext`
+4. Filament's `PlatformGLX::createDriver` sees the shared context, finds a matching FBConfig
+   via `GLX_FBCONFIG_ID`, and creates its own context with `glXCreateContextAttribs(…, share)`
+5. Both contexts now share the same GL object namespace — `import()` works by handle
+
+The older `InitializeGLX()` path (which tried to query Filament's context *after* creation)
+is retained as a fallback but is never reached in normal operation because Filament runs GL
+on a dedicated driver thread (so `glXGetCurrentContext()` returns NULL from the main thread).
+
+### Backend Abstraction
 
 ```
 GaussianComputeRenderer::Backend (abstract)
-├── GaussianComputeOpenGLBackend   — Linux + Windows (GL 4.6 compute)
-└── GaussianComputeMetalBackend    — macOS (Metal compute)
+├── GaussianComputeOpenGLBackend      — Linux + Windows (GL 4.5+ compute, SPIR-V)
+├── GaussianComputeMetalBackend       — macOS (placeholder — not functional)
+└── GaussianComputePlaceholderBackend — fallback (logs once per view, returns false)
 ```
 
-### Zero-Copy Output
-
-Both backends write compute output to a GPU texture that is directly imported into Filament
-via `Texture::Builder::import()`. This eliminates all GPU→CPU→GPU staging transfers (~12 MB/frame
-for 1024×768 RGBA16F).
-
-- **OpenGL**: `import((intptr_t)gl_texture_id)` — shared context makes GLuint visible to Filament
-- **Metal**: `import((intptr_t)CFBridgingRetain(mtlTexture))` — Metal texture wrapping
+Each backend implements `RenderGeometryStage` (passes 1-4) and `RenderCompositeStage`
+(pass 5). The split enables GPU overlap: Stage A dispatches compute work without `glFinish()`,
+allowing Filament rasterization to execute concurrently. Stage B waits for Filament to
+complete (`flushAndWait`) before reading scene depth.
 
 ---
 
-## Completed Work (committed to git)
+## Sort Key Layout
 
-### Vulkan/Metal Compute Pipeline (now being migrated to OpenGL)
-- 5-pass compute pipeline: projection, prefix sum, scatter, radix sort, composite
-- 9 GLSL compute shaders (5 main + 4 radix sort stages)
-- GPU-side radix sort with subgroup operations
-- Shared-memory cooperative tile loading (Opt7)
-- Compact 48-byte ProjectedGaussian struct (Opt4)
+Each TileEntry sort key packs `tile_index` and `depth` into a single 32-bit uint:
 
-### OpenGL Compute Backend (Phase 2 — COMPLETE)
-- **GL context**: GLX on X11 (GL 4.6 Core Profile), EGL as Wayland fallback
-- **SPIR-V loading**: Vulkan-targeted SPIR-V (`.spv` from `glslangValidator -V --target-env vulkan1.1`)
-  loads directly into OpenGL via `glShaderBinary(GL_SHADER_BINARY_FORMAT_SPIR_V)` +
-  `glSpecializeShader()`. No separate OpenGL SPIR-V compilation step needed.
-- **Radix sort**: 4-pass 8-bit LSD radix sort (keygen → 4×{histogram+scatter} → payload)
-  replaces Shell sort that caused GPU timeout on tiles with ~34K entries.
-  Uses `gl_SubgroupSize` at runtime (not hardcoded). RadixSortParams at UBO binding 14.
-- **All 9 shaders** loaded from SPIR-V; no runtime GLSL compilation.
-- **Push constants → UBO**: 4 radix sort shaders converted from Vulkan `push_constant`
-  to `layout(std140, binding = 14) uniform RadixSortParams`.
-- **Program indices**: `kProgProject(0)..kProgRadixPayload(8)`, `kNumPrograms = 9`.
+```
+bits 31..16  tile_index (16 bits, max 65535 tiles)
+bits 15..0   depth_key >> 16 (16 bits of depth precision)
+```
+
+`key = (tile_index << 16u) | (depth_key >> 16u)`
+
+This supports up to 65,535 tiles — e.g. 4K at 16×16 tile size needs 32,400 tiles.
+The previous 12/20 split (`tile << 20`) capped at 4095 tiles and corrupted rendering above
+~1280×720. 16 depth bits gives ~0.0015% relative depth precision (sufficient for back-to-front
+ordering between neighbouring splats).
+
+The 4-pass radix sort operates on all 32 bits (8 bits per pass), so the key width change
+requires no dispatch logic updates.
+
+---
+
+## Completed Work
+
+### PHASE 1: Linux/Windows Default → OpenGL (DONE)
+- `FilamentEngine.cpp`: OpenGL is the default for both Linux and Windows.
+- macOS uses the default Filament backend (Metal).
+
+### PHASE 2: OpenGL Compute Backend (DONE)
+- **GL context** (`GaussianComputeOpenGLContext`): Standalone context created before Filament,
+  passed as `sharedGLContext` to `Engine::create()`. Shares GL namespace with Filament's context.
+  X11/GLX on X11, EGL on Wayland (runtime-detected via `XDG_SESSION_TYPE`).
+- **Pipeline API** (`GaussianComputeOpenGLPipeline`): Thin wrappers around GL 4.5 compute:
+  SSBO/UBO bind, image/sampler bind, buffer management, texture management, dispatch, barriers.
+  All GL constants as `constexpr` to avoid GL header dependency in consumers.
+- **SPIR-V loading**: 9 shaders compiled offline from GLSL `.comp` to Vulkan-targeted SPIR-V
+  (`.spv`); loaded via `glShaderBinary(GL_SHADER_BINARY_FORMAT_SPIR_V)` + `glSpecializeShader()`.
+  OpenGL SPIR-V target (`-G`) fails for subgroup ops; Vulkan target works via `GL_ARB_gl_spirv`.
+- **Radix sort**: 4-pass 8-bit LSD radix sort. Runtime-queries `gl_SubgroupSize`. Sort key:
+  `(tile_index << 16) | (depth_key >> 16)` — 16 bits each, max 65535 tiles.
+- **Two-stage execution**: `RenderGeometryStage` (passes 1-4) defers `glFinish()` to enable
+  overlap. `RenderCompositeStage` (pass 5) runs after `flushAndWait()`.
+- **Zero-copy output**: `PrepareOutputTargets` creates GL textures (`DEPTH_COMPONENT32F` +
+  `RGBA16F`), imports into Filament via `Texture::Builder::import()`. No CPU staging.
+- **Depth-aware compositing**: Composite shader reads scene depth at binding 14, linearizes
+  Filament's reversed-Z depth, discards splats behind mesh geometry per-pixel.
+- **MSAA disabled** for GS views (required for sampleable depth attachment).
+- **Counter readback**: After prefix-sum pass, `total_entries` is read back from a GPU counter
+  buffer to size tile entries and sort buffers before scatter.
+
+### PHASE 4: Depth-Based Scene Compositing (DONE)
+- `gaussian_composite.comp`: binding 14 = `sampler2D scene_depth`. Reversed-Z linearization.
+  Per-splat occlusion test: `if (use_scene_depth && s_depth[i] >= scene_linear_depth) continue`.
+- UBO `depth_range_and_flags[3]` set to `1.0` in `RenderCompositeStage` when scene depth valid.
+- Example (`GaussianSplat.cpp`): red sphere placed at scene bbox center for depth compositing
+  testing.
+
+### PHASE 5: Vulkan Code Removal (DONE)
+- `GaussianComputeVulkanPipeline.h/.cpp` deleted.
+- `GaussianComputeVulkanBackend` class removed from `GaussianComputeRenderer.cpp`.
+
+### Bug Fixes (DONE)
+- **Tile index overflow** (`gaussian_radix_sort_keygen.comp`): key was `tile_index << 20`
+  (12-bit tile field, max 4095 tiles). Changed to `tile_index << 16` (16 bits, max 65535).
+  Fixed corruption on windows larger than ~1280×720.
+- **Use-after-free on resize**: `FilamentView::EnableViewCaching()` freed `color_buffer_`
+  while the GS render target still referenced it. Fixed by calling
+  `scene_->InvalidateGaussianComputeOutput(*this)` before freeing `color_buffer_`, tearing
+  down the GS render target first through:
+  `FilamentScene → FilamentRenderer → GaussianComputeRenderer::InvalidateOutputForView()`.
+- **Non-sharing contexts** (depth all zeros): two independent GL namespaces meant imported
+  texture IDs were meaningless in Filament's context. Fixed by creating the compute context
+  before Filament via `InitializeStandalone()` and passing it as `sharedGLContext`.
+- `ForEachView` vs `ForEachActiveView`: scene persistence on mouse-move.
+- View pruning: only removes outputs for truly deleted views (not merely inactive ones).
+- `scene_change_id` self-assignment: stored from scene in `RenderGeometryStage`, not in
+  `RenderCompositeStage` where the scene is inaccessible.
 
 ### Optimizations Implemented
-- **Opt1**: Persistent GPU buffers (reuse across frames if size sufficient)
-- **Opt2**: Batched command submission (project+prefix+scatter in one session)
-- **Opt3**: Half-float direct upload (RGBA16F staging, no float32 roundtrip)
-- **Opt4**: Compact projected struct (48 bytes, was 96)
-- **Opt5**: GPU-side buffer fill/copy (no CPU staging for clears)
-- **Opt6**: Scene/view data separation (scene data persists across camera moves)
-- **Opt7**: Shared-memory cooperative tile loading in composite shader
-- **Opt8**: Early culling in projection (behind-camera, negligible-alpha reject)
 
-### Data Packing (GaussianComputeDataPacking)
-- PackGaussianSceneInputs: CPU → GPU-compatible std140/std430 layouts
-- PackedGaussianViewParams: 256-byte uniform block (matrices, viewport, scene params)
-- PackedProjectedGaussian: 48-byte per-splat descriptor  
-- PackedTileEntry: 16-byte per tile-entry sort record
+| # | Name | Description |
+|---|------|-------------|
+| Opt1 | Persistent buffers | GPU buffers reused across frames if size sufficient |
+| Opt2 | Batched submission | Project + prefix + scatter in one GL session |
+| Opt3 | Half-float upload | RGBA16F staging, no float32 roundtrip |
+| Opt4 | Compact projected struct | 48 bytes (was 96) |
+| Opt5 | GPU-side fill/copy | `ClearGLBuffer` / copy without CPU staging |
+| Opt6 | Scene/view separation | Static scene data (positions, SH) cached across camera moves |
+| Opt7 | Cooperative tile load | Shared-memory batch loading for the composite pass |
+| Opt8 | Early culling | Behind-camera and negligible-alpha splats rejected in projection |
+| Opt9 | GPU Stage A overlap | Geometry stage defers `glFinish()` so Filament rasterization overlaps |
+| Opt10 | Zero-copy depth | Shared GL depth texture; no CPU readback or re-upload |
 
-### Bug Fixes
-- ForEachView vs ForEachActiveView: scene persistence on mouse-move
-- View pruning: only removes outputs for truly deleted views
+### Data Packing (`GaussianComputeDataPacking`)
+- `PackGaussianSceneInputs`: CPU → GPU-compatible std140/std430 layouts
+- `PackedGaussianViewParams` (std140 UBO): matrices, viewport, scene params.
+  `depth_range_and_flags[3]` = scene depth flag (0.0 in geometry stage, 1.0 in composite).
+- `PackedProjectedGaussian`: 48-byte per-splat descriptor
+- `PackedTileEntry`: 16-byte per tile-entry sort record (depth_key, splat_index, stable_index,
+  tile_index stored in the `reserved` field for radix keygen)
 
 ---
 
 ## Planned Work
 
-### PHASE 1: Switch Linux Default to OpenGL
+### PHASE 3: macOS / Metal Backend
 
-**Step 1.1**: Change Linux default rendering backend from `kDefault` to `kOpenGL`.
+The Metal backend currently has a placeholder stub that logs a message and returns false.
+Required work:
 
-Currently ([FilamentEngine.cpp](cpp/open3d/visualization/rendering/filament/FilamentEngine.cpp)):
-```cpp
-#ifdef _WIN32
-RenderingType EngineInstance::type_ = RenderingType::kOpenGL;  // Windows
-#else
-RenderingType EngineInstance::type_ = RenderingType::kDefault; // Linux/macOS
-#endif
-```
+1. Port the 9-shader radix sort dispatch logic to Metal (Metal Shading Language)
+2. Implement Metal equivalents of `PrepareOutputTargets`: create `MTLTexture` + import via
+   Filament's Metal `import()` path
+3. Implement `RenderCompositeStage` with scene depth binding
+4. Verify context sharing — check if Filament's Metal backend exposes a shared `MTLDevice`
+5. Remove the CPU readback path (`DownloadMetalSharedBuffer` + `UploadOutputTextures`)
 
-Change to:
-```cpp
-#if defined(_WIN32) || defined(__linux__)
-RenderingType EngineInstance::type_ = RenderingType::kOpenGL;  // Windows + Linux
-#else
-RenderingType EngineInstance::type_ = RenderingType::kDefault; // macOS → Metal
-#endif
-```
+**Files to modify:**
+- `GaussianComputeRenderer.cpp` — `GaussianComputeMetalBackend` class
+- `GaussianComputeMetalShaders.h/.mm` — Metal compute dispatch
 
-**Wayland/EGL support**: Filament's OpenGL backend on Linux can use either PlatformGLX (X11) or
-PlatformEGL (both X11 and Wayland). The Filament prebuilt library includes both platforms.
-Filament selects the appropriate platform based on the native window handle:
-- X11 window → PlatformGLX (GLX context) or PlatformEGL with EGL_PLATFORM_X11
-- Wayland surface → PlatformEGL with EGL_PLATFORM_WAYLAND
+### PHASE 6: Build Integration Cleanup
 
-Open3D already detects the GLFW platform at runtime ([NativeLinux.cpp](cpp/open3d/visualization/gui/NativeLinux.cpp)):
-```cpp
-if (glfwGetPlatform() == GLFW_PLATFORM_X11)
-    return glfwGetX11Window(window);
-else if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
-    return glfwGetWaylandWindow(window);
-```
-
-GLFW 3.4 (used by Open3D) auto-detects X11 vs Wayland at runtime. No build-time change needed.
-
-**Files**:
-- MODIFY: [FilamentEngine.cpp](cpp/open3d/visualization/rendering/filament/FilamentEngine.cpp) —
-  lines 35-42, change `#else` → `#elif defined(__APPLE__)`
+- Remove stale `resources/gaussian_compute/` copies (now generated from `shaders/` by CMake)
+- Add GL 4.5 minimum capability check to CMake (`GL_ARB_compute_shader`,
+  `GL_ARB_shader_storage_buffer_object`, `GL_KHR_shader_subgroup`)
+- Verify SPIR-V shader compilation across all supported glslangValidator versions
+- Add Python bindings for `GaussianComputeRenderer::SetRenderConfig()` and `SetEnabled()`
 
 ---
 
-### PHASE 2: OpenGL Compute Backend
+## Future Work
 
-**Step 2.1: Shared GL context infrastructure**
+### FW1: Performance Improvements
 
-Create a GL context that shares resources with Filament's internal context, using EGL
-(works on both X11 and Wayland). GLX is X11-only and should be avoided for Wayland
-compatibility.
+| # | Optimization | Impact | Description |
+|---|---|---|---|
+| FW1-1 | Eliminate counter readback | High | After prefix-sum, `total_entries` is read back via `glGetBufferSubData` — CPU/GPU sync stall. Pre-allocate tile entries buffer to worst-case size and scatter directly without readback. Remove `DownloadGLBuffer(counters_buf)` from the hot path. |
+| FW1-2 | Reduce radix sort passes | Medium | Key is 32 bits but only `ceil(log2(tile_count)) + 16` bits are significant. At 4K (32,400 tiles), only 30 bits matter. Running fewer sort passes can reduce one full sort phase per frame. |
+| FW1-3 | Fused prefix-sum + scatter | Medium | Merge tile count accumulation and scatter using subgroup prefix sums plus global atomics. Eliminates one compute dispatch and one full barrier round-trip. |
+| FW1-4 | Async compute overlap | Medium | Stage A currently serializes with `flushAndWait()` before compute. Move Stage A onto async compute where possible and synchronize with fences/timeline semaphores. |
+| FW1-5 | SH degree LOD | Low–Medium | Dynamically reduce SH degree for distant/small splats to reduce bandwidth and projection cost. |
+| FW1-6 | Per-tile entry budget | Low | Cap tiles-per-splat to bound worst-case sort/composite cost for huge splats. |
+| FW1-7 | Indirect dispatch for scatter | Low | Use GPU-written dispatch arguments (`glDispatchComputeIndirect`) to reduce overhead on sparse scenes. |
+| FW1-8 | MSAA re-enable via depth resolve | Low | Re-enable MSAA for meshes via explicit depth resolve while keeping sampleable depth for GS composite. |
 
-**Approach**: Create an EGL context before Filament engine creation, pass it via
-`EngineInstance::SetSharedContext()`. Filament's PlatformEGL creates its context in the
-same share group. Both contexts share the GL namespace (textures, SSBOs visible to both).
+### FW2: Wayland / EGL Platform Testing and Debugging
 
-**Implementation**:
-- Detect GLFW platform: if Wayland → EGL with `EGL_PLATFORM_WAYLAND_KHR`; if X11 →
-  EGL with `EGL_PLATFORM_X11_KHR` (EGL works on both platforms, avoiding the need for
-  separate GLX and EGL code paths)
-- On Windows: Use WGL with a dummy HWND, or EGL via ANGLE/Mesa
-- Create pbuffer surface (headless) for our compute context
-- Call `EngineInstance::SetSharedContext(egl_context)` before `EngineInstance::GetInstance()`
+The EGL code path (`InitializeEGL()`) currently creates an independent context — no sharing with
+Filament — because Filament on Wayland does not currently expose an already-shared EGL context in
+this integration path. As a result, depth texture sharing is not validated on Wayland yet.
 
-**Threading model**:
-- Filament's backend thread owns its GL context
-- Our compute context is made current on the main thread
-- After `engine_.flushAndWait()`, Filament is idle → safe to dispatch compute
-- After compute: `glMemoryBarrier(GL_ALL_BARRIER_BITS)` + `glFlush()`
-- Filament's next frame sees writes after implicit sync
+**Required work:**
 
-**Files**:
-- NEW: `GaussianComputeOpenGLContext.h/.cpp` — EGL context creation, make-current, sync
-- MODIFY: [FilamentEngine.h/.cpp](cpp/open3d/visualization/rendering/filament/FilamentEngine.h) — integrate shared context setup
+1. **EGL context sharing**: Check Filament's EGL platform implementation in
+   `3rdparty_downloads/filament/` for `sharedGLContext` support and implement
+   `InitializeEGLStandalone()` analogous to `InitializeGLXStandalone()`.
+2. **Test environment**: Set up Wayland compositor testing (`weston`/`sway`) and verify
+   `DetectBackend()` selects `kEGL` via `XDG_SESSION_TYPE=wayland`.
+3. **Extension checks**: Validate `EGL_KHR_create_context` and
+   `EGL_KHR_surfaceless_context`; add explicit diagnostics when missing.
+4. **Integration test**: Run `GaussianSplat` under Wayland; verify render correctness,
+   depth compositing behavior, and no GL errors.
+5. **Fallback path**: Test scenarios where `XDG_SESSION_TYPE` is unset and only
+   `WAYLAND_DISPLAY` is present.
 
-**Step 2.2: OpenGL compute pipeline API**
+**Files affected**: `GaussianComputeOpenGLContext.cpp`, `FilamentEngine.cpp`
 
-Replace [GaussianComputeVulkanPipeline.h/.cpp](cpp/open3d/visualization/rendering/filament/) with
-OpenGL equivalent providing the same free-function C-style API.
+### FW3: Windows / WGL Platform Testing and Debugging
 
-| Vulkan Concept | OpenGL Equivalent |
-|---|---|
-| VkBuffer (SSBO) | GL_SHADER_STORAGE_BUFFER |
-| VkBuffer (Uniform) | GL_UNIFORM_BUFFER |
-| VkImage (storage) | GL texture + glBindImageTexture() |
-| VkPipeline (compute) | GLuint program (compute shader) |
-| vkCmdDispatch | glDispatchCompute |
-| vkCmdPipelineBarrier | glMemoryBarrier |
-| vkCmdFillBuffer | glClearBufferSubData |
-| vkCmdCopyBuffer | glCopyBufferSubData |
-| push_constants | std140 uniform buffer |
-| VkCommandBuffer session | Not needed — GL commands execute immediately |
-| vkQueueSubmit + fence | glFenceSync + glClientWaitSync |
+On Windows, Filament uses WGL for OpenGL. A standalone shared-context setup equivalent to GLX
+is still needed to guarantee zero-copy depth sharing.
 
-**Key simplification**: No command recording/session model. The Vulkan
-"BeginSession → Record... → Submit" pattern becomes direct GL calls.
+**Required work:**
 
-**Files**:
-- NEW: `GaussianComputeOpenGLPipeline.h/.cpp`
+1. **WGL standalone context**: Implement `InitializeWGLStandalone()`:
+   - Create a hidden 1×1 window + HDC
+   - Select pixel format with `wglChoosePixelFormatARB`
+   - Create GL 4.5 core `HGLRC` with `wglCreateContextAttribsARB`
+   - Return the native handle for `sharedGLContext`
+2. **Filament engine hookup**: Extend the shared-context setup path in `FilamentEngine.cpp`
+   to run on `_WIN32` as well.
+3. **Build plumbing**: Add Windows-specific includes/guards in
+   `GaussianComputeOpenGLContext.cpp` and verify linking against OpenGL/WGL symbols.
+4. **Validation matrix**: Test Intel/NVIDIA/AMD on Windows 10/11 for:
+   shared depth correctness, resize stability, maximize/restore stability, and large-window behavior.
+5. **Pixel format matching**: Ensure the WGL pixel format used by our standalone context
+   matches what Filament expects for shared context creation.
 
-**Step 2.3: ~~Compile shaders to OpenGL SPIR-V~~ SPIR-V Loading (COMPLETE)**
+**Files affected**: `GaussianComputeOpenGLContext.h/.cpp`, `FilamentEngine.cpp`
 
-~~Add a second glslangValidator invocation~~ **Not needed.** Vulkan-targeted SPIR-V
-(`-V --target-env vulkan1.1`) loads directly in OpenGL 4.6 via `glShaderBinary(0x9551)` +
-`glSpecializeShader("main")`. This was validated at runtime on Mesa Intel LNL.
+### FW4: macOS / Metal (see PHASE 3 above)
 
-OpenGL SPIR-V (`-G --target-env opengl`) fails for shaders with subgroup operations
-("requires SPIR-V 1.3"), but the Vulkan SPIR-V path works because Mesa's `GL_ARB_gl_spirv`
-implementation handles Vulkan SPIR-V binaries correctly.
-
-**Shader source changes** (4 radix sort shaders — DONE):
-- Replaced `layout(push_constant, std430) uniform PushConstants { ... };`
-  with `layout(std140, binding = 14) uniform RadixSortParams { uint g_num_elements;
-  uint g_shift; uint g_num_workgroups; uint g_num_blocks_per_workgroup; };`
-- Replaced `#define SUBGROUP_SIZE 32` with runtime `gl_SubgroupSize` in scatter shader
-- Expanded `shared uint sums[RADIX_SORT_BINS / SUBGROUP_SIZE]` to `sums[WORKGROUP_SIZE]`
-  for variable subgroup sizes
-
-**Runtime loading**: `glShaderBinary(GL_SHADER_BINARY_FORMAT_SPIR_V)` +
-`glSpecializeShader()` (GL 4.6) — uses Vulkan SPIR-V directly.
-
-**Files** (DONE):
-- NO CHANGES NEEDED: [Open3DAddComputeShaders.cmake](cmake/Open3DAddComputeShaders.cmake) —
-  existing Vulkan SPIR-V output works directly
-- DONE: 4 radix sort `.comp` shaders — push_constant → uniform block
-
-**Step 2.4: GaussianComputeOpenGLBackend (COMPLETE)**
-
-Implements `Backend` interface with the same 5-pass pipeline architecture:
-1. Projection → 2. Prefix Sum → 3. Scatter → 4. Radix Sort → 5. Composite
-
-Radix sort dispatch sequence (10 dispatches total):
-```
-Keygen: tile_entries → sort_keys[0], sort_values[0]  (composite key = tile_idx<<20 | depth>>12)
-for shift in {0, 8, 16, 24}:
-    ClearHistogram
-    Histogram: sort_keys[src] → histograms           (per-workgroup 256-bin histograms)
-    Scatter:   sort_keys[src] → sort_keys[dst]        (8-bit radix scatter with subgroup ops)
-               sort_values[src] → sort_values[dst]
-    swap src, dst
-Payload: sort_values[0] + tile_entries → sorted_entries  (rearrange by sorted indices)
-```
-
-Work distribution: `num_wg = ceil(N / (256 * 32))`, `blocks_per_wg = ceil(N / (num_wg * 256))`
-
-Uses OpenGL pipeline API from Step 2.2. ~~Zero-copy output via import() (Step 2.5).~~
-Currently uses CPU readback; zero-copy planned.
-
-**Files** (DONE):
-- DONE: [GaussianComputeRenderer.cpp](cpp/open3d/visualization/rendering/filament/GaussianComputeRenderer.cpp) — OpenGL backend with radix sort, SPIR-V loading
-
-**Step 2.5: Zero-copy output via import()**
-
-1. Create GL texture: `glGenTextures` + `glTexStorage2D(GL_RGBA16F)`
-2. Bind as storage image for compute: `glBindImageTexture()`
-3. Composite shader writes to it
-4. Import into Filament: `Texture::Builder().import((intptr_t)gl_tex_id).build(engine)`
-5. Filament samples directly — zero copy
-
-**Files**:
-- MODIFY: [GaussianComputeRenderer.cpp](cpp/open3d/visualization/rendering/filament/GaussianComputeRenderer.cpp) — output texture creation
+macOS uses Metal exclusively. See PHASE 3 for the complete implementation plan.
 
 ---
 
-### PHASE 3: Metal Zero-Copy Output (macOS, parallel with Phase 2)
+## Known Issues / Risks
 
-Eliminate readback on existing Metal backend:
-1. Create MTLTexture with `usage = .shaderRead | .shaderWrite`
-2. Import into Filament: `Texture::Builder().import((intptr_t)CFBridgingRetain(mtlTexture)).build(engine)`
-3. Remove `DownloadMetalSharedBuffer` and `UploadOutputTextures` calls
-
-**Files**:
-- MODIFY: [GaussianComputeRenderer.cpp](cpp/open3d/visualization/rendering/filament/GaussianComputeRenderer.cpp) — Metal backend (~lines 1045-1390)
-
----
-
-### PHASE 4: Depth-Based Scene Compositing
-
-**Current approach**: The 3DGS output is rendered as an ImGui overlay on top of the Filament
-scene with alpha blending ([SceneWidget.cpp](cpp/open3d/visualization/gui/SceneWidget.cpp) lines 1133-1143).
-This means 3DGS always appears in front of any Filament geometry, regardless of actual depth.
-
-**New approach**: Replace alpha-blending overlay with depth-based per-pixel compositing.
-Where the Filament scene is nearer, show the scene pixel; where the 3DGS is nearer, show
-the 3DGS pixel.
-
-**Step 4.1: Create a depth-aware compositing Filament material**
-
-New material `gs_depth_composite.mat` that samples both layers:
-
-```
-material {
-    name : gsDepthComposite,
-    parameters : [
-        { type : sampler2d, name : gsColor },    // 3DGS color  (RGBA16F)
-        { type : sampler2d, name : gsDepth },    // 3DGS depth  (R32F linear depth)
-        { type : sampler2d, name : sceneDepth }, // Filament scene depth
-        { type : float,     name : nearPlane },
-        { type : float,     name : farPlane }
-    ],
-    requires : [ uv0 ],
-    shadingModel : unlit,
-    culling : none,
-    depthCulling : false,
-    depthWrite : false,
-    blending : opaque
-}
-
-fragment {
-    void material(inout MaterialInputs material) {
-        prepareMaterial(material);
-        vec2 uv = getUV0();
-
-        // Sample 3DGS output
-        vec4 gs_color = texture(materialParams_gsColor, uv);
-        float gs_linear_depth = texture(materialParams_gsDepth, uv).r;
-        float gs_alpha = gs_color.a;
-
-        // Sample Filament scene depth (non-linear, need to linearize)
-        float scene_ndc_depth = texture(materialParams_sceneDepth, uv).r;
-        float near = materialParams.nearPlane;
-        float far = materialParams.farPlane;
-        float scene_linear_depth = near * far / (far - scene_ndc_depth * (far - near));
-
-        // Depth test: choose the nearer pixel
-        // If 3DGS has no content (alpha ≈ 0), always show scene
-        // If scene depth is at far plane, show 3DGS if it has content
-        bool gs_nearer = (gs_alpha > 0.001) && (gs_linear_depth < scene_linear_depth);
-        
-        if (gs_nearer) {
-            // Show 3DGS pixel (convert straight-alpha to final RGB)
-            material.baseColor = gs_color;
-        } else {
-            // Discard to show the underlying scene (rendered before this pass)
-            // OR: blend the 3DGS behind scene objects
-            // For partially transparent 3DGS pixels behind scene objects,
-            // we might want to still show the scene pixel at full opacity.
-            material.baseColor = vec4(0.0, 0.0, 0.0, 0.0);
-        }
-    }
-}
-```
-
-**Alternative approach**: Instead of a separate material, modify the composite compute shader
-([gaussian_composite.comp](cpp/open3d/visualization/rendering/filament/shaders/gaussian_composite.comp))
-to take the Filament scene depth buffer as an additional input, and incorporate it into the
-front-to-back accumulation loop. This would let scene geometry participate naturally in the
-depth-sorted blend, producing correct semi-transparent splats in front of AND behind scene objects.
-
-**Step 4.2: Update gaussian_composite.comp for scene depth awareness**
-
-Modify the composite shader to accept the Filament scene depth texture as an additional
-binding. During the front-to-back splat accumulation, when a splat's depth exceeds the
-scene depth at that pixel, stop accumulating splats (the scene surface occludes remaining
-splats). Then blend the accumulated 3DGS color with the scene color based on the accumulated
-3DGS transmittance.
-
-New binding in composite shader:
-```glsl
-layout(binding = 14, r32f) uniform readonly image2D scene_depth;
-```
-
-Modified accumulation loop (conceptual):
-```glsl
-// During front-to-back accumulation:
-float scene_depth_at_pixel = imageLoad(scene_depth, pixel).r;  // linearized
-// ... for each splat in depth order:
-if (splat_depth >= scene_depth_at_pixel) {
-    // Scene surface is nearer — remaining splats are behind the scene
-    // Mix scene color with accumulated 3DGS at current transmittance
-    break;
-}
-// ... normal accumulation continues for splats in front of the scene
-```
-
-Output changes:
-- Write premultiplied RGBA (premul alpha = 1 - remaining_transmittance)
-- Or write straight-alpha with alpha = 1.0 where scene was chosen
-
-**Step 4.3: Update SceneWidget compositing**
-
-Replace the current two-image ImGui overlay with the depth-composited output.
-Either:
-- (A) A single fullscreen quad with `gs_depth_composite` material, or
-- (B) The compute shader produces the final composited image directly (preferred —
-  avoids an extra rendering pass)
-
-**Files**:
-- MODIFY: [gaussian_composite.comp](cpp/open3d/visualization/rendering/filament/shaders/gaussian_composite.comp) — add scene depth input, depth-aware accumulation
-- NEW: `gs_depth_composite.mat` (if using material approach) in `cpp/open3d/visualization/gui/Materials/`
-- MODIFY: [SceneWidget.cpp](cpp/open3d/visualization/gui/SceneWidget.cpp) — update compositing code
-- MODIFY: [FilamentView.cpp](cpp/open3d/visualization/rendering/filament/FilamentView.cpp) — expose scene depth texture to compute
-
----
-
-### PHASE 5: Remove Vulkan 3DGS Code
-
-Remove all Vulkan-specific 3DGS compute code since OpenGL is now the backend for
-Linux/Windows.
-
-**Files to delete**:
-- DELETE: [GaussianComputeVulkanPipeline.h](cpp/open3d/visualization/rendering/filament/GaussianComputeVulkanPipeline.h)
-- DELETE: [GaussianComputeVulkanPipeline.cpp](cpp/open3d/visualization/rendering/filament/GaussianComputeVulkanPipeline.cpp)
-
-**Files to modify**:
-- MODIFY: [GaussianComputeRenderer.cpp](cpp/open3d/visualization/rendering/filament/GaussianComputeRenderer.cpp) — remove `GaussianComputeVulkanBackend` class (~400 lines), remove Vulkan includes
-- MODIFY: [FilamentNativeInterop.h/.cpp](cpp/open3d/visualization/rendering/filament/FilamentNativeInterop.h) — remove `GetFilamentVulkanNativeHandles()` and `FilamentVulkanNativeHandles` struct (if only used by 3DGS)
-- MODIFY: CMakeLists.txt — remove Vulkan pipeline source from build, remove Vulkan dependencies for 3DGS target
-
-**Keep**:
-- All 9 `.comp` shader source files — they are valid GLSL and compiled to OpenGL SPIR-V
-- Vulkan extensions in shaders (`GL_KHR_shader_subgroup_*`) — these are Khronos standard extensions supported in OpenGL 4.6
-- The `.spv` (Vulkan SPIR-V) and `.metal` outputs in the build can be removed or retained for reference
-
----
-
-### PHASE 6: Build Integration
-
-**Step 6.1: CMake changes**
-- MODIFY: [Open3DAddComputeShaders.cmake](cmake/Open3DAddComputeShaders.cmake) — add OpenGL SPIR-V output; optionally remove Vulkan SPIR-V output
-- MODIFY: `cpp/open3d/visualization/rendering/filament/CMakeLists.txt` — add OpenGL pipeline sources, remove Vulkan pipeline sources, link GL/EGL
-- MODIFY: Top-level CMakeLists.txt — GL 4.6 capability check
-
-**Step 6.2: Platform guards**
-- OpenGL backend: `#if !defined(__APPLE__)` (Linux + Windows)
-- Metal backend: `#if defined(__APPLE__)` (macOS only)
-- No Vulkan backend for 3DGS
+| # | Issue | Severity | Mitigation |
+|---|---|---|---|
+| 1 | Counter readback CPU stall | Medium | Remove readback by pre-allocation / indirect dispatch (FW1-1/FW1-7). |
+| 2 | Reversed-Z assumption | Medium | Add runtime diagnostics and shader path toggle for non-reversed depth conventions. |
+| 3 | Post-processing depth loss | Low–Medium | Keep `SetPostProcessing(false)` for GS views; warn when re-enabled. |
+| 4 | Stage A overlap sync | Low | If driver-specific glitches appear, insert `glFlush()` at end of Stage A. |
+| 5 | Redundant depth buffer on resize | Low | Avoid creating `depth_buffer_` in cached view when GS shared depth is active. |
+| 6 | Wayland EGL sharing unverified | Low | Implement FW2 and add platform test coverage. |
+| 7 | `kProgShellSort` legacy slot | Low | Remove legacy shell-sort shader/program slot after full cross-platform validation. |
 
 ---
 
 ## File Inventory
 
-### New files
-- `GaussianComputeOpenGLPipeline.h/.cpp` — OpenGL compute API (SSBO, images, dispatch)
-- `GaussianComputeOpenGLContext.h/.cpp` — EGL/WGL context creation and management
-- `gs_depth_composite.mat` — Filament material for depth-based compositing (if material approach)
+### Core implementation files
+- `GaussianComputeRenderer.h/.cpp` — Backend interface, OpenGL/Metal backends, output lifecycle;
+  `InvalidateOutputForView()` for safe resize
+- `GaussianComputeOpenGLPipeline.h/.cpp` — GL 4.5 compute API wrappers
+- `GaussianComputeOpenGLContext.h/.cpp` — GLX/EGL context creation; standalone and fallback paths
+- `GaussianComputeDataPacking.h/.cpp` — CPU → GPU data packing (std140/std430)
+- `GaussianComputeMetalShaders.h/.mm` — Metal compute dispatch (placeholder)
+- `FilamentResourceManager.h/.cpp` — `CreateImportedTexture()` for zero-copy import
+- `FilamentView.h/.cpp` — `EnableViewCaching()` invalidation fix before freeing color_buffer_
+- `FilamentScene.h/.cpp` — `InvalidateGaussianComputeOutput()` forwarding
+- `FilamentRenderer.h/.cpp` — frame schedule and GS output forwarding
+- `FilamentEngine.cpp` — pre-Filament shared context setup
 
-### Modified files
-- [FilamentEngine.cpp](cpp/open3d/visualization/rendering/filament/FilamentEngine.cpp) — Linux default → kOpenGL
-- [GaussianComputeRenderer.cpp](cpp/open3d/visualization/rendering/filament/GaussianComputeRenderer.cpp) — Add OpenGL backend, remove Vulkan backend, update Metal for import(), update CreateBackend/Supported
-- [gaussian_composite.comp](cpp/open3d/visualization/rendering/filament/shaders/gaussian_composite.comp) — Add scene depth input for depth-based compositing
-- [gaussian_radix_sort*.comp](cpp/open3d/visualization/rendering/filament/shaders/) (4 files) — push_constant → uniform block
-- [Open3DAddComputeShaders.cmake](cmake/Open3DAddComputeShaders.cmake) — OpenGL SPIR-V compilation
-- [SceneWidget.cpp](cpp/open3d/visualization/gui/SceneWidget.cpp) — Depth-based compositing
-- [FilamentView.cpp](cpp/open3d/visualization/rendering/filament/FilamentView.cpp) — Expose scene depth to compute pipeline
-- [FilamentNativeInterop.h/.cpp](cpp/open3d/visualization/rendering/filament/FilamentNativeInterop.h) — Remove Vulkan interop, add OpenGL if needed
+### Shader files (9 SPIR-V programs)
 
-### Deleted files
-- [GaussianComputeVulkanPipeline.h](cpp/open3d/visualization/rendering/filament/GaussianComputeVulkanPipeline.h)
-- [GaussianComputeVulkanPipeline.cpp](cpp/open3d/visualization/rendering/filament/GaussianComputeVulkanPipeline.cpp)
+| Index | File | Pass |
+|---|---|---|
+| 0 | `gaussian_project.comp` | Pass 1: splat projection, tile rect encoding |
+| 1 | `gaussian_prefix_sum.comp` | Pass 2: tile prefix sum, counter write |
+| 2 | `gaussian_scatter.comp` | Pass 3: tile-entry scatter |
+| 3 | `gaussian_sort.comp` | Legacy shell sort (compiled, not dispatched) |
+| 4 | `gaussian_composite.comp` | Pass 5: depth-aware compositing |
+| 5 | `gaussian_radix_sort_keygen.comp` | Keygen: `(tile_id<<16)|(depth>>16)` |
+| 6 | `gaussian_radix_sort_histograms.comp` | Radix histogram |
+| 7 | `gaussian_radix_sort.comp` | Radix scatter |
+| 8 | `gaussian_radix_sort_payload.comp` | Payload rearrangement |
 
-### Reference files (read-only)
-- [GaussianComputeDataPacking.h/.cpp](cpp/open3d/visualization/rendering/filament/GaussianComputeDataPacking.h) — scene packing (unchanged)
-- [GaussianComputeMetalShaders.h/.mm](cpp/open3d/visualization/rendering/filament/GaussianComputeMetalShaders.h) — Metal compute (modified for import only)
-- [Texture.h](build/filament/src/ext_filament/include/filament/Texture.h) — import() API
-- [PlatformEGL.h](build/filament/src/ext_filament/include/backend/platforms/PlatformEGL.h) — shared context
-
----
-
-## Dependency Graph
-
-```
-Phase 1 (Linux → OpenGL default) ──── independent, do first
-Phase 2 steps:
-  Step 2.1 (shared GL context) ────────┐
-  Step 2.3 (shader SPIR-V) ───────────┤
-                                       ├─→ Step 2.4 (OpenGL backend)
-  Step 2.2 (OpenGL pipeline API) ──────┤     └─→ Step 2.5 (zero-copy)
-                                       │
-Phase 3 (Metal zero-copy) ──── parallel with Phase 2
-Phase 4 (depth compositing) ── depends on Phase 2 (needs scene depth access)
-Phase 5 (remove Vulkan) ────── depends on Phase 2 (replacement must work first)
-Phase 6 (build integration) ── depends on Phase 2, 5
-```
+### GUI / example files
+- `SceneWidget.cpp` — ImGui base image + GS overlay alpha blending
+- `examples/cpp/GaussianSplat.cpp` — includes red sphere for depth compositing testing
 
 ---
 
-## Verification
+## Verification Checklist
 
-1. **Build**: `cmake --build build --parallel $(nproc) --target GaussianSplat` on Linux + Windows
-2. **Runtime**: `./bin/examples/GaussianSplat <scene>.ply`
-   - Scene renders correctly; camera rotation/zoom works; no flicker on mouse-move
-3. **Wayland**: Test on Wayland session (e.g. `GDK_BACKEND=wayland`) — verify window creation and rendering
-4. **Depth compositing**: Place Filament geometry (cube, mesh) partially inside Gaussian splat scene,
-   verify correct occlusion in both directions (scene in front of splats AND splats in front of scene)
-5. **GL debug**: Enable `GL_KHR_debug` for compute dispatch error checking
-6. **Metal**: Verify zero-copy on macOS via Xcode GPU profiler
-7. **Performance**: Frame time comparison before/after readback elimination (~2-4ms expected improvement)
+| Test | Command / Steps | Expected Result |
+|------|----------------|-----------------|
+| Build | `cmake --build build -j$(nproc) --target GaussianSplat` | Zero errors/warnings |
+| Basic render | `./bin/examples/GaussianSplat scene.ply` | Scene renders; orbit/zoom stable |
+| Depth compositing | Run with red sphere + GS | Correct per-splat occlusion |
+| Resize / maximize | Drag/maximize/restore | No panic, no corruption |
+| Large window | > 1280×720 (tile_count > 4096) | No tile sort corruption |
+| Wayland | `XDG_SESSION_TYPE=wayland ./bin/examples/GaussianSplat ...` | No crash; behavior documented |
+| Visibility updates | Toggle geometry show/hide | Immediate updates |
+| GL debug | Enable `GL_KHR_debug` callback | No compute dispatch GL errors |
 
 ---
 
@@ -496,12 +362,14 @@ Phase 6 (build integration) ── depends on Phase 2, 5
 
 | Decision | Rationale |
 |----------|-----------|
-| Linux default → OpenGL | Ensures GS compute works on all Linux systems; Vulkan was the previous default but not needed for 3DGS |
-| EGL for shared context (not GLX) | EGL works on both X11 and Wayland; GLX is X11-only |
-| Remove Vulkan 3DGS code | Simplifies maintenance; OpenGL compute is sufficient for 3DGS workload; Vulkan import() doesn't work in Filament |
-| Keep shader Vulkan extensions | `GL_KHR_shader_subgroup_*` are Khronos standard, supported in OpenGL 4.6 |
-| Build-time SPIR-V (not runtime GLSL) | Consistency with existing pipeline; faster startup; reproducible builds |
-| Vulkan SPIR-V in OpenGL (not OpenGL SPIR-V) | OpenGL SPIR-V (`-G`) fails for subgroup ops; Vulkan SPIR-V (`-V`) works via `GL_ARB_gl_spirv` |
-| GL 4.6 minimum for compute | Required for `glShaderBinary(SPIR_V)` + `glSpecializeShader()`. Widely available (Mesa 18.0+, 2017+) |
-| Depth-based compositing | Enables mixed 3DGS + mesh scenes with correct mutual occlusion |
-| import() for zero-copy | Works on OpenGL and Metal; eliminates ~12 MB/frame PCIe traffic |
+| Linux/Windows default → OpenGL | Ensures GS compute works; shared GL context enables zero-copy |
+| Standalone context before Filament | GL context sharing is only defined at creation time; Filament context is on driver thread |
+| GLX on X11, EGL on Wayland | Runtime selection via `XDG_SESSION_TYPE`; portable session detection |
+| Two-stage compute split | Enables Stage A overlap with Filament rasterization |
+| Compute shader compositing | Per-splat occlusion without extra material pass |
+| Shared sampleable depth texture | Zero-copy depth path between Filament and GS composite |
+| MSAA disabled for GS views | Required by Filament with sampleable depth attachments |
+| Vulkan SPIR-V in OpenGL | Works with subgroup ops where OpenGL SPIR-V target fails |
+| Binding 14 reuse | Safe because radix UBO and scene depth sampler are used in disjoint stages |
+| Sort key 16/16 split | Supports up to 65535 tiles while preserving usable depth ordering |
+| Pre-destroy invalidation on resize | Prevents Filament handle use-after-free during maximize/resize |
