@@ -179,7 +179,7 @@ jobs:
         shell: bash
         working-directory: ${{ env.BUILD_DIR }}
         run: |
-          .github/workflows/update_release.sh package/${{ env.DEVEL_PKG_NAME }}
+          $GITHUB_WORKSPACE/.github/workflows/update_release.sh package/${{ env.DEVEL_PKG_NAME }}
 
       - name: Viewer App
         working-directory: ${{ env.BUILD_DIR }}
@@ -350,7 +350,7 @@ jobs:
         shell: bash
         working-directory: ${{ env.BUILD_DIR }}
         run: |
-          .github/workflows/update_release.sh lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+          $GITHUB_WORKSPACE/.github/workflows/update_release.sh lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
   test-wheel:
     name: Test wheel
