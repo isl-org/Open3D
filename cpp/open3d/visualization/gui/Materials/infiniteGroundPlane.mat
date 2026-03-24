@@ -18,7 +18,14 @@ material {
 vertex {
     void materialVertex(inout MaterialVertexInputs material) {
          float4 p = getPosition();
-         material.near_world = getWorldFromClipMatrix() * float4(p.x, p.y, 0.0, 1.0);
+         // getWorldFromClipMatrix() expects z in "inverted DX" convention
+         // (Filament >= v1.10): near = 1.0, far = 0.0 in [0,1].
+         // Using z=1.0 gives the near-plane world position for this pixel
+         // direction, which is the ray origin for ground-plane intersection.
+         // (In Filament v1.9.9 the matrix used GL-standard z where z=0.0
+         // approximated the near plane; that no longer holds after the
+         // VERTEX_DOMAIN_DEVICE z-conversion was introduced.)
+         material.near_world = getWorldFromClipMatrix() * float4(p.x, p.y, 1.0, 1.0);
          material.near_world.xyz *= (1.0 / material.near_world.w);
     }
 }
