@@ -160,19 +160,11 @@ open3d_show_and_abort_on_warning(visualization)
 open3d_set_global_properties(visualization)
 open3d_set_open3d_lib_properties(visualization)
 open3d_link_3rdparty_libraries(visualization)
-if (BUILD_GAUSSIAN_SPLAT_COMPUTE)
-    target_compile_definitions(visualization PRIVATE
-                               OPEN3D_BUILD_GAUSSIAN_SPLAT_COMPUTE=1)
-endif()
 
 open3d_show_and_abort_on_warning(visualization_impl)
 open3d_set_global_properties(visualization_impl)
 open3d_set_open3d_lib_properties(visualization_impl)
 open3d_link_3rdparty_libraries(visualization_impl)
-if (BUILD_GAUSSIAN_SPLAT_COMPUTE)
-    target_compile_definitions(visualization_impl PRIVATE
-                               OPEN3D_BUILD_GAUSSIAN_SPLAT_COMPUTE=1)
-endif()
 
 # export GUI_RESOURCE_DIR to parent scope
 if (BUILD_GUI)

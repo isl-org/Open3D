@@ -83,8 +83,11 @@ struct MaterialRecord {
     // Infinite ground plane
     float ground_plane_axis = 0.f;  // 0: XZ; >0: XY; <0: YZ
 
-    // This is only used in gaussian splat.
-    int sh_degree = 0;
+    // Max Spherical Harmonic degree for rendering gaussian splats.
+    int gaussian_splat_sh_degree = 0;
+
+    // Minimum splat alpha value when rendering gaussian splats.
+    float gaussian_splat_min_alpha = 0.05f;
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;

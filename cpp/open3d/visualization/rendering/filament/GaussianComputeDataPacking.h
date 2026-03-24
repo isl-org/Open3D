@@ -46,7 +46,7 @@ struct alignas(16) PackedGaussianViewParams {
     float camera_position_and_near[4];
     // vec4 viewport_origin_and_size
     float viewport_origin_and_size[4];
-    // uvec4 scene  (x=splat_count, y=sh_degree, z=0, w=0)
+    // uvec4 scene  (x=splat_count, y=gaussian_splat_sh_degree, z=0, w=0)
     std::uint32_t scene[4];
     // uvec4 tiles  (xy=tile_size, zw=tile_count)
     std::uint32_t tiles[4];
@@ -104,7 +104,8 @@ struct GaussianSplatSourceData {
     std::vector<float> dc_opacity;  ///< 4 floats per splat (r, g, b, opacity)
     std::vector<float> sh_rest;     ///< Variable length SH coefficients
     std::uint32_t splat_count = 0;
-    int sh_degree = 0;
+    int gaussian_splat_sh_degree = 0;
+    float gaussian_splat_min_alpha = 0.05f;
 };
 
 // ----- Helper functions used by backends  ------------------------------------

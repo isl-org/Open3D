@@ -351,75 +351,142 @@ const GaussianSplatSourceData* FilamentScene::GetGaussianSplatSourceData()
     return gaussian_splat_source_.get();
 }
 
-void FilamentScene::CacheGaussianSplatData(
-        const t::geometry::PointCloud& cloud) {
+// TODO(SS): Remove unnecessary tests, optimize caching.
+void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
+                                           const MaterialRecord& material) {
     auto src = std::make_unique<GaussianSplatSourceData>();
 
     const auto& points = cloud.GetPointPositions();
     const size_t n = points.GetLength();
-    src->splat_count = static_cast<std::uint32_t>(n);
 
-    // Positions: 3 floats per splat.
-    {
-        auto pts = points.To(core::Float32).Contiguous();
-        src->positions.resize(n * 3);
-        std::memcpy(src->positions.data(), pts.GetDataPtr(),
-                    n * 3 * sizeof(float));
+    // Prepare attribute pointers (CPU float data).
+    auto pts = points.To(core::Float32).Contiguous();
+    const float* pts_ptr = pts.GetDataPtr<float>();
+
+    const bool has_scale = cloud.HasPointAttr("scale");
+    core::Tensor scale_attr;
+    const float* scale_ptr = nullptr;
+    if (has_scale) {
+        scale_attr = cloud.GetPointAttr("scale").To(core::Float32).Contiguous();
+        scale_ptr = scale_attr.GetDataPtr<float>();
     }
 
-    // Scale (log): 3 floats per splat.
-    if (cloud.HasPointAttr("scale")) {
-        auto attr = cloud.GetPointAttr("scale").To(core::Float32).Contiguous();
-        src->log_scales.resize(n * 3);
-        std::memcpy(src->log_scales.data(), attr.GetDataPtr(),
-                    n * 3 * sizeof(float));
-    } else {
-        src->log_scales.resize(n * 3, 0.f);
+    const bool has_rot = cloud.HasPointAttr("rot");
+    core::Tensor rot_attr;
+    const float* rot_ptr = nullptr;
+    if (has_rot) {
+        rot_attr = cloud.GetPointAttr("rot").To(core::Float32).Contiguous();
+        rot_ptr = rot_attr.GetDataPtr<float>();
     }
 
-    // Rotation: 4 floats per splat (quaternion).
-    if (cloud.HasPointAttr("rot")) {
-        auto attr = cloud.GetPointAttr("rot").To(core::Float32).Contiguous();
-        src->rotations.resize(n * 4);
-        std::memcpy(src->rotations.data(), attr.GetDataPtr(),
-                    n * 4 * sizeof(float));
-    } else {
-        src->rotations.resize(n * 4, 0.f);
-        for (size_t i = 0; i < n; ++i) {
-            src->rotations[i * 4] = 1.f;  // identity quaternion
-        }
+    const bool has_f_dc = cloud.HasPointAttr("f_dc");
+    const bool has_opacity = cloud.HasPointAttr("opacity");
+    core::Tensor f_dc_attr, opacity_attr;
+    const float* f_dc_ptr = nullptr;
+    const float* opacity_ptr = nullptr;
+    if (has_f_dc) {
+        f_dc_attr = cloud.GetPointAttr("f_dc").To(core::Float32).Contiguous();
+        f_dc_ptr = f_dc_attr.GetDataPtr<float>();
     }
-
-    // DC color + opacity: 4 floats per splat.
-    if (cloud.HasPointAttr("f_dc") && cloud.HasPointAttr("opacity")) {
-        auto f_dc = cloud.GetPointAttr("f_dc").To(core::Float32).Contiguous();
-        auto opacity =
+    if (has_opacity) {
+        opacity_attr =
                 cloud.GetPointAttr("opacity").To(core::Float32).Contiguous();
-        src->dc_opacity.resize(n * 4);
-        const float* f_dc_ptr = f_dc.GetDataPtr<float>();
-        const float* opacity_ptr = opacity.GetDataPtr<float>();
-        for (size_t i = 0; i < n; ++i) {
-            src->dc_opacity[i * 4 + 0] = f_dc_ptr[i * 3 + 0];
-            src->dc_opacity[i * 4 + 1] = f_dc_ptr[i * 3 + 1];
-            src->dc_opacity[i * 4 + 2] = f_dc_ptr[i * 3 + 2];
-            src->dc_opacity[i * 4 + 3] = opacity_ptr[i];
-        }
-    } else {
-        src->dc_opacity.resize(n * 4, 0.f);
+        opacity_ptr = opacity_attr.GetDataPtr<float>();
     }
 
-    // SH coefficients.
-    int sh_degree = cloud.GaussianSplatGetSHOrder();
-    src->sh_degree = std::min(sh_degree, 2);
-    if (src->sh_degree >= 1 && cloud.HasPointAttr("f_rest")) {
-        auto f_rest =
+    const bool has_f_rest = cloud.HasPointAttr("f_rest");
+    core::Tensor f_rest_attr;
+    const float* f_rest_ptr = nullptr;
+    if (has_f_rest) {
+        f_rest_attr =
                 cloud.GetPointAttr("f_rest").To(core::Float32).Contiguous();
-        const int coeffs_per_splat = src->sh_degree * (src->sh_degree + 2) * 3;
-        src->sh_rest.resize(n * coeffs_per_splat);
-        std::memcpy(src->sh_rest.data(), f_rest.GetDataPtr(),
-                    n * coeffs_per_splat * sizeof(float));
+        f_rest_ptr = f_rest_attr.GetDataPtr<float>();
     }
 
+    // Determine desired SH degree: use material preference but not above
+    // cloud's order.
+    int cloud_sh = cloud.GaussianSplatGetSHOrder();
+    int desired_sh = std::min(cloud_sh, material.gaussian_splat_sh_degree);
+    desired_sh = std::min(desired_sh, 2);
+    src->gaussian_splat_sh_degree = desired_sh;
+    src->gaussian_splat_min_alpha = material.gaussian_splat_min_alpha;
+
+    const float min_alpha = material.gaussian_splat_min_alpha;
+
+    // Reserve buffers for the (filtered) splats.
+    src->positions.reserve(n * 3);
+    src->log_scales.reserve(n * 3);
+    src->rotations.reserve(n * 4);
+    src->dc_opacity.reserve(n * 4);
+
+    int coeffs_per_splat = 0;
+    if (desired_sh >= 1 && has_f_rest) {
+        coeffs_per_splat = desired_sh * (desired_sh + 2) * 3;
+        src->sh_rest.reserve(n * coeffs_per_splat);
+    }
+
+    // Copy per-splat data only for splats meeting opacity threshold.
+    for (size_t i = 0; i < n; ++i) {
+        float opacity = 0.f;
+        if (opacity_ptr) opacity = opacity_ptr[i];
+        if (opacity < min_alpha) continue;
+
+        // position
+        src->positions.push_back(pts_ptr[i * 3 + 0]);
+        src->positions.push_back(pts_ptr[i * 3 + 1]);
+        src->positions.push_back(pts_ptr[i * 3 + 2]);
+
+        // scale
+        if (scale_ptr) {
+            src->log_scales.push_back(scale_ptr[i * 3 + 0]);
+            src->log_scales.push_back(scale_ptr[i * 3 + 1]);
+            src->log_scales.push_back(scale_ptr[i * 3 + 2]);
+        } else {
+            src->log_scales.push_back(0.f);
+            src->log_scales.push_back(0.f);
+            src->log_scales.push_back(0.f);
+        }
+
+        // rotation
+        if (rot_ptr) {
+            src->rotations.push_back(rot_ptr[i * 4 + 0]);
+            src->rotations.push_back(rot_ptr[i * 4 + 1]);
+            src->rotations.push_back(rot_ptr[i * 4 + 2]);
+            src->rotations.push_back(rot_ptr[i * 4 + 3]);
+        } else {
+            src->rotations.push_back(1.f);
+            src->rotations.push_back(0.f);
+            src->rotations.push_back(0.f);
+            src->rotations.push_back(0.f);
+        }
+
+        // DC color + opacity
+        if (f_dc_ptr && opacity_ptr) {
+            src->dc_opacity.push_back(f_dc_ptr[i * 3 + 0]);
+            src->dc_opacity.push_back(f_dc_ptr[i * 3 + 1]);
+            src->dc_opacity.push_back(f_dc_ptr[i * 3 + 2]);
+            src->dc_opacity.push_back(opacity_ptr[i]);
+        } else {
+            src->dc_opacity.push_back(0.f);
+            src->dc_opacity.push_back(0.f);
+            src->dc_opacity.push_back(0.f);
+            src->dc_opacity.push_back(0.f);
+        }
+
+        // SH coefficients: copy only up to coeffs_per_splat for this splat.
+        if (coeffs_per_splat > 0 && f_rest_ptr) {
+            // f_rest is stored per-splat sequentially in source buffer; compute
+            // the original index offset and copy the requested subset.
+            // Note: original f_rest layout may have had more coeffs; we only
+            // copy the first coeffs_per_splat floats per splat.
+            const float* src_ptr = f_rest_ptr + i * coeffs_per_splat;
+            for (int c = 0; c < coeffs_per_splat; ++c) {
+                src->sh_rest.push_back(src_ptr[c]);
+            }
+        }
+    }
+
+    src->splat_count = static_cast<std::uint32_t>(src->positions.size() / 3);
     gaussian_splat_source_ = std::move(src);
 }
 
@@ -593,7 +660,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
             auto* pcloud =
                     dynamic_cast<const t::geometry::PointCloud*>(&geometry);
             if (pcloud) {
-                CacheGaussianSplatData(*pcloud);
+                CacheGaussianSplatData(*pcloud, internal_material);
             }
         }
     }
@@ -1082,7 +1149,7 @@ void FilamentScene::UpdateGaussianSplat(GeometryMaterialInstance& geom_mi) {
             .SetParameter("clearCoatRoughness",
                           material.base_clearcoat_roughness)
             .SetParameter("anisotropy", material.base_anisotropy)
-            .SetParameter("shDegree", material.sh_degree)
+            .SetParameter("shDegree", material.gaussian_splat_sh_degree)
             .SetTexture("albedo", maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
             .SetTexture("normalMap", maps.normal_map,

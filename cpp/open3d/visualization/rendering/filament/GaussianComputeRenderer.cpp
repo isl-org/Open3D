@@ -50,8 +50,6 @@ public:
 };
 
 namespace {
-
-#if defined(OPEN3D_BUILD_GAUSSIAN_SPLAT_COMPUTE)
 bool ReadSPIRVFile(const std::string& path,
                    std::vector<std::uint8_t>* contents) {
     std::vector<char> bytes;
@@ -907,7 +905,6 @@ std::unique_ptr<GaussianComputeRenderer::Backend> CreateBackend(
     }
     return nullptr;
 }
-#endif
 
 std::vector<GaussianComputeRenderer::PassDefinition> CreateDefaultPasses() {
     return {
@@ -926,7 +923,6 @@ std::vector<GaussianComputeRenderer::PassDefinition> CreateDefaultPasses() {
 
 int CeilDiv(int value, int divisor) { return (value + divisor - 1) / divisor; }
 
-#if defined(OPEN3D_BUILD_GAUSSIAN_SPLAT_COMPUTE)
 bool GaussianComputeBackendSupported(RenderingType backend) {
     if (!EngineInstance::GetPlatform()) {
         return false;
@@ -947,7 +943,6 @@ bool GaussianComputeBackendSupported(RenderingType backend) {
     }
     return false;
 }
-#endif  // OPEN3D_BUILD_GAUSSIAN_SPLAT_COMPUTE
 
 }  // namespace
 
@@ -1032,12 +1027,10 @@ GaussianComputeRenderer::GaussianComputeRenderer(
     : engine_(engine),
       resource_mgr_(resource_mgr),
       pass_definitions_(CreateDefaultPasses()) {
-#if defined(OPEN3D_BUILD_GAUSSIAN_SPLAT_COMPUTE)
     enabled_ =
             GaussianComputeBackendSupported(EngineInstance::GetBackendType());
     backend_ = CreateBackend(EngineInstance::GetBackendType(), resource_mgr_,
                              render_config_);
-#endif
 }
 
 GaussianComputeRenderer::~GaussianComputeRenderer() {
@@ -1156,11 +1149,7 @@ void GaussianComputeRenderer::SetEnabled(bool enabled) {
 }
 
 bool GaussianComputeRenderer::IsSupported() const {
-#if defined(OPEN3D_BUILD_GAUSSIAN_SPLAT_COMPUTE)
     return GaussianComputeBackendSupported(EngineInstance::GetBackendType());
-#else
-    return false;
-#endif
 }
 
 bool GaussianComputeRenderer::HasOutput(const FilamentView& view) const {

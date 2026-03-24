@@ -17,6 +17,7 @@
 #include "open3d/Open3D.h"
 
 using namespace open3d;
+using visualization::gui::Application;
 
 void PrintUsage() {
     utility::LogInfo("Visualize Gaussian Splat from PLY or SPLAT file.");
@@ -49,7 +50,26 @@ int main(int argc, char** argv) {
     sphere.Translate(center, /*relative=*/false);
     auto p_sphere = std::make_shared<t::geometry::TriangleMesh>(sphere);
 
-    visualization::Draw({visualization::DrawObject(argv[1], gsplat),
-                         visualization::DrawObject("test_sphere", p_sphere)},
-                        "Gaussian Splat + Mesh Depth Test");
+    // Create a material that limits SH degree to 0 and filters low-alpha
+    // splats (only splats with opacity >= 0.2 will be cached/rendered).
+    visualization::rendering::MaterialRecord mat;
+    mat.shader = "gaussianSplat";
+    mat.gaussian_splat_sh_degree = 0;
+    mat.gaussian_splat_min_alpha = 0.2f;
+
+    // Launch visualizer directly so we can pass the material to AddGeometry.
+    auto& app = Application::GetInstance();
+    app.Initialize();
+    auto vis = std::make_shared<visualization::visualizer::O3DVisualizer>(
+            "Gaussian Splat + Mesh Depth Test", 1024, 768);
+
+    vis->AddGeometry(argv[1], gsplat, &mat);
+    vis->AddGeometry("test_sphere", p_sphere);
+    vis->ShowGeometry(argv[1], true);
+    vis->ShowGeometry("test_sphere", true);
+
+    vis->ResetCameraToDefault();
+    app.AddWindow(vis);
+    vis.reset();
+    app.Run();
 }

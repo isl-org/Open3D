@@ -92,7 +92,7 @@ PackedGaussianScene PackGaussianSceneInputs(
 
     vp.scene[0] = n;
     vp.scene[1] = static_cast<std::uint32_t>(
-            std::min(source.sh_degree, config.max_sh_degree));
+            std::min(source.gaussian_splat_sh_degree, config.max_sh_degree));
     vp.scene[2] = 0;
     vp.scene[3] = 0;
 
@@ -148,8 +148,8 @@ PackedGaussianScene PackGaussianSceneInputs(
     const std::uint32_t sh_vec4_total = n * kMaxShVec4PerSplat;
     packed.sh_coefficients.assign(sh_vec4_total, Std430Vec4{});
 
-    if (source.sh_degree >= 1 && !source.sh_rest.empty()) {
-        const int sh_degree = std::min(source.sh_degree, 2);
+    if (source.gaussian_splat_sh_degree >= 1 && !source.sh_rest.empty()) {
+        const int sh_degree = std::min(source.gaussian_splat_sh_degree, 2);
         const int sh_coeffs_per_splat = sh_degree * (sh_degree + 2) * 3;
         for (std::uint32_t i = 0; i < n; ++i) {
             const float* src = source.sh_rest.data() + i * sh_coeffs_per_splat;

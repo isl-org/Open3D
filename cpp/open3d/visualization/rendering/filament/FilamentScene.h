@@ -359,7 +359,8 @@ private:
     SkyboxHandle skybox_handle_;
     LightEntity sun_;
     std::unique_ptr<GaussianSplatSourceData> gaussian_splat_source_;
-    void CacheGaussianSplatData(const t::geometry::PointCloud& cloud);
+    void CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
+                                const MaterialRecord& material);
 };
 
 }  // namespace rendering
