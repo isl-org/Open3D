@@ -104,8 +104,8 @@ struct GaussianSplatSourceData {
     std::vector<float> dc_opacity;  ///< 4 floats per splat (r, g, b, opacity)
     std::vector<float> sh_rest;     ///< Variable length SH coefficients
     std::uint32_t splat_count = 0;
-    int gaussian_splat_sh_degree = 0;
-    float gaussian_splat_min_alpha = 0.05f;
+    int gaussian_splat_sh_degree = 2;
+    float gaussian_splat_min_alpha = 0.0f;
 };
 
 // ----- Helper functions used by backends  ------------------------------------

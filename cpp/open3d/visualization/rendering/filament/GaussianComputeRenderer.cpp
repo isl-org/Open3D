@@ -124,10 +124,15 @@ private:
 };
 
 #if !defined(__APPLE__)
-// Radix sort dispatch constants.
+// Radix sort dispatch constants. These must match the GLSL #defines in
+// the gaussian_compute_dispatch_args.comp shader (RADIX_WG_SIZE, etc.).
 static constexpr std::uint32_t kRadixWorkgroupSize = 256;
 static constexpr std::uint32_t kRadixSortBins = 256;
 static constexpr std::uint32_t kRadixTargetBlocksPerWG = 32;
+// Stride (bytes) per RadixSortParams slot in the GPU radix_params_buf.
+// Must be >= sizeof(RadixSortParams)==16 and a multiple of
+// GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT (256 on most desktop GPUs).
+static constexpr std::uint32_t kRadixParamsStride = 256;
 
 // RadixSortParams matches the std140 UBO at binding 14 in the radix
 // sort shaders.
@@ -149,6 +154,9 @@ enum ProgramIndex {
     kProgRadixHistograms = 6,
     kProgRadixScatter = 7,
     kProgRadixPayload = 8,
+    // Single-thread pass that reads total_entries from counters and writes
+    // all indirect dispatch args and RadixSortParams GPU-side (no CPU stall).
+    kProgComputeDispatchArgs = 9,
 };
 
 // OpenGL compute backend for Linux and Windows.
@@ -267,6 +275,54 @@ public:
                 ResizeGLBuffer(vs.tile_offsets_buf, tile_scalar_size);
         vs.tile_heads_buf = ResizeGLBuffer(vs.tile_heads_buf, tile_scalar_size);
 
+        // Pre-allocate sort buffers using a conservative capacity estimate so
+        // the GPU never stalls on a CPU readback to learn the actual entry
+        // count from the prefix-sum pass (FW1-1 elimination). capacity =
+        // min(splat_count × kMaxTilesPerSplat, kMaxEntriesCapacity)
+        static constexpr std::uint32_t kMaxTilesPerSplat = 32u;
+        static constexpr std::uint32_t kMaxEntriesCapacity =
+                32u * 1024u * 1024u;
+        const std::uint32_t entries_capacity = std::min(
+                packed.splat_count * kMaxTilesPerSplat, kMaxEntriesCapacity);
+        const std::size_t entry_buf_size =
+                std::max(sizeof(PackedTileEntry),
+                         static_cast<std::size_t>(entries_capacity) *
+                                 sizeof(PackedTileEntry));
+        vs.tile_entries_buf =
+                ResizeGLBuffer(vs.tile_entries_buf, entry_buf_size);
+        vs.sorted_entries_buf =
+                ResizeGLBuffer(vs.sorted_entries_buf, entry_buf_size);
+
+        const std::size_t key_cap_size = std::max<std::size_t>(
+                4u, static_cast<std::size_t>(entries_capacity) *
+                            sizeof(std::uint32_t));
+        for (int i = 0; i < 2; ++i) {
+            vs.sort_keys_buf[i] =
+                    ResizeGLBuffer(vs.sort_keys_buf[i], key_cap_size);
+            vs.sort_values_buf[i] =
+                    ResizeGLBuffer(vs.sort_values_buf[i], key_cap_size);
+        }
+
+        const std::uint32_t radix_num_wg_cap = std::max(
+                1u, (entries_capacity +
+                     kRadixWorkgroupSize * kRadixTargetBlocksPerWG - 1u) /
+                            (kRadixWorkgroupSize * kRadixTargetBlocksPerWG));
+        vs.histogram_buf = ResizeGLBuffer(
+                vs.histogram_buf,
+                std::max<std::size_t>(
+                        4u, static_cast<std::size_t>(radix_num_wg_cap) *
+                                    kRadixSortBins * sizeof(std::uint32_t)));
+
+        // Dispatch args: 10 indirect commands × 3 uint32 = 120 bytes.
+        vs.dispatch_args_buf = ResizeGLBuffer(vs.dispatch_args_buf,
+                                              10u * 3u * sizeof(std::uint32_t));
+
+        // Radix params: 4 passes × kRadixParamsStride bytes.
+        // Written by kProgComputeDispatchArgs at 256-byte-aligned offsets so
+        // the C++ loop can use glBindBufferRange for the UBO at binding 14.
+        vs.radix_params_buf =
+                ResizeGLBuffer(vs.radix_params_buf, 4u * kRadixParamsStride);
+
         // --- Upload data to GPU ---
         UploadGLBuffer(vs.view_params_buf, &packed.view_params,
                        sizeof(PackedGaussianViewParams), 0);
@@ -352,85 +408,64 @@ public:
         GLComputeFullBarrier();
         DrainGLErrors("after PrefixSum");
 
-        // Read back counter[0] = total_entries.
-        std::array<std::uint32_t, kGaussianCounterCount> counters = {};
-        DownloadGLBuffer(vs.counters_buf, counters.data(), sizeof(counters), 0);
-        const std::uint32_t total_entries = counters[0];
-
-        // Allocate tile entries buffer.
-        vs.tile_entries_buf = ResizeGLBuffer(
-                vs.tile_entries_buf,
-                std::max<std::size_t>(sizeof(PackedTileEntry),
-                                      total_entries * sizeof(PackedTileEntry)));
+        // --- GPU-side: Compute dispatch args and RadixSortParams ---
+        // Reads total_entries from counters[0] and writes all indirect dispatch
+        // counts plus RadixSortParams for every radix sub-pass.
+        // This avoids the DownloadGLBuffer CPU/GPU sync stall (FW1-1).
+        BindSSBO(11, vs.dispatch_args_buf);
+        BindSSBO(12, vs.radix_params_buf);
+        UseProgram(programs_[kProgComputeDispatchArgs]);
+        DispatchCompute(1, 1, 1);
+        GLComputeFullBarrier();
+        DrainGLErrors("after DispatchArgs");
 
         // --- Pass 3: Scatter ---
+        // The scatter shader iterates over splat_count (not tile_count), so
+        // dispatch ceil_div(splat_count, group_size) workgroups to maximise
+        // GPU utilisation.  (Previous dispatch of total_tiles was correct but
+        // under-utilised GPU when splat_count >> total_tiles × group_size.)
         BindSSBO(11, vs.tile_entries_buf);
-
-        if (!dispatch_pass(GaussianComputeRenderer::PassType::kTileScatter,
-                           programs_[kProgScatter], "Scatter")) {
+        if (!programs_[kProgScatter].valid) {
+            utility::LogWarning(
+                    "GS OpenGL: scatter program not valid, skipping");
             gl_ctx.ReleaseCurrent();
             return false;
         }
+        UseProgram(programs_[kProgScatter]);
+        DispatchCompute(
+                std::max(1u, (packed.splat_count +
+                              static_cast<std::uint32_t>(
+                                      config_.scatter_group_size) -
+                              1u) /
+                                     static_cast<std::uint32_t>(
+                                             config_.scatter_group_size)),
+                1, 1);
         GLComputeFullBarrier();
         DrainGLErrors("after Scatter");
 
-        // --- Pass 4: Radix Sort ---
-        // Compute radix sort work distribution.
-        const std::uint32_t radix_num_wg = std::max(
-                1u,
-                (total_entries + kRadixWorkgroupSize * kRadixTargetBlocksPerWG -
-                 1) / (kRadixWorkgroupSize * kRadixTargetBlocksPerWG));
-        const std::uint32_t radix_blocks_per_wg = std::max(
-                1u, (total_entries + radix_num_wg * kRadixWorkgroupSize - 1) /
-                            (radix_num_wg * kRadixWorkgroupSize));
-
-        // Allocate radix sort temporary buffers.
+        // --- Pass 4: Radix Sort (GPU indirect dispatch, no CPU readback) ---
+        // All dispatch counts and RadixSortParams were written GPU-side above.
+        // We use glBindBufferRange to expose one RadixSortParams slot per pass
+        // at stride kRadixParamsStride (256 bytes) via the UBO at binding 14.
         {
-            const std::size_t key_size = std::max<std::size_t>(
-                    4, total_entries * sizeof(std::uint32_t));
-            for (int i = 0; i < 2; ++i) {
-                vs.sort_keys_buf[i] =
-                        ResizeGLBuffer(vs.sort_keys_buf[i], key_size);
-                vs.sort_values_buf[i] =
-                        ResizeGLBuffer(vs.sort_values_buf[i], key_size);
-            }
-            vs.histogram_buf = ResizeGLBuffer(
-                    vs.histogram_buf,
-                    std::max<std::size_t>(4, radix_num_wg * kRadixSortBins *
-                                                     sizeof(std::uint32_t)));
-            vs.radix_params_buf = ResizeGLBuffer(vs.radix_params_buf,
-                                                 sizeof(RadixSortParams));
-            vs.sorted_entries_buf = ResizeGLBuffer(
-                    vs.sorted_entries_buf,
-                    std::max<std::size_t>(
-                            sizeof(PackedTileEntry),
-                            total_entries * sizeof(PackedTileEntry)));
-        }
-
-        if (total_entries > 0) {
-            // Keygen: create composite sort keys from tile entries.
-            {
-                RadixSortParams params{total_entries, 0, 0, 0};
-                UploadGLBuffer(vs.radix_params_buf, &params, sizeof(params), 0);
-                BindUBO(14, vs.radix_params_buf);
-                BindSSBO(0, vs.tile_entries_buf);
-                BindSSBO(1, vs.sort_keys_buf[0]);
-                BindSSBO(2, vs.sort_values_buf[0]);
-                UseProgram(programs_[kProgRadixKeygen]);
-                DispatchCompute((total_entries + kRadixWorkgroupSize - 1) /
-                                        kRadixWorkgroupSize,
-                                1, 1);
-                GLComputeFullBarrier();
-            }
+            // Keygen: create composite sort keys (tile_id<<16 | depth>>16).
+            BindUBORange(14, vs.radix_params_buf, 0,
+                         sizeof(RadixSortParams));  // only g_num_elements used
+            BindSSBO(0, vs.tile_entries_buf);
+            BindSSBO(1, vs.sort_keys_buf[0]);
+            BindSSBO(2, vs.sort_values_buf[0]);
+            UseProgram(programs_[kProgRadixKeygen]);
+            DispatchComputeIndirect(vs.dispatch_args_buf, 0u);  // arg[0]
+            GLComputeFullBarrier();
 
             // 4 passes of histogram + scatter (8 bits per pass).
+            // Dispatch counts and per-pass params are in the GPU buffers.
             int src = 0;
-            for (std::uint32_t shift = 0; shift < 32; shift += 8) {
+            for (std::uint32_t pass = 0; pass < 4; ++pass) {
                 const int dst = 1 - src;
-                RadixSortParams params{total_entries, shift, radix_num_wg,
-                                       radix_blocks_per_wg};
-                UploadGLBuffer(vs.radix_params_buf, &params, sizeof(params), 0);
-                BindUBO(14, vs.radix_params_buf);
+                // Bind the params slot for this pass at its 256-byte offset.
+                BindUBORange(14, vs.radix_params_buf, pass * kRadixParamsStride,
+                             sizeof(RadixSortParams));
 
                 ClearGLBuffer(vs.histogram_buf);
                 GLComputeFullBarrier();
@@ -439,39 +474,39 @@ public:
                 BindSSBO(0, vs.sort_keys_buf[src]);
                 BindSSBO(1, vs.histogram_buf);
                 UseProgram(programs_[kProgRadixHistograms]);
-                DispatchCompute(radix_num_wg, 1, 1);
+                DispatchComputeIndirect(
+                        vs.dispatch_args_buf,
+                        (1u + pass) * 3u * sizeof(std::uint32_t));
                 GLComputeFullBarrier();
 
-                // Scatter pass.
+                // Sort-scatter pass.
                 BindSSBO(0, vs.sort_keys_buf[src]);
                 BindSSBO(1, vs.sort_keys_buf[dst]);
                 BindSSBO(2, vs.histogram_buf);
                 BindSSBO(3, vs.sort_values_buf[src]);
                 BindSSBO(4, vs.sort_values_buf[dst]);
                 UseProgram(programs_[kProgRadixScatter]);
-                DispatchCompute(radix_num_wg, 1, 1);
+                DispatchComputeIndirect(
+                        vs.dispatch_args_buf,
+                        (5u + pass) * 3u * sizeof(std::uint32_t));
                 GLComputeFullBarrier();
 
                 src = dst;
             }
 
-            // After 4 passes (even swap count), result is in buf[0].
-            // Payload: rearrange TileEntry structs by sorted indices.
-            {
-                RadixSortParams params{total_entries, 0, 0, 0};
-                UploadGLBuffer(vs.radix_params_buf, &params, sizeof(params), 0);
-                BindUBO(14, vs.radix_params_buf);
-                BindSSBO(0, vs.sort_values_buf[src]);
-                BindSSBO(1, vs.tile_entries_buf);
-                BindSSBO(2, vs.sorted_entries_buf);
-                UseProgram(programs_[kProgRadixPayload]);
-                DispatchCompute((total_entries + kRadixWorkgroupSize - 1) /
-                                        kRadixWorkgroupSize,
-                                1, 1);
-                GLComputeFullBarrier();
-            }
-            DrainGLErrors("after RadixSort");
+            // After 4 passes (even swap count), sorted result is in buf[0].
+            // Payload: rearrange TileEntry structs into sorted order.
+            BindUBORange(14, vs.radix_params_buf, 0,
+                         sizeof(RadixSortParams));  // only g_num_elements used
+            BindSSBO(0, vs.sort_values_buf[src]);
+            BindSSBO(1, vs.tile_entries_buf);
+            BindSSBO(2, vs.sorted_entries_buf);
+            UseProgram(programs_[kProgRadixPayload]);
+            DispatchComputeIndirect(vs.dispatch_args_buf,
+                                    9u * 3u * sizeof(std::uint32_t));
+            GLComputeFullBarrier();
         }
+        DrainGLErrors("after RadixSort");
 
         // We defer Finish to allow overlap with Filament scene draw
         gl_ctx.ReleaseCurrent();
@@ -659,6 +694,9 @@ private:
         GLBufferHandle tile_heads_buf;
         GLBufferHandle counters_buf;
         GLBufferHandle tile_entries_buf;
+        // Indirect dispatch args written by kProgComputeDispatchArgs.
+        // 10 commands x 3 uint32 = 120 bytes.
+        GLBufferHandle dispatch_args_buf;
         // Radix sort temporary buffers.
         GLBufferHandle sort_keys_buf[2];
         GLBufferHandle sort_values_buf[2];
@@ -690,6 +728,7 @@ private:
                 "gaussian_radix_sort_histograms.spv",
                 "gaussian_radix_sort.spv",
                 "gaussian_radix_sort_payload.spv",
+                "gaussian_compute_dispatch_args.spv",
         };
         static_assert(sizeof(kShaderSPVFiles) / sizeof(kShaderSPVFiles[0]) ==
                               kNumPrograms,
@@ -734,6 +773,7 @@ private:
             DestroyGLBuffer(vs.tile_heads_buf);
             DestroyGLBuffer(vs.counters_buf);
             DestroyGLBuffer(vs.tile_entries_buf);
+            DestroyGLBuffer(vs.dispatch_args_buf);
             for (int i = 0; i < 2; ++i) {
                 DestroyGLBuffer(vs.sort_keys_buf[i]);
                 DestroyGLBuffer(vs.sort_values_buf[i]);
@@ -766,7 +806,7 @@ private:
     FilamentResourceManager& resource_mgr_;
     const GaussianComputeRenderer::RenderConfig& config_;
     std::unordered_map<const FilamentView*, ViewState> view_states_;
-    static constexpr int kNumPrograms = 9;
+    static constexpr int kNumPrograms = 10;
     GLComputeProgram programs_[kNumPrograms] = {};
     bool programs_loaded_ = false;
     bool programs_valid_ = false;

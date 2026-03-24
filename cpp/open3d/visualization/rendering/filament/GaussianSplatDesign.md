@@ -189,6 +189,7 @@ requires no dispatch logic updates.
 | Opt8 | Early culling | Behind-camera and negligible-alpha splats rejected in projection |
 | Opt9 | GPU Stage A overlap | Geometry stage defers `glFinish()` so Filament rasterization overlaps |
 | Opt10 | Zero-copy depth | Shared GL depth texture; no CPU readback or re-upload |
+| Opt11 | No-readback radix sort | `gaussian_compute_dispatch_args.comp` writes all indirect dispatch counts and `RadixSortParams` GPU-side after prefix-sum; removes `DownloadGLBuffer` CPU stall (FW1-1). Sort buffers pre-allocated from splat-count estimate; scatter dispatched over `splat_count` for full parallelism. |
 
 ### Data Packing (`GaussianComputeDataPacking`)
 - `PackGaussianSceneInputs`: CPU → GPU-compatible std140/std430 layouts
@@ -234,7 +235,7 @@ Required work:
 
 | # | Optimization | Impact | Description |
 |---|---|---|---|
-| FW1-1 | Eliminate counter readback | High | After prefix-sum, `total_entries` is read back via `glGetBufferSubData` — CPU/GPU sync stall. Pre-allocate tile entries buffer to worst-case size and scatter directly without readback. Remove `DownloadGLBuffer(counters_buf)` from the hot path. |
+| FW1-1 | ~~Eliminate counter readback~~ | ~~High~~ | **Done (Opt11).** Removed `DownloadGLBuffer` stall. `gaussian_compute_dispatch_args.comp` writes all indirect dispatch args and `RadixSortParams` GPU-side. Sort buffers pre-allocated; scatter dispatched over `splat_count`. |
 | FW1-2 | Reduce radix sort passes | Medium | Key is 32 bits but only `ceil(log2(tile_count)) + 16` bits are significant. At 4K (32,400 tiles), only 30 bits matter. Running fewer sort passes can reduce one full sort phase per frame. |
 | FW1-3 | Fused prefix-sum + scatter | Medium | Merge tile count accumulation and scatter using subgroup prefix sums plus global atomics. Eliminates one compute dispatch and one full barrier round-trip. |
 | FW1-4 | Async compute overlap | Medium | Stage A currently serializes with `flushAndWait()` before compute. Move Stage A onto async compute where possible and synchronize with fences/timeline semaphores. |
@@ -341,6 +342,7 @@ macOS uses Metal exclusively. See PHASE 3 for the complete implementation plan.
 | 6 | `gaussian_radix_sort_histograms.comp` | Radix histogram |
 | 7 | `gaussian_radix_sort.comp` | Radix scatter |
 | 8 | `gaussian_radix_sort_payload.comp` | Payload rearrangement |
+| 9 | `gaussian_compute_dispatch_args.comp` | Writes indirect dispatch counts and `RadixSortParams` for all radix sub-passes (no CPU readback) |
 
 ### GUI / example files
 - `SceneWidget.cpp` — ImGui base image + GS overlay alpha blending

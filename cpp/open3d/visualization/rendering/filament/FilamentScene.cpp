@@ -13,7 +13,9 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
+#include <cmath>
 #include <cstring>
+#include <limits>
 #include <unordered_set>
 
 #ifdef _MSC_VER
@@ -411,7 +413,19 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
     src->gaussian_splat_sh_degree = desired_sh;
     src->gaussian_splat_min_alpha = material.gaussian_splat_min_alpha;
 
-    const float min_alpha = material.gaussian_splat_min_alpha;
+    // The projection shader applies Sigmoid(dc.w) to the raw logit-space
+    // opacity stored in the PLY file.  Convert min_alpha to logit space so
+    // the CPU-side filter and the GPU-side filter use the same scale.
+    // sigmoid(x) = 1 / (1 + exp(-x))  =>  x = log(a / (1 - a))
+    // Guard against min_alpha <= 0 (accept all) and >= 1 (reject all).
+    const float min_alpha_sigmoid = material.gaussian_splat_min_alpha;
+    float min_opacity_logit = -std::numeric_limits<float>::infinity();
+    if (min_alpha_sigmoid > 0.0f && min_alpha_sigmoid < 1.0f) {
+        min_opacity_logit = std::log(min_alpha_sigmoid /
+                                     (1.0f - min_alpha_sigmoid));
+    } else if (min_alpha_sigmoid >= 1.0f) {
+        min_opacity_logit = std::numeric_limits<float>::infinity();
+    }
 
     // Reserve buffers for the (filtered) splats.
     src->positions.reserve(n * 3);
@@ -419,17 +433,25 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
     src->rotations.reserve(n * 4);
     src->dc_opacity.reserve(n * 4);
 
+    // Number of SH rest coefficients per splat in the destination: capped to
+    // desired_sh.  Source stride uses cloud_sh (may be larger than desired_sh).
     int coeffs_per_splat = 0;
+    int source_coeffs_per_splat = 0;
+    if (has_f_rest && cloud_sh >= 1) {
+        source_coeffs_per_splat = cloud_sh * (cloud_sh + 2) * 3;
+    }
     if (desired_sh >= 1 && has_f_rest) {
         coeffs_per_splat = desired_sh * (desired_sh + 2) * 3;
         src->sh_rest.reserve(n * coeffs_per_splat);
     }
 
     // Copy per-splat data only for splats meeting opacity threshold.
+    // Opacity in the PLY is stored in logit (pre-sigmoid) space; compare
+    // against the logit-converted threshold computed above.
     for (size_t i = 0; i < n; ++i) {
         float opacity = 0.f;
         if (opacity_ptr) opacity = opacity_ptr[i];
-        if (opacity < min_alpha) continue;
+        if (opacity < min_opacity_logit) continue;
 
         // position
         src->positions.push_back(pts_ptr[i * 3 + 0]);
@@ -474,12 +496,11 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
         }
 
         // SH coefficients: copy only up to coeffs_per_splat for this splat.
+        // source_coeffs_per_splat is the original stride in the cloud tensor
+        // (cloud_sh * (cloud_sh+2) * 3); coeffs_per_splat is the desired
+        // (possibly smaller) number to store (desired_sh * (desired_sh+2) * 3).
         if (coeffs_per_splat > 0 && f_rest_ptr) {
-            // f_rest is stored per-splat sequentially in source buffer; compute
-            // the original index offset and copy the requested subset.
-            // Note: original f_rest layout may have had more coeffs; we only
-            // copy the first coeffs_per_splat floats per splat.
-            const float* src_ptr = f_rest_ptr + i * coeffs_per_splat;
+            const float* src_ptr = f_rest_ptr + i * source_coeffs_per_splat;
             for (int c = 0; c < coeffs_per_splat; ++c) {
                 src->sh_rest.push_back(src_ptr[c]);
             }

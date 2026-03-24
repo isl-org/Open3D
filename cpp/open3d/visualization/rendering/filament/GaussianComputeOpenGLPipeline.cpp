@@ -354,6 +354,25 @@ void DispatchCompute(std::uint32_t num_groups_x,
     glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
 }
 
+void DispatchComputeIndirect(const GLBufferHandle& buffer,
+                             std::size_t byte_offset) {
+    if (!buffer.valid) return;
+    // GL_DISPATCH_INDIRECT_BUFFER = 0x90EE
+    glBindBuffer(0x90EE, buffer.id);
+    glDispatchComputeIndirect(static_cast<GLintptr>(byte_offset));
+    glBindBuffer(0x90EE, 0);
+}
+
+void BindUBORange(std::uint32_t binding,
+                  const GLBufferHandle& buffer,
+                  std::size_t offset,
+                  std::size_t size) {
+    if (!buffer.valid) return;
+    glBindBufferRange(GL_UNIFORM_BUFFER, binding, buffer.id,
+                      static_cast<GLintptr>(offset),
+                      static_cast<GLsizeiptr>(size));
+}
+
 void GLComputeBarrier(std::uint32_t bits) {
     glMemoryBarrier(static_cast<GLbitfield>(bits));
 }

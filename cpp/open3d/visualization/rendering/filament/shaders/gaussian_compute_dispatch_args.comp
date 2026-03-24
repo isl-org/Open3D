@@ -1,0 +1,121 @@
+// Gaussian compute — dispatch argument generator.
+//
+// Single-thread pass runs after the tile prefix-sum to read total_entries
+// from the GPU counter buffer and write all indirect dispatch counts plus
+// RadixSortParams for every radix-sort sub-pass.  This eliminates the
+// DownloadGLBuffer CPU/GPU sync stall that previously preceded the sort.
+//
+// Dispatch arg layout (binding 11, 10 x uvec3 written as raw uint32):
+//   index 0         : keygen
+//   indices 1..4    : histogram pass 0..3
+//   indices 5..8    : sort-scatter pass 0..3
+//   index 9         : payload
+// Each entry is 3 consecutive uint32 ({x, y, z}), offset = index * 12.
+//
+// RadixSortParams layout (binding 12):
+//   4 entries, each occupying PARAMS_STRIDE_UINTS uint32 values.
+//   stride = 256 bytes = 64 uints (matches GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT).
+//   entry i is at uint offset i * PARAMS_STRIDE_UINTS.
+//
+// Constants must match the C++ kRadixWorkgroupSize / kRadixTargetBlocksPerWG
+// in GaussianComputeRenderer.cpp.
+
+#version 450
+
+layout(local_size_x = 1) in;
+
+// --- Constants (must match C++ radix sort constants) ---
+#define RADIX_WG_SIZE          256u
+#define RADIX_BLOCKS_PER_WG     32u
+// Stride per RadixSortParams entry in the UBO-mapped buffer.
+// Each entry is 16 bytes of useful data padded to 256 bytes
+// (= 64 uint32) to satisfy GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT.
+#define PARAMS_STRIDE_UINTS     64u
+
+// --- Bindings ---
+
+// counters_buf (binding 10): [0] = total_entries written by prefix-sum.
+layout(std430, binding = 10) readonly buffer GaussianGlobalCounters {
+    uint g_counters[];
+};
+
+// dispatch_args_buf (binding 11): 10 indirect dispatch commands.
+// Written as flat uint32 array (3 uints per command = 12 bytes) so that
+// glDispatchComputeIndirect can read {x,y,z} at 12-byte-aligned offsets.
+layout(std430, binding = 11) writeonly buffer DispatchArgs {
+    uint g_dispatch_args[];
+};
+
+// radix_params_buf (binding 12): 4 x RadixSortParams, each padded to
+// PARAMS_STRIDE_UINTS uint32 (256 bytes) for UBO range-binding.
+layout(std430, binding = 12) writeonly buffer RadixParamsRaw {
+    uint g_radix_params[];
+};
+
+// --- Helpers ---
+
+void WriteDispatch(uint index, uint x, uint y, uint z) {
+    uint base = index * 3u;
+    g_dispatch_args[base]      = x;
+    g_dispatch_args[base + 1u] = y;
+    g_dispatch_args[base + 2u] = z;
+}
+
+void WriteRadixParams(uint pass_index,
+                      uint num_elements,
+                      uint shift,
+                      uint num_workgroups,
+                      uint blocks_per_wg) {
+    uint base = pass_index * PARAMS_STRIDE_UINTS;
+    g_radix_params[base]      = num_elements;
+    g_radix_params[base + 1u] = shift;
+    g_radix_params[base + 2u] = num_workgroups;
+    g_radix_params[base + 3u] = blocks_per_wg;
+}
+
+// --- Main ---
+
+void main() {
+    uint total_entries = (g_counters.length() > 0) ? g_counters[0] : 0u;
+
+    // Compute radix sort work distribution (mirrors C++ logic exactly).
+    uint radix_num_wg = max(1u,
+        (total_entries + RADIX_WG_SIZE * RADIX_BLOCKS_PER_WG - 1u)
+        / (RADIX_WG_SIZE * RADIX_BLOCKS_PER_WG));
+    uint radix_blocks_per_wg = max(1u,
+        (total_entries + radix_num_wg * RADIX_WG_SIZE - 1u)
+        / (radix_num_wg * RADIX_WG_SIZE));
+
+    // keygen / payload group count: ceil_div(N, RADIX_WG_SIZE).
+    // Dispatch 0 if total_entries == 0 so empty scenes are a no-op.
+    uint keygen_groups = (total_entries == 0u) ? 0u :
+        (total_entries + RADIX_WG_SIZE - 1u) / RADIX_WG_SIZE;
+    uint sort_groups = (total_entries == 0u) ? 0u : radix_num_wg;
+
+    // --- Write dispatch args ---
+    // [0] keygen
+    WriteDispatch(0u, keygen_groups, 1u, 1u);
+    // [1..4] histogram passes
+    WriteDispatch(1u, sort_groups, 1u, 1u);
+    WriteDispatch(2u, sort_groups, 1u, 1u);
+    WriteDispatch(3u, sort_groups, 1u, 1u);
+    WriteDispatch(4u, sort_groups, 1u, 1u);
+    // [5..8] sort-scatter passes
+    WriteDispatch(5u, sort_groups, 1u, 1u);
+    WriteDispatch(6u, sort_groups, 1u, 1u);
+    WriteDispatch(7u, sort_groups, 1u, 1u);
+    WriteDispatch(8u, sort_groups, 1u, 1u);
+    // [9] payload
+    WriteDispatch(9u, keygen_groups, 1u, 1u);
+
+    // --- Write RadixSortParams for each of 4 sort passes ---
+    // Only g_num_elements is read by keygen/payload. All four fields are
+    // used by the histogram and sort-scatter shaders.
+    for (uint i = 0u; i < 4u; i++) {
+        WriteRadixParams(i,
+                         total_entries,
+                         i * 8u,           // shift: 0, 8, 16, 24
+                         radix_num_wg,
+                         radix_blocks_per_wg);
+    }
+}

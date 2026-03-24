@@ -135,9 +135,6 @@ void DownloadGLTexture2D(const GLTextureHandle& texture,
 /// Bind a buffer to a shader storage buffer binding point.
 void BindSSBO(std::uint32_t binding, const GLBufferHandle& buffer);
 
-/// Bind a buffer to a uniform buffer binding point.
-void BindUBO(std::uint32_t binding, const GLBufferHandle& buffer);
-
 /// Bind a texture as an image unit for compute shader access.
 /// access: GL_READ_ONLY, GL_WRITE_ONLY, or GL_READ_WRITE.
 void BindImage(std::uint32_t binding,
@@ -156,6 +153,22 @@ void UseProgram(const GLComputeProgram& program);
 void DispatchCompute(std::uint32_t num_groups_x,
                      std::uint32_t num_groups_y,
                      std::uint32_t num_groups_z);
+
+/// Dispatch compute work groups from an indirect buffer.
+/// The buffer must contain {num_groups_x, num_groups_y, num_groups_z} as
+/// three consecutive uint32 values starting at byte_offset.
+void DispatchComputeIndirect(const GLBufferHandle& buffer,
+                             std::size_t byte_offset);
+
+/// Bind a buffer to a uniform buffer binding point.
+void BindUBO(std::uint32_t binding, const GLBufferHandle& buffer);
+
+/// Bind a sub-range of a buffer to a uniform buffer binding point.
+/// offset must be a multiple of GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT.
+void BindUBORange(std::uint32_t binding,
+                  const GLBufferHandle& buffer,
+                  std::size_t offset,
+                  std::size_t size);
 
 /// Insert a memory barrier. bits should be a combination of
 /// GL_SHADER_STORAGE_BARRIER_BIT, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT, etc.

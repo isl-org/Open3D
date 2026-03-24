@@ -21,12 +21,14 @@ using visualization::gui::Application;
 
 void PrintUsage() {
     utility::LogInfo("Visualize Gaussian Splat from PLY or SPLAT file.");
-    utility::LogInfo("Usage: GaussianSplat <filename.[ply|splat]>");
+    utility::LogInfo("Usage: GaussianSplat <filename.[ply|splat]> [sh_degree] [min_alpha]");
+    utility::LogInfo("  sh_degree: integer 0..2 (default 2)");
+    utility::LogInfo("  min_alpha: float 0..1 (default 0)");
 }
 
 int main(int argc, char** argv) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
-    if (argc != 2 ||
+    if (argc < 2 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintUsage();
         return 1;
@@ -50,12 +52,39 @@ int main(int argc, char** argv) {
     sphere.Translate(center, /*relative=*/false);
     auto p_sphere = std::make_shared<t::geometry::TriangleMesh>(sphere);
 
-    // Create a material that limits SH degree to 0 and filters low-alpha
-    // splats (only splats with opacity >= 0.2 will be cached/rendered).
+    // Parse optional args: sh_degree, min_alpha
+    int sh_degree = 2;
+    float min_alpha = 0.0f;
+    if (argc >= 3) {
+        try {
+            sh_degree = std::stoi(argv[2]);
+        } catch (...) {
+            utility::LogWarning("Invalid sh_degree '{}', using default {}",
+                                argv[2], sh_degree);
+        }
+    }
+    if (argc >= 4) {
+        try {
+            min_alpha = std::stof(argv[3]);
+        } catch (...) {
+            utility::LogWarning("Invalid min_alpha '{}', using default {}",
+                                argv[3], min_alpha);
+        }
+    }
+
+    // Clamp values to sane ranges
+    sh_degree = std::max(0, std::min(2, sh_degree));
+    if (min_alpha < 0.0f) min_alpha = 0.0f;
+    if (min_alpha > 1.0f) min_alpha = 1.0f;
+
+    utility::LogInfo("Using sh_degree={} min_alpha={}", sh_degree,
+                     min_alpha);
+
+    // Create a material that sets SH degree and filters low-alpha splats.
     visualization::rendering::MaterialRecord mat;
     mat.shader = "gaussianSplat";
-    mat.gaussian_splat_sh_degree = 0;
-    mat.gaussian_splat_min_alpha = 0.2f;
+    mat.gaussian_splat_sh_degree = sh_degree;
+    mat.gaussian_splat_min_alpha = min_alpha;
 
     // Launch visualizer directly so we can pass the material to AddGeometry.
     auto& app = Application::GetInstance();
