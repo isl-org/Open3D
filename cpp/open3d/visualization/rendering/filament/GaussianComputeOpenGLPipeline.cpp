@@ -61,8 +61,8 @@ GLComputeProgram CompileGLComputeProgram(const std::string& source,
         if (log_len > 0) {
             glGetShaderInfoLog(shader, log_len, nullptr, log.data());
         }
-        utility::LogWarning("Compute shader compile error ({}): {}",
-                            debug_name, log);
+        utility::LogWarning("Compute shader compile error ({}): {}", debug_name,
+                            log);
         glDeleteShader(shader);
         return result;
     }
@@ -135,8 +135,8 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
         if (log_len > 0) {
             glGetShaderInfoLog(shader, log_len, nullptr, log.data());
         }
-        utility::LogWarning("SPIR-V specialization error ({}): {}",
-                            debug_name, log);
+        utility::LogWarning("SPIR-V specialization error ({}): {}", debug_name,
+                            log);
         glDeleteShader(shader);
         return result;
     }
@@ -155,8 +155,8 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
         if (log_len > 0) {
             glGetProgramInfoLog(program, log_len, nullptr, log.data());
         }
-        utility::LogWarning("SPIR-V program link error ({}): {}",
-                            debug_name, log);
+        utility::LogWarning("SPIR-V program link error ({}): {}", debug_name,
+                            log);
         glDeleteProgram(program);
         return result;
     }
@@ -308,8 +308,8 @@ void DestroyGLTexture(GLTextureHandle& texture) {
 }
 
 void DownloadGLTexture2D(const GLTextureHandle& texture,
-                        void* data,
-                        std::uint32_t format) {
+                         void* data,
+                         std::uint32_t format) {
     if (!texture.valid || !data) return;
     glBindTexture(GL_TEXTURE_2D, texture.id);
     glGetTexImage(GL_TEXTURE_2D, 0, format, GL_FLOAT, data);
@@ -358,9 +358,7 @@ void GLComputeBarrier(std::uint32_t bits) {
     glMemoryBarrier(static_cast<GLbitfield>(bits));
 }
 
-void GLComputeFullBarrier() {
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-}
+void GLComputeFullBarrier() { glMemoryBarrier(GL_ALL_BARRIER_BITS); }
 
 std::uint32_t DrainGLErrors(const char* context) {
     GLenum first_err = GL_NO_ERROR;

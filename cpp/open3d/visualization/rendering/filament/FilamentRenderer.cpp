@@ -189,11 +189,11 @@ void FilamentRenderer::BeginFrame() {
         // views, not views that are merely inactive due to scene caching.
         std::unordered_set<const FilamentView*> live_views;
         for (const auto& pair : scenes_) {
-            pair.second->ForEachView([&](FilamentView& view) {
-                live_views.insert(&view);
-            });
+            pair.second->ForEachView(
+                    [&](FilamentView& view) { live_views.insert(&view); });
             pair.second->ForEachActiveView([&](FilamentView& view) {
-                gaussian_compute_renderer_->RenderGeometryStage(view, *pair.second);
+                gaussian_compute_renderer_->RenderGeometryStage(view,
+                                                                *pair.second);
             });
         }
         gaussian_compute_renderer_->PruneOutputs(live_views);

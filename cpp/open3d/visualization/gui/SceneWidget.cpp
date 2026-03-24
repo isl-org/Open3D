@@ -1139,8 +1139,8 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         static int gs_ol_log = 0;
         if (gs_ol_log < 10) {
             utility::LogDebug("GS overlay: gs_tex={} id={}",
-                             static_cast<bool>(gs_tex),
-                             gs_tex ? gs_tex.GetId() : 0);
+                              static_cast<bool>(gs_tex),
+                              gs_tex ? gs_tex.GetId() : 0);
             ++gs_ol_log;
         }
     }

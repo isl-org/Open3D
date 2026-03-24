@@ -45,30 +45,7 @@ namespace visualization {
 namespace rendering {
 
 namespace {
-
-/// Detect whether to use GLX (X11) or EGL (Wayland) at runtime.
-GaussianComputeOpenGLContext::Backend DetectBackend() {
-    // Prefer XDG_SESSION_TYPE (most reliable on modern Linux).
-    const char* session = std::getenv("XDG_SESSION_TYPE");
-    if (session) {
-        if (std::strcmp(session, "wayland") == 0) {
-            return GaussianComputeOpenGLContext::Backend::kEGL;
-        }
-        if (std::strcmp(session, "x11") == 0) {
-            return GaussianComputeOpenGLContext::Backend::kGLX;
-        }
-    }
-    // Fallback to display environment variables.
-    if (std::getenv("WAYLAND_DISPLAY")) {
-        return GaussianComputeOpenGLContext::Backend::kEGL;
-    }
-    if (std::getenv("DISPLAY")) {
-        return GaussianComputeOpenGLContext::Backend::kGLX;
-    }
-    // Default to EGL (more portable).
-    return GaussianComputeOpenGLContext::Backend::kEGL;
-}
-
+// (Anonymous namespace reserved for future local helpers.)
 }  // namespace
 
 GaussianComputeOpenGLContext& GaussianComputeOpenGLContext::GetInstance() {
@@ -86,38 +63,48 @@ bool GaussianComputeOpenGLContext::Initialize() {
     // Called from RenderGeometryStage (after Filament engine exists).
     // InitializeStandalone() should already have been called from
     // FilamentEngine.cpp *before* Engine::create(), making this a no-op.
-    // If not (e.g. non-GL backend path), fall back to GLX/EGL independent
-    // init for compute-only work.
-    backend_ = DetectBackend();
-    if (backend_ == Backend::kGLX) {
-        if (InitializeGLX()) {
-            return true;
-        }
-        utility::LogWarning(
-                "GaussianComputeOpenGLContext: GLX init failed, trying EGL.");
-        backend_ = Backend::kEGL;
+    // If not (e.g. non-GL backend path), try to create a compute context now.
+    //
+    // Filament v1.54.0 uses PlatformGLX on Linux regardless of the active
+    // display server. Always try GLX first so our context shares Filament's
+    // GL object namespace. On Wayland the X11/GLX connection uses XWayland.
+    backend_ = Backend::kGLX;
+    if (InitializeGLX()) {
+        return true;
     }
+    utility::LogWarning(
+            "GaussianComputeOpenGLContext: GLX init failed, trying EGL.");
+    backend_ = Backend::kEGL;
     return InitializeEGL();
 }
 
 bool GaussianComputeOpenGLContext::InitializeStandalone() {
-    // Creates a standalone GL context (no Filament sharing required), meant
-    // to be called BEFORE Filament's Engine::create() so the context can be
-    // passed as the sharedGLContext.  Filament will then create its own
-    // context sharing our GL namespace (same GLX_FBCONFIG_ID, same Display).
+    // Creates a standalone GL context meant to be called BEFORE Filament's
+    // Engine::create() so the context can be passed as the sharedGLContext.
+    // Filament then creates its own context sharing our GL namespace
+    // (same GLX_FBCONFIG_ID, same Display).
     if (initialized_) {
         return true;
     }
-    backend_ = DetectBackend();
-    if (backend_ == Backend::kGLX) {
-        if (InitializeGLXStandalone()) {
-            return true;
+    // Filament v1.54.0 uses PlatformGLX on Linux regardless of the active
+    // display server (compile-time selection in PlatformFactory.cpp). Always
+    // create a GLX context so the handle passed to Engine::create() matches
+    // what PlatformGLX expects. On Wayland compositors, XWayland provides the
+    // required X11/GLX connection.
+    backend_ = Backend::kGLX;
+    if (InitializeGLXStandalone()) {
+        const char* session = std::getenv("XDG_SESSION_TYPE");
+        if (session && std::strcmp(session, "wayland") == 0) {
+            utility::LogInfo(
+                    "GaussianComputeOpenGLContext: Wayland session detected; "
+                    "using GLX via XWayland for Filament compatibility.");
         }
-        utility::LogWarning(
-                "GaussianComputeOpenGLContext: GLX standalone init failed, "
-                "trying EGL.");
-        backend_ = Backend::kEGL;
+        return true;
     }
+    utility::LogWarning(
+            "GaussianComputeOpenGLContext: GLX standalone init failed, "
+            "falling back to EGL (no Filament context sharing).");
+    backend_ = Backend::kEGL;
     return InitializeEGL();
 }
 
@@ -160,8 +147,7 @@ bool GaussianComputeOpenGLContext::InitializeGLX() {
 
     // 2. Query the FBConfig ID that Filament's context uses.
     int used_fb_id = -1;
-    if (glXQueryContext(dpy, filament_ctx, GLX_FBCONFIG_ID, &used_fb_id) !=
-                0 ||
+    if (glXQueryContext(dpy, filament_ctx, GLX_FBCONFIG_ID, &used_fb_id) != 0 ||
         used_fb_id < 0) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: Failed to query "
@@ -212,13 +198,11 @@ bool GaussianComputeOpenGLContext::InitializeGLX() {
     }
 
     // 4. Load glXCreateContextAttribsARB.
-    using CreateContextAttribsARB = GLXContext (*)(Display*, GLXFBConfig,
-                                                   GLXContext, Bool,
-                                                   const int*);
-    auto glXCreateContextAttribsARB =
-            reinterpret_cast<CreateContextAttribsARB>(glXGetProcAddressARB(
-                    reinterpret_cast<const GLubyte*>(
-                            "glXCreateContextAttribsARB")));
+    using CreateContextAttribsARB =
+            GLXContext (*)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+    auto glXCreateContextAttribsARB = reinterpret_cast<CreateContextAttribsARB>(
+            glXGetProcAddressARB(reinterpret_cast<const GLubyte*>(
+                    "glXCreateContextAttribsARB")));
     if (!glXCreateContextAttribsARB) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: "
@@ -256,11 +240,9 @@ bool GaussianComputeOpenGLContext::InitializeGLX() {
         swa.colormap = XCreateColormap(dpy, RootWindow(dpy, vis->screen),
                                        vis->visual, AllocNone);
         swa.border_pixel = 0;
-        drawable = XCreateWindow(
-                dpy, RootWindow(dpy, vis->screen),
-                0, 0, 1, 1, 0,
-                vis->depth, InputOutput, vis->visual,
-                CWColormap | CWBorderPixel, &swa);
+        drawable = XCreateWindow(dpy, RootWindow(dpy, vis->screen), 0, 0, 1, 1,
+                                 0, vis->depth, InputOutput, vis->visual,
+                                 CWColormap | CWBorderPixel, &swa);
         XFree(vis);
     }
 
@@ -343,13 +325,11 @@ bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
     XFree(configs);
 
     // Load glXCreateContextAttribsARB.
-    using CreateContextAttribsARB = GLXContext (*)(Display*, GLXFBConfig,
-                                                   GLXContext, Bool,
-                                                   const int*);
-    auto glXCreateContextAttribsARB =
-            reinterpret_cast<CreateContextAttribsARB>(glXGetProcAddressARB(
-                    reinterpret_cast<const GLubyte*>(
-                            "glXCreateContextAttribsARB")));
+    using CreateContextAttribsARB =
+            GLXContext (*)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+    auto glXCreateContextAttribsARB = reinterpret_cast<CreateContextAttribsARB>(
+            glXGetProcAddressARB(reinterpret_cast<const GLubyte*>(
+                    "glXCreateContextAttribsARB")));
     if (!glXCreateContextAttribsARB) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: "
@@ -383,9 +363,8 @@ bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
 
     // Create a 1×1 PBuffer as our offscreen drawable.
     const int pbuf_attribs[] = {GLX_PBUFFER_WIDTH, 1, GLX_PBUFFER_HEIGHT, 1,
-                                 None};
-    GLXPbuffer pbuf =
-            glXCreatePbuffer(dpy, chosen_config, pbuf_attribs);
+                                None};
+    GLXPbuffer pbuf = glXCreatePbuffer(dpy, chosen_config, pbuf_attribs);
     if (!pbuf) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: PBuffer creation failed "
@@ -508,8 +487,7 @@ void GaussianComputeOpenGLContext::Shutdown() {
         if (glx_drawable_) {
             if (owns_display_) {
                 // Standalone init: drawable is a PBuffer.
-                glXDestroyPbuffer(dpy,
-                                  static_cast<GLXPbuffer>(glx_drawable_));
+                glXDestroyPbuffer(dpy, static_cast<GLXPbuffer>(glx_drawable_));
             } else {
                 // Shared init: drawable is an offscreen X11 window.
                 XDestroyWindow(dpy, static_cast<Window>(glx_drawable_));
@@ -527,8 +505,7 @@ void GaussianComputeOpenGLContext::Shutdown() {
         x_display_ = nullptr;
     } else {
         auto display = static_cast<EGLDisplay>(egl_display_);
-        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE,
-                        EGL_NO_CONTEXT);
+        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
         if (egl_context_) {
             eglDestroyContext(display, static_cast<EGLContext>(egl_context_));
             egl_context_ = nullptr;
@@ -585,10 +562,9 @@ bool GaussianComputeOpenGLContext::MakeCurrent() {
                 reinterpret_cast<const char*>(glGetString(GL_VERSION));
         const char* renderer =
                 reinterpret_cast<const char*>(glGetString(GL_RENDERER));
-        utility::LogDebug(
-                "GaussianComputeOpenGLContext: {} — GL {} on {}",
-                backend_ == Backend::kGLX ? "GLX" : "EGL",
-                version ? version : "?", renderer ? renderer : "?");
+        utility::LogDebug("GaussianComputeOpenGLContext: {} — GL {} on {}",
+                          backend_ == Backend::kGLX ? "GLX" : "EGL",
+                          version ? version : "?", renderer ? renderer : "?");
     }
 
     return ok;
@@ -604,8 +580,7 @@ void GaussianComputeOpenGLContext::ReleaseCurrent() {
         glXMakeContextCurrent(dpy, None, None, nullptr);
     } else {
         auto display = static_cast<EGLDisplay>(egl_display_);
-        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE,
-                        EGL_NO_CONTEXT);
+        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     }
 }
 

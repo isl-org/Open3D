@@ -12,6 +12,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
@@ -109,7 +110,22 @@ void GLFWWindowSystem::Initialize() {
     // if using a framework version of Python).
     glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
+#if defined(__linux__)
+    // Filament v1.54.0 selects PlatformGLX exclusively on Linux (compile-time
+    // decision in PlatformFactory.cpp). Force GLFW to X11 so the native window
+    // handle is an X11 Window (XID), matching what PlatformGLX expects. On
+    // Wayland compositors, XWayland transparently provides X11 compatibility.
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+    if (!glfwInit()) {
+        utility::LogWarning(
+                "GLFWWindowSystem: X11 GLFW init failed (XWayland not "
+                "available?). Falling back to headless mode.");
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
+        glfwInit();
+    }
+#else
     glfwInit();
+#endif
 }
 
 void GLFWWindowSystem::Uninitialize() { glfwTerminate(); }

@@ -392,8 +392,7 @@ void FilamentScene::CacheGaussianSplatData(
 
     // DC color + opacity: 4 floats per splat.
     if (cloud.HasPointAttr("f_dc") && cloud.HasPointAttr("opacity")) {
-        auto f_dc =
-                cloud.GetPointAttr("f_dc").To(core::Float32).Contiguous();
+        auto f_dc = cloud.GetPointAttr("f_dc").To(core::Float32).Contiguous();
         auto opacity =
                 cloud.GetPointAttr("opacity").To(core::Float32).Contiguous();
         src->dc_opacity.resize(n * 4);
@@ -415,8 +414,7 @@ void FilamentScene::CacheGaussianSplatData(
     if (src->sh_degree >= 1 && cloud.HasPointAttr("f_rest")) {
         auto f_rest =
                 cloud.GetPointAttr("f_rest").To(core::Float32).Contiguous();
-        const int coeffs_per_splat =
-                src->sh_degree * (src->sh_degree + 2) * 3;
+        const int coeffs_per_splat = src->sh_degree * (src->sh_degree + 2) * 3;
         src->sh_rest.resize(n * coeffs_per_splat);
         std::memcpy(src->sh_rest.data(), f_rest.GetDataPtr(),
                     n * coeffs_per_splat * sizeof(float));

@@ -87,7 +87,6 @@ public:
     void SetRenderTarget(const RenderTargetHandle render_target);
 
 private:
-
     std::unique_ptr<FilamentCamera> camera_;
     Mode mode_ = Mode::Color;
     TargetBuffers discard_buffers_;

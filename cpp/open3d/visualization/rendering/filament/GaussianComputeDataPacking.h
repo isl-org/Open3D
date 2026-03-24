@@ -98,11 +98,11 @@ struct PackedGaussianScene {
 /// Stored alongside the scene so that compute backends can pack input buffers
 /// without reading back from Filament vertex buffers.
 struct GaussianSplatSourceData {
-    std::vector<float> positions;     ///< 3 floats per splat (x, y, z)
-    std::vector<float> log_scales;    ///< 3 floats per splat
-    std::vector<float> rotations;     ///< 4 floats per splat (quat w, x, y, z)
-    std::vector<float> dc_opacity;    ///< 4 floats per splat (r, g, b, opacity)
-    std::vector<float> sh_rest;       ///< Variable length SH coefficients
+    std::vector<float> positions;   ///< 3 floats per splat (x, y, z)
+    std::vector<float> log_scales;  ///< 3 floats per splat
+    std::vector<float> rotations;   ///< 4 floats per splat (quat w, x, y, z)
+    std::vector<float> dc_opacity;  ///< 4 floats per splat (r, g, b, opacity)
+    std::vector<float> sh_rest;     ///< Variable length SH coefficients
     std::uint32_t splat_count = 0;
     int sh_degree = 0;
 };
@@ -118,22 +118,20 @@ PackedGaussianScene PackGaussianSceneInputs(
 
 /// Upload compute output arrays into the pre-allocated Filament color/depth
 /// textures held by OutputTargets.  Returns true on success.
-bool UploadOutputTextures(
-        FilamentResourceManager& resource_mgr,
-        const std::vector<Std430Vec4>& color_pixels,
-        const std::vector<float>& depth_pixels,
-        std::uint32_t width,
-        std::uint32_t height,
-        GaussianComputeRenderer::OutputTargets& targets);
+bool UploadOutputTextures(FilamentResourceManager& resource_mgr,
+                          const std::vector<Std430Vec4>& color_pixels,
+                          const std::vector<float>& depth_pixels,
+                          std::uint32_t width,
+                          std::uint32_t height,
+                          GaussianComputeRenderer::OutputTargets& targets);
 
 /// Upload half-float RGBA data directly (avoiding half→float→half roundtrip).
-bool UploadOutputTexturesHalf(
-        FilamentResourceManager& resource_mgr,
-        const void* half_rgba_data,
-        std::size_t half_data_size,
-        std::uint32_t width,
-        std::uint32_t height,
-        GaussianComputeRenderer::OutputTargets& targets);
+bool UploadOutputTexturesHalf(FilamentResourceManager& resource_mgr,
+                              const void* half_rgba_data,
+                              std::size_t half_data_size,
+                              std::uint32_t width,
+                              std::uint32_t height,
+                              GaussianComputeRenderer::OutputTargets& targets);
 
 }  // namespace rendering
 }  // namespace visualization

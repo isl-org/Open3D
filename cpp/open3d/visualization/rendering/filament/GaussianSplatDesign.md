@@ -8,8 +8,8 @@ sorts, and composites Gaussian splats into a color image. A shared GL depth text
 the composite shader to reject splats behind Filament-rendered mesh geometry, producing
 correct per-splat depth occlusion.
 
-**Supported platforms**: Linux X11/GLX (operational), Linux Wayland/EGL (context created,
-not tested end-to-end), Windows/WGL (planned), macOS/Metal (placeholder only).
+**Supported platforms**: Linux X11/GLX (operational, including Wayland via XWayland),
+Windows/WGL (planned), macOS/Metal (placeholder only).
 
 ---
 
@@ -243,27 +243,32 @@ Required work:
 | FW1-7 | Indirect dispatch for scatter | Low | Use GPU-written dispatch arguments (`glDispatchComputeIndirect`) to reduce overhead on sparse scenes. |
 | FW1-8 | MSAA re-enable via depth resolve | Low | Re-enable MSAA for meshes via explicit depth resolve while keeping sampleable depth for GS composite. |
 
-### FW2: Wayland / EGL Platform Testing and Debugging
+### FW2: Native Wayland / EGL (Requires Filament rebuild)
 
-The EGL code path (`InitializeEGL()`) currently creates an independent context — no sharing with
-Filament — because Filament on Wayland does not currently expose an already-shared EGL context in
-this integration path. As a result, depth texture sharing is not validated on Wayland yet.
+**Current state**: Wayland sessions work via XWayland. `GLFWWindowSystem::Initialize()` forces
+`GLFW_PLATFORM_X11` and `GaussianComputeOpenGLContext::InitializeStandalone()` always creates a
+GLX context. Both match Filament v1.54.0's compile-time `PlatformGLX` selection.
 
-**Required work:**
+**Why native EGL requires a Filament rebuild**: `PlatformFactory.cpp` selects `PlatformGLX` or
+`PlatformEGLHeadless` at compile time. `PlatformEGLHeadless` has no windowed swapchain. There is
+no runtime Wayland platform in Filament v1.54.0.
 
-1. **EGL context sharing**: Check Filament's EGL platform implementation in
-   `3rdparty_downloads/filament/` for `sharedGLContext` support and implement
-   `InitializeEGLStandalone()` analogous to `InitializeGLXStandalone()`.
-2. **Test environment**: Set up Wayland compositor testing (`weston`/`sway`) and verify
-   `DetectBackend()` selects `kEGL` via `XDG_SESSION_TYPE=wayland`.
-3. **Extension checks**: Validate `EGL_KHR_create_context` and
-   `EGL_KHR_surfaceless_context`; add explicit diagnostics when missing.
-4. **Integration test**: Run `GaussianSplat` under Wayland; verify render correctness,
-   depth compositing behavior, and no GL errors.
-5. **Fallback path**: Test scenarios where `XDG_SESSION_TYPE` is unset and only
-   `WAYLAND_DISPLAY` is present.
+**Required work for native Wayland (no XWayland):**
 
-**Files affected**: `GaussianComputeOpenGLContext.cpp`, `FilamentEngine.cpp`
+1. **Filament platform**: Build Filament from source with
+   `-DFILAMENT_SUPPORTS_EGL_ON_LINUX=ON -DFILAMENT_SUPPORTS_XLIB=OFF -DFILAMENT_SUPPORTS_XCB=OFF`
+   and add a windowed EGL swapchain to `PlatformEGL` (upstream contribution or local patch).
+2. **EGL standalone context**: Implement `InitializeEGLStandalone()` analogous to
+   `InitializeGLXStandalone()` — creates an EGL context before Filament for namespace sharing.
+3. **Backend selection**: Tie the GS compute backend and the GLFW platform hint to the
+   Filament platform chosen at build time (CMake variable or runtime detection of `PlatformEGL`).
+4. **Remove X11 override**: Once Filament has a windowed EGL path, remove the
+   `GLFW_PLATFORM_X11` hint from `GLFWWindowSystem::Initialize()`.
+5. **Validation**: Test with `XDG_SESSION_TYPE=wayland` on Weston/GNOME-Wayland without
+   XWayland; verify render correctness and depth compositing.
+
+**Files to modify**: `GaussianComputeOpenGLContext.cpp`, `GLFWWindowSystem.cpp`,
+`FilamentEngine.cpp`, `3rdparty/filament/filament_build.cmake`
 
 ### FW3: Windows / WGL Platform Testing and Debugging
 
@@ -303,7 +308,7 @@ macOS uses Metal exclusively. See PHASE 3 for the complete implementation plan.
 | 3 | Post-processing depth loss | Low–Medium | Keep `SetPostProcessing(false)` for GS views; warn when re-enabled. |
 | 4 | Stage A overlap sync | Low | If driver-specific glitches appear, insert `glFlush()` at end of Stage A. |
 | 5 | Redundant depth buffer on resize | Low | Avoid creating `depth_buffer_` in cached view when GS shared depth is active. |
-| 6 | Wayland EGL sharing unverified | Low | Implement FW2 and add platform test coverage. |
+| 6 | Native Wayland (no XWayland) unsupported | Low | Filament v1.54.0 has no windowed EGL platform. Current fix forces X11/XWayland. See FW2 for native Wayland plan. |
 | 7 | `kProgShellSort` legacy slot | Low | Remove legacy shell-sort shader/program slot after full cross-platform validation. |
 
 ---
@@ -364,7 +369,7 @@ macOS uses Metal exclusively. See PHASE 3 for the complete implementation plan.
 |----------|-----------|
 | Linux/Windows default → OpenGL | Ensures GS compute works; shared GL context enables zero-copy |
 | Standalone context before Filament | GL context sharing is only defined at creation time; Filament context is on driver thread |
-| GLX on X11, EGL on Wayland | Runtime selection via `XDG_SESSION_TYPE`; portable session detection |
+| Force GLX on Linux (incl. Wayland) | Filament v1.54.0 uses PlatformGLX unconditionally on Linux. EGL context passed as `sharedGLContext` causes `glXQueryContext` X11 error; Wayland `wl_surface*` passed to `createSwapChain` crashes PlatformGLX. Force `GLFW_PLATFORM_X11` and GLX context; XWayland provides compatibility on Wayland compositors. Native EGL requires a Filament rebuild (see FW2). |
 | Two-stage compute split | Enables Stage A overlap with Filament rasterization |
 | Compute shader compositing | Per-splat occlusion without extra material pass |
 | Shared sampleable depth texture | Zero-copy depth path between Filament and GS composite |

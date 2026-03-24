@@ -127,8 +127,8 @@ void DestroyGLTexture(GLTextureHandle& texture);
 /// Download texture pixels to CPU memory (RGBA float32).
 /// The output buffer must have room for width * height * 4 floats.
 void DownloadGLTexture2D(const GLTextureHandle& texture,
-                        void* data,
-                        std::uint32_t format);
+                         void* data,
+                         std::uint32_t format);
 
 // --- Compute dispatch ---
 

@@ -47,8 +47,7 @@ PackedGaussianScene PackGaussianSceneInputs(
         const GaussianSplatSourceData& source,
         const GaussianComputeRenderer::ViewRenderData& render_data,
         const GaussianComputeRenderer::RenderConfig& config,
-        const std::vector<GaussianComputeRenderer::PassDispatch>&
-                dispatches) {
+        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches) {
     PackedGaussianScene packed;
 
     if (source.splat_count == 0 || render_data.viewport_size.x() <= 0 ||
@@ -170,13 +169,12 @@ PackedGaussianScene PackGaussianSceneInputs(
     return packed;
 }
 
-bool UploadOutputTextures(
-        FilamentResourceManager& resource_mgr,
-        const std::vector<Std430Vec4>& color_pixels,
-        const std::vector<float>& depth_pixels,
-        std::uint32_t width,
-        std::uint32_t height,
-        GaussianComputeRenderer::OutputTargets& targets) {
+bool UploadOutputTextures(FilamentResourceManager& resource_mgr,
+                          const std::vector<Std430Vec4>& color_pixels,
+                          const std::vector<float>& depth_pixels,
+                          std::uint32_t width,
+                          std::uint32_t height,
+                          GaussianComputeRenderer::OutputTargets& targets) {
     if (width == 0 || height == 0) {
         return false;
     }
@@ -211,8 +209,7 @@ bool UploadOutputTextures(
                 uint32_t bits;
                 std::memcpy(&bits, &f, 4);
                 uint32_t sign = (bits >> 16) & 0x8000;
-                int32_t exponent =
-                        ((bits >> 23) & 0xFF) - 127 + 15;
+                int32_t exponent = ((bits >> 23) & 0xFF) - 127 + 15;
                 uint32_t mantissa = bits & 0x007FFFFF;
                 if (exponent <= 0) {
                     return static_cast<uint16_t>(sign);
@@ -220,9 +217,8 @@ bool UploadOutputTextures(
                 if (exponent >= 31) {
                     return static_cast<uint16_t>(sign | 0x7C00);
                 }
-                return static_cast<uint16_t>(
-                        sign | (exponent << 10) |
-                        (mantissa >> 13));
+                return static_cast<uint16_t>(sign | (exponent << 10) |
+                                             (mantissa >> 13));
             };
             half_data[i * 4 + 0] = float_to_half(src.x);
             half_data[i * 4 + 1] = float_to_half(src.y);
@@ -231,8 +227,7 @@ bool UploadOutputTextures(
         }
 
         filament::Texture::PixelBufferDescriptor desc(
-                half_data, half_data_size,
-                filament::Texture::Format::RGBA,
+                half_data, half_data_size, filament::Texture::Format::RGBA,
                 filament::Texture::Type::HALF,
                 [](void* buf, size_t, void*) { std::free(buf); });
         tex->setImage(engine, 0, std::move(desc));
@@ -247,13 +242,12 @@ bool UploadOutputTextures(
     return true;
 }
 
-bool UploadOutputTexturesHalf(
-        FilamentResourceManager& resource_mgr,
-        const void* half_rgba_data,
-        std::size_t half_data_size,
-        std::uint32_t width,
-        std::uint32_t height,
-        GaussianComputeRenderer::OutputTargets& targets) {
+bool UploadOutputTexturesHalf(FilamentResourceManager& resource_mgr,
+                              const void* half_rgba_data,
+                              std::size_t half_data_size,
+                              std::uint32_t width,
+                              std::uint32_t height,
+                              GaussianComputeRenderer::OutputTargets& targets) {
     if (width == 0 || height == 0 || !half_rgba_data || half_data_size == 0) {
         return false;
     }

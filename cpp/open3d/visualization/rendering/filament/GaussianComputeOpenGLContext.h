@@ -71,7 +71,6 @@ public:
     enum class Backend { kNone, kGLX, kEGL };
 
 private:
-
     bool InitializeGLX();
     bool InitializeGLXStandalone();  // creates context without sharing
     bool InitializeEGL();

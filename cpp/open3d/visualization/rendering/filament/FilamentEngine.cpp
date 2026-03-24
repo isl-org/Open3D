@@ -38,8 +38,8 @@ static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
 #if defined(_WIN32) || defined(__linux__)
-// Default for Windows/Linux is Vulkan, but this sometimes selects the Direct3D12
-// emulated backend on Windows or has issues with Vulkan on Linux.
+// Default for Windows/Linux is Vulkan, but this sometimes selects the
+// Direct3D12 emulated backend on Windows or has issues with Vulkan on Linux.
 // Force OpenGL instead. OpenGL also enables compute-based Gaussian splatting
 // with zero-copy output via Filament's import() API.
 RenderingType EngineInstance::type_ = RenderingType::kOpenGL;
@@ -88,6 +88,10 @@ EngineInstance::~EngineInstance() {
 
 #if !defined(__APPLE__)
     GaussianComputeOpenGLContext::GetInstance().Shutdown();
+    // The GLX context handle is now destroyed; clear the cached pointer so
+    // that the next EngineInstance creation re-initialises the compute
+    // context and passes a fresh handle to Filament's Engine::create().
+    shared_context_ = nullptr;
 #endif
 }
 
@@ -117,12 +121,12 @@ EngineInstance::EngineInstance() {
             break;
     }
 
-    // On Linux (X11/GLX), create our compute GL context BEFORE the Filament
-    // engine so we can pass it as the sharedGLContext.  Filament's
-    // PlatformGLX will then create its own context sharing our GL namespace,
-    // enabling zero-copy texture import() between the two contexts.
-    // This must happen before Engine::create() because GLX context sharing
-    // can only be established at context creation time.
+        // On Linux (X11/GLX), create our compute GL context BEFORE the Filament
+        // engine so we can pass it as the sharedGLContext.  Filament's
+        // PlatformGLX will then create its own context sharing our GL
+        // namespace, enabling zero-copy texture import() between the two
+        // contexts. This must happen before Engine::create() because GLX
+        // context sharing can only be established at context creation time.
 #if !defined(__APPLE__) && !defined(_WIN32)
     if ((backend == filament::backend::Backend::OPENGL ||
          backend == filament::backend::Backend::DEFAULT) &&
