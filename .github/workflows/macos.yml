@@ -98,14 +98,6 @@ jobs:
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
-      - name: Update package devel release
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel build/package/${{ env.DEVEL_PKG_NAME }} --clobber
-          gh release view main-devel
-
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
@@ -113,6 +105,17 @@ jobs:
           name: open3d-app-macosx-10_15-${{ runner.arch}}
           path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
           if-no-files-found: error
+
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ env.BUILD_SHARED_LIBS }}" == 'ON' ]]; then
+            .github/workflows/update_release.sh build/package/${{ env.DEVEL_PKG_NAME }}
+          else
+            .github/workflows/update_release.sh build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
+          fi
 
   build-wheel:
     name: Build wheel
@@ -208,6 +211,14 @@ jobs:
           name: ${{ env.PIP_PKG_NAME }}
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
+
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          .github/workflows/update_release.sh build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+      
 
   test-wheel:
     name: Test wheel
