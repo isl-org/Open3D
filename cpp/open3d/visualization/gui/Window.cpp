@@ -991,13 +991,7 @@ void Window::OnResize() {
 
             w = std::min(screen_size.width,
                          int(std::round(pref.width / impl_->imgui_.scaling)));
-            // screen_height is the screen height, not the usable screen height.
-            // If we cannot call glfwGetMonitorWorkarea(), then we need to guess
-            // at the size. The window titlebar is about 2 * em, and then there
-            // is often a global menubar (Linux/GNOME, macOS) or a toolbar
-            // (Windows). A toolbar is somewhere around 2 - 3 ems.
-            int unusable_height = 4 * impl_->theme_.font_size;
-            h = std::min(screen_size.height - unusable_height,
+            h = std::min(screen_size.height,
                          int(std::round(pref.height / impl_->imgui_.scaling)));
             ws.SetWindowSize(impl_->window_, w, h);
         }
