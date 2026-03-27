@@ -160,7 +160,7 @@ public:
     ///
     /// \param rotation_threshold specifies the threshold in radians within the
     /// transformation. Rotations are checked by cartesian angles. If a rotation
-    /// threshold is set to -1, it is not checked (free to rotate).
+    /// threshold is set to < 0, it is not checked (free to rotate).
     CorrespondenceCheckerBasedOnSourceRotation(
             const Eigen::Vector3d &rotation_threshold = Eigen::Vector3d(-1,
                                                                         -1,
@@ -183,7 +183,7 @@ public:
 
 public:
     /// \brief 3-element vector [rx, ry, rz] representing the rotation angle 
-    /// thresholds in radians. A value of -1 means unconstrained.
+    /// thresholds in radians. A value < 0 means unconstrained.
     Eigen::Vector3d rotation_threshold_;
 };
 

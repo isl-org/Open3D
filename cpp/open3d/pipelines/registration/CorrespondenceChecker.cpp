@@ -90,15 +90,15 @@ bool CorrespondenceCheckerBasedOnSourceRotation::Check(
     Eigen::Vector6d transform_6d =
             open3d::utility::TransformMatrix4dToVector6d(transformation);
 
-    if (rotation_threshold_[0] != -1 &&
+    if (rotation_threshold_[0] >= 0.0 &&
         std::abs(transform_6d[0]) > rotation_threshold_[0]) {
         return false;
     }
-    if (rotation_threshold_[1] != -1 &&
+    if (rotation_threshold_[1] >= 0.0 &&
         std::abs(transform_6d[1]) > rotation_threshold_[1]) {
         return false;
     }
-    if (rotation_threshold_[2] != -1 &&
+    if (rotation_threshold_[2] >= 0.0 &&
         std::abs(transform_6d[2]) > rotation_threshold_[2]) {
         return false;
     }

@@ -547,7 +547,7 @@ must hold true for all edges.)");
                            "the maximum allowed thresholds [rx, ry, rz] "
                            "in radians for the angle-axis representation components. "
                            "It is assumed the user is aware of the x, y, z axes "
-                           "of the source object. A value of -1 means unconstrained.");
+                           "of the source object. A value < 0 means unconstrained.");
 
     // open3d.registration.FastGlobalRegistrationOption:
     auto fgr_option = static_cast<py::class_<FastGlobalRegistrationOption>>(
