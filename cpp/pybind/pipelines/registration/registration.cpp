@@ -158,7 +158,7 @@ void pybind_registration_declarations(py::module &m) {
             cc_r(m_registration, "CorrespondenceCheckerBasedOnSourceRotation",
                  "Class to limit the rotation of the source object.\n"
                  "It checks if the transformation is rotated too much from its "
-                 "desired value.\n"
+                 "initial, unrotated state (identity matrix).\n"
                  "Rotations are checked by comparing the components of the "
                  "angle-axis representation (SO(3) log vector) of the "
                  "estimated transformation to the given thresholds. It is "

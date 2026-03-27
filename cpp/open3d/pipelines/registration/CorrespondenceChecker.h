@@ -147,7 +147,8 @@ public:
 ///
 /// \brief Class to limit the rotation of the source object.
 ///
-/// It checks if the transformation is rotated too much from a desired value.
+/// It checks if the transformation is rotated too much from its initial, 
+/// unrotated state (identity matrix). 
 /// Rotations are checked by comparing the components of the angle-axis 
 /// representation (SO(3) log vector) of the estimated transformation 
 /// to the given thresholds. It is assumed that the user is aware of the 
