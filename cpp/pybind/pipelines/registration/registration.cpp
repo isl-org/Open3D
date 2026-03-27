@@ -428,7 +428,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
              {"target", "Target point cloud."},
              {"corres",
               "Correspondence set between source and target point cloud."},
-             {"transformation", "The estimated transformation (inplace)."}});
+             {"transformation", "The estimated transformation."}});
 
     // open3d.registration.CorrespondenceCheckerBasedOnEdgeLength:
     // CorrespondenceChecker

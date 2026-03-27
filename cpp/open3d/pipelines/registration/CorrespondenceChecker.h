@@ -46,7 +46,7 @@ public:
     /// \param source Source point cloud.
     /// \param target Target point cloud.
     /// \param corres Correspondence set between source and target point cloud.
-    /// \param transformation The estimated transformation (inplace).
+    /// \param transformation The estimated transformation.
     virtual bool Check(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
                        const CorrespondenceSet &corres,
@@ -175,7 +175,7 @@ public:
     /// \param source Source point cloud.
     /// \param target Target point cloud.
     /// \param corres Correspondence set between source and target point cloud.
-    /// \param transformation The estimated transformation (inplace).
+    /// \param transformation The estimated transformation.
     bool Check(const geometry::PointCloud &source,
                const geometry::PointCloud &target,
                const CorrespondenceSet &corres,
