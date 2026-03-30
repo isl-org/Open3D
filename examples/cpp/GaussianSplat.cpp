@@ -21,7 +21,9 @@ using visualization::gui::Application;
 
 void PrintUsage() {
     utility::LogInfo("Visualize Gaussian Splat from PLY or SPLAT file.");
-    utility::LogInfo("Usage: GaussianSplat <filename.[ply|splat]> [sh_degree] [min_alpha]");
+    utility::LogInfo(
+            "Usage: GaussianSplat <filename.[ply|splat]> [sh_degree] "
+            "[min_alpha]");
     utility::LogInfo("  sh_degree: integer 0..2 (default 2)");
     utility::LogInfo("  min_alpha: float 0..1 (default 0)");
 }
@@ -40,17 +42,17 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Create a test sphere mesh for depth compositing testing.
-    auto sphere = t::geometry::TriangleMesh::CreateSphere(0.2, 20);
-    sphere.ComputeVertexNormals();
+    // Create a test cube mesh for depth compositing testing.
+    auto cube = t::geometry::TriangleMesh::CreateBox(0.25, 0.25, 0.25);
+    cube.ComputeVertexNormals();
     auto colors = core::Tensor::Init<float>({{1.0f, 0.2f, 0.2f}})
-                          .Expand(sphere.GetVertexPositions().GetShape());
-    sphere.SetVertexColors(colors);  // Red: shape {1,3}
-    // Position the sphere at the 3DGS scene center.
+                          .Expand(cube.GetVertexPositions().GetShape());
+    cube.SetVertexColors(colors);  // Red: shape {1,3}
+    // Position the cube at the 3DGS scene center.
     auto bbox = gsplat->GetAxisAlignedBoundingBox();
     auto center = bbox.GetCenter();
-    sphere.Translate(center, /*relative=*/false);
-    auto p_sphere = std::make_shared<t::geometry::TriangleMesh>(sphere);
+    cube.Translate(center, /*relative=*/false);
+    auto p_cube = std::make_shared<t::geometry::TriangleMesh>(cube);
 
     // Parse optional args: sh_degree, min_alpha
     int sh_degree = 2;
@@ -77,8 +79,7 @@ int main(int argc, char** argv) {
     if (min_alpha < 0.0f) min_alpha = 0.0f;
     if (min_alpha > 1.0f) min_alpha = 1.0f;
 
-    utility::LogInfo("Using sh_degree={} min_alpha={}", sh_degree,
-                     min_alpha);
+    utility::LogInfo("Using sh_degree={} min_alpha={}", sh_degree, min_alpha);
 
     // Create a material that sets SH degree and filters low-alpha splats.
     visualization::rendering::MaterialRecord mat;
@@ -93,9 +94,9 @@ int main(int argc, char** argv) {
             "Gaussian Splat + Mesh Depth Test", 1024, 768);
 
     vis->AddGeometry(argv[1], gsplat, &mat);
-    vis->AddGeometry("test_sphere", p_sphere);
+    vis->AddGeometry("test_cube", p_cube);
     vis->ShowGeometry(argv[1], true);
-    vis->ShowGeometry("test_sphere", true);
+    vis->ShowGeometry("test_cube", true);
 
     vis->ResetCameraToDefault();
     app.AddWindow(vis);

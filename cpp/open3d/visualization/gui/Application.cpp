@@ -428,6 +428,8 @@ double Application::Now() const {
     return t.count();
 }
 
+bool Application::IsRunning() const { return impl_->is_running_; }
+
 std::shared_ptr<Menu> Application::GetMenubar() const {
     return impl_->menubar_;
 }

@@ -216,12 +216,12 @@ void main() {
 
 	if (pixel.x < viewport_size.x && pixel.y < viewport_size.y) {
 		float out_alpha = 1.0 - transmittance;
-		// Convert premultiplied RGB to straight alpha for ImGui compositing
-		// which uses standard (SrcAlpha, 1-SrcAlpha) blending.
-		vec3 straight_color = (out_alpha > 0.0) ? accum_color / out_alpha
-		                                        : vec3(0.0);
-
-		imageStore(out_color, pixel, vec4(straight_color, out_alpha));
+		// accum_color is already premultiplied by construction:
+		//   each splat contributes transmittance * alpha * color.
+		// Filament's transparent blend mode uses One, 1-SrcAlpha
+		// (premultiplied-alpha compositing), so store premultiplied RGB
+		// directly: final = accum_color + transmittance * background.
+		imageStore(out_color, pixel, vec4(accum_color, out_alpha));
 		imageStore(out_depth, pixel, vec4(out_linear_depth, 0.0, 0.0, 0.0));
 	}
 }

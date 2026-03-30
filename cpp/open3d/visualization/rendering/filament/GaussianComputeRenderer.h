@@ -33,8 +33,6 @@ class FilamentView;
 
 class GaussianComputeRenderer {
 public:
-    class Backend;
-
     enum class PassType {
         kProjection,
         kTilePrefixSum,
@@ -88,8 +86,16 @@ public:
         RenderTargetHandle render_target;
         std::uint32_t width = 0;
         std::uint32_t height = 0;
-        std::uint32_t scene_depth_gl_handle = 0;  // GL texture for depth
-        std::uint32_t color_gl_handle = 0;  // GL texture for GS color output
+        /// Non-Apple: shared GL texture id for Filament depth + GS composite
+        /// read.
+        std::uint32_t scene_depth_gl_handle = 0;
+        /// Non-Apple: GL texture id for GS color (written by composite, sampled
+        /// by UI).
+        std::uint32_t color_gl_handle = 0;
+        /// Apple (Metal): imported Filament scene depth / GS color native
+        /// textures.
+        std::uintptr_t scene_depth_mtl_texture = 0;
+        std::uintptr_t gs_color_mtl_texture = 0;
         ViewRenderData render_data;
         std::vector<PassDispatch> pass_dispatches;
         bool has_render_data = false;
@@ -97,6 +103,27 @@ public:
         bool needs_render = true;
         std::uint64_t last_scene_change_id = 0;
         std::uint64_t last_updated_frame = 0;
+    };
+
+    /// GPU backend for geometry + composite compute (OpenGL or Metal).
+    class Backend {
+    public:
+        virtual ~Backend() = default;
+
+        virtual const char* GetName() const = 0;
+        virtual void BeginFrame(std::uint64_t frame_index) = 0;
+        virtual void ForgetView(const FilamentView& view) = 0;
+        virtual bool RenderGeometryStage(
+                const FilamentView& view,
+                const FilamentScene& scene,
+                const ViewRenderData& render_data,
+                const std::vector<PassDispatch>& dispatches,
+                OutputTargets& targets) = 0;
+        virtual bool RenderCompositeStage(
+                const FilamentView& view,
+                const ViewRenderData& render_data,
+                const std::vector<PassDispatch>& dispatches,
+                OutputTargets& targets) = 0;
     };
 
     GaussianComputeRenderer(filament::Engine& engine,

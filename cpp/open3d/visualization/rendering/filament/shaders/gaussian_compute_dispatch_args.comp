@@ -76,7 +76,9 @@ void WriteRadixParams(uint pass_index,
 // --- Main ---
 
 void main() {
-    uint total_entries = (g_counters.length() > 0) ? g_counters[0] : 0u;
+    // Avoid .length() — it requires spvBufferSizeConstants on Metal, which we
+    // do not bind.  The counters buffer always has at least 1 entry.
+    uint total_entries = g_counters[0];
 
     // Compute radix sort work distribution (mirrors C++ logic exactly).
     uint radix_num_wg = max(1u,

@@ -1,0 +1,47 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+//
+// Shared Gaussian splatting geometry + composite dispatch sequence. OpenGL and
+// Metal backends supply a GaussianComputeGpuContext implementation.
+
+#pragma once
+
+#include <cstdint>
+#include <vector>
+
+#include "open3d/visualization/rendering/filament/GaussianComputeGpuContext.h"
+#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
+
+namespace open3d {
+namespace visualization {
+namespace rendering {
+
+struct PackedGaussianScene;
+
+/// Resize/upload buffers, then run the projection → radix → payload chain.
+/// @param scene_change_id   Scene geometry change token from Filament.
+/// @param scene_changed     True when splat buffers must be re-uploaded.
+bool RunGaussianGeometryPasses(
+        GaussianComputeGpuContext& ctx,
+        const GaussianComputeRenderer::RenderConfig& config,
+        const PackedGaussianScene& packed,
+        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
+        GaussianComputeViewGpuResources& vs,
+        std::uint64_t scene_change_id,
+        std::uint32_t source_splat_count,
+        bool scene_changed);
+
+/// Final composite pass into imported color/depth targets.
+bool RunGaussianCompositePass(
+        GaussianComputeGpuContext& ctx,
+        const GaussianComputeRenderer::RenderConfig& config,
+        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
+        GaussianComputeViewGpuResources& vs,
+        GaussianComputeRenderer::OutputTargets& targets);
+
+}  // namespace rendering
+}  // namespace visualization
+}  // namespace open3d

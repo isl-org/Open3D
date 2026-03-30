@@ -50,7 +50,6 @@ namespace rendering {
 class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
-    static const MaterialHandle kGaussianSplatShader;
     static const MaterialHandle kDefaultLitWithTransparency;
     static const MaterialHandle kDefaultLitSSR;
     static const MaterialHandle kDefaultUnlit;
@@ -103,6 +102,15 @@ public:
                                         int height,
                                         int format,
                                         int usage);
+
+#if defined(__APPLE__)
+    /// Wraps an existing `MTLTexture` (caller retains until Filament is done).
+    TextureHandle CreateImportedMTLTexture(std::uintptr_t mtl_texture,
+                                           int width,
+                                           int height,
+                                           int format,
+                                           int usage);
+#endif
 
     RenderTargetHandle CreateRenderTarget(TextureHandle color,
                                           TextureHandle depth);

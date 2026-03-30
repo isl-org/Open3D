@@ -213,7 +213,7 @@ Required work:
    Filament's Metal `import()` path
 3. Implement `RenderCompositeStage` with scene depth binding
 4. Verify context sharing — check if Filament's Metal backend exposes a shared `MTLDevice`
-5. Remove the CPU readback path (`DownloadMetalSharedBuffer` + `UploadOutputTextures`)
+5. Remove the CPU readback path (`DownloadMetalSharedBuffer`) if still present on Metal
 
 **Files to modify:**
 - `GaussianComputeRenderer.cpp` — `GaussianComputeMetalBackend` class
@@ -310,7 +310,6 @@ macOS uses Metal exclusively. See PHASE 3 for the complete implementation plan.
 | 4 | Stage A overlap sync | Low | If driver-specific glitches appear, insert `glFlush()` at end of Stage A. |
 | 5 | Redundant depth buffer on resize | Low | Avoid creating `depth_buffer_` in cached view when GS shared depth is active. |
 | 6 | Native Wayland (no XWayland) unsupported | Low | Filament v1.54.0 has no windowed EGL platform. Current fix forces X11/XWayland. See FW2 for native Wayland plan. |
-| 7 | `kProgShellSort` legacy slot | Low | Remove legacy shell-sort shader/program slot after full cross-platform validation. |
 
 ---
 
@@ -321,6 +320,7 @@ macOS uses Metal exclusively. See PHASE 3 for the complete implementation plan.
   `InvalidateOutputForView()` for safe resize
 - `GaussianComputeOpenGLPipeline.h/.cpp` — GL 4.5 compute API wrappers
 - `GaussianComputeOpenGLContext.h/.cpp` — GLX/EGL context creation; standalone and fallback paths
+- `GaussianComputeBuffers.h/.cpp` — shared SSBO/UBO size planning for backends
 - `GaussianComputeDataPacking.h/.cpp` — CPU → GPU data packing (std140/std430)
 - `GaussianComputeMetalShaders.h/.mm` — Metal compute dispatch (placeholder)
 - `FilamentResourceManager.h/.cpp` — `CreateImportedTexture()` for zero-copy import
@@ -333,16 +333,15 @@ macOS uses Metal exclusively. See PHASE 3 for the complete implementation plan.
 
 | Index | File | Pass |
 |---|---|---|
-| 0 | `gaussian_project.comp` | Pass 1: splat projection, tile rect encoding |
-| 1 | `gaussian_prefix_sum.comp` | Pass 2: tile prefix sum, counter write |
-| 2 | `gaussian_scatter.comp` | Pass 3: tile-entry scatter |
-| 3 | `gaussian_sort.comp` | Legacy shell sort (compiled, not dispatched) |
-| 4 | `gaussian_composite.comp` | Pass 5: depth-aware compositing |
-| 5 | `gaussian_radix_sort_keygen.comp` | Keygen: `(tile_id<<16)|(depth>>16)` |
-| 6 | `gaussian_radix_sort_histograms.comp` | Radix histogram |
-| 7 | `gaussian_radix_sort.comp` | Radix scatter |
-| 8 | `gaussian_radix_sort_payload.comp` | Payload rearrangement |
-| 9 | `gaussian_compute_dispatch_args.comp` | Writes indirect dispatch counts and `RadixSortParams` for all radix sub-passes (no CPU readback) |
+| 0 | `gaussian_project.comp` | Projection, tile rect encoding |
+| 1 | `gaussian_prefix_sum.comp` | Tile prefix sum, counter write |
+| 2 | `gaussian_scatter.comp` | Tile-entry scatter |
+| 3 | `gaussian_composite.comp` | Depth-aware compositing |
+| 4 | `gaussian_radix_sort_keygen.comp` | Keygen: `(tile_id<<16)|(depth>>16)` |
+| 5 | `gaussian_radix_sort_histograms.comp` | Radix histogram |
+| 6 | `gaussian_radix_sort.comp` | Radix scatter |
+| 7 | `gaussian_radix_sort_payload.comp` | Payload rearrangement |
+| 8 | `gaussian_compute_dispatch_args.comp` | Indirect dispatch counts and `RadixSortParams` (no CPU readback) |
 
 ### GUI / example files
 - `SceneWidget.cpp` — ImGui base image + GS overlay alpha blending

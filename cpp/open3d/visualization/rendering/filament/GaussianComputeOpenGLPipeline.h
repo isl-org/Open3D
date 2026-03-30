@@ -61,11 +61,6 @@ struct GLTextureHandle {
 
 // --- Shader compilation ---
 
-/// Compile a compute shader from GLSL source and link into a program.
-/// Returns an invalid handle on failure (logs warnings).
-GLComputeProgram CompileGLComputeProgram(const std::string& source,
-                                         const std::string& debug_name);
-
 /// Load a compute shader from a SPIR-V binary and link into a program.
 /// Uses glShaderBinary(GL_SHADER_BINARY_FORMAT_SPIR_V) + glSpecializeShader.
 /// Returns an invalid handle on failure (logs warnings).
@@ -79,26 +74,32 @@ void DestroyGLComputeProgram(GLComputeProgram& program);
 
 // --- Buffer management ---
 
-/// Create a GL buffer (for SSBO or UBO use).
+/// Create a GL buffer (for SSBO or UBO use) with GL_DYNAMIC_DRAW usage.
+/// Intended for buffers that are uploaded from CPU and consumed by GPU.
 /// If initial_data is non-null, the buffer is initialized with it.
 GLBufferHandle CreateGLBuffer(std::size_t size, const void* initial_data);
 
-/// Resize a GL buffer. If the buffer is already large enough, does nothing.
+/// Create a GPU-private GL buffer with GL_DYNAMIC_COPY usage.
+/// Intended for GPU-to-GPU intermediate buffers (written by compute,
+/// read by subsequent compute).  On discrete GPUs this biases placement
+/// toward GPU-local VRAM.
+GLBufferHandle CreateGLPrivateBuffer(std::size_t size);
+
+/// Resize a GL buffer (GL_DYNAMIC_DRAW). If already large enough, no-op.
 /// Otherwise creates a new buffer (old data is NOT preserved).
 /// Returns the (possibly new) buffer handle.
 GLBufferHandle ResizeGLBuffer(GLBufferHandle buffer, std::size_t new_size);
+
+/// Resize a GPU-private GL buffer (GL_DYNAMIC_COPY). If already large
+/// enough, no-op.  Otherwise creates a new private buffer.
+GLBufferHandle ResizeGLPrivateBuffer(GLBufferHandle buffer,
+                                     std::size_t new_size);
 
 /// Upload data to a region of a buffer.
 void UploadGLBuffer(const GLBufferHandle& buffer,
                     const void* data,
                     std::size_t size,
                     std::size_t offset);
-
-/// Download data from a region of a buffer to CPU memory.
-void DownloadGLBuffer(const GLBufferHandle& buffer,
-                      void* data,
-                      std::size_t size,
-                      std::size_t offset);
 
 /// Fill a buffer with zeros.
 void ClearGLBuffer(const GLBufferHandle& buffer);
@@ -123,12 +124,6 @@ GLTextureHandle ResizeGLTexture2D(GLTextureHandle texture,
 
 /// Destroy a texture.
 void DestroyGLTexture(GLTextureHandle& texture);
-
-/// Download texture pixels to CPU memory (RGBA float32).
-/// The output buffer must have room for width * height * 4 floats.
-void DownloadGLTexture2D(const GLTextureHandle& texture,
-                         void* data,
-                         std::uint32_t format);
 
 // --- Compute dispatch ---
 

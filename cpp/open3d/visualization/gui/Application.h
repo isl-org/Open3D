@@ -117,6 +117,9 @@ public:
     /// until Initialize() is called.
     double Now() const;
 
+    /// Returns true once the GUI run loop has started processing frames.
+    bool IsRunning() const;
+
     /// Delivers the itemId to the active window. Used internally.
     void OnMenuItemSelected(Menu::ItemId itemId);
 

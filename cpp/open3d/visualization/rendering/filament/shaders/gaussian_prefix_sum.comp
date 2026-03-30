@@ -3,13 +3,20 @@
 // Phase 0 (all threads): zero tile buffers in parallel.
 // Phase 1 (all threads): count per-tile splat overlaps via atomics.
 // Phase 2 (all threads): parallel blocked prefix sum over tile_counts.
-//   Each thread scans its chunk locally, then a shared-memory scan of partial
-//   sums propagates the prefix across chunks.
+//   Each thread scans its chunk locally, then a 2-level subgroup reduction
+//   propagates the prefix across chunks instead of a serial thread-0 scan.
+//   Level-1: each SIMD group sums its 32 shared_partial entries (subgroupAdd).
+//   Level-2: thread 0 scans the resulting 8 subgroup totals (8 iterations).
+//   Level-3: each thread uses subgroupExclusiveAdd for the within-SIMD prefix.
+//   This reduces the serial bottleneck from 256 to 8 iterations (~32x).
 //
 // Opt2: Parallel prefix sum replaces thread-0-only sequential scan.
 // Opt4: Updated ProjectedGaussian struct (48 bytes).
+// Opt8: 2-level subgroup prefix sum replaces serial thread-0 scan.
 
 #version 450
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_basic      : enable
 
 layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
@@ -77,7 +84,11 @@ uvec2 UnpackTileCoord(uint packed) {
 }
 
 // Shared memory for the blocked prefix sum (Phase 2).
+// shared_partial[256]: each thread stores its chunk's local sum.
+// sg_totals[8]:        one entry per SIMD group (256/32 = 8 SIMD groups),
+//                      used for the level-2 cross-SIMD scan.
 shared uint shared_partial[256];
+shared uint sg_totals[8];
 shared uint shared_total;
 
 void main() {
@@ -136,39 +147,48 @@ void main() {
 	shared_partial[local_index] = local_sum;
 	barrier();
 
-	// Step 2b: thread 0 does an exclusive scan over the 256 partial sums.
-	// 256 iterations is negligible compared to the per-tile work above.
+	// Step 2b: 2-level subgroup reduction of the 256 partial sums.
+	//
+	// Level 1: each of the 8 SIMD groups (32 threads each) sums its
+	//          32 shared_partial entries using subgroupAdd — O(1) per group.
+	//          The elected lane writes the group total to sg_totals[].
+	uint sg_local_sum = subgroupAdd(shared_partial[local_index]);
+	if (subgroupElect()) {
+		sg_totals[gl_SubgroupID] = sg_local_sum;
+	}
+	barrier();
+
+	// Level 2: thread 0 does an exclusive scan over only 8 subgroup totals
 	if (local_index == 0u) {
 		uint running = 0u;
-		for (uint i = 0u; i < 256u; ++i) {
-			uint val = shared_partial[i];
-			shared_partial[i] = running;
+		for (uint i = 0u; i < 8u; ++i) {
+			uint val = sg_totals[i];
+			sg_totals[i] = running;
 			running += val;
 		}
 		shared_total = running;
 	}
 	barrier();
 
-	// Step 2c: each thread adds the scanned prefix to its chunk.
-	uint prefix = shared_partial[local_index];
+	// Step 2c: each thread computes its final prefix as:
+	//   (subgroup-level exclusive prefix) + (within-SIMD exclusive prefix)
+	// The within-SIMD exclusive prefix is computed via subgroupExclusiveAdd
+	// over shared_partial[].
+	uint sg_prefix         = sg_totals[gl_SubgroupID];
+	uint within_sg_prefix  = subgroupExclusiveAdd(shared_partial[local_index]);
+	uint prefix = sg_prefix + within_sg_prefix;
 	for (uint t = chunk_start; t < chunk_end; ++t) {
 		tile_offsets[t] += prefix;
 		tile_write_heads[t] = tile_offsets[t];
 	}
 
 	// Thread 0 writes counters.
+	// Avoid .length() — it requires spvBufferSizeConstants on Metal, which we
+	// do not bind.  The counters buffer always has exactly 4 entries.
 	if (local_index == 0u) {
-		if (global_counters.length() > 0) {
-			global_counters[0] = shared_total;
-		}
-		if (global_counters.length() > 1) {
-			global_counters[1] = 0u;
-		}
-		if (global_counters.length() > 2) {
-			global_counters[2] = tile_count;
-		}
-		if (global_counters.length() > 3) {
-			global_counters[3] = splat_count;
-		}
+		global_counters[0] = shared_total;  // total tile entries
+		global_counters[1] = 0u;
+		global_counters[2] = tile_count;
+		global_counters[3] = splat_count;
 	}
 }

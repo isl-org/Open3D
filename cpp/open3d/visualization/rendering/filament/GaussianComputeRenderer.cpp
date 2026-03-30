@@ -9,8 +9,7 @@
 #include <filament/Texture.h>
 #include <filament/View.h>
 
-#include <functional>
-
+#include "GaussianComputeRenderer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -19,68 +18,31 @@
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeMetalShaders.h"
+#if defined(__APPLE__)
+#include "open3d/visualization/rendering/filament/GaussianComputeOutputTargetsApple.h"
+#endif
 #if !defined(__APPLE__)
+#include <memory>
+
+#include "open3d/visualization/rendering/filament/GaussianComputeBuffers.h"
+#include "open3d/visualization/rendering/filament/GaussianComputeGpuContext.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeOpenGLPipeline.h"
+#include "open3d/visualization/rendering/filament/GaussianComputePassRunner.h"
 #endif
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class GaussianComputeRenderer::Backend {
-public:
-    virtual ~Backend() = default;
-
-    virtual const char* GetName() const = 0;
-    virtual void BeginFrame(std::uint64_t frame_index) = 0;
-    virtual void ForgetView(const FilamentView& view) = 0;
-    virtual bool RenderGeometryStage(
-            const FilamentView& view,
-            const FilamentScene& scene,
-            const ViewRenderData& render_data,
-            const std::vector<PassDispatch>& dispatches,
-            OutputTargets& targets) = 0;
-    virtual bool RenderCompositeStage(
-            const FilamentView& view,
-            const ViewRenderData& render_data,
-            const std::vector<PassDispatch>& dispatches,
-            OutputTargets& targets) = 0;
-};
+#if defined(__APPLE__)
+std::unique_ptr<GaussianComputeRenderer::Backend>
+CreateGaussianComputeMetalBackend(
+        FilamentResourceManager& resource_mgr,
+        const GaussianComputeRenderer::RenderConfig& config);
+#endif
 
 namespace {
-bool ReadSPIRVFile(const std::string& path,
-                   std::vector<std::uint8_t>* contents) {
-    std::vector<char> bytes;
-    std::string error;
-    if (!utility::filesystem::FReadToBuffer(path, bytes, &error)) {
-        utility::LogWarning("Failed to read SPIR-V shader {}: {}", path, error);
-        return false;
-    }
-    contents->assign(bytes.begin(), bytes.end());
-    return true;
-}
-
-// Used by the Metal backend to load .metal shader source text.
-struct LoadedShaderSource {
-    std::string path;
-    std::string source;
-    bool loaded = false;
-};
-
-[[maybe_unused]]
-bool ReadTextFile(const std::string& path, std::string* contents) {
-    std::vector<char> bytes;
-    std::string error;
-    if (!utility::filesystem::FReadToBuffer(path, bytes, &error)) {
-        utility::LogWarning("Failed to read shader {}: {}", path, error);
-        return false;
-    }
-    contents->assign(bytes.begin(), bytes.end());
-    return true;
-}
-
 class GaussianComputePlaceholderBackend final
     : public GaussianComputeRenderer::Backend {
 public:
@@ -124,50 +86,17 @@ private:
 };
 
 #if !defined(__APPLE__)
-// Radix sort dispatch constants. These must match the GLSL #defines in
-// the gaussian_compute_dispatch_args.comp shader (RADIX_WG_SIZE, etc.).
-static constexpr std::uint32_t kRadixWorkgroupSize = 256;
-static constexpr std::uint32_t kRadixSortBins = 256;
-static constexpr std::uint32_t kRadixTargetBlocksPerWG = 32;
-// Stride (bytes) per RadixSortParams slot in the GPU radix_params_buf.
-// Must be >= sizeof(RadixSortParams)==16 and a multiple of
-// GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT (256 on most desktop GPUs).
-static constexpr std::uint32_t kRadixParamsStride = 256;
-
-// RadixSortParams matches the std140 UBO at binding 14 in the radix
-// sort shaders.
-struct RadixSortParams {
-    std::uint32_t g_num_elements;
-    std::uint32_t g_shift;
-    std::uint32_t g_num_workgroups;
-    std::uint32_t g_num_blocks_per_workgroup;
-};
-
-// Program indices matching kShaderSPVFiles[] in EnsureProgramsReady.
-enum ProgramIndex {
-    kProgProject = 0,
-    kProgPrefixSum = 1,
-    kProgScatter = 2,
-    kProgShellSort = 3,  // Legacy, retained but unused with radix sort.
-    kProgComposite = 4,
-    kProgRadixKeygen = 5,
-    kProgRadixHistograms = 6,
-    kProgRadixScatter = 7,
-    kProgRadixPayload = 8,
-    // Single-thread pass that reads total_entries from counters and writes
-    // all indirect dispatch args and RadixSortParams GPU-side (no CPU stall).
-    kProgComputeDispatchArgs = 9,
-};
-
-// OpenGL compute backend for Linux and Windows.
-// Uses GLX on X11, EGL on Wayland, and GL 4.5 compute shaders.
+// OpenGL compute backend for Linux and Windows (GL 4.5 + SPIR-V).
 class GaussianComputeOpenGLBackend final
     : public GaussianComputeRenderer::Backend {
 public:
     GaussianComputeOpenGLBackend(
             FilamentResourceManager& resource_mgr,
             const GaussianComputeRenderer::RenderConfig& config)
-        : resource_mgr_(resource_mgr), config_(config) {}
+        : config_(config) {
+        (void)resource_mgr;
+        gpu_ = CreateGaussianComputeGpuContextOpenGL();
+    }
 
     ~GaussianComputeOpenGLBackend() override { Cleanup(); }
 
@@ -190,8 +119,6 @@ public:
             const std::vector<GaussianComputeRenderer::PassDispatch>&
                     dispatches,
             GaussianComputeRenderer::OutputTargets& targets) override {
-        utility::LogDebug("GS OpenGL RenderGeometryStage: begin frame {}x{}",
-                          targets.width, targets.height);
         auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() && !gl_ctx.Initialize()) {
             utility::LogWarning(
@@ -205,8 +132,7 @@ public:
             return false;
         }
 
-        if (!EnsureProgramsReady()) {
-            utility::LogWarning("GS OpenGL: shader compilation failed");
+        if (!gpu_) {
             gl_ctx.ReleaseCurrent();
             return false;
         }
@@ -214,713 +140,112 @@ public:
         const GaussianSplatSourceData* source =
                 scene.GetGaussianSplatSourceData();
         if (!source || source->splat_count == 0) {
-            utility::LogWarning("GS OpenGL: no splat source data");
             gl_ctx.ReleaseCurrent();
             return false;
         }
-        utility::LogDebug("GS OpenGL: {} splats, {} dispatches",
-                          source->splat_count, dispatches.size());
 
-        PackedGaussianScene packed = PackGaussianSceneInputs(
-                *source, render_data, config_, dispatches);
+        PackedGaussianScene packed =
+                PackGaussianSceneInputs(*source, render_data, config_);
         if (!packed.valid) {
             utility::LogWarning("GS OpenGL: PackGaussianSceneInputs failed");
             gl_ctx.ReleaseCurrent();
             return false;
         }
-        utility::LogDebug("GS OpenGL: packed {} splats, {} tiles",
-                          packed.splat_count, packed.tile_count);
 
         auto& vs = view_states_[&view];
 
-        // Check whether scene data changed.
         const std::uint64_t scene_id = scene.GetGeometryChangeId();
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
                  source->splat_count != vs.cached_splat_count);
 
-        // --- Allocate / resize persistent GPU buffers ---
-        const std::size_t projected_size =
-                packed.splat_count * sizeof(PackedProjectedGaussian);
-        const std::size_t tile_scalar_size =
-                packed.tile_count * sizeof(std::uint32_t);
-
-        vs.view_params_buf = ResizeGLBuffer(vs.view_params_buf,
-                                            sizeof(PackedGaussianViewParams));
-        vs.counters_buf = ResizeGLBuffer(
-                vs.counters_buf, kGaussianCounterCount * sizeof(std::uint32_t));
-
-        if (scene_changed) {
-            vs.positions_buf = ResizeGLBuffer(
-                    vs.positions_buf,
-                    packed.positions.size() * sizeof(Std430Vec4));
-            vs.scales_buf =
-                    ResizeGLBuffer(vs.scales_buf, packed.log_scales.size() *
-                                                          sizeof(Std430Vec4));
-            vs.rotations_buf = ResizeGLBuffer(
-                    vs.rotations_buf,
-                    packed.rotations.size() * sizeof(Std430Vec4));
-            vs.dc_opacity_buf = ResizeGLBuffer(
-                    vs.dc_opacity_buf,
-                    packed.dc_opacity.size() * sizeof(Std430Vec4));
-            vs.sh_buf =
-                    ResizeGLBuffer(vs.sh_buf, packed.sh_coefficients.size() *
-                                                      sizeof(Std430Vec4));
-        }
-
-        vs.projected_buf = ResizeGLBuffer(vs.projected_buf, projected_size);
-        vs.tile_counts_buf =
-                ResizeGLBuffer(vs.tile_counts_buf, tile_scalar_size);
-        vs.tile_offsets_buf =
-                ResizeGLBuffer(vs.tile_offsets_buf, tile_scalar_size);
-        vs.tile_heads_buf = ResizeGLBuffer(vs.tile_heads_buf, tile_scalar_size);
-
-        // Pre-allocate sort buffers using a conservative capacity estimate so
-        // the GPU never stalls on a CPU readback to learn the actual entry
-        // count from the prefix-sum pass (FW1-1 elimination). capacity =
-        // min(splat_count × kMaxTilesPerSplat, kMaxEntriesCapacity)
-        static constexpr std::uint32_t kMaxTilesPerSplat = 32u;
-        static constexpr std::uint32_t kMaxEntriesCapacity =
-                32u * 1024u * 1024u;
-        const std::uint32_t entries_capacity = std::min(
-                packed.splat_count * kMaxTilesPerSplat, kMaxEntriesCapacity);
-        const std::size_t entry_buf_size =
-                std::max(sizeof(PackedTileEntry),
-                         static_cast<std::size_t>(entries_capacity) *
-                                 sizeof(PackedTileEntry));
-        vs.tile_entries_buf =
-                ResizeGLBuffer(vs.tile_entries_buf, entry_buf_size);
-        vs.sorted_entries_buf =
-                ResizeGLBuffer(vs.sorted_entries_buf, entry_buf_size);
-
-        const std::size_t key_cap_size = std::max<std::size_t>(
-                4u, static_cast<std::size_t>(entries_capacity) *
-                            sizeof(std::uint32_t));
-        for (int i = 0; i < 2; ++i) {
-            vs.sort_keys_buf[i] =
-                    ResizeGLBuffer(vs.sort_keys_buf[i], key_cap_size);
-            vs.sort_values_buf[i] =
-                    ResizeGLBuffer(vs.sort_values_buf[i], key_cap_size);
-        }
-
-        const std::uint32_t radix_num_wg_cap = std::max(
-                1u, (entries_capacity +
-                     kRadixWorkgroupSize * kRadixTargetBlocksPerWG - 1u) /
-                            (kRadixWorkgroupSize * kRadixTargetBlocksPerWG));
-        vs.histogram_buf = ResizeGLBuffer(
-                vs.histogram_buf,
-                std::max<std::size_t>(
-                        4u, static_cast<std::size_t>(radix_num_wg_cap) *
-                                    kRadixSortBins * sizeof(std::uint32_t)));
-
-        // Dispatch args: 10 indirect commands × 3 uint32 = 120 bytes.
-        vs.dispatch_args_buf = ResizeGLBuffer(vs.dispatch_args_buf,
-                                              10u * 3u * sizeof(std::uint32_t));
-
-        // Radix params: 4 passes × kRadixParamsStride bytes.
-        // Written by kProgComputeDispatchArgs at 256-byte-aligned offsets so
-        // the C++ loop can use glBindBufferRange for the UBO at binding 14.
-        vs.radix_params_buf =
-                ResizeGLBuffer(vs.radix_params_buf, 4u * kRadixParamsStride);
-
-        // --- Upload data to GPU ---
-        UploadGLBuffer(vs.view_params_buf, &packed.view_params,
-                       sizeof(PackedGaussianViewParams), 0);
-
-        if (scene_changed) {
-            UploadGLBuffer(vs.positions_buf, packed.positions.data(),
-                           packed.positions.size() * sizeof(Std430Vec4), 0);
-            UploadGLBuffer(vs.scales_buf, packed.log_scales.data(),
-                           packed.log_scales.size() * sizeof(Std430Vec4), 0);
-            UploadGLBuffer(vs.rotations_buf, packed.rotations.data(),
-                           packed.rotations.size() * sizeof(Std430Vec4), 0);
-            UploadGLBuffer(vs.dc_opacity_buf, packed.dc_opacity.data(),
-                           packed.dc_opacity.size() * sizeof(Std430Vec4), 0);
-            UploadGLBuffer(vs.sh_buf, packed.sh_coefficients.data(),
-                           packed.sh_coefficients.size() * sizeof(Std430Vec4),
-                           0);
-            vs.cached_scene_id = scene_id;
-            vs.cached_splat_count = source->splat_count;
-        }
-
-        // Clear counters.
-        ClearGLBuffer(vs.counters_buf);
-
-        // --- Find dispatches ---
-        auto find_dispatch = [&](GaussianComputeRenderer::PassType type)
-                -> const GaussianComputeRenderer::PassDispatch* {
-            for (const auto& d : dispatches) {
-                if (d.type == type) {
-                    return &d;
-                }
-            }
-            return nullptr;
-        };
-
-        // --- Pass 1: Projection ---
-        auto dispatch_pass = [&](GaussianComputeRenderer::PassType type,
-                                 const GLComputeProgram& prog,
-                                 const char* name) -> bool {
-            const auto* d = find_dispatch(type);
-            if (!d || !prog.valid) {
-                utility::LogWarning(
-                        "GS OpenGL: dispatch_pass {} skipped "
-                        "(dispatch={}, prog_valid={})",
-                        name, d != nullptr, prog.valid);
-                return false;
-            }
-            UseProgram(prog);
-            DispatchCompute(std::max(1, d->group_count.x()),
-                            std::max(1, d->group_count.y()),
-                            std::max(1, d->group_count.z()));
-            return true;
-        };
-
-        // Bind shared resources for projection.
-        BindUBO(0, vs.view_params_buf);
-        BindSSBO(1, vs.positions_buf);
-        BindSSBO(2, vs.scales_buf);
-        BindSSBO(3, vs.rotations_buf);
-        BindSSBO(4, vs.dc_opacity_buf);
-        BindSSBO(5, vs.sh_buf);
-        BindSSBO(6, vs.projected_buf);
-
-        // --- Pass 1: Projection ---
-        if (!dispatch_pass(GaussianComputeRenderer::PassType::kProjection,
-                           programs_[kProgProject], "Projection")) {
-            gl_ctx.ReleaseCurrent();
-            return false;
-        }
-        GLComputeFullBarrier();
-        DrainGLErrors("after Projection");
-
-        // --- Pass 2: Prefix Sum ---
-        BindSSBO(7, vs.tile_counts_buf);
-        BindSSBO(8, vs.tile_offsets_buf);
-        BindSSBO(9, vs.tile_heads_buf);
-        BindSSBO(10, vs.counters_buf);
-
-        if (!dispatch_pass(GaussianComputeRenderer::PassType::kTilePrefixSum,
-                           programs_[kProgPrefixSum], "PrefixSum")) {
-            gl_ctx.ReleaseCurrent();
-            return false;
-        }
-        GLComputeFullBarrier();
-        DrainGLErrors("after PrefixSum");
-
-        // --- GPU-side: Compute dispatch args and RadixSortParams ---
-        // Reads total_entries from counters[0] and writes all indirect dispatch
-        // counts plus RadixSortParams for every radix sub-pass.
-        // This avoids the DownloadGLBuffer CPU/GPU sync stall (FW1-1).
-        BindSSBO(11, vs.dispatch_args_buf);
-        BindSSBO(12, vs.radix_params_buf);
-        UseProgram(programs_[kProgComputeDispatchArgs]);
-        DispatchCompute(1, 1, 1);
-        GLComputeFullBarrier();
-        DrainGLErrors("after DispatchArgs");
-
-        // --- Pass 3: Scatter ---
-        // The scatter shader iterates over splat_count (not tile_count), so
-        // dispatch ceil_div(splat_count, group_size) workgroups to maximise
-        // GPU utilisation.  (Previous dispatch of total_tiles was correct but
-        // under-utilised GPU when splat_count >> total_tiles × group_size.)
-        BindSSBO(11, vs.tile_entries_buf);
-        if (!programs_[kProgScatter].valid) {
-            utility::LogWarning(
-                    "GS OpenGL: scatter program not valid, skipping");
-            gl_ctx.ReleaseCurrent();
-            return false;
-        }
-        UseProgram(programs_[kProgScatter]);
-        DispatchCompute(
-                std::max(1u, (packed.splat_count +
-                              static_cast<std::uint32_t>(
-                                      config_.scatter_group_size) -
-                              1u) /
-                                     static_cast<std::uint32_t>(
-                                             config_.scatter_group_size)),
-                1, 1);
-        GLComputeFullBarrier();
-        DrainGLErrors("after Scatter");
-
-        // --- Pass 4: Radix Sort (GPU indirect dispatch, no CPU readback) ---
-        // All dispatch counts and RadixSortParams were written GPU-side above.
-        // We use glBindBufferRange to expose one RadixSortParams slot per pass
-        // at stride kRadixParamsStride (256 bytes) via the UBO at binding 14.
-        {
-            // Keygen: create composite sort keys (tile_id<<16 | depth>>16).
-            BindUBORange(14, vs.radix_params_buf, 0,
-                         sizeof(RadixSortParams));  // only g_num_elements used
-            BindSSBO(0, vs.tile_entries_buf);
-            BindSSBO(1, vs.sort_keys_buf[0]);
-            BindSSBO(2, vs.sort_values_buf[0]);
-            UseProgram(programs_[kProgRadixKeygen]);
-            DispatchComputeIndirect(vs.dispatch_args_buf, 0u);  // arg[0]
-            GLComputeFullBarrier();
-
-            // 4 passes of histogram + scatter (8 bits per pass).
-            // Dispatch counts and per-pass params are in the GPU buffers.
-            int src = 0;
-            for (std::uint32_t pass = 0; pass < 4; ++pass) {
-                const int dst = 1 - src;
-                // Bind the params slot for this pass at its 256-byte offset.
-                BindUBORange(14, vs.radix_params_buf, pass * kRadixParamsStride,
-                             sizeof(RadixSortParams));
-
-                ClearGLBuffer(vs.histogram_buf);
-                GLComputeFullBarrier();
-
-                // Histogram pass.
-                BindSSBO(0, vs.sort_keys_buf[src]);
-                BindSSBO(1, vs.histogram_buf);
-                UseProgram(programs_[kProgRadixHistograms]);
-                DispatchComputeIndirect(
-                        vs.dispatch_args_buf,
-                        (1u + pass) * 3u * sizeof(std::uint32_t));
-                GLComputeFullBarrier();
-
-                // Sort-scatter pass.
-                BindSSBO(0, vs.sort_keys_buf[src]);
-                BindSSBO(1, vs.sort_keys_buf[dst]);
-                BindSSBO(2, vs.histogram_buf);
-                BindSSBO(3, vs.sort_values_buf[src]);
-                BindSSBO(4, vs.sort_values_buf[dst]);
-                UseProgram(programs_[kProgRadixScatter]);
-                DispatchComputeIndirect(
-                        vs.dispatch_args_buf,
-                        (5u + pass) * 3u * sizeof(std::uint32_t));
-                GLComputeFullBarrier();
-
-                src = dst;
-            }
-
-            // After 4 passes (even swap count), sorted result is in buf[0].
-            // Payload: rearrange TileEntry structs into sorted order.
-            BindUBORange(14, vs.radix_params_buf, 0,
-                         sizeof(RadixSortParams));  // only g_num_elements used
-            BindSSBO(0, vs.sort_values_buf[src]);
-            BindSSBO(1, vs.tile_entries_buf);
-            BindSSBO(2, vs.sorted_entries_buf);
-            UseProgram(programs_[kProgRadixPayload]);
-            DispatchComputeIndirect(vs.dispatch_args_buf,
-                                    9u * 3u * sizeof(std::uint32_t));
-            GLComputeFullBarrier();
-        }
-        DrainGLErrors("after RadixSort");
-
-        // We defer Finish to allow overlap with Filament scene draw
+        const bool ok = RunGaussianGeometryPasses(
+                *gpu_, config_, packed, dispatches, vs, scene_id,
+                source->splat_count, scene_changed);
         gl_ctx.ReleaseCurrent();
-        return true;
+        return ok;
     }
 
     bool RenderCompositeStage(
             const FilamentView& view,
-            const GaussianComputeRenderer::ViewRenderData& render_data,
+            const GaussianComputeRenderer::ViewRenderData&,
             const std::vector<GaussianComputeRenderer::PassDispatch>&
                     dispatches,
             GaussianComputeRenderer::OutputTargets& targets) override {
-        utility::LogDebug("GS OpenGL RenderCompositeStage.");
-
         auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
-        if (!gl_ctx.MakeCurrent()) {
+        if (!gl_ctx.MakeCurrent() || !gpu_) {
             return false;
         }
 
         auto it = view_states_.find(&view);
-        if (it == view_states_.end() || !it->second.view_params_buf.valid) {
-            gl_ctx.ReleaseCurrent();
-            return false;
-        }
-        ViewState& vs = it->second;
-
-        auto find_dispatch = [&](GaussianComputeRenderer::PassType type)
-                -> const GaussianComputeRenderer::PassDispatch* {
-            for (const auto& d : dispatches) {
-                if (d.type == type) {
-                    return &d;
-                }
-            }
-            return nullptr;
-        };
-
-        auto dispatch_pass = [&](GaussianComputeRenderer::PassType type,
-                                 const GLComputeProgram& prog,
-                                 const char* name) -> bool {
-            const auto* d = find_dispatch(type);
-            if (!d || !prog.valid) {
-                return false;
-            }
-            UseProgram(prog);
-            DispatchCompute(std::max(1, d->group_count.x()),
-                            std::max(1, d->group_count.y()),
-                            std::max(1, d->group_count.z()));
-            return true;
-        };
-
-        // Rebind sorted entries for composite (radix sort reused
-        // binding points 0-4).
-        BindUBO(0, vs.view_params_buf);
-        BindSSBO(6, vs.projected_buf);
-        BindSSBO(11, vs.sorted_entries_buf);
-
-        // Enable scene depth in the UBO.  The geometry stage packed it
-        // with depth_range_and_flags.w = 0; set it to 1 here if the
-        // shared scene depth texture is available.
-        const bool has_scene_depth = (targets.scene_depth_gl_handle != 0);
-        if (has_scene_depth) {
-            float flag = 1.0f;
-            // depth_range_and_flags[3] is at byte offset 268 in the UBO.
-            static constexpr std::size_t kDepthFlagOffset =
-                    offsetof(PackedGaussianViewParams, depth_range_and_flags) +
-                    3 * sizeof(float);
-            UploadGLBuffer(vs.view_params_buf, &flag, sizeof(flag),
-                           kDepthFlagOffset);
-        }
-
-        // --- Pass 5: Composite ---
-        // Use GL color texture from PrepareOutputTargets for the output.
-        GLTextureHandle color_out{targets.color_gl_handle, targets.width,
-                                  targets.height, targets.color_gl_handle != 0};
-        // Keep a per-view depth output texture for the composite shader.
-        vs.depth_tex = ResizeGLTexture2D(vs.depth_tex, targets.width,
-                                         targets.height, kGL_R32F);
-
-        if (!color_out.valid || !vs.depth_tex.valid) {
-            utility::LogWarning(
-                    "Gaussian compute OpenGL: Failed to create output "
-                    "textures.");
+        if (it == view_states_.end() || it->second.view_params_buf == 0) {
             gl_ctx.ReleaseCurrent();
             return false;
         }
 
-        BindImage(12, color_out, kGL_RGBA16F, kGL_WRITE_ONLY);
-        BindImage(13, vs.depth_tex, kGL_R32F, kGL_WRITE_ONLY);
-
-        // Bind scene depth as a sampler at unit 14 for occlusion testing.
-        if (has_scene_depth) {
-            GLTextureHandle scene_depth{targets.scene_depth_gl_handle,
-                                        targets.width, targets.height, true};
-            BindSamplerTexture(14, scene_depth);
-        }
-
-        DrainGLErrors("after BindImage/BindSampler for composite");
-
-        if (!dispatch_pass(GaussianComputeRenderer::PassType::kComposite,
-                           programs_[kProgComposite], "Composite")) {
-            gl_ctx.ReleaseCurrent();
-            return false;
-        }
-        GLComputeFullBarrier();
-        DrainGLErrors("after Composite");
-
-        // Ensure all GL work completes before Filament uses the context.
-        gl_ctx.Finish();
-
-        // Debug: sample center pixel from GS color output.
-        {
-            static int debug_count = 0;
-            if (debug_count < 5) {
-                // Use DownloadGLTexture2D to read a few pixels.
-                std::vector<float> pixels(targets.width * targets.height * 4);
-                DownloadGLTexture2D(color_out, pixels.data(), kGL_RGBA);
-                int cx = targets.width / 2, cy = targets.height / 2;
-                int idx = (cy * targets.width + cx) * 4;
-                utility::LogDebug(
-                        "GS composite debug: center pixel = ({}, {}, {}, "
-                        "{}), tex_id={}, size={}x{}",
-                        pixels[idx], pixels[idx + 1], pixels[idx + 2],
-                        pixels[idx + 3], color_out.id, targets.width,
-                        targets.height);
-                // Also check if any pixel has non-zero alpha.
-                float max_alpha = 0;
-                int nonzero = 0;
-                for (size_t i = 3; i < pixels.size(); i += 4) {
-                    if (pixels[i] > 0.001f) ++nonzero;
-                    if (pixels[i] > max_alpha) max_alpha = pixels[i];
-                }
-                utility::LogDebug(
-                        "GS composite debug: nonzero_alpha_pixels={}/{}, "
-                        "max_alpha={}",
-                        nonzero, targets.width * targets.height, max_alpha);
-
-                // Read scene depth texture for diagnosis.
-                if (has_scene_depth) {
-                    GLTextureHandle scene_depth_tex{
-                            targets.scene_depth_gl_handle, targets.width,
-                            targets.height, true};
-                    std::vector<float> depth_pixels(targets.width *
-                                                    targets.height);
-                    DownloadGLTexture2D(scene_depth_tex, depth_pixels.data(),
-                                        kGL_DEPTH_COMPONENT);  // 0x1902
-                    int didx = cy * targets.width + cx;
-                    float min_d = 1e30f, max_d = -1e30f;
-                    int zeros = 0;
-                    for (size_t i = 0; i < depth_pixels.size(); ++i) {
-                        if (depth_pixels[i] == 0.0f) ++zeros;
-                        if (depth_pixels[i] < min_d) min_d = depth_pixels[i];
-                        if (depth_pixels[i] > max_d) max_d = depth_pixels[i];
-                    }
-                    utility::LogDebug(
-                            "GS depth debug: center_depth={}, "
-                            "min={}, max={}, zero_pixels={}/{}",
-                            depth_pixels[didx], min_d, max_d, zeros,
-                            (int)depth_pixels.size());
-                }
-
-                DrainGLErrors("after debug readback");
-                ++debug_count;
-            }
-        }
-
+        const bool ok = RunGaussianCompositePass(*gpu_, config_, dispatches,
+                                                 it->second, targets);
         gl_ctx.ReleaseCurrent();
-
-        // Zero-copy: the GS color texture is already imported into Filament
-        // (targets.color).  ImGui can sample it directly.
-        targets.has_valid_output = true;
-        return true;
+        return ok;
     }
 
 private:
-    struct ViewState {
-        GLBufferHandle view_params_buf;
-        GLBufferHandle positions_buf;
-        GLBufferHandle scales_buf;
-        GLBufferHandle rotations_buf;
-        GLBufferHandle dc_opacity_buf;
-        GLBufferHandle sh_buf;
-        GLBufferHandle projected_buf;
-        GLBufferHandle tile_counts_buf;
-        GLBufferHandle tile_offsets_buf;
-        GLBufferHandle tile_heads_buf;
-        GLBufferHandle counters_buf;
-        GLBufferHandle tile_entries_buf;
-        // Indirect dispatch args written by kProgComputeDispatchArgs.
-        // 10 commands x 3 uint32 = 120 bytes.
-        GLBufferHandle dispatch_args_buf;
-        // Radix sort temporary buffers.
-        GLBufferHandle sort_keys_buf[2];
-        GLBufferHandle sort_values_buf[2];
-        GLBufferHandle histogram_buf;
-        GLBufferHandle radix_params_buf;
-        GLBufferHandle sorted_entries_buf;
-        GLTextureHandle depth_tex;  // GS depth output (binding 13)
-        std::uint64_t cached_scene_id = 0;
-        std::uint32_t cached_splat_count = 0;
-    };
-
-    bool EnsureProgramsReady() {
-        if (programs_loaded_) {
-            return programs_valid_;
-        }
-        programs_loaded_ = true;
-        programs_valid_ = false;
-
-        // All shaders are loaded from pre-compiled SPIR-V (.spv) files.
-        // The CMake target gaussian_compute_shaders compiles .comp -> .spv
-        // with glslangValidator -V --target-env vulkan1.1.
-        static const char* kShaderSPVFiles[] = {
-                "gaussian_project.spv",
-                "gaussian_prefix_sum.spv",
-                "gaussian_scatter.spv",
-                "gaussian_sort.spv",
-                "gaussian_composite.spv",
-                "gaussian_radix_sort_keygen.spv",
-                "gaussian_radix_sort_histograms.spv",
-                "gaussian_radix_sort.spv",
-                "gaussian_radix_sort_payload.spv",
-                "gaussian_compute_dispatch_args.spv",
-        };
-        static_assert(sizeof(kShaderSPVFiles) / sizeof(kShaderSPVFiles[0]) ==
-                              kNumPrograms,
-                      "Shader file list must match kNumPrograms");
-
-        const std::string shader_root =
-                EngineInstance::GetResourcePath() + "/gaussian_compute/";
-        for (int i = 0; i < kNumPrograms; ++i) {
-            std::vector<std::uint8_t> spirv;
-            std::string path = shader_root + kShaderSPVFiles[i];
-            if (!ReadSPIRVFile(path, &spirv)) {
-                utility::LogWarning(
-                        "Gaussian compute OpenGL: Failed to read "
-                        "SPIR-V shader {}",
-                        path);
-                return false;
-            }
-            programs_[i] = LoadGLComputeProgramSPIRV(spirv, kShaderSPVFiles[i]);
-            if (!programs_[i].valid) {
-                return false;
-            }
-        }
-
-        programs_valid_ = true;
-        return true;
-    }
-
-    void DestroyViewState(ViewState& vs) {
-        // Need GL context current to destroy GL objects.
+    void DestroyViewState(GaussianComputeViewGpuResources& vs) {
         auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
-        bool ctx_ok = gl_ctx.MakeCurrent();
-        if (ctx_ok) {
-            DestroyGLBuffer(vs.view_params_buf);
-            DestroyGLBuffer(vs.positions_buf);
-            DestroyGLBuffer(vs.scales_buf);
-            DestroyGLBuffer(vs.rotations_buf);
-            DestroyGLBuffer(vs.dc_opacity_buf);
-            DestroyGLBuffer(vs.sh_buf);
-            DestroyGLBuffer(vs.projected_buf);
-            DestroyGLBuffer(vs.tile_counts_buf);
-            DestroyGLBuffer(vs.tile_offsets_buf);
-            DestroyGLBuffer(vs.tile_heads_buf);
-            DestroyGLBuffer(vs.counters_buf);
-            DestroyGLBuffer(vs.tile_entries_buf);
-            DestroyGLBuffer(vs.dispatch_args_buf);
-            for (int i = 0; i < 2; ++i) {
-                DestroyGLBuffer(vs.sort_keys_buf[i]);
-                DestroyGLBuffer(vs.sort_values_buf[i]);
-            }
-            DestroyGLBuffer(vs.histogram_buf);
-            DestroyGLBuffer(vs.radix_params_buf);
-            DestroyGLBuffer(vs.sorted_entries_buf);
-            DestroyGLTexture(vs.depth_tex);
-            gl_ctx.ReleaseCurrent();
+        if (!gl_ctx.MakeCurrent() || !gpu_) {
+            return;
         }
+        auto destroy_buf = [&](std::uintptr_t& b) {
+            if (b != 0) {
+                gpu_->DestroyBuffer(b);
+                b = 0;
+            }
+        };
+        destroy_buf(vs.view_params_buf);
+        destroy_buf(vs.positions_buf);
+        destroy_buf(vs.scales_buf);
+        destroy_buf(vs.rotations_buf);
+        destroy_buf(vs.dc_opacity_buf);
+        destroy_buf(vs.sh_buf);
+        destroy_buf(vs.projected_buf);
+        destroy_buf(vs.tile_counts_buf);
+        destroy_buf(vs.tile_offsets_buf);
+        destroy_buf(vs.tile_heads_buf);
+        destroy_buf(vs.counters_buf);
+        destroy_buf(vs.tile_entries_buf);
+        destroy_buf(vs.dispatch_args_buf);
+        destroy_buf(vs.sort_keys_buf[0]);
+        destroy_buf(vs.sort_keys_buf[1]);
+        destroy_buf(vs.sort_values_buf[0]);
+        destroy_buf(vs.sort_values_buf[1]);
+        destroy_buf(vs.histogram_buf);
+        destroy_buf(vs.radix_params_buf);
+        destroy_buf(vs.sorted_entries_buf);
+        if (vs.composite_depth_tex != 0) {
+            gpu_->DestroyTexture(vs.composite_depth_tex);
+            vs.composite_depth_tex = 0;
+        }
+        gl_ctx.ReleaseCurrent();
     }
 
     void Cleanup() {
         auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
-        bool ctx_ok = gl_ctx.MakeCurrent();
-        if (ctx_ok) {
+        if (gl_ctx.MakeCurrent()) {
             for (auto& pair : view_states_) {
                 DestroyViewState(pair.second);
             }
-            for (auto& prog : programs_) {
-                DestroyGLComputeProgram(prog);
-            }
+            view_states_.clear();
             gl_ctx.ReleaseCurrent();
         }
-        view_states_.clear();
-        programs_loaded_ = false;
-        programs_valid_ = false;
+        gpu_.reset();
     }
 
-    FilamentResourceManager& resource_mgr_;
     const GaussianComputeRenderer::RenderConfig& config_;
-    std::unordered_map<const FilamentView*, ViewState> view_states_;
-    static constexpr int kNumPrograms = 10;
-    GLComputeProgram programs_[kNumPrograms] = {};
-    bool programs_loaded_ = false;
-    bool programs_valid_ = false;
+    std::unordered_map<const FilamentView*, GaussianComputeViewGpuResources>
+            view_states_;
+    std::unique_ptr<GaussianComputeGpuContext> gpu_;
 };
 #endif  // !defined(__APPLE__)
-
-class GaussianComputeMetalBackend final
-    : public GaussianComputeRenderer::Backend {
-public:
-    GaussianComputeMetalBackend(
-            FilamentResourceManager& resource_mgr,
-            const GaussianComputeRenderer::RenderConfig& config)
-        : resource_mgr_(resource_mgr), config_(config) {}
-
-    ~GaussianComputeMetalBackend() override {
-        for (auto& entry : pipelines_) {
-            DestroyMetalComputePipeline(entry.second.pipeline);
-        }
-    }
-
-    const char* GetName() const override { return "Metal"; }
-
-    void BeginFrame(std::uint64_t) override {}
-
-    void ForgetView(const FilamentView& view) override {
-        logged_views_.erase(&view);
-    }
-
-    bool RenderGeometryStage(
-            const FilamentView& view,
-            const FilamentScene& scene,
-            const GaussianComputeRenderer::ViewRenderData& render_data,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&
-                    dispatches,
-            GaussianComputeRenderer::OutputTargets& targets) override {
-        // Implement split later if needed. For now just track it in the map to
-        // allow placeholder.
-        if (logged_views_.insert(&view).second) {
-            utility::LogInfo(
-                    "Metal backend splits not fully implemented. "
-                    "RenderGeometryStage.");
-        }
-        return false;
-    }
-
-    bool RenderCompositeStage(
-            const FilamentView& view,
-            const GaussianComputeRenderer::ViewRenderData& render_data,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&
-                    dispatches,
-            GaussianComputeRenderer::OutputTargets& targets) override {
-        return false;
-    }
-
-private:
-    struct CompiledPass {
-        LoadedShaderSource source;
-        MetalComputePipelineHandle pipeline;
-        std::string entry_point;
-    };
-
-    void EnsurePassPipelinesLoaded(std::uintptr_t device_handle) {
-        if (!pipelines_.empty()) {
-            return;
-        }
-
-        static const struct {
-            GaussianComputeRenderer::PassType type;
-            const char* file_name;
-            const char* entry_point;
-        } kPassFiles[] = {
-                {GaussianComputeRenderer::PassType::kProjection,
-                 "gaussian_project.metal", "gaussian_project_main"},
-                {GaussianComputeRenderer::PassType::kTilePrefixSum,
-                 "gaussian_prefix_sum.metal", "gaussian_prefix_sum_main"},
-                {GaussianComputeRenderer::PassType::kTileScatter,
-                 "gaussian_scatter.metal", "gaussian_scatter_main"},
-                {GaussianComputeRenderer::PassType::kTileSort,
-                 "gaussian_sort.metal", "gaussian_sort_main"},
-                {GaussianComputeRenderer::PassType::kComposite,
-                 "gaussian_composite.metal", "gaussian_composite_main"},
-        };
-
-        const std::string shader_root =
-                EngineInstance::GetResourcePath() + "/gaussian_compute/";
-        for (const auto& pass : kPassFiles) {
-            CompiledPass compiled_pass;
-            compiled_pass.source.path = shader_root + pass.file_name;
-            compiled_pass.entry_point = pass.entry_point;
-            compiled_pass.source.loaded = ReadTextFile(
-                    compiled_pass.source.path, &compiled_pass.source.source);
-            if (compiled_pass.source.loaded) {
-                std::string error;
-                compiled_pass.pipeline = CompileMetalComputePipeline(
-                        device_handle, compiled_pass.source.source,
-                        compiled_pass.entry_point, pass.file_name, &error);
-                if (!compiled_pass.pipeline.valid) {
-                    utility::LogWarning(
-                            "Failed to compile Gaussian Metal compute pass {}: "
-                            "{}",
-                            pass.file_name, error);
-                }
-            }
-            pipelines_.emplace(pass.type, std::move(compiled_pass));
-        }
-    }
-
-    FilamentResourceManager& resource_mgr_;
-    const GaussianComputeRenderer::RenderConfig& config_;
-    std::unordered_set<const FilamentView*> logged_views_;
-
-    std::unordered_map<GaussianComputeRenderer::PassType, CompiledPass>
-            pipelines_;
-};
 
 std::unique_ptr<GaussianComputeRenderer::Backend> CreateBackend(
         RenderingType backend,
@@ -928,8 +253,12 @@ std::unique_ptr<GaussianComputeRenderer::Backend> CreateBackend(
         const GaussianComputeRenderer::RenderConfig& config) {
     switch (backend) {
         case RenderingType::kMetal:
+#if defined(__APPLE__)
+            return CreateGaussianComputeMetalBackend(resource_mgr, config);
+#else
             return std::unique_ptr<GaussianComputeRenderer::Backend>(
-                    new GaussianComputeMetalBackend(resource_mgr, config));
+                    new GaussianComputePlaceholderBackend("Metal"));
+#endif
         case RenderingType::kOpenGL:
 #if !defined(__APPLE__)
             return std::unique_ptr<GaussianComputeRenderer::Backend>(
@@ -954,8 +283,8 @@ std::vector<GaussianComputeRenderer::PassDefinition> CreateDefaultPasses() {
              "Gaussian Tile Prefix Sum", "gaussian_prefix_sum.comp"},
             {GaussianComputeRenderer::PassType::kTileScatter,
              "Gaussian Tile Scatter", "gaussian_scatter.comp"},
-            {GaussianComputeRenderer::PassType::kTileSort, "Gaussian Tile Sort",
-             "gaussian_sort.comp"},
+            {GaussianComputeRenderer::PassType::kTileSort,
+             "Gaussian Radix Sort (keygen)", "gaussian_radix_sort_keygen.comp"},
             {GaussianComputeRenderer::PassType::kComposite,
              "Gaussian Composite", "gaussian_composite.comp"},
     };
@@ -1089,13 +418,6 @@ void GaussianComputeRenderer::BeginFrame() {
 void GaussianComputeRenderer::RenderGeometryStage(FilamentView& view,
                                                   const FilamentScene& scene) {
     if (!enabled_ || !scene.HasGaussianSplatGeometry()) {
-        static bool logged_once = false;
-        if (!logged_once) {
-            utility::LogDebug(
-                    "GS RenderGeometryStage: skip (enabled={}, hasGS={})",
-                    enabled_, scene.HasGaussianSplatGeometry());
-            logged_once = true;
-        }
         return;
     }
 
@@ -1115,13 +437,6 @@ void GaussianComputeRenderer::RenderGeometryStage(FilamentView& view,
         return;
     }
 
-    utility::LogDebug(
-            "GS RenderGeometryStage: rendering (view_changed={}, "
-            "dispatch_changed={},"
-            " scene_changed={}, backend={}, has_render_data={})",
-            view_changed, dispatch_changed, scene_changed, backend_ != nullptr,
-            targets.has_render_data);
-
     bool rendered = false;
     if (backend_ && targets.has_render_data) {
         rendered =
@@ -1131,9 +446,9 @@ void GaussianComputeRenderer::RenderGeometryStage(FilamentView& view,
     if (rendered) {
         targets.last_scene_change_id = scene_change_id;
     }
-    // Set has_valid_output true even if composite hasn't run yet so that
-    // Filament can bind the external zero-copy textures that exist in targets.
-    targets.has_valid_output = rendered;
+    if (!rendered) {
+        targets.has_valid_output = false;
+    }
 }
 
 void GaussianComputeRenderer::RenderCompositeStage(FilamentView& view) {
@@ -1143,6 +458,7 @@ void GaussianComputeRenderer::RenderCompositeStage(FilamentView& view) {
     }
 
     auto& targets = it->second;
+
     bool rendered = false;
     if (backend_ && targets.has_render_data) {
         rendered = backend_->RenderCompositeStage(
@@ -1194,22 +510,9 @@ bool GaussianComputeRenderer::IsSupported() const {
 
 bool GaussianComputeRenderer::HasOutput(const FilamentView& view) const {
     auto found = outputs_.find(&view);
-    bool has = found != outputs_.end() && found->second.color &&
-               found->second.depth && found->second.render_target &&
-               found->second.has_valid_output;
-    static int has_log = 0;
-    if (has_log < 10) {
-        utility::LogDebug(
-                "GS HasOutput: found={} color={} depth={} rt={} "
-                "valid={} => {}",
-                found != outputs_.end(),
-                found != outputs_.end() && found->second.color,
-                found != outputs_.end() && found->second.depth,
-                found != outputs_.end() && found->second.render_target,
-                found != outputs_.end() && found->second.has_valid_output, has);
-        ++has_log;
-    }
-    return has;
+    return found != outputs_.end() && found->second.color &&
+           found->second.depth && found->second.render_target &&
+           found->second.has_valid_output;
 }
 
 const GaussianComputeRenderer::ViewRenderData*
@@ -1355,6 +658,7 @@ GaussianComputeRenderer::PrepareOutputTargets(FilamentView& view) {
 
     ResetOutputTargets(targets);
 
+    bool zero_copy = false;
 #if !defined(__APPLE__)
     // Create GL textures on the shared GL context for zero-copy sharing
     // with Filament.  The scene depth texture is rendered into by Filament
@@ -1413,9 +717,15 @@ GaussianComputeRenderer::PrepareOutputTargets(FilamentView& view) {
             // and only blits color to the output — depth is lost.
             view.SetPostProcessing(false);
         }
-    } else
-#endif  // !defined(__APPLE__)
-    {
+        zero_copy = static_cast<bool>(targets.depth) &&
+                    static_cast<bool>(targets.color);
+    }
+#elif defined(__APPLE__)
+    zero_copy = PrepareGaussianImportedRenderTargetsApple(
+            view, resource_mgr_, width, height, targets);
+#endif
+
+    if (!zero_copy) {
         // Fallback: Filament-owned textures (no zero-copy).
         targets.color = resource_mgr_.CreateColorAttachmentTexture(int(width),
                                                                    int(height));
@@ -1463,9 +773,13 @@ void GaussianComputeRenderer::ResetOutputTargets(OutputTargets& targets) {
             gl_ctx.ReleaseCurrent();
         }
     }
+#elif defined(__APPLE__)
+    ReleaseGaussianImportedMTLTexturesApple(targets);
 #endif
     targets.scene_depth_gl_handle = 0;
     targets.color_gl_handle = 0;
+    targets.scene_depth_mtl_texture = 0;
+    targets.gs_color_mtl_texture = 0;
 
     targets.width = 0;
     targets.height = 0;

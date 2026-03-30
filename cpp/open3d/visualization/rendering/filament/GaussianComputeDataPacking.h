@@ -23,9 +23,6 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class FilamentResourceManager;
-class FilamentScene;
-
 // ----- GPU-compatible structure definitions ----------------------------------
 // These must be tightly packed to match the std140/std430 GLSL layouts.
 
@@ -114,25 +111,7 @@ struct GaussianSplatSourceData {
 PackedGaussianScene PackGaussianSceneInputs(
         const GaussianSplatSourceData& source,
         const GaussianComputeRenderer::ViewRenderData& render_data,
-        const GaussianComputeRenderer::RenderConfig& config,
-        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches);
-
-/// Upload compute output arrays into the pre-allocated Filament color/depth
-/// textures held by OutputTargets.  Returns true on success.
-bool UploadOutputTextures(FilamentResourceManager& resource_mgr,
-                          const std::vector<Std430Vec4>& color_pixels,
-                          const std::vector<float>& depth_pixels,
-                          std::uint32_t width,
-                          std::uint32_t height,
-                          GaussianComputeRenderer::OutputTargets& targets);
-
-/// Upload half-float RGBA data directly (avoiding half→float→half roundtrip).
-bool UploadOutputTexturesHalf(FilamentResourceManager& resource_mgr,
-                              const void* half_rgba_data,
-                              std::size_t half_data_size,
-                              std::uint32_t width,
-                              std::uint32_t height,
-                              GaussianComputeRenderer::OutputTargets& targets);
+        const GaussianComputeRenderer::RenderConfig& config);
 
 }  // namespace rendering
 }  // namespace visualization

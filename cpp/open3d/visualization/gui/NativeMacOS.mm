@@ -76,22 +76,31 @@ void SetupMetalLayer(void* nativeView) {
     // return metalLayer;
 }
 
-// void ResizeNativeWindow(GLFWwindow* glfw_window) {
-//     NSWindow* win = glfwGetCocoaWindow(glfw_window);
-//     NSView* view = [win contentView];
-//     CAMetalLayer* metalLayer = (CAMetalLayer*)view.layer;
-//     if (metalLayer) {
-//         metalLayer.contentsScale = view.window.backingScaleFactor;
-//         metalLayer.frame = NSRectToCGRect(view.frame);
-//         metalLayer.drawableSize = [view convertSizeToBacking:view.bounds.size];
-//     }
-// }
+void ResizeNativeWindow(GLFWwindow* glfw_window) {
+    NSWindow* win = glfwGetCocoaWindow(glfw_window);
+    NSView* view = [win contentView];
+    CAMetalLayer* metalLayer = (CAMetalLayer*)view.layer;
+    if (metalLayer) {
+        // Keep contentsScale in sync when the window moves between displays
+        // (e.g. Retina → non-Retina), so the drawable resolution matches.
+        metalLayer.contentsScale = view.window.backingScaleFactor;
+        metalLayer.frame = NSRectToCGRect(view.frame);
+        // drawableSize must be in physical (backing-store) pixels so that the
+        // Filament Metal swap chain and the GLFW framebuffer size agree.
+        metalLayer.drawableSize = [view convertSizeToBacking:view.bounds.size];
+    }
+}
 
 void* GetNativeDrawable(GLFWwindow* glfw_window) {
     NSWindow* win = glfwGetCocoaWindow(glfw_window);
     NSView* view = [win contentView];
     if (![view.layer isKindOfClass:[CAMetalLayer class]]) {
         SetupMetalLayer(view);
+    } else {
+        // Sync the existing layer's drawableSize so it matches the current
+        // physical pixel dimensions (Retina backing scale may have changed
+        // since the layer was first created, e.g. during initial window show).
+        ResizeNativeWindow(glfw_window);
     }
     return view.layer;
 }

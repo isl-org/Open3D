@@ -74,7 +74,6 @@ set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_project.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_prefix_sum.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_scatter.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_sort.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_composite.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_histograms.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort.comp
@@ -117,7 +116,6 @@ open3d_add_compiled_materials(materials
     Materials/infiniteGroundPlane.mat
     Materials/normals.mat
     Materials/pointcloud.mat
-    Materials/gaussianSplat.mat
     Materials/ui_blit.mat
     Materials/unlitBackground.mat
     Materials/unlitGradient.mat

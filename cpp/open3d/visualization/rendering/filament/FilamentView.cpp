@@ -96,6 +96,10 @@ FilamentView::~FilamentView() {
 #pragma clang diagnostic pop
 #endif
     view_->setScene(nullptr);
+    // Clear any custom render target so Filament's deferred view-destroy
+    // command doesn't hold a reference to a render target that may be freed
+    // before the engine processes its shutdown queue.
+    view_->setRenderTarget(nullptr);
 
     camera_.reset();
     engine_.destroy(view_);

@@ -293,8 +293,12 @@ private:
         int priority = -1;  // default priority
 
         GeometryMaterialInstance mat;
+        // Stored AABB for geometry registered without a Filament entity
+        // (e.g. Gaussian splats rendered via compute, not raster).
+        geometry::AxisAlignedBoundingBox aabb;
 
-        // Filament resources
+        // Filament resources — filament_entity is null for compute-only
+        // geometry.
         utils::Entity filament_entity;
         filament::RenderableManager::PrimitiveType primitive_type;
         VertexBufferHandle vb;
@@ -326,7 +330,6 @@ private:
                                   bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
-    void UpdateGaussianSplat(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);

@@ -317,8 +317,6 @@ TextureSettings GetSettingsFromImage(const t::geometry::Image& image,
 
 const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
-const MaterialHandle FilamentResourceManager::kGaussianSplatShader =
-        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLitSSR =
@@ -814,8 +812,14 @@ void FilamentResourceManager::DestroyAll() {
     texture_cache_.clear();
     material_instances_.clear();
     materials_.clear();
-    textures_.clear();
+    // Render targets must be destroyed BEFORE textures: a Filament RenderTarget
+    // holds references to its attachment Texture objects and accesses them
+    // during its deferred destroy command.  If textures were cleared first,
+    // Filament's FIFO deferred queue would free the textures first, and the
+    // subsequent render-target destroy would access freed texture state →
+    // crash in Engine::destroy().
     render_targets_.clear();
+    textures_.clear();
     vertex_buffers_.clear();
     index_buffers_.clear();
     ibls_.clear();
@@ -1036,28 +1040,6 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = BoxResource(lit_mat, engine_);
 
-    const auto gaussian_path = resource_root + "/gaussianSplat.filamat";
-    auto gaussian_mat = LoadMaterialFromFile(gaussian_path, engine_);
-    gaussian_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
-                                      default_color);
-    gaussian_mat->setDefaultParameter("baseRoughness", 0.7f);
-    gaussian_mat->setDefaultParameter("reflectance", 0.5f);
-    gaussian_mat->setDefaultParameter("baseMetallic", 0.f);
-    gaussian_mat->setDefaultParameter("clearCoat", 0.f);
-    gaussian_mat->setDefaultParameter("clearCoatRoughness", 0.f);
-    gaussian_mat->setDefaultParameter("anisotropy", 0.f);
-    gaussian_mat->setDefaultParameter("pointSize", 3.f);
-    gaussian_mat->setDefaultParameter("albedo", texture, default_sampler);
-    gaussian_mat->setDefaultParameter("ao_rough_metalMap", texture,
-                                      default_sampler);
-    gaussian_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
-    gaussian_mat->setDefaultParameter("reflectanceMap", texture,
-                                      default_sampler);
-
-    gaussian_mat->setDefaultParameter("anisotropyMap", texture,
-                                      default_sampler);
-    materials_[kGaussianSplatShader] = BoxResource(gaussian_mat, engine_);
-
     const auto lit_trans_path =
             resource_root + "/defaultLitTransparency.filamat";
     auto lit_trans_mat = LoadMaterialFromFile(lit_trans_path, engine_);
@@ -1208,6 +1190,28 @@ void FilamentResourceManager::LoadDefaults() {
     materials_[kDefaultUnlitPolygonOffsetShader] =
             BoxResource(poffset_mat, engine_);
 }
+
+#if defined(__APPLE__)
+filament::Texture* BuildImportedMTLTextureFilament(filament::Engine& engine,
+                                                   std::uintptr_t mtl_texture,
+                                                   int width,
+                                                   int height,
+                                                   int format,
+                                                   int usage);
+
+TextureHandle FilamentResourceManager::CreateImportedMTLTexture(
+        std::uintptr_t mtl_texture,
+        int width,
+        int height,
+        int format,
+        int usage) {
+    filament::Texture* texture = BuildImportedMTLTextureFilament(
+            engine_, mtl_texture, width, height, format, usage);
+    TextureHandle handle;
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+#endif  // defined(__APPLE__)
 
 }  // namespace rendering
 }  // namespace visualization

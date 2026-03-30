@@ -4,28 +4,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Implementation of data packing helpers and texture upload for the Gaussian
-// splat compute renderer.
+// Implementation of data packing helpers for the Gaussian splat compute
+// renderer.
 
 #include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
-
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4068 4146 4293)
-#endif
-#include <filament/Engine.h>
-#include <filament/Texture.h>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-
-#include "open3d/utility/Logging.h"
-#include "open3d/visualization/rendering/filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
 namespace open3d {
 namespace visualization {
@@ -46,8 +32,7 @@ int CeilDiv(int value, int divisor) { return (value + divisor - 1) / divisor; }
 PackedGaussianScene PackGaussianSceneInputs(
         const GaussianSplatSourceData& source,
         const GaussianComputeRenderer::ViewRenderData& render_data,
-        const GaussianComputeRenderer::RenderConfig& config,
-        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches) {
+        const GaussianComputeRenderer::RenderConfig& config) {
     PackedGaussianScene packed;
 
     if (source.splat_count == 0 || render_data.viewport_size.x() <= 0 ||
@@ -167,114 +152,6 @@ PackedGaussianScene PackGaussianSceneInputs(
     packed.pixel_count = static_cast<std::uint32_t>(w * h);
     packed.valid = true;
     return packed;
-}
-
-bool UploadOutputTextures(FilamentResourceManager& resource_mgr,
-                          const std::vector<Std430Vec4>& color_pixels,
-                          const std::vector<float>& depth_pixels,
-                          std::uint32_t width,
-                          std::uint32_t height,
-                          GaussianComputeRenderer::OutputTargets& targets) {
-    if (width == 0 || height == 0) {
-        return false;
-    }
-
-    auto& engine = EngineInstance::GetInstance();
-
-    // Upload color (RGBA16F texture) from float4 data.
-    {
-        auto tex_weak = resource_mgr.GetTexture(targets.color);
-        auto tex = tex_weak.lock();
-        if (!tex) {
-            utility::LogWarning(
-                    "Gaussian compute output: invalid color texture handle.");
-            return false;
-        }
-        // Convert float RGBA to half-float RGBA for the RGBA16F texture.
-        const std::size_t pixel_count =
-                static_cast<std::size_t>(width) * height;
-        const std::size_t half_data_size = pixel_count * 4 * sizeof(uint16_t);
-        auto* half_data = static_cast<uint16_t*>(std::malloc(half_data_size));
-        if (!half_data) return false;
-
-        for (std::size_t i = 0; i < pixel_count; ++i) {
-            const Std430Vec4& src =
-                    (i < color_pixels.size())
-                            ? color_pixels[i]
-                            : *reinterpret_cast<const Std430Vec4*>(
-                                      "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
-            // Use Eigen's half conversion or just bit-approximate.
-            auto float_to_half = [](float f) -> uint16_t {
-                // IEEE 754 float16 conversion.
-                uint32_t bits;
-                std::memcpy(&bits, &f, 4);
-                uint32_t sign = (bits >> 16) & 0x8000;
-                int32_t exponent = ((bits >> 23) & 0xFF) - 127 + 15;
-                uint32_t mantissa = bits & 0x007FFFFF;
-                if (exponent <= 0) {
-                    return static_cast<uint16_t>(sign);
-                }
-                if (exponent >= 31) {
-                    return static_cast<uint16_t>(sign | 0x7C00);
-                }
-                return static_cast<uint16_t>(sign | (exponent << 10) |
-                                             (mantissa >> 13));
-            };
-            half_data[i * 4 + 0] = float_to_half(src.x);
-            half_data[i * 4 + 1] = float_to_half(src.y);
-            half_data[i * 4 + 2] = float_to_half(src.z);
-            half_data[i * 4 + 3] = float_to_half(src.w);
-        }
-
-        filament::Texture::PixelBufferDescriptor desc(
-                half_data, half_data_size, filament::Texture::Format::RGBA,
-                filament::Texture::Type::HALF,
-                [](void* buf, size_t, void*) { std::free(buf); });
-        tex->setImage(engine, 0, std::move(desc));
-    }
-
-    // Upload depth (DEPTH32F texture) - but Filament DEPTH32F textures only
-    // support DEPTH_ATTACHMENT usage, not SAMPLEABLE+setImage upload.
-    // Instead, we mark the output as valid and the depth buffer can be used
-    // through the render target path.
-    // For now, color-only output is functional.
-    targets.has_valid_output = true;
-    return true;
-}
-
-bool UploadOutputTexturesHalf(FilamentResourceManager& resource_mgr,
-                              const void* half_rgba_data,
-                              std::size_t half_data_size,
-                              std::uint32_t width,
-                              std::uint32_t height,
-                              GaussianComputeRenderer::OutputTargets& targets) {
-    if (width == 0 || height == 0 || !half_rgba_data || half_data_size == 0) {
-        return false;
-    }
-
-    auto& engine = EngineInstance::GetInstance();
-
-    auto tex_weak = resource_mgr.GetTexture(targets.color);
-    auto tex = tex_weak.lock();
-    if (!tex) {
-        utility::LogWarning(
-                "Gaussian compute output: invalid color texture handle.");
-        return false;
-    }
-
-    // Allocate a copy of the half data that Filament can own and free.
-    auto* owned_data = static_cast<uint16_t*>(std::malloc(half_data_size));
-    if (!owned_data) return false;
-    std::memcpy(owned_data, half_rgba_data, half_data_size);
-
-    filament::Texture::PixelBufferDescriptor desc(
-            owned_data, half_data_size, filament::Texture::Format::RGBA,
-            filament::Texture::Type::HALF,
-            [](void* buf, size_t, void*) { std::free(buf); });
-    tex->setImage(engine, 0, std::move(desc));
-
-    targets.has_valid_output = true;
-    return true;
 }
 
 }  // namespace rendering

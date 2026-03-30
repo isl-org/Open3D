@@ -37,61 +37,6 @@ bool CheckGLError(const char* operation) {
 
 // --- Shader compilation ---
 
-GLComputeProgram CompileGLComputeProgram(const std::string& source,
-                                         const std::string& debug_name) {
-    GLComputeProgram result;
-
-    GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
-    if (shader == 0) {
-        utility::LogWarning("Failed to create compute shader for {}",
-                            debug_name);
-        return result;
-    }
-
-    const char* src = source.c_str();
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
-
-    GLint compiled = 0;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-    if (!compiled) {
-        GLint log_len = 0;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_len);
-        std::string log(std::max(0, log_len - 1), '\0');
-        if (log_len > 0) {
-            glGetShaderInfoLog(shader, log_len, nullptr, log.data());
-        }
-        utility::LogWarning("Compute shader compile error ({}): {}", debug_name,
-                            log);
-        glDeleteShader(shader);
-        return result;
-    }
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, shader);
-    glLinkProgram(program);
-    glDeleteShader(shader);  // Detach after link.
-
-    GLint linked = 0;
-    glGetProgramiv(program, GL_LINK_STATUS, &linked);
-    if (!linked) {
-        GLint log_len = 0;
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
-        std::string log(std::max(0, log_len - 1), '\0');
-        if (log_len > 0) {
-            glGetProgramInfoLog(program, log_len, nullptr, log.data());
-        }
-        utility::LogWarning("Compute program link error ({}): {}", debug_name,
-                            log);
-        glDeleteProgram(program);
-        return result;
-    }
-
-    result.id = program;
-    result.valid = true;
-    return result;
-}
-
 GLComputeProgram LoadGLComputeProgramSPIRV(
         const std::vector<std::uint8_t>& spirv,
         const std::string& debug_name,
@@ -203,12 +148,49 @@ GLBufferHandle CreateGLBuffer(std::size_t size, const void* initial_data) {
     return result;
 }
 
+GLBufferHandle CreateGLPrivateBuffer(std::size_t size) {
+    GLBufferHandle result;
+    if (size == 0) {
+        return result;
+    }
+    GLuint buf = 0;
+    glGenBuffers(1, &buf);
+    if (buf == 0 || CheckGLError("CreateGLPrivateBuffer/gen")) {
+        return result;
+    }
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buf);
+    // GL_DYNAMIC_COPY: modified repeatedly by reading from GL (GPU compute
+    // writes it), used for subsequent compute or drawing (GPU reads it).
+    // On discrete NVIDIA/AMD hardware this biases allocation toward GPU-local
+    // VRAM, avoiding unnecessary CPU-visible coherency overhead.
+    glBufferData(GL_SHADER_STORAGE_BUFFER, static_cast<GLsizeiptr>(size),
+                 nullptr, GL_DYNAMIC_COPY);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    if (CheckGLError("CreateGLPrivateBuffer/data")) {
+        glDeleteBuffers(1, &buf);
+        return result;
+    }
+    result.id = buf;
+    result.size = size;
+    result.valid = true;
+    return result;
+}
+
 GLBufferHandle ResizeGLBuffer(GLBufferHandle buffer, std::size_t new_size) {
     if (buffer.valid && buffer.size >= new_size) {
         return buffer;
     }
     DestroyGLBuffer(buffer);
     return CreateGLBuffer(new_size, nullptr);
+}
+
+GLBufferHandle ResizeGLPrivateBuffer(GLBufferHandle buffer,
+                                     std::size_t new_size) {
+    if (buffer.valid && buffer.size >= new_size) {
+        return buffer;
+    }
+    DestroyGLBuffer(buffer);
+    return CreateGLPrivateBuffer(new_size);
 }
 
 void UploadGLBuffer(const GLBufferHandle& buffer,
@@ -219,17 +201,6 @@ void UploadGLBuffer(const GLBufferHandle& buffer,
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.id);
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, static_cast<GLintptr>(offset),
                     static_cast<GLsizeiptr>(size), data);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-}
-
-void DownloadGLBuffer(const GLBufferHandle& buffer,
-                      void* data,
-                      std::size_t size,
-                      std::size_t offset) {
-    if (!buffer.valid || size == 0) return;
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.id);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, static_cast<GLintptr>(offset),
-                       static_cast<GLsizeiptr>(size), data);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
@@ -305,15 +276,6 @@ void DestroyGLTexture(GLTextureHandle& texture) {
     texture.width = 0;
     texture.height = 0;
     texture.valid = false;
-}
-
-void DownloadGLTexture2D(const GLTextureHandle& texture,
-                         void* data,
-                         std::uint32_t format) {
-    if (!texture.valid || !data) return;
-    glBindTexture(GL_TEXTURE_2D, texture.id);
-    glGetTexImage(GL_TEXTURE_2D, 0, format, GL_FLOAT, data);
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 // --- Compute dispatch ---

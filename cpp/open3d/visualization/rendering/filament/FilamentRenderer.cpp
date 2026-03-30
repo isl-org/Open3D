@@ -76,8 +76,14 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
 }
 
 FilamentRenderer::~FilamentRenderer() {
-    scenes_.clear();
+    // Destroy GS output targets (render targets + imported textures) BEFORE
+    // the renderer and swap chain.  Filament's deferred command queue is FIFO,
+    // so any engine.destroy(rt/tex) calls queued here will be processed before
+    // engine.destroy(renderer_) and engine.destroy(swap_chain_), which matches
+    // the required teardown order (RTs before renderer before swap chain).
+    gaussian_compute_renderer_.reset();
 
+    scenes_.clear();
     engine_.destroy(renderer_);
     engine_.destroy(swap_chain_);
 }
@@ -177,10 +183,16 @@ void FilamentRenderer::BeginFrame() {
     if (gaussian_compute_renderer_) {
         gaussian_compute_renderer_->BeginFrame();
 
+#if defined(__APPLE__)
+        // The Metal backend only writes its internal sorting / projection
+        // buffers here. Shared texture synchronization happens after
+        // endFrame() before the post-frame composite.
+#else
         // Flush any pending Filament work so the GPU queue is idle before
-        // our compute dispatches.  Without this, vkQueueSubmit can fail
+        // our compute dispatches. Without this, vkQueueSubmit can fail
         // because Filament still has commands in flight on the same queue.
         engine_.flushAndWait();
+#endif
 
         // Dispatch Gaussian compute before Filament's beginFrame so our
         // vkQueueSubmit calls don't conflict with Filament's frame.
@@ -209,14 +221,18 @@ void FilamentRenderer::Draw() {
             pair.second->Draw(*renderer_);
         }
 
-        // Wait for Filament meshes to finish generating depth
+        // Non-Apple backends composite into the overlay during the current
+        // frame. Apple runs the composite stage after endFrame() so the Metal
+        // depth texture is fully produced before compute samples it.
         if (gaussian_compute_renderer_) {
+#if !defined(__APPLE__)
             engine_.flushAndWait();
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {
                     gaussian_compute_renderer_->RenderCompositeStage(view);
                 });
             }
+#endif
         }
 
         // Draw the UI. This should come after the 3D scene(s), as SceneWidget
@@ -235,6 +251,21 @@ void FilamentRenderer::Draw() {
 void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
+#if defined(__APPLE__)
+        if (gaussian_compute_renderer_) {
+            // endFrame() commits Filament's Metal command buffer. Our
+            // composite CB, committed below on the same queue, will
+            // execute after Filament's render — guaranteeing the depth
+            // texture is ready. No flushAndWait needed; blocking here
+            // stalls the main thread behind expensive geometry compute
+            // CBs that are ahead in the queue.
+            for (const auto& pair : scenes_) {
+                pair.second->ForEachActiveView([&](FilamentView& view) {
+                    gaussian_compute_renderer_->RenderCompositeStage(view);
+                });
+            }
+        }
+#endif
         if (needs_wait_after_draw_) {
             engine_.flushAndWait();
             needs_wait_after_draw_ = false;
