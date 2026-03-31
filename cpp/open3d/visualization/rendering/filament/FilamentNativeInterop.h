@@ -5,6 +5,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+#ifdef __APPLE__
 
 #include <cstdint>
 
@@ -20,24 +21,14 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-struct FilamentVulkanNativeHandles {
-    std::uintptr_t instance = 0;
-    std::uintptr_t physical_device = 0;
-    std::uintptr_t device = 0;
-    std::uintptr_t graphics_queue = 0;
-    std::uint32_t graphics_queue_family_index = ~std::uint32_t(0);
-    std::uint32_t graphics_queue_index = ~std::uint32_t(0);
-    bool valid = false;
-};
-
+/// Metal native device and command-queue handles, retrieved from Filament's
+/// PlatformMetal.  Used by the Gaussian-splatting Metal backend to share GPU
+/// resources with Filament without extra allocations.
 struct FilamentMetalNativeHandles {
     std::uintptr_t device = 0;
     std::uintptr_t command_queue = 0;
     bool valid = false;
 };
-
-FilamentVulkanNativeHandles GetFilamentVulkanNativeHandles(
-        filament::backend::Platform* platform);
 
 FilamentMetalNativeHandles GetFilamentMetalNativeHandles(
         filament::backend::Platform* platform);
@@ -45,3 +36,5 @@ FilamentMetalNativeHandles GetFilamentMetalNativeHandles(
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
+
+#endif

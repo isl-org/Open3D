@@ -11,13 +11,12 @@
 #include <cstdlib>
 #include <cstring>
 
-// GL function prototypes — works with both GLX and EGL contexts.
-// Must be defined before any GL header is included.
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glext.h>
+#if !defined(_WIN32)
+// GLEW provides GL 4.x function pointers on Linux (GLX/EGL) the same way it
+// does on Windows (WGL).  Must be included before any other GL header.
+#include <GL/glew.h>
 
-// GLX (X11)
+// GLX (X11) — included after glew.h so it doesn't pull in raw <GL/gl.h>.
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 
@@ -38,6 +37,16 @@
 // EGL (Wayland)
 #include <EGL/egl.h>
 
+#else  // _WIN32
+
+// GLEW must be included before any other GL header on Windows.
+// It provides all GL 4.x function pointers and WGL extension functions.
+#include <GL/glew.h>
+#include <GL/wglew.h>
+#include <windows.h>
+
+#endif  // _WIN32
+
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -54,6 +63,12 @@ GaussianComputeOpenGLContext& GaussianComputeOpenGLContext::GetInstance() {
 }
 
 GaussianComputeOpenGLContext::~GaussianComputeOpenGLContext() { Shutdown(); }
+
+// ---------------------------------------------------------------------------
+// Platform-specific context implementations
+// ---------------------------------------------------------------------------
+
+#if !defined(_WIN32)
 
 bool GaussianComputeOpenGLContext::Initialize() {
     if (initialized_) {
@@ -523,10 +538,8 @@ void GaussianComputeOpenGLContext::Shutdown() {
     utility::LogDebug("GaussianComputeOpenGLContext: Shut down.");
 }
 
-bool GaussianComputeOpenGLContext::IsValid() const { return initialized_; }
-
 // ---------------------------------------------------------------------------
-// MakeCurrent / ReleaseCurrent / Finish
+// MakeCurrent / ReleaseCurrent (Linux: GLX / EGL)
 // ---------------------------------------------------------------------------
 bool GaussianComputeOpenGLContext::MakeCurrent() {
     if (!initialized_) {
@@ -558,6 +571,17 @@ bool GaussianComputeOpenGLContext::MakeCurrent() {
 
     if (ok && !gl_logged_) {
         gl_logged_ = true;
+        // Initialize GLEW on first use so all GL 4.x function pointers are
+        // loaded before any compute shader dispatch.  glewExperimental=GL_TRUE
+        // ensures core-profile extensions are also exposed.
+        glewExperimental = GL_TRUE;
+        GLenum glew_err = glewInit();
+        if (glew_err != GLEW_OK) {
+            utility::LogWarning(
+                    "GaussianComputeOpenGLContext: glewInit warning: {}",
+                    reinterpret_cast<const char*>(
+                            glewGetErrorString(glew_err)));
+        }
         const char* version =
                 reinterpret_cast<const char*>(glGetString(GL_VERSION));
         const char* renderer =
@@ -583,6 +607,326 @@ void GaussianComputeOpenGLContext::ReleaseCurrent() {
         eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     }
 }
+
+#else  // _WIN32
+
+// ---------------------------------------------------------------------------
+// Windows WGL backend
+// ---------------------------------------------------------------------------
+
+// WGL_ARB_create_context constants (from wglext.h / system headers).
+#ifndef WGL_CONTEXT_MAJOR_VERSION_ARB
+#define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
+#endif
+#ifndef WGL_CONTEXT_MINOR_VERSION_ARB
+#define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
+#endif
+#ifndef WGL_CONTEXT_PROFILE_MASK_ARB
+#define WGL_CONTEXT_PROFILE_MASK_ARB 0x9126
+#endif
+#ifndef WGL_CONTEXT_CORE_PROFILE_BIT_ARB
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
+#endif
+
+namespace {
+
+/// Create a minimal hidden 1×1 window to obtain a valid HDC for pixel format
+/// selection and WGL context creation.
+HWND CreateHelperWindow() {
+    WNDCLASSA wc = {};
+    wc.style = CS_OWNDC;
+    wc.lpfnWndProc = DefWindowProcA;
+    wc.hInstance = GetModuleHandleA(nullptr);
+    wc.lpszClassName = "Open3D_GS_GL_Helper";
+    RegisterClassA(&wc);  // Ignore failure: class may already be registered.
+    return CreateWindowExA(0, wc.lpszClassName, "", WS_POPUP, 0, 0, 1, 1,
+                           nullptr, nullptr, wc.hInstance, nullptr);
+}
+
+}  // namespace
+
+bool GaussianComputeOpenGLContext::Initialize() {
+    if (initialized_) {
+        return true;
+    }
+    // Called from RenderGeometryStage after Filament is up.
+    // InitializeStandalone() should already have run from FilamentEngine.cpp
+    // before Engine::create(), so this is typically a no-op.
+    backend_ = Backend::kWGL;
+    if (InitializeWGL()) {
+        return true;
+    }
+    utility::LogWarning("GaussianComputeOpenGLContext: WGL init failed.");
+    return false;
+}
+
+bool GaussianComputeOpenGLContext::InitializeStandalone() {
+    if (initialized_) {
+        return true;
+    }
+    // Create our GL context BEFORE Filament so it can be passed as the
+    // sharedGLContext.  Filament's PlatformWGL then creates its own context
+    // sharing our GL object namespace, enabling zero-copy texture import().
+    backend_ = Backend::kWGL;
+    if (InitializeWGLStandalone()) {
+        return true;
+    }
+    utility::LogWarning(
+            "GaussianComputeOpenGLContext: WGL standalone init failed.");
+    return false;
+}
+
+void* GaussianComputeOpenGLContext::GetNativeContext() const {
+    if (!initialized_) {
+        return nullptr;
+    }
+    return glx_context_;  // HGLRC stored in glx_context_
+}
+
+// ---------------------------------------------------------------------------
+// InitializeWGL — shared context (queries Filament's current HGLRC).
+// ---------------------------------------------------------------------------
+bool GaussianComputeOpenGLContext::InitializeWGL() {
+    // Filament's context must be current on this thread when this is called
+    // (after engine creation + flushAndWait).
+    HGLRC filament_ctx = wglGetCurrentContext();
+    HDC filament_dc = wglGetCurrentDC();
+    if (!filament_ctx || !filament_dc) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: No current WGL context — "
+                "Filament must be initialized and its context current.");
+        return false;
+    }
+
+    using wglCreateContextAttribsARB_t = HGLRC(WINAPI*)(HDC, HGLRC, const int*);
+    auto create_ctx = reinterpret_cast<wglCreateContextAttribsARB_t>(
+            wglGetProcAddress("wglCreateContextAttribsARB"));
+    if (!create_ctx) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: "
+                "wglCreateContextAttribsARB unavailable.");
+        return false;
+    }
+
+    // clang-format off
+    const int ctx_attribs[] = {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+        WGL_CONTEXT_MINOR_VERSION_ARB, 5,
+        WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+        0
+    };
+    // clang-format on
+
+    // Create a GL 4.5 core context that SHARES Filament's object namespace.
+    HGLRC ctx = create_ctx(filament_dc, filament_ctx, ctx_attribs);
+    if (!ctx) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: Shared WGL context creation "
+                "failed (error=0x{:08X}).",
+                static_cast<unsigned>(GetLastError()));
+        return false;
+    }
+
+    // Borrow the DC from Filament — do NOT ReleaseDC/DestroyWindow it.
+    x_display_ = filament_dc;    // HDC
+    glx_context_ = ctx;          // HGLRC
+    egl_surface_ = filament_dc;  // drawable DC for MakeCurrent
+    owns_display_ = false;
+    initialized_ = true;
+    utility::LogDebug(
+            "GaussianComputeOpenGLContext: Created shared WGL context.");
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// InitializeWGLStandalone — create context before Filament for sharing.
+// ---------------------------------------------------------------------------
+bool GaussianComputeOpenGLContext::InitializeWGLStandalone() {
+    // 1. Create a hidden 1×1 window to obtain a valid HDC.
+    HWND hwnd = CreateHelperWindow();
+    if (!hwnd) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: Failed to create helper window "
+                "(WGL standalone).");
+        return false;
+    }
+    HDC dc = GetDC(hwnd);
+    if (!dc) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: GetDC failed "
+                "(WGL standalone).");
+        DestroyWindow(hwnd);
+        return false;
+    }
+
+    // 2. Set pixel format — standard double-buffered RGBA with depth,
+    //    matching what Filament expects from a shared context.
+    PIXELFORMATDESCRIPTOR pfd = {};
+    pfd.nSize = sizeof(pfd);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 32;
+    pfd.cDepthBits = 24;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+    int pf = ChoosePixelFormat(dc, &pfd);
+    if (!pf || !SetPixelFormat(dc, pf, &pfd)) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: SetPixelFormat failed "
+                "(WGL standalone).");
+        ReleaseDC(hwnd, dc);
+        DestroyWindow(hwnd);
+        return false;
+    }
+
+    // 3. Bootstrap: create a legacy GL context so wglGetProcAddress is
+    //    available for wglCreateContextAttribsARB, and run glewInit() to
+    //    load all GL 4.x + WGL extension function pointers.
+    HGLRC temp_ctx = wglCreateContext(dc);
+    if (!temp_ctx) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: wglCreateContext (bootstrap) "
+                "failed (WGL standalone).");
+        ReleaseDC(hwnd, dc);
+        DestroyWindow(hwnd);
+        return false;
+    }
+    wglMakeCurrent(dc, temp_ctx);
+
+    // 4. Initialize GLEW — loads all GL 4.x and WGL extension pointers.
+    //    Must be done with a current GL context.
+    glewExperimental = GL_TRUE;
+    GLenum glew_err = glewInit();
+    if (glew_err != GLEW_OK) {
+        // Non-fatal: missing extensions we don't use are expected.  GL core
+        // functions up to 4.5 are loaded regardless.
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: glewInit warning: {} "
+                "(WGL standalone).",
+                reinterpret_cast<const char*>(glewGetErrorString(glew_err)));
+    }
+
+    using wglCreateContextAttribsARB_t = HGLRC(WINAPI*)(HDC, HGLRC, const int*);
+    auto create_ctx = reinterpret_cast<wglCreateContextAttribsARB_t>(
+            wglGetProcAddress("wglCreateContextAttribsARB"));
+
+    wglMakeCurrent(nullptr, nullptr);
+    wglDeleteContext(temp_ctx);
+
+    if (!create_ctx) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: "
+                "wglCreateContextAttribsARB unavailable (WGL standalone).");
+        ReleaseDC(hwnd, dc);
+        DestroyWindow(hwnd);
+        return false;
+    }
+
+    // 5. Create the final GL 4.5 core-profile context.
+    //    No sharing here — Filament creates its context sharing with ours.
+    // clang-format off
+    const int ctx_attribs[] = {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+        WGL_CONTEXT_MINOR_VERSION_ARB, 5,
+        WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+        0
+    };
+    // clang-format on
+
+    HGLRC ctx = create_ctx(dc, nullptr, ctx_attribs);
+    if (!ctx) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: GL 4.5 context creation failed "
+                "(WGL standalone, error=0x{:08X}).",
+                static_cast<unsigned>(GetLastError()));
+        ReleaseDC(hwnd, dc);
+        DestroyWindow(hwnd);
+        return false;
+    }
+
+    x_display_ = dc;      // HDC (our window's DC)
+    glx_context_ = ctx;   // HGLRC
+    egl_surface_ = hwnd;  // HWND (for cleanup on Shutdown)
+    owns_display_ = true;
+    initialized_ = true;
+    utility::LogDebug(
+            "GaussianComputeOpenGLContext: Standalone WGL GL 4.5 context "
+            "created.  Pass to Filament as sharedContext.");
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// Shutdown / MakeCurrent / ReleaseCurrent (Windows WGL)
+// ---------------------------------------------------------------------------
+void GaussianComputeOpenGLContext::Shutdown() {
+    if (!initialized_) {
+        return;
+    }
+
+    auto ctx = static_cast<HGLRC>(glx_context_);
+    auto dc = static_cast<HDC>(x_display_);
+    wglMakeCurrent(nullptr, nullptr);
+    if (ctx) {
+        wglDeleteContext(ctx);
+        glx_context_ = nullptr;
+    }
+    if (owns_display_) {
+        auto hwnd = static_cast<HWND>(egl_surface_);
+        if (dc && hwnd) {
+            ReleaseDC(hwnd, dc);
+        }
+        if (hwnd) {
+            DestroyWindow(hwnd);
+        }
+        egl_surface_ = nullptr;
+    }
+    x_display_ = nullptr;
+    backend_ = Backend::kNone;
+    initialized_ = false;
+    gl_logged_ = false;
+    utility::LogDebug("GaussianComputeOpenGLContext: Shut down (WGL).");
+}
+
+bool GaussianComputeOpenGLContext::MakeCurrent() {
+    if (!initialized_) {
+        return false;
+    }
+    auto dc = static_cast<HDC>(x_display_);
+    auto ctx = static_cast<HGLRC>(glx_context_);
+    bool ok = (wglMakeCurrent(dc, ctx) != FALSE);
+    if (!ok) {
+        utility::LogWarning(
+                "GaussianComputeOpenGLContext: wglMakeCurrent failed "
+                "(error=0x{:08X}).",
+                static_cast<unsigned>(GetLastError()));
+        return false;
+    }
+    if (!gl_logged_) {
+        gl_logged_ = true;
+        const char* version =
+                reinterpret_cast<const char*>(glGetString(GL_VERSION));
+        const char* renderer =
+                reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+        utility::LogDebug("GaussianComputeOpenGLContext: WGL — GL {} on {}",
+                          version ? version : "?", renderer ? renderer : "?");
+    }
+    return true;
+}
+
+void GaussianComputeOpenGLContext::ReleaseCurrent() {
+    if (!initialized_) {
+        return;
+    }
+    wglMakeCurrent(nullptr, nullptr);
+}
+
+#endif  // _WIN32
+
+// ---------------------------------------------------------------------------
+// Shared across all platforms
+// ---------------------------------------------------------------------------
+
+bool GaussianComputeOpenGLContext::IsValid() const { return initialized_; }
 
 void GaussianComputeOpenGLContext::Finish() { glFinish(); }
 

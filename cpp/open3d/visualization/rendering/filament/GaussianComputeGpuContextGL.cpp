@@ -10,6 +10,10 @@
 #include <unordered_map>
 #include <vector>
 
+// GLEW for GL extension flags (GLEW_ARB_gl_spirv etc.) and glewGetString.
+// Must be included before any other GL header.
+#include <GL/glew.h>
+
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -88,6 +92,26 @@ public:
         }
         programs_loaded_ = true;
         programs_valid_ = false;
+
+        // Log driver identity so error reports are unambiguous.
+        utility::LogInfo(
+                "GaussianComputeGpuContext: GL vendor:   {}",
+                reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
+        utility::LogInfo(
+                "GaussianComputeGpuContext: GL renderer: {}",
+                reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+        utility::LogInfo(
+                "GaussianComputeGpuContext: GL version:  {}",
+                reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+        utility::LogInfo(
+                "GaussianComputeGpuContext: GLEW version: {}",
+                reinterpret_cast<const char*>(glewGetString(GLEW_VERSION)));
+        utility::LogInfo(
+                "GaussianComputeGpuContext: ARB_gl_spirv supported: {}",
+                GLEW_ARB_gl_spirv ? "yes" : "no");
+        utility::LogInfo(
+                "GaussianComputeGpuContext: ARB_compute_shader supported: {}",
+                GLEW_ARB_compute_shader ? "yes" : "no");
 
         static const char* kShaderSPVFiles[] = {
                 "gaussian_project.spv",
@@ -208,19 +232,22 @@ public:
     }
 
     void BindSSBO(std::uint32_t binding, std::uintptr_t buf) override {
-        BindSSBO(binding, ToGLBuffer(buf, buffer_sizes_));
+        // Qualify to bypass MSVC name-hiding: member hides free function.
+        ::open3d::visualization::rendering::BindSSBO(
+                binding, ToGLBuffer(buf, buffer_sizes_));
     }
 
     void BindUBO(std::uint32_t binding, std::uintptr_t buf) override {
-        BindUBO(binding, ToGLBuffer(buf, buffer_sizes_));
+        ::open3d::visualization::rendering::BindUBO(
+                binding, ToGLBuffer(buf, buffer_sizes_));
     }
 
     void BindUBORange(std::uint32_t binding,
                       std::uintptr_t buf,
                       std::size_t offset,
                       std::size_t range_size) override {
-        BindUBORange(binding, ToGLBuffer(buf, buffer_sizes_), offset,
-                     range_size);
+        ::open3d::visualization::rendering::BindUBORange(
+                binding, ToGLBuffer(buf, buffer_sizes_), offset, range_size);
     }
 
     void UseProgram(GaussianComputeProgramId id) override {
@@ -228,7 +255,8 @@ public:
         if (i < 0 || i >= static_cast<int>(GaussianComputeProgramId::kCount)) {
             return;
         }
-        UseProgram(programs_[i]);
+        // Qualify to bypass MSVC name-hiding: member hides free function.
+        ::open3d::visualization::rendering::UseProgram(programs_[i]);
     }
 
     void Dispatch(std::uint32_t groups_x,
@@ -318,7 +346,8 @@ public:
             h.height = height;
             h.valid = true;
         }
-        BindSamplerTexture(unit, h);
+        // Qualify to bypass MSVC name-hiding: member hides free function.
+        ::open3d::visualization::rendering::BindSamplerTexture(unit, h);
     }
 
     void FinishGpuWork() override {

@@ -77,7 +77,6 @@ if (BUILD_GUI)
         rendering/filament/GaussianComputeBuffers.cpp
         rendering/filament/GaussianComputeDataPacking.cpp
         rendering/filament/GaussianComputePassRunner.cpp
-        rendering/filament/FilamentNativeInterop.cpp
         rendering/filament/FilamentEntitiesMods.cpp
         rendering/filament/FilamentGeometryBuffersBuilder.cpp
         rendering/filament/FilamentRenderToBuffer.cpp

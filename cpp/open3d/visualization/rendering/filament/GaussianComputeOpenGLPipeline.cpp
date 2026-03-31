@@ -8,9 +8,9 @@
 
 #if !defined(__APPLE__)
 
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glext.h>
+// GLEW provides GL 4.x function pointers on all platforms (Windows via WGL,
+// Linux via GLX/EGL).  Must be included before any other GL header.
+#include <GL/glew.h>
 
 #include <algorithm>
 #include <cstring>
@@ -23,11 +23,32 @@ namespace rendering {
 
 namespace {
 
+/// Drain all pending GL errors and return the first one (0 = none).
+GLenum DrainErrors(const char* context) {
+    GLenum first = GL_NO_ERROR;
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        if (first == GL_NO_ERROR) {
+            first = err;
+        }
+        utility::LogDebug("GL error drained before {}: 0x{:04X}", context,
+                          static_cast<unsigned>(err));
+    }
+    return first;
+}
+
 /// Check for GL errors and log them. Returns true if an error occurred.
 bool CheckGLError(const char* operation) {
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
-        utility::LogWarning("GL error in {}: 0x{:04X}", operation, err);
+        utility::LogWarning("GL error in {}: 0x{:04X}", operation,
+                            static_cast<unsigned>(err));
+        // Drain any additional errors so subsequent checks are clean.
+        GLenum extra;
+        while ((extra = glGetError()) != GL_NO_ERROR) {
+            utility::LogWarning("  (additional GL error): 0x{:04X}",
+                                static_cast<unsigned>(extra));
+        }
         return true;
     }
     return false;
@@ -47,6 +68,48 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
         utility::LogWarning("Empty SPIR-V binary for {}", debug_name);
         return result;
     }
+
+    // Log binary size and magic bytes to confirm the right file is loaded.
+    // SPIR-V magic number: 0x07230203 (little-endian: 03 02 23 07).
+    bool magic_ok = spirv.size() >= 4 && spirv[0] == 0x03 &&
+                    spirv[1] == 0x02 && spirv[2] == 0x23 && spirv[3] == 0x07;
+    utility::LogInfo(
+            "LoadGLComputeProgramSPIRV: {} — {} bytes, magic {}",
+            debug_name, spirv.size(), magic_ok ? "OK" : "INVALID");
+    if (!magic_ok) {
+        utility::LogWarning(
+                "SPIR-V magic mismatch for {} (first 4 bytes: {:02X} {:02X} "
+                "{:02X} {:02X}) — file may be stale or not recompiled.",
+                debug_name,
+                spirv.size() > 0 ? spirv[0] : 0,
+                spirv.size() > 1 ? spirv[1] : 0,
+                spirv.size() > 2 ? spirv[2] : 0,
+                spirv.size() > 3 ? spirv[3] : 0);
+        return result;
+    }
+
+    // Check that the driver exposes ARB_gl_spirv and that GLEW loaded the
+    // glSpecializeShader entry point.  Both are required; a missing entry
+    // point silently returns 0 and causes a bogus GL_INVALID_OPERATION.
+    if (!GLEW_ARB_gl_spirv) {
+        utility::LogWarning(
+                "GL_ARB_gl_spirv not supported by this driver — cannot load "
+                "SPIR-V shader {}. "
+                "OpenGL 4.6 or the ARB_gl_spirv extension is required.",
+                debug_name);
+        return result;
+    }
+    if (!glSpecializeShader) {
+        utility::LogWarning(
+                "glSpecializeShader entry point not loaded (GLEW did not "
+                "resolve it) for {}.",
+                debug_name);
+        return result;
+    }
+
+    // Drain any pre-existing errors so subsequent CheckGLError calls are
+    // unambiguous.
+    DrainErrors("LoadGLComputeProgramSPIRV/pre");
 
     GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
     if (shader == 0) {
@@ -80,15 +143,21 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
         if (log_len > 0) {
             glGetShaderInfoLog(shader, log_len, nullptr, log.data());
         }
-        utility::LogWarning("SPIR-V specialization error ({}): {}", debug_name,
-                            log);
+        utility::LogWarning("SPIR-V specialization error ({}): {}",
+                            debug_name, log.empty() ? "(empty log)" : log);
         glDeleteShader(shader);
         return result;
     }
+    utility::LogDebug("SPIR-V specialization succeeded for {}", debug_name);
 
     GLuint program = glCreateProgram();
     glAttachShader(program, shader);
     glLinkProgram(program);
+
+    // Drain GL errors generated during linking before reading link status,
+    // so the link-status query itself is not tainted.
+    GLenum link_gl_err = DrainErrors("glLinkProgram");
+
     glDeleteShader(shader);
 
     GLint linked = 0;
@@ -100,12 +169,18 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
         if (log_len > 0) {
             glGetProgramInfoLog(program, log_len, nullptr, log.data());
         }
-        utility::LogWarning("SPIR-V program link error ({}): {}", debug_name,
-                            log);
+        utility::LogWarning(
+                "SPIR-V program link error ({}):{}{} GL error during link: "
+                "0x{:04X}",
+                debug_name,
+                log.empty() ? " (empty driver log)" : " ",
+                log.empty() ? "" : log,
+                static_cast<unsigned>(link_gl_err));
         glDeleteProgram(program);
         return result;
     }
 
+    utility::LogDebug("SPIR-V program link succeeded for {}", debug_name);
     result.id = program;
     result.valid = true;
     return result;

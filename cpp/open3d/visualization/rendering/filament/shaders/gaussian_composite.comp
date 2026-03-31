@@ -4,6 +4,15 @@
 // premultiplied color, and store a nearest-hit depth that Filament can later
 // use during scene composition.
 //
+// NOTE: This shader is intentionally compiled with glslangValidator -G (OpenGL
+// SPIR-V target) rather than -V (Vulkan target).  It uses a combined
+// image+sampler (sampler2D scene_depth, binding 14) which produces
+// OpTypeSampledImage + DescriptorSet decorations in Vulkan SPIR-V; some
+// Windows OpenGL drivers fail to link such programs via ARB_gl_spirv.
+// The OpenGL target removes DescriptorSet decorations and is accepted by all
+// drivers.  As a consequence, this shader must NOT use subgroup operations
+// (gl_SubgroupSize, subgroupAdd, etc.) which require Vulkan SPIR-V.
+//
 // Opt1: Zero-copy output — the VkImage written here is imported directly
 //       into Filament via Texture::Builder::import(), eliminating the
 //       staging-buffer round-trip.

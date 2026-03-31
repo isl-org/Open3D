@@ -5,8 +5,9 @@
 // ----------------------------------------------------------------------------
 
 // GL context management for OpenGL compute-based Gaussian splatting.
-// On X11 creates a GLX context; on Wayland creates an EGL context.
-// Both use a headless pbuffer surface for offscreen compute dispatch.
+// On X11 creates a GLX context; on Wayland creates an EGL context; on Windows
+// creates a WGL context.  All use a headless pbuffer / hidden-window surface
+// for offscreen compute dispatch.
 
 #pragma once
 
@@ -68,12 +69,14 @@ private:
 
     // Made public for use by DetectBackend() helper.
 public:
-    enum class Backend { kNone, kGLX, kEGL };
+    enum class Backend { kNone, kGLX, kEGL, kWGL };
 
 private:
     bool InitializeGLX();
     bool InitializeGLXStandalone();  // creates context without sharing
     bool InitializeEGL();
+    bool InitializeWGL();
+    bool InitializeWGLStandalone();  // creates context without sharing
 
     Backend backend_ = Backend::kNone;
 

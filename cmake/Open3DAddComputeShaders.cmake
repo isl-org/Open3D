@@ -49,6 +49,26 @@ function(open3d_add_compute_shaders target)
         set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_prefix_sum  "--msl-fixed-subgroup-size 32")
         set(GAUSSIAN_METAL_BASENAMES "")
     endif()
+
+    # Default glslangValidator flags: Vulkan 1.3 SPIR-V + LTO.
+    # Subgroup operations (gl_SubgroupSize, subgroupAdd, etc.) require Vulkan
+    # SPIR-V (-V) because glslangValidator's OpenGL target (-G) does not support
+    # them.  Most compute shaders use subgroup ops and therefore need -V.
+    set(GLSLANG_FLAGS_DEFAULT --error-column --lto -V --target-env vulkan1.3)
+
+    # Per-shader glslangValidator flag overrides.
+    #
+    # gaussian_composite is the only shader that uses a combined image+sampler
+    # (sampler2D scene_depth at binding 14).  When compiled with -V, the SPIR-V
+    # contains OpTypeSampledImage + DescriptorSet decorations.  Some Windows
+    # OpenGL drivers (Intel in particular) fail to link such SPIR-V programs via
+    # ARB_gl_spirv with an empty error log, even though the spec says DescriptorSet
+    # should be ignored.  Compiling with -G (OpenGL SPIR-V target) removes these
+    # decorations and produces a combined sampler that OpenGL drivers accept.
+    # gaussian_composite uses no subgroup operations, so -G is fully compatible.
+    # spirv-cross handles OpenGL SPIR-V correctly for Metal MSL output as well.
+    set(GLSLANG_FLAGS_gaussian_composite --error-column -G)
+
     foreach(shader IN LISTS ARG_SOURCES)
         get_filename_component(SHADER_FULL_PATH "${shader}" ABSOLUTE)
         get_filename_component(SHADER_NAME "${shader}" NAME)
@@ -64,13 +84,20 @@ function(open3d_add_compute_shaders target)
         file(RELATIVE_PATH STAGED_METAL_RELATIVE_PATH
             "${CMAKE_CURRENT_BINARY_DIR}" "${STAGED_METAL_FULL_PATH}")
 
+        # Use per-shader glslangValidator flags if defined, otherwise the default.
+        if(DEFINED GLSLANG_FLAGS_${SHADER_BASENAME})
+            set(THIS_GLSLANG_FLAGS ${GLSLANG_FLAGS_${SHADER_BASENAME}})
+        else()
+            set(THIS_GLSLANG_FLAGS ${GLSLANG_FLAGS_DEFAULT})
+        endif()
+
         add_custom_command(
             OUTPUT ${STAGED_SHADER_FULL_PATH} ${STAGED_SPIRV_FULL_PATH}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     ${SHADER_FULL_PATH} ${STAGED_SHADER_FULL_PATH}
             COMMAND ${OPEN3D_GLSLANG_VALIDATOR}
-                    -V -S comp --target-env vulkan1.3 ${SHADER_FULL_PATH}
-                    -o ${STAGED_SPIRV_FULL_PATH}
+                    ${THIS_GLSLANG_FLAGS}
+                    ${SHADER_FULL_PATH} -o ${STAGED_SPIRV_FULL_PATH}
             COMMENT "Compiling compute shader ${SHADER_NAME} to SPIR-V"
             MAIN_DEPENDENCY ${shader}
             VERBATIM

@@ -37,16 +37,7 @@ namespace {
 static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
-#if defined(_WIN32) || defined(__linux__)
-// Default for Windows/Linux is Vulkan, but this sometimes selects the
-// Direct3D12 emulated backend on Windows or has issues with Vulkan on Linux.
-// Force OpenGL instead. OpenGL also enables compute-based Gaussian splatting
-// with zero-copy output via Filament's import() API.
-RenderingType EngineInstance::type_ = RenderingType::kOpenGL;
-#else
-// macOS uses Metal via kDefault.
 RenderingType EngineInstance::type_ = RenderingType::kDefault;
-#endif
 std::string EngineInstance::resource_path_ = "";
 void* EngineInstance::shared_context_ = nullptr;
 
@@ -121,13 +112,25 @@ EngineInstance::EngineInstance() {
             break;
     }
 
-        // On Linux (X11/GLX), create our compute GL context BEFORE the Filament
-        // engine so we can pass it as the sharedGLContext.  Filament's
-        // PlatformGLX will then create its own context sharing our GL
-        // namespace, enabling zero-copy texture import() between the two
-        // contexts. This must happen before Engine::create() because GLX
-        // context sharing can only be established at context creation time.
-#if !defined(__APPLE__) && !defined(_WIN32)
+#if !defined(__APPLE__)
+    // Filament's DEFAULT backend on Windows and Linux resolves to Vulkan (or
+    // the Vulkan D3D12 emulation layer on Windows), which conflicts with our
+    // OpenGL-based compute context sharing for Gaussian splatting.  Filament
+    // only supports zero copy buffer sharing on Metal and OpenGL. Also, on
+    // Windows, Vulkan sometimes defaults to the D3D12 emulated Vulkan GPU,
+    // which does not support triple buffering and causes a crash at startup.
+    // Force OpenGL unconditionally.
+    if (backend == filament::backend::Backend::DEFAULT) {
+        backend = filament::backend::Backend::OPENGL;
+    }
+
+    // On Linux (X11/GLX) and Windows (WGL), create our compute GL context
+    // BEFORE the Filament engine so we can pass it as the sharedGLContext.
+    // Filament's PlatformGLX/PlatformWGL will then create its own context
+    // sharing our GL namespace, enabling zero-copy texture import() between
+    // the two contexts. This must happen before Engine::create() because
+    // GLX/WGL context sharing can only be established at context creation
+    // time.
     if ((backend == filament::backend::Backend::OPENGL ||
          backend == filament::backend::Backend::DEFAULT) &&
         !shared_context_) {
