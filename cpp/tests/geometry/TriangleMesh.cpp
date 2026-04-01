@@ -1155,10 +1155,14 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+    const auto triangles_ref = mesh->triangles_;
+    const size_t vertex_count = mesh->vertices_.size();
 
     mesh = mesh->FilterSmoothLaplacian(1, 0.5);
     std::vector<Eigen::Vector3d> ref1 = {
             {0, 0, 0}, {0.5, 0, 0}, {0, 0.5, 0}, {-0.5, 0, 0}, {0, -0.5, 0}};
+    EXPECT_EQ(mesh->vertices_.size(), vertex_count);
+    ExpectEQ(mesh->triangles_, triangles_ref);
     ExpectEQ(mesh->vertices_, ref1, 1e-3);
 
     mesh = mesh->FilterSmoothLaplacian(10, 0.5);
@@ -1167,6 +1171,8 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
                                          {0, 0.000488, 0},
                                          {-0.000488, 0, 0},
                                          {0, -0.000488, 0}};
+    EXPECT_EQ(mesh->vertices_.size(), vertex_count);
+    ExpectEQ(mesh->triangles_, triangles_ref);
     ExpectEQ(mesh->vertices_, ref2, 1e-3);
 }
 
@@ -1174,6 +1180,8 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+    const auto triangles_ref = mesh->triangles_;
+    const size_t vertex_count = mesh->vertices_.size();
 
     mesh = mesh->FilterSmoothTaubin(1, 0.5, -0.53);
     std::vector<Eigen::Vector3d> ref1 = {{0, 0, 0},
@@ -1181,6 +1189,8 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
                                          {0, 0.765, 0},
                                          {-0.765, 0, 0},
                                          {0, -0.765, 0}};
+    EXPECT_EQ(mesh->vertices_.size(), vertex_count);
+    ExpectEQ(mesh->triangles_, triangles_ref);
     ExpectEQ(mesh->vertices_, ref1, 1e-4);
 
     mesh = mesh->FilterSmoothTaubin(10, 0.5, -0.53);
@@ -1189,6 +1199,8 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
                                          {0, 0.052514, 0},
                                          {-0.052514, 0, 0},
                                          {0, -0.052514, 0}};
+    EXPECT_EQ(mesh->vertices_.size(), vertex_count);
+    ExpectEQ(mesh->triangles_, triangles_ref);
     ExpectEQ(mesh->vertices_, ref2, 1e-4);
 }
 
