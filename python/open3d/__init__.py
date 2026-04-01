@@ -211,4 +211,4 @@ def _jupyter_nbextension_paths():
 
 if sys.platform == "win32":
     _win32_dll_dir.close()
-del os, sys, CDLL, find_library, Path, warnings, _insert_pybind_names
+del os, sys, CDLL, find_library, Path, warnings, _insert_pybind_names, open3d
