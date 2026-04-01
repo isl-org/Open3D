@@ -308,6 +308,55 @@ bool SimpleShaderForTetraMesh::PrepareBinding(
     return true;
 }
 
+bool SimpleShaderForOrientedBoundingEllipsoid::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::OrientedBoundingEllipsoid) {
+        PrintShaderWarning(
+                "Rendering type is not geometry::OrientedBoundingEllipsoid.");
+        return false;
+    }
+    glLineWidth(GLfloat(option.line_width_));
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    return true;
+}
+
+bool SimpleShaderForOrientedBoundingEllipsoid::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        std::vector<Eigen::Vector3f> &points,
+        std::vector<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::OrientedBoundingEllipsoid) {
+        PrintShaderWarning(
+                "Rendering type is not geometry::OrientedBoundingEllipsoid.");
+        return false;
+    }
+    auto lineset = geometry::LineSet::CreateFromOrientedBoundingEllipsoid(
+            (const geometry::OrientedBoundingEllipsoid &)geometry);
+    points.resize(lineset->lines_.size() * 2);
+    colors.resize(lineset->lines_.size() * 2);
+    for (size_t i = 0; i < lineset->lines_.size(); i++) {
+        const auto point_pair = lineset->GetLineCoordinate(i);
+        points[i * 2] = point_pair.first.cast<float>();
+        points[i * 2 + 1] = point_pair.second.cast<float>();
+        Eigen::Vector3d color;
+        if (lineset->HasColors()) {
+            color = lineset->colors_[i];
+        } else {
+            color = Eigen::Vector3d::Zero();
+        }
+        colors[i * 2] = colors[i * 2 + 1] = color.cast<float>();
+    }
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(points.size());
+    return true;
+}
+
 bool SimpleShaderForOrientedBoundingBox::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,

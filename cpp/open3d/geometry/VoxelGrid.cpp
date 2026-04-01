@@ -122,6 +122,11 @@ OrientedBoundingBox VoxelGrid::GetMinimalOrientedBoundingBox(
                                                         robust);
 }
 
+OrientedBoundingEllipsoid VoxelGrid::GetOrientedBoundingEllipsoid(bool) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(
+            GetAxisAlignedBoundingBox().GetBoxPoints());
+}
+
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
     // Only update origin_ and rotation_ (lazy transform)
     origin_ = (transformation.block<3, 3>(0, 0) * origin_) +
