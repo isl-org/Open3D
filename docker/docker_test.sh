@@ -122,6 +122,9 @@ cpp_python_linking_uninstall_test() {
     fi
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
         docker_run="${docker_run} --device=/dev/dri"
+        if [ -n "${CI:-}" ]; then
+            docker_run="${docker_run} --env CI=${CI}"
+        fi
     fi
 
     # Config-dependent argument: pytest_args
@@ -134,10 +137,19 @@ cpp_python_linking_uninstall_test() {
 
     # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
-    ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
-        cd build \
-     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-    "
+    if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
+        echo "[cpp_python_linking_uninstall_test()] Running sharded gtests with GNU parallel."
+        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -euo pipefail -c " \
+            cd build \
+         && seq 0 $((${NPROC} - 1)) | parallel -k --jobs ${NPROC} --halt soon,fail=1 \
+            'GTEST_TOTAL_SHARDS=${NPROC} GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum*' \
+        "
+    else
+        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
+            cd build \
+         && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+        "
+    fi
     restart_docker_daemon_if_on_gcloud
 
     # Python test
