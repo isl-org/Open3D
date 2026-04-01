@@ -1,3 +1,4 @@
 setuptools>=67.3.2
 wheel==0.46.*
 yapf==0.43.*
+pybind11-stubgen>=2.5
