@@ -57,15 +57,17 @@ bool RunGaussianGeometryPasses(
     if (scene_changed) {
         vs.positions_buf = ctx.ResizeBuffer(
                 vs.positions_buf, packed.positions.size() * sizeof(Std430Vec4));
-        vs.scales_buf = ctx.ResizeBuffer(
-                vs.scales_buf, packed.log_scales.size() * sizeof(Std430Vec4));
+        vs.scales_buf =
+                ctx.ResizeBuffer(vs.scales_buf, packed.log_scales.size() *
+                                                        sizeof(std::uint32_t));
         vs.rotations_buf = ctx.ResizeBuffer(
-                vs.rotations_buf, packed.rotations.size() * sizeof(Std430Vec4));
-        vs.dc_opacity_buf =
-                ctx.ResizeBuffer(vs.dc_opacity_buf,
-                                 packed.dc_opacity.size() * sizeof(Std430Vec4));
-        vs.sh_buf = ctx.ResizeBuffer(
-                vs.sh_buf, packed.sh_coefficients.size() * sizeof(Std430Vec4));
+                vs.rotations_buf,
+                packed.rotations.size() * sizeof(std::uint32_t));
+        vs.dc_opacity_buf = ctx.ResizeBuffer(
+                vs.dc_opacity_buf,
+                packed.dc_opacity.size() * sizeof(std::uint32_t));
+        vs.sh_buf = ctx.ResizeBuffer(vs.sh_buf, packed.sh_coefficients.size() *
+                                                        sizeof(std::uint32_t));
     }
 
     // GPU-only intermediate buffers: use private storage (MTLStorageModePrivate
@@ -110,13 +112,14 @@ bool RunGaussianGeometryPasses(
         ctx.UploadBuffer(vs.positions_buf, packed.positions.data(),
                          packed.positions.size() * sizeof(Std430Vec4), 0);
         ctx.UploadBuffer(vs.scales_buf, packed.log_scales.data(),
-                         packed.log_scales.size() * sizeof(Std430Vec4), 0);
+                         packed.log_scales.size() * sizeof(std::uint32_t), 0);
         ctx.UploadBuffer(vs.rotations_buf, packed.rotations.data(),
-                         packed.rotations.size() * sizeof(Std430Vec4), 0);
+                         packed.rotations.size() * sizeof(std::uint32_t), 0);
         ctx.UploadBuffer(vs.dc_opacity_buf, packed.dc_opacity.data(),
-                         packed.dc_opacity.size() * sizeof(Std430Vec4), 0);
+                         packed.dc_opacity.size() * sizeof(std::uint32_t), 0);
         ctx.UploadBuffer(vs.sh_buf, packed.sh_coefficients.data(),
-                         packed.sh_coefficients.size() * sizeof(Std430Vec4), 0);
+                         packed.sh_coefficients.size() * sizeof(std::uint32_t),
+                         0);
         vs.cached_scene_id = scene_change_id;
         vs.cached_splat_count = source_splat_count;
     }

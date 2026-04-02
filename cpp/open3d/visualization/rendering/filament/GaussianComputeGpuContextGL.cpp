@@ -94,9 +94,8 @@ public:
         programs_valid_ = false;
 
         // Log driver identity so error reports are unambiguous.
-        utility::LogInfo(
-                "GaussianComputeGpuContext: GL vendor:   {}",
-                reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
+        utility::LogInfo("GaussianComputeGpuContext: GL vendor:   {}",
+                         reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
         utility::LogInfo(
                 "GaussianComputeGpuContext: GL renderer: {}",
                 reinterpret_cast<const char*>(glGetString(GL_RENDERER)));

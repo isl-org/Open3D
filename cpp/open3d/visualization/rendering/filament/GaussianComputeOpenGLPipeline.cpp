@@ -71,17 +71,15 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
 
     // Log binary size and magic bytes to confirm the right file is loaded.
     // SPIR-V magic number: 0x07230203 (little-endian: 03 02 23 07).
-    bool magic_ok = spirv.size() >= 4 && spirv[0] == 0x03 &&
-                    spirv[1] == 0x02 && spirv[2] == 0x23 && spirv[3] == 0x07;
-    utility::LogInfo(
-            "LoadGLComputeProgramSPIRV: {} — {} bytes, magic {}",
-            debug_name, spirv.size(), magic_ok ? "OK" : "INVALID");
+    bool magic_ok = spirv.size() >= 4 && spirv[0] == 0x03 && spirv[1] == 0x02 &&
+                    spirv[2] == 0x23 && spirv[3] == 0x07;
+    utility::LogInfo("LoadGLComputeProgramSPIRV: {} — {} bytes, magic {}",
+                     debug_name, spirv.size(), magic_ok ? "OK" : "INVALID");
     if (!magic_ok) {
         utility::LogWarning(
                 "SPIR-V magic mismatch for {} (first 4 bytes: {:02X} {:02X} "
                 "{:02X} {:02X}) — file may be stale or not recompiled.",
-                debug_name,
-                spirv.size() > 0 ? spirv[0] : 0,
+                debug_name, spirv.size() > 0 ? spirv[0] : 0,
                 spirv.size() > 1 ? spirv[1] : 0,
                 spirv.size() > 2 ? spirv[2] : 0,
                 spirv.size() > 3 ? spirv[3] : 0);
@@ -143,8 +141,8 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
         if (log_len > 0) {
             glGetShaderInfoLog(shader, log_len, nullptr, log.data());
         }
-        utility::LogWarning("SPIR-V specialization error ({}): {}",
-                            debug_name, log.empty() ? "(empty log)" : log);
+        utility::LogWarning("SPIR-V specialization error ({}): {}", debug_name,
+                            log.empty() ? "(empty log)" : log);
         glDeleteShader(shader);
         return result;
     }
@@ -172,10 +170,8 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
         utility::LogWarning(
                 "SPIR-V program link error ({}):{}{} GL error during link: "
                 "0x{:04X}",
-                debug_name,
-                log.empty() ? " (empty driver log)" : " ",
-                log.empty() ? "" : log,
-                static_cast<unsigned>(link_gl_err));
+                debug_name, log.empty() ? " (empty driver log)" : " ",
+                log.empty() ? "" : log, static_cast<unsigned>(link_gl_err));
         glDeleteProgram(program);
         return result;
     }

@@ -56,6 +56,13 @@ public:
         Eigen::Vector2i composite_group_size = Eigen::Vector2i(16, 16);
         bool stable_sort = true;
         int max_sh_degree = 2;
+        /// When true, multiply each splat's opacity by the density compensation
+        /// factor sqrt(det(Sigma_orig) / det(Sigma_blurred)).  This counteracts
+        /// the over-brightening of small splats caused by the subpixel blur
+        /// regularisation (+0.3 on diagonal).  Mirrors gsplat PR #117.
+        /// Can also be set per-scene via
+        /// MaterialRecord::gaussian_splat_antialias.
+        bool antialias = false;
     };
 
     struct PassDispatch {

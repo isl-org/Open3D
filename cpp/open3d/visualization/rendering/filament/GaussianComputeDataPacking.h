@@ -43,7 +43,8 @@ struct alignas(16) PackedGaussianViewParams {
     float camera_position_and_near[4];
     // vec4 viewport_origin_and_size
     float viewport_origin_and_size[4];
-    // uvec4 scene  (x=splat_count, y=gaussian_splat_sh_degree, z=0, w=0)
+    // uvec4 scene  (x=splat_count, y=gaussian_splat_sh_degree,
+    // z=antialias_flag, w=0)
     std::uint32_t scene[4];
     // uvec4 tiles  (xy=tile_size, zw=tile_count)
     std::uint32_t tiles[4];
@@ -78,13 +79,21 @@ static constexpr std::size_t kGaussianCounterCount = 4;
 // ----- CPU-side packed scene representation ----------------------------------
 
 /// Holds all splat attribute arrays packed for compute upload.
+/// Field formats match the SSBO layout in gaussian_project.comp:
+///   positions        — fp32 vec4, 16 B/splat
+///   log_scales       — fp16×4 as uvec2 pair, 8 B/splat
+///   rotations        — snorm8-biased×4 quat in one uint, 4 B/splat
+///   dc_opacity       — fp16×4 as uvec2 pair, 8 B/splat
+///   sh_coefficients  — fp16 uvec2, stride=3×degree (0/24/48 B/splat)
 struct PackedGaussianScene {
     PackedGaussianViewParams view_params;
-    std::vector<Std430Vec4> positions;
-    std::vector<Std430Vec4> log_scales;
-    std::vector<Std430Vec4> rotations;
-    std::vector<Std430Vec4> dc_opacity;
-    std::vector<Std430Vec4> sh_coefficients;
+    std::vector<Std430Vec4> positions;      ///< fp32 vec4, 16 B/splat
+    std::vector<std::uint32_t> log_scales;  ///< fp16×4 in uvec2 pair, 8 B/splat
+    std::vector<std::uint32_t>
+            rotations;  ///< snorm8-biased×4 in uint, 4 B/splat
+    std::vector<std::uint32_t> dc_opacity;  ///< fp16×4 in uvec2 pair, 8 B/splat
+    std::vector<std::uint32_t>
+            sh_coefficients;  ///< fp16 uvec2; 0/6/12 u32/splat (deg 0/1/2)
     std::uint32_t splat_count = 0;
     std::uint32_t tile_count = 0;
     std::uint32_t pixel_count = 0;
@@ -103,15 +112,31 @@ struct GaussianSplatSourceData {
     std::uint32_t splat_count = 0;
     int gaussian_splat_sh_degree = 2;
     float gaussian_splat_min_alpha = 0.0f;
+    bool gaussian_splat_antialias = false;
 };
 
 // ----- Helper functions used by backends  ------------------------------------
 
-/// Pack camera, viewport, and scene data into a PackedGaussianScene.
-PackedGaussianScene PackGaussianSceneInputs(
+/// Pack camera, viewport, and scene metadata into the view-params UBO and the
+/// scalar fields (splat_count, tile_count, pixel_count) of a
+/// PackedGaussianScene.  The per-splat attribute vectors (positions, rotations,
+/// scales, SH) are intentionally left empty — call PackGaussianSceneAttributes
+/// separately when the scene changes.  Per-frame GPU cost: glBufferSubData /
+/// MTLBuffer memcpy of 208 bytes (one PackedGaussianViewParams).
+PackedGaussianScene PackGaussianViewParams(
         const GaussianSplatSourceData& source,
         const GaussianComputeRenderer::ViewRenderData& render_data,
         const GaussianComputeRenderer::RenderConfig& config);
+
+/// Fill the large per-splat geometry attribute arrays (positions, scales,
+/// rotations, dc_opacity, SH coefficients) in a PackedGaussianScene
+/// previously created by PackGaussianViewParams.  For N splats with degree-2
+/// SH this allocates and writes N * ~160 bytes; only call when the splat
+/// geometry (splat count or content) actually changes.
+void PackGaussianSceneAttributes(
+        const GaussianSplatSourceData& source,
+        const GaussianComputeRenderer::RenderConfig& config,
+        PackedGaussianScene& packed);
 
 }  // namespace rendering
 }  // namespace visualization

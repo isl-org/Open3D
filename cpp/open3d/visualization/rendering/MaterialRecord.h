@@ -89,6 +89,11 @@ struct MaterialRecord {
     // Minimum splat alpha value when rendering gaussian splats.
     float gaussian_splat_min_alpha = 0.0f;
 
+    // Enable anti-aliasing density compensation for gaussian splats.
+    // Multiplies each splat's opacity by sqrt(det(Sigma) / det(Sigma_blurred))
+    // to counteract the over-brightening caused by the fixed +0.3 blur kernel.
+    bool gaussian_splat_antialias = false;
+
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;

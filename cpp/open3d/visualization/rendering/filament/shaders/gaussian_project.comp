@@ -42,20 +42,26 @@ layout(std430, binding = 1) readonly buffer GaussianPositions {
 	vec4 positions[];
 };
 
+// fp16×4 packed as uvec2: .x = packHalf2x16(sx, sy), .y = packHalf2x16(sz, 0)
 layout(std430, binding = 2) readonly buffer GaussianLogScales {
-	vec4 log_scales[];
+	uvec2 log_scales[];
 };
 
+// snorm8-biased×4 in one uint: bytes 0-3 = (w, x, y, z) of quaternion;
+// stored byte = int8(round(q * 127)) + 128.  GPU decode: (byte - 128) / 127.
 layout(std430, binding = 3) readonly buffer GaussianRotations {
-	vec4 rotations[];
+	uint rotations[];
 };
 
+// fp16×4 packed as uvec2: .x = packHalf2x16(r, g), .y = packHalf2x16(b, opacity)
 layout(std430, binding = 4) readonly buffer GaussianDcOpacity {
-	vec4 dc_opacity[];
+	uvec2 dc_opacity[];
 };
 
+// fp16 uvec2 per entry; stride = GetShDegree() * 3 uvec2 per splat (0, 3, or 6).
+// Each uvec2 = 4 fp16 values, replacing the former fp32 vec4 one-to-one.
 layout(std430, binding = 5) readonly buffer GaussianShCoefficients {
-	vec4 sh_coeffs[];
+	uvec2 sh_coeffs[];
 };
 
 layout(std430, binding = 6) writeonly buffer ProjectedGaussians {
@@ -72,6 +78,11 @@ uint GetSplatCount() {
 
 uint GetShDegree() {
 	return min(view_params.scene.y, 2u);
+}
+
+// Returns true when density-compensation anti-aliasing is enabled.
+bool GetAntialias() {
+	return view_params.scene.z != 0u;
 }
 
 uvec2 GetTileSize() {
@@ -122,9 +133,47 @@ mat3 QuaternionToRotation(vec4 quat) {
 		2.0 * (xz + wy), 2.0 * (yz - wx), 1.0 - 2.0 * (xx + yy));
 }
 
+// Dequantize one snorm8-biased byte: 128 maps to 0.0, 255 maps to ~+1.0.
+float DecodeSnorm8(uint b) {
+	return (float(b) - 128.0) / 127.0;
+}
+
+// Decode fp16 uvec2 pair to vec3 (log_scales buffer).
+vec3 LoadLogScale(uint i) {
+	uvec2 p = log_scales[i];
+	vec2 xy = unpackHalf2x16(p.x);
+	vec2 zw = unpackHalf2x16(p.y);
+	return vec3(xy.x, xy.y, zw.x);
+}
+
+// Dequantize snorm8-biased uint to unit quaternion (w, x, y, z).
+// normalize() compensates for the ~0.8° quantization error inherent in int8.
+vec4 LoadRotation(uint i) {
+	uint p = rotations[i];
+	return normalize(vec4(
+		DecodeSnorm8( p        & 0xFFu),
+		DecodeSnorm8((p >>  8u) & 0xFFu),
+		DecodeSnorm8((p >> 16u) & 0xFFu),
+		DecodeSnorm8((p >> 24u) & 0xFFu)));
+}
+
+// Decode fp16 uvec2 pair to vec4 (dc_opacity buffer).
+vec4 LoadDcOpacity(uint i) {
+	uvec2 p = dc_opacity[i];
+	vec2 rg = unpackHalf2x16(p.x);
+	vec2 bo = unpackHalf2x16(p.y);
+	return vec4(rg.x, rg.y, bo.x, bo.y);
+}
+
+// Load one logical vec4 worth of SH coefficients as fp16.
+// Stride = GetShDegree() * 3 uvec2/splat; each uvec2 encodes 4 fp16 values,
+// keeping the same local_vec4_index interface as before.
 vec4 LoadShVec4(uint splat_index, uint local_vec4_index) {
-	const uint kMaxShVec4PerSplat = 6u;
-	return sh_coeffs[splat_index * kMaxShVec4PerSplat + local_vec4_index];
+	uint stride = GetShDegree() * 3u;
+	uvec2 p = sh_coeffs[splat_index * stride + local_vec4_index];
+	vec2 lo = unpackHalf2x16(p.x);
+	vec2 hi = unpackHalf2x16(p.y);
+	return vec4(lo.x, lo.y, hi.x, hi.y);
 }
 
 vec3 EvaluateShDegree1(vec3 dir, uint splat_index) {
@@ -183,7 +232,7 @@ vec3 EvaluateShDegree2(vec3 dir, uint splat_index) {
 }
 
 vec3 EvaluateShColor(uint splat_index, vec3 view_dir) {
-	vec4 dc = dc_opacity[splat_index];
+	vec4 dc = LoadDcOpacity(splat_index);
 	const float sh0 = 0.2820947918;
 	vec3 color = vec3(0.5) + sh0 * dc.xyz;
 
@@ -208,6 +257,7 @@ void WriteInvalidProjection(uint splat_index) {
 }
 
 void ProjectGaussian(uint splat_index) {
+	const float EPS2D = 0.3;  // Subpixel blur to regularise tiny splats (standard 3DGS anti-aliasing).
 	vec3 position = positions[splat_index].xyz;
 	vec4 world_position4 = view_params.world_from_model * vec4(position, 1.0);
 	vec3 world_position = world_position4.xyz / max(world_position4.w, 1e-8);
@@ -215,20 +265,20 @@ void ProjectGaussian(uint splat_index) {
 	vec4 clip_center = view_params.clip_from_view * view_center;
 
 	// Opt8: Early reject — behind camera or negligible alpha.
-	vec4 dc = dc_opacity[splat_index];
+	vec4 dc = LoadDcOpacity(splat_index);
 	float alpha = Sigmoid(dc.w);
 	if (alpha <= kMinAlpha || clip_center.w <= 0.0) {
 		WriteInvalidProjection(splat_index);
 		return;
 	}
 
-	vec3 log_scale = log_scales[splat_index].xyz;
+	vec3 log_scale = LoadLogScale(splat_index);
 	vec3 scale = exp(clamp(log_scale, vec3(-20.0), vec3(20.0)));
 	mat3 scale_matrix = mat3(
 		scale.x, 0.0, 0.0,
 		0.0, scale.y, 0.0,
 		0.0, 0.0, scale.z);
-	mat3 rotation = QuaternionToRotation(rotations[splat_index]);
+	mat3 rotation = QuaternionToRotation(LoadRotation(splat_index));
 	mat3 covariance_model = rotation * scale_matrix * scale_matrix *
 							transpose(rotation);
 	mat3 view_from_model = mat3(view_params.view_from_world *
@@ -261,9 +311,23 @@ void ProjectGaussian(uint splat_index) {
 
 	vec3 cov_jx = covariance_view * jacobian_x;
 	vec3 cov_jy = covariance_view * jacobian_y;
-	float cov_xx = dot(jacobian_x, cov_jx) + 0.3;
-	float cov_xy = dot(jacobian_x, cov_jy);
-	float cov_yy = dot(jacobian_y, cov_jy) + 0.3;
+	// Pre-blur 2D covariance values (before the EPS2D subpixel regularisation).
+	float raw_xx = dot(jacobian_x, cov_jx);
+	float raw_xy = dot(jacobian_x, cov_jy);
+	float raw_yy = dot(jacobian_y, cov_jy);
+	// Add subpixel blur to regularise tiny splats (standard 3DGS anti-aliasing).
+	float cov_xx = raw_xx + EPS2D;
+	float cov_xy = raw_xy;
+	float cov_yy = raw_yy + EPS2D;
+	// Density compensation (gsplat PR #117): reduce opacity of splats whose
+	// apparent size is dominated by the blur kernel rather than their geometry.
+	//   compensation = sqrt(det(Sigma_orig) / det(Sigma_blurred))
+	// This prevents tiny splats from becoming artificially bright after blurring.
+	if (GetAntialias()) {
+		float det_orig = raw_xx * raw_yy - raw_xy * raw_xy;
+		float det_blur = cov_xx * cov_yy - cov_xy * cov_xy;
+		alpha *= sqrt(max(0.0, det_orig / det_blur));
+	}
 
 	float mid = 0.5 * (cov_xx + cov_yy);
 	float radius = length(vec2(0.5 * (cov_xx - cov_yy), cov_xy));

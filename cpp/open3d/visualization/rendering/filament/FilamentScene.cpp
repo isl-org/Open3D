@@ -435,6 +435,7 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
     desired_sh = std::min(desired_sh, 2);
     src->gaussian_splat_sh_degree = desired_sh;
     src->gaussian_splat_min_alpha = material.gaussian_splat_min_alpha;
+    src->gaussian_splat_antialias = material.gaussian_splat_antialias;
 
     // The projection shader applies Sigmoid(dc.w) to the raw logit-space
     // opacity stored in the PLY file.  Convert min_alpha to logit space so

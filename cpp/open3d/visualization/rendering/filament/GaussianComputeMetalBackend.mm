@@ -71,8 +71,9 @@ public:
             return false;
         }
 
+        // Pack only the view-params UBO (208 bytes) — cheap every frame.
         PackedGaussianScene packed =
-                PackGaussianSceneInputs(*source, render_data, config_);
+                PackGaussianViewParams(*source, render_data, config_);
         if (!packed.valid) {
             return false;
         }
@@ -83,6 +84,13 @@ public:
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
                  source->splat_count != vs.cached_splat_count);
+
+        // Pack the large per-splat arrays (N * ~160 B) only when geometry
+        // changes; on camera-move frames these stay empty and the upload
+        // in RunGaussianGeometryPasses is skipped.
+        if (scene_changed) {
+            PackGaussianSceneAttributes(*source, config_, packed);
+        }
 
         return RunGaussianGeometryPasses(*gpu_, config_, packed, dispatches, vs,
                                         scene_id, source->splat_count,
