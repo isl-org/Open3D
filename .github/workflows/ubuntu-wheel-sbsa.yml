@@ -26,7 +26,7 @@ jobs:
   build-wheel:
     permissions:
       contents: write  # Release upload
-    name: Build wheel
+    name: Build SBSA CUDA wheel
     runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
@@ -121,7 +121,7 @@ jobs:
           gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.xz gs://open3d-ci-cache/
 
   test-wheel-cpu:
-    name: Test wheel CPU
+    name: Test SBSA CUDA wheel CPU
     permissions:
       contents: read
     runs-on: ubuntu-24.04-arm
