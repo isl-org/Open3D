@@ -85,10 +85,11 @@ install_python_dependencies() {
             }
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard || {
+            python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" || {
                 echo "PyTorch ${TORCH_VER} not found in stable index, trying nightly..."
-                python -m pip install --pre -U torch --index-url "$TORCH_NIGHTLY_INDEX" tensorboard
+                python -m pip install --pre -U torch --index-url "$TORCH_NIGHTLY_INDEX"
             }
+            python -m pip install tensorboard
         else
             echo "unknown OS $OSTYPE"
             exit 1
