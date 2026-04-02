@@ -69,8 +69,11 @@ layout(std430, binding = 11) readonly buffer TileEntries {
 	TileEntry tile_entries[];
 };
 
-layout(binding = 12, rgba16f) uniform writeonly image2D out_color;
-layout(binding = 13, r32f) uniform writeonly image2D out_depth;
+// Image bindings must be < GL_MAX_IMAGE_UNITS (8 on many drivers).
+// These two output images use units 0 and 1; SSBO/UBO/sampler bindings
+// above live in separate namespaces and are not affected.
+layout(binding = 0, rgba16f) uniform writeonly image2D out_color;
+layout(binding = 1, r32f) uniform writeonly image2D out_depth;
 
 // Scene depth from Filament's render pass (reversed-Z, non-linear).
 // Bound only when depth_range_and_flags.w > 0.5.
@@ -93,10 +96,11 @@ uint LinearTileIndex(uvec2 tile) {
 	return tile.y * tile_count.x + tile.x;
 }
 
-vec3 UnpackColorRGBA8(uint packed) {
-	return vec3(float(packed & 0xFFu),
-				float((packed >> 8u) & 0xFFu),
-				float((packed >> 16u) & 0xFFu)) / 255.0;
+// 'packed' is a reserved GLSL keyword; use 'rgba8' as the parameter name.
+vec3 UnpackColorRGBA8(uint rgba8) {
+	return vec3(float(rgba8 & 0xFFu),
+				float((rgba8 >> 8u) & 0xFFu),
+				float((rgba8 >> 16u) & 0xFFu)) / 255.0;
 }
 
 // Opt7: Shared memory arrays for cooperative tile loading.

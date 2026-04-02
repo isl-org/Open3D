@@ -61,7 +61,7 @@ struct GaussianComputeViewGpuResources {
     std::uintptr_t histogram_buf = 0;
     std::uintptr_t radix_params_buf = 0;
     std::uintptr_t sorted_entries_buf = 0;
-    /// GS composite depth output (binding 13); not the shared scene depth.
+    /// GS composite depth output (image binding 1); not the shared scene depth.
     std::uintptr_t composite_depth_tex = 0;
     std::uint64_t cached_scene_id = 0;
     std::uint32_t cached_splat_count = 0;

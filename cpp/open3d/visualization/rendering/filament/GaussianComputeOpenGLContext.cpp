@@ -11,6 +11,10 @@
 #include <cstdlib>
 #include <cstring>
 
+// GLFW for cross-platform hidden window and context creation
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 #if !defined(_WIN32)
 // GLEW provides GL 4.x function pointers on Linux (GLX/EGL) the same way it
 // does on Windows (WGL).  Must be included before any other GL header.
@@ -19,6 +23,10 @@
 // GLX (X11) — included after glew.h so it doesn't pull in raw <GL/gl.h>.
 #include <GL/glx.h>
 #include <X11/Xlib.h>
+
+// GLFW native X11 access
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>
 
 // GLX_ARB_create_context constants (from glxext.h / system headers).
 #ifndef GLX_CONTEXT_MAJOR_VERSION_ARB
@@ -45,6 +53,10 @@
 #include <GL/wglew.h>
 #include <windows.h>
 
+// GLFW native Win32 access
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
 #endif  // _WIN32
 
 #include "open3d/utility/Logging.h"
@@ -52,10 +64,6 @@
 namespace open3d {
 namespace visualization {
 namespace rendering {
-
-namespace {
-// (Anonymous namespace reserved for future local helpers.)
-}  // namespace
 
 GaussianComputeOpenGLContext& GaussianComputeOpenGLContext::GetInstance() {
     static GaussianComputeOpenGLContext instance;
@@ -273,7 +281,6 @@ bool GaussianComputeOpenGLContext::InitializeGLX() {
     x_display_ = dpy;
     glx_context_ = ctx;
     glx_drawable_ = drawable;
-    owns_display_ = false;
     initialized_ = true;
 
     utility::LogDebug(
@@ -285,27 +292,49 @@ bool GaussianComputeOpenGLContext::InitializeGLX() {
 
 bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
     // Called BEFORE Filament's Engine::create().  Creates our compute context
-    // independently (no shareContext), then passes it to Filament so Filament
-    // creates its own context sharing ours — establishing a shared GL object
-    // namespace for zero-copy texture import().
+    // independently using a GLFW-managed hidden window for cross-platform
+    // simplicity, then passes it to Filament so Filament creates its own
+    // context sharing ours — establishing a shared GL object namespace for
+    // zero-copy texture import().
     //
-    // FBConfig requirements:
-    //  • GLX_WINDOW_BIT  – Filament renders to the GLFW window; the FBConfig
-    //    must be window-compatible so glXMakeContextCurrent(…, window, …)
-    //    succeeds after Filament matches our config.
-    //  • GLX_PBUFFER_BIT – Filament creates a dummy PBuffer for its idle
-    //    surface; PlatformGLX::createDriver requires this.
-    //  • DOUBLEBUFFER, DEPTH_SIZE 24 – standard rendering requirements that
-    //    match Filament's own defaults.
+    // Strategy: Use GLFW to create a hidden helper window (which connects to
+    // the X11 display and creates an initial GL context). Then borrow the
+    // Display* from GLFW and use our own FBConfig matching logic to ensure
+    // compatibility with Filament's PlatformGLX requirements.
 
-    Display* dpy = XOpenDisplay(nullptr);
+    // 1. Create a hidden GLFW helper window with OpenGL context.
+    // This initializes the X11 display connection and provides a valid context.
+    glfw_helper_window_ = nullptr;
+    {
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);  // Single-buffered for compute
+
+        glfw_helper_window_ = glfwCreateWindow(1, 1, "O3D_GS_Helper", nullptr, nullptr);
+        if (!glfw_helper_window_) {
+            utility::LogWarning(
+                    "GaussianComputeOpenGLContext: glfwCreateWindow failed "
+                    "(GLX standalone).");
+            return false;
+        }
+        glfwMakeContextCurrent(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+    }
+
+    // 2. Borrow the Display* from GLFW.
+    Display* dpy = glfwGetX11Display();
     if (!dpy) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: XOpenDisplay failed "
-                "(standalone GLX init).");
+                "GaussianComputeOpenGLContext: glfwGetX11Display() returned "
+                "nullptr (GLX standalone).");
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
 
+    // 3. Query and match FBConfig for Filament compatibility.
     // clang-format off
     const int fb_attribs[] = {
         GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT | GLX_PBUFFER_BIT,
@@ -325,13 +354,14 @@ bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
     if (!configs || num_configs == 0) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: glXChooseFBConfig failed "
-                "(standalone GLX init).");
-        XCloseDisplay(dpy);
+                "(GLX standalone).");
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
     GLXFBConfig chosen_config = configs[0];
 
-    // Log the config ID so we can verify PlatformGLX matches it.
+    // Log the config ID.
     int fb_id = -1;
     glXGetFBConfigAttrib(dpy, chosen_config, GLX_FBCONFIG_ID, &fb_id);
     utility::LogDebug(
@@ -339,7 +369,7 @@ bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
             fb_id);
     XFree(configs);
 
-    // Load glXCreateContextAttribsARB.
+    // 4. Create our own GL context with matching FBConfig.
     using CreateContextAttribsARB =
             GLXContext (*)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
     auto glXCreateContextAttribsARB = reinterpret_cast<CreateContextAttribsARB>(
@@ -350,7 +380,8 @@ bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
                 "GaussianComputeOpenGLContext: "
                 "glXCreateContextAttribsARB unavailable "
                 "(standalone GLX init).");
-        XCloseDisplay(dpy);
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
 
@@ -372,11 +403,12 @@ bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: GL 4.5 context creation "
                 "failed (standalone GLX init).");
-        XCloseDisplay(dpy);
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
 
-    // Create a 1×1 PBuffer as our offscreen drawable.
+    // 5. Create a 1×1 PBuffer as our offscreen drawable.
     const int pbuf_attribs[] = {GLX_PBUFFER_WIDTH, 1, GLX_PBUFFER_HEIGHT, 1,
                                 None};
     GLXPbuffer pbuf = glXCreatePbuffer(dpy, chosen_config, pbuf_attribs);
@@ -385,19 +417,20 @@ bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
                 "GaussianComputeOpenGLContext: PBuffer creation failed "
                 "(standalone GLX init).");
         glXDestroyContext(dpy, ctx);
-        XCloseDisplay(dpy);
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
 
+    // 6. Store state: borrowed Display and window from GLFW.
     x_display_ = dpy;
     glx_context_ = ctx;
     glx_drawable_ = pbuf;
-    owns_display_ = true;  // we opened this display, close it on Shutdown
     initialized_ = true;
 
     utility::LogDebug(
             "GaussianComputeOpenGLContext: Standalone GLX context created "
-            "(FBConfig ID={}).  Pass to Filament as sharedContext.",
+            "via GLFW helper window (FBConfig ID={}).",
             fb_id);
     return true;
 }
@@ -500,9 +533,11 @@ void GaussianComputeOpenGLContext::Shutdown() {
         auto dpy = static_cast<Display*>(x_display_);
         glXMakeContextCurrent(dpy, None, None, nullptr);
         if (glx_drawable_) {
-            if (owns_display_) {
-                // Standalone init: drawable is a PBuffer.
+            if (glfw_helper_window_) {
+                // Standalone init via GLFW: drawable is a PBuffer, GLFW owns Display.
                 glXDestroyPbuffer(dpy, static_cast<GLXPbuffer>(glx_drawable_));
+                glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+                glfw_helper_window_ = nullptr;
             } else {
                 // Shared init: drawable is an offscreen X11 window.
                 XDestroyWindow(dpy, static_cast<Window>(glx_drawable_));
@@ -512,10 +547,6 @@ void GaussianComputeOpenGLContext::Shutdown() {
         if (glx_context_) {
             glXDestroyContext(dpy, static_cast<GLXContext>(glx_context_));
             glx_context_ = nullptr;
-        }
-        // Only close the display if we opened it ourselves.
-        if (dpy && owns_display_) {
-            XCloseDisplay(dpy);
         }
         x_display_ = nullptr;
     } else {
@@ -628,23 +659,6 @@ void GaussianComputeOpenGLContext::ReleaseCurrent() {
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
 #endif
 
-namespace {
-
-/// Create a minimal hidden 1×1 window to obtain a valid HDC for pixel format
-/// selection and WGL context creation.
-HWND CreateHelperWindow() {
-    WNDCLASSA wc = {};
-    wc.style = CS_OWNDC;
-    wc.lpfnWndProc = DefWindowProcA;
-    wc.hInstance = GetModuleHandleA(nullptr);
-    wc.lpszClassName = "Open3D_GS_GL_Helper";
-    RegisterClassA(&wc);  // Ignore failure: class may already be registered.
-    return CreateWindowExA(0, wc.lpszClassName, "", WS_POPUP, 0, 0, 1, 1,
-                           nullptr, nullptr, wc.hInstance, nullptr);
-}
-
-}  // namespace
-
 bool GaussianComputeOpenGLContext::Initialize() {
     if (initialized_) {
         return true;
@@ -731,85 +745,91 @@ bool GaussianComputeOpenGLContext::InitializeWGL() {
     x_display_ = filament_dc;    // HDC
     glx_context_ = ctx;          // HGLRC
     egl_surface_ = filament_dc;  // drawable DC for MakeCurrent
-    owns_display_ = false;
     initialized_ = true;
     utility::LogDebug(
             "GaussianComputeOpenGLContext: Created shared WGL context.");
     return true;
 }
 
-// ---------------------------------------------------------------------------
-// InitializeWGLStandalone — create context before Filament for sharing.
-// ---------------------------------------------------------------------------
 bool GaussianComputeOpenGLContext::InitializeWGLStandalone() {
-    // 1. Create a hidden 1×1 window to obtain a valid HDC.
-    HWND hwnd = CreateHelperWindow();
+    // Create our GL context BEFORE Filament so it can be passed as the
+    // sharedGLContext. Filament's PlatformWGL then creates its own context
+    // sharing our GL object namespace, enabling zero-copy texture import().
+    //
+    // Strategy: Use GLFW to create a hidden 1×1 helper window, then extract
+    // the HWND and obtain an HDC for context creation. Create our own GL 4.5
+    // core-profile context on that HDC.
+
+    // 1. Create hidden GLFW helper window (1×1, invisible).
+    glfw_helper_window_ = nullptr;
+    {
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);  // Single-buffered for compute
+
+        glfw_helper_window_ = glfwCreateWindow(1, 1, "O3D_GS_Helper", nullptr, nullptr);
+        if (!glfw_helper_window_) {
+            utility::LogWarning(
+                    "GaussianComputeOpenGLContext: glfwCreateWindow failed "
+                    "(WGL standalone).");
+            return false;
+        }
+    }
+
+    // 2. Extract HWND from GLFW window and obtain HDC.
+    HWND hwnd = glfwGetWin32Window(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
     if (!hwnd) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: Failed to create helper window "
+                "GaussianComputeOpenGLContext: glfwGetWin32Window failed "
                 "(WGL standalone).");
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
+
     HDC dc = GetDC(hwnd);
     if (!dc) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: GetDC failed "
                 "(WGL standalone).");
-        DestroyWindow(hwnd);
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
 
-    // 2. Set pixel format — standard double-buffered RGBA with depth,
-    //    matching what Filament expects from a shared context.
-    PIXELFORMATDESCRIPTOR pfd = {};
-    pfd.nSize = sizeof(pfd);
-    pfd.nVersion = 1;
-    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 32;
-    pfd.cDepthBits = 24;
-    pfd.iLayerType = PFD_MAIN_PLANE;
-    int pf = ChoosePixelFormat(dc, &pfd);
-    if (!pf || !SetPixelFormat(dc, pf, &pfd)) {
-        utility::LogWarning(
-                "GaussianComputeOpenGLContext: SetPixelFormat failed "
-                "(WGL standalone).");
-        ReleaseDC(hwnd, dc);
-        DestroyWindow(hwnd);
-        return false;
-    }
-
-    // 3. Bootstrap: create a legacy GL context so wglGetProcAddress is
-    //    available for wglCreateContextAttribsARB, and run glewInit() to
-    //    load all GL 4.x + WGL extension function pointers.
+    // 3. Create a temporary GL context to bootstrap wglGetProcAddress for
+    //    wglCreateContextAttribsARB, and load GL extensions via GLEW.
     HGLRC temp_ctx = wglCreateContext(dc);
     if (!temp_ctx) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: wglCreateContext (bootstrap) "
                 "failed (WGL standalone).");
         ReleaseDC(hwnd, dc);
-        DestroyWindow(hwnd);
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
     wglMakeCurrent(dc, temp_ctx);
 
-    // 4. Initialize GLEW — loads all GL 4.x and WGL extension pointers.
+    // 4. Initialize GLEW — loads GL 4.x and WGL extension pointers.
     //    Must be done with a current GL context.
     glewExperimental = GL_TRUE;
     GLenum glew_err = glewInit();
     if (glew_err != GLEW_OK) {
-        // Non-fatal: missing extensions we don't use are expected.  GL core
-        // functions up to 4.5 are loaded regardless.
+        // Non-fatal: missing extensions we don't use are expected.
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: glewInit warning: {} "
                 "(WGL standalone).",
                 reinterpret_cast<const char*>(glewGetErrorString(glew_err)));
     }
 
+    // 5. Load wglCreateContextAttribsARB and create our GL 4.5 core context.
     using wglCreateContextAttribsARB_t = HGLRC(WINAPI*)(HDC, HGLRC, const int*);
     auto create_ctx = reinterpret_cast<wglCreateContextAttribsARB_t>(
             wglGetProcAddress("wglCreateContextAttribsARB"));
-
     wglMakeCurrent(nullptr, nullptr);
     wglDeleteContext(temp_ctx);
 
@@ -818,12 +838,13 @@ bool GaussianComputeOpenGLContext::InitializeWGLStandalone() {
                 "GaussianComputeOpenGLContext: "
                 "wglCreateContextAttribsARB unavailable (WGL standalone).");
         ReleaseDC(hwnd, dc);
-        DestroyWindow(hwnd);
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
 
-    // 5. Create the final GL 4.5 core-profile context.
-    //    No sharing here — Filament creates its context sharing with ours.
+    // Create GL 4.5 core-profile context — no sharing yet.
+    // Filament will create its context sharing with this one.
     // clang-format off
     const int ctx_attribs[] = {
         WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
@@ -840,18 +861,21 @@ bool GaussianComputeOpenGLContext::InitializeWGLStandalone() {
                 "(WGL standalone, error=0x{:08X}).",
                 static_cast<unsigned>(GetLastError()));
         ReleaseDC(hwnd, dc);
-        DestroyWindow(hwnd);
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
         return false;
     }
 
-    x_display_ = dc;      // HDC (our window's DC)
+    // 6. Store state: GLFW owns the window; we'll destroy it in Shutdown().
+    x_display_ = dc;      // HDC (from GLFW window)
     glx_context_ = ctx;   // HGLRC
-    egl_surface_ = hwnd;  // HWND (for cleanup on Shutdown)
-    owns_display_ = true;
+    egl_surface_ = hwnd;  // HWND (from GLFW window, for cleanup)
     initialized_ = true;
+
     utility::LogDebug(
             "GaussianComputeOpenGLContext: Standalone WGL GL 4.5 context "
-            "created.  Pass to Filament as sharedContext.");
+            "created via GLFW helper window.  Pass to Filament as "
+            "sharedContext.");
     return true;
 }
 
@@ -870,15 +894,14 @@ void GaussianComputeOpenGLContext::Shutdown() {
         wglDeleteContext(ctx);
         glx_context_ = nullptr;
     }
-    if (owns_display_) {
-        auto hwnd = static_cast<HWND>(egl_surface_);
-        if (dc && hwnd) {
+    if (glfw_helper_window_) {
+        // GLFW-owned standalone window: release DC then destroy the window.
+        if (dc) {
+            auto hwnd = static_cast<HWND>(egl_surface_);
             ReleaseDC(hwnd, dc);
         }
-        if (hwnd) {
-            DestroyWindow(hwnd);
-        }
-        egl_surface_ = nullptr;
+        glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfw_helper_window_ = nullptr;
     }
     x_display_ = nullptr;
     backend_ = Backend::kNone;

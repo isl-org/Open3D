@@ -182,6 +182,75 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
     return result;
 }
 
+GLComputeProgram LoadGLComputeProgramGLSL(const std::string& source,
+                                          const std::string& debug_name) {
+    GLComputeProgram result;
+
+    if (source.empty()) {
+        utility::LogWarning("Empty GLSL source for {}", debug_name);
+        return result;
+    }
+
+    DrainErrors("LoadGLComputeProgramGLSL/pre");
+
+    GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
+    if (shader == 0) {
+        utility::LogWarning("Failed to create compute shader for {}",
+                            debug_name);
+        return result;
+    }
+
+    const char* src = source.c_str();
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+
+    GLint compiled = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    if (!compiled) {
+        GLint log_len = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_len);
+        std::string log(std::max(0, log_len - 1), '\0');
+        if (log_len > 0) {
+            glGetShaderInfoLog(shader, log_len, nullptr, log.data());
+        }
+        utility::LogWarning("GLSL compilation error ({}): {}", debug_name,
+                            log.empty() ? "(empty log)" : log);
+        glDeleteShader(shader);
+        return result;
+    }
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, shader);
+    glLinkProgram(program);
+
+    GLenum link_gl_err = DrainErrors("glLinkProgram");
+    glDeleteShader(shader);
+
+    GLint linked = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &linked);
+    if (!linked) {
+        GLint log_len = 0;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
+        std::string log(std::max(0, log_len - 1), '\0');
+        if (log_len > 0) {
+            glGetProgramInfoLog(program, log_len, nullptr, log.data());
+        }
+        utility::LogWarning(
+                "GLSL program link error ({}):{}{} GL error during link: "
+                "0x{:04X}",
+                debug_name, log.empty() ? " (empty driver log)" : " ",
+                log.empty() ? "" : log,
+                static_cast<unsigned>(link_gl_err));
+        glDeleteProgram(program);
+        return result;
+    }
+
+    utility::LogDebug("GLSL program link succeeded for {}", debug_name);
+    result.id = program;
+    result.valid = true;
+    return result;
+}
+
 void DestroyGLComputeProgram(GLComputeProgram& program) {
     if (program.valid && program.id != 0) {
         glDeleteProgram(program.id);

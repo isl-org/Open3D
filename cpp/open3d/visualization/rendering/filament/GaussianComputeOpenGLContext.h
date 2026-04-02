@@ -80,11 +80,14 @@ private:
 
     Backend backend_ = Backend::kNone;
 
+    // Helper window for context creation (GLFW-owned, Linux/Windows only).
+    // Stored as void* (== GLFWwindow*) to avoid GLFW header dependency.
+    void* glfw_helper_window_ = nullptr;
+
     // GLX state (X11). GLXContext is a pointer; Window is XID (ulong).
     void* x_display_ = nullptr;
     void* glx_context_ = nullptr;
     unsigned long glx_drawable_ = 0;
-    bool owns_display_ = true;  // false when Display* is borrowed from GLFW
 
     // EGL state (Wayland). All stored as void* to avoid header pollution.
     void* egl_display_ = nullptr;

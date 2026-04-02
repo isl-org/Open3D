@@ -322,8 +322,10 @@ bool RunGaussianCompositePass(
         return false;
     }
 
-    ctx.BindImageRGBA16FWrite(12, color_tex, w, h);
-    ctx.BindImageR32FWrite(13, vs.composite_depth_tex, w, h);
+    // Image units 0 and 1: must be < GL_MAX_IMAGE_UNITS (8).
+    // SSBO/UBO bindings (6–11) and the sampler (14) live in separate namespaces.
+    ctx.BindImageRGBA16FWrite(0, color_tex, w, h);
+    ctx.BindImageR32FWrite(1, vs.composite_depth_tex, w, h);
 
     if (has_scene_depth) {
         std::uintptr_t sd = targets.scene_depth_mtl_texture

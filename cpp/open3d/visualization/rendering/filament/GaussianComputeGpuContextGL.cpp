@@ -39,6 +39,17 @@ bool ReadSPIRVFile(const std::string& path,
     return true;
 }
 
+bool ReadTextFile(const std::string& path, std::string* contents) {
+    std::vector<char> bytes;
+    std::string error;
+    if (!utility::filesystem::FReadToBuffer(path, bytes, &error)) {
+        utility::LogWarning("Failed to read GLSL shader {}: {}", path, error);
+        return false;
+    }
+    contents->assign(bytes.begin(), bytes.end());
+    return true;
+}
+
 GLBufferHandle ToGLBuffer(
         std::uintptr_t id,
         const std::unordered_map<std::uintptr_t, std::size_t>& sizes) {
@@ -123,29 +134,74 @@ public:
                 "gaussian_radix_sort_payload.spv",
                 "gaussian_compute_dispatch_args.spv",
         };
+        static const char* kShaderCompFiles[] = {
+                "gaussian_project.comp",
+                "gaussian_prefix_sum.comp",
+                "gaussian_scatter.comp",
+                "gaussian_composite.comp",
+                "gaussian_radix_sort_keygen.comp",
+                "gaussian_radix_sort_histograms.comp",
+                "gaussian_radix_sort.comp",
+                "gaussian_radix_sort_payload.comp",
+                "gaussian_compute_dispatch_args.comp",
+        };
         static_assert(
                 sizeof(kShaderSPVFiles) / sizeof(kShaderSPVFiles[0]) ==
                         static_cast<std::size_t>(
                                 GaussianComputeProgramId::kCount),
                 "Shader file list must match GaussianComputeProgramId::kCount");
+        static_assert(
+                sizeof(kShaderCompFiles) / sizeof(kShaderCompFiles[0]) ==
+                        static_cast<std::size_t>(
+                                GaussianComputeProgramId::kCount),
+                "Shader comp file list must match "
+                "GaussianComputeProgramId::kCount");
 
         const std::string shader_root =
                 EngineInstance::GetResourcePath() + "/gaussian_compute/";
         for (int i = 0; i < static_cast<int>(GaussianComputeProgramId::kCount);
              ++i) {
+            // --- Primary path: SPIR-V binary ---
             std::vector<std::uint8_t> spirv;
-            std::string path = shader_root + kShaderSPVFiles[i];
-            if (!ReadSPIRVFile(path, &spirv)) {
+            std::string spv_path = shader_root + kShaderSPVFiles[i];
+            if (ReadSPIRVFile(spv_path, &spirv)) {
+                programs_[i] = LoadGLComputeProgramSPIRV(
+                        spirv, kShaderSPVFiles[i]);
+            }
+            if (programs_[i].valid) {
+                utility::LogDebug("GaussianCompute: loaded {} via SPIR-V",
+                                  kShaderSPVFiles[i]);
+                continue;
+            }
+
+            // --- Fallback path: runtime GLSL compilation ---
+            // Reached when the .spv file is missing, has an invalid magic,
+            // the driver lacks ARB_gl_spirv, or specialization fails.
+            utility::LogWarning(
+                    "GaussianCompute: SPIR-V path failed for {} — "
+                    "trying GLSL source compilation.",
+                    kShaderSPVFiles[i]);
+
+            std::string comp_path = shader_root + kShaderCompFiles[i];
+            std::string glsl_source;
+            if (!ReadTextFile(comp_path, &glsl_source)) {
                 utility::LogWarning(
-                        "Gaussian compute OpenGL: Failed to read SPIR-V shader "
-                        "{}",
-                        path);
+                        "GaussianCompute: GLSL fallback source not found: {}",
+                        comp_path);
                 return false;
             }
-            programs_[i] = LoadGLComputeProgramSPIRV(spirv, kShaderSPVFiles[i]);
+            programs_[i] = LoadGLComputeProgramGLSL(
+                    glsl_source, kShaderCompFiles[i]);
             if (!programs_[i].valid) {
+                // Compile/link errors already logged by LoadGLComputeProgramGLSL.
+                utility::LogWarning(
+                        "GaussianCompute: GLSL compilation also failed for {}",
+                        kShaderCompFiles[i]);
                 return false;
             }
+            utility::LogInfo(
+                    "GaussianCompute: loaded {} via GLSL fallback.",
+                    kShaderCompFiles[i]);
         }
 
         programs_valid_ = true;

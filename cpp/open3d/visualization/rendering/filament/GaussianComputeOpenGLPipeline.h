@@ -69,6 +69,12 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
         const std::string& debug_name,
         const std::string& entry_point = "main");
 
+/// Compile a compute shader from GLSL source text and link into a program.
+/// Fallback path for drivers where SPIR-V loading or specialization fails.
+/// Returns an invalid handle on failure (logs warnings).
+GLComputeProgram LoadGLComputeProgramGLSL(const std::string& source,
+                                          const std::string& debug_name);
+
 /// Destroy a compute program.
 void DestroyGLComputeProgram(GLComputeProgram& program);
 
