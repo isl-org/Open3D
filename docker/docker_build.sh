@@ -217,6 +217,7 @@ cuda_wheel_build() {
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE:?'env var must be set.'}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg CI="${CI:-}" \
