@@ -112,6 +112,10 @@ jobs:
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
             python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu132
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "Stable PyTorch with CUDA 13.2 not found, trying nightly..."
+              python -m pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu132
+            }
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
