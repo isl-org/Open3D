@@ -93,15 +93,15 @@ jobs:
           echo "$CUDA_PATH\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
@@ -166,7 +166,7 @@ jobs:
 
       - name: Upload Package
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.DEVEL_PKG_NAME }}
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
@@ -194,7 +194,7 @@ jobs:
 
       - name: Upload Viewer
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: open3d-app-windows-amd64
           path: C:\Program Files\Open3D\bin\Open3D
@@ -279,17 +279,17 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
           path: open3d_ml
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -339,7 +339,7 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.PIP_PKG_NAME }}
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
@@ -380,23 +380,23 @@ jobs:
       BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
           path: open3d_ml
 
       - name: Download wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: open3d-*win*.whl
           merge-multiple: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 

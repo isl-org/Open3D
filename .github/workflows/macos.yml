@@ -41,9 +41,9 @@ jobs:
       BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -57,7 +57,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-ccache
 
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -92,14 +92,14 @@ jobs:
 
       - name: Upload package
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.DEVEL_PKG_NAME }}
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
       - name: Upload Open3D viewer app
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15-${{ runner.arch}}
@@ -148,17 +148,17 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -172,7 +172,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-ccache
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -206,7 +206,7 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.PIP_PKG_NAME }}
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
@@ -251,23 +251,23 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           pattern: open3d-*macosx*.whl
           merge-multiple: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 
