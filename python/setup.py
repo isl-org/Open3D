@@ -151,11 +151,11 @@ classifiers = [
 name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
-# open3d-cpu wheel for Linux x86_64
+# open3d-cpu wheel for Linux (x86_64 and aarch64/SBSA)
 if "@BUILD_CUDA_MODULE@" == "ON":
     classifiers.append("Environment :: GPU :: NVIDIA CUDA")
 elif (sys.platform.startswith("linux") and
-      platform.machine() in ("i386", "x86_64", "AMD64") and
+      platform.machine() in ("i386", "x86_64", "AMD64", "aarch64") and
       "@BUILD_SYCL_MODULE@" == "OFF"):
     name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "
