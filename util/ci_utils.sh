@@ -28,10 +28,11 @@ BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
 # CUDA: see docker/docker_build.sh
 # ML
 TENSORFLOW_VER="2.20.0"
-TORCH_VER="2.10"
+TORCH_VER="2.12"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
+TORCH_NIGHTLY_INDEX_URL="https://download.pytorch.org/whl/nightly"
 # Python
-PIP_VER="25.3"
+PIP_VER="26.0.1"
 PROTOBUF_VER="6.31.1"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
@@ -51,6 +52,7 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g') # e.g.: 117, 118, 121, ...
         TORCH_GLNX="torch==${TORCH_VER}+cu${CUDA_VER}"
+        TORCH_NIGHTLY_INDEX="${TORCH_NIGHTLY_INDEX_URL}/cu${CUDA_VER}"
     else
         # tensorflow-cpu wheels for macOS arm64 are not available
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -61,6 +63,7 @@ install_python_dependencies() {
             TF_ARCH_DISABLE_NAME=tensorflow
         fi
         TORCH_GLNX="torch==${TORCH_VER}+cpu"
+        TORCH_NIGHTLY_INDEX="${TORCH_NIGHTLY_INDEX_URL}/cpu"
     fi
 
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
@@ -76,10 +79,17 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL" || {
+                echo "PyTorch ${TORCH_GLNX} not found in stable index, trying nightly..."
+                python -m pip install --pre -U torch --index-url "$TORCH_NIGHTLY_INDEX"
+            }
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" tensorboard
+            python -m pip install -U torch=="$TORCH_VER" -f "$TORCH_REPO_URL" || {
+                echo "PyTorch ${TORCH_VER} not found in stable index, trying nightly..."
+                python -m pip install --pre -U torch --index-url "$TORCH_NIGHTLY_INDEX"
+            }
+            python -m pip install tensorboard
         else
             echo "unknown OS $OSTYPE"
             exit 1
@@ -169,12 +179,16 @@ build_pip_package() {
         echo "Azure Kinect disabled in Python wheel."
         BUILD_AZURE_KINECT=OFF
     fi
-    if [[ "build_jupyter" =~ ^($options)$ ]]; then
+    if [[ "build_jupyter" =~ ^($options)$ ]] && [[ "$AARCH" != "aarch64" ]]; then
         echo "Building Jupyter extension in Python wheel."
         BUILD_JUPYTER_EXTENSION=ON
         BUILD_WEBRTC_FROM_SOURCE=ON
     else
-        echo "Jupyter extension disabled in Python wheel."
+        if [[ "$AARCH" == "aarch64" ]] && [[ "build_jupyter" =~ ^($options)$ ]]; then
+            echo "Jupyter extension not supported on ARM Linux (WebRTC unavailable). Disabling."
+        else
+            echo "Jupyter extension disabled in Python wheel."
+        fi
         BUILD_JUPYTER_EXTENSION=OFF
         BUILD_WEBRTC_FROM_SOURCE=OFF
     fi

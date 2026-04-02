@@ -193,7 +193,7 @@ available for the main supported platforms. Also, the latest development version
         :columns: 2
 
         * `x86_64 (CXX11 ABI) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-devel-linux-x86_64-cxx11-abi-@OPEN3D_VERSION_FULL@.tar.xz>`__
-        * `x86_64 (CXX11 ABI) with CUDA 12.6 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-devel-linux-x86_64-cxx11-abi-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
+        * `x86_64 (CXX11 ABI) with CUDA 13.2 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-devel-linux-x86_64-cxx11-abi-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
 
 :MacOSX v10.15+:
     .. hlist::

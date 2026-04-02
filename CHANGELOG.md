@@ -76,6 +76,10 @@
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
 -   Fix Windows CI release uploads by adding `GH_REPO` environment variable for `gh` CLI
 -   Bump GitHub Actions versions across all CI workflows (checkout v6, upload/download-artifact v6/v8, setup-python v6, cache v5, google-github-actions auth/setup-gcloud v3)
+-   Upgrade CUDA to 13.2 and PyTorch to 2.12
+-   Add SBSA (ARM64) CUDA wheel builds in CI
+-   Refactor CI release upload steps into a reusable `update_release.sh` script
+-   Fix style workflow to push formatting commits to the correct PR branch
 
 
 ## 0.13

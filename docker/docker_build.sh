@@ -62,7 +62,9 @@ OPTION:
     3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
     5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
 
-    # CUDA wheels (Dockerfile.wheel)
+    # CUDA wheels — x86_64 and SBSA/ARM64 (Dockerfile.wheel)
+    # Architecture is auto-detected via uname -m. The same commands work on
+    # both x86_64 and aarch64 (SBSA) hosts.
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
     cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, developer mode
@@ -80,9 +82,9 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 # Shared variables
 AARCH="$(uname -m)"
 # do cmake pending on the architecture
-CMAKE_VERSION=cmake-3.31.8-linux-${AARCH}
-CUDA_VERSION=12.6.3-cudnn
-CUDA_VERSION_LATEST=12.6.3-cudnn
+CMAKE_VERSION=cmake-3.31.10-linux-${AARCH}
+CUDA_VERSION=13.2.0-cudnn
+CUDA_VERSION_LATEST=13.2.0-cudnn
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -176,7 +178,11 @@ openblas_build() {
 
 cuda_wheel_build() {
     BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
-    CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
+    if [ "${AARCH}" = "aarch64" ]; then
+        CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-sbsa-ci-ccache
+    else
+        CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
+    fi
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
@@ -211,6 +217,7 @@ cuda_wheel_build() {
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE:?'env var must be set.'}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg CI="${CI:-}" \
