@@ -62,7 +62,9 @@ OPTION:
     3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
     5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
 
-    # CUDA wheels (Dockerfile.wheel)
+    # CUDA wheels — x86_64 and SBSA/ARM64 (Dockerfile.wheel)
+    # Architecture is auto-detected via uname -m. The same commands work on
+    # both x86_64 and aarch64 (SBSA) hosts.
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
     cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, developer mode
@@ -176,7 +178,11 @@ openblas_build() {
 
 cuda_wheel_build() {
     BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
-    CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
+    if [ "${AARCH}" = "aarch64" ]; then
+        CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-sbsa-ci-ccache
+    else
+        CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
+    fi
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
