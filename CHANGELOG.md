@@ -74,6 +74,8 @@
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
 -   Python 3.13+3.14 support
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
+-   Fix Windows CI release uploads by adding `GH_REPO` environment variable for `gh` CLI
+-   Bump GitHub Actions versions across all CI workflows (checkout v6, upload/download-artifact v6/v8, setup-python v6, cache v5, google-github-actions auth/setup-gcloud v3)
 
 
 ## 0.13
