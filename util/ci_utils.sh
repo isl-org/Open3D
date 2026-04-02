@@ -179,12 +179,16 @@ build_pip_package() {
         echo "Azure Kinect disabled in Python wheel."
         BUILD_AZURE_KINECT=OFF
     fi
-    if [[ "build_jupyter" =~ ^($options)$ ]]; then
+    if [[ "build_jupyter" =~ ^($options)$ ]] && [[ "$AARCH" != "aarch64" ]]; then
         echo "Building Jupyter extension in Python wheel."
         BUILD_JUPYTER_EXTENSION=ON
         BUILD_WEBRTC_FROM_SOURCE=ON
     else
-        echo "Jupyter extension disabled in Python wheel."
+        if [[ "$AARCH" == "aarch64" ]] && [[ "build_jupyter" =~ ^($options)$ ]]; then
+            echo "Jupyter extension not supported on ARM Linux (WebRTC unavailable). Disabling."
+        else
+            echo "Jupyter extension disabled in Python wheel."
+        fi
         BUILD_JUPYTER_EXTENSION=OFF
         BUILD_WEBRTC_FROM_SOURCE=OFF
     fi
