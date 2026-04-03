@@ -27,7 +27,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PIP_VER: "24.3.1"
+  PIP_VER: "26.0.1"
   CUDA_VERSION: "12.6.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
@@ -76,7 +76,7 @@ jobs:
           # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
-          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "nvtx", "thrust"
+          $CUDA_PACKAGES = "nvcc", "crt", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "nvtx", "thrust"
           $CUDA_PACKAGES.ForEach({ $CUDA_INSTALL_ARGS += " $($_)_$($CUDA_VER)" })
           # Download and install CUDA
           echo "Downloading CUDA installer from $CUDA_URL"
@@ -112,6 +112,10 @@ jobs:
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
             python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "Stable PyTorch with CUDA 12.6 not found, trying nightly..."
+              python -m pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu132
+            }
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
