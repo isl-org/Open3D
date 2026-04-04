@@ -68,25 +68,24 @@ This is acceptable because 3DGS uses Gaussian kernel anti-aliasing.
 ### Shared GL Context Strategy
 
 The compute context is created **before** Filament's `Engine::create()`. This is the only
-window when context sharing can be established — GLX/EGL sharing is set at context creation
+window when context sharing can be established — GLX/WGL sharing is set at context creation
 time and cannot be added retroactively.
 
 1. `FilamentEngine.cpp` calls `GaussianComputeOpenGLContext::GetInstance().InitializeStandalone()`
-2. `InitializeStandalone()` → `InitializeGLXStandalone()` on X11 or `InitializeEGL()` on Wayland
+2. `InitializeStandalone()` creates a hidden GLFW OpenGL 4.6 helper window
 3. The resulting native context handle is passed to `Engine::create()` as `sharedGLContext`
-4. Filament's `PlatformGLX::createDriver` sees the shared context, finds a matching FBConfig
-   via `GLX_FBCONFIG_ID`, and creates its own context with `glXCreateContextAttribs(…, share)`
+4. Filament's OpenGL platform creates its own context sharing with that native handle
+  (`PlatformGLX` on Linux/X11/XWayland, `PlatformWGL` on Windows)
 5. Both contexts now share the same GL object namespace — `import()` works by handle
 
-The older `InitializeGLX()` path (which tried to query Filament's context *after* creation)
-is retained as a fallback but is never reached in normal operation because Filament runs GL
-on a dedicated driver thread (so `glXGetCurrentContext()` returns NULL from the main thread).
+There is no supported late-initialization fallback anymore. If the helper context is not
+created before `Engine::create()`, zero-copy sharing cannot be established retroactively.
 
 ### Backend Abstraction
 
 ```
 GaussianComputeRenderer::Backend (abstract)
-├── GaussianComputeOpenGLBackend      — Linux + Windows (GL 4.5+ compute, SPIR-V)
+├── GaussianComputeOpenGLBackend      — Linux + Windows (GL 4.6 core compute, SPIR-V)
 ├── GaussianComputeMetalBackend       — macOS (Metal compute, operational)
 └── GaussianComputePlaceholderBackend — fallback (logs once per view, returns false)
 ```
@@ -126,10 +125,11 @@ requires no dispatch logic updates.
 - macOS uses the default Filament backend (Metal).
 
 ### PHASE 2: OpenGL Compute Backend (DONE)
-- **GL context** (`GaussianComputeOpenGLContext`): Standalone context created before Filament,
+- **GL context** (`GaussianComputeOpenGLContext`): Standalone GL 4.6 core-profile context created before Filament,
   passed as `sharedGLContext` to `Engine::create()`. Shares GL namespace with Filament's context.
-  X11/GLX on X11, EGL on Wayland (runtime-detected via `XDG_SESSION_TYPE`).
-- **Pipeline API** (`GaussianComputeOpenGLPipeline`): Thin wrappers around GL 4.5 compute:
+  Created via GLFW: GLX on Linux X11/XWayland, WGL on Windows. Linux offscreen rendering requires
+  an X11 or XWayland server.
+- **Pipeline API** (`GaussianComputeOpenGLPipeline`): Thin wrappers around GL 4.6 core compute:
   SSBO/UBO bind, image/sampler bind, buffer management, texture management, dispatch, barriers.
   All GL constants as `constexpr` to avoid GL header dependency in consumers.
 - **SPIR-V loading**: 9 shaders compiled offline from GLSL `.comp` to Vulkan-targeted SPIR-V
@@ -296,8 +296,8 @@ sessions, providing full GS functionality under any Wayland compositor with XWay
 
 **Status**: Implementation complete; blocked on a SPIR-V shader loading error at runtime.
 
-`GaussianComputeOpenGLContext` creates a shared GL 4.5 WGL context before Filament via
-`InitializeWGLStandalone()` (hidden 1×1 HWND, `wglCreateContextAttribsARB`, GL 4.5 core).
+`GaussianComputeOpenGLContext` creates a shared GL 4.6 core-profile WGL context before Filament via
+`InitializeStandalone()` (hidden 1×1 GLFW helper window).
 Context sharing and zero-copy texture import use the same mechanism as GLX. However,
 `gaussian_composite.comp` (and possibly other shaders) fail to load on Windows OpenGL
 drivers with a SPIR-V specialization error.
@@ -349,7 +349,7 @@ which is why those are the chosen backends.
 ### Core implementation files
 - `GaussianComputeRenderer.h/.cpp` — Backend interface, OpenGL/Metal backends, output lifecycle;
   `InvalidateOutputForView()` for safe resize
-- `GaussianComputeOpenGLPipeline.h/.cpp` — GL 4.5 compute API wrappers
+- `GaussianComputeOpenGLPipeline.h/.cpp` — GL 4.6 compute API wrappers
 - `ComputeGPU.h` — All generic GPU compute types in one header:
   `ComputeProgramId` enum, `ImageFormat` enum, `GaussianComputeGpuContext` abstract base,
   `GpuComputeFrame` RAII (Begin/EndGeometryPass or Begin/EndCompositePass),
@@ -367,8 +367,8 @@ which is why those are the chosen backends.
   expression; `GpuComputeFrame` ensures Begin/End pairs are always matched
 - `FilamentNativeInterop.h/.mm` — Retrieves Filament `MTLDevice` and `MTLCommandQueue`
   from `PlatformMetal`
-- `GaussianComputeOpenGLContext.h/.cpp` — GLX/EGL/WGL context creation; standalone and
-  fallback paths
+- `GaussianComputeOpenGLContext.h/.cpp` — GLFW-owned GL 4.6 shared-context creation;
+  GLX on Linux X11/XWayland, WGL on Windows
 - `GaussianComputeBuffers.h/.cpp` — shared SSBO/UBO size planning for backends
 - `GaussianComputeDataPacking.h/.cpp` — CPU → GPU data packing (std140/std430)
 - `FilamentResourceManager.h/.cpp` — `CreateImportedTexture()` / `CreateImportedMTLTexture()`

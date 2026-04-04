@@ -6,9 +6,12 @@
 // ----------------------------------------------------------------------------
 
 // GL context management for OpenGL compute-based Gaussian splatting.
-// On X11 creates a GLX context; on Wayland creates an EGL context; on Windows
-// creates a WGL context.  All use a headless pbuffer / hidden-window surface
-// for offscreen compute dispatch.
+// Uses a hidden GLFW window with a GL 4.6 core-profile context and exposes
+// the native handle (GLXContext on Linux/X11/XWayland, HGLRC on Windows) so
+// Filament can create its own context sharing the same GL object namespace.
+//
+// Offscreen rendering on Linux now requires an X11 or XWayland server. EGL is
+// intentionally not used because Filament's Linux OpenGL path is GLX-only.
 
 #pragma once
 
@@ -18,31 +21,34 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-/// Manages a GL context for OpenGL compute operations.
-/// Uses GLX on X11 (matching Filament's PlatformGLX) and EGL on Wayland
-/// (matching Filament's PlatformEGL).
+/// Manages a shared OpenGL 4.6 context for Gaussian splatting compute.
+/// GLFW handles platform-specific context creation (GLX on Linux/X11/XWayland,
+/// WGL on Windows).
 ///
 /// Lifecycle:
-///   1. Call Initialize() before first compute dispatch.
-///   2. For compute work: MakeCurrent() → dispatch → Finish() →
-///   ReleaseCurrent().
-///   3. Call Shutdown() when done.
+///   1. Call InitializeStandalone() before Filament Engine::create().
+///   2. Pass GetNativeContext() to Engine::create() as sharedGLContext.
+///   3. For compute work: MakeCurrent() → dispatch → Finish() →
+///      ReleaseCurrent().
+///   4. Call Shutdown() when done.
 class GaussianComputeOpenGLContext {
 public:
     static GaussianComputeOpenGLContext& GetInstance();
 
-    /// Creates the GL context (GLX on X11, EGL on Wayland).
-    /// Returns true on success.
-    bool Initialize();
-
-    /// Creates a standalone (non-shared) GL context, meant to be called
-    /// BEFORE the Filament engine so it can be passed to Engine::create()
-    /// as the shared context.  When Filament starts with this as the
-    /// shared context it creates its own context sharing our GL namespace.
+    /// Creates a hidden GLFW window carrying a GL 4.6 core-profile context.
+    /// Must be called before Filament Engine::create() so the returned native
+    /// context can be passed as sharedGLContext for zero-copy sharing.
     bool InitializeStandalone();
 
-    /// Returns the native GL context handle (GLXContext* or EGLContext*),
-    /// suitable for passing to EngineInstance::SetSharedContext().
+    /// Safety wrapper used from render paths. Late initialization cannot
+    /// establish zero-copy sharing with Filament, so this only succeeds when
+    /// InitializeStandalone() already ran.
+    bool Initialize();
+
+    /// Returns the native context handle suitable for Filament's
+    /// sharedGLContext parameter:
+    ///   Linux   -> GLXContext
+    ///   Windows -> HGLRC
     void* GetNativeContext() const;
 
     /// Destroys the context and associated resources.
@@ -68,32 +74,9 @@ private:
     GaussianComputeOpenGLContext& operator=(
             const GaussianComputeOpenGLContext&) = delete;
 
-    // Made public for use by DetectBackend() helper.
-public:
-    enum class Backend { kNone, kGLX, kEGL, kWGL };
-
 private:
-    bool InitializeGLX();
-    bool InitializeGLXStandalone();  // creates context without sharing
-    bool InitializeEGL();
-    bool InitializeWGL();
-    bool InitializeWGLStandalone();  // creates context without sharing
-
-    Backend backend_ = Backend::kNone;
-
-    // Helper window for context creation (GLFW-owned, Linux/Windows only).
-    // Stored as void* (== GLFWwindow*) to avoid GLFW header dependency.
-    void* glfw_helper_window_ = nullptr;
-
-    // GLX state (X11). GLXContext is a pointer; Window is XID (ulong).
-    void* x_display_ = nullptr;
-    void* glx_context_ = nullptr;
-    unsigned long glx_drawable_ = 0;
-
-    // EGL state (Wayland). All stored as void* to avoid header pollution.
-    void* egl_display_ = nullptr;
-    void* egl_context_ = nullptr;
-    void* egl_surface_ = nullptr;
+    // Stored as void* (== GLFWwindow*) to avoid a GLFW header dependency.
+    void* glfw_window_ = nullptr;
 
     bool initialized_ = false;
     bool gl_logged_ = false;
