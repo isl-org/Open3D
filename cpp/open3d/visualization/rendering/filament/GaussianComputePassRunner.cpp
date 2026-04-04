@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -11,6 +12,7 @@
 #include <cstring>
 
 #include "open3d/utility/Logging.h"
+#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeBuffers.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
 
@@ -20,15 +22,22 @@ namespace rendering {
 
 namespace {
 
-const GaussianComputeRenderer::PassDispatch* FindPassDispatch(
+/// Look up a required PassDispatch entry; LogError on missing (programmer bug).
+const GaussianComputeRenderer::PassDispatch& RequireDispatch(
         const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
-        GaussianComputeRenderer::PassType type) {
+        GaussianComputeRenderer::PassType type,
+        const char* name) {
     for (const auto& d : dispatches) {
-        if (d.type == type) {
-            return &d;
-        }
+        if (d.type == type) return d;
     }
-    return nullptr;
+    // Missing dispatch is a programmer error — fail loudly.
+    utility::LogError("Gaussian compute: required dispatch '{}' not found",
+                      name);
+}
+
+/// Return max(1, ceil(n / denom)) as uint32.
+inline std::uint32_t DivUp(std::uint32_t n, std::uint32_t denom) {
+    return std::max(1u, (n + denom - 1u) / denom);
 }
 
 }  // namespace
@@ -42,18 +51,20 @@ bool RunGaussianGeometryPasses(
         std::uint64_t scene_change_id,
         std::uint32_t source_splat_count,
         bool scene_changed) {
-    if (!ctx.EnsureProgramsLoaded()) {
-        utility::LogWarning("Gaussian compute: shader load failed");
-        return false;
-    }
+    // Validate all required dispatches upfront (programmer error → LogError).
+    const auto& proj_d = RequireDispatch(
+            dispatches, GaussianComputeRenderer::PassType::kProjection,
+            "Projection");
+    const auto& pfx_d = RequireDispatch(
+            dispatches, GaussianComputeRenderer::PassType::kTilePrefixSum,
+            "PrefixSum");
 
     GaussianGpuBufferSizes gpu_sizes;
     ComputeGaussianGpuBufferSizes(packed, &gpu_sizes);
 
-    // CPU-uploaded buffers: keep Shared/DYNAMIC_DRAW so the CPU can write them.
+    // CPU-uploaded buffers: Shared/DYNAMIC_DRAW so the CPU can write them.
     vs.view_params_buf = ctx.ResizeBuffer(vs.view_params_buf,
                                           sizeof(PackedGaussianViewParams));
-
     if (scene_changed) {
         vs.positions_buf = ctx.ResizeBuffer(
                 vs.positions_buf, packed.positions.size() * sizeof(Std430Vec4));
@@ -70,8 +81,8 @@ bool RunGaussianGeometryPasses(
                                                         sizeof(std::uint32_t));
     }
 
-    // GPU-only intermediate buffers: use private storage (MTLStorageModePrivate
-    // on Metal, GL_DYNAMIC_COPY on OpenGL) for better cache placement.
+    // GPU-only intermediate buffers: private storage for better cache
+    // placement.
     vs.counters_buf = ctx.ResizePrivateBuffer(
             vs.counters_buf, kGaussianCounterCount * sizeof(std::uint32_t));
     vs.projected_buf =
@@ -82,22 +93,18 @@ bool RunGaussianGeometryPasses(
                                                   gpu_sizes.tile_scalar_size);
     vs.tile_heads_buf = ctx.ResizePrivateBuffer(vs.tile_heads_buf,
                                                 gpu_sizes.tile_scalar_size);
-
     vs.tile_entries_buf = ctx.ResizePrivateBuffer(vs.tile_entries_buf,
                                                   gpu_sizes.entry_buf_size);
     vs.sorted_entries_buf = ctx.ResizePrivateBuffer(vs.sorted_entries_buf,
                                                     gpu_sizes.entry_buf_size);
-
     for (int i = 0; i < 2; ++i) {
         vs.sort_keys_buf[i] = ctx.ResizePrivateBuffer(vs.sort_keys_buf[i],
                                                       gpu_sizes.key_cap_size);
         vs.sort_values_buf[i] = ctx.ResizePrivateBuffer(vs.sort_values_buf[i],
                                                         gpu_sizes.key_cap_size);
     }
-
     vs.histogram_buf = ctx.ResizePrivateBuffer(vs.histogram_buf,
                                                gpu_sizes.histogram_buf_size);
-
     // dispatch_args and radix_params are written by the ComputeDispatchArgs GPU
     // shader and never touched by the CPU — use private storage.
     vs.dispatch_args_buf = ctx.ResizePrivateBuffer(
@@ -107,7 +114,6 @@ bool RunGaussianGeometryPasses(
 
     ctx.UploadBuffer(vs.view_params_buf, &packed.view_params,
                      sizeof(PackedGaussianViewParams), 0);
-
     if (scene_changed) {
         ctx.UploadBuffer(vs.positions_buf, packed.positions.data(),
                          packed.positions.size() * sizeof(Std430Vec4), 0);
@@ -124,137 +130,122 @@ bool RunGaussianGeometryPasses(
         vs.cached_splat_count = source_splat_count;
     }
 
-    auto dispatch_pass = [&](GaussianComputeRenderer::PassType type,
-                             GaussianComputeProgramId pid,
-                             const char* name) -> bool {
-        const auto* d = FindPassDispatch(dispatches, type);
-        if (!d) {
-            utility::LogWarning(
-                    "Gaussian compute: dispatch_pass {} skipped (no dispatch)",
-                    name);
-            return false;
-        }
-        ctx.UseProgram(pid);
-        ctx.Dispatch(
-                std::max(1u, static_cast<std::uint32_t>(d->group_count.x())),
-                std::max(1u, static_cast<std::uint32_t>(d->group_count.y())),
-                std::max(1u, static_cast<std::uint32_t>(d->group_count.z())));
-        return true;
-    };
+    // GpuComputeFrame calls BeginGeometryPass() now and EndGeometryPass() on
+    // scope exit (including early returns), so the Metal encoder is always
+    // committed regardless of what happens below.
+    GpuComputeFrame frame(ctx, GpuComputeFrame::kGeometry);
 
-    ctx.BeginGeometryPass();
-
-    // Clear counters_buf inside the geometry pass so the blit encoder path is
-    // used on Metal (Private buffers can't be CPU-memset outside a CB).
+    // Clear counters_buf inside the geometry pass — on Metal, Private buffers
+    // require a blit encoder inside the command buffer.
     ctx.ClearBufferUInt32Zero(vs.counters_buf);
 
-    ctx.BindUBO(0, vs.view_params_buf);
-    ctx.BindSSBO(1, vs.positions_buf);
-    ctx.BindSSBO(2, vs.scales_buf);
-    ctx.BindSSBO(3, vs.rotations_buf);
-    ctx.BindSSBO(4, vs.dc_opacity_buf);
-    ctx.BindSSBO(5, vs.sh_buf);
-    ctx.BindSSBO(6, vs.projected_buf);
-
     // Pass 1: Project each Gaussian to screen space.
-    if (!dispatch_pass(GaussianComputeRenderer::PassType::kProjection,
-                       GaussianComputeProgramId::kProject, "Projection")) {
-        ctx.EndGeometryPass();
-        return false;
-    }
+    GpuComputePass(ctx, ComputeProgramId::kGsProject, "gs_project")
+            .UBO(0, vs.view_params_buf)
+            .SSBO(1, vs.positions_buf)
+            .SSBO(2, vs.scales_buf)
+            .SSBO(3, vs.rotations_buf)
+            .SSBO(4, vs.dc_opacity_buf)
+            .SSBO(5, vs.sh_buf)
+            .SSBO(6, vs.projected_buf)
+            .Dispatch(DivUp(static_cast<std::uint32_t>(proj_d.group_count.x()),
+                            1u),
+                      1u, 1u);
     ctx.FullBarrier();
 
-    ctx.BindSSBO(7, vs.tile_counts_buf);
-    ctx.BindSSBO(8, vs.tile_offsets_buf);
-    ctx.BindSSBO(9, vs.tile_heads_buf);
-    ctx.BindSSBO(10, vs.counters_buf);
-
-    // Pass 2: Prefix-sum tile counts to get per-tile offsets.
-    if (!dispatch_pass(GaussianComputeRenderer::PassType::kTilePrefixSum,
-                       GaussianComputeProgramId::kPrefixSum, "PrefixSum")) {
-        ctx.EndGeometryPass();
-        return false;
-    }
+    // Pass 2: Prefix-sum tile counts → per-tile offsets.
+    GpuComputePass(ctx, ComputeProgramId::kGsPrefixSum, "gs_prefix_sum")
+            .UBO(0, vs.view_params_buf)
+            .SSBO(6, vs.projected_buf)
+            .SSBO(7, vs.tile_counts_buf)
+            .SSBO(8, vs.tile_offsets_buf)
+            .SSBO(9, vs.tile_heads_buf)
+            .SSBO(10, vs.counters_buf)
+            .Dispatch(DivUp(static_cast<std::uint32_t>(pfx_d.group_count.x()),
+                            1u),
+                      1u, 1u);
     ctx.FullBarrier();
 
-    ctx.BindSSBO(11, vs.dispatch_args_buf);
-    ctx.BindSSBO(12, vs.radix_params_buf);
-
-    // Pass 3: Build indirect dispatch args for the sort passes.
-    ctx.UseProgram(GaussianComputeProgramId::kComputeDispatchArgs);
-    ctx.Dispatch(1, 1, 1);
+    // Pass 3: Build indirect dispatch args for the sort passes (1 thread).
+    GpuComputePass(ctx, ComputeProgramId::kGsDispatchArgs, "gs_dispatch_args")
+            .UBO(0, vs.view_params_buf)
+            .SSBO(7, vs.tile_counts_buf)
+            .SSBO(8, vs.tile_offsets_buf)
+            .SSBO(9, vs.tile_heads_buf)
+            .SSBO(10, vs.counters_buf)
+            .SSBO(11, vs.dispatch_args_buf)
+            .SSBO(12, vs.radix_params_buf)
+            .Dispatch(1u, 1u, 1u);
     ctx.FullBarrier();
-
-    ctx.BindSSBO(11, vs.tile_entries_buf);
 
     // Pass 4: Scatter each splat into its tile's entry list.
-    ctx.UseProgram(GaussianComputeProgramId::kScatter);
-    ctx.Dispatch(
-            std::max(1u,
-                     (packed.splat_count +
-                      static_cast<std::uint32_t>(config.scatter_group_size) -
-                      1u) /
-                             static_cast<std::uint32_t>(
-                                     config.scatter_group_size)),
-            1, 1);
+    GpuComputePass(ctx, ComputeProgramId::kGsScatter, "gs_scatter")
+            .UBO(0, vs.view_params_buf)
+            .SSBO(6, vs.projected_buf)
+            .SSBO(7, vs.tile_counts_buf)
+            .SSBO(8, vs.tile_offsets_buf)
+            .SSBO(9, vs.tile_heads_buf)
+            .SSBO(11, vs.tile_entries_buf)
+            .Dispatch(DivUp(packed.splat_count,
+                            static_cast<std::uint32_t>(
+                                    config.scatter_group_size)),
+                      1u, 1u);
     ctx.FullBarrier();
 
-    {
-        ctx.BindUBORange(14, vs.radix_params_buf, 0,
-                         sizeof(RadixSortParamsGpu));
-        ctx.BindSSBO(0, vs.tile_entries_buf);
-        ctx.BindSSBO(1, vs.sort_keys_buf[0]);
-        ctx.BindSSBO(2, vs.sort_values_buf[0]);
+    // Pass 5: Generate sort keys (depth-tile composite), indirect.
+    GpuComputePass(ctx, ComputeProgramId::kGsRadixKeygen, "gs_radix_keygen")
+            .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParamsGpu))
+            .SSBO(0, vs.tile_entries_buf)
+            .SSBO(1, vs.sort_keys_buf[0])
+            .SSBO(2, vs.sort_values_buf[0])
+            .DispatchIndirect(vs.dispatch_args_buf, 0u);
+    ctx.FullBarrier();
 
-        // Pass 5: Generate sort keys (depth-tile composite).
-        ctx.UseProgram(GaussianComputeProgramId::kRadixKeygen);
-        ctx.DispatchIndirect(vs.dispatch_args_buf, 0u);
+    // Passes 6–13: 4-pass radix sort (histogram + scatter per pass).
+    int src = 0;
+    for (std::uint32_t pass = 0; pass < 4; ++pass) {
+        const int dst = 1 - src;
+        const std::size_t params_offset = pass * kGaussianRadixParamsStride;
+
+        ctx.ClearBufferUInt32Zero(vs.histogram_buf);
         ctx.FullBarrier();
 
-        // Passes 6–13: 4-pass radix sort (histogram + scatter per pass).
-        int src = 0;
-        for (std::uint32_t pass = 0; pass < 4; ++pass) {
-            const int dst = 1 - src;
-            ctx.BindUBORange(14, vs.radix_params_buf,
-                             pass * kGaussianRadixParamsStride,
-                             sizeof(RadixSortParamsGpu));
-
-            ctx.ClearBufferUInt32Zero(vs.histogram_buf);
-            ctx.FullBarrier();
-
-            ctx.BindSSBO(0, vs.sort_keys_buf[src]);
-            ctx.BindSSBO(1, vs.histogram_buf);
-            ctx.UseProgram(GaussianComputeProgramId::kRadixHistograms);
-            ctx.DispatchIndirect(vs.dispatch_args_buf,
-                                 (1u + pass) * 3u * sizeof(std::uint32_t));
-            ctx.FullBarrier();
-
-            ctx.BindSSBO(0, vs.sort_keys_buf[src]);
-            ctx.BindSSBO(1, vs.sort_keys_buf[dst]);
-            ctx.BindSSBO(2, vs.histogram_buf);
-            ctx.BindSSBO(3, vs.sort_values_buf[src]);
-            ctx.BindSSBO(4, vs.sort_values_buf[dst]);
-            ctx.UseProgram(GaussianComputeProgramId::kRadixScatter);
-            ctx.DispatchIndirect(vs.dispatch_args_buf,
-                                 (5u + pass) * 3u * sizeof(std::uint32_t));
-            ctx.FullBarrier();
-
-            src = dst;
-        }
-
-        // Pass 14: Gather sorted values into the final sorted_entries buffer.
-        ctx.BindUBORange(14, vs.radix_params_buf, 0,
-                         sizeof(RadixSortParamsGpu));
-        ctx.BindSSBO(0, vs.sort_values_buf[src]);
-        ctx.BindSSBO(1, vs.tile_entries_buf);
-        ctx.BindSSBO(2, vs.sorted_entries_buf);
-        ctx.UseProgram(GaussianComputeProgramId::kRadixPayload);
-        ctx.DispatchIndirect(vs.dispatch_args_buf,
-                             9u * 3u * sizeof(std::uint32_t));
+        GpuComputePass(ctx, ComputeProgramId::kGsRadixHistograms,
+                       "gs_radix_histogram")
+                .UBORange(14, vs.radix_params_buf, params_offset,
+                          sizeof(RadixSortParamsGpu))
+                .SSBO(0, vs.sort_keys_buf[src])
+                .SSBO(1, vs.histogram_buf)
+                .DispatchIndirect(vs.dispatch_args_buf,
+                                  (1u + pass) * 3u * sizeof(std::uint32_t));
         ctx.FullBarrier();
+
+        GpuComputePass(ctx, ComputeProgramId::kGsRadixScatter,
+                       "gs_radix_scatter")
+                .UBORange(14, vs.radix_params_buf, params_offset,
+                          sizeof(RadixSortParamsGpu))
+                .SSBO(0, vs.sort_keys_buf[src])
+                .SSBO(1, vs.sort_keys_buf[dst])
+                .SSBO(2, vs.histogram_buf)
+                .SSBO(3, vs.sort_values_buf[src])
+                .SSBO(4, vs.sort_values_buf[dst])
+                .DispatchIndirect(vs.dispatch_args_buf,
+                                  (5u + pass) * 3u * sizeof(std::uint32_t));
+        ctx.FullBarrier();
+
+        src = dst;
     }
 
-    ctx.EndGeometryPass();
+    // Pass 14: Gather sorted values into the final sorted_entries buffer.
+    GpuComputePass(ctx, ComputeProgramId::kGsRadixPayload, "gs_radix_payload")
+            .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParamsGpu))
+            .SSBO(0, vs.sort_values_buf[src])
+            .SSBO(1, vs.tile_entries_buf)
+            .SSBO(2, vs.sorted_entries_buf)
+            .DispatchIndirect(vs.dispatch_args_buf,
+                              9u * 3u * sizeof(std::uint32_t));
+    ctx.FullBarrier();
+
     return true;
 }
 
@@ -266,19 +257,9 @@ bool RunGaussianCompositePass(
         GaussianComputeRenderer::OutputTargets& targets) {
     (void)config;
 
-    auto dispatch_pass = [&](GaussianComputeRenderer::PassType type,
-                             GaussianComputeProgramId pid) -> bool {
-        const auto* d = FindPassDispatch(dispatches, type);
-        if (!d) {
-            return false;
-        }
-        ctx.UseProgram(pid);
-        ctx.Dispatch(
-                std::max(1u, static_cast<std::uint32_t>(d->group_count.x())),
-                std::max(1u, static_cast<std::uint32_t>(d->group_count.y())),
-                std::max(1u, static_cast<std::uint32_t>(d->group_count.z())));
-        return true;
-    };
+    const auto& comp_d = RequireDispatch(
+            dispatches, GaussianComputeRenderer::PassType::kComposite,
+            "Composite");
 
     const bool has_scene_depth = (targets.scene_depth_gl_handle != 0) ||
                                  (targets.scene_depth_mtl_texture != 0);
@@ -292,58 +273,54 @@ bool RunGaussianCompositePass(
                          kDepthFlagOffset);
     }
 
-    ctx.BeginCompositePass();
-
-    if (!ctx.EnsureProgramsLoaded()) {
-        ctx.EndCompositePass();
-        return false;
-    }
-
-    ctx.BindUBO(0, vs.view_params_buf);
-    ctx.BindSSBO(6, vs.projected_buf);
-    ctx.BindSSBO(7, vs.tile_counts_buf);   // composite reads tile_counts[]
-    ctx.BindSSBO(8, vs.tile_offsets_buf);  // composite reads tile_offsets[]
-    ctx.BindSSBO(11, vs.sorted_entries_buf);
+    GpuComputeFrame frame(ctx, GpuComputeFrame::kComposite);
 
     const std::uint32_t w = targets.width;
     const std::uint32_t h = targets.height;
+    vs.composite_depth_tex =
+            ctx.ResizeTexture2DR32F(vs.composite_depth_tex, w, h);
 
-    std::uintptr_t color_tex =
+    const std::uintptr_t color_tex =
             targets.gs_color_mtl_texture
                     ? targets.gs_color_mtl_texture
                     : static_cast<std::uintptr_t>(targets.color_gl_handle);
-    vs.composite_depth_tex =
-            ctx.ResizeTexture2DR32F(vs.composite_depth_tex, w, h);
 
     if (color_tex == 0 || vs.composite_depth_tex == 0) {
         utility::LogWarning(
                 "Gaussian compute composite: missing output textures.");
-        ctx.EndCompositePass();
         return false;
     }
 
-    // Image units 0 and 1: must be < GL_MAX_IMAGE_UNITS (8).
-    // SSBO/UBO bindings (6–11) and the sampler (14) live in separate namespaces.
-    ctx.BindImageRGBA16FWrite(0, color_tex, w, h);
-    ctx.BindImageR32FWrite(1, vs.composite_depth_tex, w, h);
+    auto pass =
+            GpuComputePass(ctx, ComputeProgramId::kGsComposite, "gs_composite");
+    if (!pass.ok()) {
+        return false;
+    }
+
+    pass.UBO(0, vs.view_params_buf)
+            .SSBO(6, vs.projected_buf)
+            .SSBO(7, vs.tile_counts_buf)
+            .SSBO(8, vs.tile_offsets_buf)
+            .SSBO(11, vs.sorted_entries_buf)
+            // Image units 0 and 1: must be < GL_MAX_IMAGE_UNITS (8).
+            .Image(0, color_tex, w, h, ImageFormat::kRGBA16F)
+            .Image(1, vs.composite_depth_tex, w, h, ImageFormat::kR32F);
 
     if (has_scene_depth) {
         std::uintptr_t sd = targets.scene_depth_mtl_texture
                                     ? targets.scene_depth_mtl_texture
                                     : static_cast<std::uintptr_t>(
                                               targets.scene_depth_gl_handle);
-        ctx.BindSamplerTexture(14, sd, w, h);
+        pass.Sampler(14, sd, w, h);
     }
 
-    if (!dispatch_pass(GaussianComputeRenderer::PassType::kComposite,
-                       GaussianComputeProgramId::kComposite)) {
-        ctx.EndCompositePass();
-        return false;
-    }
+    pass.Dispatch(DivUp(static_cast<std::uint32_t>(comp_d.group_count.x()), 1u),
+                  DivUp(static_cast<std::uint32_t>(comp_d.group_count.y()), 1u),
+                  1u);
     ctx.FullBarrier();
 
     ctx.FinishGpuWork();
-    ctx.EndCompositePass();
+    frame.End();
 
     return ctx.WasLastSubmitSuccessful();
 }

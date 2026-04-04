@@ -18,7 +18,7 @@
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeGpuContext.h"
+#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/GaussianComputePassRunner.h"
 
 namespace open3d {
@@ -35,8 +35,8 @@ public:
         FilamentMetalNativeHandles mh =
                 GetFilamentMetalNativeHandles(EngineInstance::GetPlatform());
         if (mh.valid) {
-            gpu_ = CreateGaussianComputeGpuContextMetal(mh.device,
-                                                        mh.command_queue);
+            gpu_ = CreateComputeGpuContextMetal(mh.device,
+                                                mh.command_queue);
         }
     }
 

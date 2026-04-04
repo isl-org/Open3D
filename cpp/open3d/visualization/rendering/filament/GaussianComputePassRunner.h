@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -12,7 +13,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "open3d/visualization/rendering/filament/GaussianComputeGpuContext.h"
+#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
 
 namespace open3d {

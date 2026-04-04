@@ -90,14 +90,14 @@ if (BUILD_GUI)
 
     if (APPLE)
         target_sources(visualization_impl PRIVATE
-            rendering/filament/GaussianComputeGpuContextMetal.mm
+            rendering/filament/ComputeGPUMetal.mm
             rendering/filament/GaussianComputeMetalBackend.mm
             rendering/filament/GaussianComputeOutputTargetsApple.mm
             rendering/filament/FilamentNativeInterop.mm
             rendering/filament/FilamentResourceManagerApple.mm
         )
         set(O3D_GS_METAL_ARC_SOURCES
-            rendering/filament/GaussianComputeGpuContextMetal.mm
+            rendering/filament/ComputeGPUMetal.mm
             rendering/filament/GaussianComputeMetalBackend.mm
             rendering/filament/GaussianComputeOutputTargetsApple.mm
             rendering/filament/FilamentResourceManagerApple.mm
@@ -106,7 +106,7 @@ if (BUILD_GUI)
             PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
     else()
         target_sources(visualization_impl PRIVATE
-            rendering/filament/GaussianComputeGpuContextGL.cpp
+            rendering/filament/ComputeGPUGL.cpp
             rendering/filament/GaussianComputeOpenGLContext.cpp
             rendering/filament/GaussianComputeOpenGLPipeline.cpp
         )

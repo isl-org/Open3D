@@ -1,8 +1,12 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+//
+// OpenGL 4.6 + SPIR-V implementation of GaussianComputeGpuContext.
+// Compiled only on non-Apple platforms.
 
 #if !defined(__APPLE__)
 
@@ -16,8 +20,8 @@
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeGpuContext.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeOpenGLPipeline.h"
 
@@ -26,30 +30,6 @@ namespace visualization {
 namespace rendering {
 
 namespace {
-
-bool ReadSPIRVFile(const std::string& path,
-                   std::vector<std::uint8_t>* contents) {
-    std::vector<char> bytes;
-    std::string error;
-    if (!utility::filesystem::FReadToBuffer(path, bytes, &error)) {
-        utility::LogWarning("Failed to read SPIR-V shader {}: {}", path, error);
-        return false;
-    }
-    contents->assign(bytes.begin(), bytes.end());
-    return true;
-}
-
-bool ReadTextFile(const std::string& path, std::string* contents) {
-    std::vector<char> bytes;
-    std::string error;
-    if (!utility::filesystem::FReadToBuffer(path, bytes, &error)) {
-        utility::LogWarning("Failed to read GLSL shader {}: {}", path, error);
-        return false;
-    }
-    contents->assign(bytes.begin(), bytes.end());
-    return true;
-}
-
 GLBufferHandle ToGLBuffer(
         std::uintptr_t id,
         const std::unordered_map<std::uintptr_t, std::size_t>& sizes) {
@@ -90,7 +70,6 @@ GLTextureHandle ToGLTexture(
 
 }  // namespace
 
-/// OpenGL 4.6 + SPIR-V implementation of GaussianComputeGpuContext.
 class GaussianComputeGpuContextOpenGL final : public GaussianComputeGpuContext {
 public:
     GaussianComputeGpuContextOpenGL() = default;
@@ -123,54 +102,30 @@ public:
                 "GaussianComputeGpuContext: ARB_compute_shader supported: {}",
                 GLEW_ARB_compute_shader ? "yes" : "no");
 
-        static const char* kShaderSPVFiles[] = {
-                "gaussian_project.spv",
-                "gaussian_prefix_sum.spv",
-                "gaussian_scatter.spv",
-                "gaussian_composite.spv",
-                "gaussian_radix_sort_keygen.spv",
-                "gaussian_radix_sort_histograms.spv",
-                "gaussian_radix_sort.spv",
-                "gaussian_radix_sort_payload.spv",
-                "gaussian_compute_dispatch_args.spv",
-        };
-        static const char* kShaderCompFiles[] = {
-                "gaussian_project.comp",
-                "gaussian_prefix_sum.comp",
-                "gaussian_scatter.comp",
-                "gaussian_composite.comp",
-                "gaussian_radix_sort_keygen.comp",
-                "gaussian_radix_sort_histograms.comp",
-                "gaussian_radix_sort.comp",
-                "gaussian_radix_sort_payload.comp",
-                "gaussian_compute_dispatch_args.comp",
-        };
-        static_assert(
-                sizeof(kShaderSPVFiles) / sizeof(kShaderSPVFiles[0]) ==
-                        static_cast<std::size_t>(
-                                GaussianComputeProgramId::kCount),
-                "Shader file list must match GaussianComputeProgramId::kCount");
-        static_assert(
-                sizeof(kShaderCompFiles) / sizeof(kShaderCompFiles[0]) ==
-                        static_cast<std::size_t>(
-                                GaussianComputeProgramId::kCount),
-                "Shader comp file list must match "
-                "GaussianComputeProgramId::kCount");
-
         const std::string shader_root =
                 EngineInstance::GetResourcePath() + "/gaussian_compute/";
-        for (int i = 0; i < static_cast<int>(GaussianComputeProgramId::kCount);
-             ++i) {
+        for (int i = 0; i < static_cast<int>(ComputeProgramId::kCount); ++i) {
+            const std::string base = shader_root + kGsShaderNames[i];
+            const std::string spv_name =
+                    std::string(kGsShaderNames[i]) + ".spv";
+            const std::string comp_name =
+                    std::string(kGsShaderNames[i]) + ".comp";
+
             // --- Primary path: SPIR-V binary ---
             std::vector<std::uint8_t> spirv;
-            std::string spv_path = shader_root + kShaderSPVFiles[i];
-            if (ReadSPIRVFile(spv_path, &spirv)) {
-                programs_[i] = LoadGLComputeProgramSPIRV(
-                        spirv, kShaderSPVFiles[i]);
+            {
+                std::vector<char> bytes;
+                std::string error;
+                if (utility::filesystem::FReadToBuffer(base + ".spv", bytes,
+                                                       &error)) {
+                    spirv.assign(bytes.begin(), bytes.end());
+                    programs_[i] =
+                            LoadGLComputeProgramSPIRV(spirv, spv_name.c_str());
+                }
             }
             if (programs_[i].valid) {
                 utility::LogDebug("GaussianCompute: loaded {} via SPIR-V",
-                                  kShaderSPVFiles[i]);
+                                  spv_name);
                 continue;
             }
 
@@ -180,28 +135,33 @@ public:
             utility::LogWarning(
                     "GaussianCompute: SPIR-V path failed for {} — "
                     "trying GLSL source compilation.",
-                    kShaderSPVFiles[i]);
+                    spv_name);
 
-            std::string comp_path = shader_root + kShaderCompFiles[i];
-            std::string glsl_source;
-            if (!ReadTextFile(comp_path, &glsl_source)) {
-                utility::LogWarning(
-                        "GaussianCompute: GLSL fallback source not found: {}",
-                        comp_path);
-                return false;
+            {
+                std::vector<char> bytes;
+                std::string error;
+                if (!utility::filesystem::FReadToBuffer(base + ".comp", bytes,
+                                                        &error)) {
+                    utility::LogWarning(
+                            "GaussianCompute: GLSL fallback source not found: "
+                            "{}",
+                            base + ".comp");
+                    return false;
+                }
+                std::string glsl_source(bytes.begin(), bytes.end());
+                programs_[i] = LoadGLComputeProgramGLSL(glsl_source,
+                                                        comp_name.c_str());
             }
-            programs_[i] = LoadGLComputeProgramGLSL(
-                    glsl_source, kShaderCompFiles[i]);
             if (!programs_[i].valid) {
-                // Compile/link errors already logged by LoadGLComputeProgramGLSL.
+                // Compile/link errors already logged by
+                // LoadGLComputeProgramGLSL.
                 utility::LogWarning(
                         "GaussianCompute: GLSL compilation also failed for {}",
-                        kShaderCompFiles[i]);
+                        comp_name);
                 return false;
             }
-            utility::LogInfo(
-                    "GaussianCompute: loaded {} via GLSL fallback.",
-                    kShaderCompFiles[i]);
+            utility::LogInfo("GaussianCompute: loaded {} via GLSL fallback.",
+                             comp_name);
         }
 
         programs_valid_ = true;
@@ -209,26 +169,13 @@ public:
     }
 
     std::uintptr_t CreateBuffer(std::size_t size) override {
-        GLBufferHandle h = CreateGLBuffer(size, nullptr);
-        if (!h.valid) {
-            return 0;
-        }
-        std::uintptr_t k = static_cast<std::uintptr_t>(h.id);
-        buffer_sizes_[k] = h.size;
-        return k;
+        return AllocGLBuffer(size, /*priv=*/false);
     }
 
-    /// GPU-private buffer: uses GL_DYNAMIC_COPY to tell the driver the buffer
-    /// is written by GPU operations and read back by the GPU.  On discrete
-    /// GPUs this biases placement toward GPU-local VRAM.
+    /// GPU-private buffer: GL_DYNAMIC_COPY biases placement toward GPU-local
+    /// VRAM on discrete GPUs.
     std::uintptr_t CreatePrivateBuffer(std::size_t size) override {
-        GLBufferHandle h = CreateGLPrivateBuffer(size);
-        if (!h.valid) {
-            return 0;
-        }
-        std::uintptr_t k = static_cast<std::uintptr_t>(h.id);
-        buffer_sizes_[k] = h.size;
-        return k;
+        return AllocGLBuffer(size, /*priv=*/true);
     }
 
     void DestroyBuffer(std::uintptr_t buf) override {
@@ -245,8 +192,8 @@ public:
         if (buf == 0) {
             return CreateBuffer(new_size);
         }
-        GLBufferHandle h = ToGLBuffer(buf, buffer_sizes_);
-        GLBufferHandle nh = ResizeGLBuffer(h, new_size);
+        GLBufferHandle nh =
+                ResizeGLBuffer(ToGLBuffer(buf, buffer_sizes_), new_size);
         buffer_sizes_.erase(buf);
         if (!nh.valid) {
             return 0;
@@ -262,8 +209,8 @@ public:
             DestroyBuffer(buf);
             return 0;
         }
-        GLBufferHandle h = ToGLBuffer(buf, buffer_sizes_);
-        GLBufferHandle nh = ResizeGLPrivateBuffer(h, new_size);
+        GLBufferHandle nh =
+                ResizeGLPrivateBuffer(ToGLBuffer(buf, buffer_sizes_), new_size);
         buffer_sizes_.erase(buf);
         if (!nh.valid) {
             return 0;
@@ -277,13 +224,11 @@ public:
                       const void* data,
                       std::size_t size,
                       std::size_t offset) override {
-        GLBufferHandle h = ToGLBuffer(buf, buffer_sizes_);
-        UploadGLBuffer(h, data, size, offset);
+        UploadGLBuffer(ToGLBuffer(buf, buffer_sizes_), data, size, offset);
     }
 
     void ClearBufferUInt32Zero(std::uintptr_t buf) override {
-        GLBufferHandle h = ToGLBuffer(buf, buffer_sizes_);
-        ClearGLBuffer(h);
+        ClearGLBuffer(ToGLBuffer(buf, buffer_sizes_));
     }
 
     void BindSSBO(std::uint32_t binding, std::uintptr_t buf) override {
@@ -305,9 +250,9 @@ public:
                 binding, ToGLBuffer(buf, buffer_sizes_), offset, range_size);
     }
 
-    void UseProgram(GaussianComputeProgramId id) override {
+    void UseProgram(ComputeProgramId id) override {
         int i = static_cast<int>(id);
-        if (i < 0 || i >= static_cast<int>(GaussianComputeProgramId::kCount)) {
+        if (i < 0 || i >= static_cast<int>(ComputeProgramId::kCount)) {
             return;
         }
         // Qualify to bypass MSVC name-hiding: member hides free function.
@@ -327,6 +272,17 @@ public:
     }
 
     void FullBarrier() override { GLComputeFullBarrier(); }
+
+    void PushDebugGroup(const char* label) override {
+        if (GLEW_KHR_debug) {
+            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, label);
+        }
+    }
+    void PopDebugGroup() override {
+        if (GLEW_KHR_debug) {
+            glPopDebugGroup();
+        }
+    }
 
     std::uintptr_t CreateTexture2DR32F(std::uint32_t width,
                                        std::uint32_t height) override {
@@ -354,8 +310,8 @@ public:
         if (tex == 0) {
             return CreateTexture2DR32F(width, height);
         }
-        GLTextureHandle h = ToGLTexture(tex, texture_sizes_);
-        GLTextureHandle nh = ResizeGLTexture2D(h, width, height, kGL_R32F);
+        GLTextureHandle nh = ResizeGLTexture2D(ToGLTexture(tex, texture_sizes_),
+                                               width, height, kGL_R32F);
         texture_sizes_.erase(tex);
         if (!nh.valid) {
             return 0;
@@ -365,30 +321,21 @@ public:
         return nk;
     }
 
-    void BindImageRGBA16FWrite(std::uint32_t binding,
-                               std::uintptr_t tex,
-                               std::uint32_t width,
-                               std::uint32_t height) override {
+    void BindImage(std::uint32_t binding,
+                   std::uintptr_t tex,
+                   std::uint32_t width,
+                   std::uint32_t height,
+                   ImageFormat fmt) override {
         GLTextureHandle h = ToGLTexture(tex, texture_sizes_);
         if (width > 0 && height > 0) {
             h.width = width;
             h.height = height;
             h.valid = true;
         }
-        BindImage(binding, h, kGL_RGBA16F, kGL_WRITE_ONLY);
-    }
-
-    void BindImageR32FWrite(std::uint32_t binding,
-                            std::uintptr_t tex,
-                            std::uint32_t width,
-                            std::uint32_t height) override {
-        GLTextureHandle h = ToGLTexture(tex, texture_sizes_);
-        if (width > 0 && height > 0) {
-            h.width = width;
-            h.height = height;
-            h.valid = true;
-        }
-        BindImage(binding, h, kGL_R32F, kGL_WRITE_ONLY);
+        const std::uint32_t gl_fmt =
+                (fmt == ImageFormat::kRGBA16F) ? kGL_RGBA16F : kGL_R32F;
+        ::open3d::visualization::rendering::BindImage(binding, h, gl_fmt,
+                                                      kGL_WRITE_ONLY);
     }
 
     void BindSamplerTexture(std::uint32_t unit,
@@ -406,16 +353,21 @@ public:
     }
 
     void FinishGpuWork() override {
-        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
-        gl_ctx.Finish();
+        GaussianComputeOpenGLContext::GetInstance().Finish();
     }
 
-    void BeginGeometryPass() override {}
-    void EndGeometryPass() override {}
-    void BeginCompositePass() override {}
-    void EndCompositePass() override {}
-
 private:
+    std::uintptr_t AllocGLBuffer(std::size_t size, bool priv) {
+        GLBufferHandle h = priv ? CreateGLPrivateBuffer(size)
+                                : CreateGLBuffer(size, nullptr);
+        if (!h.valid) {
+            return 0;
+        }
+        std::uintptr_t k = static_cast<std::uintptr_t>(h.id);
+        buffer_sizes_[k] = h.size;
+        return k;
+    }
+
     void CleanupPrograms() {
         for (auto& p : programs_) {
             DestroyGLComputeProgram(p);
@@ -424,8 +376,7 @@ private:
         programs_valid_ = false;
     }
 
-    GLComputeProgram
-            programs_[static_cast<int>(GaussianComputeProgramId::kCount)] = {};
+    GLComputeProgram programs_[static_cast<int>(ComputeProgramId::kCount)] = {};
     bool programs_loaded_ = false;
     bool programs_valid_ = false;
     std::unordered_map<std::uintptr_t, std::size_t> buffer_sizes_;
@@ -433,8 +384,7 @@ private:
             texture_sizes_;
 };
 
-std::unique_ptr<GaussianComputeGpuContext>
-CreateGaussianComputeGpuContextOpenGL() {
+std::unique_ptr<GaussianComputeGpuContext> CreateComputeGpuContextGL() {
     return std::make_unique<GaussianComputeGpuContextOpenGL>();
 }
 

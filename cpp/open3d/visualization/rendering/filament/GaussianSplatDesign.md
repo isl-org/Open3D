@@ -350,17 +350,29 @@ which is why those are the chosen backends.
 - `GaussianComputeRenderer.h/.cpp` — Backend interface, OpenGL/Metal backends, output lifecycle;
   `InvalidateOutputForView()` for safe resize
 - `GaussianComputeOpenGLPipeline.h/.cpp` — GL 4.5 compute API wrappers
-- `GaussianComputeGpuContext.h` — Abstract GPU API (buffer/texture/dispatch/barrier) shared by GL and Metal
-- `GaussianComputeGpuContextGL.cpp` — OpenGL 4.6 + SPIR-V implementation of `GaussianComputeGpuContext`
-- `GaussianComputeGpuContextMetal.mm` — Metal implementation: buffer management, pipeline selection, `Dispatch()`, `DispatchIndirect()`, barrier, texture ops
-- `GaussianComputeMetalBackend.mm` — Metal backend: acquires Filament `MTLDevice`/queue, runs geometry + composite stages
-- `GaussianComputeOutputTargetsApple.h/.mm` — Creates `MTLTexture` (depth + color), imports into Filament via `CreateImportedMTLTexture()`
-- `GaussianComputePassRunner.h/.cpp` — Backend-agnostic geometry + composite pass sequence (shared by GL and Metal)
-- `FilamentNativeInterop.h/.mm` — Retrieves Filament `MTLDevice` and `MTLCommandQueue` from `PlatformMetal`
-- `GaussianComputeOpenGLContext.h/.cpp` — GLX/EGL/WGL context creation; standalone and fallback paths
+- `ComputeGPU.h` — All generic GPU compute types in one header:
+  `ComputeProgramId` enum, `ImageFormat` enum, `GaussianComputeGpuContext` abstract base,
+  `GpuComputeFrame` RAII (Begin/EndGeometryPass or Begin/EndCompositePass),
+  `GpuComputePass` RAII builder (UseProgram + PushDebugGroup on ctor, Dispatch/DispatchIndirect,
+  PopDebugGroup on dtor, no-op on load failure). Factory declarations included.
+- `ComputeGPUGL.cpp` — OpenGL 4.6 + SPIR-V implementation of `GaussianComputeGpuContext`
+- `ComputeGPUMetal.mm` — Metal implementation: buffer management, pipeline selection,
+  `Dispatch()`, `DispatchIndirect()`, barrier, texture ops
+- `GaussianComputeMetalBackend.mm` — Metal backend: acquires Filament `MTLDevice`/queue,
+  runs geometry + composite stages
+- `GaussianComputeOutputTargetsApple.h/.mm` — Creates `MTLTexture` (depth + color),
+  imports into Filament via `CreateImportedMTLTexture()`
+- `GaussianComputePassRunner.h/.cpp` — Backend-agnostic geometry + composite pass sequence
+  (shared by GL and Metal); each dispatch is one `GpuComputePass(ctx, id, label).SSBO().Dispatch()`
+  expression; `GpuComputeFrame` ensures Begin/End pairs are always matched
+- `FilamentNativeInterop.h/.mm` — Retrieves Filament `MTLDevice` and `MTLCommandQueue`
+  from `PlatformMetal`
+- `GaussianComputeOpenGLContext.h/.cpp` — GLX/EGL/WGL context creation; standalone and
+  fallback paths
 - `GaussianComputeBuffers.h/.cpp` — shared SSBO/UBO size planning for backends
 - `GaussianComputeDataPacking.h/.cpp` — CPU → GPU data packing (std140/std430)
-- `FilamentResourceManager.h/.cpp` — `CreateImportedTexture()` / `CreateImportedMTLTexture()` for zero-copy import
+- `FilamentResourceManager.h/.cpp` — `CreateImportedTexture()` / `CreateImportedMTLTexture()`
+  for zero-copy import
 - `FilamentView.h/.cpp` — `EnableViewCaching()` invalidation fix before freeing color_buffer_
 - `FilamentScene.h/.cpp` — `InvalidateGaussianComputeOutput()` forwarding
 - `FilamentRenderer.h/.cpp` — frame schedule and GS output forwarding

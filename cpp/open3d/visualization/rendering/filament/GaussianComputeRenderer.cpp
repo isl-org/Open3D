@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -23,8 +24,8 @@
 #if !defined(__APPLE__)
 #include <memory>
 
+#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeBuffers.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeGpuContext.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
 #include "open3d/visualization/rendering/filament/GaussianComputeOpenGLPipeline.h"
 #include "open3d/visualization/rendering/filament/GaussianComputePassRunner.h"
@@ -94,7 +95,7 @@ public:
             const GaussianComputeRenderer::RenderConfig& config)
         : config_(config) {
         (void)resource_mgr;
-        gpu_ = CreateGaussianComputeGpuContextOpenGL();
+        gpu_ = CreateComputeGpuContextGL();
     }
 
     ~GaussianComputeOpenGLBackend() override { Cleanup(); }
