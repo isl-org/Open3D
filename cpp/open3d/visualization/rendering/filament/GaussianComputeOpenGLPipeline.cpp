@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -239,8 +240,7 @@ GLComputeProgram LoadGLComputeProgramGLSL(const std::string& source,
                 "GLSL program link error ({}):{}{} GL error during link: "
                 "0x{:04X}",
                 debug_name, log.empty() ? " (empty driver log)" : " ",
-                log.empty() ? "" : log,
-                static_cast<unsigned>(link_gl_err));
+                log.empty() ? "" : log, static_cast<unsigned>(link_gl_err));
         glDeleteProgram(program);
         return result;
     }

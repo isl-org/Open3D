@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -311,16 +312,19 @@ bool GaussianComputeOpenGLContext::InitializeGLXStandalone() {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);  // Single-buffered for compute
+        glfwWindowHint(GLFW_DOUBLEBUFFER,
+                       GLFW_FALSE);  // Single-buffered for compute
 
-        glfw_helper_window_ = glfwCreateWindow(1, 1, "O3D_GS_Helper", nullptr, nullptr);
+        glfw_helper_window_ =
+                glfwCreateWindow(1, 1, "O3D_GS_Helper", nullptr, nullptr);
         if (!glfw_helper_window_) {
             utility::LogWarning(
                     "GaussianComputeOpenGLContext: glfwCreateWindow failed "
                     "(GLX standalone).");
             return false;
         }
-        glfwMakeContextCurrent(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+        glfwMakeContextCurrent(
+                reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
     }
 
     // 2. Borrow the Display* from GLFW.
@@ -534,9 +538,11 @@ void GaussianComputeOpenGLContext::Shutdown() {
         glXMakeContextCurrent(dpy, None, None, nullptr);
         if (glx_drawable_) {
             if (glfw_helper_window_) {
-                // Standalone init via GLFW: drawable is a PBuffer, GLFW owns Display.
+                // Standalone init via GLFW: drawable is a PBuffer, GLFW owns
+                // Display.
                 glXDestroyPbuffer(dpy, static_cast<GLXPbuffer>(glx_drawable_));
-                glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+                glfwDestroyWindow(
+                        reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
                 glfw_helper_window_ = nullptr;
             } else {
                 // Shared init: drawable is an offscreen X11 window.
@@ -768,9 +774,11 @@ bool GaussianComputeOpenGLContext::InitializeWGLStandalone() {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);  // Single-buffered for compute
+        glfwWindowHint(GLFW_DOUBLEBUFFER,
+                       GLFW_FALSE);  // Single-buffered for compute
 
-        glfw_helper_window_ = glfwCreateWindow(1, 1, "O3D_GS_Helper", nullptr, nullptr);
+        glfw_helper_window_ =
+                glfwCreateWindow(1, 1, "O3D_GS_Helper", nullptr, nullptr);
         if (!glfw_helper_window_) {
             utility::LogWarning(
                     "GaussianComputeOpenGLContext: glfwCreateWindow failed "
@@ -780,7 +788,8 @@ bool GaussianComputeOpenGLContext::InitializeWGLStandalone() {
     }
 
     // 2. Extract HWND from GLFW window and obtain HDC.
-    HWND hwnd = glfwGetWin32Window(reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
+    HWND hwnd = glfwGetWin32Window(
+            reinterpret_cast<GLFWwindow*>(glfw_helper_window_));
     if (!hwnd) {
         utility::LogWarning(
                 "GaussianComputeOpenGLContext: glfwGetWin32Window failed "
