@@ -86,7 +86,7 @@ private:
 };
 
 #if !defined(__APPLE__)
-// OpenGL compute backend for Linux and Windows (GL 4.5 + SPIR-V).
+// OpenGL compute backend for Linux and Windows (GL 4.6 core + SPIR-V).
 class GaussianComputeOpenGLBackend final
     : public GaussianComputeRenderer::Backend {
 public:
@@ -122,8 +122,9 @@ public:
         auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() && !gl_ctx.Initialize()) {
             utility::LogWarning(
-                    "Gaussian compute OpenGL backend: GL context not "
-                    "available.");
+                    "Gaussian compute OpenGL backend: shared GL context not "
+                    "available. InitializeStandalone() must run before "
+                    "Filament Engine::create().");
             return false;
         }
 
@@ -367,6 +368,7 @@ bool ViewRenderDataEquals(
     return left.viewport_origin == right.viewport_origin &&
            left.viewport_size == right.viewport_size &&
            left.camera_position.isApprox(right.camera_position) &&
+           left.screen_y_down == right.screen_y_down &&
            left.model_matrix.matrix().isApprox(right.model_matrix.matrix()) &&
            left.view_matrix.matrix().isApprox(right.view_matrix.matrix()) &&
            left.projection_matrix.matrix().isApprox(
@@ -806,6 +808,8 @@ GaussianComputeRenderer::ExtractViewRenderData(const FilamentView& view) const {
     auto viewport = view.GetViewport();
     data.viewport_origin = Eigen::Vector2i(viewport[0], viewport[1]);
     data.viewport_size = Eigen::Vector2i(viewport[2], viewport[3]);
+    data.screen_y_down =
+            (EngineInstance::GetBackendType() != RenderingType::kOpenGL);
 
     const auto* camera = view.GetCamera();
     if (camera) {

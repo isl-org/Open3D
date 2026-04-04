@@ -133,7 +133,7 @@ PackedGaussianScene PackGaussianViewParams(
     // renderer-level RenderConfig override.
     vp.scene[2] =
             (source.gaussian_splat_antialias || config.antialias) ? 1u : 0u;
-    vp.scene[3] = 0;
+    vp.scene[3] = render_data.screen_y_down ? 1u : 0u;
 
     vp.tiles[0] = static_cast<std::uint32_t>(tx);
     vp.tiles[1] = static_cast<std::uint32_t>(ty);

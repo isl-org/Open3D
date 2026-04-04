@@ -1127,8 +1127,14 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 
     auto render_tex = impl_->scene_->GetView()->GetColorBuffer();
     ImTextureID image_id = reinterpret_cast<ImTextureID>(render_tex.GetId());
-    ImGui::Image(image_id, ImVec2(f.width, f.height), ImVec2(0.0f, 1.0f),
-                 ImVec2(1.0f, 0.0f));
+    ImVec2 uv0{0.0f, 0.0f};
+    ImVec2 uv1{1.0f, 1.0f};
+    if (context.renderer.GetBackendType() !=
+        rendering::RenderingType::kOpenGL) {
+        uv0.y = 1.0f;
+        uv1.y = 0.0f;
+    }
+    ImGui::Image(image_id, ImVec2(f.width, f.height), uv0, uv1);
 
     // Overlay Gaussian splat compute output.  The compute composite
     // shader outputs straight-alpha RGBA so standard ImGui blending
@@ -1147,8 +1153,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     if (gs_tex) {
         ImGui::SetCursorPos(ImVec2(0, 0));
         ImTextureID gs_id = reinterpret_cast<ImTextureID>(gs_tex.GetId());
-        ImGui::Image(gs_id, ImVec2(f.width, f.height), ImVec2(0.0f, 1.0f),
-                     ImVec2(1.0f, 0.0f));
+        ImGui::Image(gs_id, ImVec2(f.width, f.height), uv0, uv1);
     }
 
     if (!impl_->labels_3d_.empty()) {

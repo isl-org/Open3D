@@ -124,13 +124,12 @@ EngineInstance::EngineInstance() {
         backend = filament::backend::Backend::OPENGL;
     }
 
-    // On Linux (X11/GLX) and Windows (WGL), create our compute GL context
-    // BEFORE the Filament engine so we can pass it as the sharedGLContext.
-    // Filament's PlatformGLX/PlatformWGL will then create its own context
-    // sharing our GL namespace, enabling zero-copy texture import() between
-    // the two contexts. This must happen before Engine::create() because
-    // GLX/WGL context sharing can only be established at context creation
-    // time.
+    // On Linux (X11/XWayland via GLX) and Windows (WGL), create our compute
+    // GL context BEFORE the Filament engine so we can pass it as the
+    // sharedGLContext. Filament then creates its own context sharing our GL
+    // namespace, enabling zero-copy texture import() between the two
+    // contexts. This must happen before Engine::create() because GLX/WGL
+    // sharing can only be established at context creation time.
     if ((backend == filament::backend::Backend::OPENGL ||
          backend == filament::backend::Backend::DEFAULT) &&
         !shared_context_) {

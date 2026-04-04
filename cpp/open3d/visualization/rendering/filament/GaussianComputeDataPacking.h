@@ -45,7 +45,7 @@ struct alignas(16) PackedGaussianViewParams {
     // vec4 viewport_origin_and_size
     float viewport_origin_and_size[4];
     // uvec4 scene  (x=splat_count, y=gaussian_splat_sh_degree,
-    // z=antialias_flag, w=0)
+    // z=antialias_flag, w=screen_y_down_flag)
     std::uint32_t scene[4];
     // uvec4 tiles  (xy=tile_size, zw=tile_count)
     std::uint32_t tiles[4];

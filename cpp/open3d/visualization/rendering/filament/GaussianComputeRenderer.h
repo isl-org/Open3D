@@ -77,6 +77,7 @@ public:
         Eigen::Vector2i viewport_origin = Eigen::Vector2i::Zero();
         Eigen::Vector2i viewport_size = Eigen::Vector2i::Zero();
         Eigen::Vector3f camera_position = Eigen::Vector3f::Zero();
+        bool screen_y_down = false;
         Camera::Transform model_matrix = Camera::Transform::Identity();
         Camera::Transform view_matrix = Camera::Transform::Identity();
         Camera::ProjectionMatrix projection_matrix =
