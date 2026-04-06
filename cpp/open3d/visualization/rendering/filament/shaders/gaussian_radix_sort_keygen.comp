@@ -1,11 +1,19 @@
 // Gaussian radix sort — key preparation pass.
 //
 // Creates composite sort keys from tile entries:
-//   key = (tile_index << 16) | (depth_key >> 16)
-// This gives 16 bits for tile index and 16 bits for depth, supporting
-// up to 65535 tiles (e.g. 4K at 16×16 tiles = 240×135 = 32400 tiles).
-// The previous 12/20 split capped at 4096 tiles, corrupting rendering on
-// windows larger than ~1280×720 at the default 16×16 tile size.
+//   key = (tile_index << D) | ((depth_key << 1) >> T)
+// where T = limits.w = ceil(log2(tile_count)), D = 32 - T.
+//
+// Dynamic split: T adapts to the actual tile count rather than a fixed 16,
+// giving more depth precision for small viewports (fewer tiles) and remaining
+// correct for large ones.  For a 1080p scene (8160 tiles) T=13, D=19 — 3 more
+// depth bits than the fixed 16/16 split.
+//
+// Sign-bit stripping: depth is always >= 0 (clamped in gaussian_scatter.comp),
+// so the IEEE 754 sign bit is always 0.  Left-shifting by 1 discards it and
+// promotes the exponent MSB to bit 31, recovering one free depth bit.
+//
+// T is clamped to [1,31] CPU-side (limits.w) so all shifts are safe.
 // Also initializes the value array with identity indices.
 
 #version 450
@@ -13,6 +21,18 @@
 #define WORKGROUP_SIZE 256
 
 layout(local_size_x = WORKGROUP_SIZE) in;
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+	mat4 world_from_model;
+	mat4 view_from_world;
+	mat4 clip_from_view;
+	vec4 camera_position_and_near;
+	vec4 viewport_origin_and_size;
+	uvec4 scene;
+	uvec4 tiles;
+	uvec4 limits;
+	vec4 depth_range_and_flags;
+} view_params;
 
 layout(std140, binding = 14) uniform RadixSortParams {
 	uint g_num_elements;
@@ -46,8 +66,15 @@ void main() {
 		return;
 	}
 	uint tile_index = g_entries[gID].tile_index;
-	uint depth_key = g_entries[gID].depth_key;
-	// Pack: 16 bits tile_index (up to 65535 tiles), 16 bits depth.
-	g_sort_keys[gID] = (tile_index << 16u) | (depth_key >> 16u);
+	uint depth_key  = g_entries[gID].depth_key;
+
+	// T bits for tile (MSBs), D bits for depth (LSBs).
+	// limits.w is clamped to [1,31] CPU-side; shifts are always well-defined.
+	uint T = view_params.limits.w;  // tile field width
+	uint D = 32u - T;               // depth field width
+
+	// Strip the IEEE 754 sign bit (always 0 for clamped-positive depth) via
+	// << 1, then keep the top D bits of the remaining 31-bit value.
+	g_sort_keys[gID] = (tile_index << D) | ((depth_key << 1u) >> T);
 	g_sort_values[gID] = gID;
 }

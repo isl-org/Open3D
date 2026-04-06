@@ -99,9 +99,15 @@ PackedGaussianScene PackGaussianViewParams(
     const int tcx = CeilDiv(w, tx);
     const int tcy = CeilDiv(h, ty);
 
-    // ---- Fill view-params UBO (208 bytes uploaded to GPU every frame) ----
+        // ---- Fill view-params UBO (288 bytes uploaded to GPU every frame) ----
     auto& vp = packed.view_params;
     std::memset(&vp, 0, sizeof(vp));
+
+        const std::uint64_t entry_budget =
+            static_cast<std::uint64_t>(n) * config.max_tiles_per_splat;
+        const std::uint32_t entry_capacity = static_cast<std::uint32_t>(std::min(
+            entry_budget,
+            static_cast<std::uint64_t>(config.max_tile_entries_total)));
 
     // world_from_model: geometry model-to-world transform.
     // Gaussian splat positions are already in world space, so this is identity.
@@ -139,6 +145,20 @@ PackedGaussianScene PackGaussianViewParams(
     vp.tiles[1] = static_cast<std::uint32_t>(ty);
     vp.tiles[2] = static_cast<std::uint32_t>(tcx);
     vp.tiles[3] = static_cast<std::uint32_t>(tcy);
+
+    vp.limits[0] = entry_capacity;
+    vp.limits[1] = config.max_tiles_per_splat;
+    vp.limits[2] = config.max_tile_entries_total;
+    // T = bits needed to hold the largest tile index = floor(log2(max_index))+1.
+    // For a single tile (tcx*tcy == 1) max_tile_index == 0, so T defaults to 1
+    // (no zero-shift UB). Clamped to [1,31] so the depth field gets >= 1 bit.
+    const std::uint32_t max_tile_index =
+            static_cast<std::uint32_t>(tcx * tcy) - 1u;
+    std::uint32_t tile_key_bits = 0u;
+    for (std::uint32_t v = max_tile_index; v > 0u; v >>= 1u) {
+        ++tile_key_bits;
+    }
+    vp.limits[3] = std::clamp(tile_key_bits, 1u, 31u);
 
     vp.depth_range_and_flags[0] = static_cast<float>(render_data.near_plane);
     vp.depth_range_and_flags[1] = static_cast<float>(render_data.far_plane);

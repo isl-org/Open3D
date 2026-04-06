@@ -75,12 +75,16 @@ static_assert(sizeof(kGsShaderNames) / sizeof(kGsShaderNames[0]) ==
 // ---------------------------------------------------------------------------
 
 /// Per-radix-pass UBO at binding 14 (std140 layout, matches GPU shader).
-struct RadixSortParamsGpu {
+/// Matches the RadixSortParams uniform block in the radix-sort shaders.
+/// Named to match the GLSL block: `layout(std140, binding=14) uniform RadixSortParams`.
+struct RadixSortParams {
     std::uint32_t g_num_elements = 0;
     std::uint32_t g_shift = 0;
     std::uint32_t g_num_workgroups = 0;
     std::uint32_t g_num_blocks_per_workgroup = 0;
 };
+static_assert(sizeof(RadixSortParams) == 16,
+              "RadixSortParams must be 16 bytes to match GLSL layout");
 
 /// Per-view GPU resource handles (opaque: GL name or MTLBuffer/MTLTexture).
 struct GaussianComputeViewGpuResources {
@@ -106,6 +110,7 @@ struct GaussianComputeViewGpuResources {
     std::uintptr_t composite_depth_tex = 0;
     std::uint64_t cached_scene_id = 0;
     std::uint32_t cached_splat_count = 0;
+    std::uint32_t warned_gpu_error_flags = 0;
 };
 
 // ---------------------------------------------------------------------------
@@ -123,25 +128,39 @@ public:
     virtual bool EnsureProgramsLoaded() = 0;
 
     // --- Buffer management ------------------------------------------------
-    virtual std::uintptr_t CreateBuffer(std::size_t size) = 0;
+    virtual std::uintptr_t CreateBuffer(std::size_t size,
+                                        const char* label = nullptr) = 0;
     virtual void DestroyBuffer(std::uintptr_t buf) = 0;
     /// Returns a valid handle (may replace buf when the API reallocates).
     virtual std::uintptr_t ResizeBuffer(std::uintptr_t buf,
-                                        std::size_t new_size) = 0;
+                                        std::size_t new_size,
+                                        const char* label = nullptr) = 0;
 
     /// GPU-private buffer: never CPU-mapped after creation.
     /// Metal: MTLStorageModePrivate; OpenGL: GL_DYNAMIC_COPY.
-    virtual std::uintptr_t CreatePrivateBuffer(std::size_t size) {
-        return CreateBuffer(size);
+    virtual std::uintptr_t CreatePrivateBuffer(std::size_t size,
+                                               const char* label = nullptr) {
+        return CreateBuffer(size, label);
     }
     virtual std::uintptr_t ResizePrivateBuffer(std::uintptr_t buf,
-                                               std::size_t new_size) {
-        return ResizeBuffer(buf, new_size);
+                                               std::size_t new_size,
+                                               const char* label = nullptr) {
+        return ResizeBuffer(buf, new_size, label);
     }
     virtual void UploadBuffer(std::uintptr_t buf,
                               const void* data,
                               std::size_t size,
                               std::size_t offset) = 0;
+    virtual bool DownloadBuffer(std::uintptr_t buf,
+                                void* dst,
+                                std::size_t size,
+                                std::size_t offset) {
+        (void)buf;
+        (void)dst;
+        (void)size;
+        (void)offset;
+        return false;
+    }
     virtual void ClearBufferUInt32Zero(std::uintptr_t buf) = 0;
 
     // --- Bindings ---------------------------------------------------------
@@ -163,11 +182,13 @@ public:
 
     // --- Textures / images ------------------------------------------------
     virtual std::uintptr_t CreateTexture2DR32F(std::uint32_t width,
-                                               std::uint32_t height) = 0;
+                                               std::uint32_t height,
+                                               const char* label = nullptr) = 0;
     virtual void DestroyTexture(std::uintptr_t tex) = 0;
     virtual std::uintptr_t ResizeTexture2DR32F(std::uintptr_t tex,
                                                std::uint32_t width,
-                                               std::uint32_t height) = 0;
+                                               std::uint32_t height,
+                                               const char* label = nullptr) = 0;
 
     /// Bind a write image at the given unit with the specified format.
     virtual void BindImage(std::uint32_t binding,

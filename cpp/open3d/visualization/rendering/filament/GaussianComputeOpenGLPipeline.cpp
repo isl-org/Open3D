@@ -24,6 +24,26 @@ namespace rendering {
 
 namespace {
 
+/// Apply a KHR_debug object label to any GL object (GL_BUFFER, GL_TEXTURE,
+/// GL_PROGRAM, etc.).  No-op when id == 0, label is empty, or KHR_debug is
+/// absent.
+void LabelGLObject(GLenum type, GLuint id, const char* label) {
+    if (id == 0 || label == nullptr || label[0] == '\0' || !GLEW_KHR_debug) {
+        return;
+    }
+
+    // If the object already has a non-empty label, don't overwrite it.
+    // Query current label with glGetObjectLabel (KHR_debug) and skip when
+    // a label exists to avoid stomping existing debug annotations.
+    GLsizei existing_length = 0;
+    glGetObjectLabel(type, id, 0, &existing_length, nullptr);
+    if (existing_length != 0) {
+        return;
+    }
+
+    glObjectLabel(type, id, -1, label);
+}
+
 /// Drain all pending GL errors and return the first one (0 = none).
 GLenum DrainErrors(const char* context) {
     GLenum first = GL_NO_ERROR;
@@ -180,6 +200,7 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
     utility::LogDebug("SPIR-V program link succeeded for {}", debug_name);
     result.id = program;
     result.valid = true;
+    LabelGLObject(GL_PROGRAM, program, debug_name.c_str());
     return result;
 }
 
@@ -248,6 +269,7 @@ GLComputeProgram LoadGLComputeProgramGLSL(const std::string& source,
     utility::LogDebug("GLSL program link succeeded for {}", debug_name);
     result.id = program;
     result.valid = true;
+    LabelGLObject(GL_PROGRAM, program, debug_name.c_str());
     return result;
 }
 
@@ -261,7 +283,9 @@ void DestroyGLComputeProgram(GLComputeProgram& program) {
 
 // --- Buffer management ---
 
-GLBufferHandle CreateGLBuffer(std::size_t size, const void* initial_data) {
+GLBufferHandle CreateGLBuffer(std::size_t size,
+                              const void* initial_data,
+                              const char* label) {
     GLBufferHandle result;
     GLuint buf = 0;
     glGenBuffers(1, &buf);
@@ -285,10 +309,11 @@ GLBufferHandle CreateGLBuffer(std::size_t size, const void* initial_data) {
     result.id = buf;
     result.size = size;
     result.valid = true;
+    LabelGLObject(GL_BUFFER, buf, label);
     return result;
 }
 
-GLBufferHandle CreateGLPrivateBuffer(std::size_t size) {
+GLBufferHandle CreateGLPrivateBuffer(std::size_t size, const char* label) {
     GLBufferHandle result;
     if (size == 0) {
         return result;
@@ -313,24 +338,30 @@ GLBufferHandle CreateGLPrivateBuffer(std::size_t size) {
     result.id = buf;
     result.size = size;
     result.valid = true;
+    LabelGLObject(GL_BUFFER, buf, label);
     return result;
 }
 
-GLBufferHandle ResizeGLBuffer(GLBufferHandle buffer, std::size_t new_size) {
+GLBufferHandle ResizeGLBuffer(GLBufferHandle buffer,
+                              std::size_t new_size,
+                              const char* label) {
     if (buffer.valid && buffer.size >= new_size) {
+        LabelGLObject(GL_BUFFER, buffer.id, label);
         return buffer;
     }
     DestroyGLBuffer(buffer);
-    return CreateGLBuffer(new_size, nullptr);
+    return CreateGLBuffer(new_size, nullptr, label);
 }
 
 GLBufferHandle ResizeGLPrivateBuffer(GLBufferHandle buffer,
-                                     std::size_t new_size) {
+                                     std::size_t new_size,
+                                     const char* label) {
     if (buffer.valid && buffer.size >= new_size) {
+        LabelGLObject(GL_BUFFER, buffer.id, label);
         return buffer;
     }
     DestroyGLBuffer(buffer);
-    return CreateGLPrivateBuffer(new_size);
+    return CreateGLPrivateBuffer(new_size, label);
 }
 
 void UploadGLBuffer(const GLBufferHandle& buffer,
@@ -342,6 +373,20 @@ void UploadGLBuffer(const GLBufferHandle& buffer,
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, static_cast<GLintptr>(offset),
                     static_cast<GLsizeiptr>(size), data);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+bool DownloadGLBuffer(const GLBufferHandle& buffer,
+                      void* dst,
+                      std::size_t size,
+                      std::size_t offset) {
+    if (!buffer.valid || dst == nullptr || size == 0) {
+        return false;
+    }
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.id);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, static_cast<GLintptr>(offset),
+                       static_cast<GLsizeiptr>(size), dst);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    return !CheckGLError("DownloadGLBuffer");
 }
 
 void ClearGLBuffer(const GLBufferHandle& buffer) {
@@ -366,7 +411,8 @@ void DestroyGLBuffer(GLBufferHandle& buffer) {
 
 GLTextureHandle CreateGLTexture2D(std::uint32_t width,
                                   std::uint32_t height,
-                                  std::uint32_t format) {
+                                  std::uint32_t format,
+                                  const char* label) {
     GLTextureHandle result;
     GLuint tex = 0;
     glGenTextures(1, &tex);
@@ -394,18 +440,22 @@ GLTextureHandle CreateGLTexture2D(std::uint32_t width,
     result.width = width;
     result.height = height;
     result.valid = true;
+    LabelGLObject(GL_TEXTURE, tex, label);
     return result;
 }
 
 GLTextureHandle ResizeGLTexture2D(GLTextureHandle texture,
                                   std::uint32_t width,
                                   std::uint32_t height,
-                                  std::uint32_t format) {
+                                  std::uint32_t format,
+                                  const char* label) {
     if (texture.valid && texture.width == width && texture.height == height) {
+        // Re-apply label in case the handle was reused with a different name.
+        LabelGLObject(GL_TEXTURE, texture.id, label);
         return texture;
     }
     DestroyGLTexture(texture);
-    return CreateGLTexture2D(width, height, format);
+    return CreateGLTexture2D(width, height, format, label);
 }
 
 void DestroyGLTexture(GLTextureHandle& texture) {

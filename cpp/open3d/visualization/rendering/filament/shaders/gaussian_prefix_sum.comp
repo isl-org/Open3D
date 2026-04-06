@@ -5,10 +5,10 @@
 // Phase 2 (all threads): parallel blocked prefix sum over tile_counts.
 //   Each thread scans its chunk locally, then a 2-level subgroup reduction
 //   propagates the prefix across chunks instead of a serial thread-0 scan.
-//   Level-1: each SIMD group sums its 32 shared_partial entries (subgroupAdd).
-//   Level-2: thread 0 scans the resulting 8 subgroup totals (8 iterations).
-//   Level-3: each thread uses subgroupExclusiveAdd for the within-SIMD prefix.
-//   This reduces the serial bottleneck from 256 to 8 iterations (~32x).
+//   The cross-subgroup step sizes itself from gl_SubgroupSize / gl_NumSubgroups
+//   at runtime so drivers with 16-wide or 32-wide subgroups both work.
+//   This reduces the serial bottleneck from 256 iterations to one pass over
+//   the runtime subgroup count.
 //
 // Opt2: Parallel prefix sum replaces thread-0-only sequential scan.
 // Opt4: Updated ProjectedGaussian struct (48 bytes).
@@ -18,7 +18,9 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_basic      : enable
 
-layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+#define WORKGROUP_SIZE 256
+
+layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
 // 48-byte projected splat descriptor (matches gaussian_project output).
 struct ProjectedGaussian {
@@ -38,6 +40,7 @@ layout(std140, binding = 0) uniform GaussianViewParams {
 	vec4 viewport_origin_and_size;
 	uvec4 scene;
 	uvec4 tiles;
+	uvec4 limits;
 	vec4 depth_range_and_flags;
 } view_params;
 
@@ -85,10 +88,11 @@ uvec2 UnpackTileCoord(uint packed) {
 
 // Shared memory for the blocked prefix sum (Phase 2).
 // shared_partial[256]: each thread stores its chunk's local sum.
-// sg_totals[8]:        one entry per SIMD group (256/32 = 8 SIMD groups),
-//                      used for the level-2 cross-SIMD scan.
-shared uint shared_partial[256];
-shared uint sg_totals[8];
+// sg_totals[WORKGROUP_SIZE]: worst-case one entry per invocation if a driver
+// reports subgroup size 1. In practice only the first gl_NumSubgroups entries
+// are used.
+shared uint shared_partial[WORKGROUP_SIZE];
+shared uint sg_totals[WORKGROUP_SIZE];
 shared uint shared_total;
 
 void main() {
@@ -97,6 +101,8 @@ void main() {
 	uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 	uint tile_count = GetTileCount1D();
 	uint splat_count = GetSplatCount();
+	uint num_subgroups = min(gl_NumSubgroups,
+		(gl_WorkGroupSize.x + gl_SubgroupSize - 1u) / gl_SubgroupSize);
 
 	// Phase 0 (all threads): zero tile counts in parallel.
 	for (uint t = global_index; t < tile_count; t += total_invocations) {
@@ -133,7 +139,7 @@ void main() {
 	// Each thread handles a chunk of tiles, computes a local prefix sum in its
 	// chunk, then a shared-memory scan propagates across chunks.
 
-	uint chunk_size = (tile_count + 255u) / 256u;
+	uint chunk_size = (tile_count + WORKGROUP_SIZE - 1u) / WORKGROUP_SIZE;
 	uint chunk_start = local_index * chunk_size;
 	uint chunk_end = min(chunk_start + chunk_size, tile_count);
 
@@ -147,21 +153,20 @@ void main() {
 	shared_partial[local_index] = local_sum;
 	barrier();
 
-	// Step 2b: 2-level subgroup reduction of the 256 partial sums.
+	// Step 2b: 2-level subgroup reduction of the workgroup partial sums.
 	//
-	// Level 1: each of the 8 SIMD groups (32 threads each) sums its
-	//          32 shared_partial entries using subgroupAdd — O(1) per group.
-	//          The elected lane writes the group total to sg_totals[].
+	// Level 1: each subgroup sums the partial values contributed by its lanes.
+	//          The elected lane writes that subgroup total to sg_totals[].
 	uint sg_local_sum = subgroupAdd(shared_partial[local_index]);
 	if (subgroupElect()) {
 		sg_totals[gl_SubgroupID] = sg_local_sum;
 	}
 	barrier();
 
-	// Level 2: thread 0 does an exclusive scan over only 8 subgroup totals
+	// Level 2: thread 0 does an exclusive scan over the runtime subgroup totals.
 	if (local_index == 0u) {
 		uint running = 0u;
-		for (uint i = 0u; i < 8u; ++i) {
+		for (uint i = 0u; i < num_subgroups; ++i) {
 			uint val = sg_totals[i];
 			sg_totals[i] = running;
 			running += val;
@@ -172,7 +177,7 @@ void main() {
 
 	// Step 2c: each thread computes its final prefix as:
 	//   (subgroup-level exclusive prefix) + (within-SIMD exclusive prefix)
-	// The within-SIMD exclusive prefix is computed via subgroupExclusiveAdd
+	// The within-subgroup exclusive prefix is computed via subgroupExclusiveAdd
 	// over shared_partial[].
 	uint sg_prefix         = sg_totals[gl_SubgroupID];
 	uint within_sg_prefix  = subgroupExclusiveAdd(shared_partial[local_index]);
@@ -187,7 +192,7 @@ void main() {
 	// do not bind.  The counters buffer always has exactly 4 entries.
 	if (local_index == 0u) {
 		global_counters[0] = shared_total;  // total tile entries
-		global_counters[1] = 0u;
+		global_counters[1] = 0u;  // error flags
 		global_counters[2] = tile_count;
 		global_counters[3] = splat_count;
 	}

@@ -57,6 +57,14 @@ public:
         Eigen::Vector2i composite_group_size = Eigen::Vector2i(16, 16);
         bool stable_sort = true;
         int max_sh_degree = 2;
+        /// Per-scene tile-entry budget used to size the shared tile entry
+        /// buffers as `splat_count * max_tiles_per_splat` before clamping to
+        /// `max_tile_entries_total`.
+        std::uint32_t max_tiles_per_splat = 32u;
+        /// Hard ceiling for total tile entries stored in tile_entries / sort
+        /// buffers. When exceeded, compute passes clamp work to this capacity
+        /// and surface a one-time warning to the user.
+        std::uint32_t max_tile_entries_total = 32u * 1024u * 1024u;
         /// When true, multiply each splat's opacity by the density compensation
         /// factor sqrt(det(Sigma_orig) / det(Sigma_blurred)).  This counteracts
         /// the over-brightening of small splats caused by the subpixel blur

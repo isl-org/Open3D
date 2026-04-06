@@ -58,7 +58,8 @@ void main() {
 	uint lID = gl_LocalInvocationID.x;
 	uint wID = gl_WorkGroupID.x;
 	uint sID = gl_SubgroupID;
-	uint lsID = gl_SubgroupInvocationID;
+	uint num_subgroups = min(gl_NumSubgroups,
+		(gl_WorkGroupSize.x + gl_SubgroupSize - 1u) / gl_SubgroupSize);
 
 	uint local_histogram = 0u;
 	uint prefix_sum = 0u;
@@ -81,10 +82,18 @@ void main() {
 	}
 	barrier();
 
+	if (lID == 0u) {
+		uint running = 0u;
+		for (uint i = 0u; i < num_subgroups; ++i) {
+			uint value = sums[i];
+			sums[i] = running;
+			running += value;
+		}
+	}
+	barrier();
+
 	if (lID < RADIX_SORT_BINS) {
-		uint sums_prefix_sum = subgroupShuffle(
-				subgroupExclusiveAdd(sums[lsID]), sID);
-		uint global_histogram = sums_prefix_sum + prefix_sum;
+		uint global_histogram = sums[sID] + prefix_sum;
 		global_offsets[lID] = global_histogram + local_histogram;
 	}
 

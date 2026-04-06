@@ -54,7 +54,7 @@ function(open3d_add_compute_shaders target)
     # Subgroup operations (gl_SubgroupSize, subgroupAdd, etc.) require Vulkan
     # SPIR-V (-V) because glslangValidator's OpenGL target (-G) does not support
     # them.  Most compute shaders use subgroup ops and therefore need -V.
-    set(GLSLANG_FLAGS_DEFAULT --error-column --lto -V --target-env vulkan1.3 -gVS)
+    set(GLSLANG_FLAGS_DEFAULT --error-column -V --target-env vulkan1.3 -gVS)
 
     # Per-shader glslangValidator flag overrides.
     #
@@ -67,7 +67,7 @@ function(open3d_add_compute_shaders target)
     # decorations and produces a combined sampler that OpenGL drivers accept.
     # gaussian_composite uses no subgroup operations, so -G is fully compatible.
     # spirv-cross handles OpenGL SPIR-V correctly for Metal MSL output as well.
-    set(GLSLANG_FLAGS_gaussian_composite --error-column -G -gVS)
+    # set(GLSLANG_FLAGS_gaussian_composite --error-column --lto -G -gVS)
 
     foreach(shader IN LISTS ARG_SOURCES)
         get_filename_component(SHADER_FULL_PATH "${shader}" ABSOLUTE)

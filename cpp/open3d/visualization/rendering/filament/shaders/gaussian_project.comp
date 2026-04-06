@@ -35,6 +35,7 @@ layout(std140, binding = 0) uniform GaussianViewParams {
 	vec4 viewport_origin_and_size;
 	uvec4 scene;
 	uvec4 tiles;
+	uvec4 limits;
 	vec4 depth_range_and_flags;
 } view_params;
 

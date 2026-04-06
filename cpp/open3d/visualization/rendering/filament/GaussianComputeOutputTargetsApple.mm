@@ -75,6 +75,8 @@ bool PrepareGaussianImportedRenderTargetsApple(
     if (!scene_depth || !gs_color) {
         return false;
     }
+    scene_depth.label = @"gs.scene_depth";
+    gs_color.label = @"gs.color";
 
     targets.scene_depth_mtl_texture = reinterpret_cast<std::uintptr_t>(
             (__bridge_retained void*)scene_depth);

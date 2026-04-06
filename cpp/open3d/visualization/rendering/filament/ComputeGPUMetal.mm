@@ -133,13 +133,15 @@ public:
         return true;
     }
 
-    std::uintptr_t CreateBuffer(std::size_t size) override {
-        return AllocateBuffer(size, MTLResourceStorageModeShared);
+    std::uintptr_t CreateBuffer(std::size_t size,
+                                const char* label = nullptr) override {
+        return AllocateBuffer(size, MTLResourceStorageModeShared, label);
     }
 
     /// GPU-private buffer: not CPU-accessible, optimal for GPU-only intermediates.
-    std::uintptr_t CreatePrivateBuffer(std::size_t size) override {
-        return AllocateBuffer(size, MTLResourceStorageModePrivate);
+    std::uintptr_t CreatePrivateBuffer(std::size_t size,
+                                       const char* label = nullptr) override {
+        return AllocateBuffer(size, MTLResourceStorageModePrivate, label);
     }
 
     void DestroyBuffer(std::uintptr_t buf) override {
@@ -153,13 +155,15 @@ public:
     }
 
     std::uintptr_t ResizeBuffer(std::uintptr_t buf,
-                                std::size_t new_size) override {
-        return ReallocBuffer(buf, new_size, /*priv=*/false);
+                                std::size_t new_size,
+                                const char* label = nullptr) override {
+        return ReallocBuffer(buf, new_size, /*priv=*/false, label);
     }
 
     std::uintptr_t ResizePrivateBuffer(std::uintptr_t buf,
-                                       std::size_t new_size) override {
-        return ReallocBuffer(buf, new_size, /*priv=*/true);
+                                       std::size_t new_size,
+                                       const char* label = nullptr) override {
+        return ReallocBuffer(buf, new_size, /*priv=*/true, label);
     }
 
     void UploadBuffer(std::uintptr_t buf,
@@ -172,6 +176,23 @@ public:
         id<MTLBuffer> b =
                 (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
         std::memcpy(static_cast<char*>([b contents]) + offset, data, size);
+    }
+
+    bool DownloadBuffer(std::uintptr_t buf,
+                        void* dst,
+                        std::size_t size,
+                        std::size_t offset) override {
+        if (!buf || !dst || size == 0) {
+            return false;
+        }
+        id<MTLBuffer> b =
+                (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
+        if ([b storageMode] == MTLStorageModePrivate) {
+            return false;
+        }
+        std::memcpy(dst, static_cast<const char*>([b contents]) + offset,
+                    size);
+        return true;
     }
 
     void ClearBufferUInt32Zero(std::uintptr_t buf) override {
@@ -307,7 +328,8 @@ public:
     }
 
     std::uintptr_t CreateTexture2DR32F(std::uint32_t width,
-                                       std::uint32_t height) override {
+                                       std::uint32_t height,
+                                       const char* label = nullptr) override {
         MTLTextureDescriptor* d = [MTLTextureDescriptor
                 texture2DDescriptorWithPixelFormat:MTLPixelFormatR32Float
                                             width:width
@@ -318,6 +340,9 @@ public:
         id<MTLTexture> t = [device_ newTextureWithDescriptor:d];
         if (!t) {
             return 0;
+        }
+        if (label && label[0] != '\0') {
+            t.label = [NSString stringWithUTF8String:label];
         }
         texture_sizes_[reinterpret_cast<std::uintptr_t>(t)] = {width, height};
         return reinterpret_cast<std::uintptr_t>((__bridge_retained void*)t);
@@ -335,12 +360,13 @@ public:
 
     std::uintptr_t ResizeTexture2DR32F(std::uintptr_t tex,
                                        std::uint32_t width,
-                                       std::uint32_t height) override {
+                                       std::uint32_t height,
+                                       const char* label = nullptr) override {
         if (tex == 0) {
-            return CreateTexture2DR32F(width, height);
+            return CreateTexture2DR32F(width, height, label);
         }
         DestroyTexture(tex);
-        return CreateTexture2DR32F(width, height);
+        return CreateTexture2DR32F(width, height, label);
     }
 
     void BindImage(std::uint32_t binding,
@@ -448,13 +474,18 @@ private:
         bool is_bound = false;
     };
 
-    std::uintptr_t AllocateBuffer(std::size_t size, MTLResourceOptions opts) {
+    std::uintptr_t AllocateBuffer(std::size_t size,
+                                  MTLResourceOptions opts,
+                                  const char* label) {
         if (size == 0) {
             return 0;
         }
         id<MTLBuffer> buf = [device_ newBufferWithLength:size options:opts];
         if (!buf) {
             return 0;
+        }
+        if (label != nullptr && label[0] != '\0') {
+            [buf setLabel:[NSString stringWithUTF8String:label]];
         }
         std::uintptr_t key = reinterpret_cast<std::uintptr_t>(
                 (__bridge_retained void*)buf);
@@ -464,13 +495,26 @@ private:
 
     std::uintptr_t ReallocBuffer(std::uintptr_t buf,
                                  std::size_t new_size,
-                                 bool priv) {
+                                 bool priv,
+                                 const char* label) {
         if (new_size == 0) {
             DestroyBuffer(buf);
             return 0;
         }
+        if (buf != 0) {
+            auto it = buffer_sizes_.find(buf);
+            if (it != buffer_sizes_.end() && it->second >= new_size) {
+                if (label != nullptr && label[0] != '\0') {
+                    id<MTLBuffer> existing =
+                            (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
+                    [existing setLabel:[NSString stringWithUTF8String:label]];
+                }
+                return buf;
+            }
+        }
         DestroyBuffer(buf);
-        return priv ? CreatePrivateBuffer(new_size) : CreateBuffer(new_size);
+        return priv ? CreatePrivateBuffer(new_size, label)
+                    : CreateBuffer(new_size, label);
     }
 
     void ResetPassState() {

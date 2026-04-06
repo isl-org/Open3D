@@ -683,9 +683,10 @@ GaussianComputeRenderer::PrepareOutputTargets(FilamentView& view) {
     {
         auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
         if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
-            auto scene_depth =
-                    CreateGLTexture2D(width, height, kGL_DEPTH_COMPONENT32F);
-            auto gs_color = CreateGLTexture2D(width, height, kGL_RGBA16F);
+            auto scene_depth = CreateGLTexture2D(
+                    width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
+            auto gs_color =
+                    CreateGLTexture2D(width, height, kGL_RGBA16F, "gs.color");
             targets.scene_depth_gl_handle =
                     scene_depth.valid ? scene_depth.id : 0;
             targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
@@ -884,7 +885,9 @@ bool GaussianComputeRenderer::ValidateRenderConfig(
            config.projection_group_size > 0 &&
            config.prefix_sum_group_size > 0 && config.scatter_group_size > 0 &&
            config.sort_group_size > 0 && config.composite_group_size.x() > 0 &&
-           config.composite_group_size.y() > 0 && config.max_sh_degree >= 0;
+           config.composite_group_size.y() > 0 && config.max_sh_degree >= 0 &&
+           config.max_tiles_per_splat > 0 &&
+           config.max_tile_entries_total > 0;
 }
 
 }  // namespace rendering

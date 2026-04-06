@@ -24,6 +24,8 @@
 
 layout(local_size_x = 1) in;
 
+#define GS_ERROR_SORT_COUNT_CLAMPED (1u << 1)
+
 // --- Constants (must match C++ radix sort constants) ---
 #define RADIX_WG_SIZE          256u
 #define RADIX_BLOCKS_PER_WG     32u
@@ -34,8 +36,20 @@ layout(local_size_x = 1) in;
 
 // --- Bindings ---
 
-// counters_buf (binding 10): [0] = total_entries written by prefix-sum.
-layout(std430, binding = 10) readonly buffer GaussianGlobalCounters {
+layout(std140, binding = 0) uniform GaussianViewParams {
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+} view_params;
+
+// counters_buf (binding 10): [0] = raw total_entries, [1] = error flags.
+layout(std430, binding = 10) buffer GaussianGlobalCounters {
     uint g_counters[];
 };
 
@@ -79,20 +93,25 @@ void main() {
     // Avoid .length() — it requires spvBufferSizeConstants on Metal, which we
     // do not bind.  The counters buffer always has at least 1 entry.
     uint total_entries = g_counters[0];
+    uint entry_capacity = view_params.limits.x;
+    uint bounded_entries = min(total_entries, entry_capacity);
+    if (bounded_entries != total_entries) {
+        g_counters[1] |= GS_ERROR_SORT_COUNT_CLAMPED;
+    }
 
     // Compute radix sort work distribution (mirrors C++ logic exactly).
     uint radix_num_wg = max(1u,
-        (total_entries + RADIX_WG_SIZE * RADIX_BLOCKS_PER_WG - 1u)
+        (bounded_entries + RADIX_WG_SIZE * RADIX_BLOCKS_PER_WG - 1u)
         / (RADIX_WG_SIZE * RADIX_BLOCKS_PER_WG));
     uint radix_blocks_per_wg = max(1u,
-        (total_entries + radix_num_wg * RADIX_WG_SIZE - 1u)
+        (bounded_entries + radix_num_wg * RADIX_WG_SIZE - 1u)
         / (radix_num_wg * RADIX_WG_SIZE));
 
     // keygen / payload group count: ceil_div(N, RADIX_WG_SIZE).
     // Dispatch 0 if total_entries == 0 so empty scenes are a no-op.
-    uint keygen_groups = (total_entries == 0u) ? 0u :
-        (total_entries + RADIX_WG_SIZE - 1u) / RADIX_WG_SIZE;
-    uint sort_groups = (total_entries == 0u) ? 0u : radix_num_wg;
+    uint keygen_groups = (bounded_entries == 0u) ? 0u :
+        (bounded_entries + RADIX_WG_SIZE - 1u) / RADIX_WG_SIZE;
+    uint sort_groups = (bounded_entries == 0u) ? 0u : radix_num_wg;
 
     // --- Write dispatch args ---
     // [0] keygen
@@ -115,7 +134,7 @@ void main() {
     // used by the histogram and sort-scatter shaders.
     for (uint i = 0u; i < 4u; i++) {
         WriteRadixParams(i,
-                         total_entries,
+                         bounded_entries,
                          i * 8u,           // shift: 0, 8, 16, 24
                          radix_num_wg,
                          radix_blocks_per_wg);

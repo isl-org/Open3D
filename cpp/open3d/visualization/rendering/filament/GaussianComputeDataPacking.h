@@ -33,7 +33,8 @@ struct Std430Vec4 {
 };
 
 /// Matches GaussianViewParams uniform block in the compute shaders (std140).
-struct alignas(16) PackedGaussianViewParams {
+/// Named to match the GLSL block: `layout(std140, binding=0) uniform GaussianViewParams`.
+struct alignas(16) GaussianViewParams {
     // mat4 world_from_model (row-major, 4 vec4)
     float world_from_model[16];
     // mat4 view_from_world
@@ -49,13 +50,20 @@ struct alignas(16) PackedGaussianViewParams {
     std::uint32_t scene[4];
     // uvec4 tiles  (xy=tile_size, zw=tile_count)
     std::uint32_t tiles[4];
+    // uvec4 limits (x=entry_capacity, y=max_tiles_per_splat,
+    // z=max_tile_entries_total, w=tile_key_bits T = ceil(log2(tile_count)),
+    // clamped to [1,31]: T bits for tile index, (32-T) bits for depth)
+    std::uint32_t limits[4];
     // vec4 depth_range_and_flags (x=near, y=far, z=stable_sort_flag, w=0)
     float depth_range_and_flags[4];
 };
+static_assert(sizeof(GaussianViewParams) == 288,
+              "GaussianViewParams must be 288 bytes to match GLSL layout");
 
 /// Matches the ProjectedGaussian struct in the compute shaders (48 bytes).
+/// Named to match the GLSL struct: `struct ProjectedGaussian` in the SSBOs.
 /// Layout (std430): vec4(16) + 4×uint(16) + vec4(16) = 48 bytes.
-struct alignas(16) PackedProjectedGaussian {
+struct alignas(16) ProjectedGaussian {
     Std430Vec4 center_depth_alpha;
     std::uint32_t packed_color;
     std::uint32_t tile_count_overlap;
@@ -63,19 +71,36 @@ struct alignas(16) PackedProjectedGaussian {
     std::uint32_t tile_rect_max;
     Std430Vec4 inv_basis;
 };
-static_assert(sizeof(PackedProjectedGaussian) == 48,
-              "PackedProjectedGaussian must be 48 bytes to match GLSL layout");
+static_assert(sizeof(ProjectedGaussian) == 48,
+              "ProjectedGaussian must be 48 bytes to match GLSL layout");
 
 /// Matches TileEntry struct in the shaders (4 × uint = 16 bytes).
-struct PackedTileEntry {
+/// Named to match the GLSL struct: `struct TileEntry` in scatter/sort/composite.
+struct TileEntry {
     std::uint32_t depth_key;
     std::uint32_t splat_index;
     std::uint32_t stable_index;
     std::uint32_t reserved;
 };
+static_assert(sizeof(TileEntry) == 16,
+              "TileEntry must be 16 bytes to match GLSL layout");
 
-/// Number of global counters used by the prefix-sum pass.
+/// Global counters shared across prefix-sum, dispatch-args, and diagnostics.
+/// [0] = total tile entries before clamping
+/// [1] = GPU error flags bitmask
+/// [2] = tile_count
+/// [3] = splat_count
 static constexpr std::size_t kGaussianCounterCount = 4;
+static constexpr std::size_t kGaussianCounterTotalEntriesIndex = 0;
+static constexpr std::size_t kGaussianCounterErrorFlagsIndex = 1;
+static constexpr std::size_t kGaussianCounterTileCountIndex = 2;
+static constexpr std::size_t kGaussianCounterSplatCountIndex = 3;
+
+inline constexpr std::uint32_t kGaussianGpuErrorTileEntryOverflow = 1u << 0;
+inline constexpr std::uint32_t kGaussianGpuErrorSortCountClamped = 1u << 1;
+inline constexpr std::uint32_t kGaussianGpuErrorKnownMask =
+    kGaussianGpuErrorTileEntryOverflow |
+    kGaussianGpuErrorSortCountClamped;
 
 // ----- CPU-side packed scene representation ----------------------------------
 
@@ -87,7 +112,7 @@ static constexpr std::size_t kGaussianCounterCount = 4;
 ///   dc_opacity       — fp16×4 as uvec2 pair, 8 B/splat
 ///   sh_coefficients  — fp16 uvec2, stride=3×degree (0/24/48 B/splat)
 struct PackedGaussianScene {
-    PackedGaussianViewParams view_params;
+    GaussianViewParams view_params;
     std::vector<Std430Vec4> positions;      ///< fp32 vec4, 16 B/splat
     std::vector<std::uint32_t> log_scales;  ///< fp16×4 in uvec2 pair, 8 B/splat
     std::vector<std::uint32_t>
@@ -123,7 +148,7 @@ struct GaussianSplatSourceData {
 /// PackedGaussianScene.  The per-splat attribute vectors (positions, rotations,
 /// scales, SH) are intentionally left empty — call PackGaussianSceneAttributes
 /// separately when the scene changes.  Per-frame GPU cost: glBufferSubData /
-/// MTLBuffer memcpy of 208 bytes (one PackedGaussianViewParams).
+/// MTLBuffer memcpy of 288 bytes (one GaussianViewParams).
 PackedGaussianScene PackGaussianViewParams(
         const GaussianSplatSourceData& source,
         const GaussianComputeRenderer::ViewRenderData& render_data,

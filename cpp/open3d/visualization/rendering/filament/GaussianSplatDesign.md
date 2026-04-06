@@ -99,19 +99,31 @@ complete (`flushAndWait`) before reading scene depth.
 
 ## Sort Key Layout
 
-Each TileEntry sort key packs `tile_index` and `depth` into a single 32-bit uint:
+Each TileEntry sort key packs `tile_index` and `depth` into a single 32-bit uint using a
+dynamic split computed from the actual tile count:
 
 ```
-bits 31..16  tile_index (16 bits, max 65535 tiles)
-bits 15..0   depth_key >> 16 (16 bits of depth precision)
+bits 31..D   tile_index   (T bits, T = ceil(log2(tile_count)), clamped to [1,31])
+bits D-1..0  depth field  (D = 32-T bits of depth precision)
 ```
 
-`key = (tile_index << 16u) | (depth_key >> 16u)`
+`key = (tile_index << D) | ((depth_key << 1u) >> T)`
 
-This supports up to 65,535 tiles — e.g. 4K at 16×16 tile size needs 32,400 tiles.
-The previous 12/20 split (`tile << 20`) capped at 4095 tiles and corrupted rendering above
-~1280×720. 16 depth bits gives ~0.0015% relative depth precision (sufficient for back-to-front
-ordering between neighbouring splats).
+The `<< 1` strips the IEEE 754 sign bit from `depth_key`, which is always 0 because depth
+is clamped to `>= 0` before `floatBitsToUint()` in the scatter pass.  This reclaims one free
+depth bit at no cost.
+
+T is computed CPU-side as `floor(log2(max_tile_index)) + 1` and stored in
+`GaussianViewParams.limits.w`, then read in `gaussian_radix_sort_keygen.comp`.
+
+| Viewport | Tiles (16×16) | T (tile bits) | D (depth bits) |
+|----------|---------------|---------------|----------------|
+| 1080p    | 8,160         | 13            | 19             |
+| 4K       | 32,400        | 15            | 17             |
+| 8K       | 129,600       | 17            | 15             |
+
+The fixed 16/16 split used previously wasted the sign bit and gave 16 depth bits at all
+resolutions.
 
 The 4-pass radix sort operates on all 32 bits (8 bits per pass), so the key width change
 requires no dispatch logic updates.
@@ -136,7 +148,8 @@ requires no dispatch logic updates.
   (`.spv`); loaded via `glShaderBinary(GL_SHADER_BINARY_FORMAT_SPIR_V)` + `glSpecializeShader()`.
   OpenGL SPIR-V target (`-G`) fails for subgroup ops; Vulkan target works via `GL_ARB_gl_spirv`.
 - **Radix sort**: 4-pass 8-bit LSD radix sort. Runtime-queries `gl_SubgroupSize`. Sort key:
-  `(tile_index << 16) | (depth_key >> 16)` — 16 bits each, max 65535 tiles.
+  `(tile_index << D) | ((depth_key << 1) >> T)` where T = `limits.w` = ceil(log2(tile_count))
+  (dynamic split, sign-bit stripped from depth). Keygen reads `view_params` at binding 0.
 - **Two-stage execution**: `RenderGeometryStage` (passes 1-4) defers `glFinish()` to enable
   overlap. `RenderCompositeStage` (pass 5) runs after `flushAndWait()`.
 - **Zero-copy output**: `PrepareOutputTargets` creates GL textures (`DEPTH_COMPONENT32F` +
@@ -209,7 +222,47 @@ requires no dispatch logic updates.
 | Opt12 | Async Stage A overlap | Stage A dispatches geometry + sort compute without `glFinish()`; `renderer_->beginFrame()` fires immediately after, so Stage A GPU work runs concurrently with Filament's rasterization of the same frame. On Metal, geometry and composite use separate `MTLCommandBuffer` objects that the GPU schedules independently (FW1-4). |
 | Opt13 | Compressed input buffers | `log_scales` and `dc_opacity` stored as fp16 (8 B/splat each, `uvec2` per splat); `rotations` as snorm8-biased uint (4 B/splat); `sh_coefficients` fp16 and degree-dependent (0/24/48 B/splat for degree 0/1/2). Total input: **36–84 B/splat** vs. the previous 160 B. GPU decodes via `unpackHalf2x16` and a 3-instruction `DecodeSnorm8` (core GLSL 4.2+, no extension). |
 
-### Anti-aliasing (`RenderConfig::antialias`)
+### GPU Object Labeling
+
+All GPU objects are labeled at construction time for debugger visibility (RenderDoc, Metal
+Frame Debugger, etc.):
+
+**GL programs** (`glObjectLabel(GL_PROGRAM, ...)`):
+Labeled with the shader source filename (e.g. `gaussian_project.comp`, `gaussian_composite.comp`).
+Applied inside `LoadGLComputeProgramSPIRV` and `LoadGLComputeProgramGLSL` immediately after
+a successful `glLinkProgram`.
+
+**GL buffers** (`glObjectLabel(GL_BUFFER, ...)`):
+All 20 per-view SSBOs/UBOs are labeled using the `gs.*` naming scheme
+(e.g. `gs.projected`, `gs.tile_entries`, `gs.sorted_entries`).  Labels are applied at
+`ResizeBuffer`/`ResizePrivateBuffer` time, including the reuse path when an existing buffer
+is large enough.
+
+**GL textures** (`glObjectLabel(GL_TEXTURE, ...)`):
+- `gs.scene_depth` — `GL_DEPTH_COMPONENT32F`; Filament writes, composite reads.
+- `gs.color` — `GL_RGBA16F`; composite writes, ImGui samples.
+- `gs.composite_depth` — `GL_R32F`; composite writes per-splat depth.
+Labels are applied via `CreateGLTexture2D` / `ResizeGLTexture2D`.
+
+**Metal objects** (`setLabel:`):
+- Buffers: same `gs.*` scheme as GL, applied in `AllocateBuffer` and reuse paths.
+- Textures: `gs.scene_depth`, `gs.color` in `GaussianComputeOutputTargetsApple`;
+  `gs.composite_depth` in `ComputeGPUMetal`'s `CreateTexture2DR32F`.
+
+**CPU/GPU struct name alignment**:
+CPU C++ struct names match their GLSL counterparts exactly so debugger displays
+are unambiguous:
+
+| C++ struct | GLSL name | Location |
+|---|---|---|
+| `GaussianViewParams` | `GaussianViewParams` | UBO binding 0 |
+| `ProjectedGaussian` | `ProjectedGaussian` | SSBO binding 6 |
+| `TileEntry` | `TileEntry` | SSBOs binding 7/8/9 |
+| `RadixSortParams` | `RadixSortParams` | UBO binding 14 |
+
+---
+
+
 
 The projection pass always adds a subpixel blur (+0.3 on the diagonal of the projected 2D covariance) to regularise very small splats.  Without further correction this makes tiny splats appear artificially bright by widening their effective footprint.
 
@@ -219,19 +272,51 @@ $$\text{compensation} = \sqrt{\frac{\det(\Sigma_{\text{orig}})}{\det(\Sigma_{\te
 
 The final opacity becomes `alpha *= compensation`.  The ratio is clamped to `max(0, …)` before the square root so degenerate (zero-area) splats are silently zeroed out rather than producing NaN.
 
-This mirrors [gsplat PR #117](https://github.com/nerfstudio-project/gsplat/pull/117).  The flag is transmitted via `scene.z` of the per-frame UBO (`PackedGaussianViewParams`), so toggling it costs nothing more than a 4-byte UBO update per frame.
+This mirrors [gsplat PR #117](https://github.com/nerfstudio-project/gsplat/pull/117).  The flag is transmitted via `scene.z` of the per-frame UBO (`GaussianViewParams`), so toggling it costs nothing more than a 4-byte UBO update per frame.
 
 ### Data Packing (`GaussianComputeDataPacking`)
-- `PackGaussianViewParams`: packs view/projection matrices + scene scalars into the 208-byte
-  `PackedGaussianViewParams` UBO. Called every frame; no heap allocation.
+- `PackGaussianViewParams`: packs view/projection matrices + scene scalars into the 288-byte
+  `GaussianViewParams` UBO. Called every frame; no heap allocation.
 - `PackGaussianSceneAttributes`: packs per-splat geometry into compressed GPU layouts.
   Called only when the scene changes.
-- `PackedGaussianViewParams` (std140 UBO, binding 0): matrices, viewport, scene params.
+- `GaussianViewParams` (std140 UBO, binding 0): matrices, viewport, scene params.
   `scene.z` = antialias flag (0 = off, 1 = density-compensation on).
+  `limits.x` = tile-entry capacity actually allocated for the frame.
+  `limits.y` = `RenderConfig::max_tiles_per_splat`.
+  `limits.z` = `RenderConfig::max_tile_entries_total`.
   `depth_range_and_flags.w` = scene depth flag used by composite (0.0 = no, 1.0 = yes).
-- `PackedProjectedGaussian`: 48-byte per-splat descriptor (output of projection pass)
-- `PackedTileEntry`: 16-byte per tile-entry sort record (depth_key, splat_index, stable_index,
+- `ProjectedGaussian`: 48-byte per-splat descriptor (output of projection pass)
+- `TileEntry`: 16-byte per tile-entry sort record (depth_key, splat_index, stable_index,
   tile_index stored in the `reserved` field for radix keygen)
+
+### Runtime Capacity Limits And Error Flags
+
+`RenderConfig` now exposes two runtime safety knobs used by both CPU allocation
+and GPU-side clamping:
+
+- `max_tiles_per_splat` — per-splat budgeting term used to estimate the tile-entry buffer size.
+- `max_tile_entries_total` — hard ceiling for total tile entries, sort keys, and sort values.
+
+The packed `GaussianViewParams.limits` block carries those values to the shaders so
+all stages use the same capacity value.
+
+`counters_buf` is also used as a compact GPU→CPU diagnostics channel:
+
+| Index | Meaning |
+|---|---|
+| `0` | Raw total tile entries written by prefix-sum |
+| `1` | Error bitmask |
+| `2` | Tile count |
+| `3` | Splat count |
+
+Current error bits:
+
+- Bit 0: tile-entry overflow in `gaussian_scatter.comp`; excess entries are dropped.
+- Bit 1: dispatch/sort count clamped in `gaussian_compute_dispatch_args.comp` because raw total entries exceeded the configured capacity.
+
+The pass runner downloads this small bitmask after GPU work completes and logs each
+warning once per view. This keeps the steady-state path cheap while still surfacing
+capacity-related rendering degradation to users.
 
 **Per-splat input SSBO formats** (consumed by `gaussian_project.comp`):
 
@@ -386,7 +471,7 @@ which is why those are the chosen backends.
 | 1 | `gaussian_prefix_sum.comp` | Tile prefix sum, counter write |
 | 2 | `gaussian_scatter.comp` | Tile-entry scatter |
 | 3 | `gaussian_composite.comp` | Depth-aware compositing |
-| 4 | `gaussian_radix_sort_keygen.comp` | Keygen: `(tile_id<<16)|(depth>>16)` |
+| 4 | `gaussian_radix_sort_keygen.comp` | Keygen: `(tile_id<<D)|((depth<<1)>>T)`, T from `limits.w` |
 | 5 | `gaussian_radix_sort_histograms.comp` | Radix histogram |
 | 6 | `gaussian_radix_sort.comp` | Radix scatter |
 | 7 | `gaussian_radix_sort_payload.comp` | Payload rearrangement |
@@ -426,5 +511,5 @@ which is why those are the chosen backends.
 | MSAA disabled for GS views | Required by Filament with sampleable depth attachments |
 | Vulkan SPIR-V in OpenGL | Works with subgroup ops where OpenGL SPIR-V target fails |
 | Binding 14 reuse | Safe because radix UBO and scene depth sampler are used in disjoint stages |
-| Sort key 16/16 split | Supports up to 65535 tiles while preserving usable depth ordering |
+| Dynamic sort key split (T/D) | Adapts tile/depth bit allocation to actual tile count; sign-bit stripping recovers one free depth bit; 1080p gets 19 depth bits vs 16 previously |
 | Pre-destroy invalidation on resize | Prevents Filament handle use-after-free during maximize/resize |

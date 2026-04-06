@@ -10,6 +10,8 @@
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
+#define GS_ERROR_TILE_ENTRY_OVERFLOW (1u << 0)
+
 // 48-byte projected splat descriptor (matches gaussian_project output).
 struct ProjectedGaussian {
 	vec4 center_depth_alpha;
@@ -35,6 +37,7 @@ layout(std140, binding = 0) uniform GaussianViewParams {
 	vec4 viewport_origin_and_size;
 	uvec4 scene;
 	uvec4 tiles;
+	uvec4 limits;
 	vec4 depth_range_and_flags;
 } view_params;
 
@@ -48,6 +51,10 @@ layout(std430, binding = 8) readonly buffer TileOffsets {
 
 layout(std430, binding = 9) buffer TileWriteHeads {
 	uint tile_write_heads[];
+};
+
+layout(std430, binding = 10) buffer GaussianGlobalCounters {
+	uint global_counters[];
 };
 
 layout(std430, binding = 11) buffer TileEntries {
@@ -75,6 +82,10 @@ uvec2 UnpackTileCoord(uint packed) {
 	return uvec2(packed & 0xFFFFu, packed >> 16u);
 }
 
+uint GetEntryCapacity() {
+	return view_params.limits.x;
+}
+
 void ScatterGaussian(uint splat_index) {
 	if (projected[splat_index].tile_count_overlap == 0u) {
 		return;
@@ -88,6 +99,10 @@ void ScatterGaussian(uint splat_index) {
 		for (uint tile_x = tile_min.x; tile_x <= tile_max.x; ++tile_x) {
 			uint tile_index = LinearTileIndex(uvec2(tile_x, tile_y));
 			uint write_index = atomicAdd(tile_write_heads[tile_index], 1u);
+			if (write_index >= GetEntryCapacity()) {
+				atomicOr(global_counters[1], GS_ERROR_TILE_ENTRY_OVERFLOW);
+				continue;
+			}
 			tile_entries[write_index].depth_key = depth_key;
 			tile_entries[write_index].splat_index = splat_index;
 			tile_entries[write_index].stable_index = splat_index;

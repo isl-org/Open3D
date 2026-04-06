@@ -84,29 +84,42 @@ void DestroyGLComputeProgram(GLComputeProgram& program);
 /// Create a GL buffer (for SSBO or UBO use) with GL_DYNAMIC_DRAW usage.
 /// Intended for buffers that are uploaded from CPU and consumed by GPU.
 /// If initial_data is non-null, the buffer is initialized with it.
-GLBufferHandle CreateGLBuffer(std::size_t size, const void* initial_data);
+GLBufferHandle CreateGLBuffer(std::size_t size,
+                              const void* initial_data,
+                              const char* label = nullptr);
 
 /// Create a GPU-private GL buffer with GL_DYNAMIC_COPY usage.
 /// Intended for GPU-to-GPU intermediate buffers (written by compute,
 /// read by subsequent compute).  On discrete GPUs this biases placement
 /// toward GPU-local VRAM.
-GLBufferHandle CreateGLPrivateBuffer(std::size_t size);
+GLBufferHandle CreateGLPrivateBuffer(std::size_t size,
+                                     const char* label = nullptr);
 
 /// Resize a GL buffer (GL_DYNAMIC_DRAW). If already large enough, no-op.
 /// Otherwise creates a new buffer (old data is NOT preserved).
 /// Returns the (possibly new) buffer handle.
-GLBufferHandle ResizeGLBuffer(GLBufferHandle buffer, std::size_t new_size);
+GLBufferHandle ResizeGLBuffer(GLBufferHandle buffer,
+                              std::size_t new_size,
+                              const char* label = nullptr);
 
 /// Resize a GPU-private GL buffer (GL_DYNAMIC_COPY). If already large
 /// enough, no-op.  Otherwise creates a new private buffer.
 GLBufferHandle ResizeGLPrivateBuffer(GLBufferHandle buffer,
-                                     std::size_t new_size);
+                                     std::size_t new_size,
+                                     const char* label = nullptr);
 
 /// Upload data to a region of a buffer.
 void UploadGLBuffer(const GLBufferHandle& buffer,
                     const void* data,
                     std::size_t size,
                     std::size_t offset);
+
+/// Download data from a region of a buffer into CPU memory.
+/// Returns true on success.
+bool DownloadGLBuffer(const GLBufferHandle& buffer,
+                     void* dst,
+                     std::size_t size,
+                     std::size_t offset);
 
 /// Fill a buffer with zeros.
 void ClearGLBuffer(const GLBufferHandle& buffer);
@@ -120,14 +133,16 @@ void DestroyGLBuffer(GLBufferHandle& buffer);
 /// format: GL_RGBA16F, GL_R32F, etc.
 GLTextureHandle CreateGLTexture2D(std::uint32_t width,
                                   std::uint32_t height,
-                                  std::uint32_t format);
+                                  std::uint32_t format,
+                                  const char* label = nullptr);
 
-/// Resize a texture. If dimensions match, does nothing.
+/// Resize a texture. If dimensions match, does nothing (re-applies label).
 /// Otherwise destroys and recreates (old data is NOT preserved).
 GLTextureHandle ResizeGLTexture2D(GLTextureHandle texture,
                                   std::uint32_t width,
                                   std::uint32_t height,
-                                  std::uint32_t format);
+                                  std::uint32_t format,
+                                  const char* label = nullptr);
 
 /// Destroy a texture.
 void DestroyGLTexture(GLTextureHandle& texture);

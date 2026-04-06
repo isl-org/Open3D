@@ -50,6 +50,7 @@ layout(std140, binding = 0) uniform GaussianViewParams {
 	vec4 viewport_origin_and_size;
 	uvec4 scene;
 	uvec4 tiles;
+	uvec4 limits;
 	vec4 depth_range_and_flags;
 } view_params;
 
@@ -96,7 +97,6 @@ uint LinearTileIndex(uvec2 tile) {
 	return tile.y * tile_count.x + tile.x;
 }
 
-// 'packed' is a reserved GLSL keyword; use 'rgba8' as the parameter name.
 vec3 UnpackColorRGBA8(uint rgba8) {
 	return vec3(float(rgba8 & 0xFFu),
 				float((rgba8 >> 8u) & 0xFFu),
@@ -134,8 +134,11 @@ void main() {
 	// Broadcast from thread 0 so every thread in the workgroup iterates
 	// the same number of batches (required for uniform barrier() calls).
 	if (local_index == 0u) {
-		wg_tile_count = tile_counts[tile_index];
-		wg_tile_offset = tile_offsets[tile_index];
+		uint entry_capacity = view_params.limits.x;
+		uint tile_offset = min(tile_offsets[tile_index], entry_capacity);
+		uint available = entry_capacity - tile_offset;
+		wg_tile_offset = tile_offset;
+		wg_tile_count = min(tile_counts[tile_index], available);
 	}
 	barrier();
 

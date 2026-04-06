@@ -168,14 +168,16 @@ public:
         return true;
     }
 
-    std::uintptr_t CreateBuffer(std::size_t size) override {
-        return AllocGLBuffer(size, /*priv=*/false);
+    std::uintptr_t CreateBuffer(std::size_t size,
+                                const char* label = nullptr) override {
+        return AllocGLBuffer(size, /*priv=*/false, label);
     }
 
     /// GPU-private buffer: GL_DYNAMIC_COPY biases placement toward GPU-local
     /// VRAM on discrete GPUs.
-    std::uintptr_t CreatePrivateBuffer(std::size_t size) override {
-        return AllocGLBuffer(size, /*priv=*/true);
+    std::uintptr_t CreatePrivateBuffer(std::size_t size,
+                                       const char* label = nullptr) override {
+        return AllocGLBuffer(size, /*priv=*/true, label);
     }
 
     void DestroyBuffer(std::uintptr_t buf) override {
@@ -188,12 +190,14 @@ public:
     }
 
     std::uintptr_t ResizeBuffer(std::uintptr_t buf,
-                                std::size_t new_size) override {
+                                std::size_t new_size,
+                                const char* label = nullptr) override {
         if (buf == 0) {
-            return CreateBuffer(new_size);
+            return CreateBuffer(new_size, label);
         }
         GLBufferHandle nh =
-                ResizeGLBuffer(ToGLBuffer(buf, buffer_sizes_), new_size);
+                ResizeGLBuffer(ToGLBuffer(buf, buffer_sizes_), new_size,
+                               label);
         buffer_sizes_.erase(buf);
         if (!nh.valid) {
             return 0;
@@ -204,13 +208,15 @@ public:
     }
 
     std::uintptr_t ResizePrivateBuffer(std::uintptr_t buf,
-                                       std::size_t new_size) override {
+                                       std::size_t new_size,
+                                       const char* label = nullptr) override {
         if (new_size == 0) {
             DestroyBuffer(buf);
             return 0;
         }
         GLBufferHandle nh =
-                ResizeGLPrivateBuffer(ToGLBuffer(buf, buffer_sizes_), new_size);
+                ResizeGLPrivateBuffer(ToGLBuffer(buf, buffer_sizes_), new_size,
+                                      label);
         buffer_sizes_.erase(buf);
         if (!nh.valid) {
             return 0;
@@ -225,6 +231,14 @@ public:
                       std::size_t size,
                       std::size_t offset) override {
         UploadGLBuffer(ToGLBuffer(buf, buffer_sizes_), data, size, offset);
+    }
+
+    bool DownloadBuffer(std::uintptr_t buf,
+                        void* dst,
+                        std::size_t size,
+                        std::size_t offset) override {
+        return DownloadGLBuffer(ToGLBuffer(buf, buffer_sizes_), dst, size,
+                                offset);
     }
 
     void ClearBufferUInt32Zero(std::uintptr_t buf) override {
@@ -285,8 +299,9 @@ public:
     }
 
     std::uintptr_t CreateTexture2DR32F(std::uint32_t width,
-                                       std::uint32_t height) override {
-        GLTextureHandle t = CreateGLTexture2D(width, height, kGL_R32F);
+                                       std::uint32_t height,
+                                       const char* label = nullptr) override {
+        GLTextureHandle t = CreateGLTexture2D(width, height, kGL_R32F, label);
         if (!t.valid) {
             return 0;
         }
@@ -306,12 +321,13 @@ public:
 
     std::uintptr_t ResizeTexture2DR32F(std::uintptr_t tex,
                                        std::uint32_t width,
-                                       std::uint32_t height) override {
+                                       std::uint32_t height,
+                                       const char* label = nullptr) override {
         if (tex == 0) {
-            return CreateTexture2DR32F(width, height);
+            return CreateTexture2DR32F(width, height, label);
         }
         GLTextureHandle nh = ResizeGLTexture2D(ToGLTexture(tex, texture_sizes_),
-                                               width, height, kGL_R32F);
+                                               width, height, kGL_R32F, label);
         texture_sizes_.erase(tex);
         if (!nh.valid) {
             return 0;
@@ -357,9 +373,11 @@ public:
     }
 
 private:
-    std::uintptr_t AllocGLBuffer(std::size_t size, bool priv) {
-        GLBufferHandle h = priv ? CreateGLPrivateBuffer(size)
-                                : CreateGLBuffer(size, nullptr);
+    std::uintptr_t AllocGLBuffer(std::size_t size,
+                                 bool priv,
+                                 const char* label) {
+        GLBufferHandle h = priv ? CreateGLPrivateBuffer(size, label)
+                                : CreateGLBuffer(size, nullptr, label);
         if (!h.valid) {
             return 0;
         }
