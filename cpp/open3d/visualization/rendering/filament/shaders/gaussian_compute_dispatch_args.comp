@@ -20,7 +20,7 @@
 // Constants must match the C++ kRadixWorkgroupSize / kRadixTargetBlocksPerWG
 // in GaussianComputeRenderer.cpp.
 
-#version 450
+#version 460
 
 layout(local_size_x = 1) in;
 
@@ -48,10 +48,13 @@ layout(std140, binding = 0) uniform GaussianViewParams {
     vec4 depth_range_and_flags;
 } view_params;
 
-// counters_buf (binding 10): [0] = raw total_entries, [1] = error flags.
+// counters_buf (binding 10): matches GaussianGpuCounters in GaussianComputeDataPacking.h.
 layout(std430, binding = 10) buffer GaussianGlobalCounters {
-    uint g_counters[];
-};
+    uint total_entries;  // raw total tile entries written by prefix-sum
+    uint error_flags;    // GPU error bitmask (GS_ERROR_*)
+    uint tile_count;     // total tile count for the frame
+    uint splat_count;    // visible splat count for the frame
+} gs_counters;
 
 // dispatch_args_buf (binding 11): 10 indirect dispatch commands.
 // Written as flat uint32 array (3 uints per command = 12 bytes) so that
@@ -92,11 +95,11 @@ void WriteRadixParams(uint pass_index,
 void main() {
     // Avoid .length() — it requires spvBufferSizeConstants on Metal, which we
     // do not bind.  The counters buffer always has at least 1 entry.
-    uint total_entries = g_counters[0];
+    uint total_entries = gs_counters.total_entries;
     uint entry_capacity = view_params.limits.x;
     uint bounded_entries = min(total_entries, entry_capacity);
     if (bounded_entries != total_entries) {
-        g_counters[1] |= GS_ERROR_SORT_COUNT_CLAMPED;
+        gs_counters.error_flags |= GS_ERROR_SORT_COUNT_CLAMPED;
     }
 
     // Compute radix sort work distribution (mirrors C++ logic exactly).

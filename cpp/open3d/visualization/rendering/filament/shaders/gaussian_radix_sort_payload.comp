@@ -4,7 +4,7 @@
 // the sorted index array to rearrange the full TileEntry structs from
 // the source buffer into sorted order in the destination buffer.
 
-#version 450
+#version 460
 
 #define WORKGROUP_SIZE 256
 
@@ -21,7 +21,7 @@ struct TileEntry {
 	uint depth_key;
 	uint splat_index;
 	uint stable_index;
-	uint reserved;
+	uint tile_index;
 };
 
 layout(std430, binding = 0) readonly buffer SortedIndices {

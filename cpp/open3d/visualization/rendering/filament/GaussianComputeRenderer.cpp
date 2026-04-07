@@ -299,6 +299,17 @@ std::vector<GaussianComputeRenderer::PassDefinition> CreateDefaultPasses() {
     };
 }
 
+bool HasCompositeOutputTextures(
+        const GaussianComputeRenderer::OutputTargets& targets) {
+#if defined(__APPLE__)
+    return targets.scene_depth_mtl_texture != 0 &&
+           targets.gs_color_mtl_texture != 0;
+#else
+    return targets.scene_depth_gl_handle != 0 &&
+           targets.color_gl_handle != 0;
+#endif
+}
+
 int CeilDiv(int value, int divisor) { return (value + divisor - 1) / divisor; }
 
 bool GaussianComputeBackendSupported(RenderingType backend) {
@@ -468,6 +479,10 @@ void GaussianComputeRenderer::RenderCompositeStage(FilamentView& view) {
     }
 
     auto& targets = it->second;
+    if (targets.width == 0 || targets.height == 0 ||
+        !HasCompositeOutputTextures(targets)) {
+        return;
+    }
 
     bool rendered = false;
     if (backend_ && targets.has_render_data) {
@@ -657,12 +672,17 @@ const char* GaussianComputeRenderer::GetBackendName() const {
 GaussianComputeRenderer::OutputTargets&
 GaussianComputeRenderer::PrepareOutputTargets(FilamentView& view) {
     auto viewport = view.GetViewport();
+    auto& targets = outputs_[&view];
+    if (viewport[2] <= 0 || viewport[3] <= 0) {
+        ResetOutputTargets(targets);
+        return targets;
+    }
+
     auto width = static_cast<std::uint32_t>(viewport[2]);
     auto height = static_cast<std::uint32_t>(viewport[3]);
-
-    auto& targets = outputs_[&view];
     if (targets.width == width && targets.height == height && targets.color &&
-        targets.depth && targets.render_target) {
+        targets.depth && targets.render_target &&
+        HasCompositeOutputTextures(targets)) {
         return targets;
     }
 
@@ -881,11 +901,13 @@ void GaussianComputeRenderer::ValidatePassShaderSources() const {
 
 bool GaussianComputeRenderer::ValidateRenderConfig(
         const RenderConfig& config) const {
+    static constexpr int kMaxSupportedShDegree = 2;
     return config.tile_size.x() > 0 && config.tile_size.y() > 0 &&
            config.projection_group_size > 0 &&
            config.prefix_sum_group_size > 0 && config.scatter_group_size > 0 &&
            config.sort_group_size > 0 && config.composite_group_size.x() > 0 &&
            config.composite_group_size.y() > 0 && config.max_sh_degree >= 0 &&
+           config.max_sh_degree <= kMaxSupportedShDegree &&
            config.max_tiles_per_splat > 0 &&
            config.max_tile_entries_total > 0;
 }

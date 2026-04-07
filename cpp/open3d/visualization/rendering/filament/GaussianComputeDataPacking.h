@@ -76,25 +76,36 @@ static_assert(sizeof(ProjectedGaussian) == 48,
 
 /// Matches TileEntry struct in the shaders (4 × uint = 16 bytes).
 /// Named to match the GLSL struct: `struct TileEntry` in scatter/sort/composite.
+/// stable_index mirrors splat_index; reserved for future stable-sort support
+/// (see depth_range_and_flags.z / RenderConfig::stable_sort).
 struct TileEntry {
     std::uint32_t depth_key;
     std::uint32_t splat_index;
-    std::uint32_t stable_index;
-    std::uint32_t reserved;
+    std::uint32_t stable_index;  ///< Currently == splat_index; unused until stable-sort is active.
+    std::uint32_t tile_index;    ///< Linear tile index; written by scatter, read by keygen.
 };
 static_assert(sizeof(TileEntry) == 16,
               "TileEntry must be 16 bytes to match GLSL layout");
 
-/// Global counters shared across prefix-sum, dispatch-args, and diagnostics.
-/// [0] = total tile entries before clamping
-/// [1] = GPU error flags bitmask
-/// [2] = tile_count
-/// [3] = splat_count
-static constexpr std::size_t kGaussianCounterCount = 4;
+/// Global counters written GPU-side (prefix-sum, scatter, dispatch-args) and
+/// read CPU-side for diagnostics and error reporting.  Layout matches the
+/// GaussianGlobalCounters SSBO block in the compute shaders (std430, binding 10).
+struct GaussianGpuCounters {
+    std::uint32_t total_entries = 0;  ///< Raw total tile entries from prefix-sum.
+    std::uint32_t error_flags   = 0;  ///< GPU error bitmask (kGaussianGpuError*).
+    std::uint32_t tile_count    = 0;  ///< Total tile count for the frame.
+    std::uint32_t splat_count   = 0;  ///< Visible splat count for the frame.
+};
+static_assert(sizeof(GaussianGpuCounters) == 4 * sizeof(std::uint32_t),
+              "GaussianGpuCounters must be 16 bytes");
+static constexpr std::size_t kGaussianCounterCount =
+        sizeof(GaussianGpuCounters) / sizeof(std::uint32_t);  // 4
+
+// Keep index constants for any code that accesses the buffer as a raw uint array.
 static constexpr std::size_t kGaussianCounterTotalEntriesIndex = 0;
-static constexpr std::size_t kGaussianCounterErrorFlagsIndex = 1;
-static constexpr std::size_t kGaussianCounterTileCountIndex = 2;
-static constexpr std::size_t kGaussianCounterSplatCountIndex = 3;
+static constexpr std::size_t kGaussianCounterErrorFlagsIndex   = 1;
+static constexpr std::size_t kGaussianCounterTileCountIndex    = 2;
+static constexpr std::size_t kGaussianCounterSplatCountIndex   = 3;
 
 inline constexpr std::uint32_t kGaussianGpuErrorTileEntryOverflow = 1u << 0;
 inline constexpr std::uint32_t kGaussianGpuErrorSortCountClamped = 1u << 1;

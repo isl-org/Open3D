@@ -12,12 +12,11 @@
 //
 // Opt2: Parallel prefix sum replaces thread-0-only sequential scan.
 // Opt4: Updated ProjectedGaussian struct (48 bytes).
-// Opt8: 2-level subgroup prefix sum replaced by thread-0 scan over
-//       shared_partial[] to avoid GL_KHR_shader_subgroup_arithmetic,
-//       which is miscompiled by some Windows OpenGL drivers.
-//       See gaussian_prefix_sum_subgroup.comp for the original.
+// Opt8: 2-level subgroup prefix sum replaces serial thread-0 scan.
 
 #version 460
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_basic      : enable
 
 #define WORKGROUP_SIZE 256
 
@@ -91,9 +90,12 @@ uvec2 UnpackTileCoord(uint pkd_tile_coord) {
 }
 
 // Shared memory for the blocked prefix sum (Phase 2).
-// shared_partial[256]: each thread stores its chunk's local sum, then thread 0
-// overwrites it with the exclusive prefix for that thread's chunk.
+// shared_partial[256]: each thread stores its chunk's local sum.
+// sg_totals[WORKGROUP_SIZE]: worst-case one entry per invocation if a driver
+// reports subgroup size 1. In practice only the first gl_NumSubgroups entries
+// are used.
 shared uint shared_partial[WORKGROUP_SIZE];
+shared uint sg_totals[WORKGROUP_SIZE];
 shared uint shared_total;
 
 void main() {
@@ -102,6 +104,8 @@ void main() {
 	uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 	uint tile_count = GetTileCount1D();
 	uint splat_count = GetSplatCount();
+	uint num_subgroups = min(gl_NumSubgroups,
+		(gl_WorkGroupSize.x + gl_SubgroupSize - 1u) / gl_SubgroupSize);
 
 	// Phase 0 (all threads): zero tile counts in parallel.
 	for (uint t = global_index; t < tile_count; t += total_invocations) {
@@ -152,23 +156,35 @@ void main() {
 	shared_partial[local_index] = local_sum;
 	barrier();
 
-	// Step 2b: Thread 0 does an exclusive prefix scan over all WORKGROUP_SIZE
-	// partial sums, overwriting shared_partial[] with the exclusive prefix for
-	// each thread's chunk.  Also computes shared_total = sum of all chunks.
+	// Step 2b: 2-level subgroup reduction of the workgroup partial sums.
+	//
+	// Level 1: each subgroup sums the partial values contributed by its lanes.
+	//          The elected lane writes that subgroup total to sg_totals[].
+	uint sg_local_sum = subgroupAdd(shared_partial[local_index]);
+	if (subgroupElect()) {
+		sg_totals[gl_SubgroupID] = sg_local_sum;
+	}
+	barrier();
+
+	// Level 2: thread 0 does an exclusive scan over the runtime subgroup totals.
 	if (local_index == 0u) {
 		uint running = 0u;
-		for (uint i = 0u; i < WORKGROUP_SIZE; ++i) {
-			uint val = shared_partial[i];
-			shared_partial[i] = running;
+		for (uint i = 0u; i < num_subgroups; ++i) {
+			uint val = sg_totals[i];
+			sg_totals[i] = running;
 			running += val;
 		}
 		shared_total = running;
 	}
 	barrier();
 
-	// Step 2c: each thread reads its exclusive prefix directly from
-	// shared_partial[], which thread 0 has overwritten with prefix values.
-	uint prefix = shared_partial[local_index];
+	// Step 2c: each thread computes its final prefix as:
+	//   (subgroup-level exclusive prefix) + (within-SIMD exclusive prefix)
+	// The within-subgroup exclusive prefix is computed via subgroupExclusiveAdd
+	// over shared_partial[].
+	uint sg_prefix         = sg_totals[gl_SubgroupID];
+	uint within_sg_prefix  = subgroupExclusiveAdd(shared_partial[local_index]);
+	uint prefix = sg_prefix + within_sg_prefix;
 	for (uint t = chunk_start; t < chunk_end; ++t) {
 		tile_offsets[t] += prefix;
 		tile_write_heads[t] = tile_offsets[t];

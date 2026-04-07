@@ -10,8 +10,10 @@
 
 #if !defined(__APPLE__)
 
+#include <cstdlib>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 // GLEW for GL extension flags (GLEW_ARB_gl_spirv etc.) and glewGetString.
@@ -70,6 +72,138 @@ GLTextureHandle ToGLTexture(
 
 }  // namespace
 
+// ---------------------------------------------------------------------------
+// Shader load policy
+// ---------------------------------------------------------------------------
+
+/// Which shader variant + loader to use for each program.
+/// Controlled by platform defaults, overridable via env vars:
+///   OPEN3D_SHADER_SUBGROUPS=0|1   — 0: no-subgroup variant (safe everywhere)
+///                                    1: _subgroup variant (faster on good drivers)
+///   OPEN3D_SHADER_PRECOMPILED=0|1 — 0: online GLSL compilation
+///                                    1: SPIR-V binary
+///
+/// Platform defaults:
+///   Windows → subgroups=off, precompiled=off  (Intel/AMD WGL GL driver issues)
+///   Linux/macOS → subgroups=on, precompiled=on
+struct ShaderLoadPolicy {
+    bool use_subgroups;   // true: load gaussian_*_subgroup.{spv,comp}
+    bool use_precompiled; // true: prefer .spv; false: online GLSL only
+};
+
+/// Shader base names that have a _subgroup variant.
+/// All other shaders are unaffected by use_subgroups.
+static const std::unordered_set<std::string> kSubgroupCapableShaders = {
+        "gaussian_prefix_sum",
+        "gaussian_radix_sort",
+};
+
+/// Read an optional boolean env var.  Returns the default if unset or invalid.
+static bool ReadBoolEnv(const char* name, bool default_val) {
+    const char* val = std::getenv(name);
+    if (val == nullptr) return default_val;
+    if (val[0] == '1' && val[1] == '\0') return true;
+    if (val[0] == '0' && val[1] == '\0') return false;
+    utility::LogWarning(
+            "GaussianCompute: env var {} has unexpected value '{}'; "
+            "expected 0 or 1. Using default ({}).",
+            name, val, default_val ? 1 : 0);
+    return default_val;
+}
+
+/// Determine the shader load policy from platform defaults and env var overrides.
+static ShaderLoadPolicy GetShaderLoadPolicy() {
+#if defined(_WIN32)
+    // Windows OpenGL drivers (especially Intel/AMD) miscompile subgroup
+    // arithmetic both via SPIR-V (GL_ARB_gl_spirv) and online GLSL.
+    // Safe default: no subgroups + online GLSL compilation.
+    bool default_subgroups   = false;
+    bool default_precompiled = false;
+#else
+    // Linux and macOS (via XWayland/GLX or Metal transpilation) handle
+    // subgroup intrinsics and SPIR-V loading correctly.
+    bool default_subgroups   = true;
+    bool default_precompiled = true;
+#endif
+
+    bool use_subgroups   = ReadBoolEnv("OPEN3D_SHADER_SUBGROUPS",   default_subgroups);
+    bool use_precompiled = ReadBoolEnv("OPEN3D_SHADER_PRECOMPILED",  default_precompiled);
+
+    const char* sg_source  = (std::getenv("OPEN3D_SHADER_SUBGROUPS")   != nullptr)
+                                     ? "env OPEN3D_SHADER_SUBGROUPS"   : "platform default";
+    const char* pre_source = (std::getenv("OPEN3D_SHADER_PRECOMPILED") != nullptr)
+                                     ? "env OPEN3D_SHADER_PRECOMPILED" : "platform default";
+
+    utility::LogInfo(
+            "GaussianCompute: shader policy: subgroups={} ({}), "
+            "precompiled={} ({}).",
+            use_subgroups ? "on" : "off", sg_source,
+            use_precompiled ? "on" : "off", pre_source);
+
+    return {use_subgroups, use_precompiled};
+}
+
+/// Load one shader program according to policy.
+/// Returns true on success; logs warnings on failure.
+/// base      = canonical name, e.g. "gaussian_prefix_sum"
+/// shader_root = filesystem directory (with trailing slash)
+static bool LoadOneProgram(GLComputeProgram& out,
+                           const std::string& base,
+                           const std::string& shader_root,
+                           const ShaderLoadPolicy& policy) {
+    // Choose the file base name: _subgroup variant if policy requests it and
+    // the shader has one; otherwise the standard name.
+    std::string file_base = base;
+    if (policy.use_subgroups && kSubgroupCapableShaders.count(base)) {
+        file_base = base + "_subgroup";
+    }
+
+    const std::string path     = shader_root + file_base;
+    const std::string spv_name = file_base + ".spv";
+    const std::string comp_name= file_base + ".comp";
+
+    // --- SPIR-V path (skipped when precompiled=off) ---
+    if (policy.use_precompiled) {
+        std::vector<char> bytes;
+        std::string error;
+        if (utility::filesystem::FReadToBuffer(path + ".spv", bytes, &error)) {
+            std::vector<std::uint8_t> spirv(bytes.begin(), bytes.end());
+            out = LoadGLComputeProgramSPIRV(spirv, spv_name.c_str());
+            if (out.valid) {
+                utility::LogDebug("GaussianCompute: loaded {} via SPIR-V",
+                                  spv_name);
+                return true;
+            }
+        }
+        utility::LogWarning(
+                "GaussianCompute: SPIR-V path failed for {} — "
+                "falling back to GLSL source compilation.",
+                spv_name);
+    }
+
+    // --- Online GLSL path ---
+    {
+        std::vector<char> bytes;
+        std::string error;
+        if (!utility::filesystem::FReadToBuffer(path + ".comp", bytes, &error)) {
+            utility::LogWarning(
+                    "GaussianCompute: GLSL source not found: {}.comp",
+                    path);
+            return false;
+        }
+        std::string glsl_source(bytes.begin(), bytes.end());
+        out = LoadGLComputeProgramGLSL(glsl_source, comp_name.c_str());
+        if (out.valid) {
+            utility::LogInfo("GaussianCompute: loaded {} via online GLSL.",
+                             comp_name);
+            return true;
+        }
+        utility::LogWarning(
+                "GaussianCompute: GLSL compilation failed for {}.", comp_name);
+        return false;
+    }
+}
+
 class GaussianComputeGpuContextOpenGL final : public GaussianComputeGpuContext {
 public:
     GaussianComputeGpuContextOpenGL() = default;
@@ -104,68 +238,44 @@ public:
 
         const std::string shader_root =
                 EngineInstance::GetResourcePath() + "/gaussian_compute/";
-        for (int i = 0; i < static_cast<int>(ComputeProgramId::kCount); ++i) {
-            const std::string base = shader_root + kGsShaderNames[i];
-            const std::string spv_name =
-                    std::string(kGsShaderNames[i]) + ".spv";
-            const std::string comp_name =
-                    std::string(kGsShaderNames[i]) + ".comp";
 
-            // --- Primary path: SPIR-V binary ---
-            std::vector<std::uint8_t> spirv;
-            {
-                std::vector<char> bytes;
-                std::string error;
-                if (utility::filesystem::FReadToBuffer(base + ".spv", bytes,
-                                                       &error)) {
-                    spirv.assign(bytes.begin(), bytes.end());
-                    programs_[i] =
-                            LoadGLComputeProgramSPIRV(spirv, spv_name.c_str());
+        ShaderLoadPolicy policy = GetShaderLoadPolicy();
+
+        // Attempt to load all shaders under the primary policy.
+        // On failure, retry once with the safe fallback policy
+        // (no subgroups + online GLSL), which works on all known GPUs.
+        for (int attempt = 0; attempt < 2; ++attempt) {
+            bool all_ok = true;
+            for (int i = 0; i < static_cast<int>(ComputeProgramId::kCount);
+                 ++i) {
+                CleanupProgram(programs_[i]);
+                if (!LoadOneProgram(programs_[i], kGsShaderNames[i],
+                                    shader_root, policy)) {
+                    all_ok = false;
+                    break;
                 }
             }
-            if (programs_[i].valid) {
-                utility::LogDebug("GaussianCompute: loaded {} via SPIR-V",
-                                  spv_name);
-                continue;
+            if (all_ok) {
+                programs_valid_ = true;
+                return true;
             }
 
-            // --- Fallback path: runtime GLSL compilation ---
-            // Reached when the .spv file is missing, has an invalid magic,
-            // the driver lacks ARB_gl_spirv, or specialization fails.
-            utility::LogWarning(
-                    "GaussianCompute: SPIR-V path failed for {} — "
-                    "trying GLSL source compilation.",
-                    spv_name);
-
-            {
-                std::vector<char> bytes;
-                std::string error;
-                if (!utility::filesystem::FReadToBuffer(base + ".comp", bytes,
-                                                        &error)) {
-                    utility::LogWarning(
-                            "GaussianCompute: GLSL fallback source not found: "
-                            "{}",
-                            base + ".comp");
-                    return false;
-                }
-                std::string glsl_source(bytes.begin(), bytes.end());
-                programs_[i] = LoadGLComputeProgramGLSL(glsl_source,
-                                                        comp_name.c_str());
-            }
-            if (!programs_[i].valid) {
-                // Compile/link errors already logged by
-                // LoadGLComputeProgramGLSL.
+            if (attempt == 0) {
+                // Primary policy failed.  Clean up partial state and retry
+                // with the universally safe fallback.
+                for (auto& p : programs_) CleanupProgram(p);
                 utility::LogWarning(
-                        "GaussianCompute: GLSL compilation also failed for {}",
-                        comp_name);
-                return false;
+                        "GaussianCompute: primary shader policy failed. "
+                        "Retrying with safe fallback "
+                        "(subgroups=off, precompiled=off).");
+                policy = {/*use_subgroups=*/false,
+                          /*use_precompiled=*/false};
             }
-            utility::LogInfo("GaussianCompute: loaded {} via GLSL fallback.",
-                             comp_name);
         }
 
-        programs_valid_ = true;
-        return true;
+        utility::LogWarning(
+                "GaussianCompute: all shader load attempts failed.");
+        return false;
     }
 
     std::uintptr_t CreateBuffer(std::size_t size,
@@ -384,6 +494,10 @@ private:
         std::uintptr_t k = static_cast<std::uintptr_t>(h.id);
         buffer_sizes_[k] = h.size;
         return k;
+    }
+
+    void CleanupProgram(GLComputeProgram& p) {
+        DestroyGLComputeProgram(p);
     }
 
     void CleanupPrograms() {

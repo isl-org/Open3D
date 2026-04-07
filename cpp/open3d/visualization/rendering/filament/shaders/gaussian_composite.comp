@@ -21,7 +21,7 @@
 //       of splat data into shared memory, then all 256 threads evaluate from
 //       shared memory instead of 256 independent global reads.
 
-#version 450
+#version 460
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
@@ -39,7 +39,7 @@ struct TileEntry {
 	uint depth_key;
 	uint splat_index;
 	uint stable_index;
-	uint reserved;
+	uint tile_index;
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {

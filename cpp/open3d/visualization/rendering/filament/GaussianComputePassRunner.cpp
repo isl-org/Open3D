@@ -122,9 +122,9 @@ void LogTileEntries(const char* label,
                 const auto& entry = entries[index];
                 utility::LogInfo(
                                 "GS debug {}[{}]: depth_key=0x{:08X} splat={} stable={} "
-                                "reserved={}",
+                                "tile_index={}",
                                 label, index, entry.depth_key, entry.splat_index,
-                                entry.stable_index, entry.reserved);
+                                entry.stable_index, entry.tile_index);
         }
 }
 
@@ -152,10 +152,12 @@ void DumpGaussianSortDebugData(GaussianComputeGpuContext& ctx,
                 return;
         }
         utility::LogInfo(
-                        "GS debug counters: total_entries={} error_flags=0x{:08X} raw=[{}, {}, {}, {}]",
+                        "GS debug counters: total_entries={} error_flags=0x{:08X} "
+                        "tile_count={} splat_count={}",
                         counters[kGaussianCounterTotalEntriesIndex],
-                        counters[kGaussianCounterErrorFlagsIndex], counters[0],
-                        counters[1], counters[2], counters[3]);
+                        counters[kGaussianCounterErrorFlagsIndex],
+                        counters[kGaussianCounterTileCountIndex],
+                        counters[kGaussianCounterSplatCountIndex]);
 
         std::vector<std::uint32_t> dispatch_args;
         if (DownloadBufferVector(ctx, vs.dispatch_args_buf, 30u, 0,

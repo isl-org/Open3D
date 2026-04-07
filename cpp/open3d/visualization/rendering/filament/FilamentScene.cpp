@@ -74,6 +74,12 @@
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
 
+int GetGaussianSplatRestCoeffCount(int sh_degree) {
+    // Degree-0 (DC) lives in f_dc. f_rest stores only degrees 1..sh_degree,
+    // i.e. ((degree + 1)^2 - 1) basis functions across 3 color channels.
+    return (((sh_degree + 1) * (sh_degree + 1)) - 1) * 3;
+}
+
 static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
     free(buffer);
 }
@@ -428,11 +434,14 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
         f_rest_ptr = f_rest_attr.GetDataPtr<float>();
     }
 
-    // Determine desired SH degree: use material preference but not above
-    // cloud's order.
+    // Determine desired SH degree: clamp the source order by both the material
+    // preference and the renderer's configured maximum.
     int cloud_sh = cloud.GaussianSplatGetSHOrder();
     int desired_sh = std::min(cloud_sh, material.gaussian_splat_sh_degree);
-    desired_sh = std::min(desired_sh, 2);
+    if (auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_)) {
+        desired_sh =
+                std::min(desired_sh, renderer->GetGaussianComputeMaxShDegree());
+    }
     src->gaussian_splat_sh_degree = desired_sh;
     src->gaussian_splat_min_alpha = material.gaussian_splat_min_alpha;
     src->gaussian_splat_antialias = material.gaussian_splat_antialias;
@@ -458,14 +467,15 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
     src->dc_opacity.reserve(n * 4);
 
     // Number of SH rest coefficients per splat in the destination: capped to
-    // desired_sh.  Source stride uses cloud_sh (may be larger than desired_sh).
+    // desired_sh. Source stride uses cloud_sh (may be larger than desired_sh).
+    // Degree-0 (DC) coefficients live in f_dc, so f_rest starts at degree 1.
     int coeffs_per_splat = 0;
     int source_coeffs_per_splat = 0;
     if (has_f_rest && cloud_sh >= 1) {
-        source_coeffs_per_splat = cloud_sh * (cloud_sh + 2) * 3;
+        source_coeffs_per_splat = GetGaussianSplatRestCoeffCount(cloud_sh);
     }
     if (desired_sh >= 1 && has_f_rest) {
-        coeffs_per_splat = desired_sh * (desired_sh + 2) * 3;
+        coeffs_per_splat = GetGaussianSplatRestCoeffCount(desired_sh);
         src->sh_rest.reserve(n * coeffs_per_splat);
     }
 
@@ -520,9 +530,9 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
         }
 
         // SH coefficients: copy only up to coeffs_per_splat for this splat.
-        // source_coeffs_per_splat is the original stride in the cloud tensor
-        // (cloud_sh * (cloud_sh+2) * 3); coeffs_per_splat is the desired
-        // (possibly smaller) number to store (desired_sh * (desired_sh+2) * 3).
+        // source_coeffs_per_splat is the original stride in the cloud tensor.
+        // coeffs_per_splat is the desired (possibly smaller) rest-coefficient
+        // count after clamping the effective SH degree.
         if (coeffs_per_splat > 0 && f_rest_ptr) {
             const float* src_ptr = f_rest_ptr + i * source_coeffs_per_splat;
             for (int c = 0; c < coeffs_per_splat; ++c) {

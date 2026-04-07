@@ -12,7 +12,7 @@
 //       splat screen-space extent is unknown before covariance projection;
 //       per-tile bounding-box cull handles frustum clipping correctly.
 
-#version 450
+#version 460
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
@@ -78,6 +78,8 @@ uint GetSplatCount() {
 }
 
 uint GetShDegree() {
+	// view_params.scene.y already stores min(config.max_sh_degree,
+	// actual_degree) on the CPU; clamp again to the shader-supported maximum.
 	return min(view_params.scene.y, 2u);
 }
 

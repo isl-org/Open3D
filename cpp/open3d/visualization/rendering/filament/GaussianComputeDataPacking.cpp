@@ -28,6 +28,12 @@ void PackMat4(float* dst, const Eigen::Matrix4f& m) {
 
 int CeilDiv(int value, int divisor) { return (value + divisor - 1) / divisor; }
 
+int GetGaussianSplatRestCoeffCount(int sh_degree) {
+    // Degree-0 (DC) lives in dc_opacity. sh_rest stores only degrees
+    // 1..sh_degree, i.e. ((degree + 1)^2 - 1) basis functions per channel.
+    return (((sh_degree + 1) * (sh_degree + 1)) - 1) * 3;
+}
+
 // Convert one float32 to float16 bit pattern.  Typical 3DGS inputs (log-scales,
 // SH coefficients, DC/opacity) are well within the fp16 dynamic range.
 // Denormals are flushed to zero for simplicity.
@@ -132,9 +138,10 @@ PackedGaussianScene PackGaussianViewParams(
     vp.viewport_origin_and_size[2] = static_cast<float>(w);
     vp.viewport_origin_and_size[3] = static_cast<float>(h);
 
-    vp.scene[0] = n;
-    vp.scene[1] = static_cast<std::uint32_t>(
-            std::min(source.gaussian_splat_sh_degree, config.max_sh_degree));
+        const int effective_sh_degree =
+            std::min(source.gaussian_splat_sh_degree, config.max_sh_degree);
+        vp.scene[0] = n;
+        vp.scene[1] = static_cast<std::uint32_t>(effective_sh_degree);
     // Antialias: enabled if requested by the material (per-scene) or the
     // renderer-level RenderConfig override.
     vp.scene[2] =
@@ -227,14 +234,18 @@ void PackGaussianSceneAttributes(
     //   degree=2: 48 B/splat (6 uvec2; 24 coeffs, no padding needed)
     // Each uvec2 stores 4 fp16 values matching the old fp32 vec4 index so
     // the shader's LoadShVec4(splat, j) indexes identically.
-    const int sh_degree =
+    const int effective_sh_degree =
             std::min(source.gaussian_splat_sh_degree, config.max_sh_degree);
-    if (sh_degree == 0 || source.sh_rest.empty()) {
+    if (effective_sh_degree == 0 || source.sh_rest.empty()) {
         packed.sh_coefficients.clear();
     } else {
-        // sh_u32_per_splat = 3 * degree * 2  (3 uvec2 * 2 uint32)
-        const int sh_u32_per_splat = 3 * sh_degree * 2;
-        const int sh_coeffs_per_splat = sh_degree * (sh_degree + 2) * 3;
+        // Stride uses 3 * degree uvec2 values per splat, i.e. 6 * degree u32.
+        const int sh_u32_per_splat = 3 * effective_sh_degree * 2;
+        const int sh_coeffs_per_splat =
+                GetGaussianSplatRestCoeffCount(effective_sh_degree);
+        const int sh_coeff_capacity = sh_u32_per_splat * 2;
+        const int sh_coeffs_to_pack =
+                std::min(sh_coeffs_per_splat, sh_coeff_capacity);
         packed.sh_coefficients.assign(
                 static_cast<std::size_t>(sh_u32_per_splat) * n, 0u);
         for (std::uint32_t i = 0; i < n; ++i) {
@@ -242,13 +253,13 @@ void PackGaussianSceneAttributes(
             std::uint32_t* dst =
                     packed.sh_coefficients.data() + i * sh_u32_per_splat;
             // Pack consecutive pairs of fp32 SH coefficients as fp16.
-            const int pairs = sh_coeffs_per_splat / 2;
+            const int pairs = sh_coeffs_to_pack / 2;
             for (int p = 0; p < pairs; ++p) {
                 dst[p] = PackHalf2(src[p * 2 + 0], src[p * 2 + 1]);
             }
             // Degree-1 has 9 coefficients (odd count); store the trailing one.
-            if (sh_coeffs_per_splat & 1) {
-                dst[pairs] = PackHalf2(src[sh_coeffs_per_splat - 1], 0.0f);
+            if (sh_coeffs_to_pack & 1) {
+                dst[pairs] = PackHalf2(src[sh_coeffs_to_pack - 1], 0.0f);
             }
         }
     }

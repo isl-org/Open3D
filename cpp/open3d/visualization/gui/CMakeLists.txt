@@ -73,10 +73,14 @@ file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
 set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_project.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_prefix_sum.comp
+    # Subgroup variant: used on Linux/macOS where subgroup arithmetic is reliable.
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_prefix_sum_subgroup.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_scatter.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_composite.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_histograms.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort.comp
+    # Subgroup variant: used on Linux/macOS where subgroup arithmetic is reliable.
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_subgroup.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_keygen.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_payload.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_compute_dispatch_args.comp

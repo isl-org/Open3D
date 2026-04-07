@@ -6,7 +6,7 @@
 //
 // Opt4: Updated ProjectedGaussian struct (48 bytes).
 
-#version 450
+#version 460
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
@@ -25,8 +25,8 @@ struct ProjectedGaussian {
 struct TileEntry {
 	uint depth_key;
 	uint splat_index;
-	uint stable_index;
-	uint reserved;
+	uint stable_index;  // Currently == splat_index; reserved for stable-sort.
+	uint tile_index;    // Linear tile index; read by radix keygen.
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
@@ -54,8 +54,11 @@ layout(std430, binding = 9) buffer TileWriteHeads {
 };
 
 layout(std430, binding = 10) buffer GaussianGlobalCounters {
-	uint global_counters[];
-};
+	uint total_entries;  // raw total tile entries written by prefix-sum
+	uint error_flags;    // GPU error bitmask (GS_ERROR_*)
+	uint tile_count;     // total tile count for the frame
+	uint splat_count;    // visible splat count for the frame
+} gs_counters;
 
 layout(std430, binding = 11) buffer TileEntries {
 	TileEntry tile_entries[];
@@ -78,8 +81,8 @@ uint DepthToSortableKey(float depth) {
 	return floatBitsToUint(max(depth, 0.0));
 }
 
-uvec2 UnpackTileCoord(uint packed) {
-	return uvec2(packed & 0xFFFFu, packed >> 16u);
+uvec2 UnpackTileCoord(uint pkd_tile_coord) {
+	return uvec2(pkd_tile_coord & 0xFFFFu, pkd_tile_coord >> 16u);
 }
 
 uint GetEntryCapacity() {
@@ -100,13 +103,13 @@ void ScatterGaussian(uint splat_index) {
 			uint tile_index = LinearTileIndex(uvec2(tile_x, tile_y));
 			uint write_index = atomicAdd(tile_write_heads[tile_index], 1u);
 			if (write_index >= GetEntryCapacity()) {
-				atomicOr(global_counters[1], GS_ERROR_TILE_ENTRY_OVERFLOW);
+				atomicOr(gs_counters.error_flags, GS_ERROR_TILE_ENTRY_OVERFLOW);
 				continue;
 			}
-			tile_entries[write_index].depth_key = depth_key;
-			tile_entries[write_index].splat_index = splat_index;
+			tile_entries[write_index].depth_key    = depth_key;
+			tile_entries[write_index].splat_index  = splat_index;
 			tile_entries[write_index].stable_index = splat_index;
-			tile_entries[write_index].reserved = tile_index;
+			tile_entries[write_index].tile_index   = tile_index;
 		}
 	}
 }

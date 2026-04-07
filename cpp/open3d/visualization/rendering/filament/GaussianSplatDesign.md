@@ -13,6 +13,79 @@ Windows/WGL (SPIR-V shader loading error, fix pending), macOS/Metal (operational
 
 ---
 
+## Algorithm: 3D Gaussian Splatting (3DGS) Rendering
+
+To implement a **3D Gaussian Splatting (3DGS)** renderer from scratch, you must handle specific geometric transformations and high-performance CUDA-style rasterization. Below are the granular details required for an implementation.
+
+---
+
+### 1. The Gaussian Primitive Representation
+Each Gaussian $i$ is stored in a structured buffer with the following parameters:
+
+* **Position ($\mu_i$):** $3 \times 1$ vector.
+* **Rotation ($q_i$):** A normalized unit quaternion $[w, x, y, z]$.
+* **Scale ($s_i$):** A $3 \times 1$ vector $[s_x, s_y, s_z]$ (stored in log-space, exponentiated for rendering).
+* **Opacity ($\alpha_i$):** A scalar, transformed via sigmoid $\alpha = \frac{1}{1 + e^{-x}}$ to bound it in $[0, 1]$.
+* **Spherical Harmonics ($SH_i$):** Up to 16 coefficients per color channel (for Degree 3). Total of 48 values ($16 \times 3$).
+
+The 3D covariance matrix $\Sigma$ is reconstructed as:
+$$\Sigma = R S S^T R^T$$
+Where $R$ is the rotation matrix derived from $q_i$, and $S$ is the diagonal scaling matrix.
+
+---
+
+### 2. Projection (The "Splat" Math)
+To project a 3D Gaussian to 2D, you need the viewing transformation $W$ and the camera projection matrix $P$.
+
+1.  **View Space Mean:** $x_{view} = W \mu_i$.
+2.  **2D Covariance ($\Sigma'$):** Using the Jacobian $J$ of the perspective projection:
+    $$\Sigma' = J W \Sigma W^T J^T$$
+    * **Low-pass Filter:** A small identity matrix ($0.3 \times I_{2 \times 2}$) is added to $\Sigma'$ to ensure the splat covers at least one pixel (anti-aliasing).
+3.  **Eigenvalue Decomposition:** Calculate the eigenvalues of $\Sigma'$ to determine the 2D radius. Cull if the center is outside the frustum or the radius is negligible.
+
+---
+
+### 3. Tile-Based Sorting & Culling
+This is the core of the 3DGS performance.
+
+* **Grid:** Divide the $W \times H$ screen into tiles of $16 \times 16$ pixels. Choose  number of bits for tile ID as $T = ceil(\log_2 (W / 16 * H/16))$
+* **Duplicate and Key:** If a Gaussian's 2D radius overlaps $N$ tiles, create $N$ instances of a 32-bit key:
+    * **High T bits:** Tile ID (row-major order).
+    * **Low 32-T bits:** Depth (distance from camera) without sign bit.
+* **Radix Sort:** Sort these keys to group Gaussians by tile and depth.
+* **Ranges:** Identify the `start` and `end` index in the sorted list for each Tile ID.
+
+---
+
+### 4. The Rasterization Kernel
+For each tile (one CUDA block), execute the following for every pixel $(x, y)$ in parallel:
+
+#### A. Fetching Data
+Load Gaussian data into **Shared Memory** in chunks (e.g., blocks of 256) to minimize global memory latency.
+
+#### B. Influence Calculation
+For a pixel at $(x, y)$, calculate the offset to the Gaussian mean $d = [x - u_i, y - v_i]$. The contribution $G_i$ is:
+$$G_i(x, y) = \exp \left( -\frac{1}{2} d^T (\Sigma'_i)^{-1} d \right)$$
+
+#### C. Alpha Blending (Front-to-Back)
+Accumulate color $C$ and transmittance $T$:
+1.  **Effective alpha:** $\alpha_{eff} = \alpha_i \cdot G_i(x, y)$.
+2.  **Update Color:** $C_{final} = C_{final} + C_i \cdot (\alpha_{eff} \cdot T)$.
+3.  **Update Transmittance:** $T = T \cdot (1 - \alpha_{eff})$.
+4.  **Early Exit:** If $T < 0.0001$, stop processing for that pixel.
+
+---
+
+### 5. Specific Parameter Values
+
+| Parameter | Typical Value | Purpose |
+| :--- | :--- | :--- |
+| **Tile Size** | $16 \times 16$ | Optimized for GPU warp architecture. |
+| **Early Exit $\epsilon$** | $1/255$ | Stops processing once a pixel is saturated. |
+| **SH Degree** | 3 | High-frequency view-dependent reflections. |
+| **Filter Size** | $0.3$ px | Prevents aliasing on sub-pixel Gaussians. |
+| **Culling Margin** | 3.0 | Gaussians rendered up to $3\sigma$ from mean. |
+
 ## Architecture
 
 ### Rendering Pipeline
@@ -286,8 +359,9 @@ This mirrors [gsplat PR #117](https://github.com/nerfstudio-project/gsplat/pull/
   `limits.z` = `RenderConfig::max_tile_entries_total`.
   `depth_range_and_flags.w` = scene depth flag used by composite (0.0 = no, 1.0 = yes).
 - `ProjectedGaussian`: 48-byte per-splat descriptor (output of projection pass)
-- `TileEntry`: 16-byte per tile-entry sort record (depth_key, splat_index, stable_index,
-  tile_index stored in the `reserved` field for radix keygen)
+- `TileEntry`: 16-byte per tile-entry sort record (`depth_key`, `splat_index`,
+  `stable_index` — currently equals `splat_index`, reserved for future stable-sort support,
+  `tile_index` — linear tile index written by scatter and read by keygen)
 
 ### Runtime Capacity Limits And Error Flags
 
@@ -300,14 +374,16 @@ and GPU-side clamping:
 The packed `GaussianViewParams.limits` block carries those values to the shaders so
 all stages use the same capacity value.
 
-`counters_buf` is also used as a compact GPU→CPU diagnostics channel:
+`counters_buf` is also used as a compact GPU→CPU diagnostics channel,
+mapped to the `GaussianGpuCounters` struct in `GaussianComputeDataPacking.h`
+(GLSL binding 10, `gs_counters`):
 
-| Index | Meaning |
+| Field | Meaning |
 |---|---|
-| `0` | Raw total tile entries written by prefix-sum |
-| `1` | Error bitmask |
-| `2` | Tile count |
-| `3` | Splat count |
+| `total_entries` | Raw total tile entries written by prefix-sum |
+| `error_flags` | Error bitmask (see below) |
+| `tile_count` | Total tile count for the frame |
+| `splat_count` | Visible splat count for the frame |
 
 Current error bits:
 
@@ -326,8 +402,105 @@ capacity-related rendering degradation to users.
 | `log_scales` | 2 | `uvec2` fp16×4 | 8 | `PackHalf2(·,·)` ×2 |
 | `rotations` | 3 | `uint` snorm8-biased×4 | 4 | `PackSnorm8x4(w,x,y,z)` |
 | `dc_opacity` | 4 | `uvec2` fp16×4 | 8 | `PackHalf2(·,·)` ×2 |
-| `sh_coefficients` | 5 | `uvec2` fp16, stride=3×degree | 0/24/48 | `PackHalf2` pairs |
+| `sh_coefficients` | 5 | `uvec2` fp16, stride=3×degree | 0/24/48 | `PackHalf2` pairs for `(((degree + 1)^2 - 1) * 3)` rest coefficients (`f_rest`; DC lives in `dc_opacity`) |
 | **Total** | | | **36/60/84** | (was 160 B for all degrees) |
+
+---
+
+## Shader Variant System
+
+### Problem
+
+On Windows OpenGL (confirmed on Intel GPU), `GL_KHR_shader_subgroup_arithmetic`
+is miscompiled both when loading Vulkan-targeted SPIR-V via `GL_ARB_gl_spirv`
+and when using the online GLSL compilation path. The scatter pass produces
+`ValuesOut` entries larger than `g_num_elements`, causing corrupt rendering.
+The same shaders work correctly on Linux (GLX) and macOS (Metal/MSL).
+
+Only two of the nine Gaussian compute shaders are affected — those that use
+`subgroupAdd`, `subgroupExclusiveAdd`, and `subgroupElect`:
+
+| Shader | Subgroup ops |
+|---|---|
+| `gaussian_prefix_sum` | `subgroupAdd`, `subgroupExclusiveAdd`, `subgroupElect` |
+| `gaussian_radix_sort` | same |
+
+### Variants
+
+Each affected shader now has two files:
+
+| File | Subgroup ops | Recommended platform |
+|---|---|---|
+| `gaussian_prefix_sum.comp` / `.spv` | None (thread-0 scan) | Windows + unknown GPUs |
+| `gaussian_prefix_sum_subgroup.comp` / `.spv` | Yes | Linux, macOS |
+| `gaussian_radix_sort.comp` / `.spv` | None (thread-0 scan) | Windows + unknown GPUs |
+| `gaussian_radix_sort_subgroup.comp` / `.spv` | Yes | Linux, macOS |
+
+All other seven shaders have a single file unchanged by this change.
+
+### Runtime Policy
+
+`GetShaderLoadPolicy()` in `ComputeGPUGL.cpp` determines which variant and
+loader to use. It applies platform defaults and respects two env var overrides.
+
+**Platform defaults:**
+
+| Platform | `use_subgroups` | `use_precompiled` |
+|---|---|---|
+| Windows | `false` | `false` |
+| Linux / macOS | `true` | `true` |
+
+**Env var overrides** (take precedence over platform defaults):
+
+| Env var | Values | Effect |
+|---|---|---|
+| `OPEN3D_SHADER_SUBGROUPS` | `0` or `1` | `0` → load `gaussian_*.comp/.spv`; `1` → load `gaussian_*_subgroup.comp/.spv` for the two affected shaders |
+| `OPEN3D_SHADER_PRECOMPILED` | `0` or `1` | `0` → online GLSL compilation only; `1` → try SPIR-V first, fall back to GLSL |
+
+**Load sequence for each shader** (`EnsureProgramsLoaded`):
+
+```
+resolve file_base:
+  if use_subgroups AND shader in {gaussian_prefix_sum, gaussian_radix_sort}:
+    file_base = shader_name + "_subgroup"
+  else:
+    file_base = shader_name
+
+if use_precompiled:
+  try load file_base.spv via GL_ARB_gl_spirv
+  → success: done
+  → failure: log warning, fall through to GLSL
+
+load file_base.comp via online GLSL compilation
+```
+
+**Auto-fallback:** If *any* shader fails to load under the primary policy, the
+entire set is discarded and all nine shaders are retried with the safe fallback
+policy `{use_subgroups=false, use_precompiled=false}`. This ensures a working
+render on uncharted GPU/driver combinations without user intervention. A warning
+is logged when fallback activates.
+
+### Build
+
+`Open3DAddComputeShaders.cmake` processes all eleven `.comp` files in
+`GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES`:
+
+- Each file is staged as-is (`.comp`) for online GLSL fallback.
+- Each file is compiled to `.spv` (Vulkan 1.3 target) via `glslangValidator`.
+- On Apple, `.spv` is transpiled to `.metal` via `spirv-cross`, with
+  `--msl-fixed-subgroup-size 32` applied to the two `_subgroup` variants.
+  The non-subgroup variants do not use `gl_SubgroupSize` and do not need the flag.
+
+```
+gaussian_compute/
+  gaussian_project.comp / .spv
+  gaussian_prefix_sum.comp / .spv          ← no-subgroup (Windows default)
+  gaussian_prefix_sum_subgroup.comp / .spv ← subgroup    (Linux/macOS default)
+  gaussian_radix_sort.comp / .spv          ← no-subgroup
+  gaussian_radix_sort_subgroup.comp / .spv ← subgroup
+  … (7 other shaders, one variant each)
+  gaussian_compute.metallib               ← Apple only
+```
 
 ---
 
@@ -341,9 +514,10 @@ See Completed Work → PHASE 3 for implementation details.
 
 - Remove stale `resources/gaussian_compute/` copies (now generated from `shaders/` by CMake)
 - Add GL 4.5 minimum capability check to CMake (`GL_ARB_compute_shader`,
-  `GL_ARB_shader_storage_buffer_object`, `GL_KHR_shader_subgroup`)
+  `GL_ARB_shader_storage_buffer_object`)
 - Verify SPIR-V shader compilation across all supported glslangValidator versions
-- Fix SPIR-V shader loading on Windows (see FW3)
+- ~~Fix SPIR-V shader loading on Windows~~ — resolved via no-subgroup + online GLSL
+  default on Windows; see Shader Variant System section.
 
 ---
 

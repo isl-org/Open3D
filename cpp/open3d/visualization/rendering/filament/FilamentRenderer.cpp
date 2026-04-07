@@ -129,6 +129,12 @@ TextureHandle FilamentRenderer::GetGaussianComputeDepthTexture(
                    : TextureHandle();
 }
 
+int FilamentRenderer::GetGaussianComputeMaxShDegree() const {
+    return gaussian_compute_renderer_
+                   ? gaussian_compute_renderer_->GetRenderConfig().max_sh_degree
+                   : 2;
+}
+
 void FilamentRenderer::InvalidateGaussianComputeOutput(FilamentView& view) {
     if (gaussian_compute_renderer_) {
         gaussian_compute_renderer_->InvalidateOutputForView(view);

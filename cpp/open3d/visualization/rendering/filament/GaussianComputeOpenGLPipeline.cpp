@@ -382,6 +382,7 @@ bool DownloadGLBuffer(const GLBufferHandle& buffer,
     if (!buffer.valid || dst == nullptr || size == 0) {
         return false;
     }
+    DrainErrors("DownloadGLBuffer/pre");
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer.id);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, static_cast<GLintptr>(offset),
                        static_cast<GLsizeiptr>(size), dst);
@@ -414,6 +415,7 @@ GLTextureHandle CreateGLTexture2D(std::uint32_t width,
                                   std::uint32_t format,
                                   const char* label) {
     GLTextureHandle result;
+    DrainErrors("CreateGLTexture2D/pre");
     GLuint tex = 0;
     glGenTextures(1, &tex);
     if (tex == 0 || CheckGLError("CreateGLTexture2D/gen")) {

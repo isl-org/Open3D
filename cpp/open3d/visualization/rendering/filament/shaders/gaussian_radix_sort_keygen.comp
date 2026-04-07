@@ -16,7 +16,7 @@
 // T is clamped to [1,31] CPU-side (limits.w) so all shifts are safe.
 // Also initializes the value array with identity indices.
 
-#version 450
+#version 460
 
 #define WORKGROUP_SIZE 256
 
@@ -45,7 +45,7 @@ struct TileEntry {
 	uint depth_key;
 	uint splat_index;
 	uint stable_index;
-	uint tile_index;  // stored in 'reserved' field
+	uint tile_index;
 };
 
 layout(std430, binding = 0) readonly buffer TileEntries {
