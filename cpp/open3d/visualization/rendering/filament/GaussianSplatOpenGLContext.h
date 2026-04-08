@@ -31,9 +31,9 @@ namespace rendering {
 ///   3. For compute work: MakeCurrent() → dispatch → Finish() →
 ///      ReleaseCurrent().
 ///   4. Call Shutdown() when done.
-class GaussianComputeOpenGLContext {
+class GaussianSplatOpenGLContext {
 public:
-    static GaussianComputeOpenGLContext& GetInstance();
+    static GaussianSplatOpenGLContext& GetInstance();
 
     /// Creates a hidden GLFW window carrying a GL 4.6 core-profile context.
     /// Must be called before Filament Engine::create() so the returned native
@@ -67,12 +67,12 @@ public:
     void Finish();
 
 private:
-    GaussianComputeOpenGLContext() = default;
-    ~GaussianComputeOpenGLContext();
+    GaussianSplatOpenGLContext() = default;
+    ~GaussianSplatOpenGLContext();
 
-    GaussianComputeOpenGLContext(const GaussianComputeOpenGLContext&) = delete;
-    GaussianComputeOpenGLContext& operator=(
-            const GaussianComputeOpenGLContext&) = delete;
+    GaussianSplatOpenGLContext(const GaussianSplatOpenGLContext&) = delete;
+    GaussianSplatOpenGLContext& operator=(
+            const GaussianSplatOpenGLContext&) = delete;
 
 private:
     // Stored as void* (== GLFWwindow*) to avoid a GLFW header dependency.

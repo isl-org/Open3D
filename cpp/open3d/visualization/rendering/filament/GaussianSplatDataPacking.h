@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -162,8 +162,8 @@ struct GaussianSplatSourceData {
 /// MTLBuffer memcpy of 288 bytes (one GaussianViewParams).
 PackedGaussianScene PackGaussianViewParams(
         const GaussianSplatSourceData& source,
-        const GaussianComputeRenderer::ViewRenderData& render_data,
-        const GaussianComputeRenderer::RenderConfig& config);
+        const GaussianSplatRenderer::ViewRenderData& render_data,
+        const GaussianSplatRenderer::RenderConfig& config);
 
 /// Fill the large per-splat geometry attribute arrays (positions, scales,
 /// rotations, dc_opacity, SH coefficients) in a PackedGaussianScene
@@ -172,7 +172,7 @@ PackedGaussianScene PackGaussianViewParams(
 /// geometry (splat count or content) actually changes.
 void PackGaussianSceneAttributes(
         const GaussianSplatSourceData& source,
-        const GaussianComputeRenderer::RenderConfig& config,
+        const GaussianSplatRenderer::RenderConfig& config,
         PackedGaussianScene& packed);
 
 }  // namespace rendering

@@ -42,7 +42,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -57,8 +57,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
-    gaussian_compute_renderer_ =
-            std::make_unique<GaussianComputeRenderer>(engine_, resource_mgr_);
+    gaussian_splat_renderer_ =
+            std::make_unique<GaussianSplatRenderer>(engine_, resource_mgr_);
 }
 
 FilamentRenderer::FilamentRenderer(filament::Engine& engine,
@@ -71,8 +71,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
-    gaussian_compute_renderer_ =
-            std::make_unique<GaussianComputeRenderer>(engine_, resource_mgr_);
+    gaussian_splat_renderer_ =
+            std::make_unique<GaussianSplatRenderer>(engine_, resource_mgr_);
 }
 
 FilamentRenderer::~FilamentRenderer() {
@@ -81,7 +81,7 @@ FilamentRenderer::~FilamentRenderer() {
     // so any engine.destroy(rt/tex) calls queued here will be processed before
     // engine.destroy(renderer_) and engine.destroy(swap_chain_), which matches
     // the required teardown order (RTs before renderer before swap chain).
-    gaussian_compute_renderer_.reset();
+    gaussian_splat_renderer_.reset();
 
     scenes_.clear();
     engine_.destroy(renderer_);
@@ -109,35 +109,35 @@ void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
 }
 
-bool FilamentRenderer::HasGaussianComputeOutput(
+bool FilamentRenderer::HasGaussianSplatOutput(
         const FilamentView& view) const {
-    return gaussian_compute_renderer_ &&
-           gaussian_compute_renderer_->HasOutput(view);
+    return gaussian_splat_renderer_ &&
+           gaussian_splat_renderer_->HasOutput(view);
 }
 
-TextureHandle FilamentRenderer::GetGaussianComputeColorTexture(
+TextureHandle FilamentRenderer::GetGaussianSplatColorTexture(
         const FilamentView& view) const {
-    return gaussian_compute_renderer_
-                   ? gaussian_compute_renderer_->GetColorTexture(view)
+    return gaussian_splat_renderer_
+                   ? gaussian_splat_renderer_->GetColorTexture(view)
                    : TextureHandle();
 }
 
-TextureHandle FilamentRenderer::GetGaussianComputeDepthTexture(
+TextureHandle FilamentRenderer::GetGaussianSplatDepthTexture(
         const FilamentView& view) const {
-    return gaussian_compute_renderer_
-                   ? gaussian_compute_renderer_->GetDepthTexture(view)
+    return gaussian_splat_renderer_
+                   ? gaussian_splat_renderer_->GetDepthTexture(view)
                    : TextureHandle();
 }
 
-int FilamentRenderer::GetGaussianComputeMaxShDegree() const {
-    return gaussian_compute_renderer_
-                   ? gaussian_compute_renderer_->GetRenderConfig().max_sh_degree
+int FilamentRenderer::GetGaussianSplatMaxShDegree() const {
+    return gaussian_splat_renderer_
+                   ? gaussian_splat_renderer_->GetRenderConfig().max_sh_degree
                    : 2;
 }
 
-void FilamentRenderer::InvalidateGaussianComputeOutput(FilamentView& view) {
-    if (gaussian_compute_renderer_) {
-        gaussian_compute_renderer_->InvalidateOutputForView(view);
+void FilamentRenderer::InvalidateGaussianSplatOutput(FilamentView& view) {
+    if (gaussian_splat_renderer_) {
+        gaussian_splat_renderer_->InvalidateOutputForView(view);
     }
 }
 
@@ -186,8 +186,8 @@ void FilamentRenderer::BeginFrame() {
         buffer_renderers_.clear();  // Cleanup
     }
 
-    if (gaussian_compute_renderer_) {
-        gaussian_compute_renderer_->BeginFrame();
+    if (gaussian_splat_renderer_) {
+        gaussian_splat_renderer_->BeginFrame();
 
 #if defined(__APPLE__)
         // The Metal backend only writes its internal sorting / projection
@@ -210,11 +210,11 @@ void FilamentRenderer::BeginFrame() {
             pair.second->ForEachView(
                     [&](FilamentView& view) { live_views.insert(&view); });
             pair.second->ForEachActiveView([&](FilamentView& view) {
-                gaussian_compute_renderer_->RenderGeometryStage(view,
+                gaussian_splat_renderer_->RenderGeometryStage(view,
                                                                 *pair.second);
             });
         }
-        gaussian_compute_renderer_->PruneOutputs(live_views);
+        gaussian_splat_renderer_->PruneOutputs(live_views);
     }
 
     frame_started_ = renderer_->beginFrame(swap_chain_);
@@ -230,12 +230,12 @@ void FilamentRenderer::Draw() {
         // Non-Apple backends composite into the overlay during the current
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
-        if (gaussian_compute_renderer_) {
+        if (gaussian_splat_renderer_) {
 #if !defined(__APPLE__)
             engine_.flushAndWait();
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {
-                    gaussian_compute_renderer_->RenderCompositeStage(view);
+                    gaussian_splat_renderer_->RenderCompositeStage(view);
                 });
             }
 #endif
@@ -258,7 +258,7 @@ void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
 #if defined(__APPLE__)
-        if (gaussian_compute_renderer_) {
+        if (gaussian_splat_renderer_) {
             // endFrame() commits Filament's Metal command buffer. Our
             // composite CB, committed below on the same queue, will
             // execute after Filament's render — guaranteeing the depth
@@ -267,7 +267,7 @@ void FilamentRenderer::EndFrame() {
             // CBs that are ahead in the queue.
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {
-                    gaussian_compute_renderer_->RenderCompositeStage(view);
+                    gaussian_splat_renderer_->RenderCompositeStage(view);
                 });
             }
         }

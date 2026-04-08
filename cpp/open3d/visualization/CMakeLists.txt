@@ -73,10 +73,10 @@ if (BUILD_GUI)
 
     target_sources(visualization_impl PRIVATE
         rendering/filament/FilamentCamera.cpp
-        rendering/filament/GaussianComputeRenderer.cpp
-        rendering/filament/GaussianComputeBuffers.cpp
-        rendering/filament/GaussianComputeDataPacking.cpp
-        rendering/filament/GaussianComputePassRunner.cpp
+        rendering/filament/GaussianSplatRenderer.cpp
+        rendering/filament/GaussianSplatBuffers.cpp
+        rendering/filament/GaussianSplatDataPacking.cpp
+        rendering/filament/GaussianSplatPassRunner.cpp
         rendering/filament/FilamentEntitiesMods.cpp
         rendering/filament/FilamentGeometryBuffersBuilder.cpp
         rendering/filament/FilamentRenderToBuffer.cpp
@@ -91,15 +91,15 @@ if (BUILD_GUI)
     if (APPLE)
         target_sources(visualization_impl PRIVATE
             rendering/filament/ComputeGPUMetal.mm
-            rendering/filament/GaussianComputeMetalBackend.mm
-            rendering/filament/GaussianComputeOutputTargetsApple.mm
+            rendering/filament/GaussianSplatMetalBackend.mm
+            rendering/filament/GaussianSplatOutputTargetsApple.mm
             rendering/filament/FilamentNativeInterop.mm
             rendering/filament/FilamentResourceManagerApple.mm
         )
         set(O3D_GS_METAL_ARC_SOURCES
             rendering/filament/ComputeGPUMetal.mm
-            rendering/filament/GaussianComputeMetalBackend.mm
-            rendering/filament/GaussianComputeOutputTargetsApple.mm
+            rendering/filament/GaussianSplatMetalBackend.mm
+            rendering/filament/GaussianSplatOutputTargetsApple.mm
             rendering/filament/FilamentResourceManagerApple.mm
         )
         set_source_files_properties(${O3D_GS_METAL_ARC_SOURCES}
@@ -107,8 +107,8 @@ if (BUILD_GUI)
     else()
         target_sources(visualization_impl PRIVATE
             rendering/filament/ComputeGPUGL.cpp
-            rendering/filament/GaussianComputeOpenGLContext.cpp
-            rendering/filament/GaussianComputeOpenGLPipeline.cpp
+            rendering/filament/GaussianSplatOpenGLContext.cpp
+            rendering/filament/GaussianSplatOpenGLPipeline.cpp
         )
     endif()
 

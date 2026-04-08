@@ -31,7 +31,7 @@ namespace rendering {
 class FilamentMaterialModifier;
 class FilamentRenderToBuffer;
 class FilamentResourceManager;
-class GaussianComputeRenderer;
+class GaussianSplatRenderer;
 class FilamentScene;
 class FilamentView;
 
@@ -101,16 +101,19 @@ public:
     void ConvertToGuiScene(const SceneHandle& id);
     FilamentScene* GetGuiScene() const { return gui_scene_.get(); }
 
-    bool HasGaussianComputeOutput(const FilamentView& view) const;
-    TextureHandle GetGaussianComputeColorTexture(
+    bool HasGaussianSplatOutput(const FilamentView& view) const;
+    TextureHandle GetGaussianSplatColorTexture(
             const FilamentView& view) const;
-    TextureHandle GetGaussianComputeDepthTexture(
+    TextureHandle GetGaussianSplatDepthTexture(
             const FilamentView& view) const;
-    int GetGaussianComputeMaxShDegree() const;
+    int GetGaussianSplatMaxShDegree() const;
+    GaussianSplatRenderer* GetGaussianSplatRenderer() {
+        return gaussian_splat_renderer_.get();
+    }
     /// Invalidates GS outputs for the given view; see
-    /// GaussianComputeRenderer::InvalidateOutputForView for why this is
+    /// GaussianSplatRenderer::InvalidateOutputForView for why this is
     /// needed before FilamentView::color_buffer_ is destroyed on resize.
-    void InvalidateGaussianComputeOutput(FilamentView& view);
+    void InvalidateGaussianSplatOutput(FilamentView& view);
 
     filament::Renderer* GetNative() { return renderer_; }
 
@@ -131,7 +134,7 @@ private:
     std::unique_ptr<FilamentScene> gui_scene_;
 
     std::unique_ptr<FilamentMaterialModifier> materials_modifier_;
-    std::unique_ptr<GaussianComputeRenderer> gaussian_compute_renderer_;
+    std::unique_ptr<GaussianSplatRenderer> gaussian_splat_renderer_;
     FilamentResourceManager& resource_mgr_;
 
     std::unordered_set<std::shared_ptr<FilamentRenderToBuffer>>

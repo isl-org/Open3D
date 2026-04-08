@@ -100,8 +100,10 @@ function(open3d_add_compute_shaders target)
 
         list(APPEND STAGED_COMPUTE_SHADERS
             "${STAGED_SHADER_FULL_PATH}"
-            "${STAGED_SPIRV_FULL_PATH}"
-            "${STAGED_METAL_FULL_PATH}")
+            "${STAGED_SPIRV_FULL_PATH}")
+        if (APPLE)
+            list(APPEND STAGED_COMPUTE_SHADERS "${STAGED_METAL_FULL_PATH}")
+        endif()
     endforeach()
 
     # Bundle SPIRV-Cross MSL into a single Metal library for runtime loading

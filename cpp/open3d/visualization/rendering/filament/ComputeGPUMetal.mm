@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// Metal implementation of GaussianComputeGpuContext.
+// Metal implementation of GaussianSplatGpuContext.
 // Compiled only on Apple platforms.
 
 #include "open3d/visualization/rendering/filament/ComputeGPU.h"
@@ -47,15 +47,15 @@ static constexpr std::size_t kMaxBindings = 32;
 
 }  // namespace
 
-class GaussianComputeGpuContextMetal final : public GaussianComputeGpuContext {
+class GaussianSplatGpuContextMetal final : public GaussianSplatGpuContext {
 public:
-    GaussianComputeGpuContextMetal(std::uintptr_t device_handle,
+    GaussianSplatGpuContextMetal(std::uintptr_t device_handle,
                                    std::uintptr_t queue_handle)
         : device_((__bridge id<MTLDevice>)reinterpret_cast<void*>(device_handle)),
           queue_((__bridge id<MTLCommandQueue>)reinterpret_cast<void*>(
                   queue_handle)) {}
 
-    ~GaussianComputeGpuContextMetal() override {
+    ~GaussianSplatGpuContextMetal() override {
         // Drain any in-flight command buffers. EndCompositePass() already waits
         // synchronously, so last_submitted_comp_cb_ is complete by the time we
         // reach the destructor. The wait below is a no-cost safety net.
@@ -627,10 +627,10 @@ private:
             texture_sizes_;
 };
 
-std::unique_ptr<GaussianComputeGpuContext> CreateComputeGpuContextMetal(
+std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextMetal(
         std::uintptr_t device_handle,
         std::uintptr_t command_queue_handle) {
-    return std::make_unique<GaussianComputeGpuContextMetal>(device_handle,
+    return std::make_unique<GaussianSplatGpuContextMetal>(device_handle,
                                                             command_queue_handle);
 }
 

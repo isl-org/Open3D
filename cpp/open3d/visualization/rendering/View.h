@@ -84,7 +84,7 @@ public:
 
     /// Returns the Gaussian compute overlay texture (premultiplied alpha),
     /// or an invalid handle if no compute output is available.
-    virtual TextureHandle GetGaussianComputeOverlay() { return {}; }
+    virtual TextureHandle GetGaussianSplatOverlay() { return {}; }
 
     virtual Camera* GetCamera() const = 0;
 };

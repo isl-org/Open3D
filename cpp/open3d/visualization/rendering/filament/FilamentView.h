@@ -71,7 +71,7 @@ public:
     bool IsCached() const override;
     TextureHandle GetColorBuffer() override;
     TextureHandle GetDepthBuffer() override;
-    TextureHandle GetGaussianComputeOverlay() override;
+    TextureHandle GetGaussianSplatOverlay() override;
 
     Camera* GetCamera() const override;
 

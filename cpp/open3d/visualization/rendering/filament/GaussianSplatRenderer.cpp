@@ -5,30 +5,30 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 #include <filament/Texture.h>
 #include <filament/View.h>
 
-#include "GaussianComputeRenderer.h"
+#include "GaussianSplatRenderer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
 #if defined(__APPLE__)
-#include "open3d/visualization/rendering/filament/GaussianComputeOutputTargetsApple.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOutputTargetsApple.h"
 #endif
 #if !defined(__APPLE__)
 #include <memory>
 
 #include "open3d/visualization/rendering/filament/ComputeGPU.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeBuffers.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLPipeline.h"
-#include "open3d/visualization/rendering/filament/GaussianComputePassRunner.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatBuffers.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLPipeline.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatPassRunner.h"
 #endif
 
 namespace open3d {
@@ -36,17 +36,17 @@ namespace visualization {
 namespace rendering {
 
 #if defined(__APPLE__)
-std::unique_ptr<GaussianComputeRenderer::Backend>
-CreateGaussianComputeMetalBackend(
+std::unique_ptr<GaussianSplatRenderer::Backend>
+CreateGaussianSplatMetalBackend(
         FilamentResourceManager& resource_mgr,
-        const GaussianComputeRenderer::RenderConfig& config);
+        const GaussianSplatRenderer::RenderConfig& config);
 #endif
 
 namespace {
-class GaussianComputePlaceholderBackend final
-    : public GaussianComputeRenderer::Backend {
+class GaussianSplatPlaceholderBackend final
+    : public GaussianSplatRenderer::Backend {
 public:
-    explicit GaussianComputePlaceholderBackend(const char* name)
+    explicit GaussianSplatPlaceholderBackend(const char* name)
         : name_(name) {}
 
     const char* GetName() const override { return name_; }
@@ -60,11 +60,11 @@ public:
     bool RenderGeometryStage(
             const FilamentView& view,
             const FilamentScene&,
-            const GaussianComputeRenderer::ViewRenderData&,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&,
-            GaussianComputeRenderer::OutputTargets&) override {
+            const GaussianSplatRenderer::ViewRenderData&,
+            const std::vector<GaussianSplatRenderer::PassDispatch>&,
+            GaussianSplatRenderer::OutputTargets&) override {
         if (logged_views_.insert(&view).second) {
-            utility::LogInfo(
+            utility::LogWarning(
                     "Gaussian compute backend '{}' is selected but GPU "
                     "dispatch is not implemented yet.",
                     name_);
@@ -74,9 +74,9 @@ public:
 
     bool RenderCompositeStage(
             const FilamentView& view,
-            const GaussianComputeRenderer::ViewRenderData&,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&,
-            GaussianComputeRenderer::OutputTargets&) override {
+            const GaussianSplatRenderer::ViewRenderData&,
+            const std::vector<GaussianSplatRenderer::PassDispatch>&,
+            GaussianSplatRenderer::OutputTargets&) override {
         return false;
     }
 
@@ -87,18 +87,19 @@ private:
 
 #if !defined(__APPLE__)
 // OpenGL compute backend for Linux and Windows (GL 4.6 core + SPIR-V).
-class GaussianComputeOpenGLBackend final
-    : public GaussianComputeRenderer::Backend {
+class GaussianSplatOpenGLBackend final
+    : public GaussianSplatRenderer::Backend {
 public:
-    GaussianComputeOpenGLBackend(
+    GaussianSplatOpenGLBackend(
             FilamentResourceManager& resource_mgr,
-            const GaussianComputeRenderer::RenderConfig& config)
+            const GaussianSplatRenderer::RenderConfig& config)
         : config_(config) {
         (void)resource_mgr;
-        gpu_ = CreateComputeGpuContextGL();
+        gpu_ = CreateComputeGpuContextGL(config_.use_shader_subgroups,
+                                         config_.use_precompiled_shaders);
     }
 
-    ~GaussianComputeOpenGLBackend() override { Cleanup(); }
+    ~GaussianSplatOpenGLBackend() override { Cleanup(); }
 
     const char* GetName() const override { return "OpenGL"; }
 
@@ -115,11 +116,11 @@ public:
     bool RenderGeometryStage(
             const FilamentView& view,
             const FilamentScene& scene,
-            const GaussianComputeRenderer::ViewRenderData& render_data,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&
+            const GaussianSplatRenderer::ViewRenderData& render_data,
+            const std::vector<GaussianSplatRenderer::PassDispatch>&
                     dispatches,
-            GaussianComputeRenderer::OutputTargets& targets) override {
-        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+            GaussianSplatRenderer::OutputTargets& targets) override {
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() && !gl_ctx.Initialize()) {
             utility::LogWarning(
                     "Gaussian compute OpenGL backend: shared GL context not "
@@ -177,11 +178,11 @@ public:
 
     bool RenderCompositeStage(
             const FilamentView& view,
-            const GaussianComputeRenderer::ViewRenderData&,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&
+            const GaussianSplatRenderer::ViewRenderData&,
+            const std::vector<GaussianSplatRenderer::PassDispatch>&
                     dispatches,
-            GaussianComputeRenderer::OutputTargets& targets) override {
-        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+            GaussianSplatRenderer::OutputTargets& targets) override {
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.MakeCurrent() || !gpu_) {
             return false;
         }
@@ -199,8 +200,8 @@ public:
     }
 
 private:
-    void DestroyViewState(GaussianComputeViewGpuResources& vs) {
-        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+    void DestroyViewState(GaussianSplatViewGpuResources& vs) {
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.MakeCurrent() || !gpu_) {
             return;
         }
@@ -238,7 +239,7 @@ private:
     }
 
     void Cleanup() {
-        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (gl_ctx.MakeCurrent()) {
             for (auto& pair : view_states_) {
                 DestroyViewState(pair.second);
@@ -249,58 +250,58 @@ private:
         gpu_.reset();
     }
 
-    const GaussianComputeRenderer::RenderConfig& config_;
-    std::unordered_map<const FilamentView*, GaussianComputeViewGpuResources>
+    const GaussianSplatRenderer::RenderConfig& config_;
+    std::unordered_map<const FilamentView*, GaussianSplatViewGpuResources>
             view_states_;
-    std::unique_ptr<GaussianComputeGpuContext> gpu_;
+    std::unique_ptr<GaussianSplatGpuContext> gpu_;
 };
 #endif  // !defined(__APPLE__)
 
-std::unique_ptr<GaussianComputeRenderer::Backend> CreateBackend(
+std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
         RenderingType backend,
         FilamentResourceManager& resource_mgr,
-        const GaussianComputeRenderer::RenderConfig& config) {
+        const GaussianSplatRenderer::RenderConfig& config) {
     switch (backend) {
         case RenderingType::kMetal:
 #if defined(__APPLE__)
-            return CreateGaussianComputeMetalBackend(resource_mgr, config);
+            return CreateGaussianSplatMetalBackend(resource_mgr, config);
 #else
-            return std::unique_ptr<GaussianComputeRenderer::Backend>(
-                    new GaussianComputePlaceholderBackend("Metal"));
+            return std::unique_ptr<GaussianSplatRenderer::Backend>(
+                    new GaussianSplatPlaceholderBackend("Metal"));
 #endif
         case RenderingType::kOpenGL:
 #if !defined(__APPLE__)
-            return std::unique_ptr<GaussianComputeRenderer::Backend>(
-                    new GaussianComputeOpenGLBackend(resource_mgr, config));
+            return std::unique_ptr<GaussianSplatRenderer::Backend>(
+                    new GaussianSplatOpenGLBackend(resource_mgr, config));
 #else
-            return std::unique_ptr<GaussianComputeRenderer::Backend>(
-                    new GaussianComputePlaceholderBackend("OpenGL"));
+            return std::unique_ptr<GaussianSplatRenderer::Backend>(
+                    new GaussianSplatPlaceholderBackend("OpenGL"));
 #endif
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
-            return std::unique_ptr<GaussianComputeRenderer::Backend>(
-                    new GaussianComputePlaceholderBackend("Unsupported"));
+            return std::unique_ptr<GaussianSplatRenderer::Backend>(
+                    new GaussianSplatPlaceholderBackend("Unsupported"));
     }
     return nullptr;
 }
 
-std::vector<GaussianComputeRenderer::PassDefinition> CreateDefaultPasses() {
+std::vector<GaussianSplatRenderer::PassDefinition> CreateDefaultPasses() {
     return {
-            {GaussianComputeRenderer::PassType::kProjection,
+            {GaussianSplatRenderer::PassType::kProjection,
              "Gaussian Projection", "gaussian_project.comp"},
-            {GaussianComputeRenderer::PassType::kTilePrefixSum,
+            {GaussianSplatRenderer::PassType::kTilePrefixSum,
              "Gaussian Tile Prefix Sum", "gaussian_prefix_sum.comp"},
-            {GaussianComputeRenderer::PassType::kTileScatter,
+            {GaussianSplatRenderer::PassType::kTileScatter,
              "Gaussian Tile Scatter", "gaussian_scatter.comp"},
-            {GaussianComputeRenderer::PassType::kTileSort,
+            {GaussianSplatRenderer::PassType::kTileSort,
              "Gaussian Radix Sort (keygen)", "gaussian_radix_sort_keygen.comp"},
-            {GaussianComputeRenderer::PassType::kComposite,
+            {GaussianSplatRenderer::PassType::kComposite,
              "Gaussian Composite", "gaussian_composite.comp"},
     };
 }
 
 bool HasCompositeOutputTextures(
-        const GaussianComputeRenderer::OutputTargets& targets) {
+        const GaussianSplatRenderer::OutputTargets& targets) {
 #if defined(__APPLE__)
     return targets.scene_depth_mtl_texture != 0 &&
            targets.gs_color_mtl_texture != 0;
@@ -312,7 +313,7 @@ bool HasCompositeOutputTextures(
 
 int CeilDiv(int value, int divisor) { return (value + divisor - 1) / divisor; }
 
-bool GaussianComputeBackendSupported(RenderingType backend) {
+bool GaussianSplatBackendSupported(RenderingType backend) {
     if (!EngineInstance::GetPlatform()) {
         return false;
     }
@@ -374,8 +375,8 @@ bool ProjectionInfoEquals(const Camera::ProjectionInfo& left,
 }
 
 bool ViewRenderDataEquals(
-        const GaussianComputeRenderer::ViewRenderData& left,
-        const GaussianComputeRenderer::ViewRenderData& right) {
+        const GaussianSplatRenderer::ViewRenderData& left,
+        const GaussianSplatRenderer::ViewRenderData& right) {
     return left.viewport_origin == right.viewport_origin &&
            left.viewport_size == right.viewport_size &&
            left.camera_position.isApprox(right.camera_position) &&
@@ -391,16 +392,16 @@ bool ViewRenderDataEquals(
            ProjectionInfoEquals(left.projection, right.projection);
 }
 
-bool PassDispatchEquals(const GaussianComputeRenderer::PassDispatch& left,
-                        const GaussianComputeRenderer::PassDispatch& right) {
+bool PassDispatchEquals(const GaussianSplatRenderer::PassDispatch& left,
+                        const GaussianSplatRenderer::PassDispatch& right) {
     return left.type == right.type && left.group_size == right.group_size &&
            left.group_count == right.group_count &&
            left.tile_count == right.tile_count;
 }
 
 bool PassDispatchesEqual(
-        const std::vector<GaussianComputeRenderer::PassDispatch>& left,
-        const std::vector<GaussianComputeRenderer::PassDispatch>& right) {
+        const std::vector<GaussianSplatRenderer::PassDispatch>& left,
+        const std::vector<GaussianSplatRenderer::PassDispatch>& right) {
     if (left.size() != right.size()) {
         return false;
     }
@@ -412,31 +413,31 @@ bool PassDispatchesEqual(
     return true;
 }
 
-GaussianComputeRenderer::GaussianComputeRenderer(
+GaussianSplatRenderer::GaussianSplatRenderer(
         filament::Engine& engine, FilamentResourceManager& resource_mgr)
     : engine_(engine),
       resource_mgr_(resource_mgr),
       pass_definitions_(CreateDefaultPasses()) {
     enabled_ =
-            GaussianComputeBackendSupported(EngineInstance::GetBackendType());
+            GaussianSplatBackendSupported(EngineInstance::GetBackendType());
     backend_ = CreateBackend(EngineInstance::GetBackendType(), resource_mgr_,
                              render_config_);
 }
 
-GaussianComputeRenderer::~GaussianComputeRenderer() {
+GaussianSplatRenderer::~GaussianSplatRenderer() {
     for (auto& pair : outputs_) {
         ResetOutputTargets(pair.second);
     }
 }
 
-void GaussianComputeRenderer::BeginFrame() {
+void GaussianSplatRenderer::BeginFrame() {
     ++frame_index_;
     if (backend_) {
         backend_->BeginFrame(frame_index_);
     }
 }
 
-void GaussianComputeRenderer::RenderGeometryStage(FilamentView& view,
+void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
                                                   const FilamentScene& scene) {
     if (!enabled_ || !scene.HasGaussianSplatGeometry()) {
         return;
@@ -472,7 +473,7 @@ void GaussianComputeRenderer::RenderGeometryStage(FilamentView& view,
     }
 }
 
-void GaussianComputeRenderer::RenderCompositeStage(FilamentView& view) {
+void GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
     auto it = outputs_.find(&view);
     if (it == outputs_.end() || !it->second.needs_render) {
         return;
@@ -495,7 +496,7 @@ void GaussianComputeRenderer::RenderCompositeStage(FilamentView& view) {
     targets.last_updated_frame = frame_index_;
 }
 
-void GaussianComputeRenderer::InvalidateOutputForView(FilamentView& view) {
+void GaussianSplatRenderer::InvalidateOutputForView(FilamentView& view) {
     auto it = outputs_.find(&view);
     if (it == outputs_.end()) {
         return;
@@ -507,7 +508,7 @@ void GaussianComputeRenderer::InvalidateOutputForView(FilamentView& view) {
     ResetOutputTargets(it->second);
 }
 
-void GaussianComputeRenderer::PruneOutputs(
+void GaussianSplatRenderer::PruneOutputs(
         const std::unordered_set<const FilamentView*>& live_views) {
     for (auto it = outputs_.begin(); it != outputs_.end();) {
         if (live_views.find(it->first) != live_views.end()) {
@@ -523,25 +524,25 @@ void GaussianComputeRenderer::PruneOutputs(
     }
 }
 
-bool GaussianComputeRenderer::IsEnabled() const { return enabled_; }
+bool GaussianSplatRenderer::IsEnabled() const { return enabled_; }
 
-void GaussianComputeRenderer::SetEnabled(bool enabled) {
+void GaussianSplatRenderer::SetEnabled(bool enabled) {
     enabled_ = enabled && IsSupported();
 }
 
-bool GaussianComputeRenderer::IsSupported() const {
-    return GaussianComputeBackendSupported(EngineInstance::GetBackendType());
+bool GaussianSplatRenderer::IsSupported() const {
+    return GaussianSplatBackendSupported(EngineInstance::GetBackendType());
 }
 
-bool GaussianComputeRenderer::HasOutput(const FilamentView& view) const {
+bool GaussianSplatRenderer::HasOutput(const FilamentView& view) const {
     auto found = outputs_.find(&view);
     return found != outputs_.end() && found->second.color &&
            found->second.depth && found->second.render_target &&
            found->second.has_valid_output;
 }
 
-const GaussianComputeRenderer::ViewRenderData*
-GaussianComputeRenderer::GetViewRenderData(const FilamentView& view) const {
+const GaussianSplatRenderer::ViewRenderData*
+GaussianSplatRenderer::GetViewRenderData(const FilamentView& view) const {
     auto found = outputs_.find(&view);
     if (found == outputs_.end() || !found->second.has_render_data) {
         return nullptr;
@@ -549,8 +550,8 @@ GaussianComputeRenderer::GetViewRenderData(const FilamentView& view) const {
     return &found->second.render_data;
 }
 
-const std::vector<GaussianComputeRenderer::PassDispatch>*
-GaussianComputeRenderer::GetPassDispatches(const FilamentView& view) const {
+const std::vector<GaussianSplatRenderer::PassDispatch>*
+GaussianSplatRenderer::GetPassDispatches(const FilamentView& view) const {
     auto found = outputs_.find(&view);
     if (found == outputs_.end()) {
         return nullptr;
@@ -558,12 +559,12 @@ GaussianComputeRenderer::GetPassDispatches(const FilamentView& view) const {
     return &found->second.pass_dispatches;
 }
 
-const std::vector<GaussianComputeRenderer::PassDefinition>&
-GaussianComputeRenderer::GetPassDefinitions() const {
+const std::vector<GaussianSplatRenderer::PassDefinition>&
+GaussianSplatRenderer::GetPassDefinitions() const {
     return pass_definitions_;
 }
 
-std::string GaussianComputeRenderer::GetShaderSourcePath(
+std::string GaussianSplatRenderer::GetShaderSourcePath(
         PassType pass_type) const {
     const PassDefinition* pass = FindPassDefinition(pass_type);
     if (!pass) {
@@ -574,17 +575,17 @@ std::string GaussianComputeRenderer::GetShaderSourcePath(
            pass->shader_file;
 }
 
-bool GaussianComputeRenderer::HasShaderSource(PassType pass_type) const {
+bool GaussianSplatRenderer::HasShaderSource(PassType pass_type) const {
     const std::string shader_path = GetShaderSourcePath(pass_type);
     return !shader_path.empty() && utility::filesystem::FileExists(shader_path);
 }
 
-const GaussianComputeRenderer::RenderConfig&
-GaussianComputeRenderer::GetRenderConfig() const {
+const GaussianSplatRenderer::RenderConfig&
+GaussianSplatRenderer::GetRenderConfig() const {
     return render_config_;
 }
 
-void GaussianComputeRenderer::SetRenderConfig(const RenderConfig& config) {
+void GaussianSplatRenderer::SetRenderConfig(const RenderConfig& config) {
     if (!ValidateRenderConfig(config)) {
         utility::LogWarning(
                 "Ignoring invalid Gaussian compute render configuration.");
@@ -599,8 +600,8 @@ void GaussianComputeRenderer::SetRenderConfig(const RenderConfig& config) {
     }
 }
 
-std::vector<GaussianComputeRenderer::PassDispatch>
-GaussianComputeRenderer::BuildPassDispatches(const FilamentView& view) const {
+std::vector<GaussianSplatRenderer::PassDispatch>
+GaussianSplatRenderer::BuildPassDispatches(const FilamentView& view) const {
     const ViewRenderData* render_data = GetViewRenderData(view);
     if (!render_data || render_data->viewport_size.x() <= 0 ||
         render_data->viewport_size.y() <= 0) {
@@ -647,30 +648,30 @@ GaussianComputeRenderer::BuildPassDispatches(const FilamentView& view) const {
     };
 }
 
-TextureHandle GaussianComputeRenderer::GetColorTexture(
+TextureHandle GaussianSplatRenderer::GetColorTexture(
         const FilamentView& view) const {
     auto found = outputs_.find(&view);
     return found != outputs_.end() ? found->second.color : TextureHandle();
 }
 
-TextureHandle GaussianComputeRenderer::GetDepthTexture(
+TextureHandle GaussianSplatRenderer::GetDepthTexture(
         const FilamentView& view) const {
     auto found = outputs_.find(&view);
     return found != outputs_.end() ? found->second.depth : TextureHandle();
 }
 
-std::uint32_t GaussianComputeRenderer::GetSceneDepthGLHandle(
+std::uint32_t GaussianSplatRenderer::GetSceneDepthGLHandle(
         const FilamentView& view) const {
     auto found = outputs_.find(&view);
     return found != outputs_.end() ? found->second.scene_depth_gl_handle : 0;
 }
 
-const char* GaussianComputeRenderer::GetBackendName() const {
+const char* GaussianSplatRenderer::GetBackendName() const {
     return backend_ ? backend_->GetName() : "Unavailable";
 }
 
-GaussianComputeRenderer::OutputTargets&
-GaussianComputeRenderer::PrepareOutputTargets(FilamentView& view) {
+GaussianSplatRenderer::OutputTargets&
+GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     auto viewport = view.GetViewport();
     auto& targets = outputs_[&view];
     if (viewport[2] <= 0 || viewport[3] <= 0) {
@@ -701,7 +702,7 @@ GaussianComputeRenderer::PrepareOutputTargets(FilamentView& view) {
     // is current).  If not yet valid here we skip and let the first render
     // call trigger init and recreation.
     {
-        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
             auto scene_depth = CreateGLTexture2D(
                     width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
@@ -773,7 +774,7 @@ GaussianComputeRenderer::PrepareOutputTargets(FilamentView& view) {
     return targets;
 }
 
-void GaussianComputeRenderer::ResetOutputTargets(OutputTargets& targets) {
+void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     // Destroy Filament wrappers first (before deleting GL textures).
     if (targets.render_target) {
         resource_mgr_.Destroy(targets.render_target);
@@ -791,7 +792,7 @@ void GaussianComputeRenderer::ResetOutputTargets(OutputTargets& targets) {
 #if !defined(__APPLE__)
     // Destroy GL textures created in PrepareOutputTargets.
     if (targets.scene_depth_gl_handle != 0 || targets.color_gl_handle != 0) {
-        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
             if (targets.scene_depth_gl_handle != 0) {
                 GLTextureHandle dt{targets.scene_depth_gl_handle, 0, 0, true};
@@ -822,8 +823,8 @@ void GaussianComputeRenderer::ResetOutputTargets(OutputTargets& targets) {
     targets.last_updated_frame = 0;
 }
 
-GaussianComputeRenderer::ViewRenderData
-GaussianComputeRenderer::ExtractViewRenderData(const FilamentView& view) const {
+GaussianSplatRenderer::ViewRenderData
+GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
     ViewRenderData data;
 
     auto viewport = view.GetViewport();
@@ -847,7 +848,7 @@ GaussianComputeRenderer::ExtractViewRenderData(const FilamentView& view) const {
     return data;
 }
 
-bool GaussianComputeRenderer::UpdateViewRenderData(OutputTargets& targets,
+bool GaussianSplatRenderer::UpdateViewRenderData(OutputTargets& targets,
                                                    const FilamentView& view) {
     const ViewRenderData new_data = ExtractViewRenderData(view);
     if (!targets.has_render_data ||
@@ -861,7 +862,7 @@ bool GaussianComputeRenderer::UpdateViewRenderData(OutputTargets& targets,
     return false;
 }
 
-bool GaussianComputeRenderer::UpdatePassDispatches(OutputTargets& targets,
+bool GaussianSplatRenderer::UpdatePassDispatches(OutputTargets& targets,
                                                    const FilamentView& view) {
     const std::vector<PassDispatch> new_dispatches = BuildPassDispatches(view);
     if (PassDispatchesEqual(targets.pass_dispatches, new_dispatches)) {
@@ -873,8 +874,8 @@ bool GaussianComputeRenderer::UpdatePassDispatches(OutputTargets& targets,
     return true;
 }
 
-const GaussianComputeRenderer::PassDefinition*
-GaussianComputeRenderer::FindPassDefinition(PassType pass_type) const {
+const GaussianSplatRenderer::PassDefinition*
+GaussianSplatRenderer::FindPassDefinition(PassType pass_type) const {
     for (const auto& pass : pass_definitions_) {
         if (pass.type == pass_type) {
             return &pass;
@@ -883,7 +884,7 @@ GaussianComputeRenderer::FindPassDefinition(PassType pass_type) const {
     return nullptr;
 }
 
-void GaussianComputeRenderer::ValidatePassShaderSources() const {
+void GaussianSplatRenderer::ValidatePassShaderSources() const {
     if (pass_sources_validated_) {
         return;
     }
@@ -899,7 +900,7 @@ void GaussianComputeRenderer::ValidatePassShaderSources() const {
     }
 }
 
-bool GaussianComputeRenderer::ValidateRenderConfig(
+bool GaussianSplatRenderer::ValidateRenderConfig(
         const RenderConfig& config) const {
     static constexpr int kMaxSupportedShDegree = 2;
     return config.tile_size.x() > 0 && config.tile_size.y() > 0 &&

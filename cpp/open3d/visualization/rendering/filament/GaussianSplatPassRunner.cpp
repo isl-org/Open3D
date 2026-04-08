@@ -5,10 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianComputePassRunner.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatPassRunner.h"
 
 #include <algorithm>
-#include <cstdlib>
 #include <cstddef>
 #include <cstring>
 #include <string>
@@ -16,8 +15,8 @@
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/ComputeGPU.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeBuffers.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatBuffers.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
 
 namespace open3d {
 namespace visualization {
@@ -26,15 +25,15 @@ namespace rendering {
 namespace {
 
 /// Look up a required PassDispatch entry; LogError on missing (programmer bug).
-const GaussianComputeRenderer::PassDispatch& RequireDispatch(
-        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
-        GaussianComputeRenderer::PassType type,
+const GaussianSplatRenderer::PassDispatch& RequireDispatch(
+        const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
+        GaussianSplatRenderer::PassType type,
         const char* name) {
     for (const auto& d : dispatches) {
         if (d.type == type) return d;
     }
     // Missing dispatch is a programmer error — fail loudly.
-    utility::LogError("Gaussian compute: required dispatch '{}' not found",
+    utility::LogError("GaussianSplat: required dispatch '{}' not found",
                       name);
 }
 
@@ -43,16 +42,8 @@ inline std::uint32_t DivUp(std::uint32_t n, std::uint32_t denom) {
     return std::max(1u, (n + denom - 1u) / denom);
 }
 
-bool GaussianSortDebugEnabled() {
-        static const bool enabled = []() {
-                const char* env = std::getenv("OPEN3D_GAUSSIAN_DEBUG_SORT");
-                return env != nullptr && env[0] != '\0' && env[0] != '0';
-        }();
-        return enabled;
-}
-
-void LogGaussianGpuErrorsOnce(GaussianComputeGpuContext& ctx,
-                              GaussianComputeViewGpuResources& vs) {
+void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
+                              GaussianSplatViewGpuResources& vs) {
         if ((vs.warned_gpu_error_flags & kGaussianGpuErrorKnownMask) ==
             kGaussianGpuErrorKnownMask) {
                 return;
@@ -68,221 +59,32 @@ void LogGaussianGpuErrorsOnce(GaussianComputeGpuContext& ctx,
                 ~vs.warned_gpu_error_flags;
         if ((new_error_flags & kGaussianGpuErrorTileEntryOverflow) != 0u) {
                 utility::LogWarning(
-                                "Gaussian compute: tile entry capacity exceeded; excess tile entries were dropped. Increase RenderConfig.max_tile_entries_total or max_tiles_per_splat.");
+                                "GaussianSplat: tile entry capacity exceeded; excess tile entries were dropped. Increase RenderConfig.max_tile_entries_total or max_tiles_per_splat.");
         }
         if ((new_error_flags & kGaussianGpuErrorSortCountClamped) != 0u) {
                 utility::LogWarning(
-                                "Gaussian compute: radix sort input count exceeded the configured tile entry capacity and was clamped. Output may be incomplete.");
+                                "GaussianSplat: radix sort input count exceeded the configured tile entry capacity and was clamped. Output may be incomplete.");
         }
         vs.warned_gpu_error_flags |= new_error_flags;
-}
-
-std::size_t GaussianSortDebugLimit() {
-        static const std::size_t limit = []() {
-                const char* env = std::getenv("OPEN3D_GAUSSIAN_DEBUG_SORT_LIMIT");
-                if (!env || env[0] == '\0') {
-                        return static_cast<std::size_t>(8);
-                }
-                char* end = nullptr;
-                const unsigned long parsed = std::strtoul(env, &end, 10);
-                if (end == env || parsed == 0ul) {
-                        return static_cast<std::size_t>(8);
-                }
-                return static_cast<std::size_t>(parsed);
-        }();
-        return limit;
-}
-
-template <typename T>
-bool DownloadBufferVector(GaussianComputeGpuContext& ctx,
-                                                  std::uintptr_t buffer,
-                                                  std::size_t count,
-                                                  std::size_t byte_offset,
-                                                  std::vector<T>* out) {
-        if (!out) {
-                return false;
-        }
-        out->assign(count, T{});
-        if (count == 0) {
-                return true;
-        }
-        return ctx.DownloadBuffer(buffer, out->data(), count * sizeof(T),
-                                                          byte_offset);
-}
-
-void LogTileEntries(const char* label,
-                                        std::uint32_t tile_index,
-                                        const std::vector<TileEntry>& entries,
-                                        std::size_t limit) {
-        const std::size_t sample_count = std::min(limit, entries.size());
-        utility::LogInfo(
-                        "GS debug {} tile={} count={} sample_count={}", label,
-                        tile_index, entries.size(), sample_count);
-        for (std::size_t index = 0; index < sample_count; ++index) {
-                const auto& entry = entries[index];
-                utility::LogInfo(
-                                "GS debug {}[{}]: depth_key=0x{:08X} splat={} stable={} "
-                                "tile_index={}",
-                                label, index, entry.depth_key, entry.splat_index,
-                                entry.stable_index, entry.tile_index);
-        }
-}
-
-void LogKeyValuePairs(const char* label,
-                                          const std::vector<std::uint32_t>& keys,
-                                          const std::vector<std::uint32_t>& values,
-                                          std::size_t limit) {
-        const std::size_t sample_count =
-                        std::min(limit, std::min(keys.size(), values.size()));
-        for (std::size_t index = 0; index < sample_count; ++index) {
-                utility::LogInfo(
-                                "GS debug {}[{}]: key=0x{:08X} value={}", label, index,
-                                keys[index], values[index]);
-        }
-}
-
-void DumpGaussianSortDebugData(GaussianComputeGpuContext& ctx,
-                                                           const PackedGaussianScene& packed,
-                                                           GaussianComputeViewGpuResources& vs,
-                                                           int final_sort_src_index) {
-        std::vector<std::uint32_t> counters;
-        if (!DownloadBufferVector(ctx, vs.counters_buf, kGaussianCounterCount, 0,
-                                                          &counters)) {
-                utility::LogWarning("GS debug: failed to download counters buffer");
-                return;
-        }
-        utility::LogInfo(
-                        "GS debug counters: total_entries={} error_flags=0x{:08X} "
-                        "tile_count={} splat_count={}",
-                        counters[kGaussianCounterTotalEntriesIndex],
-                        counters[kGaussianCounterErrorFlagsIndex],
-                        counters[kGaussianCounterTileCountIndex],
-                        counters[kGaussianCounterSplatCountIndex]);
-
-        std::vector<std::uint32_t> dispatch_args;
-        if (DownloadBufferVector(ctx, vs.dispatch_args_buf, 30u, 0,
-                                                         &dispatch_args)) {
-                for (std::size_t index = 0; index < 10; ++index) {
-                        utility::LogInfo(
-                                        "GS debug dispatch[{}]=({}, {}, {})", index,
-                                        dispatch_args[index * 3 + 0], dispatch_args[index * 3 + 1],
-                                        dispatch_args[index * 3 + 2]);
-                }
-        }
-
-        std::vector<RadixSortParams> radix_params;
-        if (DownloadBufferVector(ctx, vs.radix_params_buf, 4u, 0, &radix_params)) {
-                for (std::size_t index = 0; index < radix_params.size(); ++index) {
-                        const auto& params = radix_params[index];
-                        utility::LogInfo(
-                                        "GS debug radix_params[{}]: elements={} shift={} "
-                                        "num_wg={} blocks_per_wg={}",
-                                        index, params.g_num_elements, params.g_shift,
-                                        params.g_num_workgroups, params.g_num_blocks_per_workgroup);
-                }
-        }
-
-        std::vector<std::uint32_t> tile_counts;
-        std::vector<std::uint32_t> tile_offsets;
-        if (!DownloadBufferVector(ctx, vs.tile_counts_buf, packed.tile_count, 0,
-                                                          &tile_counts) ||
-                !DownloadBufferVector(ctx, vs.tile_offsets_buf, packed.tile_count, 0,
-                                                          &tile_offsets)) {
-                utility::LogWarning(
-                                "GS debug: failed to download tile count/offset buffers");
-                return;
-        }
-
-        std::uint32_t debug_tile = 0;
-        bool found_tile = false;
-        for (std::uint32_t tile = 0; tile < packed.tile_count; ++tile) {
-                if (tile_counts[tile] >= 2u) {
-                        debug_tile = tile;
-                        found_tile = true;
-                        break;
-                }
-        }
-        if (!found_tile) {
-                for (std::uint32_t tile = 0; tile < packed.tile_count; ++tile) {
-                        if (tile_counts[tile] > 0u) {
-                                debug_tile = tile;
-                                found_tile = true;
-                                break;
-                        }
-                }
-        }
-        if (!found_tile) {
-                utility::LogWarning("GS debug: no non-empty tile found");
-                return;
-        }
-
-        const std::uint32_t tile_offset = tile_offsets[debug_tile];
-        const std::uint32_t tile_count = tile_counts[debug_tile];
-        utility::LogInfo("GS debug selected tile={} offset={} count={}", debug_tile,
-                                         tile_offset, tile_count);
-
-        std::vector<TileEntry> unsorted_entries;
-        if (DownloadBufferVector(ctx, vs.tile_entries_buf, tile_count,
-                                                         static_cast<std::size_t>(tile_offset) *
-                                                                         sizeof(TileEntry),
-                                                         &unsorted_entries)) {
-                LogTileEntries("unsorted_entries", debug_tile, unsorted_entries,
-                                           GaussianSortDebugLimit());
-        }
-
-        std::vector<TileEntry> sorted_entries;
-        if (DownloadBufferVector(ctx, vs.sorted_entries_buf, tile_count,
-                                                         static_cast<std::size_t>(tile_offset) *
-                                                                         sizeof(TileEntry),
-                                                         &sorted_entries)) {
-                LogTileEntries("sorted_entries", debug_tile, sorted_entries,
-                                           GaussianSortDebugLimit());
-                bool monotonic = true;
-                for (std::size_t index = 1; index < sorted_entries.size(); ++index) {
-                        if (sorted_entries[index - 1].depth_key >
-                                sorted_entries[index].depth_key) {
-                                monotonic = false;
-                                break;
-                        }
-                }
-                utility::LogInfo("GS debug sorted_entries monotonic_non_decreasing={} ",
-                                                 monotonic ? "true" : "false");
-        }
-
-        std::vector<std::uint32_t> final_keys;
-        std::vector<std::uint32_t> final_values;
-        if (DownloadBufferVector(ctx, vs.sort_keys_buf[final_sort_src_index],
-                                                         tile_count,
-                                                         static_cast<std::size_t>(tile_offset) *
-                                                                         sizeof(std::uint32_t),
-                                                         &final_keys) &&
-                DownloadBufferVector(ctx, vs.sort_values_buf[final_sort_src_index],
-                                                         tile_count,
-                                                         static_cast<std::size_t>(tile_offset) *
-                                                                         sizeof(std::uint32_t),
-                                                         &final_values)) {
-                LogKeyValuePairs("final_keyvals", final_keys, final_values,
-                                                 GaussianSortDebugLimit());
-        }
 }
 
 }  // namespace
 
 bool RunGaussianGeometryPasses(
-        GaussianComputeGpuContext& ctx,
-        const GaussianComputeRenderer::RenderConfig& config,
+        GaussianSplatGpuContext& ctx,
+        const GaussianSplatRenderer::RenderConfig& config,
         const PackedGaussianScene& packed,
-        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
-        GaussianComputeViewGpuResources& vs,
+        const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
+        GaussianSplatViewGpuResources& vs,
         std::uint64_t scene_change_id,
         std::uint32_t source_splat_count,
         bool scene_changed) {
     // Validate all required dispatches upfront (programmer error → LogError).
     const auto& proj_d = RequireDispatch(
-            dispatches, GaussianComputeRenderer::PassType::kProjection,
+            dispatches, GaussianSplatRenderer::PassType::kProjection,
             "Projection");
     const auto& pfx_d = RequireDispatch(
-            dispatches, GaussianComputeRenderer::PassType::kTilePrefixSum,
+            dispatches, GaussianSplatRenderer::PassType::kTilePrefixSum,
             "PrefixSum");
 
     GaussianGpuBufferSizes gpu_sizes;
@@ -498,23 +300,19 @@ bool RunGaussianGeometryPasses(
                               9u * 3u * sizeof(std::uint32_t));
     ctx.FullBarrier();
 
-        if (GaussianSortDebugEnabled()) {
-                        DumpGaussianSortDebugData(ctx, packed, vs, src);
-        }
-
     return true;
 }
 
 bool RunGaussianCompositePass(
-        GaussianComputeGpuContext& ctx,
-        const GaussianComputeRenderer::RenderConfig& config,
-        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
-        GaussianComputeViewGpuResources& vs,
-        GaussianComputeRenderer::OutputTargets& targets) {
+        GaussianSplatGpuContext& ctx,
+        const GaussianSplatRenderer::RenderConfig& config,
+        const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
+        GaussianSplatViewGpuResources& vs,
+        GaussianSplatRenderer::OutputTargets& targets) {
     (void)config;
 
     const auto& comp_d = RequireDispatch(
-            dispatches, GaussianComputeRenderer::PassType::kComposite,
+            dispatches, GaussianSplatRenderer::PassType::kComposite,
             "Composite");
 
     const bool has_scene_depth = (targets.scene_depth_gl_handle != 0) ||

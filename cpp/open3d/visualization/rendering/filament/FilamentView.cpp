@@ -324,7 +324,7 @@ void FilamentView::EnableViewCaching(bool enable) {
             // finds the attachment handle already freed and panics with a
             // use-after-free assertion (e.g. on window maximize / resize).
             if (scene_) {
-                scene_->InvalidateGaussianComputeOutput(*this);
+                scene_->InvalidateGaussianSplatOutput(*this);
             }
             resource_mgr_.Destroy(render_target_);
             resource_mgr_.Destroy(color_buffer_);
@@ -356,8 +356,8 @@ TextureHandle FilamentView::GetColorBuffer() { return color_buffer_; }
 
 TextureHandle FilamentView::GetDepthBuffer() { return depth_buffer_; }
 
-TextureHandle FilamentView::GetGaussianComputeOverlay() {
-    if (scene_ && scene_->UsesGaussianComputeOutput(*this)) {
+TextureHandle FilamentView::GetGaussianSplatOverlay() {
+    if (scene_ && scene_->UsesGaussianSplatOutput(*this)) {
         return scene_->GetColorBufferForView(*this);
     }
     return {};

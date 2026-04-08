@@ -144,7 +144,7 @@ The compute context is created **before** Filament's `Engine::create()`. This is
 window when context sharing can be established — GLX/WGL sharing is set at context creation
 time and cannot be added retroactively.
 
-1. `FilamentEngine.cpp` calls `GaussianComputeOpenGLContext::GetInstance().InitializeStandalone()`
+1. `FilamentEngine.cpp` calls `GaussianSplatOpenGLContext::GetInstance().InitializeStandalone()`
 2. `InitializeStandalone()` creates a hidden GLFW OpenGL 4.6 helper window
 3. The resulting native context handle is passed to `Engine::create()` as `sharedGLContext`
 4. Filament's OpenGL platform creates its own context sharing with that native handle
@@ -157,10 +157,10 @@ created before `Engine::create()`, zero-copy sharing cannot be established retro
 ### Backend Abstraction
 
 ```
-GaussianComputeRenderer::Backend (abstract)
-├── GaussianComputeOpenGLBackend      — Linux + Windows (GL 4.6 core compute, SPIR-V)
-├── GaussianComputeMetalBackend       — macOS (Metal compute, operational)
-└── GaussianComputePlaceholderBackend — fallback (logs once per view, returns false)
+GaussianSplatRenderer::Backend (abstract)
+├── GaussianSplatOpenGLBackend      — Linux + Windows (GL 4.6 core compute, SPIR-V)
+├── GaussianSplatMetalBackend       — macOS (Metal compute, operational)
+└── GaussianSplatPlaceholderBackend — fallback (logs once per view, returns false)
 ```
 
 Each backend implements `RenderGeometryStage` (passes 1-4) and `RenderCompositeStage`
@@ -210,11 +210,11 @@ requires no dispatch logic updates.
 - macOS uses the default Filament backend (Metal).
 
 ### PHASE 2: OpenGL Compute Backend (DONE)
-- **GL context** (`GaussianComputeOpenGLContext`): Standalone GL 4.6 core-profile context created before Filament,
+- **GL context** (`GaussianSplatOpenGLContext`): Standalone GL 4.6 core-profile context created before Filament,
   passed as `sharedGLContext` to `Engine::create()`. Shares GL namespace with Filament's context.
   Created via GLFW: GLX on Linux X11/XWayland, WGL on Windows. Linux offscreen rendering requires
   an X11 or XWayland server.
-- **Pipeline API** (`GaussianComputeOpenGLPipeline`): Thin wrappers around GL 4.6 core compute:
+- **Pipeline API** (`GaussianSplatOpenGLPipeline`): Thin wrappers around GL 4.6 core compute:
   SSBO/UBO bind, image/sampler bind, buffer management, texture management, dispatch, barriers.
   All GL constants as `constexpr` to avoid GL header dependency in consumers.
 - **SPIR-V loading**: 9 shaders compiled offline from GLSL `.comp` to Vulkan-targeted SPIR-V
@@ -234,14 +234,14 @@ requires no dispatch logic updates.
   buffer to size tile entries and sort buffers before scatter.
 
 ### PHASE 3: macOS / Metal Backend (DONE)
-- **Metal GPU context** (`GaussianComputeGpuContextMetal`): Acquires Filament's `MTLDevice` and
+- **Metal GPU context** (`GaussianSplatGpuContextMetal`): Acquires Filament's `MTLDevice` and
   `MTLCommandQueue` via `FilamentNativeInterop` (`GetFilamentMetalNativeHandles`). Loads all 9
   compute pipelines from a pre-built `.metallib` (compiled by CMake via SPIRV-Cross from the same
   GLSL `.comp` sources). All dispatch, barrier, and buffer-binding operations fully implemented.
-- **Pass execution** (`GaussianComputeMetalBackend`): Calls `RunGaussianGeometryPasses` and
-  `RunGaussianCompositePass` from the shared `GaussianComputePassRunner` — identical pass logic
+- **Pass execution** (`GaussianSplatMetalBackend`): Calls `RunGaussianGeometryPasses` and
+  `RunGaussianCompositePass` from the shared `GaussianSplatPassRunner` — identical pass logic
   to the OpenGL backend.
-- **Metal output targets** (`GaussianComputeOutputTargetsApple`): Creates `MTLTexture` objects
+- **Metal output targets** (`GaussianSplatOutputTargetsApple`): Creates `MTLTexture` objects
   (`Depth32Float` + `RGBA16Float`), imports into Filament via `CreateImportedMTLTexture()`.
   MSAA disabled for GS views (sampleable depth incompatible with MSAA, same as GL).
 - **Frame schedule**: Geometry stage dispatches during `BeginFrame()` on a dedicated geometry
@@ -257,8 +257,8 @@ requires no dispatch logic updates.
   testing.
 
 ### PHASE 5: Vulkan Code Removal (DONE)
-- `GaussianComputeVulkanPipeline.h/.cpp` deleted.
-- `GaussianComputeVulkanBackend` class removed from `GaussianComputeRenderer.cpp`.
+- `GaussianSplatVulkanPipeline.h/.cpp` deleted.
+- `GaussianSplatVulkanBackend` class removed from `GaussianSplatRenderer.cpp`.
 
 ### Bug Fixes (DONE)
 - **Tile index overflow** (`gaussian_radix_sort_keygen.comp`): key was `tile_index << 20`
@@ -266,9 +266,9 @@ requires no dispatch logic updates.
   Fixed corruption on windows larger than ~1280×720.
 - **Use-after-free on resize**: `FilamentView::EnableViewCaching()` freed `color_buffer_`
   while the GS render target still referenced it. Fixed by calling
-  `scene_->InvalidateGaussianComputeOutput(*this)` before freeing `color_buffer_`, tearing
+  `scene_->InvalidateGaussianSplatOutput(*this)` before freeing `color_buffer_`, tearing
   down the GS render target first through:
-  `FilamentScene → FilamentRenderer → GaussianComputeRenderer::InvalidateOutputForView()`.
+  `FilamentScene → FilamentRenderer → GaussianSplatRenderer::InvalidateOutputForView()`.
 - **Non-sharing contexts** (depth all zeros): two independent GL namespaces meant imported
   texture IDs were meaningless in Filament's context. Fixed by creating the compute context
   before Filament via `InitializeStandalone()` and passing it as `sharedGLContext`.
@@ -319,7 +319,7 @@ Labels are applied via `CreateGLTexture2D` / `ResizeGLTexture2D`.
 
 **Metal objects** (`setLabel:`):
 - Buffers: same `gs.*` scheme as GL, applied in `AllocateBuffer` and reuse paths.
-- Textures: `gs.scene_depth`, `gs.color` in `GaussianComputeOutputTargetsApple`;
+- Textures: `gs.scene_depth`, `gs.color` in `GaussianSplatOutputTargetsApple`;
   `gs.composite_depth` in `ComputeGPUMetal`'s `CreateTexture2DR32F`.
 
 **CPU/GPU struct name alignment**:
@@ -347,7 +347,7 @@ The final opacity becomes `alpha *= compensation`.  The ratio is clamped to `max
 
 This mirrors [gsplat PR #117](https://github.com/nerfstudio-project/gsplat/pull/117).  The flag is transmitted via `scene.z` of the per-frame UBO (`GaussianViewParams`), so toggling it costs nothing more than a 4-byte UBO update per frame.
 
-### Data Packing (`GaussianComputeDataPacking`)
+### Data Packing (`GaussianSplatDataPacking`)
 - `PackGaussianViewParams`: packs view/projection matrices + scene scalars into the 288-byte
   `GaussianViewParams` UBO. Called every frame; no heap allocation.
 - `PackGaussianSceneAttributes`: packs per-splat geometry into compressed GPU layouts.
@@ -375,7 +375,7 @@ The packed `GaussianViewParams.limits` block carries those values to the shaders
 all stages use the same capacity value.
 
 `counters_buf` is also used as a compact GPU→CPU diagnostics channel,
-mapped to the `GaussianGpuCounters` struct in `GaussianComputeDataPacking.h`
+mapped to the `GaussianGpuCounters` struct in `GaussianSplatDataPacking.h`
 (GLSL binding 10, `gs_counters`):
 
 | Field | Meaning |
@@ -440,31 +440,27 @@ All other seven shaders have a single file unchanged by this change.
 
 ### Runtime Policy
 
-`GetShaderLoadPolicy()` in `ComputeGPUGL.cpp` determines which variant and
-loader to use. It applies platform defaults and respects two env var overrides.
+The shader variant and loader are controlled by two fields on
+`GaussianSplatRenderer::RenderConfig`:
 
-**Platform defaults:**
+| Field | Type | Default (Windows) | Default (Linux/macOS) |
+|---|---|---|---|
+| `use_shader_subgroups` | `bool` | `false` | `true` |
+| `use_precompiled_shaders` | `bool` | `false` | `true` |
 
-| Platform | `use_subgroups` | `use_precompiled` |
-|---|---|---|
-| Windows | `false` | `false` |
-| Linux / macOS | `true` | `true` |
+These fields are populated at `GaussianSplatRenderer` construction time from
+the `RenderConfig` defaults (platform-selected via `#ifdef _WIN32`).  They are
+passed to `CreateComputeGpuContextGL(use_subgroups, use_precompiled)` and stored
+in the GL context object.
 
-**Env var overrides** (take precedence over platform defaults):
-
-| Env var | Values | Effect |
-|---|---|---|
-| `OPEN3D_SHADER_SUBGROUPS` | `0` or `1` | `0` → load `gaussian_*.comp/.spv`; `1` → load `gaussian_*_subgroup.comp/.spv` for the two affected shaders |
-| `OPEN3D_SHADER_PRECOMPILED` | `0` or `1` | `0` → online GLSL compilation only; `1` → try SPIR-V first, fall back to GLSL |
-
-**Load sequence for each shader** (`EnsureProgramsLoaded`):
+**Load sequence for each shader** (`EnsureProgramsLoaded`, `LoadOneProgram`):
 
 ```
 resolve file_base:
-  if use_subgroups AND shader in {gaussian_prefix_sum, gaussian_radix_sort}:
-    file_base = shader_name + "_subgroup"
+  if shader name ends with "_subgroup" AND !use_subgroups:
+    strip "_subgroup" suffix  → load portable no-subgroup variant
   else:
-    file_base = shader_name
+    use name as-is
 
 if use_precompiled:
   try load file_base.spv via GL_ARB_gl_spirv
@@ -474,11 +470,35 @@ if use_precompiled:
 load file_base.comp via online GLSL compilation
 ```
 
+The `kGsShaderNames` table lists all shader base names with `_subgroup` suffix
+for the two affected shaders.  The suffix-stripping logic in `LoadOneProgram`
+makes it unnecessary to maintain a separate `kSubgroupCapableShaders` set.
+
 **Auto-fallback:** If *any* shader fails to load under the primary policy, the
-entire set is discarded and all nine shaders are retried with the safe fallback
-policy `{use_subgroups=false, use_precompiled=false}`. This ensures a working
-render on uncharted GPU/driver combinations without user intervention. A warning
+entire set is discarded and all programs are retried with the safe fallback
+`{use_subgroups=false, use_precompiled=false}`. This ensures a working render
+on uncharted GPU/driver combinations without user intervention. A warning is
+logged when fallback activates.
 is logged when fallback activates.
+
+### MaterialRecord / Python API
+
+Two capacity limit fields exposed on `MaterialRecord` (and via Python bindings)
+allow per-scene tuning without touching C++ headers:
+
+| `MaterialRecord` field | `RenderConfig` field | Default |
+|---|---|---|
+| `gaussian_splat_max_tiles_per_splat` | `max_tiles_per_splat` | 32 |
+| `gaussian_splat_max_tile_entries_total` | `max_tile_entries_total` | 32 × 1024 × 1024 |
+
+`FilamentScene::CacheGaussianSplatData` propagates these values to the renderer's
+`RenderConfig` via `SetRenderConfig` whenever splat data is loaded.
+
+The shader-loading policy fields (`use_shader_subgroups`,
+`use_precompiled_shaders`) are not surfaced to `MaterialRecord` because they
+must be set before the GPU context is constructed (i.e., at renderer creation
+time). They can be modified via `GaussianSplatRenderer::SetRenderConfig` only
+before the first render call.
 
 ### Build
 
@@ -512,6 +532,12 @@ See Completed Work → PHASE 3 for implementation details.
 
 ### PHASE 6: Build Integration Cleanup
 
+- ~~Remove `BUILD_GAUSSIAN_SPLAT_COMPUTE` CMake option~~ — **Done.** Gaussian
+  splatting is now always built when `BUILD_GUI=ON`.
+- ~~Remove `OPEN3D_SHADER_SUBGROUPS`/`OPEN3D_SHADER_PRECOMPILED` env var overrides~~
+  — **Done.** Policy is now sourced from `RenderConfig` with platform defaults.
+- ~~Remove `OPEN3D_GAUSSIAN_DEBUG_SORT` sort-debug env var and all associated
+  dump functions~~ — **Done.** Development-only debug code was deleted.
 - Remove stale `resources/gaussian_compute/` copies (now generated from `shaders/` by CMake)
 - Add GL 4.5 minimum capability check to CMake (`GL_ARB_compute_shader`,
   `GL_ARB_shader_storage_buffer_object`)
@@ -555,7 +581,7 @@ sessions, providing full GS functionality under any Wayland compositor with XWay
 
 **Status**: Implementation complete; blocked on a SPIR-V shader loading error at runtime.
 
-`GaussianComputeOpenGLContext` creates a shared GL 4.6 core-profile WGL context before Filament via
+`GaussianSplatOpenGLContext` creates a shared GL 4.6 core-profile WGL context before Filament via
 `InitializeStandalone()` (hidden 1×1 GLFW helper window).
 Context sharing and zero-copy texture import use the same mechanism as GLX. However,
 `gaussian_composite.comp` (and possibly other shaders) fail to load on Windows OpenGL
@@ -570,8 +596,8 @@ explicit extension enables in the SPIR-V binary or do not expose these extension
 Options: add explicit extension-enable decorations to the SPIR-V; provide a GLSL source
 fallback path on Windows; or rewrite the affected passes to avoid subgroup ops.
 
-**Files affected**: `GaussianComputeGpuContextGL.cpp`, `shaders/gaussian_composite.comp`
-(and possibly other shaders), `GaussianComputeOpenGLContext.h/.cpp`
+**Files affected**: `GaussianSplatGpuContextGL.cpp`, `shaders/gaussian_composite.comp`
+(and possibly other shaders), `GaussianSplatOpenGLContext.h/.cpp`
 
 ### FW4: Native Vulkan Backend — Unplanned
 
@@ -606,34 +632,34 @@ which is why those are the chosen backends.
 ## File Inventory
 
 ### Core implementation files
-- `GaussianComputeRenderer.h/.cpp` — Backend interface, OpenGL/Metal backends, output lifecycle;
+- `GaussianSplatRenderer.h/.cpp` — Backend interface, OpenGL/Metal backends, output lifecycle;
   `InvalidateOutputForView()` for safe resize
-- `GaussianComputeOpenGLPipeline.h/.cpp` — GL 4.6 compute API wrappers
+- `GaussianSplatOpenGLPipeline.h/.cpp` — GL 4.6 compute API wrappers
 - `ComputeGPU.h` — All generic GPU compute types in one header:
-  `ComputeProgramId` enum, `ImageFormat` enum, `GaussianComputeGpuContext` abstract base,
+  `ComputeProgramId` enum, `ImageFormat` enum, `GaussianSplatGpuContext` abstract base,
   `GpuComputeFrame` RAII (Begin/EndGeometryPass or Begin/EndCompositePass),
   `GpuComputePass` RAII builder (UseProgram + PushDebugGroup on ctor, Dispatch/DispatchIndirect,
   PopDebugGroup on dtor, no-op on load failure). Factory declarations included.
-- `ComputeGPUGL.cpp` — OpenGL 4.6 + SPIR-V implementation of `GaussianComputeGpuContext`
+- `ComputeGPUGL.cpp` — OpenGL 4.6 + SPIR-V implementation of `GaussianSplatGpuContext`
 - `ComputeGPUMetal.mm` — Metal implementation: buffer management, pipeline selection,
   `Dispatch()`, `DispatchIndirect()`, barrier, texture ops
-- `GaussianComputeMetalBackend.mm` — Metal backend: acquires Filament `MTLDevice`/queue,
+- `GaussianSplatMetalBackend.mm` — Metal backend: acquires Filament `MTLDevice`/queue,
   runs geometry + composite stages
-- `GaussianComputeOutputTargetsApple.h/.mm` — Creates `MTLTexture` (depth + color),
+- `GaussianSplatOutputTargetsApple.h/.mm` — Creates `MTLTexture` (depth + color),
   imports into Filament via `CreateImportedMTLTexture()`
-- `GaussianComputePassRunner.h/.cpp` — Backend-agnostic geometry + composite pass sequence
+- `GaussianSplatPassRunner.h/.cpp` — Backend-agnostic geometry + composite pass sequence
   (shared by GL and Metal); each dispatch is one `GpuComputePass(ctx, id, label).SSBO().Dispatch()`
   expression; `GpuComputeFrame` ensures Begin/End pairs are always matched
 - `FilamentNativeInterop.h/.mm` — Retrieves Filament `MTLDevice` and `MTLCommandQueue`
   from `PlatformMetal`
-- `GaussianComputeOpenGLContext.h/.cpp` — GLFW-owned GL 4.6 shared-context creation;
+- `GaussianSplatOpenGLContext.h/.cpp` — GLFW-owned GL 4.6 shared-context creation;
   GLX on Linux X11/XWayland, WGL on Windows
-- `GaussianComputeBuffers.h/.cpp` — shared SSBO/UBO size planning for backends
-- `GaussianComputeDataPacking.h/.cpp` — CPU → GPU data packing (std140/std430)
+- `GaussianSplatBuffers.h/.cpp` — shared SSBO/UBO size planning for backends
+- `GaussianSplatDataPacking.h/.cpp` — CPU → GPU data packing (std140/std430)
 - `FilamentResourceManager.h/.cpp` — `CreateImportedTexture()` / `CreateImportedMTLTexture()`
   for zero-copy import
 - `FilamentView.h/.cpp` — `EnableViewCaching()` invalidation fix before freeing color_buffer_
-- `FilamentScene.h/.cpp` — `InvalidateGaussianComputeOutput()` forwarding
+- `FilamentScene.h/.cpp` — `InvalidateGaussianSplatOutput()` forwarding
 - `FilamentRenderer.h/.cpp` — frame schedule and GS output forwarding
 - `FilamentEngine.cpp` — pre-Filament shared context setup
 

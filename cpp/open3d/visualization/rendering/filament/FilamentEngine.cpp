@@ -26,7 +26,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #if !defined(__APPLE__)
-#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
 #endif
 
 namespace open3d {
@@ -78,7 +78,7 @@ EngineInstance::~EngineInstance() {
     engine_ = nullptr;
 
 #if !defined(__APPLE__)
-    GaussianComputeOpenGLContext::GetInstance().Shutdown();
+    GaussianSplatOpenGLContext::GetInstance().Shutdown();
     // The GLX context handle is now destroyed; clear the cached pointer so
     // that the next EngineInstance creation re-initialises the compute
     // context and passes a fresh handle to Filament's Engine::create().
@@ -133,7 +133,7 @@ EngineInstance::EngineInstance() {
     if ((backend == filament::backend::Backend::OPENGL ||
          backend == filament::backend::Backend::DEFAULT) &&
         !shared_context_) {
-        auto& gl_ctx = GaussianComputeOpenGLContext::GetInstance();
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid()) {
             gl_ctx.InitializeStandalone();
         }

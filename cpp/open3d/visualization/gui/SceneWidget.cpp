@@ -1140,7 +1140,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     // shader outputs straight-alpha RGBA so standard ImGui blending
     // (SrcAlpha, 1-SrcAlpha) composites correctly over the Filament
     // scene rendered above.
-    auto gs_tex = impl_->scene_->GetView()->GetGaussianComputeOverlay();
+    auto gs_tex = impl_->scene_->GetView()->GetGaussianSplatOverlay();
     {
         static int gs_ol_log = 0;
         if (gs_ol_log < 10) {

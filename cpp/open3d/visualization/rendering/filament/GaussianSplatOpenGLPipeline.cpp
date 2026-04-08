@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLPipeline.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLPipeline.h"
 
 #if !defined(__APPLE__)
 
@@ -94,8 +94,8 @@ GLComputeProgram LoadGLComputeProgramSPIRV(
     // SPIR-V magic number: 0x07230203 (little-endian: 03 02 23 07).
     bool magic_ok = spirv.size() >= 4 && spirv[0] == 0x03 && spirv[1] == 0x02 &&
                     spirv[2] == 0x23 && spirv[3] == 0x07;
-    utility::LogInfo("LoadGLComputeProgramSPIRV: {} — {} bytes, magic {}",
-                     debug_name, spirv.size(), magic_ok ? "OK" : "INVALID");
+    utility::LogDebug("LoadGLComputeProgramSPIRV: {} — {} bytes, magic {}",
+                      debug_name, spirv.size(), magic_ok ? "OK" : "INVALID");
     if (!magic_ok) {
         utility::LogWarning(
                 "SPIR-V magic mismatch for {} (first 4 bytes: {:02X} {:02X} "

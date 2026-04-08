@@ -11,7 +11,7 @@
 
 #if defined(__APPLE__)
 
-#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -26,10 +26,10 @@ bool PrepareGaussianImportedRenderTargetsApple(
         FilamentResourceManager& resource_mgr,
         std::uint32_t width,
         std::uint32_t height,
-        GaussianComputeRenderer::OutputTargets& targets);
+        GaussianSplatRenderer::OutputTargets& targets);
 
 void ReleaseGaussianImportedMTLTexturesApple(
-        GaussianComputeRenderer::OutputTargets& targets);
+        GaussianSplatRenderer::OutputTargets& targets);
 
 }  // namespace rendering
 }  // namespace visualization

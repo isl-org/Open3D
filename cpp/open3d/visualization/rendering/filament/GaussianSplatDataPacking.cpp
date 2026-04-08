@@ -8,7 +8,7 @@
 // Implementation of data packing helpers for the Gaussian splat compute
 // renderer.
 
-#include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
 
 #include <algorithm>
 #include <cmath>
@@ -88,8 +88,8 @@ static std::uint32_t PackSnorm8x4(float w, float x, float y, float z) {
 
 PackedGaussianScene PackGaussianViewParams(
         const GaussianSplatSourceData& source,
-        const GaussianComputeRenderer::ViewRenderData& render_data,
-        const GaussianComputeRenderer::RenderConfig& config) {
+        const GaussianSplatRenderer::ViewRenderData& render_data,
+        const GaussianSplatRenderer::RenderConfig& config) {
     PackedGaussianScene packed;
 
     if (source.splat_count == 0 || render_data.viewport_size.x() <= 0 ||
@@ -181,7 +181,7 @@ PackedGaussianScene PackGaussianViewParams(
 
 void PackGaussianSceneAttributes(
         const GaussianSplatSourceData& source,
-        const GaussianComputeRenderer::RenderConfig& config,
+        const GaussianSplatRenderer::RenderConfig& config,
         PackedGaussianScene& packed) {
     const std::uint32_t n = source.splat_count;
 

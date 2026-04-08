@@ -9,7 +9,7 @@ functionality is out of scope.
 - Store intermediate live research and progress reports with important findings in .md files and refer to them as needed.
 - Use subagents for major steps. 
 - Create new git branches when you explore implementation options - go back to previous code as required. 
-- Prioritize human readability and maintainability
+- Prioritize human readability and maintainability.
 - Avoid duplicate implementations when similar functionality already exists - refactor and reuse instead.
 - Keep changes focused and small. Avoid broad refactors unless requested.
 - Read the relevant C++ / Python / docs files together and identify whether bindings, docs, and tests must change with the source change.

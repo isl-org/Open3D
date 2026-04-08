@@ -16,7 +16,7 @@
 // Filament's Linux OpenGL backend is PlatformGLX. Offscreen rendering on Linux
 // therefore requires an X11 or XWayland server.
 
-#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
 
 #if !defined(__APPLE__)
 
@@ -66,14 +66,14 @@ const char* GetNativeBackendName() {
 
 }  // namespace
 
-GaussianComputeOpenGLContext& GaussianComputeOpenGLContext::GetInstance() {
-    static GaussianComputeOpenGLContext instance;
+GaussianSplatOpenGLContext& GaussianSplatOpenGLContext::GetInstance() {
+    static GaussianSplatOpenGLContext instance;
     return instance;
 }
 
-GaussianComputeOpenGLContext::~GaussianComputeOpenGLContext() { Shutdown(); }
+GaussianSplatOpenGLContext::~GaussianSplatOpenGLContext() { Shutdown(); }
 
-bool GaussianComputeOpenGLContext::InitializeStandalone() {
+bool GaussianSplatOpenGLContext::InitializeStandalone() {
     if (initialized_) {
         return true;
     }
@@ -81,7 +81,7 @@ bool GaussianComputeOpenGLContext::InitializeStandalone() {
 #if !defined(_WIN32)
     if (std::strcmp(GetSessionType(), "wayland") == 0) {
         utility::LogInfo(
-                "GaussianComputeOpenGLContext: Wayland session detected; "
+                "GaussianSplatOpenGLContext: Wayland session detected; "
                 "using X11/GLX via XWayland for Filament compatibility.");
     }
 #endif
@@ -98,7 +98,7 @@ bool GaussianComputeOpenGLContext::InitializeStandalone() {
     glfwDefaultWindowHints();
     if (!window) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: glfwCreateWindow failed. "
+                "GaussianSplatOpenGLContext: glfwCreateWindow failed. "
                 "Linux offscreen rendering now requires an X11/XWayland "
                 "server.");
         return false;
@@ -111,7 +111,7 @@ bool GaussianComputeOpenGLContext::InitializeStandalone() {
     }
     if (glew_err != GLEW_OK) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: glewInit warning: {}",
+                "GaussianSplatOpenGLContext: glewInit warning: {}",
                 reinterpret_cast<const char*>(glewGetErrorString(glew_err)));
     }
 
@@ -124,11 +124,11 @@ bool GaussianComputeOpenGLContext::InitializeStandalone() {
     const char* version =
             reinterpret_cast<const char*>(glGetString(GL_VERSION));
     utility::LogDebug(
-            "GaussianComputeOpenGLContext: Created standalone {} context "
+            "GaussianSplatOpenGLContext: Created standalone {} context "
             "for session={} native={:p}",
             GetNativeBackendName(), GetSessionType(), GetNativeContext());
     utility::LogDebug(
-            "GaussianComputeOpenGLContext: GL vendor={} renderer={} "
+            "GaussianSplatOpenGLContext: GL vendor={} renderer={} "
             "version={}",
             vendor ? vendor : "?", renderer ? renderer : "?",
             version ? version : "?");
@@ -137,19 +137,19 @@ bool GaussianComputeOpenGLContext::InitializeStandalone() {
     return true;
 }
 
-bool GaussianComputeOpenGLContext::Initialize() {
+bool GaussianSplatOpenGLContext::Initialize() {
     if (initialized_) {
         return true;
     }
 
     utility::LogWarning(
-            "GaussianComputeOpenGLContext: late initialization is not "
+            "GaussianSplatOpenGLContext: late initialization is not "
             "supported. InitializeStandalone() must run before Filament "
             "Engine::create() so zero-copy sharedGLContext setup succeeds.");
     return false;
 }
 
-void* GaussianComputeOpenGLContext::GetNativeContext() const {
+void* GaussianSplatOpenGLContext::GetNativeContext() const {
     if (!glfw_window_) {
         return nullptr;
     }
@@ -162,7 +162,7 @@ void* GaussianComputeOpenGLContext::GetNativeContext() const {
 #endif
 }
 
-void GaussianComputeOpenGLContext::Shutdown() {
+void GaussianSplatOpenGLContext::Shutdown() {
     if (!initialized_) {
         return;
     }
@@ -172,12 +172,12 @@ void GaussianComputeOpenGLContext::Shutdown() {
     glfw_window_ = nullptr;
     initialized_ = false;
     gl_logged_ = false;
-    utility::LogDebug("GaussianComputeOpenGLContext: Shut down.");
+    utility::LogDebug("GaussianSplatOpenGLContext: Shut down.");
 }
 
-bool GaussianComputeOpenGLContext::IsValid() const { return initialized_; }
+bool GaussianSplatOpenGLContext::IsValid() const { return initialized_; }
 
-bool GaussianComputeOpenGLContext::MakeCurrent() {
+bool GaussianSplatOpenGLContext::MakeCurrent() {
     if (!initialized_) {
         return false;
     }
@@ -187,7 +187,7 @@ bool GaussianComputeOpenGLContext::MakeCurrent() {
     const bool ok = (glfwGetCurrentContext() == window);
     if (!ok) {
         utility::LogWarning(
-                "GaussianComputeOpenGLContext: glfwMakeContextCurrent "
+                "GaussianSplatOpenGLContext: glfwMakeContextCurrent "
                 "failed.");
         return false;
     }
@@ -199,7 +199,7 @@ bool GaussianComputeOpenGLContext::MakeCurrent() {
         const char* renderer =
                 reinterpret_cast<const char*>(glGetString(GL_RENDERER));
         utility::LogDebug(
-                "GaussianComputeOpenGLContext: {} active - GL {} on {}",
+                "GaussianSplatOpenGLContext: {} active - GL {} on {}",
                 GetNativeBackendName(), version ? version : "?",
                 renderer ? renderer : "?");
     }
@@ -207,11 +207,11 @@ bool GaussianComputeOpenGLContext::MakeCurrent() {
     return true;
 }
 
-void GaussianComputeOpenGLContext::ReleaseCurrent() {
+void GaussianSplatOpenGLContext::ReleaseCurrent() {
     glfwMakeContextCurrent(nullptr);
 }
 
-void GaussianComputeOpenGLContext::Finish() { glFinish(); }
+void GaussianSplatOpenGLContext::Finish() { glFinish(); }
 
 }  // namespace rendering
 }  // namespace visualization

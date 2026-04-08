@@ -49,7 +49,7 @@ enum class ComputeProgramId : int {
     kCount = 9,
 };
 
-/// Format selector for GaussianComputeGpuContext::BindImage().
+/// Format selector for GaussianSplatGpuContext::BindImage().
 enum class ImageFormat { kRGBA16F, kR32F };
 
 /// Canonical shader base names indexed by ComputeProgramId.
@@ -87,7 +87,7 @@ static_assert(sizeof(RadixSortParams) == 16,
               "RadixSortParams must be 16 bytes to match GLSL layout");
 
 /// Per-view GPU resource handles (opaque: GL name or MTLBuffer/MTLTexture).
-struct GaussianComputeViewGpuResources {
+struct GaussianSplatViewGpuResources {
     std::uintptr_t view_params_buf = 0;
     std::uintptr_t positions_buf = 0;
     std::uintptr_t scales_buf = 0;
@@ -114,15 +114,15 @@ struct GaussianComputeViewGpuResources {
 };
 
 // ---------------------------------------------------------------------------
-// GaussianComputeGpuContext — abstract GPU backend interface
+// GaussianSplatGpuContext — abstract GPU backend interface
 // ---------------------------------------------------------------------------
 
 /// Platform-agnostic GPU operations for compute passes.
 /// Implementations: CreateComputeGpuContextGL() (OpenGL) and
 /// CreateComputeGpuContextMetal() (Metal).
-class GaussianComputeGpuContext {
+class GaussianSplatGpuContext {
 public:
-    virtual ~GaussianComputeGpuContext() = default;
+    virtual ~GaussianSplatGpuContext() = default;
 
     /// Load all compute programs (lazy, idempotent).
     virtual bool EnsureProgramsLoaded() = 0;
@@ -233,7 +233,7 @@ class GpuComputeFrame {
 public:
     enum Kind { kGeometry, kComposite };
 
-    GpuComputeFrame(GaussianComputeGpuContext& ctx, Kind kind)
+    GpuComputeFrame(GaussianSplatGpuContext& ctx, Kind kind)
         : ctx_(ctx), kind_(kind) {
         if (kind_ == kGeometry) {
             ctx_.BeginGeometryPass();
@@ -259,7 +259,7 @@ public:
     }
 
 private:
-    GaussianComputeGpuContext& ctx_;
+    GaussianSplatGpuContext& ctx_;
     Kind kind_;
     bool ended_ = false;
 };
@@ -278,7 +278,7 @@ private:
 /// it wants to short-circuit further work for the whole pass sequence.
 class GpuComputePass {
 public:
-    GpuComputePass(GaussianComputeGpuContext& ctx,
+    GpuComputePass(GaussianSplatGpuContext& ctx,
                    ComputeProgramId pid,
                    const char* label = nullptr)
         : ctx_(ctx), label_(label) {
@@ -347,7 +347,7 @@ public:
     }
 
 private:
-    GaussianComputeGpuContext& ctx_;
+    GaussianSplatGpuContext& ctx_;
     const char* label_;
     bool ok_;
 };
@@ -357,10 +357,11 @@ private:
 // ---------------------------------------------------------------------------
 
 #if !defined(__APPLE__)
-std::unique_ptr<GaussianComputeGpuContext> CreateComputeGpuContextGL();
+std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextGL(
+        bool use_subgroups, bool use_precompiled);
 #endif
 #if defined(__APPLE__)
-std::unique_ptr<GaussianComputeGpuContext> CreateComputeGpuContextMetal(
+std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextMetal(
         std::uintptr_t device_handle, std::uintptr_t command_queue_handle);
 #endif
 

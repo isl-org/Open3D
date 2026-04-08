@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 #if defined(__APPLE__)
 
@@ -18,19 +18,19 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
 #include "open3d/visualization/rendering/filament/ComputeGPU.h"
-#include "open3d/visualization/rendering/filament/GaussianComputePassRunner.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatPassRunner.h"
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class GaussianComputeMetalBackend final : public GaussianComputeRenderer::Backend {
+class GaussianSplatMetalBackend final : public GaussianSplatRenderer::Backend {
 public:
-    GaussianComputeMetalBackend(
+    GaussianSplatMetalBackend(
             FilamentResourceManager& resource_mgr,
-            const GaussianComputeRenderer::RenderConfig& config)
+            const GaussianSplatRenderer::RenderConfig& config)
         : config_(config) {
         (void)resource_mgr;
         FilamentMetalNativeHandles mh =
@@ -41,7 +41,7 @@ public:
         }
     }
 
-    ~GaussianComputeMetalBackend() override { Cleanup(); }
+    ~GaussianSplatMetalBackend() override { Cleanup(); }
 
     const char* GetName() const override { return "Metal"; }
 
@@ -58,10 +58,10 @@ public:
     bool RenderGeometryStage(
             const FilamentView& view,
             const FilamentScene& scene,
-            const GaussianComputeRenderer::ViewRenderData& render_data,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&
+            const GaussianSplatRenderer::ViewRenderData& render_data,
+            const std::vector<GaussianSplatRenderer::PassDispatch>&
                     dispatches,
-            GaussianComputeRenderer::OutputTargets& targets) override {
+            GaussianSplatRenderer::OutputTargets& targets) override {
         if (!gpu_) {
             return false;
         }
@@ -100,10 +100,10 @@ public:
 
     bool RenderCompositeStage(
             const FilamentView& view,
-            const GaussianComputeRenderer::ViewRenderData&,
-            const std::vector<GaussianComputeRenderer::PassDispatch>&
+            const GaussianSplatRenderer::ViewRenderData&,
+            const std::vector<GaussianSplatRenderer::PassDispatch>&
                     dispatches,
-            GaussianComputeRenderer::OutputTargets& targets) override {
+            GaussianSplatRenderer::OutputTargets& targets) override {
         if (!gpu_) {
             return false;
         }
@@ -116,7 +116,7 @@ public:
     }
 
 private:
-    void DestroyViewState(GaussianComputeViewGpuResources& vs) {
+    void DestroyViewState(GaussianSplatViewGpuResources& vs) {
         if (!gpu_) {
             return;
         }
@@ -160,16 +160,16 @@ private:
         gpu_.reset();
     }
 
-    const GaussianComputeRenderer::RenderConfig& config_;
-    std::unordered_map<const FilamentView*, GaussianComputeViewGpuResources>
+    const GaussianSplatRenderer::RenderConfig& config_;
+    std::unordered_map<const FilamentView*, GaussianSplatViewGpuResources>
             view_states_;
-    std::unique_ptr<GaussianComputeGpuContext> gpu_;
+    std::unique_ptr<GaussianSplatGpuContext> gpu_;
 };
 
-std::unique_ptr<GaussianComputeRenderer::Backend> CreateGaussianComputeMetalBackend(
+std::unique_ptr<GaussianSplatRenderer::Backend> CreateGaussianSplatMetalBackend(
         FilamentResourceManager& resource_mgr,
-        const GaussianComputeRenderer::RenderConfig& config) {
-    return std::make_unique<GaussianComputeMetalBackend>(resource_mgr, config);
+        const GaussianSplatRenderer::RenderConfig& config) {
+    return std::make_unique<GaussianSplatMetalBackend>(resource_mgr, config);
 }
 
 }  // namespace rendering

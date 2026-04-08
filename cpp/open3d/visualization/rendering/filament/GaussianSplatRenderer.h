@@ -32,7 +32,7 @@ class FilamentResourceManager;
 class FilamentScene;
 class FilamentView;
 
-class GaussianComputeRenderer {
+class GaussianSplatRenderer {
 public:
     enum class PassType {
         kProjection,
@@ -154,9 +154,9 @@ public:
                 OutputTargets& targets) = 0;
     };
 
-    GaussianComputeRenderer(filament::Engine& engine,
+    GaussianSplatRenderer(filament::Engine& engine,
                             FilamentResourceManager& resource_mgr);
-    ~GaussianComputeRenderer();
+    ~GaussianSplatRenderer();
 
     void BeginFrame();
     void RenderGeometryStage(FilamentView& view, const FilamentScene& scene);

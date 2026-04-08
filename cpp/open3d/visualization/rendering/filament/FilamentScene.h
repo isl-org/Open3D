@@ -217,13 +217,13 @@ public:
     /// Iterate over ALL views (including inactive/cached ones).
     void ForEachView(const std::function<void(FilamentView&)>& callback) const;
     bool HasGaussianSplatGeometry() const;
-    bool UsesGaussianComputeOutput(const FilamentView& view) const;
+    bool UsesGaussianSplatOutput(const FilamentView& view) const;
     TextureHandle GetColorBufferForView(const FilamentView& view) const;
     TextureHandle GetDepthBufferForView(const FilamentView& view) const;
     /// Invalidates GS output targets for the given view.  Must be called
     /// before the view's FilamentView::color_buffer_ texture is freed so the
     /// GS render target (which uses it as an attachment) is torn down first.
-    void InvalidateGaussianComputeOutput(FilamentView& view);
+    void InvalidateGaussianSplatOutput(FilamentView& view);
     const GaussianSplatSourceData* GetGaussianSplatSourceData() const;
 
     void Draw(filament::Renderer& renderer);

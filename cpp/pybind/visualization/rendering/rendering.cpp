@@ -466,6 +466,18 @@ void pybind_rendering_definitions(py::module &m) {
                     "over-brightening introduced by the subpixel blur kernel. "
                     "Use this only if it was used in creating the Gaussian "
                     "splats.")
+            .def_readwrite(
+                    "gaussian_splat_max_tiles_per_splat",
+                    &MaterialRecord::gaussian_splat_max_tiles_per_splat,
+                    "Maximum number of screen tiles a single splat may cover. "
+                    "Increase for very large / close-up splats at the cost of "
+                    "higher GPU memory use. Default: 32.")
+            .def_readwrite(
+                    "gaussian_splat_max_tile_entries_total",
+                    &MaterialRecord::gaussian_splat_max_tile_entries_total,
+                    "Total tile-coverage entry budget for the whole scene. "
+                    "Increase for dense or high-resolution scenes at the cost "
+                    "of GPU memory. Default: 33554432 (32 * 1024 * 1024).")
             .def_readwrite("shader", &MaterialRecord::shader);
 
     // ---- TriangleMeshModel ----

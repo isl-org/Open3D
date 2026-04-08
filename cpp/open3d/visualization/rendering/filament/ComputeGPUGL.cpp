@@ -5,15 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// OpenGL 4.6 + SPIR-V implementation of GaussianComputeGpuContext.
+// OpenGL 4.6 + SPIR-V implementation of GaussianSplatGpuContext.
 // Compiled only on non-Apple platforms.
 
 #if !defined(__APPLE__)
 
-#include <cstdlib>
 #include <memory>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 // GLEW for GL extension flags (GLEW_ARB_gl_spirv etc.) and glewGetString.
@@ -24,8 +22,8 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLContext.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeOpenGLPipeline.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLPipeline.h"
 
 namespace open3d {
 namespace visualization {
@@ -72,143 +70,83 @@ GLTextureHandle ToGLTexture(
 
 }  // namespace
 
-// ---------------------------------------------------------------------------
-// Shader load policy
-// ---------------------------------------------------------------------------
-
-/// Which shader variant + loader to use for each program.
-/// Controlled by platform defaults, overridable via env vars:
-///   OPEN3D_SHADER_SUBGROUPS=0|1   — 0: no-subgroup variant (safe everywhere)
-///                                    1: _subgroup variant (faster on good drivers)
-///   OPEN3D_SHADER_PRECOMPILED=0|1 — 0: online GLSL compilation
-///                                    1: SPIR-V binary
-///
-/// Platform defaults:
-///   Windows → subgroups=off, precompiled=off  (Intel/AMD WGL GL driver issues)
-///   Linux/macOS → subgroups=on, precompiled=on
-struct ShaderLoadPolicy {
-    bool use_subgroups;   // true: load gaussian_*_subgroup.{spv,comp}
-    bool use_precompiled; // true: prefer .spv; false: online GLSL only
-};
-
-/// Shader base names that have a _subgroup variant.
-/// All other shaders are unaffected by use_subgroups.
-static const std::unordered_set<std::string> kSubgroupCapableShaders = {
-        "gaussian_prefix_sum",
-        "gaussian_radix_sort",
-};
-
-/// Read an optional boolean env var.  Returns the default if unset or invalid.
-static bool ReadBoolEnv(const char* name, bool default_val) {
-    const char* val = std::getenv(name);
-    if (val == nullptr) return default_val;
-    if (val[0] == '1' && val[1] == '\0') return true;
-    if (val[0] == '0' && val[1] == '\0') return false;
-    utility::LogWarning(
-            "GaussianCompute: env var {} has unexpected value '{}'; "
-            "expected 0 or 1. Using default ({}).",
-            name, val, default_val ? 1 : 0);
-    return default_val;
-}
-
-/// Determine the shader load policy from platform defaults and env var overrides.
-static ShaderLoadPolicy GetShaderLoadPolicy() {
-#if defined(_WIN32)
-    // Windows OpenGL drivers (especially Intel/AMD) miscompile subgroup
-    // arithmetic both via SPIR-V (GL_ARB_gl_spirv) and online GLSL.
-    // Safe default: no subgroups + online GLSL compilation.
-    bool default_subgroups   = false;
-    bool default_precompiled = false;
-#else
-    // Linux and macOS (via XWayland/GLX or Metal transpilation) handle
-    // subgroup intrinsics and SPIR-V loading correctly.
-    bool default_subgroups   = true;
-    bool default_precompiled = true;
-#endif
-
-    bool use_subgroups   = ReadBoolEnv("OPEN3D_SHADER_SUBGROUPS",   default_subgroups);
-    bool use_precompiled = ReadBoolEnv("OPEN3D_SHADER_PRECOMPILED",  default_precompiled);
-
-    const char* sg_source  = (std::getenv("OPEN3D_SHADER_SUBGROUPS")   != nullptr)
-                                     ? "env OPEN3D_SHADER_SUBGROUPS"   : "platform default";
-    const char* pre_source = (std::getenv("OPEN3D_SHADER_PRECOMPILED") != nullptr)
-                                     ? "env OPEN3D_SHADER_PRECOMPILED" : "platform default";
-
-    utility::LogInfo(
-            "GaussianCompute: shader policy: subgroups={} ({}), "
-            "precompiled={} ({}).",
-            use_subgroups ? "on" : "off", sg_source,
-            use_precompiled ? "on" : "off", pre_source);
-
-    return {use_subgroups, use_precompiled};
-}
-
-/// Load one shader program according to policy.
-/// Returns true on success; logs warnings on failure.
-/// base      = canonical name, e.g. "gaussian_prefix_sum"
-/// shader_root = filesystem directory (with trailing slash)
+/// Load one shader program.
+/// Shaders named with the "_subgroup" suffix are the subgroup-arithmetic
+/// variant.  When use_subgroups=false and the name ends in "_subgroup", the
+/// suffix is stripped to load the portable no-subgroup version instead.
+/// When use_precompiled=true, the SPIR-V binary is tried first, then the
+/// GLSL source as a fallback.
 static bool LoadOneProgram(GLComputeProgram& out,
-                           const std::string& base,
+                           const std::string& name,
                            const std::string& shader_root,
-                           const ShaderLoadPolicy& policy) {
-    // Choose the file base name: _subgroup variant if policy requests it and
-    // the shader has one; otherwise the standard name.
-    std::string file_base = base;
-    if (policy.use_subgroups && kSubgroupCapableShaders.count(base)) {
-        file_base = base + "_subgroup";
+                           bool use_subgroups,
+                           bool use_precompiled) {
+    // Resolve file base: strip "_subgroup" suffix when subgroups are off.
+    std::string file_base = name;
+    constexpr std::string_view kSubgroupSuffix = "_subgroup";
+    const bool is_subgroup =
+            name.size() > kSubgroupSuffix.size() &&
+            name.compare(name.size() - kSubgroupSuffix.size(),
+                          kSubgroupSuffix.size(), kSubgroupSuffix) == 0;
+    if (is_subgroup && !use_subgroups) {
+        file_base = name.substr(0, name.size() - kSubgroupSuffix.size());
     }
 
-    const std::string path     = shader_root + file_base;
-    const std::string spv_name = file_base + ".spv";
-    const std::string comp_name= file_base + ".comp";
+    const std::string path      = shader_root + file_base;
+    const std::string spv_name  = file_base + ".spv";
+    const std::string comp_name = file_base + ".comp";
 
-    // --- SPIR-V path (skipped when precompiled=off) ---
-    if (policy.use_precompiled) {
+    // SPIR-V path (skipped when precompiled=off).
+    if (use_precompiled) {
         std::vector<char> bytes;
         std::string error;
         if (utility::filesystem::FReadToBuffer(path + ".spv", bytes, &error)) {
             std::vector<std::uint8_t> spirv(bytes.begin(), bytes.end());
             out = LoadGLComputeProgramSPIRV(spirv, spv_name.c_str());
             if (out.valid) {
-                utility::LogDebug("GaussianCompute: loaded {} via SPIR-V",
+                utility::LogDebug("GaussianSplat: loaded {} via SPIR-V",
                                   spv_name);
                 return true;
             }
         }
         utility::LogWarning(
-                "GaussianCompute: SPIR-V path failed for {} — "
+                "GaussianSplat: SPIR-V path failed for {} — "
                 "falling back to GLSL source compilation.",
                 spv_name);
     }
 
-    // --- Online GLSL path ---
+    // Online GLSL path.
     {
         std::vector<char> bytes;
         std::string error;
-        if (!utility::filesystem::FReadToBuffer(path + ".comp", bytes, &error)) {
+        if (!utility::filesystem::FReadToBuffer(path + ".comp", bytes,
+                                                &error)) {
             utility::LogWarning(
-                    "GaussianCompute: GLSL source not found: {}.comp",
-                    path);
+                    "GaussianSplat: GLSL source not found: {}.comp", path);
             return false;
         }
         std::string glsl_source(bytes.begin(), bytes.end());
         out = LoadGLComputeProgramGLSL(glsl_source, comp_name.c_str());
         if (out.valid) {
-            utility::LogInfo("GaussianCompute: loaded {} via online GLSL.",
-                             comp_name);
+            utility::LogDebug("GaussianSplat: loaded {} via online GLSL.",
+                              comp_name);
             return true;
         }
-        utility::LogWarning(
-                "GaussianCompute: GLSL compilation failed for {}.", comp_name);
+        utility::LogWarning("GaussianSplat: GLSL compilation failed for {}.",
+                            comp_name);
         return false;
     }
 }
 
-class GaussianComputeGpuContextOpenGL final : public GaussianComputeGpuContext {
+class GaussianSplatGpuContextOpenGL final : public GaussianSplatGpuContext {
 public:
-    GaussianComputeGpuContextOpenGL() = default;
+    /// use_subgroups: load _subgroup shader variants (faster on Linux/macOS).
+    /// use_precompiled: try SPIR-V before online GLSL compilation.
+    GaussianSplatGpuContextOpenGL(bool use_subgroups, bool use_precompiled)
+        : use_subgroups_(use_subgroups),
+          use_precompiled_(use_precompiled) {}
 
-    ~GaussianComputeGpuContextOpenGL() override { CleanupPrograms(); }
+    ~GaussianSplatGpuContextOpenGL() override { CleanupPrograms(); }
 
     bool EnsureProgramsLoaded() override {
         if (programs_loaded_) {
@@ -217,40 +155,30 @@ public:
         programs_loaded_ = true;
         programs_valid_ = false;
 
-        // Log driver identity so error reports are unambiguous.
-        utility::LogInfo("GaussianComputeGpuContext: GL vendor:   {}",
-                         reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
-        utility::LogInfo(
-                "GaussianComputeGpuContext: GL renderer: {}",
-                reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
-        utility::LogInfo(
-                "GaussianComputeGpuContext: GL version:  {}",
-                reinterpret_cast<const char*>(glGetString(GL_VERSION)));
-        utility::LogInfo(
-                "GaussianComputeGpuContext: GLEW version: {}",
-                reinterpret_cast<const char*>(glewGetString(GLEW_VERSION)));
-        utility::LogInfo(
-                "GaussianComputeGpuContext: ARB_gl_spirv supported: {}",
+        // Log driver identity for troubleshooting.
+        utility::LogDebug("GaussianSplat GL: vendor={}  renderer={}  version={}",
+                         reinterpret_cast<const char*>(glGetString(GL_VENDOR)),
+                         reinterpret_cast<const char*>(glGetString(GL_RENDERER)),
+                         reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+        utility::LogDebug("GaussianSplat GL: ARB_gl_spirv={}",
                 GLEW_ARB_gl_spirv ? "yes" : "no");
-        utility::LogInfo(
-                "GaussianComputeGpuContext: ARB_compute_shader supported: {}",
-                GLEW_ARB_compute_shader ? "yes" : "no");
 
         const std::string shader_root =
                 EngineInstance::GetResourcePath() + "/gaussian_compute/";
 
-        ShaderLoadPolicy policy = GetShaderLoadPolicy();
-
-        // Attempt to load all shaders under the primary policy.
-        // On failure, retry once with the safe fallback policy
+        // Attempt to load under the primary policy (from RenderConfig).
+        // On any failure, retry once with the safe fallback
         // (no subgroups + online GLSL), which works on all known GPUs.
+        bool cur_subgroups   = use_subgroups_;
+        bool cur_precompiled = use_precompiled_;
         for (int attempt = 0; attempt < 2; ++attempt) {
             bool all_ok = true;
             for (int i = 0; i < static_cast<int>(ComputeProgramId::kCount);
                  ++i) {
                 CleanupProgram(programs_[i]);
                 if (!LoadOneProgram(programs_[i], kGsShaderNames[i],
-                                    shader_root, policy)) {
+                                    shader_root, cur_subgroups,
+                                    cur_precompiled)) {
                     all_ok = false;
                     break;
                 }
@@ -261,20 +189,17 @@ public:
             }
 
             if (attempt == 0) {
-                // Primary policy failed.  Clean up partial state and retry
-                // with the universally safe fallback.
                 for (auto& p : programs_) CleanupProgram(p);
                 utility::LogWarning(
-                        "GaussianCompute: primary shader policy failed. "
+                        "GaussianSplat: primary shader policy failed. "
                         "Retrying with safe fallback "
                         "(subgroups=off, precompiled=off).");
-                policy = {/*use_subgroups=*/false,
-                          /*use_precompiled=*/false};
+                cur_subgroups   = false;
+                cur_precompiled = false;
             }
         }
 
-        utility::LogWarning(
-                "GaussianCompute: all shader load attempts failed.");
+        utility::LogWarning("GaussianSplat: all shader load attempts failed.");
         return false;
     }
 
@@ -479,7 +404,7 @@ public:
     }
 
     void FinishGpuWork() override {
-        GaussianComputeOpenGLContext::GetInstance().Finish();
+        GaussianSplatOpenGLContext::GetInstance().Finish();
     }
 
 private:
@@ -511,13 +436,17 @@ private:
     GLComputeProgram programs_[static_cast<int>(ComputeProgramId::kCount)] = {};
     bool programs_loaded_ = false;
     bool programs_valid_ = false;
+    bool use_subgroups_;
+    bool use_precompiled_;
     std::unordered_map<std::uintptr_t, std::size_t> buffer_sizes_;
     std::unordered_map<std::uintptr_t, std::pair<std::uint32_t, std::uint32_t>>
             texture_sizes_;
 };
 
-std::unique_ptr<GaussianComputeGpuContext> CreateComputeGpuContextGL() {
-    return std::make_unique<GaussianComputeGpuContextOpenGL>();
+std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextGL(
+        bool use_subgroups, bool use_precompiled) {
+    return std::make_unique<GaussianSplatGpuContextOpenGL>(use_subgroups,
+                                                             use_precompiled);
 }
 
 }  // namespace rendering

@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianComputeBuffers.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatBuffers.h"
 
 #include <algorithm>
 
-#include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
 
 namespace open3d {
 namespace visualization {
@@ -17,7 +17,7 @@ namespace rendering {
 
 namespace {
 
-// Must stay in sync with GaussianComputeOpenGLBackend / gaussian_compute
+// Must stay in sync with GaussianSplatOpenGLBackend / gaussian_compute
 // shaders.
 static constexpr std::uint32_t kRadixWorkgroupSize = 256;
 static constexpr std::uint32_t kRadixSortBins = 256;

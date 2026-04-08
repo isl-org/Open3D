@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 //
 // Shared Gaussian splatting geometry + composite dispatch sequence. OpenGL and
-// Metal backends supply a GaussianComputeGpuContext implementation.
+// Metal backends supply a GaussianSplatGpuContext implementation.
 
 #pragma once
 
@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "open3d/visualization/rendering/filament/ComputeGPU.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -26,22 +26,22 @@ struct PackedGaussianScene;
 /// @param scene_change_id   Scene geometry change token from Filament.
 /// @param scene_changed     True when splat buffers must be re-uploaded.
 bool RunGaussianGeometryPasses(
-        GaussianComputeGpuContext& ctx,
-        const GaussianComputeRenderer::RenderConfig& config,
+        GaussianSplatGpuContext& ctx,
+        const GaussianSplatRenderer::RenderConfig& config,
         const PackedGaussianScene& packed,
-        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
-        GaussianComputeViewGpuResources& vs,
+        const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
+        GaussianSplatViewGpuResources& vs,
         std::uint64_t scene_change_id,
         std::uint32_t source_splat_count,
         bool scene_changed);
 
 /// Final composite pass into imported color/depth targets.
 bool RunGaussianCompositePass(
-        GaussianComputeGpuContext& ctx,
-        const GaussianComputeRenderer::RenderConfig& config,
-        const std::vector<GaussianComputeRenderer::PassDispatch>& dispatches,
-        GaussianComputeViewGpuResources& vs,
-        GaussianComputeRenderer::OutputTargets& targets);
+        GaussianSplatGpuContext& ctx,
+        const GaussianSplatRenderer::RenderConfig& config,
+        const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
+        GaussianSplatViewGpuResources& vs,
+        GaussianSplatRenderer::OutputTargets& targets);
 
 }  // namespace rendering
 }  // namespace visualization

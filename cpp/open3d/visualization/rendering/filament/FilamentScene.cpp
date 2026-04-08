@@ -69,7 +69,7 @@
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeDataPacking.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
 
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
@@ -329,9 +329,9 @@ bool FilamentScene::HasGaussianSplatGeometry() const {
     return false;
 }
 
-bool FilamentScene::UsesGaussianComputeOutput(const FilamentView& view) const {
+bool FilamentScene::UsesGaussianSplatOutput(const FilamentView& view) const {
     auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
-    if (!renderer || !renderer->HasGaussianComputeOutput(view)) {
+    if (!renderer || !renderer->HasGaussianSplatOutput(view)) {
         return false;
     }
 
@@ -359,21 +359,21 @@ bool FilamentScene::UsesGaussianComputeOutput(const FilamentView& view) const {
 TextureHandle FilamentScene::GetColorBufferForView(
         const FilamentView& view) const {
     auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
-    return renderer ? renderer->GetGaussianComputeColorTexture(view)
+    return renderer ? renderer->GetGaussianSplatColorTexture(view)
                     : TextureHandle();
 }
 
 TextureHandle FilamentScene::GetDepthBufferForView(
         const FilamentView& view) const {
     auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
-    return renderer ? renderer->GetGaussianComputeDepthTexture(view)
+    return renderer ? renderer->GetGaussianSplatDepthTexture(view)
                     : TextureHandle();
 }
 
-void FilamentScene::InvalidateGaussianComputeOutput(FilamentView& view) {
+void FilamentScene::InvalidateGaussianSplatOutput(FilamentView& view) {
     auto* fr = dynamic_cast<FilamentRenderer*>(&renderer_);
     if (fr) {
-        fr->InvalidateGaussianComputeOutput(view);
+        fr->InvalidateGaussianSplatOutput(view);
     }
 }
 
@@ -440,7 +440,7 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
     int desired_sh = std::min(cloud_sh, material.gaussian_splat_sh_degree);
     if (auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_)) {
         desired_sh =
-                std::min(desired_sh, renderer->GetGaussianComputeMaxShDegree());
+                std::min(desired_sh, renderer->GetGaussianSplatMaxShDegree());
     }
     src->gaussian_splat_sh_degree = desired_sh;
     src->gaussian_splat_min_alpha = material.gaussian_splat_min_alpha;
@@ -543,6 +543,18 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
 
     src->splat_count = static_cast<std::uint32_t>(src->positions.size() / 3);
     gaussian_splat_source_ = std::move(src);
+
+    // Propagate per-material capacity overrides to the renderer config so that
+    // the GPU-side tile allocation honours the user's settings.
+    if (auto* fr = dynamic_cast<FilamentRenderer*>(&renderer_)) {
+        if (auto* gcr = fr->GetGaussianSplatRenderer()) {
+            auto cfg = gcr->GetRenderConfig();
+            cfg.max_tiles_per_splat = material.gaussian_splat_max_tiles_per_splat;
+            cfg.max_tile_entries_total =
+                    material.gaussian_splat_max_tile_entries_total;
+            gcr->SetRenderConfig(cfg);
+        }
+    }
 }
 
 void FilamentScene::SetViewActive(const ViewHandle& view_id, bool is_active) {

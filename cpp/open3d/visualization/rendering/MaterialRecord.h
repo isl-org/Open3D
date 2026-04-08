@@ -94,6 +94,14 @@ struct MaterialRecord {
     // to counteract the over-brightening caused by the fixed +0.3 blur kernel.
     bool gaussian_splat_antialias = false;
 
+    // Maximum number of screen tiles that a single splat may cover.
+    // Raise this value for very large splats at the cost of higher memory use.
+    uint32_t gaussian_splat_max_tiles_per_splat = 32;
+
+    // Total tile-coverage entry budget for the whole scene.
+    // Raise this for dense or high-resolution scenes at the cost of GPU memory.
+    uint32_t gaussian_splat_max_tile_entries_total = 32u * 1024u * 1024u;
+
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianComputeOutputTargetsApple.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOutputTargetsApple.h"
 
 #if defined(__APPLE__)
 
@@ -18,7 +18,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/filament/GaussianComputeRenderer.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 #include <cstdint>
 
@@ -31,7 +31,7 @@ bool PrepareGaussianImportedRenderTargetsApple(
         FilamentResourceManager& resource_mgr,
         std::uint32_t width,
         std::uint32_t height,
-        GaussianComputeRenderer::OutputTargets& targets) {
+        GaussianSplatRenderer::OutputTargets& targets) {
     FilamentMetalNativeHandles mh =
             GetFilamentMetalNativeHandles(EngineInstance::GetPlatform());
     if (!mh.valid) {
@@ -116,7 +116,7 @@ bool PrepareGaussianImportedRenderTargetsApple(
 }
 
 void ReleaseGaussianImportedMTLTexturesApple(
-        GaussianComputeRenderer::OutputTargets& targets) {
+        GaussianSplatRenderer::OutputTargets& targets) {
     if (targets.scene_depth_mtl_texture != 0) {
         id<MTLTexture> t = (__bridge_transfer id<MTLTexture>)reinterpret_cast<
                 void*>(targets.scene_depth_mtl_texture);
