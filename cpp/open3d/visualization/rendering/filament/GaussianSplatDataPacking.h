@@ -113,67 +113,78 @@ inline constexpr std::uint32_t kGaussianGpuErrorKnownMask =
     kGaussianGpuErrorTileEntryOverflow |
     kGaussianGpuErrorSortCountClamped;
 
-// ----- CPU-side packed scene representation ----------------------------------
+// ----- CPU-side representation -----------------------------------------------
 
-/// Holds all splat attribute arrays packed for compute upload.
-/// Field formats match the SSBO layout in gaussian_project.comp:
-///   positions        — fp32 vec4, 16 B/splat
-///   log_scales       — fp16×4 as uvec2 pair, 8 B/splat
-///   rotations        — snorm8-biased×4 quat in one uint, 4 B/splat
-///   dc_opacity       — fp16×4 as uvec2 pair, 8 B/splat
-///   sh_coefficients  — fp16 uvec2, stride=3×degree (0/24/48 B/splat)
+/// GPU-ready per-splat packed attribute arrays, created once at scene-cache
+/// time and uploaded to GPU SSBOs only when the scene content changes.  Stores
+/// the same bit formats as the SSBO bindings consumed by gaussian_project.comp:
+///   positions       — fp32 vec4, 16 B/splat (fp32 required for position precision)
+///   log_scales      — fp16×4 as uvec2 pair, 8 B/splat
+///   rotations       — snorm8-biased×4 quat in one uint, 4 B/splat
+///   dc_opacity      — fp16×4 as uvec2 pair, 8 B/splat
+///   sh_coefficients — fp16 uvec2, stride = 3×degree×2 u32/splat
+struct GaussianSplatPackedAttrs {
+    std::vector<Std430Vec4> positions;          ///< fp32 vec4, 16 B/splat
+    std::vector<std::uint32_t> log_scales;      ///< fp16×4 in uvec2 pair, 8 B/splat
+    std::vector<std::uint32_t> rotations;       ///< snorm8-biased×4 in uint, 4 B/splat
+    std::vector<std::uint32_t> dc_opacity;      ///< fp16×4 in uvec2 pair, 8 B/splat
+    std::vector<std::uint32_t> sh_coefficients; ///< fp16 uvec2; degree-dependent stride
+    std::uint32_t splat_count = 0;
+    int sh_degree = 0;        ///< Effective SH degree packed here
+    float min_alpha = 0.0f;   ///< Stored for view-param antialias metadata
+    bool antialias = false;
+};
+
+/// Per-frame packed view-parameters for GPU upload.
+/// Contains only the small per-frame data (UBO + scalar counters).  The large
+/// per-splat attribute arrays live in GaussianSplatPackedAttrs (scene lifetime).
 struct PackedGaussianScene {
     GaussianViewParams view_params;
-    std::vector<Std430Vec4> positions;      ///< fp32 vec4, 16 B/splat
-    std::vector<std::uint32_t> log_scales;  ///< fp16×4 in uvec2 pair, 8 B/splat
-    std::vector<std::uint32_t>
-            rotations;  ///< snorm8-biased×4 in uint, 4 B/splat
-    std::vector<std::uint32_t> dc_opacity;  ///< fp16×4 in uvec2 pair, 8 B/splat
-    std::vector<std::uint32_t>
-            sh_coefficients;  ///< fp16 uvec2; 0/6/12 u32/splat (deg 0/1/2)
     std::uint32_t splat_count = 0;
     std::uint32_t tile_count = 0;
     std::uint32_t pixel_count = 0;
     bool valid = false;
 };
 
-/// CPU-side cached copy of Gaussian splat source attributes.
-/// Stored alongside the scene so that compute backends can pack input buffers
-/// without reading back from Filament vertex buffers.
-struct GaussianSplatSourceData {
-    std::vector<float> positions;   ///< 3 floats per splat (x, y, z)
-    std::vector<float> log_scales;  ///< 3 floats per splat
-    std::vector<float> rotations;   ///< 4 floats per splat (quat w, x, y, z)
-    std::vector<float> dc_opacity;  ///< 4 floats per splat (r, g, b, opacity)
-    std::vector<float> sh_rest;     ///< Variable length SH coefficients
-    std::uint32_t splat_count = 0;
-    int gaussian_splat_sh_degree = 2;
-    float gaussian_splat_min_alpha = 0.0f;
-    bool gaussian_splat_antialias = false;
-};
-
 // ----- Helper functions used by backends  ------------------------------------
 
-/// Pack camera, viewport, and scene metadata into the view-params UBO and the
-/// scalar fields (splat_count, tile_count, pixel_count) of a
-/// PackedGaussianScene.  The per-splat attribute vectors (positions, rotations,
-/// scales, SH) are intentionally left empty — call PackGaussianSceneAttributes
-/// separately when the scene changes.  Per-frame GPU cost: glBufferSubData /
-/// MTLBuffer memcpy of 288 bytes (one GaussianViewParams).
+/// Pack camera, viewport, and scene metadata into the view-params UBO.
+/// Uses the splat count, SH degree, and antialias flag from `attrs`.
+/// Per-frame GPU cost: glBufferSubData / MTLBuffer memcpy of 288 bytes.
 PackedGaussianScene PackGaussianViewParams(
-        const GaussianSplatSourceData& source,
+        const GaussianSplatPackedAttrs& attrs,
         const GaussianSplatRenderer::ViewRenderData& render_data,
         const GaussianSplatRenderer::RenderConfig& config);
 
-/// Fill the large per-splat geometry attribute arrays (positions, scales,
-/// rotations, dc_opacity, SH coefficients) in a PackedGaussianScene
-/// previously created by PackGaussianViewParams.  For N splats with degree-2
-/// SH this allocates and writes N * ~160 bytes; only call when the splat
-/// geometry (splat count or content) actually changes.
-void PackGaussianSceneAttributes(
-        const GaussianSplatSourceData& source,
-        const GaussianSplatRenderer::RenderConfig& config,
-        PackedGaussianScene& packed);
+/// Pack Gaussian splat attributes from raw PointCloud data pointers into
+/// GPU-ready format, filtering by opacity in a single pass.  Called once at
+/// scene cache time (FilamentScene::CacheGaussianSplatData) to eliminate the
+/// intermediate fp32 copy that was previously re-packed every scene-change frame.
+/// @param n                 Total number of splats in source
+/// @param scale_ptr         May be nullptr → zero log-scales
+/// @param rot_ptr           May be nullptr → identity quaternion
+/// @param f_dc_ptr          May be nullptr → zero DC color
+/// @param opacity_ptr       May be nullptr → opacity treated as zero
+/// @param f_rest_ptr        May be nullptr → no SH rest coefficients
+/// @param source_sh_degree  SH degree in the source `f_rest` tensor (sets stride)
+/// @param desired_sh_degree Effective degree to pack (may be < source_sh_degree)
+/// @param min_opacity_logit Filter threshold in logit space; splats below this are dropped
+/// @param min_alpha         Stored as `out.min_alpha` metadata
+/// @param antialias         Stored as `out.antialias` metadata
+void PackGaussianSplatAttrsDirect(
+        const float* pts_ptr,
+        std::size_t n,
+        const float* scale_ptr,
+        const float* rot_ptr,
+        const float* f_dc_ptr,
+        const float* opacity_ptr,
+        const float* f_rest_ptr,
+        int source_sh_degree,
+        int desired_sh_degree,
+        float min_opacity_logit,
+        float min_alpha,
+        bool antialias,
+        GaussianSplatPackedAttrs& out);
 
 }  // namespace rendering
 }  // namespace visualization

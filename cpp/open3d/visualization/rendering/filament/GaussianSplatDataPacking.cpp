@@ -87,17 +87,17 @@ static std::uint32_t PackSnorm8x4(float w, float x, float y, float z) {
 }  // namespace
 
 PackedGaussianScene PackGaussianViewParams(
-        const GaussianSplatSourceData& source,
+        const GaussianSplatPackedAttrs& attrs,
         const GaussianSplatRenderer::ViewRenderData& render_data,
         const GaussianSplatRenderer::RenderConfig& config) {
     PackedGaussianScene packed;
 
-    if (source.splat_count == 0 || render_data.viewport_size.x() <= 0 ||
+    if (attrs.splat_count == 0 || render_data.viewport_size.x() <= 0 ||
         render_data.viewport_size.y() <= 0) {
         return packed;
     }
 
-    const std::uint32_t n = source.splat_count;
+    const std::uint32_t n = attrs.splat_count;
     const int w = render_data.viewport_size.x();
     const int h = render_data.viewport_size.y();
     const int tx = config.tile_size.x();
@@ -138,14 +138,14 @@ PackedGaussianScene PackGaussianViewParams(
     vp.viewport_origin_and_size[2] = static_cast<float>(w);
     vp.viewport_origin_and_size[3] = static_cast<float>(h);
 
-        const int effective_sh_degree =
-            std::min(source.gaussian_splat_sh_degree, config.max_sh_degree);
+    const int effective_sh_degree =
+            std::min(attrs.sh_degree, config.max_sh_degree);
         vp.scene[0] = n;
         vp.scene[1] = static_cast<std::uint32_t>(effective_sh_degree);
     // Antialias: enabled if requested by the material (per-scene) or the
     // renderer-level RenderConfig override.
     vp.scene[2] =
-            (source.gaussian_splat_antialias || config.antialias) ? 1u : 0u;
+            (attrs.antialias || config.antialias) ? 1u : 0u;
     vp.scene[3] = render_data.screen_y_down ? 1u : 0u;
 
     vp.tiles[0] = static_cast<std::uint32_t>(tx);
@@ -179,90 +179,115 @@ PackedGaussianScene PackGaussianViewParams(
     return packed;
 }
 
-void PackGaussianSceneAttributes(
-        const GaussianSplatSourceData& source,
-        const GaussianSplatRenderer::RenderConfig& config,
-        PackedGaussianScene& packed) {
-    const std::uint32_t n = source.splat_count;
+void PackGaussianSplatAttrsDirect(
+        const float* pts_ptr,
+        std::size_t n,
+        const float* scale_ptr,
+        const float* rot_ptr,
+        const float* f_dc_ptr,
+        const float* opacity_ptr,
+        const float* f_rest_ptr,
+        int source_sh_degree,
+        int desired_sh_degree,
+        float min_opacity_logit,
+        float min_alpha,
+        bool antialias,
+        GaussianSplatPackedAttrs& out) {
+    out = GaussianSplatPackedAttrs{};
+    out.sh_degree = desired_sh_degree;
+    out.min_alpha = min_alpha;
+    out.antialias = antialias;
 
-    // ---- positions: fp32 vec4[], 16 B/splat (layout unchanged) ----
-    packed.positions.resize(n);
-    for (std::uint32_t i = 0; i < n; ++i) {
-        packed.positions[i].x = source.positions[i * 3 + 0];
-        packed.positions[i].y = source.positions[i * 3 + 1];
-        packed.positions[i].z = source.positions[i * 3 + 2];
-        packed.positions[i].w = 0.f;
+    // Determine SH rest-coefficient counts and packed stride.
+    // source_coeffs: stride in f_rest_ptr per source splat.
+    // desired_coeffs: how many coefficients to pack per output splat.
+    // sh_u32_per_splat: packed u32 count per splat (= 3 * degree * 2).
+    int source_coeffs = 0;
+    int desired_coeffs = 0;
+    int sh_u32_per_splat = 0;
+    if (desired_sh_degree > 0 && f_rest_ptr) {
+        source_coeffs = GetGaussianSplatRestCoeffCount(source_sh_degree);
+        desired_coeffs = GetGaussianSplatRestCoeffCount(desired_sh_degree);
+        sh_u32_per_splat = 3 * desired_sh_degree * 2;
     }
 
-    // ---- log_scales: fp16 uvec2[], 8 B/splat ----
-    // Two uint32 per splat: [0]=PackHalf2(sx,sy), [1]=PackHalf2(sz,0).
-    // Shader reads: uvec2 p=log_scales[i]; (xy)=unpackHalf2x16(p.x);
-    // z=unpackHalf2x16(p.y).x
-    packed.log_scales.resize(2 * n);
-    for (std::uint32_t i = 0; i < n; ++i) {
-        packed.log_scales[2 * i + 0] = PackHalf2(source.log_scales[i * 3 + 0],
-                                                 source.log_scales[i * 3 + 1]);
-        packed.log_scales[2 * i + 1] =
-                PackHalf2(source.log_scales[i * 3 + 2], 0.0f);
+    // Reserve upper bound; actual count may be lower after opacity filtering.
+    out.positions.reserve(n);
+    out.log_scales.reserve(2 * n);
+    out.rotations.reserve(n);
+    out.dc_opacity.reserve(2 * n);
+    if (sh_u32_per_splat > 0) {
+        out.sh_coefficients.reserve(static_cast<std::size_t>(sh_u32_per_splat) * n);
     }
 
-    // ---- rotations: snorm8-biased uint[], 4 B/splat ----
-    // Quaternion (w,x,y,z) in bytes 0/1/2/3; stored byte =
-    // int8(round(q*127))+128. Shader decode: q = normalize((float[4](bytes) -
-    // 128.0) / 127.0)
-    packed.rotations.resize(n);
-    for (std::uint32_t i = 0; i < n; ++i) {
-        packed.rotations[i] = PackSnorm8x4(
-                source.rotations[i * 4 + 0], source.rotations[i * 4 + 1],
-                source.rotations[i * 4 + 2], source.rotations[i * 4 + 3]);
-    }
+    for (std::size_t i = 0; i < n; ++i) {
+        // Filter: skip splats below the opacity threshold.
+        const float opacity = opacity_ptr ? opacity_ptr[i] : 0.f;
+        if (opacity < min_opacity_logit) continue;
 
-    // ---- dc_opacity: fp16 uvec2[], 8 B/splat ----
-    // Two uint32 per splat: [0]=PackHalf2(r,g), [1]=PackHalf2(b,opacity).
-    packed.dc_opacity.resize(2 * n);
-    for (std::uint32_t i = 0; i < n; ++i) {
-        packed.dc_opacity[2 * i + 0] = PackHalf2(source.dc_opacity[i * 4 + 0],
-                                                 source.dc_opacity[i * 4 + 1]);
-        packed.dc_opacity[2 * i + 1] = PackHalf2(source.dc_opacity[i * 4 + 2],
-                                                 source.dc_opacity[i * 4 + 3]);
-    }
+        // Position: fp32 vec4 (w=0 padding for std430 alignment).
+        out.positions.push_back(
+                {pts_ptr[i * 3 + 0], pts_ptr[i * 3 + 1], pts_ptr[i * 3 + 2],
+                 0.f});
 
-    // ---- sh_coefficients: fp16 uvec2[], degree-dependent ----
-    // Stride = 3 * sh_degree uvec2 per splat (i.e., 3*degree uint32 pairs):
-    //   degree=0: 0 B/splat  (buffer empty; shader branch is never taken)
-    //   degree=1: 24 B/splat (3 uvec2; 9 coeffs packed into 12 fp16 slots)
-    //   degree=2: 48 B/splat (6 uvec2; 24 coeffs, no padding needed)
-    // Each uvec2 stores 4 fp16 values matching the old fp32 vec4 index so
-    // the shader's LoadShVec4(splat, j) indexes identically.
-    const int effective_sh_degree =
-            std::min(source.gaussian_splat_sh_degree, config.max_sh_degree);
-    if (effective_sh_degree == 0 || source.sh_rest.empty()) {
-        packed.sh_coefficients.clear();
-    } else {
-        // Stride uses 3 * degree uvec2 values per splat, i.e. 6 * degree u32.
-        const int sh_u32_per_splat = 3 * effective_sh_degree * 2;
-        const int sh_coeffs_per_splat =
-                GetGaussianSplatRestCoeffCount(effective_sh_degree);
-        const int sh_coeff_capacity = sh_u32_per_splat * 2;
-        const int sh_coeffs_to_pack =
-                std::min(sh_coeffs_per_splat, sh_coeff_capacity);
-        packed.sh_coefficients.assign(
-                static_cast<std::size_t>(sh_u32_per_splat) * n, 0u);
-        for (std::uint32_t i = 0; i < n; ++i) {
-            const float* src = source.sh_rest.data() + i * sh_coeffs_per_splat;
-            std::uint32_t* dst =
-                    packed.sh_coefficients.data() + i * sh_u32_per_splat;
-            // Pack consecutive pairs of fp32 SH coefficients as fp16.
-            const int pairs = sh_coeffs_to_pack / 2;
+        // Log-scales: two fp16 pairs packed into uvec2 (8 B/splat).
+        if (scale_ptr) {
+            out.log_scales.push_back(
+                    PackHalf2(scale_ptr[i * 3 + 0], scale_ptr[i * 3 + 1]));
+            out.log_scales.push_back(
+                    PackHalf2(scale_ptr[i * 3 + 2], 0.0f));
+        } else {
+            out.log_scales.push_back(PackHalf2(0.f, 0.f));
+            out.log_scales.push_back(PackHalf2(0.f, 0.f));
+        }
+
+        // Rotation quaternion: snorm8-biased ×4 packed into one u32 (4 B/splat).
+        if (rot_ptr) {
+            out.rotations.push_back(PackSnorm8x4(rot_ptr[i * 4 + 0],
+                                                 rot_ptr[i * 4 + 1],
+                                                 rot_ptr[i * 4 + 2],
+                                                 rot_ptr[i * 4 + 3]));
+        } else {
+            // Identity quaternion (w=1, x=y=z=0).
+            out.rotations.push_back(PackSnorm8x4(1.f, 0.f, 0.f, 0.f));
+        }
+
+        // DC color + opacity: two fp16 pairs packed into uvec2 (8 B/splat).
+        if (f_dc_ptr && opacity_ptr) {
+            out.dc_opacity.push_back(
+                    PackHalf2(f_dc_ptr[i * 3 + 0], f_dc_ptr[i * 3 + 1]));
+            out.dc_opacity.push_back(
+                    PackHalf2(f_dc_ptr[i * 3 + 2], opacity_ptr[i]));
+        } else {
+            out.dc_opacity.push_back(PackHalf2(0.f, 0.f));
+            out.dc_opacity.push_back(PackHalf2(0.f, 0.f));
+        }
+
+        // SH rest coefficients: fp16 pairs packed into uvec2 array.
+        // Packs exactly sh_u32_per_splat u32s (including zero padding) so the
+        // buffer has uniform stride for GPU indexing.
+        if (sh_u32_per_splat > 0 && f_rest_ptr) {
+            const float* src = f_rest_ptr + i * source_coeffs;
+            const int pairs = desired_coeffs / 2;
             for (int p = 0; p < pairs; ++p) {
-                dst[p] = PackHalf2(src[p * 2 + 0], src[p * 2 + 1]);
+                out.sh_coefficients.push_back(
+                        PackHalf2(src[p * 2 + 0], src[p * 2 + 1]));
             }
-            // Degree-1 has 9 coefficients (odd count); store the trailing one.
-            if (sh_coeffs_to_pack & 1) {
-                dst[pairs] = PackHalf2(src[sh_coeffs_to_pack - 1], 0.0f);
+            // Odd trailing coefficient (degree-1 has 9 coefficients).
+            if (desired_coeffs & 1) {
+                out.sh_coefficients.push_back(
+                        PackHalf2(src[desired_coeffs - 1], 0.0f));
+            }
+            // Zero-pad remaining u32 slots to maintain uniform stride.
+            const int packed_u32s = (desired_coeffs + 1) / 2;
+            for (int p = packed_u32s; p < sh_u32_per_splat; ++p) {
+                out.sh_coefficients.push_back(0u);
             }
         }
     }
+
+    out.splat_count =
+            static_cast<std::uint32_t>(out.positions.size());
 }
 
 }  // namespace rendering

@@ -19,6 +19,7 @@
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatOutputTargetsApple.h"
 #include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatPassRunner.h"
 
@@ -66,16 +67,16 @@ public:
             return false;
         }
 
-        const GaussianSplatSourceData* source =
-                scene.GetGaussianSplatSourceData();
-        if (!source || source->splat_count == 0) {
+        const GaussianSplatPackedAttrs* attrs =
+                scene.GetGaussianSplatPackedAttrs();
+        if (!attrs || attrs->splat_count == 0) {
             return false;
         }
 
-        // Pack only the view-params UBO (208 bytes) — cheap every frame.
-        PackedGaussianScene packed =
-                PackGaussianViewParams(*source, render_data, config_);
-        if (!packed.valid) {
+        // Pack only the view-params UBO (288 bytes) — cheap every frame.
+        PackedGaussianScene frame =
+                PackGaussianViewParams(*attrs, render_data, config_);
+        if (!frame.valid) {
             return false;
         }
 
@@ -84,17 +85,10 @@ public:
         const std::uint64_t scene_id = scene.GetGeometryChangeId();
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
-                 source->splat_count != vs.cached_splat_count);
+                 attrs->splat_count != vs.cached_splat_count);
 
-        // Pack the large per-splat arrays (N * ~160 B) only when geometry
-        // changes; on camera-move frames these stay empty and the upload
-        // in RunGaussianGeometryPasses is skipped.
-        if (scene_changed) {
-            PackGaussianSceneAttributes(*source, config_, packed);
-        }
-
-        return RunGaussianGeometryPasses(*gpu_, config_, packed, dispatches, vs,
-                                        scene_id, source->splat_count,
+        return RunGaussianGeometryPasses(*gpu_, config_, frame, *attrs,
+                                        dispatches, vs, scene_id,
                                         scene_changed);
     }
 
@@ -113,6 +107,22 @@ public:
         }
         return RunGaussianCompositePass(*gpu_, config_, dispatches, it->second,
                                        targets);
+    }
+
+    bool PrepareOutputTextures(
+            FilamentView& view,
+            FilamentResourceManager& resource_mgr,
+            std::uint32_t width,
+            std::uint32_t height,
+            GaussianSplatRenderer::OutputTargets& targets) override {
+        return PrepareGaussianImportedRenderTargetsApple(
+                view, resource_mgr, width, height, targets);
+    }
+
+    void ReleaseOutputTextures(
+            FilamentResourceManager&,
+            GaussianSplatRenderer::OutputTargets& targets) override {
+        ReleaseGaussianImportedMTLTexturesApple(targets);
     }
 
 private:

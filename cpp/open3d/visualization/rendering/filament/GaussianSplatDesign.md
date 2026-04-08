@@ -9,7 +9,8 @@ the composite shader to reject splats behind Filament-rendered mesh geometry, pr
 correct per-splat depth occlusion.
 
 **Supported platforms**: Linux X11/GLX (operational, including Wayland via XWayland),
-Windows/WGL (SPIR-V shader loading error, fix pending), macOS/Metal (operational).
+Windows/WGL (operational; subgroup-based shaders disabled by default on affected drivers),
+macOS/Metal (operational).
 
 ---
 
@@ -124,7 +125,8 @@ runs after Filament completes (because it needs the scene depth).
 The GS compute context and Filament share the same GLX context group. GL textures created
 in our context are visible in Filament's context by handle — no copies required.
 
-**Shared depth texture**: `PrepareOutputTargets` creates a `GL_DEPTH_COMPONENT32F` texture,
+**Shared depth texture**: the backend-managed zero-copy output path creates a
+`GL_DEPTH_COMPONENT32F` texture,
 imports it into Filament as `DEPTH_ATTACHMENT | SAMPLEABLE`, and sets it as the depth
 attachment on the view's render target. Filament writes depth during mesh rendering.
 After `flushAndWait()`, the composite shader reads this same texture as `sampler2D` at
@@ -225,13 +227,15 @@ requires no dispatch logic updates.
   (dynamic split, sign-bit stripped from depth). Keygen reads `view_params` at binding 0.
 - **Two-stage execution**: `RenderGeometryStage` (passes 1-4) defers `glFinish()` to enable
   overlap. `RenderCompositeStage` (pass 5) runs after `flushAndWait()`.
-- **Zero-copy output**: `PrepareOutputTargets` creates GL textures (`DEPTH_COMPONENT32F` +
-  `RGBA16F`), imports into Filament via `Texture::Builder::import()`. No CPU staging.
+- **Zero-copy output**: `PrepareOutputTargets` delegates native texture creation/import to the
+  active backend. OpenGL creates shared GL textures (`DEPTH_COMPONENT32F` + `RGBA16F`), while
+  Metal imports `MTLTexture` objects. No CPU staging.
 - **Depth-aware compositing**: Composite shader reads scene depth at binding 14, linearizes
   Filament's reversed-Z depth, discards splats behind mesh geometry per-pixel.
 - **MSAA disabled** for GS views (required for sampleable depth attachment).
-- **Counter readback**: After prefix-sum pass, `total_entries` is read back from a GPU counter
-  buffer to size tile entries and sort buffers before scatter.
+- **No counter readback**: dispatch counts and `RadixSortParams` are generated GPU-side in
+  `gaussian_compute_dispatch_args.comp`; sort buffers are pre-allocated from the configured
+  tile-entry capacity.
 
 ### PHASE 3: macOS / Metal Backend (DONE)
 - **Metal GPU context** (`GaussianSplatGpuContextMetal`): Acquires Filament's `MTLDevice` and
@@ -286,12 +290,12 @@ requires no dispatch logic updates.
 | Opt3 | Half-float upload | RGBA16F staging, no float32 roundtrip |
 | Opt4 | Compact projected struct | 48 bytes (was 96) |
 | Opt5 | GPU-side fill/copy | `ClearGLBuffer` / copy without CPU staging |
-| Opt6 | Scene/view separation | Static scene data (positions, SH) cached across camera moves |
+| Opt6 | Scene/view separation | Static packed scene data is cached across camera moves; only the 288-byte view UBO is rebuilt each frame |
 | Opt7 | Cooperative tile load | Shared-memory batch loading for the composite pass |
 | Opt8 | Early culling | Behind-camera and negligible-alpha splats rejected in projection |
 | Opt9 | GPU Stage A overlap | Geometry stage defers `glFinish()` so Filament rasterization overlaps |
 | Opt10 | Zero-copy depth | Shared GL depth texture; no CPU readback or re-upload |
-| Opt11 | No-readback radix sort | `gaussian_compute_dispatch_args.comp` writes all indirect dispatch counts and `RadixSortParams` GPU-side after prefix-sum; removes `DownloadGLBuffer` CPU stall (FW1-1). Sort buffers pre-allocated from splat-count estimate; scatter dispatched over `splat_count` for full parallelism. |
+| Opt11 | No-readback radix sort | `gaussian_compute_dispatch_args.comp` writes all indirect dispatch counts and `RadixSortParams` GPU-side after prefix-sum; removes `DownloadGLBuffer` CPU stall (FW1-1). Sort buffers are pre-allocated from configured capacity; scatter dispatch still runs over `splat_count` for full parallelism. |
 | Opt12 | Async Stage A overlap | Stage A dispatches geometry + sort compute without `glFinish()`; `renderer_->beginFrame()` fires immediately after, so Stage A GPU work runs concurrently with Filament's rasterization of the same frame. On Metal, geometry and composite use separate `MTLCommandBuffer` objects that the GPU schedules independently (FW1-4). |
 | Opt13 | Compressed input buffers | `log_scales` and `dc_opacity` stored as fp16 (8 B/splat each, `uvec2` per splat); `rotations` as snorm8-biased uint (4 B/splat); `sh_coefficients` fp16 and degree-dependent (0/24/48 B/splat for degree 0/1/2). Total input: **36–84 B/splat** vs. the previous 160 B. GPU decodes via `unpackHalf2x16` and a 3-instruction `DecodeSnorm8` (core GLSL 4.2+, no extension). |
 
@@ -350,8 +354,11 @@ This mirrors [gsplat PR #117](https://github.com/nerfstudio-project/gsplat/pull/
 ### Data Packing (`GaussianSplatDataPacking`)
 - `PackGaussianViewParams`: packs view/projection matrices + scene scalars into the 288-byte
   `GaussianViewParams` UBO. Called every frame; no heap allocation.
-- `PackGaussianSceneAttributes`: packs per-splat geometry into compressed GPU layouts.
-  Called only when the scene changes.
+- `PackGaussianSplatAttrsDirect`: filters splats by opacity and packs per-splat geometry into
+  compressed GPU layouts in a single pass. Called once in `FilamentScene::CacheGaussianSplatData`
+  when scene geometry changes.
+- `GaussianSplatPackedAttrs`: scene-lifetime CPU cache of the GPU-ready packed splat arrays.
+  This replaces the old intermediate raw-fp32 cache and avoids re-packing on camera-move frames.
 - `GaussianViewParams` (std140 UBO, binding 0): matrices, viewport, scene params.
   `scene.z` = antialias flag (0 = off, 1 = density-compensation on).
   `limits.x` = tile-entry capacity actually allocated for the frame.
@@ -417,7 +424,7 @@ and when using the online GLSL compilation path. The scatter pass produces
 `ValuesOut` entries larger than `g_num_elements`, causing corrupt rendering.
 The same shaders work correctly on Linux (GLX) and macOS (Metal/MSL).
 
-Only two of the nine Gaussian compute shaders are affected — those that use
+Only two of the nine Gaussian splat compute shaders are affected — those that use
 `subgroupAdd`, `subgroupExclusiveAdd`, and `subgroupElect`:
 
 | Shader | Subgroup ops |

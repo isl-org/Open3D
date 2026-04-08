@@ -152,6 +152,23 @@ public:
                 const ViewRenderData& render_data,
                 const std::vector<PassDispatch>& dispatches,
                 OutputTargets& targets) = 0;
+
+        /// Create platform-specific output textures (zero-copy path).
+        /// Sets the appropriate native handles in `targets` and, for the
+        /// OpenGL backend, also imports them into Filament and configures
+        /// the view's render target / MSAA / post-processing settings.
+        /// Returns true if zero-copy setup succeeded; false falls through to
+        /// the Filament-owned texture fallback in PrepareOutputTargets.
+        virtual bool PrepareOutputTextures(FilamentView& view,
+                                           FilamentResourceManager& resource_mgr,
+                                           std::uint32_t width,
+                                           std::uint32_t height,
+                                           OutputTargets& targets) = 0;
+
+        /// Destroy platform-specific textures created by PrepareOutputTextures.
+        /// Called from ResetOutputTargets before Filament wrappers are freed.
+        virtual void ReleaseOutputTextures(FilamentResourceManager& resource_mgr,
+                                           OutputTargets& targets) = 0;
     };
 
     GaussianSplatRenderer(filament::Engine& engine,

@@ -21,18 +21,21 @@ namespace visualization {
 namespace rendering {
 
 struct PackedGaussianScene;
+struct GaussianSplatPackedAttrs;
 
 /// Resize/upload buffers, then run the projection → radix → payload chain.
-/// @param scene_change_id   Scene geometry change token from Filament.
-/// @param scene_changed     True when splat buffers must be re-uploaded.
+/// @param frame          Per-frame view parameters (UBO, splat/tile counts).
+/// @param attrs          Pre-packed per-splat GPU data (uploaded when scene_changed).
+/// @param scene_change_id  Scene geometry change token from Filament.
+/// @param scene_changed  True when per-splat buffers must be re-uploaded.
 bool RunGaussianGeometryPasses(
         GaussianSplatGpuContext& ctx,
         const GaussianSplatRenderer::RenderConfig& config,
-        const PackedGaussianScene& packed,
+        const PackedGaussianScene& frame_data,
+        const GaussianSplatPackedAttrs& attrs,
         const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
         GaussianSplatViewGpuResources& vs,
         std::uint64_t scene_change_id,
-        std::uint32_t source_splat_count,
         bool scene_changed);
 
 /// Final composite pass into imported color/depth targets.

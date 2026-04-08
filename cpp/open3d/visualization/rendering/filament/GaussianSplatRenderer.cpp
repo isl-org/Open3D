@@ -57,6 +57,18 @@ public:
         logged_views_.erase(&view);
     }
 
+    bool PrepareOutputTextures(FilamentView&,
+                               FilamentResourceManager&,
+                               std::uint32_t,
+                               std::uint32_t,
+                               GaussianSplatRenderer::OutputTargets&) override {
+        return false;
+    }
+
+    void ReleaseOutputTextures(
+            FilamentResourceManager&,
+            GaussianSplatRenderer::OutputTargets&) override {}
+
     bool RenderGeometryStage(
             const FilamentView& view,
             const FilamentScene&,
@@ -65,7 +77,7 @@ public:
             GaussianSplatRenderer::OutputTargets&) override {
         if (logged_views_.insert(&view).second) {
             utility::LogWarning(
-                    "Gaussian compute backend '{}' is selected but GPU "
+                    "GaussianSplat backend '{}' is selected but GPU "
                     "dispatch is not implemented yet.",
                     name_);
         }
@@ -123,7 +135,7 @@ public:
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() && !gl_ctx.Initialize()) {
             utility::LogWarning(
-                    "Gaussian compute OpenGL backend: shared GL context not "
+                "GaussianSplat OpenGL backend: shared GL context not "
                     "available. InitializeStandalone() must run before "
                     "Filament Engine::create().");
             return false;
@@ -139,17 +151,17 @@ public:
             return false;
         }
 
-        const GaussianSplatSourceData* source =
-                scene.GetGaussianSplatSourceData();
-        if (!source || source->splat_count == 0) {
+        const GaussianSplatPackedAttrs* attrs =
+                scene.GetGaussianSplatPackedAttrs();
+        if (!attrs || attrs->splat_count == 0) {
             gl_ctx.ReleaseCurrent();
             return false;
         }
 
-        // Pack only the view-params UBO (208 bytes) — cheap every frame.
-        PackedGaussianScene packed =
-                PackGaussianViewParams(*source, render_data, config_);
-        if (!packed.valid) {
+        // Pack only the view-params UBO (288 bytes) — cheap every frame.
+        PackedGaussianScene frame =
+                PackGaussianViewParams(*attrs, render_data, config_);
+        if (!frame.valid) {
             utility::LogWarning("GS OpenGL: PackGaussianViewParams failed");
             gl_ctx.ReleaseCurrent();
             return false;
@@ -160,18 +172,11 @@ public:
         const std::uint64_t scene_id = scene.GetGeometryChangeId();
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
-                 source->splat_count != vs.cached_splat_count);
-
-        // Pack the large per-splat arrays (N * ~160 B) only when geometry
-        // changes; on camera-move frames these stay empty and the upload
-        // in RunGaussianGeometryPasses is skipped.
-        if (scene_changed) {
-            PackGaussianSceneAttributes(*source, config_, packed);
-        }
+                 attrs->splat_count != vs.cached_splat_count);
 
         const bool ok = RunGaussianGeometryPasses(
-                *gpu_, config_, packed, dispatches, vs, scene_id,
-                source->splat_count, scene_changed);
+                *gpu_, config_, frame, *attrs, dispatches, vs, scene_id,
+                scene_changed);
         gl_ctx.ReleaseCurrent();
         return ok;
     }
@@ -197,6 +202,96 @@ public:
                                                  it->second, targets);
         gl_ctx.ReleaseCurrent();
         return ok;
+    }
+
+    bool PrepareOutputTextures(
+            FilamentView& view,
+            FilamentResourceManager& resource_mgr,
+            std::uint32_t width,
+            std::uint32_t height,
+            GaussianSplatRenderer::OutputTargets& targets) override {
+        // Create GL textures on the shared GL context for zero-copy sharing
+        // with Filament.  The scene depth texture is rendered into by Filament
+        // (as a depth attachment) and read by the GS composite shader.  The GS
+        // color texture is written by the composite shader and sampled by ImGui.
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
+        if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
+            return false;
+        }
+
+        auto scene_depth = CreateGLTexture2D(width, height,
+                                             kGL_DEPTH_COMPONENT32F,
+                                             "gs.scene_depth");
+        auto gs_color = CreateGLTexture2D(width, height, kGL_RGBA16F,
+                                          "gs.color");
+        targets.scene_depth_gl_handle = scene_depth.valid ? scene_depth.id : 0;
+        targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
+        gl_ctx.ReleaseCurrent();
+
+        if (targets.scene_depth_gl_handle == 0 ||
+            targets.color_gl_handle == 0) {
+            return false;
+        }
+
+        using Tex = filament::Texture;
+        // Import scene depth (Filament writes, GS reads).
+        targets.depth = resource_mgr.CreateImportedTexture(
+                targets.scene_depth_gl_handle, int(width), int(height),
+                static_cast<int>(Tex::InternalFormat::DEPTH32F),
+                static_cast<int>(Tex::Usage::DEPTH_ATTACHMENT |
+                                 Tex::Usage::SAMPLEABLE));
+        // Import GS color (GS writes, ImGui reads).
+        targets.color = resource_mgr.CreateImportedTexture(
+                targets.color_gl_handle, int(width), int(height),
+                static_cast<int>(Tex::InternalFormat::RGBA16F),
+                static_cast<int>(Tex::Usage::SAMPLEABLE));
+
+        // Build a render target with the view's own color buffer plus our
+        // imported depth so Filament writes depth into the shared texture.
+        auto view_color = view.GetColorBuffer();
+        if (!view_color || !targets.depth || !targets.color) {
+            return false;
+        }
+
+        targets.render_target =
+                resource_mgr.CreateRenderTarget(view_color, targets.depth);
+        view.SetRenderTarget(targets.render_target);
+
+        // Disable MSAA (required when depth is SAMPLEABLE).
+        auto* native = view.GetNativeView();
+        auto msaa = native->getMultiSampleAntiAliasingOptions();
+        msaa.enabled = false;
+        native->setMultiSampleAntiAliasingOptions(msaa);
+
+        // Disable post-processing so Filament renders directly to the render
+        // target (including depth writes); with post-processing enabled,
+        // Filament renders to internal RTs and only blits color — depth is lost.
+        view.SetPostProcessing(false);
+
+        return static_cast<bool>(targets.render_target);
+    }
+
+    void ReleaseOutputTextures(
+            FilamentResourceManager&,
+            GaussianSplatRenderer::OutputTargets& targets) override {
+        if (targets.scene_depth_gl_handle == 0 &&
+            targets.color_gl_handle == 0) {
+            return;
+        }
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
+        if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
+            if (targets.scene_depth_gl_handle != 0) {
+                GLTextureHandle dt{targets.scene_depth_gl_handle, 0, 0, true};
+                DestroyGLTexture(dt);
+            }
+            if (targets.color_gl_handle != 0) {
+                GLTextureHandle ct{targets.color_gl_handle, 0, 0, true};
+                DestroyGLTexture(ct);
+            }
+            gl_ctx.ReleaseCurrent();
+        }
+        targets.scene_depth_gl_handle = 0;
+        targets.color_gl_handle = 0;
     }
 
 private:
@@ -588,7 +683,7 @@ GaussianSplatRenderer::GetRenderConfig() const {
 void GaussianSplatRenderer::SetRenderConfig(const RenderConfig& config) {
     if (!ValidateRenderConfig(config)) {
         utility::LogWarning(
-                "Ignoring invalid Gaussian compute render configuration.");
+                "Ignoring invalid GaussianSplat render configuration.");
         return;
     }
 
@@ -689,73 +784,12 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
 
     ResetOutputTargets(targets);
 
-    bool zero_copy = false;
-#if !defined(__APPLE__)
-    // Create GL textures on the shared GL context for zero-copy sharing
-    // with Filament.  The scene depth texture is rendered into by Filament
-    // (as a depth attachment) and read by the GS composite shader.  The
-    // GS color texture is written by the composite shader and sampled by ImGui.
-    //
-    // Context must already be initialized (sharing Filament's namesapce)
-    // before we create textures — the backend's RenderGeometryStage calls
-    // Initialize() at the right time (after flushAndWait, Filament's context
-    // is current).  If not yet valid here we skip and let the first render
-    // call trigger init and recreation.
-    {
-        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
-        if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
-            auto scene_depth = CreateGLTexture2D(
-                    width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
-            auto gs_color =
-                    CreateGLTexture2D(width, height, kGL_RGBA16F, "gs.color");
-            targets.scene_depth_gl_handle =
-                    scene_depth.valid ? scene_depth.id : 0;
-            targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
-            gl_ctx.ReleaseCurrent();
-        }
-    }
-
-    if (targets.scene_depth_gl_handle != 0 && targets.color_gl_handle != 0) {
-        using Tex = filament::Texture;
-        // Import scene depth (Filament writes, GS reads).
-        targets.depth = resource_mgr_.CreateImportedTexture(
-                targets.scene_depth_gl_handle, int(width), int(height),
-                static_cast<int>(Tex::InternalFormat::DEPTH32F),
-                static_cast<int>(Tex::Usage::DEPTH_ATTACHMENT |
-                                 Tex::Usage::SAMPLEABLE));
-        // Import GS color (GS writes, ImGui reads).
-        targets.color = resource_mgr_.CreateImportedTexture(
-                targets.color_gl_handle, int(width), int(height),
-                static_cast<int>(Tex::InternalFormat::RGBA16F),
-                static_cast<int>(Tex::Usage::SAMPLEABLE));
-
-        // Build a render target that uses the view's own color buffer
-        // (where Filament renders meshes) plus our imported depth.
-        auto view_color = view.GetColorBuffer();
-        if (view_color) {
-            targets.render_target =
-                    resource_mgr_.CreateRenderTarget(view_color, targets.depth);
-            view.SetRenderTarget(targets.render_target);
-
-            // Disable MSAA — required when depth is SAMPLEABLE.
-            auto* native = view.GetNativeView();
-            auto msaa = native->getMultiSampleAntiAliasingOptions();
-            msaa.enabled = false;
-            native->setMultiSampleAntiAliasingOptions(msaa);
-
-            // Disable post-processing so Filament renders geometry
-            // directly to our render target (including depth writes).
-            // With post-processing, Filament renders to internal RTs
-            // and only blits color to the output — depth is lost.
-            view.SetPostProcessing(false);
-        }
-        zero_copy = static_cast<bool>(targets.depth) &&
-                    static_cast<bool>(targets.color);
-    }
-#elif defined(__APPLE__)
-    zero_copy = PrepareGaussianImportedRenderTargetsApple(
-            view, resource_mgr_, width, height, targets);
-#endif
+    // Attempt zero-copy setup via the backend (GL texture sharing on
+    // OpenGL, Metal texture import on Apple).  Falls back to
+    // Filament-owned textures if the backend returns false.
+    const bool zero_copy = backend_ && backend_->PrepareOutputTextures(
+                                               view, resource_mgr_, width,
+                                               height, targets);
 
     if (!zero_copy) {
         // Fallback: Filament-owned textures (no zero-copy).
@@ -775,7 +809,7 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
 }
 
 void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
-    // Destroy Filament wrappers first (before deleting GL textures).
+    // Destroy Filament wrappers first (before releasing native textures).
     if (targets.render_target) {
         resource_mgr_.Destroy(targets.render_target);
         targets.render_target = RenderTargetHandle();
@@ -789,25 +823,10 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
         targets.depth = TextureHandle();
     }
 
-#if !defined(__APPLE__)
-    // Destroy GL textures created in PrepareOutputTargets.
-    if (targets.scene_depth_gl_handle != 0 || targets.color_gl_handle != 0) {
-        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
-        if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
-            if (targets.scene_depth_gl_handle != 0) {
-                GLTextureHandle dt{targets.scene_depth_gl_handle, 0, 0, true};
-                DestroyGLTexture(dt);
-            }
-            if (targets.color_gl_handle != 0) {
-                GLTextureHandle ct{targets.color_gl_handle, 0, 0, true};
-                DestroyGLTexture(ct);
-            }
-            gl_ctx.ReleaseCurrent();
-        }
+    // Release platform-specific textures via the backend.
+    if (backend_) {
+        backend_->ReleaseOutputTextures(resource_mgr_, targets);
     }
-#elif defined(__APPLE__)
-    ReleaseGaussianImportedMTLTexturesApple(targets);
-#endif
     targets.scene_depth_gl_handle = 0;
     targets.color_gl_handle = 0;
     targets.scene_depth_mtl_texture = 0;
@@ -894,7 +913,7 @@ void GaussianSplatRenderer::ValidatePassShaderSources() const {
         const std::string shader_path = GetShaderSourcePath(pass.type);
         if (!utility::filesystem::FileExists(shader_path)) {
             utility::LogWarning(
-                    "Gaussian compute shader source for '{}' is missing at {}",
+                    "GaussianSplat shader source for '{}' is missing at {}",
                     pass.debug_name, shader_path);
         }
     }

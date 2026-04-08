@@ -18,7 +18,7 @@ struct PackedGaussianScene;
 /// Matches GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT padding in the OpenGL backend.
 inline constexpr std::uint32_t kGaussianRadixParamsStride = 256;
 
-/// Byte sizes and capacities for Gaussian compute SSBOs/UBOs. Shared by the
+/// Byte sizes and capacities for Gaussian splat SSBOs/UBOs. Shared by the
 /// OpenGL backend and any other backend that mirrors the same GLSL layouts.
 struct GaussianGpuBufferSizes {
     std::size_t projected_size = 0;
@@ -33,7 +33,7 @@ struct GaussianGpuBufferSizes {
 };
 
 /// Fills @p out from packed scene data. Must match allocation logic in
-/// gaussian_compute_dispatch_args.comp / radix shaders (tile cap, etc.).
+/// gaussian_compute_dispatch_args.comp and the radix shaders (tile cap, etc.).
 void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
                                    GaussianGpuBufferSizes* out);
 

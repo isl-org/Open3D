@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Gaussian compute — dispatch argument generator.
+// Gaussian splat dispatch argument generator.
 //
 // Single-thread pass runs after the tile prefix-sum to read total_entries
 // from the GPU counter buffer and write all indirect dispatch counts plus
@@ -25,7 +25,7 @@
 //   entry i is at uint offset i * PARAMS_STRIDE_UINTS.
 //
 // Constants must match the C++ kRadixWorkgroupSize / kRadixTargetBlocksPerWG
-// in GaussianComputeRenderer.cpp.
+// in GaussianSplatBuffers.cpp.
 
 #version 460
 
@@ -55,7 +55,7 @@ layout(std140, binding = 0) uniform GaussianViewParams {
     vec4 depth_range_and_flags;
 } view_params;
 
-// counters_buf (binding 10): matches GaussianGpuCounters in GaussianComputeDataPacking.h.
+// counters_buf (binding 10): matches GaussianGpuCounters in GaussianSplatDataPacking.h.
 layout(std430, binding = 10) buffer GaussianGlobalCounters {
     uint total_entries;  // raw total tile entries written by prefix-sum
     uint error_flags;    // GPU error bitmask (GS_ERROR_*)

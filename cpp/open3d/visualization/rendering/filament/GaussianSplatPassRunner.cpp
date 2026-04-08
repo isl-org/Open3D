@@ -73,11 +73,11 @@ void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
 bool RunGaussianGeometryPasses(
         GaussianSplatGpuContext& ctx,
         const GaussianSplatRenderer::RenderConfig& config,
-        const PackedGaussianScene& packed,
+        const PackedGaussianScene& frame_data,
+        const GaussianSplatPackedAttrs& attrs,
         const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
         GaussianSplatViewGpuResources& vs,
         std::uint64_t scene_change_id,
-        std::uint32_t source_splat_count,
         bool scene_changed) {
     // Validate all required dispatches upfront (programmer error → LogError).
     const auto& proj_d = RequireDispatch(
@@ -88,7 +88,7 @@ bool RunGaussianGeometryPasses(
             "PrefixSum");
 
     GaussianGpuBufferSizes gpu_sizes;
-    ComputeGaussianGpuBufferSizes(packed, &gpu_sizes);
+    ComputeGaussianGpuBufferSizes(frame_data, &gpu_sizes);
 
     // CPU-uploaded buffers: Shared/DYNAMIC_DRAW so the CPU can write them.
     vs.view_params_buf = ctx.ResizeBuffer(vs.view_params_buf,
@@ -96,23 +96,25 @@ bool RunGaussianGeometryPasses(
                                           "gs.view_params");
     if (scene_changed) {
         vs.positions_buf = ctx.ResizeBuffer(
-                vs.positions_buf, packed.positions.size() * sizeof(Std430Vec4),
+                vs.positions_buf,
+                attrs.positions.size() * sizeof(Std430Vec4),
                 "gs.positions");
-        vs.scales_buf =
-                ctx.ResizeBuffer(vs.scales_buf, packed.log_scales.size() *
-                                                        sizeof(std::uint32_t),
-                                 "gs.scales");
+        vs.scales_buf = ctx.ResizeBuffer(
+                vs.scales_buf,
+                attrs.log_scales.size() * sizeof(std::uint32_t),
+                "gs.scales");
         vs.rotations_buf = ctx.ResizeBuffer(
                 vs.rotations_buf,
-                packed.rotations.size() * sizeof(std::uint32_t),
+                attrs.rotations.size() * sizeof(std::uint32_t),
                 "gs.rotations");
         vs.dc_opacity_buf = ctx.ResizeBuffer(
                 vs.dc_opacity_buf,
-                packed.dc_opacity.size() * sizeof(std::uint32_t),
+                attrs.dc_opacity.size() * sizeof(std::uint32_t),
                 "gs.dc_opacity");
-        vs.sh_buf = ctx.ResizeBuffer(vs.sh_buf, packed.sh_coefficients.size() *
-                                                        sizeof(std::uint32_t),
-                                     "gs.sh_coeffs");
+        vs.sh_buf = ctx.ResizeBuffer(
+                vs.sh_buf,
+                attrs.sh_coefficients.size() * sizeof(std::uint32_t),
+                "gs.sh_coeffs");
     }
 
         // GPU-only intermediate buffers: private storage for better cache
@@ -161,22 +163,22 @@ bool RunGaussianGeometryPasses(
                                                   gpu_sizes.radix_params_size,
                                                   "gs.radix_params");
 
-    ctx.UploadBuffer(vs.view_params_buf, &packed.view_params,
+        ctx.UploadBuffer(vs.view_params_buf, &frame_data.view_params,
                      sizeof(GaussianViewParams), 0);
     if (scene_changed) {
-        ctx.UploadBuffer(vs.positions_buf, packed.positions.data(),
-                         packed.positions.size() * sizeof(Std430Vec4), 0);
-        ctx.UploadBuffer(vs.scales_buf, packed.log_scales.data(),
-                         packed.log_scales.size() * sizeof(std::uint32_t), 0);
-        ctx.UploadBuffer(vs.rotations_buf, packed.rotations.data(),
-                         packed.rotations.size() * sizeof(std::uint32_t), 0);
-        ctx.UploadBuffer(vs.dc_opacity_buf, packed.dc_opacity.data(),
-                         packed.dc_opacity.size() * sizeof(std::uint32_t), 0);
-        ctx.UploadBuffer(vs.sh_buf, packed.sh_coefficients.data(),
-                         packed.sh_coefficients.size() * sizeof(std::uint32_t),
+        ctx.UploadBuffer(vs.positions_buf, attrs.positions.data(),
+                         attrs.positions.size() * sizeof(Std430Vec4), 0);
+        ctx.UploadBuffer(vs.scales_buf, attrs.log_scales.data(),
+                         attrs.log_scales.size() * sizeof(std::uint32_t), 0);
+        ctx.UploadBuffer(vs.rotations_buf, attrs.rotations.data(),
+                         attrs.rotations.size() * sizeof(std::uint32_t), 0);
+        ctx.UploadBuffer(vs.dc_opacity_buf, attrs.dc_opacity.data(),
+                         attrs.dc_opacity.size() * sizeof(std::uint32_t), 0);
+        ctx.UploadBuffer(vs.sh_buf, attrs.sh_coefficients.data(),
+                         attrs.sh_coefficients.size() * sizeof(std::uint32_t),
                          0);
         vs.cached_scene_id = scene_change_id;
-        vs.cached_splat_count = source_splat_count;
+        vs.cached_splat_count = attrs.splat_count;
     }
 
     // GpuComputeFrame calls BeginGeometryPass() now and EndGeometryPass() on
@@ -236,7 +238,7 @@ bool RunGaussianGeometryPasses(
             .SSBO(9, vs.tile_heads_buf)
             .SSBO(10, vs.counters_buf)
             .SSBO(11, vs.tile_entries_buf)
-            .Dispatch(DivUp(packed.splat_count,
+            .Dispatch(DivUp(frame_data.splat_count,
                             static_cast<std::uint32_t>(
                                     config.scatter_group_size)),
                       1u, 1u);
@@ -342,7 +344,7 @@ bool RunGaussianCompositePass(
 
     if (color_tex == 0 || vs.composite_depth_tex == 0) {
         utility::LogWarning(
-                "Gaussian compute composite: missing output textures.");
+                                "GaussianSplat composite: missing output textures.");
         return false;
     }
 

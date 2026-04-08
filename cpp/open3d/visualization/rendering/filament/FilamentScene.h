@@ -63,7 +63,7 @@ class FilamentView;
 class GeometryBuffersBuilder;
 class Renderer;
 class View;
-struct GaussianSplatSourceData;
+struct GaussianSplatPackedAttrs;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
@@ -224,7 +224,7 @@ public:
     /// before the view's FilamentView::color_buffer_ texture is freed so the
     /// GS render target (which uses it as an attachment) is torn down first.
     void InvalidateGaussianSplatOutput(FilamentView& view);
-    const GaussianSplatSourceData* GetGaussianSplatSourceData() const;
+    const GaussianSplatPackedAttrs* GetGaussianSplatPackedAttrs() const;
 
     void Draw(filament::Renderer& renderer);
 
@@ -361,7 +361,7 @@ private:
     IndirectLightHandle ibl_handle_;
     SkyboxHandle skybox_handle_;
     LightEntity sun_;
-    std::unique_ptr<GaussianSplatSourceData> gaussian_splat_source_;
+    std::unique_ptr<GaussianSplatPackedAttrs> gaussian_splat_packed_attrs_;
     void CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
                                 const MaterialRecord& material);
 };

@@ -74,12 +74,6 @@
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
 
-int GetGaussianSplatRestCoeffCount(int sh_degree) {
-    // Degree-0 (DC) lives in f_dc. f_rest stores only degrees 1..sh_degree,
-    // i.e. ((degree + 1)^2 - 1) basis functions across 3 color channels.
-    return (((sh_degree + 1) * (sh_degree + 1)) - 1) * 3;
-}
-
 static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
     free(buffer);
 }
@@ -377,20 +371,17 @@ void FilamentScene::InvalidateGaussianSplatOutput(FilamentView& view) {
     }
 }
 
-const GaussianSplatSourceData* FilamentScene::GetGaussianSplatSourceData()
+const GaussianSplatPackedAttrs* FilamentScene::GetGaussianSplatPackedAttrs()
         const {
-    return gaussian_splat_source_.get();
+    return gaussian_splat_packed_attrs_.get();
 }
 
-// TODO(SS): Remove unnecessary tests, optimize caching.
 void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
                                            const MaterialRecord& material) {
-    auto src = std::make_unique<GaussianSplatSourceData>();
-
     const auto& points = cloud.GetPointPositions();
     const size_t n = points.GetLength();
 
-    // Prepare attribute pointers (CPU float data).
+    // Prepare attribute pointers (ensure CPU float data, contiguous layout).
     auto pts = points.To(core::Float32).Contiguous();
     const float* pts_ptr = pts.GetDataPtr<float>();
 
@@ -434,23 +425,18 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
         f_rest_ptr = f_rest_attr.GetDataPtr<float>();
     }
 
-    // Determine desired SH degree: clamp the source order by both the material
-    // preference and the renderer's configured maximum.
+    // Determine effective SH degree: clamp by source, material, and renderer.
     int cloud_sh = cloud.GaussianSplatGetSHOrder();
     int desired_sh = std::min(cloud_sh, material.gaussian_splat_sh_degree);
     if (auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_)) {
         desired_sh =
                 std::min(desired_sh, renderer->GetGaussianSplatMaxShDegree());
     }
-    src->gaussian_splat_sh_degree = desired_sh;
-    src->gaussian_splat_min_alpha = material.gaussian_splat_min_alpha;
-    src->gaussian_splat_antialias = material.gaussian_splat_antialias;
 
-    // The projection shader applies Sigmoid(dc.w) to the raw logit-space
-    // opacity stored in the PLY file.  Convert min_alpha to logit space so
-    // the CPU-side filter and the GPU-side filter use the same scale.
-    // sigmoid(x) = 1 / (1 + exp(-x))  =>  x = log(a / (1 - a))
-    // Guard against min_alpha <= 0 (accept all) and >= 1 (reject all).
+    // Convert min_alpha from sigmoid space to logit space for the opacity
+    // filter.  The projection shader stores opacity in logit (pre-sigmoid)
+    // space, so the threshold must be in the same domain.
+    // sigmoid(x) = 1/(1+exp(-x))  =>  x = log(a/(1-a))
     const float min_alpha_sigmoid = material.gaussian_splat_min_alpha;
     float min_opacity_logit = -std::numeric_limits<float>::infinity();
     if (min_alpha_sigmoid > 0.0f && min_alpha_sigmoid < 1.0f) {
@@ -460,92 +446,16 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
         min_opacity_logit = std::numeric_limits<float>::infinity();
     }
 
-    // Reserve buffers for the (filtered) splats.
-    src->positions.reserve(n * 3);
-    src->log_scales.reserve(n * 3);
-    src->rotations.reserve(n * 4);
-    src->dc_opacity.reserve(n * 4);
+    // Pack directly into GPU-ready format in one pass (filter + compress).
+    // Eliminates the old intermediate raw-fp32 scene cache.
+    auto packed = std::make_unique<GaussianSplatPackedAttrs>();
+    PackGaussianSplatAttrsDirect(
+            pts_ptr, n, scale_ptr, rot_ptr, f_dc_ptr, opacity_ptr, f_rest_ptr,
+            cloud_sh, desired_sh, min_opacity_logit, min_alpha_sigmoid,
+            material.gaussian_splat_antialias, *packed);
+    gaussian_splat_packed_attrs_ = std::move(packed);
 
-    // Number of SH rest coefficients per splat in the destination: capped to
-    // desired_sh. Source stride uses cloud_sh (may be larger than desired_sh).
-    // Degree-0 (DC) coefficients live in f_dc, so f_rest starts at degree 1.
-    int coeffs_per_splat = 0;
-    int source_coeffs_per_splat = 0;
-    if (has_f_rest && cloud_sh >= 1) {
-        source_coeffs_per_splat = GetGaussianSplatRestCoeffCount(cloud_sh);
-    }
-    if (desired_sh >= 1 && has_f_rest) {
-        coeffs_per_splat = GetGaussianSplatRestCoeffCount(desired_sh);
-        src->sh_rest.reserve(n * coeffs_per_splat);
-    }
-
-    // Copy per-splat data only for splats meeting opacity threshold.
-    // Opacity in the PLY is stored in logit (pre-sigmoid) space; compare
-    // against the logit-converted threshold computed above.
-    for (size_t i = 0; i < n; ++i) {
-        float opacity = 0.f;
-        if (opacity_ptr) opacity = opacity_ptr[i];
-        if (opacity < min_opacity_logit) continue;
-
-        // position
-        src->positions.push_back(pts_ptr[i * 3 + 0]);
-        src->positions.push_back(pts_ptr[i * 3 + 1]);
-        src->positions.push_back(pts_ptr[i * 3 + 2]);
-
-        // scale
-        if (scale_ptr) {
-            src->log_scales.push_back(scale_ptr[i * 3 + 0]);
-            src->log_scales.push_back(scale_ptr[i * 3 + 1]);
-            src->log_scales.push_back(scale_ptr[i * 3 + 2]);
-        } else {
-            src->log_scales.push_back(0.f);
-            src->log_scales.push_back(0.f);
-            src->log_scales.push_back(0.f);
-        }
-
-        // rotation
-        if (rot_ptr) {
-            src->rotations.push_back(rot_ptr[i * 4 + 0]);
-            src->rotations.push_back(rot_ptr[i * 4 + 1]);
-            src->rotations.push_back(rot_ptr[i * 4 + 2]);
-            src->rotations.push_back(rot_ptr[i * 4 + 3]);
-        } else {
-            src->rotations.push_back(1.f);
-            src->rotations.push_back(0.f);
-            src->rotations.push_back(0.f);
-            src->rotations.push_back(0.f);
-        }
-
-        // DC color + opacity
-        if (f_dc_ptr && opacity_ptr) {
-            src->dc_opacity.push_back(f_dc_ptr[i * 3 + 0]);
-            src->dc_opacity.push_back(f_dc_ptr[i * 3 + 1]);
-            src->dc_opacity.push_back(f_dc_ptr[i * 3 + 2]);
-            src->dc_opacity.push_back(opacity_ptr[i]);
-        } else {
-            src->dc_opacity.push_back(0.f);
-            src->dc_opacity.push_back(0.f);
-            src->dc_opacity.push_back(0.f);
-            src->dc_opacity.push_back(0.f);
-        }
-
-        // SH coefficients: copy only up to coeffs_per_splat for this splat.
-        // source_coeffs_per_splat is the original stride in the cloud tensor.
-        // coeffs_per_splat is the desired (possibly smaller) rest-coefficient
-        // count after clamping the effective SH degree.
-        if (coeffs_per_splat > 0 && f_rest_ptr) {
-            const float* src_ptr = f_rest_ptr + i * source_coeffs_per_splat;
-            for (int c = 0; c < coeffs_per_splat; ++c) {
-                src->sh_rest.push_back(src_ptr[c]);
-            }
-        }
-    }
-
-    src->splat_count = static_cast<std::uint32_t>(src->positions.size() / 3);
-    gaussian_splat_source_ = std::move(src);
-
-    // Propagate per-material capacity overrides to the renderer config so that
-    // the GPU-side tile allocation honours the user's settings.
+    // Propagate per-material capacity overrides to the renderer config.
     if (auto* fr = dynamic_cast<FilamentRenderer*>(&renderer_)) {
         if (auto* gcr = fr->GetGaussianSplatRenderer()) {
             auto cfg = gcr->GetRenderConfig();

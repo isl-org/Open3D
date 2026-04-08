@@ -200,8 +200,8 @@ void FilamentRenderer::BeginFrame() {
         engine_.flushAndWait();
 #endif
 
-        // Dispatch Gaussian compute before Filament's beginFrame so our
-        // vkQueueSubmit calls don't conflict with Filament's frame.
+        // Dispatch Gaussian splat geometry work before Filament's beginFrame
+        // so our queue submissions do not conflict with Filament's frame.
         // Build live_views from ALL views (including cached-but-inactive
         // ones) so PruneOutputs only removes outputs for truly deleted
         // views, not views that are merely inactive due to scene caching.
