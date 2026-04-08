@@ -57,6 +57,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/Light.h"
@@ -329,25 +330,15 @@ bool FilamentScene::UsesGaussianSplatOutput(const FilamentView& view) const {
         return false;
     }
 
-    // Check that at least one visible Gaussian splat geometry exists.
-    // Other geometry types (grid, axes, etc.) are allowed to coexist.
-    bool saw_visible_gaussian = false;
     for (const auto& pair : geometries_) {
         const auto& geometry = pair.second;
-        if (!geometry.visible) {
-            continue;
-        }
-
-        if (!pair.first.empty() && pair.first[0] == '_') {
-            continue;
-        }
-
-        if (geometry.mat.properties.shader == "gaussianSplat") {
-            saw_visible_gaussian = true;
+        if (geometry.visible &&
+            geometry.mat.properties.shader == "gaussianSplat") {
+            return true;
         }
     }
 
-    return saw_visible_gaussian;
+    return false;
 }
 
 TextureHandle FilamentScene::GetColorBufferForView(
@@ -607,13 +598,13 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         // bounds.
         if (pc->HasPointPositions() &&
             pc->GetPointPositions().GetLength() > 0) {
-            auto min_b = pc->GetMinBound();
-            auto max_b = pc->GetMaxBound();
-            const float* mn = min_b.GetDataPtr<float>();
-            const float* mx = max_b.GetDataPtr<float>();
-            geom.aabb = geometry::AxisAlignedBoundingBox(
-                    Eigen::Vector3d(mn[0], mn[1], mn[2]),
-                    Eigen::Vector3d(mx[0], mx[1], mx[2]));
+            const Eigen::Vector3d min_b =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                    pc->GetMinBound().Reshape({1, 3}))[0];
+            const Eigen::Vector3d max_b =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                    pc->GetMaxBound().Reshape({1, 3}))[0];
+            geom.aabb = geometry::AxisAlignedBoundingBox(min_b, max_b);
         }
         CacheGaussianSplatData(*pc, internal_material);
         MarkGeometryChanged();

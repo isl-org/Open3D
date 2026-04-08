@@ -7,6 +7,10 @@
 
 #include <rply.h>
 
+#include <algorithm>
+#include <cctype>
+#include <set>
+
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/LineSetIO.h"
 #include "open3d/io/PointCloudIO.h"
@@ -22,6 +26,67 @@ namespace io {
 
 /// @cond
 namespace {
+
+std::string ToLowerString(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char character) {
+                       return static_cast<char>(std::tolower(character));
+                   });
+    return value;
+}
+
+bool HasGaussianSplatProperties(p_ply ply_file) {
+    std::set<std::string> vertex_property_names;
+
+    p_ply_element element = ply_get_next_element(ply_file, nullptr);
+    while (element) {
+        const char *element_name = nullptr;
+        long element_size = 0;
+        ply_get_element_info(element, &element_name, &element_size);
+        if (element_name != nullptr &&
+            ToLowerString(element_name) == "vertex" && element_size > 0) {
+            p_ply_property property = ply_get_next_property(element, nullptr);
+            while (property) {
+                const char *property_name = nullptr;
+                e_ply_type type;
+                ply_get_property_info(property, &property_name, &type, NULL,
+                                      NULL);
+                if (property_name != nullptr) {
+                    vertex_property_names.insert(ToLowerString(property_name));
+                }
+                property = ply_get_next_property(element, property);
+            }
+            break;
+        }
+        element = ply_get_next_element(ply_file, element);
+    }
+
+    const std::vector<std::string> required_properties = {
+            "x", "y", "z", "opacity"};
+    const bool has_required_properties =
+            std::all_of(required_properties.begin(), required_properties.end(),
+                        [&vertex_property_names](const std::string &name) {
+                            return vertex_property_names.count(name) > 0;
+                        });
+    const int scale_count = static_cast<int>(std::count_if(
+            vertex_property_names.begin(), vertex_property_names.end(),
+            [](const std::string &name) {
+                return name.rfind("scale_", 0) == 0;
+            }));
+    const int rot_count = static_cast<int>(std::count_if(
+            vertex_property_names.begin(), vertex_property_names.end(),
+            [](const std::string &name) {
+                return name.rfind("rot_", 0) == 0;
+            }));
+    const int f_dc_count = static_cast<int>(std::count_if(
+            vertex_property_names.begin(), vertex_property_names.end(),
+            [](const std::string &name) {
+                return name.rfind("f_dc_", 0) == 0;
+            }));
+
+    return has_required_properties && scale_count >= 3 && rot_count >= 4 &&
+           f_dc_count >= 3;
+}
 
 namespace ply_pointcloud_reader {
 
@@ -361,6 +426,7 @@ FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
         ply_close(ply_file);
         return CONTENTS_UNKNOWN;
     }
+    const bool is_gaussian_splat = HasGaussianSplatProperties(ply_file);
 
     auto nVertices =
             ply_set_read_cb(ply_file, "vertex", "x", nullptr, nullptr, 0);
@@ -380,6 +446,10 @@ FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
     } else if (nLines > 0) {
         contents |= CONTAINS_LINES;
     } else if (nVertices > 0) {
+        contents |= CONTAINS_POINTS;
+    }
+    if (is_gaussian_splat) {
+        contents |= CONTAINS_GAUSSIAN_SPLATS;
         contents |= CONTAINS_POINTS;
     }
     return FileGeometry(contents);

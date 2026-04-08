@@ -1141,15 +1141,6 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     // (SrcAlpha, 1-SrcAlpha) composites correctly over the Filament
     // scene rendered above.
     auto gs_tex = impl_->scene_->GetView()->GetGaussianSplatOverlay();
-    {
-        static int gs_ol_log = 0;
-        if (gs_ol_log < 10) {
-            utility::LogDebug("GS overlay: gs_tex={} id={}",
-                              static_cast<bool>(gs_tex),
-                              gs_tex ? gs_tex.GetId() : 0);
-            ++gs_ol_log;
-        }
-    }
     if (gs_tex) {
         ImGui::SetCursorPos(ImVec2(0, 0));
         ImTextureID gs_id = reinterpret_cast<ImTextureID>(gs_tex.GetId());

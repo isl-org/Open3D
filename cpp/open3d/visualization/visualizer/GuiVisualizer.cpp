@@ -18,6 +18,7 @@
 #include "open3d/io/ModelIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
+#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/io/rpc/ZMQReceiver.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
@@ -337,6 +338,7 @@ struct GuiVisualizer::Impl {
     rendering::TriangleMeshModel basic_model_;
     std::shared_ptr<geometry::LineSet> wireframe_model_;
     std::shared_ptr<geometry::PointCloud> loaded_pcd_;
+    std::shared_ptr<t::geometry::PointCloud> loaded_t_pcd_;
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
@@ -494,7 +496,7 @@ struct GuiVisualizer::Impl {
         // o3dscene->ShowGeometry(WIREFRAME_NAME, true);
         if (settings_.model_.GetWireframeMode() != wireframe_enabled_) {
             wireframe_enabled_ = settings_.model_.GetWireframeMode();
-            if (wireframe_enabled_ && !loaded_pcd_) {
+            if (wireframe_enabled_ && !loaded_pcd_ && !loaded_t_pcd_) {
                 // create wireframe line set
                 if (!wireframe_model_) {
                     wireframe_model_ = std::make_shared<geometry::LineSet>();
@@ -522,7 +524,8 @@ struct GuiVisualizer::Impl {
             }
         }
 
-        if (settings_.model_.GetWireframeMode() && !loaded_pcd_) {
+        if (settings_.model_.GetWireframeMode() && !loaded_pcd_ &&
+            !loaded_t_pcd_) {
             o3dscene->SetBackground({0.1f, 0.1f, 0.1f, 1.f});
         } else {
             auto bcolor = settings_.model_.GetBackgroundColor();
@@ -1056,7 +1059,7 @@ void GuiVisualizer::SetGeometry(
     }
     impl_->settings_.view_->Update();  // make sure prefab material is correct
 
-    auto &bounds = scene3d->GetBoundingBox();
+    const auto bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
 
@@ -1068,6 +1071,81 @@ void GuiVisualizer::SetGeometry(
     }
 
     // Make sure scene is redrawn
+    impl_->scene_wgt_->ForceRedraw();
+}
+
+void GuiVisualizer::SetGeometry(
+        std::shared_ptr<const t::geometry::Geometry> geometry,
+        bool loaded_model) {
+    auto scene3d = impl_->scene_wgt_->GetScene();
+    scene3d->ClearGeometry();
+
+    impl_->SetMaterialsToDefault();
+
+    rendering::MaterialRecord loaded_material;
+    if (loaded_model) {
+        scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
+        impl_->settings_.model_.SetDisplayingPointClouds(false);
+        loaded_material.shader = "defaultLit";
+    } else {
+        auto pcd = std::dynamic_pointer_cast<const t::geometry::PointCloud>(
+                geometry);
+        if (pcd) {
+            if (pcd->IsGaussianSplat()) {
+                loaded_material.shader = "gaussianSplat";
+                loaded_material.gaussian_splat_sh_degree =
+                        pcd->GaussianSplatGetSHOrder();
+            } else if (pcd->HasPointNormals()) {
+                loaded_material.shader = "defaultLit";
+            } else if (pcd->HasPointColors()) {
+                loaded_material.shader = "defaultUnlit";
+            } else {
+                loaded_material.shader = "defaultLit";
+            }
+
+            scene3d->AddGeometry(MODEL_NAME, pcd.get(), loaded_material);
+
+            impl_->settings_.model_.SetDisplayingPointClouds(true);
+            if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
+                auto &profile =
+                        GuiSettingsModel::GetDefaultPointCloudLightingProfile();
+                impl_->settings_.model_.SetLightingProfile(profile);
+            }
+        }
+    }
+
+    auto type = impl_->settings_.model_.GetMaterialType();
+    if (type == GuiSettingsModel::MaterialType::LIT ||
+        type == GuiSettingsModel::MaterialType::UNLIT) {
+        if (loaded_material.shader == "defaultUnlit") {
+            impl_->settings_.model_.SetMaterialType(
+                    GuiSettingsModel::MaterialType::UNLIT);
+        } else {
+            impl_->settings_.model_.SetMaterialType(
+                    GuiSettingsModel::MaterialType::LIT);
+        }
+    }
+
+    impl_->settings_.model_.UnsetCustomDefaultColor();
+    if (loaded_model) {
+        impl_->settings_.view_->ShowFileMaterialEntry(true);
+        impl_->settings_.model_.SetCurrentMaterials(
+                GuiSettingsModel::MATERIAL_FROM_FILE_NAME);
+    } else {
+        impl_->settings_.view_->ShowFileMaterialEntry(false);
+    }
+    impl_->settings_.view_->Update();
+
+    const auto bounds = scene3d->GetBoundingBox();
+    impl_->scene_wgt_->SetupCamera(60.0, bounds,
+                                   bounds.GetCenter().cast<float>());
+
+    if (impl_->basic_mode_enabled_) {
+        impl_->SetBasicModeGeometry(true);
+        scene3d->GetScene()->SetSunLightDirection(
+                scene3d->GetCamera()->GetForwardVector());
+    }
+
     impl_->scene_wgt_->ForceRedraw();
 }
 
@@ -1150,6 +1228,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         impl_->basic_model_.materials_.clear();
         impl_->wireframe_model_.reset();
         impl_->loaded_pcd_.reset();
+        impl_->loaded_t_pcd_.reset();
 
         auto geometry_type = io::ReadFileGeometryType(path);
 
@@ -1171,42 +1250,76 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         }
         // path appears to be a point cloud...
         auto geometry = std::shared_ptr<geometry::Geometry3D>();
+        auto t_geometry = std::shared_ptr<t::geometry::Geometry>();
         if (!model_success) {
-            auto cloud = std::make_shared<geometry::PointCloud>();
-            bool success = false;
             const float ioProgressAmount = 0.5f;
-            try {
-                io::ReadPointCloudOption opt;
-                opt.update_progress = [ioProgressAmount,
-                                       UpdateProgress](double percent) -> bool {
-                    UpdateProgress(ioProgressAmount * float(percent / 100.0));
-                    return true;
-                };
-                success = io::ReadPointCloud(path, *cloud, opt);
-            } catch (...) {
-                success = false;
-            }
-            if (success) {
-                utility::LogInfo("Successfully read {}", path.c_str());
-                UpdateProgress(ioProgressAmount);
-                if (!cloud->HasNormals() && !cloud->HasColors()) {
-                    cloud->EstimateNormals();
+            if (geometry_type & io::CONTAINS_GAUSSIAN_SPLATS) {
+                auto cloud = std::make_shared<t::geometry::PointCloud>();
+                bool success = false;
+                try {
+                    io::ReadPointCloudOption opt;
+                    opt.update_progress = [ioProgressAmount,
+                                           UpdateProgress](double percent)
+                            -> bool {
+                        UpdateProgress(ioProgressAmount *
+                                       float(percent / 100.0));
+                        return true;
+                    };
+                    success = t::io::ReadPointCloud(path, *cloud, opt);
+                } catch (...) {
+                    success = false;
                 }
-                UpdateProgress(0.666f);
-                cloud->NormalizeNormals();
-                UpdateProgress(0.75f);
-                geometry = cloud;
-                impl_->loaded_pcd_ = cloud;
-            } else {
-                utility::LogWarning("Failed to read points {}", path.c_str());
-                cloud.reset();
+                if (success && cloud->IsGaussianSplat()) {
+                    utility::LogInfo("Successfully read {}", path.c_str());
+                    UpdateProgress(ioProgressAmount);
+                    t_geometry = cloud;
+                    impl_->loaded_t_pcd_ = cloud;
+                }
+            }
+
+            if (!t_geometry) {
+                auto cloud = std::make_shared<geometry::PointCloud>();
+                bool success = false;
+                try {
+                    io::ReadPointCloudOption opt;
+                    opt.update_progress = [ioProgressAmount,
+                                           UpdateProgress](double percent)
+                            -> bool {
+                        UpdateProgress(ioProgressAmount *
+                                       float(percent / 100.0));
+                        return true;
+                    };
+                    success = io::ReadPointCloud(path, *cloud, opt);
+                } catch (...) {
+                    success = false;
+                }
+                if (success) {
+                    utility::LogInfo("Successfully read {}", path.c_str());
+                    UpdateProgress(ioProgressAmount);
+                    if (!cloud->HasNormals() && !cloud->HasColors()) {
+                        cloud->EstimateNormals();
+                    }
+                    UpdateProgress(0.666f);
+                    cloud->NormalizeNormals();
+                    UpdateProgress(0.75f);
+                    geometry = cloud;
+                    impl_->loaded_pcd_ = cloud;
+                } else {
+                    utility::LogWarning("Failed to read points {}",
+                                        path.c_str());
+                    cloud.reset();
+                }
             }
         }
 
-        if (model_success || geometry) {
+        if (model_success || geometry || t_geometry) {
             gui::Application::GetInstance().PostToMainThread(
-                    this, [this, model_success, geometry]() {
-                        SetGeometry(geometry, model_success);
+                    this, [this, model_success, geometry, t_geometry]() {
+                        if (t_geometry) {
+                            SetGeometry(t_geometry, model_success);
+                        } else {
+                            SetGeometry(geometry, model_success);
+                        }
                         CloseDialog();
                     });
         } else {
