@@ -770,6 +770,7 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     auto viewport = view.GetViewport();
     auto& targets = outputs_[&view];
     if (viewport[2] <= 0 || viewport[3] <= 0) {
+        view.SetRenderTarget({});
         ResetOutputTargets(targets);
         return targets;
     }
@@ -782,6 +783,7 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
         return targets;
     }
 
+    view.SetRenderTarget({});
     ResetOutputTargets(targets);
 
     // Attempt zero-copy setup via the backend (GL texture sharing on
@@ -799,6 +801,7 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
                                                                    int(height));
         targets.render_target =
                 resource_mgr_.CreateRenderTarget(targets.color, targets.depth);
+        view.SetRenderTarget(targets.render_target);
     }
 
     targets.width = width;

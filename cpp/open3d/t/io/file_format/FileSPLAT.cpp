@@ -154,6 +154,11 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
             std::memcpy(position_ptr + index * 3, buffer_position,
                         3 * sizeof(float));
             std::memcpy(scale_ptr + index * 3, buffer_scale, 3 * sizeof(float));
+            
+            // Convert linear scales from SPLAT format to log-scales for internal representation
+            for (int i = 0; i < 3; i++) {
+                scale_ptr[index * 3 + i] = std::log(scale_ptr[index * 3 + i]);
+            }
 
             // Calculate the f_dc
             float *f_dc = f_dc_ptr + index * 3;
@@ -163,11 +168,11 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
             // Calculate the opacity
             float *opacity = opacity_ptr + index;
             if (buffer_color[3] == 0) {
-                opacity[0] = 0.0f;  // Handle division by zero
+                opacity[0] = std::numeric_limits<float>::lowest();  // logit(0) ≈ -∞
             } else if (buffer_color[3] == 255) {
-                opacity[0] = -std::numeric_limits<float>::lowest();  // -log(0)
+                opacity[0] = std::numeric_limits<float>::max();  // logit(1) ≈ +∞
             } else {
-                opacity[0] = -log(1 / (buffer_color[3] / 255.0) - 1);
+                opacity[0] = -std::log(255.f / buffer_color[3] - 1.0f);
             }
             // Calculate the rotation quaternion.
             // Normalize to reduce quantization error
@@ -270,9 +275,10 @@ bool WritePointCloudToSPLAT(const std::string &filename,
                                      positions_ptr + N_POSITIONS * g_idx),
                              N_POSITIONS * sizeof(float));
 
-            // Scale
-            splat_file.write(
-                    reinterpret_cast<const char *>(scale_ptr + N_SCALE * g_idx),
+            // Scale: convert from log-space (memory) to linear space (SPLAT format) before writing
+            Eigen::Vector3f log_scales{scale_ptr[g_idx * 3 + 0], scale_ptr[g_idx * 3 + 1], scale_ptr[g_idx * 3 + 2]};
+            auto scales = log_scales.array().exp().eval();
+            splat_file.write(reinterpret_cast<const char *>(scales.data()),
                     N_SCALE * sizeof(float));
 
             // Color
