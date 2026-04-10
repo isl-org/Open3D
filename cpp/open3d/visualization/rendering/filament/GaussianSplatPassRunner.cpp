@@ -247,13 +247,14 @@ bool RunGaussianGeometryPasses(
     // Pass 5: Generate sort keys (depth-tile composite), indirect.
     // Keygen reads view_params.limits.w (tile_key_bits T) for the dynamic
     // tile/depth bit split; UBO(0) provides view_params alongside the
-    // RadixSortParams at UBORange(14).
+    // RadixSortParams at UBORange(14). SSBOs use bindings 3–5 (not 0–2) so they
+    // do not alias UBO binding 0 in the SPIRV-Cross → Metal path.
     GpuComputePass(ctx, ComputeProgramId::kGsRadixKeygen, "gs_radix_keygen")
             .UBO(0, vs.view_params_buf)
             .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParams))
-            .SSBO(0, vs.tile_entries_buf)
-            .SSBO(1, vs.sort_keys_buf[0])
-            .SSBO(2, vs.sort_values_buf[0])
+            .SSBO(3, vs.tile_entries_buf)
+            .SSBO(4, vs.sort_keys_buf[0])
+            .SSBO(5, vs.sort_values_buf[0])
             .DispatchIndirect(vs.dispatch_args_buf, 0u);
     ctx.FullBarrier();
 
