@@ -87,13 +87,13 @@ static bool LoadOneProgram(GLComputeProgram& out,
     const bool is_subgroup =
             name.size() > kSubgroupSuffix.size() &&
             name.compare(name.size() - kSubgroupSuffix.size(),
-                          kSubgroupSuffix.size(), kSubgroupSuffix) == 0;
+                         kSubgroupSuffix.size(), kSubgroupSuffix) == 0;
     if (is_subgroup && !use_subgroups) {
         file_base = name.substr(0, name.size() - kSubgroupSuffix.size());
     }
 
-    const std::string path      = shader_root + file_base;
-    const std::string spv_name  = file_base + ".spv";
+    const std::string path = shader_root + file_base;
+    const std::string spv_name = file_base + ".spv";
     const std::string comp_name = file_base + ".comp";
 
     // SPIR-V path (skipped when precompiled=off).
@@ -121,8 +121,8 @@ static bool LoadOneProgram(GLComputeProgram& out,
         std::string error;
         if (!utility::filesystem::FReadToBuffer(path + ".comp", bytes,
                                                 &error)) {
-            utility::LogWarning(
-                    "GaussianSplat: GLSL source not found: {}.comp", path);
+            utility::LogWarning("GaussianSplat: GLSL source not found: {}.comp",
+                                path);
             return false;
         }
         std::string glsl_source(bytes.begin(), bytes.end());
@@ -143,8 +143,7 @@ public:
     /// use_subgroups: load _subgroup shader variants (faster on Linux/macOS).
     /// use_precompiled: try SPIR-V before online GLSL compilation.
     GaussianSplatGpuContextOpenGL(bool use_subgroups, bool use_precompiled)
-        : use_subgroups_(use_subgroups),
-          use_precompiled_(use_precompiled) {}
+        : use_subgroups_(use_subgroups), use_precompiled_(use_precompiled) {}
 
     ~GaussianSplatGpuContextOpenGL() override { CleanupPrograms(); }
 
@@ -156,12 +155,13 @@ public:
         programs_valid_ = false;
 
         // Log driver identity for troubleshooting.
-        utility::LogDebug("GaussianSplat GL: vendor={}  renderer={}  version={}",
-                         reinterpret_cast<const char*>(glGetString(GL_VENDOR)),
-                         reinterpret_cast<const char*>(glGetString(GL_RENDERER)),
-                         reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+        utility::LogDebug(
+                "GaussianSplat GL: vendor={}  renderer={}  version={}",
+                reinterpret_cast<const char*>(glGetString(GL_VENDOR)),
+                reinterpret_cast<const char*>(glGetString(GL_RENDERER)),
+                reinterpret_cast<const char*>(glGetString(GL_VERSION)));
         utility::LogDebug("GaussianSplat GL: ARB_gl_spirv={}",
-                GLEW_ARB_gl_spirv ? "yes" : "no");
+                          GLEW_ARB_gl_spirv ? "yes" : "no");
 
         const std::string shader_root =
                 EngineInstance::GetResourcePath() + "/gaussian_compute/";
@@ -169,7 +169,7 @@ public:
         // Attempt to load under the primary policy (from RenderConfig).
         // On any failure, retry once with the safe fallback
         // (no subgroups + online GLSL), which works on all known GPUs.
-        bool cur_subgroups   = use_subgroups_;
+        bool cur_subgroups = use_subgroups_;
         bool cur_precompiled = use_precompiled_;
         for (int attempt = 0; attempt < 2; ++attempt) {
             bool all_ok = true;
@@ -194,7 +194,7 @@ public:
                         "GaussianSplat: primary shader policy failed. "
                         "Retrying with safe fallback "
                         "(subgroups=off, precompiled=off).");
-                cur_subgroups   = false;
+                cur_subgroups = false;
                 cur_precompiled = false;
             }
         }
@@ -231,8 +231,7 @@ public:
             return CreateBuffer(new_size, label);
         }
         GLBufferHandle nh =
-                ResizeGLBuffer(ToGLBuffer(buf, buffer_sizes_), new_size,
-                               label);
+                ResizeGLBuffer(ToGLBuffer(buf, buffer_sizes_), new_size, label);
         buffer_sizes_.erase(buf);
         if (!nh.valid) {
             return 0;
@@ -249,9 +248,8 @@ public:
             DestroyBuffer(buf);
             return 0;
         }
-        GLBufferHandle nh =
-                ResizeGLPrivateBuffer(ToGLBuffer(buf, buffer_sizes_), new_size,
-                                      label);
+        GLBufferHandle nh = ResizeGLPrivateBuffer(
+                ToGLBuffer(buf, buffer_sizes_), new_size, label);
         buffer_sizes_.erase(buf);
         if (!nh.valid) {
             return 0;
@@ -421,9 +419,7 @@ private:
         return k;
     }
 
-    void CleanupProgram(GLComputeProgram& p) {
-        DestroyGLComputeProgram(p);
-    }
+    void CleanupProgram(GLComputeProgram& p) { DestroyGLComputeProgram(p); }
 
     void CleanupPrograms() {
         for (auto& p : programs_) {
@@ -446,7 +442,7 @@ private:
 std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextGL(
         bool use_subgroups, bool use_precompiled) {
     return std::make_unique<GaussianSplatGpuContextOpenGL>(use_subgroups,
-                                                             use_precompiled);
+                                                           use_precompiled);
 }
 
 }  // namespace rendering

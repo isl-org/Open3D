@@ -102,10 +102,8 @@ public:
     FilamentScene* GetGuiScene() const { return gui_scene_.get(); }
 
     bool HasGaussianSplatOutput(const FilamentView& view) const;
-    TextureHandle GetGaussianSplatColorTexture(
-            const FilamentView& view) const;
-    TextureHandle GetGaussianSplatDepthTexture(
-            const FilamentView& view) const;
+    TextureHandle GetGaussianSplatColorTexture(const FilamentView& view) const;
+    TextureHandle GetGaussianSplatDepthTexture(const FilamentView& view) const;
     int GetGaussianSplatMaxShDegree() const;
     GaussianSplatRenderer* GetGaussianSplatRenderer() {
         return gaussian_splat_renderer_.get();

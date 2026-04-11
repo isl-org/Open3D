@@ -18,36 +18,36 @@
 layout(local_size_x = WORKGROUP_SIZE) in;
 
 layout(std140, binding = 14) uniform RadixSortParams {
-	uint g_num_elements;
-	uint g_shift;
-	uint g_num_workgroups;
-	uint g_num_blocks_per_workgroup;
+    uint g_num_elements;
+    uint g_shift;
+    uint g_num_workgroups;
+    uint g_num_blocks_per_workgroup;
 };
 
 struct TileEntry {
-	uint depth_key;
-	uint splat_index;
-	uint stable_index;
-	uint tile_index;
+    uint depth_key;
+    uint splat_index;
+    uint stable_index;
+    uint tile_index;
 };
 
 layout(std430, binding = 0) readonly buffer SortedIndices {
-	uint g_sorted_indices[];
+    uint g_sorted_indices[];
 };
 
 layout(std430, binding = 1) readonly buffer EntriesSrc {
-	TileEntry g_entries_src[];
+    TileEntry g_entries_src[];
 };
 
 layout(std430, binding = 2) writeonly buffer EntriesDst {
-	TileEntry g_entries_dst[];
+    TileEntry g_entries_dst[];
 };
 
 void main() {
-	uint gID = gl_GlobalInvocationID.x;
-	if (gID >= g_num_elements) {
-		return;
-	}
-	uint src_index = g_sorted_indices[gID];
-	g_entries_dst[gID] = g_entries_src[src_index];
+    uint gID = gl_GlobalInvocationID.x;
+    if (gID >= g_num_elements) {
+        return;
+    }
+    uint src_index = g_sorted_indices[gID];
+    g_entries_dst[gID] = g_entries_src[src_index];
 }

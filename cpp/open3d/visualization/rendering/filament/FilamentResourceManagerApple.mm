@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,13 +18,12 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-filament::Texture* BuildImportedMTLTextureFilament(
-        filament::Engine& engine,
-        std::uintptr_t mtl_texture,
-        int width,
-        int height,
-        int format,
-        int usage) {
+filament::Texture* BuildImportedMTLTextureFilament(filament::Engine& engine,
+                                                   std::uintptr_t mtl_texture,
+                                                   int width,
+                                                   int height,
+                                                   int format,
+                                                   int usage) {
     id<MTLTexture> tex =
             (__bridge id<MTLTexture>)reinterpret_cast<void*>(mtl_texture);
     if (!tex) {

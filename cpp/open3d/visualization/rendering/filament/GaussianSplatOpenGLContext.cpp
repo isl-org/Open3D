@@ -198,10 +198,9 @@ bool GaussianSplatOpenGLContext::MakeCurrent() {
                 reinterpret_cast<const char*>(glGetString(GL_VERSION));
         const char* renderer =
                 reinterpret_cast<const char*>(glGetString(GL_RENDERER));
-        utility::LogDebug(
-                "GaussianSplatOpenGLContext: {} active - GL {} on {}",
-                GetNativeBackendName(), version ? version : "?",
-                renderer ? renderer : "?");
+        utility::LogDebug("GaussianSplatOpenGLContext: {} active - GL {} on {}",
+                          GetNativeBackendName(), version ? version : "?",
+                          renderer ? renderer : "?");
     }
 
     return true;

@@ -117,9 +117,9 @@ void UploadGLBuffer(const GLBufferHandle& buffer,
 /// Download data from a region of a buffer into CPU memory.
 /// Returns true on success.
 bool DownloadGLBuffer(const GLBufferHandle& buffer,
-                     void* dst,
-                     std::size_t size,
-                     std::size_t offset);
+                      void* dst,
+                      std::size_t size,
+                      std::size_t offset);
 
 /// Fill a buffer with zeros.
 void ClearGLBuffer(const GLBufferHandle& buffer);

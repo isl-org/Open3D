@@ -109,8 +109,7 @@ void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
 }
 
-bool FilamentRenderer::HasGaussianSplatOutput(
-        const FilamentView& view) const {
+bool FilamentRenderer::HasGaussianSplatOutput(const FilamentView& view) const {
     return gaussian_splat_renderer_ &&
            gaussian_splat_renderer_->HasOutput(view);
 }
@@ -211,7 +210,7 @@ void FilamentRenderer::BeginFrame() {
                     [&](FilamentView& view) { live_views.insert(&view); });
             pair.second->ForEachActiveView([&](FilamentView& view) {
                 gaussian_splat_renderer_->RenderGeometryStage(view,
-                                                                *pair.second);
+                                                              *pair.second);
             });
         }
         gaussian_splat_renderer_->PruneOutputs(live_views);
@@ -428,6 +427,9 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
 
 std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
     auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_);
+    // Wire the GS renderer so the offscreen path runs the same pipeline
+    // stages (geometry + composite) as the interactive window.
+    renderer->gaussian_splat_renderer_ = gaussian_splat_renderer_.get();
     buffer_renderers_.insert(renderer);
     return renderer;
 }

@@ -74,8 +74,8 @@ end_header
 }  // namespace
 
 TEST(FileFormatIO, ReadFileGeometryTypePLYPointCloud) {
-    const std::string path =
-            utility::filesystem::GetTempDirectoryPath() + "/file_type_points.ply";
+    const std::string path = utility::filesystem::GetTempDirectoryPath() +
+                             "/file_type_points.ply";
     std::ofstream output(path, std::ios::binary);
     ASSERT_TRUE(output.is_open());
     output << kPointPly;

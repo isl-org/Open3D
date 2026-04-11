@@ -30,61 +30,60 @@
 layout(local_size_x = WORKGROUP_SIZE) in;
 
 layout(std140, binding = 0) uniform GaussianViewParams {
-	mat4 world_from_model;
-	mat4 view_from_world;
-	mat4 clip_from_view;
-	vec4 camera_position_and_near;
-	vec4 viewport_origin_and_size;
-	uvec4 scene;
-	uvec4 tiles;
-	uvec4 limits;
-	vec4 depth_range_and_flags;
-} view_params;
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+}
+view_params;
 
 layout(std140, binding = 14) uniform RadixSortParams {
-	uint g_num_elements;
-	uint g_shift;
-	uint g_num_workgroups;
-	uint g_num_blocks_per_workgroup;
+    uint g_num_elements;
+    uint g_shift;
+    uint g_num_workgroups;
+    uint g_num_blocks_per_workgroup;
 };
 
 struct TileEntry {
-	uint depth_key;
-	uint splat_index;
-	uint stable_index;
-	uint tile_index;
+    uint depth_key;
+    uint splat_index;
+    uint stable_index;
+    uint tile_index;
 };
 
 // SSBO bindings must not reuse UBO binding indices (0, 14): OpenGL keeps UBO
 // and SSBO binding points separate, but SPIRV-Cross maps both to one Metal
 // buffer index per binding number, which breaks MSL (constant vs device).
 layout(std430, binding = 3) readonly buffer TileEntries {
-	TileEntry g_entries[];
+    TileEntry g_entries[];
 };
 
-layout(std430, binding = 4) writeonly buffer SortKeys {
-	uint g_sort_keys[];
-};
+layout(std430, binding = 4) writeonly buffer SortKeys { uint g_sort_keys[]; };
 
 layout(std430, binding = 5) writeonly buffer SortValues {
-	uint g_sort_values[];
+    uint g_sort_values[];
 };
 
 void main() {
-	uint gID = gl_GlobalInvocationID.x;
-	if (gID >= g_num_elements) {
-		return;
-	}
-	uint tile_index = g_entries[gID].tile_index;
-	uint depth_key  = g_entries[gID].depth_key;
+    uint gID = gl_GlobalInvocationID.x;
+    if (gID >= g_num_elements) {
+        return;
+    }
+    uint tile_index = g_entries[gID].tile_index;
+    uint depth_key = g_entries[gID].depth_key;
 
-	// T bits for tile (MSBs), D bits for depth (LSBs).
-	// limits.w is clamped to [1,31] CPU-side; shifts are always well-defined.
-	uint T = view_params.limits.w;  // tile field width
-	uint D = 32u - T;               // depth field width
+    // T bits for tile (MSBs), D bits for depth (LSBs).
+    // limits.w is clamped to [1,31] CPU-side; shifts are always well-defined.
+    uint T = view_params.limits.w;  // tile field width
+    uint D = 32u - T;               // depth field width
 
-	// Strip the IEEE 754 sign bit (always 0 for clamped-positive depth) via
-	// << 1, then keep the top D bits of the remaining 31-bit value.
-	g_sort_keys[gID] = (tile_index << D) | ((depth_key << 1u) >> T);
-	g_sort_values[gID] = gID;
+    // Strip the IEEE 754 sign bit (always 0 for clamped-positive depth) via
+    // << 1, then keep the top D bits of the remaining 31-bit value.
+    g_sort_keys[gID] = (tile_index << D) | ((depth_key << 1u) >> T);
+    g_sort_values[gID] = gID;
 }

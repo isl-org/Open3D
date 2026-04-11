@@ -25,7 +25,8 @@ struct GaussianSplatPackedAttrs;
 
 /// Resize/upload buffers, then run the projection → radix → payload chain.
 /// @param frame          Per-frame view parameters (UBO, splat/tile counts).
-/// @param attrs          Pre-packed per-splat GPU data (uploaded when scene_changed).
+/// @param attrs          Pre-packed per-splat GPU data (uploaded when
+/// scene_changed).
 /// @param scene_change_id  Scene geometry change token from Filament.
 /// @param scene_changed  True when per-splat buffers must be re-uploaded.
 bool RunGaussianGeometryPasses(

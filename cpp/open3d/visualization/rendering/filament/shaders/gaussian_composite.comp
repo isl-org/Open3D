@@ -34,47 +34,46 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 // 48-byte projected splat descriptor (matches gaussian_project output).
 struct ProjectedGaussian {
-	vec4 center_depth_alpha;
-	uint packed_color;
-	uint tile_count_overlap;
-	uint tile_rect_min;
-	uint tile_rect_max;
-	vec4 inv_basis;
+    vec4 center_depth_alpha;
+    uint packed_color;
+    uint tile_count_overlap;
+    uint tile_rect_min;
+    uint tile_rect_max;
+    vec4 inv_basis;
 };
 
 struct TileEntry {
-	uint depth_key;
-	uint splat_index;
-	uint stable_index;
-	uint tile_index;
+    uint depth_key;
+    uint splat_index;
+    uint stable_index;
+    uint tile_index;
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
-	mat4 world_from_model;
-	mat4 view_from_world;
-	mat4 clip_from_view;
-	vec4 camera_position_and_near;
-	vec4 viewport_origin_and_size;
-	uvec4 scene;
-	uvec4 tiles;
-	uvec4 limits;
-	vec4 depth_range_and_flags;
-} view_params;
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+}
+view_params;
 
 layout(std430, binding = 6) readonly buffer ProjectedGaussians {
-	ProjectedGaussian projected[];
+    ProjectedGaussian projected[];
 };
 
-layout(std430, binding = 7) readonly buffer TileCounts {
-	uint tile_counts[];
-};
+layout(std430, binding = 7) readonly buffer TileCounts { uint tile_counts[]; };
 
 layout(std430, binding = 8) readonly buffer TileOffsets {
-	uint tile_offsets[];
+    uint tile_offsets[];
 };
 
 layout(std430, binding = 11) readonly buffer TileEntries {
-	TileEntry tile_entries[];
+    TileEntry tile_entries[];
 };
 
 // Image bindings must be < GL_MAX_IMAGE_UNITS (8 on many drivers).
@@ -87,27 +86,23 @@ layout(binding = 1, r32f) uniform writeonly image2D out_depth;
 // Bound only when depth_range_and_flags.w > 0.5.
 layout(binding = 14) uniform sampler2D scene_depth;
 
-uvec2 GetTileSize() {
-	return max(view_params.tiles.xy, uvec2(1u));
-}
+uvec2 GetTileSize() { return max(view_params.tiles.xy, uvec2(1u)); }
 
-uvec2 GetTileCount2D() {
-	return max(view_params.tiles.zw, uvec2(1u));
-}
+uvec2 GetTileCount2D() { return max(view_params.tiles.zw, uvec2(1u)); }
 
 ivec2 GetViewportSize() {
-	return ivec2(max(view_params.viewport_origin_and_size.zw, vec2(1.0)));
+    return ivec2(max(view_params.viewport_origin_and_size.zw, vec2(1.0)));
 }
 
 uint LinearTileIndex(uvec2 tile) {
-	uvec2 tile_count = GetTileCount2D();
-	return tile.y * tile_count.x + tile.x;
+    uvec2 tile_count = GetTileCount2D();
+    return tile.y * tile_count.x + tile.x;
 }
 
 vec3 UnpackColorRGBA8(uint rgba8) {
-	return vec3(float(rgba8 & 0xFFu),
-				float((rgba8 >> 8u) & 0xFFu),
-				float((rgba8 >> 16u) & 0xFFu)) / 255.0;
+    return vec3(float(rgba8 & 0xFFu), float((rgba8 >> 8u) & 0xFFu),
+                float((rgba8 >> 16u) & 0xFFu)) /
+           255.0;
 }
 
 // Opt7: Shared memory arrays for cooperative tile loading.
@@ -126,125 +121,125 @@ shared uint wg_tile_count;
 shared uint wg_tile_offset;
 
 void main() {
-	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 viewport_size = GetViewportSize();
-	// All threads must participate in barrier() calls below, so we cannot
-	// exit early for out-of-viewport pixels.  Instead, flag them and skip
-	// per-pixel work and the final imageStore.
-	bool pixel_active = (pixel.x < viewport_size.x && pixel.y < viewport_size.y);
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 viewport_size = GetViewportSize();
+    // All threads must participate in barrier() calls below, so we cannot
+    // exit early for out-of-viewport pixels.  Instead, flag them and skip
+    // per-pixel work and the final imageStore.
+    bool pixel_active =
+            (pixel.x < viewport_size.x && pixel.y < viewport_size.y);
 
-	uint local_index = gl_LocalInvocationIndex;  // 0..255 for 16×16
-	uvec2 tile_size = GetTileSize();
-	uvec2 tile = min(uvec2(pixel) / tile_size, GetTileCount2D() - uvec2(1u));
-	uint tile_index = LinearTileIndex(tile);
+    uint local_index = gl_LocalInvocationIndex;  // 0..255 for 16×16
+    uvec2 tile_size = GetTileSize();
+    uvec2 tile = min(uvec2(pixel) / tile_size, GetTileCount2D() - uvec2(1u));
+    uint tile_index = LinearTileIndex(tile);
 
-	// Broadcast from thread 0 so every thread in the workgroup iterates
-	// the same number of batches (required for uniform barrier() calls).
-	if (local_index == 0u) {
-		uint entry_capacity = view_params.limits.x;
-		uint tile_offset = min(tile_offsets[tile_index], entry_capacity);
-		uint available = entry_capacity - tile_offset;
-		wg_tile_offset = tile_offset;
-		wg_tile_count = min(tile_counts[tile_index], available);
-	}
-	barrier();
+    // Broadcast from thread 0 so every thread in the workgroup iterates
+    // the same number of batches (required for uniform barrier() calls).
+    if (local_index == 0u) {
+        uint entry_capacity = view_params.limits.x;
+        uint tile_offset = min(tile_offsets[tile_index], entry_capacity);
+        uint available = entry_capacity - tile_offset;
+        wg_tile_offset = tile_offset;
+        wg_tile_count = min(tile_counts[tile_index], available);
+    }
+    barrier();
 
-	uint my_tile_count = wg_tile_count;
-	uint my_tile_offset = wg_tile_offset;
+    uint my_tile_count = wg_tile_count;
+    uint my_tile_offset = wg_tile_offset;
 
-	vec3 accum_color = vec3(0.0);
-	float transmittance = 1.0;
-	float out_linear_depth = view_params.depth_range_and_flags.y;
-	bool depth_written = false;
-	vec2 pixel_center = vec2(pixel) + vec2(0.5);
+    vec3 accum_color = vec3(0.0);
+    float transmittance = 1.0;
+    float out_linear_depth = view_params.depth_range_and_flags.y;
+    bool depth_written = false;
+    vec2 pixel_center = vec2(pixel) + vec2(0.5);
 
-	// Linearize scene depth from Filament's reversed-Z depth buffer.
-	// Filament uses reversed-Z: near -> 1.0, far -> 0.0.
-	// Linear depth = near * far / (near + z_ndc * (far - near)).
-	float scene_linear_depth = view_params.depth_range_and_flags.y;  // far
-	bool use_scene_depth = (view_params.depth_range_and_flags.w > 0.5)
-	                       && pixel_active;
-	if (use_scene_depth) {
-		float near = view_params.depth_range_and_flags.x;
-		float far = view_params.depth_range_and_flags.y;
-		float z_ndc = texelFetch(scene_depth, pixel, 0).r;
-		// z_ndc == 0.0 means at or beyond far plane (no geometry).
-		if (z_ndc > 0.0) {
-			scene_linear_depth = near * far / (near + z_ndc * (far - near));
-		}
-	}
+    // Linearize scene depth from Filament's reversed-Z depth buffer.
+    // Filament uses reversed-Z: near -> 1.0, far -> 0.0.
+    // Linear depth = near * far / (near + z_ndc * (far - near)).
+    float scene_linear_depth = view_params.depth_range_and_flags.y;  // far
+    bool use_scene_depth =
+            (view_params.depth_range_and_flags.w > 0.5) && pixel_active;
+    if (use_scene_depth) {
+        float near = view_params.depth_range_and_flags.x;
+        float far = view_params.depth_range_and_flags.y;
+        float z_ndc = texelFetch(scene_depth, pixel, 0).r;
+        // z_ndc == 0.0 means at or beyond far plane (no geometry).
+        if (z_ndc > 0.0) {
+            scene_linear_depth = near * far / (near + z_ndc * (far - near));
+        }
+    }
 
-	// Opt7: process tile entries in batches of BATCH_SIZE.
-	// ALL threads must iterate the same number of batches to keep barrier()
-	// calls uniform.  Per-pixel early saturation skips computation but
-	// still participates in barriers.
-	for (uint batch_start = 0u; batch_start < my_tile_count;
-		 batch_start += BATCH_SIZE) {
-		uint batch_end = min(batch_start + BATCH_SIZE, my_tile_count);
-		uint batch_count = batch_end - batch_start;
+    // Opt7: process tile entries in batches of BATCH_SIZE.
+    // ALL threads must iterate the same number of batches to keep barrier()
+    // calls uniform.  Per-pixel early saturation skips computation but
+    // still participates in barriers.
+    for (uint batch_start = 0u; batch_start < my_tile_count;
+         batch_start += BATCH_SIZE) {
+        uint batch_end = min(batch_start + BATCH_SIZE, my_tile_count);
+        uint batch_count = batch_end - batch_start;
 
-		// Cooperative load: each thread loads one entry into shared memory.
-		if (local_index < batch_count) {
-			uint entry_idx = my_tile_offset + batch_start + local_index;
-			uint splat_idx = tile_entries[entry_idx].splat_index;
-			ProjectedGaussian g = projected[splat_idx];
-			s_center[local_index] = g.center_depth_alpha.xy;
-			s_alpha[local_index] = g.center_depth_alpha.w;
-			s_depth[local_index] = g.center_depth_alpha.z;
-			s_color[local_index] = g.packed_color;
-			s_inv_basis[local_index] = g.inv_basis;
-		}
-		barrier();
+        // Cooperative load: each thread loads one entry into shared memory.
+        if (local_index < batch_count) {
+            uint entry_idx = my_tile_offset + batch_start + local_index;
+            uint splat_idx = tile_entries[entry_idx].splat_index;
+            ProjectedGaussian g = projected[splat_idx];
+            s_center[local_index] = g.center_depth_alpha.xy;
+            s_alpha[local_index] = g.center_depth_alpha.w;
+            s_depth[local_index] = g.center_depth_alpha.z;
+            s_color[local_index] = g.packed_color;
+            s_inv_basis[local_index] = g.inv_basis;
+        }
+        barrier();
 
-		// Per-pixel evaluation from shared memory.
-		// Skip if this pixel is outside the viewport or already saturated.
-		if (pixel_active) {
-			for (uint i = 0u; i < batch_count; ++i) {
-				// Discard splats behind scene geometry.
-				if (use_scene_depth && s_depth[i] >= scene_linear_depth) {
-					continue;
-				}
+        // Per-pixel evaluation from shared memory.
+        // Skip if this pixel is outside the viewport or already saturated.
+        if (pixel_active) {
+            for (uint i = 0u; i < batch_count; ++i) {
+                // Discard splats behind scene geometry.
+                if (use_scene_depth && s_depth[i] >= scene_linear_depth) {
+                    continue;
+                }
 
-				vec2 delta_pixels = pixel_center - s_center[i];
-				vec2 gaussian_uv = vec2(
-					dot(s_inv_basis[i].xy, delta_pixels),
-					dot(s_inv_basis[i].zw, delta_pixels));
-				float power = -dot(gaussian_uv, gaussian_uv);
-				if (power < -4.0) {
-					continue;
-				}
+                vec2 delta_pixels = pixel_center - s_center[i];
+                vec2 gaussian_uv = vec2(dot(s_inv_basis[i].xy, delta_pixels),
+                                        dot(s_inv_basis[i].zw, delta_pixels));
+                float power = -dot(gaussian_uv, gaussian_uv);
+                if (power < -4.0) {
+                    continue;
+                }
 
-				float alpha = exp(power) * s_alpha[i];
-				if (alpha <= 1.0 / 65535.0) {
-					continue;
-				}
+                float alpha = exp(power) * s_alpha[i];
+                if (alpha <= 1.0 / 65535.0) {
+                    continue;
+                }
 
-				float contribution = transmittance * alpha;
-				accum_color += contribution * UnpackColorRGBA8(s_color[i]);
-				if (!depth_written && contribution > 1.0 / 4096.0) {
-					out_linear_depth = s_depth[i];
-					depth_written = true;
-				}
+                float contribution = transmittance * alpha;
+                accum_color += contribution * UnpackColorRGBA8(s_color[i]);
+                if (!depth_written && contribution > 1.0 / 4096.0) {
+                    out_linear_depth = s_depth[i];
+                    depth_written = true;
+                }
 
-				transmittance *= (1.0 - alpha);
-				if (transmittance <= 1.0 / 4096.0) {
-					transmittance = 0.0;
-					pixel_active = false;  // saturated — skip future batches
-					break;
-				}
-			}
-		}
-		barrier();
-	}
+                transmittance *= (1.0 - alpha);
+                if (transmittance <= 1.0 / 4096.0) {
+                    transmittance = 0.0;
+                    pixel_active = false;  // saturated — skip future batches
+                    break;
+                }
+            }
+        }
+        barrier();
+    }
 
-	if (pixel.x < viewport_size.x && pixel.y < viewport_size.y) {
-		float out_alpha = 1.0 - transmittance;
-		// accum_color is already premultiplied by construction:
-		//   each splat contributes transmittance * alpha * color.
-		// Filament's transparent blend mode uses One, 1-SrcAlpha
-		// (premultiplied-alpha compositing), so store premultiplied RGB
-		// directly: final = accum_color + transmittance * background.
-		imageStore(out_color, pixel, vec4(accum_color, out_alpha));
-		imageStore(out_depth, pixel, vec4(out_linear_depth, 0.0, 0.0, 0.0));
-	}
+    if (pixel.x < viewport_size.x && pixel.y < viewport_size.y) {
+        float out_alpha = 1.0 - transmittance;
+        // accum_color is already premultiplied by construction:
+        //   each splat contributes transmittance * alpha * color.
+        // Filament's transparent blend mode uses One, 1-SrcAlpha
+        // (premultiplied-alpha compositing), so store premultiplied RGB
+        // directly: final = accum_color + transmittance * background.
+        imageStore(out_color, pixel, vec4(accum_color, out_alpha));
+        imageStore(out_depth, pixel, vec4(out_linear_depth, 0.0, 0.0, 0.0));
+    }
 }

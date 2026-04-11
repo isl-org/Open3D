@@ -71,8 +71,8 @@ private:
     ~GaussianSplatOpenGLContext();
 
     GaussianSplatOpenGLContext(const GaussianSplatOpenGLContext&) = delete;
-    GaussianSplatOpenGLContext& operator=(
-            const GaussianSplatOpenGLContext&) = delete;
+    GaussianSplatOpenGLContext& operator=(const GaussianSplatOpenGLContext&) =
+            delete;
 
 private:
     // Stored as void* (== GLFWwindow*) to avoid a GLFW header dependency.

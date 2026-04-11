@@ -32,15 +32,15 @@ namespace {
 
 /// Threads per threadgroup matching GLSL local_size_* in each shader.
 static const NSUInteger kThreadsPerGroup[][3] = {
-        {64, 1, 1},    // kGsProject
-        {256, 1, 1},   // kGsPrefixSum
-        {64, 1, 1},    // kGsScatter
-        {16, 16, 1},   // kGsComposite
-        {256, 1, 1},   // kGsRadixKeygen
-        {256, 1, 1},   // kGsRadixHistograms
-        {256, 1, 1},   // kGsRadixScatter
-        {256, 1, 1},   // kGsRadixPayload
-        {1, 1, 1},     // kGsDispatchArgs
+        {64, 1, 1},   // kGsProject
+        {256, 1, 1},  // kGsPrefixSum
+        {64, 1, 1},   // kGsScatter
+        {16, 16, 1},  // kGsComposite
+        {256, 1, 1},  // kGsRadixKeygen
+        {256, 1, 1},  // kGsRadixHistograms
+        {256, 1, 1},  // kGsRadixScatter
+        {256, 1, 1},  // kGsRadixPayload
+        {1, 1, 1},    // kGsDispatchArgs
 };
 
 static constexpr std::size_t kMaxBindings = 32;
@@ -50,8 +50,9 @@ static constexpr std::size_t kMaxBindings = 32;
 class GaussianSplatGpuContextMetal final : public GaussianSplatGpuContext {
 public:
     GaussianSplatGpuContextMetal(std::uintptr_t device_handle,
-                                   std::uintptr_t queue_handle)
-        : device_((__bridge id<MTLDevice>)reinterpret_cast<void*>(device_handle)),
+                                 std::uintptr_t queue_handle)
+        : device_((__bridge id<MTLDevice>)reinterpret_cast<void*>(
+                  device_handle)),
           queue_((__bridge id<MTLCommandQueue>)reinterpret_cast<void*>(
                   queue_handle)) {}
 
@@ -101,21 +102,19 @@ public:
 
         for (int i = 0; i < static_cast<int>(ComputeProgramId::kCount); ++i) {
             std::string entry_name = std::string(kGsShaderNames[i]) + "_main";
-            NSString* name =
-                    [NSString stringWithUTF8String:entry_name.c_str()];
+            NSString* name = [NSString stringWithUTF8String:entry_name.c_str()];
             id<MTLFunction> fn = [library_ newFunctionWithName:name];
             if (!fn) {
-                utility::LogWarning("Metal: missing function {}",
-                                    entry_name);
+                utility::LogWarning("Metal: missing function {}", entry_name);
                 return false;
             }
             NSError* perr = nil;
             id<MTLComputePipelineState> ps =
-                    [device_ newComputePipelineStateWithFunction:fn error:&perr];
+                    [device_ newComputePipelineStateWithFunction:fn
+                                                           error:&perr];
             if (!ps) {
                 utility::LogWarning(
-                        "Metal: pipeline {} failed: {}",
-                        entry_name,
+                        "Metal: pipeline {} failed: {}", entry_name,
                         perr ? [[perr localizedDescription] UTF8String] : "?");
                 return false;
             }
@@ -138,7 +137,8 @@ public:
         return AllocateBuffer(size, MTLResourceStorageModeShared, label);
     }
 
-    /// GPU-private buffer: not CPU-accessible, optimal for GPU-only intermediates.
+    /// GPU-private buffer: not CPU-accessible, optimal for GPU-only
+    /// intermediates.
     std::uintptr_t CreatePrivateBuffer(std::size_t size,
                                        const char* label = nullptr) override {
         return AllocateBuffer(size, MTLResourceStorageModePrivate, label);
@@ -173,8 +173,7 @@ public:
         if (!buf || !data || size == 0) {
             return;
         }
-        id<MTLBuffer> b =
-                (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
+        id<MTLBuffer> b = (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
         std::memcpy(static_cast<char*>([b contents]) + offset, data, size);
     }
 
@@ -185,13 +184,11 @@ public:
         if (!buf || !dst || size == 0) {
             return false;
         }
-        id<MTLBuffer> b =
-                (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
+        id<MTLBuffer> b = (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
         if ([b storageMode] == MTLStorageModePrivate) {
             return false;
         }
-        std::memcpy(dst, static_cast<const char*>([b contents]) + offset,
-                    size);
+        std::memcpy(dst, static_cast<const char*>([b contents]) + offset, size);
         return true;
     }
 
@@ -200,8 +197,7 @@ public:
         if (it == buffer_sizes_.end()) {
             return;
         }
-        id<MTLBuffer> b =
-                (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
+        id<MTLBuffer> b = (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
         const NSUInteger size = static_cast<NSUInteger>(it->second);
 
         // When a compute encoder is active we are inside a pass:
@@ -220,13 +216,13 @@ public:
         }
 
         // No active pass — CPU memset is safe (before CB commit).
-        std::memset([b contents], 0, it->second);
+        std::memset([b contents], 0, it -> second);
     }
 
     void BindSSBO(std::uint32_t binding, std::uintptr_t buf) override {
-        id<MTLBuffer> b = buf
-                                  ? (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf)
-                                  : nil;
+        id<MTLBuffer> b =
+                buf ? (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf)
+                    : nil;
         SetBufferBinding(binding, b, 0);
     }
 
@@ -239,9 +235,9 @@ public:
                       std::size_t offset,
                       std::size_t range_size) override {
         (void)range_size;
-        id<MTLBuffer> b = buf
-                                  ? (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf)
-                                  : nil;
+        id<MTLBuffer> b =
+                buf ? (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf)
+                    : nil;
         SetBufferBinding(binding, b, static_cast<NSUInteger>(offset));
     }
 
@@ -277,11 +273,12 @@ public:
         if (pi < 0 || pi >= static_cast<int>(ComputeProgramId::kCount)) {
             return;
         }
-        MTLSize tg = MTLSizeMake(kThreadsPerGroup[pi][0],
-                                 kThreadsPerGroup[pi][1],
-                                 kThreadsPerGroup[pi][2]);
+        MTLSize tg =
+                MTLSizeMake(kThreadsPerGroup[pi][0], kThreadsPerGroup[pi][1],
+                            kThreadsPerGroup[pi][2]);
         // dispatchThreads: (Metal 2 / macOS 10.13+) lets the driver handle the
-        // partial last threadgroup automatically; total = workgroup_count * tpg.
+        // partial last threadgroup automatically; total = workgroup_count *
+        // tpg.
         MTLSize total = MTLSizeMake(
                 static_cast<NSUInteger>(std::max(1u, groups_x)) * tg.width,
                 static_cast<NSUInteger>(std::max(1u, groups_y)) * tg.height,
@@ -300,12 +297,12 @@ public:
         }
         id<MTLBuffer> ib =
                 (__bridge id<MTLBuffer>)reinterpret_cast<void*>(indirect_buf);
-        MTLSize tg = MTLSizeMake(kThreadsPerGroup[pi][0],
-                                 kThreadsPerGroup[pi][1],
-                                 kThreadsPerGroup[pi][2]);
+        MTLSize tg =
+                MTLSizeMake(kThreadsPerGroup[pi][0], kThreadsPerGroup[pi][1],
+                            kThreadsPerGroup[pi][2]);
         [encoder_ dispatchThreadgroupsWithIndirectBuffer:ib
-                                   indirectBufferOffset:byte_offset
-                                  threadsPerThreadgroup:tg];
+                                    indirectBufferOffset:byte_offset
+                                   threadsPerThreadgroup:tg];
     }
 
     void FullBarrier() override {
@@ -316,7 +313,7 @@ public:
         // macOS 10.14 is the minimum supported since Xcode 12 dropped 10.13.
         if (@available(macOS 10.14, *)) {
             [encoder_ memoryBarrierWithScope:MTLBarrierScopeBuffers |
-                                         MTLBarrierScopeTextures];
+                                             MTLBarrierScopeTextures];
             return;
         }
         // Fallback on very old hardware: commit and restart the encoder so all
@@ -332,9 +329,9 @@ public:
                                        const char* label = nullptr) override {
         MTLTextureDescriptor* d = [MTLTextureDescriptor
                 texture2DDescriptorWithPixelFormat:MTLPixelFormatR32Float
-                                            width:width
-                                           height:height
-                                        mipmapped:NO];
+                                             width:width
+                                            height:height
+                                         mipmapped:NO];
         d.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
         d.storageMode = MTLStorageModePrivate;
         id<MTLTexture> t = [device_ newTextureWithDescriptor:d];
@@ -444,8 +441,7 @@ public:
             // Block the CPU until the GPU composite finishes — matches the
             // OpenGL path which calls glFinish() before EndCompositePass().
             [cb waitUntilCompleted];
-            const bool success =
-                    [cb status] != MTLCommandBufferStatusError;
+            const bool success = [cb status] != MTLCommandBufferStatusError;
             last_submit_succeeded_ = success;
             if (!success) {
                 NSError* err = [cb error];
@@ -487,8 +483,8 @@ private:
         if (label != nullptr && label[0] != '\0') {
             [buf setLabel:[NSString stringWithUTF8String:label]];
         }
-        std::uintptr_t key = reinterpret_cast<std::uintptr_t>(
-                (__bridge_retained void*)buf);
+        std::uintptr_t key =
+                reinterpret_cast<std::uintptr_t>((__bridge_retained void*)buf);
         buffer_sizes_[key] = size;
         return key;
     }
@@ -506,7 +502,8 @@ private:
             if (it != buffer_sizes_.end() && it->second >= new_size) {
                 if (label != nullptr && label[0] != '\0') {
                     id<MTLBuffer> existing =
-                            (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
+                            (__bridge id<MTLBuffer>)reinterpret_cast<void*>(
+                                    buf);
                     [existing setLabel:[NSString stringWithUTF8String:label]];
                 }
                 return buf;
@@ -560,8 +557,7 @@ private:
         }
         if (current_program_ >= 0 &&
             current_program_ < static_cast<int>(ComputeProgramId::kCount)) {
-            [encoder_
-                    setComputePipelineState:pipelines_[current_program_]];
+            [encoder_ setComputePipelineState:pipelines_[current_program_]];
         }
         for (std::size_t i = 0; i < buffer_bindings_.size(); ++i) {
             const auto& b = buffer_bindings_[i];
@@ -628,10 +624,9 @@ private:
 };
 
 std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextMetal(
-        std::uintptr_t device_handle,
-        std::uintptr_t command_queue_handle) {
+        std::uintptr_t device_handle, std::uintptr_t command_queue_handle) {
     return std::make_unique<GaussianSplatGpuContextMetal>(device_handle,
-                                                            command_queue_handle);
+                                                          command_queue_handle);
 }
 
 }  // namespace rendering

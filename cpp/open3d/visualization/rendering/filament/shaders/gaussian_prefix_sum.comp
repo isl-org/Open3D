@@ -32,69 +32,61 @@ layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
 // 48-byte projected splat descriptor (matches gaussian_project output).
 struct ProjectedGaussian {
-	vec4 center_depth_alpha;
-	uint packed_color;
-	uint tile_count_overlap;
-	uint tile_rect_min;
-	uint tile_rect_max;
-	vec4 inv_basis;
+    vec4 center_depth_alpha;
+    uint packed_color;
+    uint tile_count_overlap;
+    uint tile_rect_min;
+    uint tile_rect_max;
+    vec4 inv_basis;
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
-	mat4 world_from_model;
-	mat4 view_from_world;
-	mat4 clip_from_view;
-	vec4 camera_position_and_near;
-	vec4 viewport_origin_and_size;
-	uvec4 scene;
-	uvec4 tiles;
-	uvec4 limits;
-	vec4 depth_range_and_flags;
-} view_params;
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+}
+view_params;
 
 layout(std430, binding = 6) readonly buffer ProjectedGaussians {
-	ProjectedGaussian projected[];
+    ProjectedGaussian projected[];
 };
 
-layout(std430, binding = 7) buffer TileCounts {
-	uint tile_counts[];
-};
+layout(std430, binding = 7) buffer TileCounts { uint tile_counts[]; };
 
-layout(std430, binding = 8) buffer TileOffsets {
-	uint tile_offsets[];
-};
+layout(std430, binding = 8) buffer TileOffsets { uint tile_offsets[]; };
 
-layout(std430, binding = 9) buffer TileWriteHeads {
-	uint tile_write_heads[];
-};
+layout(std430, binding = 9) buffer TileWriteHeads { uint tile_write_heads[]; };
 
 layout(std430, binding = 10) buffer GaussianGlobalCounters {
-	uint total_entries;  // raw total tile entries written by prefix-sum
-	uint error_flags;    // GPU error bitmask (GS_ERROR_*)
-	uint tile_count;     // total tile count for the frame
-	uint splat_count;    // visible splat count for the frame
-} gs_counters;
-
-uint GetSplatCount() {
-	return view_params.scene.x;
+    uint total_entries;  // raw total tile entries written by prefix-sum
+    uint error_flags;    // GPU error bitmask (GS_ERROR_*)
+    uint tile_count;     // total tile count for the frame
+    uint splat_count;    // visible splat count for the frame
 }
+gs_counters;
 
-uvec2 GetTileCount2D() {
-	return max(view_params.tiles.zw, uvec2(1u));
-}
+uint GetSplatCount() { return view_params.scene.x; }
+
+uvec2 GetTileCount2D() { return max(view_params.tiles.zw, uvec2(1u)); }
 
 uint GetTileCount1D() {
-	uvec2 tile_count = GetTileCount2D();
-	return tile_count.x * tile_count.y;
+    uvec2 tile_count = GetTileCount2D();
+    return tile_count.x * tile_count.y;
 }
 
 uint LinearTileIndex(uvec2 tile) {
-	uvec2 tile_count = GetTileCount2D();
-	return tile.y * tile_count.x + tile.x;
+    uvec2 tile_count = GetTileCount2D();
+    return tile.y * tile_count.x + tile.x;
 }
 
 uvec2 UnpackTileCoord(uint pkd_tile_coord) {
-	return uvec2(pkd_tile_coord & 0xFFFFu, pkd_tile_coord >> 16u);
+    return uvec2(pkd_tile_coord & 0xFFFFu, pkd_tile_coord >> 16u);
 }
 
 // Shared memory for the blocked prefix sum (Phase 2).
@@ -104,90 +96,92 @@ shared uint shared_partial[WORKGROUP_SIZE];
 shared uint shared_total;
 
 void main() {
-	uint local_index = gl_LocalInvocationID.x;
-	uint global_index = gl_GlobalInvocationID.x;
-	uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-	uint tile_count = GetTileCount1D();
-	uint splat_count = GetSplatCount();
+    uint local_index = gl_LocalInvocationID.x;
+    uint global_index = gl_GlobalInvocationID.x;
+    uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+    uint tile_count = GetTileCount1D();
+    uint splat_count = GetSplatCount();
 
-	// Phase 0 (all threads): zero tile counts in parallel.
-	for (uint t = global_index; t < tile_count; t += total_invocations) {
-		tile_counts[t] = 0u;
-		tile_offsets[t] = 0u;
-		tile_write_heads[t] = 0u;
-	}
+    // Phase 0 (all threads): zero tile counts in parallel.
+    for (uint t = global_index; t < tile_count; t += total_invocations) {
+        tile_counts[t] = 0u;
+        tile_offsets[t] = 0u;
+        tile_write_heads[t] = 0u;
+    }
 
-	// Global memory barrier so all zeroing is visible.
-	memoryBarrierBuffer();
-	barrier();
+    // Global memory barrier so all zeroing is visible.
+    memoryBarrierBuffer();
+    barrier();
 
-	// Phase 1 (all threads): count per-tile splat overlaps.
-	for (uint splat_index = global_index; splat_index < splat_count;
-		 splat_index += total_invocations) {
-		if (projected[splat_index].tile_count_overlap == 0u) {
-			continue;
-		}
-		uvec2 tile_min = UnpackTileCoord(projected[splat_index].tile_rect_min);
-		uvec2 tile_max = UnpackTileCoord(projected[splat_index].tile_rect_max);
-		for (uint tile_y = tile_min.y; tile_y <= tile_max.y; ++tile_y) {
-			for (uint tile_x = tile_min.x; tile_x <= tile_max.x; ++tile_x) {
-				uint tile_index = LinearTileIndex(uvec2(tile_x, tile_y));
-				atomicAdd(tile_counts[tile_index], 1u);
-			}
-		}
-	}
+    // Phase 1 (all threads): count per-tile splat overlaps.
+    for (uint splat_index = global_index; splat_index < splat_count;
+         splat_index += total_invocations) {
+        if (projected[splat_index].tile_count_overlap == 0u) {
+            continue;
+        }
+        uvec2 tile_min = UnpackTileCoord(projected[splat_index].tile_rect_min);
+        uvec2 tile_max = UnpackTileCoord(projected[splat_index].tile_rect_max);
+        for (uint tile_y = tile_min.y; tile_y <= tile_max.y; ++tile_y) {
+            for (uint tile_x = tile_min.x; tile_x <= tile_max.x; ++tile_x) {
+                uint tile_index = LinearTileIndex(uvec2(tile_x, tile_y));
+                atomicAdd(tile_counts[tile_index], 1u);
+            }
+        }
+    }
 
-	// Barrier so all tile_counts are written.
-	memoryBarrierBuffer();
-	barrier();
+    // Barrier so all tile_counts are written.
+    memoryBarrierBuffer();
+    barrier();
 
-	// Phase 2: Parallel blocked prefix sum.
-	// Each thread handles a chunk of tiles, computes a local prefix sum in its
-	// chunk, then a shared-memory scan propagates across chunks.
+    // Phase 2: Parallel blocked prefix sum.
+    // Each thread handles a chunk of tiles, computes a local prefix sum in its
+    // chunk, then a shared-memory scan propagates across chunks.
 
-	uint chunk_size = (tile_count + WORKGROUP_SIZE - 1u) / WORKGROUP_SIZE;
-	uint chunk_start = local_index * chunk_size;
-	uint chunk_end = min(chunk_start + chunk_size, tile_count);
+    uint chunk_size = (tile_count + WORKGROUP_SIZE - 1u) / WORKGROUP_SIZE;
+    uint chunk_start = local_index * chunk_size;
+    uint chunk_end = min(chunk_start + chunk_size, tile_count);
 
-	// Step 2a: sequential prefix sum within each thread's chunk.
-	uint local_sum = 0u;
-	for (uint t = chunk_start; t < chunk_end; ++t) {
-		uint count = tile_counts[t];
-		tile_offsets[t] = local_sum;  // local (relative) offset — fixed up below
-		local_sum += count;
-	}
-	shared_partial[local_index] = local_sum;
-	barrier();
+    // Step 2a: sequential prefix sum within each thread's chunk.
+    uint local_sum = 0u;
+    for (uint t = chunk_start; t < chunk_end; ++t) {
+        uint count = tile_counts[t];
+        tile_offsets[t] =
+                local_sum;  // local (relative) offset — fixed up below
+        local_sum += count;
+    }
+    shared_partial[local_index] = local_sum;
+    barrier();
 
-	// Step 2b: Thread 0 does an exclusive prefix scan over all WORKGROUP_SIZE
-	// partial sums, overwriting shared_partial[] with the exclusive prefix for
-	// each thread's chunk.  Also computes shared_total = sum of all chunks.
-	if (local_index == 0u) {
-		uint running = 0u;
-		for (uint i = 0u; i < WORKGROUP_SIZE; ++i) {
-			uint val = shared_partial[i];
-			shared_partial[i] = running;
-			running += val;
-		}
-		shared_total = running;
-	}
-	barrier();
+    // Step 2b: Thread 0 does an exclusive prefix scan over all WORKGROUP_SIZE
+    // partial sums, overwriting shared_partial[] with the exclusive prefix for
+    // each thread's chunk.  Also computes shared_total = sum of all chunks.
+    if (local_index == 0u) {
+        uint running = 0u;
+        for (uint i = 0u; i < WORKGROUP_SIZE; ++i) {
+            uint val = shared_partial[i];
+            shared_partial[i] = running;
+            running += val;
+        }
+        shared_total = running;
+    }
+    barrier();
 
-	// Step 2c: each thread reads its exclusive prefix directly from
-	// shared_partial[], which thread 0 has overwritten with prefix values.
-	uint prefix = shared_partial[local_index];
-	for (uint t = chunk_start; t < chunk_end; ++t) {
-		tile_offsets[t] += prefix;
-		tile_write_heads[t] = tile_offsets[t];
-	}
+    // Step 2c: each thread reads its exclusive prefix directly from
+    // shared_partial[], which thread 0 has overwritten with prefix values.
+    uint prefix = shared_partial[local_index];
+    for (uint t = chunk_start; t < chunk_end; ++t) {
+        tile_offsets[t] += prefix;
+        tile_write_heads[t] = tile_offsets[t];
+    }
 
-	// Thread 0 writes counters.
-	// Avoid .length() — it requires spvBufferSizeConstants on Metal, which we
-	// do not bind.  The counters buffer always has exactly 4 entries.
-	if (local_index == 0u) {
-		gs_counters.total_entries = shared_total;  // total tile entries
-		gs_counters.error_flags   = 0u;            // error flags (cleared; scatter will OR in errors)
-		gs_counters.tile_count    = tile_count;
-		gs_counters.splat_count   = splat_count;
-	}
+    // Thread 0 writes counters.
+    // Avoid .length() — it requires spvBufferSizeConstants on Metal, which we
+    // do not bind.  The counters buffer always has exactly 4 entries.
+    if (local_index == 0u) {
+        gs_counters.total_entries = shared_total;  // total tile entries
+        gs_counters.error_flags =
+                0u;  // error flags (cleared; scatter will OR in errors)
+        gs_counters.tile_count = tile_count;
+        gs_counters.splat_count = splat_count;
+    }
 }

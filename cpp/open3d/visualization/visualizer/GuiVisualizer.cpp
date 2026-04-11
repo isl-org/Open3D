@@ -18,8 +18,8 @@
 #include "open3d/io/ModelIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/io/rpc/ZMQReceiver.h"
+#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
@@ -1258,9 +1258,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 bool success = false;
                 try {
                     io::ReadPointCloudOption opt;
-                    opt.update_progress = [ioProgressAmount,
-                                           UpdateProgress](double percent)
-                            -> bool {
+                    opt.update_progress = [ioProgressAmount, UpdateProgress](
+                                                  double percent) -> bool {
                         UpdateProgress(ioProgressAmount *
                                        float(percent / 100.0));
                         return true;
@@ -1282,9 +1281,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                 bool success = false;
                 try {
                     io::ReadPointCloudOption opt;
-                    opt.update_progress = [ioProgressAmount,
-                                           UpdateProgress](double percent)
-                            -> bool {
+                    opt.update_progress = [ioProgressAmount, UpdateProgress](
+                                                  double percent) -> bool {
                         UpdateProgress(ioProgressAmount *
                                        float(percent / 100.0));
                         return true;

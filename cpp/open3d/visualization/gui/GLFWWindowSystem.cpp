@@ -111,10 +111,11 @@ void GLFWWindowSystem::Initialize() {
     glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
 #if defined(__linux__)
-    // Filament (April 2026) selects PlatformGLX exclusively on Linux (compile-time
-    // decision in PlatformFactory.cpp). Force GLFW to X11 so the native window
-    // handle is an X11 Window (XID), matching what PlatformGLX expects. On
-    // Wayland compositors, XWayland transparently provides X11 compatibility.
+    // Filament (April 2026) selects PlatformGLX exclusively on Linux
+    // (compile-time decision in PlatformFactory.cpp). Force GLFW to X11 so the
+    // native window handle is an X11 Window (XID), matching what PlatformGLX
+    // expects. On Wayland compositors, XWayland transparently provides X11
+    // compatibility.
     glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
     if (!glfwInit()) {
         utility::LogWarning(

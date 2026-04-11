@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -8,8 +9,8 @@
 
 #if __has_include(<backend/platforms/PlatformMetal.h>) && \
         __has_include(<backend/platforms/PlatformMetal-ObjC.h>)
-#include <backend/platforms/PlatformMetal.h>
 #include <backend/platforms/PlatformMetal-ObjC.h>
+#include <backend/platforms/PlatformMetal.h>
 #define OPEN3D_HAS_FILAMENT_METAL_PLATFORM 1
 #endif
 
@@ -37,7 +38,8 @@ FilamentMetalNativeHandles GetFilamentMetalNativeHandles(
     filament::backend::MetalCommandQueue command_queue = {nil};
     metal_platform->createCommandQueue(device, command_queue);
 
-    handles.device = reinterpret_cast<std::uintptr_t>((__bridge void*)device.device);
+    handles.device =
+            reinterpret_cast<std::uintptr_t>((__bridge void*)device.device);
     handles.command_queue = reinterpret_cast<std::uintptr_t>(
             (__bridge void*)command_queue.commandQueue);
     handles.valid = handles.device != 0 && handles.command_queue != 0;
