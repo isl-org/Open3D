@@ -686,8 +686,9 @@ public:
     /// Sweeps the point cloud along a direction vector.
     /// \param vector The direction vector.
     /// \param scale Scalar factor which essentially scales the direction
-    /// vector. \param capping If true adds caps to the mesh. \return A line set
-    /// with the result of the sweep operation.
+    /// vector.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A line set with the result of the sweep operation.
     LineSet ExtrudeLinear(const core::Tensor &vector,
                           double scale = 1.0,
                           bool capping = true) const;

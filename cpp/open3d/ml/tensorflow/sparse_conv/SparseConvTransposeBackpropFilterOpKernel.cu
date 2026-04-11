@@ -60,7 +60,7 @@ public:
                 has_neighbors_importances
                         ? inp_neighbors_importance_sum.flat<TFeat>().data()
                         : nullptr,
-                (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)inp_neighbors_row_splits.flat<int64_t>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
@@ -68,7 +68,7 @@ public:
                 has_neighbors_importances
                         ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
-                (int64_t*)neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)neighbors_row_splits.flat<int64_t>().data(),
                 out_features_gradient.flat<TFeat>().data(), this->normalize);
 
         temp_size =
@@ -96,7 +96,7 @@ public:
                 has_neighbors_importances
                         ? inp_neighbors_importance_sum.flat<TFeat>().data()
                         : nullptr,
-                (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)inp_neighbors_row_splits.flat<int64_t>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 (TKernelIndex*)neighbors_kernel_index.flat<TKernelIndex>()
@@ -104,7 +104,7 @@ public:
                 has_neighbors_importances
                         ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
-                (int64_t*)neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)neighbors_row_splits.flat<int64_t>().data(),
                 out_features_gradient.flat<TFeat>().data(), this->normalize);
     }
 
@@ -122,6 +122,6 @@ private:
                     .TypeConstraint<kernelindextype>("TKernelIndex"), \
             SparseConvTransposeBackpropFilterOpKernelCUDA<            \
                     feattype, outtype, indextype, kernelindextype>);
-REG_KB(float, float, int32, int16_t)
-REG_KB(float, float, int32, uint8_t)
+REG_KB(float, float, int32_t, int16_t)
+REG_KB(float, float, int32_t, uint8_t)
 #undef REG_KB

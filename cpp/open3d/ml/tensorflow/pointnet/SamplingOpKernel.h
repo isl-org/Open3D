@@ -22,7 +22,7 @@ public:
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("sample_size", &sample_size));
         OP_REQUIRES(construction, sample_size > 0,
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "FurthestPointSampling expects positive npoint"));
     }
 
@@ -33,8 +33,9 @@ public:
         OP_REQUIRES(
                 context,
                 inp_tensor.dims() == 3 && inp_tensor.shape().dim_size(2) == 3,
-                errors::InvalidArgument("FurthestPointSampling expects "
-                                        "(batch_size,num_points,3) inp shape"));
+                absl::InvalidArgumentError(
+                        "FurthestPointSampling expects "
+                        "(batch_size,num_points,3) inp shape"));
         int batch_size = inp_tensor.shape().dim_size(0);
         int pts_size = inp_tensor.shape().dim_size(1);
         auto inp_flat = inp_tensor.flat<float>();

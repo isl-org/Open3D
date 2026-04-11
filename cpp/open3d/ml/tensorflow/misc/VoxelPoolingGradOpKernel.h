@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <cstdint>
+
+#include "absl/status/status.h"
 #include "open3d/ml/impl/misc/VoxelPooling.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -81,30 +84,31 @@ public:
         using namespace open3d::ml::impl;
 
         const Tensor& positions = context->input(0);
-        OP_REQUIRES(
-                context, positions.shape().dims() == 2,
-                errors::InvalidArgument("positions must be a rank 2 tensor"));
+        OP_REQUIRES(context, positions.shape().dims() == 2,
+                    absl::InvalidArgumentError(
+                            "positions must be a rank 2 tensor"));
 
         const Tensor& features = context->input(1);
         OP_REQUIRES(
                 context, features.shape().dims() == 2,
-                errors::InvalidArgument("features must be a rank 2 tensor"));
+                absl::InvalidArgumentError("features must be a rank 2 tensor"));
 
         const Tensor& voxel_size = context->input(2);
         OP_REQUIRES(
                 context, TensorShapeUtils::IsScalar(voxel_size.shape()),
-                errors::InvalidArgument("voxel_size must be a scalar, but is ",
-                                        voxel_size.shape().DebugString()));
+                absl::InvalidArgumentError(
+                        std::string("voxel_size must be a scalar, but is ") +
+                        voxel_size.shape().DebugString()));
 
         const Tensor& pooled_positions = context->input(3);
         OP_REQUIRES(context, pooled_positions.shape().dims() == 2,
-                    errors::InvalidArgument(
+                    absl::InvalidArgumentError(
                             "pooled_positions must be a rank 2 tensor"));
 
         const Tensor& pooled_features_gradient = context->input(4);
         OP_REQUIRES(
                 context, pooled_features_gradient.shape().dims() == 2,
-                errors::InvalidArgument(
+                absl::InvalidArgumentError(
                         "pooled_features_gradient must be a rank 2 tensor"));
 
         Tensor* features_backprop = nullptr;

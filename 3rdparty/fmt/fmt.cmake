@@ -2,12 +2,14 @@ include(ExternalProject)
 
 set(FMT_LIB_NAME fmt)
 
-if (WIN32 AND BUILD_CUDA_MODULE)
-    set(FMT_VER "10.1.1")
-    set(FMT_SHA256 "78b8c0a72b1c35e4443a7e308df52498252d1cefc2b08c9a97bc9ee6cfe61f8b")
-else ()
-    set(FMT_VER "10.2.1")
-    set(FMT_SHA256 "1250e4cc58bf06ee631567523f48848dc4596133e163f02615c97f78bab6c811")
+if (MSVC)
+    set(FMT_VER "9.1.0")   # Later versions cause compiler errors with MSVC +
+    # nvcc while compiling CUDA code, since we are unable to pass the /utf-8
+    # option correctly to nvcc's host compiler.
+    set(FMT_SHA256 "5dea48d1fcddc3ec571ce2058e13910a0d4a6bab4cc09a809d8b1dd1c88ae6f2")
+else()
+    set(FMT_VER "12.1.0")
+    set(FMT_SHA256 "ea7de4299689e12b6dddd392f9896f08fb0777ac7168897a244a6d6085043fea")
 endif()
 
 ExternalProject_Add(

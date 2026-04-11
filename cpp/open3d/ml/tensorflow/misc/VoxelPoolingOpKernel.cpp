@@ -31,7 +31,7 @@ public:
                         CheckVoxelSize(err, positions.shape().dim_size(0),
                                        positions.flat<TReal>().data(),
                                        voxel_size.scalar<TReal>()()),
-                        errors::InvalidArgument(err));
+                        absl::InvalidArgumentError(err));
         }
 
         VoxelPooling<TReal, TFeat>(
@@ -50,10 +50,10 @@ public:
                             VoxelPoolingOpKernelCPU<type, typefeat>);
 REG_KB(float, float)
 REG_KB(float, int)
-REG_KB(float, int64)
+REG_KB(float, int64_t)
 REG_KB(float, double)
 REG_KB(double, float)
 REG_KB(double, int)
-REG_KB(double, int64)
+REG_KB(double, int64_t)
 REG_KB(double, double)
 #undef REG_KB

@@ -66,13 +66,13 @@ public:
                 has_neighbors_importances
                         ? inp_neighbors_importance_sum.flat<TFeat>().data()
                         : nullptr,
-                (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)inp_neighbors_row_splits.flat<int64_t>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 has_neighbors_importances
                         ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
-                (int64_t*)neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)neighbors_row_splits.flat<int64_t>().data(),
                 extents.flat<TReal>().data(), offset.flat<TReal>().data(),
                 out_features_gradient.flat<TReal>().data(), this->interpolation,
                 this->coordinate_mapping, this->align_corners,
@@ -104,13 +104,13 @@ public:
                 has_neighbors_importances
                         ? inp_neighbors_importance_sum.flat<TFeat>().data()
                         : nullptr,
-                (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)inp_neighbors_row_splits.flat<int64_t>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 has_neighbors_importances
                         ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
-                (int64_t*)neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)neighbors_row_splits.flat<int64_t>().data(),
                 extents.flat<TReal>().data(), offset.flat<TReal>().data(),
                 out_features_gradient.flat<TReal>().data(), this->interpolation,
                 this->coordinate_mapping, this->align_corners,
@@ -131,5 +131,5 @@ private:
                     .TypeConstraint<indextype>("TIndex"),       \
             ContinuousConvTransposeBackpropFilterOpKernelCUDA<  \
                     feattype, outtype, realtype, indextype>);
-REG_KB(float, float, float, int32)
+REG_KB(float, float, float, int32_t)
 #undef REG_KB

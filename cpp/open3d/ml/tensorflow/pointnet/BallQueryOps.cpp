@@ -32,6 +32,6 @@ REGISTER_OP("Open3DBallQuery")
             ::tensorflow::shape_inference::ShapeHandle output =
                     c->MakeShape({c->Dim(dims1, 0), c->Dim(dims1, 1), nsample});
             c->set_output(0, output);
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc( TODO )doc");

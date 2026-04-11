@@ -62,5 +62,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-${{ github.sha }}-docs.tar.gz --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh open3d-${{ github.sha }}-docs.tar.gz

@@ -518,8 +518,10 @@ public:
     /// cylinder is from (0, 0, 0) to (0, 0, cylinder_height).
     /// \param cone_height defines the height of the cone. The axis of the
     /// cone will be from (0, 0, cylinder_height) to (0, 0, cylinder_height +
-    /// cone_height). \param resolution defines the resolution of the cone. The
-    /// circle will be split into resolution segments. \param cylinder_split
+    /// cone_height).
+    /// \param resolution defines the resolution of the cone. The
+    /// circle will be split into resolution segments.
+    /// \param cylinder_split
     /// defines the number of segments along the cylinder_height direction.
     /// \param cone_split defines the number of segments along
     /// the cone_height direction.
@@ -961,8 +963,9 @@ public:
     /// Sweeps the triangle mesh along a direction vector.
     /// \param vector The direction vector.
     /// \param scale Scalar factor which essentially scales the direction
-    /// vector. \param capping If true adds caps to the mesh. \return A triangle
-    /// mesh with the result of the sweep operation.
+    /// vector.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
     TriangleMesh ExtrudeLinear(const core::Tensor &vector,
                                double scale = 1.0,
                                bool capping = true) const;

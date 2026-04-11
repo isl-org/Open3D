@@ -488,7 +488,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                   const bool line_intersection) override {
         CommitScene();
 
-        auto scene = this->scene_;
+        auto traversable = rtcGetSceneTraversable(this->scene_);
         queue_.submit([=](sycl::handler& cgh) {
             cgh.parallel_for(
                     sycl::range<1>(num_rays),
@@ -522,7 +522,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                         rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
                         rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-                        rtcIntersect1(scene, &rh);
+                        rtcTraversableIntersect1(traversable, &rh);
 
                         t_hit[i] = rh.ray.tfar;
                         if (rh.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
@@ -562,7 +562,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                         const int nthreads) override {
         CommitScene();
 
-        auto scene = this->scene_;
+        auto traversable = rtcGetSceneTraversable(this->scene_);
         queue_.submit([=](sycl::handler& cgh) {
             cgh.parallel_for(
                     sycl::range<1>(num_rays),
@@ -590,7 +590,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                         ray.id = i;
                         ray.flags = 0;
 
-                        rtcOccluded1(scene, &ray, &args);
+                        rtcTraversableOccluded1(traversable, &ray, &args);
 
                         occluded[i] = int8_t(
                                 -std::numeric_limits<float>::infinity() ==
@@ -632,7 +632,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                       num_rays * sizeof(callbacks::GeomPrimID))
                 .wait();
 
-        auto scene = this->scene_;
+        auto traversable = rtcGetSceneTraversable(this->scene_);
         auto ci_previous_geom_prim_ID_tfar_ = ci_previous_geom_prim_ID_tfar;
         queue_.submit([=](sycl::handler& cgh) {
             cgh.parallel_for(
@@ -667,7 +667,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                         rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
                         rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-                        rtcIntersect1(scene, &rh, &args);
+                        rtcTraversableIntersect1(traversable, &rh, &args);
                     });
         });
         queue_.wait_and_throw();
@@ -725,7 +725,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                       num_rays * sizeof(callbacks::GeomPrimID))
                 .wait();
 
-        auto scene = this->scene_;
+        auto traversable = rtcGetSceneTraversable(this->scene_);
         auto li_previous_geom_prim_ID_tfar_ = li_previous_geom_prim_ID_tfar;
         queue_.submit([=](sycl::handler& cgh) {
             cgh.parallel_for(
@@ -766,7 +766,7 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
                         rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
                         rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-                        rtcIntersect1(scene, &rh, &args);
+                        rtcTraversableIntersect1(traversable, &rh, &args);
                     });
         });
         queue_.wait_and_throw();
@@ -895,6 +895,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
                   const bool line_intersection) override {
         CommitScene();
 
+        auto traversable = rtcGetSceneTraversable(scene_);
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             std::vector<RTCRayHit> rayhits(range.size());
 
@@ -925,7 +926,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
                 rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-                rtcIntersect1(scene_, &rh);
+                rtcTraversableIntersect1(traversable, &rh);
             }
 
             for (size_t i = range.begin(); i < range.end(); ++i) {
@@ -984,6 +985,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
         rtcInitOccludedArguments(&args);
         args.context = &context;
 
+        auto traversable = rtcGetSceneTraversable(scene_);
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             std::vector<RTCRay> rayvec(range.size());
             for (size_t i = range.begin(); i < range.end(); ++i) {
@@ -1001,7 +1003,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
                 ray.id = i - range.begin();
                 ray.flags = 0;
 
-                rtcOccluded1(scene_, &ray, &args);
+                rtcTraversableOccluded1(traversable, &ray, &args);
             }
 
             for (size_t i = range.begin(); i < range.end(); ++i) {
@@ -1054,6 +1056,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
         args.filter = callbacks::CountIntersectionsFunc;
         args.context = &context.context;
 
+        auto traversable = rtcGetSceneTraversable(scene_);
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             std::vector<RTCRayHit> rayhits(range.size());
 
@@ -1074,7 +1077,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-                rtcIntersect1(scene_, rh, &args);
+                rtcTraversableIntersect1(traversable, rh, &args);
             }
         };
 
@@ -1138,6 +1141,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
         args.filter = callbacks::ListIntersectionsFunc;
         args.context = &context.context;
 
+        auto traversable = rtcGetSceneTraversable(scene_);
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             std::vector<RTCRayHit> rayhits(range.size());
 
@@ -1158,7 +1162,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 
-                rtcIntersect1(scene_, rh, &args);
+                rtcTraversableIntersect1(traversable, rh, &args);
             }
         };
 
@@ -1186,6 +1190,7 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
                               const int nthreads) override {
         CommitScene();
 
+        auto traversable = rtcGetSceneTraversable(scene_);
         auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
             for (size_t i = range.begin(); i < range.end(); ++i) {
                 RTCPointQuery query;
@@ -1200,9 +1205,10 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
 
                 RTCPointQueryContext instStack;
                 rtcInitPointQueryContext(&instStack);
-                rtcPointQuery(scene_, &query, &instStack,
-                              &ClosestPointFunc<Vec3f, Vec3fa, Vec2f>,
-                              (void*)&result);
+                rtcTraversablePointQuery(
+                        traversable, &query, &instStack,
+                        &ClosestPointFunc<Vec3f, Vec3fa, Vec2f>,
+                        (void*)&result);
 
                 closest_points[3 * i + 0] = result.p.x();
                 closest_points[3 * i + 1] = result.p.y();
