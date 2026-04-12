@@ -869,10 +869,9 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
             rtcAttachGeometry(dst->scene_, geom);
             rtcReleaseGeometry(geom);
 
-            GeometryPtr geometry_ptr = {
-                    RTC_GEOMETRY_TYPE_TRIANGLE,
-                    static_cast<const void*>(vertex_buffer),
-                    static_cast<const void*>(index_buffer)};
+            GeometryPtr geometry_ptr = {RTC_GEOMETRY_TYPE_TRIANGLE,
+                                        static_cast<const void*>(vertex_buffer),
+                                        static_cast<const void*>(index_buffer)};
             dst->geometry_ptrs_.push_back(geometry_ptr);
         }
         return copy;
@@ -1299,10 +1298,9 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
             rtcAttachGeometry(copy->scene_, geom);
             rtcReleaseGeometry(geom);
 
-            GeometryPtr geometry_ptr = {
-                    RTC_GEOMETRY_TYPE_TRIANGLE,
-                    static_cast<const void*>(vertex_buffer),
-                    static_cast<const void*>(index_buffer)};
+            GeometryPtr geometry_ptr = {RTC_GEOMETRY_TYPE_TRIANGLE,
+                                        static_cast<const void*>(vertex_buffer),
+                                        static_cast<const void*>(index_buffer)};
             copy->geometry_ptrs_.push_back(geometry_ptr);
         }
         return copy;
