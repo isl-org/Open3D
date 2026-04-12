@@ -1,4 +1,5 @@
 ## Main
+-   Added copy and move semantics for `t::geometry::RaycastingScene` in C++ and Python: copy/move constructors and assignments are now supported. Python `copy.deepcopy()` is supported for `RaycastingScene`. (issue #7014)(PR #7437)
 -   Upgrade stdgpu third-party library to commit d7c07d0.
 -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
 -   Corrected documentation for Link Open3D in C++ projects (broken links).

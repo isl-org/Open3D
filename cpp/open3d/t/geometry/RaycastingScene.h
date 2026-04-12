@@ -35,6 +35,20 @@ public:
 
     ~RaycastingScene();
 
+    /// \brief Copy constructor.
+    /// Creates a new object as a copy of an existing one.
+    RaycastingScene(const RaycastingScene &other);
+
+    /// \brief Copy assignment operator.
+    /// Assigns the contents of an existing object to this object.
+    RaycastingScene &operator=(const RaycastingScene &other);
+
+    /// \brief Move constructor.
+    RaycastingScene(RaycastingScene &&other) noexcept;
+
+    /// \brief Move assignment operator.
+    RaycastingScene &operator=(RaycastingScene &&other) noexcept;
+
     /// \brief Add a triangle mesh to the scene.
     /// \param vertex_positions Vertices as Tensor of dim {N,3} and dtype float.
     /// \param triangle_indices Triangles as Tensor of dim {M,3} and dtype
