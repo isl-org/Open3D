@@ -838,7 +838,6 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
         copy->scene_committed_ = false;
         copy->geometry_sizes_ = geometry_sizes_;
 
-        const SYCLImpl* src = this;
         SYCLImpl* dst = copy.get();
 
         for (size_t geom_id = 0; geom_id < geometry_ptrs_.size(); ++geom_id) {
@@ -870,9 +869,10 @@ struct RaycastingScene::SYCLImpl : public RaycastingScene::Impl {
             rtcAttachGeometry(dst->scene_, geom);
             rtcReleaseGeometry(geom);
 
-            GeometryPtr geometry_ptr = {RTC_GEOMETRY_TYPE_TRIANGLE,
-                                        (const void*)vertex_buffer,
-                                        (const void*)index_buffer};
+            GeometryPtr geometry_ptr = {
+                    RTC_GEOMETRY_TYPE_TRIANGLE,
+                    static_cast<const void*>(vertex_buffer),
+                    static_cast<const void*>(index_buffer)};
             dst->geometry_ptrs_.push_back(geometry_ptr);
         }
         return copy;
@@ -1299,9 +1299,10 @@ struct RaycastingScene::CPUImpl : public RaycastingScene::Impl {
             rtcAttachGeometry(copy->scene_, geom);
             rtcReleaseGeometry(geom);
 
-            GeometryPtr geometry_ptr = {RTC_GEOMETRY_TYPE_TRIANGLE,
-                                        (const void*)vertex_buffer,
-                                        (const void*)index_buffer};
+            GeometryPtr geometry_ptr = {
+                    RTC_GEOMETRY_TYPE_TRIANGLE,
+                    static_cast<const void*>(vertex_buffer),
+                    static_cast<const void*>(index_buffer)};
             copy->geometry_ptrs_.push_back(geometry_ptr);
         }
         return copy;
@@ -1437,8 +1438,8 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
     rtcReleaseGeometry(geom);
 
     GeometryPtr geometry_ptr = {RTC_GEOMETRY_TYPE_TRIANGLE,
-                                (const void*)vertex_buffer,
-                                (const void*)index_buffer};
+                                static_cast<const void*>(vertex_buffer),
+                                static_cast<const void*>(index_buffer)};
     impl_->geometry_ptrs_.push_back(geometry_ptr);
     impl_->geometry_sizes_.push_back({num_vertices, num_triangles});
     return geom_id;
