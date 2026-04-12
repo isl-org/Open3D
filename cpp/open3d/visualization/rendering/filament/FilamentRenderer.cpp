@@ -155,6 +155,11 @@ void FilamentRenderer::SetOnAfterDraw(std::function<void()> callback) {
     on_after_draw_ = callback;
 }
 
+void FilamentRenderer::SetOnAppleGaussianCompositeComplete(
+        std::function<void()> callback) {
+    on_apple_gaussian_composite_complete_ = std::move(callback);
+}
+
 void FilamentRenderer::UpdateSwapChain() {
     void* native_win = swap_chain_->getNativeWindow();
     engine_.destroy(swap_chain_);
@@ -187,15 +192,9 @@ void FilamentRenderer::BeginFrame() {
 
     if (gaussian_splat_renderer_) {
         gaussian_splat_renderer_->BeginFrame();
-
-#if defined(__APPLE__)
-        // The Metal backend only writes its internal sorting / projection
-        // buffers here. Shared texture synchronization happens after
-        // endFrame() before the post-frame composite.
-#else
-        // Flush any pending Filament work so the GPU queue is idle before
-        // our compute dispatches. Without this, vkQueueSubmit can fail
-        // because Filament still has commands in flight on the same queue.
+#if !defined(__APPLE__)
+        // Drain Filament work before Gaussian compute dispatches (shared
+        // GL/Vulkan queue on non-Apple backends).
         engine_.flushAndWait();
 #endif
 
@@ -229,16 +228,16 @@ void FilamentRenderer::Draw() {
         // Non-Apple backends composite into the overlay during the current
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
-        if (gaussian_splat_renderer_) {
 #if !defined(__APPLE__)
+        if (gaussian_splat_renderer_) {
             engine_.flushAndWait();
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {
-                    gaussian_splat_renderer_->RenderCompositeStage(view);
+                    (void)gaussian_splat_renderer_->RenderCompositeStage(view);
                 });
             }
-#endif
         }
+#endif
 
         // Draw the UI. This should come after the 3D scene(s), as SceneWidget
         // will draw the textures as an image, and this way we will have the
@@ -264,10 +263,16 @@ void FilamentRenderer::EndFrame() {
             // texture is ready. No flushAndWait needed; blocking here
             // stalls the main thread behind expensive geometry compute
             // CBs that are ahead in the queue.
+            bool any_composite = false;
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {
-                    gaussian_splat_renderer_->RenderCompositeStage(view);
+                    if (gaussian_splat_renderer_->RenderCompositeStage(view)) {
+                        any_composite = true;
+                    }
                 });
+            }
+            if (any_composite && on_apple_gaussian_composite_complete_) {
+                on_apple_gaussian_composite_complete_();
             }
         }
 #endif

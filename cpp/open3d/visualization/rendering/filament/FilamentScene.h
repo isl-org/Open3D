@@ -217,6 +217,9 @@ public:
     /// Iterate over ALL views (including inactive/cached ones).
     void ForEachView(const std::function<void(FilamentView&)>& callback) const;
     bool HasGaussianSplatGeometry() const;
+    /// Returns true when at least one visible non-Gaussian geometry exists
+    /// (i.e., a mesh/pointcloud that occupies Filament scene depth).
+    bool HasNonGaussianVisibleGeometry() const;
     bool UsesGaussianSplatOutput(const FilamentView& view) const;
     TextureHandle GetColorBufferForView(const FilamentView& view) const;
     TextureHandle GetDepthBufferForView(const FilamentView& view) const;
@@ -297,6 +300,11 @@ private:
         // (e.g. Gaussian splats rendered via compute, not raster).
         geometry::AxisAlignedBoundingBox aabb;
 
+        // Range within the merged Gaussian splat packed-attrs buffer.
+        // Both are zero for non-Gaussian geometry.
+        std::uint32_t gs_splat_start = 0;
+        std::uint32_t gs_splat_count = 0;
+
         // Filament resources — filament_entity is null for compute-only
         // geometry.
         utils::Entity filament_entity;
@@ -361,9 +369,20 @@ private:
     IndirectLightHandle ibl_handle_;
     SkyboxHandle skybox_handle_;
     LightEntity sun_;
-    std::unique_ptr<GaussianSplatPackedAttrs> gaussian_splat_packed_attrs_;
-    void CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
+    /// Per-object packed attributes (CPU-side, scene lifetime).
+    std::unordered_map<std::string, GaussianSplatPackedAttrs>
+            per_object_gs_attrs_;
+    /// Concatenated buffer of all objects' packed attrs + visibility mask.
+    /// This is what the GPU pipeline consumes.
+    std::unique_ptr<GaussianSplatPackedAttrs> merged_gs_attrs_;
+
+    /// Pack one object's splats and store in per_object_gs_attrs_.
+    void CacheGaussianSplatData(const std::string& name,
+                                const t::geometry::PointCloud& cloud,
                                 const MaterialRecord& material);
+    /// Rebuild merged_gs_attrs_ from per_object_gs_attrs_ and update
+    /// visibility masks + RenderConfig (elementwise max across all objects).
+    void RebuildMergedGaussianData();
 };
 
 }  // namespace rendering

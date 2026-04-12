@@ -24,6 +24,7 @@ struct PackedGaussianScene;
 struct GaussianSplatPackedAttrs;
 
 /// Resize/upload buffers, then run the projection → radix → payload chain.
+/// Dispatch grid sizes are computed inline from frame_data and config.
 /// @param frame          Per-frame view parameters (UBO, splat/tile counts).
 /// @param attrs          Pre-packed per-splat GPU data (uploaded when
 /// scene_changed).
@@ -34,16 +35,15 @@ bool RunGaussianGeometryPasses(
         const GaussianSplatRenderer::RenderConfig& config,
         const PackedGaussianScene& frame_data,
         const GaussianSplatPackedAttrs& attrs,
-        const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
         GaussianSplatViewGpuResources& vs,
         std::uint64_t scene_change_id,
         bool scene_changed);
 
 /// Final composite pass into imported color/depth targets.
+/// Dispatch grid sizes are computed inline from config and targets dimensions.
 bool RunGaussianCompositePass(
         GaussianSplatGpuContext& ctx,
         const GaussianSplatRenderer::RenderConfig& config,
-        const std::vector<GaussianSplatRenderer::PassDispatch>& dispatches,
         GaussianSplatViewGpuResources& vs,
         GaussianSplatRenderer::OutputTargets& targets);
 

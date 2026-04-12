@@ -27,6 +27,7 @@ namespace rendering {
 // clang-format off
 constexpr std::uint32_t kGL_RGBA16F             = 0x881A;
 constexpr std::uint32_t kGL_R32F                = 0x822E;
+constexpr std::uint32_t kGL_R16UI               = 0x8234;  // GL_R16UI
 constexpr std::uint32_t kGL_RGBA8               = 0x8058;
 constexpr std::uint32_t kGL_RGBA                = 0x1908;
 constexpr std::uint32_t kGL_RED                 = 0x1903;

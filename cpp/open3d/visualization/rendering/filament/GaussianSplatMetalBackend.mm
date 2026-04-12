@@ -13,6 +13,7 @@
 #include <unordered_map>
 
 #include "open3d/utility/Logging.h"
+#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentNativeInterop.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -20,7 +21,6 @@
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatOutputTargetsApple.h"
-#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatPassRunner.h"
 
 namespace open3d {
@@ -29,16 +29,14 @@ namespace rendering {
 
 class GaussianSplatMetalBackend final : public GaussianSplatRenderer::Backend {
 public:
-    GaussianSplatMetalBackend(
-            FilamentResourceManager& resource_mgr,
-            const GaussianSplatRenderer::RenderConfig& config)
+    GaussianSplatMetalBackend(FilamentResourceManager& resource_mgr,
+                              const GaussianSplatRenderer::RenderConfig& config)
         : config_(config) {
         (void)resource_mgr;
         FilamentMetalNativeHandles mh =
                 GetFilamentMetalNativeHandles(EngineInstance::GetPlatform());
         if (mh.valid) {
-            gpu_ = CreateComputeGpuContextMetal(mh.device,
-                                                mh.command_queue);
+            gpu_ = CreateComputeGpuContextMetal(mh.device, mh.command_queue);
         }
     }
 
@@ -60,8 +58,6 @@ public:
             const FilamentView& view,
             const FilamentScene& scene,
             const GaussianSplatRenderer::ViewRenderData& render_data,
-            const std::vector<GaussianSplatRenderer::PassDispatch>&
-                    dispatches,
             GaussianSplatRenderer::OutputTargets& targets) override {
         if (!gpu_) {
             return false;
@@ -87,16 +83,13 @@ public:
                 (scene_id != vs.cached_scene_id ||
                  attrs->splat_count != vs.cached_splat_count);
 
-        return RunGaussianGeometryPasses(*gpu_, config_, frame, *attrs,
-                                        dispatches, vs, scene_id,
-                                        scene_changed);
+        return RunGaussianGeometryPasses(*gpu_, config_, frame, *attrs, vs,
+                                        scene_id, scene_changed);
     }
 
     bool RenderCompositeStage(
             const FilamentView& view,
             const GaussianSplatRenderer::ViewRenderData&,
-            const std::vector<GaussianSplatRenderer::PassDispatch>&
-                    dispatches,
             GaussianSplatRenderer::OutputTargets& targets) override {
         if (!gpu_) {
             return false;
@@ -105,8 +98,7 @@ public:
         if (it == view_states_.end() || it->second.view_params_buf == 0) {
             return false;
         }
-        return RunGaussianCompositePass(*gpu_, config_, dispatches, it->second,
-                                       targets);
+        return RunGaussianCompositePass(*gpu_, config_, it->second, targets);
     }
 
     bool PrepareOutputTextures(
@@ -114,9 +106,10 @@ public:
             FilamentResourceManager& resource_mgr,
             std::uint32_t width,
             std::uint32_t height,
+            bool needs_scene_depth,
             GaussianSplatRenderer::OutputTargets& targets) override {
         return PrepareGaussianImportedRenderTargetsApple(
-                view, resource_mgr, width, height, targets);
+                view, resource_mgr, width, height, needs_scene_depth, targets);
     }
 
     void ReleaseOutputTextures(
@@ -156,6 +149,7 @@ private:
         destroy_buf(vs.histogram_buf);
         destroy_buf(vs.radix_params_buf);
         destroy_buf(vs.sorted_entries_buf);
+        destroy_buf(vs.mask_buf);
         if (vs.composite_depth_tex != 0) {
             gpu_->DestroyTexture(vs.composite_depth_tex);
             vs.composite_depth_tex = 0;

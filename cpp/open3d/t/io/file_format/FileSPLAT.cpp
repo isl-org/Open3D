@@ -34,8 +34,8 @@ constexpr int SPLAT_GAUSSIAN_BYTE_SIZE = 32;
 inline double sigmoid(double x) { return 1.0 / (1.0 + std::exp(-x)); }
 
 template <typename scalar_t>
-Eigen::Array<uint8_t, 4, 1> ComputeColor(const scalar_t *f_dc_ptr,
-                                         const scalar_t *opacity_ptr) {
+Eigen::Array<uint8_t, 4, 1> ComputeColor(const scalar_t* f_dc_ptr,
+                                         const scalar_t* opacity_ptr) {
     Eigen::Array<float, 4, 1> color;
     color[0] = 0.5 + SH_C0 * f_dc_ptr[0];
     color[1] = 0.5 + SH_C0 * f_dc_ptr[1];
@@ -47,33 +47,32 @@ Eigen::Array<uint8_t, 4, 1> ComputeColor(const scalar_t *f_dc_ptr,
 
 /// Sort Gaussians in descending order according to -exp(\sum scales) / (1 +
 /// exp(-opacity)) and return the sorted order.
-std::vector<int64_t> SortedSplatIndices(geometry::TensorMap &t_map) {
+std::vector<int64_t> SortedSplatIndices(geometry::TensorMap& t_map) {
     auto num_gaussians = t_map["opacity"].GetShape(0);
     std::vector<int64_t> indices(num_gaussians);
     std::iota(indices.begin(), indices.end(), 0);
 
     // Get pointers to data
-    const float *scale_data = t_map["scale"].GetDataPtr<float>();
-    const float *opacity_data = t_map["opacity"].GetDataPtr<float>();
+    const float* scale_data = t_map["scale"].GetDataPtr<float>();
+    const float* opacity_data = t_map["opacity"].GetDataPtr<float>();
     const auto scle_grp_size = t_map["scale"].GetShape(1);
 
-    // Custom sorting function using the given formula
+    // Sort by descending volume × opacity — larger, more opaque splats first.
+    // Scales are now linear (volume proxy = s0*s1*s2), opacity is in logit
+    // space.
     tbb::parallel_sort(
             indices.begin(), indices.end(),
             [&](size_t left, size_t right) -> bool {
-                // Compute scores for left and right elements
-                float scale_left = scale_data[left * scle_grp_size] +
-                                   scale_data[left * scle_grp_size + 1] +
-                                   scale_data[left * scle_grp_size + 2];
-                float scale_right = scale_data[right * scle_grp_size] +
-                                    scale_data[right * scle_grp_size + 1] +
-                                    scale_data[right * scle_grp_size + 2];
-
-                float score_left = -std::exp(scale_left) /
-                                   (1 + std::exp(-opacity_data[left]));
-                float score_right = -std::exp(scale_right) /
-                                    (1 + std::exp(-opacity_data[right]));
-
+                float vol_left = scale_data[left * scle_grp_size] *
+                                 scale_data[left * scle_grp_size + 1] *
+                                 scale_data[left * scle_grp_size + 2];
+                float vol_right = scale_data[right * scle_grp_size] *
+                                  scale_data[right * scle_grp_size + 1] *
+                                  scale_data[right * scle_grp_size + 2];
+                float score_left =
+                        -vol_left / (1.0f + std::exp(-opacity_data[left]));
+                float score_right =
+                        -vol_right / (1.0f + std::exp(-opacity_data[right]));
                 return score_left < score_right;  // Sort in descending order
             });
     return indices;
@@ -81,9 +80,9 @@ std::vector<int64_t> SortedSplatIndices(geometry::TensorMap &t_map) {
 
 }  // End of anonymous namespace
 
-bool ReadPointCloudFromSPLAT(const std::string &filename,
-                             geometry::PointCloud &pointcloud,
-                             const open3d::io::ReadPointCloudOption &params) {
+bool ReadPointCloudFromSPLAT(const std::string& filename,
+                             geometry::PointCloud& pointcloud,
+                             const open3d::io::ReadPointCloudOption& params) {
     try {
         // Open the file
         utility::filesystem::CFile file;
@@ -110,12 +109,12 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
 
         // Constants
         char buffer[SPLAT_GAUSSIAN_BYTE_SIZE];
-        const char *buffer_position = buffer;
-        const char *buffer_scale = buffer_position + 3 * sizeof(float);
-        const uint8_t *buffer_color =
-                reinterpret_cast<const uint8_t *>(buffer_scale) +
+        const char* buffer_position = buffer;
+        const char* buffer_scale = buffer_position + 3 * sizeof(float);
+        const uint8_t* buffer_color =
+                reinterpret_cast<const uint8_t*>(buffer_scale) +
                 3 * sizeof(float);
-        const uint8_t *buffer_rotation = buffer_color + 4 * sizeof(uint8_t);
+        const uint8_t* buffer_rotation = buffer_color + 4 * sizeof(uint8_t);
         int number_of_points =
                 static_cast<int>(file_size / SPLAT_GAUSSIAN_BYTE_SIZE);
 
@@ -139,13 +138,13 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
                 "opacity",
                 core::Tensor::Empty({number_of_points, 1}, core::Float32));
 
-        float *position_ptr =
+        float* position_ptr =
                 pointcloud.GetPointPositions().GetDataPtr<float>();
-        float *scale_ptr = pointcloud.GetPointAttr("scale").GetDataPtr<float>();
-        float *f_dc_ptr = pointcloud.GetPointAttr("f_dc").GetDataPtr<float>();
-        float *opacity_ptr =
+        float* scale_ptr = pointcloud.GetPointAttr("scale").GetDataPtr<float>();
+        float* f_dc_ptr = pointcloud.GetPointAttr("f_dc").GetDataPtr<float>();
+        float* opacity_ptr =
                 pointcloud.GetPointAttr("opacity").GetDataPtr<float>();
-        float *rot_ptr = pointcloud.GetPointAttr("rot").GetDataPtr<float>();
+        float* rot_ptr = pointcloud.GetPointAttr("rot").GetDataPtr<float>();
 
         // Read the data
         for (size_t index = 0; file.ReadData(buffer, SPLAT_GAUSSIAN_BYTE_SIZE);
@@ -153,30 +152,29 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
             // Copy the data into the vectors
             std::memcpy(position_ptr + index * 3, buffer_position,
                         3 * sizeof(float));
+            // SPLAT format stores linear scales; canonical PointCloud
+            // representation is also linear, so no conversion needed.
             std::memcpy(scale_ptr + index * 3, buffer_scale, 3 * sizeof(float));
-            
-            // Convert linear scales from SPLAT format to log-scales for internal representation
-            for (int i = 0; i < 3; i++) {
-                scale_ptr[index * 3 + i] = std::log(scale_ptr[index * 3 + i]);
-            }
 
             // Calculate the f_dc
-            float *f_dc = f_dc_ptr + index * 3;
+            float* f_dc = f_dc_ptr + index * 3;
             for (int i = 0; i < 3; i++) {
                 f_dc[i] = ((buffer_color[i] / 255.0) - 0.5) / SH_C0;
             }
             // Calculate the opacity
-            float *opacity = opacity_ptr + index;
+            float* opacity = opacity_ptr + index;
             if (buffer_color[3] == 0) {
-                opacity[0] = std::numeric_limits<float>::lowest();  // logit(0) ≈ -∞
+                opacity[0] =
+                        std::numeric_limits<float>::lowest();  // logit(0) ≈ -∞
             } else if (buffer_color[3] == 255) {
-                opacity[0] = std::numeric_limits<float>::max();  // logit(1) ≈ +∞
+                opacity[0] =
+                        std::numeric_limits<float>::max();  // logit(1) ≈ +∞
             } else {
                 opacity[0] = -std::log(255.f / buffer_color[3] - 1.0f);
             }
             // Calculate the rotation quaternion.
             // Normalize to reduce quantization error
-            float *rot_float = rot_ptr + index * 4;
+            float* rot_float = rot_ptr + index * 4;
             float quat_norm = 0;
             for (int i = 0; i < 4; i++) {
                 rot_float[i] = (buffer_rotation[i] / 128.0) - 1.0;
@@ -202,15 +200,15 @@ bool ReadPointCloudFromSPLAT(const std::string &filename,
         // Report progress
         reporter.Finish();
         return true;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         utility::LogError("Read SPLAT file {} failed: {}", filename, e.what());
     }
     return false;
 }
 
-bool WritePointCloudToSPLAT(const std::string &filename,
-                            const geometry::PointCloud &pointcloud,
-                            const open3d::io::WritePointCloudOption &params) {
+bool WritePointCloudToSPLAT(const std::string& filename,
+                            const geometry::PointCloud& pointcloud,
+                            const open3d::io::WritePointCloudOption& params) {
     // Validate Point Cloud
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write SPLAT failed: point cloud has 0 points.");
@@ -234,11 +232,11 @@ bool WritePointCloudToSPLAT(const std::string &filename,
                               .Contiguous()
                               .To(core::Device("CPU:0"));
     }
-    float *positions_ptr = t_map["positions"].GetDataPtr<float>();
-    float *scale_ptr = t_map["scale"].GetDataPtr<float>();
-    float *f_dc_ptr = t_map["f_dc"].GetDataPtr<float>();
-    float *opacity_ptr = t_map["opacity"].GetDataPtr<float>();
-    float *rot_ptr = t_map["rot"].GetDataPtr<float>();
+    float* positions_ptr = t_map["positions"].GetDataPtr<float>();
+    float* scale_ptr = t_map["scale"].GetDataPtr<float>();
+    float* f_dc_ptr = t_map["f_dc"].GetDataPtr<float>();
+    float* opacity_ptr = t_map["opacity"].GetDataPtr<float>();
+    float* rot_ptr = t_map["rot"].GetDataPtr<float>();
     constexpr int N_POSITIONS = 3;
     constexpr int N_SCALE = 3;
     constexpr int N_F_DC = 3;
@@ -254,7 +252,7 @@ bool WritePointCloudToSPLAT(const std::string &filename,
     try {
         splat_file.exceptions(std::ofstream::badbit);  // failbit not set for
                                                        // binary IO errors
-    } catch (const std::ios_base::failure &) {
+    } catch (const std::ios_base::failure&) {
         utility::LogWarning("Write SPLAT failed: unable to open file: {}.",
                             filename);
         return false;
@@ -271,20 +269,20 @@ bool WritePointCloudToSPLAT(const std::string &filename,
             int64_t g_idx = sorted_indices[i];
 
             // Positions
-            splat_file.write(reinterpret_cast<const char *>(
-                                     positions_ptr + N_POSITIONS * g_idx),
+            splat_file.write(reinterpret_cast<const char*>(positions_ptr +
+                                                           N_POSITIONS * g_idx),
                              N_POSITIONS * sizeof(float));
 
-            // Scale: convert from log-space (memory) to linear space (SPLAT format) before writing
-            Eigen::Vector3f log_scales{scale_ptr[g_idx * 3 + 0], scale_ptr[g_idx * 3 + 1], scale_ptr[g_idx * 3 + 2]};
-            auto scales = log_scales.array().exp().eval();
-            splat_file.write(reinterpret_cast<const char *>(scales.data()),
+            // Scale: canonical representation is linear; SPLAT format is also
+            // linear, so write directly.
+            splat_file.write(
+                    reinterpret_cast<const char*>(scale_ptr + N_SCALE * g_idx),
                     N_SCALE * sizeof(float));
 
             // Color
             auto color = ComputeColor(f_dc_ptr + N_F_DC * g_idx,
                                       opacity_ptr + N_OPACITY * g_idx);
-            splat_file.write(reinterpret_cast<const char *>(color.data()),
+            splat_file.write(reinterpret_cast<const char*>(color.data()),
                              4 * sizeof(uint8_t));
 
             // Rot
@@ -303,7 +301,7 @@ bool WritePointCloudToSPLAT(const std::string &filename,
             rot = (rot * 128.0).array().round() + 128.0;
             auto uint8_rot =
                     rot.cwiseMin(255.0).cwiseMax(0.0).cast<uint8_t>().eval();
-            splat_file.write(reinterpret_cast<const char *>(uint8_rot.data()),
+            splat_file.write(reinterpret_cast<const char*>(uint8_rot.data()),
                              4 * sizeof(uint8_t));
 
             if (i % 1000 == 0) {
@@ -313,7 +311,7 @@ bool WritePointCloudToSPLAT(const std::string &filename,
         splat_file.close();  // Close file, flushes to disk.
         reporter.Finish();
         return true;
-    } catch (const std::ios_base::failure &e) {
+    } catch (const std::ios_base::failure& e) {
         utility::LogWarning("Write SPLAT to file {} failed: {}", filename,
                             e.what());
         return false;

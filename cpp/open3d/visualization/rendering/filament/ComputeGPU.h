@@ -46,11 +46,14 @@ enum class ComputeProgramId : int {
     kGsRadixScatter = 6,
     kGsRadixPayload = 7,
     kGsDispatchArgs = 8,
-    kCount = 9,
+    /// Merges GS linear depth (R32F) with Filament scene depth (reversed-Z)
+    /// into a normalised R16UI texture for CPU readback.
+    kGsDepthMerge = 9,
+    kCount = 10,
 };
 
 /// Format selector for GaussianSplatGpuContext::BindImage().
-enum class ImageFormat { kRGBA16F, kR32F };
+enum class ImageFormat { kRGBA16F, kR32F, kR16UI };
 
 /// Canonical shader base names indexed by ComputeProgramId.
 /// Backends derive suffixes: GL SPIR-V → base+".spv", GL GLSL → base+".comp",
@@ -65,6 +68,7 @@ constexpr const char* kGsShaderNames[] = {
         "gaussian_radix_sort",
         "gaussian_radix_sort_payload",
         "gaussian_compute_dispatch_args",
+        "gaussian_depth_merge",
 };
 static_assert(sizeof(kGsShaderNames) / sizeof(kGsShaderNames[0]) ==
                       static_cast<std::size_t>(ComputeProgramId::kCount),
@@ -76,7 +80,8 @@ static_assert(sizeof(kGsShaderNames) / sizeof(kGsShaderNames[0]) ==
 
 /// Per-radix-pass UBO at binding 14 (std140 layout, matches GPU shader).
 /// Matches the RadixSortParams uniform block in the radix-sort shaders.
-/// Named to match the GLSL block: `layout(std140, binding=14) uniform RadixSortParams`.
+/// Named to match the GLSL block: `layout(std140, binding=14) uniform
+/// RadixSortParams`.
 struct RadixSortParams {
     std::uint32_t g_num_elements = 0;
     std::uint32_t g_shift = 0;
@@ -106,8 +111,13 @@ struct GaussianSplatViewGpuResources {
     std::uintptr_t histogram_buf = 0;
     std::uintptr_t radix_params_buf = 0;
     std::uintptr_t sorted_entries_buf = 0;
+    /// Bit-packed per-splat visibility mask. Bound at binding 15.
+    std::uintptr_t mask_buf = 0;
     /// GS composite depth output (image binding 1); not the shared scene depth.
     std::uintptr_t composite_depth_tex = 0;
+    /// Merged GS+Filament depth as R16UI (normalised [0,65535]); non-zero only
+    /// when an offscreen capture is active and scene depth is available.
+    std::uintptr_t merged_depth_u16_tex = 0;
     std::uint64_t cached_scene_id = 0;
     std::uint32_t cached_splat_count = 0;
     std::uint32_t warned_gpu_error_flags = 0;
@@ -189,6 +199,11 @@ public:
                                                std::uint32_t width,
                                                std::uint32_t height,
                                                const char* label = nullptr) = 0;
+    /// Create or resize an R16UI texture for merged-depth CPU readback.
+    virtual std::uintptr_t ResizeTexture2DR16UI(std::uintptr_t tex,
+                                                std::uint32_t width,
+                                                std::uint32_t height,
+                                                const char* label = nullptr) = 0;
 
     /// Bind a write image at the given unit with the specified format.
     virtual void BindImage(std::uint32_t binding,
@@ -297,7 +312,7 @@ public:
     GpuComputePass& operator=(const GpuComputePass&) = delete;
 
     /// Returns false only when EnsureProgramsLoaded() failed (device error).
-    bool ok() const { return ok_; }
+    [[nodiscard]] bool ok() const { return ok_; }
 
     // --- Resource binding (fluent builder) --------------------------------
 
@@ -357,12 +372,13 @@ private:
 // ---------------------------------------------------------------------------
 
 #if !defined(__APPLE__)
-std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextGL(
-        bool use_subgroups, bool use_precompiled);
+[[nodiscard]] std::unique_ptr<GaussianSplatGpuContext>
+CreateComputeGpuContextGL(bool use_subgroups, bool use_precompiled);
 #endif
 #if defined(__APPLE__)
-std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextMetal(
-        std::uintptr_t device_handle, std::uintptr_t command_queue_handle);
+[[nodiscard]] std::unique_ptr<GaussianSplatGpuContext>
+CreateComputeGpuContextMetal(std::uintptr_t device_handle,
+                             std::uintptr_t command_queue_handle);
 #endif
 
 }  // namespace rendering

@@ -138,9 +138,9 @@ struct GaussianSplatPackedAttrs {
     std::vector<std::uint32_t> dc_opacity;  ///< fp16×4 in uvec2 pair, 8 B/splat
     std::vector<std::uint32_t>
             sh_coefficients;  ///< fp16 uvec2; degree-dependent stride
-    /// Per-splat visibility mask: 1 = render, 0 = cull (via
-    /// WriteInvalidProjection). Always present; all-1 when only one object or
-    /// all objects are visible.
+    /// Bit-packed visibility mask: bit k = 1 → render splat k, 0 → cull (via
+    /// WriteInvalidProjection). Size = ceil(splat_count / 32) uint32 words.
+    /// All bits set when all splats are visible.
     std::vector<std::uint32_t> visibility_mask;
     std::uint32_t splat_count = 0;
     int sh_degree = 0;       ///< Effective SH degree packed here

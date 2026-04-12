@@ -21,11 +21,14 @@ class FilamentResourceManager;
 class FilamentView;
 
 /// Creates shared MTLTextures and Filament imports (zero-copy path on Metal).
+/// @param needs_scene_depth  When false, skip allocating the scene-depth
+///                           texture (no mesh occluders in the scene).
 bool PrepareGaussianImportedRenderTargetsApple(
         FilamentView& view,
         FilamentResourceManager& resource_mgr,
         std::uint32_t width,
         std::uint32_t height,
+        bool needs_scene_depth,
         GaussianSplatRenderer::OutputTargets& targets);
 
 void ReleaseGaussianImportedMTLTexturesApple(

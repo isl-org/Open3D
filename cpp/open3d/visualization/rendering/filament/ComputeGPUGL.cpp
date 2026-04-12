@@ -370,6 +370,27 @@ public:
         return nk;
     }
 
+    std::uintptr_t ResizeTexture2DR16UI(std::uintptr_t tex,
+                                        std::uint32_t width,
+                                        std::uint32_t height,
+                                        const char* label = nullptr) override {
+        if (tex == 0) {
+            GLTextureHandle t =
+                    CreateGLTexture2D(width, height, kGL_R16UI, label);
+            if (!t.valid) return 0;
+            std::uintptr_t k = static_cast<std::uintptr_t>(t.id);
+            texture_sizes_[k] = {width, height};
+            return k;
+        }
+        GLTextureHandle nh = ResizeGLTexture2D(ToGLTexture(tex, texture_sizes_),
+                                               width, height, kGL_R16UI, label);
+        texture_sizes_.erase(tex);
+        if (!nh.valid) return 0;
+        std::uintptr_t nk = static_cast<std::uintptr_t>(nh.id);
+        texture_sizes_[nk] = {width, height};
+        return nk;
+    }
+
     void BindImage(std::uint32_t binding,
                    std::uintptr_t tex,
                    std::uint32_t width,
@@ -381,8 +402,9 @@ public:
             h.height = height;
             h.valid = true;
         }
-        const std::uint32_t gl_fmt =
-                (fmt == ImageFormat::kRGBA16F) ? kGL_RGBA16F : kGL_R32F;
+        std::uint32_t gl_fmt = kGL_R32F;
+        if (fmt == ImageFormat::kRGBA16F) gl_fmt = kGL_RGBA16F;
+        else if (fmt == ImageFormat::kR16UI) gl_fmt = kGL_R16UI;
         ::open3d::visualization::rendering::BindImage(binding, h, gl_fmt,
                                                       kGL_WRITE_ONLY);
     }

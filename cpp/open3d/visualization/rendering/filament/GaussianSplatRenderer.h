@@ -34,32 +34,18 @@ class FilamentView;
 
 class GaussianSplatRenderer {
 public:
-    enum class PassType {
-        kProjection,
-        kTilePrefixSum,
-        kTileScatter,
-        kTileSort,
-        kComposite,
-    };
-
-    struct PassDefinition {
-        PassType type = PassType::kProjection;
-        const char* debug_name = "";
-        const char* shader_file = "";
-    };
-
     struct RenderConfig {
-        // Shader subgroups (GL_KHR_shader_subgroup_arithmetic) and precompiled
-        // SPIRV binaries are currently unreliable on Windows with Intel
-        // drivers, causing incorrect prefix sum results and thus rendering
-        // corruption.  Disable by default on Windows until fixed.
-        #ifdef _WIN32
+// Shader subgroups (GL_KHR_shader_subgroup_arithmetic) and precompiled
+// SPIRV binaries are currently unreliable on Windows with Intel
+// drivers, causing incorrect prefix sum results and thus rendering
+// corruption.  Disable by default on Windows until fixed.
+#ifdef _WIN32
         bool use_shader_subgroups = false;
         bool use_precompiled_shaders = false;
-        #else
+#else
         bool use_shader_subgroups = true;
         bool use_precompiled_shaders = true;
-        #endif
+#endif
         Eigen::Vector2i tile_size = Eigen::Vector2i(16, 16);
         int projection_group_size = 64;
         int prefix_sum_group_size = 256;
@@ -83,13 +69,6 @@ public:
         /// Can also be set per-scene via
         /// MaterialRecord::gaussian_splat_antialias.
         bool antialias = false;
-    };
-
-    struct PassDispatch {
-        PassType type = PassType::kProjection;
-        Eigen::Vector3i group_size = Eigen::Vector3i::Ones();
-        Eigen::Vector3i group_count = Eigen::Vector3i::Zero();
-        Eigen::Vector2i tile_count = Eigen::Vector2i::Zero();
     };
 
     struct ViewRenderData {
@@ -125,10 +104,16 @@ public:
         std::uintptr_t scene_depth_mtl_texture = 0;
         std::uintptr_t gs_color_mtl_texture = 0;
         ViewRenderData render_data;
-        std::vector<PassDispatch> pass_dispatches;
+        /// Color-only render target wrapping `color`, used for readPixels in
+        /// the offscreen (FilamentRenderToBuffer) path.
+        RenderTargetHandle gs_readback_rt;
         bool has_render_data = false;
         bool has_valid_output = false;
         bool needs_render = true;
+        /// True when at least one non-Gaussian (mesh) geometry is visible and
+        /// the scene-depth texture must be allocated.  Changing this flag
+        /// forces a target re-setup on the next frame.
+        bool needs_scene_depth = true;
         std::uint64_t last_scene_change_id = 0;
         std::uint64_t last_updated_frame = 0;
     };
@@ -145,12 +130,10 @@ public:
                 const FilamentView& view,
                 const FilamentScene& scene,
                 const ViewRenderData& render_data,
-                const std::vector<PassDispatch>& dispatches,
                 OutputTargets& targets) = 0;
         virtual bool RenderCompositeStage(
                 const FilamentView& view,
                 const ViewRenderData& render_data,
-                const std::vector<PassDispatch>& dispatches,
                 OutputTargets& targets) = 0;
 
         /// Create platform-specific output textures (zero-copy path).
@@ -159,25 +142,48 @@ public:
         /// the view's render target / MSAA / post-processing settings.
         /// Returns true if zero-copy setup succeeded; false falls through to
         /// the Filament-owned texture fallback in PrepareOutputTargets.
-        virtual bool PrepareOutputTextures(FilamentView& view,
-                                           FilamentResourceManager& resource_mgr,
-                                           std::uint32_t width,
-                                           std::uint32_t height,
-                                           OutputTargets& targets) = 0;
+        /// @param needs_scene_depth  When false, skip allocating/importing
+        ///                           the scene-depth texture (no mesh
+        ///                           occluders).
+        virtual bool PrepareOutputTextures(
+                FilamentView& view,
+                FilamentResourceManager& resource_mgr,
+                std::uint32_t width,
+                std::uint32_t height,
+                bool needs_scene_depth,
+                OutputTargets& targets) = 0;
 
         /// Destroy platform-specific textures created by PrepareOutputTextures.
         /// Called from ResetOutputTargets before Filament wrappers are freed.
-        virtual void ReleaseOutputTextures(FilamentResourceManager& resource_mgr,
-                                           OutputTargets& targets) = 0;
+        virtual void ReleaseOutputTextures(
+                FilamentResourceManager& resource_mgr,
+                OutputTargets& targets) = 0;
+
+        /// OpenGL only: read the merged GS+Filament depth (R16UI, normalised
+        /// uint16 in [0,65535]) into \p out for offscreen RenderToDepthImage.
+        /// Default: unsupported (returns false).
+        virtual bool ReadMergedDepthToUint16Cpu(
+                const FilamentView& view,
+                std::vector<std::uint16_t>& out,
+                std::uint32_t width,
+                std::uint32_t height) {
+            (void)view;
+            (void)out;
+            (void)width;
+            (void)height;
+            return false;
+        }
     };
 
     GaussianSplatRenderer(filament::Engine& engine,
-                            FilamentResourceManager& resource_mgr);
+                          FilamentResourceManager& resource_mgr);
     ~GaussianSplatRenderer();
 
     void BeginFrame();
+
     void RenderGeometryStage(FilamentView& view, const FilamentScene& scene);
-    void RenderCompositeStage(FilamentView& view);
+    /// Returns true if the composite pass ran and the backend reported success.
+    bool RenderCompositeStage(FilamentView& view);
     void PruneOutputs(
             const std::unordered_set<const FilamentView*>& live_views);
 
@@ -188,6 +194,13 @@ public:
     /// use-after-free crash in Filament's handle validation.
     void InvalidateOutputForView(FilamentView& view);
 
+    /// Marks the view so the next geometry + composite passes run even if the
+    /// scene and camera are unchanged. Used by offscreen \c FilamentRenderToBuffer
+    /// captures: without this, \c needs_render stays false after the first
+    /// composite and subsequent \c RenderToImage calls would skip the GS pipeline
+    /// and read only the Filament swapchain (no splats).
+    void RequestRedrawForView(const FilamentView& view);
+
     bool IsEnabled() const;
     void SetEnabled(bool enabled);
     bool IsSupported() const;
@@ -195,42 +208,42 @@ public:
     bool HasOutput(const FilamentView& view) const;
     TextureHandle GetColorTexture(const FilamentView& view) const;
     TextureHandle GetDepthTexture(const FilamentView& view) const;
+    /// Returns a color-only render target suitable for readPixels readback.
+    /// Only valid after RenderCompositeStage has been called for this view.
+    RenderTargetHandle GetColorReadbackRT(const FilamentView& view) const;
+
+    /// OpenGL: read the GPU-merged GS+Filament depth (R16UI, [0,65535]) into
+    /// \p out for offscreen RenderToDepthImage. Returns false on non-GL or
+    /// when no merged depth texture exists for this view.
+    bool ReadMergedDepthToUint16Cpu(const FilamentView& view,
+                                    std::vector<std::uint16_t>& out,
+                                    std::uint32_t width,
+                                    std::uint32_t height);
     /// Returns the GL texture handle for the scene depth texture
     /// that Filament should render into (shared via import).
     std::uint32_t GetSceneDepthGLHandle(const FilamentView& view) const;
     const ViewRenderData* GetViewRenderData(const FilamentView& view) const;
-    const std::vector<PassDispatch>* GetPassDispatches(
-            const FilamentView& view) const;
-    const std::vector<PassDefinition>& GetPassDefinitions() const;
-    std::string GetShaderSourcePath(PassType pass_type) const;
-    bool HasShaderSource(PassType pass_type) const;
     const RenderConfig& GetRenderConfig() const;
     void SetRenderConfig(const RenderConfig& config);
-    std::vector<PassDispatch> BuildPassDispatches(
-            const FilamentView& view) const;
     const char* GetBackendName() const;
 
 private:
     using ViewKey = const FilamentView*;
 
-    OutputTargets& PrepareOutputTargets(FilamentView& view);
+    OutputTargets& PrepareOutputTargets(FilamentView& view,
+                                        bool needs_scene_depth);
     void ResetOutputTargets(OutputTargets& targets);
     ViewRenderData ExtractViewRenderData(const FilamentView& view) const;
     bool UpdateViewRenderData(OutputTargets& targets, const FilamentView& view);
-    bool UpdatePassDispatches(OutputTargets& targets, const FilamentView& view);
-    const PassDefinition* FindPassDefinition(PassType pass_type) const;
-    void ValidatePassShaderSources() const;
     bool ValidateRenderConfig(const RenderConfig& config) const;
 
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
     std::unordered_map<ViewKey, OutputTargets> outputs_;
-    std::vector<PassDefinition> pass_definitions_;
     RenderConfig render_config_;
     std::unique_ptr<Backend> backend_;
     bool enabled_ = false;
     std::uint64_t frame_index_ = 0;
-    mutable bool pass_sources_validated_ = false;
 };
 
 }  // namespace rendering

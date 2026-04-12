@@ -741,6 +741,13 @@ public:
     /// Check if this point cloud has all the attributes required for a Gaussian
     /// Splat. This checks for the presence of scale, rot, opacity and f_dc
     /// attributes.
+    ///
+    /// \note For 3D Gaussian splats, the \c "scale" point attribute is stored in
+    /// \b linear space (axis lengths), consistent with rendering. PLY files from
+    /// typical 3DGS tools store scales in log-space; \c t::io::ReadPointCloudFromPLY
+    /// converts them to linear on load. SPLAT files store linear scales and are
+    /// copied as-is. When writing PLY, scales are converted back to log-space for
+    /// compatibility with common PLY conventions.
     /// \returns True if a valid 3DGS point cloud, else False.
     /// \throws If point cloud has 3DGS attributes, but they are invalid (wrong
     /// shape).

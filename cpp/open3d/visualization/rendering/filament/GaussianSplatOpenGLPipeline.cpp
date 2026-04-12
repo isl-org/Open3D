@@ -511,10 +511,9 @@ void DispatchCompute(std::uint32_t num_groups_x,
 void DispatchComputeIndirect(const GLBufferHandle& buffer,
                              std::size_t byte_offset) {
     if (!buffer.valid) return;
-    // GL_DISPATCH_INDIRECT_BUFFER = 0x90EE
-    glBindBuffer(0x90EE, buffer.id);
+    glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, buffer.id);
     glDispatchComputeIndirect(static_cast<GLintptr>(byte_offset));
-    glBindBuffer(0x90EE, 0);
+    glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, 0);
 }
 
 void BindUBORange(std::uint32_t binding,

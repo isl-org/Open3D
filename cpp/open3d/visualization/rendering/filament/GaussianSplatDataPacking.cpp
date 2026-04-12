@@ -14,6 +14,8 @@
 #include <cmath>
 #include <cstring>
 
+#include "open3d/visualization/rendering/filament/GaussianSplatUtils.h"
+
 namespace open3d {
 namespace visualization {
 namespace rendering {
@@ -26,16 +28,14 @@ void PackMat4(float* dst, const Eigen::Matrix4f& m) {
     std::memcpy(dst, m.data(), 16 * sizeof(float));
 }
 
-int CeilDiv(int value, int divisor) { return (value + divisor - 1) / divisor; }
-
 int GetGaussianSplatRestCoeffCount(int sh_degree) {
     // Degree-0 (DC) lives in dc_opacity. sh_rest stores only degrees
     // 1..sh_degree, i.e. ((degree + 1)^2 - 1) basis functions per channel.
     return (((sh_degree + 1) * (sh_degree + 1)) - 1) * 3;
 }
 
-// Convert one float32 to float16 bit pattern.  Typical 3DGS inputs (log-scales,
-// SH coefficients, DC/opacity) are well within the fp16 dynamic range.
+// Convert one float32 to float16 bit pattern.  Typical 3DGS inputs (linear
+// scales, SH coefficients, DC/opacity) are well within the fp16 dynamic range.
 // Denormals are flushed to zero for simplicity.
 static std::uint16_t F32ToF16(float f) {
     std::uint32_t b;
@@ -105,13 +105,13 @@ PackedGaussianScene PackGaussianViewParams(
     const int tcx = CeilDiv(w, tx);
     const int tcy = CeilDiv(h, ty);
 
-        // ---- Fill view-params UBO (288 bytes uploaded to GPU every frame) ----
+    // ---- Fill view-params UBO (288 bytes uploaded to GPU every frame) ----
     auto& vp = packed.view_params;
     std::memset(&vp, 0, sizeof(vp));
 
-        const std::uint64_t entry_budget =
+    const std::uint64_t entry_budget =
             static_cast<std::uint64_t>(n) * config.max_tiles_per_splat;
-        const std::uint32_t entry_capacity = static_cast<std::uint32_t>(std::min(
+    const std::uint32_t entry_capacity = static_cast<std::uint32_t>(std::min(
             entry_budget,
             static_cast<std::uint64_t>(config.max_tile_entries_total)));
 
@@ -140,12 +140,11 @@ PackedGaussianScene PackGaussianViewParams(
 
     const int effective_sh_degree =
             std::min(attrs.sh_degree, config.max_sh_degree);
-        vp.scene[0] = n;
-        vp.scene[1] = static_cast<std::uint32_t>(effective_sh_degree);
+    vp.scene[0] = n;
+    vp.scene[1] = static_cast<std::uint32_t>(effective_sh_degree);
     // Antialias: enabled if requested by the material (per-scene) or the
     // renderer-level RenderConfig override.
-    vp.scene[2] =
-            (attrs.antialias || config.antialias) ? 1u : 0u;
+    vp.scene[2] = (attrs.antialias || config.antialias) ? 1u : 0u;
     vp.scene[3] = render_data.screen_y_down ? 1u : 0u;
 
     vp.tiles[0] = static_cast<std::uint32_t>(tx);
@@ -156,9 +155,10 @@ PackedGaussianScene PackGaussianViewParams(
     vp.limits[0] = entry_capacity;
     vp.limits[1] = config.max_tiles_per_splat;
     vp.limits[2] = config.max_tile_entries_total;
-    // T = bits needed to hold the largest tile index = floor(log2(max_index))+1.
-    // For a single tile (tcx*tcy == 1) max_tile_index == 0, so T defaults to 1
-    // (no zero-shift UB). Clamped to [1,31] so the depth field gets >= 1 bit.
+    // T = bits needed to hold the largest tile index =
+    // floor(log2(max_index))+1. For a single tile (tcx*tcy == 1) max_tile_index
+    // == 0, so T defaults to 1 (no zero-shift UB). Clamped to [1,31] so the
+    // depth field gets >= 1 bit.
     const std::uint32_t max_tile_index =
             static_cast<std::uint32_t>(tcx * tcy) - 1u;
     std::uint32_t tile_key_bits = 0u;
@@ -179,20 +179,19 @@ PackedGaussianScene PackGaussianViewParams(
     return packed;
 }
 
-void PackGaussianSplatAttrsDirect(
-        const float* pts_ptr,
-        std::size_t n,
-        const float* scale_ptr,
-        const float* rot_ptr,
-        const float* f_dc_ptr,
-        const float* opacity_ptr,
-        const float* f_rest_ptr,
-        int source_sh_degree,
-        int desired_sh_degree,
-        float min_opacity_logit,
-        float min_alpha,
-        bool antialias,
-        GaussianSplatPackedAttrs& out) {
+void PackGaussianSplatAttrsDirect(const float* pts_ptr,
+                                  std::size_t n,
+                                  const float* scale_ptr,
+                                  const float* rot_ptr,
+                                  const float* f_dc_ptr,
+                                  const float* opacity_ptr,
+                                  const float* f_rest_ptr,
+                                  int source_sh_degree,
+                                  int desired_sh_degree,
+                                  float min_opacity_logit,
+                                  float min_alpha,
+                                  bool antialias,
+                                  GaussianSplatPackedAttrs& out) {
     out = GaussianSplatPackedAttrs{};
     out.sh_degree = desired_sh_degree;
     out.min_alpha = min_alpha;
@@ -213,11 +212,12 @@ void PackGaussianSplatAttrsDirect(
 
     // Reserve upper bound; actual count may be lower after opacity filtering.
     out.positions.reserve(n);
-    out.log_scales.reserve(2 * n);
+    out.scales.reserve(2 * n);
     out.rotations.reserve(n);
     out.dc_opacity.reserve(2 * n);
     if (sh_u32_per_splat > 0) {
-        out.sh_coefficients.reserve(static_cast<std::size_t>(sh_u32_per_splat) * n);
+        out.sh_coefficients.reserve(static_cast<std::size_t>(sh_u32_per_splat) *
+                                    n);
     }
 
     for (std::size_t i = 0; i < n; ++i) {
@@ -226,27 +226,26 @@ void PackGaussianSplatAttrsDirect(
         if (opacity < min_opacity_logit) continue;
 
         // Position: fp32 vec4 (w=0 padding for std430 alignment).
-        out.positions.push_back(
-                {pts_ptr[i * 3 + 0], pts_ptr[i * 3 + 1], pts_ptr[i * 3 + 2],
-                 0.f});
+        out.positions.push_back({pts_ptr[i * 3 + 0], pts_ptr[i * 3 + 1],
+                                 pts_ptr[i * 3 + 2], 0.f});
 
-        // Log-scales: two fp16 pairs packed into uvec2 (8 B/splat).
+        // Linear scales: two fp16 pairs packed into uvec2 (8 B/splat).
+        // scale_ptr holds linear values (exp already applied by the caller).
         if (scale_ptr) {
-            out.log_scales.push_back(
+            out.scales.push_back(
                     PackHalf2(scale_ptr[i * 3 + 0], scale_ptr[i * 3 + 1]));
-            out.log_scales.push_back(
-                    PackHalf2(scale_ptr[i * 3 + 2], 0.0f));
+            out.scales.push_back(PackHalf2(scale_ptr[i * 3 + 2], 0.0f));
         } else {
-            out.log_scales.push_back(PackHalf2(0.f, 0.f));
-            out.log_scales.push_back(PackHalf2(0.f, 0.f));
+            out.scales.push_back(PackHalf2(0.f, 0.f));
+            out.scales.push_back(PackHalf2(0.f, 0.f));
         }
 
-        // Rotation quaternion: snorm8-biased ×4 packed into one u32 (4 B/splat).
+        // Rotation quaternion: snorm8-biased ×4 packed into one u32 (4
+        // B/splat).
         if (rot_ptr) {
-            out.rotations.push_back(PackSnorm8x4(rot_ptr[i * 4 + 0],
-                                                 rot_ptr[i * 4 + 1],
-                                                 rot_ptr[i * 4 + 2],
-                                                 rot_ptr[i * 4 + 3]));
+            out.rotations.push_back(
+                    PackSnorm8x4(rot_ptr[i * 4 + 0], rot_ptr[i * 4 + 1],
+                                 rot_ptr[i * 4 + 2], rot_ptr[i * 4 + 3]));
         } else {
             // Identity quaternion (w=1, x=y=z=0).
             out.rotations.push_back(PackSnorm8x4(1.f, 0.f, 0.f, 0.f));
@@ -286,8 +285,12 @@ void PackGaussianSplatAttrsDirect(
         }
     }
 
-    out.splat_count =
-            static_cast<std::uint32_t>(out.positions.size());
+    out.splat_count = static_cast<std::uint32_t>(out.positions.size());
+    // Populate a default all-visible mask so the buffer is always present.
+    // RebuildMergedGaussianData() overwrites this with per-object visibility.
+    // Bit-packed: all-ones = all splats visible. ceil(n/32) words.
+    const std::uint32_t n_mask_words = (out.splat_count + 31u) / 32u;
+    out.visibility_mask.assign(n_mask_words, ~0u);
 }
 
 }  // namespace rendering

@@ -61,8 +61,8 @@ bool HasGaussianSplatProperties(p_ply ply_file) {
         element = ply_get_next_element(ply_file, element);
     }
 
-    const std::vector<std::string> required_properties = {
-            "x", "y", "z", "opacity"};
+    const std::vector<std::string> required_properties = {"x", "y", "z",
+                                                          "opacity"};
     const bool has_required_properties =
             std::all_of(required_properties.begin(), required_properties.end(),
                         [&vertex_property_names](const std::string &name) {

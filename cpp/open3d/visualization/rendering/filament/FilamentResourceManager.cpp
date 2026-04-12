@@ -556,7 +556,8 @@ TextureHandle FilamentResourceManager::CreateColorAttachmentTexture(
                            .levels(1)
                            .format(Texture::InternalFormat::RGBA16F)
                            .usage(Texture::Usage::COLOR_ATTACHMENT |
-                                  Texture::Usage::SAMPLEABLE)
+                                  Texture::Usage::SAMPLEABLE |
+                                  Texture::Usage::BLIT_SRC)
                            .build(engine_);
     TextureHandle handle;
     handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
@@ -613,6 +614,27 @@ RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
                                color_tex.get())
                       .texture(RenderTarget::AttachmentPoint::DEPTH,
                                depth_tex.get())
+                      .build(engine_);
+    handle = RegisterResource<RenderTargetHandle>(engine_, rt, render_targets_);
+    return handle;
+}
+
+RenderTargetHandle FilamentResourceManager::CreateColorOnlyRenderTarget(
+        TextureHandle color) {
+    using namespace filament;
+
+    RenderTargetHandle handle;
+    auto color_tex_weak = GetTexture(color);
+    auto color_tex = color_tex_weak.lock();
+    if (!color_tex) {
+        utility::LogWarning(
+                "CreateColorOnlyRenderTarget: invalid color texture.");
+        return handle;
+    }
+
+    auto rt = RenderTarget::Builder()
+                      .texture(RenderTarget::AttachmentPoint::COLOR,
+                               color_tex.get())
                       .build(engine_);
     handle = RegisterResource<RenderTargetHandle>(engine_, rt, render_targets_);
     return handle;

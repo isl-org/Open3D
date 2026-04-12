@@ -26,407 +26,402 @@ layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 // 48-byte projected splat descriptor (std430):
 //   vec4(16) + 4×uint(16) + vec4(16) = 48 bytes.
 struct ProjectedGaussian {
-	vec4 center_depth_alpha;   // xy=pixel center, z=linear depth, w=alpha
-	uint packed_color;         // RGBA8 packed color
-	uint tile_count_overlap;   // tile overlap count; 0 = culled/invalid
-	uint tile_rect_min;        // packed: (tile_min.y << 16) | tile_min.x
-	uint tile_rect_max;        // packed: (tile_max.y << 16) | tile_max.x
-	vec4 inv_basis;            // 2×2 inverse basis matrix for Gaussian eval
+    vec4 center_depth_alpha;  // xy=pixel center, z=linear depth, w=alpha
+    uint packed_color;        // RGBA8 packed color
+    uint tile_count_overlap;  // tile overlap count; 0 = culled/invalid
+    uint tile_rect_min;       // packed: (tile_min.y << 16) | tile_min.x
+    uint tile_rect_max;       // packed: (tile_max.y << 16) | tile_max.x
+    vec4 inv_basis;           // 2×2 inverse basis matrix for Gaussian eval
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
-	mat4 world_from_model;
-	mat4 view_from_world;
-	mat4 clip_from_view;
-	vec4 camera_position_and_near;
-	vec4 viewport_origin_and_size;
-	uvec4 scene;
-	uvec4 tiles;
-	uvec4 limits;
-	vec4 depth_range_and_flags;
-} view_params;
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+}
+view_params;
 
 layout(std430, binding = 1) readonly buffer GaussianPositions {
-	vec4 positions[];
+    vec4 positions[];
 };
 
 // fp16×4 packed as uvec2: .x = packHalf2x16(sx, sy), .y = packHalf2x16(sz, 0)
-layout(std430, binding = 2) readonly buffer GaussianLogScales {
-	uvec2 log_scales[];
-};
+// Values are linear scales (not log); clamped to [1e-9, 5e8] in the shader.
+layout(std430, binding = 2) readonly buffer GaussianScales { uvec2 scales[]; };
 
 // snorm8-biased×4 in one uint: bytes 0-3 = (w, x, y, z) of quaternion;
 // stored byte = int8(round(q * 127)) + 128.  GPU decode: (byte - 128) / 127.
 layout(std430, binding = 3) readonly buffer GaussianRotations {
-	uint rotations[];
+    uint rotations[];
 };
 
-// fp16×4 packed as uvec2: .x = packHalf2x16(r, g), .y = packHalf2x16(b, opacity)
+// fp16×4 packed as uvec2: .x = packHalf2x16(r, g), .y = packHalf2x16(b,
+// opacity)
 layout(std430, binding = 4) readonly buffer GaussianDcOpacity {
-	uvec2 dc_opacity[];
+    uvec2 dc_opacity[];
 };
 
-// fp16 uvec2 per entry; stride = GetShDegree() * 3 uvec2 per splat (0, 3, or 6).
-// Each uvec2 = 4 fp16 values, replacing the former fp32 vec4 one-to-one.
+// fp16 uvec2 per entry; stride = GetShDegree() * 3 uvec2 per splat (0, 3, or
+// 6). Each uvec2 = 4 fp16 values, replacing the former fp32 vec4 one-to-one.
 layout(std430, binding = 5) readonly buffer GaussianShCoefficients {
-	uvec2 sh_coeffs[];
+    uvec2 sh_coeffs[];
 };
 
 layout(std430, binding = 6) writeonly buffer ProjectedGaussians {
-	ProjectedGaussian projected[];
+    ProjectedGaussian projected[];
+};
+
+// Bit-packed per-splat visibility mask written by the CPU (via ShowGeometry).
+// bit k of word (k/32): 1 = render splat k, 0 = cull (write dead projection
+// so downstream passes skip). Size = ceil(splat_count / 32) uint words.
+layout(std430, binding = 15) readonly buffer VisibilityMask {
+    uint visibility_mask[];
 };
 
 const float kMinDeterminant = 1e-8;
 const float kMinEigenValue = 1e-6;
 const float kMinAlpha = 1.0 / 65535.0;
 
-uint GetSplatCount() {
-	return view_params.scene.x;
-}
+uint GetSplatCount() { return view_params.scene.x; }
 
 uint GetShDegree() {
-	// view_params.scene.y already stores min(config.max_sh_degree,
-	// actual_degree) on the CPU; clamp again to the shader-supported maximum.
-	return min(view_params.scene.y, 2u);
+    // view_params.scene.y already stores min(config.max_sh_degree,
+    // actual_degree) on the CPU; clamp again to the shader-supported maximum.
+    return min(view_params.scene.y, 2u);
 }
 
 // Returns true when density-compensation anti-aliasing is enabled.
-bool GetAntialias() {
-	return view_params.scene.z != 0u;
-}
+bool GetAntialias() { return view_params.scene.z != 0u; }
 
 // Returns true when screen/image coordinates use Y=0 at the top.
-bool GetScreenYDown() {
-	return view_params.scene.w != 0u;
-}
+bool GetScreenYDown() { return view_params.scene.w != 0u; }
 
-uvec2 GetTileSize() {
-	return max(view_params.tiles.xy, uvec2(1u));
-}
+uvec2 GetTileSize() { return max(view_params.tiles.xy, uvec2(1u)); }
 
-uvec2 GetTileCount() {
-	return max(view_params.tiles.zw, uvec2(1u));
-}
+uvec2 GetTileCount() { return max(view_params.tiles.zw, uvec2(1u)); }
 
 vec2 GetViewportSize() {
-	return max(view_params.viewport_origin_and_size.zw, vec2(1.0));
+    return max(view_params.viewport_origin_and_size.zw, vec2(1.0));
 }
 
-float Sigmoid(float x) {
-	return 1.0 / (1.0 + exp(-x));
-}
+float Sigmoid(float x) { return 1.0 / (1.0 + exp(-x)); }
 
 uint PackColorRGBA8(vec3 color) {
-	uvec3 c = uvec3(clamp(color * 255.0 + 0.5, vec3(0.0), vec3(255.0)));
-	return c.r | (c.g << 8u) | (c.b << 16u) | (255u << 24u);
+    uvec3 c = uvec3(clamp(color * 255.0 + 0.5, vec3(0.0), vec3(255.0)));
+    return c.r | (c.g << 8u) | (c.b << 16u) | (255u << 24u);
 }
 
-uint PackTileCoord(uvec2 tile) {
-	return (tile.y << 16u) | tile.x;
-}
+uint PackTileCoord(uvec2 tile) { return (tile.y << 16u) | tile.x; }
 
 mat3 QuaternionToRotation(vec4 quat) {
-	vec4 q = normalize(quat);
-	float w = q.x;
-	float x = q.y;
-	float y = q.z;
-	float z = q.w;
+    vec4 q = normalize(quat);
+    float w = q.x;
+    float x = q.y;
+    float y = q.z;
+    float z = q.w;
 
-	float xx = x * x;
-	float yy = y * y;
-	float zz = z * z;
-	float xy = x * y;
-	float xz = x * z;
-	float yz = y * z;
-	float wx = w * x;
-	float wy = w * y;
-	float wz = w * z;
+    float xx = x * x;
+    float yy = y * y;
+    float zz = z * z;
+    float xy = x * y;
+    float xz = x * z;
+    float yz = y * z;
+    float wx = w * x;
+    float wy = w * y;
+    float wz = w * z;
 
-	return mat3(
-		1.0 - 2.0 * (yy + zz), 2.0 * (xy + wz), 2.0 * (xz - wy),
-		2.0 * (xy - wz), 1.0 - 2.0 * (xx + zz), 2.0 * (yz + wx),
-		2.0 * (xz + wy), 2.0 * (yz - wx), 1.0 - 2.0 * (xx + yy));
+    return mat3(1.0 - 2.0 * (yy + zz), 2.0 * (xy + wz), 2.0 * (xz - wy),
+                2.0 * (xy - wz), 1.0 - 2.0 * (xx + zz), 2.0 * (yz + wx),
+                2.0 * (xz + wy), 2.0 * (yz - wx), 1.0 - 2.0 * (xx + yy));
 }
 
 // Dequantize one snorm8-biased byte: 128 maps to 0.0, 255 maps to ~+1.0.
-float DecodeSnorm8(uint b) {
-	return (float(b) - 128.0) / 127.0;
-}
+float DecodeSnorm8(uint b) { return (float(b) - 128.0) / 127.0; }
 
-// Decode fp16 uvec2 pair to vec3 (log_scales buffer).
-vec3 LoadLogScale(uint i) {
-	uvec2 p = log_scales[i];
-	vec2 xy = unpackHalf2x16(p.x);
-	vec2 zw = unpackHalf2x16(p.y);
-	return vec3(xy.x, xy.y, zw.x);
+// Decode fp16 uvec2 pair to vec3 (linear scales buffer).
+vec3 LoadLinearScale(uint i) {
+    uvec2 p = scales[i];
+    vec2 xy = unpackHalf2x16(p.x);
+    vec2 zw = unpackHalf2x16(p.y);
+    return vec3(xy.x, xy.y, zw.x);
 }
 
 // Dequantize snorm8-biased uint to unit quaternion (w, x, y, z).
 // normalize() compensates for the ~0.8° quantization error inherent in int8.
 vec4 LoadRotation(uint i) {
-	uint p = rotations[i];
-	return normalize(vec4(
-		DecodeSnorm8( p        & 0xFFu),
-		DecodeSnorm8((p >>  8u) & 0xFFu),
-		DecodeSnorm8((p >> 16u) & 0xFFu),
-		DecodeSnorm8((p >> 24u) & 0xFFu)));
+    uint p = rotations[i];
+    return normalize(vec4(DecodeSnorm8(p & 0xFFu),
+                          DecodeSnorm8((p >> 8u) & 0xFFu),
+                          DecodeSnorm8((p >> 16u) & 0xFFu),
+                          DecodeSnorm8((p >> 24u) & 0xFFu)));
 }
 
 // Decode fp16 uvec2 pair to vec4 (dc_opacity buffer).
 vec4 LoadDcOpacity(uint i) {
-	uvec2 p = dc_opacity[i];
-	vec2 rg = unpackHalf2x16(p.x);
-	vec2 bo = unpackHalf2x16(p.y);
-	return vec4(rg.x, rg.y, bo.x, bo.y);
+    uvec2 p = dc_opacity[i];
+    vec2 rg = unpackHalf2x16(p.x);
+    vec2 bo = unpackHalf2x16(p.y);
+    return vec4(rg.x, rg.y, bo.x, bo.y);
 }
 
 // Load one logical vec4 worth of SH coefficients as fp16.
 // Stride = GetShDegree() * 3 uvec2/splat; each uvec2 encodes 4 fp16 values,
 // keeping the same local_vec4_index interface as before.
 vec4 LoadShVec4(uint splat_index, uint local_vec4_index) {
-	uint stride = GetShDegree() * 3u;
-	uvec2 p = sh_coeffs[splat_index * stride + local_vec4_index];
-	vec2 lo = unpackHalf2x16(p.x);
-	vec2 hi = unpackHalf2x16(p.y);
-	return vec4(lo.x, lo.y, hi.x, hi.y);
+    uint stride = GetShDegree() * 3u;
+    uvec2 p = sh_coeffs[splat_index * stride + local_vec4_index];
+    vec2 lo = unpackHalf2x16(p.x);
+    vec2 hi = unpackHalf2x16(p.y);
+    return vec4(lo.x, lo.y, hi.x, hi.y);
 }
 
 vec3 EvaluateShDegree1(vec3 dir, uint splat_index) {
-	vec4 buffer1 = LoadShVec4(splat_index, 0u);
-	vec4 buffer2 = LoadShVec4(splat_index, 1u);
-	vec4 buffer3 = LoadShVec4(splat_index, 2u);
+    vec4 buffer1 = LoadShVec4(splat_index, 0u);
+    vec4 buffer2 = LoadShVec4(splat_index, 1u);
+    vec4 buffer3 = LoadShVec4(splat_index, 2u);
 
-	float coeffs[9] = float[9](
-		buffer1.x, buffer1.y, buffer1.z, buffer1.w,
-		buffer2.x, buffer2.y, buffer2.z, buffer2.w,
-		buffer3.x);
+    float coeffs[9] =
+            float[9](buffer1.x, buffer1.y, buffer1.z, buffer1.w, buffer2.x,
+                     buffer2.y, buffer2.z, buffer2.w, buffer3.x);
 
-	const float c1 = 0.4886025119;
-	return c1 * vec3(
-		coeffs[0] * dir.y + coeffs[1] * dir.z + coeffs[2] * dir.x,
-		coeffs[3] * dir.y + coeffs[4] * dir.z + coeffs[5] * dir.x,
-		coeffs[6] * dir.y + coeffs[7] * dir.z + coeffs[8] * dir.x);
+    const float c1 = 0.4886025119;
+    return c1 * vec3(coeffs[0] * dir.y + coeffs[1] * dir.z + coeffs[2] * dir.x,
+                     coeffs[3] * dir.y + coeffs[4] * dir.z + coeffs[5] * dir.x,
+                     coeffs[6] * dir.y + coeffs[7] * dir.z + coeffs[8] * dir.x);
 }
 
 vec3 EvaluateShDegree2(vec3 dir, uint splat_index) {
-	vec4 buffer3 = LoadShVec4(splat_index, 2u);
-	vec4 buffer4 = LoadShVec4(splat_index, 3u);
-	vec4 buffer5 = LoadShVec4(splat_index, 4u);
-	vec4 buffer6 = LoadShVec4(splat_index, 5u);
+    vec4 buffer3 = LoadShVec4(splat_index, 2u);
+    vec4 buffer4 = LoadShVec4(splat_index, 3u);
+    vec4 buffer5 = LoadShVec4(splat_index, 4u);
+    vec4 buffer6 = LoadShVec4(splat_index, 5u);
 
-	float coeffs[15] = float[15](
-		buffer3.y, buffer3.z, buffer3.w,
-		buffer4.x, buffer4.y, buffer4.z, buffer4.w,
-		buffer5.x, buffer5.y, buffer5.z, buffer5.w,
-		buffer6.x, buffer6.y, buffer6.z, buffer6.w);
+    float coeffs[15] =
+            float[15](buffer3.y, buffer3.z, buffer3.w, buffer4.x, buffer4.y,
+                      buffer4.z, buffer4.w, buffer5.x, buffer5.y, buffer5.z,
+                      buffer5.w, buffer6.x, buffer6.y, buffer6.z, buffer6.w);
 
-	float x = dir.x;
-	float y = dir.y;
-	float z = dir.z;
+    float x = dir.x;
+    float y = dir.y;
+    float z = dir.z;
 
-	const float c0 = 1.0925484306;
-	const float c1 = 1.0925484306;
-	const float c2 = 0.3153915653;
-	const float c3 = 1.0925484306;
-	const float c4 = 0.5462742153;
+    const float c0 = 1.0925484306;
+    const float c1 = 1.0925484306;
+    const float c2 = 0.3153915653;
+    const float c3 = 1.0925484306;
+    const float c4 = 0.5462742153;
 
-	vec3 basis0 = vec3(c0 * x * y, c1 * y * z, c2 * (3.0 * z * z - 1.0));
-	vec3 basis1 = vec3(c3 * x * z, c4 * (x * x - y * y), 0.0);
+    vec3 basis0 = vec3(c0 * x * y, c1 * y * z, c2 * (3.0 * z * z - 1.0));
+    vec3 basis1 = vec3(c3 * x * z, c4 * (x * x - y * y), 0.0);
 
-	vec3 color = vec3(0.0);
-	color.r = coeffs[0] * basis0.x + coeffs[1] * basis0.y +
-			  coeffs[2] * basis0.z + coeffs[3] * basis1.x +
-			  coeffs[4] * basis1.y;
-	color.g = coeffs[5] * basis0.x + coeffs[6] * basis0.y +
-			  coeffs[7] * basis0.z + coeffs[8] * basis1.x +
-			  coeffs[9] * basis1.y;
-	color.b = coeffs[10] * basis0.x + coeffs[11] * basis0.y +
-			  coeffs[12] * basis0.z + coeffs[13] * basis1.x +
-			  coeffs[14] * basis1.y;
-	return color;
+    vec3 color = vec3(0.0);
+    color.r = coeffs[0] * basis0.x + coeffs[1] * basis0.y +
+              coeffs[2] * basis0.z + coeffs[3] * basis1.x +
+              coeffs[4] * basis1.y;
+    color.g = coeffs[5] * basis0.x + coeffs[6] * basis0.y +
+              coeffs[7] * basis0.z + coeffs[8] * basis1.x +
+              coeffs[9] * basis1.y;
+    color.b = coeffs[10] * basis0.x + coeffs[11] * basis0.y +
+              coeffs[12] * basis0.z + coeffs[13] * basis1.x +
+              coeffs[14] * basis1.y;
+    return color;
 }
 
 vec3 EvaluateShColor(uint splat_index, vec3 view_dir) {
-	vec4 dc = LoadDcOpacity(splat_index);
-	const float sh0 = 0.2820947918;
-	vec3 color = vec3(0.5) + sh0 * dc.xyz;
+    vec4 dc = LoadDcOpacity(splat_index);
+    const float sh0 = 0.2820947918;
+    vec3 color = vec3(0.5) + sh0 * dc.xyz;
 
-	uint sh_degree = GetShDegree();
-	if (sh_degree >= 1u) {
-		color += EvaluateShDegree1(view_dir, splat_index);
-	}
-	if (sh_degree >= 2u) {
-		color += EvaluateShDegree2(view_dir, splat_index);
-	}
+    uint sh_degree = GetShDegree();
+    if (sh_degree >= 1u) {
+        color += EvaluateShDegree1(view_dir, splat_index);
+    }
+    if (sh_degree >= 2u) {
+        color += EvaluateShDegree2(view_dir, splat_index);
+    }
 
-	return max(color, vec3(0.0));
+    return max(color, vec3(0.0));
 }
 
 void WriteInvalidProjection(uint splat_index) {
-	projected[splat_index].center_depth_alpha = vec4(0.0);
-	projected[splat_index].packed_color = 0u;
-	projected[splat_index].tile_count_overlap = 0u;
-	projected[splat_index].tile_rect_min = 0u;
-	projected[splat_index].tile_rect_max = 0u;
-	projected[splat_index].inv_basis = vec4(0.0);
+    projected[splat_index].center_depth_alpha = vec4(0.0);
+    projected[splat_index].packed_color = 0u;
+    projected[splat_index].tile_count_overlap = 0u;
+    projected[splat_index].tile_rect_min = 0u;
+    projected[splat_index].tile_rect_max = 0u;
+    projected[splat_index].inv_basis = vec4(0.0);
 }
 
 void ProjectGaussian(uint splat_index) {
-	const float EPS2D = 0.3;  // Subpixel blur to regularise tiny splats (standard 3DGS anti-aliasing).
-	vec3 position = positions[splat_index].xyz;
-	vec4 world_position4 = view_params.world_from_model * vec4(position, 1.0);
-	vec3 world_position = world_position4.xyz / max(world_position4.w, 1e-8);
-	vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
-	vec4 clip_center = view_params.clip_from_view * view_center;
+    // Bit-packed visibility mask: extract bit (splat_index % 32) from word
+    // (splat_index / 32). 0 = hidden by ShowGeometry(); cull immediately so
+    // downstream passes (prefix-sum, scatter) skip this splat for free.
+    if (((visibility_mask[splat_index >> 5u] >> (splat_index & 31u)) & 1u) == 0u) {
+        WriteInvalidProjection(splat_index);
+        return;
+    }
 
-	// Opt8: Early reject — behind camera or negligible alpha.
-	vec4 dc = LoadDcOpacity(splat_index);
-	float alpha = Sigmoid(dc.w);
-	if (alpha <= kMinAlpha || clip_center.w <= 0.0) {
-		WriteInvalidProjection(splat_index);
-		return;
-	}
+    const float EPS2D = 0.3;  // Subpixel blur to regularise tiny splats
+                              // (standard 3DGS anti-aliasing).
+    vec3 position = positions[splat_index].xyz;
+    vec4 world_position4 = view_params.world_from_model * vec4(position, 1.0);
+    vec3 world_position = world_position4.xyz / max(world_position4.w, 1e-8);
+    vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
+    vec4 clip_center = view_params.clip_from_view * view_center;
 
-	vec3 log_scale = LoadLogScale(splat_index);
-	vec3 scale = exp(clamp(log_scale, vec3(-20.0), vec3(20.0)));
-	mat3 scale_matrix = mat3(
-		scale.x, 0.0, 0.0,
-		0.0, scale.y, 0.0,
-		0.0, 0.0, scale.z);
-	mat3 rotation = QuaternionToRotation(LoadRotation(splat_index));
-	mat3 covariance_model = rotation * scale_matrix * scale_matrix *
-							transpose(rotation);
-	mat3 view_from_model = mat3(view_params.view_from_world *
-								view_params.world_from_model);
-	mat3 covariance_view = view_from_model * covariance_model *
-						   transpose(view_from_model);
+    // Opt8: Early reject — behind camera or negligible alpha.
+    vec4 dc = LoadDcOpacity(splat_index);
+    float alpha = Sigmoid(dc.w);
+    if (alpha <= kMinAlpha || clip_center.w <= 0.0) {
+        WriteInvalidProjection(splat_index);
+        return;
+    }
 
-	vec3 clip_row0 = vec3(view_params.clip_from_view[0].x,
-						  view_params.clip_from_view[1].x,
-						  view_params.clip_from_view[2].x);
-	vec3 clip_row1 = vec3(view_params.clip_from_view[0].y,
-						  view_params.clip_from_view[1].y,
-						  view_params.clip_from_view[2].y);
-	vec3 clip_row3 = vec3(view_params.clip_from_view[0].w,
-						  view_params.clip_from_view[1].w,
-						  view_params.clip_from_view[2].w);
+    // Scale values are linear (exp already applied at load time).
+    // Clamp to [1e-9, 5e8] — equivalent bounds to the old exp([-20, 20]).
+    vec3 scale = clamp(LoadLinearScale(splat_index), vec3(1e-9), vec3(5e8));
+    mat3 scale_matrix =
+            mat3(scale.x, 0.0, 0.0, 0.0, scale.y, 0.0, 0.0, 0.0, scale.z);
+    mat3 rotation = QuaternionToRotation(LoadRotation(splat_index));
+    mat3 covariance_model =
+            rotation * scale_matrix * scale_matrix * transpose(rotation);
+    mat3 view_from_model =
+            mat3(view_params.view_from_world * view_params.world_from_model);
+    mat3 covariance_view =
+            view_from_model * covariance_model * transpose(view_from_model);
 
-	float inv_w_sq = 1.0 / (clip_center.w * clip_center.w);
-	vec2 resolution = GetViewportSize();
-	vec3 jacobian_x = 0.5 * resolution.x *
-					  (clip_row0 * clip_center.w - clip_row3 * clip_center.x) *
-					  inv_w_sq;
-	// Match the projected 2D covariance to the output image's Y convention.
-	// OpenGL images use Y increasing upward; Metal/output textures use Y=0 at
-	// the top. The sign must match the pixel coordinate system consumed later
-	// by the composite shader.
-	float y_sign = GetScreenYDown() ? -1.0 : 1.0;
-	vec3 jacobian_y = y_sign * 0.5 * resolution.y *
-					  (clip_row1 * clip_center.w - clip_row3 * clip_center.y) *
-					  inv_w_sq;
+    vec3 clip_row0 = vec3(view_params.clip_from_view[0].x,
+                          view_params.clip_from_view[1].x,
+                          view_params.clip_from_view[2].x);
+    vec3 clip_row1 = vec3(view_params.clip_from_view[0].y,
+                          view_params.clip_from_view[1].y,
+                          view_params.clip_from_view[2].y);
+    vec3 clip_row3 = vec3(view_params.clip_from_view[0].w,
+                          view_params.clip_from_view[1].w,
+                          view_params.clip_from_view[2].w);
 
-	vec3 cov_jx = covariance_view * jacobian_x;
-	vec3 cov_jy = covariance_view * jacobian_y;
-	// Pre-blur 2D covariance values (before the EPS2D subpixel regularisation).
-	float raw_xx = dot(jacobian_x, cov_jx);
-	float raw_xy = dot(jacobian_x, cov_jy);
-	float raw_yy = dot(jacobian_y, cov_jy);
-	// Add subpixel blur to regularise tiny splats (standard 3DGS anti-aliasing).
-	float cov_xx = raw_xx + EPS2D;
-	float cov_xy = raw_xy;
-	float cov_yy = raw_yy + EPS2D;
-	// Density compensation (gsplat PR #117): reduce opacity of splats whose
-	// apparent size is dominated by the blur kernel rather than their geometry.
-	//   compensation = sqrt(det(Sigma_orig) / det(Sigma_blurred))
-	// This prevents tiny splats from becoming artificially bright after blurring.
-	if (GetAntialias()) {
-		float det_orig = raw_xx * raw_yy - raw_xy * raw_xy;
-		float det_blur = cov_xx * cov_yy - cov_xy * cov_xy;
-		alpha *= sqrt(max(0.0, det_orig / det_blur));
-	}
+    float inv_w_sq = 1.0 / (clip_center.w * clip_center.w);
+    vec2 resolution = GetViewportSize();
+    vec3 jacobian_x = 0.5 * resolution.x *
+                      (clip_row0 * clip_center.w - clip_row3 * clip_center.x) *
+                      inv_w_sq;
+    // Match the projected 2D covariance to the output image's Y convention.
+    // OpenGL images use Y increasing upward; Metal/output textures use Y=0 at
+    // the top. The sign must match the pixel coordinate system consumed later
+    // by the composite shader.
+    float y_sign = GetScreenYDown() ? -1.0 : 1.0;
+    vec3 jacobian_y = y_sign * 0.5 * resolution.y *
+                      (clip_row1 * clip_center.w - clip_row3 * clip_center.y) *
+                      inv_w_sq;
 
-	float mid = 0.5 * (cov_xx + cov_yy);
-	float radius = length(vec2(0.5 * (cov_xx - cov_yy), cov_xy));
-	float lambda1 = max(mid + radius, kMinEigenValue);
-	float lambda2 = max(mid - radius, kMinEigenValue);
+    vec3 cov_jx = covariance_view * jacobian_x;
+    vec3 cov_jy = covariance_view * jacobian_y;
+    // Pre-blur 2D covariance values (before the EPS2D subpixel regularisation).
+    float raw_xx = dot(jacobian_x, cov_jx);
+    float raw_xy = dot(jacobian_x, cov_jy);
+    float raw_yy = dot(jacobian_y, cov_jy);
+    // Add subpixel blur to regularise tiny splats (standard 3DGS
+    // anti-aliasing).
+    float cov_xx = raw_xx + EPS2D;
+    float cov_xy = raw_xy;
+    float cov_yy = raw_yy + EPS2D;
+    // Density compensation (gsplat PR #117): reduce opacity of splats whose
+    // apparent size is dominated by the blur kernel rather than their geometry.
+    //   compensation = sqrt(det(Sigma_orig) / det(Sigma_blurred))
+    // This prevents tiny splats from becoming artificially bright after
+    // blurring.
+    if (GetAntialias()) {
+        float det_orig = raw_xx * raw_yy - raw_xy * raw_xy;
+        float det_blur = cov_xx * cov_yy - cov_xy * cov_xy;
+        alpha *= sqrt(max(0.0, det_orig / det_blur));
+    }
 
-	vec2 major_dir = radius > 1e-6 ? normalize(vec2(cov_xy, lambda1 - cov_xx))
-								   : vec2(1.0, 0.0);
-	vec2 minor_dir = vec2(major_dir.y, -major_dir.x);
-	vec2 major_axis = sqrt(2.0 * lambda1) * major_dir;
-	vec2 minor_axis = sqrt(2.0 * lambda2) * minor_dir;
+    float mid = 0.5 * (cov_xx + cov_yy);
+    float radius = length(vec2(0.5 * (cov_xx - cov_yy), cov_xy));
+    float lambda1 = max(mid + radius, kMinEigenValue);
+    float lambda2 = max(mid - radius, kMinEigenValue);
 
-	float bbox_half_x = 2.0 * length(vec2(major_axis.x, minor_axis.x));
-	float bbox_half_y = 2.0 * length(vec2(major_axis.y, minor_axis.y));
-	vec2 bbox_half_extent = max(vec2(bbox_half_x, bbox_half_y), vec2(0.5));
+    vec2 major_dir = radius > 1e-6 ? normalize(vec2(cov_xy, lambda1 - cov_xx))
+                                   : vec2(1.0, 0.0);
+    vec2 minor_dir = vec2(major_dir.y, -major_dir.x);
+    vec2 major_axis = sqrt(2.0 * lambda1) * major_dir;
+    vec2 minor_axis = sqrt(2.0 * lambda2) * minor_dir;
 
-	float basis_det = major_axis.x * minor_axis.y - minor_axis.x * major_axis.y;
-	if (abs(basis_det) < kMinDeterminant) {
-		WriteInvalidProjection(splat_index);
-		return;
-	}
+    float bbox_half_x = 2.0 * length(vec2(major_axis.x, minor_axis.x));
+    float bbox_half_y = 2.0 * length(vec2(major_axis.y, minor_axis.y));
+    vec2 bbox_half_extent = max(vec2(bbox_half_x, bbox_half_y), vec2(0.5));
 
-	vec2 center_ndc = clip_center.xy / clip_center.w;
-	// Convert NDC to pixel coordinates using the backend's image-space origin.
-	float center_y = center_ndc.y * 0.5 + 0.5;
-	if (GetScreenYDown()) {
-		center_y = 1.0 - center_y;
-	}
-	vec2 center_pixel = vec2((center_ndc.x * 0.5 + 0.5) * resolution.x,
-						  center_y * resolution.y);
-	vec2 min_pixel = floor(center_pixel - bbox_half_extent);
-	vec2 max_pixel = ceil(center_pixel + bbox_half_extent);
+    float basis_det = major_axis.x * minor_axis.y - minor_axis.x * major_axis.y;
+    if (abs(basis_det) < kMinDeterminant) {
+        WriteInvalidProjection(splat_index);
+        return;
+    }
 
-	if (max_pixel.x < 0.0 || max_pixel.y < 0.0 || min_pixel.x >= resolution.x ||
-		min_pixel.y >= resolution.y) {
-		WriteInvalidProjection(splat_index);
-		return;
-	}
+    vec2 center_ndc = clip_center.xy / clip_center.w;
+    // Convert NDC to pixel coordinates using the backend's image-space origin.
+    float center_y = center_ndc.y * 0.5 + 0.5;
+    if (GetScreenYDown()) {
+        center_y = 1.0 - center_y;
+    }
+    vec2 center_pixel = vec2((center_ndc.x * 0.5 + 0.5) * resolution.x,
+                             center_y * resolution.y);
+    vec2 min_pixel = floor(center_pixel - bbox_half_extent);
+    vec2 max_pixel = ceil(center_pixel + bbox_half_extent);
 
-	uvec2 tile_size = GetTileSize();
-	uvec2 tile_count = GetTileCount();
-	ivec2 clamped_min_pixel = ivec2(max(min_pixel, vec2(0.0)));
-	ivec2 clamped_max_pixel = ivec2(min(max_pixel, resolution - vec2(1.0)));
-	uvec2 tile_min = uvec2(clamped_min_pixel) / tile_size;
-	uvec2 tile_max = uvec2(clamped_max_pixel) / tile_size;
-	tile_min = min(tile_min, tile_count - uvec2(1u));
-	tile_max = min(tile_max, tile_count - uvec2(1u));
+    if (max_pixel.x < 0.0 || max_pixel.y < 0.0 || min_pixel.x >= resolution.x ||
+        min_pixel.y >= resolution.y) {
+        WriteInvalidProjection(splat_index);
+        return;
+    }
 
-	uint tile_width = tile_max.x - tile_min.x + 1u;
-	uint tile_height = tile_max.y - tile_min.y + 1u;
-	uint tile_overlap_count = tile_width * tile_height;
+    uvec2 tile_size = GetTileSize();
+    uvec2 tile_count = GetTileCount();
+    ivec2 clamped_min_pixel = ivec2(max(min_pixel, vec2(0.0)));
+    ivec2 clamped_max_pixel = ivec2(min(max_pixel, resolution - vec2(1.0)));
+    uvec2 tile_min = uvec2(clamped_min_pixel) / tile_size;
+    uvec2 tile_max = uvec2(clamped_max_pixel) / tile_size;
+    tile_min = min(tile_min, tile_count - uvec2(1u));
+    tile_max = min(tile_max, tile_count - uvec2(1u));
 
-	float inv_basis_det = 1.0 / basis_det;
-	vec4 inv_basis = vec4(
-		minor_axis.y * inv_basis_det,
-		-minor_axis.x * inv_basis_det,
-		-major_axis.y * inv_basis_det,
-		major_axis.x * inv_basis_det);
+    uint tile_width = tile_max.x - tile_min.x + 1u;
+    uint tile_height = tile_max.y - tile_min.y + 1u;
+    uint tile_overlap_count = tile_width * tile_height;
 
-	vec3 view_dir = world_position - view_params.camera_position_and_near.xyz;
-	float view_dir_length_sq = dot(view_dir, view_dir);
-	if (view_dir_length_sq > 0.0) {
-		view_dir *= inversesqrt(view_dir_length_sq);
-	} else {
-		view_dir = vec3(0.0, 0.0, 1.0);
-	}
+    float inv_basis_det = 1.0 / basis_det;
+    vec4 inv_basis =
+            vec4(minor_axis.y * inv_basis_det, -minor_axis.x * inv_basis_det,
+                 -major_axis.y * inv_basis_det, major_axis.x * inv_basis_det);
 
-	projected[splat_index].center_depth_alpha =
-		vec4(center_pixel, -view_center.z, alpha);
-	projected[splat_index].packed_color =
-		PackColorRGBA8(EvaluateShColor(splat_index, view_dir));
-	projected[splat_index].tile_count_overlap = tile_overlap_count;
-	projected[splat_index].tile_rect_min = PackTileCoord(tile_min);
-	projected[splat_index].tile_rect_max = PackTileCoord(tile_max);
-	projected[splat_index].inv_basis = inv_basis;
+    vec3 view_dir = world_position - view_params.camera_position_and_near.xyz;
+    float view_dir_length_sq = dot(view_dir, view_dir);
+    if (view_dir_length_sq > 0.0) {
+        view_dir *= inversesqrt(view_dir_length_sq);
+    } else {
+        view_dir = vec3(0.0, 0.0, 1.0);
+    }
+
+    projected[splat_index].center_depth_alpha =
+            vec4(center_pixel, -view_center.z, alpha);
+    projected[splat_index].packed_color =
+            PackColorRGBA8(EvaluateShColor(splat_index, view_dir));
+    projected[splat_index].tile_count_overlap = tile_overlap_count;
+    projected[splat_index].tile_rect_min = PackTileCoord(tile_min);
+    projected[splat_index].tile_rect_max = PackTileCoord(tile_max);
+    projected[splat_index].inv_basis = inv_basis;
 }
 
 void main() {
-	uint global_index = gl_GlobalInvocationID.x;
-	uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-	uint splat_count = GetSplatCount();
-	for (uint splat_index = global_index; splat_index < splat_count;
-		 splat_index += max(total_invocations, 1u)) {
-		ProjectGaussian(splat_index);
-	}
+    uint global_index = gl_GlobalInvocationID.x;
+    uint total_invocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+    uint splat_count = GetSplatCount();
+    for (uint splat_index = global_index; splat_index < splat_count;
+         splat_index += max(total_invocations, 1u)) {
+        ProjectGaussian(splat_index);
+    }
 }

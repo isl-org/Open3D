@@ -388,6 +388,10 @@ void Window::CreateRenderer() {
             Application::GetInstance().GetWindowSystem().CreateRenderer(
                     impl_->window_);
     impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
+    // Metal: GS composite runs after endFrame(); defer PostRedraw so the next
+    // frame samples the updated splat texture (see FilamentRenderer::EndFrame).
+    impl_->renderer_->SetOnAppleGaussianCompositeComplete(
+            [this]() { PostRedraw(); });
 
     impl_->imgui_.imgui_bridge =
             std::make_unique<ImguiFilamentBridge>(impl_->renderer_, GetSize());

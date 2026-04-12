@@ -49,15 +49,15 @@
 // OPAQUE (!!??) which causes syntax errors with filament/View.h which tries
 // to make OPAQUE an member of a class enum. So include this after all the
 // Filament headers to avoid this problem.
-#if 1  // (enclose in #if so that apply-style doesn't move this)
+// clang-format off
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
-#endif  // 1
+// clang-format on
 
+#include "open3d/core/EigenConverter.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/core/EigenConverter.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/Light.h"
@@ -324,6 +324,18 @@ bool FilamentScene::HasGaussianSplatGeometry() const {
     return false;
 }
 
+bool FilamentScene::HasNonGaussianVisibleGeometry() const {
+    for (const auto& pair : geometries_) {
+        const auto& g = pair.second;
+        if (!g.visible) continue;
+        if (g.mat.properties.shader != "gaussianSplat" &&
+            !g.filament_entity.isNull()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool FilamentScene::UsesGaussianSplatOutput(const FilamentView& view) const {
     auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
     if (!renderer || !renderer->HasGaussianSplatOutput(view)) {
@@ -364,10 +376,11 @@ void FilamentScene::InvalidateGaussianSplatOutput(FilamentView& view) {
 
 const GaussianSplatPackedAttrs* FilamentScene::GetGaussianSplatPackedAttrs()
         const {
-    return gaussian_splat_packed_attrs_.get();
+    return merged_gs_attrs_.get();
 }
 
-void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
+void FilamentScene::CacheGaussianSplatData(const std::string& name,
+                                           const t::geometry::PointCloud& cloud,
                                            const MaterialRecord& material) {
     const auto& points = cloud.GetPointPositions();
     const size_t n = points.GetLength();
@@ -438,21 +451,78 @@ void FilamentScene::CacheGaussianSplatData(const t::geometry::PointCloud& cloud,
     }
 
     // Pack directly into GPU-ready format in one pass (filter + compress).
-    // Eliminates the old intermediate raw-fp32 scene cache.
-    auto packed = std::make_unique<GaussianSplatPackedAttrs>();
-    PackGaussianSplatAttrsDirect(
-            pts_ptr, n, scale_ptr, rot_ptr, f_dc_ptr, opacity_ptr, f_rest_ptr,
-            cloud_sh, desired_sh, min_opacity_logit, min_alpha_sigmoid,
-            material.gaussian_splat_antialias, *packed);
-    gaussian_splat_packed_attrs_ = std::move(packed);
+    auto& packed = per_object_gs_attrs_[name];
+    packed = GaussianSplatPackedAttrs{};
+    PackGaussianSplatAttrsDirect(pts_ptr, n, scale_ptr, rot_ptr, f_dc_ptr,
+                                 opacity_ptr, f_rest_ptr, cloud_sh, desired_sh,
+                                 min_opacity_logit, min_alpha_sigmoid,
+                                 material.gaussian_splat_antialias, packed);
+}
 
-    // Propagate per-material capacity overrides to the renderer config.
+void FilamentScene::RebuildMergedGaussianData() {
+    // Concatenate all per-object packed attrs into one merged buffer.
+    // The merged buffer is what the GPU pipeline consumes.  Each geometry
+    // record stores its splat range (start, count) into this buffer.
+    auto merged = std::make_unique<GaussianSplatPackedAttrs>();
+
+    // Aggregate RenderConfig: elementwise max across all objects' materials.
+    std::uint32_t max_tiles_per_splat = 32u;
+    std::uint32_t max_tile_entries_total = 32u * 1024u * 1024u;
+
+    for (auto& [obj_name, geom] : geometries_) {
+        auto it = per_object_gs_attrs_.find(obj_name);
+        if (it == per_object_gs_attrs_.end()) continue;
+
+        const auto& src = it->second;
+        const std::uint32_t splat_start =
+                static_cast<std::uint32_t>(merged->positions.size());
+        const std::uint32_t splat_count = src.splat_count;
+
+        geom.gs_splat_start = splat_start;
+        geom.gs_splat_count = splat_count;
+
+        // Append positions, scales, rotations, dc_opacity.
+        merged->positions.insert(merged->positions.end(), src.positions.begin(),
+                                 src.positions.end());
+        merged->scales.insert(merged->scales.end(), src.scales.begin(),
+                              src.scales.end());
+        merged->rotations.insert(merged->rotations.end(), src.rotations.begin(),
+                                 src.rotations.end());
+        merged->dc_opacity.insert(merged->dc_opacity.end(),
+                                  src.dc_opacity.begin(), src.dc_opacity.end());
+        merged->sh_coefficients.insert(merged->sh_coefficients.end(),
+                                       src.sh_coefficients.begin(),
+                                       src.sh_coefficients.end());
+
+        // Bit-packed visibility mask: all-ones = visible, all-zeros = culled.
+        // ceil(splat_count / 32) words appended per object.
+        const std::uint32_t mask_val = geom.visible ? ~0u : 0u;
+        const std::uint32_t n_words = (splat_count + 31u) / 32u;
+        merged->visibility_mask.insert(merged->visibility_mask.end(),
+                                       n_words, mask_val);
+
+        merged->splat_count += splat_count;
+        merged->sh_degree = std::max(merged->sh_degree, src.sh_degree);
+        merged->min_alpha = std::max(merged->min_alpha, src.min_alpha);
+        merged->antialias = merged->antialias || src.antialias;
+
+        // Propagate per-material capacity overrides (take max).
+        const auto& mat = geom.mat.properties;
+        max_tiles_per_splat = std::max(max_tiles_per_splat,
+                                       mat.gaussian_splat_max_tiles_per_splat);
+        max_tile_entries_total =
+                std::max(max_tile_entries_total,
+                         mat.gaussian_splat_max_tile_entries_total);
+    }
+
+    merged_gs_attrs_ = std::move(merged);
+
+    // Update the renderer's RenderConfig with the aggregate capacity.
     if (auto* fr = dynamic_cast<FilamentRenderer*>(&renderer_)) {
         if (auto* gcr = fr->GetGaussianSplatRenderer()) {
             auto cfg = gcr->GetRenderConfig();
-            cfg.max_tiles_per_splat = material.gaussian_splat_max_tiles_per_splat;
-            cfg.max_tile_entries_total =
-                    material.gaussian_splat_max_tile_entries_total;
+            cfg.max_tiles_per_splat = max_tiles_per_splat;
+            cfg.max_tile_entries_total = max_tile_entries_total;
             gcr->SetRenderConfig(cfg);
         }
     }
@@ -599,14 +669,15 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         if (pc->HasPointPositions() &&
             pc->GetPointPositions().GetLength() > 0) {
             const Eigen::Vector3d min_b =
-                core::eigen_converter::TensorToEigenVector3dVector(
-                    pc->GetMinBound().Reshape({1, 3}))[0];
+                    core::eigen_converter::TensorToEigenVector3dVector(
+                            pc->GetMinBound().Reshape({1, 3}))[0];
             const Eigen::Vector3d max_b =
-                core::eigen_converter::TensorToEigenVector3dVector(
-                    pc->GetMaxBound().Reshape({1, 3}))[0];
+                    core::eigen_converter::TensorToEigenVector3dVector(
+                            pc->GetMaxBound().Reshape({1, 3}))[0];
             geom.aabb = geometry::AxisAlignedBoundingBox(min_b, max_b);
         }
-        CacheGaussianSplatData(*pc, internal_material);
+        CacheGaussianSplatData(object_name, *pc, internal_material);
+        RebuildMergedGaussianData();
         MarkGeometryChanged();
         return true;
     }
@@ -746,6 +817,8 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                                    -1,
                                    {{}, material, material_instance},
                                    {},  // aabb — queried from RenderableManager
+                                   0u,  // gs_splat_start (non-Gaussian)
+                                   0u,  // gs_splat_count (non-Gaussian)
                                    filament_entity,
                                    buffer_builder.GetPrimitiveType(),
                                    vb,
@@ -786,7 +859,9 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         // cache only (placeholder Filament geometry is not updated).
         if (geoms[0]->mat.properties.shader == "gaussianSplat") {
             (void)update_flags;
-            CacheGaussianSplatData(point_cloud, geoms[0]->mat.properties);
+            CacheGaussianSplatData(object_name, point_cloud,
+                                   geoms[0]->mat.properties);
+            RebuildMergedGaussianData();
             MarkGeometryChanged();
             return;
         }
@@ -932,9 +1007,14 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
     bool removed_geometry = false;
+    bool removed_gs = false;
     auto geoms = GetGeometry(object_name, false);
     if (!geoms.empty()) {
         for (auto* g : geoms) {
+            if (g->gs_splat_count > 0) {
+                per_object_gs_attrs_.erase(g->name);
+                removed_gs = true;
+            }
             if (!g->filament_entity.isNull()) {
                 scene_->remove(g->filament_entity);
             }
@@ -947,6 +1027,11 @@ void FilamentScene::RemoveGeometry(const std::string& object_name) {
     if (GeometryIsModel(object_name)) {
         model_geometries_.erase(object_name);
         removed_geometry = true;
+    }
+
+    if (removed_gs) {
+        // Rebuild the merged Gaussian buffer without the removed object.
+        RebuildMergedGaussianData();
     }
 
     if (removed_geometry) {
@@ -966,6 +1051,24 @@ void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
                     scene_->addEntity(g->filament_entity);
                 } else {
                     scene_->remove(g->filament_entity);
+                }
+            }
+            // For Gaussian objects, update the bit-packed visibility mask in-
+            // place (no need to rebuild the full merged buffer — just flip bits).
+            if (g->gs_splat_count > 0 && merged_gs_attrs_) {
+                auto& mask = merged_gs_attrs_->visibility_mask;
+                const std::uint32_t end =
+                        g->gs_splat_start + g->gs_splat_count;
+                for (std::uint32_t k = g->gs_splat_start; k < end; ++k) {
+                    const std::uint32_t word = k / 32u;
+                    const std::uint32_t bit = k % 32u;
+                    if (word < static_cast<std::uint32_t>(mask.size())) {
+                        if (show) {
+                            mask[word] |= (1u << bit);
+                        } else {
+                            mask[word] &= ~(1u << bit);
+                        }
+                    }
                 }
             }
         }

@@ -1,0 +1,82 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// Gaussian splat depth-merge pass.
+//
+// Merges the GS composite linear depth (R32F, gs.composite_depth) with
+// Filament's reversed-Z scene depth to produce a single normalised R16UI depth
+// map suitable for CPU readback via glGetTexImage / GL_RED_INTEGER /
+// GL_UNSIGNED_SHORT.
+//
+// Output: nearest depth from either source, normalised to [0, 65535] where
+//   0 → near-plane depth, 65535 → far-plane depth.
+//
+// The pass is optional and is only dispatched when merged_depth_u16_tex is
+// allocated (i.e. an offscreen RenderToDepthImage is in progress and scene
+// depth is available). When no scene depth is present the GS composite depth
+// is read back directly and this shader is skipped.
+//
+// NOTE: compiled with -G (OpenGL SPIR-V target) to avoid Vulkan
+// DescriptorSet decorations that break ARB_gl_spirv on some Windows drivers.
+
+#version 460 core
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+// View-params UBO: same layout as every other GS compute shader.
+// Provides near/far planes and viewport size.
+layout(std140, binding = 0) uniform GaussianViewParams {
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    // depth_range_and_flags: x=near, y=far, z=stable_sort_flag, w=depth_flag
+    vec4 depth_range_and_flags;
+} view_params;
+
+// GS composite linear depth written by gaussian_composite.comp.
+// Sampled via texelFetch to avoid filtering.
+layout(binding = 0) uniform sampler2D gs_depth;
+
+// Output: merged nearest depth, normalised uint16 [0, 65535].
+layout(binding = 1, r16ui) uniform writeonly uimage2D merged_depth;
+
+// Filament reversed-Z scene depth.  Binding 14 matches gaussian_composite.comp
+// so the same descriptor set works for both shaders.
+layout(binding = 14) uniform sampler2D scene_depth;
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 vp    = ivec2(view_params.viewport_origin_and_size.zw);
+    if (pixel.x >= vp.x || pixel.y >= vp.y) return;
+
+    float near = view_params.depth_range_and_flags.x;
+    float far  = view_params.depth_range_and_flags.y;
+
+    // GS composite depth is already in linear eye-space [near, far].
+    float gs_lin = texelFetch(gs_depth, pixel, 0).r;
+
+    // Filament reversed-Z: depth buffer stores z_ndc = n/(n + z*(f-n)) where
+    // z is linear eye-space distance. Rearranging: z_lin = n*f/(n + z_ndc*(f-n)).
+    // At near plane z_ndc=1; at far plane z_ndc=0. z_ndc==0 means no geometry
+    // → treat as far distance.
+    float z_ndc  = texelFetch(scene_depth, pixel, 0).r;
+    float sc_lin = (z_ndc > 0.0)
+                     ? near * far / (near + z_ndc * (far - near))
+                     : far;
+
+    // Take the nearest (smallest linear distance) of the two sources.
+    float merged = min(gs_lin, sc_lin);
+
+    // Normalise to uint16: 0 = near, 65535 = far.
+    uint u16 = uint(clamp(merged / far, 0.0, 1.0) * 65535.0 + 0.5);
+    imageStore(merged_depth, pixel, uvec4(u16, 0u, 0u, 0u));
+}

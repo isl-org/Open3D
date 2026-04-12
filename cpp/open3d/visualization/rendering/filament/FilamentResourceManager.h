@@ -114,6 +114,9 @@ public:
 
     RenderTargetHandle CreateRenderTarget(TextureHandle color,
                                           TextureHandle depth);
+    /// Create a color-only render target (no depth attachment).
+    /// Used for readPixels readback from a compute-written texture.
+    RenderTargetHandle CreateColorOnlyRenderTarget(TextureHandle color);
 
     // Replaces the contents of the texture with the image. Returns false if
     // the image is not the same size of the texture.

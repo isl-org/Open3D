@@ -86,6 +86,10 @@ public:
     void PostRender();
     void SetRenderTarget(const RenderTargetHandle render_target);
 
+    /// Current Filament render target (color/depth attachments), or empty if
+    /// the view renders to the default framebuffer.
+    RenderTargetHandle GetRenderTargetHandle() const { return render_target_; }
+
 private:
     std::unique_ptr<FilamentCamera> camera_;
     Mode mode_ = Mode::Color;

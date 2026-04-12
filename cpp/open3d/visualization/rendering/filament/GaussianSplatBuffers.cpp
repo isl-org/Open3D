@@ -33,12 +33,11 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
     out->projected_size = packed.splat_count * sizeof(ProjectedGaussian);
     out->tile_scalar_size = packed.tile_count * sizeof(std::uint32_t);
 
-        out->entries_capacity = std::max<std::uint32_t>(1u,
-                                                                                                        packed.view_params.limits[0]);
-    out->entry_buf_size =
-            std::max(sizeof(TileEntry),
-                     static_cast<std::size_t>(out->entries_capacity) *
-                             sizeof(TileEntry));
+    out->entries_capacity =
+            std::max<std::uint32_t>(1u, packed.view_params.limits[0]);
+    out->entry_buf_size = std::max(
+            sizeof(TileEntry), static_cast<std::size_t>(out->entries_capacity) *
+                                       sizeof(TileEntry));
 
     out->key_cap_size = std::max<std::size_t>(
             4u, static_cast<std::size_t>(out->entries_capacity) *

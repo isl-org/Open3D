@@ -9,8 +9,6 @@
 
 #include <filament/Texture.h>
 #include <filament/View.h>
-
-#include "GaussianSplatRenderer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -22,6 +20,8 @@
 #include "open3d/visualization/rendering/filament/GaussianSplatOutputTargetsApple.h"
 #endif
 #if !defined(__APPLE__)
+#include <GL/glew.h>
+
 #include <memory>
 
 #include "open3d/visualization/rendering/filament/ComputeGPU.h"
@@ -36,8 +36,7 @@ namespace visualization {
 namespace rendering {
 
 #if defined(__APPLE__)
-std::unique_ptr<GaussianSplatRenderer::Backend>
-CreateGaussianSplatMetalBackend(
+std::unique_ptr<GaussianSplatRenderer::Backend> CreateGaussianSplatMetalBackend(
         FilamentResourceManager& resource_mgr,
         const GaussianSplatRenderer::RenderConfig& config);
 #endif
@@ -46,8 +45,7 @@ namespace {
 class GaussianSplatPlaceholderBackend final
     : public GaussianSplatRenderer::Backend {
 public:
-    explicit GaussianSplatPlaceholderBackend(const char* name)
-        : name_(name) {}
+    explicit GaussianSplatPlaceholderBackend(const char* name) : name_(name) {}
 
     const char* GetName() const override { return name_; }
 
@@ -61,19 +59,19 @@ public:
                                FilamentResourceManager&,
                                std::uint32_t,
                                std::uint32_t,
+                               bool,
                                GaussianSplatRenderer::OutputTargets&) override {
         return false;
     }
 
-    void ReleaseOutputTextures(
-            FilamentResourceManager&,
-            GaussianSplatRenderer::OutputTargets&) override {}
+    void ReleaseOutputTextures(FilamentResourceManager&,
+                               GaussianSplatRenderer::OutputTargets&) override {
+    }
 
     bool RenderGeometryStage(
             const FilamentView& view,
             const FilamentScene&,
             const GaussianSplatRenderer::ViewRenderData&,
-            const std::vector<GaussianSplatRenderer::PassDispatch>&,
             GaussianSplatRenderer::OutputTargets&) override {
         if (logged_views_.insert(&view).second) {
             utility::LogWarning(
@@ -85,9 +83,8 @@ public:
     }
 
     bool RenderCompositeStage(
-            const FilamentView& view,
+            const FilamentView&,
             const GaussianSplatRenderer::ViewRenderData&,
-            const std::vector<GaussianSplatRenderer::PassDispatch>&,
             GaussianSplatRenderer::OutputTargets&) override {
         return false;
     }
@@ -99,8 +96,7 @@ private:
 
 #if !defined(__APPLE__)
 // OpenGL compute backend for Linux and Windows (GL 4.6 core + SPIR-V).
-class GaussianSplatOpenGLBackend final
-    : public GaussianSplatRenderer::Backend {
+class GaussianSplatOpenGLBackend final : public GaussianSplatRenderer::Backend {
 public:
     GaussianSplatOpenGLBackend(
             FilamentResourceManager& resource_mgr,
@@ -129,13 +125,11 @@ public:
             const FilamentView& view,
             const FilamentScene& scene,
             const GaussianSplatRenderer::ViewRenderData& render_data,
-            const std::vector<GaussianSplatRenderer::PassDispatch>&
-                    dispatches,
             GaussianSplatRenderer::OutputTargets& targets) override {
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() && !gl_ctx.Initialize()) {
             utility::LogWarning(
-                "GaussianSplat OpenGL backend: shared GL context not "
+                    "GaussianSplat OpenGL backend: shared GL context not "
                     "available. InitializeStandalone() must run before "
                     "Filament Engine::create().");
             return false;
@@ -174,9 +168,8 @@ public:
                 (scene_id != vs.cached_scene_id ||
                  attrs->splat_count != vs.cached_splat_count);
 
-        const bool ok = RunGaussianGeometryPasses(
-                *gpu_, config_, frame, *attrs, dispatches, vs, scene_id,
-                scene_changed);
+        const bool ok = RunGaussianGeometryPasses(*gpu_, config_, frame, *attrs,
+                                                  vs, scene_id, scene_changed);
         gl_ctx.ReleaseCurrent();
         return ok;
     }
@@ -184,8 +177,6 @@ public:
     bool RenderCompositeStage(
             const FilamentView& view,
             const GaussianSplatRenderer::ViewRenderData&,
-            const std::vector<GaussianSplatRenderer::PassDispatch>&
-                    dispatches,
             GaussianSplatRenderer::OutputTargets& targets) override {
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.MakeCurrent() || !gpu_) {
@@ -198,10 +189,39 @@ public:
             return false;
         }
 
-        const bool ok = RunGaussianCompositePass(*gpu_, config_, dispatches,
-                                                 it->second, targets);
+        const bool ok =
+                RunGaussianCompositePass(*gpu_, config_, it->second, targets);
         gl_ctx.ReleaseCurrent();
         return ok;
+    }
+
+    bool ReadMergedDepthToUint16Cpu(
+            const FilamentView& view,
+            std::vector<std::uint16_t>& out,
+            std::uint32_t width,
+            std::uint32_t height) override {
+        auto it = view_states_.find(&view);
+        if (it == view_states_.end() ||
+            it->second.merged_depth_u16_tex == 0) {
+            return false;
+        }
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
+        if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
+            utility::LogWarning(
+                    "GaussianSplat: MakeCurrent failed in "
+                    "ReadMergedDepthToUint16Cpu");
+            return false;
+        }
+        out.resize(static_cast<size_t>(width) * height);
+        const GLuint tex =
+                static_cast<GLuint>(it->second.merged_depth_u16_tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        // GL_RED_INTEGER + GL_UNSIGNED_SHORT matches the R16UI internal format.
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT,
+                      out.data());
+        glBindTexture(GL_TEXTURE_2D, 0);
+        gl_ctx.ReleaseCurrent();
+        return true;
     }
 
     bool PrepareOutputTextures(
@@ -209,55 +229,84 @@ public:
             FilamentResourceManager& resource_mgr,
             std::uint32_t width,
             std::uint32_t height,
+            bool needs_scene_depth,
             GaussianSplatRenderer::OutputTargets& targets) override {
         // Create GL textures on the shared GL context for zero-copy sharing
         // with Filament.  The scene depth texture is rendered into by Filament
         // (as a depth attachment) and read by the GS composite shader.  The GS
-        // color texture is written by the composite shader and sampled by ImGui.
+        // color texture is written by the composite shader and sampled by
+        // ImGui.
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
             return false;
         }
 
-        auto scene_depth = CreateGLTexture2D(width, height,
-                                             kGL_DEPTH_COMPONENT32F,
-                                             "gs.scene_depth");
-        auto gs_color = CreateGLTexture2D(width, height, kGL_RGBA16F,
-                                          "gs.color");
-        targets.scene_depth_gl_handle = scene_depth.valid ? scene_depth.id : 0;
+        // Only allocate scene_depth when mesh occluders exist.  Without it,
+        // the composite shader's use_scene_depth flag stays false and the
+        // entire depth pipeline (import, bind, sampler) is skipped.
+        if (needs_scene_depth) {
+            auto scene_depth = CreateGLTexture2D(
+                    width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
+            targets.scene_depth_gl_handle =
+                    scene_depth.valid ? scene_depth.id : 0;
+        } else {
+            targets.scene_depth_gl_handle = 0;
+        }
+        auto gs_color =
+                CreateGLTexture2D(width, height, kGL_RGBA16F, "gs.color");
         targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
         gl_ctx.ReleaseCurrent();
 
-        if (targets.scene_depth_gl_handle == 0 ||
-            targets.color_gl_handle == 0) {
+        if (targets.color_gl_handle == 0) {
             return false;
         }
 
         using Tex = filament::Texture;
-        // Import scene depth (Filament writes, GS reads).
-        targets.depth = resource_mgr.CreateImportedTexture(
-                targets.scene_depth_gl_handle, int(width), int(height),
-                static_cast<int>(Tex::InternalFormat::DEPTH32F),
-                static_cast<int>(Tex::Usage::DEPTH_ATTACHMENT |
-                                 Tex::Usage::SAMPLEABLE));
-        // Import GS color (GS writes, ImGui reads).
+        // Import scene depth only when allocated (Filament writes, GS reads).
+        if (targets.scene_depth_gl_handle != 0) {
+            targets.depth = resource_mgr.CreateImportedTexture(
+                    targets.scene_depth_gl_handle, int(width), int(height),
+                    static_cast<int>(Tex::InternalFormat::DEPTH32F),
+                    static_cast<int>(Tex::Usage::DEPTH_ATTACHMENT |
+                                     Tex::Usage::SAMPLEABLE));
+        }
+        // Import GS color (composite shader writes, ImGui reads).
+        // SAMPLEABLE:       ImGui samples the result each frame.
+        // COLOR_ATTACHMENT: required for the readback render target used by
+        //                   readPixels in the offscreen
+        //                   (FilamentRenderToBuffer) path.
+        // BLIT_SRC:         required by Filament's readPixels precondition
+        //                   (will be asserted in a later release of Filament).
         targets.color = resource_mgr.CreateImportedTexture(
                 targets.color_gl_handle, int(width), int(height),
                 static_cast<int>(Tex::InternalFormat::RGBA16F),
-                static_cast<int>(Tex::Usage::SAMPLEABLE));
+                static_cast<int>(Tex::Usage::SAMPLEABLE |
+                                 Tex::Usage::COLOR_ATTACHMENT |
+                                 Tex::Usage::BLIT_SRC));
 
-        // Build a render target with the view's own color buffer plus our
-        // imported depth so Filament writes depth into the shared texture.
+        // Build a render target: use the imported depth when available,
+        // otherwise create a dummy Filament-owned depth so Filament can
+        // render normally (depth buffer still written to its own RT).
         auto view_color = view.GetColorBuffer();
-        if (!view_color || !targets.depth || !targets.color) {
+        if (!view_color || !targets.color) {
             return false;
         }
 
-        targets.render_target =
-                resource_mgr.CreateRenderTarget(view_color, targets.depth);
+        if (targets.depth) {
+            targets.render_target =
+                    resource_mgr.CreateRenderTarget(view_color, targets.depth);
+        } else {
+            // No shared depth: use a Filament-owned depth attachment so
+            // Filament renders into the view's own RT (depth stays private).
+            auto owned_depth = resource_mgr.CreateDepthAttachmentTexture(
+                    int(width), int(height));
+            targets.depth = owned_depth;
+            targets.render_target =
+                    resource_mgr.CreateRenderTarget(view_color, targets.depth);
+        }
         view.SetRenderTarget(targets.render_target);
 
-        // Disable MSAA (required when depth is SAMPLEABLE).
+        // Disable MSAA (required when depth is SAMPLEABLE or shared).
         auto* native = view.GetNativeView();
         auto msaa = native->getMultiSampleAntiAliasingOptions();
         msaa.enabled = false;
@@ -265,7 +314,8 @@ public:
 
         // Disable post-processing so Filament renders directly to the render
         // target (including depth writes); with post-processing enabled,
-        // Filament renders to internal RTs and only blits color — depth is lost.
+        // Filament renders to internal RTs and only blits color — depth is
+        // lost.
         view.SetPostProcessing(false);
 
         return static_cast<bool>(targets.render_target);
@@ -279,7 +329,15 @@ public:
             return;
         }
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
-        if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
+        if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
+            // MakeCurrent should not fail here (we own the shared context).
+            // If it does, log the leaked handles so they are diagnosable.
+            utility::LogWarning(
+                    "GaussianSplat: MakeCurrent failed in "
+                    "ReleaseOutputTextures — GL handles may leak: "
+                    "color={} depth={}",
+                    targets.color_gl_handle, targets.scene_depth_gl_handle);
+        } else {
             if (targets.scene_depth_gl_handle != 0) {
                 GLTextureHandle dt{targets.scene_depth_gl_handle, 0, 0, true};
                 DestroyGLTexture(dt);
@@ -326,9 +384,14 @@ private:
         destroy_buf(vs.histogram_buf);
         destroy_buf(vs.radix_params_buf);
         destroy_buf(vs.sorted_entries_buf);
+        destroy_buf(vs.mask_buf);
         if (vs.composite_depth_tex != 0) {
             gpu_->DestroyTexture(vs.composite_depth_tex);
             vs.composite_depth_tex = 0;
+        }
+        if (vs.merged_depth_u16_tex != 0) {
+            gpu_->DestroyTexture(vs.merged_depth_u16_tex);
+            vs.merged_depth_u16_tex = 0;
         }
         gl_ctx.ReleaseCurrent();
     }
@@ -380,33 +443,18 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
     return nullptr;
 }
 
-std::vector<GaussianSplatRenderer::PassDefinition> CreateDefaultPasses() {
-    return {
-            {GaussianSplatRenderer::PassType::kProjection,
-             "Gaussian Projection", "gaussian_project.comp"},
-            {GaussianSplatRenderer::PassType::kTilePrefixSum,
-             "Gaussian Tile Prefix Sum", "gaussian_prefix_sum.comp"},
-            {GaussianSplatRenderer::PassType::kTileScatter,
-             "Gaussian Tile Scatter", "gaussian_scatter.comp"},
-            {GaussianSplatRenderer::PassType::kTileSort,
-             "Gaussian Radix Sort (keygen)", "gaussian_radix_sort_keygen.comp"},
-            {GaussianSplatRenderer::PassType::kComposite,
-             "Gaussian Composite", "gaussian_composite.comp"},
-    };
-}
 
-bool HasCompositeOutputTextures(
-        const GaussianSplatRenderer::OutputTargets& targets) {
+// Returns true when the platform-specific GS color texture handle is ready for
+// the composite shader.  Scene depth is intentionally excluded: it is optional
+// and is 0 for splat-only scenes (no mesh occluders), which is a valid,
+// supported configuration.
+bool HasGsColorOutput(const GaussianSplatRenderer::OutputTargets& targets) {
 #if defined(__APPLE__)
-    return targets.scene_depth_mtl_texture != 0 &&
-           targets.gs_color_mtl_texture != 0;
+    return targets.gs_color_mtl_texture != 0;
 #else
-    return targets.scene_depth_gl_handle != 0 &&
-           targets.color_gl_handle != 0;
+    return targets.color_gl_handle != 0;
 #endif
 }
-
-int CeilDiv(int value, int divisor) { return (value + divisor - 1) / divisor; }
 
 bool GaussianSplatBackendSupported(RenderingType backend) {
     if (!EngineInstance::GetPlatform()) {
@@ -469,9 +517,8 @@ bool ProjectionInfoEquals(const Camera::ProjectionInfo& left,
            left.proj.perspective.far_plane == right.proj.perspective.far_plane;
 }
 
-bool ViewRenderDataEquals(
-        const GaussianSplatRenderer::ViewRenderData& left,
-        const GaussianSplatRenderer::ViewRenderData& right) {
+bool ViewRenderDataEquals(const GaussianSplatRenderer::ViewRenderData& left,
+                          const GaussianSplatRenderer::ViewRenderData& right) {
     return left.viewport_origin == right.viewport_origin &&
            left.viewport_size == right.viewport_size &&
            left.camera_position.isApprox(right.camera_position) &&
@@ -487,34 +534,10 @@ bool ViewRenderDataEquals(
            ProjectionInfoEquals(left.projection, right.projection);
 }
 
-bool PassDispatchEquals(const GaussianSplatRenderer::PassDispatch& left,
-                        const GaussianSplatRenderer::PassDispatch& right) {
-    return left.type == right.type && left.group_size == right.group_size &&
-           left.group_count == right.group_count &&
-           left.tile_count == right.tile_count;
-}
-
-bool PassDispatchesEqual(
-        const std::vector<GaussianSplatRenderer::PassDispatch>& left,
-        const std::vector<GaussianSplatRenderer::PassDispatch>& right) {
-    if (left.size() != right.size()) {
-        return false;
-    }
-    for (size_t index = 0; index < left.size(); ++index) {
-        if (!PassDispatchEquals(left[index], right[index])) {
-            return false;
-        }
-    }
-    return true;
-}
-
 GaussianSplatRenderer::GaussianSplatRenderer(
         filament::Engine& engine, FilamentResourceManager& resource_mgr)
-    : engine_(engine),
-      resource_mgr_(resource_mgr),
-      pass_definitions_(CreateDefaultPasses()) {
-    enabled_ =
-            GaussianSplatBackendSupported(EngineInstance::GetBackendType());
+    : engine_(engine), resource_mgr_(resource_mgr) {
+    enabled_ = GaussianSplatBackendSupported(EngineInstance::GetBackendType());
     backend_ = CreateBackend(EngineInstance::GetBackendType(), resource_mgr_,
                              render_config_);
 }
@@ -532,21 +555,21 @@ void GaussianSplatRenderer::BeginFrame() {
     }
 }
 
+
 void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
-                                                  const FilamentScene& scene) {
+                                                const FilamentScene& scene) {
     if (!enabled_ || !scene.HasGaussianSplatGeometry()) {
         return;
     }
 
-    ValidatePassShaderSources();
-
-    auto& targets = PrepareOutputTargets(view);
+    // Skip scene_depth allocation when no mesh geometry can occlude splats.
+    const bool needs_depth = scene.HasNonGaussianVisibleGeometry();
+    auto& targets = PrepareOutputTargets(view, needs_depth);
     const std::uint64_t scene_change_id = scene.GetGeometryChangeId();
     const bool view_changed = UpdateViewRenderData(targets, view);
-    const bool dispatch_changed = UpdatePassDispatches(targets, view);
     const bool scene_changed = targets.last_scene_change_id != scene_change_id;
 
-    if (view_changed || dispatch_changed || scene_changed) {
+    if (view_changed || scene_changed) {
         targets.needs_render = true;
     }
 
@@ -556,39 +579,48 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
 
     bool rendered = false;
     if (backend_ && targets.has_render_data) {
-        rendered =
-                backend_->RenderGeometryStage(view, scene, targets.render_data,
-                                              targets.pass_dispatches, targets);
+        rendered = backend_->RenderGeometryStage(view, scene, targets.render_data,
+                                                 targets);
     }
     if (rendered) {
         targets.last_scene_change_id = scene_change_id;
-    }
-    if (!rendered) {
+    } else {
+        // Geometry stage failed: prevent composite from consuming stale
+        // intermediate buffers from the prior frame.
         targets.has_valid_output = false;
+        targets.needs_render = false;
     }
 }
 
-void GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
+bool GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
     auto it = outputs_.find(&view);
     if (it == outputs_.end() || !it->second.needs_render) {
-        return;
+        return false;
     }
 
     auto& targets = it->second;
     if (targets.width == 0 || targets.height == 0 ||
-        !HasCompositeOutputTextures(targets)) {
-        return;
+        !HasGsColorOutput(targets)) {
+        return false;
     }
 
     bool rendered = false;
     if (backend_ && targets.has_render_data) {
-        rendered = backend_->RenderCompositeStage(
-                view, targets.render_data, targets.pass_dispatches, targets);
+        rendered = backend_->RenderCompositeStage(view, targets.render_data,
+                                                  targets);
     }
 
     targets.has_valid_output = rendered;
     targets.needs_render = false;
     targets.last_updated_frame = frame_index_;
+    return rendered;
+}
+
+void GaussianSplatRenderer::RequestRedrawForView(const FilamentView& view) {
+    auto it = outputs_.find(&view);
+    if (it != outputs_.end()) {
+        it->second.needs_render = true;
+    }
 }
 
 void GaussianSplatRenderer::InvalidateOutputForView(FilamentView& view) {
@@ -645,36 +677,6 @@ GaussianSplatRenderer::GetViewRenderData(const FilamentView& view) const {
     return &found->second.render_data;
 }
 
-const std::vector<GaussianSplatRenderer::PassDispatch>*
-GaussianSplatRenderer::GetPassDispatches(const FilamentView& view) const {
-    auto found = outputs_.find(&view);
-    if (found == outputs_.end()) {
-        return nullptr;
-    }
-    return &found->second.pass_dispatches;
-}
-
-const std::vector<GaussianSplatRenderer::PassDefinition>&
-GaussianSplatRenderer::GetPassDefinitions() const {
-    return pass_definitions_;
-}
-
-std::string GaussianSplatRenderer::GetShaderSourcePath(
-        PassType pass_type) const {
-    const PassDefinition* pass = FindPassDefinition(pass_type);
-    if (!pass) {
-        return "";
-    }
-
-    return EngineInstance::GetResourcePath() + "/gaussian_compute/" +
-           pass->shader_file;
-}
-
-bool GaussianSplatRenderer::HasShaderSource(PassType pass_type) const {
-    const std::string shader_path = GetShaderSourcePath(pass_type);
-    return !shader_path.empty() && utility::filesystem::FileExists(shader_path);
-}
-
 const GaussianSplatRenderer::RenderConfig&
 GaussianSplatRenderer::GetRenderConfig() const {
     return render_config_;
@@ -689,58 +691,9 @@ void GaussianSplatRenderer::SetRenderConfig(const RenderConfig& config) {
 
     render_config_ = config;
     for (auto& pair : outputs_) {
-        pair.second.pass_dispatches.clear();
         pair.second.has_valid_output = false;
         pair.second.needs_render = true;
     }
-}
-
-std::vector<GaussianSplatRenderer::PassDispatch>
-GaussianSplatRenderer::BuildPassDispatches(const FilamentView& view) const {
-    const ViewRenderData* render_data = GetViewRenderData(view);
-    if (!render_data || render_data->viewport_size.x() <= 0 ||
-        render_data->viewport_size.y() <= 0) {
-        return {};
-    }
-
-    const Eigen::Vector2i tile_count(CeilDiv(render_data->viewport_size.x(),
-                                             render_config_.tile_size.x()),
-                                     CeilDiv(render_data->viewport_size.y(),
-                                             render_config_.tile_size.y()));
-    const int total_tiles = tile_count.x() * tile_count.y();
-
-    return {
-            {PassType::kProjection,
-             Eigen::Vector3i(render_config_.projection_group_size, 1, 1),
-             Eigen::Vector3i(
-                     CeilDiv(total_tiles, render_config_.projection_group_size),
-                     1, 1),
-             tile_count},
-            {PassType::kTilePrefixSum,
-             Eigen::Vector3i(render_config_.prefix_sum_group_size, 1, 1),
-             Eigen::Vector3i(1, 1, 1), tile_count},
-            {PassType::kTileScatter,
-             Eigen::Vector3i(render_config_.scatter_group_size, 1, 1),
-             Eigen::Vector3i(
-                     CeilDiv(total_tiles, render_config_.scatter_group_size), 1,
-                     1),
-             tile_count},
-            {PassType::kTileSort,
-             Eigen::Vector3i(render_config_.sort_group_size, 1, 1),
-             Eigen::Vector3i(
-                     CeilDiv(total_tiles, render_config_.sort_group_size), 1,
-                     1),
-             tile_count},
-            {PassType::kComposite,
-             Eigen::Vector3i(render_config_.composite_group_size.x(),
-                             render_config_.composite_group_size.y(), 1),
-             Eigen::Vector3i(CeilDiv(render_data->viewport_size.x(),
-                                     render_config_.composite_group_size.x()),
-                             CeilDiv(render_data->viewport_size.y(),
-                                     render_config_.composite_group_size.y()),
-                             1),
-             tile_count},
-    };
 }
 
 TextureHandle GaussianSplatRenderer::GetColorTexture(
@@ -755,6 +708,25 @@ TextureHandle GaussianSplatRenderer::GetDepthTexture(
     return found != outputs_.end() ? found->second.depth : TextureHandle();
 }
 
+RenderTargetHandle GaussianSplatRenderer::GetColorReadbackRT(
+        const FilamentView& view) const {
+    auto found = outputs_.find(&view);
+    return found != outputs_.end() ? found->second.gs_readback_rt
+                                   : RenderTargetHandle();
+}
+
+
+bool GaussianSplatRenderer::ReadMergedDepthToUint16Cpu(
+        const FilamentView& view,
+        std::vector<std::uint16_t>& out,
+        std::uint32_t width,
+        std::uint32_t height) {
+    if (!backend_) {
+        return false;
+    }
+    return backend_->ReadMergedDepthToUint16Cpu(view, out, width, height);
+}
+
 std::uint32_t GaussianSplatRenderer::GetSceneDepthGLHandle(
         const FilamentView& view) const {
     auto found = outputs_.find(&view);
@@ -766,7 +738,8 @@ const char* GaussianSplatRenderer::GetBackendName() const {
 }
 
 GaussianSplatRenderer::OutputTargets&
-GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
+GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view,
+                                            bool needs_scene_depth) {
     auto viewport = view.GetViewport();
     auto& targets = outputs_[&view];
     if (viewport[2] <= 0 || viewport[3] <= 0) {
@@ -777,21 +750,25 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
 
     auto width = static_cast<std::uint32_t>(viewport[2]);
     auto height = static_cast<std::uint32_t>(viewport[3]);
+    const bool depth_mode_changed =
+            (targets.needs_scene_depth != needs_scene_depth);
     if (targets.width == width && targets.height == height && targets.color &&
-        targets.depth && targets.render_target &&
-        HasCompositeOutputTextures(targets)) {
+        targets.depth && targets.render_target && HasGsColorOutput(targets) &&
+        !depth_mode_changed) {
         return targets;
     }
 
     view.SetRenderTarget({});
     ResetOutputTargets(targets);
+    targets.needs_scene_depth = needs_scene_depth;
 
     // Attempt zero-copy setup via the backend (GL texture sharing on
     // OpenGL, Metal texture import on Apple).  Falls back to
     // Filament-owned textures if the backend returns false.
-    const bool zero_copy = backend_ && backend_->PrepareOutputTextures(
-                                               view, resource_mgr_, width,
-                                               height, targets);
+    const bool zero_copy =
+            backend_ &&
+            backend_->PrepareOutputTextures(view, resource_mgr_, width, height,
+                                            needs_scene_depth, targets);
 
     if (!zero_copy) {
         // Fallback: Filament-owned textures (no zero-copy).
@@ -804,6 +781,12 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
         view.SetRenderTarget(targets.render_target);
     }
 
+    // Create a color-only render target for offscreen readback via readPixels.
+    if (targets.color) {
+        targets.gs_readback_rt =
+                resource_mgr_.CreateColorOnlyRenderTarget(targets.color);
+    }
+
     targets.width = width;
     targets.height = height;
     targets.has_valid_output = false;
@@ -813,6 +796,10 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
 
 void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     // Destroy Filament wrappers first (before releasing native textures).
+    if (targets.gs_readback_rt) {
+        resource_mgr_.Destroy(targets.gs_readback_rt);
+        targets.gs_readback_rt = RenderTargetHandle();
+    }
     if (targets.render_target) {
         resource_mgr_.Destroy(targets.render_target);
         targets.render_target = RenderTargetHandle();
@@ -837,7 +824,6 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
 
     targets.width = 0;
     targets.height = 0;
-    targets.pass_dispatches.clear();
     targets.has_render_data = false;
     targets.has_valid_output = false;
     targets.needs_render = true;
@@ -871,7 +857,7 @@ GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
 }
 
 bool GaussianSplatRenderer::UpdateViewRenderData(OutputTargets& targets,
-                                                   const FilamentView& view) {
+                                                 const FilamentView& view) {
     const ViewRenderData new_data = ExtractViewRenderData(view);
     if (!targets.has_render_data ||
         !ViewRenderDataEquals(targets.render_data, new_data)) {
@@ -884,44 +870,6 @@ bool GaussianSplatRenderer::UpdateViewRenderData(OutputTargets& targets,
     return false;
 }
 
-bool GaussianSplatRenderer::UpdatePassDispatches(OutputTargets& targets,
-                                                   const FilamentView& view) {
-    const std::vector<PassDispatch> new_dispatches = BuildPassDispatches(view);
-    if (PassDispatchesEqual(targets.pass_dispatches, new_dispatches)) {
-        return false;
-    }
-
-    targets.pass_dispatches = new_dispatches;
-    targets.has_valid_output = false;
-    return true;
-}
-
-const GaussianSplatRenderer::PassDefinition*
-GaussianSplatRenderer::FindPassDefinition(PassType pass_type) const {
-    for (const auto& pass : pass_definitions_) {
-        if (pass.type == pass_type) {
-            return &pass;
-        }
-    }
-    return nullptr;
-}
-
-void GaussianSplatRenderer::ValidatePassShaderSources() const {
-    if (pass_sources_validated_) {
-        return;
-    }
-    pass_sources_validated_ = true;
-
-    for (const auto& pass : pass_definitions_) {
-        const std::string shader_path = GetShaderSourcePath(pass.type);
-        if (!utility::filesystem::FileExists(shader_path)) {
-            utility::LogWarning(
-                    "GaussianSplat shader source for '{}' is missing at {}",
-                    pass.debug_name, shader_path);
-        }
-    }
-}
-
 bool GaussianSplatRenderer::ValidateRenderConfig(
         const RenderConfig& config) const {
     static constexpr int kMaxSupportedShDegree = 2;
@@ -931,8 +879,7 @@ bool GaussianSplatRenderer::ValidateRenderConfig(
            config.sort_group_size > 0 && config.composite_group_size.x() > 0 &&
            config.composite_group_size.y() > 0 && config.max_sh_degree >= 0 &&
            config.max_sh_degree <= kMaxSupportedShDegree &&
-           config.max_tiles_per_splat > 0 &&
-           config.max_tile_entries_total > 0;
+           config.max_tiles_per_splat > 0 && config.max_tile_entries_total > 0;
 }
 
 }  // namespace rendering
