@@ -156,9 +156,10 @@ void main() {
 
     // Linearize scene depth from Filament's reversed-Z depth buffer.
     // Filament reversed-Z: depth buffer stores z_ndc = n/(n + z*(f-n)) where
-    // z is linear eye-space distance. Rearranging: z_lin = n*f/(n + z_ndc*(f-n)).
-    // At near plane z_ndc=1; at far plane z_ndc=0; z_ndc==0 means no geometry
-    // (treat as far distance). This formula matches gaussian_depth_merge.comp.
+    // z is linear eye-space distance. Rearranging: z_lin = n*f/(n +
+    // z_ndc*(f-n)). At near plane z_ndc=1; at far plane z_ndc=0; z_ndc==0 means
+    // no geometry (treat as far distance). This formula matches
+    // gaussian_depth_merge.comp.
     float scene_linear_depth = view_params.depth_range_and_flags.y;  // far
     bool use_scene_depth =
             (view_params.depth_range_and_flags.w > 0.5) && pixel_active;

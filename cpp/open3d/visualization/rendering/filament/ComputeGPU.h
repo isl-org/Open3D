@@ -200,10 +200,11 @@ public:
                                                std::uint32_t height,
                                                const char* label = nullptr) = 0;
     /// Create or resize an R16UI texture for merged-depth CPU readback.
-    virtual std::uintptr_t ResizeTexture2DR16UI(std::uintptr_t tex,
-                                                std::uint32_t width,
-                                                std::uint32_t height,
-                                                const char* label = nullptr) = 0;
+    virtual std::uintptr_t ResizeTexture2DR16UI(
+            std::uintptr_t tex,
+            std::uint32_t width,
+            std::uint32_t height,
+            const char* label = nullptr) = 0;
 
     /// Bind a write image at the given unit with the specified format.
     virtual void BindImage(std::uint32_t binding,

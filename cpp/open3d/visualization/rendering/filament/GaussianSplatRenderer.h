@@ -126,15 +126,13 @@ public:
         virtual const char* GetName() const = 0;
         virtual void BeginFrame(std::uint64_t frame_index) = 0;
         virtual void ForgetView(const FilamentView& view) = 0;
-        virtual bool RenderGeometryStage(
-                const FilamentView& view,
-                const FilamentScene& scene,
-                const ViewRenderData& render_data,
-                OutputTargets& targets) = 0;
-        virtual bool RenderCompositeStage(
-                const FilamentView& view,
-                const ViewRenderData& render_data,
-                OutputTargets& targets) = 0;
+        virtual bool RenderGeometryStage(const FilamentView& view,
+                                         const FilamentScene& scene,
+                                         const ViewRenderData& render_data,
+                                         OutputTargets& targets) = 0;
+        virtual bool RenderCompositeStage(const FilamentView& view,
+                                          const ViewRenderData& render_data,
+                                          OutputTargets& targets) = 0;
 
         /// Create platform-specific output textures (zero-copy path).
         /// Sets the appropriate native handles in `targets` and, for the
@@ -162,11 +160,10 @@ public:
         /// OpenGL only: read the merged GS+Filament depth (R16UI, normalised
         /// uint16 in [0,65535]) into \p out for offscreen RenderToDepthImage.
         /// Default: unsupported (returns false).
-        virtual bool ReadMergedDepthToUint16Cpu(
-                const FilamentView& view,
-                std::vector<std::uint16_t>& out,
-                std::uint32_t width,
-                std::uint32_t height) {
+        virtual bool ReadMergedDepthToUint16Cpu(const FilamentView& view,
+                                                std::vector<std::uint16_t>& out,
+                                                std::uint32_t width,
+                                                std::uint32_t height) {
             (void)view;
             (void)out;
             (void)width;
@@ -195,10 +192,11 @@ public:
     void InvalidateOutputForView(FilamentView& view);
 
     /// Marks the view so the next geometry + composite passes run even if the
-    /// scene and camera are unchanged. Used by offscreen \c FilamentRenderToBuffer
-    /// captures: without this, \c needs_render stays false after the first
-    /// composite and subsequent \c RenderToImage calls would skip the GS pipeline
-    /// and read only the Filament swapchain (no splats).
+    /// scene and camera are unchanged. Used by offscreen \c
+    /// FilamentRenderToBuffer captures: without this, \c needs_render stays
+    /// false after the first composite and subsequent \c RenderToImage calls
+    /// would skip the GS pipeline and read only the Filament swapchain (no
+    /// splats).
     void RequestRedrawForView(const FilamentView& view);
 
     bool IsEnabled() const;

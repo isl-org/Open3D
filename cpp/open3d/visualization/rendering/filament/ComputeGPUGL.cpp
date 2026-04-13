@@ -403,8 +403,10 @@ public:
             h.valid = true;
         }
         std::uint32_t gl_fmt = kGL_R32F;
-        if (fmt == ImageFormat::kRGBA16F) gl_fmt = kGL_RGBA16F;
-        else if (fmt == ImageFormat::kR16UI) gl_fmt = kGL_R16UI;
+        if (fmt == ImageFormat::kRGBA16F)
+            gl_fmt = kGL_RGBA16F;
+        else if (fmt == ImageFormat::kR16UI)
+            gl_fmt = kGL_R16UI;
         ::open3d::visualization::rendering::BindImage(binding, h, gl_fmt,
                                                       kGL_WRITE_ONLY);
     }

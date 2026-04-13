@@ -941,3 +941,70 @@ that plan.
 **Metal UI follow-up (same effort as refactor)**
 - `FilamentRenderer::SetOnAppleGaussianCompositeComplete` + `Window::PostRedraw` after successful
   post-`endFrame()` composite so splats appear without an extra user event (first-frame present).
+
+---
+
+## Geometric Transforms for Gaussian Splat PointClouds
+
+### Summary
+
+`t::geometry::PointCloud::Rotate`, `Scale`, and `Translate` correctly update all Gaussian splat
+attributes when `IsGaussianSplat()` is true. `Transform(4×4)` only warns for GS clouds because
+the linear part of a general matrix may be non-orthogonal.
+
+| Operation | Positions / Normals | Splat `rot` | Splat linear `scale` | `f_dc` | `f_rest` |
+|-----------|--------------------|--------------|-----------------------|--------|----------|
+| `Translate` | Updated | — | — | — | — |
+| `Rotate(R, c)` | Updated (same as normals, `n' = R n`) | Composed with `q_R` (CPU) | — | — | IR-rotated |
+| `Scale(s, c)` | Updated | — | Multiplied by `|s|` | — | Odd-degree blocks negated if `s < 0` |
+| `Transform(4×4)` | Updated (existing kernel) | **unchanged** (warning) | **unchanged** (warning) | **unchanged** | **unchanged** |
+| `Crop` / `SelectByMask` | Subsetted | Subsetted | Subsetted | Subsetted | Subsetted |
+
+Quaternion updates are CPU-only; SH rotations are built on CPU and applied on the PointCloud's
+device with Tensor matmul; scale updates use Tensor ops on all devices. Scene-graph
+`SetGeometryTransform` does **not** update splat attributes (GS uses identity
+`world_from_model`, so bake transforms into the tensor before calling `UpdateGeometry`).
+
+### Covariance and Quaternion Semantics
+
+Each Gaussian has covariance Σ = R_q S² R_q^T where R_q is the rotation from `rot` (stored as
+quaternion **w, x, y, z**) and S = diag(scale) is diagonal from `scale` (linear, not log).
+
+After `Rotate(R, center)` the world covariance becomes Σ' = R Σ R^T. Since R and R_q are both
+proper rotations (SO(3)), R_q' = R R_q stays in SO(3) and S is unchanged — implemented as
+quaternion left-multiply `q_new = q_R * q_old` without any eigendecomposition.
+
+After `Scale(s, center)` the covariance becomes Σ' = |s|² Σ. Negative uniform scale is the
+improper orthogonal transform `-I` followed by positive scaling, so the stored quaternion stays
+unchanged, linear axis lengths multiply by `|s|`, and SH picks up the parity of point inversion.
+
+### SH Rotation — Ivanic–Ruedenberg (IR) Algorithm
+
+The view-dependent radiance is stored in `f_dc` (degree 0, invariant) and `f_rest` (degrees 1–3).
+`f_rest` layout: `{N, Nc, 3}` where `Nc = (sh_degree+1)^2 − 1` and the last axis is the RGB
+channel. Coefficient ordering: `k = l² + l + m − 1` with l = 1 … sh_degree, m = −l … l.
+
+The shader (`EvaluateShDegree1` in `gaussian_project.comp`) evaluates degree-1 SH as:
+```glsl
+c1 * (coeffs[0]*dir.y + coeffs[1]*dir.z + coeffs[2]*dir.x, ...)
+```
+mapping `(m=-1, m=0, m=+1)` to Cartesian axes `(y, z, x)`. The IR degree-1 matrix is therefore
+built with the permutation `idx = {1, 2, 0}`:
+```
+R1[i,j] = R_so3[idx[i], idx[j]]    // (y, z, x) → (y, z, x)
+```
+
+Higher-degree matrices are derived recursively using the Ivanic–Ruedenberg u, v, w weights
+(see `PointCloud.cpp`, `BuildIrRl`). The same `R_l` matrix is applied to all
+three RGB channels independently: `new_coeffs[l][m][c] = sum_k R_l[m,k] * old_coeffs[l][k][c]`.
+
+For point inversion (`Scale(s < 0)`), the SH transformation is the parity action of `-I`:
+`Y_lm(-d) = (-1)^l Y_lm(d)`. Therefore the degree-0 term `f_dc` stays unchanged, and each odd
+degree block in `f_rest` (`l = 1, 3, ...`) is negated in place while even degrees are unchanged.
+
+Degrees 1 and 2 are supported by the current renderer (`EvaluateShDegree1/2` in
+`gaussian_project.comp`). Degree 3 is rotated in the stored tensors for consistency even though
+the shader does not yet evaluate it at render time.
+
+**References**: Ivanic & Ruedenberg (1996) "Rotation Matrices for Real Spherical Harmonics" + 1998
+erratum.

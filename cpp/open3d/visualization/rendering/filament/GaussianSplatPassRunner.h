@@ -41,11 +41,10 @@ bool RunGaussianGeometryPasses(
 
 /// Final composite pass into imported color/depth targets.
 /// Dispatch grid sizes are computed inline from config and targets dimensions.
-bool RunGaussianCompositePass(
-        GaussianSplatGpuContext& ctx,
-        const GaussianSplatRenderer::RenderConfig& config,
-        GaussianSplatViewGpuResources& vs,
-        GaussianSplatRenderer::OutputTargets& targets);
+bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
+                              const GaussianSplatRenderer::RenderConfig& config,
+                              GaussianSplatViewGpuResources& vs,
+                              GaussianSplatRenderer::OutputTargets& targets);
 
 }  // namespace rendering
 }  // namespace visualization

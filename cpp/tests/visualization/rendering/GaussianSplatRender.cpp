@@ -143,13 +143,13 @@ TEST(GaussianSplatRender, RenderToImage) {
         ASSERT_TRUE(t::io::WriteImageToPNG(ref_path, rendered))
                 << "Failed to write reference PNG: " << ref_path;
         utility::LogInfo("Reference PNG written to {}", ref_path);
-        GTEST_SKIP() << "Reference PNG generated. Remove OPEN3D_TEST_GENERATE_REFERENCE=1 "
+        GTEST_SKIP() << "Reference PNG generated. Remove "
+                        "OPEN3D_TEST_GENERATE_REFERENCE=1 "
                         "to run comparison.";
     }
 
     ASSERT_TRUE(ref_img.AsTensor().GetShape() == rendered.AsTensor().GetShape())
-            << "Reference shape "
-            << ref_img.AsTensor().GetShape().ToString()
+            << "Reference shape " << ref_img.AsTensor().GetShape().ToString()
             << " vs rendered " << rendered.AsTensor().GetShape().ToString();
 
     AllCloseOrShow(ref_img.AsTensor(), rendered.AsTensor(), 0.0, 5.0);

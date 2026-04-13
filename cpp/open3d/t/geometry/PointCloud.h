@@ -83,7 +83,7 @@ public:
     /// Construct an empty point cloud on the provided device.
     /// \param device The device on which to initialize the point cloud
     /// (default: 'CPU:0').
-    PointCloud(const core::Device &device = core::Device("CPU:0"));
+    PointCloud(const core::Device& device = core::Device("CPU:0"));
 
     /// Construct a point cloud from points.
     ///
@@ -91,15 +91,15 @@ public:
     /// point cloud (no memory copy).
     ///
     /// \param points A tensor with element shape {3}.
-    PointCloud(const core::Tensor &points);
+    PointCloud(const core::Tensor& points);
 
     /// Construct from points and other attributes of the points.
     ///
     /// \param map_keys_to_tensors A map of string to Tensor containing
     /// points and their attributes. point_dict must contain at least the
     /// "positions" key.
-    PointCloud(const std::unordered_map<std::string, core::Tensor>
-                       &map_keys_to_tensors);
+    PointCloud(const std::unordered_map<std::string, core::Tensor>&
+                       map_keys_to_tensors);
 
     virtual ~PointCloud() override {}
 
@@ -107,46 +107,46 @@ public:
     std::string ToString() const;
 
     /// Getter for point_attr_ TensorMap. Used in Pybind.
-    const TensorMap &GetPointAttr() const { return point_attr_; }
+    const TensorMap& GetPointAttr() const { return point_attr_; }
 
     /// Getter for point_attr_ TensorMap.
-    TensorMap &GetPointAttr() { return point_attr_; }
+    TensorMap& GetPointAttr() { return point_attr_; }
 
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
-    core::Tensor &GetPointAttr(const std::string &key) {
+    core::Tensor& GetPointAttr(const std::string& key) {
         return point_attr_.at(key);
     }
 
     /// Get the value of the "positions" attribute. Convenience function.
-    core::Tensor &GetPointPositions() { return GetPointAttr("positions"); }
+    core::Tensor& GetPointPositions() { return GetPointAttr("positions"); }
 
     /// Get the value of the "colors" attribute. Convenience function.
-    core::Tensor &GetPointColors() { return GetPointAttr("colors"); }
+    core::Tensor& GetPointColors() { return GetPointAttr("colors"); }
 
     /// Get the value of the "normals" attribute. Convenience function.
-    core::Tensor &GetPointNormals() { return GetPointAttr("normals"); }
+    core::Tensor& GetPointNormals() { return GetPointAttr("normals"); }
 
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
     /// \param key Attribute name.
-    const core::Tensor &GetPointAttr(const std::string &key) const {
+    const core::Tensor& GetPointAttr(const std::string& key) const {
         return point_attr_.at(key);
     }
 
     /// Get the value of the "positions" attribute. Convenience function.
-    const core::Tensor &GetPointPositions() const {
+    const core::Tensor& GetPointPositions() const {
         return GetPointAttr("positions");
     }
 
     /// Get the value of the "colors" attribute. Convenience function.
-    const core::Tensor &GetPointColors() const {
+    const core::Tensor& GetPointColors() const {
         return GetPointAttr("colors");
     }
 
     /// Get the value of the "normals" attribute. Convenience function.
-    const core::Tensor &GetPointNormals() const {
+    const core::Tensor& GetPointNormals() const {
         return GetPointAttr("normals");
     }
 
@@ -155,7 +155,7 @@ public:
     ///
     /// \param key Attribute name.
     /// \param value A tensor.
-    void SetPointAttr(const std::string &key, const core::Tensor &value) {
+    void SetPointAttr(const std::string& key, const core::Tensor& value) {
         if (value.GetDevice() != device_) {
             utility::LogError("Attribute device {} != Pointcloud's device {}.",
                               value.GetDevice().ToString(), device_.ToString());
@@ -164,19 +164,19 @@ public:
     }
 
     /// Set the value of the "positions" attribute. Convenience function.
-    void SetPointPositions(const core::Tensor &value) {
+    void SetPointPositions(const core::Tensor& value) {
         core::AssertTensorShape(value, {std::nullopt, 3});
         SetPointAttr("positions", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
-    void SetPointColors(const core::Tensor &value) {
+    void SetPointColors(const core::Tensor& value) {
         core::AssertTensorShape(value, {std::nullopt, 3});
         SetPointAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute. Convenience function.
-    void SetPointNormals(const core::Tensor &value) {
+    void SetPointNormals(const core::Tensor& value) {
         core::AssertTensorShape(value, {std::nullopt, 3});
         SetPointAttr("normals", value);
     }
@@ -185,7 +185,7 @@ public:
     /// 1) attribute key exist
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
-    bool HasPointAttr(const std::string &key) const {
+    bool HasPointAttr(const std::string& key) const {
         return point_attr_.Contains(key) && GetPointAttr(key).GetLength() > 0 &&
                GetPointAttr(key).GetLength() == GetPointPositions().GetLength();
     }
@@ -194,7 +194,7 @@ public:
     /// cannot be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.
-    void RemovePointAttr(const std::string &key) { point_attr_.Erase(key); }
+    void RemovePointAttr(const std::string& key) { point_attr_.Erase(key); }
 
     /// Check if the "positions" attribute's value has length > 0.
     /// This is a convenience function.
@@ -220,13 +220,13 @@ public:
     /// \param copy If true, a new point cloud is always created; if false, the
     /// copy is avoided when the original point cloud is already on the targeted
     /// device.
-    PointCloud To(const core::Device &device, bool copy = false) const;
+    PointCloud To(const core::Device& device, bool copy = false) const;
 
     /// Returns copy of the point cloud on the same device.
     PointCloud Clone() const;
 
     /// Clear all data in the point cloud.
-    PointCloud &Clear() override {
+    PointCloud& Clear() override {
         point_attr_.clear();
         return *this;
     }
@@ -248,11 +248,11 @@ public:
     /// The point cloud being appended, must have all the attributes
     /// present in the point cloud it is being appended to, with same
     /// dtype, device and same shape other than the first dimension / length.
-    PointCloud Append(const PointCloud &other) const;
+    PointCloud Append(const PointCloud& other) const;
 
     /// operator+ for t::PointCloud appends the compatible attributes to the
     /// point cloud.
-    PointCloud operator+(const PointCloud &other) const {
+    PointCloud operator+(const PointCloud& other) const {
         return Append(other);
     }
 
@@ -273,38 +273,61 @@ public:
     ///
     ///   [x, y, z] = [x', y', z'] / w'
     ///
+    /// \note For Gaussian splat point clouds (IsGaussianSplat()), the
+    ///   Gaussian-specific attributes (rot, scale, f_dc, f_rest) are
+    ///   **not** updated because the linear part of a general 4x4 matrix
+    ///   may be non-orthogonal. A warning is logged. Use Rotate(), Scale(),
+    ///   and Translate() to transform splat clouds consistently.
+    ///
     /// \param transformation Transformation [Tensor of dim {4,4}].
     /// \return Transformed point cloud
-    PointCloud &Transform(const core::Tensor &transformation);
+    PointCloud& Transform(const core::Tensor& transformation);
 
     /// \brief Translates the PointPositions of the PointCloud.
     /// \param translation translation tensor of dimension {3}
     /// Should be on the same device as the PointCloud
     /// \param relative if true (default): translates relative to Center
     /// \return Translated point cloud
-    PointCloud &Translate(const core::Tensor &translation,
+    PointCloud& Translate(const core::Tensor& translation,
                           bool relative = true);
 
     /// \brief Scales the PointPositions of the PointCloud.
+    ///
+    /// \note For Gaussian splat point clouds (IsGaussianSplat()), the linear
+    ///   scale attributes are multiplied by |scale|. Negative scale means
+    ///   point inversion + uniform scaling: positions are mirrored, axis
+    ///   lengths scale by |scale|, and odd-degree SH bands in f_rest are
+    ///   negated. Quaternions, f_dc, and opacity are unchanged.
+    ///
     /// \param scale Scale [double] of dimension
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
     /// to be scaled. Should be on the same device as the PointCloud
     /// \return Scaled point cloud
-    PointCloud &Scale(double scale, const core::Tensor &center);
+    PointCloud& Scale(double scale, const core::Tensor& center);
 
     /// \brief Rotates the PointPositions and PointNormals (if exists).
+    ///
+    /// \note For Gaussian splat point clouds (IsGaussianSplat()), the
+    ///   per-splat quaternion orientations (rot) are composed with
+    ///   Quaternion(R) on CPU, and the SH rest coefficients (f_rest) are
+    ///   rotated via the Ivanic–Ruedenberg recursion on all devices. A proper
+    ///   rotation matrix is assumed, consistent with how normals are rotated
+    ///   (n' = R n, no orthogonality check). The linear scale attributes and
+    ///   f_dc are unchanged. A warning is logged if rot cannot be updated
+    ///   (non-CPU).
+    ///
     /// \param R Rotation [Tensor of dim {3,3}].
     /// Should be on the same device as the PointCloud
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
-    /// to be scaled. Should be on the same device as the PointCloud
+    /// to be rotated. Should be on the same device as the PointCloud
     /// \return Rotated point cloud
-    PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
+    PointCloud& Rotate(const core::Tensor& R, const core::Tensor& center);
 
     /// \brief Assigns uniform color to the point cloud.
     ///
     /// \param color  RGB color for the point cloud. {3,} shaped Tensor.
     /// Floating color values are clipped between 0.0 and 1.0.
-    PointCloud &PaintUniformColor(const core::Tensor &color);
+    PointCloud& PaintUniformColor(const core::Tensor& color);
 
     /// \brief Select points from input pointcloud, based on boolean mask
     /// indices into output point cloud.
@@ -312,7 +335,7 @@ public:
     /// \param boolean_mask Boolean indexing tensor of shape {n,} containing
     /// true value for the indices that is to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
-    PointCloud SelectByMask(const core::Tensor &boolean_mask,
+    PointCloud SelectByMask(const core::Tensor& boolean_mask,
                             bool invert = false) const;
 
     /// \brief Select points from input pointcloud, based on indices list into
@@ -323,7 +346,7 @@ public:
     /// \param invert Set to `True` to invert the selection of indices, and also
     /// ignore the duplicated indices.
     /// \param remove_duplicates Set to `True` to remove the duplicated indices.
-    PointCloud SelectByIndex(const core::Tensor &indices,
+    PointCloud SelectByIndex(const core::Tensor& indices,
                              bool invert = false,
                              bool remove_duplicates = false) const;
 
@@ -332,7 +355,7 @@ public:
     /// \param voxel_size Voxel size. A positive number.
     /// \param reduction Reduction type. Currently only support "mean".
     PointCloud VoxelDownSample(double voxel_size,
-                               const std::string &reduction = "mean") const;
+                               const std::string& reduction = "mean") const;
 
     /// \brief Downsamples a point cloud by selecting every kth index point and
     /// its attributes.
@@ -414,7 +437,7 @@ public:
     /// \return Tuple of visible triangle mesh and indices of visible points on
     /// the same device as the point cloud.
     std::tuple<TriangleMesh, core::Tensor> HiddenPointRemoval(
-            const core::Tensor &camera_location, double radius) const;
+            const core::Tensor& camera_location, double radius) const;
 
     /// \brief Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
@@ -483,7 +506,7 @@ public:
 
 public:
     /// Normalize point normals to length 1.
-    PointCloud &NormalizeNormals();
+    PointCloud& NormalizeNormals();
 
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
@@ -504,7 +527,7 @@ public:
     /// \param orientation_reference Normals are oriented with respect to
     /// orientation_reference.
     void OrientNormalsToAlignWithDirection(
-            const core::Tensor &orientation_reference =
+            const core::Tensor& orientation_reference =
                     core::Tensor::Init<float>({0, 0, 1},
                                               core::Device("CPU:0")));
 
@@ -513,7 +536,7 @@ public:
     /// \param camera_location Normals are oriented with towards the
     /// camera_location.
     void OrientNormalsTowardsCameraLocation(
-            const core::Tensor &camera_location = core::Tensor::Zeros(
+            const core::Tensor& camera_location = core::Tensor::Zeros(
                     {3}, core::Float32, core::Device("CPU:0")));
 
     /// \brief Function to consistently orient estimated normals based on
@@ -575,9 +598,9 @@ public:
     /// \return Created point cloud with the 'points' property set. Thus is
     /// empty if the conversion fails.
     static PointCloud CreateFromDepthImage(
-            const Image &depth,
-            const core::Tensor &intrinsics,
-            const core::Tensor &extrinsics =
+            const Image& depth,
+            const core::Tensor& intrinsics,
+            const core::Tensor& extrinsics =
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
@@ -610,9 +633,9 @@ public:
     /// \return Created point cloud with the 'points' and 'colors' properties
     /// set. This is empty if the conversion fails.
     static PointCloud CreateFromRGBDImage(
-            const RGBDImage &rgbd_image,
-            const core::Tensor &intrinsics,
-            const core::Tensor &extrinsics =
+            const RGBDImage& rgbd_image,
+            const core::Tensor& intrinsics,
+            const core::Tensor& extrinsics =
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
@@ -621,9 +644,9 @@ public:
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static PointCloud FromLegacy(
-            const open3d::geometry::PointCloud &pcd_legacy,
+            const open3d::geometry::PointCloud& pcd_legacy,
             core::Dtype dtype = core::Float32,
-            const core::Device &device = core::Device("CPU:0"));
+            const core::Device& device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D PointCloud.
     open3d::geometry::PointCloud ToLegacy() const;
@@ -632,8 +655,8 @@ public:
     geometry::Image ProjectToDepthImage(
             int width,
             int height,
-            const core::Tensor &intrinsics,
-            const core::Tensor &extrinsics =
+            const core::Tensor& intrinsics,
+            const core::Tensor& extrinsics =
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
@@ -642,8 +665,8 @@ public:
     geometry::RGBDImage ProjectToRGBDImage(
             int width,
             int height,
-            const core::Tensor &intrinsics,
-            const core::Tensor &extrinsics =
+            const core::Tensor& intrinsics,
+            const core::Tensor& extrinsics =
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
@@ -659,7 +682,7 @@ public:
     /// \param aabb AxisAlignedBoundingBox to crop points.
     /// \param invert Crop the points outside of the bounding box or inside of
     /// the bounding box.
-    PointCloud Crop(const AxisAlignedBoundingBox &aabb,
+    PointCloud Crop(const AxisAlignedBoundingBox& aabb,
                     bool invert = false) const;
 
     /// \brief Function to crop pointcloud into output pointcloud.
@@ -667,7 +690,7 @@ public:
     /// \param obb OrientedBoundingBox to crop points.
     /// \param invert Crop the points outside of the bounding box or inside of
     /// the bounding box.
-    PointCloud Crop(const OrientedBoundingBox &obb, bool invert = false) const;
+    PointCloud Crop(const OrientedBoundingBox& obb, bool invert = false) const;
 
     /// Sweeps the point cloud rotationally about an axis.
     /// \param angle The rotation angle in degree.
@@ -678,7 +701,7 @@ public:
     /// \param capping If true adds caps to the mesh.
     /// \return A line set with the result of the sweep operation.
     LineSet ExtrudeRotation(double angle,
-                            const core::Tensor &axis,
+                            const core::Tensor& axis,
                             int resolution = 16,
                             double translation = 0.0,
                             bool capping = true) const;
@@ -689,7 +712,7 @@ public:
     /// vector.
     /// \param capping If true adds caps to the mesh.
     /// \return A line set with the result of the sweep operation.
-    LineSet ExtrudeLinear(const core::Tensor &vector,
+    LineSet ExtrudeLinear(const core::Tensor& vector,
                           double scale = 1.0,
                           bool capping = true) const;
 
@@ -734,7 +757,7 @@ public:
     /// different metrics.
     /// \returns Tensor containing the requested metrics.
     core::Tensor ComputeMetrics(
-            const PointCloud &pcd2,
+            const PointCloud& pcd2,
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
 
@@ -742,12 +765,14 @@ public:
     /// Splat. This checks for the presence of scale, rot, opacity and f_dc
     /// attributes.
     ///
-    /// \note For 3D Gaussian splats, the \c "scale" point attribute is stored in
-    /// \b linear space (axis lengths), consistent with rendering. PLY files from
-    /// typical 3DGS tools store scales in log-space; \c t::io::ReadPointCloudFromPLY
-    /// converts them to linear on load. SPLAT files store linear scales and are
-    /// copied as-is. When writing PLY, scales are converted back to log-space for
-    /// compatibility with common PLY conventions.
+    /// \note For 3D Gaussian splats, the \c "scale" point attribute is stored
+    /// in
+    /// \b linear space (axis lengths), consistent with rendering. PLY files
+    /// from typical 3DGS tools store scales in log-space; \c
+    /// t::io::ReadPointCloudFromPLY converts them to linear on load. SPLAT
+    /// files store linear scales and are copied as-is. When writing PLY, scales
+    /// are converted back to log-space for compatibility with common PLY
+    /// conventions.
     /// \returns True if a valid 3DGS point cloud, else False.
     /// \throws If point cloud has 3DGS attributes, but they are invalid (wrong
     /// shape).

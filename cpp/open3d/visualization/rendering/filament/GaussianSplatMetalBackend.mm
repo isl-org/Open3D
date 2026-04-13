@@ -84,7 +84,7 @@ public:
                  attrs->splat_count != vs.cached_splat_count);
 
         return RunGaussianGeometryPasses(*gpu_, config_, frame, *attrs, vs,
-                                        scene_id, scene_changed);
+                                         scene_id, scene_changed);
     }
 
     bool RenderCompositeStage(

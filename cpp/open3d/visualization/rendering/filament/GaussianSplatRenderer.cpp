@@ -9,6 +9,7 @@
 
 #include <filament/Texture.h>
 #include <filament/View.h>
+
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -68,11 +69,10 @@ public:
                                GaussianSplatRenderer::OutputTargets&) override {
     }
 
-    bool RenderGeometryStage(
-            const FilamentView& view,
-            const FilamentScene&,
-            const GaussianSplatRenderer::ViewRenderData&,
-            GaussianSplatRenderer::OutputTargets&) override {
+    bool RenderGeometryStage(const FilamentView& view,
+                             const FilamentScene&,
+                             const GaussianSplatRenderer::ViewRenderData&,
+                             GaussianSplatRenderer::OutputTargets&) override {
         if (logged_views_.insert(&view).second) {
             utility::LogWarning(
                     "GaussianSplat backend '{}' is selected but GPU "
@@ -82,10 +82,9 @@ public:
         return false;
     }
 
-    bool RenderCompositeStage(
-            const FilamentView&,
-            const GaussianSplatRenderer::ViewRenderData&,
-            GaussianSplatRenderer::OutputTargets&) override {
+    bool RenderCompositeStage(const FilamentView&,
+                              const GaussianSplatRenderer::ViewRenderData&,
+                              GaussianSplatRenderer::OutputTargets&) override {
         return false;
     }
 
@@ -195,14 +194,12 @@ public:
         return ok;
     }
 
-    bool ReadMergedDepthToUint16Cpu(
-            const FilamentView& view,
-            std::vector<std::uint16_t>& out,
-            std::uint32_t width,
-            std::uint32_t height) override {
+    bool ReadMergedDepthToUint16Cpu(const FilamentView& view,
+                                    std::vector<std::uint16_t>& out,
+                                    std::uint32_t width,
+                                    std::uint32_t height) override {
         auto it = view_states_.find(&view);
-        if (it == view_states_.end() ||
-            it->second.merged_depth_u16_tex == 0) {
+        if (it == view_states_.end() || it->second.merged_depth_u16_tex == 0) {
             return false;
         }
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
@@ -213,8 +210,7 @@ public:
             return false;
         }
         out.resize(static_cast<size_t>(width) * height);
-        const GLuint tex =
-                static_cast<GLuint>(it->second.merged_depth_u16_tex);
+        const GLuint tex = static_cast<GLuint>(it->second.merged_depth_u16_tex);
         glBindTexture(GL_TEXTURE_2D, tex);
         // GL_RED_INTEGER + GL_UNSIGNED_SHORT matches the R16UI internal format.
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT,
@@ -443,7 +439,6 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
     return nullptr;
 }
 
-
 // Returns true when the platform-specific GS color texture handle is ready for
 // the composite shader.  Scene depth is intentionally excluded: it is optional
 // and is 0 for splat-only scenes (no mesh occluders), which is a valid,
@@ -555,7 +550,6 @@ void GaussianSplatRenderer::BeginFrame() {
     }
 }
 
-
 void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
                                                 const FilamentScene& scene) {
     if (!enabled_ || !scene.HasGaussianSplatGeometry()) {
@@ -579,8 +573,8 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
 
     bool rendered = false;
     if (backend_ && targets.has_render_data) {
-        rendered = backend_->RenderGeometryStage(view, scene, targets.render_data,
-                                                 targets);
+        rendered = backend_->RenderGeometryStage(view, scene,
+                                                 targets.render_data, targets);
     }
     if (rendered) {
         targets.last_scene_change_id = scene_change_id;
@@ -714,7 +708,6 @@ RenderTargetHandle GaussianSplatRenderer::GetColorReadbackRT(
     return found != outputs_.end() ? found->second.gs_readback_rt
                                    : RenderTargetHandle();
 }
-
 
 bool GaussianSplatRenderer::ReadMergedDepthToUint16Cpu(
         const FilamentView& view,

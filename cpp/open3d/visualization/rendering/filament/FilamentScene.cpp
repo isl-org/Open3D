@@ -498,8 +498,8 @@ void FilamentScene::RebuildMergedGaussianData() {
         // ceil(splat_count / 32) words appended per object.
         const std::uint32_t mask_val = geom.visible ? ~0u : 0u;
         const std::uint32_t n_words = (splat_count + 31u) / 32u;
-        merged->visibility_mask.insert(merged->visibility_mask.end(),
-                                       n_words, mask_val);
+        merged->visibility_mask.insert(merged->visibility_mask.end(), n_words,
+                                       mask_val);
 
         merged->splat_count += splat_count;
         merged->sh_degree = std::max(merged->sh_degree, src.sh_degree);
@@ -1054,11 +1054,11 @@ void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
                 }
             }
             // For Gaussian objects, update the bit-packed visibility mask in-
-            // place (no need to rebuild the full merged buffer — just flip bits).
+            // place (no need to rebuild the full merged buffer — just flip
+            // bits).
             if (g->gs_splat_count > 0 && merged_gs_attrs_) {
                 auto& mask = merged_gs_attrs_->visibility_mask;
-                const std::uint32_t end =
-                        g->gs_splat_start + g->gs_splat_count;
+                const std::uint32_t end = g->gs_splat_start + g->gs_splat_count;
                 for (std::uint32_t k = g->gs_splat_start; k < end; ++k) {
                     const std::uint32_t word = k / 32u;
                     const std::uint32_t bit = k % 32u;

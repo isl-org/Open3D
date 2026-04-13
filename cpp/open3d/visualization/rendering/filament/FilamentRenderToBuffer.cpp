@@ -52,11 +52,8 @@ namespace {
 
 /// Composite shader stores premultiplied RGB in \p gs_rgba; blend like ImGui
 /// \c One / \c OneMinusSrcAlpha over an opaque Filament base.
-void BlendPremultipliedSplatOverRgb8(uint8_t* base_rgb,
-                                     int n_channels,
-                                     const float* gs_rgba,
-                                     int w,
-                                     int h) {
+void BlendPremultipliedSplatOverRgb8(
+        uint8_t* base_rgb, int n_channels, const float* gs_rgba, int w, int h) {
     const int n = w * h;
     for (int i = 0; i < n; ++i) {
         const float fr = gs_rgba[i * 4 + 0];
@@ -238,8 +235,8 @@ void FilamentRenderToBuffer::Render() {
     frame_done_ = false;
     scene_->HideRefractedMaterials();
 
-    const bool has_gaussian = gaussian_splat_renderer_ &&
-                              scene_->HasGaussianSplatGeometry();
+    const bool has_gaussian =
+            gaussian_splat_renderer_ && scene_->HasGaussianSplatGeometry();
 #if defined(__APPLE__)
     const bool run_gs_pipeline = has_gaussian && !depth_image_;
 #else
@@ -321,11 +318,10 @@ void FilamentRenderToBuffer::Render() {
             std::vector<float> gs_f32;
 
             PixelBufferDescriptor base_pd(
-                    base_rgba.data(), base_rgba.size(),
-                    PixelDataFormat::RGBA, PixelDataType::UBYTE,
-                    [](void*, size_t, void*) {}, nullptr);
-            renderer_->readPixels(native_view_rt, vp.left, vp.bottom,
-                                  vp.width, vp.height, std::move(base_pd));
+                    base_rgba.data(), base_rgba.size(), PixelDataFormat::RGBA,
+                    PixelDataType::UBYTE, [](void*, size_t, void*) {}, nullptr);
+            renderer_->readPixels(native_view_rt, vp.left, vp.bottom, vp.width,
+                                  vp.height, std::move(base_pd));
 
             if (native_gs_rt) {
                 gs_f32.resize(n_pixels * 4);
@@ -353,7 +349,7 @@ void FilamentRenderToBuffer::Render() {
             }
             if (native_gs_rt && !gs_f32.empty()) {
                 BlendPremultipliedSplatOverRgb8(buffer_, nc, gs_f32.data(),
-                                               int(width_), int(height_));
+                                                int(width_), int(height_));
             }
 
             // Deliver result now; the BeginFrame flushAndWait is a no-op since
@@ -366,7 +362,8 @@ void FilamentRenderToBuffer::Render() {
                 callback_ = nullptr;
             }
             frame_done_ = true;
-        } else if (depth_image_ && run_gs_pipeline && gaussian_splat_renderer_) {
+        } else if (depth_image_ && run_gs_pipeline &&
+                   gaussian_splat_renderer_) {
             // GPU-merged depth path: the composite pass has already merged
             // GS and Filament depth into a normalised R16UI texture.
             // Read it back directly — no CPU merge required.
@@ -397,9 +394,8 @@ void FilamentRenderToBuffer::Render() {
                 // scene-depth texture → merged_depth_u16_tex not allocated).
                 auto* user_param = new PBDParams(this, callback_);
                 PixelBufferDescriptor pd(
-                        buffer_, buffer_size_,
-                        PixelDataFormat::DEPTH_COMPONENT, PixelDataType::FLOAT,
-                        ReadPixelsCallback, user_param);
+                        buffer_, buffer_size_, PixelDataFormat::DEPTH_COMPONENT,
+                        PixelDataType::FLOAT, ReadPixelsCallback, user_param);
                 renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
                                       std::move(pd));
             }
@@ -411,7 +407,7 @@ void FilamentRenderToBuffer::Render() {
                         "swapchain — splat composite may be missing.");
             }
             auto format = (n_channels_ == 3 ? PixelDataFormat::RGB
-                                              : PixelDataFormat::RGBA);
+                                            : PixelDataFormat::RGBA);
             auto type = PixelDataType::UBYTE;
             if (depth_image_) {
                 format = PixelDataFormat::DEPTH_COMPONENT;

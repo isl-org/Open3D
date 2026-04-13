@@ -262,7 +262,8 @@ void ProjectGaussian(uint splat_index) {
     // Bit-packed visibility mask: extract bit (splat_index % 32) from word
     // (splat_index / 32). 0 = hidden by ShowGeometry(); cull immediately so
     // downstream passes (prefix-sum, scatter) skip this splat for free.
-    if (((visibility_mask[splat_index >> 5u] >> (splat_index & 31u)) & 1u) == 0u) {
+    if (((visibility_mask[splat_index >> 5u] >> (splat_index & 31u)) & 1u) ==
+        0u) {
         WriteInvalidProjection(splat_index);
         return;
     }

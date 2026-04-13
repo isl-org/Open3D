@@ -367,13 +367,14 @@ public:
         return CreateTexture2DR32F(width, height, label);
     }
 
-    std::uintptr_t ResizeTexture2DR16UI(std::uintptr_t tex,
-                                        std::uint32_t /*width*/,
-                                        std::uint32_t /*height*/,
-                                        const char* /*label*/ = nullptr) override {
+    std::uintptr_t ResizeTexture2DR16UI(
+            std::uintptr_t tex,
+            std::uint32_t /*width*/,
+            std::uint32_t /*height*/,
+            const char* /*label*/ = nullptr) override {
         // Metal depth-merge via GPU is not yet supported on this backend.
-        // The CPU fallback path in FilamentRenderToBuffer handles depth readback
-        // on Apple using Filament-only depth (no GS depth merge).
+        // The CPU fallback path in FilamentRenderToBuffer handles depth
+        // readback on Apple using Filament-only depth (no GS depth merge).
         (void)tex;
         return 0;
     }

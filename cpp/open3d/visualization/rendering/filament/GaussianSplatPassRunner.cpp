@@ -67,10 +67,11 @@ bool RunGaussianGeometryPasses(
         bool scene_changed) {
     // Projection dispatch: sized by total_tiles so the prefix-sum and scatter
     // passes share the same total_invocations stride (the projection shader
-    // loops over splats with that stride). See I4 comment in GaussianSplatRenderer.cpp.
-    const std::uint32_t proj_groups = DivUp(
-            frame_data.tile_count,
-            static_cast<std::uint32_t>(config.projection_group_size));
+    // loops over splats with that stride). See I4 comment in
+    // GaussianSplatRenderer.cpp.
+    const std::uint32_t proj_groups =
+            DivUp(frame_data.tile_count,
+                  static_cast<std::uint32_t>(config.projection_group_size));
     // Prefix-sum covers all tiles in one workgroup.
     const std::uint32_t pfx_groups = 1u;
 
@@ -90,7 +91,8 @@ bool RunGaussianGeometryPasses(
                 vs.scales_buf, attrs.scales.size() * sizeof(std::uint32_t),
                 "gs.scales");
         assert(attrs.visibility_mask.size() == mask_words &&
-               "visibility_mask must be bit-packed: ceil(splat_count/32) words");
+               "visibility_mask must be bit-packed: ceil(splat_count/32) "
+               "words");
         vs.mask_buf = ctx.ResizeBuffer(
                 vs.mask_buf, mask_words * sizeof(std::uint32_t), "gs.mask");
         vs.rotations_buf = ctx.ResizeBuffer(
@@ -151,8 +153,9 @@ bool RunGaussianGeometryPasses(
         ctx.UploadBuffer(vs.scales_buf, attrs.scales.data(),
                          attrs.scales.size() * sizeof(std::uint32_t), 0);
         if (!attrs.visibility_mask.empty()) {
-            ctx.UploadBuffer(vs.mask_buf, attrs.visibility_mask.data(),
-                             attrs.visibility_mask.size() * sizeof(std::uint32_t), 0);
+            ctx.UploadBuffer(
+                    vs.mask_buf, attrs.visibility_mask.data(),
+                    attrs.visibility_mask.size() * sizeof(std::uint32_t), 0);
         }
         ctx.UploadBuffer(vs.rotations_buf, attrs.rotations.data(),
                          attrs.rotations.size() * sizeof(std::uint32_t), 0);
@@ -295,18 +298,17 @@ bool RunGaussianGeometryPasses(
     return true;
 }
 
-bool RunGaussianCompositePass(
-        GaussianSplatGpuContext& ctx,
-        const GaussianSplatRenderer::RenderConfig& config,
-        GaussianSplatViewGpuResources& vs,
-        GaussianSplatRenderer::OutputTargets& targets) {
+bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
+                              const GaussianSplatRenderer::RenderConfig& config,
+                              GaussianSplatViewGpuResources& vs,
+                              GaussianSplatRenderer::OutputTargets& targets) {
     // Composite dispatch grid sized by viewport / workgroup size.
-    const std::uint32_t comp_x = DivUp(
-            targets.width,
-            static_cast<std::uint32_t>(config.composite_group_size.x()));
-    const std::uint32_t comp_y = DivUp(
-            targets.height,
-            static_cast<std::uint32_t>(config.composite_group_size.y()));
+    const std::uint32_t comp_x =
+            DivUp(targets.width,
+                  static_cast<std::uint32_t>(config.composite_group_size.x()));
+    const std::uint32_t comp_y =
+            DivUp(targets.height,
+                  static_cast<std::uint32_t>(config.composite_group_size.y()));
 
     const bool has_scene_depth = (targets.scene_depth_gl_handle != 0) ||
                                  (targets.scene_depth_mtl_texture != 0);
