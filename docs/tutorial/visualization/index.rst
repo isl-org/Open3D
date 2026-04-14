@@ -4,6 +4,7 @@ Visualization
 .. toctree::
 
     visualization
+    gaussian_splatting_web_visualizer
     customized_visualization
     interactive_visualization
     non_blocking_visualization
