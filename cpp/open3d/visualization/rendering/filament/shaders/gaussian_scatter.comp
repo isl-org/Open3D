@@ -78,7 +78,11 @@ uint LinearTileIndex(uvec2 tile) {
 }
 
 uint DepthToSortableKey(float depth) {
-    return floatBitsToUint(max(depth, 0.0));
+    // Depth is stored as Filament inverse depth (near=1, far=0), but the
+    // radix sort expects near splats to come first with ascending keys.
+    // Convert to a monotonic near->far value by inverting once here.
+    float sortable_depth = clamp(1.0 - depth, 0.0, 1.0);
+    return floatBitsToUint(sortable_depth);
 }
 
 uvec2 UnpackTileCoord(uint pkd_tile_coord) {

@@ -335,7 +335,8 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     // Allocate the merged-depth R16UI texture only when both scene depth is
     // present (mesh occluders exist) AND an offscreen depth readback has been
     // requested for this view.  When only GS depth is needed (no meshes),
-    // composite_depth_tex (R32F) is read directly via ReadCompositeDepthToFloatCpu.
+    // composite_depth_tex (R32F) is read directly via
+    // ReadCompositeDepthToFloatCpu.
     if (has_scene_depth && targets.wants_depth_readback) {
         vs.merged_depth_u16_tex = ctx.ResizeTexture2DR16UI(
                 vs.merged_depth_u16_tex, w, h, "gs.merged_depth");

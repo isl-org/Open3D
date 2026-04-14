@@ -26,7 +26,8 @@ layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 // 48-byte projected splat descriptor (std430):
 //   vec4(16) + 4×uint(16) + vec4(16) = 48 bytes.
 struct ProjectedGaussian {
-    vec4 center_depth_alpha;  // xy=pixel center, z=linear depth, w=alpha
+    vec4 center_depth_alpha;  // xy=pixel center, z=Filament inverse depth,
+                              // w=alpha
     uint packed_color;        // RGBA8 packed color
     uint tile_count_overlap;  // tile overlap count; 0 = culled/invalid
     uint tile_rect_min;       // packed: (tile_min.y << 16) | tile_min.x
@@ -411,8 +412,19 @@ void ProjectGaussian(uint splat_index) {
         view_dir = vec3(0.0, 0.0, 1.0);
     }
 
+    // Store depth in Filament reversed/inverse convention:
+    // near -> 1, far -> 0.
+    float near = view_params.depth_range_and_flags.x;
+    float far = view_params.depth_range_and_flags.y;
+    float linear_depth = clamp(-view_center.z, near, far);
+    // Inverse/reversed depth matching Filament's depth buffer convention.
+    // near -> 1, far -> 0.
+    float inverse_depth =
+            near * (far - linear_depth) / (linear_depth * (far - near));
+    inverse_depth = clamp(inverse_depth, 0.0, 1.0);
+
     projected[splat_index].center_depth_alpha =
-            vec4(center_pixel, -view_center.z, alpha);
+            vec4(center_pixel, inverse_depth, alpha);
     projected[splat_index].packed_color =
             PackColorRGBA8(EvaluateShColor(splat_index, view_dir, dc));
     projected[splat_index].tile_count_overlap = tile_overlap_count;

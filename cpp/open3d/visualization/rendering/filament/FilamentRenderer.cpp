@@ -235,7 +235,8 @@ void FilamentRenderer::Draw() {
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
         if (gaussian_splat_renderer_ &&
-            !GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
+            !GaussianSplatFrameScheduler::
+                    CompositeRunsAfterFilamentEndFrame()) {
             engine_.flushAndWait();
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {

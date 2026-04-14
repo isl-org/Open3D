@@ -67,8 +67,8 @@ Eigen::Matrix3f BuildIrR1(const Eigen::Matrix3f& R) {
 }
 
 Eigen::MatrixXf BuildIrRl(int l,
-                                 const Eigen::Matrix3f& R1,
-                                 const Eigen::MatrixXf& Rp) {
+                          const Eigen::Matrix3f& R1,
+                          const Eigen::MatrixXf& Rp) {
     // Rp: IR matrix for degree l-1 (shape (2(l-1)+1) × (2(l-1)+1)).
     auto P = [&](int i, int a, int b) {
         auto g = [&](int m, int n) { return Rp(m + l - 1, n + l - 1); };
@@ -107,8 +107,7 @@ Eigen::MatrixXf BuildIrRl(int l,
 // Update rot and f_rest in-place after Rotate(R, center).
 // Proper rotation is assumed (same policy as RotateNormalsKernel).
 // rot: CPU Eigen loop. f_rest: IR matrices computed on CPU, Matmul on device.
-void RotateGSSplat(const core::Tensor& R_tensor,
-                          PointCloud& pcd) {
+void RotateGSSplat(const core::Tensor& R_tensor, PointCloud& pcd) {
     auto device = pcd.GetDevice();
     int64_t N = pcd.GetPointPositions().GetLength();
 

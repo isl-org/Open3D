@@ -14,6 +14,8 @@
 #include "open3d/visualization/rendering/filament/GaussianSplatOpenGLBackend.h"
 
 #include <GL/glew.h>
+#include <filament/Texture.h>
+#include <filament/View.h>
 
 #include <memory>
 #include <unordered_map>

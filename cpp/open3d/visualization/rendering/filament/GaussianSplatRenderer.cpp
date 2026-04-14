@@ -404,8 +404,8 @@ bool GaussianSplatRenderer::ReadCompositeDepthToFloatCpu(
     return backend_->ReadCompositeDepthToFloatCpu(view, out, width, height);
 }
 
-void GaussianSplatRenderer::RequestDepthReadbackForView(const FilamentView& view,
-                                                         bool wanted) {
+void GaussianSplatRenderer::RequestDepthReadbackForView(
+        const FilamentView& view, bool wanted) {
     auto it = outputs_.find(&view);
     if (it != outputs_.end()) {
         it->second.wants_depth_readback = wanted;
@@ -435,6 +435,12 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view,
 
     auto width = static_cast<std::uint32_t>(viewport[2]);
     auto height = static_cast<std::uint32_t>(viewport[3]);
+    // Keep scene-depth mode sticky once enabled for an existing view output.
+    // This avoids unstable lifetime transitions between shared sampleable
+    // depth and private depth attachments during runtime visibility toggles.
+    if (targets.width > 0 && targets.height > 0) {
+        needs_scene_depth = needs_scene_depth || targets.needs_scene_depth;
+    }
     const bool depth_mode_changed =
             (targets.needs_scene_depth != needs_scene_depth);
     if (targets.width == width && targets.height == height && targets.color &&

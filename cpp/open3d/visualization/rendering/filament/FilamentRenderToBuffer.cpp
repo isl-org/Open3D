@@ -246,15 +246,15 @@ void FilamentRenderToBuffer::Render() {
         // GL/Vulkan queue on non-Apple backends).
         engine_.flushAndWait();
 #endif
-        GaussianSplatFrameScheduler::RunGeometry(
-                *gaussian_splat_renderer_, *view_, *scene_);
+        GaussianSplatFrameScheduler::RunGeometry(*gaussian_splat_renderer_,
+                                                 *view_, *scene_);
     }
 
     if (renderer_->beginFrame(swapchain_)) {
         renderer_->render(view_->GetNativeView());
 
-        if (run_gs_pipeline &&
-            !GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
+        if (run_gs_pipeline && !GaussianSplatFrameScheduler::
+                                       CompositeRunsAfterFilamentEndFrame()) {
             engine_.flushAndWait();
             GaussianSplatFrameScheduler::RunComposite(*gaussian_splat_renderer_,
                                                       *view_);
@@ -371,12 +371,12 @@ void FilamentRenderToBuffer::Render() {
                             static_cast<std::uint32_t>(height_)) &&
                     merged_u16.size() == width_ * height_;
             if (got_merged) {
-                // Convert normalised uint16 [0,65535] → linear float [0,far].
-                const float far_z =
-                        static_cast<float>(view_->GetCamera()->GetFar());
+                // Convert normalised uint16 [0,65535] -> Filament inverse
+                // depth [0,1]. Renderer::RenderToDepthImage applies the final
+                // user-facing conversion for z_in_view_space/normalized modes.
                 float* dst = reinterpret_cast<float*>(buffer_);
                 for (size_t i = 0; i < merged_u16.size(); ++i) {
-                    dst[i] = (merged_u16[i] / 65535.f) * far_z;
+                    dst[i] = merged_u16[i] / 65535.f;
                 }
                 if (callback_) {
                     callback_({static_cast<std::size_t>(width_),
@@ -409,10 +409,10 @@ void FilamentRenderToBuffer::Render() {
                     // Final fallback: Filament depth only via readPixels
                     // (backend unsupported or no GS depth available).
                     auto* user_param = new PBDParams(this, callback_);
-                    PixelBufferDescriptor pd(
-                            buffer_, buffer_size_,
-                            PixelDataFormat::DEPTH_COMPONENT, PixelDataType::FLOAT,
-                            ReadPixelsCallback, user_param);
+                    PixelBufferDescriptor pd(buffer_, buffer_size_,
+                                             PixelDataFormat::DEPTH_COMPONENT,
+                                             PixelDataType::FLOAT,
+                                             ReadPixelsCallback, user_param);
                     renderer_->readPixels(vp.left, vp.bottom, vp.width,
                                           vp.height, std::move(pd));
                 }

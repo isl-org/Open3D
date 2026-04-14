@@ -33,12 +33,16 @@ namespace tests {
 
 namespace {
 
-std::string RenderToImageReferencePngPath() {
+std::string RenderToImageReferencePngPath(bool depth = false) {
     std::string here(__FILE__);
     const auto pos = here.find_last_of("/\\");
     const std::string dir =
             (pos == std::string::npos) ? std::string() : here.substr(0, pos);
-    return dir + "/testdata/GaussianSplatRender_RenderToImage.png";
+    if (depth) {
+        return dir + "/testdata/GaussianSplatRender_RenderToDepth.png";
+    } else {
+        return dir + "/testdata/GaussianSplatRender_RenderToImage.png";
+    }
 }
 
 t::geometry::PointCloud MakeTwoSplatCloud() {
@@ -87,6 +91,7 @@ TEST(GaussianSplatRender, RenderToImage) {
     constexpr int kW = 36, kH = 20;
 
     const std::string ref_path = RenderToImageReferencePngPath();
+    const std::string ref_depth_path = RenderToImageReferencePngPath(true);
 
     // If OPEN3D_TEST_GENERATE_REFERENCE=1, write the rendered image as the new
     // golden reference and skip comparison. Use this to update the reference
@@ -97,6 +102,7 @@ TEST(GaussianSplatRender, RenderToImage) {
     }();
 
     t::geometry::Image ref_img;
+    t::geometry::Image ref_depth_img;
     if (!generate_ref) {
         if (!utility::filesystem::FileExists(ref_path)) {
             GTEST_SKIP() << "Missing golden PNG: " << ref_path
@@ -105,6 +111,14 @@ TEST(GaussianSplatRender, RenderToImage) {
         }
         ASSERT_TRUE(t::io::ReadImageFromPNG(ref_path, ref_img))
                 << "Failed to read reference PNG: " << ref_path;
+
+        if (!utility::filesystem::FileExists(ref_depth_path)) {
+            GTEST_SKIP() << "Missing golden depth PNG: " << ref_depth_path
+                         << "\n  Re-run with OPEN3D_TEST_GENERATE_REFERENCE=1 "
+                            "to create it.";
+        }
+        ASSERT_TRUE(t::io::ReadImageFromPNG(ref_depth_path, ref_depth_img))
+                << "Failed to read reference depth PNG: " << ref_depth_path;
     }
 
     auto& app = visualization::gui::Application::GetInstance();
@@ -143,16 +157,63 @@ TEST(GaussianSplatRender, RenderToImage) {
         ASSERT_TRUE(t::io::WriteImageToPNG(ref_path, rendered))
                 << "Failed to write reference PNG: " << ref_path;
         utility::LogInfo("Reference PNG written to {}", ref_path);
-        GTEST_SKIP() << "Reference PNG generated. Remove "
+    }
+
+    if (!generate_ref) {
+        ASSERT_TRUE(ref_img.AsTensor().GetShape() ==
+                    rendered.AsTensor().GetShape())
+                << "Reference shape "
+                << ref_img.AsTensor().GetShape().ToString() << " vs rendered "
+                << rendered.AsTensor().GetShape().ToString();
+        AllCloseOrShow(ref_img.AsTensor(), rendered.AsTensor(), 0.0, 5.0);
+    }
+
+    auto depth = app.RenderToDepthImage(*ctx.renderer, ctx.scene->GetView(),
+                                        ctx.scene->GetScene(), kW, kH);
+    ASSERT_NE(depth, nullptr) << "RenderToDepthImage returned null";
+    EXPECT_EQ(depth->width_, kW);
+    EXPECT_EQ(depth->height_, kH);
+    EXPECT_EQ(depth->num_of_channels_, 1);
+    EXPECT_EQ(depth->bytes_per_channel_, 4);
+
+    t::geometry::Image rendered_depth = t::geometry::Image::FromLegacy(*depth);
+    utility::LogInfo("Rendered depth image {}: min {}, max {}",
+                     rendered_depth.ToString(),
+                     rendered_depth.AsTensor().Min({0, 1, 2}).ToString(),
+                     rendered_depth.AsTensor().Max({0, 1, 2}).ToString());
+
+    // Filament convention: default depth is inverse (near=1, far=0).
+    const float depth_min =
+            rendered_depth.AsTensor().Min({0, 1, 2}).Item<float>();
+    const float depth_max =
+            rendered_depth.AsTensor().Max({0, 1, 2}).Item<float>();
+    EXPECT_GE(depth_min, 0.0);
+    EXPECT_LE(depth_max, 1.0);
+
+    // Depth references are stored as PNG, so compare as UInt16.
+    t::geometry::Image rendered_depth_u16 =
+            rendered_depth.To(core::UInt16, /*scale=*/65535.0f);
+
+    if (generate_ref) {
+        ASSERT_TRUE(t::io::WriteImageToPNG(ref_depth_path, rendered_depth_u16))
+                << "Failed to write reference depth PNG: " << ref_depth_path;
+        utility::LogInfo("Reference depth PNG written to {}", ref_depth_path);
+    }
+
+    if (!generate_ref) {
+        ASSERT_TRUE(ref_depth_img.AsTensor().GetShape() ==
+                    rendered_depth_u16.AsTensor().GetShape())
+                << "Reference depth shape "
+                << ref_depth_img.AsTensor().GetShape().ToString()
+                << " vs rendered depth "
+                << rendered_depth_u16.AsTensor().GetShape().ToString();
+        AllCloseOrShow(ref_depth_img.AsTensor(), rendered_depth_u16.AsTensor(),
+                       0.0, 5.0);
+    } else {
+        GTEST_SKIP() << "Reference PNGs generated. Remove "
                         "OPEN3D_TEST_GENERATE_REFERENCE=1 "
                         "to run comparison.";
     }
-
-    ASSERT_TRUE(ref_img.AsTensor().GetShape() == rendered.AsTensor().GetShape())
-            << "Reference shape " << ref_img.AsTensor().GetShape().ToString()
-            << " vs rendered " << rendered.AsTensor().GetShape().ToString();
-
-    AllCloseOrShow(ref_img.AsTensor(), rendered.AsTensor(), 0.0, 5.0);
 }
 
 }  // namespace tests

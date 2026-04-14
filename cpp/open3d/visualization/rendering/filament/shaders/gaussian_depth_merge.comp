@@ -7,13 +7,13 @@
 
 // Gaussian splat depth-merge pass.
 //
-// Merges the GS composite linear depth (R32F, gs.composite_depth) with
+// Merges the GS composite inverse depth (R32F, gs.composite_depth) with
 // Filament's reversed-Z scene depth to produce a single normalised R16UI depth
 // map suitable for CPU readback via glGetTexImage / GL_RED_INTEGER /
 // GL_UNSIGNED_SHORT.
 //
 // Output: nearest depth from either source, normalised to [0, 65535] where
-//   0 → near-plane depth, 65535 → far-plane depth.
+//   65535 → near-plane depth, 0 → far-plane depth (Filament convention).
 //
 // The pass is optional and is only dispatched when merged_depth_u16_tex is
 // allocated (i.e. an offscreen RenderToDepthImage is in progress and scene
@@ -59,24 +59,15 @@ void main() {
     ivec2 vp = ivec2(view_params.viewport_origin_and_size.zw);
     if (pixel.x >= vp.x || pixel.y >= vp.y) return;
 
-    float near = view_params.depth_range_and_flags.x;
-    float far = view_params.depth_range_and_flags.y;
+    // Both depth inputs are in Filament reversed/inverse depth convention.
+    float gs_inv = texelFetch(gs_depth, pixel, 0).r;
+    float sc_inv = texelFetch(scene_depth, pixel, 0).r;
 
-    // GS composite depth is already in linear eye-space [near, far].
-    float gs_lin = texelFetch(gs_depth, pixel, 0).r;
+    // In inverse depth, larger means nearer.
+    float merged = max(gs_inv, sc_inv);
 
-    // Filament reversed-Z: depth buffer stores z_ndc = n/(n + z*(f-n)) where
-    // z is linear eye-space distance. Rearranging: z_lin = n*f/(n +
-    // z_ndc*(f-n)). At near plane z_ndc=1; at far plane z_ndc=0. z_ndc==0 means
-    // no geometry → treat as far distance.
-    float z_ndc = texelFetch(scene_depth, pixel, 0).r;
-    float sc_lin =
-            (z_ndc > 0.0) ? near * far / (near + z_ndc * (far - near)) : far;
-
-    // Take the nearest (smallest linear distance) of the two sources.
-    float merged = min(gs_lin, sc_lin);
-
-    // Normalise to uint16: 0 = near, 65535 = far.
-    uint u16 = uint(clamp(merged / far, 0.0, 1.0) * 65535.0 + 0.5);
+    // Normalise to uint16 preserving Filament convention:
+    // near -> 65535, far -> 0.
+    uint u16 = uint(clamp(merged, 0.0, 1.0) * 65535.0 + 0.5);
     imageStore(merged_depth, pixel, uvec4(u16, 0u, 0u, 0u));
 }

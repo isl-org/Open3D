@@ -149,27 +149,17 @@ void main() {
 
     vec3 accum_color = vec3(0.0);
     float transmittance = 1.0;
-    float out_linear_depth = view_params.depth_range_and_flags.y;
+    // Output depth uses Filament convention: near=1, far=0.
+    float out_inverse_depth = 0.0;
     bool depth_written = false;
     vec2 pixel_center = vec2(pixel) + vec2(0.5);
 
-    // Linearize scene depth from Filament's reversed-Z depth buffer.
-    // Filament reversed-Z: depth buffer stores z_ndc = n/(n + z*(f-n)) where
-    // z is linear eye-space distance. Rearranging: z_lin = n*f/(n +
-    // z_ndc*(f-n)). At near plane z_ndc=1; at far plane z_ndc=0; z_ndc==0 means
-    // no geometry (treat as far distance). This formula matches
-    // gaussian_depth_merge.comp.
-    float scene_linear_depth = view_params.depth_range_and_flags.y;  // far
+    // Filament scene depth is already in reversed/inverse convention.
+    float scene_inverse_depth = 0.0;  // far
     bool use_scene_depth =
             (view_params.depth_range_and_flags.w > 0.5) && pixel_active;
     if (use_scene_depth) {
-        float near = view_params.depth_range_and_flags.x;
-        float far = view_params.depth_range_and_flags.y;
-        float z_ndc = texelFetch(scene_depth, pixel, 0).r;
-        // z_ndc == 0.0 means at or beyond far plane (no geometry).
-        if (z_ndc > 0.0) {
-            scene_linear_depth = near * far / (near + z_ndc * (far - near));
-        }
+        scene_inverse_depth = texelFetch(scene_depth, pixel, 0).r;
     }
 
     // Opt7: process tile entries in batches of BATCH_SIZE.
@@ -198,8 +188,9 @@ void main() {
         // Skip if this pixel is outside the viewport or already saturated.
         if (pixel_active) {
             for (uint i = 0u; i < batch_count; ++i) {
-                // Discard splats behind scene geometry.
-                if (use_scene_depth && s_depth[i] >= scene_linear_depth) {
+                // Discard splats behind scene geometry. With inverse depth,
+                // farther splats have smaller values.
+                if (use_scene_depth && s_depth[i] <= scene_inverse_depth) {
                     continue;
                 }
 
@@ -219,7 +210,7 @@ void main() {
                 float contribution = transmittance * alpha;
                 accum_color += contribution * UnpackColorRGBA8(s_color[i]);
                 if (!depth_written && contribution > 1.0 / 4096.0) {
-                    out_linear_depth = s_depth[i];
+                    out_inverse_depth = s_depth[i];
                     depth_written = true;
                 }
 
@@ -242,6 +233,6 @@ void main() {
         // (premultiplied-alpha compositing), so store premultiplied RGB
         // directly: final = accum_color + transmittance * background.
         imageStore(out_color, pixel, vec4(accum_color, out_alpha));
-        imageStore(out_depth, pixel, vec4(out_linear_depth, 0.0, 0.0, 0.0));
+        imageStore(out_depth, pixel, vec4(out_inverse_depth, 0.0, 0.0, 0.0));
     }
 }

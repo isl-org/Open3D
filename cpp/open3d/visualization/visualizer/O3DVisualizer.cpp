@@ -68,6 +68,7 @@ static const std::string kDefaultIBL = "default";
 enum MenuId {
     MENU_ABOUT = 0,
     MENU_EXPORT_RGB,
+    MENU_EXPORT_DEPTH,
     MENU_CLOSE,
     MENU_SETTINGS,
     MENU_ACTIONS_BASE = 1000 /* this should be last */
@@ -2126,6 +2127,35 @@ Ctrl-alt-click to polygon select)";
                 });
     }
 
+    void ExportCurrentDepthImage(const std::string &path) {
+        scene_->EnableSceneCaching(false);
+        scene_->GetScene()->GetScene()->RenderToDepthImage(
+                [this, path](std::shared_ptr<geometry::Image> image) mutable {
+                    bool ok = false;
+                    if (image && image->num_of_channels_ == 1 &&
+                        image->bytes_per_channel_ == 4) {
+                        // Depth export stores normalized depth in 16-bit PNG.
+                        auto depth_float =
+                                std::make_shared<geometry::Image>(*image);
+                        depth_float->ClipIntensity(0.0, 1.0);
+                        depth_float->LinearTransform(65535.0, 0.0);
+                        auto depth_u16 =
+                                depth_float
+                                        ->CreateImageFromFloatImage<uint16_t>();
+                        ok = io::WriteImage(path, *depth_u16);
+                    }
+                    if (!ok) {
+                        this->window_->ShowMessageBox(
+                                "Error",
+                                (std::string(
+                                         "Could not write depth image to ") +
+                                 path + ".")
+                                        .c_str());
+                    }
+                    scene_->EnableSceneCaching(true);
+                });
+    }
+
     void OnAbout() {
         auto &theme = window_->GetTheme();
         auto dlg = std::make_shared<gui::Dialog>("About");
@@ -2183,6 +2213,20 @@ Ctrl-alt-click to polygon select)";
         dlg->SetOnDone([this](const char *path) {
             this->window_->CloseDialog();
             this->ExportCurrentImage(path);
+        });
+        window_->ShowDialog(dlg);
+    }
+
+    void OnExportDepth() {
+        auto dlg = std::make_shared<gui::FileDialog>(
+                gui::FileDialog::Mode::SAVE, "Save Depth File",
+                window_->GetTheme());
+        dlg->AddFilter(".png", "PNG images (.png)");
+        dlg->AddFilter("", "All files");
+        dlg->SetOnCancel([this]() { this->window_->CloseDialog(); });
+        dlg->SetOnDone([this](const char *path) {
+            this->window_->CloseDialog();
+            this->ExportCurrentDepthImage(path);
         });
         window_->ShowDialog(dlg);
     }
@@ -2272,6 +2316,7 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     if (Application::GetInstance().UsingNativeWindows()) {
         auto file_menu = std::make_shared<Menu>();
         file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
+        file_menu->AddItem("Export Current Depth Image...", MENU_EXPORT_DEPTH);
         file_menu->AddSeparator();
         file_menu->AddItem("Close Window", MENU_CLOSE, KeyName::KEY_W);
         menu->AddMenu("File", file_menu);
@@ -2294,6 +2339,8 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     SetOnMenuItemActivated(MENU_ABOUT, [this]() { this->impl_->OnAbout(); });
     SetOnMenuItemActivated(MENU_EXPORT_RGB,
                            [this]() { this->impl_->OnExportRGB(); });
+    SetOnMenuItemActivated(MENU_EXPORT_DEPTH,
+                           [this]() { this->impl_->OnExportDepth(); });
     SetOnMenuItemActivated(MENU_CLOSE, [this]() { this->impl_->OnClose(); });
     SetOnMenuItemActivated(MENU_SETTINGS,
                            [this]() { this->impl_->OnToggleSettings(); });

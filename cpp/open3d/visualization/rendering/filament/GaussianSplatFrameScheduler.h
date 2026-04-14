@@ -7,10 +7,10 @@
 
 // Unified per-frame scheduling helpers for Gaussian splatting.
 //
-// Both the interactive (FilamentRenderer) and offscreen (FilamentRenderToBuffer)
-// paths use the same Apple vs non-Apple ordering policy for geometry and
-// composite stages.  Centralising the logic here prevents the two callers from
-// drifting out of sync.
+// Both the interactive (FilamentRenderer) and offscreen
+// (FilamentRenderToBuffer) paths use the same Apple vs non-Apple ordering
+// policy for geometry and composite stages.  Centralising the logic here
+// prevents the two callers from drifting out of sync.
 
 #pragma once
 

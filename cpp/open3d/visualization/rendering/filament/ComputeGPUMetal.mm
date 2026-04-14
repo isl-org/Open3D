@@ -367,11 +367,10 @@ public:
         return CreateTexture2DR32F(width, height, label);
     }
 
-    std::uintptr_t ResizeTexture2DR16UI(
-            std::uintptr_t tex,
-            std::uint32_t width,
-            std::uint32_t height,
-            const char* label = nullptr) override {
+    std::uintptr_t ResizeTexture2DR16UI(std::uintptr_t tex,
+                                        std::uint32_t width,
+                                        std::uint32_t height,
+                                        const char* label = nullptr) override {
         if (tex != 0) {
             DestroyTexture(tex);
         }
@@ -544,14 +543,14 @@ private:
         if (!cb) return false;
         id<MTLBlitCommandEncoder> blit = [cb blitCommandEncoder];
         [blit copyFromTexture:src
-                  sourceSlice:0
-                  sourceLevel:0
-                 sourceOrigin:MTLOriginMake(0, 0, 0)
-                   sourceSize:MTLSizeMake(width, height, 1)
-                     toBuffer:staging
-            destinationOffset:0
-       destinationBytesPerRow:row_bytes
-     destinationBytesPerImage:total_bytes];
+                             sourceSlice:0
+                             sourceLevel:0
+                            sourceOrigin:MTLOriginMake(0, 0, 0)
+                              sourceSize:MTLSizeMake(width, height, 1)
+                                toBuffer:staging
+                       destinationOffset:0
+                  destinationBytesPerRow:row_bytes
+                destinationBytesPerImage:total_bytes];
         [blit endEncoding];
         [cb commit];
         [cb waitUntilCompleted];
