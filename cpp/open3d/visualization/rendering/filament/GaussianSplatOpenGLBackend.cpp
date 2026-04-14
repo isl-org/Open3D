@@ -28,7 +28,6 @@
 #include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatOpenGLPipeline.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLSync.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatPassRunner.h"
 
 namespace open3d {
@@ -127,15 +126,6 @@ public:
         if (it == view_states_.end() || it->second.view_params_buf == 0) {
             gl_ctx.ReleaseCurrent();
             return false;
-        }
-
-        // Wait on the per-view GL fence inserted by the Filament context after
-        // the scene render, then destroy it.  This replaces the coarse
-        // engine_.flushAndWait() with a GPU-side stall scoped to this view.
-        if (targets.scene_depth_ready_fence != 0) {
-            WaitOpenGLFenceOnGpu(targets.scene_depth_ready_fence);
-            DestroyOpenGLFence(targets.scene_depth_ready_fence);
-            targets.scene_depth_ready_fence = 0;
         }
 
         const bool ok =

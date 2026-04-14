@@ -111,7 +111,6 @@ if (BUILD_GUI)
             rendering/filament/GaussianSplatOpenGLBackend.cpp
             rendering/filament/GaussianSplatOpenGLContext.cpp
             rendering/filament/GaussianSplatOpenGLPipeline.cpp
-            rendering/filament/GaussianSplatOpenGLSync.cpp
         )
     endif()
 

@@ -255,9 +255,7 @@ void FilamentRenderToBuffer::Render() {
 
         if (run_gs_pipeline &&
             !GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
-            // Insert a per-view GL fence for the depth handoff instead of a
-            // coarse flushAndWait.
-            gaussian_splat_renderer_->MarkSceneDepthReadyForView(*view_);
+            engine_.flushAndWait();
             GaussianSplatFrameScheduler::RunComposite(*gaussian_splat_renderer_,
                                                       *view_);
         }

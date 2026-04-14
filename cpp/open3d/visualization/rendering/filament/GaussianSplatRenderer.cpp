@@ -22,7 +22,6 @@
 #endif
 #if !defined(__APPLE__)
 #include "open3d/visualization/rendering/filament/GaussianSplatOpenGLBackend.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLSync.h"
 #endif
 
 namespace open3d {
@@ -413,21 +412,6 @@ void GaussianSplatRenderer::RequestDepthReadbackForView(const FilamentView& view
     }
 }
 
-void GaussianSplatRenderer::MarkSceneDepthReadyForView(FilamentView& view) {
-#if !defined(__APPLE__)
-    auto it = outputs_.find(&view);
-    if (it == outputs_.end()) return;
-    auto& targets = it->second;
-    // Destroy any leftover fence from a previous frame before creating a new one.
-    if (targets.scene_depth_ready_fence != 0) {
-        DestroyOpenGLFence(targets.scene_depth_ready_fence);
-    }
-    targets.scene_depth_ready_fence = CreateAndFlushOpenGLFence();
-#else
-    (void)view;
-#endif
-}
-
 std::uint32_t GaussianSplatRenderer::GetSceneDepthGLHandle(
         const FilamentView& view) const {
     auto found = outputs_.find(&view);
@@ -522,13 +506,6 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     targets.color_gl_handle = 0;
     targets.scene_depth_mtl_texture = 0;
     targets.gs_color_mtl_texture = 0;
-
-#if !defined(__APPLE__)
-    if (targets.scene_depth_ready_fence != 0) {
-        DestroyOpenGLFence(targets.scene_depth_ready_fence);
-        targets.scene_depth_ready_fence = 0;
-    }
-#endif
 
     targets.width = 0;
     targets.height = 0;

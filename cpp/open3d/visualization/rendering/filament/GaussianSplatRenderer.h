@@ -117,11 +117,6 @@ public:
         /// view.  Controls allocation of the merged_depth_u16_tex scratch
         /// texture; cleared after each frame.
         bool wants_depth_readback = false;
-        /// Non-Apple (OpenGL): opaque GLsync handle inserted by Filament's
-        /// main context after the scene render.  The compute context waits on
-        /// this fence before the composite pass instead of using a coarse
-        /// engine_.flushAndWait().  0 = no pending fence.
-        std::uintptr_t scene_depth_ready_fence = 0;
         std::uint64_t last_scene_change_id = 0;
         std::uint64_t last_updated_frame = 0;
     };
@@ -254,11 +249,6 @@ public:
     void RequestDepthReadbackForView(const FilamentView& view,
                                      bool wanted = true);
 
-    /// Non-Apple only: insert a GL fence on the current (Filament) context
-    /// immediately after the scene render, then flush.  The compute context
-    /// will call glWaitSync before the composite pass instead of blocking on
-    /// engine_.flushAndWait().  On Apple this is a no-op.
-    void MarkSceneDepthReadyForView(FilamentView& view);
     /// Returns the GL texture handle for the scene depth texture
     /// that Filament should render into (shared via import).
     std::uint32_t GetSceneDepthGLHandle(const FilamentView& view) const;

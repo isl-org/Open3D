@@ -236,11 +236,9 @@ void FilamentRenderer::Draw() {
         // depth texture is fully produced before compute samples it.
         if (gaussian_splat_renderer_ &&
             !GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
+            engine_.flushAndWait();
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {
-                    // Insert a per-view GL fence so the compute context waits
-                    // only for this view's depth — no full flushAndWait.
-                    gaussian_splat_renderer_->MarkSceneDepthReadyForView(view);
                     GaussianSplatFrameScheduler::RunComposite(
                             *gaussian_splat_renderer_, view);
                 });
