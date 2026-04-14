@@ -25,6 +25,9 @@ struct GaussianGpuBufferSizes {
     std::size_t tile_scalar_size = 0;
     std::size_t entry_buf_size = 0;
     std::size_t key_cap_size = 0;
+    /// Byte size of the sorted splat-index buffer: one uint32 per tile entry
+    /// (4 B each, vs. 12 B for a full TileEntry). Used by the composite pass.
+    std::size_t sorted_splat_size = 0;
     std::size_t histogram_buf_size = 0;
     std::size_t dispatch_args_size = 0;
     std::size_t radix_params_size = 0;

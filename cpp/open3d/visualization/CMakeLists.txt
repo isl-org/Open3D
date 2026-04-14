@@ -76,6 +76,7 @@ if (BUILD_GUI)
         rendering/filament/GaussianSplatRenderer.cpp
         rendering/filament/GaussianSplatBuffers.cpp
         rendering/filament/GaussianSplatDataPacking.cpp
+        rendering/filament/GaussianSplatFrameScheduler.cpp
         rendering/filament/GaussianSplatPassRunner.cpp
         rendering/filament/FilamentEntitiesMods.cpp
         rendering/filament/FilamentGeometryBuffersBuilder.cpp
@@ -107,8 +108,10 @@ if (BUILD_GUI)
     else()
         target_sources(visualization_impl PRIVATE
             rendering/filament/ComputeGPUGL.cpp
+            rendering/filament/GaussianSplatOpenGLBackend.cpp
             rendering/filament/GaussianSplatOpenGLContext.cpp
             rendering/filament/GaussianSplatOpenGLPipeline.cpp
+            rendering/filament/GaussianSplatOpenGLSync.cpp
         )
     endif()
 

@@ -102,11 +102,12 @@ void main() {
     uint tile_count = GetTileCount1D();
     uint splat_count = GetSplatCount();
 
-    // Phase 0 (all threads): zero tile counts in parallel.
+    // Phase 0 (all threads): zero tile_counts in parallel so phase 1 atomicAdd
+    // starts from 0.  tile_offsets and tile_write_heads are unconditionally
+    // overwritten by phase 2 for all indices in [0, tile_count) so they do
+    // not need zeroing here.
     for (uint t = global_index; t < tile_count; t += total_invocations) {
         tile_counts[t] = 0u;
-        tile_offsets[t] = 0u;
-        tile_write_heads[t] = 0u;
     }
 
     // Global memory barrier so all zeroing is visible.

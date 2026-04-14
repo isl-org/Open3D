@@ -42,6 +42,9 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
     out->key_cap_size = std::max<std::size_t>(
             4u, static_cast<std::size_t>(out->entries_capacity) *
                         sizeof(std::uint32_t));
+    // Sorted splat-index buffer: one uint32 per entry (3× smaller than a full
+    // TileEntry). key_cap_size is already one uint32 per entry — reuse it.
+    out->sorted_splat_size = out->key_cap_size;
 
     out->radix_num_wg_cap = std::max(
             1u, (out->entries_capacity +

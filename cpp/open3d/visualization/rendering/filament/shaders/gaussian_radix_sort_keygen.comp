@@ -52,7 +52,6 @@ layout(std140, binding = 14) uniform RadixSortParams {
 struct TileEntry {
     uint depth_key;
     uint splat_index;
-    uint stable_index;
     uint tile_index;
 };
 

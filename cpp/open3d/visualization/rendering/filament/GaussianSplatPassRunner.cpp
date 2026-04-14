@@ -123,9 +123,12 @@ bool RunGaussianGeometryPasses(
             vs.tile_heads_buf, gpu_sizes.tile_scalar_size, "gs.tile_heads");
     vs.tile_entries_buf = ctx.ResizePrivateBuffer(
             vs.tile_entries_buf, gpu_sizes.entry_buf_size, "gs.tile_entries");
-    vs.sorted_entries_buf = ctx.ResizePrivateBuffer(vs.sorted_entries_buf,
-                                                    gpu_sizes.entry_buf_size,
-                                                    "gs.sorted_entries");
+    // Sorted payload: only splat_index (uint32) per entry — 3× smaller than a
+    // full TileEntry.  The composite shader reads only splat_index, so carrying
+    // depth_key and tile_index through the payload pass wastes bandwidth.
+    vs.sorted_splat_indices_buf = ctx.ResizePrivateBuffer(
+            vs.sorted_splat_indices_buf, gpu_sizes.sorted_splat_size,
+            "gs.sorted_splat_indices");
     for (int i = 0; i < 2; ++i) {
         vs.sort_keys_buf[i] = ctx.ResizePrivateBuffer(
                 vs.sort_keys_buf[i], gpu_sizes.key_cap_size,
@@ -279,12 +282,13 @@ bool RunGaussianGeometryPasses(
         src = dst;
     }
 
-    // Pass 14: Gather sorted values into the final sorted_entries buffer.
+    // Pass 14: Extract splat_index from each sorted TileEntry into the compact
+    // sorted_splat_indices buffer (uint[] instead of TileEntry[]).
     GpuComputePass(ctx, ComputeProgramId::kGsRadixPayload, "gs_radix_payload")
             .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParams))
             .SSBO(0, vs.sort_values_buf[src])
             .SSBO(1, vs.tile_entries_buf)
-            .SSBO(2, vs.sorted_entries_buf)
+            .SSBO(2, vs.sorted_splat_indices_buf)
             .DispatchIndirect(vs.dispatch_args_buf,
                               9u * 3u * sizeof(std::uint32_t));
     ctx.FullBarrier();
@@ -328,9 +332,11 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     const std::uint32_t h = targets.height;
     vs.composite_depth_tex = ctx.ResizeTexture2DR32F(vs.composite_depth_tex, w,
                                                      h, "gs.composite_depth");
-    // Allocate the merged-depth R16UI texture when scene depth is present
-    // (needed for offscreen RenderToDepthImage GPU merging).
-    if (has_scene_depth) {
+    // Allocate the merged-depth R16UI texture only when both scene depth is
+    // present (mesh occluders exist) AND an offscreen depth readback has been
+    // requested for this view.  When only GS depth is needed (no meshes),
+    // composite_depth_tex (R32F) is read directly via ReadCompositeDepthToFloatCpu.
+    if (has_scene_depth && targets.wants_depth_readback) {
         vs.merged_depth_u16_tex = ctx.ResizeTexture2DR16UI(
                 vs.merged_depth_u16_tex, w, h, "gs.merged_depth");
     }
@@ -356,7 +362,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
             .SSBO(6, vs.projected_buf)
             .SSBO(7, vs.tile_counts_buf)
             .SSBO(8, vs.tile_offsets_buf)
-            .SSBO(11, vs.sorted_entries_buf)
+            .SSBO(11, vs.sorted_splat_indices_buf)
             // Image units 0 and 1: must be < GL_MAX_IMAGE_UNITS (8).
             .Image(0, color_tex, w, h, ImageFormat::kRGBA16F)
             .Image(1, vs.composite_depth_tex, w, h, ImageFormat::kR32F);
@@ -374,9 +380,9 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
 
     // GPU depth-merge pass (optional): merge GS linear depth with Filament
     // scene depth into a normalised R16UI texture for CPU readback.
-    // Only dispatched when both the merged-depth texture and scene depth are
-    // available (i.e. an offscreen RenderToDepthImage is in progress).
-    if (has_scene_depth && vs.merged_depth_u16_tex != 0) {
+    // Only dispatched when a readback was requested AND the merged texture
+    // was successfully allocated.
+    if (targets.wants_depth_readback && vs.merged_depth_u16_tex != 0) {
         const std::uintptr_t sd =
                 targets.scene_depth_mtl_texture
                         ? targets.scene_depth_mtl_texture

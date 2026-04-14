@@ -32,8 +32,7 @@ struct ProjectedGaussian {
 struct TileEntry {
     uint depth_key;
     uint splat_index;
-    uint stable_index;  // Currently == splat_index; reserved for stable-sort.
-    uint tile_index;    // Linear tile index; read by radix keygen.
+    uint tile_index;  // Linear tile index; read by radix keygen.
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
@@ -108,7 +107,6 @@ void ScatterGaussian(uint splat_index) {
             }
             tile_entries[write_index].depth_key = depth_key;
             tile_entries[write_index].splat_index = splat_index;
-            tile_entries[write_index].stable_index = splat_index;
             tile_entries[write_index].tile_index = tile_index;
         }
     }

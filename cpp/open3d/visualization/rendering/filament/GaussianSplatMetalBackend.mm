@@ -118,6 +118,30 @@ public:
         ReleaseGaussianImportedMTLTexturesApple(targets);
     }
 
+    bool ReadMergedDepthToUint16Cpu(const FilamentView& view,
+                                    std::vector<std::uint16_t>& out,
+                                    std::uint32_t width,
+                                    std::uint32_t height) override {
+        auto it = view_states_.find(&view);
+        if (it == view_states_.end() || it->second.merged_depth_u16_tex == 0) {
+            return false;
+        }
+        return gpu_->DownloadTextureR16UI(it->second.merged_depth_u16_tex,
+                                          width, height, out);
+    }
+
+    bool ReadCompositeDepthToFloatCpu(const FilamentView& view,
+                                      std::vector<float>& out,
+                                      std::uint32_t width,
+                                      std::uint32_t height) override {
+        auto it = view_states_.find(&view);
+        if (it == view_states_.end() || it->second.composite_depth_tex == 0) {
+            return false;
+        }
+        return gpu_->DownloadTextureR32F(it->second.composite_depth_tex, width,
+                                         height, out);
+    }
+
 private:
     void DestroyViewState(GaussianSplatViewGpuResources& vs) {
         if (!gpu_) {
@@ -148,11 +172,15 @@ private:
         destroy_buf(vs.sort_values_buf[1]);
         destroy_buf(vs.histogram_buf);
         destroy_buf(vs.radix_params_buf);
-        destroy_buf(vs.sorted_entries_buf);
+        destroy_buf(vs.sorted_splat_indices_buf);
         destroy_buf(vs.mask_buf);
         if (vs.composite_depth_tex != 0) {
             gpu_->DestroyTexture(vs.composite_depth_tex);
             vs.composite_depth_tex = 0;
+        }
+        if (vs.merged_depth_u16_tex != 0) {
+            gpu_->DestroyTexture(vs.merged_depth_u16_tex);
+            vs.merged_depth_u16_tex = 0;
         }
     }
 

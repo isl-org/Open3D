@@ -42,6 +42,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatFrameScheduler.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 namespace open3d {
@@ -163,17 +164,10 @@ void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
     height_ = height;
 
     // Allocate cached Filament color/depth attachments for Gaussian splat
-    // zero-copy and for readPixels of the Filament base pass.  Skip on Apple
-    // depth-only captures where the GS pipeline is disabled.
-#if defined(__APPLE__)
-    if (scene_ && scene_->HasGaussianSplatGeometry() && !depth_image_) {
-        view_->EnableViewCaching(true);
-    }
-#else
+    // zero-copy and for readPixels of the Filament base pass.
     if (scene_ && scene_->HasGaussianSplatGeometry()) {
         view_->EnableViewCaching(true);
     }
-#endif
 
     if (depth_image_) {
         buffer_size_ = width * height * sizeof(std::float_t);
@@ -237,32 +231,36 @@ void FilamentRenderToBuffer::Render() {
 
     const bool has_gaussian =
             gaussian_splat_renderer_ && scene_->HasGaussianSplatGeometry();
-#if defined(__APPLE__)
-    const bool run_gs_pipeline = has_gaussian && !depth_image_;
-#else
     const bool run_gs_pipeline = has_gaussian;
-#endif
 
     if (run_gs_pipeline) {
         gaussian_splat_renderer_->RequestRedrawForView(*view_);
+        if (depth_image_) {
+            // Signal that a depth readback is needed so the composite pass
+            // allocates and populates the merged_depth_u16_tex scratch texture.
+            gaussian_splat_renderer_->RequestDepthReadbackForView(*view_, true);
+        }
         gaussian_splat_renderer_->BeginFrame();
 #if !defined(__APPLE__)
         // Drain Filament work before Gaussian compute dispatches (shared
         // GL/Vulkan queue on non-Apple backends).
         engine_.flushAndWait();
 #endif
-        gaussian_splat_renderer_->RenderGeometryStage(*view_, *scene_);
+        GaussianSplatFrameScheduler::RunGeometry(
+                *gaussian_splat_renderer_, *view_, *scene_);
     }
 
     if (renderer_->beginFrame(swapchain_)) {
         renderer_->render(view_->GetNativeView());
 
-#if !defined(__APPLE__)
-        if (run_gs_pipeline) {
-            engine_.flushAndWait();
-            (void)gaussian_splat_renderer_->RenderCompositeStage(*view_);
+        if (run_gs_pipeline &&
+            !GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
+            // Insert a per-view GL fence for the depth handoff instead of a
+            // coarse flushAndWait.
+            gaussian_splat_renderer_->MarkSceneDepthReadyForView(*view_);
+            GaussianSplatFrameScheduler::RunComposite(*gaussian_splat_renderer_,
+                                                      *view_);
         }
-#endif
 
         using namespace filament;
         using namespace backend;
@@ -271,11 +269,11 @@ void FilamentRenderToBuffer::Render() {
 
         renderer_->endFrame();
 
-#if defined(__APPLE__)
-        if (run_gs_pipeline) {
-            (void)gaussian_splat_renderer_->RenderCompositeStage(*view_);
+        if (run_gs_pipeline &&
+            GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
+            GaussianSplatFrameScheduler::RunComposite(*gaussian_splat_renderer_,
+                                                      *view_);
         }
-#endif
 
         engine_.flushAndWait();
 
@@ -390,14 +388,36 @@ void FilamentRenderToBuffer::Render() {
                 }
                 frame_done_ = true;
             } else {
-                // Fallback: Filament depth only via readPixels (non-GL, or no
-                // scene-depth texture → merged_depth_u16_tex not allocated).
-                auto* user_param = new PBDParams(this, callback_);
-                PixelBufferDescriptor pd(
-                        buffer_, buffer_size_, PixelDataFormat::DEPTH_COMPONENT,
-                        PixelDataType::FLOAT, ReadPixelsCallback, user_param);
-                renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
-                                      std::move(pd));
+                // Try GS-only composite depth (R32F) when no scene depth
+                // was available for merging.
+                std::vector<float> gs_depth;
+                const bool got_gs_depth =
+                        gaussian_splat_renderer_->ReadCompositeDepthToFloatCpu(
+                                *view_, gs_depth,
+                                static_cast<std::uint32_t>(width_),
+                                static_cast<std::uint32_t>(height_)) &&
+                        gs_depth.size() == width_ * height_;
+                if (got_gs_depth) {
+                    float* dst = reinterpret_cast<float*>(buffer_);
+                    std::copy(gs_depth.begin(), gs_depth.end(), dst);
+                    if (callback_) {
+                        callback_({static_cast<std::size_t>(width_),
+                                   static_cast<std::size_t>(height_), 1u,
+                                   buffer_, buffer_size_});
+                        callback_ = nullptr;
+                    }
+                    frame_done_ = true;
+                } else {
+                    // Final fallback: Filament depth only via readPixels
+                    // (backend unsupported or no GS depth available).
+                    auto* user_param = new PBDParams(this, callback_);
+                    PixelBufferDescriptor pd(
+                            buffer_, buffer_size_,
+                            PixelDataFormat::DEPTH_COMPONENT, PixelDataType::FLOAT,
+                            ReadPixelsCallback, user_param);
+                    renderer_->readPixels(vp.left, vp.bottom, vp.width,
+                                          vp.height, std::move(pd));
+                }
             }
         } else {
             if (!depth_image_ && run_gs_pipeline && !native_view_rt) {

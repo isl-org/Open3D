@@ -52,7 +52,6 @@ public:
         int scatter_group_size = 64;
         int sort_group_size = 64;
         Eigen::Vector2i composite_group_size = Eigen::Vector2i(16, 16);
-        bool stable_sort = true;
         int max_sh_degree = 2;
         /// Per-scene tile-entry budget used to size the shared tile entry
         /// buffers as `splat_count * max_tiles_per_splat` before clamping to
@@ -114,6 +113,15 @@ public:
         /// the scene-depth texture must be allocated.  Changing this flag
         /// forces a target re-setup on the next frame.
         bool needs_scene_depth = true;
+        /// True when an offscreen depth readback has been requested for this
+        /// view.  Controls allocation of the merged_depth_u16_tex scratch
+        /// texture; cleared after each frame.
+        bool wants_depth_readback = false;
+        /// Non-Apple (OpenGL): opaque GLsync handle inserted by Filament's
+        /// main context after the scene render.  The compute context waits on
+        /// this fence before the composite pass instead of using a coarse
+        /// engine_.flushAndWait().  0 = no pending fence.
+        std::uintptr_t scene_depth_ready_fence = 0;
         std::uint64_t last_scene_change_id = 0;
         std::uint64_t last_updated_frame = 0;
     };
@@ -157,13 +165,28 @@ public:
                 FilamentResourceManager& resource_mgr,
                 OutputTargets& targets) = 0;
 
-        /// OpenGL only: read the merged GS+Filament depth (R16UI, normalised
-        /// uint16 in [0,65535]) into \p out for offscreen RenderToDepthImage.
+        /// Read the merged GS+Filament depth (R16UI, normalised uint16 in
+        /// [0,65535]) into \p out for offscreen RenderToDepthImage.
         /// Default: unsupported (returns false).
         virtual bool ReadMergedDepthToUint16Cpu(const FilamentView& view,
                                                 std::vector<std::uint16_t>& out,
                                                 std::uint32_t width,
                                                 std::uint32_t height) {
+            (void)view;
+            (void)out;
+            (void)width;
+            (void)height;
+            return false;
+        }
+
+        /// Read the GS composite depth (R32F, linear eye-space in metres) into
+        /// \p out.  Used when no scene (mesh) depth is available so the merge
+        /// pass is skipped and composite_depth_tex is read directly.
+        /// Default: unsupported (returns false).
+        virtual bool ReadCompositeDepthToFloatCpu(const FilamentView& view,
+                                                  std::vector<float>& out,
+                                                  std::uint32_t width,
+                                                  std::uint32_t height) {
             (void)view;
             (void)out;
             (void)width;
@@ -210,13 +233,32 @@ public:
     /// Only valid after RenderCompositeStage has been called for this view.
     RenderTargetHandle GetColorReadbackRT(const FilamentView& view) const;
 
-    /// OpenGL: read the GPU-merged GS+Filament depth (R16UI, [0,65535]) into
-    /// \p out for offscreen RenderToDepthImage. Returns false on non-GL or
-    /// when no merged depth texture exists for this view.
+    /// Read the GPU-merged GS+Filament depth (R16UI, [0,65535]) into \p out
+    /// for offscreen RenderToDepthImage. Returns false when no merged depth
+    /// texture exists for this view.
     bool ReadMergedDepthToUint16Cpu(const FilamentView& view,
                                     std::vector<std::uint16_t>& out,
                                     std::uint32_t width,
                                     std::uint32_t height);
+
+    /// Read the GS composite depth (R32F, linear eye-space) into \p out when
+    /// no scene depth (mesh) is present and the merge pass was skipped.
+    bool ReadCompositeDepthToFloatCpu(const FilamentView& view,
+                                      std::vector<float>& out,
+                                      std::uint32_t width,
+                                      std::uint32_t height);
+
+    /// Signal that an offscreen depth readback is needed for \p view in the
+    /// next composite pass.  Causes the merged_depth_u16_tex to be allocated
+    /// only when a scene-depth texture is also available.
+    void RequestDepthReadbackForView(const FilamentView& view,
+                                     bool wanted = true);
+
+    /// Non-Apple only: insert a GL fence on the current (Filament) context
+    /// immediately after the scene render, then flush.  The compute context
+    /// will call glWaitSync before the composite pass instead of blocking on
+    /// engine_.flushAndWait().  On Apple this is a no-op.
+    void MarkSceneDepthReadyForView(FilamentView& view);
     /// Returns the GL texture handle for the scene depth texture
     /// that Filament should render into (shared via import).
     std::uint32_t GetSceneDepthGLHandle(const FilamentView& view) const;

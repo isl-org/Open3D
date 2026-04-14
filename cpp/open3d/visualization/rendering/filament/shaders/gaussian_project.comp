@@ -119,8 +119,8 @@ uint PackColorRGBA8(vec3 color) {
 
 uint PackTileCoord(uvec2 tile) { return (tile.y << 16u) | tile.x; }
 
-mat3 QuaternionToRotation(vec4 quat) {
-    vec4 q = normalize(quat);
+// Input q must already be unit length (guaranteed by LoadRotation()).
+mat3 QuaternionToRotation(vec4 q) {
     float w = q.x;
     float x = q.y;
     float y = q.z;
@@ -181,10 +181,11 @@ vec4 LoadShVec4(uint splat_index, uint local_vec4_index) {
     return vec4(lo.x, lo.y, hi.x, hi.y);
 }
 
-vec3 EvaluateShDegree1(vec3 dir, uint splat_index) {
+// buffer3 (index 2) is shared between degree-1 and degree-2 evaluation to
+// avoid loading the same vec4 twice when both degrees are active.
+vec3 EvaluateShDegree1(vec3 dir, uint splat_index, vec4 buffer3) {
     vec4 buffer1 = LoadShVec4(splat_index, 0u);
     vec4 buffer2 = LoadShVec4(splat_index, 1u);
-    vec4 buffer3 = LoadShVec4(splat_index, 2u);
 
     float coeffs[9] =
             float[9](buffer1.x, buffer1.y, buffer1.z, buffer1.w, buffer2.x,
@@ -196,8 +197,7 @@ vec3 EvaluateShDegree1(vec3 dir, uint splat_index) {
                      coeffs[6] * dir.y + coeffs[7] * dir.z + coeffs[8] * dir.x);
 }
 
-vec3 EvaluateShDegree2(vec3 dir, uint splat_index) {
-    vec4 buffer3 = LoadShVec4(splat_index, 2u);
+vec3 EvaluateShDegree2(vec3 dir, uint splat_index, vec4 buffer3) {
     vec4 buffer4 = LoadShVec4(splat_index, 3u);
     vec4 buffer5 = LoadShVec4(splat_index, 4u);
     vec4 buffer6 = LoadShVec4(splat_index, 5u);
@@ -233,17 +233,19 @@ vec3 EvaluateShDegree2(vec3 dir, uint splat_index) {
     return color;
 }
 
-vec3 EvaluateShColor(uint splat_index, vec3 view_dir) {
-    vec4 dc = LoadDcOpacity(splat_index);
+// dc is passed in from the caller to avoid a duplicate LoadDcOpacity() call.
+// buffer3 (index 2) is loaded once and shared between degree-1 and degree-2.
+vec3 EvaluateShColor(uint splat_index, vec3 view_dir, vec4 dc) {
     const float sh0 = 0.2820947918;
     vec3 color = vec3(0.5) + sh0 * dc.xyz;
 
     uint sh_degree = GetShDegree();
     if (sh_degree >= 1u) {
-        color += EvaluateShDegree1(view_dir, splat_index);
-    }
-    if (sh_degree >= 2u) {
-        color += EvaluateShDegree2(view_dir, splat_index);
+        vec4 buffer3 = LoadShVec4(splat_index, 2u);
+        color += EvaluateShDegree1(view_dir, splat_index, buffer3);
+        if (sh_degree >= 2u) {
+            color += EvaluateShDegree2(view_dir, splat_index, buffer3);
+        }
     }
 
     return max(color, vec3(0.0));
@@ -270,13 +272,15 @@ void ProjectGaussian(uint splat_index) {
 
     const float EPS2D = 0.3;  // Subpixel blur to regularise tiny splats
                               // (standard 3DGS anti-aliasing).
-    vec3 position = positions[splat_index].xyz;
-    vec4 world_position4 = view_params.world_from_model * vec4(position, 1.0);
-    vec3 world_position = world_position4.xyz / max(world_position4.w, 1e-8);
+    // GS positions are already in world space; world_from_model is always
+    // identity so the multiply and w-divide are skipped.
+    vec3 world_position = positions[splat_index].xyz;
     vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
     vec4 clip_center = view_params.clip_from_view * view_center;
 
     // Opt8: Early reject — behind camera or negligible alpha.
+    // dc is loaded once here and reused in EvaluateShColor() to avoid a
+    // second LoadDcOpacity() call.
     vec4 dc = LoadDcOpacity(splat_index);
     float alpha = Sigmoid(dc.w);
     if (alpha <= kMinAlpha || clip_center.w <= 0.0) {
@@ -292,8 +296,8 @@ void ProjectGaussian(uint splat_index) {
     mat3 rotation = QuaternionToRotation(LoadRotation(splat_index));
     mat3 covariance_model =
             rotation * scale_matrix * scale_matrix * transpose(rotation);
-    mat3 view_from_model =
-            mat3(view_params.view_from_world * view_params.world_from_model);
+    // world_from_model is identity so view_from_model == view_from_world.
+    mat3 view_from_model = mat3(view_params.view_from_world);
     mat3 covariance_view =
             view_from_model * covariance_model * transpose(view_from_model);
 
@@ -410,7 +414,7 @@ void ProjectGaussian(uint splat_index) {
     projected[splat_index].center_depth_alpha =
             vec4(center_pixel, -view_center.z, alpha);
     projected[splat_index].packed_color =
-            PackColorRGBA8(EvaluateShColor(splat_index, view_dir));
+            PackColorRGBA8(EvaluateShColor(splat_index, view_dir, dc));
     projected[splat_index].tile_count_overlap = tile_overlap_count;
     projected[splat_index].tile_rect_min = PackTileCoord(tile_min);
     projected[splat_index].tile_rect_max = PackTileCoord(tile_max);

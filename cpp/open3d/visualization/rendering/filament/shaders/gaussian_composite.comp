@@ -27,6 +27,9 @@
 // Opt7: Shared-memory cooperative tile loading — the workgroup loads batches
 //       of splat data into shared memory, then all 256 threads evaluate from
 //       shared memory instead of 256 independent global reads.
+// Opt8: Compact sorted payload — binding 11 is now uint[] splat_index values
+//       (4 B each) instead of TileEntry structs (12 B each), reducing the
+//       sorted payload buffer size by 3× and halving memory bandwidth here.
 
 #version 460
 
@@ -40,13 +43,6 @@ struct ProjectedGaussian {
     uint tile_rect_min;
     uint tile_rect_max;
     vec4 inv_basis;
-};
-
-struct TileEntry {
-    uint depth_key;
-    uint splat_index;
-    uint stable_index;
-    uint tile_index;
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
@@ -72,8 +68,11 @@ layout(std430, binding = 8) readonly buffer TileOffsets {
     uint tile_offsets[];
 };
 
-layout(std430, binding = 11) readonly buffer TileEntries {
-    TileEntry tile_entries[];
+// Compact sorted payload: one splat_index per tile entry, in sort order.
+// Only splat_index is needed here; depth_key and tile_index were used by
+// the radix sort keygen and are not read during compositing.
+layout(std430, binding = 11) readonly buffer SortedSplatIndices {
+    uint sorted_splat_indices[];
 };
 
 // Image bindings must be < GL_MAX_IMAGE_UNITS (8 on many drivers).
@@ -185,7 +184,7 @@ void main() {
         // Cooperative load: each thread loads one entry into shared memory.
         if (local_index < batch_count) {
             uint entry_idx = my_tile_offset + batch_start + local_index;
-            uint splat_idx = tile_entries[entry_idx].splat_index;
+            uint splat_idx = sorted_splat_indices[entry_idx];
             ProjectedGaussian g = projected[splat_idx];
             s_center[local_index] = g.center_depth_alpha.xy;
             s_alpha[local_index] = g.center_depth_alpha.w;

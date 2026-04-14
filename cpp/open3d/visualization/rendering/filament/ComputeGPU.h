@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 namespace open3d {
 namespace visualization {
@@ -110,7 +111,9 @@ struct GaussianSplatViewGpuResources {
     std::uintptr_t sort_values_buf[2] = {0, 0};
     std::uintptr_t histogram_buf = 0;
     std::uintptr_t radix_params_buf = 0;
-    std::uintptr_t sorted_entries_buf = 0;
+    /// Post-sort payload: one uint splat_index per sorted tile entry (4 B
+    /// each, vs. 12 B for a full TileEntry). Used by the composite shader.
+    std::uintptr_t sorted_splat_indices_buf = 0;
     /// Bit-packed per-splat visibility mask. Bound at binding 15.
     std::uintptr_t mask_buf = 0;
     /// GS composite depth output (image binding 1); not the shared scene depth.
@@ -205,6 +208,34 @@ public:
             std::uint32_t width,
             std::uint32_t height,
             const char* label = nullptr) = 0;
+
+    /// Download the contents of an R32F texture into a float vector.
+    /// The caller must ensure no outstanding GPU writes to the texture.
+    /// Returns false when not supported or on error.
+    virtual bool DownloadTextureR32F(std::uintptr_t tex,
+                                     std::uint32_t width,
+                                     std::uint32_t height,
+                                     std::vector<float>& out) {
+        (void)tex;
+        (void)width;
+        (void)height;
+        (void)out;
+        return false;
+    }
+
+    /// Download the contents of an R16UI texture into a uint16_t vector.
+    /// The caller must ensure no outstanding GPU writes to the texture.
+    /// Returns false when not supported or on error.
+    virtual bool DownloadTextureR16UI(std::uintptr_t tex,
+                                      std::uint32_t width,
+                                      std::uint32_t height,
+                                      std::vector<std::uint16_t>& out) {
+        (void)tex;
+        (void)width;
+        (void)height;
+        (void)out;
+        return false;
+    }
 
     /// Bind a write image at the given unit with the specified format.
     virtual void BindImage(std::uint32_t binding,

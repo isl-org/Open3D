@@ -5,11 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Gaussian radix sort — payload rearrange pass.
+// Gaussian radix sort — payload extraction pass.
 //
-// After radix sorting (depth_key, original_index) pairs, this pass uses
-// the sorted index array to rearrange the full TileEntry structs from
-// the source buffer into sorted order in the destination buffer.
+// After radix sorting (key, original_index) pairs, this pass uses the sorted
+// index array to read each TileEntry from the source buffer and writes only
+// the splat_index (uint32) into the compact output buffer.
+//
+// Writing only splat_index (4 B) instead of a full TileEntry (12 B) reduces
+// the sorted payload buffer size by 3× and halves composite shader bandwidth,
+// since the composite only ever reads splat_index.
 
 #version 460
 
@@ -27,7 +31,6 @@ layout(std140, binding = 14) uniform RadixSortParams {
 struct TileEntry {
     uint depth_key;
     uint splat_index;
-    uint stable_index;
     uint tile_index;
 };
 
@@ -39,8 +42,9 @@ layout(std430, binding = 1) readonly buffer EntriesSrc {
     TileEntry g_entries_src[];
 };
 
-layout(std430, binding = 2) writeonly buffer EntriesDst {
-    TileEntry g_entries_dst[];
+// Output: only splat_index per sorted position (4 B vs. 12 B for TileEntry).
+layout(std430, binding = 2) writeonly buffer SortedSplatIndices {
+    uint g_sorted_splat_indices[];
 };
 
 void main() {
@@ -49,5 +53,5 @@ void main() {
         return;
     }
     uint src_index = g_sorted_indices[gID];
-    g_entries_dst[gID] = g_entries_src[src_index];
+    g_sorted_splat_indices[gID] = g_entries_src[src_index].splat_index;
 }

@@ -42,6 +42,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
+#include "open3d/visualization/rendering/filament/GaussianSplatFrameScheduler.h"
 #include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
 
 namespace open3d {
@@ -200,17 +201,22 @@ void FilamentRenderer::BeginFrame() {
 
         // Dispatch Gaussian splat geometry work before Filament's beginFrame
         // so our queue submissions do not conflict with Filament's frame.
-        // Build live_views from ALL views (including cached-but-inactive
-        // ones) so PruneOutputs only removes outputs for truly deleted
-        // views, not views that are merely inactive due to scene caching.
+        //
+        // Build live_views from ALL views that must not be pruned: scene views
+        // (including cached-but-inactive ones) AND active buffer-renderer views
+        // whose capture is still pending.  Buffer-renderer views must be added
+        // BEFORE PruneOutputs() so their outputs are not destroyed mid-capture.
         std::unordered_set<const FilamentView*> live_views;
         for (const auto& pair : scenes_) {
             pair.second->ForEachView(
                     [&](FilamentView& view) { live_views.insert(&view); });
             pair.second->ForEachActiveView([&](FilamentView& view) {
-                gaussian_splat_renderer_->RenderGeometryStage(view,
-                                                              *pair.second);
+                GaussianSplatFrameScheduler::RunGeometry(
+                        *gaussian_splat_renderer_, view, *pair.second);
             });
+        }
+        for (const auto& br : buffer_renderers_) {
+            live_views.insert(static_cast<FilamentView*>(&br->GetView()));
         }
         gaussian_splat_renderer_->PruneOutputs(live_views);
     }
@@ -228,16 +234,18 @@ void FilamentRenderer::Draw() {
         // Non-Apple backends composite into the overlay during the current
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
-#if !defined(__APPLE__)
-        if (gaussian_splat_renderer_) {
-            engine_.flushAndWait();
+        if (gaussian_splat_renderer_ &&
+            !GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {
-                    (void)gaussian_splat_renderer_->RenderCompositeStage(view);
+                    // Insert a per-view GL fence so the compute context waits
+                    // only for this view's depth — no full flushAndWait.
+                    gaussian_splat_renderer_->MarkSceneDepthReadyForView(view);
+                    GaussianSplatFrameScheduler::RunComposite(
+                            *gaussian_splat_renderer_, view);
                 });
             }
         }
-#endif
 
         // Draw the UI. This should come after the 3D scene(s), as SceneWidget
         // will draw the textures as an image, and this way we will have the
@@ -255,8 +263,8 @@ void FilamentRenderer::Draw() {
 void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
-#if defined(__APPLE__)
-        if (gaussian_splat_renderer_) {
+        if (gaussian_splat_renderer_ &&
+            GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
             // endFrame() commits Filament's Metal command buffer. Our
             // composite CB, committed below on the same queue, will
             // execute after Filament's render — guaranteeing the depth
@@ -266,16 +274,15 @@ void FilamentRenderer::EndFrame() {
             bool any_composite = false;
             for (const auto& pair : scenes_) {
                 pair.second->ForEachActiveView([&](FilamentView& view) {
-                    if (gaussian_splat_renderer_->RenderCompositeStage(view)) {
-                        any_composite = true;
-                    }
+                    GaussianSplatFrameScheduler::RunComposite(
+                            *gaussian_splat_renderer_, view);
+                    any_composite = true;
                 });
             }
             if (any_composite && on_apple_gaussian_composite_complete_) {
                 on_apple_gaussian_composite_complete_();
             }
         }
-#endif
         if (needs_wait_after_draw_) {
             engine_.flushAndWait();
             needs_wait_after_draw_ = false;

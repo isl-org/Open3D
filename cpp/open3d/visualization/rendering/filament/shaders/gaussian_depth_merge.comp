@@ -38,7 +38,7 @@ layout(std140, binding = 0) uniform GaussianViewParams {
     uvec4 scene;
     uvec4 tiles;
     uvec4 limits;
-    // depth_range_and_flags: x=near, y=far, z=stable_sort_flag, w=depth_flag
+    // depth_range_and_flags: x=near, y=far, z=reserved, w=reserved
     vec4 depth_range_and_flags;
 }
 view_params;

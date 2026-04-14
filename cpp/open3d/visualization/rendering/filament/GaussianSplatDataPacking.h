@@ -55,7 +55,7 @@ struct alignas(16) GaussianViewParams {
     // z=max_tile_entries_total, w=tile_key_bits T = ceil(log2(tile_count)),
     // clamped to [1,31]: T bits for tile index, (32-T) bits for depth)
     std::uint32_t limits[4];
-    // vec4 depth_range_and_flags (x=near, y=far, z=stable_sort_flag, w=0)
+    // vec4 depth_range_and_flags (x=near, y=far, z=reserved, w=0)
     float depth_range_and_flags[4];
 };
 static_assert(sizeof(GaussianViewParams) == 288,
@@ -75,21 +75,18 @@ struct alignas(16) ProjectedGaussian {
 static_assert(sizeof(ProjectedGaussian) == 48,
               "ProjectedGaussian must be 48 bytes to match GLSL layout");
 
-/// Matches TileEntry struct in the shaders (4 × uint = 16 bytes).
+/// Matches TileEntry struct in the shaders (3 × uint = 12 bytes).
 /// Named to match the GLSL struct: `struct TileEntry` in
-/// scatter/sort/composite. stable_index mirrors splat_index; reserved for
-/// future stable-sort support (see depth_range_and_flags.z /
-/// RenderConfig::stable_sort).
+/// scatter/sort/composite. Radix sort is inherently stable so stable_index
+/// is not needed.
 struct TileEntry {
     std::uint32_t depth_key;
     std::uint32_t splat_index;
-    std::uint32_t stable_index;  ///< Currently == splat_index; unused until
-                                 ///< stable-sort is active.
     std::uint32_t tile_index;  ///< Linear tile index; written by scatter, read
                                ///< by keygen.
 };
-static_assert(sizeof(TileEntry) == 16,
-              "TileEntry must be 16 bytes to match GLSL layout");
+static_assert(sizeof(TileEntry) == 12,
+              "TileEntry must be 12 bytes to match GLSL layout");
 
 /// Global counters written GPU-side (prefix-sum, scatter, dispatch-args) and
 /// read CPU-side for diagnostics and error reporting.  Layout matches the

@@ -16,7 +16,6 @@
 // Based on Intel Embree's GPU sort kernel.
 
 #version 460
-#extension GL_KHR_shader_subgroup_basic : enable
 
 #define WORKGROUP_SIZE 256
 #define RADIX_SORT_BINS 256

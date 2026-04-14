@@ -425,6 +425,34 @@ public:
         ::open3d::visualization::rendering::BindSamplerTexture(unit, h);
     }
 
+    bool DownloadTextureR32F(std::uintptr_t tex,
+                             std::uint32_t width,
+                             std::uint32_t height,
+                             std::vector<float>& out) override {
+        if (tex == 0 || width == 0 || height == 0) return false;
+        out.resize(static_cast<std::size_t>(width) * height);
+        const GLuint id = static_cast<GLuint>(tex);
+        glBindTexture(GL_TEXTURE_2D, id);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, out.data());
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return DrainGLErrors("DownloadTextureR32F") == 0;
+    }
+
+    bool DownloadTextureR16UI(std::uintptr_t tex,
+                              std::uint32_t width,
+                              std::uint32_t height,
+                              std::vector<std::uint16_t>& out) override {
+        if (tex == 0 || width == 0 || height == 0) return false;
+        out.resize(static_cast<std::size_t>(width) * height);
+        const GLuint id = static_cast<GLuint>(tex);
+        glBindTexture(GL_TEXTURE_2D, id);
+        // GL_RED_INTEGER + GL_UNSIGNED_SHORT matches the R16UI internal format.
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT,
+                      out.data());
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return DrainGLErrors("DownloadTextureR16UI") == 0;
+    }
+
     void FinishGpuWork() override {
         GaussianSplatOpenGLContext::GetInstance().Finish();
     }

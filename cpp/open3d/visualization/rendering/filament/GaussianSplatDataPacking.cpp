@@ -169,7 +169,7 @@ PackedGaussianScene PackGaussianViewParams(
 
     vp.depth_range_and_flags[0] = static_cast<float>(render_data.near_plane);
     vp.depth_range_and_flags[1] = static_cast<float>(render_data.far_plane);
-    vp.depth_range_and_flags[2] = config.stable_sort ? 1.0f : 0.0f;
+    vp.depth_range_and_flags[2] = 0.0f;  // reserved
     vp.depth_range_and_flags[3] = 0.0f;
 
     packed.splat_count = n;

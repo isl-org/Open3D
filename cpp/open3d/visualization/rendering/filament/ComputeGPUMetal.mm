@@ -369,14 +369,53 @@ public:
 
     std::uintptr_t ResizeTexture2DR16UI(
             std::uintptr_t tex,
-            std::uint32_t /*width*/,
-            std::uint32_t /*height*/,
-            const char* /*label*/ = nullptr) override {
-        // Metal depth-merge via GPU is not yet supported on this backend.
-        // The CPU fallback path in FilamentRenderToBuffer handles depth
-        // readback on Apple using Filament-only depth (no GS depth merge).
-        (void)tex;
-        return 0;
+            std::uint32_t width,
+            std::uint32_t height,
+            const char* label = nullptr) override {
+        if (tex != 0) {
+            DestroyTexture(tex);
+        }
+        // Allocate a CPU-visible R16Uint texture for merged depth readback.
+        MTLTextureDescriptor* d = [MTLTextureDescriptor
+                texture2DDescriptorWithPixelFormat:MTLPixelFormatR16Uint
+                                             width:width
+                                            height:height
+                                         mipmapped:NO];
+        d.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        d.storageMode = MTLStorageModePrivate;
+        id<MTLTexture> t = [device_ newTextureWithDescriptor:d];
+        if (!t) {
+            return 0;
+        }
+        if (label && label[0] != '\0') {
+            t.label = [NSString stringWithUTF8String:label];
+        }
+        const std::uintptr_t k =
+                reinterpret_cast<std::uintptr_t>((__bridge_retained void*)t);
+        texture_sizes_[k] = {width, height};
+        return k;
+    }
+
+    bool DownloadTextureR32F(std::uintptr_t tex,
+                             std::uint32_t width,
+                             std::uint32_t height,
+                             std::vector<float>& out) override {
+        if (tex == 0 || width == 0 || height == 0) return false;
+        id<MTLTexture> src =
+                (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex);
+        return DownloadTextureImpl(src, width, height, sizeof(float), &out,
+                                   nullptr);
+    }
+
+    bool DownloadTextureR16UI(std::uintptr_t tex,
+                              std::uint32_t width,
+                              std::uint32_t height,
+                              std::vector<std::uint16_t>& out) override {
+        if (tex == 0 || width == 0 || height == 0) return false;
+        id<MTLTexture> src =
+                (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex);
+        return DownloadTextureImpl(src, width, height, sizeof(std::uint16_t),
+                                   nullptr, &out);
     }
 
     void BindImage(std::uint32_t binding,
@@ -482,6 +521,52 @@ private:
         id<MTLSamplerState> sampler = nil;
         bool is_bound = false;
     };
+
+    // Download a private MTLTexture into a CPU vector using a blit encoder.
+    // Exactly one of f32_out and u16_out must be non-null.
+    bool DownloadTextureImpl(id<MTLTexture> src,
+                             std::uint32_t width,
+                             std::uint32_t height,
+                             std::size_t bytes_per_pixel,
+                             std::vector<float>* f32_out,
+                             std::vector<std::uint16_t>* u16_out) {
+        if (!src || !queue_) return false;
+        const NSUInteger row_bytes =
+                static_cast<NSUInteger>(width) * bytes_per_pixel;
+        const NSUInteger total_bytes = row_bytes * height;
+        // Allocate a shared (CPU-visible) staging buffer.
+        id<MTLBuffer> staging =
+                [device_ newBufferWithLength:total_bytes
+                                     options:MTLResourceStorageModeShared];
+        if (!staging) return false;
+
+        id<MTLCommandBuffer> cb = [queue_ commandBuffer];
+        if (!cb) return false;
+        id<MTLBlitCommandEncoder> blit = [cb blitCommandEncoder];
+        [blit copyFromTexture:src
+                  sourceSlice:0
+                  sourceLevel:0
+                 sourceOrigin:MTLOriginMake(0, 0, 0)
+                   sourceSize:MTLSizeMake(width, height, 1)
+                     toBuffer:staging
+            destinationOffset:0
+       destinationBytesPerRow:row_bytes
+     destinationBytesPerImage:total_bytes];
+        [blit endEncoding];
+        [cb commit];
+        [cb waitUntilCompleted];
+
+        const void* ptr = [staging contents];
+        if (!ptr) return false;
+        if (f32_out) {
+            f32_out->resize(static_cast<std::size_t>(width) * height);
+            std::memcpy(f32_out->data(), ptr, total_bytes);
+        } else if (u16_out) {
+            u16_out->resize(static_cast<std::size_t>(width) * height);
+            std::memcpy(u16_out->data(), ptr, total_bytes);
+        }
+        return true;
+    }
 
     std::uintptr_t AllocateBuffer(std::size_t size,
                                   MTLResourceOptions opts,

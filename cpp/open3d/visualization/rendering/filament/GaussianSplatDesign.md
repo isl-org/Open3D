@@ -396,7 +396,7 @@ a successful `glLinkProgram`.
 
 **GL buffers** (`glObjectLabel(GL_BUFFER, ...)`):
 All 20 per-view SSBOs/UBOs are labeled using the `gs.*` naming scheme
-(e.g. `gs.projected`, `gs.tile_entries`, `gs.sorted_entries`).  Labels are applied at
+(e.g. `gs.projected`, `gs.tile_entries`, `gs.sorted_splat_indices`).  Labels are applied at
 `ResizeBuffer`/`ResizePrivateBuffer` time, including the reuse path when an existing buffer
 is large enough.
 
@@ -451,9 +451,9 @@ This mirrors [gsplat PR #117](https://github.com/nerfstudio-project/gsplat/pull/
   `limits.z` = `RenderConfig::max_tile_entries_total`.
   `depth_range_and_flags.w` = scene depth flag used by composite (0.0 = no, 1.0 = yes).
 - `ProjectedGaussian`: 48-byte per-splat descriptor (output of projection pass)
-- `TileEntry`: 16-byte per tile-entry sort record (`depth_key`, `splat_index`,
-  `stable_index` — currently equals `splat_index`, reserved for future stable-sort support,
-  `tile_index` — linear tile index written by scatter and read by keygen)
+- `TileEntry`: 12-byte per tile-entry sort record (`depth_key`, `splat_index`,
+  `tile_index` — linear tile index written by scatter and read by keygen).
+  Radix sort is inherently stable so a separate `stable_index` field is not needed.
 
 ### Runtime Capacity Limits And Error Flags
 

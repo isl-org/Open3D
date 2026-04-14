@@ -70,7 +70,7 @@ Eigen::MatrixXf BuildIrRl(int l,
                                  const Eigen::Matrix3f& R1,
                                  const Eigen::MatrixXf& Rp) {
     // Rp: IR matrix for degree l-1 (shape (2(l-1)+1) × (2(l-1)+1)).
-    auto P = [&](int i, int a, int b) -> float {
+    auto P = [&](int i, int a, int b) {
         auto g = [&](int m, int n) { return Rp(m + l - 1, n + l - 1); };
         if (b == l)
             return R1(i + 1, 2) * g(a, l - 1) - R1(i + 1, 0) * g(a, -(l - 1));
