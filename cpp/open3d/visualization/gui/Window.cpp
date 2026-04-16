@@ -675,6 +675,11 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     ShowDialog(dlg);
 }
 
+void Window::SetClipboardText(const std::string& text) {
+    Application::GetInstance().GetWindowSystem().SetClipboardText(
+            impl_->window_, text.c_str());
+}
+
 void Window::ShowMenu(bool show) {
     impl_->draw_menu_ = show;
     SetNeedsLayout();

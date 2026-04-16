@@ -455,7 +455,7 @@ void FilamentScene::CacheGaussianSplatData(const std::string& name,
     packed = GaussianSplatPackedAttrs{};
     PackGaussianSplatAttrsDirect(pts_ptr, n, scale_ptr, rot_ptr, f_dc_ptr,
                                  opacity_ptr, f_rest_ptr, cloud_sh, desired_sh,
-                                 min_opacity_logit, min_alpha_sigmoid,
+                                 min_opacity_logit,
                                  material.gaussian_splat_antialias, packed);
 }
 
@@ -503,7 +503,6 @@ void FilamentScene::RebuildMergedGaussianData() {
 
         merged->splat_count += splat_count;
         merged->sh_degree = std::max(merged->sh_degree, src.sh_degree);
-        merged->min_alpha = std::max(merged->min_alpha, src.min_alpha);
         merged->antialias = merged->antialias || src.antialias;
 
         // Propagate per-material capacity overrides (take max).

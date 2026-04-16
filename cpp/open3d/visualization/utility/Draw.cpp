@@ -11,6 +11,8 @@
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/rendering/Camera.h"
+#include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Model.h"
 
 namespace open3d {
@@ -152,27 +154,48 @@ std::string Draw(const std::vector<DrawObject> &objects,
     if (config.lookat.has_value() && config.eye.has_value() &&
         config.up.has_value()) {
         draw->SetupCamera(config.field_of_view,
-                          config.lookat.value().cast<float>(),
-                          config.eye.value().cast<float>(),
-                          config.up.value().cast<float>());
+                          config.lookat.value(),
+                          config.eye.value(),
+                          config.up.value());
     } else if (config.intrinsic_matrix.has_value() &&
                config.extrinsic_matrix.has_value()) {
         draw->SetupCamera(config.intrinsic_matrix.value(),
                           config.extrinsic_matrix.value(), width, height);
     }
 
-    // 9. Set animation parameters
+    // 9. Override near/far clip planes if requested. Read current camera state
+    // so only the specified planes are changed; position/orientation are kept.
+    if (config.near_plane.has_value() || config.far_plane.has_value()) {
+        auto* camera = draw->GetScene()->GetCamera();
+        double fov = camera->GetFieldOfView();
+        double near = config.near_plane.has_value()
+                              ? double(config.near_plane.value())
+                              : camera->GetNear();
+        double far = config.far_plane.has_value()
+                             ? double(config.far_plane.value())
+                             : camera->GetFar();
+        double aspect = double(width) / double(height);
+        camera->SetProjection(fov, aspect, near, far,
+                              camera->GetFieldOfViewType());
+    }
+
+    // 10. Show world-space axes
+    if (config.show_axes.has_value()) {
+        draw->ShowAxes(config.show_axes.value());
+    }
+
+    // 11. Set animation parameters
     draw->SetAnimationTimeStep(config.animation_time_step);
     if (config.animation_duration.has_value()) {
         draw->SetAnimationDuration(config.animation_duration.value());
     }
 
-    // 10. Set UI visibility
+    // 12. Set UI visibility
     if (config.show_ui.has_value()) {
         draw->ShowSettings(config.show_ui.value());
     }
 
-    // 11. Set IBL and sky box
+    // 13. Set IBL and sky box
     if (config.ibl.has_value()) {
         draw->SetIBL(config.ibl.value());
     }
@@ -183,7 +206,7 @@ std::string Draw(const std::vector<DrawObject> &objects,
         draw->ShowSkybox(config.show_skybox.value());
     }
 
-    // 12. Configure RPC interface and close callback
+    // 14. Configure RPC interface and close callback
     if (!config.rpc_interface.empty()) {
         std::string rpc_addr = config.rpc_interface;
         if (rpc_addr == "default") {
@@ -198,17 +221,17 @@ std::string Draw(const std::vector<DrawObject> &objects,
         });
     }
 
-    // 13. Enable raw/basic rendering mode
+    // 15. Enable raw/basic rendering mode
     if (config.raw_mode.has_value()) {
         draw->EnableBasicMode(config.raw_mode.value());
     }
 
-    // 14. Call user init callback
+    // 16. Call user init callback
     if (config.on_init) {
         config.on_init(*draw);
     }
 
-    // 15. Set animation callbacks
+    // 17. Set animation callbacks
     if (config.on_animation_frame) {
         draw->SetOnAnimationFrame(config.on_animation_frame);
     }
@@ -216,7 +239,7 @@ std::string Draw(const std::vector<DrawObject> &objects,
         draw->SetOnAnimationTick(config.on_animation_tick);
     }
 
-    // 16. Add window and handle blocking vs non-blocking
+    // 18. Add window and handle blocking vs non-blocking
     gui::Application::GetInstance().AddWindow(draw);
 
     if (config.non_blocking_and_return_uid) {

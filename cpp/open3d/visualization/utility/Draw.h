@@ -61,11 +61,11 @@ struct DrawAction {
 struct DrawConfig {
     /// \section Camera Setup
     /// Camera principal axis direction (lookat point). Use with eye and up.
-    std::optional<Eigen::Vector3d> lookat;
+    std::optional<Eigen::Vector3f> lookat;
     /// Camera location. Use with lookat and up.
-    std::optional<Eigen::Vector3d> eye;
+    std::optional<Eigen::Vector3f> eye;
     /// Camera up direction. Use with lookat and eye.
-    std::optional<Eigen::Vector3d> up;
+    std::optional<Eigen::Vector3f> up;
     /// Camera horizontal field of view in degrees. Default: 60.0.
     float field_of_view = 60.0f;
     /// Camera intrinsic matrix (3x3). Use with extrinsic_matrix instead of
@@ -93,8 +93,18 @@ struct DrawConfig {
     /// Show settings user interface (can be toggled from Actions menu).
     /// Default: false.
     std::optional<bool> show_ui;
+    /// Show world-space axes at the scene origin. Default: false.
+    std::optional<bool> show_axes;
     /// Use raw mode for simpler rendering of basic geometry. Default: false.
     std::optional<bool> raw_mode;
+
+    /// \section Camera Clip Planes
+    /// Near clip distance (world units). If set, overrides the value chosen by
+    /// ResetCameraToDefault(). Must be positive. Default: auto.
+    std::optional<float> near_plane;
+    /// Far clip distance (world units). Must be greater than near_plane.
+    /// Default: auto.
+    std::optional<float> far_plane;
     /// 3D point size (pixel count). Default: 3.
     std::optional<int> point_size;
     /// 3D line width (pixel count). Default: 2.

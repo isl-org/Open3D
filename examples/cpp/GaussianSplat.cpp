@@ -17,7 +17,6 @@
 #include "open3d/Open3D.h"
 
 using namespace open3d;
-using visualization::gui::Application;
 
 void PrintUsage() {
     utility::LogInfo("Visualize Gaussian Splat from PLY or SPLAT file.");
@@ -94,23 +93,20 @@ int main(int argc, char** argv) {
     utility::LogInfo("Using sh_degree={} min_alpha={} antialias={}", sh_degree,
                      min_alpha, antialias);
 
-    // Create a material that sets SH degree, alpha filter, and anti-aliasing.
-    visualization::rendering::MaterialRecord mat;
-    mat.shader = "gaussianSplat";
-    mat.gaussian_splat_sh_degree = sh_degree;
-    mat.gaussian_splat_min_alpha = min_alpha;
-    mat.gaussian_splat_antialias = antialias;
+    // Build DrawObjects. The splat gets a material that sets the GS parameters.
+    visualization::DrawObject splat_obj(argv[1], gsplat);
+    splat_obj.material.shader = "gaussianSplat";
+    splat_obj.material.gaussian_splat_sh_degree = sh_degree;
+    splat_obj.material.gaussian_splat_min_alpha = min_alpha;
+    splat_obj.material.gaussian_splat_antialias = antialias;
+    splat_obj.has_material = true;
 
-    // Launch visualizer directly so we can pass the material to AddGeometry.
-    auto& app = Application::GetInstance();
-    app.Initialize();
-    auto vis = std::make_shared<visualization::visualizer::O3DVisualizer>(
-            "Gaussian Splat + Mesh Depth Test", 1024, 768);
+    visualization::DrawObject cube_obj("test_cube", p_cube);
 
-    vis->AddGeometry(argv[1], gsplat, &mat);
-    vis->AddGeometry("test_cube", p_cube);
-    vis->ResetCameraToDefault();
-    app.AddWindow(vis);
-    vis.reset();
-    app.Run();
+    visualization::DrawConfig config;
+    config.show_ui = true;
+    config.near_plane = 1.f;
+
+    visualization::Draw({splat_obj, cube_obj}, "Gaussian Splat + Mesh Depth Test",
+                        1024, 768,                        {}, config);
 }

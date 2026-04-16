@@ -569,6 +569,10 @@ MenuBase* GLFWWindowSystem::CreateOSMenu() {
 #endif
 }
 
+void GLFWWindowSystem::SetClipboardText(OSWindow w, const char* text) {
+    glfwSetClipboardString((GLFWwindow*)w, text);
+}
+
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

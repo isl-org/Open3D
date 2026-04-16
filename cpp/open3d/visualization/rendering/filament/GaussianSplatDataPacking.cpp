@@ -189,12 +189,10 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
                                   int source_sh_degree,
                                   int desired_sh_degree,
                                   float min_opacity_logit,
-                                  float min_alpha,
                                   bool antialias,
                                   GaussianSplatPackedAttrs& out) {
     out = GaussianSplatPackedAttrs{};
     out.sh_degree = desired_sh_degree;
-    out.min_alpha = min_alpha;
     out.antialias = antialias;
 
     // Determine SH rest-coefficient counts and packed stride.
@@ -222,7 +220,7 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
 
     for (std::size_t i = 0; i < n; ++i) {
         // Filter: skip splats below the opacity threshold.
-        const float opacity = opacity_ptr ? opacity_ptr[i] : 0.f;
+        const float opacity = opacity_ptr[i];
         if (opacity < min_opacity_logit) continue;
 
         // Position: fp32 vec4 (w=0 padding for std430 alignment).

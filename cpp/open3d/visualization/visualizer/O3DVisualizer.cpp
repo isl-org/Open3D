@@ -10,6 +10,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <json/json.h>
 
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/Image.h"
@@ -23,6 +24,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/IJsonConvertible.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
@@ -43,6 +45,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
+#include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
 #include "open3d/visualization/visualizer/MessageProcessor.h"
@@ -471,9 +474,14 @@ struct O3DVisualizer::Impl {
         auto *reset = new SmallButton("Reset Camera");
         reset->SetOnClicked([this]() { this->ResetCameraToDefault(); });
 
+        auto *copy_view = new SmallButton("Copy View");
+        copy_view->SetOnClicked([this]() { this->CopyViewToClipboard(); });
+
         h = new Horiz(v_spacing);
         h->AddStretch();
         h->AddChild(GiveOwnership(reset));
+        h->AddFixed(v_spacing);
+        h->AddChild(GiveOwnership(copy_view));
         h->AddStretch();
         settings.view_panel->AddChild(GiveOwnership(h));
 
@@ -2112,6 +2120,32 @@ Ctrl-alt-click to polygon select)";
         next_animation_tick_clock_time_ = now + ui_state_.frame_delay;
     }
 
+    /// Copies current camera parameters to the clipboard as a JSON string.
+    void CopyViewToClipboard() {
+        auto *camera = scene_->GetScene()->GetCamera();
+        Eigen::Vector3d lookat =
+                scene_->GetCenterOfRotation().cast<double>();
+        Eigen::Vector3d eye = camera->GetPosition().cast<double>();
+        Eigen::Vector3d up = camera->GetUpVector().cast<double>();
+
+        Json::Value result;
+        utility::IJsonConvertible::EigenVector3dToJsonArray(
+                lookat, result["lookat"]);
+        utility::IJsonConvertible::EigenVector3dToJsonArray(
+                eye, result["eye"]);
+        utility::IJsonConvertible::EigenVector3dToJsonArray(
+                up, result["up"]);
+        result["field_of_view"] = camera->GetFieldOfView();
+        result["near_plane"] = camera->GetNear();
+        result["far_plane"] = camera->GetFar();
+        auto frame = scene_->GetFrame();
+        result["width"] = frame.width;
+        result["height"] = frame.height;
+
+        window_->SetClipboardText(utility::JsonToString(result));
+        utility::LogInfo("View parameters copied to clipboard.");
+    }
+
     void ExportCurrentImage(const std::string &path) {
         scene_->EnableSceneCaching(false);
         scene_->GetScene()->GetScene()->RenderToImage(
@@ -2612,6 +2646,8 @@ void O3DVisualizer::SetOnAnimationTick(
 void O3DVisualizer::ExportCurrentImage(const std::string &path) {
     impl_->ExportCurrentImage(path);
 }
+
+void O3DVisualizer::CopyViewToClipboard() { impl_->CopyViewToClipboard(); }
 
 void O3DVisualizer::Layout(const gui::LayoutContext &context) {
     auto em = context.theme.font_size;

@@ -140,8 +140,7 @@ struct GaussianSplatPackedAttrs {
     /// All bits set when all splats are visible.
     std::vector<std::uint32_t> visibility_mask;
     std::uint32_t splat_count = 0;
-    int sh_degree = 0;       ///< Effective SH degree packed here
-    float min_alpha = 0.0f;  ///< Stored for view-param antialias metadata
+    int sh_degree = 0;    ///< Effective SH degree packed here
     bool antialias = false;
 };
 
@@ -184,7 +183,6 @@ PackedGaussianScene PackGaussianViewParams(
 /// source_sh_degree)
 /// @param min_opacity_logit Filter threshold in logit space; splats below this
 /// are dropped
-/// @param min_alpha         Stored as `out.min_alpha` metadata
 /// @param antialias         Stored as `out.antialias` metadata
 void PackGaussianSplatAttrsDirect(const float* pts_ptr,
                                   std::size_t n,
@@ -196,7 +194,6 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
                                   int source_sh_degree,
                                   int desired_sh_degree,
                                   float min_opacity_logit,
-                                  float min_alpha,
                                   bool antialias,
                                   GaussianSplatPackedAttrs& out);
 

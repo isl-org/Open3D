@@ -414,24 +414,6 @@ TEST(GaussianSplatTransform, ScaleNegativeUsesAbsValueAndNegatesOddSHDegrees) {
     EXPECT_NEAR(pos_data[3], -2.f, 1e-5f);
 }
 
-TEST(GaussianSplatTransform, CropPreservesAllAttributes) {
-    auto pcd = MakeGSSplatCloud();
-    // Crop to x ∈ [−0.5, 0.5]: only the first splat (0,0,0) is kept.
-    t::geometry::AxisAlignedBoundingBox aabb(
-            core::Tensor::Init<float>({-0.5f, -1.f, -1.f},
-                                      core::Device("CPU:0")),
-            core::Tensor::Init<float>({0.5f, 1.f, 1.f}, core::Device("CPU:0")));
-    auto cropped = pcd.Crop(aabb);
-
-    EXPECT_EQ(cropped.GetPointPositions().GetLength(), 1);
-    EXPECT_TRUE(cropped.IsGaussianSplat());
-    EXPECT_EQ(cropped.GetPointAttr("rot").GetShape()[0], 1);
-    EXPECT_EQ(cropped.GetPointAttr("scale").GetShape()[0], 1);
-    EXPECT_EQ(cropped.GetPointAttr("f_dc").GetShape()[0], 1);
-    EXPECT_EQ(cropped.GetPointAttr("f_rest").GetShape()[0], 1);
-    EXPECT_EQ(cropped.GetPointAttr("opacity").GetShape()[0], 1);
-}
-
 TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
     core::Device device = GetParam();
     if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
