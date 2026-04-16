@@ -88,36 +88,159 @@ void Draw(const std::vector<std::shared_ptr<rendering::TriangleMeshModel>>
     Draw(objs, window_name, width, height, actions);
 }
 
-void Draw(const std::vector<DrawObject> &objects,
-          const std::string &window_name /*= "Open3D"*/,
-          int width /*= 1024*/,
-          int height /*= 768*/,
-          const std::vector<DrawAction> &actions /*= {}*/) {
+// Advanced Draw function with full feature parity to draw.py.
+// Implements the exact orchestration order and behavior from Python.
+std::string Draw(const std::vector<DrawObject> &objects,
+                 const std::string &window_name /*= "Open3D"*/,
+                 int width /*= 1024*/,
+                 int height /*= 768*/,
+                 const std::vector<DrawAction> &actions /*= {}*/,
+                 const DrawConfig &config) {
+    // 1. Initialize GUI application instance
     gui::Application::GetInstance().Initialize();
-    auto draw = std::make_shared<visualizer::O3DVisualizer>(window_name, width,
-                                                            height);
-    for (auto &o : objects) {
+
+    // 2. Create visualizer window
+    auto draw = std::make_shared<visualizer::O3DVisualizer>(
+            window_name, width, height);
+
+    // 3. Set background color and image (if provided)
+    if (config.bg_color.has_value() || config.bg_image) {
+        Eigen::Vector4f bg_color_vec(1.0f, 1.0f, 1.0f, 1.0f);
+        if (config.bg_color.has_value()) {
+            bg_color_vec =
+                    config.bg_color.value().cast<float>();
+        }
+        draw->SetBackground(bg_color_vec, config.bg_image);
+    }
+
+    // 4. Add action buttons
+    for (const auto &a : actions) {
+        draw->AddAction(a.name, a.callback);
+    }
+
+    // 5. Set point and line sizes
+    if (config.point_size.has_value()) {
+        draw->SetPointSize(config.point_size.value());
+    }
+    if (config.line_width.has_value()) {
+        draw->SetLineWidth(config.line_width.value());
+    }
+
+    // 6. Add geometries
+    for (const auto &o : objects) {
+        const rendering::MaterialRecord *material =
+                o.has_material ? &o.material : nullptr;
         if (o.geometry) {
-            draw->AddGeometry(o.name, o.geometry);
+            draw->AddGeometry(o.name, o.geometry, material, o.group, o.time,
+                              o.is_visible);
         } else if (o.tgeometry) {
-            draw->AddGeometry(o.name, o.tgeometry);
+            draw->AddGeometry(o.name, o.tgeometry, material, o.group, o.time,
+                              o.is_visible);
         } else if (o.model) {
-            draw->AddGeometry(o.name, o.model);
+            draw->AddGeometry(o.name, o.model, material, o.group, o.time,
+                              o.is_visible);
         } else {
             utility::LogWarning("Invalid object passed to Draw");
         }
         draw->ShowGeometry(o.name, o.is_visible);
     }
 
-    for (auto &act : actions) {
-        draw->AddAction(act.name, act.callback);
-    }
-
+    // 7. Reset camera to default view
     draw->ResetCameraToDefault();
 
+    // 8. Setup camera using either lookat/eye/up or intrinsic/extrinsic
+    if (config.lookat.has_value() && config.eye.has_value() &&
+        config.up.has_value()) {
+        draw->SetupCamera(config.field_of_view,
+                          config.lookat.value().cast<float>(),
+                          config.eye.value().cast<float>(),
+                          config.up.value().cast<float>());
+    } else if (config.intrinsic_matrix.has_value() &&
+               config.extrinsic_matrix.has_value()) {
+        draw->SetupCamera(config.intrinsic_matrix.value(),
+                          config.extrinsic_matrix.value(), width, height);
+    }
+
+    // 9. Set animation parameters
+    draw->SetAnimationTimeStep(config.animation_time_step);
+    if (config.animation_duration.has_value()) {
+        draw->SetAnimationDuration(config.animation_duration.value());
+    }
+
+    // 10. Set UI visibility
+    if (config.show_ui.has_value()) {
+        draw->ShowSettings(config.show_ui.value());
+    }
+
+    // 11. Set IBL and sky box
+    if (config.ibl.has_value()) {
+        draw->SetIBL(config.ibl.value());
+    }
+    if (config.ibl_intensity.has_value()) {
+        draw->SetIBLIntensity(config.ibl_intensity.value());
+    }
+    if (config.show_skybox.has_value()) {
+        draw->ShowSkybox(config.show_skybox.value());
+    }
+
+    // 12. Configure RPC interface and close callback
+    if (!config.rpc_interface.empty()) {
+        std::string rpc_addr = config.rpc_interface;
+        if (rpc_addr == "default") {
+            rpc_addr = "tcp://127.0.0.1:51454";
+        }
+        draw->StartRPCInterface(rpc_addr, 10000);
+
+        // Install close callback to stop RPC when window closes
+        draw->SetOnClose([draw]() {
+            draw->StopRPCInterface();
+            return true;
+        });
+    }
+
+    // 13. Enable raw/basic rendering mode
+    if (config.raw_mode.has_value()) {
+        draw->EnableBasicMode(config.raw_mode.value());
+    }
+
+    // 14. Call user init callback
+    if (config.on_init) {
+        config.on_init(*draw);
+    }
+
+    // 15. Set animation callbacks
+    if (config.on_animation_frame) {
+        draw->SetOnAnimationFrame(config.on_animation_frame);
+    }
+    if (config.on_animation_tick) {
+        draw->SetOnAnimationTick(config.on_animation_tick);
+    }
+
+    // 16. Add window and handle blocking vs non-blocking
     gui::Application::GetInstance().AddWindow(draw);
-    draw.reset();  // so we don't hold onto the pointer after Run() cleans up
-    gui::Application::GetInstance().Run();
+
+    if (config.non_blocking_and_return_uid) {
+        // Non-blocking mode: return window UID
+        auto uid = draw->GetWebRTCUID();
+        draw.reset();  // release our reference
+        return uid;
+    } else {
+        // Blocking mode: release our reference so window teardown happens
+        // before global engine cleanup inside Application::Run().
+        draw.reset();
+        gui::Application::GetInstance().Run();
+        return "";
+    }
+}
+
+// Simple overload that creates a DrawObject version and calls advanced Draw
+// with default config for backward compatibility.
+void Draw(const std::vector<DrawObject> &objects,
+          const std::string &window_name /*= "Open3D"*/,
+          int width /*= 1024*/,
+          int height /*= 768*/,
+          const std::vector<DrawAction> &actions /*= {}*/) {
+    Draw(objects, window_name, width, height, actions, DrawConfig());
 }
 
 }  // namespace visualization

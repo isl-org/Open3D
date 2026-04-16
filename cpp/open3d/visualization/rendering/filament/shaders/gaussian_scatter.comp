@@ -78,10 +78,11 @@ uint LinearTileIndex(uvec2 tile) {
 }
 
 uint DepthToSortableKey(float depth) {
-    // Depth is stored as Filament inverse depth (near=1, far=0), but the
-    // radix sort expects near splats to come first with ascending keys.
-    // Convert to a monotonic near->far value by inverting once here.
-    float sortable_depth = clamp(1.0 - depth, 0.0, 1.0);
+    // Depth is stored as normalized linear depth (near=0, far=1), which is
+    // already monotonically ascending for front-to-back radix sort order.
+    // floatBitsToUint() preserves ordering for positive floats and provides
+    // a free log-density tilt that concentrates more keys near the camera.
+    float sortable_depth = clamp(depth, 0.0, 1.0);
     return floatBitsToUint(sortable_depth);
 }
 

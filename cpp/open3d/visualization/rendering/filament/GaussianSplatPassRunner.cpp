@@ -314,9 +314,11 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
             DivUp(targets.height,
                   static_cast<std::uint32_t>(config.composite_group_size.y()));
 
+    // Always upload depth flag when scene depth is present (which is always
+    // for interactive GS views). The shader will use this to test occlusion
+    // against mesh geometry.
     const bool has_scene_depth = (targets.scene_depth_gl_handle != 0) ||
                                  (targets.scene_depth_mtl_texture != 0);
-
     if (has_scene_depth) {
         float flag = 1.0f;
         static constexpr std::size_t kDepthFlagOffset =

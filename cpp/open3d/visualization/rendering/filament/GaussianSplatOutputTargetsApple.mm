@@ -68,20 +68,16 @@ bool PrepareGaussianImportedRenderTargetsApple(
                        MTLTextureUsageShaderWrite;
     color_desc.storageMode = MTLStorageModePrivate;
 
-    // Only allocate scene_depth when mesh occluders exist.  Without it, the
-    // composite shader's use_scene_depth flag stays false.
-    id<MTLTexture> scene_depth = nil;
-    if (needs_scene_depth) {
-        scene_depth = [device newTextureWithDescriptor:depth_desc];
-        if (!scene_depth) {
-            return false;
-        }
-        scene_depth.label = @"gs.scene_depth";
-        targets.scene_depth_mtl_texture = reinterpret_cast<std::uintptr_t>(
-                (__bridge_retained void*)scene_depth);
-    } else {
-        targets.scene_depth_mtl_texture = 0;
+    // Always allocate scene_depth for GS views to ensure stable render-target
+    // topology and avoid Filament handle lifecycle hazards from topology
+    // transitions. The composite shader's occlusion test is gated separately.
+    id<MTLTexture> scene_depth = [device newTextureWithDescriptor:depth_desc];
+    if (!scene_depth) {
+        return false;
     }
+    scene_depth.label = @"gs.scene_depth";
+    targets.scene_depth_mtl_texture = reinterpret_cast<std::uintptr_t>(
+            (__bridge_retained void*)scene_depth);
 
     id<MTLTexture> gs_color = [device newTextureWithDescriptor:color_desc];
     if (!gs_color) {
@@ -93,6 +89,8 @@ bool PrepareGaussianImportedRenderTargetsApple(
             reinterpret_cast<std::uintptr_t>((__bridge_retained void*)gs_color);
 
     using Tex = filament::Texture;
+    // Import scene depth (always allocated; Filament writes, GS reads for
+    // occlusion testing).
     if (targets.scene_depth_mtl_texture != 0) {
         targets.depth = resource_mgr.CreateImportedMTLTexture(
                 targets.scene_depth_mtl_texture, w, h,

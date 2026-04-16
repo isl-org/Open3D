@@ -269,9 +269,22 @@ bits D-1..0  depth field  (D = 32-T bits of depth precision)
 
 `key = (tile_index << D) | ((depth_key << 1u) >> T)`
 
-The `<< 1` strips the IEEE 754 sign bit from `depth_key`, which is always 0 because depth
-is clamped to `>= 0` before `floatBitsToUint()` in the scatter pass.  This reclaims one free
-depth bit at no cost.
+**Depth convention for sorting**: `depth_key = floatBitsToUint(norm_depth)` where
+`norm_depth = (linear_depth - near) / (far - near)` is the normalized linear depth
+(near=0, far=1), computed in `gaussian_project.comp` and stored in `center_depth_alpha.z`.
+
+This gives **uniform sort-key resolution** across the full depth range (constant Δd per
+key interval). The previous inverse/reversed depth (`near=1, far=0`) had a 1/d² distribution
+that crowded all key space within a few metres of the camera while leaving the mid-ground
+and far field with centimetre-to-metre gaps between distinct sort keys.
+
+`floatBitsToUint()` also provides a free logarithmic-density tilt: IEEE 754 has more
+representable values near zero, so slightly more keys are allocated near the camera (where
+sort errors have the largest visual impact) without any extra cost.
+
+The `<< 1` strips the IEEE 754 sign bit from `depth_key`, which is always 0 because
+`norm_depth` is clamped to `[0,1]` before `floatBitsToUint()` in the scatter pass.  This
+reclaims one free depth bit at no cost.
 
 T is computed CPU-side as `floor(log2(max_tile_index)) + 1` and stored in
 `GaussianViewParams.limits.w`, then read in `gaussian_radix_sort_keygen.comp`.
@@ -309,14 +322,18 @@ requires no dispatch logic updates.
   OpenGL SPIR-V target (`-G`) fails for subgroup ops; Vulkan target works via `GL_ARB_gl_spirv`.
 - **Radix sort**: 4-pass 8-bit LSD radix sort. Runtime-queries `gl_SubgroupSize`. Sort key:
   `(tile_index << D) | ((depth_key << 1) >> T)` where T = `limits.w` = ceil(log2(tile_count))
-  (dynamic split, sign-bit stripped from depth). Keygen reads `view_params` at binding 0.
+  (dynamic split, sign-bit stripped from depth). `depth_key = floatBitsToUint(norm_depth)`
+  where `norm_depth` is normalized linear depth (near=0, far=1), giving uniform sort precision
+  across the full depth range. Keygen reads `view_params` at binding 0.
 - **Two-stage execution**: `RenderGeometryStage` (passes 1-4) defers `glFinish()` to enable
   overlap. `RenderCompositeStage` (pass 5) runs after `flushAndWait()`.
 - **Zero-copy output**: `PrepareOutputTargets` delegates native texture creation/import to the
   active backend. OpenGL creates shared GL textures (`DEPTH_COMPONENT32F` + `RGBA16F`), while
   Metal imports `MTLTexture` objects. No CPU staging.
-- **Depth-aware compositing**: Composite shader reads scene depth at binding 14, linearizes
-  Filament's reversed-Z depth, discards splats behind mesh geometry per-pixel.
+- **Depth-aware compositing**: Composite shader reads scene depth at binding 14, converts
+  Filament's reversed-Z depth to normalized linear once per pixel, discards splats at or
+  behind mesh geometry per-pixel (`s_depth[i] >= scene_linear_01`). Output depth is converted
+  back to Filament inverse convention before `imageStore` so downstream consumers are unchanged.
 - **MSAA disabled** for GS views (required for sampleable depth attachment).
 - **No counter readback**: dispatch counts and `RadixSortParams` are generated GPU-side in
   `gaussian_compute_dispatch_args.comp`; sort buffers are pre-allocated from the configured
@@ -339,8 +356,13 @@ requires no dispatch logic updates.
 - Validated on Apple Silicon (M-series) hardware.
 
 ### PHASE 4: Depth-Based Scene Compositing (DONE)
-- `gaussian_composite.comp`: binding 14 = `sampler2D scene_depth`. Reversed-Z linearization.
-  Per-splat occlusion test: `if (use_scene_depth && s_depth[i] >= scene_linear_depth) continue`.
+- `gaussian_composite.comp`: binding 14 = `sampler2D scene_depth`. Filament inverse depth
+  (near=1, far=0) converted to normalized linear (near=0, far=1) once per pixel via
+  `InverseToLinear01()` before the splat loop.
+  Per-splat occlusion test: `if (use_scene_depth && s_depth[i] >= scene_linear_01) continue`
+  (larger linear value = farther from camera = behind scene geometry).
+  Output depth converted back to Filament inverse via `Linear01ToInverse()` before `imageStore`
+  so `gaussian_depth_merge.comp` and CPU readback are unaffected.
 - UBO `depth_range_and_flags[3]` set to `1.0` in `RenderCompositeStage` when scene depth valid.
 - Example (`GaussianSplat.cpp`): red sphere placed at scene bbox center for depth compositing
   testing.
@@ -776,8 +798,8 @@ which is why those are the chosen backends.
 | 0 | `gaussian_project.comp` | Projection, tile rect encoding |
 | 1 | `gaussian_prefix_sum.comp` | Tile prefix sum, counter write |
 | 2 | `gaussian_scatter.comp` | Tile-entry scatter |
-| 3 | `gaussian_composite.comp` | Depth-aware compositing (color + linear depth out) |
-| 4 | `gaussian_radix_sort_keygen.comp` | Keygen: `(tile_id<<D)|((depth<<1)>>T)`, T from `limits.w` |
+| 3 | `gaussian_composite.comp` | Depth-aware compositing; occlusion vs Filament scene depth; outputs inverse depth |
+| 4 | `gaussian_radix_sort_keygen.comp` | Keygen: `(tile_id<<D)|((norm_depth<<1)>>T)`, T from `limits.w`; norm_depth = (d-near)/(far-near) |
 | 5 | `gaussian_radix_sort_histograms.comp` | Radix histogram |
 | 6 | `gaussian_radix_sort.comp` | Radix scatter |
 | 7 | `gaussian_radix_sort_payload.comp` | Payload rearrangement |
@@ -826,6 +848,7 @@ Sources are listed in `cpp/open3d/visualization/gui/CMakeLists.txt` (`gaussian_c
 | Vulkan SPIR-V in OpenGL | Works with subgroup ops where OpenGL SPIR-V target fails |
 | Binding 14 reuse | Safe because radix UBO and scene depth sampler are used in disjoint stages |
 | Dynamic sort key split (T/D) | Adapts tile/depth bit allocation to actual tile count; sign-bit stripping recovers one free depth bit; 1080p gets 19 depth bits vs 16 previously |
+| Normalized linear depth for sort keys | `center_depth_alpha.z` stores `(d-near)/(far-near)` instead of inverse depth. Uniform Δd per sort-key interval across full depth range vs previous 1/d² crowding near camera. `floatBitsToUint` provides a free log-density tilt toward near field. Inverse depth is derived inline in composite only for occlusion test and depth output. |
 | Pre-destroy invalidation on resize | Prevents Filament handle use-after-free during maximize/resize |
 
 ---

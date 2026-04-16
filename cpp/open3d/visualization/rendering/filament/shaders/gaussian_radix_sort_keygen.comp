@@ -16,7 +16,14 @@
 // correct for large ones.  For a 1080p scene (8160 tiles) T=13, D=19 — 3 more
 // depth bits than the fixed 16/16 split.
 //
-// Sign-bit stripping: depth is always >= 0 (clamped in gaussian_scatter.comp),
+// Depth convention: depth_key = floatBitsToUint(norm_depth) where
+// norm_depth is the normalized linear depth: near=0, far=1.  This gives
+// uniform sort-key resolution across the full depth range (constant Δd per
+// key interval), unlike the 1/d² crowding of inverse/reversed depth.
+// floatBitsToUint() also provides a free log-density tilt that slightly
+// concentrates more keys near the camera, where sort errors are most visible.
+//
+// Sign-bit stripping: norm_depth is always >= 0 (clamped in scatter.comp),
 // so the IEEE 754 sign bit is always 0.  Left-shifting by 1 discards it and
 // promotes the exponent MSB to bit 31, recovering one free depth bit.
 //

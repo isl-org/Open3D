@@ -195,17 +195,14 @@ public:
             return false;
         }
 
-        // Only allocate scene_depth when mesh occluders exist.  Without it,
-        // the composite shader's use_scene_depth flag stays false and the
-        // entire depth pipeline (import, bind, sampler) is skipped.
-        if (needs_scene_depth) {
-            auto scene_depth = CreateGLTexture2D(
-                    width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
-            targets.scene_depth_gl_handle =
-                    scene_depth.valid ? scene_depth.id : 0;
-        } else {
-            targets.scene_depth_gl_handle = 0;
-        }
+        // Always allocate scene depth for GS views to ensure stable render-target
+        // topology and avoid Filament handle lifecycle hazards. The composite
+        // shader's occlusion test is gated separately by the presence of mesh
+        // occluders in the scene.
+        auto scene_depth = CreateGLTexture2D(
+                width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
+        targets.scene_depth_gl_handle =
+                scene_depth.valid ? scene_depth.id : 0;
         auto gs_color =
                 CreateGLTexture2D(width, height, kGL_RGBA16F, "gs.color");
         targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
@@ -216,7 +213,8 @@ public:
         }
 
         using Tex = filament::Texture;
-        // Import scene depth only when allocated (Filament writes, GS reads).
+        // Import scene depth (always allocated; Filament writes, GS reads for
+        // occlusion testing).
         if (targets.scene_depth_gl_handle != 0) {
             targets.depth = resource_mgr.CreateImportedTexture(
                     targets.scene_depth_gl_handle, int(width), int(height),

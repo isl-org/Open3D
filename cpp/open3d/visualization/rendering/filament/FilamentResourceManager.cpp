@@ -119,16 +119,23 @@ void DestroyResource(const REHandle_abstract& id,
                      ResourcesContainer<ResourceType>& container) {
     auto found = container.find(id);
     if (found == container.end()) {
-        utility::LogError("Trying to destroy nonexistent resource ({})!", id);
+        utility::LogWarning("Trying to destroy nonexistent resource ({})!",
+                            id);
+        return;
+    }
+
+    if (found->second.use_count == 0) {
+        utility::LogWarning(
+                "Trying to destroy resource ({}) with zero use count. "
+                "Removing stale entry.",
+                id);
+        container.erase(found);
         return;
     }
 
     found->second.use_count -= 1;
     if (found->second.use_count == 0) {
         container.erase(found);
-    } else if (found->second.use_count < 0) {
-        utility::LogError("Negative use count for resource ({})!", id);
-        return;
     }
 }
 

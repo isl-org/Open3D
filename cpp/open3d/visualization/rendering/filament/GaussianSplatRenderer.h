@@ -109,9 +109,8 @@ public:
         bool has_render_data = false;
         bool has_valid_output = false;
         bool needs_render = true;
-        /// True when at least one non-Gaussian (mesh) geometry is visible and
-        /// the scene-depth texture must be allocated.  Changing this flag
-        /// forces a target re-setup on the next frame.
+        /// Scene-depth texture is always allocated for GS views to ensure
+        /// stable render-target topology. Reserved for internal consistency.
         bool needs_scene_depth = true;
         /// True when an offscreen depth readback has been requested for this
         /// view.  Controls allocation of the merged_depth_u16_tex scratch
@@ -143,9 +142,8 @@ public:
         /// the view's render target / MSAA / post-processing settings.
         /// Returns true if zero-copy setup succeeded; false falls through to
         /// the Filament-owned texture fallback in PrepareOutputTargets.
-        /// @param needs_scene_depth  When false, skip allocating/importing
-        ///                           the scene-depth texture (no mesh
-        ///                           occluders).
+        /// @param needs_scene_depth  Reserved for compatibility; always true
+        ///                           since scene-depth is always allocated.
         virtual bool PrepareOutputTextures(
                 FilamentView& view,
                 FilamentResourceManager& resource_mgr,
@@ -260,8 +258,7 @@ public:
 private:
     using ViewKey = const FilamentView*;
 
-    OutputTargets& PrepareOutputTargets(FilamentView& view,
-                                        bool needs_scene_depth);
+    OutputTargets& PrepareOutputTargets(FilamentView& view);
     void ResetOutputTargets(OutputTargets& targets);
     ViewRenderData ExtractViewRenderData(const FilamentView& view) const;
     bool UpdateViewRenderData(OutputTargets& targets, const FilamentView& view);

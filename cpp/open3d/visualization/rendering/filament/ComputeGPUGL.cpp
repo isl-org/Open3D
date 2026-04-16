@@ -435,7 +435,15 @@ public:
         glBindTexture(GL_TEXTURE_2D, id);
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, out.data());
         glBindTexture(GL_TEXTURE_2D, 0);
-        return DrainGLErrors("DownloadTextureR32F") == 0;
+        if (DrainGLErrors("DownloadTextureR32F") != 0) return false;
+        // glGetTexImage returns bottom-up (OpenGL origin). Flip to top-down
+        // so callers match the orientation of Filament readPixels output.
+        for (std::uint32_t row = 0; row < height / 2; ++row) {
+            std::swap_ranges(out.begin() + row * width,
+                             out.begin() + row * width + width,
+                             out.begin() + (height - 1 - row) * width);
+        }
+        return true;
     }
 
     bool DownloadTextureR16UI(std::uintptr_t tex,
@@ -450,7 +458,15 @@ public:
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT,
                       out.data());
         glBindTexture(GL_TEXTURE_2D, 0);
-        return DrainGLErrors("DownloadTextureR16UI") == 0;
+        if (DrainGLErrors("DownloadTextureR16UI") != 0) return false;
+        // glGetTexImage returns bottom-up (OpenGL origin). Flip to top-down
+        // so callers match the orientation of Filament readPixels output.
+        for (std::uint32_t row = 0; row < height / 2; ++row) {
+            std::swap_ranges(out.begin() + row * width,
+                             out.begin() + row * width + width,
+                             out.begin() + (height - 1 - row) * width);
+        }
+        return true;
     }
 
     void FinishGpuWork() override {

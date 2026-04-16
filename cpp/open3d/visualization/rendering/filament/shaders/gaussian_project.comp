@@ -26,8 +26,8 @@ layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 // 48-byte projected splat descriptor (std430):
 //   vec4(16) + 4×uint(16) + vec4(16) = 48 bytes.
 struct ProjectedGaussian {
-    vec4 center_depth_alpha;  // xy=pixel center, z=Filament inverse depth,
-                              // w=alpha
+    vec4 center_depth_alpha;  // xy=pixel center, z=normalized linear depth
+                              //   (near=0, far=1), w=alpha
     uint packed_color;        // RGBA8 packed color
     uint tile_count_overlap;  // tile overlap count; 0 = culled/invalid
     uint tile_rect_min;       // packed: (tile_min.y << 16) | tile_min.x
@@ -87,7 +87,8 @@ layout(std430, binding = 15) readonly buffer VisibilityMask {
 
 const float kMinDeterminant = 1e-8;
 const float kMinEigenValue = 1e-6;
-const float kMinAlpha = 1.0 / 65535.0;
+const float kMinAlpha = 1.0 / 255.0;
+const float kLog2E = 1.44269504089;  // log2(e) for exp2-based sigmoid
 
 uint GetSplatCount() { return view_params.scene.x; }
 
@@ -111,7 +112,7 @@ vec2 GetViewportSize() {
     return max(view_params.viewport_origin_and_size.zw, vec2(1.0));
 }
 
-float Sigmoid(float x) { return 1.0 / (1.0 + exp(-x)); }
+float Sigmoid(float x) { return 1.0 / (1.0 + exp2(-x * kLog2E)); }
 
 uint PackColorRGBA8(vec3 color) {
     uvec3 c = uvec3(clamp(color * 255.0 + 0.5, vec3(0.0), vec3(255.0)));
@@ -212,14 +213,10 @@ vec3 EvaluateShDegree2(vec3 dir, uint splat_index, vec4 buffer3) {
     float y = dir.y;
     float z = dir.z;
 
-    const float c0 = 1.0925484306;
-    const float c1 = 1.0925484306;
-    const float c2 = 0.3153915653;
-    const float c3 = 1.0925484306;
-    const float c4 = 0.5462742153;
-
-    vec3 basis0 = vec3(c0 * x * y, c1 * y * z, c2 * (3.0 * z * z - 1.0));
-    vec3 basis1 = vec3(c3 * x * z, c4 * (x * x - y * y), 0.0);
+    const vec3 c012 = vec3(1.0925484306, 1.0925484306, 0.3153915653);
+    const vec2 c34 = vec2(1.0925484306, 0.5462742153);
+    vec3 basis0 = c012 * vec3(x * y, y * z, 3.0 * z * z - 1.0);
+    vec2 basis1 = c34 * vec2(x * z, x * x - y * y);
 
     vec3 color = vec3(0.0);
     color.r = coeffs[0] * basis0.x + coeffs[1] * basis0.y +
@@ -271,7 +268,7 @@ void ProjectGaussian(uint splat_index) {
         return;
     }
 
-    const float EPS2D = 0.3;  // Subpixel blur to regularise tiny splats
+    const float kEps2D = 0.3;  // Subpixel blur to regularise tiny splats
                               // (standard 3DGS anti-aliasing).
     // GS positions are already in world space; world_from_model is always
     // identity so the multiply and w-divide are skipped.
@@ -279,12 +276,14 @@ void ProjectGaussian(uint splat_index) {
     vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
     vec4 clip_center = view_params.clip_from_view * view_center;
 
-    // Opt8: Early reject — behind camera or negligible alpha.
+    // Opt8: Early reject — behind camera outside [near, far] or negligible alpha.
     // dc is loaded once here and reused in EvaluateShColor() to avoid a
     // second LoadDcOpacity() call.
+    float near = view_params.depth_range_and_flags.x;
+    float far = view_params.depth_range_and_flags.y;
     vec4 dc = LoadDcOpacity(splat_index);
     float alpha = Sigmoid(dc.w);
-    if (alpha <= kMinAlpha || clip_center.w <= 0.0) {
+    if (alpha <= kMinAlpha || clip_center.w <= 0.0 || view_center.z >= -near || view_center.z <= -far) {
         WriteInvalidProjection(splat_index);
         return;
     }
@@ -328,15 +327,15 @@ void ProjectGaussian(uint splat_index) {
 
     vec3 cov_jx = covariance_view * jacobian_x;
     vec3 cov_jy = covariance_view * jacobian_y;
-    // Pre-blur 2D covariance values (before the EPS2D subpixel regularisation).
+    // Pre-blur 2D covariance values (before the kEps2D subpixel regularisation).
     float raw_xx = dot(jacobian_x, cov_jx);
     float raw_xy = dot(jacobian_x, cov_jy);
     float raw_yy = dot(jacobian_y, cov_jy);
     // Add subpixel blur to regularise tiny splats (standard 3DGS
     // anti-aliasing).
-    float cov_xx = raw_xx + EPS2D;
+    float cov_xx = raw_xx + kEps2D;
     float cov_xy = raw_xy;
-    float cov_yy = raw_yy + EPS2D;
+    float cov_yy = raw_yy + kEps2D;
     // Density compensation (gsplat PR #117): reduce opacity of splats whose
     // apparent size is dominated by the blur kernel rather than their geometry.
     //   compensation = sqrt(det(Sigma_orig) / det(Sigma_blurred))
@@ -359,8 +358,20 @@ void ProjectGaussian(uint splat_index) {
     vec2 major_axis = sqrt(2.0 * lambda1) * major_dir;
     vec2 minor_axis = sqrt(2.0 * lambda2) * minor_dir;
 
-    float bbox_half_x = 2.0 * length(vec2(major_axis.x, minor_axis.x));
-    float bbox_half_y = 2.0 * length(vec2(major_axis.y, minor_axis.y));
+    // Tighten the bbox to only cover pixels where this splat's contribution
+    // exceeds kMinAlpha.  At a Gaussian-UV distance r the per-pixel alpha is
+    // exp(-r²) * alpha, so the threshold is reached at:
+    //   r_eff = sqrt(log(alpha / kMinAlpha))
+    // Cap at 2.0 to match the composite pass's own power < -4.0 early-out,
+    // so opaque splats (alpha >= kMinAlpha * e^4 ≈ 0.21) keep the same
+    // footprint as before.  Translucent floaters get a proportionally smaller
+    // bbox, directly reducing their tile-entry count and buffer pressure.
+    float alpha_cutoff_radius =
+            min(sqrt(max(0.0, log(alpha / kMinAlpha))), 2.0);
+    float bbox_half_x =
+            alpha_cutoff_radius * length(vec2(major_axis.x, minor_axis.x));
+    float bbox_half_y =
+            alpha_cutoff_radius * length(vec2(major_axis.y, minor_axis.y));
     vec2 bbox_half_extent = max(vec2(bbox_half_x, bbox_half_y), vec2(0.5));
 
     float basis_det = major_axis.x * minor_axis.y - minor_axis.x * major_axis.y;
@@ -412,19 +423,14 @@ void ProjectGaussian(uint splat_index) {
         view_dir = vec3(0.0, 0.0, 1.0);
     }
 
-    // Store depth in Filament reversed/inverse convention:
-    // near -> 1, far -> 0.
-    float near = view_params.depth_range_and_flags.x;
-    float far = view_params.depth_range_and_flags.y;
-    float linear_depth = clamp(-view_center.z, near, far);
-    // Inverse/reversed depth matching Filament's depth buffer convention.
-    // near -> 1, far -> 0.
-    float inverse_depth =
-            near * (far - linear_depth) / (linear_depth * (far - near));
-    inverse_depth = clamp(inverse_depth, 0.0, 1.0);
+    // Normalize view-space depth to [0, 1] with near=0, far=1.
+    // This uniform distribution gives constant sort-key resolution across
+    // the full depth range. Splats with -view_center.z outside [near, far] are
+    // already culled above, so the result is always in [0, 1].
+    float norm_depth = (-view_center.z - near) / (far - near);
 
     projected[splat_index].center_depth_alpha =
-            vec4(center_pixel, inverse_depth, alpha);
+            vec4(center_pixel, norm_depth, alpha);
     projected[splat_index].packed_color =
             PackColorRGBA8(EvaluateShColor(splat_index, view_dir, dc));
     projected[splat_index].tile_count_overlap = tile_overlap_count;

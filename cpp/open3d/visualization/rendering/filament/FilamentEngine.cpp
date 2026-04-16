@@ -147,7 +147,10 @@ EngineInstance::EngineInstance() {
     }
 #endif
 
-    engine_ = filament::Engine::create(backend, nullptr, shared_context_);
+    filament::Engine::Config fmcfg;
+    fmcfg.stereoscopicType = filament::Engine::StereoscopicType::INSTANCED;
+    fmcfg.stereoscopicEyeCount = 1;   // We do not support stereo.
+    engine_ = filament::Engine::create(backend, nullptr, shared_context_, &fmcfg);
     if (!engine_) {
         utility::LogError("Failed to create Filament engine.");
     }

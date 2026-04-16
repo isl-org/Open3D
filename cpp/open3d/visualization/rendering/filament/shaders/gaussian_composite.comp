@@ -85,6 +85,8 @@ layout(binding = 1, r32f) uniform writeonly image2D out_depth;
 // Bound only when depth_range_and_flags.w > 0.5.
 layout(binding = 14) uniform sampler2D scene_depth;
 
+const float kLog2E = 1.44269504089;  // log2(e) for exp2-based sigmoid
+
 uvec2 GetTileSize() { return max(view_params.tiles.xy, uvec2(1u)); }
 
 uvec2 GetTileCount2D() { return max(view_params.tiles.zw, uvec2(1u)); }
@@ -102,6 +104,23 @@ vec3 UnpackColorRGBA8(uint rgba8) {
     return vec3(float(rgba8 & 0xFFu), float((rgba8 >> 8u) & 0xFFu),
                 float((rgba8 >> 16u) & 0xFFu)) /
            255.0;
+}
+
+// Convert Filament inverse depth (near=1, far=0) to normalized linear depth
+// (near=0, far=1) using the near/far planes from the view params UBO.
+// Formula derived from: inv = near*(far-d) / (d*(far-near))
+//   => d = near*far / (inv*(far-near) + near)
+//   => linear_01 = (d - near) / (far - near)
+//                = near*(1 - inv) / (inv*(far-near) + near)
+float InverseToLinear01(float inv, float near, float far) {
+    return near * (1.0 - inv) / (inv * (far - near) + near);
+}
+
+// Convert normalized linear depth (near=0, far=1) back to Filament inverse
+// depth (near=1, far=0), for writing depth outputs in Filament convention.
+// Formula: inv = near*(1 - linear_01) / (near + linear_01*(far - near))
+float Linear01ToInverse(float linear_01, float near, float far) {
+    return near * (1.0 - linear_01) / (near + linear_01 * (far - near));
 }
 
 // Opt7: Shared memory arrays for cooperative tile loading.
@@ -138,7 +157,7 @@ void main() {
     if (local_index == 0u) {
         uint entry_capacity = view_params.limits.x;
         uint tile_offset = min(tile_offsets[tile_index], entry_capacity);
-        uint available = entry_capacity - tile_offset;
+        uint available = max(entry_capacity - tile_offset, 0u);
         wg_tile_offset = tile_offset;
         wg_tile_count = min(tile_counts[tile_index], available);
     }
@@ -149,17 +168,24 @@ void main() {
 
     vec3 accum_color = vec3(0.0);
     float transmittance = 1.0;
-    // Output depth uses Filament convention: near=1, far=0.
-    float out_inverse_depth = 0.0;
+    // Output depth in normalized linear convention (near=0, far=1);
+    // converted back to Filament inverse convention before imageStore.
+    float out_norm_depth = 0.0;
     bool depth_written = false;
     vec2 pixel_center = vec2(pixel) + vec2(0.5);
 
-    // Filament scene depth is already in reversed/inverse convention.
-    float scene_inverse_depth = 0.0;  // far
+    float near = view_params.depth_range_and_flags.x;
+    float far = view_params.depth_range_and_flags.y;
+
+    // Convert Filament scene depth (inverse, near=1, far=0) to linear_01
+    // once per pixel before the splat loop, so the per-splat occlusion test
+    // is a simple float comparison with no per-iteration conversion.
+    float scene_linear_01 = 0.0;  // corresponds to far (no occlusion)
     bool use_scene_depth =
             (view_params.depth_range_and_flags.w > 0.5) && pixel_active;
     if (use_scene_depth) {
-        scene_inverse_depth = texelFetch(scene_depth, pixel, 0).r;
+        float scene_inverse_depth = texelFetch(scene_depth, pixel, 0).r;
+        scene_linear_01 = InverseToLinear01(scene_inverse_depth, near, far);
     }
 
     // Opt7: process tile entries in batches of BATCH_SIZE.
@@ -188,9 +214,9 @@ void main() {
         // Skip if this pixel is outside the viewport or already saturated.
         if (pixel_active) {
             for (uint i = 0u; i < batch_count; ++i) {
-                // Discard splats behind scene geometry. With inverse depth,
-                // farther splats have smaller values.
-                if (use_scene_depth && s_depth[i] <= scene_inverse_depth) {
+                // Discard splats at or behind scene geometry. Depth is
+                // normalized linear (near=0, far=1): larger value = farther.
+                if (use_scene_depth && s_depth[i] >= scene_linear_01) {
                     continue;
                 }
 
@@ -202,19 +228,18 @@ void main() {
                     continue;
                 }
 
-                float alpha = exp(power) * s_alpha[i];
+                float alpha = exp2(power * kLog2E) * s_alpha[i];
                 if (alpha <= 1.0 / 65535.0) {
                     continue;
                 }
 
                 float contribution = transmittance * alpha;
                 accum_color += contribution * UnpackColorRGBA8(s_color[i]);
-                if (!depth_written && contribution > 1.0 / 4096.0) {
-                    out_inverse_depth = s_depth[i];
+                transmittance *= (1.0 - alpha);
+                if (!depth_written && transmittance < 0.5) {
+                    out_norm_depth = s_depth[i];
                     depth_written = true;
                 }
-
-                transmittance *= (1.0 - alpha);
                 if (transmittance <= 1.0 / 4096.0) {
                     transmittance = 0.0;
                     pixel_active = false;  // saturated — skip future batches
@@ -233,6 +258,10 @@ void main() {
         // (premultiplied-alpha compositing), so store premultiplied RGB
         // directly: final = accum_color + transmittance * background.
         imageStore(out_color, pixel, vec4(accum_color, out_alpha));
+        // Convert nearest-splat depth back to Filament inverse convention
+        // (near=1, far=0) so gaussian_depth_merge.comp and CPU readback
+        // can compare against Filament's own depth buffer unchanged.
+        float out_inverse_depth = Linear01ToInverse(out_norm_depth, near, far);
         imageStore(out_depth, pixel, vec4(out_inverse_depth, 0.0, 0.0, 0.0));
     }
 }

@@ -229,9 +229,11 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
         return;
     }
 
-    // Skip scene_depth allocation when no mesh geometry can occlude splats.
-    const bool needs_depth = scene.HasNonGaussianVisibleGeometry();
-    auto& targets = PrepareOutputTargets(view, needs_depth);
+    // Always allocate scene depth for GS views to ensure stable render-target
+    // topology. This prevents Filament handle lifecycle hazards that occur
+    // when transitioning between private-depth and shared sampleable depth
+    // attachments during runtime geometry visibility changes.
+    auto& targets = PrepareOutputTargets(view);
     const std::uint64_t scene_change_id = scene.GetGeometryChangeId();
     const bool view_changed = UpdateViewRenderData(targets, view);
     const bool scene_changed = targets.last_scene_change_id != scene_change_id;
@@ -423,8 +425,7 @@ const char* GaussianSplatRenderer::GetBackendName() const {
 }
 
 GaussianSplatRenderer::OutputTargets&
-GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view,
-                                            bool needs_scene_depth) {
+GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     auto viewport = view.GetViewport();
     auto& targets = outputs_[&view];
     if (viewport[2] <= 0 || viewport[3] <= 0) {
@@ -435,31 +436,23 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view,
 
     auto width = static_cast<std::uint32_t>(viewport[2]);
     auto height = static_cast<std::uint32_t>(viewport[3]);
-    // Keep scene-depth mode sticky once enabled for an existing view output.
-    // This avoids unstable lifetime transitions between shared sampleable
-    // depth and private depth attachments during runtime visibility toggles.
-    if (targets.width > 0 && targets.height > 0) {
-        needs_scene_depth = needs_scene_depth || targets.needs_scene_depth;
-    }
-    const bool depth_mode_changed =
-            (targets.needs_scene_depth != needs_scene_depth);
     if (targets.width == width && targets.height == height && targets.color &&
-        targets.depth && targets.render_target && HasGsColorOutput(targets) &&
-        !depth_mode_changed) {
+        targets.depth && targets.render_target && HasGsColorOutput(targets)) {
         return targets;
     }
 
     view.SetRenderTarget({});
     ResetOutputTargets(targets);
-    targets.needs_scene_depth = needs_scene_depth;
+    // Scene depth is always allocated per design to ensure stable topology.
+    targets.needs_scene_depth = true;
 
     // Attempt zero-copy setup via the backend (GL texture sharing on
-    // OpenGL, Metal texture import on Apple).  Falls back to
-    // Filament-owned textures if the backend returns false.
+    // OpenGL, Metal texture import on Apple). Falls back to Filament-owned
+    // textures if the backend returns false.
     const bool zero_copy =
             backend_ &&
             backend_->PrepareOutputTextures(view, resource_mgr_, width, height,
-                                            needs_scene_depth, targets);
+                                            true, targets);
 
     if (!zero_copy) {
         // Fallback: Filament-owned textures (no zero-copy).

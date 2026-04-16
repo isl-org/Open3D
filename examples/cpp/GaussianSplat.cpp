@@ -109,9 +109,6 @@ int main(int argc, char** argv) {
 
     vis->AddGeometry(argv[1], gsplat, &mat);
     vis->AddGeometry("test_cube", p_cube);
-    vis->ShowGeometry(argv[1], true);
-    vis->ShowGeometry("test_cube", true);
-
     vis->ResetCameraToDefault();
     app.AddWindow(vis);
     vis.reset();
