@@ -8,7 +8,7 @@
 // Metal implementation of GaussianSplatGpuContext.
 // Compiled only on Apple platforms.
 
-#include "open3d/visualization/rendering/filament/ComputeGPU.h"
+#include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
 
 #if defined(__APPLE__)
 
@@ -84,9 +84,8 @@ public:
         if (library_) {
             return true;
         }
-        const std::string lib_path =
-                EngineInstance::GetResourcePath() +
-                "/gaussian_compute/gaussian_compute.metallib";
+        const std::string lib_path = EngineInstance::GetResourcePath() +
+                                     "/gaussian_splat/gaussian_splat.metallib";
         if (!utility::filesystem::FileExists(lib_path)) {
             utility::LogWarning("Metal: missing metallib at {}", lib_path);
             return false;

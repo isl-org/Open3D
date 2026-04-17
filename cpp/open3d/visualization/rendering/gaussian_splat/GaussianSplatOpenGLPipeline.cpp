@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLPipeline.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLPipeline.h"
 
 #if !defined(__APPLE__)
 

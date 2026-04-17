@@ -16,7 +16,7 @@
 // Filament's Linux OpenGL backend is PlatformGLX. Offscreen rendering on Linux
 // therefore requires an X11 or XWayland server.
 
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
 
 #if !defined(__APPLE__)
 

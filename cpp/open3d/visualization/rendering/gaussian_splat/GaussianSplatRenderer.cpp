@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 
 #include <filament/Texture.h>
 #include <filament/View.h>
@@ -16,18 +16,17 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
-#if defined(__APPLE__)
-#include "open3d/visualization/rendering/filament/GaussianSplatOutputTargetsApple.h"
-#endif
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 #if !defined(__APPLE__)
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLBackend.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLBackend.h"
 #endif
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
+// Metal backend factory is defined in GaussianSplatMetalBackend.mm and linked
+// on Apple platforms; declared here to avoid a separate header for one symbol.
 #if defined(__APPLE__)
 std::unique_ptr<GaussianSplatRenderer::Backend> CreateGaussianSplatMetalBackend(
         FilamentResourceManager& resource_mgr,
@@ -35,6 +34,9 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateGaussianSplatMetalBackend(
 #endif
 
 namespace {
+
+/// No-op backend used on Vulkan/unsupported platforms so the renderer stays
+/// valid without crashing; emits a one-time warning per view.
 class GaussianSplatPlaceholderBackend final
     : public GaussianSplatRenderer::Backend {
 public:
@@ -52,7 +54,6 @@ public:
                                FilamentResourceManager&,
                                std::uint32_t,
                                std::uint32_t,
-                               bool,
                                GaussianSplatRenderer::OutputTargets&) override {
         return false;
     }
@@ -85,6 +86,7 @@ private:
     std::unordered_set<const FilamentView*> logged_views_;
 };
 
+/// Select and construct the platform-appropriate backend.
 std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
         RenderingType backend,
         FilamentResourceManager& resource_mgr,
@@ -112,10 +114,9 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
     return nullptr;
 }
 
-// Returns true when the platform-specific GS color texture handle is ready for
-// the composite shader.  Scene depth is intentionally excluded: it is optional
-// and is 0 for splat-only scenes (no mesh occluders), which is a valid,
-// supported configuration.
+/// Returns true when the platform-specific GS color texture handle is ready.
+/// Scene depth is excluded; it is optional (0 for splat-only scenes without
+/// mesh occluders), which is a valid configuration.
 bool HasGsColorOutput(const GaussianSplatRenderer::OutputTargets& targets) {
 #if defined(__APPLE__)
     return targets.gs_color_mtl_texture != 0;
@@ -147,8 +148,23 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 
 }  // namespace
 
+// ----- GaussianSplatRenderer -------------------------------------------------
+
+/// Returns true when composite must run after Filament's endFrame().
+/// On Metal, endFrame() commits the command buffer so the depth texture is
+/// guaranteed ready before our composite CB executes on the same queue.
+/// On OpenGL the composite can run before endFrame() within the same frame.
+bool GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame() {
+#if defined(__APPLE__)
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool ProjectionInfoEquals(const Camera::ProjectionInfo& left,
                           const Camera::ProjectionInfo& right) {
+    // Compare all active projection fields; used for per-frame dirty detection.
     if (left.is_ortho != right.is_ortho ||
         left.is_intrinsic != right.is_intrinsic) {
         return false;
@@ -187,6 +203,7 @@ bool ProjectionInfoEquals(const Camera::ProjectionInfo& left,
 
 bool ViewRenderDataEquals(const GaussianSplatRenderer::ViewRenderData& left,
                           const GaussianSplatRenderer::ViewRenderData& right) {
+    // Detect camera/viewport changes to decide whether to re-run passes.
     return left.viewport_origin == right.viewport_origin &&
            left.viewport_size == right.viewport_size &&
            left.camera_position.isApprox(right.camera_position) &&
@@ -211,12 +228,15 @@ GaussianSplatRenderer::GaussianSplatRenderer(
 }
 
 GaussianSplatRenderer::~GaussianSplatRenderer() {
+    // Destroy output targets before releasing backend resources.
     for (auto& pair : outputs_) {
         ResetOutputTargets(pair.second);
     }
 }
 
 void GaussianSplatRenderer::BeginFrame() {
+    // Advance the frame counter and notify the backend so it can reset
+    // per-frame GPU state (e.g. Metal command buffer recycling).
     ++frame_index_;
     if (backend_) {
         backend_->BeginFrame(frame_index_);
@@ -225,6 +245,7 @@ void GaussianSplatRenderer::BeginFrame() {
 
 void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
                                                 const FilamentScene& scene) {
+    // Skip when disabled or when the scene has no splat geometry.
     if (!enabled_ || !scene.HasGaussianSplatGeometry()) {
         return;
     }
@@ -262,6 +283,8 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
 }
 
 bool GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
+    // Run the composite compute pass for a single view; returns true on
+    // success.
     auto it = outputs_.find(&view);
     if (it == outputs_.end() || !it->second.needs_render) {
         return false;
@@ -286,6 +309,7 @@ bool GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
 }
 
 void GaussianSplatRenderer::RequestRedrawForView(const FilamentView& view) {
+    // Force the next frame to run both GS stages even if nothing has changed.
     auto it = outputs_.find(&view);
     if (it != outputs_.end()) {
         it->second.needs_render = true;
@@ -293,6 +317,8 @@ void GaussianSplatRenderer::RequestRedrawForView(const FilamentView& view) {
 }
 
 void GaussianSplatRenderer::InvalidateOutputForView(FilamentView& view) {
+    // Destroy GS outputs for the view, clearing the view's RT first to avoid
+    // a use-after-free when Filament processes the pending destroy commands.
     auto it = outputs_.find(&view);
     if (it == outputs_.end()) {
         return;
@@ -306,6 +332,7 @@ void GaussianSplatRenderer::InvalidateOutputForView(FilamentView& view) {
 
 void GaussianSplatRenderer::PruneOutputs(
         const std::unordered_set<const FilamentView*>& live_views) {
+    // Remove outputs for views that are no longer active, releasing GPU memory.
     for (auto it = outputs_.begin(); it != outputs_.end();) {
         if (live_views.find(it->first) != live_views.end()) {
             ++it;
@@ -352,6 +379,8 @@ GaussianSplatRenderer::GetRenderConfig() const {
 }
 
 void GaussianSplatRenderer::SetRenderConfig(const RenderConfig& config) {
+    // Validate and apply a new render config; invalidate all outputs so the
+    // next frame rebuilds with the new settings.
     if (!ValidateRenderConfig(config)) {
         utility::LogWarning(
                 "Ignoring invalid GaussianSplat render configuration.");
@@ -426,6 +455,9 @@ const char* GaussianSplatRenderer::GetBackendName() const {
 
 GaussianSplatRenderer::OutputTargets&
 GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
+    // Allocate (or return cached) output textures and render target for this
+    // view.  Zero-copy setup via the backend is tried first; on failure the
+    // fallback creates Filament-owned textures.
     auto viewport = view.GetViewport();
     auto& targets = outputs_[&view];
     if (viewport[2] <= 0 || viewport[3] <= 0) {
@@ -443,16 +475,13 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
 
     view.SetRenderTarget({});
     ResetOutputTargets(targets);
-    // Scene depth is always allocated per design to ensure stable topology.
-    targets.needs_scene_depth = true;
 
     // Attempt zero-copy setup via the backend (GL texture sharing on
     // OpenGL, Metal texture import on Apple). Falls back to Filament-owned
     // textures if the backend returns false.
     const bool zero_copy =
-            backend_ &&
-            backend_->PrepareOutputTextures(view, resource_mgr_, width, height,
-                                            true, targets);
+            backend_ && backend_->PrepareOutputTextures(view, resource_mgr_,
+                                                        width, height, targets);
 
     if (!zero_copy) {
         // Fallback: Filament-owned textures (no zero-copy).
@@ -479,7 +508,8 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
 }
 
 void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
-    // Destroy Filament wrappers first (before releasing native textures).
+    // Destroy all GS output handles in the correct order: Filament wrappers
+    // first, then the underlying native textures via the backend.
     if (targets.gs_readback_rt) {
         resource_mgr_.Destroy(targets.gs_readback_rt);
         targets.gs_readback_rt = RenderTargetHandle();
@@ -518,6 +548,7 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
 
 GaussianSplatRenderer::ViewRenderData
 GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
+    // Extract camera and viewport state for upload to the compute UBO.
     ViewRenderData data;
 
     auto viewport = view.GetViewport();
@@ -543,6 +574,7 @@ GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
 
 bool GaussianSplatRenderer::UpdateViewRenderData(OutputTargets& targets,
                                                  const FilamentView& view) {
+    // Detect camera/viewport changes; set needs_render when anything changed.
     const ViewRenderData new_data = ExtractViewRenderData(view);
     if (!targets.has_render_data ||
         !ViewRenderDataEquals(targets.render_data, new_data)) {
@@ -557,6 +589,7 @@ bool GaussianSplatRenderer::UpdateViewRenderData(OutputTargets& targets,
 
 bool GaussianSplatRenderer::ValidateRenderConfig(
         const RenderConfig& config) const {
+    // Reject configs with zero or out-of-range values before applying.
     static constexpr int kMaxSupportedShDegree = 2;
     return config.tile_size.x() > 0 && config.tile_size.y() > 0 &&
            config.projection_group_size > 0 &&

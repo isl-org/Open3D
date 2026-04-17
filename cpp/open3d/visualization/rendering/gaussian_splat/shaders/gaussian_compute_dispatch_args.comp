@@ -25,7 +25,7 @@
 //   entry i is at uint offset i * PARAMS_STRIDE_UINTS.
 //
 // Constants must match the C++ kRadixWorkgroupSize / kRadixTargetBlocksPerWG
-// in GaussianSplatBuffers.cpp.
+// in GaussianSplatDataPacking.cpp.
 
 #version 460
 

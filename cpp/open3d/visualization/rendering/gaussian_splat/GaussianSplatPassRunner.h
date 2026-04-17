@@ -5,16 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// Shared Gaussian splatting geometry + composite dispatch sequence. OpenGL and
-// Metal backends supply a GaussianSplatGpuContext implementation.
+// Shared Gaussian splatting geometry + composite dispatch sequence.  OpenGL and
+// Metal backends supply a GaussianSplatGpuContext implementation; this file
+// contains the platform-agnostic pass logic that both backends invoke.
 
 #pragma once
 
 #include <cstdint>
 #include <vector>
 
-#include "open3d/visualization/rendering/filament/ComputeGPU.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
+#include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {

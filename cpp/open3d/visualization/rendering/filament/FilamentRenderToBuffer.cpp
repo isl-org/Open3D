@@ -42,8 +42,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatFrameScheduler.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -246,18 +245,16 @@ void FilamentRenderToBuffer::Render() {
         // GL/Vulkan queue on non-Apple backends).
         engine_.flushAndWait();
 #endif
-        GaussianSplatFrameScheduler::RunGeometry(*gaussian_splat_renderer_,
-                                                 *view_, *scene_);
+        gaussian_splat_renderer_->RenderGeometryStage(*view_, *scene_);
     }
 
     if (renderer_->beginFrame(swapchain_)) {
         renderer_->render(view_->GetNativeView());
 
-        if (run_gs_pipeline && !GaussianSplatFrameScheduler::
-                                       CompositeRunsAfterFilamentEndFrame()) {
+        if (run_gs_pipeline &&
+            !GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()) {
             engine_.flushAndWait();
-            GaussianSplatFrameScheduler::RunComposite(*gaussian_splat_renderer_,
-                                                      *view_);
+            gaussian_splat_renderer_->RenderCompositeStage(*view_);
         }
 
         using namespace filament;
@@ -268,9 +265,8 @@ void FilamentRenderToBuffer::Render() {
         renderer_->endFrame();
 
         if (run_gs_pipeline &&
-            GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
-            GaussianSplatFrameScheduler::RunComposite(*gaussian_splat_renderer_,
-                                                      *view_);
+            GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()) {
+            gaussian_splat_renderer_->RenderCompositeStage(*view_);
         }
 
         engine_.flushAndWait();

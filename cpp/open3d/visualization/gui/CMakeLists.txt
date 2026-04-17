@@ -71,20 +71,20 @@ open3d_link_3rdparty_libraries(GUI)
 file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
 
 set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_project.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_prefix_sum.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_project.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_prefix_sum.comp
     # Subgroup variant: used on Linux/macOS where subgroup arithmetic is reliable.
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_prefix_sum_subgroup.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_scatter.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_composite.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_histograms.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_prefix_sum_subgroup.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_scatter.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_composite.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_histograms.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort.comp
     # Subgroup variant: used on Linux/macOS where subgroup arithmetic is reliable.
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_subgroup.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_keygen.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_radix_sort_payload.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_compute_dispatch_args.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/filament/shaders/gaussian_depth_merge.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_subgroup.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_keygen.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_payload.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_compute_dispatch_args.comp
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_depth_merge.comp
 )
 
 # copy GUI/Resources -> <output>/resources
@@ -97,7 +97,7 @@ include(Open3DAddComputeShaders)
 
 open3d_add_compute_shaders(gaussian_compute_shaders
     OUTPUT_DIRECTORY
-    ${GUI_RESOURCE_DIR}/gaussian_compute
+    ${GUI_RESOURCE_DIR}/gaussian_splat
     SOURCES
     ${GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES}
 )

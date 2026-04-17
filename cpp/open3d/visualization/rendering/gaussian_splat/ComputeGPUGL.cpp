@@ -20,10 +20,10 @@
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLPipeline.h"
+#include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLPipeline.h"
 
 namespace open3d {
 namespace visualization {
@@ -164,7 +164,7 @@ public:
                           GLEW_ARB_gl_spirv ? "yes" : "no");
 
         const std::string shader_root =
-                EngineInstance::GetResourcePath() + "/gaussian_compute/";
+                EngineInstance::GetResourcePath() + "/gaussian_splat/";
 
         // Attempt to load under the primary policy (from RenderConfig).
         // On any failure, retry once with the safe fallback

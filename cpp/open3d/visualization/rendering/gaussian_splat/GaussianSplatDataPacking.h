@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Data structures and packing helpers shared between Gaussian splat compute
-// backends (Vulkan, Metal).  The structures mirror the std140/std430 layouts
-// expected by the GLSL compute shaders.
+// CPU data structures and packing helpers shared by the OpenGL and Metal
+// Gaussian splat compute backends.  The structures mirror the std140/std430
+// layouts expected by the GLSL/MSL compute shaders.
 
 #pragma once
 
@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -104,8 +104,8 @@ static_assert(sizeof(GaussianGpuCounters) == 4 * sizeof(std::uint32_t),
 static constexpr std::size_t kGaussianCounterCount =
         sizeof(GaussianGpuCounters) / sizeof(std::uint32_t);  // 4
 
-// Keep index constants for any code that accesses the buffer as a raw uint
-// array.
+// Index constants for code that accesses the counters buffer as a raw uint32
+// array rather than through the struct.
 static constexpr std::size_t kGaussianCounterTotalEntriesIndex = 0;
 static constexpr std::size_t kGaussianCounterErrorFlagsIndex = 1;
 static constexpr std::size_t kGaussianCounterTileCountIndex = 2;
@@ -140,7 +140,7 @@ struct GaussianSplatPackedAttrs {
     /// All bits set when all splats are visible.
     std::vector<std::uint32_t> visibility_mask;
     std::uint32_t splat_count = 0;
-    int sh_degree = 0;    ///< Effective SH degree packed here
+    int sh_degree = 0;  ///< Effective SH degree packed here
     bool antialias = false;
 };
 
@@ -156,7 +156,37 @@ struct PackedGaussianScene {
     bool valid = false;
 };
 
-// ----- Helper functions used by backends  ------------------------------------
+// ----- GPU buffer sizing (absorbed from GaussianSplatBuffers) ----------------
+
+/// UBO stride for radix-sort params: must match
+/// GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT padding used by both the OpenGL backend
+/// and the radix-sort dispatch shaders.
+inline constexpr std::uint32_t kGaussianRadixParamsStride = 256;
+
+/// Byte sizes and capacities for Gaussian splat SSBOs/UBOs.
+/// Must match allocation logic in gaussian_compute_dispatch_args.comp and the
+/// radix shaders (tile cap, etc.).
+struct GaussianGpuBufferSizes {
+    std::size_t projected_size = 0;
+    std::size_t tile_scalar_size = 0;
+    std::size_t entry_buf_size = 0;
+    std::size_t key_cap_size = 0;
+    /// Byte size of the sorted splat-index buffer: one uint32 per tile entry
+    /// (4 B each, vs. 12 B for a full TileEntry). Used by the composite pass.
+    std::size_t sorted_splat_size = 0;
+    std::size_t histogram_buf_size = 0;
+    std::size_t dispatch_args_size = 0;
+    std::size_t radix_params_size = 0;
+    std::uint32_t entries_capacity = 0;
+    std::uint32_t radix_num_wg_cap = 0;
+};
+
+/// Compute GPU buffer sizes from a packed-scene frame description.
+/// Called once per geometry pass to size intermediate SSBO allocations.
+void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
+                                   GaussianGpuBufferSizes* out);
+
+// ----- Packing helpers -------------------------------------------------------
 
 /// Pack camera, viewport, and scene metadata into the view-params UBO.
 /// Uses the splat count, SH degree, and antialias flag from `attrs`.

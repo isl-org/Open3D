@@ -70,7 +70,7 @@
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond

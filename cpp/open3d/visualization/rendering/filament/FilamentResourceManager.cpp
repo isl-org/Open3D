@@ -119,8 +119,7 @@ void DestroyResource(const REHandle_abstract& id,
                      ResourcesContainer<ResourceType>& container) {
     auto found = container.find(id);
     if (found == container.end()) {
-        utility::LogWarning("Trying to destroy nonexistent resource ({})!",
-                            id);
+        utility::LogWarning("Trying to destroy nonexistent resource ({})!", id);
         return;
     }
 

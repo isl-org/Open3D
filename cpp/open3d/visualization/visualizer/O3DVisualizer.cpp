@@ -7,10 +7,11 @@
 
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
 
+#include <json/json.h>
+
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
-#include <json/json.h>
 
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/Image.h"
@@ -43,9 +44,9 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
+#include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
-#include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
 #include "open3d/visualization/visualizer/MessageProcessor.h"
@@ -2123,18 +2124,15 @@ Ctrl-alt-click to polygon select)";
     /// Copies current camera parameters to the clipboard as a JSON string.
     void CopyViewToClipboard() {
         auto *camera = scene_->GetScene()->GetCamera();
-        Eigen::Vector3d lookat =
-                scene_->GetCenterOfRotation().cast<double>();
+        Eigen::Vector3d lookat = scene_->GetCenterOfRotation().cast<double>();
         Eigen::Vector3d eye = camera->GetPosition().cast<double>();
         Eigen::Vector3d up = camera->GetUpVector().cast<double>();
 
         Json::Value result;
-        utility::IJsonConvertible::EigenVector3dToJsonArray(
-                lookat, result["lookat"]);
-        utility::IJsonConvertible::EigenVector3dToJsonArray(
-                eye, result["eye"]);
-        utility::IJsonConvertible::EigenVector3dToJsonArray(
-                up, result["up"]);
+        utility::IJsonConvertible::EigenVector3dToJsonArray(lookat,
+                                                            result["lookat"]);
+        utility::IJsonConvertible::EigenVector3dToJsonArray(eye, result["eye"]);
+        utility::IJsonConvertible::EigenVector3dToJsonArray(up, result["up"]);
         result["field_of_view"] = camera->GetFieldOfView();
         result["near_plane"] = camera->GetNear();
         result["far_plane"] = camera->GetFar();

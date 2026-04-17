@@ -269,21 +269,22 @@ void ProjectGaussian(uint splat_index) {
     }
 
     const float kEps2D = 0.3;  // Subpixel blur to regularise tiny splats
-                              // (standard 3DGS anti-aliasing).
+                               // (standard 3DGS anti-aliasing).
     // GS positions are already in world space; world_from_model is always
     // identity so the multiply and w-divide are skipped.
     vec3 world_position = positions[splat_index].xyz;
     vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
     vec4 clip_center = view_params.clip_from_view * view_center;
 
-    // Opt8: Early reject — behind camera outside [near, far] or negligible alpha.
-    // dc is loaded once here and reused in EvaluateShColor() to avoid a
+    // Opt8: Early reject — behind camera outside [near, far] or negligible
+    // alpha. dc is loaded once here and reused in EvaluateShColor() to avoid a
     // second LoadDcOpacity() call.
     float near = view_params.depth_range_and_flags.x;
     float far = view_params.depth_range_and_flags.y;
     vec4 dc = LoadDcOpacity(splat_index);
     float alpha = Sigmoid(dc.w);
-    if (alpha <= kMinAlpha || clip_center.w <= 0.0 || view_center.z >= -near || view_center.z <= -far) {
+    if (alpha <= kMinAlpha || clip_center.w <= 0.0 || view_center.z >= -near ||
+        view_center.z <= -far) {
         WriteInvalidProjection(splat_index);
         return;
     }
@@ -327,7 +328,8 @@ void ProjectGaussian(uint splat_index) {
 
     vec3 cov_jx = covariance_view * jacobian_x;
     vec3 cov_jy = covariance_view * jacobian_y;
-    // Pre-blur 2D covariance values (before the kEps2D subpixel regularisation).
+    // Pre-blur 2D covariance values (before the kEps2D subpixel
+    // regularisation).
     float raw_xx = dot(jacobian_x, cov_jx);
     float raw_xy = dot(jacobian_x, cov_jy);
     float raw_yy = dot(jacobian_y, cov_jy);

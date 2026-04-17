@@ -26,7 +26,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #if !defined(__APPLE__)
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
 #endif
 
 namespace open3d {
@@ -149,8 +149,9 @@ EngineInstance::EngineInstance() {
 
     filament::Engine::Config fmcfg;
     fmcfg.stereoscopicType = filament::Engine::StereoscopicType::INSTANCED;
-    fmcfg.stereoscopicEyeCount = 1;   // We do not support stereo.
-    engine_ = filament::Engine::create(backend, nullptr, shared_context_, &fmcfg);
+    fmcfg.stereoscopicEyeCount = 1;  // We do not support stereo.
+    engine_ =
+            filament::Engine::create(backend, nullptr, shared_context_, &fmcfg);
     if (!engine_) {
         utility::LogError("Failed to create Filament engine.");
     }

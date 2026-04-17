@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/rendering/filament/GaussianSplatPassRunner.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatPassRunner.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -14,10 +14,8 @@
 #include <vector>
 
 #include "open3d/utility/Logging.h"
-#include "open3d/visualization/rendering/filament/ComputeGPU.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatBuffers.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatUtils.h"
+#include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 
 namespace open3d {
 namespace visualization {
@@ -25,6 +23,14 @@ namespace rendering {
 
 namespace {
 
+// Unsigned integer ceiling division: max(1, ceil(n / denom)).
+// Used to compute compute dispatch group counts from workload sizes.
+inline std::uint32_t DivUp(std::uint32_t n, std::uint32_t denom) {
+    return std::max(1u, (n + denom - 1u) / denom);
+}
+
+/// Download the GPU error-flag counters and log new error codes once per view.
+/// Keeps a bitfield of already-warned flags to suppress repeated messages.
 void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
                               GaussianSplatViewGpuResources& vs) {
     if ((vs.warned_gpu_error_flags & kGaussianGpuErrorKnownMask) ==
@@ -65,10 +71,13 @@ bool RunGaussianGeometryPasses(
         GaussianSplatViewGpuResources& vs,
         std::uint64_t scene_change_id,
         bool scene_changed) {
+    // Allocate/resize all intermediate SSBO/UBO buffers, upload per-frame and
+    // (when scene_changed) per-splat data, then dispatch all geometry passes:
+    // project → prefix-sum → dispatch-args → scatter → keygen → radix→payload.
+    //
     // Projection dispatch: sized by total_tiles so the prefix-sum and scatter
     // passes share the same total_invocations stride (the projection shader
-    // loops over splats with that stride). See I4 comment in
-    // GaussianSplatRenderer.cpp.
+    // loops over splats with that stride).
     const std::uint32_t proj_groups =
             DivUp(frame_data.tile_count,
                   static_cast<std::uint32_t>(config.projection_group_size));
@@ -306,6 +315,9 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
                               const GaussianSplatRenderer::RenderConfig& config,
                               GaussianSplatViewGpuResources& vs,
                               GaussianSplatRenderer::OutputTargets& targets) {
+    // Composite splats from the sorted tile-entry buffer onto the GS color
+    // texture, then optionally merge GS linear depth with Filament scene depth.
+    //
     // Composite dispatch grid sized by viewport / workgroup size.
     const std::uint32_t comp_x =
             DivUp(targets.width,

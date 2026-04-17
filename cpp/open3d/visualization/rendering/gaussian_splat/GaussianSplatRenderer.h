@@ -32,8 +32,12 @@ class FilamentResourceManager;
 class FilamentScene;
 class FilamentView;
 
+/// Manages per-view GPU output targets, backend lifetime, and frame
+/// orchestration for the Gaussian splat compute pipeline.  One instance lives
+/// inside FilamentRenderer and FilamentRenderToBuffer.
 class GaussianSplatRenderer {
 public:
+    /// Tunable knobs for the compute pipeline, set once at construction.
     struct RenderConfig {
 // Shader subgroups (GL_KHR_shader_subgroup_arithmetic) and precompiled
 // SPIRV binaries are currently unreliable on Windows with Intel
@@ -70,6 +74,7 @@ public:
         bool antialias = false;
     };
 
+    /// Camera and viewport state extracted per-view each geometry pass.
     struct ViewRenderData {
         Eigen::Vector2i viewport_origin = Eigen::Vector2i::Zero();
         Eigen::Vector2i viewport_size = Eigen::Vector2i::Zero();
@@ -86,6 +91,10 @@ public:
         double far_plane = 0.0;
     };
 
+    /// Per-view GPU output textures and render targets.
+    /// scene_depth is always allocated to maintain stable render-target
+    /// topology and ensure Filament can write depth regardless of scene
+    /// content.
     struct OutputTargets {
         TextureHandle color;
         TextureHandle depth;
@@ -109,9 +118,6 @@ public:
         bool has_render_data = false;
         bool has_valid_output = false;
         bool needs_render = true;
-        /// Scene-depth texture is always allocated for GS views to ensure
-        /// stable render-target topology. Reserved for internal consistency.
-        bool needs_scene_depth = true;
         /// True when an offscreen depth readback has been requested for this
         /// view.  Controls allocation of the merged_depth_u16_tex scratch
         /// texture; cleared after each frame.
@@ -137,19 +143,16 @@ public:
                                           OutputTargets& targets) = 0;
 
         /// Create platform-specific output textures (zero-copy path).
-        /// Sets the appropriate native handles in `targets` and, for the
-        /// OpenGL backend, also imports them into Filament and configures
-        /// the view's render target / MSAA / post-processing settings.
-        /// Returns true if zero-copy setup succeeded; false falls through to
-        /// the Filament-owned texture fallback in PrepareOutputTargets.
-        /// @param needs_scene_depth  Reserved for compatibility; always true
-        ///                           since scene-depth is always allocated.
+        /// On OpenGL: creates shared GL textures and imports them into
+        /// Filament. On Metal: creates MTLTextures and imports them into
+        /// Filament. Returns true if zero-copy setup succeeded; false falls
+        /// through to the Filament-owned texture fallback in
+        /// PrepareOutputTargets.
         virtual bool PrepareOutputTextures(
                 FilamentView& view,
                 FilamentResourceManager& resource_mgr,
                 std::uint32_t width,
                 std::uint32_t height,
-                bool needs_scene_depth,
                 OutputTargets& targets) = 0;
 
         /// Destroy platform-specific textures created by PrepareOutputTextures.
@@ -191,6 +194,12 @@ public:
     GaussianSplatRenderer(filament::Engine& engine,
                           FilamentResourceManager& resource_mgr);
     ~GaussianSplatRenderer();
+
+    /// Returns true when the composite pass must run AFTER Filament's
+    /// endFrame().  On Metal, the depth texture is not guaranteed written until
+    /// endFrame() commits the command buffer; on OpenGL the composite can run
+    /// before endFrame() within the same frame.
+    static bool CompositeRunsAfterFilamentEndFrame();
 
     void BeginFrame();
 

@@ -42,8 +42,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatFrameScheduler.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatRenderer.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -207,12 +206,12 @@ void FilamentRenderer::BeginFrame() {
         // whose capture is still pending.  Buffer-renderer views must be added
         // BEFORE PruneOutputs() so their outputs are not destroyed mid-capture.
         std::unordered_set<const FilamentView*> live_views;
-        for (const auto& pair : scenes_) {
-            pair.second->ForEachView(
-                    [&](FilamentView& view) { live_views.insert(&view); });
-            pair.second->ForEachActiveView([&](FilamentView& view) {
-                GaussianSplatFrameScheduler::RunGeometry(
-                        *gaussian_splat_renderer_, view, *pair.second);
+        for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+            scene->ForEachView([&live_views](const FilamentView& view) {
+                live_views.insert(&view);
+            });
+            scene->ForEachActiveView([this, &scene](FilamentView& view) {
+                gaussian_splat_renderer_->RenderGeometryStage(view, *scene);
             });
         }
         for (const auto& br : buffer_renderers_) {
@@ -227,21 +226,19 @@ void FilamentRenderer::BeginFrame() {
 void FilamentRenderer::Draw() {
     if (frame_started_) {
         // Draw 3D scenes into textures
-        for (const auto& pair : scenes_) {
-            pair.second->Draw(*renderer_);
+        for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+            scene->Draw(*renderer_);
         }
 
         // Non-Apple backends composite into the overlay during the current
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
         if (gaussian_splat_renderer_ &&
-            !GaussianSplatFrameScheduler::
-                    CompositeRunsAfterFilamentEndFrame()) {
+            !GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()) {
             engine_.flushAndWait();
-            for (const auto& pair : scenes_) {
-                pair.second->ForEachActiveView([&](FilamentView& view) {
-                    GaussianSplatFrameScheduler::RunComposite(
-                            *gaussian_splat_renderer_, view);
+            for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+                scene->ForEachActiveView([this](FilamentView& view) {
+                    gaussian_splat_renderer_->RenderCompositeStage(view);
                 });
             }
         }
@@ -263,7 +260,7 @@ void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
         if (gaussian_splat_renderer_ &&
-            GaussianSplatFrameScheduler::CompositeRunsAfterFilamentEndFrame()) {
+            GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()) {
             // endFrame() commits Filament's Metal command buffer. Our
             // composite CB, committed below on the same queue, will
             // execute after Filament's render — guaranteeing the depth
@@ -271,10 +268,10 @@ void FilamentRenderer::EndFrame() {
             // stalls the main thread behind expensive geometry compute
             // CBs that are ahead in the queue.
             bool any_composite = false;
-            for (const auto& pair : scenes_) {
-                pair.second->ForEachActiveView([&](FilamentView& view) {
-                    GaussianSplatFrameScheduler::RunComposite(
-                            *gaussian_splat_renderer_, view);
+            for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+                scene->ForEachActiveView([this,
+                                          &any_composite](FilamentView& view) {
+                    gaussian_splat_renderer_->RenderCompositeStage(view);
                     any_composite = true;
                 });
             }

@@ -109,7 +109,7 @@ function(open3d_add_compute_shaders target)
     # Bundle SPIRV-Cross MSL into a single Metal library for runtime loading
     # (newLibraryWithFile / newLibraryWithData), avoiding newLibraryWithSource.
     if(APPLE AND GAUSSIAN_METAL_BASENAMES)
-        set(METALLIB_OUTPUT "${OUTPUT_DIRECTORY_FULL_PATH}/gaussian_compute.metallib")
+        set(METALLIB_OUTPUT "${OUTPUT_DIRECTORY_FULL_PATH}/gaussian_splat.metallib")
         set(METAL_AIR_FILES "")
         foreach(BASE IN LISTS GAUSSIAN_METAL_BASENAMES)
             set(STAGED_METAL_FULL_PATH "${OUTPUT_DIRECTORY_FULL_PATH}/${BASE}.metal")
@@ -133,7 +133,7 @@ function(open3d_add_compute_shaders target)
             OUTPUT ${METALLIB_OUTPUT}
             COMMAND xcrun -sdk macosx metal ${METAL_AIR_FILES} -o ${METALLIB_OUTPUT}
             DEPENDS ${METAL_AIR_FILES}
-            COMMENT "Linking gaussian_compute.metallib"
+            COMMENT "Linking gaussian_splat.metallib"
             VERBATIM
         )
         list(APPEND STAGED_COMPUTE_SHADERS "${METALLIB_OUTPUT}")

@@ -7,6 +7,7 @@
 //
 // Generic GPU compute abstraction used by the Gaussian splatting pipeline.
 // One header covers all platforms (OpenGL on Linux/Windows, Metal on macOS).
+// Runtime shader resources are loaded from resources/gaussian_splat/.
 //
 // Typical usage:
 //

@@ -11,7 +11,7 @@
 
 #if !defined(__APPLE__)
 
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLBackend.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLBackend.h"
 
 #include <GL/glew.h>
 #include <filament/Texture.h>
@@ -22,21 +22,20 @@
 #include <vector>
 
 #include "open3d/utility/Logging.h"
-#include "open3d/visualization/rendering/filament/ComputeGPU.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatBuffers.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLContext.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatOpenGLPipeline.h"
-#include "open3d/visualization/rendering/filament/GaussianSplatPassRunner.h"
+#include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLPipeline.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatPassRunner.h"
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
-// OpenGL compute backend for Linux and Windows (GL 4.6 core + SPIR-V).
+/// OpenGL compute backend for Linux and Windows (GL 4.6 core + SPIR-V).
 class GaussianSplatOpenGLBackend final : public GaussianSplatRenderer::Backend {
 public:
     GaussianSplatOpenGLBackend(
@@ -55,6 +54,7 @@ public:
     void BeginFrame(std::uint64_t) override {}
 
     void ForgetView(const FilamentView& view) override {
+        // Release per-view GPU resources when the view is removed.
         auto it = view_states_.find(&view);
         if (it != view_states_.end()) {
             DestroyViewState(it->second);
@@ -67,6 +67,8 @@ public:
             const FilamentScene& scene,
             const GaussianSplatRenderer::ViewRenderData& render_data,
             GaussianSplatRenderer::OutputTargets& targets) override {
+        // Switch to the shared GL context, pack view params, and run all
+        // geometry compute passes (project → radix → payload).
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() && !gl_ctx.Initialize()) {
             utility::LogWarning(
@@ -119,6 +121,7 @@ public:
             const FilamentView& view,
             const GaussianSplatRenderer::ViewRenderData&,
             GaussianSplatRenderer::OutputTargets& targets) override {
+        // Switch to the shared GL context and dispatch the composite pass.
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.MakeCurrent() || !gpu_) {
             return false;
@@ -140,6 +143,8 @@ public:
                                     std::vector<std::uint16_t>& out,
                                     std::uint32_t width,
                                     std::uint32_t height) override {
+        // Download the merged GS+Filament depth texture (R16UI) for
+        // offscreen RenderToDepthImage.
         auto it = view_states_.find(&view);
         if (it == view_states_.end() || it->second.merged_depth_u16_tex == 0) {
             return false;
@@ -161,6 +166,8 @@ public:
                                       std::vector<float>& out,
                                       std::uint32_t width,
                                       std::uint32_t height) override {
+        // Download the GS-only composite depth (R32F) when no mesh occluders
+        // are present and the merge pass was skipped.
         auto it = view_states_.find(&view);
         if (it == view_states_.end() || it->second.composite_depth_tex == 0) {
             return false;
@@ -183,26 +190,19 @@ public:
             FilamentResourceManager& resource_mgr,
             std::uint32_t width,
             std::uint32_t height,
-            bool needs_scene_depth,
             GaussianSplatRenderer::OutputTargets& targets) override {
         // Create GL textures on the shared GL context for zero-copy sharing
-        // with Filament.  The scene depth texture is rendered into by Filament
-        // (as a depth attachment) and read by the GS composite shader.  The GS
-        // color texture is written by the composite shader and sampled by
-        // ImGui.
+        // with Filament.  Scene depth is always allocated to keep render-target
+        // topology stable; the composite shader's occlusion test is gated
+        // separately by the presence of mesh occluders at runtime.
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
             return false;
         }
 
-        // Always allocate scene depth for GS views to ensure stable render-target
-        // topology and avoid Filament handle lifecycle hazards. The composite
-        // shader's occlusion test is gated separately by the presence of mesh
-        // occluders in the scene.
         auto scene_depth = CreateGLTexture2D(
                 width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
-        targets.scene_depth_gl_handle =
-                scene_depth.valid ? scene_depth.id : 0;
+        targets.scene_depth_gl_handle = scene_depth.valid ? scene_depth.id : 0;
         auto gs_color =
                 CreateGLTexture2D(width, height, kGL_RGBA16F, "gs.color");
         targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
@@ -213,8 +213,8 @@ public:
         }
 
         using Tex = filament::Texture;
-        // Import scene depth (always allocated; Filament writes, GS reads for
-        // occlusion testing).
+        // Import scene depth (Filament writes, GS composite reads for
+        // occlusion testing against mesh geometry).
         if (targets.scene_depth_gl_handle != 0) {
             targets.depth = resource_mgr.CreateImportedTexture(
                     targets.scene_depth_gl_handle, int(width), int(height),
@@ -276,6 +276,7 @@ public:
     void ReleaseOutputTextures(
             FilamentResourceManager&,
             GaussianSplatRenderer::OutputTargets& targets) override {
+        // Delete the raw GL textures that were created outside Filament.
         if (targets.scene_depth_gl_handle == 0 &&
             targets.color_gl_handle == 0) {
             return;
@@ -306,6 +307,7 @@ public:
 
 private:
     void DestroyViewState(GaussianSplatViewGpuResources& vs) {
+        // Free all per-view GPU buffers and textures on the shared context.
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.MakeCurrent() || !gpu_) {
             return;

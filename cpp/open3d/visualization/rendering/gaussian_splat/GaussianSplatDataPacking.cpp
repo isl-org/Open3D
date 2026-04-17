@@ -5,16 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Implementation of data packing helpers for the Gaussian splat compute
-// renderer.
+// CPU-side packing and GPU buffer-sizing implementation for the Gaussian splat
+// compute pipeline (OpenGL and Metal backends share this code).
 
-#include "open3d/visualization/rendering/filament/GaussianSplatDataPacking.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-
-#include "open3d/visualization/rendering/filament/GaussianSplatUtils.h"
 
 namespace open3d {
 namespace visualization {
@@ -22,15 +20,22 @@ namespace rendering {
 
 namespace {
 
+// Integer ceiling division: ceil(value / divisor).
+// Used locally to compute tile grid dimensions.
+inline int CeilDiv(int value, int divisor) {
+    return (value + divisor - 1) / divisor;
+}
+
 // Pack an Eigen 4x4 (column-major) into a 16-float array in column-major order
 // matching std140 mat4 layout.
 void PackMat4(float* dst, const Eigen::Matrix4f& m) {
     std::memcpy(dst, m.data(), 16 * sizeof(float));
 }
 
+// Count rest-coefficient floats per splat for a given SH degree.
+// Degree-0 (DC) lives in dc_opacity; sh_rest stores degrees 1..sh_degree,
+// i.e. ((degree+1)^2 - 1) basis functions per RGB channel.
 int GetGaussianSplatRestCoeffCount(int sh_degree) {
-    // Degree-0 (DC) lives in dc_opacity. sh_rest stores only degrees
-    // 1..sh_degree, i.e. ((degree + 1)^2 - 1) basis functions per channel.
     return (((sh_degree + 1) * (sh_degree + 1)) - 1) * 3;
 }
 
@@ -84,12 +89,59 @@ static std::uint32_t PackSnorm8x4(float w, float x, float y, float z) {
            (static_cast<std::uint32_t>(EncodeSnorm8(z)) << 24);
 }
 
+// Radix-sort workgroup constants — must stay in sync with the radix shaders
+// and the dispatch-args compute shader.
+constexpr std::uint32_t kRadixWorkgroupSize = 256;
+constexpr std::uint32_t kRadixSortBins = 256;
+constexpr std::uint32_t kRadixTargetBlocksPerWG = 32;
+
 }  // namespace
+
+// ----- ComputeGaussianGpuBufferSizes -----------------------------------------
+
+void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
+                                   GaussianGpuBufferSizes* out) {
+    // Derive SSBO/UBO byte sizes from the packed-scene tile/splat counts.
+    // All size formulas must stay in sync with the dispatch shaders.
+    if (!out || !packed.valid) {
+        return;
+    }
+    out->projected_size = packed.splat_count * sizeof(ProjectedGaussian);
+    out->tile_scalar_size = packed.tile_count * sizeof(std::uint32_t);
+
+    out->entries_capacity =
+            std::max<std::uint32_t>(1u, packed.view_params.limits[0]);
+    out->entry_buf_size = std::max(
+            sizeof(TileEntry), static_cast<std::size_t>(out->entries_capacity) *
+                                       sizeof(TileEntry));
+
+    out->key_cap_size = std::max<std::size_t>(
+            4u, static_cast<std::size_t>(out->entries_capacity) *
+                        sizeof(std::uint32_t));
+    // Sorted splat-index buffer: one uint32 per entry (3× smaller than a full
+    // TileEntry). key_cap_size is already one uint32 per entry — reuse it.
+    out->sorted_splat_size = out->key_cap_size;
+
+    out->radix_num_wg_cap = std::max(
+            1u, (out->entries_capacity +
+                 kRadixWorkgroupSize * kRadixTargetBlocksPerWG - 1u) /
+                        (kRadixWorkgroupSize * kRadixTargetBlocksPerWG));
+    out->histogram_buf_size = std::max<std::size_t>(
+            4u, static_cast<std::size_t>(out->radix_num_wg_cap) *
+                        kRadixSortBins * sizeof(std::uint32_t));
+
+    out->dispatch_args_size = 10u * 3u * sizeof(std::uint32_t);
+    out->radix_params_size = 4u * kGaussianRadixParamsStride;
+}
+
+// ----- PackGaussianViewParams ------------------------------------------------
 
 PackedGaussianScene PackGaussianViewParams(
         const GaussianSplatPackedAttrs& attrs,
         const GaussianSplatRenderer::ViewRenderData& render_data,
         const GaussianSplatRenderer::RenderConfig& config) {
+    // Build the 288-byte per-frame UBO from camera/viewport/scene state.
+    // Called every frame; cost is a single memcpy-sized CPU write to the GPU.
     PackedGaussianScene packed;
 
     if (attrs.splat_count == 0 || render_data.viewport_size.x() <= 0 ||
@@ -105,7 +157,6 @@ PackedGaussianScene PackGaussianViewParams(
     const int tcx = CeilDiv(w, tx);
     const int tcy = CeilDiv(h, ty);
 
-    // ---- Fill view-params UBO (288 bytes uploaded to GPU every frame) ----
     auto& vp = packed.view_params;
     std::memset(&vp, 0, sizeof(vp));
 
@@ -179,6 +230,8 @@ PackedGaussianScene PackGaussianViewParams(
     return packed;
 }
 
+// ----- PackGaussianSplatAttrsDirect ------------------------------------------
+
 void PackGaussianSplatAttrsDirect(const float* pts_ptr,
                                   std::size_t n,
                                   const float* scale_ptr,
@@ -191,6 +244,8 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
                                   float min_opacity_logit,
                                   bool antialias,
                                   GaussianSplatPackedAttrs& out) {
+    // Pack all per-splat attributes into GPU-ready fp16/snorm8 arrays in a
+    // single pass, filtering below-threshold splats to keep upload small.
     out = GaussianSplatPackedAttrs{};
     out.sh_degree = desired_sh_degree;
     out.antialias = antialias;

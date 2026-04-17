@@ -133,8 +133,8 @@ struct DrawConfig {
     /// Signature: TickResult(O3DVisualizer&, double tick_duration, double time)
     /// Return TickResult::REDRAW to trigger scene redraw, or
     /// TickResult::NO_CHANGE if redraw is not needed.
-    std::function<visualizer::O3DVisualizer::TickResult(visualizer::O3DVisualizer &, double,
-                                         double)>
+    std::function<visualizer::O3DVisualizer::TickResult(
+            visualizer::O3DVisualizer &, double, double)>
             on_animation_tick;
 
     /// \section Blocking Mode
@@ -173,8 +173,8 @@ struct DrawConfig {
 /// config.eye = Eigen::Vector3d(0, 0, 5);
 /// config.lookat = Eigen::Vector3d(0, 0, 0);
 /// config.bg_color = Eigen::Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
-/// open3d::visualization::Draw({obj}, "My Visualization", 1024, 768, {}, config);
-/// \endcode
+/// open3d::visualization::Draw({obj}, "My Visualization", 1024, 768, {},
+/// config); \endcode
 std::string Draw(const std::vector<DrawObject> &objects,
                  const std::string &window_name = "Open3D",
                  int width = 1024,

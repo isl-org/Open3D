@@ -185,13 +185,11 @@ bind the scene-depth texture:
 - `FilamentScene::HasNonGaussianVisibleGeometry()`: returns true only when a non-splat
   (mesh/point cloud) geometry is currently visible (has a non-null entity and
   `shader != "gaussianSplat"`).
-- `GaussianSplatRenderer::RenderGeometryStage` passes this as `needs_scene_depth` to
-  `PrepareOutputTargets`.
-- When `needs_scene_depth=false`: the backend skips the `scene_depth` texture entirely and
-  creates a Filament-owned depth attachment instead. The composite pass receives
-  `depth_range_and_flags.w=0.0` and skips all depth fetches.
-- A change in `needs_scene_depth` between frames triggers target re-setup (`depth_mode_changed`
-  check inside `PrepareOutputTargets`).
+- Scene depth is **always** allocated to keep render-target topology stable.
+  The composite shader gates occlusion testing at runtime via
+  `depth_range_and_flags.w`: set to 1.0 when a scene-depth texture is present
+  (mesh occluders exist), 0.0 otherwise.
+- This removes the need for dynamic re-setup when geometry visibility changes.
 
 ### Offscreen Rendering
 
@@ -627,14 +625,14 @@ before the first render call.
   The non-subgroup variants do not use `gl_SubgroupSize` and do not need the flag.
 
 ```
-gaussian_compute/
+gaussian_splat/
   gaussian_project.comp / .spv
   gaussian_prefix_sum.comp / .spv          ← no-subgroup (Windows default)
   gaussian_prefix_sum_subgroup.comp / .spv ← subgroup    (Linux/macOS default)
   gaussian_radix_sort.comp / .spv          ← no-subgroup
   gaussian_radix_sort_subgroup.comp / .spv ← subgroup
   … (7 other shaders, one variant each)
-  gaussian_compute.metallib               ← Apple only
+  gaussian_splat.metallib                  ← Apple only
 ```
 
 ---
@@ -653,7 +651,7 @@ See Completed Work → PHASE 3 for implementation details.
   — **Done.** Policy is now sourced from `RenderConfig` with platform defaults.
 - ~~Remove `OPEN3D_GAUSSIAN_DEBUG_SORT` sort-debug env var and all associated
   dump functions~~ — **Done.** Development-only debug code was deleted.
-- Remove stale `resources/gaussian_compute/` copies (now generated from `shaders/` by CMake)
+- ~~Rename `gaussian_compute` resource directory to `gaussian_splat`~~ — **Done.** Built output directory, metallib name, and runtime loader paths all use `gaussian_splat`.
 - Add GL 4.5 minimum capability check to CMake (`GL_ARB_compute_shader`,
   `GL_ARB_shader_storage_buffer_object`)
 - Verify SPIR-V shader compilation across all supported glslangValidator versions
@@ -746,12 +744,20 @@ which is why those are the chosen backends.
 
 ## File Inventory
 
-### Core implementation files
-- `GaussianSplatRenderer.h/.cpp` — Backend interface, OpenGL/Metal backends, output lifecycle;
+### Core implementation files (under `cpp/open3d/visualization/rendering/gaussian_splat/`)
+
+All GS-specific sources now live in their own subfolder, separate from the
+Filament integration files.
+
+- `GaussianSplatRenderer.h/.cpp` — Backend interface, per-view output lifecycle,
+  `CompositeRunsAfterFilamentEndFrame()` static method (replaces GaussianSplatFrameScheduler);
   `InvalidateOutputForView()` for safe resize; `BeginFrame()`; `GetColorReadbackRT()`;
   `RequestRedrawForView()`; `RenderCompositeStage()` returns `bool`; OpenGL:
   `ReadMergedDepthToUint16Cpu()` (R16UI merged depth after `gaussian_depth_merge.comp`)
-- `GaussianSplatUtils.h` — shared `CeilDiv` / `DivUp` helpers for packing and pass runner
+- `GaussianSplatDataPacking.h/.cpp` — CPU → GPU data packing (std140/std430);
+  also contains `GaussianGpuBufferSizes` / `ComputeGaussianGpuBufferSizes` and
+  `kGaussianRadixParamsStride` (formerly split into `GaussianSplatBuffers` and
+  `GaussianSplatUtils`, now consolidated here)
 - `GaussianSplatOpenGLPipeline.h/.cpp` — GL 4.6 compute API wrappers
 - `ComputeGPU.h` — All generic GPU compute types in one header:
   `ComputeProgramId` enum (includes `kGsDepthMerge`), `ImageFormat` (includes `kR16UI`),
@@ -763,19 +769,21 @@ which is why those are the chosen backends.
 - `ComputeGPUMetal.mm` — Metal implementation: buffer management, pipeline selection,
   `Dispatch()`, `DispatchIndirect()`, barrier, texture ops
 - `GaussianSplatMetalBackend.mm` — Metal backend: acquires Filament `MTLDevice`/queue,
-  runs geometry + composite stages
-- `GaussianSplatOutputTargetsApple.h/.mm` — Creates `MTLTexture` (depth + color),
-  imports into Filament via `CreateImportedMTLTexture()`
+  runs geometry + composite stages; MTLTexture creation and import helpers are inlined
+  here (formerly in the deleted `GaussianSplatOutputTargetsApple` files)
 - `GaussianSplatPassRunner.h/.cpp` — Backend-agnostic geometry + composite pass sequence
   (shared by GL and Metal); launch grid sizes computed inline from `RenderConfig` + frame data
   (no `PassDispatch` / `PassType` indirection); optional depth-merge pass; `GpuComputeFrame`
   ensures Begin/End pairs are always matched
-- `FilamentNativeInterop.h/.mm` — Retrieves Filament `MTLDevice` and `MTLCommandQueue`
-  from `PlatformMetal`
 - `GaussianSplatOpenGLContext.h/.cpp` — GLFW-owned GL 4.6 shared-context creation;
   GLX on Linux X11/XWayland, WGL on Windows
-- `GaussianSplatBuffers.h/.cpp` — shared SSBO/UBO size planning for backends
-- `GaussianSplatDataPacking.h/.cpp` — CPU → GPU data packing (std140/std430)
+- `GaussianSplatOpenGLBackend.h/.cpp` — GL compute backend implementation
+- `shaders/` — Compute shader sources (`.comp`), built to `resources/gaussian_splat/`
+
+### Filament integration files (under `cpp/open3d/visualization/rendering/filament/`)
+
+- `FilamentNativeInterop.h/.mm` — Retrieves Filament `MTLDevice` and `MTLCommandQueue`
+  from `PlatformMetal`
 - `FilamentResourceManager.h/.cpp` — `CreateImportedTexture()` / `CreateImportedMTLTexture()`
   for zero-copy import; `CreateColorOnlyRenderTarget()` for GS readback RT
 - `FilamentView.h/.cpp` — `EnableViewCaching()` invalidation fix; `GetRenderTargetHandle()`
@@ -786,8 +794,9 @@ which is why those are the chosen backends.
 - `FilamentRenderToBuffer.h/.cpp` — GS pipeline mirror (`GaussianSplatRenderer*` member);
   RGBA8 base + RGBA16F GS parallel `readPixels`; `BlendPremultipliedSplatOverRgb8` CPU blend;
   OpenGL depth via `ReadMergedDepthToUint16Cpu` after GPU `gaussian_depth_merge`
-- `FilamentRenderer.h/.cpp` — frame schedule and GS output forwarding; Apple:
-  `SetOnAppleGaussianCompositeComplete` after successful post-`endFrame()` composite
+- `FilamentRenderer.h/.cpp` — frame schedule and GS output forwarding; calls
+  `GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()` directly (no scheduler wrapper);
+  Apple: `SetOnAppleGaussianCompositeComplete` after successful post-`endFrame()` composite
 - `Window.cpp` — registers composite-complete callback → `PostRedraw()` (Metal first-frame fix)
 - `FilamentEngine.cpp` — pre-Filament shared context setup
 
@@ -806,7 +815,9 @@ which is why those are the chosen backends.
 | 8 | `gaussian_compute_dispatch_args.comp` | Indirect dispatch counts and `RadixSortParams` (no CPU readback) |
 | 9 | `gaussian_depth_merge.comp` | GL: merge GS + Filament depth → normalised R16UI (offscreen readback) |
 
-Sources are listed in `cpp/open3d/visualization/gui/CMakeLists.txt` (`gaussian_compute_shaders`).
+Sources live in `cpp/open3d/visualization/rendering/gaussian_splat/shaders/` and are
+listed in `cpp/open3d/visualization/gui/CMakeLists.txt` (`gaussian_compute_shaders` target).
+The output directory is `resources/gaussian_splat/` (runtime loader path).
 
 ### GUI / example files
 - `SceneWidget.cpp` — ImGui base image + GS overlay alpha blending
@@ -875,10 +886,11 @@ Sources are listed in `cpp/open3d/visualization/gui/CMakeLists.txt` (`gaussian_c
 - `gaussian_project.comp`: binding 15 `VisibilityMask`; masked splats call `WriteInvalidProjection`.
 - `ShowGeometry`: patches mask slice in-place and calls `MarkGeometryChanged()`.
 
-**T5 — Scene-depth fast path**
+**T5 — Scene-depth allocation simplified**
 - `HasNonGaussianVisibleGeometry()` added to `FilamentScene`.
-- `PrepareOutputTargets` gains `needs_scene_depth` param; skips `scene_depth` texture allocation when false.
-- When false: Filament-owned depth attachment used; composite shader skips depth fetch (`depth_range_and_flags.w=0`).
+- Scene depth is now always allocated; `needs_scene_depth` API was removed.
+- The composite shader uses `depth_range_and_flags.w` to gate occlusion testing at runtime,
+  which avoids render-target topology changes when mesh visibility toggles.
 
 **T6 — RenderToImage / RenderToDepthImage GS integration**
 - `FilamentRenderToBuffer` gains `GaussianSplatRenderer*`; `Render()` mirrors interactive ordering.

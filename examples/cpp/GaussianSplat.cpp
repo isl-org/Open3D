@@ -107,6 +107,7 @@ int main(int argc, char** argv) {
     config.show_ui = true;
     config.near_plane = 1.f;
 
-    visualization::Draw({splat_obj, cube_obj}, "Gaussian Splat + Mesh Depth Test",
-                        1024, 768,                        {}, config);
+    visualization::Draw({splat_obj, cube_obj},
+                        "Gaussian Splat + Mesh Depth Test", 1024, 768, {},
+                        config);
 }

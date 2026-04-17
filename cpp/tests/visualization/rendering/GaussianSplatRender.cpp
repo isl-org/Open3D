@@ -192,7 +192,7 @@ TEST(GaussianSplatRender, RenderToImage) {
 
     // Depth references are stored as PNG, so compare as UInt16.
     t::geometry::Image rendered_depth_u16 =
-            rendered_depth.To(core::UInt16, /*scale=*/65535.0f);
+            rendered_depth.To(core::UInt16, /*copy=*/false, /*scale=*/65535.0f);
 
     if (generate_ref) {
         ASSERT_TRUE(t::io::WriteImageToPNG(ref_depth_path, rendered_depth_u16))

@@ -202,8 +202,8 @@ def draw(geometry=None,
         cam = w.scene.camera
         _near = near_plane if near_plane is not None else cam.get_near()
         _far = far_plane if far_plane is not None else cam.get_far()
-        cam.set_projection(cam.get_field_of_view(), width / height, _near,
-                           _far, cam.get_field_of_view_type())
+        cam.set_projection(cam.get_field_of_view(), width / height, _near, _far,
+                           cam.get_field_of_view_type())
 
     if show_axes is not None:
         w.show_axes = show_axes

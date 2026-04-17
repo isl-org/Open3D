@@ -12,8 +12,8 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Model.h"
+#include "open3d/visualization/rendering/Open3DScene.h"
 
 namespace open3d {
 namespace visualization {
@@ -102,15 +102,14 @@ std::string Draw(const std::vector<DrawObject> &objects,
     gui::Application::GetInstance().Initialize();
 
     // 2. Create visualizer window
-    auto draw = std::make_shared<visualizer::O3DVisualizer>(
-            window_name, width, height);
+    auto draw = std::make_shared<visualizer::O3DVisualizer>(window_name, width,
+                                                            height);
 
     // 3. Set background color and image (if provided)
     if (config.bg_color.has_value() || config.bg_image) {
         Eigen::Vector4f bg_color_vec(1.0f, 1.0f, 1.0f, 1.0f);
         if (config.bg_color.has_value()) {
-            bg_color_vec =
-                    config.bg_color.value().cast<float>();
+            bg_color_vec = config.bg_color.value().cast<float>();
         }
         draw->SetBackground(bg_color_vec, config.bg_image);
     }
@@ -153,10 +152,8 @@ std::string Draw(const std::vector<DrawObject> &objects,
     // 8. Setup camera using either lookat/eye/up or intrinsic/extrinsic
     if (config.lookat.has_value() && config.eye.has_value() &&
         config.up.has_value()) {
-        draw->SetupCamera(config.field_of_view,
-                          config.lookat.value(),
-                          config.eye.value(),
-                          config.up.value());
+        draw->SetupCamera(config.field_of_view, config.lookat.value(),
+                          config.eye.value(), config.up.value());
     } else if (config.intrinsic_matrix.has_value() &&
                config.extrinsic_matrix.has_value()) {
         draw->SetupCamera(config.intrinsic_matrix.value(),
@@ -166,7 +163,7 @@ std::string Draw(const std::vector<DrawObject> &objects,
     // 9. Override near/far clip planes if requested. Read current camera state
     // so only the specified planes are changed; position/orientation are kept.
     if (config.near_plane.has_value() || config.far_plane.has_value()) {
-        auto* camera = draw->GetScene()->GetCamera();
+        auto *camera = draw->GetScene()->GetCamera();
         double fov = camera->GetFieldOfView();
         double near = config.near_plane.has_value()
                               ? double(config.near_plane.value())
