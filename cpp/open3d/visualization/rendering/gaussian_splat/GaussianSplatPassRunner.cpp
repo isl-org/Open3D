@@ -505,8 +505,9 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
             .SSBO(7, vs.tile_counts_buf)
             .SSBO(8, vs.tile_offsets_buf)
             .SSBO(11, vs.sorted_splat_indices_buf)
-            // Image units 0 and 1: must be < GL_MAX_IMAGE_UNITS (8).
-            .Image(0, color_tex, w, h, ImageFormat::kRGBA16F)
+            // Image unit 16 for color (shared UBO/image binding 0 conflict in Vulkan);
+            // image unit 1 for composite depth.
+            .Image(16, color_tex, w, h, ImageFormat::kRGBA16F)
             .Image(1, vs.composite_depth_tex, w, h, ImageFormat::kR32F);
 
     if (has_scene_depth) {
@@ -532,7 +533,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
                                   targets.scene_depth_gl_handle);
         GpuComputePass(ctx, ComputeProgramId::kGsDepthMerge, "gs_depth_merge")
                 .UBO(0, vs.view_params_buf)
-                .Sampler(0, vs.composite_depth_tex, w, h)
+                .Sampler(16, vs.composite_depth_tex, w, h)  // binding 16: avoids UBO@0 conflict
                 .Image(1, vs.merged_depth_u16_tex, w, h, ImageFormat::kR16UI)
                 .Sampler(14, sd, w, h)
                 .Dispatch(DivUp(w, 16u), DivUp(h, 16u), 1u);

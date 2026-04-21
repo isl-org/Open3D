@@ -104,9 +104,11 @@ if (BUILD_GUI)
     else()
         target_sources(visualization_impl PRIVATE
             rendering/gaussian_splat/ComputeGPUGL.cpp
+            rendering/gaussian_splat/ComputeGPUVulkan.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLBackend.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLPipeline.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
             rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
         )
         # VMA is a header-only library; point to our vendored copy.

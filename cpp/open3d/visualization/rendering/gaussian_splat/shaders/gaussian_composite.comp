@@ -11,14 +11,11 @@
 // premultiplied color, and store a nearest-hit depth that Filament can later
 // use during scene composition.
 //
-// NOTE: This shader is intentionally compiled with glslangValidator -G (OpenGL
-// SPIR-V target) rather than -V (Vulkan target).  It uses a combined
-// image+sampler (sampler2D scene_depth, binding 14) which produces
-// OpTypeSampledImage + DescriptorSet decorations in Vulkan SPIR-V; some
-// Windows OpenGL drivers fail to link such programs via ARB_gl_spirv.
-// The OpenGL target removes DescriptorSet decorations and is accepted by all
-// drivers.  As a consequence, this shader must NOT use subgroup operations
-// (gl_SubgroupSize, subgroupAdd, etc.) which require Vulkan SPIR-V.
+// Compiled with glslangValidator -V --target-env vulkan1.3 (Vulkan SPIR-V).
+// Image binding 16 is used for out_color (instead of the natural 0) to avoid
+// a Vulkan descriptor-set conflict: UBO GaussianViewParams is at binding 0 in
+// set 0, and Vulkan does not allow a second descriptor type at the same
+// (set, binding) pair.  All GL/Metal backends pass Image(16,...) to match.
 //
 // Opt1: Zero-copy output — the VkImage written here is imported directly
 //       into Filament via Texture::Builder::import(), eliminating the
@@ -84,7 +81,8 @@ layout(std430, binding = 11) readonly buffer SortedSplatIndices {
 // Image bindings must be < GL_MAX_IMAGE_UNITS (8 on many drivers).
 // These two output images use units 0 and 1; SSBO/UBO/sampler bindings
 // above live in separate namespaces and are not affected.
-layout(binding = 0, rgba16f) uniform writeonly image2D out_color;
+// Binding 16 avoids the (set=0, binding=0) conflict with GaussianViewParams UBO.
+layout(binding = 16, rgba16f) uniform writeonly image2D out_color;
 layout(binding = 1, r32f) uniform writeonly image2D out_depth;
 
 // Scene depth from Filament's render pass (reversed-Z, non-linear).

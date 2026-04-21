@@ -65,6 +65,7 @@ constexpr const char* kRequiredDeviceExtensions[] = {
         VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
         VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+        VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 };
 #else
 constexpr const char* kRequiredDeviceExtensions[] = {
@@ -74,6 +75,7 @@ constexpr const char* kRequiredDeviceExtensions[] = {
         VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
         VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+        VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 };
 #endif
 

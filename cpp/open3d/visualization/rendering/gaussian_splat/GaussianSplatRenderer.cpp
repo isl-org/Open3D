@@ -19,6 +19,7 @@
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 #if !defined(__APPLE__)
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLBackend.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanBackend.h"
 #endif
 
 namespace open3d {
@@ -108,8 +109,18 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
 #endif
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
+#if !defined(__APPLE__)
+            if (auto vk_backend =
+                        CreateGaussianSplatVulkanBackend(resource_mgr, config);
+                vk_backend) {
+                return vk_backend;
+            }
+            // Fall back to OpenGL if Vulkan interop context is not available.
+            return CreateGaussianSplatOpenGLBackend(resource_mgr, config);
+#else
             return std::unique_ptr<GaussianSplatRenderer::Backend>(
                     new GaussianSplatPlaceholderBackend("Unsupported"));
+#endif
     }
     return nullptr;
 }
