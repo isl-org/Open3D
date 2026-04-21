@@ -72,6 +72,15 @@ public:
         /// Can also be set per-scene via
         /// MaterialRecord::gaussian_splat_antialias.
         bool antialias = false;
+        /// Use OneSweep radix sort instead of the 4-pass LSD radix sort.
+        /// OneSweep fuses the per-digit histogram into a single global-hist
+        /// dispatch and uses decoupled lookback to eliminate separate histogram
+        /// passes, reducing sort dispatches from 10 to 7.  Requires
+        /// device-scope atomic coherence; disabled by default pending
+        /// per-platform testing. Falls back automatically to the 4-pass radix
+        /// sort if the OneSweep shader programs fail to load on the current
+        /// driver.
+        bool use_onesweep_sort = true;
     };
 
     /// Camera and viewport state extracted per-view each geometry pass.

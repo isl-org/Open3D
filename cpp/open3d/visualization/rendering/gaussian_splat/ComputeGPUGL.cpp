@@ -30,6 +30,40 @@ namespace visualization {
 namespace rendering {
 
 namespace {
+
+// Returns true when the driver reports all subgroup features required by the
+// OneSweep shaders:
+//   gaussian_onesweep_global_hist_subgroup.comp — arithmetic (subgroupAdd)
+//   gaussian_onesweep_digit_pass_subgroup.comp  — ballot (WaveMatch8),
+//                                                  shuffle (subgroupShuffle),
+//                                                  vote (subgroupAll)
+// Also validates subgroup size <= 32 (WaveMatch8 uses only ballot .x bits).
+bool GlSubgroupArithmeticAndBallotAvailable() {
+    if (!GLEW_KHR_shader_subgroup) {
+        return false;
+    }
+    GLint features = 0;
+    glGetIntegerv(GL_SUBGROUP_SUPPORTED_FEATURES_KHR, &features);
+    const GLint kRequired = GL_SUBGROUP_FEATURE_ARITHMETIC_BIT_KHR |
+                            GL_SUBGROUP_FEATURE_BALLOT_BIT_KHR |
+                            GL_SUBGROUP_FEATURE_SHUFFLE_BIT_KHR |
+                            GL_SUBGROUP_FEATURE_VOTE_BIT_KHR;
+    const bool features_ok = (features & kRequired) == kRequired;
+
+    // WaveMatch8 uses subgroupBallot(...).x (bits 0-31 only); subgroup size
+    // must be <= 32 for correctness.
+    GLint max_sg = 0;
+    glGetIntegerv(GL_SUBGROUP_SIZE_KHR, &max_sg);
+    const bool size_ok = (max_sg > 0) && (max_sg <= 32);
+
+    const bool ok = features_ok && size_ok;
+    utility::LogDebug(
+            "GaussianSplat: GL subgroup features=0x{:x} max_size={}, "
+            "onesweep={}",
+            features, max_sg, ok ? "yes" : "no");
+    return ok;
+}
+
 GLBufferHandle ToGLBuffer(
         std::uintptr_t id,
         const std::unordered_map<std::uintptr_t, std::size_t>& sizes) {
@@ -166,15 +200,14 @@ public:
         const std::string shader_root =
                 EngineInstance::GetResourcePath() + "/gaussian_splat/";
 
-        // Attempt to load under the primary policy (from RenderConfig).
-        // On any failure, retry once with the safe fallback
-        // (no subgroups + online GLSL), which works on all known GPUs.
+        // Phase 1: Load required base shaders [0, kGsFirstOneSweepProgram).
+        // Attempt under the primary policy; retry once with the safe fallback.
+        // OneSweep programs are loaded in Phase 2 below.
         bool cur_subgroups = use_subgroups_;
         bool cur_precompiled = use_precompiled_;
         for (int attempt = 0; attempt < 2; ++attempt) {
             bool all_ok = true;
-            for (int i = 0; i < static_cast<int>(ComputeProgramId::kCount);
-                 ++i) {
+            for (int i = 0; i < kGsFirstOneSweepProgram; ++i) {
                 CleanupProgram(programs_[i]);
                 if (!LoadOneProgram(programs_[i], kGsShaderNames[i],
                                     shader_root, cur_subgroups,
@@ -185,11 +218,13 @@ public:
             }
             if (all_ok) {
                 programs_valid_ = true;
-                return true;
+                break;
             }
 
             if (attempt == 0) {
-                for (auto& p : programs_) CleanupProgram(p);
+                for (int i = 0; i < kGsFirstOneSweepProgram; ++i) {
+                    CleanupProgram(programs_[i]);
+                }
                 utility::LogWarning(
                         "GaussianSplat: primary shader policy failed. "
                         "Retrying with safe fallback "
@@ -199,8 +234,50 @@ public:
             }
         }
 
-        utility::LogWarning("GaussianSplat: all shader load attempts failed.");
-        return false;
+        if (!programs_valid_) {
+            utility::LogWarning(
+                    "GaussianSplat: all shader load attempts failed.");
+            return false;
+        }
+
+        // Phase 2: Optionally load OneSweep programs (failure is non-fatal).
+        // OneSweep shaders require subgroup arithmetic + ballot (for both the
+        // global-histogram SCAN mode and the digit-pass lookback).
+        if (!GlSubgroupArithmeticAndBallotAvailable()) {
+            onesweep_programs_valid_ = false;
+            utility::LogDebug(
+                    "GaussianSplat: OneSweep disabled — subgroup "
+                    "arithmetic+ballot not available "
+                    "(subgroup-basic radix sort still active).");
+            return true;
+        }
+
+        onesweep_programs_valid_ = true;
+        for (int i = kGsFirstOneSweepProgram;
+             i < static_cast<int>(ComputeProgramId::kCount); ++i) {
+            CleanupProgram(programs_[i]);
+            if (!LoadOneProgram(programs_[i], kGsShaderNames[i], shader_root,
+                                use_subgroups_, use_precompiled_)) {
+                onesweep_programs_valid_ = false;
+                // Clean up partially-loaded OneSweep programs.
+                for (int j = kGsFirstOneSweepProgram; j <= i; ++j) {
+                    CleanupProgram(programs_[j]);
+                }
+                utility::LogDebug(
+                        "GaussianSplat: OneSweep programs not available "
+                        "(falling back to 4-pass radix sort).");
+                break;
+            }
+        }
+        if (onesweep_programs_valid_) {
+            utility::LogDebug("GaussianSplat: OneSweep programs loaded.");
+        }
+
+        return true;
+    }
+
+    bool AreOneSweepProgramsLoaded() const override {
+        return onesweep_programs_valid_;
     }
 
     std::uintptr_t CreateBuffer(std::size_t size,
@@ -500,6 +577,7 @@ private:
     GLComputeProgram programs_[static_cast<int>(ComputeProgramId::kCount)] = {};
     bool programs_loaded_ = false;
     bool programs_valid_ = false;
+    bool onesweep_programs_valid_ = false;  ///< true if OneSweep loaded OK
     bool use_subgroups_;
     bool use_precompiled_;
     std::unordered_map<std::uintptr_t, std::size_t> buffer_sizes_;

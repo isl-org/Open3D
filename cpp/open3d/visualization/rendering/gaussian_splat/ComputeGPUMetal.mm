@@ -31,6 +31,7 @@ namespace rendering {
 namespace {
 
 /// Threads per threadgroup matching GLSL local_size_* in each shader.
+/// Must have exactly ComputeProgramId::kCount rows — enforced by static_assert.
 static const NSUInteger kThreadsPerGroup[][3] = {
         {64, 1, 1},   // kGsProject
         {256, 1, 1},  // kGsPrefixSum
@@ -42,7 +43,12 @@ static const NSUInteger kThreadsPerGroup[][3] = {
         {256, 1, 1},  // kGsRadixPayload
         {1, 1, 1},    // kGsDispatchArgs
         {16, 16, 1},  // kGsDepthMerge
+        {256, 1, 1},  // kGsOneSweepGlobalHist
+        {256, 1, 1},  // kGsOneSweepDigitPass
 };
+static_assert(std::size(kThreadsPerGroup) ==
+                      static_cast<std::size_t>(ComputeProgramId::kCount),
+              "kThreadsPerGroup row count must match ComputeProgramId::kCount");
 
 static constexpr std::size_t kMaxBindings = 32;
 
@@ -100,12 +106,12 @@ public:
             return false;
         }
 
-        for (int i = 0; i < static_cast<int>(ComputeProgramId::kCount); ++i) {
+        auto load_pipeline = [&](int i) -> bool {
             std::string entry_name = std::string(kGsShaderNames[i]) + "_main";
             NSString* name = [NSString stringWithUTF8String:entry_name.c_str()];
             id<MTLFunction> fn = [library_ newFunctionWithName:name];
             if (!fn) {
-                utility::LogWarning("Metal: missing function {}", entry_name);
+                utility::LogDebug("Metal: missing function {}", entry_name);
                 return false;
             }
             NSError* perr = nil;
@@ -113,12 +119,41 @@ public:
                     [device_ newComputePipelineStateWithFunction:fn
                                                            error:&perr];
             if (!ps) {
-                utility::LogWarning(
+                utility::LogDebug(
                         "Metal: pipeline {} failed: {}", entry_name,
                         perr ? [[perr localizedDescription] UTF8String] : "?");
                 return false;
             }
             pipelines_[i] = ps;
+            return true;
+        };
+
+        // Phase 1: base programs (required). Failure is fatal for Metal GS.
+        for (int i = 0; i < kGsFirstOneSweepProgram; ++i) {
+            if (!load_pipeline(i)) {
+                utility::LogWarning("Metal: failed to load base GS program {}",
+                                    kGsShaderNames[i]);
+                return false;
+            }
+        }
+
+        // Phase 2: OneSweep programs (optional). Failure disables OneSweep
+        // but does not affect the base radix-sort pipeline.
+        // SIMD-group arithmetic is always available on A11+ / M-series;
+        // pipeline compilation below acts as the implicit capability guard.
+        onesweep_programs_valid_ = true;
+        for (int i = kGsFirstOneSweepProgram;
+             i < static_cast<int>(ComputeProgramId::kCount); ++i) {
+            if (!load_pipeline(i)) {
+                onesweep_programs_valid_ = false;
+                utility::LogDebug("Metal: OneSweep program {} unavailable; "
+                                  "falling back to radix sort.",
+                                  kGsShaderNames[i]);
+                break;
+            }
+        }
+        if (onesweep_programs_valid_) {
+            utility::LogDebug("Metal: OneSweep programs loaded.");
         }
 
         @autoreleasepool {
@@ -130,6 +165,10 @@ public:
             sampler_ = [device_ newSamplerStateWithDescriptor:sdesc];
         }
         return true;
+    }
+
+    bool AreOneSweepProgramsLoaded() const override {
+        return onesweep_programs_valid_;
     }
 
     std::uintptr_t CreateBuffer(std::size_t size,
@@ -713,6 +752,7 @@ private:
     std::array<SamplerBindingState, kMaxBindings> sampler_bindings_;
 
     bool last_submit_succeeded_ = true;
+    bool onesweep_programs_valid_ = false;
 
     std::unordered_map<std::uintptr_t, std::size_t> buffer_sizes_;
     std::unordered_map<std::uintptr_t, std::pair<std::uint32_t, std::uint32_t>>

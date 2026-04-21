@@ -41,6 +41,8 @@ constexpr std::uint32_t kSlotKeygen = 0u;
 constexpr std::uint32_t kSlotRadixHist0 = 1u;     // passes 0-3 → 1-4
 constexpr std::uint32_t kSlotRadixScatter0 = 5u;  // passes 0-3 → 5-8
 constexpr std::uint32_t kSlotPayload = 9u;
+constexpr std::uint32_t kSlotOneSweepHist = 10u;
+constexpr std::uint32_t kSlotOneSweepDigit0 = 11u;  // passes 0-3 → 11-14
 
 // Compute the byte offset of a dispatch_args slot for DispatchIndirect().
 inline std::size_t IndirectByteOffset(std::uint32_t slot) {
@@ -113,6 +115,70 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
                 .DispatchIndirect(
                         vs.dispatch_args_buf,
                         IndirectByteOffset(kSlotRadixScatter0 + pass));
+        ctx.FullBarrier();
+
+        src = dst;
+    }
+    return src;
+}
+
+// Run the OneSweep sort (decoupled-lookback, 7 dispatches vs 10 for classical)
+// and return the final source buffer index for the payload pass.
+// Caller must already have allocated vs.onesweep_* buffers.
+int RunOneSweepSort(GaussianSplatGpuContext& ctx,
+                    GaussianSplatViewGpuResources& vs,
+                    int src) {
+    ctx.ClearBufferUInt32Zero(vs.onesweep_global_hist_buf);
+    ctx.FullBarrier();
+
+    // Global histogram: one dispatch covers all four digit positions.
+    GpuComputePass(ctx, ComputeProgramId::kGsOneSweepGlobalHist,
+                   "gs_onesweep_global_hist")
+            .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParams))
+            .SSBO(0, vs.sort_keys_buf[0])
+            .SSBO(2, vs.onesweep_global_hist_buf)
+            .DispatchIndirect(vs.dispatch_args_buf,
+                              IndirectByteOffset(kSlotOneSweepHist));
+    ctx.FullBarrier();
+
+    // Prefix scan: single WG converts raw counts to exclusive output offsets.
+    GpuComputePass(ctx, ComputeProgramId::kGsOneSweepGlobalHist,
+                   "gs_onesweep_scan")
+            .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParams))
+            .SSBO(0, vs.sort_keys_buf[0])  // unused in scan mode
+            .SSBO(2, vs.onesweep_global_hist_buf)
+            .Dispatch(1u, 1u, 1u);
+    ctx.FullBarrier();
+
+    for (std::uint32_t pass = 0; pass < 4; ++pass) {
+        const int dst = 1 - src;
+        const std::size_t params_offset = pass * kGaussianRadixParamsStride;
+
+        // Each digit pass requires fresh STATUS_INVALID partition descriptors,
+        // a zeroed partition-assignment counter, and a zeroed tail iterator.
+        // The circular partition_buf is fixed-size (1 MB); clearing it is
+        // much cheaper than the variable-size buffer (up to 80 MB for large
+        // scenes).
+        ctx.ClearBufferUInt32Zero(vs.onesweep_partition_buf);
+        ctx.ClearBufferUInt32Zero(vs.onesweep_partition_counter_buf);
+        ctx.ClearBufferUInt32Zero(vs.onesweep_tail_buf);
+        ctx.FullBarrier();
+
+        GpuComputePass(ctx, ComputeProgramId::kGsOneSweepDigitPass,
+                       "gs_onesweep_digit_pass")
+                .UBORange(14, vs.radix_params_buf, params_offset,
+                          sizeof(RadixSortParams))
+                .SSBO(0, vs.sort_keys_buf[src])
+                .SSBO(1, vs.sort_keys_buf[dst])
+                .SSBO(2, vs.onesweep_global_hist_buf)
+                .SSBO(3, vs.sort_values_buf[src])
+                .SSBO(4, vs.sort_values_buf[dst])
+                .SSBO(5, vs.onesweep_partition_buf)
+                .SSBO(6, vs.onesweep_partition_counter_buf)
+                .SSBO(7, vs.onesweep_tail_buf)
+                .DispatchIndirect(
+                        vs.dispatch_args_buf,
+                        IndirectByteOffset(kSlotOneSweepDigit0 + pass));
         ctx.FullBarrier();
 
         src = dst;
@@ -327,8 +393,28 @@ bool RunGaussianGeometryPasses(
                               IndirectByteOffset(kSlotKeygen));
     ctx.FullBarrier();
 
+    // Sort stage: branch on algorithm selection.
+    // OneSweep requires both the programs to have loaded and the config flag.
     int src = 0;
-    src = RunClassicalRadixSort(ctx, vs, src);
+    if (config.use_onesweep_sort && ctx.AreOneSweepProgramsLoaded()) {
+        // Allocate / resize OneSweep-specific buffers before dispatching.
+        // partition_buf is fixed-size (circular, 1 MB) regardless of sort size.
+        vs.onesweep_global_hist_buf = ctx.ResizePrivateBuffer(
+                vs.onesweep_global_hist_buf,
+                gpu_sizes.onesweep_global_hist_size, "gs.onesweep_global_hist");
+        vs.onesweep_partition_buf = ctx.ResizePrivateBuffer(
+                vs.onesweep_partition_buf, gpu_sizes.onesweep_partition_size,
+                "gs.onesweep_partition");
+        vs.onesweep_partition_counter_buf = ctx.ResizePrivateBuffer(
+                vs.onesweep_partition_counter_buf, sizeof(std::uint32_t),
+                "gs.onesweep_counter");
+        vs.onesweep_tail_buf = ctx.ResizePrivateBuffer(
+                vs.onesweep_tail_buf, gpu_sizes.onesweep_tail_size,
+                "gs.onesweep_tail");
+        src = RunOneSweepSort(ctx, vs, src);
+    } else {
+        src = RunClassicalRadixSort(ctx, vs, src);
+    }
 
     // Extract splat_index from each sorted TileEntry into the compact
     // sorted_splat_indices buffer (uint[] instead of TileEntry[]).

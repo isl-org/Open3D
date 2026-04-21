@@ -1,0 +1,401 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// OneSweep digit-binning pass (subgroup variant).
+//
+// A single dispatch per digit (4 dispatches total) replaces the separate
+// histogram + scatter pair used by the classical LSD radix sort.
+//
+// Each workgroup:
+//   1. Waits for its circular partition slot to be free (gate-keep), then
+//      claims a partition index via an atomic counter.
+//   2. Loads KEYS_PER_THREAD keys + values from its partition using
+//      block-cyclic addressing (sub-block j read as j*WG_SIZE+lID) so that
+//      consecutive lanes access consecutive addresses within each sub-block.
+//   3. Builds a per-WG per-bin histogram using per-wave sub-histograms:
+//      each wave writes to its own row in s_wave_hist (no cross-wave
+//      contention), then the rows are scanned in-place into exclusive
+//      inter-wave prefix sums by the first RADIX threads.
+//   4. Publishes an AGGREGATE descriptor so successor partitions can begin
+//      their lookback without waiting for the inclusive prefix.
+//   5. Performs decoupled lookback (Adinets & Merrill 2022) to accumulate
+//      the per-bin exclusive prefix from all predecessor partitions.
+//      Each of the first RADIX threads handles one bin independently.
+//      subgroupAll(done) lets the wave exit as soon as all 32 of its bins
+//      have resolved, reducing idle spinning.
+//   6. Publishes an INCLUSIVE descriptor, then advances the tail counter so
+//      the circular slot can be reused by a later partition.
+//   7. Scatters keys and values using 8-ballot bit-parallel lane ranking:
+//      WaveMatch8 computes the set of in-range lanes with the same digit
+//      using 8 subgroupBallot calls (one per bit). Only the lowest-rank
+//      lane in each match group does one atomicAdd to s_wave_hist[wave][bin]
+//      to reserve output positions; the base is broadcast via subgroupShuffle.
+//      No per-sub-block barrier is needed — all sharing is wave-local.
+//
+// Shared memory layout (~10 KB total, down from ~19 KB):
+//   s_wave_hist  8 KB  — dual-use:
+//                        Phase 3 build:   per-wave bin counts (MAX_WAVES ×
+//                        RADIX) Phase 7 scatter: exclusive inter-wave prefix +
+//                        running
+//                                         counter per (wave, bin); only this
+//                                         wave's own row is written, so no
+//                                         cross-wave contention.
+//   s_hist       1 KB  — per-bin WG total count (AGGREGATE/INCLUSIVE publish)
+//   s_exclusive  1 KB  — per-bin exclusive prefix from decoupled lookback
+//   logical_part   4 B — dynamically assigned partition index
+//
+// Partition descriptor encoding (one uvec2 per (circular-slot, bin)):
+//   .x bits 31-30 = status:  0=INVALID, 1=AGGREGATE, 2=INCLUSIVE
+//   .x bits 29-0  = value:   local count (AGGREGATE) or inclusive prefix
+//   .y             = partition index (stale-reuse detection)
+//
+// Circular partition buffer:
+//   onesweep_partition_buf has CIRCULAR_SIZE × RADIX uvec2 entries (fixed).
+//   Partition 'part' maps to slot (part & (CIRCULAR_SIZE-1)).
+//   A tail counter tracks the last INCLUSIVE partition; each WG spins at the
+//   start until tail + CIRCULAR_SIZE > part, ensuring the slot is free.
+//   For 1M–4M splats (10M–80M tile entries, 2500–20000 partitions), the
+//   fixed 1 MB circular window fits in iGPU LLC regardless of sort size,
+//   bounding lookback DRAM traffic to ~1 MB/sort vs. up to 80 MB without it.
+//
+// Memory-ordering model:
+//   - partition_buf is declared coherent volatile; volatile prevents the
+//     compiler from caching spin-loop reads, and coherent provides device-
+//     scope visibility.
+//   - memoryBarrierBuffer() fires once per predecessor after status is
+//     observed (acquire fence), and once before each status publish (release).
+//   - All other inter-thread synchronization uses workgroup barrier().
+//
+// Subgroup requirements (all available on Intel Gen9+ iGPU and Apple M-series):
+//   GL_KHR_shader_subgroup_basic   — gl_SubgroupID, gl_SubgroupInvocationID
+//   GL_KHR_shader_subgroup_vote    — subgroupAll
+//   GL_KHR_shader_subgroup_ballot  — subgroupBallot, gl_SubgroupLtMask
+//   GL_KHR_shader_subgroup_shuffle — subgroupShuffle
+//   NOTE: WaveMatch8 uses only the .x component of ballot results, so
+//   correctness requires subgroup size <= 32. The host feature gate in
+//   GlSubgroupArithmeticAndBallotAvailable() (ComputeGPUGL.cpp) enforces
+//   this via GL_MAX_SUBGROUP_SIZE_KHR when available.
+//
+// References:
+//   Adinets & Merrill, "OneSweep: A Faster Least Significant Digit Radix
+//   Sort for GPUs", arXiv:2206.01784 (2022).
+//   b0nes164/GPUSorting, OneSweep.hlsl / SweepCommon.hlsl (MIT license).
+//   GPUOpen blog: "Boosting GPU Radix Sort performance" (AMD, 2024).
+
+#version 460
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_vote : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_shuffle : enable
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+#define RADIX 256u
+#define WORKGROUP_SIZE 256u
+#define KEYS_PER_THREAD 16u
+#define PART_SIZE \
+    (WORKGROUP_SIZE * KEYS_PER_THREAD)  // 4096 elements per partition
+// Safe upper bound for number of waves; covers SubgroupSize >= 32 on all
+// supported platforms (Apple M-series, NVIDIA, AMD, Intel).  For
+// SubgroupSize=64 only indices 0-3 are used; indices 4-7 stay zero from
+// initialization.
+#define MAX_WAVES 8u
+// Circular partition buffer size (power-of-2, must exceed max simultaneous
+// live WGs on the target GPU). 512 gives 1 MB fixed buffer, well within LLC.
+// Must match kOneSweepCircularSize in GaussianSplatDataPacking.h.
+#define CIRCULAR_SIZE 512u
+#define CIRCULAR_MASK (CIRCULAR_SIZE - 1u)
+
+// Partition descriptor status flags packed into .x bits 31-30.
+#define STATUS_INVALID 0u
+#define STATUS_AGGREGATE 1u
+#define STATUS_INCLUSIVE 2u
+#define STATUS_SHIFT 30u
+#define VALUE_MASK 0x3FFFFFFFu  // bits 29-0
+
+// RadixSortParams UBO at binding 14: provides g_num_elements and g_shift.
+layout(std140, binding = 14) uniform RadixSortParams {
+    uint g_num_elements;
+    uint g_shift;  // digit shift for this pass: 0, 8, 16, or 24
+    uint g_num_workgroups;
+    uint g_num_blocks_per_workgroup;
+};
+
+layout(std430, binding = 0) readonly buffer KeysIn { uint keys_in[]; };
+layout(std430, binding = 1) writeonly buffer KeysOut { uint keys_out[]; };
+
+// Global histogram at binding 2: row = pass (shift/8), column = bin.
+// Contains exclusive output offsets after the scan pass.
+layout(std430, binding = 2) readonly buffer GlobalHist { uint global_hist[]; };
+
+layout(std430, binding = 3) readonly buffer ValuesIn { uint vals_in[]; };
+layout(std430, binding = 4) writeonly buffer ValuesOut { uint vals_out[]; };
+
+// Circular partition descriptor buffer: [slot * RADIX + bin] = uvec2
+// descriptor. slot = part & CIRCULAR_MASK. Cleared to zero (STATUS_INVALID) by
+// the runner before each digit pass; stale-reuse detected via .y ==
+// partition_index. coherent volatile: device-scope visibility via plain loads
+// in spin loop.
+layout(std430, binding = 5) coherent volatile buffer PartitionBuf {
+    uvec2 partition_buf[];
+};
+
+// Single atomic counter for dynamic partition assignment.
+// Cleared to 0 by the runner before each digit pass.
+layout(std430, binding = 6) coherent buffer PartitionCounter {
+    uint partition_counter;
+};
+
+// Tail iterator: tracks last INCLUSIVE partition for circular-slot recycling.
+// Cleared to 0 by the runner before each digit pass.
+layout(std430, binding = 7) coherent buffer TailBuf { uint tail_counter; };
+
+// ---- Shared memory ---------------------------------------------------------
+
+// Dual-use across histogram (phase 3) and scatter (phase 7).
+// Phase 3: s_wave_hist[wave * RADIX + bin] = key count for that (wave, bin).
+// After reduction, the first RADIX threads transform the rows in-place so that
+// s_wave_hist[wave * RADIX + bin] = exclusive inter-wave prefix (number of
+// keys with this bin from waves 0..wave-1). The total becomes s_hist[bin].
+// Phase 7: each wave atomicAdds to its own row to reserve output slots; the
+// pre-add value from the first reservation for a (wave, bin) is exactly the
+// cumulative inter-wave prefix + count emitted by prior j-iterations. Waves
+// never contend across rows.
+shared uint s_wave_hist[MAX_WAVES * RADIX];  // 8 KB
+
+shared uint
+        s_hist[RADIX];  // per-WG per-bin count (for AGGREGATE/INCLUSIVE)  1 KB
+shared uint s_exclusive[RADIX];  // per-bin exclusive prefix from decoupled
+                                 // lookback 1 KB
+shared uint logical_part;        // dynamically assigned partition index 4 B
+
+// ---- Helpers ---------------------------------------------------------------
+
+uint ExtractDigit(uint key) { return (key >> g_shift) & 0xFFu; }
+
+// 64-bit partition descriptor: .x = status(2) | value(30), .y = partition_idx.
+uvec2 PackDescriptor64(uint part_idx, uint status, uint value) {
+    return uvec2((status << STATUS_SHIFT) | (value & VALUE_MASK), part_idx);
+}
+uint GetStatus(uvec2 desc) { return desc.x >> STATUS_SHIFT; }
+uint GetValue(uvec2 desc) { return desc.x & VALUE_MASK; }
+
+// Returns a bitmask of lanes in this subgroup that have the same 8-bit digit.
+// Uses 8 subgroupBallot calls (one per bit) to avoid shared memory entirely.
+// Requires subgroup size <= 32 (only .x component used).
+uint WaveMatch8(uint digit) {
+    uint waveMatch = 0xFFFFFFFFu;
+    for (int k = 0; k < 8; k++) {
+        bool my_bit = bool((digit >> k) & 1u);
+        uint ballot =
+                subgroupBallot(my_bit).x;  // mask of lanes with bit k == 1
+        uint keep =
+                my_bit ? ballot : ~ballot;  // lanes that agree with me on bit k
+        waveMatch &= keep;
+    }
+    return waveMatch;
+}
+
+// ---- Main ------------------------------------------------------------------
+
+void main() {
+    uint lID = gl_LocalInvocationID.x;
+
+    // 1. Dynamic partition assignment.
+    if (lID == 0u) {
+        logical_part = atomicAdd(partition_counter, 1u);
+    }
+    barrier();
+    uint part = logical_part;
+    uint part_start = part * PART_SIZE;
+
+    // Circular buffer gate: spin until our circular slot has been recycled by
+    // the previous occupant (whose partition index is part - CIRCULAR_SIZE).
+    // Only lane 0 spins; barrier() propagates the green-light to all lanes.
+    if (lID == 0u && part >= CIRCULAR_SIZE) {
+        while (atomicAdd(tail_counter, 0u) + CIRCULAR_SIZE <= part) {
+        }
+    }
+    barrier();
+
+    // 2. Coalesced load: block-cyclic layout so that within each sub-block j,
+    //    consecutive lanes (lID) read consecutive addresses (j*WG_SIZE+lID).
+    //    Sentinel key 0xFFFFFFFF maps to bin 255 and is never written to output
+    //    (excluded by the active-lane mask in WaveMatch8 during scatter).
+    uint keys[KEYS_PER_THREAD];
+    uint vals[KEYS_PER_THREAD];
+    for (uint j = 0u; j < KEYS_PER_THREAD; ++j) {
+        uint idx = part_start + j * WORKGROUP_SIZE + lID;
+        bool in_range = idx < g_num_elements;
+        keys[j] = in_range ? keys_in[idx] : 0xFFFFFFFFu;
+        vals[j] = in_range ? vals_in[idx] : 0u;
+    }
+
+    // 3. Per-wave sub-histograms: each wave writes into its own RADIX-sized
+    //    row, so atomics within a row are contended only by lanes of the same
+    //    wave (~8× less contention than a single shared s_hist array).
+    for (uint i = lID; i < MAX_WAVES * RADIX; i += WORKGROUP_SIZE) {
+        s_wave_hist[i] = 0u;
+    }
+    barrier();
+
+    uint wave_base = gl_SubgroupID * RADIX;
+    for (uint j = 0u; j < KEYS_PER_THREAD; ++j) {
+        uint idx = part_start + j * WORKGROUP_SIZE + lID;
+        if (idx < g_num_elements) {
+            atomicAdd(s_wave_hist[wave_base + ExtractDigit(keys[j])], 1u);
+        }
+    }
+    barrier();
+
+    // Reduce per-wave rows into s_hist AND transform s_wave_hist in place to
+    // exclusive inter-wave prefix. After this pass:
+    //   s_wave_hist[w * RADIX + bin] = total count for bin from waves 0..w-1
+    //   s_hist[bin] = total WG count for bin
+    // s_wave_hist is then reused as a per-(wave, bin) running output counter
+    // during scatter (phase 7) — no additional shared memory needed.
+    if (lID < RADIX) {
+        uint running = 0u;
+        for (uint w = 0u; w < MAX_WAVES; ++w) {
+            uint count = s_wave_hist[w * RADIX + lID];
+            s_wave_hist[w * RADIX + lID] =
+                    running;  // exclusive inter-wave prefix
+            running += count;
+        }
+        s_hist[lID] = running;
+    }
+    barrier();
+
+    // 4. Publish AGGREGATE descriptor to this partition's circular slot.
+    //    memoryBarrierBuffer() (release) before the exchange ensures all prior
+    //    SSBO writes are device-visible before the status flag is observed by
+    //    successors performing decoupled lookback.
+    uint slot = part & CIRCULAR_MASK;
+    if (lID < RADIX) {
+        memoryBarrierBuffer();
+        partition_buf[slot * RADIX + lID] =
+                PackDescriptor64(part, STATUS_AGGREGATE, s_hist[lID]);
+    }
+    // No WG barrier: lookback begins immediately after AGGREGATE publish.
+
+    // 5 + 6. Decoupled lookback with subgroupAll convergence guard.
+    //   Each of the first RADIX threads handles one bin. The subgroupAll guard
+    //   lets the entire wave exit the while-loop as soon as all 32 of its bins
+    //   have found an INCLUSIVE predecessor (or reached partition 0), rather
+    //   than each bin spinning independently until the slowest one resolves.
+    //
+    //   Spin reads use plain coherent volatile loads (not atomicOr) because
+    //   the volatile qualifier forces a device-memory re-fetch on each
+    //   iteration without issuing an atomic read-modify-write.  One
+    //   memoryBarrierBuffer() acquire fence fires after the spin loop exits
+    //   (not on every iteration), ensuring the count/prefix value written
+    //   before the status flag is visible.
+    //
+    //   Circular-indexed lookback: predecessor at partition t maps to slot
+    //   (t & CIRCULAR_MASK). The stale-reuse check (.y == expected t) ensures
+    //   we never read leftover data from a previous occupant of the same slot.
+    if (lID < RADIX) {
+        uint exclusive = 0u;
+        int t = int(part) - 1;
+        bool done = (t < 0);
+        while (!subgroupAll(done)) {
+            if (!done) {
+                uint pred_slot = uint(t) & CIRCULAR_MASK;
+                uvec2 desc;
+                // Spin until this slot holds valid data for partition t.
+                // Two conditions: status != INVALID AND partition_index == t.
+                do {
+                    desc = partition_buf[pred_slot * RADIX + lID];
+                } while (GetStatus(desc) == STATUS_INVALID ||
+                         desc.y != uint(t));
+                // Single acquire fence per predecessor: ensures the value
+                // published before the status flag is visible.
+                memoryBarrierBuffer();
+
+                exclusive += GetValue(desc);
+                if (GetStatus(desc) == STATUS_INCLUSIVE) {
+                    done = true;
+                } else {
+                    --t;
+                }
+            }
+        }
+        s_exclusive[lID] = exclusive;
+
+        // 6. Publish INCLUSIVE so successors can terminate their lookback
+        //    early by stopping at this partition instead of walking to 0.
+        uint inclusive = exclusive + s_hist[lID];
+        memoryBarrierBuffer();  // release: value must be visible before status
+        partition_buf[slot * RADIX + lID] =
+                PackDescriptor64(part, STATUS_INCLUSIVE, inclusive);
+    }
+
+    // Advance the tail counter after all RADIX INCLUSIVE descriptors are
+    // published, freeing this circular slot for reuse by partition
+    // (part + CIRCULAR_SIZE). Lane 0 does the atomic; barrier() propagates
+    // the green-light to all lanes and ensures scatter sees s_exclusive.
+    if (lID == 0u) {
+        memoryBarrierBuffer();  // release: INCLUSIVE descriptors visible first
+        atomicAdd(tail_counter, 1u);
+    }
+    barrier();  // all threads see s_exclusive before scatter; tail visible
+                // globally
+
+    // 7. Scatter keys and values using 8-ballot WaveMatch rank.
+    //
+    //   For each key j, WaveMatch8 computes the set of in-range lanes in this
+    //   wave with the same digit via 8 subgroupBallot calls. The active-lane
+    //   mask excludes sentinel (out-of-range) keys from the match group so
+    //   they cannot corrupt the output offset counters.
+    //
+    //   Only the lowest-rank lane in each match group does one atomicAdd to
+    //   s_wave_hist[wave][digit] to reserve output positions for the group;
+    //   the base is broadcast to all peers via subgroupShuffle.
+    //
+    //   s_wave_hist[wave][digit] starts at the exclusive inter-wave prefix
+    //   (from the reduction above), so the first reservation from this wave
+    //   for a given digit returns exactly that prefix. Subsequent j iterations
+    //   accumulate correctly because the atomic counter is not reset between
+    //   iterations — it simply advances with each batch.
+    //
+    //   No per-j barrier is required: each wave writes only to its own row in
+    //   s_wave_hist (no cross-wave contention) and executes j iterations in
+    //   SIMD lockstep.
+    uint pass = g_shift >> 3u;
+    for (uint j = 0u; j < KEYS_PER_THREAD; ++j) {
+        uint idx = part_start + j * WORKGROUP_SIZE + lID;
+        bool in_range = idx < g_num_elements;
+        uint digit = ExtractDigit(keys[j]);
+
+        // Build match mask restricted to in-range lanes (sentinels excluded).
+        uint active_mask = subgroupBallot(in_range).x;
+        uint waveMatch = WaveMatch8(digit) & active_mask;
+
+        uint rank_in_wave = bitCount(waveMatch & gl_SubgroupLtMask.x);
+        uint count_in_wave = bitCount(waveMatch);
+        bool is_leader = (rank_in_wave == 0u) && (count_in_wave > 0u);
+
+        // Leader reserves output slots for the whole match group.
+        uint wg_base = 0u;
+        if (is_leader) {
+            wg_base = atomicAdd(s_wave_hist[wave_base + digit], count_in_wave);
+        }
+        // Broadcast leader's reserved base to all same-digit peers.
+        // findLSB(max(waveMatch,1)) avoids undefined behaviour when
+        // waveMatch==0 (no in-range lane with this digit); fallback to lane 0,
+        // which holds 0.
+        uint first_lane = uint(findLSB(max(waveMatch, 1u)));
+        wg_base = subgroupShuffle(wg_base, first_lane);
+
+        if (in_range) {
+            uint out_addr = global_hist[pass * RADIX + digit] +
+                            s_exclusive[digit] + wg_base + rank_in_wave;
+            keys_out[out_addr] = keys[j];
+            vals_out[out_addr] = vals[j];
+        }
+    }
+}

@@ -329,6 +329,10 @@ private:
         destroy_buf(vs.sh_buf);
         destroy_buf(vs.projected_composite_buf);
         destroy_buf(vs.projected_meta_buf);
+        destroy_buf(vs.onesweep_global_hist_buf);
+        destroy_buf(vs.onesweep_partition_buf);
+        destroy_buf(vs.onesweep_partition_counter_buf);
+        destroy_buf(vs.onesweep_tail_buf);
         destroy_buf(vs.tile_counts_buf);
         destroy_buf(vs.tile_offsets_buf);
         destroy_buf(vs.tile_heads_buf);

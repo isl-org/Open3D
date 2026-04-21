@@ -84,14 +84,21 @@ struct OffscreenCtx {
     OffscreenCtx& operator=(const OffscreenCtx&) = delete;
 };
 
-// Render the canonical two-splat scene and return the resulting image.
-// The camera is placed so both splats are visible.
+// Render the canonical two-splat scene using the given sort algorithm and
+// return the resulting image.  The camera is placed so both splats are visible.
 std::shared_ptr<geometry::Image> RenderTwoSplats(
         visualization::gui::Application& app,
         const visualization::rendering::MaterialRecord& mat,
         int w,
-        int h) {
+        int h,
+        bool use_onesweep) {
     OffscreenCtx ctx(w, h);
+    auto* gs = ctx.renderer->GetGaussianSplatRenderer();
+    if (gs) {
+        auto cfg = gs->GetRenderConfig();
+        cfg.use_onesweep_sort = use_onesweep;
+        gs->SetRenderConfig(cfg);
+    }
     auto pcd = MakeTwoSplatCloud();
     ctx.scene->AddGeometry("splats", &pcd, mat, /*add_downsampled_copy=*/false);
     auto* cam = ctx.scene->GetCamera();
@@ -234,6 +241,43 @@ TEST(GaussianSplatRender, RenderToImage) {
                         "OPEN3D_TEST_GENERATE_REFERENCE=1 "
                         "to run comparison.";
     }
+}
+
+// Verify that the optimised OneSweep sort produces pixel-identical output to
+// the classical 4-pass radix sort on the same two-splat scene.  The test is
+// effectively skipped when OneSweep programs are unavailable (e.g. Windows
+// without subgroup arithmetic): the runner falls back to classical radix, so
+// both renders are identical and the comparison passes regardless.
+TEST(GaussianSplatRender, OneSweepSortMatchesRadixSort) {
+    constexpr int kW = 36;
+    constexpr int kH = 20;
+
+    auto& app = visualization::gui::Application::GetInstance();
+    app.Initialize();
+
+    visualization::rendering::MaterialRecord mat;
+    mat.shader = "gaussianSplat";
+    mat.gaussian_splat_sh_degree = 0;
+    mat.gaussian_splat_min_alpha = 0.0f;
+    mat.gaussian_splat_antialias = false;
+
+    auto classical_img =
+            RenderTwoSplats(app, mat, kW, kH, /*use_onesweep=*/false);
+    ASSERT_NE(classical_img, nullptr) << "Classical sort RenderToImage failed";
+
+    auto onesweep_img =
+            RenderTwoSplats(app, mat, kW, kH, /*use_onesweep=*/true);
+    ASSERT_NE(onesweep_img, nullptr) << "OneSweep sort RenderToImage failed";
+
+    ASSERT_EQ(onesweep_img->width_, classical_img->width_);
+    ASSERT_EQ(onesweep_img->height_, classical_img->height_);
+
+    // Allow ε=5 to tolerate fp16 rounding in center_xy.
+    t::geometry::Image classical_t =
+            t::geometry::Image::FromLegacy(*classical_img);
+    t::geometry::Image onesweep_t =
+            t::geometry::Image::FromLegacy(*onesweep_img);
+    AllCloseOrShow(classical_t.AsTensor(), onesweep_t.AsTensor(), 0.0, 5.0);
 }
 
 }  // namespace tests

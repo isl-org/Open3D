@@ -36,6 +36,9 @@ layout(local_size_x = 1) in;
 // --- Constants (must match C++ radix sort constants) ---
 #define RADIX_WG_SIZE 256u
 #define RADIX_BLOCKS_PER_WG 32u
+// OneSweep: RADIX threads × KEYS_PER_THREAD = partition size.
+// ONESWEEP_PART_SIZE must match gaussian_onesweep_digit_pass_subgroup.comp.
+#define ONESWEEP_PART_SIZE (RADIX_WG_SIZE * 16u)  // 4096
 // Stride per RadixSortParams entry in the UBO-mapped buffer.
 // Each entry is 16 bytes of useful data padded to 256 bytes
 // (= 64 uint32) to satisfy GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT.
@@ -143,6 +146,20 @@ void main() {
     WriteDispatch(8u, sort_groups, 1u, 1u);
     // [9] payload
     WriteDispatch(9u, keygen_groups, 1u, 1u);
+
+    // --- OneSweep dispatch args (indices 10-14, always emitted) ---
+    // Used only when use_onesweep_sort=true; ignored otherwise.
+    //   [10] onesweep global hist (many WGs, same count as keygen)
+    //   [11..14] onesweep digit pass 0..3 = ceil(N / ONESWEEP_PART_SIZE)
+    uint onesweep_groups = (bounded_entries == 0u)
+                                   ? 0u
+                                   : (bounded_entries + ONESWEEP_PART_SIZE -
+                                      1u) / ONESWEEP_PART_SIZE;
+    WriteDispatch(10u, keygen_groups, 1u, 1u);
+    WriteDispatch(11u, onesweep_groups, 1u, 1u);
+    WriteDispatch(12u, onesweep_groups, 1u, 1u);
+    WriteDispatch(13u, onesweep_groups, 1u, 1u);
+    WriteDispatch(14u, onesweep_groups, 1u, 1u);
 
     // --- Write RadixSortParams for each of 4 sort passes ---
     // Only g_num_elements is read by keygen/payload. All four fields are

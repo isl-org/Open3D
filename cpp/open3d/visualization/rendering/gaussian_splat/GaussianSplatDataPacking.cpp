@@ -119,8 +119,23 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
             4u, static_cast<std::size_t>(out->radix_num_wg_cap) *
                         kRadixSortBins * sizeof(std::uint32_t));
 
-    out->dispatch_args_size = 10u * 3u * sizeof(std::uint32_t);
+    // 10 radix entries + 5 OneSweep entries (always emitted by dispatch_args
+    // shader; OneSweep entries are ignored when use_onesweep_sort=false).
+    out->dispatch_args_size = 15u * 3u * sizeof(std::uint32_t);
     out->radix_params_size = 4u * kGaussianRadixParamsStride;
+
+    // OneSweep sort buffer sizes.
+    // onesweep_global_hist_buf: 4 digit passes × 256 bins × uint32 = 4 KB.
+    out->onesweep_global_hist_size = 4u * 256u * sizeof(std::uint32_t);
+    // onesweep_partition_buf: fixed circular buffer — kOneSweepCircularSize
+    // slots × 256 bins × uvec2 (8 bytes) = 1 MB, regardless of sort size.
+    // The fixed size keeps the hot lookback window in iGPU LLC even for large
+    // scenes (4M splats → 40M entries → 10 MB variable-size partition_buf
+    // without the circular buffer).
+    out->onesweep_partition_size =
+            kOneSweepCircularSize * 256u * 2u * sizeof(std::uint32_t);
+    // onesweep_tail_buf: single uint32 tail iterator.
+    out->onesweep_tail_size = sizeof(std::uint32_t);
 }
 
 // ----- PackGaussianViewParams ------------------------------------------------

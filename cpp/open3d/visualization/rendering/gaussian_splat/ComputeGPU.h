@@ -51,7 +51,11 @@ enum class ComputeProgramId : int {
     /// Merges GS linear depth (R32F) with Filament scene depth (reversed-Z)
     /// into a normalised R16UI texture for CPU readback.
     kGsDepthMerge = 9,
-    kCount = 10,
+    /// OneSweep sort — one-shot 4-digit global histogram (subgroup variant).
+    kGsOneSweepGlobalHist = 10,
+    /// OneSweep sort — per-digit binning pass with decoupled lookback.
+    kGsOneSweepDigitPass = 11,
+    kCount = 12,
 };
 
 /// Format selector for GaussianSplatGpuContext::BindImage().
@@ -71,10 +75,22 @@ constexpr const char* kGsShaderNames[] = {
         "gaussian_radix_sort_payload",
         "gaussian_compute_dispatch_args",
         "gaussian_depth_merge",
+        // OneSweep: _subgroup suffix → stripped when use_subgroups=false,
+        // so the fallback non-subgroup file would be required; since no such
+        // file exists, loading fails and onesweep_programs_valid is set false.
+        "gaussian_onesweep_global_hist_subgroup",
+        "gaussian_onesweep_digit_pass_subgroup",
 };
 static_assert(std::size(kGsShaderNames) ==
                       static_cast<std::size_t>(ComputeProgramId::kCount),
               "kGsShaderNames must match ComputeProgramId::kCount");
+
+/// First program index that belongs to the optional OneSweep sort tier.
+/// Programs [0, kGsFirstOneSweepProgram) are required (base tier).
+/// Programs [kGsFirstOneSweepProgram, kCount) are optional; failure to load
+/// disables OneSweep without affecting base rendering.
+constexpr int kGsFirstOneSweepProgram =
+        static_cast<int>(ComputeProgramId::kGsOneSweepGlobalHist);
 
 // ---------------------------------------------------------------------------
 // GPU data layout structs
@@ -106,6 +122,12 @@ struct GaussianSplatViewGpuResources {
     /// so composite reads a single contiguous struct per splat.
     std::uintptr_t projected_composite_buf = 0;  ///< binding 6,  32 B/splat
     std::uintptr_t projected_meta_buf = 0;       ///< binding 12, 16 B/splat
+    /// OneSweep sort buffers (only allocated when use_onesweep_sort=true):
+    std::uintptr_t onesweep_global_hist_buf = 0;  ///< 4×256 uint (4 KB)
+    /// Fixed 1 MB circular buffer: kOneSweepCircularSize × 256 × uvec2 (8 B).
+    std::uintptr_t onesweep_partition_buf = 0;
+    std::uintptr_t onesweep_partition_counter_buf = 0;  ///< 1 uint (4 B)
+    std::uintptr_t onesweep_tail_buf = 0;  ///< 1 uint tail iterator
     std::uintptr_t tile_counts_buf = 0;
     std::uintptr_t tile_offsets_buf = 0;
     std::uintptr_t tile_heads_buf = 0;
@@ -144,6 +166,11 @@ public:
 
     /// Load all compute programs (lazy, idempotent).
     virtual bool EnsureProgramsLoaded() = 0;
+
+    /// Returns true if the optional OneSweep programs were successfully loaded.
+    /// The base programs (EnsureProgramsLoaded) must succeed regardless.
+    /// Default: false (OneSweep unsupported on this backend).
+    virtual bool AreOneSweepProgramsLoaded() const { return false; }
 
     // --- Buffer management ------------------------------------------------
     virtual std::uintptr_t CreateBuffer(std::size_t size,
