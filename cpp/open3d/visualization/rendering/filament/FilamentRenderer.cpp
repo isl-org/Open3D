@@ -97,8 +97,7 @@ SceneHandle FilamentRenderer::CreateScene() {
 }
 
 Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
-    auto found = scenes_.find(id);
-    if (found != scenes_.end()) {
+    if (const auto found = scenes_.find(id); found != scenes_.end()) {
         return found->second.get();
     }
 
@@ -339,9 +338,8 @@ MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
     materials_modifier_->Reset();
 
-    auto instance_id = resource_mgr_.CreateMaterialInstance(id);
-
-    if (instance_id) {
+    if (auto instance_id = resource_mgr_.CreateMaterialInstance(id);
+        instance_id) {
         auto w_material_instance =
                 resource_mgr_.GetMaterialInstance(instance_id);
         materials_modifier_->Init(w_material_instance.lock(), instance_id);
@@ -358,8 +356,8 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
         const MaterialInstanceHandle& id) {
     materials_modifier_->Reset();
 
-    auto w_material_instance = resource_mgr_.GetMaterialInstance(id);
-    if (!w_material_instance.expired()) {
+    if (auto w_material_instance = resource_mgr_.GetMaterialInstance(id);
+        !w_material_instance.expired()) {
         materials_modifier_->Init(w_material_instance.lock(), id);
     } else {
         utility::LogWarning(

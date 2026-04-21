@@ -87,7 +87,12 @@ struct MaterialRecord {
     int gaussian_splat_sh_degree = 2;
 
     // Minimum splat alpha value when rendering gaussian splats.
-    float gaussian_splat_min_alpha = 0.0f;
+    /// Minimum alpha threshold for Gaussian splat CPU-side filtering in
+    /// PackGaussianSplatAttrsDirect().  Splats whose sigmoid(opacity) is below
+    /// this value are discarded at load time and never uploaded to the GPU,
+    /// removing the need for a redundant per-splat GPU alpha test.
+    /// Matches the composite pass kMinAlpha = 1/255.
+    float gaussian_splat_min_alpha = 1.0f / 255.0f;
 
     // Enable anti-aliasing density compensation for gaussian splats.
     // Multiplies each splat's opacity by sqrt(det(Sigma) / det(Sigma_blurred))

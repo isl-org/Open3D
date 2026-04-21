@@ -72,7 +72,7 @@ constexpr const char* kGsShaderNames[] = {
         "gaussian_compute_dispatch_args",
         "gaussian_depth_merge",
 };
-static_assert(sizeof(kGsShaderNames) / sizeof(kGsShaderNames[0]) ==
+static_assert(std::size(kGsShaderNames) ==
                       static_cast<std::size_t>(ComputeProgramId::kCount),
               "kGsShaderNames must match ComputeProgramId::kCount");
 
@@ -101,7 +101,11 @@ struct GaussianSplatViewGpuResources {
     std::uintptr_t rotations_buf = 0;
     std::uintptr_t dc_opacity_buf = 0;
     std::uintptr_t sh_buf = 0;
-    std::uintptr_t projected_buf = 0;
+    /// Two projected buffers replace the old 48 B/splat ProjectedGaussian.
+    /// ProjectedComposite (32 B, binding 6) includes Std430Vec4 inv_basis
+    /// so composite reads a single contiguous struct per splat.
+    std::uintptr_t projected_composite_buf = 0;  ///< binding 6,  32 B/splat
+    std::uintptr_t projected_meta_buf = 0;       ///< binding 12, 16 B/splat
     std::uintptr_t tile_counts_buf = 0;
     std::uintptr_t tile_offsets_buf = 0;
     std::uintptr_t tile_heads_buf = 0;

@@ -394,15 +394,17 @@ requires no dispatch logic updates.
 | Opt2 | Batched submission | Project + prefix + scatter in one GL session |
 | Opt3 | Half-float upload | RGBA16F staging, no float32 roundtrip |
 | Opt4 | Compact projected struct | 48 bytes (was 96) |
+| Opt4b | Split projected buffers | Old 48 B `ProjectedGaussian` split into three purpose-sized buffers: `ProjectedComposite` (16 B, binding 6 — fp16 center + depth + alpha + RGBA8), `ProjectedTileMeta` (16 B, binding 12 — sort key + tile rect), `inv_basis` vec4 (16 B, binding 13). Composite reads only bindings 6+13 = **32 B/splat** (−33%). Scatter/prefix read only binding 12 = **16 B/splat** (−67%). |
 | Opt5 | GPU-side fill/copy | `ClearGLBuffer` / copy without CPU staging |
 | Opt6 | Scene/view separation | Static packed scene data is cached across camera moves; only the 288-byte view UBO is rebuilt each frame |
 | Opt7 | Cooperative tile load | Shared-memory batch loading for the composite pass |
-| Opt8 | Early culling | Behind-camera and negligible-alpha splats rejected in projection |
+| Opt8 | Early culling | Behind-camera splats rejected in projection; sub-threshold-alpha splats filtered CPU-side by `PackGaussianSplatAttrsDirect` (`MaterialRecord::gaussian_splat_min_alpha = 1/255` default) removing redundant GPU alpha test |
 | Opt9 | GPU Stage A overlap | Geometry stage defers `glFinish()` so Filament rasterization overlaps |
 | Opt10 | Zero-copy depth | Shared GL depth texture; no CPU readback or re-upload |
 | Opt11 | No-readback radix sort | `gaussian_compute_dispatch_args.comp` writes all indirect dispatch counts and `RadixSortParams` GPU-side after prefix-sum; removes `DownloadGLBuffer` CPU stall (FW1-1). Sort buffers are pre-allocated from configured capacity; scatter dispatch still runs over `splat_count` for full parallelism. |
 | Opt12 | Async Stage A overlap | Stage A dispatches geometry + sort compute without `glFinish()`; `renderer_->beginFrame()` fires immediately after, so Stage A GPU work runs concurrently with Filament's rasterization of the same frame. On Metal, geometry and composite use separate `MTLCommandBuffer` objects that the GPU schedules independently (FW1-4). |
 | Opt13 | Compressed input buffers | `scales` (linear) and `dc_opacity` stored as fp16 (8 B/splat each, `uvec2` per splat); `rotations` as snorm8-biased uint (4 B/splat); `sh_coefficients` fp16 and degree-dependent (0/24/48 B/splat for degree 0/1/2). Total input: **36–84 B/splat** vs. the previous 160 B. GPU decodes via `unpackHalf2x16` and a 3-instruction `DecodeSnorm8` (core GLSL 4.2+, no extension). |
+| Opt14 | Composite workgroup early-exit | Shared `wg_active_count` counter decremented via `atomicAdd` when a thread saturates (`transmittance ≤ 1/4096`). When `wg_active_count == 0` (all 256 pixels in the tile saturated), the outer batch loop exits uniformly, skipping remaining `composite[]` and `inv_basis[]` reads. Preserves barrier uniformity. |
 
 ### GPU Object Labeling
 
@@ -470,7 +472,17 @@ This mirrors [gsplat PR #117](https://github.com/nerfstudio-project/gsplat/pull/
   `limits.y` = `RenderConfig::max_tiles_per_splat`.
   `limits.z` = `RenderConfig::max_tile_entries_total`.
   `depth_range_and_flags.w` = scene depth flag used by composite (0.0 = no, 1.0 = yes).
-- `ProjectedGaussian`: 48-byte per-splat descriptor (output of projection pass)
+- `ProjectedComposite`: 16-byte per-splat composite descriptor (binding 6, output of projection pass)
+  - `center_xy_fp16`: `packHalf2x16(center_x, center_y)` — absolute viewport pixel coords (fp16 step ≤ 0.5 px at 4K)
+  - `depth`: fp32 normalized linear depth (near=0, far=1)
+  - `alpha`: fp32 sigmoid-opacity × density-compensation
+  - `packed_rgba8`: RGBA8 view-dependent SH color
+- `ProjectedTileMeta`: 16-byte per-splat tile metadata (binding 12, read by prefix-sum and scatter only)
+  - `norm_depth`: fp32 depth copy used as sort key source
+  - `tile_count_overlap`: tile bbox area; 0 = culled
+  - `tile_rect_min/max`: packed `(y<<16)|x`
+- `inv_basis_data`: 16-byte fp32 vec4 per splat (binding 13, read only by composite)
+- ~~`ProjectedGaussian`~~: superseded by the three above (was 48 B, now 32 B for composite, 16 B for scatter/prefix)
 - `TileEntry`: 12-byte per tile-entry sort record (`depth_key`, `splat_index`,
   `tile_index` — linear tile index written by scatter and read by keygen).
   Radix sort is inherently stable so a separate `stable_index` field is not needed.
@@ -533,10 +545,10 @@ The same shaders work correctly on Linux (GLX) and macOS (Metal/MSL).
 Only two of the core Gaussian splat compute shaders (prefix + radix sort family) are affected — those that use
 `subgroupAdd`, `subgroupExclusiveAdd`, and `subgroupElect`:
 
-| Shader | Subgroup ops |
+| Shader | Subgroup extensions required |
 |---|---|
-| `gaussian_prefix_sum` | `subgroupAdd`, `subgroupExclusiveAdd`, `subgroupElect` |
-| `gaussian_radix_sort` | same |
+| `gaussian_prefix_sum` | `_basic` only |
+| `gaussian_radix_sort` | `_basic` only |
 
 ### Variants
 
@@ -739,6 +751,8 @@ which is why those are the chosen backends.
 | 5 | Redundant depth buffer on resize | Low | Avoid creating `depth_buffer_` in cached view when GS shared depth is active. |
 | 6 | Native Wayland (no XWayland) unsupported | Low | Unplanned: Filament does not support EGL/Wayland zero-copy texture sharing. XWayland provides full GS functionality on Wayland compositors. See FW2. |
 | 7 | Windows SPIR-V shader loading error | Medium | `gaussian_composite.comp` fails with a SPIR-V specialization error on Windows OpenGL drivers. Likely subgroup extension issue. See FW3 for details and fix options. |
+| 8 | fp16 center precision ceiling | Low | `ProjectedComposite.center_xy_fp16` encodes absolute viewport pixel coordinates as fp16. Step size ≈ 0.47 px at 3840 (4K width). For the Gaussian kernel delta `pixel - center`, both are decoded to fp32 before subtraction, so error is sub-pixel and visually imperceptible. Would require mitigation at 8K+ viewports. |
+| 9 | CPU alpha-filter post-compensation edge case | Low | `MaterialRecord::gaussian_splat_min_alpha = 1/255` filters splats CPU-side. When `antialias=true`, the density-compensation factor (≤1) can push a borderline splat's effective alpha below 1/255 in the projection shader. The composite `power < -4.0` early-out and transmittance threshold already prune such contributions; visible impact is negligible. |
 
 ---
 

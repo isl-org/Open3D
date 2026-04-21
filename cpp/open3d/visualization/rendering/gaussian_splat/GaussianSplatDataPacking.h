@@ -61,19 +61,41 @@ struct alignas(16) GaussianViewParams {
 static_assert(sizeof(GaussianViewParams) == 288,
               "GaussianViewParams must be 288 bytes to match GLSL layout");
 
-/// Matches the ProjectedGaussian struct in the compute shaders (48 bytes).
-/// Named to match the GLSL struct: `struct ProjectedGaussian` in the SSBOs.
-/// Layout (std430): vec4(16) + 4×uint(16) + vec4(16) = 48 bytes.
-struct alignas(16) ProjectedGaussian {
-    Std430Vec4 center_depth_alpha;
-    std::uint32_t packed_color;
+/// Composite-pass projected splat data (32 bytes, binding 6).
+/// Written by gaussian_project.comp, read only by gaussian_composite.comp.
+/// Layout (std430): 8×uint/float = 32 bytes (two vec4).
+///   center_xy_fp16 — packHalf2x16(center_x, center_y) in absolute viewport
+///                    pixels; fp16 step ≤ 0.5 px at 4K.
+///   depth          — normalized linear depth (near=0, far=1), fp32.
+///   alpha          — sigmoid(opacity) × density_compensation, fp32.
+///   packed_rgba8 — RGBA8-packed view-dependent SH color.
+///   inv_basis    — vec4: 2×2 inverse covariance basis (row-major), std430-
+///                  aligned to 16 B; composite reads 32 B from one buffer.
+struct alignas(16) ProjectedComposite {
+    std::uint32_t center_xy_fp16;
+    float depth;
+    float alpha;
+    std::uint32_t packed_rgba8;
+    alignas(16) Std430Vec4 inv_basis;
+};
+static_assert(sizeof(ProjectedComposite) == 32,
+              "ProjectedComposite must be 32 bytes to match GLSL layout");
+
+/// Tile-metadata projected splat data (16 bytes, binding 12).
+/// Written by gaussian_project.comp, read by gaussian_prefix_sum.comp and
+/// gaussian_scatter.comp (never by the composite pass).
+/// Layout (std430): 1×float + 3×uint = 16 bytes.
+///   norm_depth         — copy of depth; used as the sort key source.
+///   tile_count_overlap — number of tiles the splat overlaps; 0 = culled.
+///   tile_rect_min/max  — packed tile bounding box: (y<<16)|x.
+struct alignas(16) ProjectedTileMeta {
+    float norm_depth;
     std::uint32_t tile_count_overlap;
     std::uint32_t tile_rect_min;
     std::uint32_t tile_rect_max;
-    Std430Vec4 inv_basis;
 };
-static_assert(sizeof(ProjectedGaussian) == 48,
-              "ProjectedGaussian must be 48 bytes to match GLSL layout");
+static_assert(sizeof(ProjectedTileMeta) == 16,
+              "ProjectedTileMeta must be 16 bytes to match GLSL layout");
 
 /// Matches TileEntry struct in the shaders (3 × uint = 12 bytes).
 /// Named to match the GLSL struct: `struct TileEntry` in
@@ -167,7 +189,10 @@ inline constexpr std::uint32_t kGaussianRadixParamsStride = 256;
 /// Must match allocation logic in gaussian_compute_dispatch_args.comp and the
 /// radix shaders (tile cap, etc.).
 struct GaussianGpuBufferSizes {
-    std::size_t projected_size = 0;
+    /// Two projected buffers: composite (32 B, composite pass only) and
+    /// tile metadata (16 B, scatter/prefix passes only).
+    std::size_t projected_composite_size = 0;  ///< splat_count × 32 B
+    std::size_t projected_meta_size = 0;       ///< splat_count × 16 B
     std::size_t tile_scalar_size = 0;
     std::size_t entry_buf_size = 0;
     std::size_t key_cap_size = 0;
@@ -202,10 +227,10 @@ PackedGaussianScene PackGaussianViewParams(
 /// intermediate fp32 copy that was previously re-packed every scene-change
 /// frame.
 /// @param n                 Total number of splats in source
-/// @param scale_ptr         May be nullptr → zero scales (linear)
-/// @param rot_ptr           May be nullptr → identity quaternion
-/// @param f_dc_ptr          May be nullptr → zero DC color
-/// @param opacity_ptr       May be nullptr → opacity treated as zero
+/// @param scale_ptr         Non-null when n>0: linear scales (3 floats/splat).
+/// @param rot_ptr           Non-null when n>0: unit quaternion (w,x,y,z).
+/// @param f_dc_ptr          Non-null when n>0: DC SH color (3 floats/splat).
+/// @param opacity_ptr       Non-null when n>0: opacity logit (1 float/splat).
 /// @param f_rest_ptr        May be nullptr → no SH rest coefficients
 /// @param source_sh_degree  SH degree in the source `f_rest` tensor (sets
 /// stride)

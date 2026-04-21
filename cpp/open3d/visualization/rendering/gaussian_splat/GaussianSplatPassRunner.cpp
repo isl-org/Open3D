@@ -29,6 +29,24 @@ inline std::uint32_t DivUp(std::uint32_t n, std::uint32_t denom) {
     return std::max(1u, (n + denom - 1u) / denom);
 }
 
+// Byte stride between consecutive entries in the dispatch_args SSBO.
+// Each entry is 3 × uint32 (x, y, z group counts for DrawComputeIndirect).
+// Must stay in sync with WriteDispatch() in
+// gaussian_compute_dispatch_args.comp.
+constexpr std::size_t kIndirectStride = 3u * sizeof(std::uint32_t);
+
+// Named slot indices for the dispatch_args SSBO, matching the WriteDispatch()
+// calls in gaussian_compute_dispatch_args.comp.
+constexpr std::uint32_t kSlotKeygen = 0u;
+constexpr std::uint32_t kSlotRadixHist0 = 1u;     // passes 0-3 → 1-4
+constexpr std::uint32_t kSlotRadixScatter0 = 5u;  // passes 0-3 → 5-8
+constexpr std::uint32_t kSlotPayload = 9u;
+
+// Compute the byte offset of a dispatch_args slot for DispatchIndirect().
+inline std::size_t IndirectByteOffset(std::uint32_t slot) {
+    return slot * kIndirectStride;
+}
+
 /// Download the GPU error-flag counters and log new error codes once per view.
 /// Keeps a bitfield of already-warned flags to suppress repeated messages.
 void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
@@ -59,6 +77,47 @@ void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
                 "incomplete.");
     }
     vs.warned_gpu_error_flags |= new_error_flags;
+}
+
+// Run the classical 4-pass LSD radix sort and return the final source buffer
+// index (0 or 1) for the payload pass that follows.
+int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
+                          GaussianSplatViewGpuResources& vs,
+                          int src) {
+    for (std::uint32_t pass = 0; pass < 4; ++pass) {
+        const int dst = 1 - src;
+        const std::size_t params_offset = pass * kGaussianRadixParamsStride;
+
+        ctx.ClearBufferUInt32Zero(vs.histogram_buf);
+        ctx.FullBarrier();
+
+        GpuComputePass(ctx, ComputeProgramId::kGsRadixHistograms,
+                       "gs_radix_histogram")
+                .UBORange(14, vs.radix_params_buf, params_offset,
+                          sizeof(RadixSortParams))
+                .SSBO(0, vs.sort_keys_buf[src])
+                .SSBO(1, vs.histogram_buf)
+                .DispatchIndirect(vs.dispatch_args_buf,
+                                  IndirectByteOffset(kSlotRadixHist0 + pass));
+        ctx.FullBarrier();
+
+        GpuComputePass(ctx, ComputeProgramId::kGsRadixScatter,
+                       "gs_radix_scatter")
+                .UBORange(14, vs.radix_params_buf, params_offset,
+                          sizeof(RadixSortParams))
+                .SSBO(0, vs.sort_keys_buf[src])
+                .SSBO(1, vs.sort_keys_buf[dst])
+                .SSBO(2, vs.histogram_buf)
+                .SSBO(3, vs.sort_values_buf[src])
+                .SSBO(4, vs.sort_values_buf[dst])
+                .DispatchIndirect(
+                        vs.dispatch_args_buf,
+                        IndirectByteOffset(kSlotRadixScatter0 + pass));
+        ctx.FullBarrier();
+
+        src = dst;
+    }
+    return src;
 }
 
 }  // namespace
@@ -122,8 +181,14 @@ bool RunGaussianGeometryPasses(
     vs.counters_buf = ctx.ResizeBuffer(
             vs.counters_buf, kGaussianCounterCount * sizeof(std::uint32_t),
             "gs.counters");
-    vs.projected_buf = ctx.ResizePrivateBuffer(
-            vs.projected_buf, gpu_sizes.projected_size, "gs.projected");
+    // Two projected buffers replace the old 48 B/splat ProjectedGaussian:
+    // composite (32 B, inv_basis inlined) + meta (16 B).
+    vs.projected_composite_buf = ctx.ResizePrivateBuffer(
+            vs.projected_composite_buf, gpu_sizes.projected_composite_size,
+            "gs.projected_composite");
+    vs.projected_meta_buf = ctx.ResizePrivateBuffer(
+            vs.projected_meta_buf, gpu_sizes.projected_meta_size,
+            "gs.projected_meta");
     vs.tile_counts_buf = ctx.ResizePrivateBuffer(
             vs.tile_counts_buf, gpu_sizes.tile_scalar_size, "gs.tile_counts");
     vs.tile_offsets_buf = ctx.ResizePrivateBuffer(
@@ -183,7 +248,7 @@ bool RunGaussianGeometryPasses(
     // GpuComputeFrame calls BeginGeometryPass() now and EndGeometryPass() on
     // scope exit (including early returns), so the Metal encoder is always
     // committed regardless of what happens below.
-    GpuComputeFrame frame(ctx, GpuComputeFrame::kGeometry);
+    GpuComputeFrame frame(ctx, GpuComputeFrame::Kind::kGeometry);
 
     // Clear counters_buf inside the geometry pass — on Metal, Private buffers
     // require a blit encoder inside the command buffer.
@@ -192,6 +257,8 @@ bool RunGaussianGeometryPasses(
     // Pass 1: Project each Gaussian to screen space.
     // Binding 15: per-splat visibility mask (0 = cull via
     // WriteInvalidProjection).
+    // Bindings 6/12: composite (inv_basis inlined) + meta — split from old
+    // projected.
     GpuComputePass(ctx, ComputeProgramId::kGsProject, "gs_project")
             .UBO(0, vs.view_params_buf)
             .SSBO(1, vs.positions_buf)
@@ -199,15 +266,17 @@ bool RunGaussianGeometryPasses(
             .SSBO(3, vs.rotations_buf)
             .SSBO(4, vs.dc_opacity_buf)
             .SSBO(5, vs.sh_buf)
-            .SSBO(6, vs.projected_buf)
+            .SSBO(6, vs.projected_composite_buf)
+            .SSBO(12, vs.projected_meta_buf)
             .SSBO(15, vs.mask_buf)
             .Dispatch(proj_groups, 1u, 1u);
     ctx.FullBarrier();
 
     // Pass 2: Prefix-sum tile counts → per-tile offsets.
+    // Only meta (binding 12) is needed: tile_count_overlap + tile_rect_min/max.
     GpuComputePass(ctx, ComputeProgramId::kGsPrefixSum, "gs_prefix_sum")
             .UBO(0, vs.view_params_buf)
-            .SSBO(6, vs.projected_buf)
+            .SSBO(12, vs.projected_meta_buf)
             .SSBO(7, vs.tile_counts_buf)
             .SSBO(8, vs.tile_offsets_buf)
             .SSBO(9, vs.tile_heads_buf)
@@ -228,9 +297,10 @@ bool RunGaussianGeometryPasses(
     ctx.FullBarrier();
 
     // Pass 4: Scatter each splat into its tile's entry list.
+    // Only meta (binding 12) is needed: tile_count_overlap, tile_rect_*, depth.
     GpuComputePass(ctx, ComputeProgramId::kGsScatter, "gs_scatter")
             .UBO(0, vs.view_params_buf)
-            .SSBO(6, vs.projected_buf)
+            .SSBO(12, vs.projected_meta_buf)
             .SSBO(7, vs.tile_counts_buf)
             .SSBO(8, vs.tile_offsets_buf)
             .SSBO(9, vs.tile_heads_buf)
@@ -253,45 +323,14 @@ bool RunGaussianGeometryPasses(
             .SSBO(3, vs.tile_entries_buf)
             .SSBO(4, vs.sort_keys_buf[0])
             .SSBO(5, vs.sort_values_buf[0])
-            .DispatchIndirect(vs.dispatch_args_buf, 0u);
+            .DispatchIndirect(vs.dispatch_args_buf,
+                              IndirectByteOffset(kSlotKeygen));
     ctx.FullBarrier();
 
-    // Passes 6–13: 4-pass radix sort (histogram + scatter per pass).
     int src = 0;
-    for (std::uint32_t pass = 0; pass < 4; ++pass) {
-        const int dst = 1 - src;
-        const std::size_t params_offset = pass * kGaussianRadixParamsStride;
+    src = RunClassicalRadixSort(ctx, vs, src);
 
-        ctx.ClearBufferUInt32Zero(vs.histogram_buf);
-        ctx.FullBarrier();
-
-        GpuComputePass(ctx, ComputeProgramId::kGsRadixHistograms,
-                       "gs_radix_histogram")
-                .UBORange(14, vs.radix_params_buf, params_offset,
-                          sizeof(RadixSortParams))
-                .SSBO(0, vs.sort_keys_buf[src])
-                .SSBO(1, vs.histogram_buf)
-                .DispatchIndirect(vs.dispatch_args_buf,
-                                  (1u + pass) * 3u * sizeof(std::uint32_t));
-        ctx.FullBarrier();
-
-        GpuComputePass(ctx, ComputeProgramId::kGsRadixScatter,
-                       "gs_radix_scatter")
-                .UBORange(14, vs.radix_params_buf, params_offset,
-                          sizeof(RadixSortParams))
-                .SSBO(0, vs.sort_keys_buf[src])
-                .SSBO(1, vs.sort_keys_buf[dst])
-                .SSBO(2, vs.histogram_buf)
-                .SSBO(3, vs.sort_values_buf[src])
-                .SSBO(4, vs.sort_values_buf[dst])
-                .DispatchIndirect(vs.dispatch_args_buf,
-                                  (5u + pass) * 3u * sizeof(std::uint32_t));
-        ctx.FullBarrier();
-
-        src = dst;
-    }
-
-    // Pass 14: Extract splat_index from each sorted TileEntry into the compact
+    // Extract splat_index from each sorted TileEntry into the compact
     // sorted_splat_indices buffer (uint[] instead of TileEntry[]).
     GpuComputePass(ctx, ComputeProgramId::kGsRadixPayload, "gs_radix_payload")
             .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParams))
@@ -299,7 +338,7 @@ bool RunGaussianGeometryPasses(
             .SSBO(1, vs.tile_entries_buf)
             .SSBO(2, vs.sorted_splat_indices_buf)
             .DispatchIndirect(vs.dispatch_args_buf,
-                              9u * 3u * sizeof(std::uint32_t));
+                              IndirectByteOffset(kSlotPayload));
     ctx.FullBarrier();
 
 #ifndef NDEBUG
@@ -340,7 +379,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
                          kDepthFlagOffset);
     }
 
-    GpuComputeFrame frame(ctx, GpuComputeFrame::kComposite);
+    GpuComputeFrame frame(ctx, GpuComputeFrame::Kind::kComposite);
 
     const std::uint32_t w = targets.width;
     const std::uint32_t h = targets.height;
@@ -373,8 +412,10 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
         return false;
     }
 
+    // Binding 6: ProjectedComposite (32 B/splat) — inv_basis inlined, no
+    // binding 13.
     pass.UBO(0, vs.view_params_buf)
-            .SSBO(6, vs.projected_buf)
+            .SSBO(6, vs.projected_composite_buf)
             .SSBO(7, vs.tile_counts_buf)
             .SSBO(8, vs.tile_offsets_buf)
             .SSBO(11, vs.sorted_splat_indices_buf)

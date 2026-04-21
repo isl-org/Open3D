@@ -11,6 +11,7 @@
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 
@@ -39,41 +40,25 @@ int GetGaussianSplatRestCoeffCount(int sh_degree) {
     return (((sh_degree + 1) * (sh_degree + 1)) - 1) * 3;
 }
 
-// Convert one float32 to float16 bit pattern.  Typical 3DGS inputs (linear
-// scales, SH coefficients, DC/opacity) are well within the fp16 dynamic range.
-// Denormals are flushed to zero for simplicity.
-static std::uint16_t F32ToF16(float f) {
-    std::uint32_t b;
-    std::memcpy(&b, &f, sizeof(b));
-    const std::uint32_t sign = (b >> 31) & 0x1u;
-    const std::int32_t exp32 = static_cast<std::int32_t>((b >> 23) & 0xFFu);
-    const std::uint32_t mant32 = b & 0x7FFFFFu;
-    if (exp32 == 0xFF) {  // Inf or NaN
-        return static_cast<std::uint16_t>((sign << 15) | 0x7C00u |
-                                          (mant32 ? 0x200u : 0u));
-    }
-    const std::int32_t exp16 = exp32 - 127 + 15;
-    if (exp16 >= 31) {
-        return static_cast<std::uint16_t>((sign << 15) | 0x7C00u);
-    }
-    if (exp16 <= 0) {
-        return static_cast<std::uint16_t>(sign << 15);
-    }
-    return static_cast<std::uint16_t>(
-            (sign << 15) | (static_cast<std::uint32_t>(exp16) << 10) |
-            (mant32 >> 13));
+// Pack fp32 → fp16 bit patterns. Matches GLSL unpackHalf2x16() (lo bits 0–15,
+// hi bits 16–31). Eigen::half uses round-to-nearest-even; .x is raw uint16.
+inline std::uint32_t HalfPair(float lo, float hi) {
+    return static_cast<std::uint32_t>(Eigen::half(lo).x) |
+           (static_cast<std::uint32_t>(Eigen::half(hi).x) << 16u);
 }
 
-// Pack two fp32 values as fp16 into one uint32 (lo in bits 0-15, hi in 16-31).
-// Matches the bit layout read by GLSL unpackHalf2x16().
-static std::uint32_t PackHalf2(float lo, float hi) {
-    return static_cast<std::uint32_t>(F32ToF16(lo)) |
-           (static_cast<std::uint32_t>(F32ToF16(hi)) << 16);
+// Four floats → two u32 (two half2), e.g. linear scales (sx,sy,sz,0) or
+// DC+opacity (r,g,b,opacity_logit).
+inline std::array<std::uint32_t, 2> PackHalf4(float x,
+                                              float y,
+                                              float z,
+                                              float w) {
+    return {{HalfPair(x, y), HalfPair(z, w)}};
 }
 
 // Encode a float in [-1, 1] as a biased uint8 (stored value =
 // int8(round(f*127)) + 128). GPU decode: (float(byte) - 128.0) / 127.0.
-static std::uint8_t EncodeSnorm8(float f) {
+std::uint8_t EncodeSnorm8(float f) {
     const float clamped = std::max(-1.0f, std::min(1.0f, f));
     const auto q = static_cast<std::int8_t>(
             static_cast<int>(std::round(clamped * 127.0f)));
@@ -82,7 +67,7 @@ static std::uint8_t EncodeSnorm8(float f) {
 
 // Pack quaternion components (w, x, y, z) as 4 biased snorm8 values into one
 // uint32 (w in bits 0-7, x in 8-15, y in 16-23, z in 24-31).
-static std::uint32_t PackSnorm8x4(float w, float x, float y, float z) {
+std::uint32_t PackSnorm8x4(float w, float x, float y, float z) {
     return static_cast<std::uint32_t>(EncodeSnorm8(w)) |
            (static_cast<std::uint32_t>(EncodeSnorm8(x)) << 8) |
            (static_cast<std::uint32_t>(EncodeSnorm8(y)) << 16) |
@@ -106,7 +91,11 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
     if (!out || !packed.valid) {
         return;
     }
-    out->projected_size = packed.splat_count * sizeof(ProjectedGaussian);
+    // ProjectedComposite (32 B): Std430Vec4 inv_basis matches GLSL vec4.
+    // so one buffer covers all composite-pass per-splat data.
+    out->projected_composite_size =
+            packed.splat_count * sizeof(ProjectedComposite);
+    out->projected_meta_size = packed.splat_count * sizeof(ProjectedTileMeta);
     out->tile_scalar_size = packed.tile_count * sizeof(std::uint32_t);
 
     out->entries_capacity =
@@ -160,48 +149,44 @@ PackedGaussianScene PackGaussianViewParams(
     auto& vp = packed.view_params;
     std::memset(&vp, 0, sizeof(vp));
 
-    const std::uint64_t entry_budget =
+    const auto entry_budget =
             static_cast<std::uint64_t>(n) * config.max_tiles_per_splat;
-    const std::uint32_t entry_capacity = static_cast<std::uint32_t>(std::min(
+    const auto entry_capacity = static_cast<std::uint32_t>(std::min(
             entry_budget,
             static_cast<std::uint64_t>(config.max_tile_entries_total)));
 
-    // world_from_model: geometry model-to-world transform.
-    // Gaussian splat positions are already in world space, so this is identity.
-    // Note: render_data.model_matrix is the CAMERA's model matrix (camera-to-
-    // world), which must NOT be used here.
-    Eigen::Matrix4f model_f = Eigen::Matrix4f::Identity();
-    Eigen::Matrix4f view_f = render_data.view_matrix.matrix().cast<float>();
-    Eigen::Matrix4f proj_f = render_data.projection_matrix.matrix();
-    PackMat4(vp.world_from_model, model_f);
-    PackMat4(vp.view_from_world, view_f);
-    PackMat4(vp.clip_from_view, proj_f);
+    // world_from_model: splat positions are in world space → identity.
+    // render_data.model_matrix is the camera rig; do not use it here.
+    PackMat4(vp.world_from_model, Eigen::Matrix4f::Identity());
+    PackMat4(vp.view_from_world,
+             render_data.view_matrix.matrix().cast<float>());
+    PackMat4(vp.clip_from_view, render_data.projection_matrix.matrix());
 
-    vp.camera_position_and_near[0] = render_data.camera_position.x();
-    vp.camera_position_and_near[1] = render_data.camera_position.y();
-    vp.camera_position_and_near[2] = render_data.camera_position.z();
-    vp.camera_position_and_near[3] = static_cast<float>(render_data.near_plane);
+    const std::array<float, 4> cam_pn{
+            render_data.camera_position.x(), render_data.camera_position.y(),
+            render_data.camera_position.z(),
+            static_cast<float>(render_data.near_plane)};
+    std::memcpy(vp.camera_position_and_near, cam_pn.data(), sizeof(cam_pn));
 
-    vp.viewport_origin_and_size[0] =
-            static_cast<float>(render_data.viewport_origin.x());
-    vp.viewport_origin_and_size[1] =
-            static_cast<float>(render_data.viewport_origin.y());
-    vp.viewport_origin_and_size[2] = static_cast<float>(w);
-    vp.viewport_origin_and_size[3] = static_cast<float>(h);
+    const std::array<float, 4> vp_origin_size{
+            static_cast<float>(render_data.viewport_origin.x()),
+            static_cast<float>(render_data.viewport_origin.y()),
+            static_cast<float>(w), static_cast<float>(h)};
+    std::memcpy(vp.viewport_origin_and_size, vp_origin_size.data(),
+                sizeof(vp_origin_size));
 
     const int effective_sh_degree =
             std::min(attrs.sh_degree, config.max_sh_degree);
-    vp.scene[0] = n;
-    vp.scene[1] = static_cast<std::uint32_t>(effective_sh_degree);
-    // Antialias: enabled if requested by the material (per-scene) or the
-    // renderer-level RenderConfig override.
-    vp.scene[2] = (attrs.antialias || config.antialias) ? 1u : 0u;
-    vp.scene[3] = render_data.screen_y_down ? 1u : 0u;
+    const std::array<std::uint32_t, 4> scene_u{
+            n, static_cast<std::uint32_t>(effective_sh_degree),
+            (attrs.antialias || config.antialias) ? 1u : 0u,
+            render_data.screen_y_down ? 1u : 0u};
+    std::memcpy(vp.scene, scene_u.data(), sizeof(scene_u));
 
-    vp.tiles[0] = static_cast<std::uint32_t>(tx);
-    vp.tiles[1] = static_cast<std::uint32_t>(ty);
-    vp.tiles[2] = static_cast<std::uint32_t>(tcx);
-    vp.tiles[3] = static_cast<std::uint32_t>(tcy);
+    const std::array<std::uint32_t, 4> tiles_u{
+            static_cast<std::uint32_t>(tx), static_cast<std::uint32_t>(ty),
+            static_cast<std::uint32_t>(tcx), static_cast<std::uint32_t>(tcy)};
+    std::memcpy(vp.tiles, tiles_u.data(), sizeof(tiles_u));
 
     vp.limits[0] = entry_capacity;
     vp.limits[1] = config.max_tiles_per_splat;
@@ -218,10 +203,10 @@ PackedGaussianScene PackGaussianViewParams(
     }
     vp.limits[3] = std::clamp(tile_key_bits, 1u, 31u);
 
-    vp.depth_range_and_flags[0] = static_cast<float>(render_data.near_plane);
-    vp.depth_range_and_flags[1] = static_cast<float>(render_data.far_plane);
-    vp.depth_range_and_flags[2] = 0.0f;  // reserved
-    vp.depth_range_and_flags[3] = 0.0f;
+    const std::array<float, 4> depth_rng{
+            static_cast<float>(render_data.near_plane),
+            static_cast<float>(render_data.far_plane), 0.f, 0.f};
+    std::memcpy(vp.depth_range_and_flags, depth_rng.data(), sizeof(depth_rng));
 
     packed.splat_count = n;
     packed.tile_count = static_cast<std::uint32_t>(tcx * tcy);
@@ -246,14 +231,21 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
                                   GaussianSplatPackedAttrs& out) {
     // Pack all per-splat attributes into GPU-ready fp16/snorm8 arrays in a
     // single pass, filtering below-threshold splats to keep upload small.
+    // scale_ptr, rot_ptr, f_dc_ptr, opacity_ptr must be non-null when n>0
+    // (FilamentScene rejects clouds missing any of these). f_rest_ptr is
+    // optional. For n==0, pointers are unused (empty std::vector::data() may be
+    // nullptr).
     out = GaussianSplatPackedAttrs{};
     out.sh_degree = desired_sh_degree;
     out.antialias = antialias;
+    if (n == 0) {
+        out.visibility_mask.assign(0, 0u);
+        return;
+    }
+    if (!pts_ptr || !scale_ptr || !rot_ptr || !f_dc_ptr || !opacity_ptr) {
+        return;
+    }
 
-    // Determine SH rest-coefficient counts and packed stride.
-    // source_coeffs: stride in f_rest_ptr per source splat.
-    // desired_coeffs: how many coefficients to pack per output splat.
-    // sh_u32_per_splat: packed u32 count per splat (= 3 * degree * 2).
     int source_coeffs = 0;
     int desired_coeffs = 0;
     int sh_u32_per_splat = 0;
@@ -263,7 +255,6 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
         sh_u32_per_splat = 3 * desired_sh_degree * 2;
     }
 
-    // Reserve upper bound; actual count may be lower after opacity filtering.
     out.positions.reserve(n);
     out.scales.reserve(2 * n);
     out.rotations.reserve(n);
@@ -274,63 +265,36 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
     }
 
     for (std::size_t i = 0; i < n; ++i) {
-        // Filter: skip splats below the opacity threshold.
-        const float opacity = opacity_ptr[i];
-        if (opacity < min_opacity_logit) continue;
+        if (const float opacity = opacity_ptr[i]; opacity < min_opacity_logit) {
+            continue;
+        }
 
-        // Position: fp32 vec4 (w=0 padding for std430 alignment).
         out.positions.push_back({pts_ptr[i * 3 + 0], pts_ptr[i * 3 + 1],
                                  pts_ptr[i * 3 + 2], 0.f});
 
-        // Linear scales: two fp16 pairs packed into uvec2 (8 B/splat).
-        // scale_ptr holds linear values (exp already applied by the caller).
-        if (scale_ptr) {
-            out.scales.push_back(
-                    PackHalf2(scale_ptr[i * 3 + 0], scale_ptr[i * 3 + 1]));
-            out.scales.push_back(PackHalf2(scale_ptr[i * 3 + 2], 0.0f));
-        } else {
-            out.scales.push_back(PackHalf2(0.f, 0.f));
-            out.scales.push_back(PackHalf2(0.f, 0.f));
-        }
+        const auto sc = PackHalf4(scale_ptr[i * 3 + 0], scale_ptr[i * 3 + 1],
+                                  scale_ptr[i * 3 + 2], 0.f);
+        out.scales.insert(out.scales.end(), sc.begin(), sc.end());
 
-        // Rotation quaternion: snorm8-biased ×4 packed into one u32 (4
-        // B/splat).
-        if (rot_ptr) {
-            out.rotations.push_back(
-                    PackSnorm8x4(rot_ptr[i * 4 + 0], rot_ptr[i * 4 + 1],
-                                 rot_ptr[i * 4 + 2], rot_ptr[i * 4 + 3]));
-        } else {
-            // Identity quaternion (w=1, x=y=z=0).
-            out.rotations.push_back(PackSnorm8x4(1.f, 0.f, 0.f, 0.f));
-        }
+        out.rotations.push_back(
+                PackSnorm8x4(rot_ptr[i * 4 + 0], rot_ptr[i * 4 + 1],
+                             rot_ptr[i * 4 + 2], rot_ptr[i * 4 + 3]));
 
-        // DC color + opacity: two fp16 pairs packed into uvec2 (8 B/splat).
-        if (f_dc_ptr && opacity_ptr) {
-            out.dc_opacity.push_back(
-                    PackHalf2(f_dc_ptr[i * 3 + 0], f_dc_ptr[i * 3 + 1]));
-            out.dc_opacity.push_back(
-                    PackHalf2(f_dc_ptr[i * 3 + 2], opacity_ptr[i]));
-        } else {
-            out.dc_opacity.push_back(PackHalf2(0.f, 0.f));
-            out.dc_opacity.push_back(PackHalf2(0.f, 0.f));
-        }
+        const auto dc = PackHalf4(f_dc_ptr[i * 3 + 0], f_dc_ptr[i * 3 + 1],
+                                  f_dc_ptr[i * 3 + 2], opacity_ptr[i]);
+        out.dc_opacity.insert(out.dc_opacity.end(), dc.begin(), dc.end());
 
-        // SH rest coefficients: fp16 pairs packed into uvec2 array.
-        // Packs exactly sh_u32_per_splat u32s (including zero padding) so the
-        // buffer has uniform stride for GPU indexing.
         if (sh_u32_per_splat > 0 && f_rest_ptr) {
             const float* src = f_rest_ptr + i * source_coeffs;
             const int pairs = desired_coeffs / 2;
             for (int p = 0; p < pairs; ++p) {
                 out.sh_coefficients.push_back(
-                        PackHalf2(src[p * 2 + 0], src[p * 2 + 1]));
+                        HalfPair(src[p * 2 + 0], src[p * 2 + 1]));
             }
-            // Odd trailing coefficient (degree-1 has 9 coefficients).
             if (desired_coeffs & 1) {
                 out.sh_coefficients.push_back(
-                        PackHalf2(src[desired_coeffs - 1], 0.0f));
+                        HalfPair(src[desired_coeffs - 1], 0.f));
             }
-            // Zero-pad remaining u32 slots to maintain uniform stride.
             const int packed_u32s = (desired_coeffs + 1) / 2;
             for (int p = packed_u32s; p < sh_u32_per_splat; ++p) {
                 out.sh_coefficients.push_back(0u);

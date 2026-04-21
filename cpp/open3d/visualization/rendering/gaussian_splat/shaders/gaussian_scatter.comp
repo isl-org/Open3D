@@ -7,26 +7,24 @@
 
 // Gaussian splat tile scatter pass.
 //
-// This pass expands the projected splat descriptors into compact tile-local
+// This pass expands the projected tile metadata into compact tile-local
 // entry lists that can be sorted and composited without revisiting the full
-// input attribute buffers.
-//
-// Opt4: Updated ProjectedGaussian struct (48 bytes).
+// input attribute buffers.  Reads ProjectedTileMeta (binding 12, 16 B/splat)
+// instead of the old 48 B ProjectedGaussian (−67% bandwidth for this pass).
 
 #version 460
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
-#define GS_ERROR_TILE_ENTRY_OVERFLOW (1u << 0)
+const uint GS_ERROR_TILE_ENTRY_OVERFLOW = (1u << 0);
 
-// 48-byte projected splat descriptor (matches gaussian_project output).
-struct ProjectedGaussian {
-    vec4 center_depth_alpha;
-    uint packed_color;
+// Tile-metadata per-splat descriptor (16 B, binding 12).
+// Written by gaussian_project.comp; only these fields are needed here.
+struct ProjectedTileMeta {
+    float norm_depth;
     uint tile_count_overlap;
     uint tile_rect_min;
     uint tile_rect_max;
-    vec4 inv_basis;
 };
 
 struct TileEntry {
@@ -48,8 +46,8 @@ layout(std140, binding = 0) uniform GaussianViewParams {
 }
 view_params;
 
-layout(std430, binding = 6) readonly buffer ProjectedGaussians {
-    ProjectedGaussian projected[];
+layout(std430, binding = 12) readonly buffer ProjectedTileMetas {
+    ProjectedTileMeta meta[];
 };
 
 layout(std430, binding = 8) readonly buffer TileOffsets {
@@ -93,14 +91,13 @@ uvec2 UnpackTileCoord(uint pkd_tile_coord) {
 uint GetEntryCapacity() { return view_params.limits.x; }
 
 void ScatterGaussian(uint splat_index) {
-    if (projected[splat_index].tile_count_overlap == 0u) {
+    if (meta[splat_index].tile_count_overlap == 0u) {
         return;
     }
 
-    uvec2 tile_min = UnpackTileCoord(projected[splat_index].tile_rect_min);
-    uvec2 tile_max = UnpackTileCoord(projected[splat_index].tile_rect_max);
-    uint depth_key =
-            DepthToSortableKey(projected[splat_index].center_depth_alpha.z);
+    uvec2 tile_min = UnpackTileCoord(meta[splat_index].tile_rect_min);
+    uvec2 tile_max = UnpackTileCoord(meta[splat_index].tile_rect_max);
+    uint depth_key = DepthToSortableKey(meta[splat_index].norm_depth);
 
     for (uint tile_y = tile_min.y; tile_y <= tile_max.y; ++tile_y) {
         for (uint tile_x = tile_min.x; tile_x <= tile_max.x; ++tile_x) {

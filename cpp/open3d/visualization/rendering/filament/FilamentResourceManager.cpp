@@ -105,8 +105,7 @@ template <class ResourceType>
 std::weak_ptr<ResourceType> FindResource(
         const REHandle_abstract& id,
         ResourcesContainer<ResourceType>& container) {
-    auto found = container.find(id);
-    if (found != container.end()) {
+    if (auto found = container.find(id); found != container.end()) {
         return found->second.ptr;
     }
 
@@ -154,14 +153,17 @@ std::intptr_t RetainImageForLoading(
     return id;
 }
 
-static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+void DeallocateBuffer(void* buffer,
+                      [[maybe_unused]] size_t size,
+                      [[maybe_unused]] void* user_ptr) {
     free(buffer);
 }
 
-void FreeRetainedImage(void* buffer, size_t size, void* user_ptr) {
+void FreeRetainedImage([[maybe_unused]] void* buffer,
+                       [[maybe_unused]] size_t size,
+                       void* user_ptr) {
     const auto id = reinterpret_cast<std::intptr_t>(user_ptr);
-    auto found = pending_images.find(id);
-    if (found != pending_images.end()) {
+    if (auto found = pending_images.find(id); found != pending_images.end()) {
         pending_images.erase(found);
     } else {
         utility::LogDebug(

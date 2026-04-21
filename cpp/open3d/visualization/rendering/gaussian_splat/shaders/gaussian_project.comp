@@ -8,31 +8,44 @@
 // Gaussian splat projection pass.
 //
 // This pass reconstructs the anisotropic Gaussian in screen space, evaluates
-// the view-dependent SH color once per splat, and stores a compact projected
-// descriptor for the later tile passes.
+// the view-dependent SH color once per splat, and writes three output SSBOs:
 //
-// Opt4: Compact ProjectedGaussian — 48 bytes (was 96).
-//       Removed axis_basis, packed color as RGBA8 uint, merged
-//       tile_rect/metadata into 4 scalars.
-// Opt8: Early cull: behind-camera and negligible-alpha reject before
-//       expensive covariance/SH math.  NDC frustum cull removed because
-//       splat screen-space extent is unknown before covariance projection;
-//       per-tile bounding-box cull handles frustum clipping correctly.
+//   binding 6  — ProjectedComposite (32 B): center, depth, alpha, RGBA8,
+//                vec4 inv_basis. Read only by gaussian_composite.comp.
+//   binding 12 — ProjectedTileMeta (16 B): norm_depth, tile overlap/rect.
+//                Read only by gaussian_prefix_sum.comp and gaussian_scatter.comp.
+//
+// Splitting the old 48 B ProjectedGaussian into two 16 B structs reduces
+// per-splat read bandwidth by 33% in the composite pass and 67% in scatter/
+// prefix, at no cost to the project pass (total write bytes are unchanged).
+//
+// CPU-side alpha filtering (PackGaussianSplatAttrsDirect) already culls splats
+// below kMinAlpha at load time, so the shader alpha test is removed.
+//
+// Opt4→Opt4b: Composite 16 B (was 48 B), scatter/prefix meta 16 B.
+// Opt8: Early cull: behind-camera rejects before expensive covariance/SH math.
 
 #version 460
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
-// 48-byte projected splat descriptor (std430):
-//   vec4(16) + 4×uint(16) + vec4(16) = 48 bytes.
-struct ProjectedGaussian {
-    vec4 center_depth_alpha;  // xy=pixel center, z=normalized linear depth
-                              //   (near=0, far=1), w=alpha
-    uint packed_color;        // RGBA8 packed color
-    uint tile_count_overlap;  // tile overlap count; 0 = culled/invalid
-    uint tile_rect_min;       // packed: (tile_min.y << 16) | tile_min.x
-    uint tile_rect_max;       // packed: (tile_max.y << 16) | tile_max.x
-    vec4 inv_basis;           // 2×2 inverse basis matrix for Gaussian eval
+// Composite-pass output: fp16 center + fp32 depth/alpha + RGBA8 + vec4 inv_basis
+// (32 B). Inlining inv_basis avoids a separate SSBO lookup in the composite
+// cooperative load — one 32 B fetch instead of two 16 B fetches.
+struct ProjectedComposite {
+    uint center_xy_fp16;  // packHalf2x16(center_x, center_y) viewport pixels
+    float depth;          // normalized linear depth (near=0, far=1)
+    float alpha;          // sigmoid(opacity) × density_compensation
+    uint packed_rgba8;    // RGBA8 view-dependent color
+    vec4 inv_basis;       // 2×2 inverse covariance basis (row-major), 16 B align
+};
+
+// Tile-metadata output: used only by prefix-sum and scatter (16 B).
+struct ProjectedTileMeta {
+    float norm_depth;         // copy of depth; sort key source
+    uint tile_count_overlap;  // tile bbox area; 0 = culled/invalid
+    uint tile_rect_min;       // (tile_min.y << 16) | tile_min.x
+    uint tile_rect_max;       // (tile_max.y << 16) | tile_max.x
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
@@ -74,9 +87,17 @@ layout(std430, binding = 5) readonly buffer GaussianShCoefficients {
     uvec2 sh_coeffs[];
 };
 
-layout(std430, binding = 6) writeonly buffer ProjectedGaussians {
-    ProjectedGaussian projected[];
+layout(std430, binding = 6) writeonly buffer ProjectedComposites {
+    ProjectedComposite composite[];
 };
+
+// Tile metadata: read by prefix-sum and scatter, not by composite.
+layout(std430, binding = 12) writeonly buffer ProjectedTileMetas {
+    ProjectedTileMeta meta[];
+};
+
+// inv_basis is now a field inside ProjectedComposite (see binding 6 above).
+// No separate binding 13 for inv_basis.
 
 // Bit-packed per-splat visibility mask written by the CPU (via ShowGeometry).
 // bit k of word (k/32): 1 = render splat k, 0 = cull (write dead projection
@@ -250,12 +271,10 @@ vec3 EvaluateShColor(uint splat_index, vec3 view_dir, vec4 dc) {
 }
 
 void WriteInvalidProjection(uint splat_index) {
-    projected[splat_index].center_depth_alpha = vec4(0.0);
-    projected[splat_index].packed_color = 0u;
-    projected[splat_index].tile_count_overlap = 0u;
-    projected[splat_index].tile_rect_min = 0u;
-    projected[splat_index].tile_rect_max = 0u;
-    projected[splat_index].inv_basis = vec4(0.0);
+    // Only tile_count_overlap == 0 needs to be written; downstream passes
+    // (prefix-sum, scatter) gate all work on this field and never read the rest
+    // of a culled splat's data.
+    meta[splat_index].tile_count_overlap = 0u;
 }
 
 void ProjectGaussian(uint splat_index) {
@@ -276,14 +295,17 @@ void ProjectGaussian(uint splat_index) {
     vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
     vec4 clip_center = view_params.clip_from_view * view_center;
 
-    // Opt8: Early reject — behind camera outside [near, far] or negligible
-    // alpha. dc is loaded once here and reused in EvaluateShColor() to avoid a
-    // second LoadDcOpacity() call.
+    // Early reject: behind camera or outside [near, far].
+    // Sub-threshold alpha splats are already filtered CPU-side by
+    // PackGaussianSplatAttrsDirect() (MaterialRecord.gaussian_splat_min_alpha
+    // = 1/255 by default), so no redundant GPU alpha test is needed here.
+    // dc is loaded once and reused in EvaluateShColor() to avoid a second
+    // LoadDcOpacity() call.
     float near = view_params.depth_range_and_flags.x;
     float far = view_params.depth_range_and_flags.y;
     vec4 dc = LoadDcOpacity(splat_index);
     float alpha = Sigmoid(dc.w);
-    if (alpha <= kMinAlpha || clip_center.w <= 0.0 || view_center.z >= -near ||
+    if (clip_center.w <= 0.0 || view_center.z >= -near ||
         view_center.z <= -far) {
         WriteInvalidProjection(splat_index);
         return;
@@ -431,14 +453,20 @@ void ProjectGaussian(uint splat_index) {
     // already culled above, so the result is always in [0, 1].
     float norm_depth = (-view_center.z - near) / (far - near);
 
-    projected[splat_index].center_depth_alpha =
-            vec4(center_pixel, norm_depth, alpha);
-    projected[splat_index].packed_color =
+    // Composite buffer (binding 6): all composite-pass data in one 32 B struct.
+    // Inlining inv_basis avoids a second SSBO fetch in the composite pass.
+    composite[splat_index].center_xy_fp16 = packHalf2x16(center_pixel);
+    composite[splat_index].depth = norm_depth;
+    composite[splat_index].alpha = alpha;
+    composite[splat_index].packed_rgba8 =
             PackColorRGBA8(EvaluateShColor(splat_index, view_dir, dc));
-    projected[splat_index].tile_count_overlap = tile_overlap_count;
-    projected[splat_index].tile_rect_min = PackTileCoord(tile_min);
-    projected[splat_index].tile_rect_max = PackTileCoord(tile_max);
-    projected[splat_index].inv_basis = inv_basis;
+    composite[splat_index].inv_basis = inv_basis;
+
+    // Tile-meta buffer (binding 12): sort key source + tile bounding box.
+    meta[splat_index].norm_depth = norm_depth;
+    meta[splat_index].tile_count_overlap = tile_overlap_count;
+    meta[splat_index].tile_rect_min = PackTileCoord(tile_min);
+    meta[splat_index].tile_rect_max = PackTileCoord(tile_max);
 }
 
 void main() {

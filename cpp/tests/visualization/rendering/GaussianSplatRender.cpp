@@ -70,14 +70,13 @@ struct OffscreenCtx {
 
     OffscreenCtx(int w, int h) {
         using namespace visualization::rendering;
-        renderer = new FilamentRenderer(EngineInstance::GetInstance(), w, h,
-                                        EngineInstance::GetResourceManager());
-        scene = new Open3DScene(*renderer);
+        renderer = std::make_unique<FilamentRenderer>(
+                EngineInstance::GetInstance(), w, h,
+                EngineInstance::GetResourceManager());
+        scene = std::make_unique<Open3DScene>(*renderer);
     }
 
     ~OffscreenCtx() {
-        delete scene;
-        delete renderer;
         visualization::rendering::EngineInstance::DestroyInstance();
     }
 
@@ -85,10 +84,31 @@ struct OffscreenCtx {
     OffscreenCtx& operator=(const OffscreenCtx&) = delete;
 };
 
+// Render the canonical two-splat scene and return the resulting image.
+// The camera is placed so both splats are visible.
+std::shared_ptr<geometry::Image> RenderTwoSplats(
+        visualization::gui::Application& app,
+        const visualization::rendering::MaterialRecord& mat,
+        int w,
+        int h) {
+    OffscreenCtx ctx(w, h);
+    auto pcd = MakeTwoSplatCloud();
+    ctx.scene->AddGeometry("splats", &pcd, mat, /*add_downsampled_copy=*/false);
+    auto* cam = ctx.scene->GetCamera();
+    cam->LookAt(Eigen::Vector3f(0.5f, 0.0f, -2.0f),
+                Eigen::Vector3f(0.5f, 0.0f, 0.0f),
+                Eigen::Vector3f(0.0f, 1.0f, 0.0f));
+    cam->SetProjection(60.0, static_cast<double>(w) / h, 0.01, 100.0,
+                       visualization::rendering::Camera::FovType::Vertical);
+    return app.RenderToImage(*ctx.renderer, ctx.scene->GetView(),
+                             ctx.scene->GetScene(), w, h);
+}
+
 }  // namespace
 
 TEST(GaussianSplatRender, RenderToImage) {
-    constexpr int kW = 36, kH = 20;
+    constexpr int kW = 36;
+    constexpr int kH = 20;
 
     const std::string ref_path = RenderToImageReferencePngPath();
     const std::string ref_depth_path = RenderToImageReferencePngPath(true);

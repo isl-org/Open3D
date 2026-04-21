@@ -18,7 +18,8 @@
 //   the runtime subgroup count.
 //
 // Opt2: Parallel prefix sum replaces thread-0-only sequential scan.
-// Opt4: Updated ProjectedGaussian struct (48 bytes).
+// Opt4b: Reads ProjectedTileMeta (16 B, binding 12) instead of the old 48 B
+//        ProjectedGaussian — 67% bandwidth reduction for this pass.
 // Opt8: 2-level subgroup prefix sum replaces serial thread-0 scan.
 
 #version 460
@@ -29,14 +30,13 @@
 
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
-// 48-byte projected splat descriptor (matches gaussian_project output).
-struct ProjectedGaussian {
-    vec4 center_depth_alpha;
-    uint packed_color;
+// Tile-metadata per-splat descriptor (16 B, binding 12).
+// Written by gaussian_project.comp; only these fields are needed here.
+struct ProjectedTileMeta {
+    float norm_depth;
     uint tile_count_overlap;
     uint tile_rect_min;
     uint tile_rect_max;
-    vec4 inv_basis;
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
@@ -52,8 +52,8 @@ layout(std140, binding = 0) uniform GaussianViewParams {
 }
 view_params;
 
-layout(std430, binding = 6) readonly buffer ProjectedGaussians {
-    ProjectedGaussian projected[];
+layout(std430, binding = 12) readonly buffer ProjectedTileMetas {
+    ProjectedTileMeta meta[];
 };
 
 layout(std430, binding = 7) buffer TileCounts { uint tile_counts[]; };
@@ -122,11 +122,11 @@ void main() {
     // Phase 1 (all threads): count per-tile splat overlaps.
     for (uint splat_index = global_index; splat_index < splat_count;
          splat_index += total_invocations) {
-        if (projected[splat_index].tile_count_overlap == 0u) {
+        if (meta[splat_index].tile_count_overlap == 0u) {
             continue;
         }
-        uvec2 tile_min = UnpackTileCoord(projected[splat_index].tile_rect_min);
-        uvec2 tile_max = UnpackTileCoord(projected[splat_index].tile_rect_max);
+        uvec2 tile_min = UnpackTileCoord(meta[splat_index].tile_rect_min);
+        uvec2 tile_max = UnpackTileCoord(meta[splat_index].tile_rect_max);
         for (uint tile_y = tile_min.y; tile_y <= tile_max.y; ++tile_y) {
             for (uint tile_x = tile_min.x; tile_x <= tile_max.x; ++tile_x) {
                 uint tile_index = LinearTileIndex(uvec2(tile_x, tile_y));

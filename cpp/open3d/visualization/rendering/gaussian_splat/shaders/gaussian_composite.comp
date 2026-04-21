@@ -23,7 +23,9 @@
 // Opt1: Zero-copy output — the VkImage written here is imported directly
 //       into Filament via Texture::Builder::import(), eliminating the
 //       staging-buffer round-trip.
-// Opt4: Updated ProjectedGaussian struct (48 bytes).
+// Opt4b: ProjectedComposite (32 B, binding 6) packs center/depth/alpha/color
+//        and inv_basis into one struct — one 32 B SSBO fetch per splat instead
+//        of two 16 B fetches from separate buffers, halving L2 cache lookups.
 // Opt7: Shared-memory cooperative tile loading — the workgroup loads batches
 //       of splat data into shared memory, then all 256 threads evaluate from
 //       shared memory instead of 256 independent global reads.
@@ -35,14 +37,16 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-// 48-byte projected splat descriptor (matches gaussian_project output).
-struct ProjectedGaussian {
-    vec4 center_depth_alpha;
-    uint packed_color;
-    uint tile_count_overlap;
-    uint tile_rect_min;
-    uint tile_rect_max;
-    vec4 inv_basis;
+// Composite-pass projected data (32 B, binding 6).
+// All fields needed by the composite pass are packed into a single struct so
+// the cooperative load issues one 32 B SSBO read per splat instead of two
+// separate reads from binding 6 and a former binding 13.
+struct ProjectedComposite {
+    uint center_xy_fp16;  // packHalf2x16(center_x, center_y) viewport pixels
+    float depth;
+    float alpha;
+    uint packed_rgba8;
+    vec4 inv_basis;  // 2×2 inverse covariance basis, row-major
 };
 
 layout(std140, binding = 0) uniform GaussianViewParams {
@@ -58,9 +62,11 @@ layout(std140, binding = 0) uniform GaussianViewParams {
 }
 view_params;
 
-layout(std430, binding = 6) readonly buffer ProjectedGaussians {
-    ProjectedGaussian projected[];
+layout(std430, binding = 6) readonly buffer ProjectedComposites {
+    ProjectedComposite composite[];
 };
+
+// inv_basis is now inlined in ProjectedComposite (binding 6); no binding 13.
 
 layout(std430, binding = 7) readonly buffer TileCounts { uint tile_counts[]; };
 
@@ -137,8 +143,18 @@ shared vec4 s_inv_basis[BATCH_SIZE];
 // number of batches and hit every barrier()).
 shared uint wg_tile_count;
 shared uint wg_tile_offset;
+// Counts how many pixels in this workgroup are still not saturated.
+// When it reaches zero the outer batch loop exits early for the whole WG,
+// skipping composite[] / inv_basis[] reads for all remaining batches.
+shared uint wg_active_count;
 
 void main() {
+    const float kSurfaceThreshold =
+            0.5;  // Declare surface when transmittance hits this value.
+    const float kMinTransmittance =
+            1.0 /
+            4096.0;  // Stop compositing when transmittance hits this value.
+
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 viewport_size = GetViewportSize();
     // All threads must participate in barrier() calls below, so we cannot
@@ -154,12 +170,14 @@ void main() {
 
     // Broadcast from thread 0 so every thread in the workgroup iterates
     // the same number of batches (required for uniform barrier() calls).
+    // Initialize wg_active_count = 256 (all threads potentially active).
     if (local_index == 0u) {
         uint entry_capacity = view_params.limits.x;
         uint tile_offset = min(tile_offsets[tile_index], entry_capacity);
         uint available = max(entry_capacity - tile_offset, 0u);
         wg_tile_offset = tile_offset;
         wg_tile_count = min(tile_counts[tile_index], available);
+        wg_active_count = BATCH_SIZE;
     }
     barrier();
 
@@ -197,21 +215,24 @@ void main() {
         uint batch_end = min(batch_start + BATCH_SIZE, my_tile_count);
         uint batch_count = batch_end - batch_start;
 
-        // Cooperative load: each thread loads one entry into shared memory.
+        // Cooperative load: each thread loads one 32 B ProjectedComposite from
+        // a single SSBO (binding 6).  inv_basis is inlined, so one L2 fetch
+        // covers all data needed by the per-pixel Gaussian evaluation.
         if (local_index < batch_count) {
             uint entry_idx = my_tile_offset + batch_start + local_index;
             uint splat_idx = sorted_splat_indices[entry_idx];
-            ProjectedGaussian g = projected[splat_idx];
-            s_center[local_index] = g.center_depth_alpha.xy;
-            s_alpha[local_index] = g.center_depth_alpha.w;
-            s_depth[local_index] = g.center_depth_alpha.z;
-            s_color[local_index] = g.packed_color;
+            ProjectedComposite g = composite[splat_idx];
+            s_center[local_index] = unpackHalf2x16(g.center_xy_fp16);
+            s_depth[local_index] = g.depth;
+            s_alpha[local_index] = g.alpha;
+            s_color[local_index] = g.packed_rgba8;
             s_inv_basis[local_index] = g.inv_basis;
         }
         barrier();
 
         // Per-pixel evaluation from shared memory.
         // Skip if this pixel is outside the viewport or already saturated.
+        bool was_active = pixel_active;
         if (pixel_active) {
             for (uint i = 0u; i < batch_count; ++i) {
                 // Discard splats at or behind scene geometry. Depth is
@@ -227,27 +248,31 @@ void main() {
                 if (power < -4.0) {
                     continue;
                 }
-
                 float alpha = exp2(power * kLog2E) * s_alpha[i];
-                if (alpha <= 1.0 / 65535.0) {
-                    continue;
-                }
-
                 float contribution = transmittance * alpha;
                 accum_color += contribution * UnpackColorRGBA8(s_color[i]);
                 transmittance *= (1.0 - alpha);
-                if (!depth_written && transmittance < 0.5) {
+                if (!depth_written && transmittance < kSurfaceThreshold) {
                     out_norm_depth = s_depth[i];
                     depth_written = true;
                 }
-                if (transmittance <= 1.0 / 4096.0) {
+                if (transmittance <= kMinTransmittance) {
                     transmittance = 0.0;
                     pixel_active = false;  // saturated — skip future batches
                     break;
                 }
             }
         }
+        // Workgroup early-exit: decrement wg_active_count for threads that
+        // just saturated (was_active && !pixel_active).  When all 256 pixels
+        // in the tile are saturated, wg_active_count == 0 and the whole WG
+        // can skip remaining batches (barrier uniformity is still preserved).
         barrier();
+        if (was_active && !pixel_active) {
+            atomicAdd(wg_active_count, uint(-1));
+        }
+        barrier();
+        if (wg_active_count == 0u) break;
     }
 
     if (pixel.x < viewport_size.x && pixel.y < viewport_size.y) {

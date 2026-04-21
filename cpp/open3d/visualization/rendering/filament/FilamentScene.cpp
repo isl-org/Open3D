@@ -16,7 +16,9 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <string>
 #include <unordered_set>
+#include <vector>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -389,12 +391,15 @@ void FilamentScene::CacheGaussianSplatData(const std::string& name,
     auto pts = points.To(core::Float32).Contiguous();
     const float* pts_ptr = pts.GetDataPtr<float>();
 
+    std::string missing;
     const bool has_scale = cloud.HasPointAttr("scale");
     core::Tensor scale_attr;
     const float* scale_ptr = nullptr;
     if (has_scale) {
         scale_attr = cloud.GetPointAttr("scale").To(core::Float32).Contiguous();
         scale_ptr = scale_attr.GetDataPtr<float>();
+    } else {
+        missing += "scale, ";
     }
 
     const bool has_rot = cloud.HasPointAttr("rot");
@@ -403,6 +408,8 @@ void FilamentScene::CacheGaussianSplatData(const std::string& name,
     if (has_rot) {
         rot_attr = cloud.GetPointAttr("rot").To(core::Float32).Contiguous();
         rot_ptr = rot_attr.GetDataPtr<float>();
+    } else {
+        missing += "rot, ";
     }
 
     const bool has_f_dc = cloud.HasPointAttr("f_dc");
@@ -413,13 +420,24 @@ void FilamentScene::CacheGaussianSplatData(const std::string& name,
     if (has_f_dc) {
         f_dc_attr = cloud.GetPointAttr("f_dc").To(core::Float32).Contiguous();
         f_dc_ptr = f_dc_attr.GetDataPtr<float>();
+    } else {
+        missing += "f_dc, ";
     }
     if (has_opacity) {
         opacity_attr =
                 cloud.GetPointAttr("opacity").To(core::Float32).Contiguous();
         opacity_ptr = opacity_attr.GetDataPtr<float>();
+    } else {
+        missing += "opacity, ";
     }
-
+    if (n > 0 && !missing.empty()) {
+        utility::LogWarning(
+                "Gaussian splat object '{}': missing required point "
+                "attribute(s): {}. The object will not be displayed.",
+                name, missing.substr(0, missing.size() - 2) + ".");
+        per_object_gs_attrs_.erase(name);
+        return;
+    }
     const bool has_f_rest = cloud.HasPointAttr("f_rest");
     core::Tensor f_rest_attr;
     const float* f_rest_ptr = nullptr;

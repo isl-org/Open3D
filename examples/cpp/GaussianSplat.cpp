@@ -31,14 +31,13 @@ void PrintUsage() {
 }
 
 int main(int argc, char** argv) {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 2 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintUsage();
         return 1;
     }
-    std::shared_ptr<t::geometry::PointCloud> gsplat =
-            std::make_shared<t::geometry::PointCloud>();
+    auto gsplat = std::make_shared<t::geometry::PointCloud>();
     if (!t::io::ReadPointCloud(argv[1], *gsplat)) {
         utility::LogWarning("Failed to read file {}", argv[1]);
         return 1;

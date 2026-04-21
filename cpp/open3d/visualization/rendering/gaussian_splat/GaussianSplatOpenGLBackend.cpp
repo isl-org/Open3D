@@ -324,7 +324,7 @@ private:
         destroy_buf(vs.rotations_buf);
         destroy_buf(vs.dc_opacity_buf);
         destroy_buf(vs.sh_buf);
-        destroy_buf(vs.projected_buf);
+        destroy_buf(vs.projected_meta_buf);
         destroy_buf(vs.tile_counts_buf);
         destroy_buf(vs.tile_offsets_buf);
         destroy_buf(vs.tile_heads_buf);
