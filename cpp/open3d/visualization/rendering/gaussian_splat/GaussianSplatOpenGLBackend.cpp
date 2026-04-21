@@ -30,6 +30,7 @@
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLPipeline.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatPassRunner.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
 
 namespace open3d {
 namespace visualization {
@@ -191,21 +192,101 @@ public:
             std::uint32_t width,
             std::uint32_t height,
             GaussianSplatRenderer::OutputTargets& targets) override {
-        // Create GL textures on the shared GL context for zero-copy sharing
-        // with Filament.  Scene depth is always allocated to keep render-target
-        // topology stable; the composite shader's occlusion test is gated
-        // separately by the presence of mesh occluders at runtime.
+        // Allocate output textures on the shared GL context for zero-copy
+        // sharing with Filament. Scene depth is always allocated to keep
+        // render-target topology stable.
+        //
+        // Primary path (Milestone B+C): Vulkan-owned shared images imported
+        // into OpenGL via EXT_memory_object. The GL names are then passed to
+        // CreateImportedTexture() exactly as before. Filament has no
+        // awareness of the Vulkan backing.
+        //
+        // Fallback: plain GL textures when the Vulkan interop context is not
+        // available (driver missing required extensions, headless, etc.).
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
             return false;
         }
 
-        auto scene_depth = CreateGLTexture2D(
-                width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
-        targets.scene_depth_gl_handle = scene_depth.valid ? scene_depth.id : 0;
-        auto gs_color =
-                CreateGLTexture2D(width, height, kGL_RGBA16F, "gs.color");
-        targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
+        auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
+        bool use_vk = vk_ctx.IsValid() && vk_ctx.AreGLExtensionsReady();
+
+        if (use_vk) {
+            // --- Vulkan-owned shared images (primary path) ---
+            // Each image is allocated with a dedicated exportable
+            // VkDeviceMemory, exported as a POSIX FD, imported into an OpenGL
+            // memory object, and bound to a texture name. The GL name below is
+            // passed to CreateImportedTexture() exactly as the legacy path
+            // used to pass the result of CreateGLTexture2D().
+
+            SharedImageDesc color_img = vk_ctx.CreateSharedColorImage(
+                    width, height, "gs.color");
+            if (!color_img.IsValid()) {
+                utility::LogWarning(
+                        "GaussianSplat: Vulkan shared color image failed; "
+                        "falling back to GL-owned textures");
+                use_vk = false;
+            } else {
+                SharedImageDesc depth_img = vk_ctx.CreateSharedDepthImage(
+                        width, height, "gs.scene_depth");
+                if (!depth_img.IsValid()) {
+                    // Depth failed: roll back color and fall through to GL.
+                    vk_ctx.DestroySharedImage(color_img);
+                    utility::LogWarning(
+                            "GaussianSplat: Vulkan shared depth image failed; "
+                            "falling back to GL-owned textures");
+                    use_vk = false;
+                } else {
+                    // Both images created; populate targets.
+                    targets.color_gl_handle = color_img.gl_texture;
+                    targets.color_vk_image =
+                            reinterpret_cast<std::uintptr_t>(color_img.vk_image);
+                    targets.color_vk_memory =
+                            reinterpret_cast<std::uintptr_t>(color_img.vk_memory);
+                    targets.color_gl_mem_obj = color_img.gl_memory_object;
+
+                    targets.scene_depth_gl_handle = depth_img.gl_texture;
+                    targets.depth_vk_image =
+                            reinterpret_cast<std::uintptr_t>(depth_img.vk_image);
+                    targets.depth_vk_memory =
+                            reinterpret_cast<std::uintptr_t>(depth_img.vk_memory);
+                    targets.depth_gl_mem_obj = depth_img.gl_memory_object;
+
+                    // Create cross-API semaphore pair (GL→VK and VK→GL)
+                    // for Milestone D (Vulkan compute queue). Not yet
+                    // signalled/waited while everything runs on GL.
+                    SharedSemaphoreDesc sem_gl_to_vk, sem_vk_to_gl;
+                    if (vk_ctx.CreateSemaphorePair(sem_gl_to_vk, sem_vk_to_gl)) {
+                        targets.vk_sem_gl_to_vk =
+                                reinterpret_cast<std::uintptr_t>(
+                                        sem_gl_to_vk.vk_semaphore);
+                        targets.gl_sem_gl_to_vk = sem_gl_to_vk.gl_semaphore;
+                        targets.vk_sem_vk_to_gl =
+                                reinterpret_cast<std::uintptr_t>(
+                                        sem_vk_to_gl.vk_semaphore);
+                        targets.gl_sem_vk_to_gl = sem_vk_to_gl.gl_semaphore;
+                    } else {
+                        utility::LogWarning(
+                                "GaussianSplat: semaphore pair creation "
+                                "failed; cross-API sync unavailable");
+                    }
+                    targets.uses_vulkan_interop = true;
+                }
+            }
+        }
+
+        if (!use_vk) {
+            // --- Plain GL textures (fallback path) ---
+            auto scene_depth = CreateGLTexture2D(
+                    width, height, kGL_DEPTH_COMPONENT32F, "gs.scene_depth");
+            targets.scene_depth_gl_handle =
+                    scene_depth.valid ? scene_depth.id : 0;
+            auto gs_color =
+                    CreateGLTexture2D(width, height, kGL_RGBA16F, "gs.color");
+            targets.color_gl_handle = gs_color.valid ? gs_color.id : 0;
+            targets.uses_vulkan_interop = false;
+        }
+
         gl_ctx.ReleaseCurrent();
 
         if (targets.color_gl_handle == 0) {
@@ -276,33 +357,95 @@ public:
     void ReleaseOutputTextures(
             FilamentResourceManager&,
             GaussianSplatRenderer::OutputTargets& targets) override {
-        // Delete the raw GL textures that were created outside Filament.
+        // Delete the output textures created by PrepareOutputTextures.
+        // Two paths:
+        //   Vulkan interop: destroy GL memory objects, GL textures, Vulkan
+        //     images, Vulkan device memory, and semaphores via the interop
+        //     context. Must be done while the GL context is current.
+        //   Legacy GL: delete plain GL textures via DestroyGLTexture().
         if (targets.scene_depth_gl_handle == 0 &&
             targets.color_gl_handle == 0) {
             return;
         }
         auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
-            // MakeCurrent should not fail here (we own the shared context).
-            // If it does, log the leaked handles so they are diagnosable.
             utility::LogWarning(
                     "GaussianSplat: MakeCurrent failed in "
                     "ReleaseOutputTextures — GL handles may leak: "
                     "color={} depth={}",
                     targets.color_gl_handle, targets.scene_depth_gl_handle);
+            return;
+        }
+
+        if (targets.uses_vulkan_interop) {
+            auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
+
+            // Destroy semaphore pair first (no Filament dependency).
+            if (targets.vk_sem_gl_to_vk != 0 || targets.gl_sem_gl_to_vk != 0) {
+                SharedSemaphoreDesc s_gl_to_vk;
+                s_gl_to_vk.vk_semaphore = reinterpret_cast<VkSemaphore>(
+                        targets.vk_sem_gl_to_vk);
+                s_gl_to_vk.gl_semaphore = targets.gl_sem_gl_to_vk;
+                vk_ctx.DestroySemaphore(s_gl_to_vk);
+                targets.vk_sem_gl_to_vk = 0;
+                targets.gl_sem_gl_to_vk = 0;
+            }
+            if (targets.vk_sem_vk_to_gl != 0 || targets.gl_sem_vk_to_gl != 0) {
+                SharedSemaphoreDesc s_vk_to_gl;
+                s_vk_to_gl.vk_semaphore = reinterpret_cast<VkSemaphore>(
+                        targets.vk_sem_vk_to_gl);
+                s_vk_to_gl.gl_semaphore = targets.gl_sem_vk_to_gl;
+                vk_ctx.DestroySemaphore(s_vk_to_gl);
+                targets.vk_sem_vk_to_gl = 0;
+                targets.gl_sem_vk_to_gl = 0;
+            }
+
+            // Destroy shared color image: GL objects first, then Vulkan.
+            if (targets.color_gl_handle != 0) {
+                SharedImageDesc color_desc;
+                color_desc.vk_image = reinterpret_cast<VkImage>(
+                        targets.color_vk_image);
+                color_desc.vk_memory = reinterpret_cast<VkDeviceMemory>(
+                        targets.color_vk_memory);
+                color_desc.gl_memory_object = targets.color_gl_mem_obj;
+                color_desc.gl_texture = targets.color_gl_handle;
+                vk_ctx.DestroySharedImage(color_desc);
+                targets.color_vk_image = 0;
+                targets.color_vk_memory = 0;
+                targets.color_gl_mem_obj = 0;
+                targets.color_gl_handle = 0;
+            }
+
+            // Destroy shared depth image: GL objects first, then Vulkan.
+            if (targets.scene_depth_gl_handle != 0) {
+                SharedImageDesc depth_desc;
+                depth_desc.vk_image = reinterpret_cast<VkImage>(
+                        targets.depth_vk_image);
+                depth_desc.vk_memory = reinterpret_cast<VkDeviceMemory>(
+                        targets.depth_vk_memory);
+                depth_desc.gl_memory_object = targets.depth_gl_mem_obj;
+                depth_desc.gl_texture = targets.scene_depth_gl_handle;
+                vk_ctx.DestroySharedImage(depth_desc);
+                targets.depth_vk_image = 0;
+                targets.depth_vk_memory = 0;
+                targets.depth_gl_mem_obj = 0;
+                targets.scene_depth_gl_handle = 0;
+            }
+            targets.uses_vulkan_interop = false;
         } else {
+            // Legacy path: plain GL-owned textures.
             if (targets.scene_depth_gl_handle != 0) {
                 GLTextureHandle dt{targets.scene_depth_gl_handle, 0, 0, true};
                 DestroyGLTexture(dt);
+                targets.scene_depth_gl_handle = 0;
             }
             if (targets.color_gl_handle != 0) {
                 GLTextureHandle ct{targets.color_gl_handle, 0, 0, true};
                 DestroyGLTexture(ct);
+                targets.color_gl_handle = 0;
             }
-            gl_ctx.ReleaseCurrent();
         }
-        targets.scene_depth_gl_handle = 0;
-        targets.color_gl_handle = 0;
+        gl_ctx.ReleaseCurrent();
     }
 
 private:

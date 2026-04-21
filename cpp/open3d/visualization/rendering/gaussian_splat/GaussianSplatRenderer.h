@@ -116,6 +116,30 @@ public:
         /// Non-Apple: GL texture id for GS color (written by composite, sampled
         /// by UI).
         std::uint32_t color_gl_handle = 0;
+
+        /// When true, the GL textures above are backed by Vulkan-exported
+        /// dedicated memory (EXT_memory_object). ReleaseOutputTextures uses
+        /// the opaque handles below to destroy both the GL objects and the
+        /// Vulkan allocation. Always false on Apple.
+        bool uses_vulkan_interop = false;
+
+        /// Opaque Vulkan handles stored as uintptr_t to avoid including Vulkan
+        /// headers here. Cast to VkImage / VkDeviceMemory in the non-Apple
+        /// backend. Zero unless uses_vulkan_interop=true.
+        std::uintptr_t color_vk_image = 0;
+        std::uintptr_t color_vk_memory = 0;
+        std::uint32_t color_gl_mem_obj = 0;  ///< glCreateMemoryObjectsEXT name
+        std::uintptr_t depth_vk_image = 0;
+        std::uintptr_t depth_vk_memory = 0;
+        std::uint32_t depth_gl_mem_obj = 0;  ///< glCreateMemoryObjectsEXT name
+
+        /// Cross-API binary semaphore pair. Created in PrepareOutputTextures
+        /// for use in Milestone D (Vulkan compute queue). Not yet
+        /// signalled/waited while the GL compute backend is active.
+        std::uintptr_t vk_sem_gl_to_vk = 0;  ///< VkSemaphore
+        std::uint32_t gl_sem_gl_to_vk = 0;   ///< GL semaphore name
+        std::uintptr_t vk_sem_vk_to_gl = 0;  ///< VkSemaphore
+        std::uint32_t gl_sem_vk_to_gl = 0;   ///< GL semaphore name
         /// Apple (Metal): imported Filament scene depth / GS color native
         /// textures.
         std::uintptr_t scene_depth_mtl_texture = 0;
