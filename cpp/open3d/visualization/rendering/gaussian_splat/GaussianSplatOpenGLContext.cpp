@@ -20,6 +20,8 @@
 
 #if !defined(__APPLE__)
 
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
+
 #include <cstdlib>
 #include <cstring>
 
@@ -117,6 +119,14 @@ bool GaussianSplatOpenGLContext::InitializeStandalone() {
 
     glfw_window_ = window;
     initialized_ = true;
+
+    // After glewInit(), probe GL interop extensions for the Vulkan interop
+    // context (EXT_memory_object_fd, EXT_semaphore_fd, etc.).
+    // This must happen while the GL context is current.
+    auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
+    if (vk_ctx.IsValid() && !vk_ctx.AreGLExtensionsReady()) {
+        vk_ctx.ProbeGLExtensions();
+    }
 
     const char* vendor = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
     const char* renderer =

@@ -107,6 +107,11 @@ if (BUILD_GUI)
             rendering/gaussian_splat/GaussianSplatOpenGLBackend.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLPipeline.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
+        )
+        # VMA is a header-only library; point to our vendored copy.
+        target_include_directories(visualization_impl PRIVATE
+            ${PROJECT_SOURCE_DIR}/3rdparty/vkmemalloc
         )
     endif()
 

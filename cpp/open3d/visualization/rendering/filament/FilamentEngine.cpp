@@ -27,6 +27,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #if !defined(__APPLE__)
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
 #endif
 
 namespace open3d {
@@ -79,6 +80,7 @@ EngineInstance::~EngineInstance() {
 
 #if !defined(__APPLE__)
     GaussianSplatOpenGLContext::GetInstance().Shutdown();
+    GaussianSplatVulkanInteropContext::GetInstance().Shutdown();
     // The GLX context handle is now destroyed; clear the cached pointer so
     // that the next EngineInstance creation re-initialises the compute
     // context and passes a fresh handle to Filament's Engine::create().
@@ -122,6 +124,22 @@ EngineInstance::EngineInstance() {
     // Force OpenGL unconditionally.
     if (backend == filament::backend::Backend::DEFAULT) {
         backend = filament::backend::Backend::OPENGL;
+    }
+
+    // Initialise the Vulkan interop context BEFORE the GL context so that
+    // Vulkan device memory allocations and exported FDs are ready for the
+    // GL EXT_memory_object import calls made during PrepareOutputTextures().
+    // Failure is non-fatal: the Vulkan backend will fall back gracefully.
+    {
+        auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
+        if (!vk_ctx.IsValid()) {
+            if (!vk_ctx.Initialize()) {
+                utility::LogWarning(
+                        "EngineInstance: Vulkan interop context init failed: "
+                        "{}",
+                        vk_ctx.GetLastError());
+            }
+        }
     }
 
     // On Linux (X11/XWayland via GLX) and Windows (WGL), create our compute
