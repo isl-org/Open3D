@@ -20,9 +20,10 @@
 #include <unordered_map>
 #include <vector>
 
-// BlueVK: dynamic Vulkan loader bundled with Filament.
-#include "bluevk/BlueVK.h"
-using namespace bluevk;
+// vulkan-hpp RAII: dynamic dispatch through the per-object DeviceDispatcher;
+// VK_NO_PROTOTYPES is defined transitively via GaussianSplatVulkanInteropContext.h.
+// The global VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE is defined in
+// GaussianSplatVulkanInteropContext.cpp (exactly once in the program).
 
 // VMA: header-only allocator (implementation in GaussianSplatVulkanInteropContext.cpp).
 #include "vk_mem_alloc.h"
@@ -177,8 +178,9 @@ static_assert(std::size(kShaderBindings) ==
 // ---------------------------------------------------------------------------
 class GaussianSplatGpuContextVulkan final : public GaussianSplatGpuContext {
 public:
-    explicit GaussianSplatGpuContextVulkan(bool use_subgroups)
-        : use_subgroups_(use_subgroups) {}
+    explicit GaussianSplatGpuContextVulkan(
+            VulkanSubgroupOptions subgroup_options)
+        : subgroup_options_(subgroup_options) {}
 
     ~GaussianSplatGpuContextVulkan() override { Shutdown(); }
 
@@ -200,6 +202,57 @@ public:
         physical_device_ = interop.GetPhysicalDevice();
         compute_queue_ = interop.GetComputeQueue();
         queue_family_ = interop.GetComputeQueueFamily();
+        debug_utils_enabled_ = interop.GetDebugUtilsEnabled();
+
+        const std::uint32_t sg_size = interop.GetSubgroupSize();
+        const auto subgroup_stages = static_cast<vk::ShaderStageFlags>(
+            interop.GetSubgroupSupportedStages());
+        const auto subgroup_ops = static_cast<vk::SubgroupFeatureFlags>(
+            interop.GetSubgroupSupportedOperations());
+        const bool compute_subgroups =
+            static_cast<bool>(subgroup_stages &
+                      vk::ShaderStageFlagBits::eCompute);
+        const bool fixed_onesweep_subgroup_size =
+                interop.SupportsRequiredComputeSubgroupSize(32u, 8u);
+
+        if (subgroup_options_.enable_prefix_sum &&
+            (!compute_subgroups || sg_size < 16 ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eBasic) ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eArithmetic))) {
+            utility::LogInfo(
+                "GaussianSplatVulkan: disabling prefix_sum subgroup "
+                "variant (compute_subgroups={}, subgroupSize={}, "
+                "ops=0x{:x})",
+                compute_subgroups, sg_size,
+                interop.GetSubgroupSupportedOperations());
+            subgroup_options_.enable_prefix_sum = false;
+        }
+        if (subgroup_options_.enable_onesweep &&
+            (!compute_subgroups || !fixed_onesweep_subgroup_size ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eBasic) ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eArithmetic) ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eVote) ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eBallot) ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eShuffle))) {
+            utility::LogInfo(
+                "GaussianSplatVulkan: disabling OneSweep subgroup "
+                "variants (compute_subgroups={}, subgroupSize={}, "
+                "fixed32={}, ops=0x{:x})",
+                compute_subgroups, sg_size, fixed_onesweep_subgroup_size,
+                interop.GetSubgroupSupportedOperations());
+            subgroup_options_.enable_onesweep = false;
+        }
+        if (subgroup_options_.enable_radix_sort &&
+            (!compute_subgroups || sg_size == 0 ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eBasic) ||
+             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eArithmetic))) {
+            utility::LogInfo(
+                "GaussianSplatVulkan: disabling radix subgroup variant "
+                "(compute_subgroups={}, subgroupSize={}, ops=0x{:x})",
+                compute_subgroups, sg_size,
+                interop.GetSubgroupSupportedOperations());
+            subgroup_options_.enable_radix_sort = false;
+        }
 
         if (!InitVma()) return false;
         if (!InitCommandPool()) return false;
@@ -257,7 +310,9 @@ public:
         auto it = buffers_.find(buf);
         if (it == buffers_.end()) return;
         auto& e = it->second;
-        if (e.mapped) vmaUnmapMemory(vma_, e.alloc);
+        // Persistent-mapped allocations (CPU_TO_GPU + VMA_ALLOCATION_CREATE_MAPPED_BIT)
+        // are managed by VMA internally; do NOT call vmaUnmapMemory on them.
+        // vmaDestroyBuffer handles cleanup including the persistent mapping.
         vmaDestroyBuffer(vma_, e.buffer, e.alloc);
         buffers_.erase(it);
     }
@@ -325,7 +380,7 @@ public:
     void ClearBufferUInt32Zero(std::uintptr_t buf) override {
         auto it = buffers_.find(buf);
         if (it == buffers_.end()) return;
-        vkCmdFillBuffer(cmd_, it->second.buffer, 0, VK_WHOLE_SIZE, 0u);
+        cmd_.fillBuffer(vk::Buffer(it->second.buffer), 0, VK_WHOLE_SIZE, 0u);
     }
 
     // --- Bindings ---------------------------------------------------------
@@ -387,7 +442,7 @@ public:
         PendingWrite pw{};
         pw.binding = unit;
         pw.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        pw.img = {nearest_sampler_, view,
+        pw.img = {static_cast<VkSampler>(*nearest_sampler_), view,
                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
         pending_.push_back(pw);
     }
@@ -400,7 +455,7 @@ public:
         auto& p = pipelines_[i];
         if (!p.valid) return;
         active_id_ = i;
-        vkCmdBindPipeline(cmd_, VK_PIPELINE_BIND_POINT_COMPUTE, p.pipeline);
+        cmd_.bindPipeline(vk::PipelineBindPoint::eCompute, *p.pipeline);
         pending_.clear();
     }
 
@@ -408,7 +463,7 @@ public:
                   std::uint32_t gy,
                   std::uint32_t gz) override {
         FlushPendingBindings();
-        vkCmdDispatch(cmd_, gx, gy, gz);
+        cmd_.dispatch(gx, gy, gz);
     }
 
     void DispatchIndirect(std::uintptr_t indirect_buf,
@@ -416,28 +471,25 @@ public:
         auto it = buffers_.find(indirect_buf);
         if (it == buffers_.end()) return;
         FlushPendingBindings();
-        vkCmdDispatchIndirect(cmd_, it->second.buffer,
-                              static_cast<VkDeviceSize>(byte_offset));
+        cmd_.dispatchIndirect(vk::Buffer(it->second.buffer),
+                              static_cast<vk::DeviceSize>(byte_offset));
     }
 
     void FullBarrier() override {
-        // Memory barrier covering all compute accesses:
-        VkMemoryBarrier2 mb{};
-        mb.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
-        mb.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-                          VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-        mb.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
-        mb.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-                          VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-        mb.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT |
-                           VK_ACCESS_2_MEMORY_WRITE_BIT |
-                           VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
-
-        VkDependencyInfo di{};
-        di.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-        di.memoryBarrierCount = 1;
-        di.pMemoryBarriers = &mb;
-        vkCmdPipelineBarrier2(cmd_, &di);
+        // Full compute+transfer memory barrier using Vulkan 1.3 synchronization2.
+        vk::MemoryBarrier2 mb{
+                vk::PipelineStageFlagBits2::eComputeShader |
+                        vk::PipelineStageFlagBits2::eTransfer,
+                vk::AccessFlagBits2::eMemoryWrite,
+                vk::PipelineStageFlagBits2::eComputeShader |
+                        vk::PipelineStageFlagBits2::eTransfer |
+                        vk::PipelineStageFlagBits2::eDrawIndirect,
+                vk::AccessFlagBits2::eMemoryRead |
+                        vk::AccessFlagBits2::eMemoryWrite |
+                        vk::AccessFlagBits2::eIndirectCommandRead,
+        };
+        cmd_.pipelineBarrier2(
+                vk::DependencyInfo{{}, mb, {}, {}});
     }
 
     // --- Textures / images ------------------------------------------------
@@ -455,8 +507,8 @@ public:
         auto it = textures_.find(tex);
         if (it == textures_.end()) return;
         auto& e = it->second;
-        if (e.view != VK_NULL_HANDLE)
-            vkDestroyImageView(device_, e.view, nullptr);
+        // Explicitly destroy the view before the VMA image for correct order.
+        e.view = vk::raii::ImageView{nullptr};
         if (!e.is_shared) vmaDestroyImage(vma_, e.image, e.alloc);
         textures_.erase(it);
     }
@@ -517,14 +569,18 @@ public:
     }
 
     void PushDebugGroup(const char* label) override {
-        if (!vkCmdBeginDebugUtilsLabelEXT) return;
+        if (!debug_utils_enabled_) return;
+        auto fn = VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdBeginDebugUtilsLabelEXT;
+        if (!fn) return;
         VkDebugUtilsLabelEXT info{};
         info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
         info.pLabelName = label;
-        vkCmdBeginDebugUtilsLabelEXT(cmd_, &info);
+        fn(static_cast<VkCommandBuffer>(*cmd_), &info);
     }
     void PopDebugGroup() override {
-        if (vkCmdEndDebugUtilsLabelEXT) vkCmdEndDebugUtilsLabelEXT(cmd_);
+        if (!debug_utils_enabled_) return;
+        auto fn = VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdEndDebugUtilsLabelEXT;
+        if (fn) fn(static_cast<VkCommandBuffer>(*cmd_));
     }
 
     // --- Shared-image registration (called by GaussianSplatVulkanBackend) -
@@ -539,8 +595,8 @@ public:
         VkImageAspectFlags aspect = (format == VK_FORMAT_D32_SFLOAT)
                                             ? VK_IMAGE_ASPECT_DEPTH_BIT
                                             : VK_IMAGE_ASPECT_COLOR_BIT;
-        VkImageView view = CreateImageView(image, format, aspect);
-        if (view == VK_NULL_HANDLE) {
+        vk::raii::ImageView view = CreateImageView(image, format, aspect);
+        if (static_cast<VkImageView>(*view) == VK_NULL_HANDLE) {
             utility::LogWarning(
                     "GaussianSplatVulkan: failed to create view for shared "
                     "gl_name={}",
@@ -549,7 +605,7 @@ public:
         }
         TexEntry e{};
         e.image = image;
-        e.view = view;
+        e.view = std::move(view);
         e.alloc = VK_NULL_HANDLE;  // owned by VulkanInteropContext
         e.format = format;
         e.width = w;
@@ -557,7 +613,7 @@ public:
         e.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
         e.is_shared = true;
         uintptr_t handle = next_handle_++;
-        textures_[handle] = e;
+        textures_[handle] = std::move(e);
         gl_to_handle_[gl_name] = handle;
     }
 
@@ -567,8 +623,7 @@ public:
         uintptr_t h = it->second;
         auto te = textures_.find(h);
         if (te != textures_.end()) {
-            if (te->second.view != VK_NULL_HANDLE)
-                vkDestroyImageView(device_, te->second.view, nullptr);
+            // vk::raii::ImageView in TexEntry auto-destroyed on erase
             textures_.erase(te);
         }
         gl_to_handle_.erase(it);
@@ -581,21 +636,22 @@ private:
     VkQueue compute_queue_ = VK_NULL_HANDLE;
     std::uint32_t queue_family_ = 0;
     VmaAllocator vma_ = VK_NULL_HANDLE;
-    VkCommandPool cmd_pool_ = VK_NULL_HANDLE;
-    VkCommandBuffer cmd_ = VK_NULL_HANDLE;
-    VkFence fence_ = VK_NULL_HANDLE;
-    VkSampler nearest_sampler_ = VK_NULL_HANDLE;
+    vk::raii::CommandPool cmd_pool_{nullptr};
+    vk::raii::CommandBuffer cmd_{nullptr};
+    vk::raii::Fence fence_{nullptr};
+    vk::raii::Sampler nearest_sampler_{nullptr};
     bool cmd_active_ = false;
+    bool fence_submitted_ = false;  // true while fence has a pending submission
 
     struct Pipeline {
-        VkDescriptorSetLayout dset_layout = VK_NULL_HANDLE;
-        VkPipelineLayout layout = VK_NULL_HANDLE;
-        VkPipeline pipeline = VK_NULL_HANDLE;
+        vk::raii::DescriptorSetLayout dset_layout{nullptr};
+        vk::raii::PipelineLayout layout{nullptr};
+        vk::raii::Pipeline pipeline{nullptr};
         bool valid = false;
         // Bitmask of valid bindings so we can filter writes.
         std::uint64_t binding_mask = 0;  // bit i set ↔ binding i exists
     };
-    Pipeline pipelines_[static_cast<int>(ComputeProgramId::kCount)] = {};
+    Pipeline pipelines_[static_cast<int>(ComputeProgramId::kCount)];
     int active_id_ = -1;
 
     struct BufEntry {
@@ -610,7 +666,7 @@ private:
     struct TexEntry {
         VmaAllocation alloc = VK_NULL_HANDLE;
         VkImage image = VK_NULL_HANDLE;
-        VkImageView view = VK_NULL_HANDLE;
+        vk::raii::ImageView view{nullptr};  // RAII: auto-destroys vkDestroyImageView
         VkFormat format = VK_FORMAT_UNDEFINED;
         std::uint32_t width = 0;
         std::uint32_t height = 0;
@@ -629,33 +685,63 @@ private:
     };
     std::vector<PendingWrite> pending_;
 
-    bool use_subgroups_;
+    VulkanSubgroupOptions subgroup_options_{};
     bool programs_loaded_ = false;
     bool programs_valid_ = false;
     bool onesweep_valid_ = false;
+    bool debug_utils_enabled_ = false;  // VK_EXT_debug_utils enabled at instance
 
     // --- Init helpers -----------------------------------------------------
 
     bool InitVma() {
+        // VMA is compiled with VMA_STATIC_VULKAN_FUNCTIONS=0 and
+        // VMA_DYNAMIC_VULKAN_FUNCTIONS=0 (set in GaussianSplatVulkanInteropContext.cpp
+        // before VMA_IMPLEMENTATION), so all function pointers must be provided
+        // manually. The VULKAN_HPP_DEFAULT_DISPATCHER holds all pointers after
+        // GaussianSplatVulkanInteropContext::Initialize() calls
+        // VULKAN_HPP_DEFAULT_DISPATCHER.init(instance) and .init(device).
+        auto& d = VULKAN_HPP_DEFAULT_DISPATCHER;
         VmaVulkanFunctions vk_fn{};
-        vk_fn.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
-        vk_fn.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+        // Core dispatch loaders (required for VMA version detection)
+        vk_fn.vkGetInstanceProcAddr = d.vkGetInstanceProcAddr;
+        vk_fn.vkGetDeviceProcAddr = d.vkGetDeviceProcAddr;
+        // Physical-device / memory queries
+        vk_fn.vkGetPhysicalDeviceProperties = d.vkGetPhysicalDeviceProperties;
+        vk_fn.vkGetPhysicalDeviceMemoryProperties = d.vkGetPhysicalDeviceMemoryProperties;
+        // Memory allocation
+        vk_fn.vkAllocateMemory = d.vkAllocateMemory;
+        vk_fn.vkFreeMemory = d.vkFreeMemory;
+        vk_fn.vkMapMemory = d.vkMapMemory;
+        vk_fn.vkUnmapMemory = d.vkUnmapMemory;
+        vk_fn.vkFlushMappedMemoryRanges = d.vkFlushMappedMemoryRanges;
+        vk_fn.vkInvalidateMappedMemoryRanges = d.vkInvalidateMappedMemoryRanges;
+        // Buffer / image lifecycle
+        vk_fn.vkBindBufferMemory = d.vkBindBufferMemory;
+        vk_fn.vkBindImageMemory = d.vkBindImageMemory;
+        vk_fn.vkGetBufferMemoryRequirements = d.vkGetBufferMemoryRequirements;
+        vk_fn.vkGetImageMemoryRequirements = d.vkGetImageMemoryRequirements;
+        vk_fn.vkCreateBuffer = d.vkCreateBuffer;
+        vk_fn.vkDestroyBuffer = d.vkDestroyBuffer;
+        vk_fn.vkCreateImage = d.vkCreateImage;
+        vk_fn.vkDestroyImage = d.vkDestroyImage;
+        vk_fn.vkCmdCopyBuffer = d.vkCmdCopyBuffer;
+        // Vulkan 1.1 / KHR equivalents required by VMA 3.x
+        vk_fn.vkGetBufferMemoryRequirements2KHR = d.vkGetBufferMemoryRequirements2;
+        vk_fn.vkGetImageMemoryRequirements2KHR = d.vkGetImageMemoryRequirements2;
+        vk_fn.vkBindBufferMemory2KHR = d.vkBindBufferMemory2;
+        vk_fn.vkBindImageMemory2KHR = d.vkBindImageMemory2;
+        vk_fn.vkGetPhysicalDeviceMemoryProperties2KHR =
+                d.vkGetPhysicalDeviceMemoryProperties2;
+        // Vulkan 1.3 device memory query (lazy allocation support)
+        vk_fn.vkGetDeviceBufferMemoryRequirements = d.vkGetDeviceBufferMemoryRequirements;
+        vk_fn.vkGetDeviceImageMemoryRequirements = d.vkGetDeviceImageMemoryRequirements;
 
         VmaAllocatorCreateInfo ci{};
         ci.vulkanApiVersion = VK_API_VERSION_1_3;
         ci.physicalDevice = physical_device_;
         ci.device = device_;
-        ci.instance = vkGetPhysicalDeviceProperties != nullptr
-                              ? [&]() -> VkInstance {
-            // Retrieve the instance from the BlueVK loader via the
-            // physical device's parent. We can't get it directly, so
-            // pass VK_NULL_HANDLE and let VMA use the function pointers.
-            return VK_NULL_HANDLE;
-        }()
-                              : VK_NULL_HANDLE;
+        ci.instance = GaussianSplatVulkanInteropContext::GetInstance().GetVkInstance();
         ci.pVulkanFunctions = &vk_fn;
-        // Note: instance is optional if all needed pfns are provided via
-        // pVulkanFunctions; VMA works with global BlueVK dispatch.
         if (vmaCreateAllocator(&ci, &vma_) != VK_SUCCESS) {
             utility::LogWarning(
                     "GaussianSplatVulkan: vmaCreateAllocator failed");
@@ -665,52 +751,96 @@ private:
     }
 
     bool InitCommandPool() {
-        VkCommandPoolCreateInfo ci{};
-        ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        ci.queueFamilyIndex = queue_family_;
-        ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        if (vkCreateCommandPool(device_, &ci, nullptr, &cmd_pool_) !=
-            VK_SUCCESS) {
+        auto& raii_dev =
+                GaussianSplatVulkanInteropContext::GetInstance().GetRaiiDevice();
+        vk::CommandPoolCreateInfo ci{
+                vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+                queue_family_,
+        };
+        try {
+            cmd_pool_ = raii_dev.createCommandPool(ci);
+        } catch (const vk::SystemError& e) {
             utility::LogWarning(
-                    "GaussianSplatVulkan: vkCreateCommandPool failed");
+                    "GaussianSplatVulkan: vkCreateCommandPool failed: {}",
+                    e.what());
             return false;
         }
-        VkCommandBufferAllocateInfo ai{};
-        ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        ai.commandPool = cmd_pool_;
-        ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        ai.commandBufferCount = 1;
-        if (vkAllocateCommandBuffers(device_, &ai, &cmd_) != VK_SUCCESS) {
+        vk::CommandBufferAllocateInfo ai{
+                *cmd_pool_,
+                vk::CommandBufferLevel::ePrimary,
+                1,
+        };
+        try {
+            auto cmds = raii_dev.allocateCommandBuffers(ai);
+            cmd_ = std::move(cmds.front());
+        } catch (const vk::SystemError& e) {
             utility::LogWarning(
-                    "GaussianSplatVulkan: vkAllocateCommandBuffers failed");
+                    "GaussianSplatVulkan: vkAllocateCommandBuffers failed: {}",
+                    e.what());
             return false;
         }
         return true;
     }
 
     bool InitFence() {
-        VkFenceCreateInfo fi{};
-        fi.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        return vkCreateFence(device_, &fi, nullptr, &fence_) == VK_SUCCESS;
+        try {
+            fence_ = GaussianSplatVulkanInteropContext::GetInstance()
+                             .GetRaiiDevice()
+                             .createFence({});
+        } catch (const vk::SystemError& e) {
+            utility::LogWarning(
+                    "GaussianSplatVulkan: vkCreateFence failed: {}", e.what());
+            return false;
+        }
+        return true;
     }
 
     bool InitSampler() {
-        VkSamplerCreateInfo si{};
-        si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        si.magFilter = VK_FILTER_NEAREST;
-        si.minFilter = VK_FILTER_NEAREST;
-        si.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        si.addressModeU = si.addressModeV = si.addressModeW =
-                VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        return vkCreateSampler(device_, &si, nullptr, &nearest_sampler_) ==
-               VK_SUCCESS;
+        vk::SamplerCreateInfo si{
+                {},
+                vk::Filter::eNearest,
+                vk::Filter::eNearest,
+                vk::SamplerMipmapMode::eNearest,
+                vk::SamplerAddressMode::eClampToEdge,
+                vk::SamplerAddressMode::eClampToEdge,
+                vk::SamplerAddressMode::eClampToEdge,
+        };
+        try {
+            nearest_sampler_ = GaussianSplatVulkanInteropContext::GetInstance()
+                                        .GetRaiiDevice()
+                                        .createSampler(si);
+        } catch (const vk::SystemError& e) {
+            utility::LogWarning(
+                    "GaussianSplatVulkan: vkCreateSampler failed: {}",
+                    e.what());
+            return false;
+        }
+        return true;
     }
 
     // --- Shader loading ---------------------------------------------------
 
+    bool ShouldUseSubgroupVariant(ComputeProgramId id) const {
+        switch (id) {
+            case ComputeProgramId::kGsPrefixSum:
+                return subgroup_options_.enable_prefix_sum;
+            case ComputeProgramId::kGsRadixScatter:
+                return subgroup_options_.enable_radix_sort;
+            case ComputeProgramId::kGsOneSweepGlobalHist:
+            case ComputeProgramId::kGsOneSweepDigitPass:
+                return subgroup_options_.enable_onesweep;
+            default:
+                return false;
+        }
+    }
+
     bool LoadShader(ComputeProgramId id, const std::string& shader_root) {
         const int i = static_cast<int>(id);
         std::string name = kGsShaderNames[i];
+        const bool want_subgroup = ShouldUseSubgroupVariant(id);
+        const bool require_subgroup_size_32 =
+            id == ComputeProgramId::kGsOneSweepGlobalHist ||
+            id == ComputeProgramId::kGsOneSweepDigitPass;
 
         // Resolve subgroup variant name
         constexpr std::string_view kSubgroupSuffix = "_subgroup";
@@ -722,7 +852,7 @@ private:
         // For non-subgroup names, optionally append _subgroup when enabled.
         // For already-subgroup names (_subgroup suffix), use as-is.
         std::string file_name;
-        if (!is_subgroup && use_subgroups_) {
+        if (!is_subgroup && want_subgroup) {
             // Check if a subgroup variant exists; fall back if not.
             const std::string candidate =
                     shader_root + name + "_subgroup.spv";
@@ -733,7 +863,7 @@ private:
             } else {
                 file_name = name;
             }
-        } else if (is_subgroup && !use_subgroups_) {
+        } else if (is_subgroup && !want_subgroup) {
             // Strip _subgroup suffix
             file_name = name.substr(0, name.size() - kSubgroupSuffix.size());
         } else {
@@ -749,91 +879,102 @@ private:
             return false;
         }
 
-        // Create shader module
-        VkShaderModuleCreateInfo smi{};
-        smi.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        smi.codeSize = bytes.size();
-        smi.pCode = reinterpret_cast<const std::uint32_t*>(bytes.data());
-        VkShaderModule shader_module = VK_NULL_HANDLE;
-        if (vkCreateShaderModule(device_, &smi, nullptr, &shader_module) !=
-            VK_SUCCESS) {
+        // RAII device: all vk::raii::Xxx handles auto-destroy on exception.
+        auto& raii_dev =
+                GaussianSplatVulkanInteropContext::GetInstance().GetRaiiDevice();
+        vk::ShaderModuleCreateInfo smi{
+                {},
+                bytes.size(),
+                reinterpret_cast<const std::uint32_t*>(bytes.data()),
+        };
+        vk::raii::ShaderModule shader_module{nullptr};
+        try {
+            shader_module = raii_dev.createShaderModule(smi);
+        } catch (const vk::SystemError& e) {
             utility::LogWarning(
-                    "GaussianSplatVulkan: vkCreateShaderModule failed for {}",
-                    file_name);
+                    "GaussianSplatVulkan: vkCreateShaderModule failed for {}: {}",
+                    file_name, e.what());
             return false;
         }
 
         // Build descriptor set layout for this pipeline
         const auto& bt = kShaderBindings[i];
-        std::vector<VkDescriptorSetLayoutBinding> layout_bindings(bt.count);
+        std::vector<vk::DescriptorSetLayoutBinding> layout_bindings(bt.count);
         std::uint64_t binding_mask = 0;
         for (std::uint32_t j = 0; j < bt.count; ++j) {
             auto& lb = layout_bindings[j];
             lb.binding = bt.descs[j].binding;
-            lb.descriptorType = bt.descs[j].type;
+            lb.descriptorType = static_cast<vk::DescriptorType>(bt.descs[j].type);
             lb.descriptorCount = 1;
-            lb.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-            lb.pImmutableSamplers = nullptr;
+            lb.stageFlags = vk::ShaderStageFlagBits::eCompute;
             if (lb.binding < 64) binding_mask |= (uint64_t(1) << lb.binding);
         }
 
-        VkDescriptorSetLayoutCreateInfo dslci{};
-        dslci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        vk::DescriptorSetLayoutCreateInfo dslci{};
         // Enable push descriptors for this layout.
-        dslci.flags =
-                VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+        dslci.flags = static_cast<vk::DescriptorSetLayoutCreateFlags>(
+                VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
         dslci.bindingCount = bt.count;
         dslci.pBindings = layout_bindings.data();
-        VkDescriptorSetLayout dset_layout = VK_NULL_HANDLE;
-        if (vkCreateDescriptorSetLayout(device_, &dslci, nullptr,
-                                        &dset_layout) != VK_SUCCESS) {
-            vkDestroyShaderModule(device_, shader_module, nullptr);
+        vk::raii::DescriptorSetLayout dset_layout{nullptr};
+        try {
+            dset_layout = raii_dev.createDescriptorSetLayout(dslci);
+        } catch (const vk::SystemError& e) {
+            // shader_module auto-destroyed by RAII
             utility::LogWarning(
                     "GaussianSplatVulkan: vkCreateDescriptorSetLayout failed "
-                    "for {}",
-                    file_name);
+                    "for {}: {}",
+                    file_name, e.what());
             return false;
         }
 
-        VkPipelineLayoutCreateInfo plci{};
-        plci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        plci.setLayoutCount = 1;
-        plci.pSetLayouts = &dset_layout;
-        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-        if (vkCreatePipelineLayout(device_, &plci, nullptr,
-                                   &pipeline_layout) != VK_SUCCESS) {
-            vkDestroyDescriptorSetLayout(device_, dset_layout, nullptr);
-            vkDestroyShaderModule(device_, shader_module, nullptr);
+        const vk::DescriptorSetLayout dsl_handle = *dset_layout;
+        vk::PipelineLayoutCreateInfo plci{{}, 1, &dsl_handle};
+        vk::raii::PipelineLayout pipeline_layout{nullptr};
+        try {
+            pipeline_layout = raii_dev.createPipelineLayout(plci);
+        } catch (const vk::SystemError& e) {
+            // dset_layout, shader_module auto-destroyed by RAII
+            utility::LogWarning(
+                    "GaussianSplatVulkan: vkCreatePipelineLayout failed "
+                    "for {}: {}",
+                    file_name, e.what());
             return false;
         }
 
-        VkComputePipelineCreateInfo pci{};
-        pci.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-        pci.stage.sType =
-                VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        pci.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        pci.stage.module = shader_module;
-        pci.stage.pName = "main";
-        pci.layout = pipeline_layout;
-        VkPipeline pipeline = VK_NULL_HANDLE;
-        VkResult res = vkCreateComputePipelines(device_, VK_NULL_HANDLE, 1,
-                                                &pci, nullptr, &pipeline);
-        // Shader module can be destroyed after pipeline creation.
-        vkDestroyShaderModule(device_, shader_module, nullptr);
-        if (res != VK_SUCCESS) {
-            vkDestroyPipelineLayout(device_, pipeline_layout, nullptr);
-            vkDestroyDescriptorSetLayout(device_, dset_layout, nullptr);
+        vk::PipelineShaderStageCreateInfo stage_info{
+            {},
+            vk::ShaderStageFlagBits::eCompute,
+            *shader_module,
+            "main",
+        };
+        vk::PipelineShaderStageRequiredSubgroupSizeCreateInfo
+            required_subgroup_size_info{};
+        if (want_subgroup && require_subgroup_size_32) {
+            stage_info.flags =
+                vk::PipelineShaderStageCreateFlagBits::eAllowVaryingSubgroupSize;
+            required_subgroup_size_info.requiredSubgroupSize = 32u;
+            stage_info.pNext = &required_subgroup_size_info;
+        }
+
+        vk::ComputePipelineCreateInfo pci{{}, stage_info, *pipeline_layout};
+        vk::raii::Pipeline pipeline{nullptr};
+        try {
+            pipeline = raii_dev.createComputePipeline(nullptr, pci);
+        } catch (const vk::SystemError& e) {
+            // pipeline_layout, dset_layout, shader_module auto-destroyed by RAII
             utility::LogWarning(
                     "GaussianSplatVulkan: vkCreateComputePipelines failed "
-                    "for {}",
-                    file_name);
+                    "for {}: {}",
+                    file_name, e.what());
             return false;
         }
+        // shader_module auto-destroyed here (pipeline compiled; module no longer needed)
 
         auto& p = pipelines_[i];
-        p.dset_layout = dset_layout;
-        p.layout = pipeline_layout;
-        p.pipeline = pipeline;
+        p.dset_layout = std::move(dset_layout);
+        p.layout = std::move(pipeline_layout);
+        p.pipeline = std::move(pipeline);
         p.binding_mask = binding_mask;
         p.valid = true;
         utility::LogDebug("GaussianSplatVulkan: loaded {}", file_name);
@@ -844,11 +985,19 @@ private:
 
     void BeginCmdBuf() {
         if (cmd_active_) return;
-        vkResetCommandBuffer(cmd_, 0);
-        VkCommandBufferBeginInfo bi{};
-        bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(cmd_, &bi);
+        // If the fence is still pending from a previous submission, wait for
+        // it before resetting the command buffer.  This guards against the
+        // case where BeginCmdBuf is called again before SubmitAndWait has had
+        // a chance to drain (e.g. geometry pass on frame N+1 vs composite
+        // pass on frame N that was never submitted due to an early return).
+        if (fence_submitted_) {
+            (void)vk::Device(device_).waitForFences(
+                    {*fence_}, true, UINT64_MAX);
+            vk::Device(device_).resetFences({*fence_});
+            fence_submitted_ = false;
+        }
+        cmd_.reset({});
+        cmd_.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
         cmd_active_ = true;
         active_id_ = -1;
         pending_.clear();
@@ -856,15 +1005,21 @@ private:
 
     void SubmitAndWait() {
         if (!cmd_active_) return;
-        vkEndCommandBuffer(cmd_);
+        cmd_.end();
         cmd_active_ = false;
-        VkSubmitInfo si{};
-        si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        si.commandBufferCount = 1;
-        si.pCommandBuffers = &cmd_;
-        vkResetFences(device_, 1, &fence_);
-        vkQueueSubmit(compute_queue_, 1, &si, fence_);
-        vkWaitForFences(device_, 1, &fence_, VK_TRUE, UINT64_MAX);
+        // Reset the fence only if it is not already pending.  BeginCmdBuf
+        // above handles the case where we start a new buffer while pending.
+        if (!fence_submitted_) {
+            vk::Device(device_).resetFences({*fence_});
+        }
+        vk::CommandBufferSubmitInfo cmd_info{*cmd_, 0};
+        vk::SubmitInfo2 si{{}, {}, cmd_info, {}};
+        utility::LogDebug("GaussianSplatVulkan: submit");
+        vk::Queue(compute_queue_).submit2(si, *fence_);
+        fence_submitted_ = true;
+        (void)vk::Device(device_).waitForFences({*fence_}, true, UINT64_MAX);
+        vk::Device(device_).resetFences({*fence_});
+        fence_submitted_ = false;
         active_id_ = -1;
         pending_.clear();
     }
@@ -900,8 +1055,12 @@ private:
             writes.push_back(w);
         }
         if (!writes.empty()) {
-            vkCmdPushDescriptorSetKHR(
-                    cmd_, VK_PIPELINE_BIND_POINT_COMPUTE, p.layout, 0,
+            // vkCmdPushDescriptorSetKHR is a KHR extension function; call it
+            // through the default dispatcher which was loaded with the device.
+            VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdPushDescriptorSetKHR(
+                    static_cast<VkCommandBuffer>(*cmd_),
+                    VK_PIPELINE_BIND_POINT_COMPUTE,
+                    static_cast<VkPipelineLayout>(*p.layout), 0,
                     static_cast<std::uint32_t>(writes.size()),
                     writes.data());
         }
@@ -931,7 +1090,7 @@ private:
                                   needed_layout);
             e.current_layout = needed_layout;
         }
-        return e.view;
+        return static_cast<VkImageView>(*e.view);
     }
 
     void TransitionImageLayout(VkImage image,
@@ -939,51 +1098,49 @@ private:
                                VkImageLayout old_layout,
                                VkImageLayout new_layout) {
         const bool is_depth = (format == VK_FORMAT_D32_SFLOAT);
-        VkImageMemoryBarrier2 b{};
-        b.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-        b.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-                         VK_PIPELINE_STAGE_2_TRANSFER_BIT |
-                         VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-        b.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT |
-                          VK_ACCESS_2_MEMORY_READ_BIT;
-        b.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-        b.dstAccessMask =
+        const vk::AccessFlags2 dst_access =
                 (new_layout == VK_IMAGE_LAYOUT_GENERAL)
-                        ? (VK_ACCESS_2_SHADER_WRITE_BIT |
-                           VK_ACCESS_2_SHADER_READ_BIT)
-                        : VK_ACCESS_2_SHADER_READ_BIT;
-        b.oldLayout = old_layout;
-        b.newLayout = new_layout;
-        b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        b.image = image;
-        b.subresourceRange.aspectMask =
-                is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT
-                         : VK_IMAGE_ASPECT_COLOR_BIT;
-        b.subresourceRange.levelCount = 1;
-        b.subresourceRange.layerCount = 1;
-        VkDependencyInfo di{};
-        di.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-        di.imageMemoryBarrierCount = 1;
-        di.pImageMemoryBarriers = &b;
-        vkCmdPipelineBarrier2(cmd_, &di);
+                        ? (vk::AccessFlagBits2::eShaderWrite |
+                           vk::AccessFlagBits2::eShaderRead)
+                        : vk::AccessFlagBits2::eShaderRead;
+        vk::ImageMemoryBarrier2 b{
+                vk::PipelineStageFlagBits2::eAllCommands,
+                vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead,
+                vk::PipelineStageFlagBits2::eComputeShader,
+                dst_access,
+                static_cast<vk::ImageLayout>(old_layout),
+                static_cast<vk::ImageLayout>(new_layout),
+                VK_QUEUE_FAMILY_IGNORED,
+                VK_QUEUE_FAMILY_IGNORED,
+                vk::Image(image),
+                vk::ImageSubresourceRange{
+                        is_depth ? vk::ImageAspectFlagBits::eDepth
+                                 : vk::ImageAspectFlagBits::eColor,
+                        0, 1, 0, 1},
+        };
+        cmd_.pipelineBarrier2(
+                vk::DependencyInfo{{}, {}, {}, b});
     }
 
-    VkImageView CreateImageView(VkImage image,
-                                VkFormat format,
-                                VkImageAspectFlags aspect) {
-        VkImageViewCreateInfo vci{};
-        vci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        vci.image = image;
-        vci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        vci.format = format;
-        vci.subresourceRange.aspectMask = aspect;
-        vci.subresourceRange.levelCount = 1;
-        vci.subresourceRange.layerCount = 1;
-        VkImageView view = VK_NULL_HANDLE;
-        if (vkCreateImageView(device_, &vci, nullptr, &view) != VK_SUCCESS)
-            return VK_NULL_HANDLE;
-        return view;
+    vk::raii::ImageView CreateImageView(VkImage image,
+                                        VkFormat format,
+                                        VkImageAspectFlags aspect) {
+        vk::ImageViewCreateInfo vci{
+                {},
+                vk::Image(image),
+                vk::ImageViewType::e2D,
+                static_cast<vk::Format>(format),
+                {},
+                vk::ImageSubresourceRange{
+                        static_cast<vk::ImageAspectFlags>(aspect), 0, 1, 0, 1},
+        };
+        try {
+            return GaussianSplatVulkanInteropContext::GetInstance()
+                    .GetRaiiDevice()
+                    .createImageView(vci);
+        } catch (const vk::SystemError&) {
+            return vk::raii::ImageView{nullptr};
+        }
     }
 
     // --- Buffer allocation ------------------------------------------------
@@ -1051,8 +1208,8 @@ private:
         if (vmaCreateImage(vma_, &ici, &aci, &image, &alloc, nullptr) !=
             VK_SUCCESS)
             return 0;
-        VkImageView view = CreateImageView(image, format, aspect);
-        if (view == VK_NULL_HANDLE) {
+        vk::raii::ImageView view = CreateImageView(image, format, aspect);
+        if (static_cast<VkImageView>(*view) == VK_NULL_HANDLE) {
             vmaDestroyImage(vma_, image, alloc);
             return 0;
         }
@@ -1060,7 +1217,7 @@ private:
         TexEntry& e = textures_[handle];
         e.alloc = alloc;
         e.image = image;
-        e.view = view;
+        e.view = std::move(view);
         e.format = format;
         e.width = w;
         e.height = h;
@@ -1105,13 +1262,16 @@ private:
         auto& e = it->second;
         TransitionImageLayout(e.image, e.format, e.current_layout,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        VkBufferImageCopy region{};
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.layerCount = 1;
-        region.imageExtent = {w, h, 1};
-        vkCmdCopyImageToBuffer(cmd_, e.image,
-                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, staging,
-                               1, &region);
+        vk::BufferImageCopy region{
+                0, 0, 0,
+                {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+                {0, 0, 0},
+                {w, h, 1},
+        };
+        cmd_.copyImageToBuffer(
+                vk::Image(e.image),
+                vk::ImageLayout::eTransferSrcOptimal,
+                vk::Buffer(staging), region);
         // Transition back to previous layout (or GENERAL).
         TransitionImageLayout(e.image, e.format,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -1136,42 +1296,39 @@ private:
 
     void Shutdown() {
         if (device_ == VK_NULL_HANDLE) return;
-        vkDeviceWaitIdle(device_);
+        vk::Device(device_).waitIdle();
 
-        // Destroy textures
+        // Destroy image views (RAII) before their VMA images.
         for (auto& [h, e] : textures_) {
-            if (e.view != VK_NULL_HANDLE)
-                vkDestroyImageView(device_, e.view, nullptr);
+            e.view = vk::raii::ImageView{nullptr};  // vkDestroyImageView
             if (!e.is_shared && e.alloc != VK_NULL_HANDLE)
                 vmaDestroyImage(vma_, e.image, e.alloc);
         }
         textures_.clear();
 
-        // Destroy buffers
+        // Destroy VMA buffers.
         for (auto& [h, e] : buffers_) {
-            if (e.mapped) vmaUnmapMemory(vma_, e.alloc);
             vmaDestroyBuffer(vma_, e.buffer, e.alloc);
         }
         buffers_.clear();
 
-        // Destroy pipelines
+        // Reset pipeline RAII handles: destroys pipelines, layouts, dset layouts.
         for (auto& p : pipelines_) {
-            if (!p.valid) continue;
-            vkDestroyPipeline(device_, p.pipeline, nullptr);
-            vkDestroyPipelineLayout(device_, p.layout, nullptr);
-            vkDestroyDescriptorSetLayout(device_, p.dset_layout, nullptr);
+            p.pipeline = vk::raii::Pipeline{nullptr};
+            p.layout = vk::raii::PipelineLayout{nullptr};
+            p.dset_layout = vk::raii::DescriptorSetLayout{nullptr};
             p.valid = false;
         }
 
-        if (nearest_sampler_ != VK_NULL_HANDLE)
-            vkDestroySampler(device_, nearest_sampler_, nullptr);
-        if (fence_ != VK_NULL_HANDLE)
-            vkDestroyFence(device_, fence_, nullptr);
-        if (cmd_pool_ != VK_NULL_HANDLE) {
-            vkFreeCommandBuffers(device_, cmd_pool_, 1, &cmd_);
-            vkDestroyCommandPool(device_, cmd_pool_, nullptr);
+        // Reset remaining RAII handles in reverse init order.
+        nearest_sampler_ = vk::raii::Sampler{nullptr};
+        fence_ = vk::raii::Fence{nullptr};
+        cmd_ = vk::raii::CommandBuffer{nullptr};
+        cmd_pool_ = vk::raii::CommandPool{nullptr};
+        if (vma_ != VK_NULL_HANDLE) {
+            vmaDestroyAllocator(vma_);
+            vma_ = VK_NULL_HANDLE;
         }
-        if (vma_ != VK_NULL_HANDLE) vmaDestroyAllocator(vma_);
         device_ = VK_NULL_HANDLE;
     }
 };
@@ -1202,7 +1359,7 @@ void UnregisterSharedImageFromVulkanContext(GaussianSplatGpuContext& ctx,
 }
 
 std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextVulkan(
-        bool use_subgroups) {
+    VulkanSubgroupOptions subgroup_options) {
     auto& interop = GaussianSplatVulkanInteropContext::GetInstance();
     if (!interop.IsValid()) {
         utility::LogWarning(
@@ -1210,7 +1367,7 @@ std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextVulkan(
                 "Vulkan compute context not created");
         return nullptr;
     }
-    return std::make_unique<GaussianSplatGpuContextVulkan>(use_subgroups);
+    return std::make_unique<GaussianSplatGpuContextVulkan>(subgroup_options);
 }
 
 }  // namespace rendering

@@ -56,7 +56,7 @@ function(open3d_add_compute_shaders target)
     # Subgroup operations (gl_SubgroupSize, subgroupAdd, etc.) require Vulkan
     # SPIR-V (-V) because glslangValidator's OpenGL target (-G) does not support
     # them.  Most compute shaders use subgroup ops and therefore need -V.
-    set(GLSLANG_FLAGS --error-column -V --target-env vulkan1.3 -gVS)
+    set(GLSLANG_FLAGS -V --target-env vulkan1.3 -gVS)
 
     foreach(shader IN LISTS ARG_SOURCES)
         get_filename_component(SHADER_FULL_PATH "${shader}" ABSOLUTE)

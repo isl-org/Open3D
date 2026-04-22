@@ -37,7 +37,8 @@ namespace {
 //   gaussian_onesweep_digit_pass_subgroup.comp  — ballot (WaveMatch8),
 //                                                  shuffle (subgroupShuffle),
 //                                                  vote (subgroupAll)
-// Also validates subgroup size <= 32 (WaveMatch8 uses only ballot .x bits).
+// Also validates subgroup size >= 8 so the shader's 32-wave shared-memory
+// layout covers the worst case for a 256-thread workgroup.
 bool GlSubgroupArithmeticAndBallotAvailable() {
     if (!GLEW_KHR_shader_subgroup) {
         return false;
@@ -50,11 +51,12 @@ bool GlSubgroupArithmeticAndBallotAvailable() {
                             GL_SUBGROUP_FEATURE_VOTE_BIT_KHR;
     const bool features_ok = (features & kRequired) == kRequired;
 
-    // WaveMatch8 uses subgroupBallot(...).x (bits 0-31 only); subgroup size
-    // must be <= 32 for correctness.
+    // The subgroup-agnostic OneSweep shader supports subgroup sizes in
+    // [8, 128]; 8 is the minimum size covered by its 32-wave shared-memory
+    // allocation for a 256-thread workgroup.
     GLint max_sg = 0;
     glGetIntegerv(GL_SUBGROUP_SIZE_KHR, &max_sg);
-    const bool size_ok = (max_sg > 0) && (max_sg <= 32);
+    const bool size_ok = (max_sg >= 8);
 
     const bool ok = features_ok && size_ok;
     utility::LogDebug(

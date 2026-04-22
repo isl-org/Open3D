@@ -103,17 +103,18 @@ if (BUILD_GUI)
             PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
     else()
         target_sources(visualization_impl PRIVATE
-            rendering/gaussian_splat/ComputeGPUGL.cpp
             rendering/gaussian_splat/ComputeGPUVulkan.cpp
-            rendering/gaussian_splat/GaussianSplatOpenGLBackend.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLPipeline.cpp
             rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
             rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanProbe.cpp
         )
         # VMA is a header-only library; point to our vendored copy.
+        # vulkan-hpp raii headers replace BlueVK for GaussianSplat compute.
         target_include_directories(visualization_impl PRIVATE
             ${PROJECT_SOURCE_DIR}/3rdparty/vkmemalloc
+            ${PROJECT_SOURCE_DIR}/3rdparty_downloads/Vulkan-Headers-vulkan-sdk-1.4.341.0/include
         )
     endif()
 

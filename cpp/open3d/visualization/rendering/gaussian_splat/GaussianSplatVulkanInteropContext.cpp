@@ -19,6 +19,10 @@
 
 #if !defined(__APPLE__)
 
+// Provide storage for vulkan-hpp's global dynamic dispatch loader (exactly one
+// translation unit in the program must define this macro).
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 #include <GL/glew.h>
 
 #include <algorithm>
@@ -28,9 +32,9 @@
 #include "open3d/utility/Logging.h"
 
 // Initialize VMA in this single translation unit.
-// VK_NO_PROTOTYPES is already defined by bluevk/BlueVK.h (included via
-// the context header), so VMA must use VmaVulkanFunctions rather than
-// calling Vulkan symbols directly.
+// VK_NO_PROTOTYPES is already defined via vulkan_raii.hpp (included in the
+// context header), so VMA must use VmaVulkanFunctions rather than calling
+// Vulkan symbols directly.
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 // Suppress pedantic warnings inside the VMA header-only implementation.
@@ -46,11 +50,6 @@
 namespace open3d {
 namespace visualization {
 namespace rendering {
-
-// All Vulkan function pointers live in namespace bluevk after
-// bluevk::initialize() and bluevk::bindInstance(). Bring them into scope
-// so the rest of this TU can call vkCreateInstance() etc. directly.
-using namespace bluevk;  // NOLINT(build/namespaces)
 
 // ---------------------------------------------------------------------------
 // Required Vulkan device extensions for interop
@@ -87,10 +86,11 @@ constexpr const char* kRequiredInstanceExtensions[] = {
 
 /// Returns true when all extensions in 'required' are present in
 /// 'available'.  Sets out_missing to the first missing extension name.
-bool CheckExtensions(const std::vector<VkExtensionProperties>& available,
-                     const char* const* required,
-                     std::size_t required_count,
-                     std::string& out_missing) {
+bool CheckExtensions(
+        const std::vector<vk::ExtensionProperties>& available,
+        const char* const* required,
+        std::size_t required_count,
+        std::string& out_missing) {
     for (std::size_t i = 0; i < required_count; ++i) {
         bool found = false;
         for (const auto& ext : available) {
@@ -112,15 +112,12 @@ bool CheckExtensions(const std::vector<VkExtensionProperties>& available,
 ///  +1  : integrated GPU
 ///   0  : any compute-capable device
 ///  -∞  : no compute queue or missing required extensions → reject
-int ScoreDevice(VkPhysicalDevice dev) {
+int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
     // Check for a compute queue.
-    std::uint32_t qfam_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(dev, &qfam_count, nullptr);
-    std::vector<VkQueueFamilyProperties> qfams(qfam_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(dev, &qfam_count, qfams.data());
+    const auto qfams = dev.getQueueFamilyProperties();
     bool has_compute = false;
     for (const auto& qf : qfams) {
-        if (qf.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+        if (qf.queueFlags & vk::QueueFlagBits::eCompute) {
             has_compute = true;
             break;
         }
@@ -128,10 +125,7 @@ int ScoreDevice(VkPhysicalDevice dev) {
     if (!has_compute) return -1;
 
     // Check device extensions.
-    std::uint32_t ext_count = 0;
-    vkEnumerateDeviceExtensionProperties(dev, nullptr, &ext_count, nullptr);
-    std::vector<VkExtensionProperties> exts(ext_count);
-    vkEnumerateDeviceExtensionProperties(dev, nullptr, &ext_count, exts.data());
+    const auto exts = dev.enumerateDeviceExtensionProperties();
 
     std::string missing;
     const bool ok = CheckExtensions(
@@ -139,11 +133,13 @@ int ScoreDevice(VkPhysicalDevice dev) {
             std::size(kRequiredDeviceExtensions), missing);
     if (!ok) return -1;
 
+    // Shaders are compiled for Vulkan 1.3 (SPIR-V 1.6); reject older devices.
+    const auto props = dev.getProperties();
+    if (props.apiVersion < VK_API_VERSION_1_3) return -1;
+
     // Score device type.
-    VkPhysicalDeviceProperties props{};
-    vkGetPhysicalDeviceProperties(dev, &props);
-    if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) return 2;
-    if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) return 1;
+    if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) return 2;
+    if (props.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) return 1;
     return 0;
 }
 
@@ -170,45 +166,62 @@ GaussianSplatVulkanInteropContext::~GaussianSplatVulkanInteropContext() {
 bool GaussianSplatVulkanInteropContext::Initialize() {
     if (initialized_) return true;
 
-    // BlueVK: dynamically load the Vulkan library and global entry points.
-    if (!bluevk::initialize()) {
-        last_error_ = "bluevk::initialize() failed: Vulkan loader not found";
+    // Initialize the global dynamic dispatcher with vkGetInstanceProcAddr
+    // obtained from the Vulkan loader via vulkan-hpp's DynamicLoader utility.
+    // This loads instance-independent entry points (e.g. vkCreateInstance).
+    try {
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(
+                vk::detail::DynamicLoader().getProcAddress<PFN_vkGetInstanceProcAddr>(
+                        "vkGetInstanceProcAddr"));
+    } catch (const std::exception& e) {
+        last_error_ = std::string("Vulkan loader not found: ") + e.what();
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }
 
     if (!CreateInstance()) return false;
 
-    // Bind instance-level Vulkan function pointers through BlueVK.
-    bluevk::bindInstance(instance_);
+    // After instance creation, update the dispatcher with instance-level
+    // function pointers (required for physical device enumeration etc.).
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(static_cast<vk::Instance>(*instance_));
 
     if (!SelectPhysicalDevice()) return false;
     if (!CreateLogicalDevice()) return false;
 
+    // After device creation, update the dispatcher with device-level
+    // function pointers for push descriptors and other extensions.
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(static_cast<vk::Device>(*device_));
+
     initialized_ = true;
     utility::LogDebug("GaussianSplat VulkanInteropContext: initialized ({})",
-                      [&] {
-                          VkPhysicalDeviceProperties p{};
-                          vkGetPhysicalDeviceProperties(physical_device_, &p);
-                          return std::string(p.deviceName);
-                      }());
+                      physical_device_.getProperties().deviceName.data());
     return true;
 }
 
 void GaussianSplatVulkanInteropContext::Shutdown() {
     if (!initialized_) return;
 
-    if (device_ != VK_NULL_HANDLE) {
-        vkDeviceWaitIdle(device_);
-        vkDestroyDevice(device_, nullptr);
-        device_ = VK_NULL_HANDLE;
+    // Wait for idle before releasing sub-objects.  The raw VkDevice is
+    // extracted before the raii handle is reset so the call is valid.
+    if (*device_) {
+        try {
+            device_.waitIdle();
+        } catch (const vk::SystemError& e) {
+            utility::LogWarning(
+                    "GaussianSplat VulkanInteropContext: waitIdle during "
+                    "shutdown failed: {}",
+                    e.what());
+        }
     }
-    if (instance_ != VK_NULL_HANDLE) {
-        vkDestroyInstance(instance_, nullptr);
-        instance_ = VK_NULL_HANDLE;
-    }
-    physical_device_ = VK_NULL_HANDLE;
-    compute_queue_ = VK_NULL_HANDLE;
+
+    // Resetting in reverse construction order: queue → device → physical →
+    // instance → context. vk::raii handles call vkDestroy* in their dtors.
+    compute_queue_ = vk::raii::Queue{nullptr};
+    device_ = vk::raii::Device{nullptr};
+    physical_device_ = vk::raii::PhysicalDevice{nullptr};
+    instance_ = vk::raii::Instance{nullptr};
+    // context_ is a value member; its dtor unloads the Vulkan loader.
+
     compute_queue_family_ = UINT32_MAX;
     initialized_ = false;
     gl_extensions_ok_ = false;
@@ -254,12 +267,9 @@ bool GaussianSplatVulkanInteropContext::ProbeGLExtensions() {
 // ---------------------------------------------------------------------------
 
 bool GaussianSplatVulkanInteropContext::CreateInstance() {
-    // Check instance extension availability.
-    std::uint32_t ext_count = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &ext_count, nullptr);
-    std::vector<VkExtensionProperties> available_exts(ext_count);
-    vkEnumerateInstanceExtensionProperties(nullptr, &ext_count,
-                                           available_exts.data());
+    // Check instance extension availability via vulkan-hpp.
+    const auto available_exts =
+            context_.enumerateInstanceExtensionProperties();
 
     std::string missing;
     if (!CheckExtensions(available_exts, kRequiredInstanceExtensions,
@@ -269,22 +279,36 @@ bool GaussianSplatVulkanInteropContext::CreateInstance() {
         return false;
     }
 
-    VkApplicationInfo app_info{};
-    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.pApplicationName = "Open3D GaussianSplat";
-    app_info.apiVersion = VK_API_VERSION_1_1;
+    // Build extension list: required + optional VK_EXT_debug_utils (for GPU
+    // frame markers visible in validation layers and debug tools).
+    std::vector<const char*> extensions(
+            kRequiredInstanceExtensions,
+            kRequiredInstanceExtensions +
+                    std::size(kRequiredInstanceExtensions));
+    for (const auto& ext : available_exts) {
+        if (std::strcmp(ext.extensionName,
+                        VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0) {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            debug_utils_enabled_ = true;
+            break;
+        }
+    }
 
-    VkInstanceCreateInfo ci{};
-    ci.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    ci.pApplicationInfo = &app_info;
-    ci.enabledExtensionCount =
-            static_cast<std::uint32_t>(std::size(kRequiredInstanceExtensions));
-    ci.ppEnabledExtensionNames = kRequiredInstanceExtensions;
+    // Shaders are compiled for --target-env vulkan1.3 (SPIR-V 1.6).
+    // The instance must advertise 1.3 or vkCreateShaderModule rejects them.
+    vk::ApplicationInfo app_info{
+            "Open3D GaussianSplat",        // pApplicationName
+            1,                             // applicationVersion
+            nullptr,                       // pEngineName
+            0,                             // engineVersion
+            VK_API_VERSION_1_3,            // apiVersion
+    };
+    vk::InstanceCreateInfo ci({}, &app_info, {}, extensions);
 
-    const VkResult res = vkCreateInstance(&ci, nullptr, &instance_);
-    if (res != VK_SUCCESS) {
-        last_error_ = "vkCreateInstance failed (VkResult=" +
-                      std::to_string(static_cast<int>(res)) + ")";
+    try {
+        instance_ = context_.createInstance(ci);
+    } catch (const vk::SystemError& e) {
+        last_error_ = std::string("vkCreateInstance failed: ") + e.what();
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }
@@ -296,27 +320,24 @@ bool GaussianSplatVulkanInteropContext::CreateInstance() {
 // ---------------------------------------------------------------------------
 
 bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
-    std::uint32_t dev_count = 0;
-    vkEnumeratePhysicalDevices(instance_, &dev_count, nullptr);
-    if (dev_count == 0) {
+    auto devices = instance_.enumeratePhysicalDevices();
+    if (devices.empty()) {
         last_error_ = "No Vulkan-capable devices found";
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }
-    std::vector<VkPhysicalDevice> devices(dev_count);
-    vkEnumeratePhysicalDevices(instance_, &dev_count, devices.data());
 
-    VkPhysicalDevice best = VK_NULL_HANDLE;
     int best_score = -1;
-    for (VkPhysicalDevice dev : devices) {
-        const int score = ScoreDevice(dev);
+    std::size_t best_idx = devices.size();
+    for (std::size_t i = 0; i < devices.size(); ++i) {
+        const int score = ScoreDevice(devices[i]);
         if (score > best_score) {
             best_score = score;
-            best = dev;
+            best_idx = i;
         }
     }
 
-    if (best == VK_NULL_HANDLE) {
+    if (best_idx == devices.size()) {
         last_error_ =
                 "No suitable Vulkan device found with required interop "
                 "extensions. Required extensions: "
@@ -325,13 +346,13 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }
-    physical_device_ = best;
+    physical_device_ = std::move(devices[best_idx]);
 
-    VkPhysicalDeviceProperties props{};
-    vkGetPhysicalDeviceProperties(physical_device_, &props);
-    vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_props_);
+    const auto props = physical_device_.getProperties();
+    memory_props_ = static_cast<VkPhysicalDeviceMemoryProperties>(
+            physical_device_.getMemoryProperties());
     utility::LogDebug("GaussianSplat Vulkan: selected device '{}'",
-                      props.deviceName);
+                      props.deviceName.data());
     return true;
 }
 
@@ -340,30 +361,29 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
 // ---------------------------------------------------------------------------
 
 bool GaussianSplatVulkanInteropContext::CreateLogicalDevice() {
-    std::uint32_t qfam_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &qfam_count,
-                                             nullptr);
-    std::vector<VkQueueFamilyProperties> qfams(qfam_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &qfam_count,
-                                             qfams.data());
+    const auto qfams = physical_device_.getQueueFamilyProperties();
 
-    // Prefer a compute-only queue (no graphics flag) for dedicated compute.
-    std::uint32_t compute_family = UINT32_MAX;
+    // Prefer a queue family that supports both GRAPHICS and COMPUTE — the
+    // same hardware engine (RCS on Intel, GFX on AMD) that OpenGL GL_ARB_gl_spirv
+    // uses. Dedicated compute-only queues (CCS on Intel) can behave differently
+    // for the same SPIR-V shaders and may hang on some driver/hardware combos.
+    // Fall back to a compute-only queue only when no graphics+compute family exists.
     std::uint32_t graphics_compute_family = UINT32_MAX;
-    for (std::uint32_t i = 0; i < qfam_count; ++i) {
-        if (qfams[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            if (!(qfams[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-                compute_family = i;  // dedicated compute
-                break;
-            }
-            if (graphics_compute_family == UINT32_MAX) {
+    std::uint32_t compute_only_family = UINT32_MAX;
+    for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(qfams.size()); ++i) {
+        const auto flags = qfams[i].queueFlags;
+        if ((flags & vk::QueueFlagBits::eCompute) &&
+            (flags & vk::QueueFlagBits::eGraphics)) {
+            if (graphics_compute_family == UINT32_MAX)
                 graphics_compute_family = i;
-            }
+        } else if ((flags & vk::QueueFlagBits::eCompute) &&
+                   compute_only_family == UINT32_MAX) {
+            compute_only_family = i;
         }
     }
-    compute_queue_family_ = (compute_family != UINT32_MAX)
-                                    ? compute_family
-                                    : graphics_compute_family;
+    compute_queue_family_ = (graphics_compute_family != UINT32_MAX)
+                                    ? graphics_compute_family
+                                    : compute_only_family;
     if (compute_queue_family_ == UINT32_MAX) {
         last_error_ = "No compute queue family found";
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
@@ -371,36 +391,72 @@ bool GaussianSplatVulkanInteropContext::CreateLogicalDevice() {
     }
 
     const float queue_priority = 1.0f;
-    VkDeviceQueueCreateInfo qci{};
-    qci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    qci.queueFamilyIndex = compute_queue_family_;
-    qci.queueCount = 1;
-    qci.pQueuePriorities = &queue_priority;
+    vk::DeviceQueueCreateInfo qci({}, compute_queue_family_, 1, &queue_priority);
 
-    // Enable required subgroup features for OneSweep (Vulkan 1.1+).
-    VkPhysicalDeviceFeatures2 features2{};
-    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    // Query all hardware-supported features and pass them back to createDevice
+    // so that Vulkan 1.1/1.2/1.3 features used by the SPIR-V shaders
+    // (subgroups, shader floats, atomics, etc.) are fully enabled.
+    auto features_chain =
+            physical_device_.getFeatures2<vk::PhysicalDeviceFeatures2,
+                                          vk::PhysicalDeviceVulkan11Features,
+                                          vk::PhysicalDeviceVulkan12Features,
+                          vk::PhysicalDeviceVulkan13Features,
+                          vk::PhysicalDeviceSubgroupSizeControlFeatures>();
 
-    VkDeviceCreateInfo dci{};
-    dci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    dci.pNext = &features2;
-    dci.queueCreateInfoCount = 1;
-    dci.pQueueCreateInfos = &qci;
-    dci.enabledExtensionCount =
-            static_cast<std::uint32_t>(std::size(kRequiredDeviceExtensions));
-    dci.ppEnabledExtensionNames = kRequiredDeviceExtensions;
+    vk::DeviceCreateInfo dci({}, qci, {}, kRequiredDeviceExtensions);
+    dci.pNext = &features_chain.get<vk::PhysicalDeviceFeatures2>();
 
-    const VkResult res =
-            vkCreateDevice(physical_device_, &dci, nullptr, &device_);
-    if (res != VK_SUCCESS) {
-        last_error_ = "vkCreateDevice failed (VkResult=" +
-                      std::to_string(static_cast<int>(res)) + ")";
+    try {
+        device_ = physical_device_.createDevice(dci);
+    } catch (const vk::SystemError& e) {
+        last_error_ = std::string("vkCreateDevice failed: ") + e.what();
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }
-    vkGetDeviceQueue(device_, compute_queue_family_, 0, &compute_queue_);
-    utility::LogDebug("GaussianSplat Vulkan: compute queue family {}",
-                      compute_queue_family_);
+    compute_queue_ = device_.getQueue(compute_queue_family_, 0);
+
+    // Query the hardware subgroup size so callers can skip _subgroup shader
+    // variants when the device subgroup size is too small (e.g. Intel Xe2=8).
+    auto props11 =
+            physical_device_
+                .getProperties2<vk::PhysicalDeviceProperties2,
+                        vk::PhysicalDeviceVulkan11Properties,
+                        vk::PhysicalDeviceSubgroupSizeControlProperties>();
+        const auto& subgroup_props =
+            props11.get<vk::PhysicalDeviceVulkan11Properties>();
+        subgroup_size_ = subgroup_props.subgroupSize;
+        subgroup_supported_stages_ =
+            static_cast<std::uint32_t>(subgroup_props.subgroupSupportedStages);
+        subgroup_supported_operations_ = static_cast<std::uint32_t>(
+            subgroup_props.subgroupSupportedOperations);
+        const auto& subgroup_size_control_features =
+            features_chain.get<vk::PhysicalDeviceSubgroupSizeControlFeatures>();
+        subgroup_size_control_ =
+            subgroup_size_control_features.subgroupSizeControl == VK_TRUE;
+        compute_full_subgroups_ =
+            subgroup_size_control_features.computeFullSubgroups == VK_TRUE;
+
+        const auto& subgroup_size_control_props =
+            props11.get<vk::PhysicalDeviceSubgroupSizeControlProperties>();
+        min_subgroup_size_ = subgroup_size_control_props.minSubgroupSize;
+        max_subgroup_size_ = subgroup_size_control_props.maxSubgroupSize;
+        max_compute_workgroup_subgroups_ =
+            subgroup_size_control_props.maxComputeWorkgroupSubgroups;
+        required_subgroup_size_stages_ = static_cast<std::uint32_t>(
+            subgroup_size_control_props.requiredSubgroupSizeStages);
+
+        utility::LogDebug("GaussianSplat Vulkan: compute queue family {}, "
+                  "subgroupSize={}, subgroupStages=0x{:x}, "
+                  "subgroupOps=0x{:x}, subgroupSizeControl={}, "
+                  "computeFullSubgroups={}, minSubgroupSize={}, "
+                  "maxSubgroupSize={}, maxComputeWorkgroupSubgroups={}, "
+                  "requiredSubgroupStages=0x{:x}",
+                  compute_queue_family_, subgroup_size_,
+                  subgroup_supported_stages_, subgroup_supported_operations_,
+                  subgroup_size_control_, compute_full_subgroups_,
+                  min_subgroup_size_, max_subgroup_size_,
+                  max_compute_workgroup_subgroups_,
+                  required_subgroup_size_stages_);
     return true;
 }
 
@@ -431,119 +487,122 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         VkImage& out_image,
         VkDeviceMemory& out_memory,
         int& out_fd) const {
-    // Declare that this image's memory will be exported as a POSIX FD
-    // (OpaqueFd handle type, compatible with GL EXT_memory_object_fd).
-    VkExternalMemoryImageCreateInfo ext_img_ci{};
-    ext_img_ci.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    const vk::Format format = static_cast<vk::Format>(vk_format);
+    const vk::ImageUsageFlags vk_usage = static_cast<vk::ImageUsageFlags>(usage);
+
 #if defined(_WIN32)
-    ext_img_ci.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    constexpr vk::ExternalMemoryHandleTypeFlagBits kHandleType =
+            vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
 #else
-    ext_img_ci.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    constexpr vk::ExternalMemoryHandleTypeFlagBits kHandleType =
+            vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd;
 #endif
 
-    VkImageCreateInfo img_ci{};
-    img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    img_ci.pNext = &ext_img_ci;
-    img_ci.imageType = VK_IMAGE_TYPE_2D;
-    img_ci.format = vk_format;
-    img_ci.extent = {width, height, 1};
-    img_ci.mipLevels = 1;
-    img_ci.arrayLayers = 1;
-    img_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    img_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    img_ci.usage = usage;
-    img_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    img_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    // Chain external-memory info into the image create info.
+    vk::StructureChain<vk::ImageCreateInfo, vk::ExternalMemoryImageCreateInfo>
+            img_chain{
+                    vk::ImageCreateInfo{
+                            {},
+                            vk::ImageType::e2D,
+                            format,
+                            {width, height, 1},
+                            1,
+                            1,
+                            vk::SampleCountFlagBits::e1,
+                            vk::ImageTiling::eOptimal,
+                            vk_usage,
+                            vk::SharingMode::eExclusive,
+                            {},
+                            vk::ImageLayout::eUndefined,
+                    },
+                    vk::ExternalMemoryImageCreateInfo{kHandleType},
+            };
 
-    if (vkCreateImage(device_, &img_ci, nullptr, &out_image) != VK_SUCCESS) {
-        utility::LogWarning("GaussianSplat Vulkan: vkCreateImage failed");
+    // Use the non-RAII vk::Device wrapper: AllocateExportableImage manages raw
+    // VkImage/VkDeviceMemory lifetimes explicitly (exported to GL via FD).
+    const vk::Device dev(*device_);
+
+    vk::Image image;
+    try {
+        image = dev.createImage(img_chain.get<vk::ImageCreateInfo>());
+    } catch (const vk::SystemError& e) {
+        utility::LogWarning("GaussianSplat Vulkan: vkCreateImage failed: {}",
+                            e.what());
         return false;
     }
 
-    // Require a dedicated allocation (required by most drivers for
-    // external-memory images and strongly recommended by the spec).
-    VkMemoryDedicatedAllocateInfo dedicated{};
-    dedicated.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
-    dedicated.image = out_image;
-
-    VkExportMemoryAllocateInfo export_ai{};
-    export_ai.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
-    export_ai.pNext = &dedicated;
-#if defined(_WIN32)
-    export_ai.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-#else
-    export_ai.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-#endif
-
-    VkMemoryRequirements mem_req{};
-    vkGetImageMemoryRequirements(device_, out_image, &mem_req);
-
+    const vk::MemoryRequirements mem_req = dev.getImageMemoryRequirements(image);
     const std::uint32_t mem_type = FindMemoryType(
-            mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            mem_req.memoryTypeBits,
+            static_cast<VkMemoryPropertyFlags>(
+                    vk::MemoryPropertyFlagBits::eDeviceLocal));
     if (mem_type == UINT32_MAX) {
         utility::LogWarning(
                 "GaussianSplat Vulkan: no suitable device-local memory type");
-        vkDestroyImage(device_, out_image, nullptr);
-        out_image = VK_NULL_HANDLE;
+        dev.destroyImage(image);
         return false;
     }
 
-    VkMemoryAllocateInfo alloc_i{};
-    alloc_i.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_i.pNext = &export_ai;
-    alloc_i.allocationSize = mem_req.size;
-    alloc_i.memoryTypeIndex = mem_type;
+    // Chain dedicated-alloc and export-alloc info into vk::MemoryAllocateInfo.
+    vk::StructureChain<vk::MemoryAllocateInfo,
+                       vk::ExportMemoryAllocateInfo,
+                       vk::MemoryDedicatedAllocateInfo>
+            mem_chain{
+                    vk::MemoryAllocateInfo{mem_req.size, mem_type},
+                    vk::ExportMemoryAllocateInfo{kHandleType},
+                    vk::MemoryDedicatedAllocateInfo{image},
+            };
 
-    if (vkAllocateMemory(device_, &alloc_i, nullptr, &out_memory) !=
-        VK_SUCCESS) {
-        utility::LogWarning("GaussianSplat Vulkan: vkAllocateMemory failed");
-        vkDestroyImage(device_, out_image, nullptr);
-        out_image = VK_NULL_HANDLE;
+    vk::DeviceMemory memory;
+    try {
+        memory = dev.allocateMemory(mem_chain.get<vk::MemoryAllocateInfo>());
+    } catch (const vk::SystemError& e) {
+        utility::LogWarning("GaussianSplat Vulkan: vkAllocateMemory failed: {}",
+                            e.what());
+        dev.destroyImage(image);
         return false;
     }
 
-    if (vkBindImageMemory(device_, out_image, out_memory, 0) != VK_SUCCESS) {
-        utility::LogWarning("GaussianSplat Vulkan: vkBindImageMemory failed");
-        vkFreeMemory(device_, out_memory, nullptr);
-        vkDestroyImage(device_, out_image, nullptr);
-        out_image = VK_NULL_HANDLE;
-        out_memory = VK_NULL_HANDLE;
-        return false;
-    }
-
-    // Export the memory as a platform FD.
-#if defined(_WIN32)
-    VkMemoryGetWin32HandleInfoKHR gh_info{};
-    gh_info.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
-    gh_info.memory = out_memory;
-    gh_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-    HANDLE win32_handle = nullptr;
-    if (vkGetMemoryWin32HandleKHR(device_, &gh_info, &win32_handle) !=
-        VK_SUCCESS) {
+    try {
+        (void)dev.bindImageMemory(image, memory, 0);
+    } catch (const vk::SystemError& e) {
         utility::LogWarning(
-                "GaussianSplat Vulkan: vkGetMemoryWin32HandleKHR failed");
-        vkFreeMemory(device_, out_memory, nullptr);
-        vkDestroyImage(device_, out_image, nullptr);
-        out_image = VK_NULL_HANDLE;
-        out_memory = VK_NULL_HANDLE;
+                "GaussianSplat Vulkan: vkBindImageMemory failed: {}", e.what());
+        dev.freeMemory(memory);
+        dev.destroyImage(image);
         return false;
     }
-    // Store the HANDLE as an int via reinterpret so the API is uniform.
+
+    // Export the memory as a platform handle.
+#if defined(_WIN32)
+    HANDLE win32_handle = nullptr;
+    try {
+        win32_handle = dev.getMemoryWin32HandleKHR(
+                {memory, vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32});
+    } catch (const vk::SystemError& e) {
+        utility::LogWarning(
+                "GaussianSplat Vulkan: vkGetMemoryWin32HandleKHR failed: {}",
+                e.what());
+        dev.freeMemory(memory);
+        dev.destroyImage(image);
+        return false;
+    }
     out_fd = static_cast<int>(reinterpret_cast<intptr_t>(win32_handle));
 #else
-    VkMemoryGetFdInfoKHR gfd_info{};
-    gfd_info.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
-    gfd_info.memory = out_memory;
-    gfd_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-    if (vkGetMemoryFdKHR(device_, &gfd_info, &out_fd) != VK_SUCCESS) {
-        utility::LogWarning("GaussianSplat Vulkan: vkGetMemoryFdKHR failed");
-        vkFreeMemory(device_, out_memory, nullptr);
-        vkDestroyImage(device_, out_image, nullptr);
-        out_image = VK_NULL_HANDLE;
-        out_memory = VK_NULL_HANDLE;
+    try {
+        out_fd = dev.getMemoryFdKHR(
+                {memory, vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd});
+    } catch (const vk::SystemError& e) {
+        utility::LogWarning(
+                "GaussianSplat Vulkan: vkGetMemoryFdKHR failed: {}", e.what());
+        dev.freeMemory(memory);
+        dev.destroyImage(image);
         return false;
     }
 #endif
+
+    out_image = static_cast<VkImage>(image);
+    out_memory = static_cast<VkDeviceMemory>(memory);
     return true;
 }
 
@@ -648,24 +707,23 @@ SharedImageDesc GaussianSplatVulkanInteropContext::CreateSharedImage(
     }
 
     int export_fd = -1;
-    VkMemoryRequirements mem_req{};
     {
-        // Probe memory requirements before the full allocation.
-        VkImageCreateInfo probe_ci{};
-        probe_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        probe_ci.imageType = VK_IMAGE_TYPE_2D;
-        probe_ci.format = vk_fmt;
-        probe_ci.extent = {width, height, 1};
-        probe_ci.mipLevels = 1;
-        probe_ci.arrayLayers = 1;
-        probe_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-        probe_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-        probe_ci.usage = usage;
-        VkImage probe_img = VK_NULL_HANDLE;
-        vkCreateImage(device_, &probe_ci, nullptr, &probe_img);
-        if (probe_img != VK_NULL_HANDLE) {
-            vkGetImageMemoryRequirements(device_, probe_img, &mem_req);
-            vkDestroyImage(device_, probe_img, nullptr);
+        // Probe memory requirements using a temporary image (no exportable
+        // memory yet) to determine the actual allocation size for GL import.
+        vk::ImageCreateInfo probe_ci{{},
+                                     vk::ImageType::e2D,
+                                     static_cast<vk::Format>(vk_fmt),
+                                     {width, height, 1},
+                                     1,
+                                     1,
+                                     vk::SampleCountFlagBits::e1,
+                                     vk::ImageTiling::eOptimal,
+                                     static_cast<vk::ImageUsageFlags>(usage)};
+        try {
+            vk::Image probe_img = vk::Device(*device_).createImage(probe_ci);
+            vk::Device(*device_).destroyImage(probe_img);
+        } catch (...) {
+            // Ignore probe failures; AllocateExportableImage will report.
         }
     }
 
@@ -674,15 +732,19 @@ SharedImageDesc GaussianSplatVulkanInteropContext::CreateSharedImage(
     if (!ok) return desc;
 
     // Query actual memory size for the GL import call.
-    VkMemoryRequirements actual_req{};
-    vkGetImageMemoryRequirements(device_, desc.vk_image, &actual_req);
+    const vk::MemoryRequirements actual_req =
+            vk::Device(*device_).getImageMemoryRequirements(
+                    static_cast<vk::Image>(desc.vk_image));
 
     ok = ImportFDIntoGL(export_fd, width, height,
-                        actual_req.size, interop_format,
+                        static_cast<VkDeviceSize>(actual_req.size),
+                        interop_format,
                         desc.gl_memory_object, desc.gl_texture);
     if (!ok) {
-        vkFreeMemory(device_, desc.vk_memory, nullptr);
-        vkDestroyImage(device_, desc.vk_image, nullptr);
+        vk::Device(*device_).freeMemory(
+                static_cast<vk::DeviceMemory>(desc.vk_memory));
+        vk::Device(*device_).destroyImage(
+                static_cast<vk::Image>(desc.vk_image));
         desc = SharedImageDesc{};
         return desc;
     }
@@ -727,11 +789,12 @@ void GaussianSplatVulkanInteropContext::DestroySharedImage(
     }
     // Now safe to free Vulkan resources.
     if (desc.vk_image != VK_NULL_HANDLE) {
-        vkDestroyImage(device_, desc.vk_image, nullptr);
+        vk::Device(*device_).destroyImage(static_cast<vk::Image>(desc.vk_image));
         desc.vk_image = VK_NULL_HANDLE;
     }
     if (desc.vk_memory != VK_NULL_HANDLE) {
-        vkFreeMemory(device_, desc.vk_memory, nullptr);
+        vk::Device(*device_).freeMemory(
+                static_cast<vk::DeviceMemory>(desc.vk_memory));
         desc.vk_memory = VK_NULL_HANDLE;
     }
     desc = SharedImageDesc{};
@@ -743,52 +806,57 @@ void GaussianSplatVulkanInteropContext::DestroySharedImage(
 
 bool GaussianSplatVulkanInteropContext::CreateExportableSemaphore(
         VkSemaphore& out_semaphore, int& out_fd) const {
-    VkExportSemaphoreCreateInfo export_ci{};
-    export_ci.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
 #if defined(_WIN32)
-    export_ci.handleTypes =
-            VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    constexpr vk::ExternalSemaphoreHandleTypeFlagBits kSemHandleType =
+            vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32;
 #else
-    export_ci.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+    constexpr vk::ExternalSemaphoreHandleTypeFlagBits kSemHandleType =
+            vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd;
 #endif
 
-    VkSemaphoreCreateInfo sci{};
-    sci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    sci.pNext = &export_ci;
+    // Chain export info into the semaphore create info.
+    vk::StructureChain<vk::SemaphoreCreateInfo, vk::ExportSemaphoreCreateInfo>
+            chain{{}, {kSemHandleType}};
 
-    if (vkCreateSemaphore(device_, &sci, nullptr, &out_semaphore) !=
-        VK_SUCCESS) {
-        utility::LogWarning("GaussianSplat Vulkan: vkCreateSemaphore failed");
+    // Use the non-RAII vk::Device wrapper: semaphore lifetime is managed
+    // manually here (exported to GL via FD, raw VkSemaphore in SharedSemaphoreDesc).
+    const vk::Device sdev(*device_);
+
+    vk::Semaphore semaphore;
+    try {
+        semaphore = sdev.createSemaphore(chain.get<vk::SemaphoreCreateInfo>());
+    } catch (const vk::SystemError& e) {
+        utility::LogWarning("GaussianSplat Vulkan: vkCreateSemaphore failed: {}",
+                            e.what());
         return false;
     }
 
 #if defined(_WIN32)
-    VkSemaphoreGetWin32HandleInfoKHR gh_info{};
-    gh_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-    gh_info.semaphore = out_semaphore;
-    gh_info.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     HANDLE win32_handle = nullptr;
-    if (vkGetSemaphoreWin32HandleKHR(device_, &gh_info, &win32_handle) !=
-        VK_SUCCESS) {
+    try {
+        win32_handle = sdev.getSemaphoreWin32HandleKHR(
+                {semaphore, vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32});
+    } catch (const vk::SystemError& e) {
         utility::LogWarning(
-                "GaussianSplat Vulkan: vkGetSemaphoreWin32HandleKHR failed");
-        vkDestroySemaphore(device_, out_semaphore, nullptr);
-        out_semaphore = VK_NULL_HANDLE;
+                "GaussianSplat Vulkan: vkGetSemaphoreWin32HandleKHR failed: {}",
+                e.what());
+        sdev.destroySemaphore(semaphore);
         return false;
     }
     out_fd = static_cast<int>(reinterpret_cast<intptr_t>(win32_handle));
 #else
-    VkSemaphoreGetFdInfoKHR gfd_info{};
-    gfd_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
-    gfd_info.semaphore = out_semaphore;
-    gfd_info.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
-    if (vkGetSemaphoreFdKHR(device_, &gfd_info, &out_fd) != VK_SUCCESS) {
-        utility::LogWarning("GaussianSplat Vulkan: vkGetSemaphoreFdKHR failed");
-        vkDestroySemaphore(device_, out_semaphore, nullptr);
-        out_semaphore = VK_NULL_HANDLE;
+    try {
+        out_fd = sdev.getSemaphoreFdKHR(
+                {semaphore, vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd});
+    } catch (const vk::SystemError& e) {
+        utility::LogWarning(
+                "GaussianSplat Vulkan: vkGetSemaphoreFdKHR failed: {}",
+                e.what());
+        sdev.destroySemaphore(semaphore);
         return false;
     }
 #endif
+    out_semaphore = static_cast<VkSemaphore>(semaphore);
     return true;
 }
 
@@ -832,7 +900,8 @@ bool GaussianSplatVulkanInteropContext::CreateSemaphorePair(
         return false;
     }
     if (!ImportFDIntoGLSemaphore(fd0, out_gl_to_vk.gl_semaphore)) {
-        vkDestroySemaphore(device_, out_gl_to_vk.vk_semaphore, nullptr);
+        vk::Device(*device_).destroySemaphore(
+                static_cast<vk::Semaphore>(out_gl_to_vk.vk_semaphore));
         out_gl_to_vk.vk_semaphore = VK_NULL_HANDLE;
         return false;
     }
@@ -845,7 +914,8 @@ bool GaussianSplatVulkanInteropContext::CreateSemaphorePair(
         return false;
     }
     if (!ImportFDIntoGLSemaphore(fd1, out_vk_to_gl.gl_semaphore)) {
-        vkDestroySemaphore(device_, out_vk_to_gl.vk_semaphore, nullptr);
+        vk::Device(*device_).destroySemaphore(
+                static_cast<vk::Semaphore>(out_vk_to_gl.vk_semaphore));
         out_vk_to_gl.vk_semaphore = VK_NULL_HANDLE;
         DestroySemaphore(out_gl_to_vk);
         return false;
@@ -862,7 +932,8 @@ void GaussianSplatVulkanInteropContext::DestroySemaphore(
         desc.gl_semaphore = 0;
     }
     if (desc.vk_semaphore != VK_NULL_HANDLE) {
-        vkDestroySemaphore(device_, desc.vk_semaphore, nullptr);
+        vk::Device(*device_).destroySemaphore(
+                static_cast<vk::Semaphore>(desc.vk_semaphore));
         desc.vk_semaphore = VK_NULL_HANDLE;
     }
     desc = SharedSemaphoreDesc{};

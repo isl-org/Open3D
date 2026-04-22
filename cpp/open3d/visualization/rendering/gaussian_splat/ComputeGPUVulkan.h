@@ -34,6 +34,12 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+struct VulkanSubgroupOptions {
+    bool enable_prefix_sum = false;
+    bool enable_onesweep = false;
+    bool enable_radix_sort = false;
+};
+
 /// Register a GL-Vulkan shared image with a Vulkan compute context so that
 /// subsequent BindImage() / BindSamplerTexture() calls for that GL texture
 /// name resolve to the backing VkImage.
@@ -59,10 +65,10 @@ void UnregisterSharedImageFromVulkanContext(GaussianSplatGpuContext& ctx,
 /// Uses device / queue from GaussianSplatVulkanInteropContext::GetInstance().
 /// Returns nullptr if the interop context is not initialized.
 ///
-/// @param use_subgroups  If true, load the _subgroup SPIR-V variants for
-///                       prefix-sum and radix-sort (faster on Vulkan).
+/// @param subgroup_options  Controls which subgroup-capable shader families
+///                          should load subgroup SPIR-V variants.
 [[nodiscard]] std::unique_ptr<GaussianSplatGpuContext>
-CreateComputeGpuContextVulkan(bool use_subgroups);
+CreateComputeGpuContextVulkan(VulkanSubgroupOptions subgroup_options);
 
 }  // namespace rendering
 }  // namespace visualization

@@ -118,7 +118,7 @@ void main() {
     // ----- HISTOGRAM MODE (many WGs: accumulate counts) --------------------
 
     // Clear local histogram.
-    for (uint i = lID; i < NUM_PASSES * RADIX; i += 256u) {
+    for (uint i = lID; i < NUM_PASSES * RADIX; i += RADIX) {
         s_hist[i] = 0u;
     }
     barrier();
@@ -135,7 +135,7 @@ void main() {
 
     // Merge local WG histogram into the global buffer (skip zero bins to
     // reduce atomicAdd traffic on bins that are empty for this WG).
-    for (uint i = lID; i < NUM_PASSES * RADIX; i += 256u) {
+    for (uint i = lID; i < NUM_PASSES * RADIX; i += RADIX) {
         uint v = s_hist[i];
         if (v != 0u) {
             atomicAdd(global_hist[i], v);

@@ -18,7 +18,6 @@
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 #if !defined(__APPLE__)
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLBackend.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanBackend.h"
 #endif
 
@@ -101,12 +100,6 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
                     new GaussianSplatPlaceholderBackend("Metal"));
 #endif
         case RenderingType::kOpenGL:
-#if !defined(__APPLE__)
-            return CreateGaussianSplatOpenGLBackend(resource_mgr, config);
-#else
-            return std::unique_ptr<GaussianSplatRenderer::Backend>(
-                    new GaussianSplatPlaceholderBackend("OpenGL"));
-#endif
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)
@@ -115,8 +108,9 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
                 vk_backend) {
                 return vk_backend;
             }
-            // Fall back to OpenGL if Vulkan interop context is not available.
-            return CreateGaussianSplatOpenGLBackend(resource_mgr, config);
+            return std::unique_ptr<GaussianSplatRenderer::Backend>(
+                    new GaussianSplatPlaceholderBackend(
+                            "Vulkan not available"));
 #else
             return std::unique_ptr<GaussianSplatRenderer::Backend>(
                     new GaussianSplatPlaceholderBackend("Unsupported"));

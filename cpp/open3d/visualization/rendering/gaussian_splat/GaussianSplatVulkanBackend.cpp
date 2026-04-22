@@ -26,9 +26,8 @@
 #include <unordered_map>
 #include <vector>
 
-// BlueVK for VkFormat constants (shared images use these).
-#include "bluevk/BlueVK.h"
-using namespace bluevk;
+// VkFormat constants (VK_FORMAT_R16G16B16A16_SFLOAT etc.) are provided via
+// vulkan_raii.hpp included transitively through GaussianSplatVulkanInteropContext.h.
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -38,7 +37,6 @@ using namespace bluevk;
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPUVulkan.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLPipeline.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatPassRunner.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
 
@@ -54,7 +52,13 @@ class GaussianSplatVulkanBackend final : public GaussianSplatRenderer::Backend {
 public:
     explicit GaussianSplatVulkanBackend(
             const GaussianSplatRenderer::RenderConfig& config)
-        : config_(config) {}
+        : config_(config) {
+        config_.use_shader_subgroups = true;
+        config_.use_onesweep_sort = true;
+        utility::LogDebug(
+            "GaussianSplat Vulkan: enabling prefix_sum and OneSweep "
+            "subgroup pipeline");
+    }
 
     ~GaussianSplatVulkanBackend() override {
         // Free per-view GPU resources via the compute context.
@@ -162,14 +166,6 @@ public:
             }
         }
 
-        if (!use_vk) {
-            auto sd = CreateGLTexture2D(width, height, kGL_DEPTH_COMPONENT32F,
-                                        "gs.scene_depth");
-            targets.scene_depth_gl_handle = sd.valid ? sd.id : 0;
-            auto sc = CreateGLTexture2D(width, height, kGL_RGBA16F, "gs.color");
-            targets.color_gl_handle = sc.valid ? sc.id : 0;
-            targets.uses_vulkan_interop = false;
-        }
 
         gl_ctx.ReleaseCurrent();
 
@@ -290,17 +286,6 @@ public:
                 targets.scene_depth_gl_handle = 0;
             }
             targets.uses_vulkan_interop = false;
-        } else {
-            if (targets.scene_depth_gl_handle != 0) {
-                GLTextureHandle dt{targets.scene_depth_gl_handle, 0, 0, true};
-                DestroyGLTexture(dt);
-                targets.scene_depth_gl_handle = 0;
-            }
-            if (targets.color_gl_handle != 0) {
-                GLTextureHandle ct{targets.color_gl_handle, 0, 0, true};
-                DestroyGLTexture(ct);
-                targets.color_gl_handle = 0;
-            }
         }
         gl_ctx.ReleaseCurrent();
     }
@@ -374,7 +359,11 @@ private:
 
     bool EnsureGpuContext() {
         if (gpu_) return gpu_->EnsureProgramsLoaded();
-        gpu_ = CreateComputeGpuContextVulkan(config_.use_shader_subgroups);
+        VulkanSubgroupOptions subgroup_options;
+        subgroup_options.enable_prefix_sum = true;
+        subgroup_options.enable_onesweep = true;
+        subgroup_options.enable_radix_sort = false;
+        gpu_ = CreateComputeGpuContextVulkan(subgroup_options);
         if (!gpu_) return false;
         return gpu_->EnsureProgramsLoaded();
     }

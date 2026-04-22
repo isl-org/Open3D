@@ -26,6 +26,7 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -65,8 +66,8 @@ t::geometry::PointCloud MakeTwoSplatCloud() {
 }
 
 struct OffscreenCtx {
-    visualization::rendering::FilamentRenderer* renderer = nullptr;
-    visualization::rendering::Open3DScene* scene = nullptr;
+    std::unique_ptr<visualization::rendering::FilamentRenderer> renderer;
+    std::unique_ptr<visualization::rendering::Open3DScene> scene;
 
     OffscreenCtx(int w, int h) {
         using namespace visualization::rendering;

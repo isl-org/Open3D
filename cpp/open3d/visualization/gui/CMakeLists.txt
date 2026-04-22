@@ -85,6 +85,8 @@ set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_payload.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_compute_dispatch_args.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_depth_merge.comp
+    # Test-only Vulkan compute probe for device forward progress.
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_forward_progress_chain.comp
     # OneSweep sort: subgroup-only variants; fall back to radix sort if unavailable.
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_onesweep_global_hist_subgroup.comp
     ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_onesweep_digit_pass_subgroup.comp

@@ -21,9 +21,9 @@
 //     CreateSharedDepthImage(), CreateSemaphorePair() per view, and holds the
 //     resulting handles in OutputTargets.
 //
-// Uses BlueVK (libbluevk in the Filament prebuilt) for dynamic Vulkan loading
-// and VMA (vk_mem_alloc.h vendored in 3rdparty/vkmemalloc/) for suballocated
-// internal-only buffer allocations.
+// Uses vulkan-hpp (Vulkan-Headers) for Vulkan loading and RAII handle
+// lifetime management, and VMA (vk_mem_alloc.h vendored in
+// 3rdparty/vkmemalloc/) for suballocated internal-only buffer allocations.
 //
 // Thread-safety: not thread-safe. All calls must be made from the render
 // thread. Shared images / semaphores must be created or destroyed while the
@@ -34,13 +34,22 @@
 #if !defined(__APPLE__)
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
-// BlueVK defines VK_NO_PROTOTYPES and includes <vulkan/vulkan.h>.
-// This makes Vulkan types available without linking to libvulkan.so at
-// compile time; all function pointers are loaded dynamically at runtime.
-#include <bluevk/BlueVK.h>
+// Suppress C function-prototype declarations in vulkan.h: all Vulkan entry
+// points are resolved at runtime through vulkan-hpp's per-object RAII
+// dispatchers (ContextDispatcher / InstanceDispatcher / DeviceDispatcher),
+// not as statically-linked symbols.
+//
+// NOTE: BlueVK (used by Filament) also defines VK_NO_PROTOTYPES before
+// including vulkan.h, so the two includes are mutually compatible when
+// this header is included after Filament headers.
+#ifndef VK_NO_PROTOTYPES
+#define VK_NO_PROTOTYPES
+#endif
+#include <vulkan/vulkan_raii.hpp>
 
 namespace open3d {
 namespace visualization {
@@ -148,11 +157,50 @@ public:
     /// Human-readable description of the last failure (extension name, etc.).
     const std::string& GetLastError() const { return last_error_; }
 
-    // --- Device accessors (used by VulkanBackend) --------------------------
-    VkDevice GetDevice() const { return device_; }
-    VkPhysicalDevice GetPhysicalDevice() const { return physical_device_; }
-    VkQueue GetComputeQueue() const { return compute_queue_; }
+    // --- Device accessors (used by VulkanBackend and ComputeGPUVulkan) ----
+    // vk::Handle::CType provides the underlying C type (e.g. vk::Instance::CType
+    // == VkInstance). On 64-bit platforms vk::raii handles implicitly convert to
+    // their C equivalents; static_cast is used here to be explicit and 32-bit safe.
+    VkInstance GetVkInstance() const {
+        return static_cast<vk::Instance::CType>(*instance_);
+    }
+    VkDevice GetDevice() const {
+        return static_cast<vk::Device::CType>(*device_);
+    }
+    VkPhysicalDevice GetPhysicalDevice() const {
+        return static_cast<vk::PhysicalDevice::CType>(*physical_device_);
+    }
+    VkQueue GetComputeQueue() const {
+        return static_cast<vk::Queue::CType>(*compute_queue_);
+    }
     std::uint32_t GetComputeQueueFamily() const { return compute_queue_family_; }
+    /// True when VK_EXT_debug_utils was available and enabled at instance creation.
+    bool GetDebugUtilsEnabled() const { return debug_utils_enabled_; }
+    /// Hardware subgroup size (gl_SubgroupSize) for compute shaders on this device.
+    /// The two-level subgroup prefix-sum shader requires subgroupSize^2 >= WG_SIZE
+    /// (WG_SIZE=256 → need subgroupSize >= 16). Returns 0 before Initialize().
+    std::uint32_t GetSubgroupSize() const { return subgroup_size_; }
+    std::uint32_t GetSubgroupSupportedStages() const {
+        return subgroup_supported_stages_;
+    }
+    std::uint32_t GetSubgroupSupportedOperations() const {
+        return subgroup_supported_operations_;
+    }
+    bool SupportsRequiredComputeSubgroupSize(
+            std::uint32_t subgroup_size,
+            std::uint32_t min_workgroup_subgroups = 0) const {
+        return subgroup_size_control_ &&
+               (required_subgroup_size_stages_ & VK_SHADER_STAGE_COMPUTE_BIT) !=
+                       0 &&
+               subgroup_size >= min_subgroup_size_ &&
+               subgroup_size <= max_subgroup_size_ &&
+               (min_workgroup_subgroups == 0 ||
+                max_compute_workgroup_subgroups_ >= min_workgroup_subgroups);
+    }
+
+    // RAII accessors used by ComputeGPUVulkan to create sub-objects.
+    const vk::raii::Instance& GetRaiiInstance() const { return instance_; }
+    const vk::raii::Device& GetRaiiDevice() const { return device_; }
 
     // --- Shared-image lifecycle -------------------------------------------
 
@@ -245,12 +293,26 @@ private:
     // --- State ------------------------------------------------------------
     bool initialized_ = false;
     bool gl_extensions_ok_ = false;
+    bool debug_utils_enabled_ = false;  // VK_EXT_debug_utils enabled in instance
+    std::uint32_t subgroup_size_ = 0;   // queried after logical device creation
+    std::uint32_t subgroup_supported_stages_ = 0;
+    std::uint32_t subgroup_supported_operations_ = 0;
+    bool subgroup_size_control_ = false;
+    bool compute_full_subgroups_ = false;
+    std::uint32_t min_subgroup_size_ = 0;
+    std::uint32_t max_subgroup_size_ = 0;
+    std::uint32_t max_compute_workgroup_subgroups_ = 0;
+    std::uint32_t required_subgroup_size_stages_ = 0;
     std::string last_error_;
 
-    VkInstance instance_ = VK_NULL_HANDLE;
-    VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
-    VkDevice device_ = VK_NULL_HANDLE;
-    VkQueue compute_queue_ = VK_NULL_HANDLE;
+    // RAII handles. Destruction order is reverse of declaration order:
+    // compute_queue_ → device_ → physical_device_ → instance_ → context_.
+    // vk::raii::Context loads the Vulkan loader; all others are sub-objects.
+    vk::raii::Context context_;
+    vk::raii::Instance instance_{nullptr};
+    vk::raii::PhysicalDevice physical_device_{nullptr};
+    vk::raii::Device device_{nullptr};
+    vk::raii::Queue compute_queue_{nullptr};
     std::uint32_t compute_queue_family_ = UINT32_MAX;
 
     VkPhysicalDeviceMemoryProperties memory_props_{};

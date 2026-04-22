@@ -41,8 +41,10 @@ constexpr std::uint32_t kSlotKeygen = 0u;
 constexpr std::uint32_t kSlotRadixHist0 = 1u;     // passes 0-3 → 1-4
 constexpr std::uint32_t kSlotRadixScatter0 = 5u;  // passes 0-3 → 5-8
 constexpr std::uint32_t kSlotPayload = 9u;
+
 constexpr std::uint32_t kSlotOneSweepHist = 10u;
 constexpr std::uint32_t kSlotOneSweepDigit0 = 11u;  // passes 0-3 → 11-14
+constexpr std::uint32_t kOneSweepRadix = 256u;
 
 // Compute the byte offset of a dispatch_args slot for DispatchIndirect().
 inline std::size_t IndirectByteOffset(std::uint32_t slot) {
@@ -126,6 +128,7 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
 // and return the final source buffer index for the payload pass.
 // Caller must already have allocated vs.onesweep_* buffers.
 int RunOneSweepSort(GaussianSplatGpuContext& ctx,
+                    const GaussianSplatRenderer::RenderConfig& config,
                     GaussianSplatViewGpuResources& vs,
                     int src) {
     ctx.ClearBufferUInt32Zero(vs.onesweep_global_hist_buf);
@@ -280,13 +283,14 @@ bool RunGaussianGeometryPasses(
     vs.histogram_buf = ctx.ResizePrivateBuffer(
             vs.histogram_buf, gpu_sizes.histogram_buf_size, "gs.histogram");
     // dispatch_args and radix_params are written by the ComputeDispatchArgs GPU
-    // shader and never touched by the CPU — use private storage.
-    vs.dispatch_args_buf = ctx.ResizePrivateBuffer(vs.dispatch_args_buf,
-                                                   gpu_sizes.dispatch_args_size,
-                                                   "gs.dispatch_args");
-    vs.radix_params_buf = ctx.ResizePrivateBuffer(vs.radix_params_buf,
-                                                  gpu_sizes.radix_params_size,
-                                                  "gs.radix_params");
+    // shader and never touched by the CPU; keep them GPU-private for best cache
+    // placement on the compute queue.
+    vs.dispatch_args_buf = ctx.ResizePrivateBuffer(
+            vs.dispatch_args_buf, gpu_sizes.dispatch_args_size,
+            "gs.dispatch_args");
+    vs.radix_params_buf = ctx.ResizePrivateBuffer(
+            vs.radix_params_buf, gpu_sizes.radix_params_size,
+            "gs.radix_params");
 
     ctx.UploadBuffer(vs.view_params_buf, &frame_data.view_params,
                      sizeof(GaussianViewParams), 0);
@@ -398,20 +402,20 @@ bool RunGaussianGeometryPasses(
     int src = 0;
     if (config.use_onesweep_sort && ctx.AreOneSweepProgramsLoaded()) {
         // Allocate / resize OneSweep-specific buffers before dispatching.
-        // partition_buf is fixed-size (circular, 1 MB) regardless of sort size.
         vs.onesweep_global_hist_buf = ctx.ResizePrivateBuffer(
                 vs.onesweep_global_hist_buf,
-                gpu_sizes.onesweep_global_hist_size, "gs.onesweep_global_hist");
-        vs.onesweep_partition_buf = ctx.ResizePrivateBuffer(
-                vs.onesweep_partition_buf, gpu_sizes.onesweep_partition_size,
-                "gs.onesweep_partition");
+                gpu_sizes.onesweep_global_hist_size,
+                "gs.onesweep_global_hist");
         vs.onesweep_partition_counter_buf = ctx.ResizePrivateBuffer(
                 vs.onesweep_partition_counter_buf, sizeof(std::uint32_t),
                 "gs.onesweep_counter");
         vs.onesweep_tail_buf = ctx.ResizePrivateBuffer(
                 vs.onesweep_tail_buf, gpu_sizes.onesweep_tail_size,
                 "gs.onesweep_tail");
-        src = RunOneSweepSort(ctx, vs, src);
+        vs.onesweep_partition_buf = ctx.ResizePrivateBuffer(
+                vs.onesweep_partition_buf, gpu_sizes.onesweep_partition_size,
+                "gs.onesweep_partition");
+        src = RunOneSweepSort(ctx, config, vs, src);
     } else {
         src = RunClassicalRadixSort(ctx, vs, src);
     }
@@ -427,11 +431,8 @@ bool RunGaussianGeometryPasses(
                               IndirectByteOffset(kSlotPayload));
     ctx.FullBarrier();
 
-#ifndef NDEBUG
-    // Flush GPU error counters to CPU so projection failures are visible
-    // in debug builds before the composite stage consumes stale buffers.
+    // Flush GPU error counters so tile-entry overflow warnings are visible.
     LogGaussianGpuErrorsOnce(ctx, vs);
-#endif
 
     return true;
 }

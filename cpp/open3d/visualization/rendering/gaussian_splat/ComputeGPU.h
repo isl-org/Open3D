@@ -436,8 +436,7 @@ private:
 // ---------------------------------------------------------------------------
 
 #if !defined(__APPLE__)
-[[nodiscard]] std::unique_ptr<GaussianSplatGpuContext>
-CreateComputeGpuContextGL(bool use_subgroups, bool use_precompiled);
+// Vulkan-only: no GL compute factory.
 #endif
 #if defined(__APPLE__)
 [[nodiscard]] std::unique_ptr<GaussianSplatGpuContext>
