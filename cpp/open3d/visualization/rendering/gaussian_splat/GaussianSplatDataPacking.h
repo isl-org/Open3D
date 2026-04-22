@@ -185,13 +185,6 @@ struct PackedGaussianScene {
 /// and the radix-sort dispatch shaders.
 inline constexpr std::uint32_t kGaussianRadixParamsStride = 256;
 
-/// Number of circular partition-buffer slots in the OneSweep sort.
-/// Must be a power of 2 and exceed the maximum number of simultaneously
-/// live workgroups (typically ≤ 384 on Intel Iris Xe). Must match CIRCULAR_SIZE
-/// in gaussian_onesweep_digit_pass_subgroup.comp.
-/// Fixed buffer = kOneSweepCircularSize × 256 × 8 B = 1 MB.
-inline constexpr std::uint32_t kOneSweepCircularSize = 512u;
-
 /// Byte sizes and capacities for Gaussian splat SSBOs/UBOs.
 /// Must match allocation logic in gaussian_compute_dispatch_args.comp and the
 /// radix shaders (tile cap, etc.).
@@ -207,19 +200,11 @@ struct GaussianGpuBufferSizes {
     /// (4 B each, vs. 12 B for a full TileEntry). Used by the composite pass.
     std::size_t sorted_splat_size = 0;
     std::size_t histogram_buf_size = 0;
-    /// 10 radix dispatch entries + 5 OneSweep dispatch entries (always
-    /// emitted).
+    /// 10 radix dispatch entries (keygen, 4 histograms, 4 scatters, payload).
     std::size_t dispatch_args_size = 0;
     std::size_t radix_params_size = 0;
     std::uint32_t entries_capacity = 0;
     std::uint32_t radix_num_wg_cap = 0;
-    /// OneSweep sort buffers (allocated only when use_onesweep_sort=true):
-    std::size_t onesweep_global_hist_size =
-            0;  ///< 4×256×4 = 4 KB, always fixed
-    /// Fixed 1 MB: kOneSweepCircularSize × 256 × 8 B (uvec2 per slot).
-    /// Does not grow with sort size; stays hot in iGPU LLC.
-    std::size_t onesweep_partition_size = 0;
-    std::size_t onesweep_tail_size = 0;  ///< 1 uint32 (4 B)
 };
 
 /// Compute GPU buffer sizes from a packed-scene frame description.

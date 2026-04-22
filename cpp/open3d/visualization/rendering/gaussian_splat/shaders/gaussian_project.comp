@@ -13,7 +13,8 @@
 //   binding 6  — ProjectedComposite (32 B): center, depth, alpha, RGBA8,
 //                vec4 inv_basis. Read only by gaussian_composite.comp.
 //   binding 12 — ProjectedTileMeta (16 B): norm_depth, tile overlap/rect.
-//                Read only by gaussian_prefix_sum.comp and gaussian_scatter.comp.
+//                Read only by gaussian_prefix_sum.comp and
+//                gaussian_scatter.comp.
 //
 // Splitting the old 48 B ProjectedGaussian into two 16 B structs reduces
 // per-splat read bandwidth by 33% in the composite pass and 67% in scatter/
@@ -29,15 +30,15 @@
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
-// Composite-pass output: fp16 center + fp32 depth/alpha + RGBA8 + vec4 inv_basis
-// (32 B). Inlining inv_basis avoids a separate SSBO lookup in the composite
-// cooperative load — one 32 B fetch instead of two 16 B fetches.
+// Composite-pass output: fp16 center + fp32 depth/alpha + RGBA8 + vec4
+// inv_basis (32 B). Inlining inv_basis avoids a separate SSBO lookup in the
+// composite cooperative load — one 32 B fetch instead of two 16 B fetches.
 struct ProjectedComposite {
     uint center_xy_fp16;  // packHalf2x16(center_x, center_y) viewport pixels
     float depth;          // normalized linear depth (near=0, far=1)
     float alpha;          // sigmoid(opacity) × density_compensation
     uint packed_rgba8;    // RGBA8 view-dependent color
-    vec4 inv_basis;       // 2×2 inverse covariance basis (row-major), 16 B align
+    vec4 inv_basis;  // 2×2 inverse covariance basis (row-major), 16 B align
 };
 
 // Tile-metadata output: used only by prefix-sum and scatter (16 B).

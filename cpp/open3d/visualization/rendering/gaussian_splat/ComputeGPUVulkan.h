@@ -36,7 +36,6 @@ namespace rendering {
 
 struct VulkanSubgroupOptions {
     bool enable_prefix_sum = false;
-    bool enable_onesweep = false;
     bool enable_radix_sort = false;
 };
 

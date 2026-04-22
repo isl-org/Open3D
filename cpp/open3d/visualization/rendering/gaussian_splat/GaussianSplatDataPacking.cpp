@@ -79,7 +79,6 @@ std::uint32_t PackSnorm8x4(float w, float x, float y, float z) {
 constexpr std::uint32_t kRadixWorkgroupSize = 256;
 constexpr std::uint32_t kRadixSortBins = 256;
 constexpr std::uint32_t kRadixTargetBlocksPerWG = 32;
-constexpr std::uint32_t kOneSweepPartitionSize = 256u * 16u;
 
 }  // namespace
 
@@ -120,26 +119,8 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
             4u, static_cast<std::size_t>(out->radix_num_wg_cap) *
                         kRadixSortBins * sizeof(std::uint32_t));
 
-    // 10 radix entries + 5 OneSweep entries (always emitted by dispatch_args
-    // shader; OneSweep entries are ignored when use_onesweep_sort=false).
-    out->dispatch_args_size = 15u * 3u * sizeof(std::uint32_t);
+    out->dispatch_args_size = 10u * 3u * sizeof(std::uint32_t);
     out->radix_params_size = 4u * kGaussianRadixParamsStride;
-
-    // OneSweep sort buffer sizes.
-    // onesweep_global_hist_buf: 4 digit passes × 256 bins × uint32 = 4 KB.
-    out->onesweep_global_hist_size = 4u * 256u * sizeof(std::uint32_t);
-        // onesweep_partition_buf: one uvec2 descriptor per (partition, bin).
-        // This follows the upstream HLSL design more closely than the circular
-        // slot optimization and avoids slot-reuse synchronization.
-        const std::uint32_t onesweep_partitions =
-            std::max<std::uint32_t>(1u, (out->entries_capacity +
-                         kOneSweepPartitionSize - 1u) /
-                            kOneSweepPartitionSize);
-        out->onesweep_partition_size =
-            static_cast<std::size_t>(onesweep_partitions) * 256u * 2u *
-            sizeof(std::uint32_t);
-    // onesweep_tail_buf: single uint32 tail iterator.
-    out->onesweep_tail_size = sizeof(std::uint32_t);
 }
 
 // ----- PackGaussianViewParams ------------------------------------------------

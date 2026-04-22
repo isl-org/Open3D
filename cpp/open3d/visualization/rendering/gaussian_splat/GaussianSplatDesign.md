@@ -405,7 +405,6 @@ requires no dispatch logic updates.
 | Opt12 | Async Stage A overlap | Stage A dispatches geometry + sort compute without `glFinish()`; `renderer_->beginFrame()` fires immediately after, so Stage A GPU work runs concurrently with Filament's rasterization of the same frame. On Metal, geometry and composite use separate `MTLCommandBuffer` objects that the GPU schedules independently (FW1-4). |
 | Opt13 | Compressed input buffers | `scales` (linear) and `dc_opacity` stored as fp16 (8 B/splat each, `uvec2` per splat); `rotations` as snorm8-biased uint (4 B/splat); `sh_coefficients` fp16 and degree-dependent (0/24/48 B/splat for degree 0/1/2). Total input: **36–84 B/splat** vs. the previous 160 B. GPU decodes via `unpackHalf2x16` and a 3-instruction `DecodeSnorm8` (core GLSL 4.2+, no extension). |
 | Opt14 | Composite workgroup early-exit | Shared `wg_active_count` counter decremented via `atomicAdd` when a thread saturates (`transmittance ≤ 1/4096`). When `wg_active_count == 0` (all 256 pixels in the tile saturated), the outer batch loop exits uniformly, skipping remaining `composite[]` and `inv_basis[]` reads. Preserves barrier uniformity. |
-| Opt15 | OneSweep sort (optional) | When `RenderConfig::use_onesweep_sort=true` and subgroup programs load successfully: replaces 4-pass LSD radix (10 dispatches) with a one-shot global histogram + 4 digit-binning passes (7 dispatches, −30%). Uses decoupled-lookback scan (Adinets & Merrill 2022). Digit-pass uses 8-ballot `WaveMatch8` rank (no shared-memory bin_flags; −9 KB SMEM, enabling one extra concurrent WG per subslice on iGPU), `subgroupAll` early-exit in lookback, and a fixed 1 MB circular partition buffer that keeps lookback DRAM traffic in iGPU LLC for 1M–4M splat scenes. Falls back to 4-pass radix sort automatically if OneSweep programs fail to load. |
 
 ### GPU Object Labeling
 
@@ -550,33 +549,6 @@ Only two of the core Gaussian splat compute shaders (prefix + radix sort family)
 |---|---|
 | `gaussian_prefix_sum` | `_basic` only |
 | `gaussian_radix_sort` | `_basic` only |
-| `gaussian_onesweep_global_hist` | `_arithmetic` (`subgroupExclusiveAdd`, `subgroupAdd` in SCAN mode), `_ballot` |
-| `gaussian_onesweep_digit_pass` | `_basic`, `_vote` (`subgroupAll`), `_ballot` (`subgroupBallot`, `gl_SubgroupLtMask` for `WaveMatch8`), `_shuffle` (`subgroupShuffle` for broadcast) |
-
-> **OneSweep subgroup requirements and shared-memory layout:**
->
-> `gaussian_onesweep_digit_pass_subgroup` uses four subgroup extension tiers:
-> - `_basic`: `gl_SubgroupID`, `gl_SubgroupInvocationID`
-> - `_vote`: `subgroupAll` in the lookback loop (wave exits as soon as all 32 of its bins resolve)
-> - `_ballot`: `subgroupBallot` for `WaveMatch8` (8 ballot calls compute same-digit lane mask without shared memory)
-> - `_shuffle`: `subgroupShuffle` to broadcast the leader's reserved output base to all same-digit peers
->
-> **WaveMatch8 constraint:** uses only `subgroupBallot(...).x` (bits 0–31), so subgroup size must be ≤ 32. `GlSubgroupArithmeticAndBallotAvailable()` in `ComputeGPUGL.cpp` checks `GL_MAX_SUBGROUP_SIZE_KHR ≤ 32` in addition to feature bits.
->
-> **Shared memory layout** (`gaussian_onesweep_digit_pass_subgroup`, ~10 KB total, down from ~19 KB):
-> - `s_wave_hist[MAX_WAVES × RADIX]` (8 KB): dual-use.  
->   Phase 3: per-wave bin counts accumulated via per-wave row atomics.  
->   After reduction: transformed in-place to exclusive inter-wave prefix (scan over MAX_WAVES rows per bin, first RADIX threads). `s_hist[bin]` gets the total count.  
->   Phase 7 scatter: each wave atomicAdds to its own row to track emitted keys; the first reservation returns exactly the inter-wave exclusive prefix, subsequent ones accumulate naturally. No cross-wave contention; no per-j barrier needed.
-> - `s_hist[RADIX]` (1 KB): per-bin WG total count for AGGREGATE/INCLUSIVE publish.
-> - `s_exclusive[RADIX]` (1 KB): per-bin exclusive lookback result.
-> - Removed vs. previous: `bin_flags[RADIX]` (8 KB), `s_offset[RADIX]` (1 KB).
->
-> **Circular partition buffer** (see also iGPU impact analysis below):
-> `onesweep_partition_buf` is a fixed 1 MB circular buffer (`kOneSweepCircularSize = 512` slots × 256 bins × 8 B per uvec2 entry) regardless of sort input size. For 1M–4M splat scenes (10M–80M tile entries, 2500–20000 partitions), the variable-size design would require 2.5–20 MB — well above the 3–4 MB iGPU LLC. The circular design keeps the hot lookback window in LLC at all sort sizes.  
-> Each descriptor is a `uvec2`: `.x = status(2)|value(30)`, `.y = partition_index` (stale-reuse detection).  
-> A `tail_counter` (single uint, binding 7) tracks the last INCLUSIVE partition; a WG spins at startup if its circular slot is still occupied by a predecessor's lookback. After publishing INCLUSIVE, the WG increments `tail_counter` to free the slot.  
-> `EnsureProgramsLoaded` Phase 2 on OpenGL pre-checks all four feature bits plus `GL_MAX_SUBGROUP_SIZE_KHR ≤ 32` before compiling the OneSweep shaders.  If absent, `onesweep_programs_valid_` is set false and the 4-pass radix sort is used instead.  On Metal, SIMD-group shuffle/vote are always available on A11+/M-series.
 
 ### Variants
 
@@ -589,12 +561,7 @@ Each affected shader now has two files:
 | `gaussian_radix_sort.comp` / `.spv` | None (thread-0 scan) | Windows + unknown GPUs |
 | `gaussian_radix_sort_subgroup.comp` / `.spv` | Yes | Linux, macOS |
 
-All other seven shaders have a single file unchanged by this change.
-
-The two OneSweep shaders have only a `_subgroup` variant (no plain fallback) because:
-- OneSweep requires device-scope atomic coherence, which is the same platform prerequisite as subgroup arithmetic.
-- A non-subgroup OneSweep variant was deliberately not built.
-- If the `_subgroup` OneSweep files fail to load (e.g. missing on Windows), `EnsureProgramsLoaded` logs a debug message and sets `onesweep_programs_valid_ = false`; `AreOneSweepProgramsLoaded()` returns false; the pass runner uses the 4-pass radix sort automatically.
+All other shaders have a single file unchanged by this change.
 
 ### Runtime Policy
 
@@ -712,7 +679,7 @@ See Completed Work → PHASE 3 for implementation details.
 | # | Optimization | Impact | Description |
 |---|---|---|---|
 | FW1-1 | ~~Eliminate counter readback~~ | ~~High~~ | **Done (Opt11).** Removed `DownloadGLBuffer` stall. `gaussian_compute_dispatch_args.comp` writes all indirect dispatch args and `RadixSortParams` GPU-side. Sort buffers pre-allocated; scatter dispatched over `splat_count`. |
-| FW1-2 | ~~Reduce radix sort passes~~ | ~~Medium~~ | **Partially done (Opt15 / OneSweep).** OneSweep replaces 4-pass radix with a one-shot global histogram + 4 digit-binning passes (10 → 7 dispatches). Further reduction via fewer digit bits is still possible but deferred. |
+| FW1-2 | Reduce radix sort passes | Medium | Still open. The renderer uses the original 4-pass LSD radix pipeline; reducing dispatch count would require a new sort design that preserves the current portability and fallback behavior. |
 | FW1-3 | Fused prefix-sum + scatter | Medium | Merge tile count accumulation and scatter using subgroup prefix sums plus global atomics. Eliminates one compute dispatch and one full barrier round-trip. |
 | FW1-4 | ~~Async compute overlap~~ | ~~Medium~~ | **Done (Opt12).** Stage A dispatches without `glFinish()`; Filament's `beginFrame()` follows immediately so both execute concurrently on GPU. Metal uses separate `MTLCommandBuffer` objects per stage for hardware-level scheduling overlap. |
 | FW1-5 | SH degree LOD | Low–Medium | Dynamically reduce SH degree for distant/small splats to reduce bandwidth and projection cost. |
@@ -786,7 +753,6 @@ which is why those are the chosen backends.
 | 7 | Windows SPIR-V shader loading error | Medium | `gaussian_composite.comp` fails with a SPIR-V specialization error on Windows OpenGL drivers. Likely subgroup extension issue. See FW3 for details and fix options. |
 | 8 | fp16 center precision ceiling | Low | `ProjectedComposite.center_xy_fp16` encodes absolute viewport pixel coordinates as fp16. Step size ≈ 0.47 px at 3840 (4K width). For the Gaussian kernel delta `pixel - center`, both are decoded to fp32 before subtraction, so error is sub-pixel and visually imperceptible. Would require mitigation at 8K+ viewports. |
 | 9 | CPU alpha-filter post-compensation edge case | Low | `MaterialRecord::gaussian_splat_min_alpha = 1/255` filters splats CPU-side. When `antialias=true`, the density-compensation factor (≤1) can push a borderline splat's effective alpha below 1/255 in the projection shader. The composite `power < -4.0` early-out and transmittance threshold already prune such contributions; visible impact is negligible. |
-| 10 | OneSweep forward-progress requirement | Medium | Decoupled-lookback in `gaussian_onesweep_digit_pass_subgroup.comp` assumes the GPU provides inter-workgroup forward progress (spinning WG does not prevent other WGs from running). Verified on NVIDIA/AMD/Apple Silicon; may deadlock on some drivers. Disabled by default pending CI testing; enable via `RenderConfig::use_onesweep_sort`. |
 
 ---
 
@@ -862,9 +828,6 @@ Filament integration files.
 | 7 | `gaussian_radix_sort_payload.comp` | Payload rearrangement |
 | 8 | `gaussian_compute_dispatch_args.comp` | Indirect dispatch counts and `RadixSortParams` (no CPU readback) |
 | 9 | `gaussian_depth_merge.comp` | GL: merge GS + Filament depth → normalised R16UI (offscreen readback) |
-| 10 | `gaussian_onesweep_global_hist_subgroup.comp` | OneSweep: one-shot 4×256 histogram (histogram mode) + in-place prefix scan (scan mode, 1 WG) |
-| 11 | `gaussian_onesweep_digit_pass_subgroup.comp` | OneSweep: per-digit binning with dynamic partition assignment + decoupled-lookback |
-
 Sources live in `cpp/open3d/visualization/rendering/gaussian_splat/shaders/` and are
 listed in `cpp/open3d/visualization/gui/CMakeLists.txt` (`gaussian_compute_shaders` target).
 The output directory is `resources/gaussian_splat/` (runtime loader path).

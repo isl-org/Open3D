@@ -27,7 +27,8 @@
 #include <vector>
 
 // VkFormat constants (VK_FORMAT_R16G16B16A16_SFLOAT etc.) are provided via
-// vulkan_raii.hpp included transitively through GaussianSplatVulkanInteropContext.h.
+// vulkan_raii.hpp included transitively through
+// GaussianSplatVulkanInteropContext.h.
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -54,10 +55,8 @@ public:
             const GaussianSplatRenderer::RenderConfig& config)
         : config_(config) {
         config_.use_shader_subgroups = true;
-        config_.use_onesweep_sort = true;
         utility::LogDebug(
-            "GaussianSplat Vulkan: enabling prefix_sum and OneSweep "
-            "subgroup pipeline");
+                "GaussianSplat Vulkan: enabling subgroup radix pipeline");
     }
 
     ~GaussianSplatVulkanBackend() override {
@@ -166,7 +165,6 @@ public:
             }
         }
 
-
         gl_ctx.ReleaseCurrent();
 
         if (targets.color_gl_handle == 0) return false;
@@ -222,8 +220,8 @@ public:
         // destroying them (prevents stale VkImageView usage in next dispatch).
         if (gpu_ && targets.uses_vulkan_interop) {
             if (targets.color_gl_handle != 0)
-                UnregisterSharedImageFromVulkanContext(
-                        *gpu_, targets.color_gl_handle);
+                UnregisterSharedImageFromVulkanContext(*gpu_,
+                                                       targets.color_gl_handle);
             if (targets.scene_depth_gl_handle != 0)
                 UnregisterSharedImageFromVulkanContext(
                         *gpu_, targets.scene_depth_gl_handle);
@@ -241,8 +239,8 @@ public:
             auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
             if (targets.vk_sem_gl_to_vk != 0 || targets.gl_sem_gl_to_vk != 0) {
                 SharedSemaphoreDesc s;
-                s.vk_semaphore = reinterpret_cast<VkSemaphore>(
-                        targets.vk_sem_gl_to_vk);
+                s.vk_semaphore =
+                        reinterpret_cast<VkSemaphore>(targets.vk_sem_gl_to_vk);
                 s.gl_semaphore = targets.gl_sem_gl_to_vk;
                 vk_ctx.DestroySemaphore(s);
                 targets.vk_sem_gl_to_vk = 0;
@@ -250,8 +248,8 @@ public:
             }
             if (targets.vk_sem_vk_to_gl != 0 || targets.gl_sem_vk_to_gl != 0) {
                 SharedSemaphoreDesc s;
-                s.vk_semaphore = reinterpret_cast<VkSemaphore>(
-                        targets.vk_sem_vk_to_gl);
+                s.vk_semaphore =
+                        reinterpret_cast<VkSemaphore>(targets.vk_sem_vk_to_gl);
                 s.gl_semaphore = targets.gl_sem_vk_to_gl;
                 vk_ctx.DestroySemaphore(s);
                 targets.vk_sem_vk_to_gl = 0;
@@ -259,8 +257,7 @@ public:
             }
             if (targets.color_gl_handle != 0) {
                 SharedImageDesc d;
-                d.vk_image =
-                        reinterpret_cast<VkImage>(targets.color_vk_image);
+                d.vk_image = reinterpret_cast<VkImage>(targets.color_vk_image);
                 d.vk_memory = reinterpret_cast<VkDeviceMemory>(
                         targets.color_vk_memory);
                 d.gl_memory_object = targets.color_gl_mem_obj;
@@ -273,8 +270,7 @@ public:
             }
             if (targets.scene_depth_gl_handle != 0) {
                 SharedImageDesc d;
-                d.vk_image =
-                        reinterpret_cast<VkImage>(targets.depth_vk_image);
+                d.vk_image = reinterpret_cast<VkImage>(targets.depth_vk_image);
                 d.vk_memory = reinterpret_cast<VkDeviceMemory>(
                         targets.depth_vk_memory);
                 d.gl_memory_object = targets.depth_gl_mem_obj;
@@ -290,11 +286,11 @@ public:
         gl_ctx.ReleaseCurrent();
     }
 
-    bool RenderGeometryStage(const FilamentView& view,
-                             const FilamentScene& scene,
-                             const GaussianSplatRenderer::ViewRenderData&
-                                     render_data,
-                             GaussianSplatRenderer::OutputTargets& targets) override {
+    bool RenderGeometryStage(
+            const FilamentView& view,
+            const FilamentScene& scene,
+            const GaussianSplatRenderer::ViewRenderData& render_data,
+            GaussianSplatRenderer::OutputTargets& targets) override {
         // Vulkan compute: no GL context needed for dispatch.
         if (!EnsureGpuContext()) return false;
 
@@ -313,12 +309,13 @@ public:
                  attrs->splat_count != vs.cached_splat_count);
 
         return RunGaussianGeometryPasses(*gpu_, config_, frame, *attrs, vs,
-                                        scene_id, scene_changed);
+                                         scene_id, scene_changed);
     }
 
-    bool RenderCompositeStage(const FilamentView& view,
-                              const GaussianSplatRenderer::ViewRenderData&,
-                              GaussianSplatRenderer::OutputTargets& targets) override {
+    bool RenderCompositeStage(
+            const FilamentView& view,
+            const GaussianSplatRenderer::ViewRenderData&,
+            GaussianSplatRenderer::OutputTargets& targets) override {
         if (!gpu_) return false;
         auto it = view_states_.find(&view);
         if (it == view_states_.end() || it->second.view_params_buf == 0) {
@@ -361,8 +358,7 @@ private:
         if (gpu_) return gpu_->EnsureProgramsLoaded();
         VulkanSubgroupOptions subgroup_options;
         subgroup_options.enable_prefix_sum = true;
-        subgroup_options.enable_onesweep = true;
-        subgroup_options.enable_radix_sort = false;
+        subgroup_options.enable_radix_sort = true;
         gpu_ = CreateComputeGpuContextVulkan(subgroup_options);
         if (!gpu_) return false;
         return gpu_->EnsureProgramsLoaded();
@@ -384,10 +380,6 @@ private:
         destroy_buf(vs.sh_buf);
         destroy_buf(vs.projected_composite_buf);
         destroy_buf(vs.projected_meta_buf);
-        destroy_buf(vs.onesweep_global_hist_buf);
-        destroy_buf(vs.onesweep_partition_buf);
-        destroy_buf(vs.onesweep_partition_counter_buf);
-        destroy_buf(vs.onesweep_tail_buf);
         destroy_buf(vs.tile_counts_buf);
         destroy_buf(vs.tile_offsets_buf);
         destroy_buf(vs.tile_heads_buf);

@@ -45,7 +45,8 @@ view_params;
 
 // GS composite depth (Filament inverse convention: near=1, far=0) written by
 // gaussian_composite.comp via Linear01ToInverse().  Sampled via texelFetch.
-// Binding 16 avoids the (set=0, binding=0) conflict with GaussianViewParams UBO.
+// Binding 16 avoids the (set=0, binding=0) conflict with GaussianViewParams
+// UBO.
 layout(binding = 16) uniform sampler2D gs_depth;
 
 // Output: merged nearest depth, normalised uint16 [0, 65535].

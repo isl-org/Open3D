@@ -22,8 +22,8 @@
 //     resulting handles in OutputTargets.
 //
 // Uses vulkan-hpp (Vulkan-Headers) for Vulkan loading and RAII handle
-// lifetime management, and VMA (vk_mem_alloc.h vendored in
-// 3rdparty/vkmemalloc/) for suballocated internal-only buffer allocations.
+// lifetime management, and VMA (vk_mem_alloc.h from the pinned 3rdparty
+// download) for suballocated internal-only buffer allocations.
 //
 // Thread-safety: not thread-safe. All calls must be made from the render
 // thread. Shared images / semaphores must be created or destroyed while the
@@ -61,8 +61,8 @@ namespace rendering {
 
 /// Image format selector used for interop image creation.
 enum class VkInteropImageFormat {
-    kRGBA16F,        ///< RGBA16F colour (VK_FORMAT_R16G16B16A16_SFLOAT / GL RGBA16F)
-    kDepth32F,       ///< Depth-only (VK_FORMAT_D32_SFLOAT / GL DEPTH_COMPONENT32F)
+    kRGBA16F,   ///< RGBA16F colour (VK_FORMAT_R16G16B16A16_SFLOAT / GL RGBA16F)
+    kDepth32F,  ///< Depth-only (VK_FORMAT_D32_SFLOAT / GL DEPTH_COMPONENT32F)
 };
 
 /// Describes a single GPU image that is owned by Vulkan but visible to OpenGL
@@ -101,7 +101,8 @@ struct SharedImageDesc {
 /// Direction of a cross-API semaphore.
 enum class SemaphoreDirection {
     kGLtoVK,  ///< GL signals → Vulkan waits (e.g. after Filament writes depth)
-    kVKtoGL,  ///< Vulkan signals → GL waits (e.g. after GS composite writes color)
+    kVKtoGL,  ///< Vulkan signals → GL waits (e.g. after GS composite writes
+              ///< color)
 };
 
 /// Describes a binary semaphore exported from Vulkan and imported into OpenGL.
@@ -138,8 +139,9 @@ public:
 
     /// Load Vulkan via BlueVK, select a physical device with external-memory /
     /// external-semaphore extension support, and create a compute queue.
-    /// Must be called BEFORE GaussianSplatOpenGLContext::InitializeStandalone().
-    /// Returns false on failure; call GetLastError() for a diagnostic string.
+    /// Must be called BEFORE
+    /// GaussianSplatOpenGLContext::InitializeStandalone(). Returns false on
+    /// failure; call GetLastError() for a diagnostic string.
     bool Initialize();
 
     /// Release all Vulkan resources and invalidate the context.
@@ -158,9 +160,11 @@ public:
     const std::string& GetLastError() const { return last_error_; }
 
     // --- Device accessors (used by VulkanBackend and ComputeGPUVulkan) ----
-    // vk::Handle::CType provides the underlying C type (e.g. vk::Instance::CType
-    // == VkInstance). On 64-bit platforms vk::raii handles implicitly convert to
-    // their C equivalents; static_cast is used here to be explicit and 32-bit safe.
+    // vk::Handle::CType provides the underlying C type (e.g.
+    // vk::Instance::CType
+    // == VkInstance). On 64-bit platforms vk::raii handles implicitly convert
+    // to their C equivalents; static_cast is used here to be explicit and
+    // 32-bit safe.
     VkInstance GetVkInstance() const {
         return static_cast<vk::Instance::CType>(*instance_);
     }
@@ -173,29 +177,22 @@ public:
     VkQueue GetComputeQueue() const {
         return static_cast<vk::Queue::CType>(*compute_queue_);
     }
-    std::uint32_t GetComputeQueueFamily() const { return compute_queue_family_; }
-    /// True when VK_EXT_debug_utils was available and enabled at instance creation.
+    std::uint32_t GetComputeQueueFamily() const {
+        return compute_queue_family_;
+    }
+    /// True when VK_EXT_debug_utils was available and enabled at instance
+    /// creation.
     bool GetDebugUtilsEnabled() const { return debug_utils_enabled_; }
-    /// Hardware subgroup size (gl_SubgroupSize) for compute shaders on this device.
-    /// The two-level subgroup prefix-sum shader requires subgroupSize^2 >= WG_SIZE
-    /// (WG_SIZE=256 → need subgroupSize >= 16). Returns 0 before Initialize().
+    /// Hardware subgroup size (gl_SubgroupSize) for compute shaders on this
+    /// device. The two-level subgroup prefix-sum shader requires subgroupSize^2
+    /// >= WG_SIZE (WG_SIZE=256 → need subgroupSize >= 16). Returns 0 before
+    /// Initialize().
     std::uint32_t GetSubgroupSize() const { return subgroup_size_; }
     std::uint32_t GetSubgroupSupportedStages() const {
         return subgroup_supported_stages_;
     }
     std::uint32_t GetSubgroupSupportedOperations() const {
         return subgroup_supported_operations_;
-    }
-    bool SupportsRequiredComputeSubgroupSize(
-            std::uint32_t subgroup_size,
-            std::uint32_t min_workgroup_subgroups = 0) const {
-        return subgroup_size_control_ &&
-               (required_subgroup_size_stages_ & VK_SHADER_STAGE_COMPUTE_BIT) !=
-                       0 &&
-               subgroup_size >= min_subgroup_size_ &&
-               subgroup_size <= max_subgroup_size_ &&
-               (min_workgroup_subgroups == 0 ||
-                max_compute_workgroup_subgroups_ >= min_workgroup_subgroups);
     }
 
     // RAII accessors used by ComputeGPUVulkan to create sub-objects.
@@ -246,8 +243,8 @@ private:
     GaussianSplatVulkanInteropContext() = default;
     ~GaussianSplatVulkanInteropContext();
 
-    GaussianSplatVulkanInteropContext(const GaussianSplatVulkanInteropContext&) =
-            delete;
+    GaussianSplatVulkanInteropContext(
+            const GaussianSplatVulkanInteropContext&) = delete;
     GaussianSplatVulkanInteropContext& operator=(
             const GaussianSplatVulkanInteropContext&) = delete;
 
@@ -279,11 +276,11 @@ private:
 
     /// Create one VkSemaphore with VkExportSemaphoreCreateInfo and export its
     /// FD. Returns VK_NULL_HANDLE on failure.
-    bool CreateExportableSemaphore(VkSemaphore& out_semaphore, int& out_fd) const;
+    bool CreateExportableSemaphore(VkSemaphore& out_semaphore,
+                                   int& out_fd) const;
 
     /// Import an FD into a GL semaphore object.
-    bool ImportFDIntoGLSemaphore(int fd,
-                                 std::uint32_t& out_gl_semaphore) const;
+    bool ImportFDIntoGLSemaphore(int fd, std::uint32_t& out_gl_semaphore) const;
 
     SharedImageDesc CreateSharedImage(std::uint32_t width,
                                       std::uint32_t height,
@@ -293,16 +290,11 @@ private:
     // --- State ------------------------------------------------------------
     bool initialized_ = false;
     bool gl_extensions_ok_ = false;
-    bool debug_utils_enabled_ = false;  // VK_EXT_debug_utils enabled in instance
-    std::uint32_t subgroup_size_ = 0;   // queried after logical device creation
+    bool debug_utils_enabled_ =
+            false;                     // VK_EXT_debug_utils enabled in instance
+    std::uint32_t subgroup_size_ = 0;  // queried after logical device creation
     std::uint32_t subgroup_supported_stages_ = 0;
     std::uint32_t subgroup_supported_operations_ = 0;
-    bool subgroup_size_control_ = false;
-    bool compute_full_subgroups_ = false;
-    std::uint32_t min_subgroup_size_ = 0;
-    std::uint32_t max_subgroup_size_ = 0;
-    std::uint32_t max_compute_workgroup_subgroups_ = 0;
-    std::uint32_t required_subgroup_size_stages_ = 0;
     std::string last_error_;
 
     // RAII handles. Destruction order is reverse of declaration order:

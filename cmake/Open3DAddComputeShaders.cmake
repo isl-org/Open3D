@@ -47,8 +47,6 @@ function(open3d_add_compute_shaders target)
         # and elimination of the runtime get_num_active_threads_in_simdgroup().
         set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_radix_sort_subgroup        "--msl-fixed-subgroup-size 32")
         set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_prefix_sum_subgroup        "--msl-fixed-subgroup-size 32")
-        set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_onesweep_global_hist_subgroup "--msl-fixed-subgroup-size 32")
-        set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_onesweep_digit_pass_subgroup  "--msl-fixed-subgroup-size 32")
         set(GAUSSIAN_METAL_BASENAMES "")
     endif()
 

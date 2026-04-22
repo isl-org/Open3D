@@ -26,6 +26,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #include <GL/glew.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 
@@ -58,39 +59,30 @@ namespace {
 
 #if defined(_WIN32)
 constexpr const char* kRequiredDeviceExtensions[] = {
-        VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-        VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
         VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
         VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
-        VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
         VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 };
 #else
 constexpr const char* kRequiredDeviceExtensions[] = {
-        VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-        VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
         VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
         VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
-        VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
         VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 };
 #endif
 
-constexpr const char* kRequiredInstanceExtensions[] = {
-        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-        VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
-        VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
-};
+bool ShouldEnableDebugUtils() {
+    const char* value = std::getenv("OPEN3D_VULKAN_DEBUG_UTILS");
+    return value != nullptr && value[0] != '\0' &&
+       std::strcmp(value, "0") != 0;
+}
 
 /// Returns true when all extensions in 'required' are present in
 /// 'available'.  Sets out_missing to the first missing extension name.
-bool CheckExtensions(
-        const std::vector<vk::ExtensionProperties>& available,
-        const char* const* required,
-        std::size_t required_count,
-        std::string& out_missing) {
+bool CheckExtensions(const std::vector<vk::ExtensionProperties>& available,
+                     const char* const* required,
+                     std::size_t required_count,
+                     std::string& out_missing) {
     for (std::size_t i = 0; i < required_count; ++i) {
         bool found = false;
         for (const auto& ext : available) {
@@ -128,9 +120,9 @@ int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
     const auto exts = dev.enumerateDeviceExtensionProperties();
 
     std::string missing;
-    const bool ok = CheckExtensions(
-            exts, kRequiredDeviceExtensions,
-            std::size(kRequiredDeviceExtensions), missing);
+    const bool ok =
+            CheckExtensions(exts, kRequiredDeviceExtensions,
+                            std::size(kRequiredDeviceExtensions), missing);
     if (!ok) return -1;
 
     // Shaders are compiled for Vulkan 1.3 (SPIR-V 1.6); reject older devices.
@@ -171,8 +163,9 @@ bool GaussianSplatVulkanInteropContext::Initialize() {
     // This loads instance-independent entry points (e.g. vkCreateInstance).
     try {
         VULKAN_HPP_DEFAULT_DISPATCHER.init(
-                vk::detail::DynamicLoader().getProcAddress<PFN_vkGetInstanceProcAddr>(
-                        "vkGetInstanceProcAddr"));
+                vk::detail::DynamicLoader()
+                        .getProcAddress<PFN_vkGetInstanceProcAddr>(
+                                "vkGetInstanceProcAddr"));
     } catch (const std::exception& e) {
         last_error_ = std::string("Vulkan loader not found: ") + e.what();
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
@@ -253,12 +246,14 @@ bool GaussianSplatVulkanInteropContext::ProbeGLExtensions() {
     for (const auto& e : entries) {
         if (!e.present) {
             last_error_ = std::string("Missing GL extension: ") + e.name;
-            utility::LogWarning("GaussianSplat Vulkan interop: {}", last_error_);
+            utility::LogWarning("GaussianSplat Vulkan interop: {}",
+                                last_error_);
             return false;
         }
     }
     gl_extensions_ok_ = true;
-    utility::LogDebug("GaussianSplat Vulkan interop: all GL extensions present");
+    utility::LogDebug(
+            "GaussianSplat Vulkan interop: all GL extensions present");
     return true;
 }
 
@@ -267,41 +262,30 @@ bool GaussianSplatVulkanInteropContext::ProbeGLExtensions() {
 // ---------------------------------------------------------------------------
 
 bool GaussianSplatVulkanInteropContext::CreateInstance() {
-    // Check instance extension availability via vulkan-hpp.
-    const auto available_exts =
-            context_.enumerateInstanceExtensionProperties();
+    // Query instance extensions so we can enable VK_EXT_debug_utils only when
+    // explicitly requested for validation/profiling runs.
+    const auto available_exts = context_.enumerateInstanceExtensionProperties();
 
-    std::string missing;
-    if (!CheckExtensions(available_exts, kRequiredInstanceExtensions,
-                         std::size(kRequiredInstanceExtensions), missing)) {
-        last_error_ = "Missing Vulkan instance extension: " + missing;
-        utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
-        return false;
-    }
-
-    // Build extension list: required + optional VK_EXT_debug_utils (for GPU
-    // frame markers visible in validation layers and debug tools).
-    std::vector<const char*> extensions(
-            kRequiredInstanceExtensions,
-            kRequiredInstanceExtensions +
-                    std::size(kRequiredInstanceExtensions));
-    for (const auto& ext : available_exts) {
-        if (std::strcmp(ext.extensionName,
-                        VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0) {
-            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-            debug_utils_enabled_ = true;
-            break;
+    std::vector<const char*> extensions;
+    if (ShouldEnableDebugUtils()) {
+        for (const auto& ext : available_exts) {
+            if (std::strcmp(ext.extensionName,
+                            VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0) {
+                extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+                debug_utils_enabled_ = true;
+                break;
+            }
         }
     }
 
     // Shaders are compiled for --target-env vulkan1.3 (SPIR-V 1.6).
     // The instance must advertise 1.3 or vkCreateShaderModule rejects them.
     vk::ApplicationInfo app_info{
-            "Open3D GaussianSplat",        // pApplicationName
-            1,                             // applicationVersion
-            nullptr,                       // pEngineName
-            0,                             // engineVersion
-            VK_API_VERSION_1_3,            // apiVersion
+            "Open3D GaussianSplat",  // pApplicationName
+            1,                       // applicationVersion
+            nullptr,                 // pEngineName
+            0,                       // engineVersion
+            VK_API_VERSION_1_3,      // apiVersion
     };
     vk::InstanceCreateInfo ci({}, &app_info, {}, extensions);
 
@@ -340,8 +324,8 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
     if (best_idx == devices.size()) {
         last_error_ =
                 "No suitable Vulkan device found with required interop "
-                "extensions. Required extensions: "
-                VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME
+                "extensions. Required "
+                "extensions: " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME
                 ", " VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
@@ -364,13 +348,15 @@ bool GaussianSplatVulkanInteropContext::CreateLogicalDevice() {
     const auto qfams = physical_device_.getQueueFamilyProperties();
 
     // Prefer a queue family that supports both GRAPHICS and COMPUTE — the
-    // same hardware engine (RCS on Intel, GFX on AMD) that OpenGL GL_ARB_gl_spirv
-    // uses. Dedicated compute-only queues (CCS on Intel) can behave differently
-    // for the same SPIR-V shaders and may hang on some driver/hardware combos.
-    // Fall back to a compute-only queue only when no graphics+compute family exists.
+    // same hardware engine (RCS on Intel, GFX on AMD) that OpenGL
+    // GL_ARB_gl_spirv uses. Dedicated compute-only queues (CCS on Intel) can
+    // behave differently for the same SPIR-V shaders and may hang on some
+    // driver/hardware combos. Fall back to a compute-only queue only when no
+    // graphics+compute family exists.
     std::uint32_t graphics_compute_family = UINT32_MAX;
     std::uint32_t compute_only_family = UINT32_MAX;
-    for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(qfams.size()); ++i) {
+    for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(qfams.size());
+         ++i) {
         const auto flags = qfams[i].queueFlags;
         if ((flags & vk::QueueFlagBits::eCompute) &&
             (flags & vk::QueueFlagBits::eGraphics)) {
@@ -391,20 +377,33 @@ bool GaussianSplatVulkanInteropContext::CreateLogicalDevice() {
     }
 
     const float queue_priority = 1.0f;
-    vk::DeviceQueueCreateInfo qci({}, compute_queue_family_, 1, &queue_priority);
+    vk::DeviceQueueCreateInfo qci({}, compute_queue_family_, 1,
+                                  &queue_priority);
 
-    // Query all hardware-supported features and pass them back to createDevice
-    // so that Vulkan 1.1/1.2/1.3 features used by the SPIR-V shaders
-    // (subgroups, shader floats, atomics, etc.) are fully enabled.
-    auto features_chain =
+    // Request only the Vulkan 1.3 features this backend actually uses.
+    // The command path relies on vkQueueSubmit2 / vkCmdPipelineBarrier2, so
+    // synchronization2 must be enabled. Subgroup variants are selected from
+    // properties and supported-operation bits only.
+    auto supported_features =
             physical_device_.getFeatures2<vk::PhysicalDeviceFeatures2,
-                                          vk::PhysicalDeviceVulkan11Features,
-                                          vk::PhysicalDeviceVulkan12Features,
-                          vk::PhysicalDeviceVulkan13Features,
-                          vk::PhysicalDeviceSubgroupSizeControlFeatures>();
+                                          vk::PhysicalDeviceVulkan13Features>();
+    const auto& supported_vulkan13 =
+            supported_features.get<vk::PhysicalDeviceVulkan13Features>();
+    if (supported_vulkan13.synchronization2 != VK_TRUE) {
+        last_error_ =
+                "Selected Vulkan device does not support synchronization2";
+        utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
+        return false;
+    }
+
+    vk::StructureChain<vk::PhysicalDeviceFeatures2,
+                       vk::PhysicalDeviceVulkan13Features>
+            enabled_features;
+    enabled_features.get<vk::PhysicalDeviceVulkan13Features>()
+            .synchronization2 = VK_TRUE;
 
     vk::DeviceCreateInfo dci({}, qci, {}, kRequiredDeviceExtensions);
-    dci.pNext = &features_chain.get<vk::PhysicalDeviceFeatures2>();
+    dci.pNext = &enabled_features.get<vk::PhysicalDeviceFeatures2>();
 
     try {
         device_ = physical_device_.createDevice(dci);
@@ -419,44 +418,23 @@ bool GaussianSplatVulkanInteropContext::CreateLogicalDevice() {
     // variants when the device subgroup size is too small (e.g. Intel Xe2=8).
     auto props11 =
             physical_device_
-                .getProperties2<vk::PhysicalDeviceProperties2,
-                        vk::PhysicalDeviceVulkan11Properties,
-                        vk::PhysicalDeviceSubgroupSizeControlProperties>();
-        const auto& subgroup_props =
+                    .getProperties2<vk::PhysicalDeviceProperties2,
+                                    vk::PhysicalDeviceVulkan11Properties>();
+    const auto& subgroup_props =
             props11.get<vk::PhysicalDeviceVulkan11Properties>();
-        subgroup_size_ = subgroup_props.subgroupSize;
-        subgroup_supported_stages_ =
+    subgroup_size_ = subgroup_props.subgroupSize;
+    subgroup_supported_stages_ =
             static_cast<std::uint32_t>(subgroup_props.subgroupSupportedStages);
-        subgroup_supported_operations_ = static_cast<std::uint32_t>(
+    subgroup_supported_operations_ = static_cast<std::uint32_t>(
             subgroup_props.subgroupSupportedOperations);
-        const auto& subgroup_size_control_features =
-            features_chain.get<vk::PhysicalDeviceSubgroupSizeControlFeatures>();
-        subgroup_size_control_ =
-            subgroup_size_control_features.subgroupSizeControl == VK_TRUE;
-        compute_full_subgroups_ =
-            subgroup_size_control_features.computeFullSubgroups == VK_TRUE;
 
-        const auto& subgroup_size_control_props =
-            props11.get<vk::PhysicalDeviceSubgroupSizeControlProperties>();
-        min_subgroup_size_ = subgroup_size_control_props.minSubgroupSize;
-        max_subgroup_size_ = subgroup_size_control_props.maxSubgroupSize;
-        max_compute_workgroup_subgroups_ =
-            subgroup_size_control_props.maxComputeWorkgroupSubgroups;
-        required_subgroup_size_stages_ = static_cast<std::uint32_t>(
-            subgroup_size_control_props.requiredSubgroupSizeStages);
-
-        utility::LogDebug("GaussianSplat Vulkan: compute queue family {}, "
-                  "subgroupSize={}, subgroupStages=0x{:x}, "
-                  "subgroupOps=0x{:x}, subgroupSizeControl={}, "
-                  "computeFullSubgroups={}, minSubgroupSize={}, "
-                  "maxSubgroupSize={}, maxComputeWorkgroupSubgroups={}, "
-                  "requiredSubgroupStages=0x{:x}",
-                  compute_queue_family_, subgroup_size_,
-                  subgroup_supported_stages_, subgroup_supported_operations_,
-                  subgroup_size_control_, compute_full_subgroups_,
-                  min_subgroup_size_, max_subgroup_size_,
-                  max_compute_workgroup_subgroups_,
-                  required_subgroup_size_stages_);
+    utility::LogDebug(
+            "GaussianSplat Vulkan: compute queue family {}, "
+            "subgroupSize={}, subgroupStages=0x{:x}, "
+            "subgroupOps=0x{:x}, synchronization2={}",
+            compute_queue_family_, subgroup_size_, subgroup_supported_stages_,
+            subgroup_supported_operations_,
+            supported_vulkan13.synchronization2 == VK_TRUE);
     return true;
 }
 
@@ -488,7 +466,8 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         VkDeviceMemory& out_memory,
         int& out_fd) const {
     const vk::Format format = static_cast<vk::Format>(vk_format);
-    const vk::ImageUsageFlags vk_usage = static_cast<vk::ImageUsageFlags>(usage);
+    const vk::ImageUsageFlags vk_usage =
+            static_cast<vk::ImageUsageFlags>(usage);
 
 #if defined(_WIN32)
     constexpr vk::ExternalMemoryHandleTypeFlagBits kHandleType =
@@ -531,11 +510,12 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         return false;
     }
 
-    const vk::MemoryRequirements mem_req = dev.getImageMemoryRequirements(image);
-    const std::uint32_t mem_type = FindMemoryType(
-            mem_req.memoryTypeBits,
-            static_cast<VkMemoryPropertyFlags>(
-                    vk::MemoryPropertyFlagBits::eDeviceLocal));
+    const vk::MemoryRequirements mem_req =
+            dev.getImageMemoryRequirements(image);
+    const std::uint32_t mem_type =
+            FindMemoryType(mem_req.memoryTypeBits,
+                           static_cast<VkMemoryPropertyFlags>(
+                                   vk::MemoryPropertyFlagBits::eDeviceLocal));
     if (mem_type == UINT32_MAX) {
         utility::LogWarning(
                 "GaussianSplat Vulkan: no suitable device-local memory type");
@@ -544,8 +524,7 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
     }
 
     // Chain dedicated-alloc and export-alloc info into vk::MemoryAllocateInfo.
-    vk::StructureChain<vk::MemoryAllocateInfo,
-                       vk::ExportMemoryAllocateInfo,
+    vk::StructureChain<vk::MemoryAllocateInfo, vk::ExportMemoryAllocateInfo,
                        vk::MemoryDedicatedAllocateInfo>
             mem_chain{
                     vk::MemoryAllocateInfo{mem_req.size, mem_type},
@@ -593,8 +572,8 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         out_fd = dev.getMemoryFdKHR(
                 {memory, vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd});
     } catch (const vk::SystemError& e) {
-        utility::LogWarning(
-                "GaussianSplat Vulkan: vkGetMemoryFdKHR failed: {}", e.what());
+        utility::LogWarning("GaussianSplat Vulkan: vkGetMemoryFdKHR failed: {}",
+                            e.what());
         dev.freeMemory(memory);
         dev.destroyImage(image);
         return false;
@@ -623,8 +602,8 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
     }
 
 #if defined(_WIN32)
-    const HANDLE win32_handle = reinterpret_cast<HANDLE>(
-            static_cast<intptr_t>(fd));
+    const HANDLE win32_handle =
+            reinterpret_cast<HANDLE>(static_cast<intptr_t>(fd));
     glImportMemoryWin32HandleEXT(out_gl_memory_object,
                                  static_cast<GLuint64>(memory_size),
                                  GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, win32_handle);
@@ -654,10 +633,9 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
             gl_internal_format = GL_DEPTH_COMPONENT32F;
             break;
     }
-    glTextureStorageMem2DEXT(out_gl_texture, 1, gl_internal_format,
-                             static_cast<GLsizei>(width),
-                             static_cast<GLsizei>(height),
-                             out_gl_memory_object, /*offset=*/0);
+    glTextureStorageMem2DEXT(
+            out_gl_texture, 1, gl_internal_format, static_cast<GLsizei>(width),
+            static_cast<GLsizei>(height), out_gl_memory_object, /*offset=*/0);
 
     const GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
@@ -738,8 +716,7 @@ SharedImageDesc GaussianSplatVulkanInteropContext::CreateSharedImage(
 
     ok = ImportFDIntoGL(export_fd, width, height,
                         static_cast<VkDeviceSize>(actual_req.size),
-                        interop_format,
-                        desc.gl_memory_object, desc.gl_texture);
+                        interop_format, desc.gl_memory_object, desc.gl_texture);
     if (!ok) {
         vk::Device(*device_).freeMemory(
                 static_cast<vk::DeviceMemory>(desc.vk_memory));
@@ -755,9 +732,10 @@ SharedImageDesc GaussianSplatVulkanInteropContext::CreateSharedImage(
     desc.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     if (label) {
-        utility::LogDebug("GaussianSplat Vulkan: created shared image '{}' "
-                          "{}x{} GL={}",
-                          label, width, height, desc.gl_texture);
+        utility::LogDebug(
+                "GaussianSplat Vulkan: created shared image '{}' "
+                "{}x{} GL={}",
+                label, width, height, desc.gl_texture);
     }
     return desc;
 }
@@ -789,7 +767,8 @@ void GaussianSplatVulkanInteropContext::DestroySharedImage(
     }
     // Now safe to free Vulkan resources.
     if (desc.vk_image != VK_NULL_HANDLE) {
-        vk::Device(*device_).destroyImage(static_cast<vk::Image>(desc.vk_image));
+        vk::Device(*device_).destroyImage(
+                static_cast<vk::Image>(desc.vk_image));
         desc.vk_image = VK_NULL_HANDLE;
     }
     if (desc.vk_memory != VK_NULL_HANDLE) {
@@ -819,15 +798,16 @@ bool GaussianSplatVulkanInteropContext::CreateExportableSemaphore(
             chain{{}, {kSemHandleType}};
 
     // Use the non-RAII vk::Device wrapper: semaphore lifetime is managed
-    // manually here (exported to GL via FD, raw VkSemaphore in SharedSemaphoreDesc).
+    // manually here (exported to GL via FD, raw VkSemaphore in
+    // SharedSemaphoreDesc).
     const vk::Device sdev(*device_);
 
     vk::Semaphore semaphore;
     try {
         semaphore = sdev.createSemaphore(chain.get<vk::SemaphoreCreateInfo>());
     } catch (const vk::SystemError& e) {
-        utility::LogWarning("GaussianSplat Vulkan: vkCreateSemaphore failed: {}",
-                            e.what());
+        utility::LogWarning(
+                "GaussianSplat Vulkan: vkCreateSemaphore failed: {}", e.what());
         return false;
     }
 
@@ -835,7 +815,8 @@ bool GaussianSplatVulkanInteropContext::CreateExportableSemaphore(
     HANDLE win32_handle = nullptr;
     try {
         win32_handle = sdev.getSemaphoreWin32HandleKHR(
-                {semaphore, vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32});
+                {semaphore,
+                 vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32});
     } catch (const vk::SystemError& e) {
         utility::LogWarning(
                 "GaussianSplat Vulkan: vkGetSemaphoreWin32HandleKHR failed: {}",
@@ -847,7 +828,8 @@ bool GaussianSplatVulkanInteropContext::CreateExportableSemaphore(
 #else
     try {
         out_fd = sdev.getSemaphoreFdKHR(
-                {semaphore, vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd});
+                {semaphore,
+                 vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd});
     } catch (const vk::SystemError& e) {
         utility::LogWarning(
                 "GaussianSplat Vulkan: vkGetSemaphoreFdKHR failed: {}",
@@ -864,25 +846,22 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGLSemaphore(
         int fd, std::uint32_t& out_gl_semaphore) const {
     glGenSemaphoresEXT(1, &out_gl_semaphore);
     if (out_gl_semaphore == 0) {
-        utility::LogWarning(
-                "GaussianSplat GL: glGenSemaphoresEXT returned 0");
+        utility::LogWarning("GaussianSplat GL: glGenSemaphoresEXT returned 0");
         return false;
     }
 #if defined(_WIN32)
     const HANDLE win32_handle =
             reinterpret_cast<HANDLE>(static_cast<intptr_t>(fd));
-    glImportSemaphoreWin32HandleEXT(out_gl_semaphore,
-                                    GL_HANDLE_TYPE_OPAQUE_WIN32_EXT,
-                                    win32_handle);
+    glImportSemaphoreWin32HandleEXT(
+            out_gl_semaphore, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, win32_handle);
 #else
     glImportSemaphoreFdEXT(out_gl_semaphore, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fd);
     // FD ownership transferred to GL.
 #endif
     const GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
-        utility::LogWarning(
-                "GaussianSplat GL: semaphore import error 0x{:x}",
-                static_cast<unsigned>(err));
+        utility::LogWarning("GaussianSplat GL: semaphore import error 0x{:x}",
+                            static_cast<unsigned>(err));
         glDeleteSemaphoresEXT(1, &out_gl_semaphore);
         out_gl_semaphore = 0;
         return false;

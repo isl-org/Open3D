@@ -20,10 +20,10 @@
 
 #if !defined(__APPLE__)
 
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
-
 #include <cstdlib>
 #include <cstring>
+
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
 
 // GLFW for cross-platform hidden window and context creation.
 #define GLFW_INCLUDE_NONE

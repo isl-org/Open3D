@@ -71,25 +71,20 @@ open3d_link_3rdparty_libraries(GUI)
 file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
 
 set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_project.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_prefix_sum.comp
+    ../rendering/gaussian_splat/shaders/gaussian_project.comp
+    ../rendering/gaussian_splat/shaders/gaussian_prefix_sum.comp
     # Subgroup variant: used on Linux/macOS where subgroup arithmetic is reliable.
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_prefix_sum_subgroup.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_scatter.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_composite.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_histograms.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort.comp
+    ../rendering/gaussian_splat/shaders/gaussian_prefix_sum_subgroup.comp
+    ../rendering/gaussian_splat/shaders/gaussian_scatter.comp
+    ../rendering/gaussian_splat/shaders/gaussian_composite.comp
+    ../rendering/gaussian_splat/shaders/gaussian_radix_sort_histograms.comp
+    ../rendering/gaussian_splat/shaders/gaussian_radix_sort.comp
     # Subgroup variant: used on Linux/macOS where subgroup arithmetic is reliable.
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_subgroup.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_keygen.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_radix_sort_payload.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_compute_dispatch_args.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_depth_merge.comp
-    # Test-only Vulkan compute probe for device forward progress.
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_forward_progress_chain.comp
-    # OneSweep sort: subgroup-only variants; fall back to radix sort if unavailable.
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_onesweep_global_hist_subgroup.comp
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/rendering/gaussian_splat/shaders/gaussian_onesweep_digit_pass_subgroup.comp
+    ../rendering/gaussian_splat/shaders/gaussian_radix_sort_subgroup.comp
+    ../rendering/gaussian_splat/shaders/gaussian_radix_sort_keygen.comp
+    ../rendering/gaussian_splat/shaders/gaussian_radix_sort_payload.comp
+    ../rendering/gaussian_splat/shaders/gaussian_compute_dispatch_args.comp
+    ../rendering/gaussian_splat/shaders/gaussian_depth_merge.comp
 )
 
 # copy GUI/Resources -> <output>/resources

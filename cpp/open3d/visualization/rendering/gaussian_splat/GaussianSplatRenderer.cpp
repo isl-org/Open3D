@@ -155,6 +155,7 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 
 // ----- GaussianSplatRenderer -------------------------------------------------
 
+// @AGENT Inline this
 /// Returns true when composite must run after Filament's endFrame().
 /// On Metal, endFrame() commits the command buffer so the depth texture is
 /// guaranteed ready before our composite CB executes on the same queue.
@@ -167,6 +168,7 @@ bool GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame() {
 #endif
 }
 
+// @AGENT CHeck if this test can be eliminated based on if filament is rendering.
 bool ProjectionInfoEquals(const Camera::ProjectionInfo& left,
                           const Camera::ProjectionInfo& right) {
     // Compare all active projection fields; used for per-frame dirty detection.
@@ -206,6 +208,7 @@ bool ProjectionInfoEquals(const Camera::ProjectionInfo& left,
            left.proj.perspective.far_plane == right.proj.perspective.far_plane;
 }
 
+// @AGENT CHeck if this test can be eliminated based on if filament is rendering.
 bool ViewRenderDataEquals(const GaussianSplatRenderer::ViewRenderData& left,
                           const GaussianSplatRenderer::ViewRenderData& right) {
     // Detect camera/viewport changes to decide whether to re-run passes.

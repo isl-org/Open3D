@@ -608,6 +608,24 @@ else()
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_eigen3)
 endif()
 
+# Vulkan-Headers
+include(${Open3D_3RDPARTY_DIR}/vulkan_headers/vulkan_headers.cmake)
+open3d_import_3rdparty_library(3rdparty_vulkan_headers
+    INCLUDE_DIRS ${VULKAN_HEADERS_INCLUDE_DIRS}
+    INCLUDE_ALL
+    DEPENDS      ext_vulkan_headers
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vulkan_headers)
+
+# Vulkan Memory Allocator
+include(${Open3D_3RDPARTY_DIR}/vkmemalloc/vkmemalloc.cmake)
+open3d_import_3rdparty_library(3rdparty_vkmemalloc
+    INCLUDE_DIRS ${VMA_INCLUDE_DIRS}
+    INCLUDE_ALL
+    DEPENDS      ext_vkmemalloc
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vkmemalloc)
+
 # Nanoflann
 if(USE_SYSTEM_NANOFLANN)
     open3d_find_package_3rdparty_library(3rdparty_nanoflann

@@ -32,6 +32,9 @@
 
 #version 460
 
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 // Composite-pass projected data (32 B, binding 6).
@@ -81,7 +84,8 @@ layout(std430, binding = 11) readonly buffer SortedSplatIndices {
 // Image bindings must be < GL_MAX_IMAGE_UNITS (8 on many drivers).
 // These two output images use units 0 and 1; SSBO/UBO/sampler bindings
 // above live in separate namespaces and are not affected.
-// Binding 16 avoids the (set=0, binding=0) conflict with GaussianViewParams UBO.
+// Binding 16 avoids the (set=0, binding=0) conflict with GaussianViewParams
+// UBO.
 layout(binding = 16, rgba16f) uniform writeonly image2D out_color;
 layout(binding = 1, r32f) uniform writeonly image2D out_depth;
 
@@ -104,11 +108,6 @@ uint LinearTileIndex(uvec2 tile) {
     return tile.y * tile_count.x + tile.x;
 }
 
-vec3 UnpackColorRGBA8(uint rgba8) {
-    return vec3(float(rgba8 & 0xFFu), float((rgba8 >> 8u) & 0xFFu),
-                float((rgba8 >> 16u) & 0xFFu)) /
-           255.0;
-}
 
 // Convert Filament inverse depth (near=1, far=0) to normalized linear depth
 // (near=0, far=1) using the near/far planes from the view params UBO.
@@ -248,7 +247,7 @@ void main() {
                 }
                 float alpha = exp2(power * kLog2E) * s_alpha[i];
                 float contribution = transmittance * alpha;
-                accum_color += contribution * UnpackColorRGBA8(s_color[i]);
+                accum_color += contribution * unpackUnorm4x8(s_color[i]).rgb;
                 transmittance *= (1.0 - alpha);
                 if (!depth_written && transmittance < kSurfaceThreshold) {
                     out_norm_depth = s_depth[i];
@@ -261,13 +260,14 @@ void main() {
                 }
             }
         }
-        // Workgroup early-exit: decrement wg_active_count for threads that
-        // just saturated (was_active && !pixel_active).  When all 256 pixels
-        // in the tile are saturated, wg_active_count == 0 and the whole WG
-        // can skip remaining batches (barrier uniformity is still preserved).
-        barrier();
-        if (was_active && !pixel_active) {
-            atomicAdd(wg_active_count, uint(-1));
+        // Workgroup early-exit: aggregate newly saturated lanes per subgroup
+        // so only one lane performs the shared-memory atomic decrement.
+        // The barrier after the atomic is still required so every invocation
+        // observes the final workgroup count before the uniform break test.
+        uint newly_saturated = (was_active && !pixel_active) ? 1u : 0u;
+        uint subgroup_saturated = subgroupAdd(newly_saturated);
+        if (subgroupElect() && subgroup_saturated > 0u) {
+            atomicAdd(wg_active_count, uint(0u - subgroup_saturated));
         }
         barrier();
         if (wg_active_count == 0u) break;
