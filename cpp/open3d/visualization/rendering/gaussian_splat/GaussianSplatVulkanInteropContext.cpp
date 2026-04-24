@@ -73,8 +73,7 @@ constexpr const char* kRequiredDeviceExtensions[] = {
 
 bool ShouldEnableDebugUtils() {
     const char* value = std::getenv("OPEN3D_VULKAN_DEBUG_UTILS");
-    return value != nullptr && value[0] != '\0' &&
-       std::strcmp(value, "0") != 0;
+    return value != nullptr && value[0] != '\0' && std::strcmp(value, "0") != 0;
 }
 
 /// Returns true when all extensions in 'required' are present in

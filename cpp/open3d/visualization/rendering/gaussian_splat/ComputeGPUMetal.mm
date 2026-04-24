@@ -34,13 +34,9 @@ namespace {
 /// Must have exactly ComputeProgramId::kCount rows — enforced by static_assert.
 static const NSUInteger kThreadsPerGroup[][3] = {
         {64, 1, 1},   // kGsProject
-        {256, 1, 1},  // kGsPrefixSum
-        {64, 1, 1},   // kGsScatter
         {16, 16, 1},  // kGsComposite
-        {256, 1, 1},  // kGsRadixKeygen
         {256, 1, 1},  // kGsRadixHistograms
         {256, 1, 1},  // kGsRadixScatter
-        {256, 1, 1},  // kGsRadixPayload
         {1, 1, 1},    // kGsDispatchArgs
         {16, 16, 1},  // kGsDepthMerge
 };

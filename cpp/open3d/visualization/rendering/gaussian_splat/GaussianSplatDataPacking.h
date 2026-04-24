@@ -81,35 +81,6 @@ struct alignas(16) ProjectedComposite {
 static_assert(sizeof(ProjectedComposite) == 32,
               "ProjectedComposite must be 32 bytes to match GLSL layout");
 
-/// Tile-metadata projected splat data (16 bytes, binding 12).
-/// Written by gaussian_project.comp, read by gaussian_prefix_sum.comp and
-/// gaussian_scatter.comp (never by the composite pass).
-/// Layout (std430): 1×float + 3×uint = 16 bytes.
-///   norm_depth         — copy of depth; used as the sort key source.
-///   tile_count_overlap — number of tiles the splat overlaps; 0 = culled.
-///   tile_rect_min/max  — packed tile bounding box: (y<<16)|x.
-struct alignas(16) ProjectedTileMeta {
-    float norm_depth;
-    std::uint32_t tile_count_overlap;
-    std::uint32_t tile_rect_min;
-    std::uint32_t tile_rect_max;
-};
-static_assert(sizeof(ProjectedTileMeta) == 16,
-              "ProjectedTileMeta must be 16 bytes to match GLSL layout");
-
-/// Matches TileEntry struct in the shaders (3 × uint = 12 bytes).
-/// Named to match the GLSL struct: `struct TileEntry` in
-/// scatter/sort/composite. Radix sort is inherently stable so stable_index
-/// is not needed.
-struct TileEntry {
-    std::uint32_t depth_key;
-    std::uint32_t splat_index;
-    std::uint32_t tile_index;  ///< Linear tile index; written by scatter, read
-                               ///< by keygen.
-};
-static_assert(sizeof(TileEntry) == 12,
-              "TileEntry must be 12 bytes to match GLSL layout");
-
 /// Global counters written GPU-side (prefix-sum, scatter, dispatch-args) and
 /// read CPU-side for diagnostics and error reporting.  Layout matches the
 /// GaussianGlobalCounters SSBO block in the compute shaders (std430, binding
@@ -189,18 +160,15 @@ inline constexpr std::uint32_t kGaussianRadixParamsStride = 256;
 /// Must match allocation logic in gaussian_compute_dispatch_args.comp and the
 /// radix shaders (tile cap, etc.).
 struct GaussianGpuBufferSizes {
-    /// Two projected buffers: composite (32 B, composite pass only) and
-    /// tile metadata (16 B, scatter/prefix passes only).
-    std::size_t projected_composite_size = 0;  ///< splat_count × 32 B
-    std::size_t projected_meta_size = 0;       ///< splat_count × 16 B
+    /// Composite-pass projected data (32 B/splat, binding 6).
+    std::size_t projected_composite_size = 0;
+    /// steal_counter: one uint32 used by the composite work-stealing dispatch.
+    /// (Previously: per-tile count/offset arrays of size tile_count×4 B each.)
     std::size_t tile_scalar_size = 0;
-    std::size_t entry_buf_size = 0;
+    /// Sort key/value ping-pong buffers (entry_capacity × 4 B each, ×2 arrays).
     std::size_t key_cap_size = 0;
-    /// Byte size of the sorted splat-index buffer: one uint32 per tile entry
-    /// (4 B each, vs. 12 B for a full TileEntry). Used by the composite pass.
-    std::size_t sorted_splat_size = 0;
     std::size_t histogram_buf_size = 0;
-    /// 10 radix dispatch entries (keygen, 4 histograms, 4 scatters, payload).
+    /// 8 indirect dispatch entries (4×histogram + 4×scatter).
     std::size_t dispatch_args_size = 0;
     std::size_t radix_params_size = 0;
     std::uint32_t entries_capacity = 0;

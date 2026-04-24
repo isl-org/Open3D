@@ -29,6 +29,13 @@
 // Opt8: Compact sorted payload — binding 11 is now uint[] splat_index values
 //       (4 B each) instead of TileEntry structs (12 B each), reducing the
 //       sorted payload buffer size by 3× and halving memory bandwidth here.
+// Opt9: Work-stealing persistent threads — each workgroup atomically claims
+//       tiles from a global counter until all tiles are processed.  Eliminates
+//       the separate 20 ms gaussian_tile_boundaries pass: the tile's entry
+//       range is found with a O(log N) binary search on the sorted keys
+//       (binding 7) instead of reading precomputed tile_counts/tile_offsets.
+//       Load balancing: workgroups that finish light tiles immediately claim
+//       new ones, keeping all SMs busy throughout frame.
 
 #version 460
 
@@ -62,22 +69,41 @@ layout(std140, binding = 0) uniform GaussianViewParams {
 }
 view_params;
 
-layout(std430, binding = 6) readonly buffer ProjectedComposites {
+layout(std430, binding = 6) restrict readonly buffer ProjectedComposites {
     ProjectedComposite composite[];
 };
 
 // inv_basis is now inlined in ProjectedComposite (binding 6); no binding 13.
 
-layout(std430, binding = 7) readonly buffer TileCounts { uint tile_counts[]; };
-
-layout(std430, binding = 8) readonly buffer TileOffsets {
-    uint tile_offsets[];
+// Sorted sort keys from the final radix-sort pass (same buffer as project
+// output).  Used for binary search to find each tile's entry range, replacing
+// the separate gaussian_tile_boundaries pass.
+// Key format: upper T bits = tile_index, lower D bits = depth component,
+// where T = limits.w, D = 32 - T.
+layout(std430, binding = 7) restrict readonly buffer SortKeys {
+    uint sort_keys[];
 };
+
+// Work-stealing counter: one uint32 cleared to 0 before each composite pass.
+// Thread 0 of each workgroup atomically claims the next tile index.
+layout(std430, binding = 8) restrict buffer StealCounter {
+    uint steal_counter;
+};
+
+// Global counters from the geometry pass: total_entries is the number of
+// sort entries produced (before entry_capacity clamping is applied).
+layout(std430, binding = 10) restrict readonly buffer GaussianGlobalCounters {
+    uint total_entries;
+    uint error_flags;
+    uint tile_count_gs;  // tile count as seen by the geometry pass
+    uint splat_count_gs;
+}
+gs_counters;
 
 // Compact sorted payload: one splat_index per tile entry, in sort order.
 // Only splat_index is needed here; depth_key and tile_index were used by
 // the radix sort keygen and are not read during compositing.
-layout(std430, binding = 11) readonly buffer SortedSplatIndices {
+layout(std430, binding = 11) restrict readonly buffer SortedSplatIndices {
     uint sorted_splat_indices[];
 };
 
@@ -108,6 +134,50 @@ uint LinearTileIndex(uvec2 tile) {
     return tile.y * tile_count.x + tile.x;
 }
 
+// Morton curve helpers: decode a Z-order (Morton) code to 2D tile (x, y).
+// Even bit positions carry x; odd bit positions carry y.
+// Neighboring tiles in Morton order share cache lines in the sorted splat
+// buffer more often than raster order, improving L2 hit rate.
+//
+// MortonExtractEvenBits: compact all even-position bits to the low end.
+uint MortonExtractEvenBits(uint x) {
+    x &= 0x55555555u;
+    x = (x ^ (x >> 1u)) & 0x33333333u;
+    x = (x ^ (x >> 2u)) & 0x0f0f0f0fu;
+    x = (x ^ (x >> 4u)) & 0x00ff00ffu;
+    x = (x ^ (x >> 8u)) & 0x0000ffffu;
+    return x;
+}
+
+uvec2 MortonDecode2D(uint code) {
+    return uvec2(MortonExtractEvenBits(code),         // x: even bits
+                 MortonExtractEvenBits(code >> 1u));  // y: odd bits
+}
+
+// Round x up to the next power-of-2 (≥1).
+uint NextPow2(uint x) {
+    if (x <= 1u) return 1u;
+    // findMSB returns the index of the most significant 1-bit
+    return 1u << (findMSB(x - 1u) + 1u);
+}
+
+// Binary search: return the first index i in [lo, hi) such that
+// (sort_keys[i] >> D) >= target_tile.  Sort keys are sorted ascending so
+// tile indices occupy the most-significant T bits (T = 32 - D).
+// Caller supplies [lo, hi) so the second of two adjacent-tile searches can
+// start from the first result, reducing cost from O(log₂ N) to O(log₂ n)
+// where n is the number of entries in that tile.
+uint LowerBound(uint target_tile, uint lo, uint hi, uint D) {
+    while (lo < hi) {
+        uint mid = lo + ((hi - lo) >> 1u);
+        if ((sort_keys[mid] >> D) < target_tile) {
+            lo = mid + 1u;
+        } else {
+            hi = mid;
+        }
+    }
+    return lo;
+}
 
 // Convert Filament inverse depth (near=1, far=0) to normalized linear depth
 // (near=0, far=1) using the near/far planes from the view params UBO.
@@ -135,14 +205,15 @@ shared float s_depth[BATCH_SIZE];
 shared uint s_color[BATCH_SIZE];
 shared vec4 s_inv_basis[BATCH_SIZE];
 
-// Workgroup-uniform tile entry count (broadcast from thread 0 so that
-// ALL threads — including those outside the viewport — iterate the same
-// number of batches and hit every barrier()).
+// Opt9: Work-stealing shared state.
+// s_stolen_tile: tile index claimed atomically from steal_counter by thread 0.
+// wg_tile_offset/wg_tile_count: tile range found by binary search (thread 0),
+// broadcast to all threads.
+// wg_active_count: counts pixels still accumulating; early-exits the batch
+// loop when all 256 threads are saturated (transmittance ≤ threshold).
+shared uint s_stolen_tile;
 shared uint wg_tile_count;
 shared uint wg_tile_offset;
-// Counts how many pixels in this workgroup are still not saturated.
-// When it reaches zero the outer batch loop exits early for the whole WG,
-// skipping composite[] / inv_basis[] reads for all remaining batches.
 shared uint wg_active_count;
 
 void main() {
@@ -152,139 +223,192 @@ void main() {
             1.0 /
             4096.0;  // Stop compositing when transmittance hits this value.
 
-    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 viewport_size = GetViewportSize();
-    // All threads must participate in barrier() calls below, so we cannot
-    // exit early for out-of-viewport pixels.  Instead, flag them and skip
-    // per-pixel work and the final imageStore.
-    bool pixel_active =
-            (pixel.x < viewport_size.x && pixel.y < viewport_size.y);
-
     uint local_index = gl_LocalInvocationIndex;  // 0..255 for 16×16
+
+    // Pre-compute uniform values read each iteration.
     uvec2 tile_size = GetTileSize();
-    uvec2 tile = min(uvec2(pixel) / tile_size, GetTileCount2D() - uvec2(1u));
-    uint tile_index = LinearTileIndex(tile);
-
-    // Broadcast from thread 0 so every thread in the workgroup iterates
-    // the same number of batches (required for uniform barrier() calls).
-    // Initialize wg_active_count = 256 (all threads potentially active).
-    if (local_index == 0u) {
-        uint entry_capacity = view_params.limits.x;
-        uint tile_offset = min(tile_offsets[tile_index], entry_capacity);
-        uint available = max(entry_capacity - tile_offset, 0u);
-        wg_tile_offset = tile_offset;
-        wg_tile_count = min(tile_counts[tile_index], available);
-        wg_active_count = BATCH_SIZE;
-    }
-    barrier();
-
-    uint my_tile_count = wg_tile_count;
-    uint my_tile_offset = wg_tile_offset;
-
-    vec3 accum_color = vec3(0.0);
-    float transmittance = 1.0;
-    // Output depth in normalized linear convention (near=0, far=1);
-    // converted back to Filament inverse convention before imageStore.
-    float out_norm_depth = 0.0;
-    bool depth_written = false;
-    vec2 pixel_center = vec2(pixel) + vec2(0.5);
+    uvec2 tile_count_2d = GetTileCount2D();
+    ivec2 viewport_size = GetViewportSize();
+    // Morton range: the steal_counter scans Z-curve codes from 0 to
+    // morton_range-1.  The side length is the next power-of-2 >= both tile
+    // grid dimensions; squaring it gives the number of Morton codes to visit.
+    // Codes whose decoded (tx, ty) falls outside the grid are skipped with a
+    // uniform continue — this only happens for non-power-of-2 grids and adds
+    // at most 2× extra atomicAdd calls (no per-pixel work).
+    uint morton_side = NextPow2(max(tile_count_2d.x, tile_count_2d.y));
+    uint morton_range = morton_side * morton_side;
+    // D = bits reserved for the depth component in each sort key.
+    // T = limits.w = ceil(log2(tile_count)); D = 32 - T.
+    uint D = 32u - view_params.limits.w;
+    // Total valid sort entries, capped at the configured capacity.
+    uint N = min(gs_counters.total_entries, view_params.limits.x);
 
     float near = view_params.depth_range_and_flags.x;
     float far = view_params.depth_range_and_flags.y;
+    bool has_scene_depth = view_params.depth_range_and_flags.w > 0.5;
 
-    // Convert Filament scene depth (inverse, near=1, far=0) to linear_01
-    // once per pixel before the splat loop, so the per-splat occlusion test
-    // is a simple float comparison with no per-iteration conversion.
-    float scene_linear_01 = 0.0;  // corresponds to far (no occlusion)
-    bool use_scene_depth =
-            (view_params.depth_range_and_flags.w > 0.5) && pixel_active;
-    if (use_scene_depth) {
-        float scene_inverse_depth = texelFetch(scene_depth, pixel, 0).r;
-        scene_linear_01 = InverseToLinear01(scene_inverse_depth, near, far);
-    }
-
-    // Opt7: process tile entries in batches of BATCH_SIZE.
-    // ALL threads must iterate the same number of batches to keep barrier()
-    // calls uniform.  Per-pixel early saturation skips computation but
-    // still participates in barriers.
-    for (uint batch_start = 0u; batch_start < my_tile_count;
-         batch_start += BATCH_SIZE) {
-        uint batch_end = min(batch_start + BATCH_SIZE, my_tile_count);
-        uint batch_count = batch_end - batch_start;
-
-        // Cooperative load: each thread loads one 32 B ProjectedComposite from
-        // a single SSBO (binding 6).  inv_basis is inlined, so one L2 fetch
-        // covers all data needed by the per-pixel Gaussian evaluation.
-        if (local_index < batch_count) {
-            uint entry_idx = my_tile_offset + batch_start + local_index;
-            uint splat_idx = sorted_splat_indices[entry_idx];
-            ProjectedComposite g = composite[splat_idx];
-            s_center[local_index] = unpackHalf2x16(g.center_xy_fp16);
-            s_depth[local_index] = g.depth;
-            s_alpha[local_index] = g.alpha;
-            s_color[local_index] = g.packed_rgba8;
-            s_inv_basis[local_index] = g.inv_basis;
+    // Opt9 work-stealing loop: each workgroup atomically claims one tile at a
+    // time from steal_counter until all tiles are consumed.  Workgroups that
+    // finish light tiles immediately claim the next one, preventing SM idle
+    // time from load imbalance.
+    while (true) {
+        // Thread 0 claims the next tile; result broadcast via shared memory.
+        if (local_index == 0u) {
+            s_stolen_tile = atomicAdd(steal_counter, 1u);
         }
         barrier();
 
-        // Per-pixel evaluation from shared memory.
-        // Skip if this pixel is outside the viewport or already saturated.
-        bool was_active = pixel_active;
-        if (pixel_active) {
-            for (uint i = 0u; i < batch_count; ++i) {
-                // Discard splats at or behind scene geometry. Depth is
-                // normalized linear (near=0, far=1): larger value = farther.
-                if (use_scene_depth && s_depth[i] >= scene_linear_01) {
-                    continue;
-                }
+        uint tile_index = s_stolen_tile;
+        if (tile_index >= morton_range) break;  // uniform: all threads exit
 
-                vec2 delta_pixels = pixel_center - s_center[i];
-                vec2 gaussian_uv = vec2(dot(s_inv_basis[i].xy, delta_pixels),
-                                        dot(s_inv_basis[i].zw, delta_pixels));
-                float power = -dot(gaussian_uv, gaussian_uv);
-                if (power < -4.0) {
-                    continue;
-                }
-                float alpha = exp2(power * kLog2E) * s_alpha[i];
-                float contribution = transmittance * alpha;
-                accum_color += contribution * unpackUnorm4x8(s_color[i]).rgb;
-                transmittance *= (1.0 - alpha);
-                if (!depth_written && transmittance < kSurfaceThreshold) {
-                    out_norm_depth = s_depth[i];
-                    depth_written = true;
-                }
-                if (transmittance <= kMinTransmittance) {
-                    transmittance = 0.0;
-                    pixel_active = false;  // saturated — skip future batches
-                    break;
+        // Decode Morton Z-curve code to 2D tile coordinates.
+        // x occupies even bit positions, y occupies odd bit positions.
+        uvec2 tile = MortonDecode2D(tile_index);
+
+        // Skip Morton codes that fall outside the tile grid.
+        // For non-power-of-2 grids the Morton square is larger than the tile
+        // grid; these holes are skipped with no per-pixel work (uniform).
+        if (tile.x >= tile_count_2d.x || tile.y >= tile_count_2d.y) {
+            continue;
+        }
+
+        // Convert 2D tile back to linear (row-major) index used by the sort
+        // keys.  tile_index is the Morton steal counter, NOT the sort-key
+        // tile field — they differ for any non-trivial tile ordering.
+        uint linear_tile = tile.y * tile_count_2d.x + tile.x;
+
+        // Map this invocation to its pixel within the stolen tile.
+        // local_index encodes (lx, ly) for the 16×16 workgroup.
+        uvec2 local_2d = uvec2(local_index % 16u, local_index / 16u);
+        ivec2 pixel = ivec2(tile * tile_size + local_2d);
+        // Out-of-viewport pixels still participate in barrier() calls.
+        bool pixel_active =
+                (pixel.x < viewport_size.x && pixel.y < viewport_size.y);
+
+        // Thread 0: binary search on sorted keys to find this tile's range.
+        // Sort keys encode the linear tile index in their upper T bits, so
+        // use linear_tile (not the Morton code tile_index) for the search.
+        // The second search starts from tile_start, reducing its iteration
+        // count from O(log₂ N) to O(log₂ tile_entry_count).
+        if (local_index == 0u) {
+            uint tile_start = LowerBound(linear_tile, 0u, N, D);
+            uint tile_end = LowerBound(linear_tile + 1u, tile_start, N, D);
+            wg_tile_offset = tile_start;
+            wg_tile_count = tile_end - tile_start;
+            wg_active_count = BATCH_SIZE;
+        }
+        barrier();
+
+        uint my_tile_count = wg_tile_count;
+        uint my_tile_offset = wg_tile_offset;
+
+        // Per-pixel state — reset for each stolen tile.
+        vec3 accum_color = vec3(0.0);
+        float transmittance = 1.0;
+        // Output depth in normalized linear convention (near=0, far=1);
+        // converted back to Filament inverse convention before imageStore.
+        float out_norm_depth = 0.0;
+        bool depth_written = false;
+        vec2 pixel_center = vec2(pixel) + vec2(0.5);
+
+        // Convert Filament scene depth (inverse, near=1, far=0) to linear_01
+        // once per pixel before the splat loop, so the per-splat occlusion
+        // test is a simple float comparison with no per-iteration conversion.
+        float scene_linear_01 = 0.0;  // corresponds to far (no occlusion)
+        bool use_scene_depth = has_scene_depth && pixel_active;
+        if (use_scene_depth) {
+            float scene_inverse_depth = texelFetch(scene_depth, pixel, 0).r;
+            scene_linear_01 = InverseToLinear01(scene_inverse_depth, near, far);
+        }
+
+        // Opt7: process tile entries in batches of BATCH_SIZE.
+        // ALL threads must iterate the same number of batches to keep
+        // barrier() calls uniform.  Per-pixel early saturation skips
+        // computation but still participates in barriers.
+        for (uint batch_start = 0u; batch_start < my_tile_count;
+             batch_start += BATCH_SIZE) {
+            uint batch_end = min(batch_start + BATCH_SIZE, my_tile_count);
+            uint batch_count = batch_end - batch_start;
+
+            // Cooperative load: each thread loads one 32 B ProjectedComposite
+            // from a single SSBO (binding 6).  inv_basis is inlined, so one
+            // L2 fetch covers all data needed by the per-pixel Gaussian eval.
+            if (local_index < batch_count) {
+                uint entry_idx = my_tile_offset + batch_start + local_index;
+                uint splat_idx = sorted_splat_indices[entry_idx];
+                ProjectedComposite g = composite[splat_idx];
+                s_center[local_index] = unpackHalf2x16(g.center_xy_fp16);
+                s_depth[local_index] = g.depth;
+                s_alpha[local_index] = g.alpha;
+                s_color[local_index] = g.packed_rgba8;
+                s_inv_basis[local_index] = g.inv_basis;
+            }
+            barrier();
+
+            // Per-pixel evaluation from shared memory.
+            // Skip if this pixel is outside the viewport or already saturated.
+            bool was_active = pixel_active;
+            if (pixel_active) {
+                for (uint i = 0u; i < batch_count; ++i) {
+                    // Discard splats at or behind scene geometry. Depth is
+                    // normalized linear (near=0, far=1): larger = farther.
+                    if (use_scene_depth && s_depth[i] >= scene_linear_01) {
+                        continue;
+                    }
+
+                    vec2 delta_pixels = pixel_center - s_center[i];
+                    vec2 gaussian_uv =
+                            vec2(dot(s_inv_basis[i].xy, delta_pixels),
+                                 dot(s_inv_basis[i].zw, delta_pixels));
+                    float power = -dot(gaussian_uv, gaussian_uv);
+                    if (power < -4.0) {
+                        continue;
+                    }
+                    float alpha = exp2(power * kLog2E) * s_alpha[i];
+                    float contribution = transmittance * alpha;
+                    accum_color +=
+                            contribution * unpackUnorm4x8(s_color[i]).rgb;
+                    transmittance *= (1.0 - alpha);
+                    if (!depth_written && transmittance < kSurfaceThreshold) {
+                        out_norm_depth = s_depth[i];
+                        depth_written = true;
+                    }
+                    if (transmittance <= kMinTransmittance) {
+                        transmittance = 0.0;
+                        pixel_active = false;  // saturated
+                        break;
+                    }
                 }
             }
-        }
-        // Workgroup early-exit: aggregate newly saturated lanes per subgroup
-        // so only one lane performs the shared-memory atomic decrement.
-        // The barrier after the atomic is still required so every invocation
-        // observes the final workgroup count before the uniform break test.
-        uint newly_saturated = (was_active && !pixel_active) ? 1u : 0u;
-        uint subgroup_saturated = subgroupAdd(newly_saturated);
-        if (subgroupElect() && subgroup_saturated > 0u) {
-            atomicAdd(wg_active_count, uint(0u - subgroup_saturated));
-        }
-        barrier();
-        if (wg_active_count == 0u) break;
-    }
+            // Workgroup early-exit: aggregate newly saturated lanes per
+            // subgroup so only one lane performs the shared-memory atomic.
+            // The barrier after the atomic is still required so every
+            // invocation observes the final count before the break test.
+            uint newly_saturated = (was_active && !pixel_active) ? 1u : 0u;
+            uint subgroup_saturated = subgroupAdd(newly_saturated);
+            if (subgroupElect() && subgroup_saturated > 0u) {
+                atomicAdd(wg_active_count, uint(0u - subgroup_saturated));
+            }
+            barrier();
+            if (wg_active_count == 0u) break;
+        }  // batch loop
 
-    if (pixel.x < viewport_size.x && pixel.y < viewport_size.y) {
-        float out_alpha = 1.0 - transmittance;
-        // accum_color is already premultiplied by construction:
-        //   each splat contributes transmittance * alpha * color.
-        // Filament's transparent blend mode uses One, 1-SrcAlpha
-        // (premultiplied-alpha compositing), so store premultiplied RGB
-        // directly: final = accum_color + transmittance * background.
-        imageStore(out_color, pixel, vec4(accum_color, out_alpha));
-        // Convert nearest-splat depth back to Filament inverse convention
-        // (near=1, far=0) so gaussian_depth_merge.comp and CPU readback
-        // can compare against Filament's own depth buffer unchanged.
-        float out_inverse_depth = Linear01ToInverse(out_norm_depth, near, far);
-        imageStore(out_depth, pixel, vec4(out_inverse_depth, 0.0, 0.0, 0.0));
-    }
+        // Write outputs for pixels that are inside the viewport.
+        if (pixel.x < viewport_size.x && pixel.y < viewport_size.y) {
+            float out_alpha = 1.0 - transmittance;
+            // accum_color is already premultiplied by construction:
+            //   each splat contributes transmittance * alpha * color.
+            // Filament's transparent blend mode uses One, 1-SrcAlpha
+            // (premultiplied-alpha compositing), so store premultiplied RGB
+            // directly: final = accum_color + transmittance * background.
+            imageStore(out_color, pixel, vec4(accum_color, out_alpha));
+            // Convert nearest-splat depth back to Filament inverse convention
+            // (near=1, far=0) so gaussian_depth_merge.comp and CPU readback
+            // can compare against Filament's own depth buffer unchanged.
+            float out_inverse_depth =
+                    Linear01ToInverse(out_norm_depth, near, far);
+            imageStore(out_depth, pixel,
+                       vec4(out_inverse_depth, 0.0, 0.0, 0.0));
+        }
+    }  // work-stealing loop: grab next tile
 }

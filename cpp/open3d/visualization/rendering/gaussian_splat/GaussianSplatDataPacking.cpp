@@ -48,7 +48,7 @@ inline std::uint32_t HalfPair(float lo, float hi) {
 }
 
 // Four floats → two u32 (two half2), e.g. linear scales (sx,sy,sz,0) or
-// DC+opacity (r,g,b,opacity_logit).
+// DC+opacity (r,g,b,sigmoid(opacity_logit)).
 inline std::array<std::uint32_t, 2> PackHalf4(float x,
                                               float y,
                                               float z,
@@ -91,25 +91,20 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
     if (!out || !packed.valid) {
         return;
     }
-    // ProjectedComposite (32 B): Std430Vec4 inv_basis matches GLSL vec4.
-    // so one buffer covers all composite-pass per-splat data.
+    // ProjectedComposite (32 B): written by project, read only by composite.
     out->projected_composite_size =
             packed.splat_count * sizeof(ProjectedComposite);
-    out->projected_meta_size = packed.splat_count * sizeof(ProjectedTileMeta);
-    out->tile_scalar_size = packed.tile_count * sizeof(std::uint32_t);
+    // steal_counter: one uint32 — atomic tile index for composite
+    // work-stealing. Composite no longer needs per-tile counts/offsets arrays
+    // (binary search).
+    out->tile_scalar_size = sizeof(std::uint32_t);
 
     out->entries_capacity =
             std::max<std::uint32_t>(1u, packed.view_params.limits[0]);
-    out->entry_buf_size = std::max(
-            sizeof(TileEntry), static_cast<std::size_t>(out->entries_capacity) *
-                                       sizeof(TileEntry));
-
+    // Sort key/value ping-pong buffers: one uint32 per entry capacity.
     out->key_cap_size = std::max<std::size_t>(
             4u, static_cast<std::size_t>(out->entries_capacity) *
                         sizeof(std::uint32_t));
-    // Sorted splat-index buffer: one uint32 per entry (3× smaller than a full
-    // TileEntry). key_cap_size is already one uint32 per entry — reuse it.
-    out->sorted_splat_size = out->key_cap_size;
 
     out->radix_num_wg_cap = std::max(
             1u, (out->entries_capacity +
@@ -119,7 +114,8 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
             4u, static_cast<std::size_t>(out->radix_num_wg_cap) *
                         kRadixSortBins * sizeof(std::uint32_t));
 
-    out->dispatch_args_size = 10u * 3u * sizeof(std::uint32_t);
+    // 8 slots: 4×histogram + 4×radix_scatter (tile_boundaries pass removed).
+    out->dispatch_args_size = 8u * 3u * sizeof(std::uint32_t);
     out->radix_params_size = 4u * kGaussianRadixParamsStride;
 }
 
@@ -280,8 +276,11 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
                 PackSnorm8x4(rot_ptr[i * 4 + 0], rot_ptr[i * 4 + 1],
                              rot_ptr[i * 4 + 2], rot_ptr[i * 4 + 3]));
 
+        // Apply sigmoid to the raw opacity logit once at pack time; the shader
+        // reads the result directly as alpha without a per-frame exp() call.
+        const float sigmoid_opacity = 1.0f / (1.0f + std::exp(-opacity_ptr[i]));
         const auto dc = PackHalf4(f_dc_ptr[i * 3 + 0], f_dc_ptr[i * 3 + 1],
-                                  f_dc_ptr[i * 3 + 2], opacity_ptr[i]);
+                                  f_dc_ptr[i * 3 + 2], sigmoid_opacity);
         out.dc_opacity.insert(out.dc_opacity.end(), dc.begin(), dc.end());
 
         if (sh_u32_per_splat > 0 && f_rest_ptr) {

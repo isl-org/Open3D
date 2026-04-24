@@ -29,9 +29,11 @@ layout(std140, binding = 14) uniform RadixSortParams {
     uint g_num_blocks_per_workgroup;
 };
 
-layout(std430, binding = 0) readonly buffer KeysIn { uint g_keys_in[]; };
+layout(std430, binding = 0) restrict readonly buffer KeysIn {
+    uint g_keys_in[];
+};
 
-layout(std430, binding = 1) buffer Histograms { uint g_histograms[]; };
+layout(std430, binding = 1) restrict buffer Histograms { uint g_histograms[]; };
 
 shared uint histogram[RADIX_SORT_BINS];
 
@@ -39,11 +41,13 @@ void main() {
     uint lID = gl_LocalInvocationID.x;
     uint wID = gl_WorkGroupID.x;
 
+    // Initialize per-workgroup histogram.
     if (lID < RADIX_SORT_BINS) {
         histogram[lID] = 0u;
     }
     barrier();
 
+    // Accumulate histogram: count keys by their 8-bit radix digit at g_shift.
     for (uint index = 0u; index < g_num_blocks_per_workgroup; index++) {
         uint elementId = wID * g_num_blocks_per_workgroup * WORKGROUP_SIZE +
                          index * WORKGROUP_SIZE + lID;
@@ -55,6 +59,7 @@ void main() {
     }
     barrier();
 
+    // Store per-workgroup histogram to global buffer (one row per WG).
     if (lID < RADIX_SORT_BINS) {
         g_histograms[RADIX_SORT_BINS * wID + lID] = histogram[lID];
     }

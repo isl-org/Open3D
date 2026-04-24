@@ -33,15 +33,15 @@ layout(std140, binding = 14) uniform RadixSortParams {
     uint g_num_blocks_per_workgroup;
 };
 
-layout(std430, binding = 0) buffer KeysIn { uint g_keys_in[]; };
+layout(std430, binding = 0) restrict buffer KeysIn { uint g_keys_in[]; };
 
-layout(std430, binding = 1) buffer KeysOut { uint g_keys_out[]; };
+layout(std430, binding = 1) restrict buffer KeysOut { uint g_keys_out[]; };
 
-layout(std430, binding = 2) buffer Histograms { uint g_histograms[]; };
+layout(std430, binding = 2) restrict buffer Histograms { uint g_histograms[]; };
 
-layout(std430, binding = 3) buffer ValuesIn { uint g_values_in[]; };
+layout(std430, binding = 3) restrict buffer ValuesIn { uint g_values_in[]; };
 
-layout(std430, binding = 4) buffer ValuesOut { uint g_values_out[]; };
+layout(std430, binding = 4) restrict buffer ValuesOut { uint g_values_out[]; };
 
 shared uint sums[WORKGROUP_SIZE];  // WORKGROUP_SIZE == RADIX_SORT_BINS; reused
                                    // as scratch for prefix scan

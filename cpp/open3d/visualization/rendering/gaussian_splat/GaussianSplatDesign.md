@@ -28,7 +28,7 @@ Each Gaussian $i$ is stored in a structured buffer with the following parameters
 * **Position ($\mu_i$):** $3 \times 1$ vector.
 * **Rotation ($q_i$):** A normalized unit quaternion $[w, x, y, z]$.
 * **Scale ($s_i$):** A $3 \times 1$ vector $[s_x, s_y, s_z]$ in **linear** space. PLY files store log-scales which are exponentiated at load time; SPLAT files store linear scales directly.
-* **Opacity ($\alpha_i$):** A scalar, transformed via sigmoid $\alpha = \frac{1}{1 + e^{-x}}$ to bound it in $[0, 1]$.
+* **Opacity ($\alpha_i$):** A scalar, transformed via sigmoid $\alpha = \frac{1}{1 + e^{-x}}$ to bound it in $[0, 1]$. The sigmoid is applied once during CPU buffer packing (Opt20), not per-frame in the shader.
 * **Spherical Harmonics ($SH_i$):** Up to 16 coefficients per color channel (for Degree 3). Total of 48 values ($16 \times 3$).
 
 The 3D covariance matrix $\Sigma$ is reconstructed as:
@@ -106,7 +106,7 @@ composite samples it. ImGui then draws the same frame’s splat overlay.
 │  BeginFrame                                                     │
 │  1. gaussian_splat_renderer_->BeginFrame()                       │
 │  2. engine_.flushAndWait()     — drain Filament before GS compute │
-│  3. GS geometry (Stage A)      — project / prefix / scatter / sort │
+│  3. GS geometry (Stage A)      — project+keygen / sort / tile_boundaries │
 │  4. renderer_->beginFrame()                                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  Draw                                                           │
@@ -174,8 +174,8 @@ hierarchy in `FilamentScene`:
 - **Shader side** (`gaussian_project.comp`, binding 15 `VisibilityMask`): bit-packed
   (`ceil(splat_count / 32)` `uint32` words). At the start of `ProjectGaussian()`,
   `if (((visibility_mask[splat_index >> 5u] >> (splat_index & 31u)) & 1u) == 0u) { … }`
-  culls hidden splats. Culled splats propagate `tile_count_overlap=0` through the rest of the
-  pipeline unchanged.
+  culls hidden splats. Culled splats simply generate no sort entries; the rest of the pipeline
+  is unaffected.
 
 ### Scene-Depth Fast Path
 
@@ -285,7 +285,7 @@ The `<< 1` strips the IEEE 754 sign bit from `depth_key`, which is always 0 beca
 reclaims one free depth bit at no cost.
 
 T is computed CPU-side as `floor(log2(max_tile_index)) + 1` and stored in
-`GaussianViewParams.limits.w`, then read in `gaussian_radix_sort_keygen.comp`.
+`GaussianViewParams.limits.w`, then read in `gaussian_project.comp` when generating sort keys.
 
 | Viewport | Tiles (16×16) | T (tile bits) | D (depth bits) |
 |----------|---------------|---------------|----------------|
@@ -390,11 +390,13 @@ requires no dispatch logic updates.
 
 | # | Name | Description |
 |---|------|-------------|
+| Opt14 | Composite workgroup early-exit | Shared `wg_active_count` counter decremented via `atomicAdd` when a thread saturates (`transmittance ≤ 1/4096`). When `wg_active_count == 0` (all 256 pixels in the tile saturated), the outer batch loop exits uniformly, skipping remaining `composite[]` and `inv_basis[]` reads. Preserves barrier uniformity. |
+| Opt15 | Fused entry generation | Sort key/value pairs are generated inside `gaussian_project.comp` via a global atomic counter, eliminating the separate `prefix_sum` (~30ms), `scatter` (~30ms), `keygen`, and `payload` passes. Sort values carry `splat_index` directly, removing the `TileEntry` intermediate struct. A new lightweight `tile_boundaries` pass (grid-stride scan of sorted keys) finds per-tile offsets in the sorted output. Net pipeline: 14 dispatches → 10; ~80MB of intermediate buffers eliminated. |
 | Opt1 | Persistent buffers | GPU buffers reused across frames if size sufficient |
 | Opt2 | Batched submission | Project + prefix + scatter in one GL session |
 | Opt3 | Half-float upload | RGBA16F staging, no float32 roundtrip |
 | Opt4 | Compact projected struct | 48 bytes (was 96) |
-| Opt4b | Split projected buffers | Old 48 B `ProjectedGaussian` split into three purpose-sized buffers: `ProjectedComposite` (16 B, binding 6 — fp16 center + depth + alpha + RGBA8), `ProjectedTileMeta` (16 B, binding 12 — sort key + tile rect), `inv_basis` vec4 (16 B, binding 13). Composite reads only bindings 6+13 = **32 B/splat** (−33%). Scatter/prefix read only binding 12 = **16 B/splat** (−67%). |
+| Opt4b | Merged projected struct | Old 48 B `ProjectedGaussian` replaced by `ProjectedComposite` (32 B, binding 6 — fp16 center + depth + alpha + RGBA8 + `vec4 inv_basis` inlined). Composite issues one 32 B SSBO fetch per splat instead of two 16 B fetches from separate bindings, halving L2 cache lookups. Projection also writes `ProjectedTileMeta` (16 B, binding 12 — sort key + tile rect) read only by sort/prefix. |
 | Opt5 | GPU-side fill/copy | `ClearGLBuffer` / copy without CPU staging |
 | Opt6 | Scene/view separation | Static packed scene data is cached across camera moves; only the 288-byte view UBO is rebuilt each frame |
 | Opt7 | Cooperative tile load | Shared-memory batch loading for the composite pass |
@@ -403,8 +405,12 @@ requires no dispatch logic updates.
 | Opt10 | Zero-copy depth | Shared GL depth texture; no CPU readback or re-upload |
 | Opt11 | No-readback radix sort | `gaussian_compute_dispatch_args.comp` writes all indirect dispatch counts and `RadixSortParams` GPU-side after prefix-sum; removes `DownloadGLBuffer` CPU stall (FW1-1). Sort buffers are pre-allocated from configured capacity; scatter dispatch still runs over `splat_count` for full parallelism. |
 | Opt12 | Async Stage A overlap | Stage A dispatches geometry + sort compute without `glFinish()`; `renderer_->beginFrame()` fires immediately after, so Stage A GPU work runs concurrently with Filament's rasterization of the same frame. On Metal, geometry and composite use separate `MTLCommandBuffer` objects that the GPU schedules independently (FW1-4). |
-| Opt13 | Compressed input buffers | `scales` (linear) and `dc_opacity` stored as fp16 (8 B/splat each, `uvec2` per splat); `rotations` as snorm8-biased uint (4 B/splat); `sh_coefficients` fp16 and degree-dependent (0/24/48 B/splat for degree 0/1/2). Total input: **36–84 B/splat** vs. the previous 160 B. GPU decodes via `unpackHalf2x16` and a 3-instruction `DecodeSnorm8` (core GLSL 4.2+, no extension). |
-| Opt14 | Composite workgroup early-exit | Shared `wg_active_count` counter decremented via `atomicAdd` when a thread saturates (`transmittance ≤ 1/4096`). When `wg_active_count == 0` (all 256 pixels in the tile saturated), the outer batch loop exits uniformly, skipping remaining `composite[]` and `inv_basis[]` reads. Preserves barrier uniformity. |
+| Opt13 | Compressed input buffers | `scales` (linear) and `dc_opacity` stored as fp16 (8 B/splat each, `uvec2` per splat); `rotations` as snorm8-biased uint (4 B/splat); `sh_coefficients` fp16 and degree-dependent (0/24/48 B/splat for degree 0/1/2). Sigmoid applied once CPU-side during packing (`std::exp` in `GaussianSplatDataPacking.cpp`) instead of per-frame in the shader. Total input: **36–84 B/splat** vs. the previous 160 B. GPU decodes rotations via a single `vec4` bit-extract + normalize (vectorized `LoadRotation`), scales/dc via `unpackHalf2x16`. |
+| Opt16 | `restrict` qualifiers | All SSBO bindings in all 6 shader files (`gaussian_project`, `gaussian_composite`, `gaussian_radix_sort_histograms`, `gaussian_radix_sort[_subgroup]`, `gaussian_compute_dispatch_args`) declare `restrict` on buffer bindings. Enables GPU cache and alias analysis optimizations. |
+| Opt17 | Subgroup-batched atomicAdd | `WriteSortEntries()` in `gaussian_project.comp` uses `subgroupAdd` / `subgroupExclusiveAdd` / `subgroupBroadcastFirst` to batch the global atomic counter increment: one `atomicAdd` per subgroup (~32 lanes) instead of per-tile-entry. Reduces global atomic traffic by ~32×. |
+| Opt18 | Merged LowerBound | In `gaussian_composite.comp`, the second `LowerBound` call (finding `tile_end`) starts from `tile_start` instead of 0. Reduces binary search iterations from `2 × log₂(N)` to `log₂(N) + log₂(tile_entries)` — typically 23 → ~13 iterations for 5.5M entries. |
+| Opt19 | Vectorized shader math | `QuaternionToRotation()` uses `vec3` sub-expressions for diagonal/off-diagonal terms (~40% fewer scalar instructions). `EvaluateShDegree1/2` gather one `vec3` per SH basis function, enabling GPU to evaluate all RGB channels of one basis simultaneously instead of per-channel scalar ops. |
+| Opt20 | CPU-side sigmoid | Sigmoid opacity (`1/(1+exp(-x))`) computed once during CPU buffer packing (`GaussianSplatDataPacking.cpp`) instead of per-frame in the projection shader. Eliminates a transcendental `exp()` per splat per frame. |
 
 ### GPU Object Labeling
 
@@ -417,10 +423,8 @@ Applied inside `LoadGLComputeProgramSPIRV` and `LoadGLComputeProgramGLSL` immedi
 a successful `glLinkProgram`.
 
 **GL buffers** (`glObjectLabel(GL_BUFFER, ...)`):
-All 20 per-view SSBOs/UBOs are labeled using the `gs.*` naming scheme
-(e.g. `gs.projected`, `gs.tile_entries`, `gs.sorted_splat_indices`).  Labels are applied at
-`ResizeBuffer`/`ResizePrivateBuffer` time, including the reuse path when an existing buffer
-is large enough.
+Per-view SSBOs/UBOs are labeled using the `gs.*` naming scheme
+(e.g. `gs.projected_composite`, `gs.sort_keys.0`, `gs.tile_counts`).
 
 **GL textures** (`glObjectLabel(GL_TEXTURE, ...)`):
 - `gs.scene_depth` — `GL_DEPTH_COMPONENT32F`; Filament writes, composite reads.
@@ -440,7 +444,7 @@ are unambiguous:
 | C++ struct | GLSL name | Location |
 |---|---|---|
 | `GaussianViewParams` | `GaussianViewParams` | UBO binding 0 |
-| `ProjectedGaussian` | `ProjectedGaussian` | SSBO binding 6 |
+| `ProjectedComposite` | `ProjectedComposite` | SSBO binding 6 (32 B) |
 | `TileEntry` | `TileEntry` | SSBOs binding 7/8/9 |
 | `RadixSortParams` | `RadixSortParams` | UBO binding 14 |
 
@@ -525,7 +529,7 @@ capacity-related rendering degradation to users.
 | `positions` | 1 | `vec4` fp32 | 16 | direct copy |
 | `scales` (linear) | 2 | `uvec2` fp16×4 | 8 | `PackHalf2(·,·)` ×2 |
 | `rotations` | 3 | `uint` snorm8-biased×4 | 4 | `PackSnorm8x4(w,x,y,z)` |
-| `dc_opacity` | 4 | `uvec2` fp16×4 | 8 | `PackHalf2(·,·)` ×2 |
+| `dc_opacity` | 4 | `uvec2` fp16×4 | 8 | `PackHalf2(·,·)` ×2; opacity has sigmoid pre-applied CPU-side |
 | `sh_coefficients` | 5 | `uvec2` fp16, stride=3×degree | 0/24/48 | `PackHalf2` pairs for `(((degree + 1)^2 - 1) * 3)` rest coefficients (`f_rest`; DC lives in `dc_opacity`) |
 | `visibility_mask` | 15 | `uint32[]` bitfield | `ceil(N/32)×4` bytes total | one bit per splat; `RebuildMergedGaussianData()` / `ShowGeometry()` |
 | **Total** | | | **36–84 B/splat** (+ mask overhead) | mask ~0.125 B/splat amortised vs old 4 B/splat per-index storage |
@@ -680,7 +684,7 @@ See Completed Work → PHASE 3 for implementation details.
 |---|---|---|---|
 | FW1-1 | ~~Eliminate counter readback~~ | ~~High~~ | **Done (Opt11).** Removed `DownloadGLBuffer` stall. `gaussian_compute_dispatch_args.comp` writes all indirect dispatch args and `RadixSortParams` GPU-side. Sort buffers pre-allocated; scatter dispatched over `splat_count`. |
 | FW1-2 | Reduce radix sort passes | Medium | Still open. The renderer uses the original 4-pass LSD radix pipeline; reducing dispatch count would require a new sort design that preserves the current portability and fallback behavior. |
-| FW1-3 | Fused prefix-sum + scatter | Medium | Merge tile count accumulation and scatter using subgroup prefix sums plus global atomics. Eliminates one compute dispatch and one full barrier round-trip. |
+| FW1-3 | ~~Fused prefix-sum + scatter~~ | ~~Medium~~ | **Done (Opt15+Opt17).** Fused into `gaussian_project.comp` with subgroup-batched global atomics. Prefix-sum, scatter, keygen, and payload passes all eliminated. |
 | FW1-4 | ~~Async compute overlap~~ | ~~Medium~~ | **Done (Opt12).** Stage A dispatches without `glFinish()`; Filament's `beginFrame()` follows immediately so both execute concurrently on GPU. Metal uses separate `MTLCommandBuffer` objects per stage for hardware-level scheduling overlap. |
 | FW1-5 | SH degree LOD | Low–Medium | Dynamically reduce SH degree for distant/small splats to reduce bandwidth and projection cost. |
 | FW1-6 | Per-tile entry budget | Low | Cap tiles-per-splat to bound worst-case sort/composite cost for huge splats. |
@@ -744,7 +748,7 @@ which is why those are the chosen backends.
 
 | # | Issue | Severity | Mitigation |
 |---|---|---|---|
-| 1 | Counter readback CPU stall | Medium | Remove readback by pre-allocation / indirect dispatch (FW1-1/FW1-7). |
+| 1 | ~~Counter readback CPU stall~~ | ~~Medium~~ | **Resolved (Opt11).** GPU-side dispatch args via `gaussian_compute_dispatch_args.comp`. |
 | 2 | Reversed-Z assumption | Medium | Add runtime diagnostics and shader path toggle for non-reversed depth conventions. |
 | 3 | Post-processing depth loss | Low–Medium | Keep `SetPostProcessing(false)` for GS views; warn when re-enabled. |
 | 4 | Stage A overlap sync | Low | If driver-specific glitches appear, insert `glFlush()` at end of Stage A. |
@@ -990,6 +994,27 @@ that plan.
 - `FilamentRenderer::SetOnAppleGaussianCompositeComplete` + `Window::PostRedraw` after successful
   post-`endFrame()` composite so splats appear without an extra user event (first-frame present).
 
+### T9 — Shader micro-optimizations (Apr 2026)
+
+Targeted optimizations to reduce per-splat instruction count, memory traffic, and global
+atomic contention across the compute pipeline. All changes are GLSL-only unless noted.
+
+- **`restrict` qualifiers (Opt16)**: Added to all SSBO bindings in all 6 shader files.
+- **Subgroup-batched atomicAdd (Opt17)**: `WriteSortEntries()` in `gaussian_project.comp`
+  batches the global `atomicAdd` for sort-entry allocation via `subgroupAdd` /
+  `subgroupExclusiveAdd` / `subgroupBroadcastFirst`. One atomic per subgroup (~32 lanes)
+  instead of per tile-entry. Requires `GL_KHR_shader_subgroup_{basic,arithmetic,ballot}`.
+- **Merged LowerBound (Opt18)**: Second binary search in `gaussian_composite.comp` starts
+  from the first result (`tile_start`), saving ~10 iterations per tile.
+- **Vectorized shader math (Opt19)**: `QuaternionToRotation()` rewired with `vec3`
+  sub-expressions. `LoadRotation()` decodes snorm8×4 quaternion as a single `vec4`
+  bit-extract + normalize. `EvaluateShDegree1/2` gather one `vec3` per SH basis function.
+- **CPU-side sigmoid (Opt20)**: Sigmoid opacity moved from per-frame projection shader to
+  one-time CPU packing in `GaussianSplatDataPacking.cpp` (`std::exp`). C++ change.
+- **Radix sort annotations**: Added inline comments to `gaussian_radix_sort_histograms.comp`
+  and `gaussian_radix_sort_subgroup.comp` explaining Phase 1 (histogram/offset computation)
+  and Phase 2 (scatter with bit-flag ranking), variable meanings, and subgroup coordination.
+
 ---
 
 ## Geometric Transforms for Gaussian Splat PointClouds
@@ -1056,3 +1081,13 @@ the shader does not yet evaluate it at render time.
 
 **References**: Ivanic & Ruedenberg (1996) "Rotation Matrices for Real Spherical Harmonics" + 1998
 erratum.
+
+
+
+### Shader profiling on LNL
+6M splat scene: ~7fps
+- gs_project: 10ms
+- 4x: (total ~50ms)
+   - gs_radix_histogram: 0.1ms-2ms
+   - gs_radix_scatter: 10-13ms
+- gs_composite: 80ms-100ms

@@ -379,12 +379,8 @@ private:
         destroy_buf(vs.dc_opacity_buf);
         destroy_buf(vs.sh_buf);
         destroy_buf(vs.projected_composite_buf);
-        destroy_buf(vs.projected_meta_buf);
-        destroy_buf(vs.tile_counts_buf);
-        destroy_buf(vs.tile_offsets_buf);
-        destroy_buf(vs.tile_heads_buf);
+        destroy_buf(vs.tile_counts_buf);  // steal_counter
         destroy_buf(vs.counters_buf);
-        destroy_buf(vs.tile_entries_buf);
         destroy_buf(vs.dispatch_args_buf);
         destroy_buf(vs.sort_keys_buf[0]);
         destroy_buf(vs.sort_keys_buf[1]);
@@ -392,7 +388,6 @@ private:
         destroy_buf(vs.sort_values_buf[1]);
         destroy_buf(vs.histogram_buf);
         destroy_buf(vs.radix_params_buf);
-        destroy_buf(vs.sorted_splat_indices_buf);
         destroy_buf(vs.mask_buf);
         if (vs.composite_depth_tex != 0) {
             gpu_->DestroyTexture(vs.composite_depth_tex);

@@ -37,10 +37,8 @@ constexpr std::size_t kIndirectStride = 3u * sizeof(std::uint32_t);
 
 // Named slot indices for the dispatch_args SSBO, matching the WriteDispatch()
 // calls in gaussian_compute_dispatch_args.comp.
-constexpr std::uint32_t kSlotKeygen = 0u;
-constexpr std::uint32_t kSlotRadixHist0 = 1u;     // passes 0-3 → 1-4
-constexpr std::uint32_t kSlotRadixScatter0 = 5u;  // passes 0-3 → 5-8
-constexpr std::uint32_t kSlotPayload = 9u;
+constexpr std::uint32_t kSlotRadixHist0 = 0u;     // passes 0-3 → slots 0-3
+constexpr std::uint32_t kSlotRadixScatter0 = 4u;  // passes 0-3 → slots 4-7
 
 // Compute the byte offset of a dispatch_args slot for DispatchIndirect().
 inline std::size_t IndirectByteOffset(std::uint32_t slot) {
@@ -137,11 +135,16 @@ bool RunGaussianGeometryPasses(
     // Projection dispatch: sized by total_tiles so the prefix-sum and scatter
     // passes share the same total_invocations stride (the projection shader
     // loops over splats with that stride).
+    // Clamp 1D dispatch to device-reported limit; if it exceeds the limit use a
+    // 2D grid (gy = ceil(groups / max_x)) so gx stays within
+    // maxComputeWorkGroupCount[0]. The project shader linearises wg_id = wg_y *
+    // num_wg_x + wg_x internally.
     const std::uint32_t proj_groups =
-            DivUp(frame_data.tile_count,
+            DivUp(frame_data.splat_count,
                   static_cast<std::uint32_t>(config.projection_group_size));
-    // Prefix-sum covers all tiles in one workgroup.
-    const std::uint32_t pfx_groups = 1u;
+    const std::uint32_t max_wg_x = ctx.GetMaxComputeWorkGroupCount();
+    const std::uint32_t proj_gx = std::min(proj_groups, max_wg_x);
+    const std::uint32_t proj_gy = DivUp(proj_groups, proj_gx);
 
     GaussianGpuBufferSizes gpu_sizes;
     ComputeGaussianGpuBufferSizes(frame_data, &gpu_sizes);
@@ -181,28 +184,13 @@ bool RunGaussianGeometryPasses(
     vs.counters_buf = ctx.ResizeBuffer(
             vs.counters_buf, kGaussianCounterCount * sizeof(std::uint32_t),
             "gs.counters");
-    // Two projected buffers replace the old 48 B/splat ProjectedGaussian:
-    // composite (32 B, inv_basis inlined) + meta (16 B).
     vs.projected_composite_buf = ctx.ResizePrivateBuffer(
             vs.projected_composite_buf, gpu_sizes.projected_composite_size,
             "gs.projected_composite");
-    vs.projected_meta_buf = ctx.ResizePrivateBuffer(
-            vs.projected_meta_buf, gpu_sizes.projected_meta_size,
-            "gs.projected_meta");
+    // steal_counter_buf: one uint32 cleared per composite pass; the composite
+    // shader atomically claims tile indices from it (work-stealing pattern).
     vs.tile_counts_buf = ctx.ResizePrivateBuffer(
-            vs.tile_counts_buf, gpu_sizes.tile_scalar_size, "gs.tile_counts");
-    vs.tile_offsets_buf = ctx.ResizePrivateBuffer(
-            vs.tile_offsets_buf, gpu_sizes.tile_scalar_size, "gs.tile_offsets");
-    vs.tile_heads_buf = ctx.ResizePrivateBuffer(
-            vs.tile_heads_buf, gpu_sizes.tile_scalar_size, "gs.tile_heads");
-    vs.tile_entries_buf = ctx.ResizePrivateBuffer(
-            vs.tile_entries_buf, gpu_sizes.entry_buf_size, "gs.tile_entries");
-    // Sorted payload: only splat_index (uint32) per entry — 3× smaller than a
-    // full TileEntry.  The composite shader reads only splat_index, so carrying
-    // depth_key and tile_index through the payload pass wastes bandwidth.
-    vs.sorted_splat_indices_buf = ctx.ResizePrivateBuffer(
-            vs.sorted_splat_indices_buf, gpu_sizes.sorted_splat_size,
-            "gs.sorted_splat_indices");
+            vs.tile_counts_buf, sizeof(std::uint32_t), "gs.steal_counter");
     for (int i = 0; i < 2; ++i) {
         vs.sort_keys_buf[i] = ctx.ResizePrivateBuffer(
                 vs.sort_keys_buf[i], gpu_sizes.key_cap_size,
@@ -254,12 +242,15 @@ bool RunGaussianGeometryPasses(
     // Clear counters_buf inside the geometry pass — on Metal, Private buffers
     // require a blit encoder inside the command buffer.
     ctx.ClearBufferUInt32Zero(vs.counters_buf);
+    // Barrier: vkCmdFillBuffer is TRANSFER; the project dispatch reads binding
+    // 10 (counters_buf) as STORAGE_BUFFER. Without a barrier the validation
+    // layer reports READ_AFTER_WRITE (TRANSFER_WRITE → SHADER_STORAGE_READ).
+    ctx.FullBarrier();
 
-    // Pass 1: Project each Gaussian to screen space.
-    // Binding 15: per-splat visibility mask (0 = cull via
-    // WriteInvalidProjection).
-    // Bindings 6/12: composite (inv_basis inlined) + meta — split from old
-    // projected.
+    // Pass 1: Project each Gaussian to screen space and generate sort entries.
+    // Each (splat, tile) pair atomically claims a slot in
+    // sort_keys/sort_values. Replaces old project + prefix_sum + scatter +
+    // keygen chain.
     GpuComputePass(ctx, ComputeProgramId::kGsProject, "gs_project")
             .UBO(0, vs.view_params_buf)
             .SSBO(1, vs.positions_buf)
@@ -268,79 +259,26 @@ bool RunGaussianGeometryPasses(
             .SSBO(4, vs.dc_opacity_buf)
             .SSBO(5, vs.sh_buf)
             .SSBO(6, vs.projected_composite_buf)
-            .SSBO(12, vs.projected_meta_buf)
-            .SSBO(15, vs.mask_buf)
-            .Dispatch(proj_groups, 1u, 1u);
-    ctx.FullBarrier();
-
-    // Pass 2: Prefix-sum tile counts → per-tile offsets.
-    // Only meta (binding 12) is needed: tile_count_overlap + tile_rect_min/max.
-    GpuComputePass(ctx, ComputeProgramId::kGsPrefixSum, "gs_prefix_sum")
-            .UBO(0, vs.view_params_buf)
-            .SSBO(12, vs.projected_meta_buf)
-            .SSBO(7, vs.tile_counts_buf)
-            .SSBO(8, vs.tile_offsets_buf)
-            .SSBO(9, vs.tile_heads_buf)
+            .SSBO(7, vs.sort_keys_buf[0])
+            .SSBO(8, vs.sort_values_buf[0])
             .SSBO(10, vs.counters_buf)
-            .Dispatch(pfx_groups, 1u, 1u);
+            .SSBO(15, vs.mask_buf)
+            .Dispatch(proj_gx, proj_gy, 1u);
     ctx.FullBarrier();
 
-    // Pass 3: Build indirect dispatch args for the sort passes (1 thread).
+    // Pass 2: Compute indirect dispatch args for radix sort and
+    // tile_boundaries.
     GpuComputePass(ctx, ComputeProgramId::kGsDispatchArgs, "gs_dispatch_args")
             .UBO(0, vs.view_params_buf)
-            .SSBO(7, vs.tile_counts_buf)
-            .SSBO(8, vs.tile_offsets_buf)
-            .SSBO(9, vs.tile_heads_buf)
             .SSBO(10, vs.counters_buf)
             .SSBO(11, vs.dispatch_args_buf)
             .SSBO(12, vs.radix_params_buf)
             .Dispatch(1u, 1u, 1u);
     ctx.FullBarrier();
 
-    // Pass 4: Scatter each splat into its tile's entry list.
-    // Only meta (binding 12) is needed: tile_count_overlap, tile_rect_*, depth.
-    GpuComputePass(ctx, ComputeProgramId::kGsScatter, "gs_scatter")
-            .UBO(0, vs.view_params_buf)
-            .SSBO(12, vs.projected_meta_buf)
-            .SSBO(7, vs.tile_counts_buf)
-            .SSBO(8, vs.tile_offsets_buf)
-            .SSBO(9, vs.tile_heads_buf)
-            .SSBO(10, vs.counters_buf)
-            .SSBO(11, vs.tile_entries_buf)
-            .Dispatch(DivUp(frame_data.splat_count,
-                            static_cast<std::uint32_t>(
-                                    config.scatter_group_size)),
-                      1u, 1u);
-    ctx.FullBarrier();
-
-    // Pass 5: Generate sort keys (depth-tile composite), indirect.
-    // Keygen reads view_params.limits.w (tile_key_bits T) for the dynamic
-    // tile/depth bit split; UBO(0) provides view_params alongside the
-    // RadixSortParams at UBORange(14). SSBOs use bindings 3–5 (not 0–2) so they
-    // do not alias UBO binding 0 in the SPIRV-Cross → Metal path.
-    GpuComputePass(ctx, ComputeProgramId::kGsRadixKeygen, "gs_radix_keygen")
-            .UBO(0, vs.view_params_buf)
-            .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParams))
-            .SSBO(3, vs.tile_entries_buf)
-            .SSBO(4, vs.sort_keys_buf[0])
-            .SSBO(5, vs.sort_values_buf[0])
-            .DispatchIndirect(vs.dispatch_args_buf,
-                              IndirectByteOffset(kSlotKeygen));
-    ctx.FullBarrier();
-
-    int src = 0;
-    src = RunClassicalRadixSort(ctx, vs, src);
-
-    // Extract splat_index from each sorted TileEntry into the compact
-    // sorted_splat_indices buffer (uint[] instead of TileEntry[]).
-    GpuComputePass(ctx, ComputeProgramId::kGsRadixPayload, "gs_radix_payload")
-            .UBORange(14, vs.radix_params_buf, 0, sizeof(RadixSortParams))
-            .SSBO(0, vs.sort_values_buf[src])
-            .SSBO(1, vs.tile_entries_buf)
-            .SSBO(2, vs.sorted_splat_indices_buf)
-            .DispatchIndirect(vs.dispatch_args_buf,
-                              IndirectByteOffset(kSlotPayload));
-    ctx.FullBarrier();
+    // Passes 3-10: 4-pass LSD radix sort (8 dispatches).
+    int src = RunClassicalRadixSort(ctx, vs, 0);
+    vs.final_sort_src = src;
 
     // Flush GPU error counters so tile-entry overflow warnings are visible.
     LogGaussianGpuErrorsOnce(ctx, vs);
@@ -356,12 +294,23 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     // texture, then optionally merge GS linear depth with Filament scene depth.
     //
     // Composite dispatch grid sized by viewport / workgroup size.
+    // Composite uses a work-stealing dispatch: each workgroup atomically
+    // claims tile indices until all tiles are processed.  Tile indices are
+    // Morton Z-curve codes: the counter scans [0, morton_range) where
+    // morton_range = next_pow2(max(tile_x, tile_y))^2.  Out-of-bounds codes
+    // are skipped cheaply by the shader.  Launch ceil(morton_range / 4)
+    // workgroups so each handles ~4 tiles on average.
     const std::uint32_t comp_x =
             DivUp(targets.width,
                   static_cast<std::uint32_t>(config.composite_group_size.x()));
     const std::uint32_t comp_y =
             DivUp(targets.height,
                   static_cast<std::uint32_t>(config.composite_group_size.y()));
+    // Next power-of-2 side covering both dimensions.
+    std::uint32_t morton_side = 1u;
+    while (morton_side < comp_x || morton_side < comp_y) morton_side <<= 1u;
+    const std::uint32_t morton_range = morton_side * morton_side;
+    const std::uint32_t steal_wg_count = std::max(1u, (morton_range + 3u) / 4u);
 
     // Always upload depth flag when scene depth is present (which is always
     // for interactive GS views). The shader will use this to test occlusion
@@ -378,6 +327,11 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     }
 
     GpuComputeFrame frame(ctx, GpuComputeFrame::Kind::kComposite);
+
+    // Reset the work-stealing counter so each composite invocation starts
+    // tile stealing from 0.
+    ctx.ClearBufferUInt32Zero(vs.tile_counts_buf);
+    ctx.FullBarrier();
 
     const std::uint32_t w = targets.width;
     const std::uint32_t h = targets.height;
@@ -410,13 +364,17 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
         return false;
     }
 
-    // Binding 6: ProjectedComposite (32 B/splat) — inv_basis inlined, no
-    // binding 13.
+    // Opt9: Work-stealing composite — bindings:
+    //   7: sort_keys (binary search to find per-tile entry range)
+    //   8: steal_counter (atomic tile claim, reset to 0 above)
+    //  10: gs_counters (total_entries for binary search bound)
+    //  11: sorted_splat_indices (final sort payload)
     pass.UBO(0, vs.view_params_buf)
             .SSBO(6, vs.projected_composite_buf)
-            .SSBO(7, vs.tile_counts_buf)
-            .SSBO(8, vs.tile_offsets_buf)
-            .SSBO(11, vs.sorted_splat_indices_buf)
+            .SSBO(7, vs.sort_keys_buf[vs.final_sort_src])
+            .SSBO(8, vs.tile_counts_buf)  // repurposed as steal_counter
+            .SSBO(10, vs.counters_buf)
+            .SSBO(11, vs.sort_values_buf[vs.final_sort_src])
             // Image unit 16 for color (shared UBO/image binding 0 conflict in
             // Vulkan); image unit 1 for composite depth.
             .Image(16, color_tex, w, h, ImageFormat::kRGBA16F)
@@ -430,7 +388,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
         pass.Sampler(14, sd, w, h);
     }
 
-    pass.Dispatch(comp_x, comp_y, 1u);
+    pass.Dispatch(steal_wg_count, 1u, 1u);
     ctx.FullBarrier();
 
     // GPU depth-merge pass (optional): merge GS linear depth with Filament

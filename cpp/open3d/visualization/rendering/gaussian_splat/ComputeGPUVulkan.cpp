@@ -64,24 +64,10 @@ static constexpr ShaderBindingDesc kBindingsProject[] = {
         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {12, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {15, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-};
-static constexpr ShaderBindingDesc kBindingsPrefixSum[] = {
-        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {9, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {12, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-};
-static constexpr ShaderBindingDesc kBindingsScatter[] = {
-        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {9, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {11, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {12, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
+        {15, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
 };
 static constexpr ShaderBindingDesc kBindingsComposite[] = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
@@ -89,17 +75,11 @@ static constexpr ShaderBindingDesc kBindingsComposite[] = {
         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
+        {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {11, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {14, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         {16, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
-};
-static constexpr ShaderBindingDesc kBindingsRadixKeygen[] = {
-        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
 };
 static constexpr ShaderBindingDesc kBindingsRadixHistograms[] = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
@@ -112,12 +92,6 @@ static constexpr ShaderBindingDesc kBindingsRadixScatter[] = {
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-};
-static constexpr ShaderBindingDesc kBindingsRadixPayload[] = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
 };
 static constexpr ShaderBindingDesc kBindingsDispatchArgs[] = {
@@ -143,13 +117,9 @@ struct ShaderBindingTable {
 
 static constexpr ShaderBindingTable kShaderBindings[] = {
         {kBindingsProject, std::size(kBindingsProject)},
-        {kBindingsPrefixSum, std::size(kBindingsPrefixSum)},
-        {kBindingsScatter, std::size(kBindingsScatter)},
         {kBindingsComposite, std::size(kBindingsComposite)},
-        {kBindingsRadixKeygen, std::size(kBindingsRadixKeygen)},
         {kBindingsRadixHistograms, std::size(kBindingsRadixHistograms)},
         {kBindingsRadixScatter, std::size(kBindingsRadixScatter)},
-        {kBindingsRadixPayload, std::size(kBindingsRadixPayload)},
         {kBindingsDispatchArgs, std::size(kBindingsDispatchArgs)},
         {kBindingsDepthMerge, std::size(kBindingsDepthMerge)},
 };
@@ -240,8 +210,23 @@ public:
             }
         }
         programs_valid_ = true;
+        // Cache the device's maximum compute workgroup count along X so
+        // PassRunner can split large dispatches without hardcoding 65535.
+        // Use vkGetPhysicalDeviceProperties2 (Vulkan 1.1+) to avoid the
+        // legacy-command validation warning triggered by the v1.0 variant.
+        VkPhysicalDeviceProperties2 props2{};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceProperties2(
+                physical_device_, &props2);
+        max_wg_count_x_ = props2.properties.limits.maxComputeWorkGroupCount[0];
         utility::LogDebug("GaussianSplatVulkan: programs loaded");
         return true;
+    }
+
+    std::uint32_t GetMaxComputeWorkGroupCount() const override {
+        // Returns the cached value queried at program-load time.
+        // Falls back to the Vulkan-mandated minimum (65535) if not yet loaded.
+        return max_wg_count_x_ > 0 ? max_wg_count_x_ : 65535u;
     }
 
     // --- Buffer management ------------------------------------------------
@@ -377,6 +362,25 @@ public:
                    std::uint32_t /*width*/,
                    std::uint32_t /*height*/,
                    ImageFormat /*fmt*/) override {
+        // Depth images (D32_SFLOAT) lack VK_IMAGE_USAGE_STORAGE_BIT and
+        // cannot be bound as STORAGE_IMAGE.  This indicates a caller bug
+        // (wrong handle); skip silently so we don't trigger VUID-00339.
+        auto it = textures_.find(tex);
+        if (it == textures_.end()) {
+            auto git = gl_to_handle_.find(static_cast<std::uint32_t>(tex));
+            if (git != gl_to_handle_.end()) {
+                it = textures_.find(git->second);
+            }
+        }
+        if (it != textures_.end() &&
+            it->second.format == VK_FORMAT_D32_SFLOAT) {
+            utility::LogWarning(
+                    "GaussianSplatVulkan: BindImage(binding={}) skipped — "
+                    "handle resolves to a depth image which cannot be a "
+                    "STORAGE_IMAGE. Check handle/GL-name mapping.",
+                    binding);
+            return;
+        }
         auto view = ResolveImageView(tex, VK_IMAGE_LAYOUT_GENERAL);
         if (view == VK_NULL_HANDLE) return;
         PendingWrite pw{};
@@ -568,7 +572,13 @@ public:
         e.format = format;
         e.width = w;
         e.height = h;
-        e.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        // Shared (GL-interop) images are assumed to be in GENERAL layout when
+        // Vulkan first accesses them.  Using UNDEFINED would produce a best-
+        // practices warning on the first UNDEFINED→SHADER_READ_ONLY transition
+        // because the validation layer thinks the content will be discarded;
+        // GENERAL preserves content and satisfies the transition origin
+        // requirement without producing that warning.
+        e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
         e.is_shared = true;
         uintptr_t handle = next_handle_++;
         textures_[handle] = std::move(e);
@@ -634,7 +644,9 @@ private:
     };
     std::unordered_map<uintptr_t, TexEntry> textures_;
     std::unordered_map<std::uint32_t, uintptr_t> gl_to_handle_;
-    std::uint64_t next_handle_ = 1;
+    // Start at a large value so internal handles never collide with small GL
+    // texture names (which are assigned by the driver starting at 1).
+    std::uint64_t next_handle_ = 0x80000000ULL;
 
     struct PendingWrite {
         std::uint32_t binding = 0;
@@ -647,6 +659,7 @@ private:
     VulkanSubgroupOptions subgroup_options_{};
     bool programs_loaded_ = false;
     bool programs_valid_ = false;
+    std::uint32_t max_wg_count_x_ = 0;  // cached from VkPhysicalDeviceLimits
     bool debug_utils_enabled_ =
             false;  // VK_EXT_debug_utils enabled at instance
 
@@ -785,8 +798,6 @@ private:
 
     bool ShouldUseSubgroupVariant(ComputeProgramId id) const {
         switch (id) {
-            case ComputeProgramId::kGsPrefixSum:
-                return subgroup_options_.enable_prefix_sum;
             case ComputeProgramId::kGsRadixScatter:
                 return subgroup_options_.enable_radix_sort;
             default:
@@ -1051,33 +1062,37 @@ private:
                                VkImageLayout new_layout) {
         const bool is_depth = (format == VK_FORMAT_D32_SFLOAT);
         const auto src_stage =
-            (old_layout == VK_IMAGE_LAYOUT_UNDEFINED)
-                ? vk::PipelineStageFlagBits2::eNone
+                (old_layout == VK_IMAGE_LAYOUT_UNDEFINED)
+                        ? vk::PipelineStageFlagBits2::eNone
                 : (old_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                      ? vk::PipelineStageFlagBits2::eTransfer
-                      : vk::PipelineStageFlagBits2::eComputeShader;
+                        ? vk::PipelineStageFlagBits2::eTransfer
+                        : vk::PipelineStageFlagBits2::eComputeShader;
         const auto src_access =
-            (old_layout == VK_IMAGE_LAYOUT_UNDEFINED)
-                ? vk::AccessFlags2{}
+                (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) ? vk::AccessFlags2{}
                 : (old_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                      ? vk::AccessFlagBits2::eTransferRead
-                      : (vk::AccessFlagBits2::eShaderWrite |
-                         vk::AccessFlagBits2::eShaderRead);
+                        ? vk::AccessFlagBits2::eTransferRead
+                // SHADER_READ_ONLY_OPTIMAL is a read-only layout;
+                // using eShaderWrite here would be incorrect and
+                // triggers BestPractices-ImageBarrierAccessLayout.
+                : (old_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                        ? vk::AccessFlagBits2::eShaderRead
+                        : (vk::AccessFlagBits2::eShaderWrite |
+                           vk::AccessFlagBits2::eShaderRead);
         const auto dst_stage =
-            (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                ? vk::PipelineStageFlagBits2::eTransfer
-                : vk::PipelineStageFlagBits2::eComputeShader;
+                (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                        ? vk::PipelineStageFlagBits2::eTransfer
+                        : vk::PipelineStageFlagBits2::eComputeShader;
         const vk::AccessFlags2 dst_access =
-            (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                ? vk::AccessFlagBits2::eTransferRead
+                (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                        ? vk::AccessFlagBits2::eTransferRead
                 : (new_layout == VK_IMAGE_LAYOUT_GENERAL)
                         ? (vk::AccessFlagBits2::eShaderWrite |
                            vk::AccessFlagBits2::eShaderRead)
                         : vk::AccessFlagBits2::eShaderRead;
         vk::ImageMemoryBarrier2 b{
-            src_stage,
-            src_access,
-            dst_stage,
+                src_stage,
+                src_access,
+                dst_stage,
                 dst_access,
                 static_cast<vk::ImageLayout>(old_layout),
                 static_cast<vk::ImageLayout>(new_layout),

@@ -37,21 +37,17 @@ namespace rendering {
 // ---------------------------------------------------------------------------
 
 /// Program IDs for the Gaussian splatting compute shaders.
-/// Values index into the shader file list; kCount must stay last.
+/// Values index into kGsShaderNames; kCount must stay last.
 enum class ComputeProgramId : int {
     kGsProject = 0,
-    kGsPrefixSum = 1,
-    kGsScatter = 2,
-    kGsComposite = 3,
-    kGsRadixKeygen = 4,
-    kGsRadixHistograms = 5,
-    kGsRadixScatter = 6,
-    kGsRadixPayload = 7,
-    kGsDispatchArgs = 8,
+    kGsComposite = 1,
+    kGsRadixHistograms = 2,
+    kGsRadixScatter = 3,
+    kGsDispatchArgs = 4,
     /// Merges GS linear depth (R32F) with Filament scene depth (reversed-Z)
     /// into a normalised R16UI texture for CPU readback.
-    kGsDepthMerge = 9,
-    kCount = 10,
+    kGsDepthMerge = 5,
+    kCount = 6,
 };
 
 /// Format selector for GaussianSplatGpuContext::BindImage().
@@ -62,13 +58,9 @@ enum class ImageFormat { kRGBA16F, kR32F, kR16UI };
 /// Metal entry point → base+"_main".
 constexpr const char* kGsShaderNames[] = {
         "gaussian_project",
-        "gaussian_prefix_sum",
-        "gaussian_scatter",
         "gaussian_composite",
-        "gaussian_radix_sort_keygen",
         "gaussian_radix_sort_histograms",
         "gaussian_radix_sort",
-        "gaussian_radix_sort_payload",
         "gaussian_compute_dispatch_args",
         "gaussian_depth_merge",
 };
@@ -101,24 +93,21 @@ struct GaussianSplatViewGpuResources {
     std::uintptr_t rotations_buf = 0;
     std::uintptr_t dc_opacity_buf = 0;
     std::uintptr_t sh_buf = 0;
-    /// Two projected buffers replace the old 48 B/splat ProjectedGaussian.
-    /// ProjectedComposite (32 B, binding 6) includes Std430Vec4 inv_basis
-    /// so composite reads a single contiguous struct per splat.
-    std::uintptr_t projected_composite_buf = 0;  ///< binding 6,  32 B/splat
-    std::uintptr_t projected_meta_buf = 0;       ///< binding 12, 16 B/splat
+    /// Composite-pass projected data (32 B/splat, binding 6).
+    /// Written by project, read only by composite.
+    std::uintptr_t projected_composite_buf = 0;
+    /// Per-frame work-stealing atomic counter (1 uint32): cleared before each
+    /// composite pass; each composite workgroup atomically claims tile indices.
     std::uintptr_t tile_counts_buf = 0;
-    std::uintptr_t tile_offsets_buf = 0;
-    std::uintptr_t tile_heads_buf = 0;
+    /// GPU error/diagnostic counters (total_entries, error_flags, ...).
     std::uintptr_t counters_buf = 0;
-    std::uintptr_t tile_entries_buf = 0;
     std::uintptr_t dispatch_args_buf = 0;
+    /// Ping-pong sort buffers: keys = (tile<<D)|(depth>>T), values =
+    /// splat_index.
     std::uintptr_t sort_keys_buf[2] = {0, 0};
     std::uintptr_t sort_values_buf[2] = {0, 0};
     std::uintptr_t histogram_buf = 0;
     std::uintptr_t radix_params_buf = 0;
-    /// Post-sort payload: one uint splat_index per sorted tile entry (4 B
-    /// each, vs. 12 B for a full TileEntry). Used by the composite shader.
-    std::uintptr_t sorted_splat_indices_buf = 0;
     /// Bit-packed per-splat visibility mask. Bound at binding 15.
     std::uintptr_t mask_buf = 0;
     /// GS composite depth output (image binding 1); not the shared scene depth.
@@ -126,6 +115,9 @@ struct GaussianSplatViewGpuResources {
     /// Merged GS+Filament depth as R16UI (normalised [0,65535]); non-zero only
     /// when an offscreen capture is active and scene depth is available.
     std::uintptr_t merged_depth_u16_tex = 0;
+    /// Which sort_values_buf index holds the final sorted splat indices.
+    /// Set at the end of RunGaussianGeometryPasses; read by composite.
+    int final_sort_src = 0;
     std::uint64_t cached_scene_id = 0;
     std::uint32_t cached_splat_count = 0;
     std::uint32_t warned_gpu_error_flags = 0;
@@ -197,6 +189,12 @@ public:
     virtual void DispatchIndirect(std::uintptr_t indirect_buf,
                                   std::size_t byte_offset) = 0;
     virtual void FullBarrier() = 0;
+
+    /// Maximum compute dispatch group count along the X axis.
+    /// Used to split large dispatches into 2D grids that stay within device
+    /// limits (Vulkan: VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0]).
+    /// Default returns 65535 (Vulkan minimum guaranteed by the spec).
+    virtual std::uint32_t GetMaxComputeWorkGroupCount() const { return 65535u; }
 
     // --- Textures / images ------------------------------------------------
     virtual std::uintptr_t CreateTexture2DR32F(std::uint32_t width,
