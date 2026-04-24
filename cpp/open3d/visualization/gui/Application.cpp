@@ -12,18 +12,27 @@
 #include <windows.h>  // so APIENTRY gets defined and GLFW doesn't define it
 #endif                // _MSC_VER
 
+// Platform headers for GetSelfBinaryDir()
+#if defined(__APPLE__) || defined(__linux__)
+#include <dlfcn.h>    // dladdr  (POSIX; libSystem on macOS, libdl on Linux)
+#include <limits.h>   // PATH_MAX
+#endif
+
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>  // std::getenv
 #include <iostream>
 #include <list>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
 
+#include "open3d/Open3DConfig.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Button.h"
+#include "open3d/visualization/gui/Dialog.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/GLFWWindowSystem.h"
 #include "open3d/visualization/gui/Label.h"
@@ -44,57 +53,107 @@ namespace {
 
 const double RUNLOOP_DELAY_SEC = 0.010;
 
-std::string FindResourcePath(int argc, const char *argv[]) {
+// Returns the directory that contains the currently-running binary or shared
+// library (whichever loaded this translation unit).  This works whether the
+// caller is a standalone executable or a Python/app process that loaded the
+// Open3D DLL/dylib/.so, making resource discovery robust across deployment
+// scenarios.
+std::string GetSelfBinaryDir() {
     namespace o3dfs = open3d::utility::filesystem;
-    std::string argv0;
-    if (argc != 0 && argv) {
-        argv0 = argv[0];
+
+#if defined(__APPLE__) || defined(__linux__)
+    // dladdr() resolves which shared-library image owns the given code address.
+    // Passing the address of this very function gives us *this* dylib/so/exe.
+    // This is POSIX-standard and works identically on macOS and Linux.
+    ::Dl_info info;
+    if (::dladdr(reinterpret_cast<void *>(&GetSelfBinaryDir), &info) &&
+        info.dli_fname && info.dli_fname[0]) {
+        char resolved[PATH_MAX];
+        const char *p =
+                ::realpath(info.dli_fname, resolved) ? resolved : info.dli_fname;
+        std::string path(p);
+        auto slash = path.rfind('/');
+        return (slash != std::string::npos) ? path.substr(0, slash) : path;
     }
 
-    // Convert backslash (Windows) to forward slash
-    for (auto &c : argv0) {
-        if (c == '\\') {
-            c = '/';
+#elif defined(_WIN32)
+    // GetModuleHandleExW with FLAG_FROM_ADDRESS retrieves the HMODULE of
+    // whichever DLL/EXE contains the given virtual address – i.e. this module.
+    HMODULE hModule = nullptr;
+    if (::GetModuleHandleExW(
+                GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                reinterpret_cast<LPCWSTR>(&GetSelfBinaryDir), &hModule)) {
+        wchar_t buf[MAX_PATH];
+        DWORD len = ::GetModuleFileNameW(hModule, buf, MAX_PATH);
+        if (len > 0 && len < MAX_PATH) {
+            // Strip the filename to get the directory.
+            wchar_t *last_sep = ::wcsrchr(buf, L'\\');
+            if (last_sep) *last_sep = L'\0';
+
+            // Convert UTF-16 directory to UTF-8.
+            int sz = ::WideCharToMultiByte(CP_UTF8, 0, buf, -1, nullptr, 0,
+                                           nullptr, nullptr);
+            if (sz > 1) {
+                std::string result(static_cast<size_t>(sz) - 1, '\0');
+                ::WideCharToMultiByte(CP_UTF8, 0, buf, -1, &result[0], sz,
+                                      nullptr, nullptr);
+                // Normalise backslashes for the rest of the codebase.
+                for (char &c : result) {
+                    if (c == '\\') c = '/';
+                }
+                return result;
+            }
+        }
+    }
+#endif
+
+    return {};
+}
+
+std::string FindResourcePath() {
+// Search order (stops at the first hit):
+//   1. OPEN3D_RESOURCE_PATH environment variable.
+//   2. Subpaths relative to the directory of this binary or shared library,
+//      discovered via GetSelfBinaryDir().
+    namespace o3dfs = open3d::utility::filesystem;
+
+    // ---- Priority 1: explicit environment variable -------------------------
+    if (const char *env = std::getenv("OPEN3D_RESOURCE_PATH")) {
+        if (o3dfs::DirectoryExists(env)) {
+            open3d::utility::LogInfo(
+                    "Using resource path from OPEN3D_RESOURCE_PATH: {}", env);
+            return std::string(env);
+        }
+        open3d::utility::LogWarning(
+                "OPEN3D_RESOURCE_PATH='{}' does not exist, ignoring.", env);
+    }
+
+    // ---- Priority 2: relative to this binary / shared library --------------
+    std::string self_dir = GetSelfBinaryDir();
+    if (!self_dir.empty()) {
+#if defined(__APPLE__)
+        // macOS bundle: .../Contents/MacOS/ -> .../Contents/Resources/
+        if (self_dir.size() >= 5 &&
+            self_dir.rfind("MacOS") == self_dir.size() - 5) {
+            std::string bundle_res =
+                    self_dir.substr(0, self_dir.size() - 5) + "Resources";
+            if (o3dfs::DirectoryExists(bundle_res)) {
+                return bundle_res;
+            }
+        }
+#endif
+        for (auto &sub :
+             {"/resources", "/../resources" /* Xcode build layout */,
+              "/share/resources" /* GNU prefix */,
+              "/share/Open3D/resources" /* GNU installed */}) {
+            std::string candidate = self_dir + sub;
+            if (o3dfs::DirectoryExists(candidate)) {
+                return candidate;
+            }
         }
     }
 
-    // Chop off the process name
-    auto last_slash = argv0.rfind("/");
-    auto path = argv0.substr(0, last_slash);
-
-    if (argv0[0] == '/' ||
-        (argv0.size() > 3 && argv0[1] == ':' && argv0[2] == '/')) {
-        // is absolute path, we're done
-    } else {
-        // relative path:  prepend working directory
-        auto cwd = o3dfs::GetWorkingDirectory();
-#ifdef __APPLE__
-        // When running an app from the command line with the full relative
-        // path (e.g. `bin/Open3D.app/Contents/MacOS/Open3D`), the working
-        // directory can be set to the resources directory, in which case
-        // a) we are done, and b) cwd + / + argv0 is wrong.
-        if (cwd.rfind("/Contents/Resources") == cwd.size() - 19) {
-            return cwd;
-        }
-#endif  // __APPLE__
-        path = cwd + "/" + path;
-    }
-
-#ifdef __APPLE__
-    if (path.rfind("MacOS") == path.size() - 5) {  // path is in a bundle
-        return path.substr(0, path.size() - 5) + "Resources";
-    }
-#endif  // __APPLE__
-
-    for (auto &subpath :
-         {"/resources", "/../resources" /*building with Xcode */,
-          "/share/resources" /* GNU */, "/share/Open3D/resources" /* GNU */}) {
-        open3d::utility::LogInfo("Checking for resources in {}",
-                                 path + subpath);
-        if (o3dfs::DirectoryExists(path + subpath)) {
-            return path + subpath;
-        }
-    }
     open3d::utility::LogError("Could not find resource directory.");
     return "";
 }
@@ -262,19 +321,9 @@ Application::Application() : impl_(new Application::Impl()) {
 Application::~Application() {}
 
 void Application::Initialize() {
-    // We don't have a great way of getting the process name, so let's hope that
-    // the current directory is where the resources are located. This is a
-    // safe assumption when running on macOS and Windows normally.
-    auto path = open3d::utility::filesystem::GetWorkingDirectory();
-    // Copy to C string, as some implementations of std::string::c_str()
-    // return a very temporary pointer.
-    char *argv = strdup(path.c_str());
-    Initialize(1, (const char **)&argv);
-    free(argv);
-}
-
-void Application::Initialize(int argc, const char *argv[]) {
-    Initialize(FindResourcePath(argc, argv).c_str());
+    // Use FindResourcePath() which automatically locates the binary/library
+    // directory without needing a working-directory heuristic.
+    Initialize(FindResourcePath().c_str());
 }
 
 void Application::Initialize(const char *resource_path) {
@@ -726,6 +775,137 @@ std::shared_ptr<geometry::Image> Application::RenderToDepthImage(
     return img;
 }
 
+// ---------------------------------------------------------------------------
+// Shared dialog factories
+// ---------------------------------------------------------------------------
+
+std::shared_ptr<Dialog> CreateAboutDialog(Window *window) {
+    auto &theme = window->GetTheme();
+    auto em = theme.font_size;
+    auto dlg = std::make_shared<Dialog>("About");
+
+    auto title = std::make_shared<Label>(
+            (std::string("Open3D ") + OPEN3D_VERSION).c_str());
+    auto text = std::make_shared<Label>(
+            "The MIT License (MIT)\n"
+            "Copyright (c) 2018-2024 www.open3d.org\n\n"
+
+            "Permission is hereby granted, free of charge, to any person "
+            "obtaining a copy of this software and associated documentation "
+            "files (the \"Software\"), to deal in the Software without "
+            "restriction, including without limitation the rights to use, "
+            "copy, modify, merge, publish, distribute, sublicense, and/or "
+            "sell copies of the Software, and to permit persons to whom "
+            "the Software is furnished to do so, subject to the following "
+            "conditions:\n\n"
+
+            "The above copyright notice and this permission notice shall be "
+            "included in all copies or substantial portions of the "
+            "Software.\n\n"
+
+            "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, "
+            "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES "
+            "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND "
+            "NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT "
+            "HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, "
+            "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING "
+            "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR "
+            "OTHER DEALINGS IN THE SOFTWARE.");
+    auto ok = std::make_shared<Button>("OK");
+    ok->SetOnClicked([window]() { window->CloseDialog(); });
+
+    Margins margins(em);
+    auto layout = std::make_shared<Vert>(0, margins);
+    layout->AddChild(Horiz::MakeCentered(title));
+    layout->AddFixed(em);
+    auto scroll = std::make_shared<ScrollableVert>(0);
+    scroll->AddChild(text);
+    layout->AddChild(scroll);
+    layout->AddFixed(em);
+    layout->AddChild(Horiz::MakeCentered(ok));
+    dlg->AddChild(layout);
+
+    return dlg;
+}
+
+std::shared_ptr<Dialog> CreateControlsHelpDialog(Window *window) {
+    auto &theme = window->GetTheme();
+    auto em = theme.font_size;
+    auto dlg = std::make_shared<Dialog>("Controls");
+
+    // Helper to build a two-column grid of shortcut rows.
+    // Each row is (key label, description label).  Section headers span the
+    // left column only; the right column gets an empty string.
+    auto grid = std::make_shared<VGrid>(2, int(0.25f * em));
+
+    auto AddRow = [&grid](const char *key, const char *desc) {
+        grid->AddChild(std::make_shared<Label>(key));
+        grid->AddChild(std::make_shared<Label>(desc));
+    };
+    // A section header uses the full left column; right cell is blank.
+    auto AddSection = [&AddRow](const char *title) {
+        AddRow(title, "");
+    };
+    // A blank spacer row between sections.
+    auto AddSpacer = [&AddRow]() { AddRow("", ""); };
+
+    // ---- Arcball (Orbit) mode --------------------------------------------
+    AddSection("Arcball mode");
+    AddRow("Left-drag", "Rotate camera");
+    AddRow("Shift + left-drag", "Forward / backward");
+#if defined(__APPLE__)
+    AddRow("Cmd + left-drag", "Pan camera");
+    AddRow("Opt + left-drag (up/down)", "Rotate around forward axis");
+#else
+    AddRow("Ctrl + left-drag", "Pan camera");
+    AddRow("Win + left-drag (up/down)", "Rotate around forward axis");
+#endif
+    // GNOME3 uses Win/Meta to move windows, so provide an alternative.
+    AddRow("Ctrl + Shift + left-drag", "Rotate around forward axis");
+#if defined(__APPLE__)
+    AddRow("Ctrl + left-drag", "Rotate directional light");
+#else
+    AddRow("Alt + left-drag", "Rotate directional light");
+#endif
+    AddRow("Right-drag", "Pan camera");
+    AddRow("Middle-drag", "Rotate directional light");
+    AddRow("Scroll wheel", "Forward / backward");
+    AddRow("Shift + scroll wheel", "Change field of view");
+
+    AddSpacer();
+
+    // ---- Fly mode --------------------------------------------------------
+    AddSection("Fly mode");
+    AddRow("Left-drag", "Look (rotate camera)");
+#if defined(__APPLE__)
+    AddRow("Opt + left-drag", "Rotate around forward axis");
+#else
+    AddRow("Win + left-drag", "Rotate around forward axis");
+#endif
+    AddRow("W / S", "Forward / backward");
+    AddRow("A / D", "Step left / right");
+    AddRow("Q / Z", "Step up / down");
+    AddRow("E / R", "Roll left / right");
+    AddRow("Up / Down arrow", "Look up / down");
+    AddRow("Left / Right arrow", "Look left / right");
+
+    // Wrap the grid in a scrollable area so the dialog stays compact on
+    // small displays.
+    Margins grid_margins(em, int(0.5f * em));
+    auto scroll = std::make_shared<ScrollableVert>(0, grid_margins);
+    scroll->AddChild(grid);
+
+    auto ok = std::make_shared<Button>("OK");
+    ok->SetOnClicked([window]() { window->CloseDialog(); });
+
+    Margins outer(em);
+    auto layout = std::make_shared<Vert>(int(0.5f * em), outer);
+    layout->AddChild(scroll);
+    layout->AddChild(Horiz::MakeCentered(ok));
+    dlg->AddChild(layout);
+
+    return dlg;
+}
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d
