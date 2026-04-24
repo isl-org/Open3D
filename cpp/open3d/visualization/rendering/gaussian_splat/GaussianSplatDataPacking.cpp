@@ -41,10 +41,17 @@ int GetGaussianSplatRestCoeffCount(int sh_degree) {
 }
 
 // Pack fp32 → fp16 bit patterns. Matches GLSL unpackHalf2x16() (lo bits 0–15,
-// hi bits 16–31). Eigen::half uses round-to-nearest-even; .x is raw uint16.
+// hi bits 16–31). Use Eigen's conversion helpers instead of reading
+// Eigen::half::x directly because on ARM64 that field is __fp16 rather than the
+// raw 16-bit bit pattern.
+inline std::uint16_t FloatToHalfBits(float value) {
+    return Eigen::half_impl::raw_half_as_uint16(
+            Eigen::half_impl::float_to_half_rtne(value));
+}
+
 inline std::uint32_t HalfPair(float lo, float hi) {
-    return static_cast<std::uint32_t>(Eigen::half(lo).x) |
-           (static_cast<std::uint32_t>(Eigen::half(hi).x) << 16u);
+    return static_cast<std::uint32_t>(FloatToHalfBits(lo)) |
+           (static_cast<std::uint32_t>(FloatToHalfBits(hi)) << 16u);
 }
 
 // Four floats → two u32 (two half2), e.g. linear scales (sx,sy,sz,0) or
@@ -261,7 +268,8 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
     }
 
     for (std::size_t i = 0; i < n; ++i) {
-        if (const float opacity = opacity_ptr[i]; opacity < min_opacity_logit) {
+        const float opacity = opacity_ptr[i];
+        if (opacity < min_opacity_logit) {
             continue;
         }
 
@@ -278,7 +286,7 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
 
         // Apply sigmoid to the raw opacity logit once at pack time; the shader
         // reads the result directly as alpha without a per-frame exp() call.
-        const float sigmoid_opacity = 1.0f / (1.0f + std::exp(-opacity_ptr[i]));
+        const float sigmoid_opacity = 1.0f / (1.0f + std::exp(-opacity));
         const auto dc = PackHalf4(f_dc_ptr[i * 3 + 0], f_dc_ptr[i * 3 + 1],
                                   f_dc_ptr[i * 3 + 2], sigmoid_opacity);
         out.dc_opacity.insert(out.dc_opacity.end(), dc.begin(), dc.end());

@@ -193,6 +193,10 @@ public:
         if (!buf || !dst || size == 0) {
             return false;
         }
+        auto it = buffer_sizes_.find(buf);
+        if (it == buffer_sizes_.end() || offset + size > it->second) {
+            return false;
+        }
         id<MTLBuffer> b = (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
         if ([b storageMode] == MTLStorageModePrivate) {
             return false;
