@@ -105,7 +105,6 @@ if (BUILD_GUI)
         target_sources(visualization_impl PRIVATE
             rendering/gaussian_splat/ComputeGPUVulkan.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
-            rendering/gaussian_splat/GaussianSplatOpenGLPipeline.cpp
             rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
             rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
         )

@@ -10,13 +10,11 @@
 #include <filament/Texture.h>
 #include <filament/View.h>
 
-#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 #if !defined(__APPLE__)
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanBackend.h"
 #endif
@@ -155,20 +153,6 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 
 // ----- GaussianSplatRenderer -------------------------------------------------
 
-// @AGENT Inline this
-/// Returns true when composite must run after Filament's endFrame().
-/// On Metal, endFrame() commits the command buffer so the depth texture is
-/// guaranteed ready before our composite CB executes on the same queue.
-/// On OpenGL the composite can run before endFrame() within the same frame.
-bool GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame() {
-#if defined(__APPLE__)
-    return true;
-#else
-    return false;
-#endif
-}
-
-// @AGENT CHeck if this test can be eliminated based on if filament is rendering.
 bool ProjectionInfoEquals(const Camera::ProjectionInfo& left,
                           const Camera::ProjectionInfo& right) {
     // Compare all active projection fields; used for per-frame dirty detection.
@@ -208,7 +192,6 @@ bool ProjectionInfoEquals(const Camera::ProjectionInfo& left,
            left.proj.perspective.far_plane == right.proj.perspective.far_plane;
 }
 
-// @AGENT CHeck if this test can be eliminated based on if filament is rendering.
 bool ViewRenderDataEquals(const GaussianSplatRenderer::ViewRenderData& left,
                           const GaussianSplatRenderer::ViewRenderData& right) {
     // Detect camera/viewport changes to decide whether to re-run passes.
@@ -601,8 +584,7 @@ bool GaussianSplatRenderer::ValidateRenderConfig(
     static constexpr int kMaxSupportedShDegree = 2;
     return config.tile_size.x() > 0 && config.tile_size.y() > 0 &&
            config.projection_group_size > 0 &&
-           config.prefix_sum_group_size > 0 && config.scatter_group_size > 0 &&
-           config.sort_group_size > 0 && config.composite_group_size.x() > 0 &&
+           config.composite_group_size.x() > 0 &&
            config.composite_group_size.y() > 0 && config.max_sh_degree >= 0 &&
            config.max_sh_degree <= kMaxSupportedShDegree &&
            config.max_tiles_per_splat > 0 && config.max_tile_entries_total > 0;

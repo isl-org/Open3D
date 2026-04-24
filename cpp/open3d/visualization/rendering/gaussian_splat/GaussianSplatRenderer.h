@@ -52,9 +52,6 @@ public:
 #endif
         Eigen::Vector2i tile_size = Eigen::Vector2i(16, 16);
         int projection_group_size = 64;
-        int prefix_sum_group_size = 256;
-        int scatter_group_size = 64;
-        int sort_group_size = 64;
         Eigen::Vector2i composite_group_size = Eigen::Vector2i(16, 16);
         int max_sh_degree = 2;
         /// Per-scene tile-entry budget used to size the shared tile entry
@@ -218,12 +215,6 @@ public:
     GaussianSplatRenderer(filament::Engine& engine,
                           FilamentResourceManager& resource_mgr);
     ~GaussianSplatRenderer();
-
-    /// Returns true when the composite pass must run AFTER Filament's
-    /// endFrame().  On Metal, the depth texture is not guaranteed written until
-    /// endFrame() commits the command buffer; on OpenGL the composite can run
-    /// before endFrame() within the same frame.
-    static bool CompositeRunsAfterFilamentEndFrame();
 
     void BeginFrame();
 

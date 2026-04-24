@@ -33,7 +33,7 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
-#include "vk_mem_alloc.h"
+#include "vk_mem_alloc.hpp"
 
 namespace open3d {
 namespace visualization {
@@ -669,50 +669,13 @@ private:
         // VMA is compiled with VMA_STATIC_VULKAN_FUNCTIONS=0 and
         // VMA_DYNAMIC_VULKAN_FUNCTIONS=0 (set in
         // GaussianSplatVulkanInteropContext.cpp before VMA_IMPLEMENTATION), so
-        // all function pointers must be provided manually. The
-        // VULKAN_HPP_DEFAULT_DISPATCHER holds all pointers after
+        // all function pointers must be provided manually.
+        // vma::functionsFromDispatcher() fills VmaVulkanFunctions from the
+        // vulkan-hpp dynamic dispatcher, which is fully initialised after
         // GaussianSplatVulkanInteropContext::Initialize() calls
         // VULKAN_HPP_DEFAULT_DISPATCHER.init(instance) and .init(device).
-        auto& d = VULKAN_HPP_DEFAULT_DISPATCHER;
-        VmaVulkanFunctions vk_fn{};
-        // Core dispatch loaders (required for VMA version detection)
-        vk_fn.vkGetInstanceProcAddr = d.vkGetInstanceProcAddr;
-        vk_fn.vkGetDeviceProcAddr = d.vkGetDeviceProcAddr;
-        // Physical-device / memory queries
-        vk_fn.vkGetPhysicalDeviceProperties = d.vkGetPhysicalDeviceProperties;
-        vk_fn.vkGetPhysicalDeviceMemoryProperties =
-                d.vkGetPhysicalDeviceMemoryProperties;
-        // Memory allocation
-        vk_fn.vkAllocateMemory = d.vkAllocateMemory;
-        vk_fn.vkFreeMemory = d.vkFreeMemory;
-        vk_fn.vkMapMemory = d.vkMapMemory;
-        vk_fn.vkUnmapMemory = d.vkUnmapMemory;
-        vk_fn.vkFlushMappedMemoryRanges = d.vkFlushMappedMemoryRanges;
-        vk_fn.vkInvalidateMappedMemoryRanges = d.vkInvalidateMappedMemoryRanges;
-        // Buffer / image lifecycle
-        vk_fn.vkBindBufferMemory = d.vkBindBufferMemory;
-        vk_fn.vkBindImageMemory = d.vkBindImageMemory;
-        vk_fn.vkGetBufferMemoryRequirements = d.vkGetBufferMemoryRequirements;
-        vk_fn.vkGetImageMemoryRequirements = d.vkGetImageMemoryRequirements;
-        vk_fn.vkCreateBuffer = d.vkCreateBuffer;
-        vk_fn.vkDestroyBuffer = d.vkDestroyBuffer;
-        vk_fn.vkCreateImage = d.vkCreateImage;
-        vk_fn.vkDestroyImage = d.vkDestroyImage;
-        vk_fn.vkCmdCopyBuffer = d.vkCmdCopyBuffer;
-        // Vulkan 1.1 / KHR equivalents required by VMA 3.x
-        vk_fn.vkGetBufferMemoryRequirements2KHR =
-                d.vkGetBufferMemoryRequirements2;
-        vk_fn.vkGetImageMemoryRequirements2KHR =
-                d.vkGetImageMemoryRequirements2;
-        vk_fn.vkBindBufferMemory2KHR = d.vkBindBufferMemory2;
-        vk_fn.vkBindImageMemory2KHR = d.vkBindImageMemory2;
-        vk_fn.vkGetPhysicalDeviceMemoryProperties2KHR =
-                d.vkGetPhysicalDeviceMemoryProperties2;
-        // Vulkan 1.3 device memory query (lazy allocation support)
-        vk_fn.vkGetDeviceBufferMemoryRequirements =
-                d.vkGetDeviceBufferMemoryRequirements;
-        vk_fn.vkGetDeviceImageMemoryRequirements =
-                d.vkGetDeviceImageMemoryRequirements;
+        VmaVulkanFunctions vk_fn =
+                vma::functionsFromDispatcher(VULKAN_HPP_DEFAULT_DISPATCHER);
 
         VmaAllocatorCreateInfo ci{};
         ci.vulkanApiVersion = VK_API_VERSION_1_3;

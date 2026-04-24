@@ -34,9 +34,7 @@
 #if !defined(__APPLE__)
 
 #include <cstdint>
-#include <optional>
 #include <string>
-#include <vector>
 
 // Suppress C function-prototype declarations in vulkan.h: all Vulkan entry
 // points are resolved at runtime through vulkan-hpp's per-object RAII

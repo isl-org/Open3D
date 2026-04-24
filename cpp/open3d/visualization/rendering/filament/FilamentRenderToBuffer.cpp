@@ -251,11 +251,12 @@ void FilamentRenderToBuffer::Render() {
     if (renderer_->beginFrame(swapchain_)) {
         renderer_->render(view_->GetNativeView());
 
-        if (run_gs_pipeline &&
-            !GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()) {
+#if !defined(__APPLE__)
+        if (run_gs_pipeline) {
             engine_.flushAndWait();
             gaussian_splat_renderer_->RenderCompositeStage(*view_);
         }
+#endif
 
         using namespace filament;
         using namespace backend;
@@ -264,10 +265,11 @@ void FilamentRenderToBuffer::Render() {
 
         renderer_->endFrame();
 
-        if (run_gs_pipeline &&
-            GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()) {
+#if defined(__APPLE__)
+        if (run_gs_pipeline) {
             gaussian_splat_renderer_->RenderCompositeStage(*view_);
         }
+#endif
 
         engine_.flushAndWait();
 

@@ -232,8 +232,8 @@ void FilamentRenderer::Draw() {
         // Non-Apple backends composite into the overlay during the current
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
-        if (gaussian_splat_renderer_ &&
-            !GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()) {
+#if !defined(__APPLE__)
+        if (gaussian_splat_renderer_) {
             engine_.flushAndWait();
             for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
                 scene->ForEachActiveView([this](FilamentView& view) {
@@ -241,6 +241,7 @@ void FilamentRenderer::Draw() {
                 });
             }
         }
+#endif
 
         // Draw the UI. This should come after the 3D scene(s), as SceneWidget
         // will draw the textures as an image, and this way we will have the
@@ -258,8 +259,8 @@ void FilamentRenderer::Draw() {
 void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
-        if (gaussian_splat_renderer_ &&
-            GaussianSplatRenderer::CompositeRunsAfterFilamentEndFrame()) {
+#if defined(__APPLE__)
+        if (gaussian_splat_renderer_) {
             // endFrame() commits Filament's Metal command buffer. Our
             // composite CB, committed below on the same queue, will
             // execute after Filament's render — guaranteeing the depth
@@ -278,6 +279,7 @@ void FilamentRenderer::EndFrame() {
                 on_apple_gaussian_composite_complete_();
             }
         }
+#endif
         if (needs_wait_after_draw_) {
             engine_.flushAndWait();
             needs_wait_after_draw_ = false;

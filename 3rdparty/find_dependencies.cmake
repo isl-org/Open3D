@@ -622,7 +622,7 @@ include(${Open3D_3RDPARTY_DIR}/vkmemalloc/vkmemalloc.cmake)
 open3d_import_3rdparty_library(3rdparty_vkmemalloc
     INCLUDE_DIRS ${VMA_INCLUDE_DIRS}
     INCLUDE_ALL
-    DEPENDS      ext_vkmemalloc
+    DEPENDS      ext_vkmemalloc ext_vmahpp
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vkmemalloc)
 

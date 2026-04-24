@@ -45,7 +45,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #pragma GCC diagnostic ignored "-Wparentheses"
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
+#include "vk_mem_alloc.hpp"
 #pragma GCC diagnostic pop
 
 namespace open3d {
