@@ -25,7 +25,7 @@ int main(int argc, const char *argv[]) {
     const int height = 480;
 
     auto &app = Application::GetInstance();
-    app.Initialize(argc, argv);
+    app.Initialize();
 
     auto *renderer =
             new FilamentRenderer(EngineInstance::GetInstance(), width, height,

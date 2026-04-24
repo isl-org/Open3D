@@ -58,54 +58,6 @@ namespace visualization {
 
 namespace {
 
-std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
-    auto &theme = window->GetTheme();
-    auto dlg = std::make_shared<gui::Dialog>("About");
-
-    auto title = std::make_shared<gui::Label>(
-            (std::string("Open3D ") + OPEN3D_VERSION).c_str());
-    auto text = std::make_shared<gui::Label>(
-            "The MIT License (MIT)\n"
-            "Copyright (c) 2018-2023 www.open3d.org\n\n"
-
-            "Permission is hereby granted, free of charge, to any person "
-            "obtaining a copy of this software and associated documentation "
-            "files (the \"Software\"), to deal in the Software without "
-            "restriction, including without limitation the rights to use, "
-            "copy, modify, merge, publish, distribute, sublicense, and/or "
-            "sell copies of the Software, and to permit persons to whom "
-            "the Software is furnished to do so, subject to the following "
-            "conditions:\n\n"
-
-            "The above copyright notice and this permission notice shall be "
-            "included in all copies or substantial portions of the "
-            "Software.\n\n"
-
-            "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, "
-            "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES "
-            "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND "
-            "NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT "
-            "HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, "
-            "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING "
-            "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR "
-            "OTHER DEALINGS IN THE SOFTWARE.");
-    auto ok = std::make_shared<gui::Button>("OK");
-    ok->SetOnClicked([window]() { window->CloseDialog(); });
-
-    gui::Margins margins(theme.font_size);
-    auto layout = std::make_shared<gui::Vert>(0, margins);
-    layout->AddChild(gui::Horiz::MakeCentered(title));
-    layout->AddFixed(theme.font_size);
-    auto v = std::make_shared<gui::ScrollableVert>(0);
-    v->AddChild(text);
-    layout->AddChild(v);
-    layout->AddFixed(theme.font_size);
-    layout->AddChild(gui::Horiz::MakeCentered(ok));
-    dlg->AddChild(layout);
-
-    return dlg;
-}
-
 std::shared_ptr<gui::VGrid> CreateHelpDisplay(gui::Window *window) {
     auto &theme = window->GetTheme();
 
@@ -1444,7 +1396,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             break;
         }
         case HELP_ABOUT: {
-            auto dlg = CreateAboutDialog(this);
+            auto dlg = gui::CreateAboutDialog(this);
             ShowDialog(dlg);
             break;
         }
