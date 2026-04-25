@@ -189,7 +189,7 @@ int main(int argc, const char *argv[]) {
         open3d::utility::filesystem::ChangeWorkingDirectory(homedir);
     }
 
-    Application::GetInstance().Initialize(argc, argv);
+    Application::GetInstance().Initialize();
 
     // Note: if NSApp is created (which happens in +sharedApplication)
     //       then GLFW will use our NSApp with our delegate instead of its

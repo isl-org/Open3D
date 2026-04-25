@@ -676,8 +676,25 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         MaterialRecord internal_material = material;
         auto* drawable = dynamic_cast<const t::geometry::DrawableGeometry*>(pc);
         if (drawable && drawable->HasMaterial()) {
+            // Pick up colors and other PBR fields from the embedded asset (e.g. PLY).
+            // ToMaterialRecord() also sets record.shader to the embedded MTL name,
+            // which is never "gaussianSplat" and is not a reliable signal for
+            // whether the API intended compute rendering.
             drawable->GetMaterial().ToMaterialRecord(internal_material);
         }
+        // 3DGS is only driven by the compute path; the scene graph must always
+        // report shader "gaussianSplat" for HasGaussianSplatGeometry(). Never
+        // depend on the caller's material.shader string matching (defaults and
+        // partial MaterialRecord can skip the old guard). GS tuning always comes
+        // from the AddGeometry() parameter.
+        //internal_material.shader = "gaussianSplat";
+        //internal_material.gaussian_splat_sh_degree = material.gaussian_splat_sh_degree;
+        //internal_material.gaussian_splat_min_alpha = material.gaussian_splat_min_alpha;
+        //internal_material.gaussian_splat_antialias = material.gaussian_splat_antialias;
+        //internal_material.gaussian_splat_max_tiles_per_splat =
+        //        material.gaussian_splat_max_tiles_per_splat;
+        //internal_material.gaussian_splat_max_tile_entries_total =
+        //        material.gaussian_splat_max_tile_entries_total;
         auto& geom = geometries_[object_name];
         geom.name = object_name;
         geom.mat.properties = internal_material;

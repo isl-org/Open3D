@@ -715,7 +715,7 @@ int main(int argc, char* argv[]) {
     widget_string = widget_string + device_string;
 
     auto& app = gui::Application::GetInstance();
-    app.Initialize(argc, (const char**)argv);
+    app.Initialize();
     app.AddWindow(std::make_shared<ExampleWindow>(path_config,
                                                   core::Device(device_string)));
     app.Run();

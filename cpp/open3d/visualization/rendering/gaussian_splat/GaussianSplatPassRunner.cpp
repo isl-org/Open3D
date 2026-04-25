@@ -8,10 +8,8 @@
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatPassRunner.h"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
-#include <cstring>
-#include <string>
-#include <vector>
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
@@ -54,8 +52,9 @@ void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
         return;
     }
 
-    std::uint32_t counters[kGaussianCounterCount] = {0, 0, 0, 0};
-    if (!ctx.DownloadBuffer(vs.counters_buf, counters, sizeof(counters), 0)) {
+    std::array<std::uint32_t, kGaussianCounterCount> counters = {0, 0, 0, 0};
+    if (!ctx.DownloadBuffer(vs.counters_buf, counters.data(), sizeof(counters),
+                            0)) {
         return;
     }
 
@@ -403,8 +402,8 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
                                   targets.scene_depth_gl_handle);
         GpuComputePass(ctx, ComputeProgramId::kGsDepthMerge, "gs_depth_merge")
                 .UBO(0, vs.view_params_buf)
-                .Sampler(16, vs.composite_depth_tex, w,
-                         h)  // binding 16: avoids UBO@0 conflict
+                .Sampler(15, vs.composite_depth_tex, w,
+                         h)  // binding 15: Metal max texture/sampler index
                 .Image(1, vs.merged_depth_u16_tex, w, h, ImageFormat::kR16UI)
                 .Sampler(14, sd, w, h)
                 .Dispatch(DivUp(w, 16u), DivUp(h, 16u), 1u);
@@ -413,7 +412,6 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
 
     ctx.FinishGpuWork();
     // frame destructor calls End() automatically; explicit call omitted.
-
     LogGaussianGpuErrorsOnce(ctx, vs);
 
     return ctx.WasLastSubmitSuccessful();

@@ -53,8 +53,9 @@ struct ShaderBindingDesc {
 // Binding tables derived from SPIR-V analysis (spirv-dis) of each compiled
 // shader.  image_layout is VK_IMAGE_LAYOUT_UNDEFINED for buffer bindings.
 //
-// NOTE: out_color in composite and gs_depth in depth_merge use binding 16
-//       (not 0) to avoid conflicting with the GaussianViewParams UBO at B0.
+// NOTE: out_color in composite uses binding 16 (not 0) to avoid conflicting
+//       with the GaussianViewParams UBO at B0.  depth_merge gs_depth uses 15
+//       so Metal texture/sampler slots stay in 0..15.
 
 static constexpr ShaderBindingDesc kBindingsProject[] = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
@@ -105,7 +106,7 @@ static constexpr ShaderBindingDesc kBindingsDepthMerge[] = {
         {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
         {14, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
-        {16, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        {15, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
 };
 

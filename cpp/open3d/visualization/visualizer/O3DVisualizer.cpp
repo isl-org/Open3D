@@ -71,6 +71,7 @@ static const std::string kDefaultIBL = "default";
 
 enum MenuId {
     MENU_ABOUT = 0,
+    MENU_HELP_CONTROLS,
     MENU_EXPORT_RGB,
     MENU_EXPORT_DEPTH,
     MENU_CLOSE,
@@ -2360,15 +2361,24 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     menu->AddMenu("Actions", actions_menu);
     impl_->settings.actions_menu = actions_menu.get();
 
-#if !defined(__APPLE__)
     auto help_menu = std::make_shared<Menu>();
+    help_menu->AddItem("Show Controls...", MENU_HELP_CONTROLS);
+    help_menu->AddSeparator();
     help_menu->AddItem("About", MENU_ABOUT);
+#if defined(__APPLE__)
+    // macOS adds a Spotlight search field to menus literally named "Help";
+    // a trailing space avoids that while still appearing as "Help" to the user.
+    menu->AddMenu("Help ", help_menu);
+#else
     menu->AddMenu("Help", help_menu);
-#endif  // !__APPLE__
+#endif  // __APPLE__
 
     Application::GetInstance().SetMenubar(menu);
 
     SetOnMenuItemActivated(MENU_ABOUT, [this]() { this->impl_->OnAbout(); });
+    SetOnMenuItemActivated(MENU_HELP_CONTROLS, [this]() {
+        this->ShowDialog(gui::CreateControlsHelpDialog(this));
+    });
     SetOnMenuItemActivated(MENU_EXPORT_RGB,
                            [this]() { this->impl_->OnExportRGB(); });
     SetOnMenuItemActivated(MENU_EXPORT_DEPTH,
