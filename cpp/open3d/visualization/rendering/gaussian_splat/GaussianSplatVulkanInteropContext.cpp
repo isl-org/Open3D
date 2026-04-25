@@ -15,6 +15,23 @@
 //   1. CreateExportableSemaphore() × 2 → VkSemaphore + FD each
 //   2. ImportFDIntoGLSemaphore()   × 2 → gl_semaphore each
 
+#if defined(_WIN32)
+// Ensure Vulkan Win32 platform symbols and Win32 types (HANDLE) are
+// available in this translation unit before any Vulkan headers are
+// included by the context header.
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+#define VK_USE_PLATFORM_WIN32_KHR 1
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+
+#endif
+
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
 
 #if !defined(__APPLE__)
@@ -38,15 +55,19 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 // Vulkan symbols directly.
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
+#ifndef _MSC_VER
 // Suppress pedantic warnings inside the VMA header-only implementation.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #pragma GCC diagnostic ignored "-Wparentheses"
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.hpp"
+#ifndef _MSC_VER
 #pragma GCC diagnostic pop
+#endif
 
 namespace open3d {
 namespace visualization {
@@ -566,6 +587,11 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         return false;
     }
     out_fd = static_cast<int>(reinterpret_cast<intptr_t>(win32_handle));
+    // NOTE: on Windows, HANDLE values are not real file descriptors and should be
+    // closed with CloseHandle() after being imported into GL. However, the current
+    // design passes them as int (out_fd) to ImportFDIntoGL, which will pass them
+    // to glImportMemoryWin32HandleEXT. GL takes ownership of the HANDLE import,
+    // so we cannot close it here. The HANDLE lifetime is managed by GL and Vulkan.
 #else
     try {
         out_fd = dev.getMemoryFdKHR(
@@ -606,6 +632,10 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
     glImportMemoryWin32HandleEXT(out_gl_memory_object,
                                  static_cast<GLuint64>(memory_size),
                                  GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, win32_handle);
+    // IMPORTANT: On Windows, vkGetMemoryWin32HandleKHR() returns a new HANDLE
+    // that we own. glImportMemoryWin32HandleEXT() makes a copy internally. We
+    // must close the returned HANDLE to avoid kernel handle resource leaks.
+    CloseHandle(win32_handle);
 #else
     glImportMemoryFdEXT(out_gl_memory_object,
                         static_cast<GLuint64>(memory_size),
@@ -853,6 +883,11 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGLSemaphore(
             reinterpret_cast<HANDLE>(static_cast<intptr_t>(fd));
     glImportSemaphoreWin32HandleEXT(
             out_gl_semaphore, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, win32_handle);
+    // IMPORTANT: On Windows, vkGetSemaphoreWin32HandleKHR() returns a new
+    // HANDLE that we own. glImportSemaphoreWin32HandleEXT() makes a copy
+    // internally. We must close the returned HANDLE to avoid kernel handle
+    // resource leaks.
+    CloseHandle(win32_handle);
 #else
     glImportSemaphoreFdEXT(out_gl_semaphore, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fd);
     // FD ownership transferred to GL.
