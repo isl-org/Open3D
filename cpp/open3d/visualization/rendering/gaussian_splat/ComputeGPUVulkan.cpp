@@ -524,8 +524,25 @@ public:
     // Filament rendering proceeds in parallel; WaitForGeometryPass() (called
     // at the start of RunGaussianCompositePass) drains it only if needed.
     void EndGeometryPass() override { SubmitOnly(); }
-    void BeginCompositePass() override { BeginCmdBuf(); }
-    void EndCompositePass() override { SubmitAndWait(); }
+    void BeginCompositePass() override {
+        BeginCmdBuf();
+        // Acquire shared GL-interop images from the external (OpenGL) API into
+        // this Vulkan compute queue.  flushAndWait() in FilamentRenderer ensures
+        // GL has finished writing before we reach here on the CPU; these barriers
+        // perform the GPU-side queue-family ownership transfer and set the layout
+        // Vulkan will use.  Without them the spec considers the image contents
+        // and layout undefined, which manifests as VK_ERROR_DEVICE_LOST on
+        // strict drivers (typically Windows AMD/Intel).
+        EmitSharedInteropAcquireBarriers();
+    }
+    void EndCompositePass() override {
+        // Release shared images back to the external (OpenGL) API before
+        // Filament samples the GS color overlay.  The release barrier transfers
+        // queue-family ownership and leaves both images in GENERAL so GL can
+        // use them without an explicit Vulkan layout.
+        EmitSharedInteropReleaseBarriers();
+        SubmitAndWait();
+    }
 
     void WaitForGeometryPass() override { WaitForPendingSubmit(); }
 
@@ -578,12 +595,12 @@ public:
         e.format = format;
         e.width = w;
         e.height = h;
-        // Shared (GL-interop) images are assumed to be in GENERAL layout when
-        // Vulkan first accesses them.  Using UNDEFINED would produce a best-
-        // practices warning on the first UNDEFINED→SHADER_READ_ONLY transition
-        // because the validation layer thinks the content will be discarded;
-        // GENERAL preserves content and satisfies the transition origin
-        // requirement without producing that warning.
+        // Initialise current_layout to GENERAL as a consistent sentinel for
+        // shared images.  The acquire barrier in EmitSharedInteropAcquireBarriers
+        // always uses oldLayout = UNDEFINED (external-acquire pattern, spec
+        // §12.7.4) and ignores this field; the release barrier writes GENERAL
+        // back here each frame.  The sentinel is used only by ResolveImageView
+        // for any intra-CB transitions that follow the acquire.
         e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
         e.is_shared = true;
         uintptr_t handle = next_handle_++;
@@ -604,6 +621,103 @@ public:
     }
 
 private:
+    // --- GL–Vulkan interop barriers ----------------------------------------
+
+    // Emit image memory barriers that acquire ownership of every shared
+    // (GL-interop) image from VK_QUEUE_FAMILY_EXTERNAL to this compute queue.
+    //
+    // These barriers must be the first commands in the composite command buffer
+    // (called from BeginCompositePass after BeginCmdBuf).  On the GL side,
+    // engine_.flushAndWait() already guarantees GPU completion before this CB
+    // records, so srcStageMask = NONE / srcAccessMask = 0 is correct: we are
+    // not waiting for in-flight Vulkan work but performing an ownership handoff
+    // from an external API whose completion has been ensured by the CPU wait.
+    //
+    // Preserve externally produced contents by acquiring from GENERAL, which
+    // matches the layout we release to at the end of the previous composite
+    // pass. newLayout is chosen to match the first Vulkan use in the composite pass:
+    //   Color (RGBA16F) -> GENERAL                  (storage image, write/read)
+    //   Depth (D32_SFLOAT) -> SHADER_READ_ONLY_OPTIMAL (combined sampler)
+    // current_layout is updated so ResolveImageView will not emit a redundant
+    // transition on its first call in the same CB.
+    void EmitSharedInteropAcquireBarriers() {
+        std::vector<vk::ImageMemoryBarrier2> barriers;
+        barriers.reserve(textures_.size());
+        for (auto& [handle, e] : textures_) {
+            if (!e.is_shared) continue;
+            const bool is_depth = (e.format == VK_FORMAT_D32_SFLOAT);
+            const vk::ImageLayout new_layout =
+                    is_depth ? vk::ImageLayout::eShaderReadOnlyOptimal
+                             : vk::ImageLayout::eGeneral;
+            const vk::AccessFlags2 dst_access =
+                    is_depth ? vk::AccessFlagBits2::eShaderRead
+                             : (vk::AccessFlagBits2::eShaderRead |
+                                vk::AccessFlagBits2::eShaderWrite);
+            const vk::ImageAspectFlags aspect =
+                    is_depth ? vk::ImageAspectFlagBits::eDepth
+                             : vk::ImageAspectFlagBits::eColor;
+            barriers.emplace_back(
+                    vk::PipelineStageFlagBits2::eNone,  // srcStageMask
+                    vk::AccessFlags2{},                  // srcAccessMask
+                    vk::PipelineStageFlagBits2::eComputeShader,  // dstStageMask
+                    dst_access,
+                    vk::ImageLayout::eGeneral,    // oldLayout (preserve data)
+                    new_layout,
+                    VK_QUEUE_FAMILY_EXTERNAL,  // srcQueueFamilyIndex
+                    queue_family_,             // dstQueueFamilyIndex
+                    vk::Image(e.image),
+                    vk::ImageSubresourceRange{aspect, 0, 1, 0, 1});
+            e.current_layout = static_cast<VkImageLayout>(new_layout);
+        }
+        if (!barriers.empty()) {
+            cmd_.pipelineBarrier2(
+                    vk::DependencyInfo{{}, {}, {}, barriers});
+        }
+    }
+
+    // Emit image memory barriers that release ownership of every shared
+    // (GL-interop) image from this compute queue back to VK_QUEUE_FAMILY_EXTERNAL.
+    //
+    // Called from EndCompositePass just before SubmitAndWait().  After submit
+    // the fence signals on the CPU; Filament then reads the GS color overlay.
+    //
+    // Both images are transitioned to GENERAL for GL (GL has no Vulkan layout
+    // concept; GENERAL is universally compatible with external API hand-off).
+    // current_layout is updated to GENERAL so the next frame's acquire starts
+    // from a consistent sentinel.
+    void EmitSharedInteropReleaseBarriers() {
+        if (!cmd_active_) return;
+        std::vector<vk::ImageMemoryBarrier2> barriers;
+        barriers.reserve(textures_.size());
+        for (auto& [handle, e] : textures_) {
+            if (!e.is_shared) continue;
+            const bool is_depth = (e.format == VK_FORMAT_D32_SFLOAT);
+            const vk::AccessFlags2 src_access =
+                    is_depth ? vk::AccessFlagBits2::eShaderRead
+                             : (vk::AccessFlagBits2::eShaderRead |
+                                vk::AccessFlagBits2::eShaderWrite);
+            const vk::ImageAspectFlags aspect =
+                    is_depth ? vk::ImageAspectFlagBits::eDepth
+                             : vk::ImageAspectFlagBits::eColor;
+            barriers.emplace_back(
+                    vk::PipelineStageFlagBits2::eComputeShader,  // srcStageMask
+                    src_access,
+                    vk::PipelineStageFlagBits2::eNone,  // dstStageMask
+                    vk::AccessFlags2{},                  // dstAccessMask
+                    vk::ImageLayout(e.current_layout),  // oldLayout (post-composite)
+                    vk::ImageLayout::eGeneral,           // newLayout for GL
+                    queue_family_,             // srcQueueFamilyIndex
+                    VK_QUEUE_FAMILY_EXTERNAL,  // dstQueueFamilyIndex
+                    vk::Image(e.image),
+                    vk::ImageSubresourceRange{aspect, 0, 1, 0, 1});
+            e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
+        }
+        if (!barriers.empty()) {
+            cmd_.pipelineBarrier2(
+                    vk::DependencyInfo{{}, {}, {}, barriers});
+        }
+    }
+
     // --- Internal state ---------------------------------------------------
     VkDevice device_ = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
@@ -1032,6 +1146,11 @@ private:
         return static_cast<VkImageView>(*e.view);
     }
 
+    // Layout transition for internally-owned (non-shared) VMA images only.
+    // Uses VK_QUEUE_FAMILY_IGNORED because these images are never accessed by
+    // an external API; queue-family ownership is always within this compute
+    // queue.  Shared GL-interop images must use EmitSharedInteropAcquire/
+    // ReleaseBarriers instead, which use VK_QUEUE_FAMILY_EXTERNAL.
     void TransitionImageLayout(VkImage image,
                                VkFormat format,
                                VkImageLayout old_layout,

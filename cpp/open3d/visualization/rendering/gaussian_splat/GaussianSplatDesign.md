@@ -760,6 +760,15 @@ work finishes, not when Filament's driver thread has finished rendering.
   it signals. Full CPU+GPU stall. This is the mechanism used to synchronize GS compute with
   Filament's depth output.
 
+**`flushAndWait()` is not a substitute for Vulkan queue-family ownership transfer**: it provides
+CPU-side ordering (GL work is guaranteed done before the composite command buffer records its
+first command), but it does not perform the GPU-side `VK_QUEUE_FAMILY_EXTERNAL` ↔ compute queue
+ownership acquire/release required by the Vulkan spec for externally-shared images (spec §12.7.4).
+`EmitSharedInteropAcquireBarriers()` / `EmitSharedInteropReleaseBarriers()` in
+`ComputeGPUVulkan.cpp` perform this ownership transfer at the start and end of each composite
+command buffer. Without them, image layout state is undefined from Vulkan's perspective and strict
+drivers (especially Windows AMD/Intel) return `VK_ERROR_DEVICE_LOST`.
+
 **Consequence**: The Filament Vulkan backend (`kVulkan`) falls through to the same
 `GaussianSplatVulkanBackend` as `kOpenGL`/`kDefault`; the check is
 `GaussianSplatVulkanInteropContext::GetInstance().IsValid()`, which requires GL interop.
@@ -908,6 +917,7 @@ The output directory is `resources/gaussian_splat/` (runtime loader path).
 | Vulkan compute instead of GL compute | GL compute shaders have limited/no subgroup support on Intel hardware. Vulkan compute provides full `VK_KHR_shader_subgroup` on all major vendors, enabling subgroup-optimized sort and projection shaders. |
 | Fire-and-forget geometry pass | `EndGeometryPass()` submits the Vulkan command buffer and signals a fence without waiting. This allows Vulkan geometry work to overlap with Filament's `beginFrame()` and scene draw on the GPU. `WaitForGeometryPass()` drains the fence before composite — usually a no-op because geometry finishes during Filament's draw. |
 | GL semaphores not used for Filament sync | `GL_EXT_semaphore` objects are shared across GL contexts, but commands to signal/wait them must be issued on a specific context's stream. We cannot inject `glSignalSemaphoreEXT` into Filament's driver thread without modifying Filament internals. CPU fence waits (`engine_.flushAndWait()`) are the only viable synchronization mechanism. |
+| `VK_QUEUE_FAMILY_EXTERNAL` for GL–Vulkan handoff | Images shared with OpenGL via `EXT_external_memory` require queue-family ownership acquire/release in every composite command buffer (`VK_QUEUE_FAMILY_EXTERNAL` ↔ compute queue). `VK_QUEUE_FAMILY_IGNORED` is only valid when no external API is involved; using it for shared images is a spec violation that produces `VK_ERROR_DEVICE_LOST` on strict drivers (typically Windows). `engine_.flushAndWait()` provides CPU-side ordering (GL work is done before Vulkan records) but does not substitute for the GPU-side ownership transfer. Acquire uses `oldLayout = UNDEFINED` (standard external-acquire pattern per spec §12.7.4). Release transitions both images to `GENERAL` so GL can consume them without a Vulkan layout constraint. |
 | Normalized linear depth for sort keys | `center_depth_alpha.z` stores `(d-near)/(far-near)` instead of inverse depth. Uniform Δd per sort-key interval across full depth range vs previous 1/d² crowding near camera. `floatBitsToUint` provides a free log-density tilt toward near field. Inverse depth is derived inline in composite only for occlusion test and depth output. |
 | Pre-destroy invalidation on resize | Prevents Filament handle use-after-free during maximize/resize |
 
