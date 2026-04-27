@@ -11,9 +11,13 @@
 #include <imgui_internal.h>  // so we can examine the current context
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <memory>
 #include <queue>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -53,6 +57,25 @@ void UpdateImGuiForScaling(float new_scaling) {
     ImGuiStyle& style = ImGui::GetStyle();
     // FrameBorderSize is not adjusted (we want minimal borders)
     style.FrameRounding *= new_scaling;
+}
+
+enum class DebugHudEnvMode { kNone, kFps, kFrameTime };
+
+DebugHudEnvMode ParseOpen3dDebugHudMode() {
+    const char* env = std::getenv("OPEN3D_DEBUG");
+    if (!env || env[0] == '\0') {
+        return DebugHudEnvMode::kNone;
+    }
+    std::string debugconfig(env);
+    std::transform(debugconfig.begin(), debugconfig.end(), debugconfig.begin(),
+                   ::tolower);
+    if (debugconfig.find("frametime") != std::string::npos) {
+        return DebugHudEnvMode::kFrameTime;
+    }
+    if (debugconfig.find("fps") != std::string::npos) {
+        return DebugHudEnvMode::kFps;
+    }
+    return DebugHudEnvMode::kNone;
 }
 
 void ChangeAllRenderQuality(
@@ -220,6 +243,11 @@ struct Window::Impl {
     // child, it is a child window, and needs to be on top, which we cannot
     // guarantee if it is a child widget.
     std::shared_ptr<Dialog> active_dialog_;
+
+    /// Optional FPS / frametime HUD (not in \c children_; see DrawOnce).
+    std::shared_ptr<Label> debug_hud_label_;
+    float debug_hud_frametime_ms_ = 0.0f;
+    float debug_hud_fps_ = 0.0f;
 
     std::queue<std::function<void()>> deferred_until_before_draw_;
     std::queue<std::function<void()>> deferred_until_draw_;
@@ -905,6 +933,46 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
         ImGui::PopStyleVar(2);
     }
 
+    // OPEN3D_DEBUG: optional FPS / frametime overlay (top-left of content
+    // area).
+    {
+        static const DebugHudEnvMode hud_mode = ParseOpen3dDebugHudMode();
+        if (hud_mode == DebugHudEnvMode::kNone) {
+            impl_->debug_hud_label_.reset();
+        } else {
+            if (!impl_->debug_hud_label_) {
+                impl_->debug_hud_label_ = std::make_shared<Label>("");
+                impl_->debug_hud_label_->SetTextColor(theme.text_color);
+            }
+            if (impl_->debug_hud_frametime_ms_ > 1000.0f ||
+                impl_->debug_hud_fps_ > 60.0f) {
+                char buf[64];
+                if (hud_mode == DebugHudEnvMode::kFrameTime) {
+                    auto frametime_ms = impl_->debug_hud_frametime_ms_ /
+                                        impl_->debug_hud_fps_;
+                    std::snprintf(buf, sizeof(buf), "%.0f ms", frametime_ms);
+                } else {
+                    auto fps = impl_->debug_hud_fps_ * 1000.0f /
+                               impl_->debug_hud_frametime_ms_;
+                    std::snprintf(buf, sizeof(buf), "%.1f FPS", fps);
+                }
+                impl_->debug_hud_label_->SetText(buf);
+                impl_->debug_hud_frametime_ms_ = 0.0f;
+                impl_->debug_hud_fps_ = 0.0f;
+            }
+            impl_->debug_hud_label_->SetVisible(true);
+            LayoutContext layout_ctx = GetLayoutContext();
+            const Size pref = impl_->debug_hud_label_->CalcPreferredSize(
+                    layout_ctx, Widget::Constraints());
+            const int margin =
+                    std::max(4, theme.default_margin / 2 + theme.font_size / 8);
+            const Rect cr = GetContentRect();
+            impl_->debug_hud_label_->SetFrame(Rect(cr.x + margin, cr.y + margin,
+                                                   pref.width, pref.height));
+            impl_->debug_hud_label_->DrawOverlay(dc);
+        }
+    }
+
     // Finish frame and generate the commands
     ImGui::PopFont();
     ImGui::EndFrame();
@@ -917,9 +985,17 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // draw, and if we are drawing for layout purposes, don't actually
     // draw, because we are just going to draw again after this returns.
     if (!is_layout_pass) {
+        using clock = std::chrono::steady_clock;
+        const clock::time_point t0 = clock::now();
         impl_->renderer_->BeginFrame();
         impl_->renderer_->Draw();
         impl_->renderer_->EndFrame();
+        const clock::time_point t1 = clock::now();
+        if (impl_->renderer_->LastBeginFrameSubmitted()) {
+            impl_->debug_hud_frametime_ms_ +=
+                    std::chrono::duration<float, std::milli>(t1 - t0).count();
+            impl_->debug_hud_fps_++;
+        }
     }
 
     if (needs_layout) {

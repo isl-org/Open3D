@@ -290,9 +290,10 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
                               GaussianSplatViewGpuResources& vs,
                               GaussianSplatRenderer::OutputTargets& targets) {
     // Ensure the geometry pass has finished writing splat buffers before we
-    // read them in the composite pass.  On Vulkan, geometry runs fire-and-forget
-    // (overlapping with Filament rendering), so this may be a no-op if the GPU
-    // already completed the work; otherwise it blocks until the fence signals.
+    // read them in the composite pass.  On Vulkan, geometry runs
+    // fire-and-forget (overlapping with Filament rendering), so this may be a
+    // no-op if the GPU already completed the work; otherwise it blocks until
+    // the fence signals.
     ctx.WaitForGeometryPass();
 
     // Composite splats from the sorted tile-entry buffer onto the GS color

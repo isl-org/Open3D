@@ -143,8 +143,8 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 #endif
         case RenderingType::kOpenGL:
             // On Linux/Windows, Filament uses OpenGL but 3DGS compute runs on
-            // Vulkan (GL compute has limited subgroup support on Intel hardware).
-            // Fall through to check Vulkan availability.
+            // Vulkan (GL compute has limited subgroup support on Intel
+            // hardware). Fall through to check Vulkan availability.
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)

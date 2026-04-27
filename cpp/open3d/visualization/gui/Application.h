@@ -46,7 +46,7 @@ public:
     /// Initializes the application, and in particular, finds the path for
     /// the resources.
     void Initialize();
-    
+
     /// Initializes the application, with a specific path to the resources.
     void Initialize(const char *resource_path);
 

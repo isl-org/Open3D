@@ -65,6 +65,8 @@ public:
 
     void SetOnAfterDraw(std::function<void()> callback) override;
 
+    bool LastBeginFrameSubmitted() const override { return frame_started_; }
+
     /// Metal: Gaussian splat compositing runs after \c endFrame() so Filament's
     /// depth is ready. The first \c Draw() still samples the GS color texture
     /// from before that composite; call \p callback after a successful

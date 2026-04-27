@@ -577,11 +577,12 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         return false;
     }
     out_fd = static_cast<int>(reinterpret_cast<intptr_t>(win32_handle));
-    // NOTE: on Windows, HANDLE values are not real file descriptors and should be
-    // closed with CloseHandle() after being imported into GL. However, the current
-    // design passes them as int (out_fd) to ImportFDIntoGL, which will pass them
-    // to glImportMemoryWin32HandleEXT. GL takes ownership of the HANDLE import,
-    // so we cannot close it here. The HANDLE lifetime is managed by GL and Vulkan.
+    // NOTE: on Windows, HANDLE values are not real file descriptors and should
+    // be closed with CloseHandle() after being imported into GL. However, the
+    // current design passes them as int (out_fd) to ImportFDIntoGL, which will
+    // pass them to glImportMemoryWin32HandleEXT. GL takes ownership of the
+    // HANDLE import, so we cannot close it here. The HANDLE lifetime is managed
+    // by GL and Vulkan.
 #else
     try {
         out_fd = dev.getMemoryFdKHR(

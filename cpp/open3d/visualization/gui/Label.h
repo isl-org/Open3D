@@ -36,6 +36,10 @@ public:
 
     DrawResult Draw(const DrawContext& context) override;
 
+    /// Draws text in \c GetFrame() using ImGui's foreground draw list so the
+    /// label does not require an \c ImGui::Begin host window (internal HUD).
+    void DrawOverlay(const DrawContext& context) const;
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

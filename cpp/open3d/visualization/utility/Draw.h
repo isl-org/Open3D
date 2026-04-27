@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <vector>
 #include <optional>
+#include <vector>
 
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/visualizer/O3DVisualizer.h"

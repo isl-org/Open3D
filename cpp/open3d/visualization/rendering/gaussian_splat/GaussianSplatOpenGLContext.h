@@ -62,7 +62,7 @@ public:
     /// Releases the context (no context current on this thread).
     void ReleaseCurrent();
 
-    private:
+private:
     GaussianSplatOpenGLContext() = default;
     ~GaussianSplatOpenGLContext();
 

@@ -166,11 +166,11 @@ std::string Draw(const std::vector<DrawObject> &objects,
         auto *camera = draw->GetScene()->GetCamera();
         double fov = camera->GetFieldOfView();
         double near_plane = config.near_plane.has_value()
-                              ? double(config.near_plane.value())
-                              : camera->GetNear();
+                                    ? double(config.near_plane.value())
+                                    : camera->GetNear();
         double far_plane = config.far_plane.has_value()
-                             ? double(config.far_plane.value())
-                             : camera->GetFar();
+                                   ? double(config.far_plane.value())
+                                   : camera->GetFar();
         double aspect = double(width) / double(height);
         camera->SetProjection(fov, aspect, near_plane, far_plane,
                               camera->GetFieldOfViewType());

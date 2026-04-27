@@ -240,7 +240,8 @@ void FilamentRenderer::Draw() {
 #if !defined(__APPLE__)
         if (gaussian_splat_renderer_) {
             // Wait for Filament's OpenGL scene draw to finish so the shared
-            // depth texture is fully written before the composite pass reads it.
+            // depth texture is fully written before the composite pass reads
+            // it.
             engine_.flushAndWait();
             for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
                 scene->ForEachActiveView([this](FilamentView& view) {

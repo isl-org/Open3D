@@ -527,12 +527,12 @@ public:
     void BeginCompositePass() override {
         BeginCmdBuf();
         // Acquire shared GL-interop images from the external (OpenGL) API into
-        // this Vulkan compute queue.  flushAndWait() in FilamentRenderer ensures
-        // GL has finished writing before we reach here on the CPU; these barriers
-        // perform the GPU-side queue-family ownership transfer and set the layout
-        // Vulkan will use.  Without them the spec considers the image contents
-        // and layout undefined, which manifests as VK_ERROR_DEVICE_LOST on
-        // strict drivers (typically Windows AMD/Intel).
+        // this Vulkan compute queue.  flushAndWait() in FilamentRenderer
+        // ensures GL has finished writing before we reach here on the CPU;
+        // these barriers perform the GPU-side queue-family ownership transfer
+        // and set the layout Vulkan will use.  Without them the spec considers
+        // the image contents and layout undefined, which manifests as
+        // VK_ERROR_DEVICE_LOST on strict drivers (typically Windows AMD/Intel).
         EmitSharedInteropAcquireBarriers();
     }
     void EndCompositePass() override {
@@ -596,11 +596,12 @@ public:
         e.width = w;
         e.height = h;
         // Initialise current_layout to GENERAL as a consistent sentinel for
-        // shared images.  The acquire barrier in EmitSharedInteropAcquireBarriers
-        // always uses oldLayout = UNDEFINED (external-acquire pattern, spec
-        // §12.7.4) and ignores this field; the release barrier writes GENERAL
-        // back here each frame.  The sentinel is used only by ResolveImageView
-        // for any intra-CB transitions that follow the acquire.
+        // shared images.  The acquire barrier in
+        // EmitSharedInteropAcquireBarriers always uses oldLayout = UNDEFINED
+        // (external-acquire pattern, spec §12.7.4) and ignores this field; the
+        // release barrier writes GENERAL back here each frame.  The sentinel is
+        // used only by ResolveImageView for any intra-CB transitions that
+        // follow the acquire.
         e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
         e.is_shared = true;
         uintptr_t handle = next_handle_++;
@@ -635,7 +636,8 @@ private:
     //
     // Preserve externally produced contents by acquiring from GENERAL, which
     // matches the layout we release to at the end of the previous composite
-    // pass. newLayout is chosen to match the first Vulkan use in the composite pass:
+    // pass. newLayout is chosen to match the first Vulkan use in the composite
+    // pass:
     //   Color (RGBA16F) -> GENERAL                  (storage image, write/read)
     //   Depth (D32_SFLOAT) -> SHADER_READ_ONLY_OPTIMAL (combined sampler)
     // current_layout is updated so ResolveImageView will not emit a redundant
@@ -658,10 +660,10 @@ private:
                              : vk::ImageAspectFlagBits::eColor;
             barriers.emplace_back(
                     vk::PipelineStageFlagBits2::eNone,  // srcStageMask
-                    vk::AccessFlags2{},                  // srcAccessMask
+                    vk::AccessFlags2{},                 // srcAccessMask
                     vk::PipelineStageFlagBits2::eComputeShader,  // dstStageMask
                     dst_access,
-                    vk::ImageLayout::eGeneral,    // oldLayout (preserve data)
+                    vk::ImageLayout::eGeneral,  // oldLayout (preserve data)
                     new_layout,
                     VK_QUEUE_FAMILY_EXTERNAL,  // srcQueueFamilyIndex
                     queue_family_,             // dstQueueFamilyIndex
@@ -670,13 +672,13 @@ private:
             e.current_layout = static_cast<VkImageLayout>(new_layout);
         }
         if (!barriers.empty()) {
-            cmd_.pipelineBarrier2(
-                    vk::DependencyInfo{{}, {}, {}, barriers});
+            cmd_.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, barriers});
         }
     }
 
     // Emit image memory barriers that release ownership of every shared
-    // (GL-interop) image from this compute queue back to VK_QUEUE_FAMILY_EXTERNAL.
+    // (GL-interop) image from this compute queue back to
+    // VK_QUEUE_FAMILY_EXTERNAL.
     //
     // Called from EndCompositePass just before SubmitAndWait().  After submit
     // the fence signals on the CPU; Filament then reads the GS color overlay.
@@ -703,18 +705,18 @@ private:
                     vk::PipelineStageFlagBits2::eComputeShader,  // srcStageMask
                     src_access,
                     vk::PipelineStageFlagBits2::eNone,  // dstStageMask
-                    vk::AccessFlags2{},                  // dstAccessMask
-                    vk::ImageLayout(e.current_layout),  // oldLayout (post-composite)
-                    vk::ImageLayout::eGeneral,           // newLayout for GL
-                    queue_family_,             // srcQueueFamilyIndex
-                    VK_QUEUE_FAMILY_EXTERNAL,  // dstQueueFamilyIndex
+                    vk::AccessFlags2{},                 // dstAccessMask
+                    vk::ImageLayout(
+                            e.current_layout),  // oldLayout (post-composite)
+                    vk::ImageLayout::eGeneral,  // newLayout for GL
+                    queue_family_,              // srcQueueFamilyIndex
+                    VK_QUEUE_FAMILY_EXTERNAL,   // dstQueueFamilyIndex
                     vk::Image(e.image),
                     vk::ImageSubresourceRange{aspect, 0, 1, 0, 1});
             e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
         }
         if (!barriers.empty()) {
-            cmd_.pipelineBarrier2(
-                    vk::DependencyInfo{{}, {}, {}, barriers});
+            cmd_.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, barriers});
         }
     }
 

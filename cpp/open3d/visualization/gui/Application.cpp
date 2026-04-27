@@ -14,8 +14,8 @@
 
 // Platform headers for GetSelfBinaryDir()
 #if defined(__APPLE__) || defined(__linux__)
-#include <dlfcn.h>    // dladdr  (POSIX; libSystem on macOS, libdl on Linux)
-#include <limits.h>   // PATH_MAX
+#include <dlfcn.h>   // dladdr  (POSIX; libSystem on macOS, libdl on Linux)
+#include <limits.h>  // PATH_MAX
 #endif
 
 #include <algorithm>
@@ -69,8 +69,8 @@ std::string GetSelfBinaryDir() {
     if (::dladdr(reinterpret_cast<void *>(&GetSelfBinaryDir), &info) &&
         info.dli_fname && info.dli_fname[0]) {
         char resolved[PATH_MAX];
-        const char *p =
-                ::realpath(info.dli_fname, resolved) ? resolved : info.dli_fname;
+        const char *p = ::realpath(info.dli_fname, resolved) ? resolved
+                                                             : info.dli_fname;
         std::string path(p);
         auto slash = path.rfind('/');
         return (slash != std::string::npos) ? path.substr(0, slash) : path;
@@ -112,10 +112,10 @@ std::string GetSelfBinaryDir() {
 }
 
 std::string FindResourcePath() {
-// Search order (stops at the first hit):
-//   1. OPEN3D_RESOURCE_PATH environment variable.
-//   2. Subpaths relative to the directory of this binary or shared library,
-//      discovered via GetSelfBinaryDir().
+    // Search order (stops at the first hit):
+    //   1. OPEN3D_RESOURCE_PATH environment variable.
+    //   2. Subpaths relative to the directory of this binary or shared library,
+    //      discovered via GetSelfBinaryDir().
     namespace o3dfs = open3d::utility::filesystem;
 
     // ---- Priority 1: explicit environment variable -------------------------
@@ -143,7 +143,7 @@ std::string FindResourcePath() {
             }
         }
 #endif
-        for (auto& sub :
+        for (auto &sub :
              {"/resources", "/../resources" /* Xcode build layout */,
               "/../../resources" /* Windows build layout, extra CONFIG dir */,
               "/share/resources" /* GNU prefix */,
@@ -844,9 +844,7 @@ std::shared_ptr<Dialog> CreateControlsHelpDialog(Window *window) {
         grid->AddChild(std::make_shared<Label>(desc));
     };
     // A section header uses the full left column; right cell is blank.
-    auto AddSection = [&AddRow](const char *title) {
-        AddRow(title, "");
-    };
+    auto AddSection = [&AddRow](const char *title) { AddRow(title, ""); };
     // A blank spacer row between sections.
     auto AddSpacer = [&AddRow]() { AddRow("", ""); };
 
