@@ -28,8 +28,7 @@ namespace rendering {
 /// Lifecycle:
 ///   1. Call InitializeStandalone() before Filament Engine::create().
 ///   2. Pass GetNativeContext() to Engine::create() as sharedGLContext.
-///   3. For compute work: MakeCurrent() → dispatch → Finish() →
-///      ReleaseCurrent().
+///   3. For compute work: MakeCurrent() → dispatch → ReleaseCurrent().
 ///   4. Call Shutdown() when done.
 class GaussianSplatOpenGLContext {
 public:
@@ -63,10 +62,7 @@ public:
     /// Releases the context (no context current on this thread).
     void ReleaseCurrent();
 
-    /// Calls glFinish() to ensure all compute commands complete.
-    void Finish();
-
-private:
+    private:
     GaussianSplatOpenGLContext() = default;
     ~GaussianSplatOpenGLContext();
 

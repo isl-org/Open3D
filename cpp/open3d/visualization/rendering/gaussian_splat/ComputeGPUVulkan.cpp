@@ -520,9 +520,14 @@ public:
     // --- Frame boundary ---------------------------------------------------
 
     void BeginGeometryPass() override { BeginCmdBuf(); }
-    void EndGeometryPass() override { SubmitAndWait(); }
+    // Fire-and-forget: submit and signal the fence but do NOT block.
+    // Filament rendering proceeds in parallel; WaitForGeometryPass() (called
+    // at the start of RunGaussianCompositePass) drains it only if needed.
+    void EndGeometryPass() override { SubmitOnly(); }
     void BeginCompositePass() override { BeginCmdBuf(); }
     void EndCompositePass() override { SubmitAndWait(); }
+
+    void WaitForGeometryPass() override { WaitForPendingSubmit(); }
 
     void FinishGpuWork() override {
         if (!cmd_active_) return;
@@ -914,17 +919,12 @@ private:
 
     void BeginCmdBuf() {
         if (cmd_active_) return;
-        // If the fence is still pending from a previous submission, wait for
-        // it before resetting the command pool.  This guards against the
-        // case where BeginCmdBuf is called again before SubmitAndWait has had
-        // a chance to drain (e.g. geometry pass on frame N+1 vs composite
-        // pass on frame N that was never submitted due to an early return).
-        if (fence_submitted_) {
-            (void)vk::Device(device_).waitForFences({*fence_}, true,
-                                                    UINT64_MAX);
-            vk::Device(device_).resetFences({*fence_});
-            fence_submitted_ = false;
-        }
+        // If the geometry pass submitted a fence-only (fire-and-forget), drain
+        // it now before resetting the command pool.  Also guards the case where
+        // BeginCmdBuf is called again before a previous SubmitAndWait has had
+        // a chance to drain (e.g. geometry pass on frame N+1 before composite
+        // on frame N was submitted due to an early return).
+        WaitForPendingSubmit();
         vk::Device(device_).resetCommandPool(*cmd_pool_, {});
         cmd_.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
         cmd_active_ = true;
@@ -932,24 +932,36 @@ private:
         pending_.clear();
     }
 
-    void SubmitAndWait() {
+    // Submit the current command buffer and signal the fence, but do NOT wait.
+    // Used by EndGeometryPass() so geometry overlaps with Filament rendering.
+    // The fence is checked (and waited if necessary) in WaitForPendingSubmit(),
+    // which BeginCmdBuf() and BeginCompositePass() call before starting work.
+    void SubmitOnly() {
         if (!cmd_active_) return;
         cmd_.end();
         cmd_active_ = false;
-        // Reset the fence only if it is not already pending.  BeginCmdBuf
-        // above handles the case where we start a new buffer while pending.
-        if (!fence_submitted_) {
-            vk::Device(device_).resetFences({*fence_});
-        }
+        vk::Device(device_).resetFences({*fence_});
         vk::CommandBufferSubmitInfo cmd_info{*cmd_, 0};
         vk::SubmitInfo2 si{{}, {}, cmd_info, {}};
         vk::Queue(compute_queue_).submit2(si, *fence_);
         fence_submitted_ = true;
+        active_id_ = -1;
+        pending_.clear();
+    }
+
+    // Wait for the most recently submitted fence if one is outstanding.
+    // No-op when no submission is pending (fence_submitted_ == false).
+    void WaitForPendingSubmit() {
+        if (!fence_submitted_) return;
         (void)vk::Device(device_).waitForFences({*fence_}, true, UINT64_MAX);
         vk::Device(device_).resetFences({*fence_});
         fence_submitted_ = false;
-        active_id_ = -1;
-        pending_.clear();
+    }
+
+    // Submit and immediately wait (used by EndCompositePass and FinishGpuWork).
+    void SubmitAndWait() {
+        SubmitOnly();
+        WaitForPendingSubmit();
     }
 
     // --- Descriptor helpers -----------------------------------------------

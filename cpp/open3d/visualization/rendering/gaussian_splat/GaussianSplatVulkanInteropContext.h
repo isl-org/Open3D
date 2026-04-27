@@ -9,7 +9,7 @@
 //
 // Owns a headless Vulkan instance and logical device used solely for compute
 // work. All resources that must be visible to both Vulkan compute and
-// OpenGL/Filament are allocated here as exportable memory or semaphores.
+// OpenGL/Filament are allocated here as exportable memory objects.
 //
 // Key relationships:
 //   - GaussianSplatOpenGLContext creates the GL/GLFW context and calls
@@ -17,17 +17,16 @@
 //     GL interop extensions are present.
 //   - FilamentEngine.cpp calls Initialize() before GL context setup, and
 //     Shutdown() on engine teardown.
-//   - GaussianSplatVulkanBackend uses CreateSharedColorImage(),
-//     CreateSharedDepthImage(), CreateSemaphorePair() per view, and holds the
-//     resulting handles in OutputTargets.
+//   - GaussianSplatVulkanBackend uses CreateSharedColorImage() and
+//     CreateSharedDepthImage() per view, holding the handles in OutputTargets.
 //
 // Uses vulkan-hpp (Vulkan-Headers) for Vulkan loading and RAII handle
 // lifetime management, and VMA (vk_mem_alloc.h from the pinned 3rdparty
 // download) for suballocated internal-only buffer allocations.
 //
 // Thread-safety: not thread-safe. All calls must be made from the render
-// thread. Shared images / semaphores must be created or destroyed while the
-// GL context is current (for the GL import calls).
+// thread. Shared images must be created or destroyed while the GL context is
+// current (for the GL import calls).
 
 #pragma once
 
@@ -72,8 +71,8 @@ enum class VkInteropImageFormat {
 ///      imports it into OpenGL, returning a fully-initialised SharedImageDesc.
 ///   2. The gl_texture name (uint32_t) is passed to
 ///      FilamentResourceManager::CreateImportedTexture() exactly as today.
-///   3. DestroySharedImage() first deletes the GL semaphore/memory-object, then
-///      the Vulkan image and memory.
+///   3. DestroySharedImage() first deletes the GL memory-object and texture,
+///      then the Vulkan image and memory.
 struct SharedImageDesc {
     VkImage vk_image = VK_NULL_HANDLE;
     VkDeviceMemory vk_memory = VK_NULL_HANDLE;  ///< Dedicated exportable alloc
@@ -89,36 +88,10 @@ struct SharedImageDesc {
     VkInteropImageFormat format = VkInteropImageFormat::kRGBA16F;
 
     /// Vulkan image layout currently assumed by the Vulkan side. Updated after
-    /// each VkImageMemoryBarrier. Used to construct semaphore signal parameters
-    /// (glSignalSemaphoreEXT layout argument).
+    /// each VkImageMemoryBarrier.
     VkImageLayout current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     bool IsValid() const { return vk_image != VK_NULL_HANDLE; }
-};
-
-/// Direction of a cross-API semaphore.
-enum class SemaphoreDirection {
-    kGLtoVK,  ///< GL signals → Vulkan waits (e.g. after Filament writes depth)
-    kVKtoGL,  ///< Vulkan signals → GL waits (e.g. after GS composite writes
-              ///< color)
-};
-
-/// Describes a binary semaphore exported from Vulkan and imported into OpenGL.
-///
-/// Usage per direction:
-///   kGLtoVK: call glSignalSemaphoreEXT(gl_semaphore, ...) + glFlush(),
-///            then VkSubmitInfo2.waitSemaphoreCount with vk_semaphore.
-///   kVKtoGL: VkSubmitInfo2.signalSemaphoreCount with vk_semaphore,
-///            then glWaitSemaphoreEXT(gl_semaphore, ...).
-///
-/// Binary semaphores must alternate strictly between signal and wait;
-/// each member of the pair is used once per frame.
-struct SharedSemaphoreDesc {
-    VkSemaphore vk_semaphore = VK_NULL_HANDLE;
-    std::uint32_t gl_semaphore = 0;  ///< glGenSemaphoresEXT result
-    SemaphoreDirection direction = SemaphoreDirection::kGLtoVK;
-
-    bool IsValid() const { return vk_semaphore != VK_NULL_HANDLE; }
 };
 
 // ---------------------------------------------------------------------------
@@ -135,8 +108,8 @@ class GaussianSplatVulkanInteropContext {
 public:
     static GaussianSplatVulkanInteropContext& GetInstance();
 
-    /// Load Vulkan via BlueVK, select a physical device with external-memory /
-    /// external-semaphore extension support, and create a compute queue.
+    /// Load Vulkan via BlueVK, select a physical device with external-memory
+    /// extension support, and create a compute queue.
     /// Must be called BEFORE
     /// GaussianSplatOpenGLContext::InitializeStandalone(). Returns false on
     /// failure; call GetLastError() for a diagnostic string.
@@ -218,17 +191,6 @@ public:
     /// Requires the GL context to be current.
     void DestroySharedImage(SharedImageDesc& desc);
 
-    // --- Semaphore lifecycle ----------------------------------------------
-
-    /// Create one cross-API binary semaphore pair (one GL→VK, one VK→GL).
-    /// The returned semaphores are ready to use; their initial state is
-    /// unsignalled. Requires the GL context to be current.
-    bool CreateSemaphorePair(SharedSemaphoreDesc& out_gl_to_vk,
-                             SharedSemaphoreDesc& out_vk_to_gl);
-
-    /// Destroy a single cross-API semaphore. Requires GL context current.
-    void DestroySemaphore(SharedSemaphoreDesc& desc);
-
     // --- Vulkan device memory type helpers --------------------------------
 
     /// Find a memory type index that satisfies type_filter (bitmask from
@@ -271,14 +233,6 @@ private:
                         VkInteropImageFormat format,
                         std::uint32_t& out_gl_memory_object,
                         std::uint32_t& out_gl_texture) const;
-
-    /// Create one VkSemaphore with VkExportSemaphoreCreateInfo and export its
-    /// FD. Returns VK_NULL_HANDLE on failure.
-    bool CreateExportableSemaphore(VkSemaphore& out_semaphore,
-                                   int& out_fd) const;
-
-    /// Import an FD into a GL semaphore object.
-    bool ImportFDIntoGLSemaphore(int fd, std::uint32_t& out_gl_semaphore) const;
 
     SharedImageDesc CreateSharedImage(std::uint32_t width,
                                       std::uint32_t height,

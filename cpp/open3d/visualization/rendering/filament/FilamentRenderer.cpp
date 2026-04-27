@@ -192,8 +192,13 @@ void FilamentRenderer::BeginFrame() {
     if (gaussian_splat_renderer_) {
         gaussian_splat_renderer_->BeginFrame();
 #if !defined(__APPLE__)
-        // Drain Filament work before Gaussian compute dispatches (shared
-        // GL/Vulkan queue on non-Apple backends).
+        // Drain any pending Filament (OpenGL) work before the geometry pass
+        // begins. Filament renders on its own driver thread with an OpenGL
+        // backend; flushAndWait() enqueues glFinish() there and blocks until
+        // it completes. This ensures the shared interop textures from the
+        // previous frame are no longer in use by the GL driver before Vulkan
+        // compute overwrites them. (Vulkan and Filament run independent queues;
+        // there is no shared queue between them.)
         engine_.flushAndWait();
 #endif
 
@@ -234,6 +239,8 @@ void FilamentRenderer::Draw() {
         // depth texture is fully produced before compute samples it.
 #if !defined(__APPLE__)
         if (gaussian_splat_renderer_) {
+            // Wait for Filament's OpenGL scene draw to finish so the shared
+            // depth texture is fully written before the composite pass reads it.
             engine_.flushAndWait();
             for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
                 scene->ForEachActiveView([this](FilamentView& view) {

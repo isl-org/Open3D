@@ -97,28 +97,40 @@ The pipeline is split into two stages: a heavy geometry stage (projection + sort
 overlap with Filament mesh rasterization on the GPU, and a lightweight composite stage that
 runs after Filament completes (because it needs the scene depth).
 
-**Non-Apple (OpenGL / Vulkan swapchain)** — composite runs *inside* `Draw`, after Filament
-scene rasterization and `engine_.flushAndWait()`, so scene depth is ready before the GS
-composite samples it. ImGui then draws the same frame’s splat overlay.
+**Non-Apple (Filament OpenGL + Vulkan compute)** — composite runs *inside* `Draw`, after
+Filament scene rasterization and `engine_.flushAndWait()`, so scene depth is ready before the
+GS composite samples it. ImGui then draws the same frame's splat overlay.
+
+Filament uses an **OpenGL** backend (the only zero-copy texture-sharing path on Linux/Windows).
+GS compute runs on a separate **Vulkan** compute queue. GL compute shaders are not used because
+Intel hardware has limited/no subgroup support. The two queues are independent; synchronization
+uses CPU fences.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  BeginFrame                                                     │
-│  1. gaussian_splat_renderer_->BeginFrame()                       │
-│  2. engine_.flushAndWait()     — drain Filament before GS compute │
-│  3. GS geometry (Stage A)      — project+keygen / sort / tile_boundaries │
-│  4. renderer_->beginFrame()                                     │
-├─────────────────────────────────────────────────────────────────┤
-│  Draw                                                           │
-│  5. Filament scene draw        — depth → shared depth texture   │
-│  6. engine_.flushAndWait()     — depth ready for composite       │
-│  7. GS composite (Stage B)     — writes GS RGBA16F               │
-│  8. GUI (ImGui)                — base + splat overlay            │
-├─────────────────────────────────────────────────────────────────┤
-│  EndFrame                                                       │
-│  9. renderer_->endFrame()                                       │
-└─────────────────────────────────────────────────────────────────┘
+BeginFrame:
+  1. gaussian_splat_renderer_->BeginFrame()
+  2. engine_.flushAndWait()     -- CPU STALL: drain prior Filament (GL) work;
+                                   ensures shared textures are not in use
+  3. GS geometry (Stage A)      -- VK Submit (signal fence), NO CPU WAIT
+                                   [fire-and-forget; overlaps Filament below]
+  4. renderer_->beginFrame()
+
+Draw (Filament + Vulkan geometry overlap on GPU):
+  5. Filament scene draw        -- depth written to shared GL depth texture
+  6. engine_.flushAndWait()     -- CPU STALL: depth ready for composite
+  7. WaitForGeometryPass()      -- VK fence wait (usually no-op; geometry
+                                   already finished during Filament draw)
+  8. GS composite (Stage B)     -- VK Submit + wait; writes GS RGBA16F
+  9. GUI (ImGui)                -- base + splat overlay
+
+EndFrame:
+  10. renderer_->endFrame()
 ```
+
+The fire-and-forget geometry pass (step 3) allows GPU overlap: Vulkan geometry runs
+concurrently with `renderer_->beginFrame()` and Filament's scene draw. In most frames the
+geometry fence is already signaled before `WaitForGeometryPass()` is called. The two
+mandatory CPU stalls (`flushAndWait`) cannot be eliminated without Filament modifications.
 
 **Apple (Metal)** — Filament’s depth attachment is not guaranteed sampleable until after Filament
 submits its command buffer. GS **composite runs after** `renderer_->endFrame()` (still on the
@@ -241,17 +253,19 @@ created before `Engine::create()`, zero-copy sharing cannot be established retro
 
 ```
 GaussianSplatRenderer::Backend (abstract)
-├── GaussianSplatOpenGLBackend      — Linux + Windows (GL 4.6 core compute, SPIR-V)
+├── GaussianSplatVulkanBackend      — Linux + Windows (Vulkan compute; shares textures
+│                                    with Filament OpenGL via GL_EXT_memory_object)
 ├── GaussianSplatMetalBackend       — macOS (Metal compute, operational)
 └── GaussianSplatPlaceholderBackend — fallback (logs once per view, returns false)
 ```
 
 Each backend implements `RenderGeometryStage` (passes 1-4) and `RenderCompositeStage`
-(pass 5; returns `bool` success). The split enables GPU overlap: Stage A dispatches compute
-work without `glFinish()`, allowing Filament rasterization to execute concurrently. On **non-Apple**
-backends, Stage B runs in `Draw` after `engine_.flushAndWait()` so scene depth is ready. On
-**Metal**, Stage B runs after `endFrame()` so Filament’s depth is submitted first; the interactive
-GUI then uses `SetOnAppleGaussianCompositeComplete` → `PostRedraw()` to present updated splats.
+(pass 5; returns `bool` success). The split enables GPU overlap: Stage A submits Vulkan
+work fire-and-forget (no CPU wait), allowing Filament rasterization to execute concurrently.
+On **non-Apple**, Stage B runs in `Draw` after `engine_.flushAndWait()` (depth ready) and
+`WaitForGeometryPass()` (geometry fence drain). On **Metal**, Stage B runs after `endFrame()`
+so Filament's depth is submitted first; the interactive GUI then uses
+`SetOnAppleGaussianCompositeComplete` → `PostRedraw()` to present updated splats.
 
 ---
 
@@ -307,27 +321,27 @@ requires no dispatch logic updates.
 - `FilamentEngine.cpp`: OpenGL is the default for both Linux and Windows.
 - macOS uses the default Filament backend (Metal).
 
-### PHASE 2: OpenGL Compute Backend (DONE)
+### PHASE 2: GL Shared Context + Texture Interop (DONE)
 - **GL context** (`GaussianSplatOpenGLContext`): Standalone GL 4.6 core-profile context created before Filament,
   passed as `sharedGLContext` to `Engine::create()`. Shares GL namespace with Filament's context.
   Created via GLFW: GLX on Linux X11/XWayland, WGL on Windows. Linux offscreen rendering requires
   an X11 or XWayland server.
-- **Pipeline API** (`GaussianSplatOpenGLPipeline`): Thin wrappers around GL 4.6 core compute:
-  SSBO/UBO bind, image/sampler bind, buffer management, texture management, dispatch, barriers.
+- **Pipeline API** (`GaussianSplatOpenGLPipeline`): Thin wrappers around GL interop and helper-context
+  operations: `GL_EXT_memory_object` image import, `glCreateMemoryObjectsEXT`, `glTexStorageMem2DEXT`,
+  texture creation, SSBO/UBO bind, buffer management, dispatch, barriers.
   All GL constants as `constexpr` to avoid GL header dependency in consumers.
-- **SPIR-V loading**: 9 shaders compiled offline from GLSL `.comp` to Vulkan-targeted SPIR-V
-  (`.spv`); loaded via `glShaderBinary(GL_SHADER_BINARY_FORMAT_SPIR_V)` + `glSpecializeShader()`.
-  OpenGL SPIR-V target (`-G`) fails for subgroup ops; Vulkan target works via `GL_ARB_gl_spirv`.
-- **Radix sort**: 4-pass 8-bit LSD radix sort. Runtime-queries `gl_SubgroupSize`. Sort key:
+- **SPIR-V shaders**: 9 shaders compiled offline from GLSL `.comp` to Vulkan-targeted SPIR-V
+  (`.spv`). Loaded by `ComputeGPUVulkan` via `vkCreateShaderModule`.
+- **Radix sort**: 4-pass 8-bit LSD radix sort. Sort key:
   `(tile_index << D) | ((depth_key << 1) >> T)` where T = `limits.w` = ceil(log2(tile_count))
   (dynamic split, sign-bit stripped from depth). `depth_key = floatBitsToUint(norm_depth)`
   where `norm_depth` is normalized linear depth (near=0, far=1), giving uniform sort precision
-  across the full depth range. Keygen reads `view_params` at binding 0.
-- **Two-stage execution**: `RenderGeometryStage` (passes 1-4) defers `glFinish()` to enable
-  overlap. `RenderCompositeStage` (pass 5) runs after `flushAndWait()`.
-- **Zero-copy output**: `PrepareOutputTargets` delegates native texture creation/import to the
-  active backend. OpenGL creates shared GL textures (`DEPTH_COMPONENT32F` + `RGBA16F`), while
-  Metal imports `MTLTexture` objects. No CPU staging.
+  across the full depth range.
+- **Two-stage execution**: `RenderGeometryStage` (passes 1-4) submits fire-and-forget, enabling
+  GPU overlap. `RenderCompositeStage` (pass 5) waits on the geometry fence then runs.
+- **Zero-copy output**: `PrepareOutputTargets` allocates VkImage with exportable memory, imports
+  into GL via `GL_EXT_memory_object`, and into Filament as a shared GL texture. Metal imports
+  `MTLTexture` objects. No CPU staging.
 - **Depth-aware compositing**: Composite shader reads scene depth at binding 14, converts
   Filament's reversed-Z depth to normalized linear once per pixel, discards splats at or
   behind mesh geometry per-pixel (`s_depth[i] >= scene_linear_01`). Output depth is converted
@@ -365,9 +379,18 @@ requires no dispatch logic updates.
 - Example (`GaussianSplat.cpp`): red sphere placed at scene bbox center for depth compositing
   testing.
 
-### PHASE 5: Vulkan Code Removal (DONE)
-- `GaussianSplatVulkanPipeline.h/.cpp` deleted.
-- `GaussianSplatVulkanBackend` class removed from `GaussianSplatRenderer.cpp`.
+### PHASE 5: Vulkan Compute Backend (DONE)
+- `GaussianSplatVulkanInteropContext.h/.cpp`: headless Vulkan instance + logical device for
+  compute; GL-Vulkan interop via `GL_EXT_memory_object` (exports `VkImage` FDs, imports into
+  GL using `glCreateMemoryObjectsEXT` + `glTexStorageMem2DEXT`). Requires Vulkan physical
+  device with `VK_KHR_external_memory_fd` (Linux) or `VK_KHR_external_memory_win32` (Windows).
+- `GaussianSplatVulkanBackend.h/.cpp`: `GaussianSplatRenderer::Backend` implementation for
+  Vulkan; calls `GaussianSplatVulkanInteropContext` to allocate shared textures, registers
+  them with `ComputeGPUVulkan`, and drives `RunGaussianGeometryPasses` / `RunGaussianCompositePass`.
+- `ComputeGPUVulkan.h/.cpp`: `GaussianSplatGpuContext` for Vulkan; manages pipelines, SSBOs,
+  command buffer lifecycle, and fence-based synchronization. Geometry pass is fire-and-forget
+  (`EndGeometryPass` calls `SubmitOnly`; `WaitForGeometryPass` drains the fence before composite).
+- Shader SPIR-V compiled from the same GLSL `.comp` sources used by Metal.
 
 ### Bug Fixes (DONE)
 - **Tile index overflow** (`gaussian_radix_sort_keygen.comp`): key was `tile_index << 20`
@@ -411,6 +434,7 @@ requires no dispatch logic updates.
 | Opt18 | Merged LowerBound | In `gaussian_composite.comp`, the second `LowerBound` call (finding `tile_end`) starts from `tile_start` instead of 0. Reduces binary search iterations from `2 × log₂(N)` to `log₂(N) + log₂(tile_entries)` — typically 23 → ~13 iterations for 5.5M entries. |
 | Opt19 | Vectorized shader math | `QuaternionToRotation()` uses `vec3` sub-expressions for diagonal/off-diagonal terms (~40% fewer scalar instructions). `EvaluateShDegree1/2` gather one `vec3` per SH basis function, enabling GPU to evaluate all RGB channels of one basis simultaneously instead of per-channel scalar ops. |
 | Opt20 | CPU-side sigmoid | Sigmoid opacity (`1/(1+exp(-x))`) computed once during CPU buffer packing (`GaussianSplatDataPacking.cpp`) instead of per-frame in the projection shader. Eliminates a transcendental `exp()` per splat per frame. |
+| Opt21 | Fire-and-forget geometry pass | `EndGeometryPass()` submits Vulkan geometry + sort command buffer and signals a fence without waiting. Vulkan geometry overlaps with `renderer_->beginFrame()` and Filament's scene draw. `WaitForGeometryPass()` at the start of composite checks the fence (typically already signaled), eliminating CPU stall #2 from the old 4-stall schedule. Net: 4 CPU stalls reduced to 2. |
 
 ### GPU Object Labeling
 
@@ -706,41 +730,41 @@ sharing support.
 forced in `GLFWWindowSystem::Initialize()` so GLFW and Filament both use GLX on all Linux
 sessions, providing full GS functionality under any Wayland compositor with XWayland enabled.
 
-### FW3: Windows / WGL — SPIR-V Shader Loading Error
+### FW3: Windows / WGL — Subgroup Support
 
-**Status**: Implementation complete; blocked on a SPIR-V shader loading error at runtime.
+**Status**: Resolved. Vulkan compute is used on all Linux/Windows platforms. Vulkan has
+full subgroup support on all major vendors (NVIDIA, AMD, Intel). The OpenGL compute path
+that had the SPIR-V/subgroup issue on Windows GL drivers has been removed.
 
-`GaussianSplatOpenGLContext` creates a shared GL 4.6 core-profile WGL context before Filament via
-`InitializeStandalone()` (hidden 1×1 GLFW helper window).
-Context sharing and zero-copy texture import use the same mechanism as GLX. However,
-`gaussian_composite.comp` (and possibly other shaders) fail to load on Windows OpenGL
-drivers with a SPIR-V specialization error.
+### FW4: Filament Vulkan Backend — Not Applicable
 
-**Likely cause**: The shaders are compiled with a Vulkan SPIR-V target and use subgroup
-extensions (`GL_KHR_shader_subgroup`, `gl_SubgroupSize`). Some Windows drivers require
-explicit extension enables in the SPIR-V binary or do not expose these extensions via
-`GL_ARB_gl_spirv`.
+**Status**: Not applicable. Filament uses an **OpenGL** backend on Linux/Windows (the only
+zero-copy texture-sharing path). GS compute uses a separate Vulkan compute queue.
 
-**Required fix**: Reproduce and triage on Windows 10/11 with Intel/NVIDIA/AMD.
-Options: add explicit extension-enable decorations to the SPIR-V; provide a GLSL source
-fallback path on Windows; or rewrite the affected passes to avoid subgroup ops.
+**Why GL semaphores cannot synchronize with Filament's GL context**:
+Filament runs its OpenGL backend on a dedicated driver thread (`FEngine::loop`). GL commands
+are batched into a `CommandBufferQueue` and executed asynchronously. We cannot inject
+`glSignalSemaphoreEXT` or `glWaitSemaphoreEXT` into Filament's command stream without
+modifying Filament internals.
 
-**Files affected**: `GaussianSplatGpuContextGL.cpp`, `shaders/gaussian_composite.comp`
-(and possibly other shaders), `GaussianSplatOpenGLContext.h/.cpp`
+Our GLFW helper context shares the GL object namespace with Filament's context (textures,
+memory objects, and semaphore objects are visible in both), but command streams are
+independent. A `glSignalSemaphoreEXT` issued on our helper context signals when **our** GL
+work finishes, not when Filament's driver thread has finished rendering.
 
-### FW4: Native Vulkan Backend — Unplanned
+**What `engine_.flush()` / `engine_.flushAndWait()` actually do**:
+- `engine_.flush()`: pushes the command buffer to Filament's driver thread queue, non-blocking.
+  GL commands may not have executed yet.
+- `engine_.flushAndWait()`: enqueues `glFinish()` on the driver thread, then creates a Filament
+  `Fence` (backed by `glFenceSync` + `glClientWaitSync`) and blocks the calling CPU thread until
+  it signals. Full CPU+GPU stall. This is the mechanism used to synchronize GS compute with
+  Filament's depth output.
 
-**Status**: Unplanned. Filament does not support Vulkan zero-copy texture sharing.
-
-The depth-aware composite requires GS compute and Filament to share depth and color textures
-without CPU copies. Filament's Vulkan backend does not expose an API to import
-externally-allocated `VkImage` / `VkDeviceMemory` objects into the renderer's image layout
-tracking, making zero-copy depth import infeasible without significant changes to Filament
-internals.
-
-OpenGL (Linux/Windows via GLX/WGL) and Metal (macOS) both provide cross-context zero-copy
-texture sharing — GL object namespace sharing and `MTLTexture` bridging respectively —
-which is why those are the chosen backends.
+**Consequence**: The Filament Vulkan backend (`kVulkan`) falls through to the same
+`GaussianSplatVulkanBackend` as `kOpenGL`/`kDefault`; the check is
+`GaussianSplatVulkanInteropContext::GetInstance().IsValid()`, which requires GL interop.
+A Filament Vulkan backend without a shared GL context would have no zero-copy path and is
+not supported.
 
 ---
 
@@ -776,26 +800,31 @@ Filament integration files.
   also contains `GaussianGpuBufferSizes` / `ComputeGaussianGpuBufferSizes` and
   `kGaussianRadixParamsStride` (formerly split into `GaussianSplatBuffers` and
   `GaussianSplatUtils`, now consolidated here)
-- `GaussianSplatOpenGLPipeline.h/.cpp` — GL 4.6 compute API wrappers
+- `GaussianSplatOpenGLPipeline.h/.cpp` — GL 4.6 API wrappers (memory-object import,
+  texture creation, buffer ops for the helper context)
 - `ComputeGPU.h` — All generic GPU compute types in one header:
   `ComputeProgramId` enum (includes `kGsDepthMerge`), `ImageFormat` (includes `kR16UI`),
-  `GaussianSplatGpuContext` abstract base,
+  `GaussianSplatGpuContext` abstract base (includes `WaitForGeometryPass()` virtual),
   `GpuComputeFrame` RAII (Begin/EndGeometryPass or Begin/EndCompositePass),
   `GpuComputePass` RAII builder (UseProgram + PushDebugGroup on ctor, Dispatch/DispatchIndirect,
   PopDebugGroup on dtor, no-op on load failure). Factory declarations included.
-- `ComputeGPUGL.cpp` — OpenGL 4.6 + SPIR-V implementation of `GaussianSplatGpuContext`
+- `ComputeGPUVulkan.h/.cpp` — Vulkan implementation of `GaussianSplatGpuContext`: pipeline
+  management, SSBO/UBO binding, command buffer lifecycle, fire-and-forget geometry submit,
+  fence-based `WaitForGeometryPass()`.
+- `GaussianSplatVulkanInteropContext.h/.cpp` — Headless Vulkan instance + device for compute;
+  allocates exportable `VkImage` memory and imports it into GL via `GL_EXT_memory_object`.
+- `GaussianSplatVulkanBackend.h/.cpp` — Vulkan `GaussianSplatRenderer::Backend` for Linux/Windows.
 - `ComputeGPUMetal.mm` — Metal implementation: buffer management, pipeline selection,
   `Dispatch()`, `DispatchIndirect()`, barrier, texture ops
 - `GaussianSplatMetalBackend.mm` — Metal backend: acquires Filament `MTLDevice`/queue,
   runs geometry + composite stages; MTLTexture creation and import helpers are inlined
   here (formerly in the deleted `GaussianSplatOutputTargetsApple` files)
 - `GaussianSplatPassRunner.h/.cpp` — Backend-agnostic geometry + composite pass sequence
-  (shared by GL and Metal); launch grid sizes computed inline from `RenderConfig` + frame data
-  (no `PassDispatch` / `PassType` indirection); optional depth-merge pass; `GpuComputeFrame`
+  (shared by Vulkan and Metal); calls `ctx.WaitForGeometryPass()` at start of composite;
+  launch grid sizes computed inline from `RenderConfig` + frame data; `GpuComputeFrame`
   ensures Begin/End pairs are always matched
 - `GaussianSplatOpenGLContext.h/.cpp` — GLFW-owned GL 4.6 shared-context creation;
   GLX on Linux X11/XWayland, WGL on Windows
-- `GaussianSplatOpenGLBackend.h/.cpp` — GL compute backend implementation
 - `shaders/` — Compute shader sources (`.comp`), built to `resources/gaussian_splat/`
 
 ### Filament integration files (under `cpp/open3d/visualization/rendering/filament/`)
@@ -876,6 +905,9 @@ The output directory is `resources/gaussian_splat/` (runtime loader path).
 | Vulkan SPIR-V in OpenGL | Works with subgroup ops where OpenGL SPIR-V target fails |
 | Binding 14 reuse | Safe because radix UBO and scene depth sampler are used in disjoint stages |
 | Dynamic sort key split (T/D) | Adapts tile/depth bit allocation to actual tile count; sign-bit stripping recovers one free depth bit; 1080p gets 19 depth bits vs 16 previously |
+| Vulkan compute instead of GL compute | GL compute shaders have limited/no subgroup support on Intel hardware. Vulkan compute provides full `VK_KHR_shader_subgroup` on all major vendors, enabling subgroup-optimized sort and projection shaders. |
+| Fire-and-forget geometry pass | `EndGeometryPass()` submits the Vulkan command buffer and signals a fence without waiting. This allows Vulkan geometry work to overlap with Filament's `beginFrame()` and scene draw on the GPU. `WaitForGeometryPass()` drains the fence before composite — usually a no-op because geometry finishes during Filament's draw. |
+| GL semaphores not used for Filament sync | `GL_EXT_semaphore` objects are shared across GL contexts, but commands to signal/wait them must be issued on a specific context's stream. We cannot inject `glSignalSemaphoreEXT` into Filament's driver thread without modifying Filament internals. CPU fence waits (`engine_.flushAndWait()`) are the only viable synchronization mechanism. |
 | Normalized linear depth for sort keys | `center_depth_alpha.z` stores `(d-near)/(far-near)` instead of inverse depth. Uniform Δd per sort-key interval across full depth range vs previous 1/d² crowding near camera. `floatBitsToUint` provides a free log-density tilt toward near field. Inverse depth is derived inline in composite only for occlusion test and depth output. |
 | Pre-destroy invalidation on resize | Prevents Filament handle use-after-free during maximize/resize |
 

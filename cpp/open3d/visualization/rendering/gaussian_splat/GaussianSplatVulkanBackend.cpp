@@ -128,17 +128,6 @@ public:
                     targets.depth_vk_memory = reinterpret_cast<std::uintptr_t>(
                             depth_img.vk_memory);
                     targets.depth_gl_mem_obj = depth_img.gl_memory_object;
-                    SharedSemaphoreDesc s_gl_to_vk, s_vk_to_gl;
-                    if (vk_ctx.CreateSemaphorePair(s_gl_to_vk, s_vk_to_gl)) {
-                        targets.vk_sem_gl_to_vk =
-                                reinterpret_cast<std::uintptr_t>(
-                                        s_gl_to_vk.vk_semaphore);
-                        targets.gl_sem_gl_to_vk = s_gl_to_vk.gl_semaphore;
-                        targets.vk_sem_vk_to_gl =
-                                reinterpret_cast<std::uintptr_t>(
-                                        s_vk_to_gl.vk_semaphore);
-                        targets.gl_sem_vk_to_gl = s_vk_to_gl.gl_semaphore;
-                    }
                     targets.uses_vulkan_interop = true;
 
                     // Register shared images in the Vulkan compute context
@@ -237,24 +226,6 @@ public:
 
         if (targets.uses_vulkan_interop) {
             auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
-            if (targets.vk_sem_gl_to_vk != 0 || targets.gl_sem_gl_to_vk != 0) {
-                SharedSemaphoreDesc s;
-                s.vk_semaphore =
-                        reinterpret_cast<VkSemaphore>(targets.vk_sem_gl_to_vk);
-                s.gl_semaphore = targets.gl_sem_gl_to_vk;
-                vk_ctx.DestroySemaphore(s);
-                targets.vk_sem_gl_to_vk = 0;
-                targets.gl_sem_gl_to_vk = 0;
-            }
-            if (targets.vk_sem_vk_to_gl != 0 || targets.gl_sem_vk_to_gl != 0) {
-                SharedSemaphoreDesc s;
-                s.vk_semaphore =
-                        reinterpret_cast<VkSemaphore>(targets.vk_sem_vk_to_gl);
-                s.gl_semaphore = targets.gl_sem_vk_to_gl;
-                vk_ctx.DestroySemaphore(s);
-                targets.vk_sem_vk_to_gl = 0;
-                targets.gl_sem_vk_to_gl = 0;
-            }
             if (targets.color_gl_handle != 0) {
                 SharedImageDesc d;
                 d.vk_image = reinterpret_cast<VkImage>(targets.color_vk_image);

@@ -17,6 +17,7 @@
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #if !defined(__APPLE__)
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanBackend.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
 #endif
 
 namespace open3d {
@@ -135,16 +136,22 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 
     switch (backend) {
         case RenderingType::kMetal:
-            return true;
-        case RenderingType::kOpenGL:
-#if !defined(__APPLE__)
+#if defined(__APPLE__)
             return true;
 #else
             return false;
 #endif
+        case RenderingType::kOpenGL:
+            // On Linux/Windows, Filament uses OpenGL but 3DGS compute runs on
+            // Vulkan (GL compute has limited subgroup support on Intel hardware).
+            // Fall through to check Vulkan availability.
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
+#if !defined(__APPLE__)
+            return GaussianSplatVulkanInteropContext::GetInstance().IsValid();
+#else
             return false;
+#endif
     }
     return false;
 }

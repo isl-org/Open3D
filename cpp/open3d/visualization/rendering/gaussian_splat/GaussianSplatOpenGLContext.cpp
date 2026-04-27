@@ -121,7 +121,7 @@ bool GaussianSplatOpenGLContext::InitializeStandalone() {
     initialized_ = true;
 
     // After glewInit(), probe GL interop extensions for the Vulkan interop
-    // context (EXT_memory_object_fd, EXT_semaphore_fd, etc.).
+    // context (EXT_memory_object_fd, etc.).
     // This must happen while the GL context is current.
     auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
     if (vk_ctx.IsValid() && !vk_ctx.AreGLExtensionsReady()) {
@@ -219,8 +219,6 @@ bool GaussianSplatOpenGLContext::MakeCurrent() {
 void GaussianSplatOpenGLContext::ReleaseCurrent() {
     glfwMakeContextCurrent(nullptr);
 }
-
-void GaussianSplatOpenGLContext::Finish() { glFinish(); }
 
 }  // namespace rendering
 }  // namespace visualization

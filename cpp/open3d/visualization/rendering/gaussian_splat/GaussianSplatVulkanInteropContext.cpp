@@ -7,13 +7,10 @@
 //
 // Vulkan-OpenGL interop context implementation (Linux and Windows).
 //
-// Sequence of calls for one shared colour image (depth is symmetric):
+// Sequence of calls for one shared image (colour or depth):
 //   1. AllocateExportableImage() → VkImage + VkDeviceMemory + FD
 //   2. ImportFDIntoGL()          → gl_memory_object + gl_texture
 //   3. (caller) CreateImportedTexture(gl_texture, ...) into Filament
-// Semaphore pair (one GL→VK, one VK→GL per view):
-//   1. CreateExportableSemaphore() × 2 → VkSemaphore + FD each
-//   2. ImportFDIntoGLSemaphore()   × 2 → gl_semaphore each
 
 #if defined(_WIN32)
 // Ensure Vulkan Win32 platform symbols and Win32 types (HANDLE) are
@@ -42,7 +39,6 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #include <GL/glew.h>
 
-#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
@@ -81,13 +77,11 @@ namespace {
 #if defined(_WIN32)
 constexpr const char* kRequiredDeviceExtensions[] = {
         VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
-        VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
         VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 };
 #else
 constexpr const char* kRequiredDeviceExtensions[] = {
         VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
-        VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
         VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 };
 #endif
@@ -253,13 +247,10 @@ bool GaussianSplatVulkanInteropContext::ProbeGLExtensions() {
         bool present;
     } entries[] = {
             {"GL_EXT_memory_object", GLEW_EXT_memory_object != 0},
-            {"GL_EXT_semaphore", GLEW_EXT_semaphore != 0},
 #if defined(_WIN32)
             {"GL_EXT_memory_object_win32", GLEW_EXT_memory_object_win32 != 0},
-            {"GL_EXT_semaphore_win32", GLEW_EXT_semaphore_win32 != 0},
 #else
             {"GL_EXT_memory_object_fd", GLEW_EXT_memory_object_fd != 0},
-            {"GL_EXT_semaphore_fd", GLEW_EXT_semaphore_fd != 0},
 #endif
     };
 
@@ -345,8 +336,7 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
         last_error_ =
                 "No suitable Vulkan device found with required interop "
                 "extensions. Required "
-                "extensions: " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME
-                ", " VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+                "extensions: " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }
@@ -806,150 +796,6 @@ void GaussianSplatVulkanInteropContext::DestroySharedImage(
         desc.vk_memory = VK_NULL_HANDLE;
     }
     desc = SharedImageDesc{};
-}
-
-// ---------------------------------------------------------------------------
-// Semaphore lifecycle
-// ---------------------------------------------------------------------------
-
-bool GaussianSplatVulkanInteropContext::CreateExportableSemaphore(
-        VkSemaphore& out_semaphore, int& out_fd) const {
-#if defined(_WIN32)
-    constexpr vk::ExternalSemaphoreHandleTypeFlagBits kSemHandleType =
-            vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32;
-#else
-    constexpr vk::ExternalSemaphoreHandleTypeFlagBits kSemHandleType =
-            vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd;
-#endif
-
-    // Chain export info into the semaphore create info.
-    vk::StructureChain<vk::SemaphoreCreateInfo, vk::ExportSemaphoreCreateInfo>
-            chain{{}, {kSemHandleType}};
-
-    // Use the non-RAII vk::Device wrapper: semaphore lifetime is managed
-    // manually here (exported to GL via FD, raw VkSemaphore in
-    // SharedSemaphoreDesc).
-    const vk::Device sdev(*device_);
-
-    vk::Semaphore semaphore;
-    try {
-        semaphore = sdev.createSemaphore(chain.get<vk::SemaphoreCreateInfo>());
-    } catch (const vk::SystemError& e) {
-        utility::LogWarning(
-                "GaussianSplat Vulkan: vkCreateSemaphore failed: {}", e.what());
-        return false;
-    }
-
-#if defined(_WIN32)
-    HANDLE win32_handle = nullptr;
-    try {
-        win32_handle = sdev.getSemaphoreWin32HandleKHR(
-                {semaphore,
-                 vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32});
-    } catch (const vk::SystemError& e) {
-        utility::LogWarning(
-                "GaussianSplat Vulkan: vkGetSemaphoreWin32HandleKHR failed: {}",
-                e.what());
-        sdev.destroySemaphore(semaphore);
-        return false;
-    }
-    out_fd = static_cast<int>(reinterpret_cast<intptr_t>(win32_handle));
-#else
-    try {
-        out_fd = sdev.getSemaphoreFdKHR(
-                {semaphore,
-                 vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd});
-    } catch (const vk::SystemError& e) {
-        utility::LogWarning(
-                "GaussianSplat Vulkan: vkGetSemaphoreFdKHR failed: {}",
-                e.what());
-        sdev.destroySemaphore(semaphore);
-        return false;
-    }
-#endif
-    out_semaphore = static_cast<VkSemaphore>(semaphore);
-    return true;
-}
-
-bool GaussianSplatVulkanInteropContext::ImportFDIntoGLSemaphore(
-        int fd, std::uint32_t& out_gl_semaphore) const {
-    glGenSemaphoresEXT(1, &out_gl_semaphore);
-    if (out_gl_semaphore == 0) {
-        utility::LogWarning("GaussianSplat GL: glGenSemaphoresEXT returned 0");
-        return false;
-    }
-#if defined(_WIN32)
-    const HANDLE win32_handle =
-            reinterpret_cast<HANDLE>(static_cast<intptr_t>(fd));
-    glImportSemaphoreWin32HandleEXT(
-            out_gl_semaphore, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, win32_handle);
-    // IMPORTANT: On Windows, vkGetSemaphoreWin32HandleKHR() returns a new
-    // HANDLE that we own. glImportSemaphoreWin32HandleEXT() makes a copy
-    // internally. We must close the returned HANDLE to avoid kernel handle
-    // resource leaks.
-    CloseHandle(win32_handle);
-#else
-    glImportSemaphoreFdEXT(out_gl_semaphore, GL_HANDLE_TYPE_OPAQUE_FD_EXT, fd);
-    // FD ownership transferred to GL.
-#endif
-    const GLenum err = glGetError();
-    if (err != GL_NO_ERROR) {
-        utility::LogWarning("GaussianSplat GL: semaphore import error 0x{:x}",
-                            static_cast<unsigned>(err));
-        glDeleteSemaphoresEXT(1, &out_gl_semaphore);
-        out_gl_semaphore = 0;
-        return false;
-    }
-    return true;
-}
-
-bool GaussianSplatVulkanInteropContext::CreateSemaphorePair(
-        SharedSemaphoreDesc& out_gl_to_vk, SharedSemaphoreDesc& out_vk_to_gl) {
-    if (!initialized_ || !gl_extensions_ok_) return false;
-
-    // GL→VK semaphore: GL signals, Vulkan waits.
-    int fd0 = -1;
-    if (!CreateExportableSemaphore(out_gl_to_vk.vk_semaphore, fd0)) {
-        return false;
-    }
-    if (!ImportFDIntoGLSemaphore(fd0, out_gl_to_vk.gl_semaphore)) {
-        vk::Device(*device_).destroySemaphore(
-                static_cast<vk::Semaphore>(out_gl_to_vk.vk_semaphore));
-        out_gl_to_vk.vk_semaphore = VK_NULL_HANDLE;
-        return false;
-    }
-    out_gl_to_vk.direction = SemaphoreDirection::kGLtoVK;
-
-    // VK→GL semaphore: Vulkan signals, GL waits.
-    int fd1 = -1;
-    if (!CreateExportableSemaphore(out_vk_to_gl.vk_semaphore, fd1)) {
-        DestroySemaphore(out_gl_to_vk);
-        return false;
-    }
-    if (!ImportFDIntoGLSemaphore(fd1, out_vk_to_gl.gl_semaphore)) {
-        vk::Device(*device_).destroySemaphore(
-                static_cast<vk::Semaphore>(out_vk_to_gl.vk_semaphore));
-        out_vk_to_gl.vk_semaphore = VK_NULL_HANDLE;
-        DestroySemaphore(out_gl_to_vk);
-        return false;
-    }
-    out_vk_to_gl.direction = SemaphoreDirection::kVKtoGL;
-    return true;
-}
-
-void GaussianSplatVulkanInteropContext::DestroySemaphore(
-        SharedSemaphoreDesc& desc) {
-    if (!desc.IsValid()) return;
-    if (desc.gl_semaphore != 0) {
-        glDeleteSemaphoresEXT(1, &desc.gl_semaphore);
-        desc.gl_semaphore = 0;
-    }
-    if (desc.vk_semaphore != VK_NULL_HANDLE) {
-        vk::Device(*device_).destroySemaphore(
-                static_cast<vk::Semaphore>(desc.vk_semaphore));
-        desc.vk_semaphore = VK_NULL_HANDLE;
-    }
-    desc = SharedSemaphoreDesc{};
 }
 
 }  // namespace rendering

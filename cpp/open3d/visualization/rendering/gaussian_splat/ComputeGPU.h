@@ -260,11 +260,17 @@ public:
     virtual bool WasLastSubmitSuccessful() const { return true; }
 
     /// Metal: wraps each stage in a MTLCommandBuffer + encoder pair.
-    /// OpenGL: no-ops (compute is issued inline on the current context).
+    /// Vulkan: manages command buffer lifetime and fence signalling.
     virtual void BeginGeometryPass() {}
     virtual void EndGeometryPass() {}
     virtual void BeginCompositePass() {}
     virtual void EndCompositePass() {}
+
+    /// Ensure geometry pass GPU work has finished before composite begins.
+    /// Vulkan: CPU-waits on the geometry fence if still pending (fire-and-forget
+    /// geometry overlaps Filament rendering; this drains it only if needed).
+    /// Metal/other: no-op — those backends already wait synchronously.
+    virtual void WaitForGeometryPass() {}
 
     /// KHR_debug / Metal debug-group markers around each dispatch.
     /// Default implementations are no-ops.
