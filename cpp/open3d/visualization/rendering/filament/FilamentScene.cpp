@@ -478,10 +478,12 @@ void FilamentScene::CacheGaussianSplatData(const std::string& name,
 }
 
 void FilamentScene::RebuildMergedGaussianData() {
-    // Concatenate all per-object packed attrs into one merged buffer.
-    // The merged buffer is what the GPU pipeline consumes.  Each geometry
-    // record stores its splat range (start, count) into this buffer.
-    auto merged = std::make_unique<GaussianSplatPackedAttrs>();
+    // Gather per-object packed buffers, preserving merge order so geometry
+    // records can map to stable [start, count) ranges after merge.
+    std::vector<GaussianSplatMergeItem> merge_items;
+    std::vector<RenderableGeometry*> merge_geoms;
+    merge_items.reserve(geometries_.size());
+    merge_geoms.reserve(geometries_.size());
 
     // Aggregate RenderConfig: elementwise max across all objects' materials.
     std::uint32_t max_tiles_per_splat = 32u;
@@ -490,38 +492,8 @@ void FilamentScene::RebuildMergedGaussianData() {
     for (auto& [obj_name, geom] : geometries_) {
         auto it = per_object_gs_attrs_.find(obj_name);
         if (it == per_object_gs_attrs_.end()) continue;
-
-        const auto& src = it->second;
-        const std::uint32_t splat_start =
-                static_cast<std::uint32_t>(merged->positions.size());
-        const std::uint32_t splat_count = src.splat_count;
-
-        geom.gs_splat_start = splat_start;
-        geom.gs_splat_count = splat_count;
-
-        // Append positions, scales, rotations, dc_opacity.
-        merged->positions.insert(merged->positions.end(), src.positions.begin(),
-                                 src.positions.end());
-        merged->scales.insert(merged->scales.end(), src.scales.begin(),
-                              src.scales.end());
-        merged->rotations.insert(merged->rotations.end(), src.rotations.begin(),
-                                 src.rotations.end());
-        merged->dc_opacity.insert(merged->dc_opacity.end(),
-                                  src.dc_opacity.begin(), src.dc_opacity.end());
-        merged->sh_coefficients.insert(merged->sh_coefficients.end(),
-                                       src.sh_coefficients.begin(),
-                                       src.sh_coefficients.end());
-
-        // Bit-packed visibility mask: all-ones = visible, all-zeros = culled.
-        // ceil(splat_count / 32) words appended per object.
-        const std::uint32_t mask_val = geom.visible ? ~0u : 0u;
-        const std::uint32_t n_words = (splat_count + 31u) / 32u;
-        merged->visibility_mask.insert(merged->visibility_mask.end(), n_words,
-                                       mask_val);
-
-        merged->splat_count += splat_count;
-        merged->sh_degree = std::max(merged->sh_degree, src.sh_degree);
-        merged->antialias = merged->antialias || src.antialias;
+        merge_items.push_back({&it->second, geom.visible});
+        merge_geoms.push_back(&geom);
 
         // Propagate per-material capacity overrides (take max).
         const auto& mat = geom.mat.properties;
@@ -530,6 +502,17 @@ void FilamentScene::RebuildMergedGaussianData() {
         max_tile_entries_total =
                 std::max(max_tile_entries_total,
                          mat.gaussian_splat_max_tile_entries_total);
+    }
+
+    auto merged = std::make_unique<GaussianSplatPackedAttrs>();
+    std::vector<std::uint32_t> splat_starts;
+    MergeGaussianSplatPackedAttrs(merge_items, merged.get(), &splat_starts);
+
+    for (std::size_t i = 0; i < merge_geoms.size(); ++i) {
+        merge_geoms[i]->gs_splat_start = splat_starts[i];
+        merge_geoms[i]->gs_splat_count = merge_items[i].attrs
+                                                 ? merge_items[i].attrs->splat_count
+                                                 : 0u;
     }
 
     merged_gs_attrs_ = std::move(merged);

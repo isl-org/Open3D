@@ -137,6 +137,13 @@ struct GaussianSplatPackedAttrs {
     bool antialias = false;
 };
 
+/// One packed Gaussian-splat source to be merged into a scene-level packed
+/// buffer.
+struct GaussianSplatMergeItem {
+    const GaussianSplatPackedAttrs* attrs = nullptr;
+    bool visible = true;
+};
+
 /// Per-frame packed view-parameters for GPU upload.
 /// Contains only the small per-frame data (UBO + scalar counters).  The large
 /// per-splat attribute arrays live in GaussianSplatPackedAttrs (scene
@@ -220,6 +227,19 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
                                   float min_opacity_logit,
                                   bool antialias,
                                   GaussianSplatPackedAttrs& out);
+
+/// Merge multiple per-object packed Gaussian-splat buffers into one scene-level
+/// packed buffer. The output uses a single SH stride (max source SH degree),
+/// with lower-order sources zero-padded per splat.
+/// @param items        Merge sources in output order.
+/// @param out          Output packed buffer (overwritten).
+/// @param splat_starts Optional output; receives per-item start index in merged
+///                     splat arrays. `splat_starts[i]` corresponds to
+///                     `items[i]`.
+void MergeGaussianSplatPackedAttrs(
+        const std::vector<GaussianSplatMergeItem>& items,
+        GaussianSplatPackedAttrs* out,
+        std::vector<std::uint32_t>* splat_starts = nullptr);
 
 }  // namespace rendering
 }  // namespace visualization

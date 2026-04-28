@@ -201,14 +201,14 @@ vec4 LoadShVec4(uint splat_index, uint local_vec4_index) {
 vec3 EvaluateShDegree1(vec3 dir, uint splat_index, vec4 buffer3) {
     vec4 b1 = LoadShVec4(splat_index, 0u);
     vec4 b2 = LoadShVec4(splat_index, 1u);
-    // Gather one vec3 per SH basis function (R,G,B coefficients for that
-    // basis). Packed order: (Y-1.r, Y0.r, Y+1.r, Y-1.g | Y0.g, Y+1.g, Y-1.b,
-    // Y0.b | Y+1.b)
-    vec3 yn1 = vec3(b1.x, b1.w, b2.z);       // m=-1, scaled by dir.y
-    vec3 y0 = vec3(b1.y, b2.x, b2.w);        // m= 0, scaled by dir.z
-    vec3 yp1 = vec3(b1.z, b2.y, buffer3.x);  // m=+1, scaled by dir.x
+    // f_rest is packed as basis-major RGB triples:
+    // (Y-1.r, Y-1.g, Y-1.b, Y0.r | Y0.g, Y0.b, Y+1.r, Y+1.g |
+    // Y+1.b)
+    vec3 yn1 = vec3(b1.x, b1.y, b1.z);       // m=-1, scaled by dir.y
+    vec3 y0 = vec3(b1.w, b2.x, b2.y);        // m= 0, scaled by dir.z
+    vec3 yp1 = vec3(b2.z, b2.w, buffer3.x);  // m=+1, scaled by dir.x
     const float c1 = 0.4886025119;
-    return c1 * (yn1 * dir.y + y0 * dir.z + yp1 * dir.x);
+    return c1 * (-yn1 * dir.y + y0 * dir.z - yp1 * dir.x);
 }
 
 vec3 EvaluateShDegree2(vec3 dir, uint splat_index, vec4 buffer3) {
@@ -216,20 +216,19 @@ vec3 EvaluateShDegree2(vec3 dir, uint splat_index, vec4 buffer3) {
     vec4 b5 = LoadShVec4(splat_index, 4u);
     vec4 b6 = LoadShVec4(splat_index, 5u);
 
-    const vec3 c012 = vec3(1.0925484306, 1.0925484306, 0.3153915653);
-    const vec2 c34 = vec2(1.0925484306, 0.5462742153);
+    const vec3 c012 = vec3(1.0925484306, -1.0925484306, 0.3153915653);
+    const vec2 c34 = vec2(-1.0925484306, 0.5462742153);
     float x = dir.x, y = dir.y, z = dir.z;
     vec3 basis0 = c012 * vec3(x * y, y * z, 3.0 * z * z - 1.0);
     vec2 basis1 = c34 * vec2(x * z, x * x - y * y);
 
-    // Gather one vec3 per SH basis function (R,G,B coefficients for that
-    // basis). Packed order: (Y-2.r,Y-1.r,Y0.r | Y+1.r,Y+2.r,Y-2.g,Y-1.g |
-    // Y0.g,Y+1.g,Y+2.g,Y-2.b | Y-1.b,Y0.b,Y+1.b,Y+2.b)
-    vec3 cm2 = vec3(buffer3.y, b4.z, b5.w);  // m=-2
-    vec3 cm1 = vec3(buffer3.z, b4.w, b6.x);  // m=-1
-    vec3 c0 = vec3(buffer3.w, b5.x, b6.y);   // m= 0
-    vec3 cp1 = vec3(b4.x, b5.y, b6.z);       // m=+1
-    vec3 cp2 = vec3(b4.y, b5.z, b6.w);       // m=+2
+    // Continue the same basis-major RGB order for degree 2:
+    // (Y-2.rgb, Y-1.rgb, Y0.rgb, Y+1.rgb, Y+2.rgb)
+    vec3 cm2 = vec3(buffer3.y, buffer3.z, buffer3.w);  // m=-2
+    vec3 cm1 = vec3(b4.x, b4.y, b4.z);                 // m=-1
+    vec3 c0 = vec3(b4.w, b5.x, b5.y);                  // m= 0
+    vec3 cp1 = vec3(b5.z, b5.w, b6.x);                 // m=+1
+    vec3 cp2 = vec3(b6.y, b6.z, b6.w);                 // m=+2
 
     return cm2 * basis0.x + cm1 * basis0.y + c0 * basis0.z + cp1 * basis1.x +
            cp2 * basis1.y;

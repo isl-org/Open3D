@@ -40,6 +40,59 @@ int GetGaussianSplatRestCoeffCount(int sh_degree) {
     return (((sh_degree + 1) * (sh_degree + 1)) - 1) * 3;
 }
 
+// fp16-pair storage stride in uint32 words for one splat's SH-rest payload.
+// Degree-0 has no f_rest payload.
+std::size_t GetShU32PerSplat(int sh_degree) {
+    return sh_degree > 0 ? std::size_t(3 * sh_degree * 2) : 0u;
+}
+
+void ReservePackedAttrArrays(GaussianSplatPackedAttrs* out,
+                             std::size_t splat_capacity,
+                             std::size_t sh_u32_per_splat) {
+    out->positions.reserve(splat_capacity);
+    out->scales.reserve(2 * splat_capacity);
+    out->rotations.reserve(splat_capacity);
+    out->dc_opacity.reserve(2 * splat_capacity);
+    if (sh_u32_per_splat > 0u) {
+        out->sh_coefficients.reserve(splat_capacity * sh_u32_per_splat);
+    }
+}
+
+std::size_t AppendZeroedShSlot(std::vector<std::uint32_t>* dst_sh,
+                               std::size_t sh_u32_per_splat) {
+    const std::size_t dst_base = dst_sh->size();
+    dst_sh->resize(dst_base + sh_u32_per_splat, 0u);
+    return dst_base;
+}
+
+void CopyShPrefixToSlot(std::vector<std::uint32_t>* dst_sh,
+                        std::size_t dst_base,
+                        std::size_t dst_sh_u32_per_splat,
+                        const std::uint32_t* src_u32,
+                        std::size_t src_u32_count) {
+    const std::size_t copy_count = std::min(dst_sh_u32_per_splat, src_u32_count);
+    if (copy_count == 0u) {
+        return;
+    }
+    std::copy_n(src_u32, copy_count, dst_sh->begin() + dst_base);
+}
+
+void SetVisibilityMaskRange(std::vector<std::uint32_t>* visibility_mask,
+                            std::uint32_t splat_start,
+                            std::uint32_t splat_count,
+                            bool visible) {
+    const std::uint32_t splat_end = splat_start + splat_count;
+    const std::uint32_t n_words = (splat_end + 31u) / 32u;
+    visibility_mask->resize(n_words, 0u);
+    if (!visible) {
+        return;
+    }
+
+    for (std::uint32_t k = splat_start; k < splat_end; ++k) {
+        (*visibility_mask)[k >> 5u] |= 1u << (k & 31u);
+    }
+}
+
 // Pack fp32 → fp16 bit patterns. Matches GLSL unpackHalf2x16() (lo bits 0–15,
 // hi bits 16–31). Use Eigen's conversion helpers instead of reading
 // Eigen::half::x directly because on ARM64 that field is __fp16 rather than the
@@ -251,21 +304,14 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
 
     int source_coeffs = 0;
     int desired_coeffs = 0;
-    int sh_u32_per_splat = 0;
+    std::size_t sh_u32_per_splat = 0;
     if (desired_sh_degree > 0 && f_rest_ptr) {
         source_coeffs = GetGaussianSplatRestCoeffCount(source_sh_degree);
         desired_coeffs = GetGaussianSplatRestCoeffCount(desired_sh_degree);
-        sh_u32_per_splat = 3 * desired_sh_degree * 2;
+        sh_u32_per_splat = GetShU32PerSplat(desired_sh_degree);
     }
 
-    out.positions.reserve(n);
-    out.scales.reserve(2 * n);
-    out.rotations.reserve(n);
-    out.dc_opacity.reserve(2 * n);
-    if (sh_u32_per_splat > 0) {
-        out.sh_coefficients.reserve(static_cast<std::size_t>(sh_u32_per_splat) *
-                                    n);
-    }
+    ReservePackedAttrArrays(&out, n, sh_u32_per_splat);
 
     for (std::size_t i = 0; i < n; ++i) {
         const float opacity = opacity_ptr[i];
@@ -292,19 +338,17 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
         out.dc_opacity.insert(out.dc_opacity.end(), dc.begin(), dc.end());
 
         if (sh_u32_per_splat > 0 && f_rest_ptr) {
+            const std::size_t dst_base =
+                    AppendZeroedShSlot(&out.sh_coefficients, sh_u32_per_splat);
             const float* src = f_rest_ptr + i * source_coeffs;
             const int pairs = desired_coeffs / 2;
             for (int p = 0; p < pairs; ++p) {
-                out.sh_coefficients.push_back(
-                        HalfPair(src[p * 2 + 0], src[p * 2 + 1]));
+                out.sh_coefficients[dst_base + std::size_t(p)] =
+                        HalfPair(src[p * 2 + 0], src[p * 2 + 1]);
             }
             if (desired_coeffs & 1) {
-                out.sh_coefficients.push_back(
-                        HalfPair(src[desired_coeffs - 1], 0.f));
-            }
-            const int packed_u32s = (desired_coeffs + 1) / 2;
-            for (int p = packed_u32s; p < sh_u32_per_splat; ++p) {
-                out.sh_coefficients.push_back(0u);
+                out.sh_coefficients[dst_base + std::size_t(pairs)] =
+                        HalfPair(src[desired_coeffs - 1], 0.f);
             }
         }
     }
@@ -313,8 +357,85 @@ void PackGaussianSplatAttrsDirect(const float* pts_ptr,
     // Populate a default all-visible mask so the buffer is always present.
     // RebuildMergedGaussianData() overwrites this with per-object visibility.
     // Bit-packed: all-ones = all splats visible. ceil(n/32) words.
-    const std::uint32_t n_mask_words = (out.splat_count + 31u) / 32u;
-    out.visibility_mask.assign(n_mask_words, ~0u);
+    out.visibility_mask.clear();
+    SetVisibilityMaskRange(&out.visibility_mask, 0u, out.splat_count, true);
+}
+
+void MergeGaussianSplatPackedAttrs(
+        const std::vector<GaussianSplatMergeItem>& items,
+        GaussianSplatPackedAttrs* out,
+        std::vector<std::uint32_t>* splat_starts) {
+    if (!out) {
+        return;
+    }
+
+    *out = GaussianSplatPackedAttrs{};
+    if (splat_starts) {
+        splat_starts->clear();
+        splat_starts->reserve(items.size());
+    }
+
+    std::uint32_t merged_sh_degree = 0u;
+    std::size_t merged_splat_capacity = 0u;
+    for (const auto& item : items) {
+        if (!item.attrs) {
+            continue;
+        }
+        merged_sh_degree = std::max(merged_sh_degree,
+                                    std::uint32_t(item.attrs->sh_degree));
+        merged_splat_capacity += item.attrs->splat_count;
+    }
+
+    out->sh_degree = static_cast<int>(merged_sh_degree);
+    const std::size_t merged_sh_u32_per_splat =
+            GetShU32PerSplat(static_cast<int>(merged_sh_degree));
+    ReservePackedAttrArrays(out, merged_splat_capacity, merged_sh_u32_per_splat);
+
+    for (const auto& item : items) {
+        if (splat_starts) splat_starts->push_back(out->splat_count);
+        if (!item.attrs) {
+            continue;
+        }
+        const auto& src = *item.attrs;
+        const std::uint32_t splat_count = src.splat_count;
+
+        out->positions.insert(out->positions.end(), src.positions.begin(),
+                              src.positions.end());
+        out->scales.insert(out->scales.end(), src.scales.begin(),
+                           src.scales.end());
+        out->rotations.insert(out->rotations.end(), src.rotations.begin(),
+                              src.rotations.end());
+        out->dc_opacity.insert(out->dc_opacity.end(), src.dc_opacity.begin(),
+                               src.dc_opacity.end());
+
+        if (merged_sh_u32_per_splat > 0u) {
+            const std::size_t src_sh_u32_per_splat =
+                    GetShU32PerSplat(src.sh_degree);
+            const std::size_t src_sh_size = src.sh_coefficients.size();
+            for (std::uint32_t i = 0; i < splat_count; ++i) {
+                const std::size_t dst_base = AppendZeroedShSlot(
+                        &out->sh_coefficients, merged_sh_u32_per_splat);
+                if (src_sh_u32_per_splat == 0u) {
+                    continue;
+                }
+                const std::size_t src_base =
+                        std::size_t(i) * src_sh_u32_per_splat;
+                if (src_base >= src_sh_size) {
+                    continue;
+                }
+                CopyShPrefixToSlot(
+                        &out->sh_coefficients, dst_base,
+                        merged_sh_u32_per_splat,
+                        src.sh_coefficients.data() + src_base,
+                        std::min(src_sh_u32_per_splat, src_sh_size - src_base));
+            }
+        }
+
+        SetVisibilityMaskRange(&out->visibility_mask, out->splat_count,
+                               splat_count, item.visible);
+        out->splat_count += splat_count;
+        out->antialias = out->antialias || src.antialias;
+    }
 }
 
 }  // namespace rendering

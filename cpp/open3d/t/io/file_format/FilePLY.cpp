@@ -293,7 +293,15 @@ bool ReadPointCloudFromPLY(const std::string& filename,
             if (attr_state->name_ == "f_rest") {
                 attr_state->data_ptr_ =
                         pointcloud.GetPointAttr("f_rest").GetDataPtr();
+                // GraphDECO / 3DGS PLY stores f_rest properties channel-major:
+                //   R[0..Nc), G[0..Nc), B[0..Nc).
+                // Open3D stores f_rest as {N, Nc, 3}, i.e. basis-major RGB
+                // triples. Remap each property offset into the tensor layout.
+                const int basis_count = f_rest_count / 3;
+                const int channel = attr_state->offset_ / basis_count;
+                const int basis = attr_state->offset_ % basis_count;
                 attr_state->stride_ = f_rest_count;
+                attr_state->offset_ = basis * 3 + channel;
             }
         }
     }

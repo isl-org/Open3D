@@ -219,6 +219,7 @@ shared uint wg_active_count;
 void main() {
     const float kSurfaceThreshold =
             0.5;  // Declare surface when transmittance hits this value.
+    const float kMinAlpha = 1./255; // Skip splats with alpha less than this value.
     const float kMinTransmittance =
             1.0 /
             4096.0;  // Stop compositing when transmittance hits this value.
@@ -365,6 +366,9 @@ void main() {
                         continue;
                     }
                     float alpha = exp2(power * kLog2E) * s_alpha[i];
+                    if (alpha < kMinAlpha) {
+                        continue;
+                    }
                     float contribution = transmittance * alpha;
                     accum_color +=
                             contribution * unpackUnorm4x8(s_color[i]).rgb;
