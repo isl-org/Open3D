@@ -132,7 +132,7 @@ RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
  && (wget -nv https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && { tar -xf ${CCACHE_TAR_NAME}.tar.?z || true; } \
+ && if compgen -G "${CCACHE_TAR_NAME}.tar.?z" > /dev/null; then tar -xf ${CCACHE_TAR_NAME}.tar.?z; fi \
  && mkdir -p ${CCACHE_DIR} \
  && ccache -M 4G \
  && ccache -s
