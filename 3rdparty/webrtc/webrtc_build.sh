@@ -27,19 +27,20 @@ set -euox pipefail
 # 2) depot_tools and webrtc have compatible versions, see:
 #    https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
 #
-# 3) Apply the following patch to enable GLIBCXX_USE_CXX11_ABI selection:
+# 3) For old-ABI builds, apply the following patches to enable
+#    GLIBCXX_USE_CXX11_ABI selection:
 #    - 0001-build-enable-rtc_use_cxx11_abi-option.patch        # apply to webrtc/src
 #    - 0001-src-enable-rtc_use_cxx11_abi-option.patch          # apply to webrtc/src/build
 #    - 0001-third_party-enable-rtc_use_cxx11_abi-option.patch  # apply to webrtc/src/third_party
 #    Note that these patches may or may not be compatible with your custom
 #    WebRTC commits. You may have to patch them manually.
 
-# Date: Wed Apr 7 19:12:13 2021 +0200
-WEBRTC_COMMIT=${WEBRTC_COMMIT:-60e674842ebae283cc6b2627f4b6f2f8186f3317}
-# Date: Wed Apr 7 21:35:29 2021 +0000
-DEPOT_TOOLS_COMMIT=${DEPOT_TOOLS_COMMIT:-e1a98941d3ab10549be6d82d0686bb0fb91ec903}
+# Upstream HEAD on 2026-05-04
+WEBRTC_COMMIT=${WEBRTC_COMMIT:-ffb74219ec3edff87b8bb9a88c1710dc7d2df97e}
+# Upstream HEAD on 2026-05-04
+DEPOT_TOOLS_COMMIT=${DEPOT_TOOLS_COMMIT:-ff41874736c800b2f79aa8cf9596c7919066eb02}
 
-GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI:-0}
+GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI:-1}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 SUDO=${SUDO:-sudo}                           # Set to command if running inside docker
 export PATH="$PWD/../depot_tools":${PATH}    # $(basename $PWD) == Open3D
@@ -48,7 +49,7 @@ export DEPOT_TOOLS_UPDATE=0
 install_dependencies_ubuntu() {
     options="$(echo "$@" | tr ' ' '|')"
     # Dependencies
-    # python*       : resolve ImportError: No module named pkg_resources
+    # python3*      : resolve ImportError: No module named pkg_resources
     # libglib2.0-dev: resolve pkg_config("glib")
     $SUDO apt-get update
     $SUDO apt-get install -y \
@@ -58,10 +59,11 @@ install_dependencies_ubuntu() {
         git \
         gnupg \
         libglib2.0-dev \
-        python \
-        python-pip \
-        python-setuptools \
-        python-wheel \
+        python-is-python3 \
+        python3 \
+        python3-pip \
+        python3-setuptools \
+        python3-wheel \
         software-properties-common \
         tree \
         curl
@@ -107,14 +109,18 @@ download_webrtc_sources() {
 build_webrtc() {
     # PWD=Open3D
     OPEN3D_DIR="$PWD"
-    echo Apply patches
     cp 3rdparty/webrtc/{CMakeLists.txt,webrtc_common.cmake} ../webrtc
-    git -C ../webrtc/src apply \
-        "$OPEN3D_DIR"/3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
-    git -C ../webrtc/src/build apply \
-        "$OPEN3D_DIR"/3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch
-    git -C ../webrtc/src/third_party apply \
-        "$OPEN3D_DIR"/3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
+    if [[ "${GLIBCXX_USE_CXX11_ABI}" == "0" ]]; then
+        echo Apply old-ABI patches
+        git -C ../webrtc/src apply \
+            "$OPEN3D_DIR"/3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
+        git -C ../webrtc/src/build apply \
+            "$OPEN3D_DIR"/3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch
+        git -C ../webrtc/src/third_party apply \
+            "$OPEN3D_DIR"/3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
+    else
+        echo Skip old-ABI patches
+    fi
     WEBRTC_COMMIT_SHORT=$(git -C ../webrtc/src rev-parse --short=7 HEAD)
 
     echo Build WebRTC
@@ -131,8 +137,14 @@ build_webrtc() {
 
     echo Package WebRTC
     if [[ $(uname -s) == 'Linux' ]]; then
+        WEBRTC_ARCH=$(uname -m)
+        if [[ "${WEBRTC_ARCH}" == "aarch64" || "${WEBRTC_ARCH}" == "arm64" ]]; then
+            WEBRTC_PLATFORM="linux_arm64"
+        else
+            WEBRTC_PLATFORM="linux"
+        fi
         tar -czf \
-            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz" \
+            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_${WEBRTC_PLATFORM}_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz" \
             webrtc_release
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \

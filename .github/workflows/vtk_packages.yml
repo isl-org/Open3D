@@ -26,7 +26,7 @@ jobs:
           make -j$(nproc)
           cmake -E sha256sum vtk*.tar.gz > checksum_linux.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vtk_linux
           path: |
@@ -78,7 +78,7 @@ jobs:
           ls
           cmake -E sha256sum (get-item vtk*.tar.gz).Name > checksum_win_${{matrix.configuration}}.txt
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vtk_windows_${{matrix.configuration}}
           path: |
@@ -107,7 +107,7 @@ jobs:
           make -j2
           cmake -E sha256sum vtk*.tar.gz > checksum_macos.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vtk_macos
           path: |

@@ -9,21 +9,27 @@
 function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS "")
 
-    if(NOT MSVC)
-        # ABI selection
-        if(GLIBCXX_USE_CXX11_ABI)
-            set(WEBRTC_ARGS rtc_use_cxx11_abi=true\n${WEBRTC_ARGS})
-        else()
-            set(WEBRTC_ARGS rtc_use_cxx11_abi=false\n${WEBRTC_ARGS})
-        endif()
+    if(NOT MSVC AND NOT GLIBCXX_USE_CXX11_ABI)
+        # ABI selection. Upstream WebRTC does not declare this arg; the
+        # companion patches add it for old-ABI compatibility builds only.
+        set(WEBRTC_ARGS rtc_use_cxx11_abi=false\n${WEBRTC_ARGS})
     endif()
 
     if (APPLE)  # WebRTC default
+        set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+        # ARM64 Linux builds need Clang for WebRTC's NEON-enabled sources.
         set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
     else()
         # Do not use Google clang for compilation due to LTO error when Open3D
         # is built with gcc on Ubuntu 20.04.
         set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
+    endif()
+
+    # Architecture
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+        set(WEBRTC_ARGS target_os="linux"\n${WEBRTC_ARGS})
+        set(WEBRTC_ARGS target_cpu="arm64"\n${WEBRTC_ARGS})
     endif()
 
     # Don't use libc++ (Clang), use libstdc++ (GNU)

@@ -76,7 +76,8 @@ RUN ccache --version \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
  && (wget -nv https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && { tar -xf ${CCACHE_TAR_NAME}.tar.?z || true; }
+ && { tar -xf ${CCACHE_TAR_NAME}.tar.?z || true; } \
+ && mkdir -p ${CCACHE_DIR}
 # We need to set ccache size explicitly with -M, otherwise the default size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN ccache -M 4G \
