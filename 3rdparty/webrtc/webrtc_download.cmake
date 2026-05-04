@@ -23,6 +23,10 @@ elseif (WIN32)
     )
     set(WEBRTC_SHA256 f4686d0028ef5c36c5d7158a638fa834b63183b522f0b63932f7f70ebffeea22)
 else()  # Linux
+    if(LINUX_AARCH64)
+        message(FATAL_ERROR "Pre-built WebRTC binaries are not available for "
+            "Linux ARM64. Please use BUILD_WEBRTC_FROM_SOURCE=ON.")
+    endif()
     if(GLIBCXX_USE_CXX11_ABI)
         set(WEBRTC_URL
             https://github.com/isl-org/open3d_downloads/releases/download/webrtc-v3/webrtc_${WEBRTC_VER}_cxx-abi-1.tar.gz

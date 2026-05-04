@@ -27,7 +27,7 @@ jobs:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout Open3D source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Maximize build space
         run: |
@@ -50,7 +50,7 @@ jobs:
           mv open3d-*-docs.tar.gz open3d-${GITHUB_SHA}-docs.tar.gz
 
       - name: Upload docs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: open3d-${{ github.sha }}-docs
           path: open3d-${{ github.sha }}-docs.tar.gz

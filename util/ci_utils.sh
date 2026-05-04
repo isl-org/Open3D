@@ -27,11 +27,11 @@ BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
 # ML
-TENSORFLOW_VER="2.20.0"
-TORCH_VER="2.10"
+TENSORFLOW_VER="2.21.0"
+TORCH_VER="2.12"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
-PIP_VER="25.3"
+PIP_VER="26.1"
 PROTOBUF_VER="6.31.1"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
@@ -172,10 +172,16 @@ build_pip_package() {
     if [[ "build_jupyter" =~ ^($options)$ ]]; then
         echo "Building Jupyter extension in Python wheel."
         BUILD_JUPYTER_EXTENSION=ON
-        BUILD_WEBRTC_FROM_SOURCE=ON
+        BUILD_WEBRTC=ON
+        if [[ "$AARCH" == "aarch64" ]]; then
+            BUILD_WEBRTC_FROM_SOURCE=ON
+        else
+            BUILD_WEBRTC_FROM_SOURCE=OFF
+        fi
     else
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
+        BUILD_WEBRTC=OFF
         BUILD_WEBRTC_FROM_SOURCE=OFF
     fi
     set -u
@@ -193,7 +199,8 @@ build_pip_package() {
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
-        "-DBUILD_WEBRTC=$BUILD_WEBRTC_FROM_SOURCE"
+        "-DBUILD_WEBRTC=$BUILD_WEBRTC"
+        "-DBUILD_WEBRTC_FROM_SOURCE=$BUILD_WEBRTC_FROM_SOURCE"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_UNIT_TESTS=OFF"

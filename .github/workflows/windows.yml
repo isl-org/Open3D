@@ -27,8 +27,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.6.0"
+  PIP_VER: "26.1"
+  CUDA_VERSION: "13.2.1"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
@@ -76,7 +76,7 @@ jobs:
           # Installer arguments
           $CUDA_INSTALL_ARGS = "-s"
           # Required packages
-          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "nvtx", "thrust"
+          $CUDA_PACKAGES = "nvcc", "nvvm", "visual_studio_integration", "crt", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "nvtx", "thrust"
           $CUDA_PACKAGES.ForEach({ $CUDA_INSTALL_ARGS += " $($_)_$($CUDA_VER)" })
           # Download and install CUDA
           echo "Downloading CUDA installer from $CUDA_URL"
@@ -93,15 +93,15 @@ jobs:
           echo "$CUDA_PATH\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
@@ -111,7 +111,7 @@ jobs:
         run: |
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
-            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu132
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
@@ -166,7 +166,7 @@ jobs:
 
       - name: Upload Package
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.DEVEL_PKG_NAME }}
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
@@ -193,7 +193,7 @@ jobs:
 
       - name: Upload Viewer
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: open3d-app-windows-amd64
           path: C:\Program Files\Open3D\bin\Open3D
@@ -277,17 +277,17 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
           path: open3d_ml
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -337,7 +337,7 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.PIP_PKG_NAME }}
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
@@ -377,10 +377,10 @@ jobs:
       BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
@@ -393,7 +393,7 @@ jobs:
           merge-multiple: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 

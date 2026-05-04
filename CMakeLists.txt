@@ -231,9 +231,6 @@ endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
-if(BUILD_WEBRTC AND LINUX_AARCH64)
-    message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
-endif()
 if(BUILD_WEBRTC AND NOT BUILD_GUI)
     message(FATAL_ERROR "BUILD_WEBRTC=ON requires BUILD_GUI=ON")
 endif()
@@ -509,6 +506,8 @@ if(WIN32)
         # for Open3D to compile (the linker fails otherwise with a "fatal error LNK1189: library limit of 65535
         # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
         add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
+        # CUDA 13.2 CCCL headers require MSVC's standard-conforming preprocessor.
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:preprocessor>)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

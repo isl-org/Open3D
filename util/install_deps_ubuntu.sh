@@ -66,6 +66,11 @@ if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "24.04" ]; then
     deps=("${deps[@]/libc++-dev/libc++-14-dev}")
     deps=("${deps[@]/libc++abi-dev/libc++abi-14-dev}")
 fi
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "26.04" ]; then
+    deps=("${deps[@]/clang/clang-15}")
+    deps=("${deps[@]/libc++-dev/libc++-15-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-15-dev}")
+fi
 
 # Special case for ARM64
 if [ "$(uname -m)" == "aarch64" ]; then

@@ -7,11 +7,11 @@ on:
       webrtc_commit:
         description: 'Specify WebRTC commit to build.'
         required: false
-        default: '60e674842ebae283cc6b2627f4b6f2f8186f3317'  # Date: Wed Apr 7 19:12:13 2021 +0200
+        default: 'ffb74219ec3edff87b8bb9a88c1710dc7d2df97e'  # Upstream HEAD on 2026-05-04
       depot_tools_commit:
         description: 'Specify Depot Tools commit to to use for the build.'
         required: false
-        default: 'e1a98941d3ab10549be6d82d0686bb0fb91ec903' # Date: Wed Apr 7 21:35:29 2021 +0000
+        default: 'ff41874736c800b2f79aa8cf9596c7919066eb02' # Upstream HEAD on 2026-05-04
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -30,19 +30,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13]
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-14]
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.10
 
       - name: Install dependencies
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
+        if: ${{ startsWith(matrix.os, 'ubuntu-24.04') }}
         run: |
           source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu
@@ -58,7 +58,7 @@ jobs:
           build_webrtc
 
       - name: Upload WebRTC
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: webrtc_release_${{ matrix.os }}
           path: |
@@ -80,10 +80,10 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
 
@@ -166,7 +166,7 @@ jobs:
           cmake -E sha256sum webrtc_${env:WEBRTC_COMMIT_SHORT}_win.zip | Tee-Object -FilePath checksum_win.txt
 
       - name: Upload WebRTC
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: webrtc_release_windows
           path: |
