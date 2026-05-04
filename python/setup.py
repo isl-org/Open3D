@@ -155,7 +155,7 @@ with open("README.rst") as readme:
 if "@BUILD_CUDA_MODULE@" == "ON":
     classifiers.append("Environment :: GPU :: NVIDIA CUDA")
 elif (sys.platform.startswith("linux") and
-      platform.machine() in ("i386", "x86_64", "AMD64") and
+      platform.machine() in ("i386", "x86_64", "AMD64", "aarch64") and
       "@BUILD_SYCL_MODULE@" == "OFF"):
     name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "
