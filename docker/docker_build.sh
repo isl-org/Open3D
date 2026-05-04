@@ -16,6 +16,7 @@
 #   This make the Docker image reproducible across different machines.
 set -euo pipefail
 
+export DOCKER_BUILDKIT=1
 export BUILDKIT_PROGRESS=plain
 
 __usage_docker_build="USAGE:
@@ -80,8 +81,12 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 
 # Shared variables
 AARCH="$(uname -m)"
+CMAKE_AARCH=${AARCH}
+if [[ "${CMAKE_AARCH}" == "arm64" ]]; then
+    CMAKE_AARCH=aarch64
+fi
 # do cmake pending on the architecture
-CMAKE_VERSION=cmake-3.31.8-linux-${AARCH}
+CMAKE_VERSION=cmake-3.31.8-linux-${CMAKE_AARCH}
 CUDA_VERSION=13.2.1-cudnn
 CUDA_VERSION_LATEST=13.2.1-cudnn
 

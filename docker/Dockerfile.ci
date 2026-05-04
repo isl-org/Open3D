@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
@@ -57,6 +58,7 @@ ENV BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
+ENV CCACHE_DIR=/root/.cache/ccache
 
 # The base image already contains the oneAPI packages.
 # Having this in the list can cause checksum errors when apt-get update.
@@ -122,7 +124,8 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
 # - CCACHE_DIR_PARENT = ~/.cache
 # We need to set ccache size explicitly with -M, otherwise the defualt size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
-RUN ccache --version \
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
+ ccache --version \
  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
@@ -170,7 +173,7 @@ RUN mkdir -p /etc/apt/keyrings \
  && yarn --version
 
 # Build all
-RUN \
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
     if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
         export CMAKE_CXX_COMPILER=icpx; \
         export CMAKE_C_COMPILER=icx; \
@@ -211,7 +214,8 @@ RUN \
 # If CI is not null or unset, remove all large build folders to save disk space
 
 # Compress ccache folder, move to / directory
-RUN ccache -s \
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
+ ccache -s \
  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \

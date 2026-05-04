@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
 ARG BASE_IMAGE=nvidia/cuda:13.2.1-cudnn-devel-ubuntu22.04
 FROM ${BASE_IMAGE}
@@ -24,6 +25,7 @@ ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
+ENV CCACHE_DIR=/root/.cache/ccache
 
 SHELL ["/bin/bash", "-c"]
 
@@ -69,7 +71,8 @@ ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 # CCACHE_DIR        = ~/.cache/ccache
 # CCACHE_DIR_NAME   = ccache
 # CCACHE_DIR_PARENT = ~/.cache
-RUN ccache --version \
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
+ ccache --version \
  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
@@ -80,7 +83,8 @@ RUN ccache --version \
  && mkdir -p ${CCACHE_DIR}
 # We need to set ccache size explicitly with -M, otherwise the default size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
-RUN ccache -M 4G \
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
+ ccache -M 4G \
  && ccache -s
 
 # pyenv
@@ -138,7 +142,8 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build python wheel
-RUN export NPROC=$(($(nproc)+2)) \
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
+ export NPROC=$(($(nproc)+2)) \
  && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \
  && if [ "$(uname -m)" = "aarch64" ]; then \
@@ -150,7 +155,8 @@ RUN export NPROC=$(($(nproc)+2)) \
  # remove build folder (except lib) to save CI space on Github
 
 # Compress ccache folder, move to / directory
-RUN ccache -s \
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
+ ccache -s \
  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
