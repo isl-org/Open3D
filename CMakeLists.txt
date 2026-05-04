@@ -506,6 +506,8 @@ if(WIN32)
         # for Open3D to compile (the linker fails otherwise with a "fatal error LNK1189: library limit of 65535
         # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
         add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
+        # CUDA 13.2 CCCL headers require MSVC's standard-conforming preprocessor.
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:preprocessor>)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

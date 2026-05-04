@@ -29,7 +29,7 @@ BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
 # ML
 TENSORFLOW_VER="2.21.0"
 TORCH_VER="2.12"
-TORCH_REPO_URL="https://download.pytorch.org/whl/test/torch/"
+TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="26.1"
 PROTOBUF_VER="6.31.1"

@@ -49,7 +49,7 @@ jobs:
       CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
       BUILD_PYTORCH_OPS: 'ON'
-      # TensorFlow v2.20 only supports python 3.9-3.13
+      # TensorFlow v2.21 only supports python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
@@ -84,6 +84,7 @@ jobs:
             docker/docker_build.sh cuda_wheel_py314
           fi
           shopt -s failglob
+          ls -al ${GITHUB_WORKSPACE}/open3d*.whl
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
@@ -146,7 +147,7 @@ jobs:
       CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-sbsa-ci-ccache
       OPEN3D_CPU_RENDERING: true
       BUILD_PYTORCH_OPS: 'ON'
-      # TensorFlow v2.20 only supports python 3.9-3.13
+      # TensorFlow v2.21 only supports python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
@@ -164,6 +165,7 @@ jobs:
           fi
           docker/docker_build.sh "cuda_wheel_py${PY_NO_DOT}${DEV_SUFFIX}"
           shopt -s failglob
+          ls -al ${GITHUB_WORKSPACE}/open3d*.whl
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
@@ -224,7 +226,7 @@ jobs:
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       BUILD_PYTORCH_OPS: 'ON'
-      # TensorFlow v2.20 only supports python 3.9-3.13
+      # TensorFlow v2.21 only supports python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code

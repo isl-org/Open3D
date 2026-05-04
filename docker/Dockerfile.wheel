@@ -143,14 +143,13 @@ WORKDIR /root/Open3D
 
 # Build python wheel
 RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
- export NPROC=$(($(nproc)+2)) \
+ set -e \
+ && export NPROC=$(($(nproc)+2)) \
  && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \
- && if [ "$(uname -m)" = "aarch64" ]; then \
-        build_pip_package build_azure_kinect; \
-    else \
-        build_pip_package build_azure_kinect build_jupyter; \
-    fi \
+ && build_args=(build_azure_kinect) \
+ && if [ "$(uname -m)" != "aarch64" ]; then build_args+=(build_jupyter); fi \
+ && build_pip_package "${build_args[@]}" \
  && if [ ${CI:-}a != a ]; then find /root/Open3D/build -mindepth 1 -maxdepth 1 ! -name 'lib' -exec rm -rf {} + ; fi
  # remove build folder (except lib) to save CI space on Github
 

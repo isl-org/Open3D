@@ -18,8 +18,12 @@ function(get_webrtc_args WEBRTC_ARGS)
     if (APPLE)  # WebRTC default
         set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
     elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
-        # ARM64 Linux builds need Clang for WebRTC's NEON-enabled sources.
+        # m144 libyuv uses ARM features that GCC 11 cannot assemble. Use the
+        # native system clang/lld instead of Chromium's downloaded x86_64 tools.
         set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+        set(WEBRTC_ARGS clang_base_path="/usr"\n${WEBRTC_ARGS})
+        set(WEBRTC_ARGS clang_use_chrome_plugins=false\n${WEBRTC_ARGS})
+        set(WEBRTC_ARGS use_lld=true\n${WEBRTC_ARGS})
     else()
         # Do not use Google clang for compilation due to LTO error when Open3D
         # is built with gcc on Ubuntu 20.04.
@@ -80,15 +84,15 @@ endfunction()
 # webrtc        -> libwebrtc.a
 # other targets -> libwebrtc_extra.a
 set(NINJA_TARGETS
-    webrtc
-    rtc_json
-    jsoncpp
-    builtin_video_decoder_factory
-    builtin_video_encoder_factory
-    peerconnection
-    p2p_server_utils
-    task_queue
-    default_task_queue_factory
+    :webrtc
+    rtc_base:rtc_json
+    third_party/jsoncpp:jsoncpp
+    api/video_codecs:builtin_video_decoder_factory
+    api/video_codecs:builtin_video_encoder_factory
+    pc:peer_connection
+    p2p:p2p_server_utils
+    api/task_queue:task_queue
+    api/task_queue:default_task_queue_factory
 )
 
 # Byproducts for ninja build, later packaged by CMake into libwebrtc_extra.a

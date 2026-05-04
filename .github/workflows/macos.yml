@@ -141,7 +141,7 @@ jobs:
             python_version: '3.13'
 
     env:
-      # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
+      # TensorFlow v2.21 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
       # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
       BUILD_PYTORCH_OPS: 'ON'
@@ -244,7 +244,7 @@ jobs:
             python_version: '3.13'
 
     env:
-      # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
+      # TensorFlow v2.21 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
       # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
       BUILD_PYTORCH_OPS: 'ON'
