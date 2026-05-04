@@ -28,7 +28,7 @@ concurrency:
 
 env:
   PIP_VER: "26.1"
-  CUDA_VERSION: "13.2.2"
+  CUDA_VERSION: "13.2.1"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
