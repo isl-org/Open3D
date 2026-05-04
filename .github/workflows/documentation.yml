@@ -27,7 +27,7 @@ jobs:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout Open3D source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Maximize build space
         run: |

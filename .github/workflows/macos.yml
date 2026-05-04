@@ -41,9 +41,9 @@ jobs:
       BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -57,7 +57,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-ccache
 
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -148,17 +148,17 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -172,7 +172,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-ccache
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -251,10 +251,10 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
@@ -267,7 +267,7 @@ jobs:
           merge-multiple: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 

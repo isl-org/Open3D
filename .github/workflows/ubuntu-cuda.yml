@@ -67,7 +67,7 @@ jobs:
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: 'false'
       - name: Package code

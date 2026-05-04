@@ -27,8 +27,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.6.0"
+  PIP_VER: "26.1"
+  CUDA_VERSION: "13.2.2"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
@@ -93,15 +93,15 @@ jobs:
           echo "$CUDA_PATH\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
@@ -111,7 +111,7 @@ jobs:
         run: |
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
-            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+            python -m pip install torch==2.12.0 torchvision==0.27.0 --index-url https://download.pytorch.org/whl/cu132
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
@@ -277,17 +277,17 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
           path: open3d_ml
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -377,10 +377,10 @@ jobs:
       BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Checkout Open3D-ML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: isl-org/Open3D-ML
           ref: main
@@ -393,7 +393,7 @@ jobs:
           merge-multiple: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python_version }}
 

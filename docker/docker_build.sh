@@ -61,6 +61,7 @@ OPTION:
     3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy (cxx11_abi), release mode
     3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
     5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
+    5-ml-noble-sbsa           : CUDA SBSA CI, 5-ml-noble-sbsa, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
@@ -81,8 +82,8 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 AARCH="$(uname -m)"
 # do cmake pending on the architecture
 CMAKE_VERSION=cmake-3.31.8-linux-${AARCH}
-CUDA_VERSION=12.6.3-cudnn
-CUDA_VERSION_LATEST=12.6.3-cudnn
+CUDA_VERSION=13.2.2-cudnn
+CUDA_VERSION_LATEST=13.2.2-cudnn
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -176,7 +177,11 @@ openblas_build() {
 
 cuda_wheel_build() {
     BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
-    CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
+    if [[ "${AARCH}" == "aarch64" || "${AARCH}" == "arm64" ]]; then
+        CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-sbsa-ci-ccache
+    else
+        CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
+    fi
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
@@ -314,6 +319,21 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-5-ml-noble
+    export PYTHON_VERSION=3.12
+    export BUILD_SHARED_LIBS=OFF
+    export BUILD_CUDA_MODULE=ON
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=OFF
+    export BUILD_SYCL_MODULE=OFF
+}
+
+5-ml-noble-sbsa_export_env() {
+    export DOCKER_TAG=open3d-ci:5-ml-noble-sbsa
+
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-5-ml-noble-sbsa
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
@@ -591,6 +611,10 @@ function main() {
         ;;
     5-ml-noble)
         5-ml-noble_export_env
+        ci_build
+        ;;
+    5-ml-noble-sbsa)
+        5-ml-noble-sbsa_export_env
         ci_build
         ;;
     *)
