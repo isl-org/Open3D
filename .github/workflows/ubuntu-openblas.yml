@@ -70,14 +70,18 @@ jobs:
           # Strip the dot: 3.12 ➜ 312, 3.14 ➜ 314 …
           PY_NO_DOT="${PYTHON_VERSION//./}"
           # Add “-dev” only when requested
-          DEV_SUFFIX=$([ "${DEVELOPER_BUILD}" = "ON" ] && echo "-dev")
+          DEV_SUFFIX=""
+          if [ "${DEVELOPER_BUILD}" = "ON" ]; then
+            DEV_SUFFIX="-dev"
+          fi
           echo "DOCKER_TAG=openblas-arm64-py${PY_NO_DOT}${DEV_SUFFIX}" >> $GITHUB_ENV
 
       - name: Docker build
         run: |
           docker/docker_build.sh "${DOCKER_TAG}"
           shopt -s failglob
-          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
+          wheels=("${GITHUB_WORKSPACE}"/open3d*.whl)
+          PIP_PKG_NAME="$(basename "${wheels[0]}")"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Docker test
