@@ -111,7 +111,7 @@ jobs:
         run: |
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
-            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu132
+            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/test/cu132
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
