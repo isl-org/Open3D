@@ -6,20 +6,18 @@
 // ----------------------------------------------------------------------------
 //
 // Vulkan compute backend for the Gaussian splatting pipeline.
-// Compiled on non-Apple platforms alongside ComputeGPUGL.cpp.
+// Compiled on non-Apple platforms.
 //
 // Key design:
 //   - Implements GaussianSplatGpuContext backed by Vulkan compute pipelines
-//     loaded from the same SPIR-V assets used by the GL backend.
+//     loaded from SPIR-V assets at resources/gaussian_splat/.
 //   - Uses VK_KHR_push_descriptor for efficient per-dispatch binding (no
 //     descriptor pool allocation per frame).
 //   - Uses VMA for general buffer/image allocation.  Shared cross-API images
 //     (color, depth) are registered via RegisterSharedImageInVulkanContext()
 //     rather than allocated here; VulkanInteropContext owns those.
 //   - Synchronisation: each EndXxxPass() submits and waits (fence-based) so
-//     the rest of the pipeline sees a completed GPU result.  Milestone E will
-//     replace the fence wait with the explicit GL<->VK semaphore pair created
-//     in PrepareOutputTextures.
+//     the rest of the pipeline sees a completed GPU result.
 
 #pragma once
 
@@ -33,11 +31,6 @@
 namespace open3d {
 namespace visualization {
 namespace rendering {
-
-struct VulkanSubgroupOptions {
-    bool enable_prefix_sum = false;
-    bool enable_radix_sort = false;
-};
 
 /// Register a GL-Vulkan shared image with a Vulkan compute context so that
 /// subsequent BindImage() / BindSamplerTexture() calls for that GL texture
@@ -63,11 +56,8 @@ void UnregisterSharedImageFromVulkanContext(GaussianSplatGpuContext& ctx,
 /// Factory: create a Vulkan-backed GaussianSplatGpuContext.
 /// Uses device / queue from GaussianSplatVulkanInteropContext::GetInstance().
 /// Returns nullptr if the interop context is not initialized.
-///
-/// @param subgroup_options  Controls which subgroup-capable shader families
-///                          should load subgroup SPIR-V variants.
 [[nodiscard]] std::unique_ptr<GaussianSplatGpuContext>
-CreateComputeGpuContextVulkan(VulkanSubgroupOptions subgroup_options);
+CreateComputeGpuContextVulkan();
 
 }  // namespace rendering
 }  // namespace visualization

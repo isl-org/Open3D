@@ -53,13 +53,12 @@ enum class ComputeProgramId : int {
 enum class ImageFormat { kRGBA16F, kR32F, kR16UI };
 
 /// Canonical shader base names indexed by ComputeProgramId.
-/// Backends derive suffixes: GL SPIR-V → base+".spv", GL GLSL → base+".comp",
-/// Metal entry point → base+"_main".
+/// Backends append ".spv" (Vulkan) or "_main" (Metal entry point).
 constexpr const char* kGsShaderNames[] = {
         "gaussian_project",
         "gaussian_composite",
         "gaussian_radix_sort_histograms",
-        "gaussian_radix_sort",
+        "gaussian_radix_sort_scatter",
         "gaussian_compute_dispatch_args",
         "gaussian_depth_merge",
 };
@@ -127,8 +126,7 @@ struct GaussianSplatViewGpuResources {
 // ---------------------------------------------------------------------------
 
 /// Platform-agnostic GPU operations for compute passes.
-/// Implementations: CreateComputeGpuContextGL() (OpenGL) and
-/// CreateComputeGpuContextMetal() (Metal).
+/// Implementations: ComputeGPUVulkan (non-Apple) and ComputeGPUMetal (Apple).
 class GaussianSplatGpuContext {
 public:
     virtual ~GaussianSplatGpuContext() = default;

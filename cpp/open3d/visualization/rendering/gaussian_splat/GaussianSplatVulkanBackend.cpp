@@ -53,11 +53,7 @@ class GaussianSplatVulkanBackend final : public GaussianSplatRenderer::Backend {
 public:
     explicit GaussianSplatVulkanBackend(
             const GaussianSplatRenderer::RenderConfig& config)
-        : config_(config) {
-        config_.use_shader_subgroups = true;
-        utility::LogDebug(
-                "GaussianSplat Vulkan: enabling subgroup radix pipeline");
-    }
+        : config_(config) {}
 
     ~GaussianSplatVulkanBackend() override {
         // Free per-view GPU resources via the compute context.
@@ -327,10 +323,7 @@ private:
 
     bool EnsureGpuContext() {
         if (gpu_) return gpu_->EnsureProgramsLoaded();
-        VulkanSubgroupOptions subgroup_options;
-        subgroup_options.enable_prefix_sum = true;
-        subgroup_options.enable_radix_sort = true;
-        gpu_ = CreateComputeGpuContextVulkan(subgroup_options);
+        gpu_ = CreateComputeGpuContextVulkan();
         if (!gpu_) return false;
         return gpu_->EnsureProgramsLoaded();
     }

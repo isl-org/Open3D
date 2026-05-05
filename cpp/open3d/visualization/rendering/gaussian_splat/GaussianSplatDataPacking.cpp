@@ -70,7 +70,8 @@ void CopyShPrefixToSlot(std::vector<std::uint32_t>* dst_sh,
                         std::size_t dst_sh_u32_per_splat,
                         const std::uint32_t* src_u32,
                         std::size_t src_u32_count) {
-    const std::size_t copy_count = std::min(dst_sh_u32_per_splat, src_u32_count);
+    const std::size_t copy_count =
+            std::min(dst_sh_u32_per_splat, src_u32_count);
     if (copy_count == 0u) {
         return;
     }
@@ -174,7 +175,7 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
             4u, static_cast<std::size_t>(out->radix_num_wg_cap) *
                         kRadixSortBins * sizeof(std::uint32_t));
 
-    // 8 slots: 4×histogram + 4×radix_scatter (tile_boundaries pass removed).
+    // 8 slots: 4×histogram + 4×radix_scatter.
     out->dispatch_args_size = 8u * 3u * sizeof(std::uint32_t);
     out->radix_params_size = 4u * kGaussianRadixParamsStride;
 }
@@ -389,7 +390,8 @@ void MergeGaussianSplatPackedAttrs(
     out->sh_degree = static_cast<int>(merged_sh_degree);
     const std::size_t merged_sh_u32_per_splat =
             GetShU32PerSplat(static_cast<int>(merged_sh_degree));
-    ReservePackedAttrArrays(out, merged_splat_capacity, merged_sh_u32_per_splat);
+    ReservePackedAttrArrays(out, merged_splat_capacity,
+                            merged_sh_u32_per_splat);
 
     for (const auto& item : items) {
         if (splat_starts) splat_starts->push_back(out->splat_count);

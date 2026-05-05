@@ -31,11 +31,10 @@
 //       sorted payload buffer size by 3× and halving memory bandwidth here.
 // Opt9: Work-stealing persistent threads — each workgroup atomically claims
 //       tiles from a global counter until all tiles are processed.  Eliminates
-//       the separate 20 ms gaussian_tile_boundaries pass: the tile's entry
-//       range is found with a O(log N) binary search on the sorted keys
-//       (binding 7) instead of reading precomputed tile_counts/tile_offsets.
-//       Load balancing: workgroups that finish light tiles immediately claim
-//       new ones, keeping all SMs busy throughout frame.
+//       the tile's entry range is found with a O(log N) binary search on the
+//       sorted keys (binding 7). Load balancing: workgroups that finish light
+//       tiles immediately claim new ones, keeping all SMs busy throughout
+//       frame.
 
 #version 460
 
@@ -77,7 +76,7 @@ layout(std430, binding = 6) restrict readonly buffer ProjectedComposites {
 
 // Sorted sort keys from the final radix-sort pass (same buffer as project
 // output).  Used for binary search to find each tile's entry range, replacing
-// the separate gaussian_tile_boundaries pass.
+// Binary search on sort_keys finds each tile's entry range (binding 7).
 // Key format: upper T bits = tile_index, lower D bits = depth component,
 // where T = limits.w, D = 32 - T.
 layout(std430, binding = 7) restrict readonly buffer SortKeys {
@@ -219,7 +218,8 @@ shared uint wg_active_count;
 void main() {
     const float kSurfaceThreshold =
             0.5;  // Declare surface when transmittance hits this value.
-    const float kMinAlpha = 1./255; // Skip splats with alpha less than this value.
+    const float kMinAlpha =
+            1. / 255;  // Skip splats with alpha less than this value.
     const float kMinTransmittance =
             1.0 /
             4096.0;  // Stop compositing when transmittance hits this value.

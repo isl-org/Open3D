@@ -129,11 +129,10 @@ bool RunGaussianGeometryPasses(
         bool scene_changed) {
     // Allocate/resize all intermediate SSBO/UBO buffers, upload per-frame and
     // (when scene_changed) per-splat data, then dispatch all geometry passes:
-    // project → prefix-sum → dispatch-args → scatter → keygen → radix→payload.
+    // project → dispatch-args → radix-sort (4×histogram+scatter).
     //
-    // Projection dispatch: sized by total_tiles so the prefix-sum and scatter
-    // passes share the same total_invocations stride (the projection shader
-    // loops over splats with that stride).
+    // Projection dispatch: each (splat, tile) pair atomically claims a slot in
+    // the sort buffers during the project pass.
     // Clamp 1D dispatch to device-reported limit; if it exceeds the limit use a
     // 2D grid (gy = ceil(groups / max_x)) so gx stays within
     // maxComputeWorkGroupCount[0]. The project shader linearises wg_id = wg_y *
@@ -265,8 +264,7 @@ bool RunGaussianGeometryPasses(
             .Dispatch(proj_gx, proj_gy, 1u);
     ctx.FullBarrier();
 
-    // Pass 2: Compute indirect dispatch args for radix sort and
-    // tile_boundaries.
+    // Pass 2: Compute indirect dispatch args for radix sort.
     GpuComputePass(ctx, ComputeProgramId::kGsDispatchArgs, "gs_dispatch_args")
             .UBO(0, vs.view_params_buf)
             .SSBO(10, vs.counters_buf)

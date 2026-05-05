@@ -510,9 +510,8 @@ void FilamentScene::RebuildMergedGaussianData() {
 
     for (std::size_t i = 0; i < merge_geoms.size(); ++i) {
         merge_geoms[i]->gs_splat_start = splat_starts[i];
-        merge_geoms[i]->gs_splat_count = merge_items[i].attrs
-                                                 ? merge_items[i].attrs->splat_count
-                                                 : 0u;
+        merge_geoms[i]->gs_splat_count =
+                merge_items[i].attrs ? merge_items[i].attrs->splat_count : 0u;
     }
 
     merged_gs_attrs_ = std::move(merged);

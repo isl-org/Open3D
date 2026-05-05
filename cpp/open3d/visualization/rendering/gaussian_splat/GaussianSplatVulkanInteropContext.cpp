@@ -358,11 +358,11 @@ bool GaussianSplatVulkanInteropContext::CreateLogicalDevice() {
     const auto qfams = physical_device_.getQueueFamilyProperties();
 
     // Prefer a queue family that supports both GRAPHICS and COMPUTE — the
-    // same hardware engine (RCS on Intel, GFX on AMD) that OpenGL
-    // GL_ARB_gl_spirv uses. Dedicated compute-only queues (CCS on Intel) can
-    // behave differently for the same SPIR-V shaders and may hang on some
-    // driver/hardware combos. Fall back to a compute-only queue only when no
-    // graphics+compute family exists.
+    // same hardware engine (RCS on Intel, GFX on AMD) as the OpenGL context.
+    // Dedicated compute-only queues (CCS on Intel) can behave differently for
+    // the same SPIR-V shaders and may hang on some driver/hardware combos.
+    // Fall back to a compute-only queue only when no graphics+compute family
+    // exists.
     std::uint32_t graphics_compute_family = UINT32_MAX;
     std::uint32_t compute_only_family = UINT32_MAX;
     for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(qfams.size());

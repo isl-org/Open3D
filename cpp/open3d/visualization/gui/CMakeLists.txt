@@ -74,9 +74,7 @@ set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
     ../rendering/gaussian_splat/shaders/gaussian_project.comp
     ../rendering/gaussian_splat/shaders/gaussian_composite.comp
     ../rendering/gaussian_splat/shaders/gaussian_radix_sort_histograms.comp
-    ../rendering/gaussian_splat/shaders/gaussian_radix_sort.comp
-    # Subgroup variant: used on Linux/macOS where subgroup arithmetic is reliable.
-    ../rendering/gaussian_splat/shaders/gaussian_radix_sort_subgroup.comp
+    ../rendering/gaussian_splat/shaders/gaussian_radix_sort_scatter.comp
     ../rendering/gaussian_splat/shaders/gaussian_compute_dispatch_args.comp
     ../rendering/gaussian_splat/shaders/gaussian_depth_merge.comp
 )

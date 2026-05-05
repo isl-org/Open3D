@@ -39,17 +39,6 @@ class GaussianSplatRenderer {
 public:
     /// Tunable knobs for the compute pipeline, set once at construction.
     struct RenderConfig {
-// Shader subgroups (GL_KHR_shader_subgroup_arithmetic) and precompiled
-// SPIRV binaries are currently unreliable on Windows with Intel
-// drivers, causing incorrect prefix sum results and thus rendering
-// corruption.  Disable by default on Windows until fixed.
-#ifdef _WIN32
-        bool use_shader_subgroups = false;
-        bool use_precompiled_shaders = false;
-#else
-        bool use_shader_subgroups = true;
-        bool use_precompiled_shaders = true;
-#endif
         Eigen::Vector2i tile_size = Eigen::Vector2i(16, 16);
         int projection_group_size = 64;
         Eigen::Vector2i composite_group_size = Eigen::Vector2i(16, 16);

@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """
 Load a table of 3D assets and per-row transforms from a CSV file, then display
 all geometries in one :func:`open3d.visualization.draw` window.
@@ -51,7 +50,8 @@ def _parse_floats(row: Dict[str, str], keys: List[str]) -> Tuple[float, ...]:
     return tuple(float(row[k].strip()) for k in keys)
 
 
-def _euler_deg_xyz_to_R(rx_deg: float, ry_deg: float, rz_deg: float) -> np.ndarray:
+def _euler_deg_xyz_to_R(rx_deg: float, ry_deg: float,
+                        rz_deg: float) -> np.ndarray:
     return o3d.geometry.get_rotation_matrix_from_xyz(
         np.deg2rad(np.array([rx_deg, ry_deg, rz_deg], dtype=np.float64)))
 
@@ -160,8 +160,8 @@ def _read_manifest(csv_path: Path):
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Draw multiple 3D assets with transforms from a CSV manifest."
-    )
+        description=
+        "Draw multiple 3D assets with transforms from a CSV manifest.")
     parser.add_argument(
         "csv",
         type=Path,
@@ -191,8 +191,7 @@ def main() -> int:
             return 1
 
         scale, rx, ry, rz, tx, ty, tz = _parse_floats(
-            row, ["scale", "rx_deg", "ry_deg", "rz_deg", "tx", "ty", "tz"]
-        )
+            row, ["scale", "rx_deg", "ry_deg", "rz_deg", "tx", "ty", "tz"])
         R = _euler_deg_xyz_to_R(rx, ry, rz)
         tvec = np.array([tx, ty, tz], dtype=np.float64)
         out = _load_and_transform_row(path, scale, R, tvec)
@@ -206,8 +205,12 @@ def main() -> int:
     if not draw_list:
         print("No entries to display.", file=sys.stderr)
         return 1
-    o3d.visualization.draw(draw_list, show_ui=True, title=csv_path.name, 
-        show_skybox=False, bg_color=(0.0, 0.0, 0.0, 1.0), ibl_intensity=100000)
+    o3d.visualization.draw(draw_list,
+                           show_ui=True,
+                           title=csv_path.name,
+                           show_skybox=False,
+                           bg_color=(0.0, 0.0, 0.0, 1.0),
+                           ibl_intensity=100000)
     return 0
 
 

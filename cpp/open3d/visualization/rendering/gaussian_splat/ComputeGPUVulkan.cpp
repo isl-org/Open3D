@@ -133,9 +133,7 @@ static_assert(std::size(kShaderBindings) ==
 // ---------------------------------------------------------------------------
 class GaussianSplatGpuContextVulkan final : public GaussianSplatGpuContext {
 public:
-    explicit GaussianSplatGpuContextVulkan(
-            VulkanSubgroupOptions subgroup_options)
-        : subgroup_options_(subgroup_options) {}
+    GaussianSplatGpuContextVulkan() = default;
 
     ~GaussianSplatGpuContextVulkan() override { Shutdown(); }
 
@@ -159,46 +157,13 @@ public:
         queue_family_ = interop.GetComputeQueueFamily();
         debug_utils_enabled_ = interop.GetDebugUtilsEnabled();
 
-        const std::uint32_t sg_size = interop.GetSubgroupSize();
-        const auto subgroup_stages = static_cast<vk::ShaderStageFlags>(
-                interop.GetSubgroupSupportedStages());
-        const auto subgroup_ops = static_cast<vk::SubgroupFeatureFlags>(
-                interop.GetSubgroupSupportedOperations());
-        const bool compute_subgroups = static_cast<bool>(
-                subgroup_stages & vk::ShaderStageFlagBits::eCompute);
-        if (subgroup_options_.enable_prefix_sum &&
-            (!compute_subgroups || sg_size < 16 ||
-             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eBasic) ||
-             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eArithmetic))) {
-            utility::LogInfo(
-                    "GaussianSplatVulkan: disabling prefix_sum subgroup "
-                    "variant (compute_subgroups={}, subgroupSize={}, "
-                    "ops=0x{:x})",
-                    compute_subgroups, sg_size,
-                    interop.GetSubgroupSupportedOperations());
-            subgroup_options_.enable_prefix_sum = false;
-        }
-        if (subgroup_options_.enable_radix_sort &&
-            (!compute_subgroups || sg_size == 0 ||
-             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eBasic) ||
-             !(subgroup_ops & vk::SubgroupFeatureFlagBits::eArithmetic))) {
-            utility::LogInfo(
-                    "GaussianSplatVulkan: disabling radix subgroup variant "
-                    "(compute_subgroups={}, subgroupSize={}, ops=0x{:x})",
-                    compute_subgroups, sg_size,
-                    interop.GetSubgroupSupportedOperations());
-            subgroup_options_.enable_radix_sort = false;
-        }
-
         if (!InitVma()) return false;
         if (!InitCommandPool()) return false;
         if (!InitFence()) return false;
         if (!InitSampler()) return false;
 
-        // Vulkan-native SPIR-V lives in the same resource subdirectory as
-        // the GL backend; open3d_add_compute_shaders compiles all shaders
-        // with -V --target-env vulkan1.3, so the same .spv files work for
-        // both VkCreateShaderModule and GL_ARB_gl_spirv.
+        // Shaders are compiled with -V --target-env vulkan1.3 by
+        // open3d_add_compute_shaders.
         const std::string shader_root =
                 EngineInstance::GetResourcePath() + "/gaussian_splat/";
 
@@ -778,7 +743,6 @@ private:
     };
     std::vector<PendingWrite> pending_;
 
-    VulkanSubgroupOptions subgroup_options_{};
     bool programs_loaded_ = false;
     bool programs_valid_ = false;
     std::uint32_t max_wg_count_x_ = 0;  // cached from VkPhysicalDeviceLimits
@@ -881,48 +845,10 @@ private:
 
     // --- Shader loading ---------------------------------------------------
 
-    bool ShouldUseSubgroupVariant(ComputeProgramId id) const {
-        switch (id) {
-            case ComputeProgramId::kGsRadixScatter:
-                return subgroup_options_.enable_radix_sort;
-            default:
-                return false;
-        }
-    }
-
     bool LoadShader(ComputeProgramId id, const std::string& shader_root) {
         const int i = static_cast<int>(id);
-        std::string name = kGsShaderNames[i];
-        const bool want_subgroup = ShouldUseSubgroupVariant(id);
-
-        // Resolve subgroup variant name
-        constexpr std::string_view kSubgroupSuffix = "_subgroup";
-        const bool is_subgroup =
-                name.size() > kSubgroupSuffix.size() &&
-                name.compare(name.size() - kSubgroupSuffix.size(),
-                             kSubgroupSuffix.size(), kSubgroupSuffix) == 0;
-
-        // For non-subgroup names, optionally append _subgroup when enabled.
-        // For already-subgroup names (_subgroup suffix), use as-is.
-        std::string file_name;
-        if (!is_subgroup && want_subgroup) {
-            // Check if a subgroup variant exists; fall back if not.
-            const std::string candidate = shader_root + name + "_subgroup.spv";
-            std::vector<char> tmp;
-            std::string err;
-            if (utility::filesystem::FReadToBuffer(candidate, tmp, &err)) {
-                file_name = name + "_subgroup";
-            } else {
-                file_name = name;
-            }
-        } else if (is_subgroup && !want_subgroup) {
-            // Strip _subgroup suffix
-            file_name = name.substr(0, name.size() - kSubgroupSuffix.size());
-        } else {
-            file_name = name;
-        }
-
-        const std::string spv_path = shader_root + file_name + ".spv";
+        const std::string name = kGsShaderNames[i];
+        const std::string spv_path = shader_root + name + ".spv";
         std::vector<char> bytes;
         std::string err;
         if (!utility::filesystem::FReadToBuffer(spv_path, bytes, &err)) {
@@ -946,7 +872,7 @@ private:
             utility::LogWarning(
                     "GaussianSplatVulkan: vkCreateShaderModule failed for {}: "
                     "{}",
-                    file_name, e.what());
+                    name, e.what());
             return false;
         }
 
@@ -978,7 +904,7 @@ private:
             utility::LogWarning(
                     "GaussianSplatVulkan: vkCreateDescriptorSetLayout failed "
                     "for {}: {}",
-                    file_name, e.what());
+                    name, e.what());
             return false;
         }
 
@@ -992,7 +918,7 @@ private:
             utility::LogWarning(
                     "GaussianSplatVulkan: vkCreatePipelineLayout failed "
                     "for {}: {}",
-                    file_name, e.what());
+                    name, e.what());
             return false;
         }
 
@@ -1015,7 +941,7 @@ private:
             utility::LogWarning(
                     "GaussianSplatVulkan: vkCreateComputePipelines failed "
                     "for {}: {}",
-                    file_name, e.what());
+                    name, e.what());
             return false;
         }
         // shader_module auto-destroyed here (pipeline compiled; module no
@@ -1027,7 +953,7 @@ private:
         p.pipeline = std::move(pipeline);
         p.binding_mask = binding_mask;
         p.valid = true;
-        utility::LogDebug("GaussianSplatVulkan: loaded {}", file_name);
+        utility::LogDebug("GaussianSplatVulkan: loaded {}", name);
         return true;
     }
 
@@ -1437,8 +1363,7 @@ void UnregisterSharedImageFromVulkanContext(GaussianSplatGpuContext& ctx,
     vk_ctx->UnregisterSharedImage(gl_name);
 }
 
-std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextVulkan(
-        VulkanSubgroupOptions subgroup_options) {
+std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextVulkan() {
     auto& interop = GaussianSplatVulkanInteropContext::GetInstance();
     if (!interop.IsValid()) {
         utility::LogWarning(
@@ -1446,7 +1371,7 @@ std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextVulkan(
                 "Vulkan compute context not created");
         return nullptr;
     }
-    return std::make_unique<GaussianSplatGpuContextVulkan>(subgroup_options);
+    return std::make_unique<GaussianSplatGpuContextVulkan>();
 }
 
 }  // namespace rendering

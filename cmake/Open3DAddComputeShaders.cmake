@@ -39,14 +39,10 @@ function(open3d_add_compute_shaders target)
     find_program(OPEN3D_GLSLANG_VALIDATOR glslangValidator REQUIRED)
     if (APPLE)
         find_program(OPEN3D_SPIRV_CROSS spirv-cross REQUIRED)
-        # Per-shader extra SPIRV-Cross flags.
-        # The _subgroup variants use GLSL subgroup builtins (gl_SubgroupSize,
-        # subgroupAdd, subgroupExclusiveAdd, …).  Fixing the subgroup size to
-        # 32 (Apple Silicon SIMD width) lets the Metal compiler treat
-        # gl_SubgroupSize as a compile-time constant, enabling loop unrolling
-        # and elimination of the runtime get_num_active_threads_in_simdgroup().
-        set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_radix_sort_subgroup        "--msl-fixed-subgroup-size 32")
-        set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_prefix_sum_subgroup        "--msl-fixed-subgroup-size 32")
+        # The scatter pass uses subgroup arithmetic (gl_SubgroupSize, subgroupAdd, etc.).
+        # Fixing the subgroup size to 32 (Apple Silicon SIMD width) lets the Metal compiler
+        # treat gl_SubgroupSize as a compile-time constant for loop unrolling.
+        set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_radix_sort_scatter        "--msl-fixed-subgroup-size 32")
         set(GAUSSIAN_METAL_BASENAMES "")
     endif()
 

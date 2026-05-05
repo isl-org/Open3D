@@ -155,9 +155,7 @@ public:
     /// creation.
     bool GetDebugUtilsEnabled() const { return debug_utils_enabled_; }
     /// Hardware subgroup size (gl_SubgroupSize) for compute shaders on this
-    /// device. The two-level subgroup prefix-sum shader requires subgroupSize^2
-    /// >= WG_SIZE (WG_SIZE=256 → need subgroupSize >= 16). Returns 0 before
-    /// Initialize().
+    /// device. Returns 0 before Initialize().
     std::uint32_t GetSubgroupSize() const { return subgroup_size_; }
     std::uint32_t GetSubgroupSupportedStages() const {
         return subgroup_supported_stages_;

@@ -20,9 +20,6 @@
 // depth is available). When no scene depth is present the GS composite depth
 // is read back directly and this shader is skipped.
 //
-// NOTE: compiled with -G (OpenGL SPIR-V target) to avoid Vulkan
-// DescriptorSet decorations that break ARB_gl_spirv on some Windows drivers.
-
 #version 460 core
 
 layout(local_size_x = 16, local_size_y = 16) in;
