@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
             {"depth_scale", 1000}};
 
     auto& app = gui::Application::GetInstance();
-    app.Initialize(argc, const_cast<const char**>(argv));
+    app.Initialize();
     auto mono =
             app.AddFont(gui::FontDescription(gui::FontDescription::MONOSPACE));
     app.AddWindow(std::make_shared<examples::online_slam::ReconstructionWindow>(
