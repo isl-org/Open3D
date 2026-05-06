@@ -140,6 +140,9 @@ public:
 
     void ShowMessageBox(const char* title, const char* message);
 
+    /// Copies text to the system clipboard.
+    void SetClipboardText(const std::string& text);
+
     /// This is for internal use in rare circumstances when the destructor
     /// will not be called in a timely fashion.
     void DestroyWindow();

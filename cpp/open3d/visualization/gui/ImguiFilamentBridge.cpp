@@ -374,11 +374,14 @@ void ImguiFilamentBridge::Update(ImDrawData* imgui_data) {
 
 void ImguiFilamentBridge::OnWindowResized(const Window& window) {
     auto size = window.GetSize();
-    impl_->view_->SetViewport(0, 0, size.width, size.height);
+    const auto width = (size.width > 0 ? size.width : 1);
+    const auto height = (size.height > 0 ? size.height : 1);
+
+    impl_->view_->SetViewport(0, 0, width, height);
 
     auto camera = impl_->view_->GetCamera();
     camera->SetProjection(visualization::rendering::Camera::Projection::Ortho,
-                          0.0, size.width, size.height, 0.0, 0.0, 1.0);
+                          0.0, width, height, 0.0, 0.0, 1.0);
 }
 
 void ImguiFilamentBridge::CreateVertexBuffer(size_t buffer_index,

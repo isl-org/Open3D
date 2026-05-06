@@ -1,0 +1,142 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// Gaussian splat dispatch argument generator.
+//
+// Single-thread pass runs after gaussian_project.comp to read total_entries
+// from the GPU counter buffer and write indirect dispatch counts plus
+// RadixSortParams for every radix-sort sub-pass. Eliminates the CPU/GPU sync
+// stall that would otherwise be needed to read the entry count.
+//
+// Dispatch arg layout (binding 11, 8 × uvec3 written as raw uint32):
+//   indices 0..3    : histogram pass 0..3
+//   indices 4..7    : sort-scatter pass 0..3
+// Each entry is 3 consecutive uint32 ({x, y, z}), offset = index × 12.
+// tile_boundaries pass removed: composite uses binary search instead.
+//
+// RadixSortParams layout (binding 12):
+//   4 entries, each occupying PARAMS_STRIDE_UINTS uint32 values.
+//   stride = 256 bytes = 64 uints (matches GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT).
+//   entry i is at uint offset i × PARAMS_STRIDE_UINTS.
+//
+// Constants must match the C++ kRadixWorkgroupSize / kRadixTargetBlocksPerWG
+// in GaussianSplatDataPacking.cpp.
+
+#version 460
+
+layout(local_size_x = 1) in;
+
+#define GS_ERROR_SORT_COUNT_CLAMPED (1u << 1)
+
+// --- Constants (must match C++ radix sort constants) ---
+#define RADIX_WG_SIZE 256u
+#define RADIX_BLOCKS_PER_WG 32u
+// Stride per RadixSortParams entry in the UBO-mapped buffer.
+// Each entry is 16 bytes of useful data padded to 256 bytes
+// (= 64 uint32) to satisfy GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT.
+#define PARAMS_STRIDE_UINTS 64u
+
+// --- Bindings ---
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+}
+view_params;
+
+// counters_buf (binding 10): matches GaussianGpuCounters in
+// GaussianSplatDataPacking.h.
+layout(std430, binding = 10) restrict buffer GaussianGlobalCounters {
+    uint total_entries;  // raw total tile entries written by prefix-sum
+    uint error_flags;    // GPU error bitmask (GS_ERROR_*)
+    uint tile_count;     // total tile count for the frame
+    uint splat_count;    // visible splat count for the frame
+}
+gs_counters;
+
+// dispatch_args_buf (binding 11): 10 indirect dispatch commands.
+// Written as flat uint32 array (3 uints per command = 12 bytes) so that
+// glDispatchComputeIndirect can read {x,y,z} at 12-byte-aligned offsets.
+layout(std430, binding = 11) restrict writeonly buffer DispatchArgs {
+    uint g_dispatch_args[];
+};
+
+// radix_params_buf (binding 12): 4 x RadixSortParams, each padded to
+// PARAMS_STRIDE_UINTS uint32 (256 bytes) for UBO range-binding.
+layout(std430, binding = 12) restrict writeonly buffer RadixParamsRaw {
+    uint g_radix_params[];
+};
+
+// --- Helpers ---
+
+void WriteDispatch(uint index, uint x, uint y, uint z) {
+    uint base = index * 3u;
+    g_dispatch_args[base] = x;
+    g_dispatch_args[base + 1u] = y;
+    g_dispatch_args[base + 2u] = z;
+}
+
+void WriteRadixParams(uint pass_index,
+                      uint num_elements,
+                      uint shift,
+                      uint num_workgroups,
+                      uint blocks_per_wg) {
+    uint base = pass_index * PARAMS_STRIDE_UINTS;
+    g_radix_params[base] = num_elements;
+    g_radix_params[base + 1u] = shift;
+    g_radix_params[base + 2u] = num_workgroups;
+    g_radix_params[base + 3u] = blocks_per_wg;
+}
+
+// --- Main ---
+
+void main() {
+    // Avoid .length() - it requires spvBufferSizeConstants on Metal, which we
+    // do not bind. The counters buffer always has at least 1 entry.
+    uint total_entries = gs_counters.total_entries;
+    uint entry_capacity = view_params.limits.x;
+    uint bounded_entries = min(total_entries, entry_capacity);
+    if (bounded_entries != total_entries) {
+        gs_counters.error_flags |= GS_ERROR_SORT_COUNT_CLAMPED;
+    }
+
+    // Compute radix sort work distribution (mirrors C++ logic exactly).
+    uint radix_num_wg = max(
+            1u, (bounded_entries + RADIX_WG_SIZE * RADIX_BLOCKS_PER_WG - 1u) /
+                        (RADIX_WG_SIZE * RADIX_BLOCKS_PER_WG));
+    uint radix_blocks_per_wg =
+            max(1u, (bounded_entries + radix_num_wg * RADIX_WG_SIZE - 1u) /
+                            (radix_num_wg * RADIX_WG_SIZE));
+
+    uint sort_groups = (bounded_entries == 0u) ? 0u : radix_num_wg;
+
+    // --- Write dispatch args ---
+    // [0..3] histogram passes
+    WriteDispatch(0u, sort_groups, 1u, 1u);
+    WriteDispatch(1u, sort_groups, 1u, 1u);
+    WriteDispatch(2u, sort_groups, 1u, 1u);
+    WriteDispatch(3u, sort_groups, 1u, 1u);
+    // [4..7] sort-scatter passes
+    WriteDispatch(4u, sort_groups, 1u, 1u);
+    WriteDispatch(5u, sort_groups, 1u, 1u);
+    WriteDispatch(6u, sort_groups, 1u, 1u);
+    WriteDispatch(7u, sort_groups, 1u, 1u);
+
+    // --- Write RadixSortParams for each of 4 sort passes ---
+    for (uint i = 0u; i < 4u; i++) {
+        WriteRadixParams(i, bounded_entries,
+                         i * 8u,  // shift: 0, 8, 16, 24
+                         radix_num_wg, radix_blocks_per_wg);
+    }
+}
