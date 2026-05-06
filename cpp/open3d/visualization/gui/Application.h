@@ -33,6 +33,7 @@ class Scene;
 namespace gui {
 
 struct Theme;
+class Dialog;
 class Window;
 class WindowSystem;
 
@@ -43,13 +44,9 @@ public:
     virtual ~Application();
 
     /// Initializes the application, and in particular, finds the path for
-    /// the resources. If you can provide the argc/argv arguments it is more
-    /// reliable.
+    /// the resources.
     void Initialize();
-    /// Initializes the application, and in particular, finds the path for
-    /// the resources. If you can provide the argc/argv arguments it is more
-    /// reliable.
-    void Initialize(int argc, const char *argv[]);
+
     /// Initializes the application, with a specific path to the resources.
     void Initialize(const char *resource_path);
 
@@ -116,6 +113,9 @@ public:
     /// Returns high-resolution counter value (in seconds). Not valid
     /// until Initialize() is called.
     double Now() const;
+
+    /// Returns true once the GUI run loop has started processing frames.
+    bool IsRunning() const;
 
     /// Delivers the itemId to the active window. Used internally.
     void OnMenuItemSelected(Menu::ItemId itemId);
@@ -191,6 +191,19 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
+
+// ---------------------------------------------------------------------------
+// Shared dialog factories (usable from any visualizer)
+// ---------------------------------------------------------------------------
+
+/// Creates a modal "About" dialog showing the Open3D version and MIT license.
+/// Call window->ShowDialog(CreateAboutDialog(window)) to display it.
+std::shared_ptr<Dialog> CreateAboutDialog(Window *window);
+
+/// Creates a modal "Controls" dialog documenting all mouse and keyboard
+/// shortcuts for Orbit (Arcball) and Fly camera modes.
+/// Call window->ShowDialog(CreateControlsHelpDialog(window)) to display it.
+std::shared_ptr<Dialog> CreateControlsHelpDialog(Window *window);
 
 }  // namespace gui
 }  // namespace visualization

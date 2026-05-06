@@ -70,11 +70,29 @@ open3d_link_3rdparty_libraries(GUI)
 # --- build resources ----
 file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
 
+set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
+    ../rendering/gaussian_splat/shaders/gaussian_project.comp
+    ../rendering/gaussian_splat/shaders/gaussian_composite.comp
+    ../rendering/gaussian_splat/shaders/gaussian_radix_sort_histograms.comp
+    ../rendering/gaussian_splat/shaders/gaussian_radix_sort_scatter.comp
+    ../rendering/gaussian_splat/shaders/gaussian_compute_dispatch_args.comp
+    ../rendering/gaussian_splat/shaders/gaussian_depth_merge.comp
+)
+
 # copy GUI/Resources -> <output>/resources
 set(GUI_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
 file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
 file(COPY ${GUI_RESOURCE_SOURCE_FILES}
      DESTINATION ${GUI_RESOURCE_DIR})
+
+include(Open3DAddComputeShaders)
+
+open3d_add_compute_shaders(gaussian_compute_shaders
+    OUTPUT_DIRECTORY
+    ${GUI_RESOURCE_DIR}/gaussian_splat
+    SOURCES
+    ${GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES}
+)
 
 
 include(Open3DAddCompiledMaterials)
@@ -95,7 +113,6 @@ open3d_add_compiled_materials(materials
     Materials/infiniteGroundPlane.mat
     Materials/normals.mat
     Materials/pointcloud.mat
-    Materials/gaussianSplat.mat
     Materials/ui_blit.mat
     Materials/unlitBackground.mat
     Materials/unlitGradient.mat
@@ -108,11 +125,14 @@ open3d_add_compiled_materials(materials
 add_source_group(Materials)
 
 add_dependencies(GUI materials)
+add_dependencies(GUI gaussian_compute_shaders)
 
 get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
+get_target_property(GAUSSIAN_COMPUTE_SHADER_OUTPUT_FILES gaussian_compute_shaders COMPUTE_SHADER_FILES)
 
 # Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
 set(GUI_RESOURCE_FILES
     ${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES}
+    ${GAUSSIAN_COMPUTE_SHADER_OUTPUT_FILES}
     PARENT_SCOPE)
 set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)

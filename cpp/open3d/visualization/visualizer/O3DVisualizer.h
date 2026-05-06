@@ -202,6 +202,11 @@ public:
 
     void ExportCurrentImage(const std::string& path);
 
+    /// Copies the current camera view parameters to the clipboard as a JSON
+    /// string with fields: intrinsic_matrix, extrinsic_matrix, near_plane,
+    /// far_plane. Field names match draw.py parameters for easy reuse.
+    void CopyViewToClipboard();
+
     UIState GetUIState() const;
     rendering::Open3DScene* GetScene() const;
 
