@@ -1,0 +1,511 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// Gaussian splat projection pass.
+//
+// Each invocation processes one splat:
+//   1. Transforms the 3D Gaussian to screen space, evaluating the 2D covariance
+//      and per-pixel Gaussian kernel (inv_basis) from the 3x3 model covariance.
+//   2. Evaluates the view-dependent SH color.
+//   3. Writes per-splat composite data (ProjectedComposite, 32 B, binding 6)
+//      consumed only by gaussian_composite.comp.
+//   4. For each screen tile the splat overlaps, atomically claims a slot in the
+//      sort_keys/sort_values ping-pong buffers (bindings 7/8) and writes a
+//      32-bit sort key: (tile_index << D) | ((depth_bits << 1) >> T).
+//      sort_values[pos] = splat_index so the radix sort output IS the sorted
+//      splat-index array - no separate payload pass is needed.
+//
+// Fusing entry generation here eliminates the old prefix_sum + scatter + keygen
+// + payload passes (~65 ms) and ~80 MB of intermediate GPU buffers.
+// Opt4b: ProjectedComposite (32 B, binding 6) packs all composite-pass data.
+// Opt8:  Early cull: behind-camera splats rejected before covariance/SH math.
+
+#version 460
+
+// Subgroup extensions for batched atomicAdd in WriteSortEntries.
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+// Composite-pass output: fp16 center + fp32 depth/alpha + RGBA8 + vec4
+// inv_basis (32 B). Inlining inv_basis avoids a separate SSBO lookup in the
+// composite cooperative load — one 32 B fetch instead of two 16 B fetches.
+struct ProjectedComposite {
+    uint center_xy_fp16;  // packHalf2x16(center_x, center_y) viewport pixels
+    float depth;          // normalized linear depth (near=0, far=1)
+    float alpha;          // sigmoid(opacity) × density_compensation
+    uint packed_rgba8;    // RGBA8 view-dependent color
+    vec4 inv_basis;  // 2×2 inverse covariance basis (row-major), 16 B align
+};
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+}
+view_params;
+
+layout(std430, binding = 1) restrict readonly buffer GaussianPositions {
+    vec4 positions[];
+};
+
+// fp16×4 packed as uvec2: .x = packHalf2x16(sx, sy), .y = packHalf2x16(sz, 0)
+// Values are linear scales (not log); clamped to [1e-9, 5e8] in the shader.
+layout(std430, binding = 2) restrict readonly buffer GaussianScales {
+    uvec2 scales[];
+};
+
+// snorm8-biased×4 in one uint: bytes 0-3 = (w, x, y, z) of quaternion;
+// stored byte = int8(round(q * 127)) + 128.  GPU decode: (byte - 128) / 127.
+layout(std430, binding = 3) restrict readonly buffer GaussianRotations {
+    uint rotations[];
+};
+
+// fp16×4 packed as uvec2: .x = packHalf2x16(r, g), .y = packHalf2x16(b,
+// sigmoid(opacity_logit)) — sigmoid is applied on CPU at pack time.
+layout(std430, binding = 4) restrict readonly buffer GaussianDcOpacity {
+    uvec2 dc_opacity[];
+};
+
+// fp16 uvec2 per entry; stride = GetShDegree() * 3 uvec2 per splat (0, 3, or
+// 6). Each uvec2 = 4 fp16 values, replacing the former fp32 vec4 one-to-one.
+layout(std430, binding = 5) restrict readonly buffer GaussianShCoefficients {
+    uvec2 sh_coeffs[];
+};
+
+layout(std430, binding = 6) restrict writeonly buffer ProjectedComposites {
+    ProjectedComposite composite[];
+};
+
+// Sort key ping-pong buffer (slot 0): key = (tile << D) | (depth >> T).
+layout(std430, binding = 7) restrict writeonly buffer SortKeys {
+    uint sort_keys[];
+};
+
+// Sort value ping-pong buffer (slot 0): value = splat_index.
+// After radix sort, sort_values[final_src][i] is the sorted splat index.
+layout(std430, binding = 8) restrict writeonly buffer SortValues {
+    uint sort_values[];
+};
+
+// Global entry counter and error flags; cleared by CPU before this pass.
+layout(std430, binding = 10) restrict buffer GaussianGlobalCounters {
+    uint total_entries;  // atomically incremented once per (splat, tile) pair
+    uint error_flags;    // GPU error bitmask
+    uint tile_count;     // informational
+    uint splat_count;    // informational
+}
+gs_counters;
+
+// Bit-packed per-splat visibility mask written by the CPU (via ShowGeometry).
+// bit k of word (k/32): 1 = render splat k, 0 = cull (write dead projection
+// so downstream passes skip). Size = ceil(splat_count / 32) uint words.
+layout(std430, binding = 15) restrict readonly buffer VisibilityMask {
+    uint visibility_mask[];
+};
+
+const float kMinDeterminant = 1e-8;
+const float kMinEigenValue = 1e-6;
+const float kMinAlpha = 1.0 / 255.0;
+const uint kGsErrorTileEntryOverflow = 1u << 0;
+
+uint GetSplatCount() { return view_params.scene.x; }
+
+uint GetShDegree() {
+    // view_params.scene.y already stores min(config.max_sh_degree,
+    // actual_degree) on the CPU; clamp again to the shader-supported maximum.
+    return min(view_params.scene.y, 2u);
+}
+
+// Returns true when density-compensation anti-aliasing is enabled.
+bool GetAntialias() { return view_params.scene.z != 0u; }
+
+// Returns true when screen/image coordinates use Y=0 at the top.
+bool GetScreenYDown() { return view_params.scene.w != 0u; }
+
+uvec2 GetTileSize() { return max(view_params.tiles.xy, uvec2(1u)); }
+
+uvec2 GetTileCount() { return max(view_params.tiles.zw, uvec2(1u)); }
+
+vec2 GetViewportSize() {
+    return max(view_params.viewport_origin_and_size.zw, vec2(1.0));
+}
+
+// Pack RGB color to RGBA8 uint with full alpha using the built-in
+// packUnorm4x8, which maps to a single GPU instruction.
+uint PackColorRGBA8(vec3 color) {
+    return packUnorm4x8(vec4(clamp(color, 0.0, 1.0), 1.0));
+}
+
+uint PackTileCoord(uvec2 tile) { return (tile.y << 16u) | tile.x; }
+
+// Maps 2D tile coordinate to a linear index (tile.y * tile_count.x + tile.x).
+uint LinearTileIndex(uvec2 tile) { return tile.y * GetTileCount().x + tile.x; }
+
+// Build rotation matrix from unit quaternion q = (w, x, y, z) in q.xyzw.
+// Uses vec3 arithmetic to reduce scalar ops and improve readability.
+mat3 QuaternionToRotation(vec4 q) {
+    vec3 v = q.yzw;         // (x, y, z)
+    vec3 v2 = 2.0 * v * v;  // (2x², 2y², 2z²)
+    vec3 diag = 1.0 - vec3(v2.y + v2.z, v2.x + v2.z, v2.x + v2.y);
+    vec3 off = 2.0 * vec3(v.x * v.y, v.x * v.z, v.y * v.z);  // (2xy, 2xz, 2yz)
+    vec3 wt = 2.0 * q.x * vec3(v.z, v.y, v.x);               // (2wz, 2wy, 2wx)
+    // Column-major mat3(col0, col1, col2)
+    return mat3(diag.x, off.x + wt.x, off.y - wt.y, off.x - wt.x, diag.y,
+                off.z + wt.z, off.y + wt.y, off.z - wt.z, diag.z);
+}
+
+// Decode fp16 uvec2 pair to vec3 (linear scales buffer).
+vec3 LoadLinearScale(uint i) {
+    uvec2 p = scales[i];
+    return vec3(unpackHalf2x16(p.x), unpackHalf2x16(p.y).x);
+}
+
+// Decode biased snorm8×4 quaternion (w,x,y,z) from one uint32.
+// Stored as int8(round(q*127))+128; GPU decode: (byte - 128) / 127.
+// normalize() absorbs the ~0.8° quantization error inherent in int8.
+vec4 LoadRotation(uint i) {
+    uvec4 b = (uvec4(rotations[i]) >> uvec4(0u, 8u, 16u, 24u)) & 0xFFu;
+    return normalize((vec4(b) - 128.0) * (1.0 / 127.0));
+}
+
+// Decode fp16 uvec2 pair to vec4 (dc_opacity buffer).
+vec4 LoadDcOpacity(uint i) {
+    uvec2 p = dc_opacity[i];
+    return vec4(unpackHalf2x16(p.x), unpackHalf2x16(p.y));
+}
+
+// Load one logical vec4 worth of SH coefficients as fp16.
+// Stride = GetShDegree() * 3 uvec2/splat; each uvec2 encodes 4 fp16 values,
+// keeping the same local_vec4_index interface as before.
+vec4 LoadShVec4(uint splat_index, uint local_vec4_index) {
+    uint stride = GetShDegree() * 3u;
+    uvec2 p = sh_coeffs[splat_index * stride + local_vec4_index];
+    return vec4(unpackHalf2x16(p.x), unpackHalf2x16(p.y));
+}
+
+// buffer3 (index 2) is shared between degree-1 and degree-2 evaluation to
+// avoid loading the same vec4 twice when both degrees are active.
+vec3 EvaluateShDegree1(vec3 dir, uint splat_index, vec4 buffer3) {
+    vec4 b1 = LoadShVec4(splat_index, 0u);
+    vec4 b2 = LoadShVec4(splat_index, 1u);
+    // f_rest is packed as basis-major RGB triples:
+    // (Y-1.r, Y-1.g, Y-1.b, Y0.r | Y0.g, Y0.b, Y+1.r, Y+1.g |
+    // Y+1.b)
+    vec3 yn1 = vec3(b1.x, b1.y, b1.z);       // m=-1, scaled by dir.y
+    vec3 y0 = vec3(b1.w, b2.x, b2.y);        // m= 0, scaled by dir.z
+    vec3 yp1 = vec3(b2.z, b2.w, buffer3.x);  // m=+1, scaled by dir.x
+    const float c1 = 0.4886025119;
+    return c1 * (-yn1 * dir.y + y0 * dir.z - yp1 * dir.x);
+}
+
+vec3 EvaluateShDegree2(vec3 dir, uint splat_index, vec4 buffer3) {
+    vec4 b4 = LoadShVec4(splat_index, 3u);
+    vec4 b5 = LoadShVec4(splat_index, 4u);
+    vec4 b6 = LoadShVec4(splat_index, 5u);
+
+    const vec3 c012 = vec3(1.0925484306, -1.0925484306, 0.3153915653);
+    const vec2 c34 = vec2(-1.0925484306, 0.5462742153);
+    float x = dir.x, y = dir.y, z = dir.z;
+    vec3 basis0 = c012 * vec3(x * y, y * z, 3.0 * z * z - 1.0);
+    vec2 basis1 = c34 * vec2(x * z, x * x - y * y);
+
+    // Continue the same basis-major RGB order for degree 2:
+    // (Y-2.rgb, Y-1.rgb, Y0.rgb, Y+1.rgb, Y+2.rgb)
+    vec3 cm2 = vec3(buffer3.y, buffer3.z, buffer3.w);  // m=-2
+    vec3 cm1 = vec3(b4.x, b4.y, b4.z);                 // m=-1
+    vec3 c0 = vec3(b4.w, b5.x, b5.y);                  // m= 0
+    vec3 cp1 = vec3(b5.z, b5.w, b6.x);                 // m=+1
+    vec3 cp2 = vec3(b6.y, b6.z, b6.w);                 // m=+2
+
+    return cm2 * basis0.x + cm1 * basis0.y + c0 * basis0.z + cp1 * basis1.x +
+           cp2 * basis1.y;
+}
+
+// dc is passed in from the caller to avoid a duplicate LoadDcOpacity() call.
+// buffer3 (index 2) is loaded once and shared between degree-1 and degree-2.
+vec3 EvaluateShColor(uint splat_index, vec3 view_dir, vec4 dc) {
+    const float sh0 = 0.2820947918;
+    vec3 color = vec3(0.5) + sh0 * dc.xyz;
+
+    uint sh_degree = GetShDegree();
+    if (sh_degree >= 1u) {
+        vec4 buffer3 = LoadShVec4(splat_index, 2u);
+        color += EvaluateShDegree1(view_dir, splat_index, buffer3);
+        if (sh_degree >= 2u) {
+            color += EvaluateShDegree2(view_dir, splat_index, buffer3);
+        }
+    }
+
+    return max(color, vec3(0.0));
+}
+
+// Per-splat data returned by ProjectGaussian and consumed by WriteSortEntries.
+// Separating projection from sort-key generation lets all lanes (including
+// those that returned early) participate in the subgroup prefix sum so only
+// one global atomicAdd is issued per subgroup per loop iteration.
+struct SortEntryParams {
+    uvec2 tile_min;
+    uvec2 tile_max;
+    uint depth_bits;
+    uint splat_index;
+    uint entry_count;  // 0 for culled/invisible splats
+};
+
+// Convenience: return a zero-work params for any culled splat.
+SortEntryParams CulledEntryParams(uint idx) {
+    return SortEntryParams(uvec2(0u), uvec2(0u), 0u, idx, 0u);
+}
+
+SortEntryParams ProjectGaussian(uint splat_index) {
+    // Bit-packed visibility mask: extract bit (splat_index % 32) from word
+    // (splat_index / 32). 0 = hidden by ShowGeometry(); no sort entries are
+    // generated for hidden splats.
+    if (((visibility_mask[splat_index >> 5u] >> (splat_index & 31u)) & 1u) ==
+        0u) {
+        return CulledEntryParams(splat_index);
+    }
+
+    const float kEps2D = 0.3;  // Subpixel blur to regularise tiny splats
+                               // (standard 3DGS anti-aliasing).
+    // GS positions are already in world space; world_from_model is always
+    // identity so the multiply and w-divide are skipped.
+    vec3 world_position = positions[splat_index].xyz;
+    vec4 view_center = view_params.view_from_world * vec4(world_position, 1.0);
+    vec4 clip_center = view_params.clip_from_view * view_center;
+
+    // Early reject: behind camera or outside [near, far].
+    // Sub-threshold alpha splats are already filtered CPU-side by
+    // PackGaussianSplatAttrsDirect() (MaterialRecord.gaussian_splat_min_alpha
+    // = 1/255 by default), so no redundant GPU alpha test is needed here.
+    // dc is loaded once and reused in EvaluateShColor() to avoid a second
+    // LoadDcOpacity() call.
+    float near = view_params.depth_range_and_flags.x;
+    float far = view_params.depth_range_and_flags.y;
+    vec4 dc = LoadDcOpacity(splat_index);
+    float alpha = dc.w;  // sigmoid applied on CPU during buffer packing
+    if (clip_center.w <= 0.0 || view_center.z >= -near ||
+        view_center.z <= -far) {
+        return CulledEntryParams(splat_index);
+    }
+
+    // Scale values are linear (exp already applied at load time).
+    // Clamp to [1e-9, 5e8] — equivalent bounds to the old exp([-20, 20]).
+    vec3 scale = clamp(LoadLinearScale(splat_index), vec3(1e-9), vec3(5e8));
+    mat3 scale_sqr_matrix =
+            mat3(scale.x * scale.x, 0.0, 0.0, 0.0, scale.y * scale.y, 0.0, 0.0,
+                 0.0, scale.z * scale.z);
+    mat3 rotation = QuaternionToRotation(LoadRotation(splat_index));
+    // world_from_model is identity so view_from_model == view_from_world.
+    mat3 view_from_model = mat3(view_params.view_from_world) * rotation;
+    mat3 covariance_view =
+            view_from_model * scale_sqr_matrix * transpose(view_from_model);
+
+    vec3 clip_row0 = vec3(view_params.clip_from_view[0].x,
+                          view_params.clip_from_view[1].x,
+                          view_params.clip_from_view[2].x);
+    vec3 clip_row1 = vec3(view_params.clip_from_view[0].y,
+                          view_params.clip_from_view[1].y,
+                          view_params.clip_from_view[2].y);
+    vec3 clip_row3 = vec3(view_params.clip_from_view[0].w,
+                          view_params.clip_from_view[1].w,
+                          view_params.clip_from_view[2].w);
+
+    float inv_w_sq = 1.0 / (clip_center.w * clip_center.w);
+    vec2 resolution = GetViewportSize();
+    vec3 jacobian_x = 0.5 * resolution.x *
+                      (clip_row0 * clip_center.w - clip_row3 * clip_center.x) *
+                      inv_w_sq;
+    // Match the projected 2D covariance to the output image's Y convention.
+    // OpenGL images use Y increasing upward; Metal/output textures use Y=0 at
+    // the top. The sign must match the pixel coordinate system consumed later
+    // by the composite shader.
+    float y_sign = GetScreenYDown() ? -1.0 : 1.0;
+    vec3 jacobian_y = y_sign * 0.5 * resolution.y *
+                      (clip_row1 * clip_center.w - clip_row3 * clip_center.y) *
+                      inv_w_sq;
+
+    vec3 cov_jx = covariance_view * jacobian_x;
+    vec3 cov_jy = covariance_view * jacobian_y;
+    // Pre-blur 2D covariance values (before the kEps2D subpixel
+    // regularisation).
+    float raw_xx = dot(jacobian_x, cov_jx);
+    float raw_xy = dot(jacobian_x, cov_jy);
+    float raw_yy = dot(jacobian_y, cov_jy);
+    // Add subpixel blur to regularise tiny splats (standard 3DGS
+    // anti-aliasing).
+    float cov_xx = raw_xx + kEps2D;
+    float cov_xy = raw_xy;
+    float cov_yy = raw_yy + kEps2D;
+    // Density compensation (gsplat PR #117): reduce opacity of splats whose
+    // apparent size is dominated by the blur kernel rather than their geometry.
+    //   compensation = sqrt(det(Sigma_orig) / det(Sigma_blurred))
+    // This prevents tiny splats from becoming artificially bright after
+    // blurring.
+    if (GetAntialias()) {
+        float det_orig = raw_xx * raw_yy - raw_xy * raw_xy;
+        float det_blur = cov_xx * cov_yy - cov_xy * cov_xy;
+        alpha *= sqrt(max(0.0, det_orig / det_blur));
+    }
+
+    float mid = 0.5 * (cov_xx + cov_yy);
+    float radius = length(vec2(0.5 * (cov_xx - cov_yy), cov_xy));
+    float lambda1 = max(mid + radius, kMinEigenValue);
+    float lambda2 = max(mid - radius, kMinEigenValue);
+
+    vec2 major_dir = radius > 1e-6 ? normalize(vec2(cov_xy, lambda1 - cov_xx))
+                                   : vec2(1.0, 0.0);
+    vec2 minor_dir = vec2(major_dir.y, -major_dir.x);
+    vec2 major_axis = sqrt(2.0 * lambda1) * major_dir;
+    vec2 minor_axis = sqrt(2.0 * lambda2) * minor_dir;
+
+    // Tighten the bbox to only cover pixels where this splat's contribution
+    // exceeds kMinAlpha.  At a Gaussian-UV distance r the per-pixel alpha is
+    // exp(-r²) * alpha, so the threshold is reached at:
+    //   r_eff = sqrt(log(alpha / kMinAlpha))
+    // Cap at 2.0 to match the composite pass's own power < -4.0 early-out,
+    // so opaque splats (alpha >= kMinAlpha * e^4 ≈ 0.21) keep the same
+    // footprint as before.  Translucent floaters get a proportionally smaller
+    // bbox, directly reducing their tile-entry count and buffer pressure.
+    float alpha_cutoff_radius =
+            min(sqrt(max(0.0, log(alpha / kMinAlpha))), 2.0);
+    float bbox_half_x =
+            alpha_cutoff_radius * length(vec2(major_axis.x, minor_axis.x));
+    float bbox_half_y =
+            alpha_cutoff_radius * length(vec2(major_axis.y, minor_axis.y));
+    vec2 bbox_half_extent = max(vec2(bbox_half_x, bbox_half_y), vec2(0.5));
+
+    float basis_det = major_axis.x * minor_axis.y - minor_axis.x * major_axis.y;
+    if (abs(basis_det) < kMinDeterminant) {
+        return CulledEntryParams(splat_index);
+    }
+
+    vec2 center_ndc = clip_center.xy / clip_center.w;
+    // Convert NDC to pixel coordinates using the backend's image-space origin.
+    float center_y = center_ndc.y * 0.5 + 0.5;
+    if (GetScreenYDown()) {
+        center_y = 1.0 - center_y;
+    }
+    vec2 center_pixel = vec2((center_ndc.x * 0.5 + 0.5) * resolution.x,
+                             center_y * resolution.y);
+    vec2 min_pixel = floor(center_pixel - bbox_half_extent);
+    vec2 max_pixel = ceil(center_pixel + bbox_half_extent);
+
+    if (max_pixel.x < 0.0 || max_pixel.y < 0.0 || min_pixel.x >= resolution.x ||
+        min_pixel.y >= resolution.y) {
+        return CulledEntryParams(splat_index);
+    }
+
+    uvec2 tile_size = GetTileSize();
+    uvec2 tile_count = GetTileCount();
+    ivec2 clamped_min_pixel = ivec2(max(min_pixel, vec2(0.0)));
+    ivec2 clamped_max_pixel = ivec2(min(max_pixel, resolution - vec2(1.0)));
+    uvec2 tile_min = uvec2(clamped_min_pixel) / tile_size;
+    uvec2 tile_max = uvec2(clamped_max_pixel) / tile_size;
+    tile_min = min(tile_min, tile_count - uvec2(1u));
+    tile_max = min(tile_max, tile_count - uvec2(1u));
+
+    float inv_basis_det = 1.0 / basis_det;
+    vec4 inv_basis =
+            vec4(minor_axis.y * inv_basis_det, -minor_axis.x * inv_basis_det,
+                 -major_axis.y * inv_basis_det, major_axis.x * inv_basis_det);
+
+    vec3 view_dir = world_position - view_params.camera_position_and_near.xyz;
+    float view_dir_length_sq = dot(view_dir, view_dir);
+    if (view_dir_length_sq > 0.0) {
+        view_dir *= inversesqrt(view_dir_length_sq);
+    } else {
+        view_dir = vec3(0.0, 0.0, 1.0);
+    }
+
+    // Normalize view-space depth to [0, 1] with near=0, far=1.
+    // Uniform distribution gives constant sort-key resolution across the range.
+    // Splats outside [near, far] are already culled above, so always in [0, 1].
+    float norm_depth = (-view_center.z - near) / (far - near);
+
+    // Composite buffer (binding 6): all composite-pass data in one 32 B struct.
+    composite[splat_index].center_xy_fp16 = packHalf2x16(center_pixel);
+    composite[splat_index].depth = norm_depth;
+    composite[splat_index].alpha = alpha;
+    composite[splat_index].packed_rgba8 =
+            PackColorRGBA8(EvaluateShColor(splat_index, view_dir, dc));
+    composite[splat_index].inv_basis = inv_basis;
+
+    // Return tile range and packed depth for WriteSortEntries, which issues
+    // one batched atomicAdd per subgroup instead of one per (splat, tile).
+    // T and D are re-derived from view_params in WriteSortEntries.
+    uint depth_bits = floatBitsToUint(clamp(norm_depth, 0.0, 1.0));
+    uint entry_count =
+            (tile_max.x - tile_min.x + 1u) * (tile_max.y - tile_min.y + 1u);
+    return SortEntryParams(tile_min, tile_max, depth_bits, splat_index,
+                           entry_count);
+}
+
+// Write sort entries for one splat using a subgroup-level prefix sum so only
+// one global atomicAdd is issued per subgroup per loop iteration (~32x fewer
+// atomics than one-per-tile).  All lanes call this — including those that
+// returned CulledEntryParams from ProjectGaussian with entry_count = 0, so
+// the subgroup operations always see a full (or uniform-tail) set of lanes.
+void WriteSortEntries(SortEntryParams p) {
+    // Prefix sum: claim a contiguous block of sort-key slots for this lane.
+    uint sg_total = subgroupAdd(p.entry_count);
+    uint sg_offset = subgroupExclusiveAdd(p.entry_count);
+    uint sg_base = 0u;
+    if (subgroupElect()) {
+        sg_base = atomicAdd(gs_counters.total_entries, sg_total);
+    }
+    sg_base = subgroupBroadcastFirst(sg_base);
+    uint my_base = sg_base + sg_offset;
+
+    if (p.entry_count == 0u) return;
+
+    uint T = view_params.limits.w;
+    uint D = 32u - T;
+    uint entry_cap = view_params.limits.x;
+
+    // Report overflow if any entry in this splat's range exceeds the cap.
+    if (my_base + p.entry_count > entry_cap) {
+        atomicOr(gs_counters.error_flags, kGsErrorTileEntryOverflow);
+    }
+
+    uint local_entry = 0u;
+    for (uint ty = p.tile_min.y; ty <= p.tile_max.y; ++ty) {
+        for (uint tx = p.tile_min.x; tx <= p.tile_max.x; ++tx) {
+            uint pos = my_base + local_entry;
+            if (pos < entry_cap) {
+                uint tile_idx = LinearTileIndex(uvec2(tx, ty));
+                sort_keys[pos] = (tile_idx << D) | ((p.depth_bits << 1u) >> T);
+                sort_values[pos] = p.splat_index;
+            }
+            local_entry++;
+        }
+    }
+}
+
+void main() {
+    // Linearise the 2D workgroup grid so a single dispatch can cover more than
+    // 65535 workgroups (Vulkan maxComputeWorkGroupCount[0] limit).
+    // PassRunner dispatches as (min(groups, 65535), ceil(groups / 65535), 1).
+    uint wg_id = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+    uint global_index = wg_id * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+    uint total_invocations =
+            gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_WorkGroupSize.x;
+    uint splat_count = GetSplatCount();
+    for (uint splat_index = global_index; splat_index < splat_count;
+         splat_index += max(total_invocations, 1u)) {
+        SortEntryParams params = ProjectGaussian(splat_index);
+        WriteSortEntries(params);
+    }
+}

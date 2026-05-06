@@ -47,7 +47,7 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
         add_custom_command(TARGET "${TARGET_NAME}"
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
-            COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "${APP_DIR}/${RESOURCE_DIR_NAME}"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${GUI_RESOURCE_DIR}" "${APP_DIR}/${RESOURCE_DIR_NAME}"
         )
         if (UNIX)
             install(DIRECTORY   "${APP_DIR}"
