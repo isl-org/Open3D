@@ -12,6 +12,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
@@ -109,7 +110,23 @@ void GLFWWindowSystem::Initialize() {
     // if using a framework version of Python).
     glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
+#if defined(__linux__)
+    // Filament (April 2026) selects PlatformGLX exclusively on Linux
+    // (compile-time decision in PlatformFactory.cpp). Force GLFW to X11 so the
+    // native window handle is an X11 Window (XID), matching what PlatformGLX
+    // expects. On Wayland compositors, XWayland transparently provides X11
+    // compatibility.
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+    if (!glfwInit()) {
+        utility::LogWarning(
+                "GLFWWindowSystem: X11 GLFW init failed (XWayland not "
+                "available?). Falling back to headless mode.");
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
+        glfwInit();
+    }
+#else
     glfwInit();
+#endif
 }
 
 void GLFWWindowSystem::Uninitialize() { glfwTerminate(); }
@@ -184,9 +201,13 @@ void GLFWWindowSystem::DestroyWindow(OSWindow w) {
 void GLFWWindowSystem::PostRedrawEvent(OSWindow w) {
 #if __APPLE__
     // Layer-backed Metal views do not trigger GLFW's refresh callback when
-    // marked dirty. Call the draw callback directly so we actually render.
+    // marked dirty. Call the draw callback directly so we actually render, but
+    // avoid doing that during AddWindow() before the app loop is running or
+    // before the native window becomes visible.
     GLFWwindow* window = static_cast<GLFWwindow*>(w);
-    if (!window || glfwWindowShouldClose(window)) {
+    if (!window || glfwWindowShouldClose(window) ||
+        !Application::GetInstance().IsRunning() ||
+        !glfwGetWindowAttrib(window, GLFW_VISIBLE)) {
         return;
     }
     DrawCallback(window);
@@ -526,6 +547,13 @@ rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
 void GLFWWindowSystem::ResizeRenderer(OSWindow w,
                                       rendering::FilamentRenderer* renderer) {
 #if __APPLE__
+    // Sync CAMetalLayer drawableSize to the new physical pixel dimensions
+    // before recreating the swap chain, so Filament's drawable and the GLFW
+    // framebuffer size (used for the Filament viewport) agree.  Without this,
+    // moving the window between Retina and non-Retina displays (or the initial
+    // window-show resize) leaves the layer at the wrong size, causing the
+    // rendered content to appear only in the lower-left quarter on Retina.
+    ResizeNativeWindow((GLFWwindow*)w);
     // We need to recreate the swap chain after resizing a window on macOS
     // otherwise things look very wrong. SwapChain does not need to be resized
     // on other platforms.
@@ -539,6 +567,10 @@ MenuBase* GLFWWindowSystem::CreateOSMenu() {
 #else
     return new MenuImgui();
 #endif
+}
+
+void GLFWWindowSystem::SetClipboardText(OSWindow w, const char* text) {
+    glfwSetClipboardString((GLFWwindow*)w, text);
 }
 
 }  // namespace gui

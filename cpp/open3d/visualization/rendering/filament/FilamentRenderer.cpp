@@ -42,6 +42,7 @@
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 
 namespace open3d {
 namespace visualization {
@@ -56,6 +57,8 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
+    gaussian_splat_renderer_ =
+            std::make_unique<GaussianSplatRenderer>(engine_, resource_mgr_);
 }
 
 FilamentRenderer::FilamentRenderer(filament::Engine& engine,
@@ -68,11 +71,19 @@ FilamentRenderer::FilamentRenderer(filament::Engine& engine,
     renderer_ = engine_.createRenderer();
 
     materials_modifier_ = std::make_unique<FilamentMaterialModifier>();
+    gaussian_splat_renderer_ =
+            std::make_unique<GaussianSplatRenderer>(engine_, resource_mgr_);
 }
 
 FilamentRenderer::~FilamentRenderer() {
-    scenes_.clear();
+    // Destroy GS output targets (render targets + imported textures) BEFORE
+    // the renderer and swap chain.  Filament's deferred command queue is FIFO,
+    // so any engine.destroy(rt/tex) calls queued here will be processed before
+    // engine.destroy(renderer_) and engine.destroy(swap_chain_), which matches
+    // the required teardown order (RTs before renderer before swap chain).
+    gaussian_splat_renderer_.reset();
 
+    scenes_.clear();
     engine_.destroy(renderer_);
     engine_.destroy(swap_chain_);
 }
@@ -86,8 +97,7 @@ SceneHandle FilamentRenderer::CreateScene() {
 }
 
 Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
-    auto found = scenes_.find(id);
-    if (found != scenes_.end()) {
+    if (const auto found = scenes_.find(id); found != scenes_.end()) {
         return found->second.get();
     }
 
@@ -96,6 +106,37 @@ Scene* FilamentRenderer::GetScene(const SceneHandle& id) const {
 
 void FilamentRenderer::DestroyScene(const SceneHandle& id) {
     scenes_.erase(id);
+}
+
+bool FilamentRenderer::HasGaussianSplatOutput(const FilamentView& view) const {
+    return gaussian_splat_renderer_ &&
+           gaussian_splat_renderer_->HasOutput(view);
+}
+
+TextureHandle FilamentRenderer::GetGaussianSplatColorTexture(
+        const FilamentView& view) const {
+    return gaussian_splat_renderer_
+                   ? gaussian_splat_renderer_->GetColorTexture(view)
+                   : TextureHandle();
+}
+
+TextureHandle FilamentRenderer::GetGaussianSplatDepthTexture(
+        const FilamentView& view) const {
+    return gaussian_splat_renderer_
+                   ? gaussian_splat_renderer_->GetDepthTexture(view)
+                   : TextureHandle();
+}
+
+int FilamentRenderer::GetGaussianSplatMaxShDegree() const {
+    return gaussian_splat_renderer_
+                   ? gaussian_splat_renderer_->GetRenderConfig().max_sh_degree
+                   : 2;
+}
+
+void FilamentRenderer::InvalidateGaussianSplatOutput(FilamentView& view) {
+    if (gaussian_splat_renderer_) {
+        gaussian_splat_renderer_->InvalidateOutputForView(view);
+    }
 }
 
 void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
@@ -111,6 +152,11 @@ void FilamentRenderer::SetClearColor(const Eigen::Vector4f& color) {
 
 void FilamentRenderer::SetOnAfterDraw(std::function<void()> callback) {
     on_after_draw_ = callback;
+}
+
+void FilamentRenderer::SetOnAppleGaussianCompositeComplete(
+        std::function<void()> callback) {
+    on_apple_gaussian_composite_complete_ = std::move(callback);
 }
 
 void FilamentRenderer::UpdateSwapChain() {
@@ -143,15 +189,67 @@ void FilamentRenderer::BeginFrame() {
         buffer_renderers_.clear();  // Cleanup
     }
 
+    if (gaussian_splat_renderer_) {
+        gaussian_splat_renderer_->BeginFrame();
+#if !defined(__APPLE__)
+        // Drain any pending Filament (OpenGL) work before the geometry pass
+        // begins. Filament renders on its own driver thread with an OpenGL
+        // backend; flushAndWait() enqueues glFinish() there and blocks until
+        // it completes. This ensures the shared interop textures from the
+        // previous frame are no longer in use by the GL driver before Vulkan
+        // compute overwrites them. (Vulkan and Filament run independent queues;
+        // there is no shared queue between them.)
+        engine_.flushAndWait();
+#endif
+
+        // Dispatch Gaussian splat geometry work before Filament's beginFrame
+        // so our queue submissions do not conflict with Filament's frame.
+        //
+        // Build live_views from ALL views that must not be pruned: scene views
+        // (including cached-but-inactive ones) AND active buffer-renderer views
+        // whose capture is still pending.  Buffer-renderer views must be added
+        // BEFORE PruneOutputs() so their outputs are not destroyed mid-capture.
+        std::unordered_set<const FilamentView*> live_views;
+        for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+            scene->ForEachView([&live_views](const FilamentView& view) {
+                live_views.insert(&view);
+            });
+            scene->ForEachActiveView([this, &scene](FilamentView& view) {
+                gaussian_splat_renderer_->RenderGeometryStage(view, *scene);
+            });
+        }
+        for (const auto& br : buffer_renderers_) {
+            live_views.insert(static_cast<FilamentView*>(&br->GetView()));
+        }
+        gaussian_splat_renderer_->PruneOutputs(live_views);
+    }
+
     frame_started_ = renderer_->beginFrame(swap_chain_);
 }
 
 void FilamentRenderer::Draw() {
     if (frame_started_) {
         // Draw 3D scenes into textures
-        for (const auto& pair : scenes_) {
-            pair.second->Draw(*renderer_);
+        for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+            scene->Draw(*renderer_);
         }
+
+        // Non-Apple backends composite into the overlay during the current
+        // frame. Apple runs the composite stage after endFrame() so the Metal
+        // depth texture is fully produced before compute samples it.
+#if !defined(__APPLE__)
+        if (gaussian_splat_renderer_) {
+            // Wait for Filament's OpenGL scene draw to finish so the shared
+            // depth texture is fully written before the composite pass reads
+            // it.
+            engine_.flushAndWait();
+            for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+                scene->ForEachActiveView([this](FilamentView& view) {
+                    gaussian_splat_renderer_->RenderCompositeStage(view);
+                });
+            }
+        }
+#endif
 
         // Draw the UI. This should come after the 3D scene(s), as SceneWidget
         // will draw the textures as an image, and this way we will have the
@@ -169,6 +267,27 @@ void FilamentRenderer::Draw() {
 void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
+#if defined(__APPLE__)
+        if (gaussian_splat_renderer_) {
+            // endFrame() commits Filament's Metal command buffer. Our
+            // composite CB, committed below on the same queue, will
+            // execute after Filament's render — guaranteeing the depth
+            // texture is ready. No flushAndWait needed; blocking here
+            // stalls the main thread behind expensive geometry compute
+            // CBs that are ahead in the queue.
+            bool any_composite = false;
+            for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+                scene->ForEachActiveView([this,
+                                          &any_composite](FilamentView& view) {
+                    gaussian_splat_renderer_->RenderCompositeStage(view);
+                    any_composite = true;
+                });
+            }
+            if (any_composite && on_apple_gaussian_composite_complete_) {
+                on_apple_gaussian_composite_complete_();
+            }
+        }
+#endif
         if (needs_wait_after_draw_) {
             engine_.flushAndWait();
             needs_wait_after_draw_ = false;
@@ -229,9 +348,8 @@ MaterialInstanceHandle FilamentRenderer::AddMaterialInstance(
 MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
     materials_modifier_->Reset();
 
-    auto instance_id = resource_mgr_.CreateMaterialInstance(id);
-
-    if (instance_id) {
+    if (auto instance_id = resource_mgr_.CreateMaterialInstance(id);
+        instance_id) {
         auto w_material_instance =
                 resource_mgr_.GetMaterialInstance(instance_id);
         materials_modifier_->Init(w_material_instance.lock(), instance_id);
@@ -248,8 +366,8 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
         const MaterialInstanceHandle& id) {
     materials_modifier_->Reset();
 
-    auto w_material_instance = resource_mgr_.GetMaterialInstance(id);
-    if (!w_material_instance.expired()) {
+    if (auto w_material_instance = resource_mgr_.GetMaterialInstance(id);
+        !w_material_instance.expired()) {
         materials_modifier_->Init(w_material_instance.lock(), id);
     } else {
         utility::LogWarning(
@@ -325,6 +443,9 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
 
 std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
     auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_);
+    // Wire the GS renderer so the offscreen path runs the same pipeline
+    // stages (geometry + composite) as the interactive window.
+    renderer->gaussian_splat_renderer_ = gaussian_splat_renderer_.get();
     buffer_renderers_.insert(renderer);
     return renderer;
 }

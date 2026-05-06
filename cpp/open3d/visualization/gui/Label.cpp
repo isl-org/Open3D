@@ -139,6 +139,27 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     return Widget::DrawResult::NONE;
 }
 
+void Label::DrawOverlay(const DrawContext& context) const {
+    const auto& frame = GetFrame();
+    ImDrawList* draw_list = ImGui::GetForegroundDrawList();
+    ImFont* font = (ImFont*)context.fonts.GetFont(impl_->font_id_);
+    const float font_size = font->FontSize;
+    const bool is_default_color = (impl_->color_ == DEFAULT_COLOR);
+    const ImU32 text_col = is_default_color ? ImGui::GetColorU32(ImGuiCol_Text)
+                                            : colorToImguiRGBA(impl_->color_);
+
+    const ImVec2 padding = ImGui::GetStyle().FramePadding;
+    const ImVec2 pos(float(frame.x + padding.x), float(frame.y + padding.y));
+    const float wrap_width =
+            std::max(1.0f, float(frame.width) - 2.0f * padding.x);
+
+    const char* text_begin = impl_->text_.c_str();
+    const char* text_end = text_begin + impl_->text_.size();
+
+    draw_list->AddText(font, font_size, pos, text_col, text_begin, text_end,
+                       wrap_width);
+}
+
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

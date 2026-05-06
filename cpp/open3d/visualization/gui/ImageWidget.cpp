@@ -106,7 +106,7 @@ Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
                 ImVec2(params.pos_x, params.pos_y - ImGui::GetScrollY()));
         ImVec2 uv0 = ImVec2{params.u0, params.v0},
                uv1 = ImVec2{params.u1, params.v1};
-        // Switch to Y down for Vulkand and Metal backends
+        // Switch to Y down for Vulkan and Metal backends
         if (context.renderer.GetBackendType() !=
             rendering::RenderingType::kOpenGL) {
             uv0.y = params.v1;
