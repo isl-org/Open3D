@@ -158,6 +158,20 @@ RegistrationResult RegistrationICP(
                 TransformationEstimationPointToPoint(false),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
+/// \brief DCReg-compatible ICP registration with kNN local-plane residuals and
+/// a local body-frame SO(3) pose update.
+///
+/// This function is intentionally separate from RegistrationICP because the
+/// standalone DCReg update needs the original source points and current pose
+/// state, which are not available inside a TransformationEstimation callback.
+RegistrationResult RegistrationICPDCRegLocal(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_correspondence_distance,
+        const Eigen::Matrix4d &init = Eigen::Matrix4d::Identity(),
+        const DCRegOption &option = DCRegOption(),
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+
 /// \brief Function for global RANSAC registration based on a given set of
 /// correspondences.
 ///

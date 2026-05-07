@@ -4,6 +4,7 @@ Pipelines
 .. toctree::
 
     icp_registration
+    dcreg_icp
     generalized_icp
     robust_kernels
     colored_pointcloud_registration
