@@ -151,6 +151,19 @@ void pybind_registration_declarations(py::module &m) {
                  "normals. It considers vertex normal affinity of any "
                  "correspondences. It computes dot product of two normal "
                  "vectors. It takes radian value for the threshold.");
+    py::class_<
+            CorrespondenceCheckerBasedOnSourceRotation,
+            PyCorrespondenceChecker<CorrespondenceCheckerBasedOnSourceRotation>,
+            CorrespondenceChecker>
+            cc_r(m_registration, "CorrespondenceCheckerBasedOnSourceRotation",
+                 "Class to limit the rotation of the source object.\n"
+                 "It checks if the transformation is rotated too much from its "
+                 "initial, unrotated state (identity matrix).\n"
+                 "Rotations are checked by comparing the components of the "
+                 "angle-axis representation (SO(3) log vector) of the "
+                 "estimated transformation to the given thresholds. It is "
+                 "assumed that the user is aware of the x, y, z axes of the "
+                 "source object when setting these tolerances.");
     py::class_<FastGlobalRegistrationOption> fgr_option(
             m_registration, "FastGlobalRegistrationOption",
             "Options for FastGlobalRegistration.");
@@ -415,7 +428,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
              {"target", "Target point cloud."},
              {"corres",
               "Correspondence set between source and target point cloud."},
-             {"transformation", "The estimated transformation (inplace)."}});
+             {"transformation", "The estimated transformation."}});
 
     // open3d.registration.CorrespondenceCheckerBasedOnEdgeLength:
     // CorrespondenceChecker
@@ -503,6 +516,38 @@ must hold true for all edges.)");
                            &CorrespondenceCheckerBasedOnNormal::
                                    normal_angle_threshold_,
                            "Radian value for angle threshold.");
+
+    // open3d.registration.CorrespondenceCheckerBasedOnSourceRotation:
+    // CorrespondenceChecker
+    auto cc_r = static_cast<py::class_<
+            CorrespondenceCheckerBasedOnSourceRotation,
+            PyCorrespondenceChecker<CorrespondenceCheckerBasedOnSourceRotation>,
+            CorrespondenceChecker>>(
+            m_registration.attr("CorrespondenceCheckerBasedOnSourceRotation"));
+    py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnSourceRotation>(
+            cc_r);
+    cc_r.def(py::init([](const Eigen::Vector3d &rotation_threshold) {
+                 return new CorrespondenceCheckerBasedOnSourceRotation(
+                         rotation_threshold);
+             }),
+             "rotation_threshold"_a)
+            .def("__repr__",
+                 [](const CorrespondenceCheckerBasedOnSourceRotation &c) {
+                     return fmt::format(
+                             ""
+                             "CorrespondenceCheckerBasedOnSourceRotation with "
+                             "rotation_threshold={:f}, {:f}, {:f} radians.",
+                             c.rotation_threshold_[0], c.rotation_threshold_[1],
+                             c.rotation_threshold_[2]);
+                 })
+            .def_readwrite("rotation_threshold",
+                           &CorrespondenceCheckerBasedOnSourceRotation::
+                                   rotation_threshold_,
+                           "Float64 numpy array of shape (3,) representing "
+                           "the maximum allowed thresholds [rx, ry, rz] "
+                           "in radians for the angle-axis representation components. "
+                           "It is assumed the user is aware of the x, y, z axes "
+                           "of the source object. A value < 0 means unconstrained.");
 
     // open3d.registration.FastGlobalRegistrationOption:
     auto fgr_option = static_cast<py::class_<FastGlobalRegistrationOption>>(
@@ -614,7 +659,8 @@ must hold true for all edges.)");
                      "clouds can be aligned. One of "
                      "(``CorrespondenceCheckerBasedOnEdgeLength``, "
                      "``CorrespondenceCheckerBasedOnDistance``, "
-                     "``CorrespondenceCheckerBasedOnNormal``)"},
+                     "``CorrespondenceCheckerBasedOnNormal``, "
+                     "``CorrespondenceCheckerBasedOnSourceRotation``)"},
                     {"confidence",
                      "Desired probability of success for RANSAC. Used for "
                      "estimating early termination by k = log(1 - "

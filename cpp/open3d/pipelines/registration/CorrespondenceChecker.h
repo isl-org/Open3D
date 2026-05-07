@@ -46,7 +46,7 @@ public:
     /// \param source Source point cloud.
     /// \param target Target point cloud.
     /// \param corres Correspondence set between source and target point cloud.
-    /// \param transformation The estimated transformation (inplace).
+    /// \param transformation The estimated transformation.
     virtual bool Check(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
                        const CorrespondenceSet &corres,
@@ -141,6 +141,50 @@ public:
 public:
     /// Radian value for angle threshold.
     double normal_angle_threshold_;
+};
+
+/// \class CorrespondenceCheckerBasedOnSourceRotation
+///
+/// \brief Class to limit the rotation of the source object.
+///
+/// It checks if the transformation is rotated too much from its initial, 
+/// unrotated state (identity matrix). 
+/// Rotations are checked by comparing the components of the angle-axis 
+/// representation (SO(3) log vector) of the estimated transformation 
+/// to the given thresholds. It is assumed that the user is aware of the 
+/// x, y, z axes of the source object when setting these tolerances. 
+class CorrespondenceCheckerBasedOnSourceRotation
+    : public CorrespondenceChecker {
+public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param rotation_threshold specifies the threshold in radians within the
+    /// transformation. Rotations are checked by cartesian angles. If a rotation
+    /// threshold is set to < 0, it is not checked (free to rotate).
+    CorrespondenceCheckerBasedOnSourceRotation(
+            const Eigen::Vector3d &rotation_threshold = Eigen::Vector3d(-1,
+                                                                        -1,
+                                                                        -1))
+        : CorrespondenceChecker(false),
+          rotation_threshold_(rotation_threshold) {}
+    ~CorrespondenceCheckerBasedOnSourceRotation() override {}
+
+public:
+    /// \brief Function to check if two points can be aligned.
+    ///
+    /// \param source Source point cloud.
+    /// \param target Target point cloud.
+    /// \param corres Correspondence set between source and target point cloud.
+    /// \param transformation The estimated transformation.
+    bool Check(const geometry::PointCloud &source,
+               const geometry::PointCloud &target,
+               const CorrespondenceSet &corres,
+               const Eigen::Matrix4d &transformation) const override;
+
+public:
+    /// \brief 3-element vector [rx, ry, rz] representing the rotation angle 
+    /// thresholds in radians. A value < 0 means unconstrained.
+    Eigen::Vector3d rotation_threshold_;
 };
 
 }  // namespace registration
