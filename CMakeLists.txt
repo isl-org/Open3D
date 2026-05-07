@@ -38,6 +38,7 @@ option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
 option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
+option(BUILD_APPS                 "Build the Open3D Applications"            OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"         ON )
@@ -155,6 +156,23 @@ if (NOT DEVELOPER_BUILD)
         message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
     endif()
 endif()
+
+if(UNIX)
+    if(APPLE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
+        set(CMAKE_MACOSX_RPATH ON)
+        set(_rpath_portable_origin "@loader_path/../lib")
+    else()
+        set(_rpath_portable_origin $ORIGIN/../lib)
+    endif()
+    # Use separate rpaths during build and install phases.
+    set(CMAKE_SKIP_BUILD_RPATH FALSE)
+    # Don't use the install-rpath during the build phase.
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    set(CMAKE_INSTALL_RPATH "${_rpath_portable_origin}")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
+message(STATUS "CMAKE_INSTALL_RPATH: " ${CMAKE_INSTALL_RPATH})
 
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
