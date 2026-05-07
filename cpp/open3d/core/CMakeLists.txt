@@ -102,6 +102,7 @@ open3d_sycl_target_sources(core_impl PRIVATE
     linalg/LeastSquaresSYCL.cpp
     linalg/LUSYCL.cpp
     linalg/MatmulSYCL.cpp
+    nns/KnnSearchOpsSYCL.cpp
     linalg/SolveSYCL.cpp
     linalg/SVDSYCL.cpp
     linalg/TriSYCL.cpp

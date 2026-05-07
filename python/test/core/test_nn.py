@@ -19,7 +19,7 @@ from open3d_test import list_devices
 np.random.seed(0)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_knn_index(device):
     dtype = o3c.float32
 
@@ -34,7 +34,7 @@ def test_knn_index(device):
         assert nns.multi_radius_index()
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_knn_search(device):
     dtype = o3c.float32
 
@@ -107,7 +107,7 @@ def test_knn_search(device):
                                rtol=1e-5)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 @pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_fixed_radius_search(device, dtype):
     dataset_points = o3c.Tensor(

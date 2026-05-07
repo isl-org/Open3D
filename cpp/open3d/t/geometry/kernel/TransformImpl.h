@@ -87,6 +87,8 @@ OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RotateNormalsKernel(
     normals_ptr[2] = x[2];
 }
 
+#ifndef OPEN3D_SKIP_TRANSFORM_MAIN
+
 #ifdef __CUDACC__
 void TransformPointsCUDA
 #else
@@ -166,6 +168,8 @@ void RotateNormalsCPU
                           });
     });
 }
+
+#endif  // OPEN3D_SKIP_TRANSFORM_MAIN
 
 }  // namespace transform
 }  // namespace kernel

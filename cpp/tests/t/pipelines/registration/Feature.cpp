@@ -20,10 +20,11 @@
 namespace open3d {
 namespace tests {
 
-class FeaturePermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Feature,
-                         FeaturePermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class FeaturePermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Feature,
+        FeaturePermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(FeaturePermuteDevices, SelectByIndex) {
     core::Device device = GetParam();
