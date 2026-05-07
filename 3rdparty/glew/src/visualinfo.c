@@ -4,7 +4,7 @@
 ** Copyright (C) Nate Robins, 1997
 **               Michael Wimmer, 1999
 **               Milan Ikits, 2002-2008
-**               Nigel Stewart, 2008-2019
+**               Nigel Stewart, 2008-2025
 **
 ** visualinfo is a small utility that displays all available visuals,
 ** aka. pixelformats, in an OpenGL system along with renderer version
@@ -36,6 +36,9 @@
 #include <GL/glew.h>
 #if defined(GLEW_OSMESA)
 #define GLAPI extern
+#ifndef APIENTRY
+#define APIENTRY
+#endif
 #include <GL/osmesa.h>
 #elif defined(GLEW_EGL)
 #include <GL/eglew.h>
@@ -47,18 +50,6 @@
 #elif !defined(__HAIKU__)
 #include <GL/glxew.h>
 #endif
-
-#ifdef GLEW_MX
-GLEWContext _glewctx;
-#  define glewGetContext() (&_glewctx)
-#  ifdef _WIN32
-WGLEWContext _wglewctx;
-#    define wglewGetContext() (&_wglewctx)
-#  elif !defined(__APPLE__) && !defined(__HAIKU__) || defined(GLEW_APPLE_GLX)
-GLXEWContext _glxewctx;
-#    define glxewGetContext() (&_glxewctx)
-#  endif
-#endif /* GLEW_MX */
 
 typedef struct GLContextStruct
 {
@@ -123,6 +114,13 @@ main (int argc, char** argv)
     return 1;
   }
 
+#if defined(GLEW_EGL)
+  {
+    fprintf(stderr, "Error [main]: EGL not supported by visualinfo.\n");
+    return 1;
+  }
+#endif
+
   /* ---------------------------------------------------------------------- */
   /* create OpenGL rendering context */
   InitContext(&ctx);
@@ -136,16 +134,7 @@ main (int argc, char** argv)
   /* ---------------------------------------------------------------------- */
   /* initialize GLEW */
   glewExperimental = GL_TRUE;
-#ifdef GLEW_MX
-  err = glewContextInit(glewGetContext());
-#  ifdef _WIN32
-  err = err || wglewContextInit(wglewGetContext());
-#  elif !defined(__APPLE__) && !defined(__HAIKU__) || defined(GLEW_APPLE_GLX)
-  err = err || glxewContextInit(glxewGetContext());
-#  endif
-#else
   err = glewInit();
-#endif
   if (GLEW_OK != err)
   {
     fprintf(stderr, "Error [main]: glewInit failed: %s\n", glewGetErrorString(err));
@@ -274,6 +263,7 @@ void PrintExtensions (const char* s)
 void
 VisualInfo (GLContext* ctx)
 {
+  (void) ctx; /* not used */
 }
 
 #elif defined(_WIN32)
@@ -1041,7 +1031,7 @@ GLboolean CreateContext (GLContext* ctx)
   {
     osmPixels = (GLubyte *) calloc(osmWidth*osmHeight*4, 1);
   }
-  if (!OSMesaMakeCurrent(ctx->ctx, osmPixels, GL_UNSIGNED_BYTE, osmWidth, osmHeight))
+  if (!OSMesaMakeCurrent(ctx->ctx, osmPixels, osmFormat, osmWidth, osmHeight))
   {
       return GL_TRUE;
   }
@@ -1063,13 +1053,13 @@ void InitContext (GLContext* ctx)
 
 GLboolean CreateContext (GLContext* ctx)
 {
+  (void) ctx; /* not used */
   return GL_FALSE;
 }
 
 void DestroyContext (GLContext* ctx)
 {
-  if (NULL == ctx) return;
-  return;
+  (void) ctx; /* not used */
 }
 
 /* ------------------------------------------------------------------------ */
