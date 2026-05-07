@@ -136,7 +136,18 @@ void pybind_class_io_definitions(py::module &m_io) {
                                 remove_infinite_points, print_progress});
                 return pcd;
             },
-            "Function to read PointCloud with tensor attributes from file.",
+            R"(Read a tensor :class:`open3d.t.geometry.PointCloud` from file.
+
+For 3D Gaussian splat data (``.ply`` / ``.splat`` with the usual attributes):
+
+- **In-memory ``scale``** on the returned point cloud is always **linear** (axis
+  lengths), which matches the Filament / rendering path.
+- **PLY** files follow the common convention of storing **log-scale** per axis;
+  the reader applies ``exp`` so the tensor attribute ``scale`` is linear.
+- **SPLAT** files store **linear** scales already; no conversion is applied.
+
+When writing PLY from a Gaussian splat cloud, ``write_point_cloud`` converts
+``scale`` back to log-space for the same file convention.)",
             "filename"_a, "format"_a = "auto", "remove_nan_points"_a = false,
             "remove_infinite_points"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
@@ -152,7 +163,12 @@ void pybind_class_io_definitions(py::module &m_io) {
                         filename.string(), pointcloud,
                         {write_ascii, compressed, print_progress});
             },
-            "Function to write PointCloud with tensor attributes to file.",
+            R"(Write a tensor :class:`open3d.t.geometry.PointCloud` to file.
+
+For Gaussian splat clouds written as **PLY**, per-point ``scale`` is converted
+from the in-memory **linear** representation to **log-scale** in the file, matching
+common 3DGS PLY conventions (see :meth:`read_point_cloud`). SPLAT output writes
+linear scales directly.)",
             "filename"_a, "pointcloud"_a, "write_ascii"_a = false,
             "compressed"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",

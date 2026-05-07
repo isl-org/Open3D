@@ -29,6 +29,9 @@
 #endif  // _MSC_VER
 
 #include <Eigen/Geometry>
+#include <cstdint>
+#include <functional>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -60,6 +63,7 @@ class FilamentView;
 class GeometryBuffersBuilder;
 class Renderer;
 class View;
+struct GaussianSplatPackedAttrs;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views
@@ -126,6 +130,7 @@ public:
     void OverrideMaterial(const std::string& object_name,
                           const MaterialRecord& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
+    std::uint64_t GetGeometryChangeId() const;
 
     void OverrideMaterialAll(const MaterialRecord& material,
                              bool shader_only = true) override;
@@ -208,6 +213,22 @@ public:
             std::function<void(std::shared_ptr<geometry::Image>)> callback)
             override;
 
+    void ForEachActiveView(const std::function<void(FilamentView&)>& callback);
+    /// Iterate over ALL views (including inactive/cached ones).
+    void ForEachView(const std::function<void(FilamentView&)>& callback) const;
+    bool HasGaussianSplatGeometry() const;
+    /// Returns true when at least one visible non-Gaussian geometry exists
+    /// (i.e., a mesh/pointcloud that occupies Filament scene depth).
+    bool HasNonGaussianVisibleGeometry() const;
+    bool UsesGaussianSplatOutput(const FilamentView& view) const;
+    TextureHandle GetColorBufferForView(const FilamentView& view) const;
+    TextureHandle GetDepthBufferForView(const FilamentView& view) const;
+    /// Invalidates GS output targets for the given view.  Must be called
+    /// before the view's FilamentView::color_buffer_ texture is freed so the
+    /// GS render target (which uses it as an attachment) is torn down first.
+    void InvalidateGaussianSplatOutput(FilamentView& view);
+    const GaussianSplatPackedAttrs* GetGaussianSplatPackedAttrs() const;
+
     void Draw(filament::Renderer& renderer);
 
     // NOTE: This method is to work around Filament limitation when rendering to
@@ -220,6 +241,8 @@ public:
     filament::Scene* GetNativeScene() const { return scene_; }
 
 private:
+    void MarkGeometryChanged();
+
     MaterialInstanceHandle AssignMaterialToFilamentGeometry(
             filament::RenderableManager::Builder& builder,
             const MaterialRecord& material);
@@ -236,6 +259,7 @@ private:
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
     filament::Scene* scene_ = nullptr;
+    std::uint64_t geometry_change_id_ = 1;
 
     struct TextureMaps {
         rendering::TextureHandle albedo_map =
@@ -272,8 +296,17 @@ private:
         int priority = -1;  // default priority
 
         GeometryMaterialInstance mat;
+        // Stored AABB for geometry registered without a Filament entity
+        // (e.g. Gaussian splats rendered via compute, not raster).
+        geometry::AxisAlignedBoundingBox aabb;
 
-        // Filament resources
+        // Range within the merged Gaussian splat packed-attrs buffer.
+        // Both are zero for non-Gaussian geometry.
+        std::uint32_t gs_splat_start = 0;
+        std::uint32_t gs_splat_count = 0;
+
+        // Filament resources — filament_entity is null for compute-only
+        // geometry.
         utils::Entity filament_entity;
         filament::RenderableManager::PrimitiveType primitive_type;
         VertexBufferHandle vb;
@@ -305,7 +338,6 @@ private:
                                   bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
-    void UpdateGaussianSplat(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
@@ -337,6 +369,20 @@ private:
     IndirectLightHandle ibl_handle_;
     SkyboxHandle skybox_handle_;
     LightEntity sun_;
+    /// Per-object packed attributes (CPU-side, scene lifetime).
+    std::unordered_map<std::string, GaussianSplatPackedAttrs>
+            per_object_gs_attrs_;
+    /// Concatenated buffer of all objects' packed attrs + visibility mask.
+    /// This is what the GPU pipeline consumes.
+    std::unique_ptr<GaussianSplatPackedAttrs> merged_gs_attrs_;
+
+    /// Pack one object's splats and store in per_object_gs_attrs_.
+    void CacheGaussianSplatData(const std::string& name,
+                                const t::geometry::PointCloud& cloud,
+                                const MaterialRecord& material);
+    /// Rebuild merged_gs_attrs_ from per_object_gs_attrs_ and update
+    /// visibility masks + RenderConfig (elementwise max across all objects).
+    void RebuildMergedGaussianData();
 };
 
 }  // namespace rendering

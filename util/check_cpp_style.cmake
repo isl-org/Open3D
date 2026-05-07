@@ -65,6 +65,10 @@ foreach(DIRECTORY ${CPP_FORMAT_DIRS})
         "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.ispc"
         # Generated files
         "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h.in"
+        # Objective-C++
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.mm"
+        # GLSL compute shaders
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.comp"
     )
     set(IGNOFRED_FILES
         "${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h"

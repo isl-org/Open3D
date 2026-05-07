@@ -35,7 +35,10 @@ def draw(geometry=None,
          on_init=None,
          on_animation_frame=None,
          on_animation_tick=None,
-         non_blocking_and_return_uid=False):
+         non_blocking_and_return_uid=False,
+         near_plane=None,
+         far_plane=None,
+         show_axes=None):
     """Draw 3D geometry types and 3D models. This is a high level interface to
     :class:`open3d.visualization.O3DVisualizer`.
 
@@ -106,6 +109,13 @@ def draw(geometry=None,
             to close the window. Instead return the window ID. This is useful
             for embedding the visualizer and is used in the WebRTC interface and
             Tensorboard plugin.
+        near_plane (float): Near clip distance in world units. Overrides the
+            value chosen automatically by ``reset_camera_to_default()``. Must
+            be positive.
+        far_plane (float): Far clip distance in world units. Must be greater
+            than ``near_plane``.
+        show_axes (bool): Show world-space axes at the scene origin.
+            Default: False.
 
     Example:
         See `examples/visualization/draw.py` for examples of advanced usage. The ``actions()``
@@ -185,6 +195,18 @@ def draw(geometry=None,
         w.setup_camera(field_of_view, lookat, eye, up)
     elif intrinsic_matrix is not None and extrinsic_matrix is not None:
         w.setup_camera(intrinsic_matrix, extrinsic_matrix, width, height)
+
+    # Override near/far clip planes if requested. Only the specified planes
+    # are changed; camera position/orientation are preserved.
+    if near_plane is not None or far_plane is not None:
+        cam = w.scene.camera
+        _near = near_plane if near_plane is not None else cam.get_near()
+        _far = far_plane if far_plane is not None else cam.get_far()
+        cam.set_projection(cam.get_field_of_view(), width / height, _near, _far,
+                           cam.get_field_of_view_type())
+
+    if show_axes is not None:
+        w.show_axes = show_axes
 
     w.animation_time_step = animation_time_step
     if animation_duration is not None:

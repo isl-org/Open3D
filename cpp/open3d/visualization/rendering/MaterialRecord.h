@@ -83,8 +83,29 @@ struct MaterialRecord {
     // Infinite ground plane
     float ground_plane_axis = 0.f;  // 0: XZ; >0: XY; <0: YZ
 
-    // This is only used in gaussian splat.
-    int sh_degree = 0;
+    // Max Spherical Harmonic degree for rendering gaussian splats.
+    int gaussian_splat_sh_degree = 2;
+
+    // Minimum splat alpha value when rendering gaussian splats.
+    /// Minimum alpha threshold for Gaussian splat CPU-side filtering in
+    /// PackGaussianSplatAttrsDirect().  Splats whose sigmoid(opacity) is below
+    /// this value are discarded at load time and never uploaded to the GPU,
+    /// removing the need for a redundant per-splat GPU alpha test.
+    /// Matches the composite pass kMinAlpha = 1/255.
+    float gaussian_splat_min_alpha = 1.0f / 255.0f;
+
+    // Enable anti-aliasing density compensation for gaussian splats.
+    // Multiplies each splat's opacity by sqrt(det(Sigma) / det(Sigma_blurred))
+    // to counteract the over-brightening caused by the fixed +0.3 blur kernel.
+    bool gaussian_splat_antialias = false;
+
+    // Maximum number of screen tiles that a single splat may cover.
+    // Raise this value for very large splats at the cost of higher memory use.
+    uint32_t gaussian_splat_max_tiles_per_splat = 32;
+
+    // Total tile-coverage entry budget for the whole scene.
+    // Raise this for dense or high-resolution scenes at the cost of GPU memory.
+    uint32_t gaussian_splat_max_tile_entries_total = 32u * 1024u * 1024u;
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;

@@ -449,6 +449,35 @@ void pybind_rendering_definitions(py::module &m) {
             .def_readwrite("aspect_ratio", &MaterialRecord::aspect_ratio)
             .def_readwrite("ground_plane_axis",
                            &MaterialRecord::ground_plane_axis)
+            .def_readwrite("gaussian_splat_sh_degree",
+                           &MaterialRecord::gaussian_splat_sh_degree,
+                           "Max SH degree for Gaussian splat rendering (0-2).")
+            .def_readwrite(
+                    "gaussian_splat_min_alpha",
+                    &MaterialRecord::gaussian_splat_min_alpha,
+                    "Minimum opacity threshold for Gaussian splat rendering "
+                    "(0.0-1.0).  Splats with alpha below this are discarded.")
+            .def_readwrite(
+                    "gaussian_splat_antialias",
+                    &MaterialRecord::gaussian_splat_antialias,
+                    "Enable density-compensation anti-aliasing for Gaussian "
+                    "splats.  Multiplies each splat's opacity by "
+                    "sqrt(det(Sigma_orig)/det(Sigma_blurred)) to correct the "
+                    "over-brightening introduced by the subpixel blur kernel. "
+                    "Use this only if it was used in creating the Gaussian "
+                    "splats.")
+            .def_readwrite(
+                    "gaussian_splat_max_tiles_per_splat",
+                    &MaterialRecord::gaussian_splat_max_tiles_per_splat,
+                    "Maximum number of screen tiles a single splat may cover. "
+                    "Increase for very large / close-up splats at the cost of "
+                    "higher GPU memory use. Default: 32.")
+            .def_readwrite(
+                    "gaussian_splat_max_tile_entries_total",
+                    &MaterialRecord::gaussian_splat_max_tile_entries_total,
+                    "Total tile-coverage entry budget for the whole scene. "
+                    "Increase for dense or high-resolution scenes at the cost "
+                    "of GPU memory. Default: 33554432 (32 * 1024 * 1024).")
             .def_readwrite("shader", &MaterialRecord::shader);
 
     // ---- TriangleMeshModel ----

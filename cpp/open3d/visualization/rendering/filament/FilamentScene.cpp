@@ -13,8 +13,12 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
+#include <cmath>
 #include <cstring>
+#include <limits>
+#include <string>
 #include <unordered_set>
+#include <vector>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -47,10 +51,11 @@
 // OPAQUE (!!??) which causes syntax errors with filament/View.h which tries
 // to make OPAQUE an member of a class enum. So include this after all the
 // Filament headers to avoid this problem.
-#if 1  // (enclose in #if so that apply-style doesn't move this)
+// clang-format off
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
-#endif  // 1
+// clang-format on
 
+#include "open3d/core/EigenConverter.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
@@ -67,6 +72,7 @@
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentView.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
@@ -103,8 +109,7 @@ std::unordered_map<std::string, MaterialHandle> shader_mappings = {
          ResourceManager::kDefaultUnlitPolygonOffsetShader},
         {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
         {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader},
-        {"gaussianSplat", ResourceManager::kGaussianSplatShader}};
+        {"unlitLine", ResourceManager::kDefaultLineShader}};
 
 MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
 MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
@@ -146,6 +151,12 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+void FilamentScene::MarkGeometryChanged() { ++geometry_change_id_; }
+
+std::uint64_t FilamentScene::GetGeometryChangeId() const {
+    return geometry_change_id_;
+}
+
 FilamentScene::FilamentScene(filament::Engine& engine,
                              FilamentResourceManager& resource_mgr,
                              Renderer& renderer)
@@ -158,6 +169,30 @@ FilamentScene::FilamentScene(filament::Engine& engine,
 }
 
 FilamentScene::~FilamentScene() {
+    // Fully destroy all remaining geometry entities so the RenderableManager
+    // no longer references their material instances when
+    // FilamentResourceManager later destroys them via
+    // engine.destroy(mat_inst_ptr).  We use engine_.destroy(entity) rather than
+    // just rm.destroy(entity) so that all Filament ECS components (Renderable,
+    // Transform, etc.) are removed AND the entity slot is freed from
+    // EntityManager.  This prevents Filament from encountering leftover entity
+    // records during engine shutdown.
+    //
+    // We intentionally do NOT call resource_mgr_.Destroy() for VBs, IBs, or
+    // mat instances here — FilamentResourceManager's own destructor handles
+    // them safely after the engine has processed any deferred commands.
+    for (auto& pair : geometries_) {
+        const auto& geom = pair.second;
+        if (!geom.filament_entity.isNull()) {
+            scene_->remove(geom.filament_entity);
+            // engine_.destroy(entity) removes ALL ECS components + frees the
+            // entity slot — equivalent to what ReleaseResources does for the
+            // entity, without touching VBs/IBs/mat-instances (handled later
+            // by FilamentResourceManager::DestroyAll).
+            engine_.destroy(geom.filament_entity);
+        }
+    }
+
     for (auto& le : lights_) {
         engine_.destroy(le.second.filament_entity);
         le.second.filament_entity.clear();
@@ -262,6 +297,236 @@ View* FilamentScene::GetView(const ViewHandle& view_id) const {
     return nullptr;
 }
 
+void FilamentScene::ForEachActiveView(
+        const std::function<void(FilamentView&)>& callback) {
+    for (auto& pair : views_) {
+        auto& container = pair.second;
+        if (!container.is_active || !container.view) {
+            continue;
+        }
+        callback(*container.view);
+    }
+}
+
+void FilamentScene::ForEachView(
+        const std::function<void(FilamentView&)>& callback) const {
+    for (const auto& pair : views_) {
+        if (pair.second.view) {
+            callback(*pair.second.view);
+        }
+    }
+}
+
+bool FilamentScene::HasGaussianSplatGeometry() const {
+    for (const auto& pair : geometries_) {
+        if (pair.second.mat.properties.shader == "gaussianSplat") {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FilamentScene::HasNonGaussianVisibleGeometry() const {
+    for (const auto& pair : geometries_) {
+        const auto& g = pair.second;
+        if (!g.visible) continue;
+        if (g.mat.properties.shader != "gaussianSplat" &&
+            !g.filament_entity.isNull()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FilamentScene::UsesGaussianSplatOutput(const FilamentView& view) const {
+    auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
+    if (!renderer || !renderer->HasGaussianSplatOutput(view)) {
+        return false;
+    }
+
+    for (const auto& pair : geometries_) {
+        const auto& geometry = pair.second;
+        if (geometry.visible &&
+            geometry.mat.properties.shader == "gaussianSplat") {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+TextureHandle FilamentScene::GetColorBufferForView(
+        const FilamentView& view) const {
+    auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
+    return renderer ? renderer->GetGaussianSplatColorTexture(view)
+                    : TextureHandle();
+}
+
+TextureHandle FilamentScene::GetDepthBufferForView(
+        const FilamentView& view) const {
+    auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_);
+    return renderer ? renderer->GetGaussianSplatDepthTexture(view)
+                    : TextureHandle();
+}
+
+void FilamentScene::InvalidateGaussianSplatOutput(FilamentView& view) {
+    auto* fr = dynamic_cast<FilamentRenderer*>(&renderer_);
+    if (fr) {
+        fr->InvalidateGaussianSplatOutput(view);
+    }
+}
+
+const GaussianSplatPackedAttrs* FilamentScene::GetGaussianSplatPackedAttrs()
+        const {
+    return merged_gs_attrs_.get();
+}
+
+void FilamentScene::CacheGaussianSplatData(const std::string& name,
+                                           const t::geometry::PointCloud& cloud,
+                                           const MaterialRecord& material) {
+    const auto& points = cloud.GetPointPositions();
+    const size_t n = points.GetLength();
+
+    // Prepare attribute pointers (ensure CPU float data, contiguous layout).
+    auto pts = points.To(core::Float32).Contiguous();
+    const float* pts_ptr = pts.GetDataPtr<float>();
+
+    std::string missing;
+    const bool has_scale = cloud.HasPointAttr("scale");
+    core::Tensor scale_attr;
+    const float* scale_ptr = nullptr;
+    if (has_scale) {
+        scale_attr = cloud.GetPointAttr("scale").To(core::Float32).Contiguous();
+        scale_ptr = scale_attr.GetDataPtr<float>();
+    } else {
+        missing += "scale, ";
+    }
+
+    const bool has_rot = cloud.HasPointAttr("rot");
+    core::Tensor rot_attr;
+    const float* rot_ptr = nullptr;
+    if (has_rot) {
+        rot_attr = cloud.GetPointAttr("rot").To(core::Float32).Contiguous();
+        rot_ptr = rot_attr.GetDataPtr<float>();
+    } else {
+        missing += "rot, ";
+    }
+
+    const bool has_f_dc = cloud.HasPointAttr("f_dc");
+    const bool has_opacity = cloud.HasPointAttr("opacity");
+    core::Tensor f_dc_attr, opacity_attr;
+    const float* f_dc_ptr = nullptr;
+    const float* opacity_ptr = nullptr;
+    if (has_f_dc) {
+        f_dc_attr = cloud.GetPointAttr("f_dc").To(core::Float32).Contiguous();
+        f_dc_ptr = f_dc_attr.GetDataPtr<float>();
+    } else {
+        missing += "f_dc, ";
+    }
+    if (has_opacity) {
+        opacity_attr =
+                cloud.GetPointAttr("opacity").To(core::Float32).Contiguous();
+        opacity_ptr = opacity_attr.GetDataPtr<float>();
+    } else {
+        missing += "opacity, ";
+    }
+    if (n > 0 && !missing.empty()) {
+        utility::LogWarning(
+                "Gaussian splat object '{}': missing required point "
+                "attribute(s): {}. The object will not be displayed.",
+                name, missing.substr(0, missing.size() - 2) + ".");
+        per_object_gs_attrs_.erase(name);
+        return;
+    }
+    const bool has_f_rest = cloud.HasPointAttr("f_rest");
+    core::Tensor f_rest_attr;
+    const float* f_rest_ptr = nullptr;
+    if (has_f_rest) {
+        f_rest_attr =
+                cloud.GetPointAttr("f_rest").To(core::Float32).Contiguous();
+        f_rest_ptr = f_rest_attr.GetDataPtr<float>();
+    }
+
+    // Determine effective SH degree: clamp by source, material, and renderer.
+    int cloud_sh = cloud.GaussianSplatGetSHOrder();
+    int desired_sh = std::min(cloud_sh, material.gaussian_splat_sh_degree);
+    if (auto* renderer = dynamic_cast<const FilamentRenderer*>(&renderer_)) {
+        desired_sh =
+                std::min(desired_sh, renderer->GetGaussianSplatMaxShDegree());
+    }
+
+    // Convert min_alpha from sigmoid space to logit space for the opacity
+    // filter.  The projection shader stores opacity in logit (pre-sigmoid)
+    // space, so the threshold must be in the same domain.
+    // sigmoid(x) = 1/(1+exp(-x))  =>  x = log(a/(1-a))
+    const float min_alpha_sigmoid = material.gaussian_splat_min_alpha;
+    float min_opacity_logit = -std::numeric_limits<float>::infinity();
+    if (min_alpha_sigmoid > 0.0f && min_alpha_sigmoid < 1.0f) {
+        min_opacity_logit =
+                std::log(min_alpha_sigmoid / (1.0f - min_alpha_sigmoid));
+    } else if (min_alpha_sigmoid >= 1.0f) {
+        min_opacity_logit = std::numeric_limits<float>::infinity();
+    }
+
+    // Pack directly into GPU-ready format in one pass (filter + compress).
+    auto& packed = per_object_gs_attrs_[name];
+    packed = GaussianSplatPackedAttrs{};
+    PackGaussianSplatAttrsDirect(pts_ptr, n, scale_ptr, rot_ptr, f_dc_ptr,
+                                 opacity_ptr, f_rest_ptr, cloud_sh, desired_sh,
+                                 min_opacity_logit,
+                                 material.gaussian_splat_antialias, packed);
+}
+
+void FilamentScene::RebuildMergedGaussianData() {
+    // Gather per-object packed buffers, preserving merge order so geometry
+    // records can map to stable [start, count) ranges after merge.
+    std::vector<GaussianSplatMergeItem> merge_items;
+    std::vector<RenderableGeometry*> merge_geoms;
+    merge_items.reserve(geometries_.size());
+    merge_geoms.reserve(geometries_.size());
+
+    // Aggregate RenderConfig: elementwise max across all objects' materials.
+    std::uint32_t max_tiles_per_splat = 32u;
+    std::uint32_t max_tile_entries_total = 32u * 1024u * 1024u;
+
+    for (auto& [obj_name, geom] : geometries_) {
+        auto it = per_object_gs_attrs_.find(obj_name);
+        if (it == per_object_gs_attrs_.end()) continue;
+        merge_items.push_back({&it->second, geom.visible});
+        merge_geoms.push_back(&geom);
+
+        // Propagate per-material capacity overrides (take max).
+        const auto& mat = geom.mat.properties;
+        max_tiles_per_splat = std::max(max_tiles_per_splat,
+                                       mat.gaussian_splat_max_tiles_per_splat);
+        max_tile_entries_total =
+                std::max(max_tile_entries_total,
+                         mat.gaussian_splat_max_tile_entries_total);
+    }
+
+    auto merged = std::make_unique<GaussianSplatPackedAttrs>();
+    std::vector<std::uint32_t> splat_starts;
+    MergeGaussianSplatPackedAttrs(merge_items, merged.get(), &splat_starts);
+
+    for (std::size_t i = 0; i < merge_geoms.size(); ++i) {
+        merge_geoms[i]->gs_splat_start = splat_starts[i];
+        merge_geoms[i]->gs_splat_count =
+                merge_items[i].attrs ? merge_items[i].attrs->splat_count : 0u;
+    }
+
+    merged_gs_attrs_ = std::move(merged);
+
+    // Update the renderer's RenderConfig with the aggregate capacity.
+    if (auto* fr = dynamic_cast<FilamentRenderer*>(&renderer_)) {
+        if (auto* gcr = fr->GetGaussianSplatRenderer()) {
+            auto cfg = gcr->GetRenderConfig();
+            cfg.max_tiles_per_splat = max_tiles_per_splat;
+            cfg.max_tile_entries_total = max_tile_entries_total;
+            gcr->SetRenderConfig(cfg);
+        }
+    }
+}
+
 void FilamentScene::SetViewActive(const ViewHandle& view_id, bool is_active) {
     auto found = views_.find(view_id);
     if (found != views_.end()) {
@@ -363,6 +628,9 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
                     "Internal error: could not create downsampled point cloud");
         }
     }
+    if (success) {
+        MarkGeometryChanged();
+    }
     return success;
 }
 
@@ -376,6 +644,47 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         utility::LogWarning("Geometry for object {} is empty", object_name);
         return false;
     }
+
+    // Gaussian splats are rendered entirely via compute shaders (Metal on
+    // macOS, OpenGL elsewhere). They need no Filament VB/IB or renderable
+    // entity — only a scene-graph record for visibility/AABB bookkeeping and
+    // a CPU-side source data cache for the compute backend.
+    if (const auto* pc =
+                dynamic_cast<const t::geometry::PointCloud*>(&geometry);
+        pc && pc->IsGaussianSplat()) {
+        if (geometries_.count(object_name)) {
+            RemoveGeometry(object_name);
+        }
+        MaterialRecord internal_material = material;
+        auto* drawable = dynamic_cast<const t::geometry::DrawableGeometry*>(pc);
+        if (drawable && drawable->HasMaterial()) {
+            // Pick up colors and other PBR fields from the embedded asset (e.g.
+            // PLY). ToMaterialRecord() also sets record.shader to the embedded
+            // MTL name, which is never "gaussianSplat" and is not a reliable
+            // signal for whether the API intended compute rendering.
+            drawable->GetMaterial().ToMaterialRecord(internal_material);
+        }
+        auto& geom = geometries_[object_name];
+        geom.name = object_name;
+        geom.mat.properties = internal_material;
+        // Compute AABB from splat positions for camera framing and scene
+        // bounds.
+        if (pc->HasPointPositions() &&
+            pc->GetPointPositions().GetLength() > 0) {
+            const Eigen::Vector3d min_b =
+                    core::eigen_converter::TensorToEigenVector3dVector(
+                            pc->GetMinBound().Reshape({1, 3}))[0];
+            const Eigen::Vector3d max_b =
+                    core::eigen_converter::TensorToEigenVector3dVector(
+                            pc->GetMaxBound().Reshape({1, 3}))[0];
+            geom.aabb = geometry::AxisAlignedBoundingBox(min_b, max_b);
+        }
+        CacheGaussianSplatData(object_name, *pc, internal_material);
+        RebuildMergedGaussianData();
+        MarkGeometryChanged();
+        return true;
+    }
+
     auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
     if (!buffer_builder) {
         utility::LogWarning(
@@ -422,6 +731,9 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
                                        vb, ib, material, BufferReuse::kYes);
         }
     }
+    if (success) {
+        MarkGeometryChanged();
+    }
     return success;
 }
 
@@ -465,6 +777,8 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
     model_geometries_[object_name] = mesh_object_names;
 
+    MarkGeometryChanged();
+
     return true;
 }
 
@@ -505,6 +819,9 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                                    true,
                                    -1,
                                    {{}, material, material_instance},
+                                   {},  // aabb — queried from RenderableManager
+                                   0u,  // gs_splat_start (non-Gaussian)
+                                   0u,  // gs_splat_count (non-Gaussian)
                                    filament_entity,
                                    buffer_builder.GetPrimitiveType(),
                                    vb,
@@ -541,6 +858,16 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                                    uint32_t update_flags) {
     auto geoms = GetGeometry(object_name, false);
     if (!geoms.empty()) {
+        // 3D Gaussian Splatting is rendered via compute shaders; refresh CPU
+        // cache only (placeholder Filament geometry is not updated).
+        if (geoms[0]->mat.properties.shader == "gaussianSplat") {
+            (void)update_flags;
+            CacheGaussianSplatData(object_name, point_cloud,
+                                   geoms[0]->mat.properties);
+            RebuildMergedGaussianData();
+            MarkGeometryChanged();
+            return;
+        }
         // Note: There should only be a single entry in geoms
         auto* g = geoms[0];
         auto vbuf_ptr = resource_mgr_.GetVertexBuffer(g->vb).lock();
@@ -676,35 +1003,81 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
 #pragma clang diagnostic pop
 #endif
         }
+
+        MarkGeometryChanged();
     }
 }
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
+    bool removed_geometry = false;
+    bool removed_gs = false;
     auto geoms = GetGeometry(object_name, false);
     if (!geoms.empty()) {
         for (auto* g : geoms) {
-            scene_->remove(g->filament_entity);
+            if (g->gs_splat_count > 0) {
+                per_object_gs_attrs_.erase(g->name);
+                removed_gs = true;
+            }
+            if (!g->filament_entity.isNull()) {
+                scene_->remove(g->filament_entity);
+            }
             g->ReleaseResources(engine_, resource_mgr_);
             geometries_.erase(g->name);
+            removed_geometry = true;
         }
     }
 
     if (GeometryIsModel(object_name)) {
         model_geometries_.erase(object_name);
+        removed_geometry = true;
+    }
+
+    if (removed_gs) {
+        // Rebuild the merged Gaussian buffer without the removed object.
+        RebuildMergedGaussianData();
+    }
+
+    if (removed_geometry) {
+        MarkGeometryChanged();
     }
 }
 
 void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         if (g->visible != show) {
             g->visible = show;
-            if (show) {
-                scene_->addEntity(g->filament_entity);
-            } else {
-                scene_->remove(g->filament_entity);
+            changed = true;
+            if (!g->filament_entity.isNull()) {
+                if (show) {
+                    scene_->addEntity(g->filament_entity);
+                } else {
+                    scene_->remove(g->filament_entity);
+                }
+            }
+            // For Gaussian objects, update the bit-packed visibility mask in-
+            // place (no need to rebuild the full merged buffer — just flip
+            // bits).
+            if (g->gs_splat_count > 0 && merged_gs_attrs_) {
+                auto& mask = merged_gs_attrs_->visibility_mask;
+                const std::uint32_t end = g->gs_splat_start + g->gs_splat_count;
+                for (std::uint32_t k = g->gs_splat_start; k < end; ++k) {
+                    const std::uint32_t word = k / 32u;
+                    const std::uint32_t bit = k % 32u;
+                    if (word < static_cast<std::uint32_t>(mask.size())) {
+                        if (show) {
+                            mask[word] |= (1u << bit);
+                        } else {
+                            mask[word] &= ~(1u << bit);
+                        }
+                    }
+                }
             }
         }
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -722,6 +1095,11 @@ bool FilamentScene::GeometryIsVisible(const std::string& object_name) {
 utils::EntityInstance<filament::TransformManager>
 FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
     filament::TransformManager::Instance itransform;
+    // Compute-only geometries (Gaussian splats) have no Filament entity;
+    // return an invalid transform instance.
+    if (geom->filament_entity.isNull()) {
+        return itransform;
+    }
     auto& transform_mgr = engine_.getTransformManager();
     itransform = transform_mgr.getInstance(geom->filament_entity);
     if (!itransform.isValid()) {
@@ -736,6 +1114,7 @@ FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
 
 void FilamentScene::SetGeometryTransform(const std::string& object_name,
                                          const Transform& transform) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         auto itransform = GetGeometryTransformInstance(g);
@@ -745,7 +1124,11 @@ void FilamentScene::SetGeometryTransform(const std::string& object_name,
             transform_mgr.setTransform(
                     itransform,
                     converters::FilamentMatrixFromEigenMatrix(ematrix));
+            changed = true;
         }
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -769,6 +1152,12 @@ geometry::AxisAlignedBoundingBox FilamentScene::GetGeometryBoundingBox(
     geometry::AxisAlignedBoundingBox result;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
+        if (g->filament_entity.isNull()) {
+            // Compute-only geometry (e.g. Gaussian splats) has no Filament
+            // renderable; return the AABB stored at AddGeometry time.
+            result += g->aabb;
+            continue;
+        }
         auto& renderable_mgr = engine_.getRenderableManager();
         auto inst = renderable_mgr.getInstance(g->filament_entity);
         auto box = renderable_mgr.getAxisAlignedBoundingBox(inst);
@@ -789,37 +1178,55 @@ geometry::AxisAlignedBoundingBox FilamentScene::GetGeometryBoundingBox(
 void FilamentScene::GeometryShadows(const std::string& object_name,
                                     bool cast_shadows,
                                     bool receive_shadows) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
+        if (g->filament_entity.isNull()) continue;
         auto& renderable_mgr = engine_.getRenderableManager();
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCastShadows(inst, cast_shadows);
         renderable_mgr.setReceiveShadows(inst, receive_shadows);
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
 void FilamentScene::SetGeometryCulling(const std::string& object_name,
                                        bool enable) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
+        g->culling_enabled = enable;
+        if (g->filament_entity.isNull()) continue;
         auto& renderable_mgr = engine_.getRenderableManager();
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCulling(inst, enable);
-        g->culling_enabled = enable;
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
 void FilamentScene::SetGeometryPriority(const std::string& object_name,
                                         uint8_t priority) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
+        g->priority = (int)priority;
+        if (g->filament_entity.isNull()) continue;
         auto& renderable_mgr = engine_.getRenderableManager();
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setPriority(inst, priority);
-        g->priority = (int)priority;
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -854,32 +1261,6 @@ void FilamentScene::UpdateDefaultLit(GeometryMaterialInstance& geom_mi) {
             //             rendering::TextureSamplerParameters::Pretty())
             // .SetTexture("anisotropyMap", maps.anisotropy_map,
             //             rendering::TextureSamplerParameters::Pretty())
-            .Finish();
-}
-
-void FilamentScene::UpdateGaussianSplat(GeometryMaterialInstance& geom_mi) {
-    auto& material = geom_mi.properties;
-    auto& maps = geom_mi.maps;
-
-    renderer_.ModifyMaterial(geom_mi.mat_instance)
-            .SetColor("baseColor", material.base_color, false)
-            .SetParameter("pointSize", material.point_size)
-            .SetParameter("baseRoughness", material.base_roughness)
-            .SetParameter("baseMetallic", material.base_metallic)
-            .SetParameter("reflectance", material.base_reflectance)
-            .SetParameter("clearCoat", material.base_clearcoat)
-            .SetParameter("clearCoatRoughness",
-                          material.base_clearcoat_roughness)
-            .SetParameter("anisotropy", material.base_anisotropy)
-            .SetParameter("shDegree", material.sh_degree)
-            .SetTexture("albedo", maps.albedo_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("normalMap", maps.normal_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("ao_rough_metalMap", maps.ao_rough_metal_map,
-                        rendering::TextureSamplerParameters::Pretty())
-            .SetTexture("reflectanceMap", maps.reflectance_map,
-                        rendering::TextureSamplerParameters::Pretty())
             .Finish();
 }
 
@@ -1096,6 +1477,10 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
 }
 
 void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
+    // Compute-only geometry (e.g. Gaussian splats) has no Filament material
+    // instance — skip material parameter updates entirely.
+    if (geom.filament_entity.isNull()) return;
+
     auto& props = geom.mat.properties;
     auto& maps = geom.mat.maps;
 
@@ -1168,8 +1553,6 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
-    } else if (props.shader == "gaussianSplat") {
-        UpdateGaussianSplat(geom.mat);
     } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
@@ -1178,6 +1561,10 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
 void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
                                              const MaterialRecord& material,
                                              bool shader_only) {
+    // Compute-only geometries (Gaussian splats) have no Filament entity or
+    // material instance; material overrides are not applicable.
+    if (geom->filament_entity.isNull()) return;
+
     // Has the shader changed?
     if (geom->mat.properties.shader != material.shader) {
         // TODO: put this in a method
@@ -1234,9 +1621,14 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
 
 void FilamentScene::OverrideMaterial(const std::string& object_name,
                                      const MaterialRecord& material) {
+    bool changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         OverrideMaterialInternal(g, material);
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -1248,11 +1640,16 @@ void FilamentScene::QueryGeometry(std::vector<std::string>& geometry) {
 
 void FilamentScene::OverrideMaterialAll(const MaterialRecord& material,
                                         bool shader_only) {
+    bool changed = false;
     for (auto& ge : geometries_) {
         if (ge.first == kBackgroundName) {
             continue;
         }
         OverrideMaterialInternal(&ge.second, material, shader_only);
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
     }
 }
 
@@ -1912,7 +2309,9 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
         filament::Engine& engine, FilamentResourceManager& manager) {
     if (vb) manager.Destroy(vb);
     if (ib) manager.Destroy(ib);
-    engine.destroy(filament_entity);
+    if (!filament_entity.isNull()) {
+        engine.destroy(filament_entity);
+    }
 
     // Delete texture maps...
     auto destroy_map = [&manager](rendering::TextureHandle map) {
@@ -1928,12 +2327,16 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
     destroy_map(mat.maps.clear_coat_roughness_map);
     destroy_map(mat.maps.anisotropy_map);
 
-    manager.Destroy(mat.mat_instance);
+    // mat_instance is null for GS geometries (handled by compute pipeline,
+    // not Filament rasterization).  Attempting to destroy a null handle throws.
+    if (mat.mat_instance) {
+        manager.Destroy(mat.mat_instance);
+    }
 
-    // Destroy filament entity
-    utils::EntityManager::get().destroy(filament_entity);
-
-    filament_entity.clear();
+    if (!filament_entity.isNull()) {
+        utils::EntityManager::get().destroy(filament_entity);
+        filament_entity.clear();
+    }
 }
 
 void FilamentScene::Draw(filament::Renderer& renderer) {
