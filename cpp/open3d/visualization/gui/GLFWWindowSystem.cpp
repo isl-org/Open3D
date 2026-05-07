@@ -130,16 +130,9 @@ Size GLFWWindowSystem::GetScreenSize(OSWindow w) {
         monitor = glfwGetPrimaryMonitor();
     }
     if (monitor) {
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        if (mode) {
-            screen_width = mode->width;
-            screen_height = mode->height;
-        }
-        // TODO: if we can update GLFW we can replace the above with this
-        //       Also, see below.
-        // int xpos, ypos;
-        // glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
-        //                       &screen_width, &screen_height);
+        int xpos, ypos;
+        glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
+                               &screen_width, &screen_height);
     }
 
     return Size(screen_width, screen_height);
