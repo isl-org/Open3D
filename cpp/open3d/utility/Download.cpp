@@ -22,7 +22,9 @@
 #define USE_OPENSSL
 #endif
 
+#ifndef CURL_STATICLIB
 #define CURL_STATICLIB
+#endif
 
 #include <curl/curl.h>
 #include <curl/easy.h>
