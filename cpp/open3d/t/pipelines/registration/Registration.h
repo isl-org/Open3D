@@ -143,6 +143,17 @@ ICP(const geometry::PointCloud &source,
     const std::function<void(const std::unordered_map<std::string, core::Tensor>
                                      &)> &callback_after_iteration = nullptr);
 
+/// \brief Wrapper for symmetric ICP registration using symmetric objective.
+RegistrationResult SymmetricICP(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_correspondence_distance,
+        const core::Tensor &init_source_to_target =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+        const TransformationEstimationSymmetric &estimation =
+                TransformationEstimationSymmetric(),
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
 /// The vector of ICPConvergenceCriteria(relative fitness, relative rmse,

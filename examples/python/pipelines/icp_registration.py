@@ -42,6 +42,17 @@ def point_to_plane_icp(source, target, threshold, trans_init):
     draw_registration_result(source, target, reg_p2l.transformation)
 
 
+def symmetric_icp(source, target, threshold, trans_init):
+    print("Apply symmetric ICP")
+    reg_sym = o3d.pipelines.registration.registration_symmetric_icp(
+        source, target, threshold, trans_init,
+        o3d.pipelines.registration.TransformationEstimationSymmetric())
+    print(reg_sym)
+    print("Transformation is:")
+    print(reg_sym.transformation, "\n")
+    draw_registration_result(source, target, reg_sym.transformation)
+
+
 if __name__ == "__main__":
     pcd_data = o3d.data.DemoICPPointClouds()
     source = o3d.io.read_point_cloud(pcd_data.paths[0])
@@ -59,3 +70,4 @@ if __name__ == "__main__":
 
     point_to_point_icp(source, target, threshold, trans_init)
     point_to_plane_icp(source, target, threshold, trans_init)
+    symmetric_icp(source, target, threshold, trans_init)
