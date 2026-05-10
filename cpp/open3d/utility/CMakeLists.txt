@@ -7,7 +7,6 @@ target_sources(utility PRIVATE
     Download.cpp
     Eigen.cpp
     Extract.cpp
-    ExtractZIP.cpp
     FileSystem.cpp
     Helper.cpp
     IJsonConvertible.cpp
@@ -18,6 +17,13 @@ target_sources(utility PRIVATE
     Random.cpp
     Timer.cpp
 )
+
+if (WITH_MINIZIP)
+    target_sources(utility PRIVATE
+        ExtractZIP.cpp
+    )
+    target_compile_definitions(utility PRIVATE HAS_MINIZIP)
+endif()
 
 if (BUILD_ISPC_MODULE)
     target_sources(utility PRIVATE
