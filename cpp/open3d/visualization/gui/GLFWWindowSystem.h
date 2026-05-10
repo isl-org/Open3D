@@ -70,6 +70,8 @@ public:
 
     MenuBase* CreateOSMenu() override;
 
+    void SetFullScreen(OSWindow w, bool bFullScreen) override;
+
 private:
     static void DrawCallback(GLFWwindow* window);
     static void ResizeCallback(GLFWwindow* window, int os_width, int os_height);
@@ -86,6 +88,11 @@ private:
     static void CharCallback(GLFWwindow* window, unsigned int utf32char);
     static void DragDropCallback(GLFWwindow*, int count, const char* paths[]);
     static void CloseCallback(GLFWwindow* window);
+
+    int win_width_;
+    int win_height_;
+    int win_x_;
+    int win_y_;
 };
 
 }  // namespace gui

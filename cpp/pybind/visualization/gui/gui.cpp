@@ -806,6 +806,9 @@ void pybind_gui_definitions(py::module &m) {
                  "show_menu(show): shows or hides the menu in the window, "
                  "except on macOS since the menubar is not in the window "
                  "and all applications must have a menubar.")
+            .def("set_full_screen", &PyWindow::SetFullScreen,
+                 "Make the window fullscreen or reset to previous state.",
+                 "fullscreen"_a = true)
             .def_property_readonly(
                     "renderer", &PyWindow::GetRenderer,
                     "Gets the rendering.Renderer object for the Window");
