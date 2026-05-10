@@ -607,6 +607,24 @@ public:
     /// 0-D and 1-D Tensor remains the same.
     Tensor T() const;
 
+    /// \brief Computes the Gram matrix (Gramian) of this tensor. Expects input
+    /// to be <= 2-D Tensor.
+    ///
+    /// \return The Gramian of the given tensor. For a 2D tensor of shape {m,
+    /// n}, this will be a square matrix of shape {n, n}. 1D tensors of shape
+    /// {n} are reshaped to {1, n} before the operation. For 0D, the returned
+    /// tensor is the same as the input.
+    Tensor Gram() const;
+
+    /// \brief Computes the row Gram matrix of this tensor. Expects input to be
+    /// <= 2-D Tensor.
+    ///
+    /// \return The Row Gramian of the given tensor. For a 2D tensor of shape
+    /// {m, n}, this will be a square matrix of shape {m, m}. 1D tensors of
+    /// shape {n} are reshaped to {1, n} before the operation. For 0D, the
+    /// returned tensor is the same as the input.
+    Tensor RowGram() const;
+
     /// \brief Compute the determinant of a 2D square tensor.
     /// \return returns the determinant of the matrix (double).
     double Det() const;
