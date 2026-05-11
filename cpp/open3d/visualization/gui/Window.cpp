@@ -989,9 +989,13 @@ void Window::OnResize() {
             ImGui::PopFont();
             ImGui::EndFrame();
 
-            w = std::min(screen_size.width,
+            // screen_size is the monitor work area; SetWindowSize sets the
+            // content size, so subtract the window-decoration extents before
+            // clamping to keep the outer window inside the work area.
+            auto frame_size = ws.GetWindowFrameSize(impl_->window_);
+            w = std::min(screen_size.width - frame_size.width,
                          int(std::round(pref.width / impl_->imgui_.scaling)));
-            h = std::min(screen_size.height,
+            h = std::min(screen_size.height - frame_size.height,
                          int(std::round(pref.height / impl_->imgui_.scaling)));
             ws.SetWindowSize(impl_->window_, w, h);
         }

@@ -130,8 +130,7 @@ Size GLFWWindowSystem::GetScreenSize(OSWindow w) {
         monitor = glfwGetPrimaryMonitor();
     }
     if (monitor) {
-        int xpos, ypos;
-        glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
+        glfwGetMonitorWorkarea(monitor, nullptr, nullptr,
                                &screen_width, &screen_height);
     }
 
@@ -226,6 +225,12 @@ Size GLFWWindowSystem::GetWindowSize(OSWindow w) const {
 
 void GLFWWindowSystem::SetWindowSize(OSWindow w, int width, int height) {
     glfwSetWindowSize((GLFWwindow*)w, width, height);
+}
+
+Size GLFWWindowSystem::GetWindowFrameSize(OSWindow w) const {
+    int left = 0, top = 0, right = 0, bottom = 0;
+    glfwGetWindowFrameSize((GLFWwindow*)w, &left, &top, &right, &bottom);
+    return Size(left + right, top + bottom);
 }
 
 Size GLFWWindowSystem::GetWindowSizePixels(OSWindow w) const {
