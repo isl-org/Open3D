@@ -229,7 +229,8 @@ void GLFWWindowSystem::SetWindowSize(OSWindow w, int width, int height) {
 
 Size GLFWWindowSystem::GetWindowFrameSize(OSWindow w) const {
     int left = 0, top = 0, right = 0, bottom = 0;
-    glfwGetWindowFrameSize((GLFWwindow*)w, &left, &top, &right, &bottom);
+    glfwGetWindowFrameSize(static_cast<GLFWwindow*>(w), &left, &top, &right,
+                           &bottom);
     return Size(left + right, top + bottom);
 }
 
