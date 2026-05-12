@@ -121,7 +121,7 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     if (!is_default_color) {
         ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));
     }
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
+    ImGui::PushFont(static_cast<ImFont*>(context.fonts.GetFont(impl_->font_id_)));
 
     auto padding = ImGui::GetStyle().FramePadding;
     float wrapX = ImGui::GetCursorPos().x + frame.width - padding.x;
@@ -142,7 +142,7 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
 void Label::DrawOverlay(const DrawContext& context) const {
     const auto& frame = GetFrame();
     ImDrawList* draw_list = ImGui::GetForegroundDrawList();
-    ImFont* font = (ImFont*)context.fonts.GetFont(impl_->font_id_);
+    ImFont* font = static_cast<ImFont*>(context.fonts.GetFont(impl_->font_id_));
     const float font_size = font->FontSize;
     const bool is_default_color = (impl_->color_ == DEFAULT_COLOR);
     const ImU32 text_col = is_default_color ? ImGui::GetColorU32(ImGuiCol_Text)

@@ -553,7 +553,7 @@ void GLFWWindowSystem::ResizeRenderer(OSWindow w,
     // moving the window between Retina and non-Retina displays (or the initial
     // window-show resize) leaves the layer at the wrong size, causing the
     // rendered content to appear only in the lower-left quarter on Retina.
-    ResizeNativeWindow((GLFWwindow*)w);
+    ResizeNativeWindow(static_cast<GLFWwindow*>(w));
     // We need to recreate the swap chain after resizing a window on macOS
     // otherwise things look very wrong. SwapChain does not need to be resized
     // on other platforms.
@@ -570,7 +570,7 @@ MenuBase* GLFWWindowSystem::CreateOSMenu() {
 }
 
 void GLFWWindowSystem::SetClipboardText(OSWindow w, const char* text) {
-    glfwSetClipboardString((GLFWwindow*)w, text);
+    glfwSetClipboardString(static_cast<GLFWwindow*>(w), text);
 }
 
 }  // namespace gui

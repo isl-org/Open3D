@@ -41,6 +41,7 @@
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
 
 /// @cond
 namespace filament {
@@ -63,7 +64,6 @@ class FilamentView;
 class GeometryBuffersBuilder;
 class Renderer;
 class View;
-struct GaussianSplatPackedAttrs;
 
 // Contains renderable objects like geometry and lights
 // Can have multiple views

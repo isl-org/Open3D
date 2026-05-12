@@ -92,16 +92,14 @@ public:
         }
 
         auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
-        bool use_vk = vk_ctx.IsValid() && vk_ctx.AreGLExtensionsReady();
 
-        if (use_vk) {
+        if (vk_ctx.IsValid() && vk_ctx.AreGLExtensionsReady()) {
             SharedImageDesc color_img =
                     vk_ctx.CreateSharedColorImage(width, height, "gs.color");
             if (!color_img.IsValid()) {
                 utility::LogWarning(
                         "GaussianSplatVulkan: shared color image failed; "
                         "falling back to GL textures");
-                use_vk = false;
             } else {
                 SharedImageDesc depth_img = vk_ctx.CreateSharedDepthImage(
                         width, height, "gs.scene_depth");
@@ -110,7 +108,6 @@ public:
                     utility::LogWarning(
                             "GaussianSplatVulkan: shared depth image failed; "
                             "falling back to GL textures");
-                    use_vk = false;
                 } else {
                     targets.color_gl_handle = color_img.gl_texture;
                     targets.color_vk_image = reinterpret_cast<std::uintptr_t>(

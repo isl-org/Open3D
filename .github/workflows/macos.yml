@@ -63,13 +63,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config libusb
-
-          if [[ ${{ runner.arch }} == "ARM64"  ]]; then
-            # Fix gfortran not found issue
-            brew install gcc
-            ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
-          fi
+          brew install ccache pkg-config libusb glslang spirv-cross
+          # Fix gfortran not found issue
+          brew install gcc
+          ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
@@ -188,11 +185,9 @@ jobs:
           install_python_dependencies
 
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-          fi
+          ln -s $(which gfortran-13) /usr/local/bin/gfortran
 
-          brew install ccache
+          brew install ccache glslang spirv-cross 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
