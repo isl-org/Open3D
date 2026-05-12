@@ -121,7 +121,8 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     if (!is_default_color) {
         ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));
     }
-    ImGui::PushFont(static_cast<ImFont*>(context.fonts.GetFont(impl_->font_id_)));
+    ImGui::PushFont(
+            static_cast<ImFont*>(context.fonts.GetFont(impl_->font_id_)));
 
     auto padding = ImGui::GetStyle().FramePadding;
     float wrapX = ImGui::GetCursorPos().x + frame.width - padding.x;
