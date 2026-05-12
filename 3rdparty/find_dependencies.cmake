@@ -1503,6 +1503,10 @@ if(NOT USE_SYSTEM_MSGPACK)
         INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
         DEPENDS      ext_msgpack-c
     )
+    # msgpack-cxx >= 4.0 pulls in <boost/predef/other/endian.h> by default for
+    # endianness detection. Open3D does not depend on Boost, so opt into the
+    # bundled msgpack/predef/* fallback via MSGPACK_NO_BOOST.
+    target_compile_definitions(3rdparty_msgpack INTERFACE MSGPACK_NO_BOOST)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_msgpack)
 else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_msgpack)
