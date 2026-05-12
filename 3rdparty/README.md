@@ -93,8 +93,8 @@ libzmq                      4.3.3         LGPLv3 + static link exception license
 ZeroMQ is a high-performance asynchronous messaging library
 https://github.com/zeromq/libzmq
 --------------------------------------------------------------------------------
-msgpack-c                   3.3.0                     Boost Software License 1.0
-MessagePack implementation for C and C++
+msgpack-cxx                 7.0.0                     Boost Software License 1.0
+MessagePack implementation for C++ (header-only)
 https://github.com/msgpack/msgpack-c/tree/cpp_master
 --------------------------------------------------------------------------------
 nanoflann                   1.3.1                                    BSD license
