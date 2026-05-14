@@ -29,81 +29,91 @@ Line-set-only files are skipped with a warning.
 Example::
 
     filename,scale,rx_deg,ry_deg,rz_deg,tx,ty,tz
-    /Users/ssheorey/Downloads/point_cloud_29999_only_table.ply,1,0,0,0,0,0,0
-    /Users/ssheorey/Downloads/vase-f1992_13_2-150k-4096.glb,0.5,180,0,0,-0.2,0.2,1.0
-    /Users/ssheorey/Downloads/Lycaste_virginalis-150k-4096_std.glb,0.75,180,0,0,0,0.425,0.8
-    /Users/ssheorey/Downloads/nike.splat,0.075,-15,0,0,0,0.47,1.0
-    #/Users/ssheorey/Downloads/garden_30K.ply,1,0,0,0,0,0,0
+    mipnerf360_garden_crop_table.ply,1,0,0,0,0,0,0
+    vase-f1992_13_2-150k-4096.glb,0.5,180,0,0,-0.2,0.2,1.0
+    Lycaste_virginalis-150k-4096_std.glb,0.75,180,0,0,0,0.425,0.8
+    nike.splat,0.075,-15,0,0,0,0.47,1.0
 """
 
-import argparse
 import csv
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Tuple
+import requests
 
 import numpy as np
 import open3d as o3d
 
 
-def _parse_floats(row: Dict[str, str], keys: List[str]) -> Tuple[float, ...]:
-    return tuple(float(row[k].strip()) for k in keys)
+def _download_example_assets():
+    """Download example assets and create a manifest CSV with scale - rotation - translation to setup the example scene."""
+    asset_urls = {
+        "mipnerf360_garden_crop_table.ply":
+            "https://github.com/isl-org/open3d_downloads/releases/download/3dgs-1/mipnerf360_garden_crop_table.ply",
+        "vase-f1992_13_2-150k-4096.glb":
+            "https://3d-api.si.edu/content/document/3d_package:a05dc7c9-7b6f-43f8-8830-69fe98718e4f/resources/vase-f1992_13_2-150k-4096.glb",
+        "Lycaste_virginalis-150k-4096_std.glb":
+            "https://3d-api.si.edu/content/document/3d_package:5ff6e90a-4ddb-4eea-a69c-40970f85fbcb/resources/Lycaste_virginalis-150k-4096_std.glb",
+        "nike.splat":
+            "https://huggingface.co/cakewalk/splat-data/resolve/8fa962a5c7088fff3149a658718b89c5eb2c9c26/nike.splat?download=true",
+    }
+    dataset = o3d.data.Dataset("3dgs_example_assets")
+    out_path = Path(dataset.download_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    CHUNK = 64 * 1024 * 1024  # 64MB
+    for name, url in asset_urls.items():
+        if (out_path / name).is_file():
+            continue
+        # Stream download in chunks to handle large files
+        r = requests.get(url, stream=True, timeout=30)
+        r.raise_for_status()
+        print(f"Downloading {name}", end="", flush=True)
+        with open(out_path / name, "wb") as fh:
+            for chunk in r.iter_content(chunk_size=CHUNK):
+                if not chunk:
+                    continue
+                fh.write(chunk)
+                print(".", end="", flush=True)
+        print()
+    with open(out_path / "3dgs_example_scene.csv", "w", newline="") as f:
+        f.write("""filename,scale,rx_deg,ry_deg,rz_deg,tx,ty,tz
+mipnerf360_garden_crop_table.ply,1,0,0,0,0,0,0
+vase-f1992_13_2-150k-4096.glb,0.5,180,0,0,-0.2,0.2,1.0
+Lycaste_virginalis-150k-4096_std.glb,0.75,180,0,0,0,0.425,0.8
+nike.splat,0.075,-15,0,0,0,0.47,1.0
+""")
+    return out_path / "3dgs_example_scene.csv"
 
 
-def _euler_deg_xyz_to_R(rx_deg: float, ry_deg: float,
-                        rz_deg: float) -> np.ndarray:
-    return o3d.geometry.get_rotation_matrix_from_xyz(
-        np.deg2rad(np.array([rx_deg, ry_deg, rz_deg], dtype=np.float64)))
-
-
-def _apply_srt_legacy(
-    geometry: o3d.geometry.Geometry,
-    scale: float,
-    R: np.ndarray,
-    translation: np.ndarray,
+def _apply_srt_geometry(
+    geometry,
+    srt: Tuple[float, float, float, float, float, float, float],
 ) -> None:
+    scale, rx, ry, rz, tx, ty, tz = srt
+    rotation = np.array(
+        o3d.geometry.get_rotation_matrix_from_xyz(
+            np.deg2rad(np.array([rx, ry, rz], dtype=np.float64))))
+    translation = np.array([tx, ty, tz], dtype=np.float64)
+    scale = np.asarray(scale, dtype=np.float64)
     center = np.zeros(3, dtype=np.float64)
-    geometry.scale(scale, center)
-    geometry.rotate(R, center)
+    geometry.scale(float(scale.reshape(-1)[0]), center)
+    geometry.rotate(rotation, center)
     geometry.translate(translation)
-
-
-def _apply_srt_tensor_point_cloud(
-    pcd: o3d.t.geometry.PointCloud,
-    scale: float,
-    R: np.ndarray,
-    translation: np.ndarray,
-) -> None:
-    if pcd.is_empty():
-        return
-    dtype = pcd.point["positions"].dtype
-    dev = pcd.device
-    zero = o3d.core.Tensor([0.0, 0.0, 0.0], dtype=dtype, device=dev)
-    R_t = o3d.core.Tensor(R, dtype=dtype, device=dev)
-    t_np = np.asarray(translation, dtype=np.float64)
-    t_t = o3d.core.Tensor(t_np, dtype=dtype, device=dev)
-    pcd.scale(float(scale), center=zero)
-    pcd.rotate(R_t, center=zero)
-    pcd.translate(t_t, relative=True)
 
 
 def _load_and_transform_row(
     path: Path,
-    scale: float,
-    R: np.ndarray,
-    tvec: np.ndarray,
+    srt: Tuple[float, float, float, float, float, float, float],
 ):
     """Load geometry from *path* and return a list of draw() dicts (one entry)."""
+    if not path.is_file():
+        print(f"[Open3D][warning] File not found: {path!s}. Skipping.",
+              file=sys.stderr)
+        return None
     gtype = o3d.io.read_file_geometry_type(str(path))
     if gtype & o3d.io.CONTAINS_GAUSSIAN_SPLATS:
         t_pcd = o3d.t.io.read_point_cloud(str(path))
-        if t_pcd.is_empty():
-            print(
-                f"[Open3D][warning] Empty tensor point cloud after read: {path!s}",
-                file=sys.stderr,
-            )
-            return None
-        _apply_srt_tensor_point_cloud(t_pcd, scale, R, tvec)
+        _apply_srt_geometry(t_pcd, srt)
         mat = o3d.visualization.rendering.MaterialRecord()
         mat.shader = "gaussianSplat"
         return [{"name": path.stem, "geometry": t_pcd, "material": mat}]
@@ -111,18 +121,12 @@ def _load_and_transform_row(
     if gtype & o3d.io.CONTAINS_TRIANGLES:
         model = o3d.io.read_triangle_model(str(path))
         for mesh_info in model.meshes:
-            _apply_srt_legacy(mesh_info.mesh, scale, R, tvec)
+            _apply_srt_geometry(mesh_info.mesh, srt)
         return [{"name": path.stem, "geometry": model}]
 
     if gtype & o3d.io.CONTAINS_POINTS:
         pcd = o3d.io.read_point_cloud(str(path))
-        if not pcd.has_points():
-            print(
-                f"[Open3D][warning] No points in point cloud: {path!s}",
-                file=sys.stderr,
-            )
-            return None
-        _apply_srt_legacy(pcd, scale, R, tvec)
+        _apply_srt_geometry(pcd, srt)
         return [{"name": path.stem, "geometry": pcd}]
 
     if gtype & o3d.io.CONTAINS_LINES:
@@ -154,47 +158,39 @@ def _read_manifest(csv_path: Path):
         for i, row in enumerate(reader, start=2):
             if not any(str(v).strip() for v in row.values() if v is not None):
                 continue
+            if row["filename"].strip().startswith("#"):
+                continue
             rows.append({"_line": i, **row})
     return rows
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description=
-        "Draw multiple 3D assets with transforms from a CSV manifest.")
-    parser.add_argument(
-        "csv",
-        type=Path,
-        help="Path to a CSV with columns: filename, scale, "
-        "rx_deg, ry_deg, rz_deg, tx, ty, tz",
-    )
-    args = parser.parse_args()
-    csv_path = args.csv.resolve()
+    if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
+        print(__doc__)
+        return 0
+    if len(sys.argv) == 1:
+        print(
+            "No CSV provided, downloading example assets and using generated manifest."
+        )
+        csv_path = _download_example_assets()
+    else:
+        csv_path = Path(sys.argv[1]).resolve()
     base_dir = csv_path.parent
     try:
         manifest = _read_manifest(csv_path)
     except ValueError as e:
         print(f"[Open3D][error] {e}", file=sys.stderr)
+        print(__doc__)
         return 1
 
     draw_list: list[dict] = []
     for row in manifest:
-        if row["filename"].strip().startswith('#'):
-            continue
         relp = Path(row["filename"].strip())
         path = relp if relp.is_absolute() else (base_dir / relp)
-        if not path.is_file():
-            print(
-                f"[Open3D][error] line {row['_line']}: file not found: {path}",
-                file=sys.stderr,
-            )
-            return 1
-
-        scale, rx, ry, rz, tx, ty, tz = _parse_floats(
-            row, ["scale", "rx_deg", "ry_deg", "rz_deg", "tx", "ty", "tz"])
-        R = _euler_deg_xyz_to_R(rx, ry, rz)
-        tvec = np.array([tx, ty, tz], dtype=np.float64)
-        out = _load_and_transform_row(path, scale, R, tvec)
+        srt = tuple(
+            float(row[x].strip())
+            for x in ["scale", "rx_deg", "ry_deg", "rz_deg", "tx", "ty", "tz"])
+        out = _load_and_transform_row(path, srt)
         if not out:
             continue
         object_name = f"l{row['_line']}_{path.stem}"
@@ -205,12 +201,14 @@ def main() -> int:
     if not draw_list:
         print("No entries to display.", file=sys.stderr)
         return 1
-    o3d.visualization.draw(draw_list,
-                           show_ui=True,
-                           title=csv_path.name,
-                           show_skybox=False,
-                           bg_color=(0.0, 0.0, 0.0, 1.0),
-                           ibl_intensity=100000)
+    o3d.visualization.draw(
+        draw_list,
+        show_ui=True,
+        title=csv_path.stem,
+        show_skybox=False,
+        bg_color=(0.0, 0.0, 0.0, 1.0),
+        ibl_intensity=100000,
+    )
     return 0
 
 
