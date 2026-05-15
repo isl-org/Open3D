@@ -7,6 +7,7 @@
 
 #include "open3d/geometry/MeshBase.h"
 
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -86,6 +87,17 @@ void pybind_meshbase_definitions(py::module &m) {
                  "color"_a)
             .def("compute_convex_hull", &MeshBase::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
+            .def("get_oriented_bounding_ellipsoid",
+                 &MeshBase::GetOrientedBoundingEllipsoid, "robust"_a = false,
+                 R"(Compute the minimum volume oriented bounding ellipsoid that
+encloses the mesh vertices, using Khachiyan's algorithm.
+
+Args:
+    robust (bool): If set to true uses a more robust method which works in
+        degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+    open3d.geometry.OrientedBoundingEllipsoid)")
             .def_readwrite("vertices", &MeshBase::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "

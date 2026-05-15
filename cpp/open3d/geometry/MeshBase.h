@@ -95,7 +95,7 @@ public:
     ///               in degenerate cases but introduces noise to the points
     ///               coordinates.
     virtual OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
-            bool robust = false) const override;
+            bool robust = false) const;
 
     virtual MeshBase &Transform(const Eigen::Matrix4d &transformation) override;
     virtual MeshBase &Translate(const Eigen::Vector3d &translation,

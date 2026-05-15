@@ -56,7 +56,7 @@ public:
     OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
     OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
-            bool robust = false) const override;
+            bool robust = false) const;
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     PointCloud &Translate(const Eigen::Vector3d &translation,
                           bool relative = true) override;

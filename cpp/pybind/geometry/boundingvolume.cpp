@@ -66,27 +66,14 @@ void pybind_boundingvolume_definitions(py::module &m) {
                        << r.z() << ")";
                      return s.str();
                  })
-            //   .def_static("create_from_axis_aligned_bounding_box",
-            //               &OrientedBoundingEllipsoid::
-            //                       CreateFromAxisAlignedBoundingBox,
-            //               "Returns an oriented bounding ellipsoid from the "
-            //               "AxisAlignedBoundingBox.",
-            //               "aabox"_a)
-            //   .def_static(
-            //           "create_from_oriented_bounding_box",
-            //           &OrientedBoundingEllipsoid::CreateFromOrientedBoundingBox,
-            //           "Returns an oriented bounding ellipsoid from the "
-            //           "OrientedBoundingBox.",
-            //           "obb"_a)
             .def_static("create_from_points",
                         &OrientedBoundingEllipsoid::CreateFromPoints,
                         "points"_a, "robust"_a = false,
                         R"doc(
 Creates the oriented bounding ellipsoid that encloses the set of points.
 
-Computes the oriented bounding box based on the Khachiyan algorithm.
+Uses Khachiyan's algorithm to compute the minimum volume enclosing ellipsoid.
 https://ecommons.cornell.edu/server/api/core/bitstreams/2b9e302e-e31c-45c9-b292-64a1c0d70bef/content
-The returned bounding ellipsoid is the minimal volume bounding ellipsoid.
 
 Args:
      points (open3d.utility.Vector3dVector): Input points.
@@ -94,11 +81,30 @@ Args:
           degenerate cases but introduces noise to the points coordinates.
 
 Returns:
-     open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
-     bounding box is oriented such that the axes are ordered with respect to
-     the principal components.
-)doc")
+     open3d.geometry.OrientedBoundingEllipsoid: The minimum volume oriented
+     bounding ellipsoid.
 
+Example::
+
+    import open3d as o3d
+
+    # Compute oriented bounding ellipsoid from a mesh
+    mesh = o3d.io.read_triangle_mesh("model.obj")
+    mesh.compute_triangle_normals()
+    ellipsoid = mesh.get_oriented_bounding_ellipsoid()
+    print(f"Volume: {ellipsoid.volume()}")
+    print(f"Center: {ellipsoid.center}")
+    print(f"Radii:  {ellipsoid.radii}")
+    ellipsoid.color = (0, 0.44, 0.77)
+
+    # Option 1: wireframe visualization via LineSet
+    ellipsoid_lines = o3d.geometry.LineSet.create_from_oriented_bounding_ellipsoid(ellipsoid)
+    o3d.visualization.draw([mesh, ellipsoid_lines])
+
+    # Option 2: solid ellipsoid mesh
+    ellipsoid_mesh = o3d.geometry.TriangleMesh.create_from_oriented_bounding_ellipsoid(ellipsoid)
+    o3d.visualization.draw([mesh, ellipsoid_mesh])
+)doc")
             .def("volume", &OrientedBoundingEllipsoid::Volume,
                  "Returns the volume of the bounding ellipsoid.")
             .def_readwrite("center", &OrientedBoundingEllipsoid::center_,
@@ -110,12 +116,6 @@ Returns:
             .def_readwrite("color", &OrientedBoundingEllipsoid::color_,
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "OrientedBoundingEllipsoid", "volume");
-    //     docstring::ClassMethodDocInject(
-    //             m, "OrientedBoundingEllipsoid",
-    //             "create_from_axis_aligned_bounding_box",
-    //             {{"aabox",
-    //               "AxisAlignedBoundingBox object from which
-    //               OrientedBoundingEllipsoid is " "created."}});
 
     auto oriented_bounding_box = static_cast<
             py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,

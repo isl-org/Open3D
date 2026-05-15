@@ -1283,6 +1283,12 @@ OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
+OrientedBoundingEllipsoid PointCloud::GetOrientedBoundingEllipsoid(
+        bool robust) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(GetPointPositions(),
+                                                       robust);
+}
+
 LineSet PointCloud::ExtrudeRotation(double angle,
                                     const core::Tensor &axis,
                                     int resolution,

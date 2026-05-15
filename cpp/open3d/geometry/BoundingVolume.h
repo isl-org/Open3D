@@ -63,10 +63,6 @@ public:
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust) const override;
 
-    /// Returns the object itself
-    virtual OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
-            bool robust) const override;
-
     virtual OrientedBoundingEllipsoid& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingEllipsoid& Translate(
@@ -79,29 +75,30 @@ public:
     /// Returns the volume of the bounding box.
     double Volume() const;
 
-    /// Returns the six critical points of the bounding ellipsoid.
-    /// \verbatim
-    ///      ------- x
-    ///     /|
-    ///    / |
-    ///   /  | z
-    ///  y
-    ///                            2
-    ///                         .--|---.
-    ///                    .--'    |     '--.
-    ///               .--'         |          '--.
-    ///            .'              |   4           '.
-    ///           /                |  /              \
-    ///          /                 | /                \
-    ///       0 |------------------|-------------------| 1
-    ///          \               / |                  /
-    ///           \             /  |                 /
-    ///            '.         5    |               .'
-    ///               '--.         |          .--'
-    ///                    '--.    |     .--'
-    ///                         '--|---'
-    ///                            3
-    /// \endverbatim
+    /** Returns the six critical points of the bounding ellipsoid.
+     * \verbatim
+     *      ------- x
+     *     /|
+     *    / |
+     *   /  | z
+     *  y
+     *                            2
+     *                         .--|---.
+     *                    .--'    |     '--.
+     *               .--'         |          '--.
+     *            .'              |   4           '.
+     *           /                |  /              \
+     *          /                 | /                \
+     *       0 |------------------|-------------------| 1
+     *          \               / |                  /
+     *           \             /  |                 /
+     *            '.         5    |               .'
+     *               '--.         |          .--'
+     *                    '--.    |     .--'
+     *                         '--|---'
+     *                            3
+     * \endverbatim
+     */
     std::vector<Eigen::Vector3d> GetEllipsoidPoints() const;
 
     /// Return indices to points that are within the bounding ellipsoid.
@@ -181,10 +178,6 @@ public:
 
     /// Returns the object itself
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
-            bool robust) const override;
-
-    /// Returns an oriented bounding ellipsoid encapsulating the object
-    virtual OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
             bool robust) const override;
 
     virtual OrientedBoundingBox& Transform(
@@ -326,10 +319,6 @@ public:
     /// and orientation as the object
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
-
-    /// Returns an oriented bounding ellipsoid encapsulating the object
-    virtual OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
-            bool robust) const override;
 
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;

@@ -654,6 +654,10 @@ public:
     /// Create an oriented bounding box from attribute "positions".
     OrientedBoundingBox GetOrientedBoundingBox() const;
 
+    /// Create an oriented bounding ellipsoid from attribute "positions".
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust = false) const;
+
     /// \brief Function to crop pointcloud into output pointcloud.
     ///
     /// \param aabb AxisAlignedBoundingBox to crop points.

@@ -123,10 +123,6 @@ enum class MethodOBBCreate {
     MINIMAL_JYLANKI  ///< Minimal OBB by Jylanki
 };
 
-enum class MethodOBELCreate {
-    MINIMAL_APPROX,  ///< Minimal OBEL approximation
-};
-
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

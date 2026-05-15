@@ -632,6 +632,24 @@ public:
             const std::vector<double> contour_values = {0.0},
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a solid TriangleMesh representing the surface of an
+    /// OrientedBoundingEllipsoid.
+    /// \param ellipsoid The oriented bounding ellipsoid.
+    /// \param scale Scale factor applied to each semi-axis radius before
+    /// constructing the mesh. Default is (1, 1, 1).
+    /// \param resolution Resolution of the generated ellipsoid surface mesh.
+    /// \param float_dtype The data type for vertex attributes.
+    /// \param int_dtype The data type for triangle indices.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &ellipsoid,
+            const core::Tensor &scale = core::Tensor::Ones(
+                    {3}, core::Float64, core::Device("CPU:0")),
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -854,6 +872,10 @@ public:
 
     /// Create an oriented bounding box from vertex attribute "positions".
     OrientedBoundingBox GetOrientedBoundingBox() const;
+
+    /// Create an oriented bounding ellipsoid from vertex attribute "positions".
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust = false) const;
 
     /// Fill holes by triangulating boundary edges.
     ///

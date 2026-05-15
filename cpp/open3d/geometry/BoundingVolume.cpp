@@ -58,11 +58,6 @@ OrientedBoundingBox OrientedBoundingEllipsoid::GetMinimalOrientedBoundingBox(
     return OrientedBoundingBox::CreateFromPoints(GetEllipsoidPoints());
 }
 
-OrientedBoundingEllipsoid
-OrientedBoundingEllipsoid::GetOrientedBoundingEllipsoid(bool) const {
-    return *this;
-}
-
 OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Transform(
         const Eigen::Matrix4d& transformation) {
     utility::LogError(
@@ -157,11 +152,6 @@ OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox(bool) const {
 OrientedBoundingBox OrientedBoundingBox::GetMinimalOrientedBoundingBox(
         bool) const {
     return *this;
-}
-
-OrientedBoundingEllipsoid OrientedBoundingBox::GetOrientedBoundingEllipsoid(
-        bool) const {
-    return OrientedBoundingEllipsoid::CreateFromPoints(GetBoxPoints());
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Transform(
@@ -340,11 +330,6 @@ OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox(
 OrientedBoundingBox AxisAlignedBoundingBox::GetMinimalOrientedBoundingBox(
         bool robust) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
-}
-
-OrientedBoundingEllipsoid AxisAlignedBoundingBox::GetOrientedBoundingEllipsoid(
-        bool) const {
-    return OrientedBoundingEllipsoid::CreateFromPoints(GetBoxPoints());
 }
 
 AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Eigen::Vector3d& min_bound,

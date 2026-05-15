@@ -509,7 +509,7 @@ protected:
 ///     - Value tensor must have shape {3,}.
 ///     - Value tensor can only be float32 (default) or float64.
 ///     - Value tensor can only be range [0.0, 1.0].
-class OrientedBoundingEllipsoid : public Geometry, public DrawableGeometry {
+class OrientedBoundingEllipsoid : public Geometry {
 public:
     /// \brief Construct an empty OrientedBoundingEllipsoid on the provided
     /// device.
@@ -633,32 +633,33 @@ public:
     /// Returns the volume of the bounding ellipsoid.
     double Volume() const;
 
-    /// \brief Returns the six critical points of the bounding ellipsoid.
-    ///
-    /// The Return tensor has shape {6, 3} and data type same as the ellipsoid.
-    ///
-    /// \verbatim
-    ///      ------- x
-    ///     /|
-    ///    / |
-    ///   /  | z
-    ///  y
-    ///                            2
-    ///                         .--|---.
-    ///                    .--'    |     '--.
-    ///               .--'         |          '--.
-    ///            .'              |   4           '.
-    ///           /                |  /              \
-    ///          /                 | /                \
-    ///       0 |------------------|-------------------| 1
-    ///          \               / |                  /
-    ///           \             /  |                 /
-    ///            '.         5    |               .'
-    ///               '--.         |          .--'
-    ///                    '--.    |     .--'
-    ///                         '--|---'
-    ///                            3
-    /// \endverbatim
+    /** \brief Returns the six critical points of the bounding ellipsoid.
+     *
+     * The Return tensor has shape {6, 3} and data type same as the ellipsoid.
+     *
+     * \verbatim
+     *      ------- x
+     *     /|
+     *    / |
+     *   /  | z
+     *  y
+     *                            2
+     *                         .--|---.
+     *                    .--'    |     '--.
+     *               .--'         |          '--.
+     *            .'              |   4           '.
+     *           /                |  /              \
+     *          /                 | /                \
+     *       0 |------------------|-------------------| 1
+     *          \               / |                  /
+     *           \             /  |                 /
+     *            '.         5    |               .'
+     *               '--.         |          .--'
+     *                    '--.    |     .--'
+     *                         '--|---'
+     *                            3
+     * \endverbatim
+     */
     core::Tensor GetEllipsoidPoints() const;
 
     /// \brief Indices to points that are within the bounding ellipsoid.
@@ -675,6 +676,13 @@ public:
 
     /// Convert to an axis-aligned box.
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Returns an oriented bounding box around the ellipsoid.
+    OrientedBoundingBox GetOrientedBoundingBox(bool robust = false) const;
+
+    /// Returns the minimal oriented bounding box around the ellipsoid.
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const;
 
     /// Create an OrientedBoundingEllipsoid from a legacy Open3D oriented
     /// bounding ellipsoid.

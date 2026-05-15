@@ -759,6 +759,42 @@ OrientedBoundingBox TriangleMesh::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromPoints(GetVertexPositions());
 }
 
+OrientedBoundingEllipsoid TriangleMesh::GetOrientedBoundingEllipsoid(
+        bool robust) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(GetVertexPositions(),
+                                                       robust);
+}
+
+TriangleMesh TriangleMesh::CreateFromOrientedBoundingEllipsoid(
+        const OrientedBoundingEllipsoid &ellipsoid,
+        const core::Tensor &scale,
+        int resolution,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    // Extract radii scaled by the per-axis scale factors.
+    core::Tensor radii =
+            ellipsoid.GetRadii().To(core::Float64) * scale.To(core::Float64);
+    double rx = radii[0].Item<double>();
+    double ry = radii[1].Item<double>();
+    double rz = radii[2].Item<double>();
+    TriangleMesh mesh = CreateEllipsoid(rx, ry, rz, resolution, float_dtype,
+                                        int_dtype, device);
+    // Apply the ellipsoid rotation and translation.
+    core::Tensor R = ellipsoid.GetRotation().To(device, float_dtype);
+    core::Tensor t = ellipsoid.GetCenter().To(device, float_dtype);
+    core::Tensor T = core::Tensor::Eye(4, float_dtype, device);
+    T.Slice(0, 0, 3).Slice(1, 0, 3) = R;
+    T.Slice(0, 0, 3).Slice(1, 3, 4) = t.Reshape({3, 1});
+    mesh.Transform(T);
+    // Copy color from the ellipsoid to all vertices.
+    core::Tensor color = ellipsoid.GetColor().To(device, float_dtype);
+    int64_t num_vertices = mesh.GetVertexPositions().GetLength();
+    mesh.SetVertexColors(
+            color.Reshape({1, 3}).Expand({num_vertices, 3}).Contiguous());
+    return mesh;
+}
+
 TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     using namespace vtkutils;
     // do not include triangle attributes because they will not be preserved by

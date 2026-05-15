@@ -857,6 +857,17 @@ AxisAlignedBoundingBox OrientedBoundingEllipsoid::GetAxisAlignedBoundingBox()
     return AxisAlignedBoundingBox::CreateFromPoints(GetEllipsoidPoints());
 }
 
+OrientedBoundingBox OrientedBoundingEllipsoid::GetOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(GetEllipsoidPoints(), robust);
+}
+
+OrientedBoundingBox OrientedBoundingEllipsoid::GetMinimalOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(
+            GetEllipsoidPoints(), robust, MethodOBBCreate::MINIMAL_JYLANKI);
+}
+
 OrientedBoundingEllipsoid OrientedBoundingEllipsoid::FromLegacy(
         const open3d::geometry::OrientedBoundingEllipsoid &ellipsoid,
         const core::Dtype &dtype,

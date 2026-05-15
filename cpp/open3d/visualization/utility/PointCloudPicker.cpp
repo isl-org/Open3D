@@ -79,17 +79,6 @@ geometry::OrientedBoundingBox PointCloudPicker::GetMinimalOrientedBoundingBox(
     }
 }
 
-geometry::OrientedBoundingEllipsoid
-PointCloudPicker::GetOrientedBoundingEllipsoid(bool robust) const {
-    if (pointcloud_ptr_) {
-        return geometry::OrientedBoundingEllipsoid::CreateFromPoints(
-                ((const geometry::PointCloud&)(*pointcloud_ptr_)).points_,
-                robust);
-    } else {
-        return geometry::OrientedBoundingEllipsoid();
-    }
-}
-
 PointCloudPicker& PointCloudPicker::Transform(
         const Eigen::Matrix4d& /*transformation*/) {
     // Do nothing
