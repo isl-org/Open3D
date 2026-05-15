@@ -640,15 +640,15 @@ OrientedBoundingEllipsoid::OrientedBoundingEllipsoid(
 }
 
 OrientedBoundingEllipsoid OrientedBoundingEllipsoid::To(
-        const core::Device &device, bool copy) const {
-    if (!copy && GetDevice() == device) {
+        const core::Device &device, const core::Dtype &dtype, bool copy) const {
+    if (!copy && GetDevice() == device && GetDtype() == dtype) {
         return *this;
     }
-    OrientedBoundingEllipsoid ellipsoid(device);
-    ellipsoid.SetCenter(center_.To(device, true));
-    ellipsoid.SetRotation(rotation_.To(device, true));
-    ellipsoid.SetRadii(radii_.To(device, true));
-    ellipsoid.SetColor(color_.To(device, true));
+    OrientedBoundingEllipsoid ellipsoid(
+            center_.To(device, dtype, /*copy=*/true),
+            rotation_.To(device, dtype, /*copy=*/true),
+            radii_.To(device, dtype, /*copy=*/true));
+    ellipsoid.SetColor(color_.To(device, dtype, /*copy=*/true));
     return ellipsoid;
 }
 

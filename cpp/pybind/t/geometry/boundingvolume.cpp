@@ -471,21 +471,21 @@ tensors, which must be on the same device and have the same data type.)");
 
     obe.def("to", &OrientedBoundingEllipsoid::To,
             "Transfer the oriented bounding ellipsoid to a specified device.",
-            "device"_a, "copy"_a = false);
+            "device"_a, "dtype"_a, "copy"_a = false);
     obe.def("clone", &OrientedBoundingEllipsoid::Clone,
             "Returns a copy of the oriented bounding ellipsoid on the same "
             "device.");
     obe.def(
             "cpu",
             [](const OrientedBoundingEllipsoid& obe) {
-                return obe.To(core::Device("CPU:0"));
+                return obe.To(core::Device("CPU:0"), obe.GetDtype());
             },
             "Transfer the oriented bounding ellipsoid to CPU. No-op if already "
             "on CPU.");
     obe.def(
             "cuda",
             [](const OrientedBoundingEllipsoid& obe, int device_id) {
-                return obe.To(core::Device("CUDA", device_id));
+                return obe.To(core::Device("CUDA", device_id), obe.GetDtype());
             },
             "Transfer the oriented bounding ellipsoid to a CUDA device.",
             "device_id"_a = 0);

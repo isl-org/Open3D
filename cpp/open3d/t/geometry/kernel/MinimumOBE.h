@@ -6,8 +6,11 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-#include "open3d/t/geometry/BoundingVolume.h"
-#include "open3d/t/geometry/TriangleMesh.h"
+#include <Eigen/Core>
+#include <vector>
+
+#include "open3d/core/Tensor.h"
+#include "open3d/geometry/BoundingVolume.h"
 
 namespace open3d {
 namespace t {
@@ -29,11 +32,20 @@ namespace minimum_obe {
 /// 2. Running Khachiyan's algorithm to find the optimal ellipsoid
 /// 3. Extracting the ellipsoid parameters (center, orientation, radii)
 ///
-/// \param points A list of points with data type of float32 or float64 (N x
-/// 3 tensor, where N must be larger than 3).
-/// \param robust If set to true uses a more robust method which works
-///               in degenerate cases but introduces noise to the points
-///               coordinates.
+/// All computation is in Eigen (Float64) on the CPU.
+///
+/// \param points  Convex-hull or raw point set (each element is a 3D point).
+///                Must contain at least 4 non-coplanar points.
+/// \param robust  If true, joggle the convex-hull computation to handle
+///                degenerate / near-planar inputs.
+/// \return Legacy OrientedBoundingEllipsoid (Eigen types, Float64).
+open3d::geometry::OrientedBoundingEllipsoid ComputeMinimumOBEKhachiyan(
+        const std::vector<Eigen::Vector3d> &points, bool robust);
+
+/// Tensor wrapper: accepts an (N, 3) tensor of any supported float dtype on
+/// any device.  Converts to Eigen on the CPU, calls the Eigen core above,
+/// and converts the result back to a tensor OBE with the *same* dtype and
+/// device as the input points.
 OrientedBoundingEllipsoid ComputeMinimumOBEKhachiyan(const core::Tensor &points,
                                                      bool robust);
 

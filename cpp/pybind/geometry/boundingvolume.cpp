@@ -89,18 +89,19 @@ Example::
     import open3d as o3d
 
     # Compute oriented bounding ellipsoid from a mesh
-    mesh = o3d.io.read_triangle_mesh("model.obj")
+    mesh_path = o3d.data.MonkeyModel().path
+    mesh = o3d.io.read_triangle_mesh(mesh_path)
     mesh.compute_triangle_normals()
     ellipsoid = mesh.get_oriented_bounding_ellipsoid()
     print(f"Volume: {ellipsoid.volume()}")
     print(f"Center: {ellipsoid.center}")
     print(f"Radii:  {ellipsoid.radii}")
     ellipsoid.color = (0, 0.44, 0.77)
-
+    
     # Option 1: wireframe visualization via LineSet
     ellipsoid_lines = o3d.geometry.LineSet.create_from_oriented_bounding_ellipsoid(ellipsoid)
     o3d.visualization.draw([mesh, ellipsoid_lines])
-
+    
     # Option 2: solid ellipsoid mesh
     ellipsoid_mesh = o3d.geometry.TriangleMesh.create_from_oriented_bounding_ellipsoid(ellipsoid)
     o3d.visualization.draw([mesh, ellipsoid_mesh])

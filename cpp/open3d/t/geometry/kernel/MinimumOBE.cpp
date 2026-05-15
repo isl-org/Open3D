@@ -11,8 +11,9 @@
 
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/BoundingVolume.h"
-#include "open3d/t/geometry/PointCloud.h"
 
 namespace open3d {
 namespace t {
@@ -28,23 +29,15 @@ struct EigenOBE {
         : R_(Eigen::Matrix3d::Identity()),
           radii_(Eigen::Vector3d::Zero()),
           center_(Eigen::Vector3d::Zero()) {}
-    EigenOBE(const OrientedBoundingEllipsoid& obe)
-        : R_(core::eigen_converter::TensorToEigenMatrixXd(obe.GetRotation())),
-          radii_(core::eigen_converter::TensorToEigenMatrixXd(
-                  obe.GetRadii().Reshape({3, 1}))),
-          center_(core::eigen_converter::TensorToEigenMatrixXd(
-                  obe.GetCenter().Reshape({3, 1}))) {}
     double Volume() const {
         return 4.0 * M_PI * radii_(0) * radii_(1) * radii_(2) / 3.0;
     }
-    operator OrientedBoundingEllipsoid() const {
-        OrientedBoundingEllipsoid obe;
-        obe.SetRotation(core::eigen_converter::EigenMatrixToTensor(R_));
-        obe.SetRadii(core::eigen_converter::EigenMatrixToTensor(radii_).Reshape(
-                {3}));
-        obe.SetCenter(
-                core::eigen_converter::EigenMatrixToTensor(center_).Reshape(
-                        {3}));
+    /// Convert to legacy OrientedBoundingEllipsoid (Eigen types, Float64).
+    open3d::geometry::OrientedBoundingEllipsoid ToLegacy() const {
+        open3d::geometry::OrientedBoundingEllipsoid obe;
+        obe.center_ = center_;
+        obe.R_ = R_;
+        obe.radii_ = radii_;
         return obe;
     }
     Eigen::Matrix3d R_;
@@ -203,39 +196,34 @@ double KhachiyanAlgorithm(const Eigen::MatrixXd& A,
 
 }  // namespace
 
-OrientedBoundingEllipsoid ComputeMinimumOBEKhachiyan(
-        const core::Tensor& points_, bool robust) {
-    // ------------------------------------------------------------
-    // 0) Compute the convex hull of the input point cloud
-    // ------------------------------------------------------------
-    core::AssertTensorShape(points_, {std::nullopt, 3});
-    if (points_.GetShape(0) == 0) {
+open3d::geometry::OrientedBoundingEllipsoid ComputeMinimumOBEKhachiyan(
+        const std::vector<Eigen::Vector3d>& points, bool robust) {
+    if (points.empty()) {
         utility::LogError("Input point set is empty.");
-        return OrientedBoundingEllipsoid();
     }
-    if (points_.GetShape(0) < 4) {
+    if (static_cast<int>(points.size()) < 4) {
         utility::LogError("Input point set has less than 4 points.");
-        return OrientedBoundingEllipsoid();
     }
 
-    // Copy to CPU here
-    PointCloud pcd(points_.To(core::Device()));
-    auto hull_mesh = pcd.ComputeConvexHull(robust);
-    if (hull_mesh.GetVertexPositions().NumElements() == 0) {
-        utility::LogError("Failed to compute convex hull.");
-        return OrientedBoundingEllipsoid();
+    // ------------------------------------------------------------
+    // 0) Compute the convex hull of the input point cloud using legacy API (Eigen types, CPU).
+    // ------------------------------------------------------------
+    open3d::geometry::PointCloud pcd;
+    pcd.points_ = points;
+    auto [hull_mesh, hull_indices] = pcd.ComputeConvexHull(robust);
+    if (hull_mesh->vertices_.empty()) {
+        utility::LogWarning("Failed to compute convex hull.");
+        return open3d::geometry::OrientedBoundingEllipsoid();
     }
 
     // Get convex hull vertices
-    const std::vector<Eigen::Vector3d>& hull_v =
-            core::eigen_converter::TensorToEigenVector3dVector(
-                    hull_mesh.GetVertexPositions());
+    const auto& hull_v = hull_mesh->vertices_;
     int num_vertices = static_cast<int>(hull_v.size());
 
     // Handle degenerate planar cases up front.
     if (num_vertices < 4) {
-        utility::LogError("Convex hull is degenerate.");
-        return OrientedBoundingEllipsoid();
+        utility::LogWarning("Convex hull is degenerate.");
+        return open3d::geometry::OrientedBoundingEllipsoid();
     }
 
     // Assemble matrix A with dimensions 3 x n_points, where each column is a
@@ -279,7 +267,29 @@ OrientedBoundingEllipsoid ComputeMinimumOBEKhachiyan(
     // Check orientation and permute axes to closest identity
     MapOBEToClosestIdentity(obe);
 
-    return obe;
+    return obe.ToLegacy();
+}
+
+OrientedBoundingEllipsoid ComputeMinimumOBEKhachiyan(const core::Tensor& points,
+                                                     bool robust) {
+    core::AssertTensorShape(points, {std::nullopt, 3});
+    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
+    if (points.GetShape(0) < 4) {
+        utility::LogError("Input point set has less than 4 points.");
+    }
+
+    // Convert tensor → Eigen (Float64, CPU). One copy.
+    const std::vector<Eigen::Vector3d> eigen_points =
+            core::eigen_converter::TensorToEigenVector3dVector(
+                    points.To(core::Device("CPU:0"), core::Float64));
+
+    // Run Eigen-native core.
+    open3d::geometry::OrientedBoundingEllipsoid legacy_obe =
+            ComputeMinimumOBEKhachiyan(eigen_points, robust);
+
+    // Convert legacy OBE → tensor OBE with the caller's dtype and device.
+    return OrientedBoundingEllipsoid::FromLegacy(legacy_obe, points.GetDtype(),
+                                                 points.GetDevice());
 }
 
 }  // namespace minimum_obe

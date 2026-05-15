@@ -541,17 +541,19 @@ public:
     /// OrientedBoundingEllipsoid.
     core::Dtype GetDtype() const { return dtype_; }
 
-    /// Transfer the OrientedBoundingEllipsoid to a specified device.
+    /// Transfer the OrientedBoundingEllipsoid to a specified device and dtype.
     /// \param device The targeted device to convert to.
+    /// \param dtype The targeted data type (Float32 or Float64).
     /// \param copy If true, a new OrientedBoundingEllipsoid is always created;
     /// if false, the copy is avoided when the original
-    /// OrientedBoundingEllipsoid is already on the targeted device.
+    /// OrientedBoundingEllipsoid is already on the targeted device and dtype.
     OrientedBoundingEllipsoid To(const core::Device &device,
+                                 const core::Dtype &dtype,
                                  bool copy = false) const;
 
     /// Returns copy of the OrientedBoundingEllipsoid on the same device.
     OrientedBoundingEllipsoid Clone() const {
-        return To(GetDevice(), /*copy=*/true);
+        return To(GetDevice(), GetDtype(), /*copy=*/true);
     }
 
     OrientedBoundingEllipsoid &Clear() override;
