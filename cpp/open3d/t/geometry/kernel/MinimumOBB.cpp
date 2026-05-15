@@ -7,6 +7,8 @@
 
 #include "open3d/t/geometry/kernel/MinimumOBB.h"
 
+#include <Eigen/src/Core/Matrix.h>
+
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/geometry/BoundingVolume.h"
@@ -99,8 +101,8 @@ OrientedBoundingBox ComputeMinimumOBBJylanki(const core::Tensor& points_,
         Eigen::Vector3d col[3] = {R.col(0), R.col(1), R.col(2)};
         Eigen::Vector3d ext = extent;
         double best_score = -1e9;
-        Eigen::Matrix3d best_R;
-        Eigen::Vector3d best_extent;
+        Eigen::Matrix3d best_R = Eigen::Matrix3d::Identity();
+        Eigen::Vector3d best_extent{{-1, -1, -1}};
         // Hard-coded permutations of indices [0,1,2]
         static const std::array<std::array<int, 3>, 6> permutations = {
                 {{{0, 1, 2}},

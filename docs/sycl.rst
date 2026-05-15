@@ -30,7 +30,7 @@ and (optionally) SYCL runtime for your `Nvidia
 <https://developer.codeplay.com/products/oneapi/amd/download>`_ GPU.
 
 For Python, the wheels will automatically install the DPC++ runtime package
-(`dpcpp-cpp-rt`).  Make sure to have the `correct drivers installed 
+(`dpcpp-cpp-rt`).  Make sure to have the `correct drivers installed
 <https://dgpu-docs.intel.com/driver/client/overview.html>`_ for your GPU. For
 raycasting on Intel GPUs, you will also need the
 `intel-level-zero-gpu-raytracing` package.
@@ -41,10 +41,11 @@ raycasting on Intel GPUs, you will also need the
     :widths: auto
 
     * - Linux SYCL (Ubuntu 22.04+)
-      - `Python 3.9 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp39-cp39-manylinux_2_31_x86_64.whl>`__
       - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp310-cp310-manylinux_2_31_x86_64.whl>`__
       - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp311-cp311-manylinux_2_31_x86_64.whl>`__
       - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-manylinux_2_31_x86_64.whl>`__
+      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-manylinux_2_31_x86_64.whl>`__
       - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/v0.19.0/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
 
 Usage
@@ -65,7 +66,7 @@ emulate support with these environment variables:
 
 .. code-block:: shell
 
-    export IGC_EnableDPEmulation=1          # Enable float64 emulation during compilation 
+    export IGC_EnableDPEmulation=1          # Enable float64 emulation during compilation
     export OverrideDefaultFP64Settings=1    # Enable double precision emulation at runtime.
 
 The binaries only contain kernels compiled to SPIR-V IR. At runtime, they will
@@ -105,10 +106,10 @@ SYCL runtime are installed. You can select a specific device with the
     o3d.core.sycl.print_sycl_devices(print_all=True)
 
     # Return a list of available devices.
-    o3d.core.sycl.get_available_devices() 
+    o3d.core.sycl.get_available_devices()
 
     # Check if a device is available
-    o3d.core.sycl.is_available(o3d.core.Device("SYCL:0"))  
+    o3d.core.sycl.is_available(o3d.core.Device("SYCL:0"))
 
 
 Building from source
@@ -119,7 +120,7 @@ Python version, set the `PYTHON_VERSION` variable in `docker/docker_build.sh`.
 
 .. code-block:: shell
 
-    cd docker 
+    cd docker
     ./docker_build.sh sycl-shared
 
 This will create the Python wheel and C++ binary archive in the current

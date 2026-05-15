@@ -36,7 +36,12 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
 //   bindings for each py array types.
 template <typename EigenVector>
 std::vector<EigenVector> py_array_to_vectors_double(
-        py::array_t<double, py::array::c_style | py::array::forcecast> array) {
+        py::array_t<double> array) {  // remove the restrictive flags here
+    // Ensure array is contiguous (C-style)
+    if (!(array.flags() & (py::array::c_style))) {
+        // Make a contiguous copy if necessary
+        array = py::array_t<double, py::array::c_style>(array);
+    }
     int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
@@ -53,8 +58,10 @@ std::vector<EigenVector> py_array_to_vectors_double(
 }
 
 template <typename EigenVector>
-std::vector<EigenVector> py_array_to_vectors_int(
-        py::array_t<int, py::array::c_style | py::array::forcecast> array) {
+std::vector<EigenVector> py_array_to_vectors_int(py::array_t<int> array) {
+    if (!(array.flags() & (py::array::c_style))) {
+        array = py::array_t<int, py::array::c_style>(array);
+    }
     int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
@@ -70,8 +77,10 @@ std::vector<EigenVector> py_array_to_vectors_int(
 template <typename EigenVector,
           typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
 std::vector<EigenVector, EigenAllocator>
-py_array_to_vectors_int_eigen_allocator(
-        py::array_t<int, py::array::c_style | py::array::forcecast> array) {
+py_array_to_vectors_int_eigen_allocator(py::array_t<int> array) {
+    if (!(array.flags() & (py::array::c_style))) {
+        array = py::array_t<int, py::array::c_style>(array);
+    }
     int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
@@ -87,8 +96,10 @@ py_array_to_vectors_int_eigen_allocator(
 template <typename EigenVector,
           typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
 std::vector<EigenVector, EigenAllocator>
-py_array_to_vectors_int64_eigen_allocator(
-        py::array_t<int64_t, py::array::c_style | py::array::forcecast> array) {
+py_array_to_vectors_int64_eigen_allocator(py::array_t<int64_t> array) {
+    if (!(array.flags() & (py::array::c_style))) {
+        array = py::array_t<int64_t, py::array::c_style>(array);
+    }
     int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();

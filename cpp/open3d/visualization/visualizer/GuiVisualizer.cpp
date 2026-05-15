@@ -515,15 +515,18 @@ struct GuiVisualizer::Impl {
                 // o3dscene->ShowGeometry(WIREFRAME_NAME, true);
                 o3dscene->ShowGeometry(MODEL_NAME, false);
                 o3dscene->GetView()->SetWireframe(true);
-                o3dscene->SetBackground({0.1f, 0.1f, 0.1f, 1.f});
             } else {
                 o3dscene->RemoveGeometry(WIREFRAME_NAME);
                 o3dscene->ShowGeometry(MODEL_NAME, true);
                 o3dscene->GetView()->SetWireframe(false);
-                auto bcolor = settings_.model_.GetBackgroundColor();
-                o3dscene->SetBackground(
-                        {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
             }
+        }
+
+        if (settings_.model_.GetWireframeMode() && !loaded_pcd_) {
+            o3dscene->SetBackground({0.1f, 0.1f, 0.1f, 1.f});
+        } else {
+            auto bcolor = settings_.model_.GetBackgroundColor();
+            o3dscene->SetBackground({bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
         }
 
         if (settings_.model_.GetBasicMode() != basic_mode_enabled_) {

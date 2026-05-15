@@ -20,20 +20,24 @@ OPTION:
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
     openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
     openblas-amd64-py313-dev    : OpenBLAS AMD64 3.13 wheel, developer mode
+    openblas-amd64-py314-dev    : OpenBLAS AMD64 3.14 wheel, developer mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
     openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
     openblas-amd64-py313        : OpenBLAS AMD64 3.13 wheel, release mode
+    openblas-amd64-py314        : OpenBLAS AMD64 3.14 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
     openblas-arm64-py312-dev    : OpenBLAS ARM64 3.12 wheel, developer mode
     openblas-arm64-py313-dev    : OpenBLAS ARM64 3.13 wheel, developer mode
+    openblas-arm64-py314-dev    : OpenBLAS ARM64 3.14 wheel, developer mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
     openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
     openblas-arm64-py312        : OpenBLAS ARM64 3.12 wheel, release mode
     openblas-arm64-py313        : OpenBLAS ARM64 3.13 wheel, release mode
+    openblas-arm64-py314        : OpenBLAS ARM64 3.14 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
@@ -226,6 +230,11 @@ openblas-amd64-py313-dev)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-amd64-py314-dev)
+    openblas_export_env amd64 py314 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 openblas-amd64-py310)
     openblas_export_env amd64 py310
     openblas_print_env
@@ -243,6 +252,11 @@ openblas-amd64-py312)
     ;;
 openblas-amd64-py313)
     openblas_export_env amd64 py313
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py314)
+    openblas_export_env amd64 py314
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
@@ -268,6 +282,11 @@ openblas-arm64-py313-dev)
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;
+openblas-arm64-py314-dev)
+    openblas_export_env arm64 py314 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 openblas-arm64-py310)
     openblas_export_env arm64 py310
     openblas_print_env
@@ -285,6 +304,11 @@ openblas-arm64-py312)
     ;;
 openblas-arm64-py313)
     openblas_export_env arm64 py313
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py314)
+    openblas_export_env arm64 py314
     openblas_print_env
     cpp_python_linking_uninstall_test
     ;;

@@ -9,6 +9,8 @@
 
 #include <string>
 
+#include "open3d/visualization/rendering/Renderer.h"
+
 namespace filament {
 class Engine;
 }
@@ -21,16 +23,10 @@ class FilamentResourceManager;
 
 class EngineInstance {
 public:
-    enum class RenderingType { kDefault, kOpenGL, kVulkan, kMetal };
-
     // Selects backend to use.
     // Should be called before instance usage.
     // If not called, platform available default backend will be used.
     static void SelectBackend(RenderingType type);
-
-    /// Initialize Engine for headless rendering. Must be called before first
-    /// access to the Engine (GetInstance).
-    static void EnableHeadless();
 
     // Specifies path to load shaders and skyboxes from. Must be called before
     // instance usage, or default path will be used.
@@ -39,6 +35,8 @@ public:
 
     static filament::Engine& GetInstance();
     static FilamentResourceManager& GetResourceManager();
+
+    static RenderingType GetBackendType() { return type_; }
 
     /// Destroys the singleton instance, to force Filament cleanup at a
     /// specific time. Calling GetInstance() after this will re-create
@@ -53,7 +51,6 @@ private:
     EngineInstance();
 
     static RenderingType type_;
-    static bool is_headless_;
     static std::string resource_path_;
     filament::Engine* engine_;
     FilamentResourceManager* resource_manager_;

@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <cstdint>
+
+#include "absl/status/status.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -24,17 +27,18 @@ public:
 
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 type is not compatible");
+        static_assert(sizeof(int64_t) == sizeof(int64_t),
+                      "int64_t type is not compatible");
 
         const Tensor& values = context->input(0);
-        OP_REQUIRES(context, values.shape().dims() == 1,
-                    errors::InvalidArgument("values must be a rank 1 tensor"));
+        OP_REQUIRES(
+                context, values.shape().dims() == 1,
+                absl::InvalidArgumentError("values must be a rank 1 tensor"));
 
         const Tensor& row_splits = context->input(1);
-        OP_REQUIRES(
-                context, row_splits.shape().dims() == 1,
-                errors::InvalidArgument("row_splits must be a rank 1 tensor"));
+        OP_REQUIRES(context, row_splits.shape().dims() == 1,
+                    absl::InvalidArgumentError(
+                            "row_splits must be a rank 1 tensor"));
 
         // special treatment for empty values vector
         if (values.shape().dim_size(0) == 0) {

@@ -36,3 +36,6 @@ if(WIN32)
                         ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>
                         COMMENT "Copying Open3D DLLs to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
 endif()
+if (MSVC)
+    add_compile_options(/utf-8)  # fmt 12+ requires /utf-8 with MSVC
+endif()

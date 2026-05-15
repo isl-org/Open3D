@@ -20,7 +20,6 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
         vec2 uv = getUV0();
-        uv.y = 1.0 - uv.y;
         /* OpenGL spec 8.4.4.4 says that texture().a is 1.0 if there
            is no alpha channel, so this shader can handle both RGB and RGBA
            images */

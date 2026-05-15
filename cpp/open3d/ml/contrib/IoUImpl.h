@@ -198,7 +198,7 @@ OPEN3D_HOST_DEVICE inline float BoxOverlap(const float *box_a,
         }
     }
 
-    OPEN3D_ASSERT(cnt != 0 && "Invalid value: cnt==0.");
+    if (cnt == 0) return 0.f;
 
     poly_center.x_ /= cnt;
     poly_center.y_ /= cnt;

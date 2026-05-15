@@ -25,7 +25,7 @@ referring to "DPC++".
 
    # We'll be using oneAPI's distribution of conda and Python
    # Python 3.6+ will work
-   conda create -n sycl python=3.8
+   conda create -n sycl python=3.10
    conda activate sycl
    ```
 4. Check your environment
@@ -33,7 +33,7 @@ referring to "DPC++".
    which icx        # /opt/intel/oneapi/compiler/<version>/linux/bin/icx
    which icpx       # /opt/intel/oneapi/compiler/<version>/linux/bin/icpx
    which python     # ${HOME}/.conda/envs/sycl/bin/python
-   python --version # Python 3.8.12 :: Intel Corporation
+   python --version # Python 3.10.0 :: Intel Corporation
    ```
 5. Config and build
    ```bash

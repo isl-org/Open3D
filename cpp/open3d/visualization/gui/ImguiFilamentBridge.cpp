@@ -22,6 +22,11 @@
  * limitations under the License.
  */
 
+// clang-format off
+// NOTE: this must precede header files that bring in Filament headers
+#include <cstring>
+// clang-format on
+
 #include "open3d/visualization/gui/ImguiFilamentBridge.h"
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
@@ -38,17 +43,17 @@
 #include <filament/TransformManager.h>
 #include <utils/EntityManager.h>
 
+#include <cerrno>
+#include <iostream>
+#include <map>
+#include <vector>
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER
 
 #include <fcntl.h>
 #include <imgui.h>
-
-#include <cerrno>
-#include <iostream>
-#include <map>
-#include <vector>
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"

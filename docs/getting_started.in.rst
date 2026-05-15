@@ -32,6 +32,7 @@ Supported Python versions:
 * 3.11
 * 3.12
 * 3.13
+* 3.14
 
 Supported operating systems:
 
@@ -99,24 +100,28 @@ version (``HEAD`` of ``main`` branch):
       - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_35_x86_64.whl>`__
       - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp312-cp312-manylinux_2_35_x86_64.whl>`__
       - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp313-cp313-manylinux_2_35_x86_64.whl>`__
+      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp314-cp314-manylinux_2_35_x86_64.whl>`__
 
     * - Linux (CPU)
       - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_35_x86_64.whl>`__
       - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_35_x86_64.whl>`__
       - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp312-cp312-manylinux_2_35_x86_64.whl>`__
       - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp313-cp313-manylinux_2_35_x86_64.whl>`__
+      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp314-cp314-manylinux_2_35_x86_64.whl>`__
 
     * - MacOS
       - `Python 3.10 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_11_0_universal2.whl>`__
       - `Python 3.11 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-macosx_10_15_universal2.whl>`__
       - `Python 3.12 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp312-cp312-macosx_10_15_universal2.whl>`__
-      - `Python 3.13 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp312-cp313-macosx_10_15_universal2.whl>`__
+      - `Python 3.13 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp313-cp313-macosx_10_15_universal2.whl>`__
+      - `Python 3.14 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp314-cp314-macosx_10_15_universal2.whl>`__
 
     * - Windows
       - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-win_amd64.whl>`__
       - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-win_amd64.whl>`__
       - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp312-cp312-win_amd64.whl>`__
       - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp313-cp313-win_amd64.whl>`__
+      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp314-cp314-win_amd64.whl>`__
 
 Please use these links from the `latest version of this page
 <https://www.open3d.org/docs/latest/getting_started.html>`__ only. You can also

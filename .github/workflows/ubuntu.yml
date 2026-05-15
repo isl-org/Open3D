@@ -82,8 +82,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ ${BUILD_SHARED_LIBS} == 'ON' ] ; then
-            gh release upload main-devel open3d-devel-*.tar.xz --clobber
+            .github/workflows/update_release.sh open3d-devel-*.tar.xz
           else
-            gh release upload main-devel open3d-viewer-*-Linux.deb --clobber
+            .github/workflows/update_release.sh open3d-viewer-*-Linux.deb
           fi
-          gh release view main-devel

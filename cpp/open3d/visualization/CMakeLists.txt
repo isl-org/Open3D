@@ -2,6 +2,8 @@ open3d_ispc_add_library(visualization OBJECT)
 
 open3d_ispc_add_library(visualization_impl OBJECT)
 set_target_properties(visualization_impl PROPERTIES CXX_VISIBILITY_PRESET hidden)
+# filament uses C++20 designated initializers
+set_property(TARGET visualization_impl visualization PROPERTY CXX_STANDARD 20)
 
 target_sources(visualization_impl PRIVATE
     shader/GeometryRenderer.cpp
