@@ -206,7 +206,8 @@ open3d::geometry::OrientedBoundingEllipsoid ComputeMinimumOBEKhachiyan(
     }
 
     // ------------------------------------------------------------
-    // 0) Compute the convex hull of the input point cloud using legacy API (Eigen types, CPU).
+    // 0) Compute the convex hull of the input point cloud using legacy API
+    // (Eigen types, CPU).
     // ------------------------------------------------------------
     open3d::geometry::PointCloud pcd;
     pcd.points_ = points;
