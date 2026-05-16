@@ -70,6 +70,8 @@ public:
 
     MenuBase* CreateOSMenu() override;
 
+    void SetClipboardText(OSWindow w, const char* text) override;
+
 private:
     static void DrawCallback(GLFWwindow* window);
     static void ResizeCallback(GLFWwindow* window, int os_width, int os_height);

@@ -1,6 +1,6 @@
 /*
 ** The OpenGL Extension Wrangler Library
-** Copyright (C) 2008-2019, Nigel Stewart <nigels[]users sourceforge net>
+** Copyright (C) 2008-2025, Nigel Stewart <nigels[]nigels com>
 ** Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
 ** Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
 ** Copyright (C) 2002, Lev Povalahev
@@ -1446,7 +1446,7 @@ WGLEW_VAR_EXPORT GLboolean __WGLEW_NV_video_output;
 WGLEW_VAR_EXPORT GLboolean __WGLEW_OML_sync_control;
 /* ------------------------------------------------------------------------- */
 
-GLEWAPI GLenum GLEWAPIENTRY wglewInit ();
+GLEWAPI GLenum GLEWAPIENTRY wglewInit (void);
 GLEWAPI GLboolean GLEWAPIENTRY wglewIsSupported (const char *name);
 
 #ifndef WGLEW_GET_VAR

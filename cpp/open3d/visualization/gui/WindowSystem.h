@@ -85,6 +85,11 @@ public:
                                 rendering::FilamentRenderer* renderer) = 0;
 
     virtual MenuBase* CreateOSMenu() = 0;
+
+    /// Copies text to the system clipboard.
+    /// The default implementation is a no-op for window systems that do not
+    /// support the clipboard.
+    virtual void SetClipboardText(OSWindow w, const char* text) {}
 };
 
 }  // namespace gui

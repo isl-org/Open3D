@@ -402,6 +402,26 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a ellipsoid triangle mesh. The ellipsoid will be centered
+    /// at (0, 0, 0).
+    /// \param radius_x defines first radii of the ellipsoid.
+    /// \param radius_y defines second radii of the ellipsoid.
+    /// \param radius_z defines third radii of the ellipsoid.
+    /// \param resolution defines the resolution of the ellipsoid.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateEllipsoid(
+            double radius_x = 1.0,
+            double radius_y = 1.0,
+            double radius_z = 1.0,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
     /// Create a tetrahedron triangle mesh. The centroid of the mesh will be
     /// placed at (0, 0, 0) and the vertices have a distance of radius to the
     /// center.
@@ -612,6 +632,24 @@ public:
     static TriangleMesh CreateIsosurfaces(
             const core::Tensor &volume,
             const std::vector<double> contour_values = {0.0},
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a solid TriangleMesh representing the surface of an
+    /// OrientedBoundingEllipsoid.
+    /// \param ellipsoid The oriented bounding ellipsoid.
+    /// \param scale Scale factor applied to each semi-axis radius before
+    /// constructing the mesh. Default is (1, 1, 1).
+    /// \param resolution Resolution of the generated ellipsoid surface mesh.
+    /// \param float_dtype The data type for vertex attributes.
+    /// \param int_dtype The data type for triangle indices.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &ellipsoid,
+            const core::Tensor &scale = core::Tensor::Ones(
+                    {3}, core::Float64, core::Device("CPU:0")),
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
 public:
@@ -836,6 +874,10 @@ public:
 
     /// Create an oriented bounding box from vertex attribute "positions".
     OrientedBoundingBox GetOrientedBoundingBox() const;
+
+    /// Create an oriented bounding ellipsoid from vertex attribute "positions".
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust = false) const;
 
     /// Fill holes by triangulating boundary edges.
     ///

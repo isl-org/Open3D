@@ -357,6 +357,13 @@ This example shows how to create a hemisphere from a sphere::
                         "float_dtype"_a = core::Float32,
                         "int_dtype"_a = core::Int64,
                         "device"_a = core::Device("CPU:0"))
+            .def_static("create_ellipsoid", &TriangleMesh::CreateEllipsoid,
+                        "Create an ellipsoid mesh centered at (0, 0, 0).",
+                        "radius_x"_a = 1.0, "radius_y"_a = 1.0,
+                        "radius_z"_a = 1.0, "resolution"_a = 20,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
             .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
                         "Create a tetrahedron mesh centered at (0, 0, 0).",
                         "radius"_a = 1.0, "float_dtype"_a = core::Float32,
@@ -554,6 +561,28 @@ Example:
 )");
 
     triangle_mesh.def_static(
+            "create_from_oriented_bounding_ellipsoid",
+            &TriangleMesh::CreateFromOrientedBoundingEllipsoid, "ellipsoid"_a,
+            "scale"_a = core::Tensor::Ones({3}, core::Float64,
+                                           core::Device("CPU:0")),
+            "resolution"_a = 20, "float_dtype"_a = core::Float32,
+            "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"),
+            R"(Create a solid TriangleMesh representing the surface of an OrientedBoundingEllipsoid.
+
+Args:
+    ellipsoid (open3d.t.geometry.OrientedBoundingEllipsoid): The oriented
+        bounding ellipsoid.
+    scale (open3d.core.Tensor): Per-axis scale factors applied to each
+        semi-axis radius, shape (3,). Default is (1, 1, 1).
+    resolution (int): Resolution of the generated ellipsoid surface mesh.
+    float_dtype (open3d.core.Dtype): Float32 or Float64, for vertex attributes.
+    int_dtype (open3d.core.Dtype): Int32 or Int64, for triangle indices.
+    device (open3d.core.Device): The device for the returned mesh.
+
+Returns:
+    open3d.t.geometry.TriangleMesh: Solid surface mesh of the ellipsoid.)");
+
+    triangle_mesh.def_static(
             "create_isosurfaces",
             // Accept anything for contour_values that pybind can convert to
             // std::list. This also avoids o3d.utility.DoubleVector.
@@ -744,6 +773,11 @@ Example:
                       &TriangleMesh::GetOrientedBoundingBox,
                       "Create an oriented bounding box from vertex attribute "
                       "'positions'.");
+    triangle_mesh.def("get_oriented_bounding_ellipsoid",
+                      &TriangleMesh::GetOrientedBoundingEllipsoid,
+                      "Create an oriented bounding ellipsoid from vertex "
+                      "attribute 'positions'.",
+                      "robust"_a = false);
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,
