@@ -104,8 +104,7 @@ Eigen::MatrixXf BuildIrRl(int l,
 
             // v weight — incorporates sqrt(1+delta_{m,1}) / sqrt(2) factors.
             float v = 0.5f *
-                      std::sqrt((1.f + d) * (l + am - 1.f) * (l + am) /
-                                denom) *
+                      std::sqrt((1.f + d) * (l + am - 1.f) * (l + am) / denom) *
                       (1.f - 2.f * d);
 
             // w weight (zero when m == 0).

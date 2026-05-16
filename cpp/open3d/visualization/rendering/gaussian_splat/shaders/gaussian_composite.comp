@@ -308,7 +308,10 @@ void main() {
         float transmittance = 1.0;
         // Output depth in normalized linear convention (near=0, far=1);
         // converted back to Filament inverse convention before imageStore.
-        float out_norm_depth = 0.0;
+        // Initialise to 1.0 (far plane) so pixels with no splat contribution
+        // produce inverse depth 0.0 (far), allowing the depth-merge shader to
+        // pick the Filament scene depth via max(gs_inv=0, sc_inv).
+        float out_norm_depth = 1.0;
         bool depth_written = false;
         vec2 pixel_center = vec2(pixel) + vec2(0.5);
 

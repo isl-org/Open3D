@@ -513,8 +513,7 @@ bool WritePointCloudToPLY(const std::string& filename,
             attributeType = GetPlyType(it.second.GetDtype());
             ply_add_property(ply_file, it.first.c_str(), attributeType,
                              attributeType, attributeType);
-        } else if (it.first == "f_rest" && shape.size() == 3 &&
-                   shape[2] == 3) {
+        } else if (it.first == "f_rest" && shape.size() == 3 && shape[2] == 3) {
             // f_rest shape is {N, basis_count, 3}.
             // The PLY reader expects channel-major (GraphDECO) ordering:
             //   f_rest_0 .. f_rest_{Nc-1}  : R basis coefficients
@@ -580,7 +579,8 @@ bool WritePointCloudToPLY(const std::string& filename,
                     }
                 } else {
                     for (int idx_offset = base;
-                         idx_offset < it.group_size_ * (static_cast<int>(i) + 1);
+                         idx_offset <
+                         it.group_size_ * (static_cast<int>(i) + 1);
                          ++idx_offset) {
                         ply_write(ply_file, data_ptr[idx_offset]);
                     }

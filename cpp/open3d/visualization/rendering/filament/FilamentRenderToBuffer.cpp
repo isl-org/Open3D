@@ -234,11 +234,6 @@ void FilamentRenderToBuffer::Render() {
 
     if (run_gs_pipeline) {
         gaussian_splat_renderer_->RequestRedrawForView(*view_);
-        if (depth_image_) {
-            // Signal that a depth readback is needed so the composite pass
-            // allocates and populates the merged_depth_u16_tex scratch texture.
-            gaussian_splat_renderer_->RequestDepthReadbackForView(*view_, true);
-        }
         gaussian_splat_renderer_->BeginFrame();
 #if !defined(__APPLE__)
         // Drain Filament work before Gaussian compute dispatches (shared
@@ -246,6 +241,13 @@ void FilamentRenderToBuffer::Render() {
         engine_.flushAndWait();
 #endif
         gaussian_splat_renderer_->RenderGeometryStage(*view_, *scene_);
+        if (depth_image_) {
+            // Signal that a depth readback is needed so the composite pass
+            // allocates and populates the merged_depth_u16_tex scratch texture.
+            // Must be after RenderGeometryStage which creates the OutputTargets
+            // entry for this view via PrepareOutputTargets().
+            gaussian_splat_renderer_->RequestDepthReadbackForView(*view_, true);
+        }
     }
 
     if (renderer_->beginFrame(swapchain_)) {

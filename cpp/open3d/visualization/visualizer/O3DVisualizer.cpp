@@ -2170,8 +2170,19 @@ Ctrl-alt-click to polygon select)";
                         // Depth export stores normalized depth in 16-bit PNG.
                         auto depth_float =
                                 std::make_shared<geometry::Image>(*image);
-                        depth_float->ClipIntensity(0.0, 1.0);
-                        depth_float->LinearTransform(65535.0, 0.0);
+                        float *depth_data = depth_float->PointerAs<float>();
+                        size_t num_pixels = static_cast<size_t>(
+                                depth_float->GetMaxBound().prod());
+                        float max_val =
+                                std::reduce(depth_data, depth_data + num_pixels,
+                                            0.0f, [](float a, float b) {
+                                                if (!std::isfinite(a)) return b;
+                                                if (!std::isfinite(b)) return a;
+                                                return std::max(a, b);
+                                            });
+                        if (max_val > 0)
+                            depth_float->LinearTransform(65535.0 / max_val,
+                                                         0.0);
                         auto depth_u16 =
                                 depth_float
                                         ->CreateImageFromFloatImage<uint16_t>();
