@@ -49,7 +49,12 @@ namespace geometry {
 namespace {
 
 // ---------------------------------------------------------------------------
-// Ivanic–Ruedenberg (IR 1996/1998) real-SH rotation helpers.
+// Ivanic–Ruedenberg real-SH rotation helpers.
+// Ivanic and K. Ruedenberg, "Rotation Matrices for Real Spherical Harmonics.
+// Direct Determination by Recursion", J. Phys. Chem., vol. 100, no. 15, pp.
+// 6342-6347, 1996. http://pubs.acs.org/doi/pdf/10.1021/jp953350u
+// Corrections (1998): http://pubs.acs.org/doi/pdf/10.1021/jp9833350
+// Conventions: No Condon-Shortley phase, same as GraphDECO 3DGS.
 //
 // BuildIrR1   : degree-1 IR matrix — maps (y,z,x) SH ordering to the
 //               shader's EvaluateShDegree1 convention (m=-1→y, m=0→z, m=+1→x).
@@ -70,8 +75,13 @@ Eigen::MatrixXf BuildIrRl(int l,
                           const Eigen::Matrix3f& R1,
                           const Eigen::MatrixXf& Rp) {
     // Rp: IR matrix for degree l-1 (shape (2(l-1)+1) × (2(l-1)+1)).
-    auto P = [&](int i, int a, int b) {
-        auto g = [&](int m, int n) { return Rp(m + l - 1, n + l - 1); };
+    // Ivanic–Ruedenberg (1996) + 1998 erratum.
+    // P(i, a, b) accesses Rp with row index a ∈ [-(l-1), l-1].
+    auto P = [&](int i, int a, int b) -> float {
+        // g(m, n) indexes Rp with offset so m ∈ [-(l-1), l-1] maps to [0, 2l-2]
+        auto g = [&](int m, int n) -> float {
+            return Rp(m + l - 1, n + l - 1);
+        };
         if (b == l)
             return R1(i + 1, 2) * g(a, l - 1) - R1(i + 1, 0) * g(a, -(l - 1));
         if (b == -l)
@@ -87,17 +97,53 @@ Eigen::MatrixXf BuildIrRl(int l,
             float denom = std::abs(n) < l ? float(l * l - n * n)
                                           : float(l * (2 * l - 1));
             float am = std::abs(float(m));
+
+            // u weight (zero when |m| == l, so P(0, m, n) is never
+            // out-of-bounds).
             float u = std::sqrt(float(l * l - m * m) / denom);
+
+            // v weight — incorporates sqrt(1+delta_{m,1}) / sqrt(2) factors.
             float v = 0.5f *
-                      std::sqrt((1.f + d) * (l + am - 1.f) * (l + am) / denom) *
+                      std::sqrt((1.f + d) * (l + am - 1.f) * (l + am) /
+                                denom) *
                       (1.f - 2.f * d);
+
+            // w weight (zero when m == 0).
             float w = am > 0.f ? -0.5f * std::sqrt((l - am - 1.f) * (l - am) /
                                                    denom)
                                : 0.f;
+
             float res = 0.f;
+
+            // U term: row index = m (safe because u == 0 when |m| == l).
             if (u != 0.f) res += u * P(0, m, n);
-            if (v != 0.f) res += v * P(1, m, n);
-            if (w != 0.f) res += w * P(-1, m, n);
+
+            // V term (Table 2 of Ivanic & Ruedenberg 1998 erratum).
+            if (v != 0.f) {
+                if (m == 0) {
+                    res += v * (P(1, 1, n) + P(-1, -1, n));
+                } else if (m > 0) {
+                    float dv = (m == 1) ? 1.f : 0.f;
+                    res += v * (P(1, m - 1, n) * std::sqrt(1.f + dv) -
+                                P(-1, -m + 1, n) * (1.f - dv));
+                } else {
+                    // m < 0
+                    float dv = (m == -1) ? 1.f : 0.f;
+                    res += v * (P(1, m + 1, n) * (1.f - dv) +
+                                P(-1, -m - 1, n) * std::sqrt(1.f + dv));
+                }
+            }
+
+            // W term: uses shifted row indices (w == 0 when m == 0).
+            if (w != 0.f) {
+                if (m > 0) {
+                    res += w * (P(1, m + 1, n) + P(-1, -m - 1, n));
+                } else {
+                    // m < 0 (m == 0 excluded by w == 0)
+                    res += w * (P(1, m - 1, n) - P(-1, -m + 1, n));
+                }
+            }
+
             Rl(m + l, n + l) = res;
         }
     }

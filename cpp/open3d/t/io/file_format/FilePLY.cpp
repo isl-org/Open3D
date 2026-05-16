@@ -363,12 +363,19 @@ e_ply_type GetPlyType(const core::Dtype& dtype) {
 struct AttributePtr {
     AttributePtr(const core::Dtype& dtype,
                  const void* data_ptr,
-                 const int& group_size)
-        : dtype_(dtype), data_ptr_(data_ptr), group_size_(group_size) {}
+                 const int& group_size,
+                 const std::vector<int>& write_order = {})
+        : dtype_(dtype),
+          data_ptr_(data_ptr),
+          group_size_(group_size),
+          write_order_(write_order) {}
 
     const core::Dtype dtype_;
     const void* data_ptr_;
     const int group_size_;
+    // Optional per-element index permutation for channel-reordering.
+    // Empty means write elements in storage order (default).
+    const std::vector<int> write_order_;
 };
 }  // namespace
 
@@ -506,6 +513,39 @@ bool WritePointCloudToPLY(const std::string& filename,
             attributeType = GetPlyType(it.second.GetDtype());
             ply_add_property(ply_file, it.first.c_str(), attributeType,
                              attributeType, attributeType);
+        } else if (it.first == "f_rest" && shape.size() == 3 &&
+                   shape[2] == 3) {
+            // f_rest shape is {N, basis_count, 3}.
+            // The PLY reader expects channel-major (GraphDECO) ordering:
+            //   f_rest_0 .. f_rest_{Nc-1}  : R basis coefficients
+            //   f_rest_Nc .. f_rest_{2Nc-1}: G basis coefficients
+            //   f_rest_{2Nc} .. f_rest_{3Nc-1}: B basis coefficients
+            // The tensor is stored basis-major: element[basis*3 + channel].
+            // We emit the property names in channel-major order and build a
+            // write_order permutation so values are written in the same order.
+            const int basis_count = static_cast<int>(shape[1]);
+            attributeType = GetPlyType(it.second.GetDtype());
+            for (int channel = 0; channel < 3; ++channel) {
+                for (int basis = 0; basis < basis_count; ++basis) {
+                    int prop_idx = channel * basis_count + basis;
+                    std::string prop_name =
+                            "f_rest_" + std::to_string(prop_idx);
+                    ply_add_property(ply_file, prop_name.c_str(), attributeType,
+                                     attributeType, attributeType);
+                }
+            }
+            // Build permutation: for each output slot (channel-major index)
+            // record the corresponding storage index (basis-major).
+            std::vector<int> write_order;
+            write_order.reserve(group_size);
+            for (int channel = 0; channel < 3; ++channel) {
+                for (int basis = 0; basis < basis_count; ++basis) {
+                    write_order.push_back(basis * 3 + channel);
+                }
+            }
+            attribute_ptrs.emplace_back(it.second.GetDtype(),
+                                        it.second.GetDataPtr(), group_size,
+                                        write_order);
         } else {
             for (int ch = 0; ch < group_size; ch++) {
                 std::string prop_name = it.first + "_" + std::to_string(ch);
@@ -532,9 +572,18 @@ bool WritePointCloudToPLY(const std::string& filename,
             DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
                 const scalar_t* data_ptr =
                         static_cast<const scalar_t*>(it.data_ptr_);
-                for (int idx_offset = it.group_size_ * i;
-                     idx_offset < it.group_size_ * (i + 1); ++idx_offset) {
-                    ply_write(ply_file, data_ptr[idx_offset]);
+                const int base = it.group_size_ * static_cast<int>(i);
+                if (!it.write_order_.empty()) {
+                    // Channel-reordered write (e.g. f_rest channel-major).
+                    for (int idx : it.write_order_) {
+                        ply_write(ply_file, data_ptr[base + idx]);
+                    }
+                } else {
+                    for (int idx_offset = base;
+                         idx_offset < it.group_size_ * (static_cast<int>(i) + 1);
+                         ++idx_offset) {
+                        ply_write(ply_file, data_ptr[idx_offset]);
+                    }
                 }
             });
         }

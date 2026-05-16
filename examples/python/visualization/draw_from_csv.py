@@ -94,9 +94,8 @@ def _apply_srt_geometry(
         o3d.geometry.get_rotation_matrix_from_xyz(
             np.deg2rad(np.array([rx, ry, rz], dtype=np.float64))))
     translation = np.array([tx, ty, tz], dtype=np.float64)
-    scale = np.asarray(scale, dtype=np.float64)
     center = np.zeros(3, dtype=np.float64)
-    geometry.scale(float(scale.reshape(-1)[0]), center)
+    geometry.scale(scale, center)
     geometry.rotate(rotation, center)
     geometry.translate(translation)
 
