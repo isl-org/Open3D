@@ -39,7 +39,7 @@ def test_pointcloud_get_oriented_bounding_ellipsoid(device):
     assert isinstance(obe, o3d.t.geometry.OrientedBoundingEllipsoid)
     np.testing.assert_allclose(obe.volume(), 25.13274123, atol=1e-5)
     # Center should be near the origin for this symmetric point set.
-    np.testing.assert_allclose(obe.center.numpy(), 0.0, atol=1e-3)
+    np.testing.assert_allclose(obe.center.cpu().numpy(), 0.0, atol=1e-3)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -53,6 +53,6 @@ def test_trianglemesh_get_oriented_bounding_ellipsoid(device):
     assert isinstance(obe, o3d.t.geometry.OrientedBoundingEllipsoid)
     np.testing.assert_allclose(obe.volume(), 4.18879, atol=1e-5)
     # Sphere centered at origin — ellipsoid center should be near origin.
-    np.testing.assert_allclose(obe.center.numpy(), 0.0, atol=1e-3)
+    np.testing.assert_allclose(obe.center.cpu().numpy(), 0.0, atol=1e-3)
     # All radii should be positive.
-    np.testing.assert_array_less(0.0, obe.radii.numpy())
+    np.testing.assert_array_less(0.0, obe.radii.cpu().numpy())
