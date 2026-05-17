@@ -1956,7 +1956,8 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
             baked_textures["normals"].To(GetDevice(), core::Float32);
 
     RaycastingScene rcs;
-    rcs.AddTriangles(*this);
+    // TODO: Reuse RCS from BakeVertexAttrTextures() if possible.
+    rcs.AddTriangles(*this);  
 
     const int64_t n_pixels = tex_width * tex_width;
 
@@ -1974,13 +1975,14 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
                      255);
     }
 
-    // Get origins and normals for valid pixels.
+    // Get positions and normals for valid pixels.
     Tensor valid_positions = positions.IndexGet({valid_indices});
     Tensor valid_normals = normals.IndexGet({valid_indices});
 
-    Tensor origins = valid_positions.Expand({n_rays, n_valid_pixels, 3});
-
-    // Hemisphere sampling using 2D quasirandom numbers.
+    // Hemisphere sampling using 2D quasirandom numbers. Uses Malley's method
+    // for unit disk sampling. Note that this gives cosine weighted samples,
+    // which is what we want for AO.
+    // sampled_dirs shape: {n_rays, 3} — same directions reused for every pixel.
     Tensor qr = Tensor::Quasirandom(n_rays, 2, core::Float32, GetDevice());
     Tensor r1 = qr.Slice(1, 0, 1);
     Tensor r = r1.Sqrt();
@@ -1988,42 +1990,74 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
     Tensor theta = r2 * 2.0 * M_PI;
     Tensor sampled_dirs =
             Tensor::Empty({n_rays, 3}, core::Float32, GetDevice());
-    sampled_dirs.Slice(1, 0, 1) = r * theta.Cos();  // X
-    sampled_dirs.Slice(1, 1, 2) = r * theta.Sin();  // Y
+    sampled_dirs.Slice(1, 0, 1) = r * theta.Cos();    // X
+    sampled_dirs.Slice(1, 1, 2) = r * theta.Sin();    // Y
     sampled_dirs.Slice(1, 2, 3) = (1.f - r1).Sqrt();  // Z >= 0
-    sampled_dirs =
-            sampled_dirs.Expand({n_valid_pixels, n_rays, 3}).Transpose(0, 1);
 
-    // Rotate (0, 0, 1) to align with normal
-    // Create basis from normals to transform sampled directions.
-    Tensor t = valid_normals.Expand({n_rays, n_valid_pixels, 3});
-    Tensor up1 = Tensor::Init<float>({0, 0, 1}, GetDevice());
-    Tensor up2 = Tensor::Init<float>({1, 0, 0}, GetDevice());
-    Tensor up = up1.Expand({n_rays, n_valid_pixels, 3});
-    Tensor abs_dot = t.Mul(up).Sum({-1}).Abs();
-    up.IndexSet({abs_dot.Ge(1.0 - 1e-6)}, up2);
-    // Compute b = normalize(cross(t, up))
-    Tensor b = t.Cross(up);
-    b = b / b.Norm({-1}, true).Clip_(1e-6, INFINITY);
-    // Transform directions to world space.
-    Tensor directions = sampled_dirs.Slice(-1, 0, 1) * t.Cross(b) +
-                        sampled_dirs.Slice(-1, 1, 2) * b +
-                        sampled_dirs.Slice(-1, 2, 3) * t;
+    const Tensor up1 = Tensor::Init<float>({0, 0, 1}, GetDevice());
+    const Tensor up2 = Tensor::Init<float>({1, 0, 0}, GetDevice());
 
-    // Cast all rays at once.
-    Tensor rays = origins.Append(directions, -1);
-    Tensor occlusion = rcs.TestOcclusions(
-            rays, 1e-5f,  // tnear > 0 to prevent self-occlusions
-            max_hit_distance);
+    // Process pixels in batches to bound peak memory.
+    // Peak memory per batch ≈ n_rays * batch_size * 6 * 4 bytes (rays tensor)
+    // plus comparable intermediate tensors (basis, directions).
+    // At batch_size=256K and n_rays=64: ~384 MB for rays alone.
+    constexpr int64_t kBatchSize = 256 * 1024;
+    Tensor ao_values =
+            Tensor::Ones({n_valid_pixels}, core::Float32, GetDevice());
+
+    for (int64_t batch_start = 0; batch_start < n_valid_pixels;
+         batch_start += kBatchSize) {
+        const int64_t batch_end =
+                std::min(batch_start + kBatchSize, n_valid_pixels);
+        const int64_t batch_size = batch_end - batch_start;
+
+        Tensor batch_positions =
+                valid_positions.Slice(0, batch_start, batch_end);
+        Tensor batch_normals = valid_normals.Slice(0, batch_start, batch_end);
+
+        // origins: {n_rays, batch_size, 3} via zero-copy expand.
+        Tensor origins = batch_positions.Expand({n_rays, batch_size, 3});
+        // Expand sampled_dirs to {n_rays, batch_size, 3}.
+        Tensor batch_sampled_dirs =
+                sampled_dirs.Expand({batch_size, n_rays, 3}).Transpose(0, 1);
+
+        // Build per-pixel TBN basis.
+        // up must be Contiguous() so that IndexSet() below writes to distinct
+        // memory locations. Without this, all elements share the same 3 floats
+        // (stride-0 from Expand), causing a global overwrite instead of a
+        // per-pixel conditional update.
+        Tensor t = batch_normals.Expand({n_rays, batch_size, 3});
+        Tensor up = up1.Expand({n_rays, batch_size, 3}).Contiguous();
+        Tensor abs_dot = t.Mul(up).Sum({-1}).Abs();
+        up.IndexSet({abs_dot.Ge(1.0 - 1e-6)}, up2);
+        // Compute b = normalize(cross(t, up))
+        Tensor b = t.Cross(up);
+        b = b / b.Norm({-1}, true).Clip_(1e-6, INFINITY);
+        // Rotate sampled directions from tangent space to world space.
+        Tensor directions = batch_sampled_dirs.Slice(-1, 0, 1) * t.Cross(b) +
+                            batch_sampled_dirs.Slice(-1, 1, 2) * b +
+                            batch_sampled_dirs.Slice(-1, 2, 3) * t;
+
+        // Cast rays for this batch.
+        Tensor rays = origins.Append(directions, -1);
+        Tensor occlusion = rcs.TestOcclusions(
+                rays, 1e-5f,  // tnear > 0 to prevent self-occlusions
+                max_hit_distance);
+        ao_values.Slice(0, batch_start, batch_end) =
+                1.0f - occlusion.To(core::Float32).Mean({0});
+    }
 
     Tensor ao_texture = Tensor::Ones({n_pixels}, core::Float32, GetDevice());
-    ao_texture.IndexSet({valid_indices}, 1.0f - occlusion.To(core::Float32).Mean({0}));
+    ao_texture.IndexSet({valid_indices}, ao_values);
     ao_texture = ao_texture.View({(int64_t)tex_width, (int64_t)tex_width, 1});
 
     // Denoise with bilateral filter.
     Image ao_image(ao_texture);
+    // MonteCarlo noise has variance 1/(4*n_rays), so value_sigma \propto
+    // 0.5/sqrt(n_rays). We use twice that for a smoother result.
     Image denoised_ao_image = ao_image.FilterBilateral(
-            /*kernel_size*/ 3, /*value_sigma*/ 2./n_rays, /*distance_sigma*/ 3.0);
+            /*kernel_size*/ 3, /*value_sigma*/ 2. / (2 * sqrt(n_rays)),
+            /*distance_sigma*/ 3.0);
 
     // Convert to an 8-bit image and update material.
     Image final_image(denoised_ao_image.To(core::UInt8, false, 255.f, 0.f));
@@ -2259,17 +2293,35 @@ Image TriangleMesh::TransformNormalMap(const Image &normal_map,
     input_normals_t = input_normals_t.To(core::Float32);
 
     if (to_tangent_space) {
-        // World -> Tangent
-        // N_t = transpose(TBN) * N_w
+        // World -> Tangent (exact MikkTSpace inverse)
+        // Compute the adjugate rows of TBN (unnormalized cofactors), which
+        // form the exact left-inverse even when T/B/N are not orthonormal
+        // after interpolation:
+        //   row0 = cross(B, N)
+        //   row1 = cross(N, T)
+        //   row2 = cross(T, B)
+        // Orientation sign: fSign = sign(dot(T, row0))
+        // N_t = normalize(fSign * [dot(N_w, row0), dot(N_w, row1),
+        //                          dot(N_w, row2)])
+        core::Tensor row0 = tbn_B.Cross(tbn_N);  // cross(B, N)
+        core::Tensor row1 = tbn_N.Cross(tbn_T);  // cross(N, T)
+        core::Tensor row2 = tbn_T.Cross(tbn_B);  // cross(T, B)
+
+        // fSign = dot(T, row0) >= 0 ? 1 : -1
+        core::Tensor dot_T_row0 = (tbn_T * row0).Sum({2}, true);
+        core::Tensor fSign = (dot_T_row0 >= core::Tensor::Init<float>({0}))
+                                             .To(core::Float32) *
+                                     2.0f -
+                             1.0f;
+
         core::Tensor tangent_normals_t =
                 core::Tensor::Empty({tex_height, tex_width, 3}, core::Float32);
-
         tangent_normals_t.Slice(2, 0, 1) =
-                (input_normals_t * tbn_T).Sum({2}, true);
+                fSign * (input_normals_t * row0).Sum({2}, true);
         tangent_normals_t.Slice(2, 1, 2) =
-                (input_normals_t * tbn_B).Sum({2}, true);
+                fSign * (input_normals_t * row1).Sum({2}, true);
         tangent_normals_t.Slice(2, 2, 3) =
-                (input_normals_t * tbn_N).Sum({2}, true);
+                fSign * (input_normals_t * row2).Sum({2}, true);
 
         // Normalize and encode from [-1, 1] to [0, 255]
         tangent_normals_t =

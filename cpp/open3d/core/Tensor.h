@@ -321,15 +321,15 @@ public:
 
     /// \brief Generates a tensor containing points from a quasirandom sequence.
     ///
-    /// This function creates a tensor of shape {n, dims} where each row is a point
-    /// in a low-discrepancy quasirandom sequence (specifically, the generalized
-    /// golden ratio based R_n sequence). The 2D variant is the plastic
-    /// sequence. Such sequences are commonly used in numerical integration,
-    /// computer graphics and sampling tasks where uniform coverage of the space
-    /// is desired. See 
-    // https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
-    // for more details.
-    /// 
+    /// This function creates a tensor of shape {n, dims} where each row is a
+    /// point in a low-discrepancy quasirandom sequence (specifically, the
+    /// generalized golden ratio based R_n sequence). The 2D variant is the
+    /// plastic sequence. Such sequences are commonly used in numerical
+    /// integration, computer graphics and sampling tasks where uniform coverage
+    /// of the space is desired. See
+    /// https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+    /// for more details.
+    ///
     /// \param n Number of points to generate (default: 16).
     /// \param dims Number of dimensions for each point (default: 2).
     /// \param dtype Data type of the output tensor (default: core::Float32).
@@ -632,17 +632,19 @@ public:
     /// \return returns the determinant of the matrix (double).
     double Det() const;
 
-    
-    /// \brief Computes the cross product of the current tensor with another tensor.
+    /// \brief Computes the cross product of the current tensor with another
+    /// tensor.
     ///
-    /// The cross product is computed along the specified axis. The tensors must have compatible 
+    /// The cross product is computed along the specified axis. The tensors must
+    /// have compatible
     // (i.e. broadcastable) shape, and the size of the specified axis must be 3.
     // If the axis is -1 (default), the last axis is used.
     ///
     /// \param other The second input tensor to compute the cross product with.
-    /// \param axis The axis along which to compute the cross product. Default is -1 (the last axis).
-    /// \return A tensor containing the cross product of the two input tensors along the specified axis.
-    Tensor Cross(const Tensor &other, int64_t axis=-1) const;
+    /// \param axis The axis along which to compute the cross product. Default
+    /// is -1 (the last axis). \return A tensor containing the cross product of
+    /// the two input tensors along the specified axis.
+    Tensor Cross(const Tensor& other, int64_t axis = -1) const;
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
     /// must have empty shape.
@@ -843,7 +845,9 @@ public:
     /// \return Tensor containing the computed norms. Dtype is
     /// preserved for Float32 and Float64 for L2 norm, It is onverted to Float32
     /// for all other cases.
-    Tensor Norm(const SizeVector& dims = {}, bool keepdim=false, float p=2.0) const;
+    Tensor Norm(const SizeVector& dims = {},
+                bool keepdim = false,
+                float p = 2.0) const;
 
     /// Element-wise logical not of a tensor, returning a new boolean
     /// tensor.

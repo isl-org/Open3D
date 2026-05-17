@@ -1661,13 +1661,13 @@ TEST_P(TriangleMeshPermuteDevices, TangentSpace) {
             ElementsAre(tex_size, tex_size, 3));
 
     // Visual inspection.
-    t::io::WriteImage("baked_tangents.png",
-                      mesh.GetMaterial()
-                              .GetTextureMap("tangents")
-                              .To(core::UInt8, false, 127.5, 127.5));
-    t::io::WriteImage("baked_normals.png",
-                      mesh.GetMaterial().GetTextureMap("normals").To(
-                              core::UInt8, false, 127.5, 127.5));
+    // t::io::WriteImage("baked_tangents.png",
+    //                   mesh.GetMaterial()
+    //                           .GetTextureMap("tangents")
+    //                           .To(core::UInt8, false, 127.5, 127.5));
+    // t::io::WriteImage("baked_normals.png",
+    //                   mesh.GetMaterial().GetTextureMap("normals").To(
+    //                           core::UInt8, false, 127.5, 127.5));
 
     // Create a dummy world-space normal map (Float32, [-1, 1]).
     // A simple gradient from (-1,-1,-1) to (1,1,1)
@@ -1696,7 +1696,7 @@ TEST_P(TriangleMeshPermuteDevices, TangentSpace) {
     EXPECT_EQ(tangent_normal_map.GetChannels(), 3);
     EXPECT_TRUE(mesh.GetMaterial().HasNormalMap());
 
-    t::io::WriteImage("tangent_normal_map.png", tangent_normal_map);
+    // t::io::WriteImage("tangent_normal_map.png", tangent_normal_map);
 
     // 3. Tangent to World space.
     auto world_normal_map_restored =
@@ -1705,8 +1705,8 @@ TEST_P(TriangleMeshPermuteDevices, TangentSpace) {
 
     EXPECT_EQ(world_normal_map_restored.GetDtype(), core::UInt8);
     EXPECT_EQ(world_normal_map_restored.GetChannels(), 3);
-    t::io::WriteImage("world_normal_map_restored.png",
-                      world_normal_map_restored);
+    // t::io::WriteImage("world_normal_map_restored.png",
+    //                  world_normal_map_restored);
 
     // world_normal_map_restored is the same as world_normal_map for the region
     // with valid UV coordinates.
@@ -1719,22 +1719,26 @@ TEST_P(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
     // UVAtlas is CPU only.
     core::Device cpu_device("CPU:0");
     auto mesh = t::geometry::TriangleMesh::CreateTorus(
-           1.0, 0.6, 30, 20, core::Float32, core::Int64, cpu_device);
-    // auto box1 = t::geometry::TriangleMesh::CreateBox(1.f, 1.f, 1.f);
-    // auto mesh = box1.BooleanDifference(box1.Clone().Translate(core::Tensor::Init({0.1, 0.1, 0.1})));
+            1.0, 0.6, 30, 20, core::Float32, core::Int64, cpu_device);
     mesh.ComputeVertexNormals();
     mesh.ComputeUVAtlas();
 
     auto ao_map = mesh.ComputeAmbientOcclusion(
-            /*tex_width=*/256, /*n_rays=*/8, /*max_hit_distance=*/INFINITY,
+            /*tex_width=*/128, /*n_rays=*/8, /*max_hit_distance=*/INFINITY,
             /*update_material=*/true);
 
     EXPECT_EQ(ao_map.GetDtype(), core::UInt8);
-    EXPECT_THAT(ao_map.AsTensor().GetShape(), ElementsAre(256, 256, 1));
+    EXPECT_THAT(ao_map.AsTensor().GetShape(), ElementsAre(128, 128, 1));
     EXPECT_TRUE(mesh.GetMaterial().HasAOMap());
+    EXPECT_NEAR(ao_map.To(core::Float32)
+                        .AsTensor()
+                        .Mean({0, 1}, false)
+                        .Item<float>(),
+                0.967f, 2e-3f);
+    EXPECT_NEAR(ao_map.AsTensor().Lt(255).NonZero().GetShape()[1], 1730, 40);
 
-    t::io::WriteTriangleMesh("torus_ao.glb", mesh);
-    t::io::WriteImage("torus_ao_texture.png", mesh.GetMaterial().GetAOMap());
+    // t::io::WriteTriangleMesh("torus_ao.glb", mesh);
+    // t::io::WriteImage("torus_ao_texture.png", mesh.GetMaterial().GetAOMap());
     // Visual inspection.
     // visualization::Draw({std::shared_ptr<t::geometry::TriangleMesh>(
     //                            &mesh, [](t::geometry::TriangleMesh*) {})},

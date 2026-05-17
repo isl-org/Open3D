@@ -272,13 +272,13 @@ TEST_P(TensorPermuteDevicesWithSYCL, Quasirandom) {
 
     // Basic functionality
     core::Tensor qr_ref = core::Tensor::Init<float>({{0.11803399, 0.035687387},
-                                               {0.73606795, 0.5713748},
-                                               {0.35410196, 0.10706216},
-                                               {0.97213596, 0.64274955},
-                                               {0.59016997, 0.17843693},
-                                               {0.20820393, 0.7141243},
-                                               {0.8262379, 0.24981171},
-                                               {0.44427192, 0.7854991}});
+                                                     {0.73606795, 0.5713748},
+                                                     {0.35410196, 0.10706216},
+                                                     {0.97213596, 0.64274955},
+                                                     {0.59016997, 0.17843693},
+                                                     {0.20820393, 0.7141243},
+                                                     {0.8262379, 0.24981171},
+                                                     {0.44427192, 0.7854991}});
     core::Tensor qr = core::Tensor::Quasirandom(8, 2, core::Float32, device);
     EXPECT_EQ(qr.GetShape(), core::SizeVector({8, 2}));
     EXPECT_EQ(qr.GetDtype(), core::Float32);
@@ -1642,7 +1642,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, Cross) {
     core::Tensor b =
             core::Tensor::Init<float>({{7, 8, 9}, {10, 11, 12}}, device);
 
-    core::Tensor c = a.Cross(b);   // axis=-1
+    core::Tensor c = a.Cross(b);  // axis=-1
     core::Tensor c_ref =
             core::Tensor::Init<float>({{-6, 12, -6}, {-6, 12, -6}}, device);
     EXPECT_TRUE(c.AllClose(c_ref));

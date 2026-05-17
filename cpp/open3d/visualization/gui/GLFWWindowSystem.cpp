@@ -209,13 +209,13 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
     glfwShowWindow(glfw_window);
     glfwMakeContextCurrent(glfw_window);
     glfwSwapInterval(1);
-    //if (!visible) {
-    //    glfwHideWindow(glfw_window);
-    //} else {
-    //    glfwShowWindow(glfw_window);
-    //}
+    // if (!visible) {
+    //     glfwHideWindow(glfw_window);
+    // } else {
+    //     glfwShowWindow(glfw_window);
+    // }
     utility::LogInfo("[GLFW] Created window '{}' ({}x{})\n", title, width,
-                      height);
+                     height);
 
     return glfw_window;
 }
