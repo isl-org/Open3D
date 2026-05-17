@@ -9,9 +9,9 @@
 
 #include <json/json.h>
 
+#include <execution>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/Image.h"
@@ -2174,7 +2174,8 @@ Ctrl-alt-click to polygon select)";
                         size_t num_pixels = static_cast<size_t>(
                                 depth_float->GetMaxBound().prod());
                         float max_val =
-                                std::reduce(depth_data, depth_data + num_pixels,
+                                std::reduce(std::execution::par_unseq,
+                                            depth_data, depth_data + num_pixels,
                                             0.0f, [](float a, float b) {
                                                 if (!std::isfinite(a)) return b;
                                                 if (!std::isfinite(b)) return a;

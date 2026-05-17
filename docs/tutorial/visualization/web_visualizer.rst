@@ -168,7 +168,7 @@ Then, run the example notebook
 `docs/jupyter/visualization/jupyter_visualization.ipynb <https://github.com/isl-org/Open3D/blob/main/docs/jupyter/visualization/jupyter_visualization.ipynb>`_.
 
 For **3D Gaussian splatting** (``.splat`` / Gaussian PLY) in Jupyter, see
-`docs/tutorial/visualization/gaussian_splatting_web_visualizer.ipynb <https://github.com/isl-org/Open3D/blob/main/docs/tutorial/visualization/gaussian_splatting_web_visualizer.ipynb>`_.
+`docs/jupyter/visualization/gaussian_splatting.ipynb <https://github.com/isl-org/Open3D/blob/main/docs/jupyter/visualization/gaussian_splatting.ipynb>`_.
 
 Unlike standalone mode, ``WEBRTC_IP`` and ``WEBRTC_PORT`` are not used in
 Jupyter mode. However, you might want to
