@@ -39,10 +39,10 @@ function(open3d_add_compute_shaders target)
     find_program(OPEN3D_GLSLANG_VALIDATOR glslangValidator REQUIRED)
     if (APPLE)
         find_program(OPEN3D_SPIRV_CROSS spirv-cross REQUIRED)
-        # The scatter pass uses subgroup arithmetic (gl_SubgroupSize, subgroupAdd, etc.).
-        # Fixing the subgroup size to 32 (Apple Silicon SIMD width) lets the Metal compiler
+        # For shaders that use subgroup arithmetic (gl_SubgroupSize, subgroupAdd, etc.).
+        # fixing the subgroup size to 32 (Apple Silicon SIMD width) lets the Metal compiler
         # treat gl_SubgroupSize as a compile-time constant for loop unrolling.
-        set(SPIRV_CROSS_EXTRA_FLAGS_gaussian_radix_sort_scatter        "--msl-fixed-subgroup-size 32")
+        set(SPIRV_CROSS_EXTRA_FLAGS "--msl-fixed-subgroup-size 32")
         set(GAUSSIAN_METAL_BASENAMES "")
     endif()
 
@@ -79,7 +79,6 @@ function(open3d_add_compute_shaders target)
             VERBATIM
         )
         if (APPLE)
-            set(SPIRV_CROSS_EXTRA_FLAGS ${SPIRV_CROSS_EXTRA_FLAGS_${SHADER_BASENAME}})
             file(GENERATE OUTPUT run_spirv_cross_${SHADER_BASENAME}.sh CONTENT 
             "${OPEN3D_SPIRV_CROSS} \"${STAGED_SPIRV_FULL_PATH}\" --msl --msl-version 20400 --msl-decoration-binding ${SPIRV_CROSS_EXTRA_FLAGS} \
             --rename-entry-point main ${SHADER_BASENAME}_main comp --output \"${STAGED_METAL_FULL_PATH}\" 
