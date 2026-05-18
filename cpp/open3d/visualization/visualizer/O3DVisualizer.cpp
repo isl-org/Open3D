@@ -8,6 +8,8 @@
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
 
 #include <json/json.h>
+#include <tbb/parallel_reduce.h>
+#include <tbb/blocked_range.h>
 
 #include <cmath>
 #include <set>
