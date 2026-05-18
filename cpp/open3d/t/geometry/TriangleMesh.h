@@ -1163,29 +1163,38 @@ public:
                                   float max_hit_distance = INFINITY,
                                   bool update_material = true);
 
-    /// Computes tangent space for the triangle mesh with MikkTSpace.
-    /// The mesh must have vertex positions, vertex normals, and texture UVs
-    /// (triangle attribute 'texture_uvs'). The computed tangents and bitangents
-    /// will be added as vertex attributes 'tangents' and 'bitangents'.
+    /// Computes tangent space for the triangle mesh with MikkTSpace.  The mesh
+    /// must have vertex positions, vertex normals, and texture UVs (triangle
+    /// attribute 'texture_uvs'). The computed tangents will be added as vertex
+    /// attributes 'tangents' with shape {N, 4}, where the 4th element is the
+    /// sign.  Bitangents are normally computed as needed with the formula:
+    /// \verbatim
+    /// vB = sign * cross(vN, vT);
+    /// \endverbatim
     /// This function works on the CPU and will transfer data to the CPU if
     /// necessary.
-    /// \param bake If true, the tangents, bitangents and normals will also be
-    /// baked to textures and saved to the material.
+    /// \param bake If true, the tangents and normals will also be
+    /// baked to textures (unnormalized, interpolated) and saved to the
+    /// material.
     /// \param tex_width Baked texture size. Default 512.
     void ComputeTangentSpace(bool bake = true, int tex_width = 512);
 
     /// \brief Converts a normal map between world and tangent space.
     ///
     /// The conversion is performed for each pixel of the map. The mesh must
-    /// have vertex normals, tangents, bitangents, and texture UVs.
-    /// The tangent space attributes can be computed with
-    /// `ComputeTangentSpace()`.
+    /// have vertex normals (shape {N, 3}), tangents with sign (shape {N, 4})
+    /// and texture UVs.  The tangent space attributes can be computed with
+    /// `ComputeTangentSpace()`. Bitangents are normally computed as needed with
+    /// the formula:
+    /// \verbatim
+    /// vB = sign * cross(vN, vT);
+    /// \endverbatim
     ///
-    /// \param normal_map The normal map to convert.
-    /// When converting to tangent space, this is the world-space normal map.
-    /// When converting to world space, this is the tangent-space normal map.
-    /// It is expected to have 3 channels with Float32 or Float64 data type,
-    /// with values in range [-1, 1], or UInt8 data type in the range [0, 255].
+    /// \param normal_map The normal map to convert.  When converting to tangent
+    /// space, this is the world-space normal map.  When converting to world
+    /// space, this is the tangent-space normal map.  It is expected to have 3
+    /// channels with Float32 or Float64 data type, with values in range [-1,
+    /// 1], or UInt8 data type in the range [0, 255].
     /// \param to_tangent_space If true, converts from world to tangent space.
     /// If false, converts from tangent to world space.
     /// \param update_material If true and we are converting to tangent space,

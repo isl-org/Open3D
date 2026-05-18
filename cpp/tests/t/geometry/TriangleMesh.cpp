@@ -1685,8 +1685,9 @@ TEST_P(TriangleMeshPermuteDevices, TangentSpace) {
     world_map_t =
             world_map_t / world_map_t.Norm({2}, true).Clip_(1e-6, INFINITY);
     t::geometry::Image world_normal_map(world_map_t);
-    t::io::WriteImage("world_normal_map.png",
-                      world_normal_map.To(core::UInt8, false, 127.5f, 127.5f));
+    //  t::io::WriteImage("world_normal_map.png",
+    //                    world_normal_map.To(core::UInt8, false, 127.5f,
+    //                    127.5f));
 
     // 2. World to Tangent space.
     auto tangent_normal_map = mesh.TransformNormalMap(world_normal_map,

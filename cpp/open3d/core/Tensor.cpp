@@ -1174,7 +1174,7 @@ Tensor Tensor::Cross(const Tensor& other, int64_t axis) const {
         utility::LogError(
                 "[Tensor::Cross] Dim axis={} of both tensors must have shape "
                 "3. Got {} and {} instead.",
-                axis, GetShape(3), other.GetShape(3));
+                axis, GetShape(axis), other.GetShape(axis));
     }
     Tensor t_x = Slice(axis, 0, 1), t_y = Slice(axis, 1, 2),
            t_z = Slice(axis, 2, 3);

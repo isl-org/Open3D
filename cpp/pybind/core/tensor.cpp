@@ -785,8 +785,8 @@ Example:
  must be 3. If the axis is -1 (default), the last axis is used.
 
  Args:
-    other The second input tensor to compute the cross product with.
-    axis The axis along which to compute the cross product. Default is -1 (the
+    other: The second input tensor to compute the cross product with.
+    axis: The axis along which to compute the cross product. Default is -1 (the
         last axis).
 
  Returns:

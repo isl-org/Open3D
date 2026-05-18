@@ -411,7 +411,6 @@ public:
     /// t = np.empty((4, 5), dtype=np.float32)
     /// t[2, 0:4:2] = np.empty((2, 5), dtype=np.float32)
     /// ```
-    ///    Tensor Cross(const Tensor &b) const;
     /// The equivalent Open3D C++ calls:
     /// ```cpp
     /// Tensor t({4, 5}, core::Float32);
@@ -636,14 +635,15 @@ public:
     /// tensor.
     ///
     /// The cross product is computed along the specified axis. The tensors must
-    /// have compatible
-    // (i.e. broadcastable) shape, and the size of the specified axis must be 3.
-    // If the axis is -1 (default), the last axis is used.
+    /// have compatible (i.e. broadcastable) shape, and the size of the
+    /// specified axis must be 3.  If the axis is -1 (default), the last axis is
+    /// used.
     ///
     /// \param other The second input tensor to compute the cross product with.
     /// \param axis The axis along which to compute the cross product. Default
-    /// is -1 (the last axis). \return A tensor containing the cross product of
-    /// the two input tensors along the specified axis.
+    /// is -1 (the last axis).
+    /// \return A tensor containing the cross product of the two input tensors
+    /// along the specified axis.
     Tensor Cross(const Tensor& other, int64_t axis = -1) const;
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
@@ -842,8 +842,8 @@ public:
     /// with size 1.
     /// \param p The order of the norm. Default is 2.0 (L2 norm). Can be
     /// positive infinity (L-infinity norm).
-    /// \return Tensor containing the computed norms. Dtype is
-    /// preserved for Float32 and Float64 for L2 norm, It is onverted to Float32
+    /// \return Tensor containing the computed norms. Dtype is preserved for
+    /// Float32 and Float64 for L2 norm, It is converted to Float32
     /// for all other cases.
     Tensor Norm(const SizeVector& dims = {},
                 bool keepdim = false,

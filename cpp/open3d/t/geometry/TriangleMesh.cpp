@@ -25,6 +25,7 @@
 #include <mutex>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
@@ -1945,8 +1946,7 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
     }
 
     // Bake positions and normals into textures.
-    const float margin =
-            (tex_width + 511.f) / 512.f;  // = ceil(tex_width / 512)
+    const float margin = (tex_width + 511) / 512;  // = ceil(tex_width / 512)
     auto baked_textures =
             BakeVertexAttrTextures(tex_width, {"positions", "normals"}, margin,
                                    /*fill=*/0.0, /*update_material=*/false);
@@ -1957,7 +1957,7 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
 
     RaycastingScene rcs;
     // TODO: Reuse RCS from BakeVertexAttrTextures() if possible.
-    rcs.AddTriangles(*this);  
+    rcs.AddTriangles(*this);
 
     const int64_t n_pixels = tex_width * tex_width;
 
@@ -2234,12 +2234,15 @@ Image TriangleMesh::TransformNormalMap(const Image &normal_map,
                 "Use ComputeVertexNormals() and ComputeTangentSpace() to "
                 "compute them.");
     }
-
     if (normal_map.GetChannels() != 3) {
         utility::LogError("Normal map must have 3 channels, but has {}.",
                           normal_map.GetChannels());
     }
-
+    const core::Device device = GetDevice();
+    if (normal_map.GetDevice() != device) {
+        utility::LogError("Normal map device {} does not match mesh device {}.",
+                          normal_map.GetDevice().ToString(), device.ToString());
+    }
     int tex_width = normal_map.GetCols();
     int tex_height = normal_map.GetRows();
     if (tex_width != tex_height) {
@@ -2250,8 +2253,7 @@ Image TriangleMesh::TransformNormalMap(const Image &normal_map,
     }
 
     // Bake TBN vectors into textures.
-    const float margin =
-            (tex_width + 511.f) / 512.f;  // = ceil(tex_width / 512)
+    const float margin = (tex_width + 511) / 512;  // = ceil(tex_width / 512)
     if (!HasMaterial()) {
         SetMaterial(visualization::rendering::Material());
         GetMaterial().SetDefaultProperties();  // defaultLit
@@ -2260,18 +2262,19 @@ Image TriangleMesh::TransformNormalMap(const Image &normal_map,
     std::unordered_map<std::string, core::Tensor> baked_textures;
     if (!(GetMaterial().HasTextureMap("normals") &&
           GetMaterial().HasTextureMap("tangents"))) {
+        // BakeVertexAttrTextures requires CPU; move results back to the mesh
+        // device for all subsequent computation.
         baked_textures = To(core::Device("CPU:0"))
                                  .BakeVertexAttrTextures(
                                          tex_width, {"normals", "tangents"},
                                          margin, /*fill=*/0.0, false);
+        baked_textures["normals"] = baked_textures["normals"].To(device);
+        baked_textures["tangents"] = baked_textures["tangents"].To(device);
     } else {
         baked_textures["normals"] =
-                GetMaterial().GetTextureMap("normals").AsTensor().To(
-                        core::Device("CPU:0"));
-        baked_textures["tangents"] = GetMaterial()
-                                             .GetTextureMap("tangents")
-                                             .AsTensor()
-                                             .To(core::Device("CPU:0"));
+                GetMaterial().GetTextureMap("normals").AsTensor().To(device);
+        baked_textures["tangents"] =
+                GetMaterial().GetTextureMap("tangents").AsTensor().To(device);
     }
 
     // Baked (Interpolated) TBN vectors are NOT normalized.
@@ -2314,8 +2317,8 @@ Image TriangleMesh::TransformNormalMap(const Image &normal_map,
                                      2.0f -
                              1.0f;
 
-        core::Tensor tangent_normals_t =
-                core::Tensor::Empty({tex_height, tex_width, 3}, core::Float32);
+        core::Tensor tangent_normals_t = core::Tensor::Empty(
+                {tex_height, tex_width, 3}, core::Float32, device);
         tangent_normals_t.Slice(2, 0, 1) =
                 fSign * (input_normals_t * row0).Sum({2}, true);
         tangent_normals_t.Slice(2, 1, 2) =

@@ -1266,8 +1266,10 @@ Example::
             R"(Computes tangent space for the triangle mesh with MikkTSpace.
     The mesh must have vertex positions, vertex normals, and texture UVs
     (triangle attribute 'texture_uvs'). The computed tangents will be added as
-    vertex attributes 'tangents' shape (N,4). This function works on the CPU and
-    will transfer data to the CPU if necessary.
+    vertex attributes 'tangents' shape (N,4), where the 4th element is the sign.
+    Bitangents are normally computed as needed with the formula:
+    ``vB = sign * cross(vN, vT);``
+    This function works on the CPU and will transfer data to the CPU if necessary.
     
     Args:
         bake (bool): If true, the normals and tangents will also be baked to
@@ -1281,8 +1283,8 @@ Example::
                       R"(Converts a normal map between world and tangent space.
     
     The conversion is performed for each pixel of the map. The mesh must
-    have vertex normals and tangents. The tangent space attributes can be
-    computed with `compute_tangent_space()`.
+    have vertex normals (shape (N, 3)) and tangents with sign (shape (N, 4)).
+    The tangent space attributes can be computed with `compute_tangent_space()`.
     
     Args:
         normal_map (o3d.t.geometry.Image): The normal map to convert.
