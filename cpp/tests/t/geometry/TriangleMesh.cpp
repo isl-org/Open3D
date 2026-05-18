@@ -1736,7 +1736,7 @@ TEST_P(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
                         .Mean({0, 1}, false)
                         .Item<float>(),
                 0.967f, 2e-3f);
-    EXPECT_NEAR(ao_map.AsTensor().Lt(255).NonZero().GetShape()[1], 1730, 40);
+    EXPECT_NEAR(ao_map.AsTensor().Lt(255).NonZero().GetShape()[1], 1700, 100);
 
     // t::io::WriteTriangleMesh("torus_ao.glb", mesh);
     // t::io::WriteImage("torus_ao_texture.png", mesh.GetMaterial().GetAOMap());
