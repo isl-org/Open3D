@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -36,6 +37,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/RaycastingScene.h"
@@ -2053,11 +2055,20 @@ Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
 
     // Denoise with bilateral filter.
     Image ao_image(ao_texture);
-    // MonteCarlo noise has variance 1/(4*n_rays), so value_sigma \propto
-    // 0.5/sqrt(n_rays). We use twice that for a smoother result.
-    Image denoised_ao_image = ao_image.FilterBilateral(
-            /*kernel_size*/ 3, /*value_sigma*/ 2. / (2 * sqrt(n_rays)),
-            /*distance_sigma*/ 3.0);
+    Image denoised_ao_image;
+    try {
+        // MonteCarlo noise has variance 1/(4*n_rays), so value_sigma \propto
+        // 0.5/sqrt(n_rays). We use twice that for a smoother result.
+        denoised_ao_image = ao_image.FilterBilateral(
+                /*kernel_size*/ 3, /*value_sigma*/ 2. / (2 * sqrt(n_rays)),
+                /*distance_sigma*/ 3.0);
+    } catch (const std::runtime_error &e) {  // macOS does not have IPP
+        utility::LogWarning(
+                "Bilateral filter failed. Increase n_rays if AO is noisy. "
+                "Error: {}",
+                e.what());
+        denoised_ao_image = ao_image;
+    }
 
     // Convert to an 8-bit image and update material.
     Image final_image(denoised_ao_image.To(core::UInt8, false, 255.f, 0.f));
