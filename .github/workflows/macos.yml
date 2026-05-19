@@ -63,9 +63,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config libusb glslang spirv-cross
+          brew install ccache glslang spirv-cross
           # Fix gfortran not found issue
-          brew install gcc
           ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
