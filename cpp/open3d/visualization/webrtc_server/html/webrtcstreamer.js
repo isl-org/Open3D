@@ -62,6 +62,13 @@ let WebRtcStreamer = (function() {
         // Open3D-specific functions.
         this.onClose = onClose;
         this.commsFetch = commsFetch;
+
+        // Pending coalesced pointer/wheel events. A single requestAnimationFrame
+        // flushes both at most once per browser frame (~60 Hz), preventing a
+        // backlog of stale events from queuing up on the server.
+        this.pendingPointerEvent = null;  // MOVE or DRAG (latest wins)
+        this.pendingWheelEvent = null;    // WHEEL (dx/dy accumulated)
+        this.rafPending = false;
     }
 
     const logAndReturn = function(value) {
@@ -180,6 +187,26 @@ let WebRtcStreamer = (function() {
         if (typeof this.dataChannel != 'undefined') {
             this.dataChannel.send(JSON.stringify(jsonData));
         }
+    };
+
+    // Schedule a requestAnimationFrame flush of pending coalesced events.
+    // Only one rAF is scheduled at a time; calling again while one is already
+    // pending is a no-op. When the frame fires, the latest pointer event and
+    // the accumulated wheel event (if any) are sent and cleared.
+    WebRtcStreamer.prototype._scheduleRafFlush = function() {
+        if (this.rafPending) return;
+        this.rafPending = true;
+        requestAnimationFrame(() => {
+            this.rafPending = false;
+            if (this.pendingPointerEvent !== null) {
+                this.sendJsonData(this.pendingPointerEvent);
+                this.pendingPointerEvent = null;
+            }
+            if (this.pendingWheelEvent !== null) {
+                this.sendJsonData(this.pendingWheelEvent);
+                this.pendingWheelEvent = null;
+            }
+        });
     };
 
     WebRtcStreamer.prototype.addEventListeners = function(windowUID) {
@@ -333,7 +360,9 @@ let WebRtcStreamer = (function() {
                 // - Open3D: L=1, M=2, R=4
                 // - JavaScript: L=1, R=2, M=4
                 event.preventDefault();
-                var open3dMouseEvent = {
+                // Throttle to one event per animation frame. Only the latest
+                // absolute position matters; intermediate positions are stale.
+                this.pendingPointerEvent = {
                     window_uid: windowUID,
                     class_name: 'MouseEvent',
                     type: event.buttons === 0 ? 'MOVE' : 'DRAG',
@@ -344,7 +373,7 @@ let WebRtcStreamer = (function() {
                         buttons: event.buttons,  // MouseButtons ORed together
                     },
                 };
-                this.sendJsonData(open3dMouseEvent);
+                this._scheduleRafFlush();
             }, false);
             this.videoElt.addEventListener('touchmove', (event) => {
                 // TODO: Known differences. Currently only left-key drag works.
@@ -352,7 +381,8 @@ let WebRtcStreamer = (function() {
                 // - JavaScript: L=1, R=2, M=4
                 event.preventDefault();
                 var rect = event.target.getBoundingClientRect();
-                var open3dMouseEvent = {
+                // Throttle to one event per animation frame (latest wins).
+                this.pendingPointerEvent = {
                     window_uid: windowUID,
                     class_name: 'MouseEvent',
                     type: 'DRAG',
@@ -363,7 +393,7 @@ let WebRtcStreamer = (function() {
                         buttons: 1,  // MouseButtons ORed together
                     },
                 };
-                this.sendJsonData(open3dMouseEvent);
+                this._scheduleRafFlush();
             }, false);
             this.videoElt.addEventListener('mouseleave', (event) => {
                 var open3dMouseEvent = {
@@ -397,20 +427,36 @@ let WebRtcStreamer = (function() {
                 dx = dx === 0 ? dx : (-dx / Math.abs(dx)) * 1;
                 dy = dy === 0 ? dy : (-dy / Math.abs(dy)) * 1;
 
-                var open3dMouseEvent = {
-                    window_uid: windowUID,
-                    class_name: 'MouseEvent',
-                    type: 'WHEEL',
-                    x: event.offsetX,
-                    y: event.offsetY,
-                    modifiers: WebRtcStreamer._getModifiers(event),
-                    wheel: {
-                        dx: dx,
-                        dy: dy,
-                        isTrackpad: isTrackpad ? 1 : 0,
-                    },
-                };
-                this.sendJsonData(open3dMouseEvent);
+                if (this.pendingWheelEvent === null) {
+                    // First wheel event in this frame: create a new pending
+                    // event and schedule a flush.
+                    this.pendingWheelEvent = {
+                        window_uid: windowUID,
+                        class_name: 'MouseEvent',
+                        type: 'WHEEL',
+                        x: event.offsetX,
+                        y: event.offsetY,
+                        modifiers: WebRtcStreamer._getModifiers(event),
+                        wheel: {
+                            dx: dx,
+                            dy: dy,
+                            isTrackpad: isTrackpad ? 1 : 0,
+                        },
+                    };
+                    this._scheduleRafFlush();
+                } else {
+                    // Subsequent wheel events in the same frame: accumulate
+                    // dx/dy so the total scroll amount is preserved, and
+                    // update cursor position to the latest coordinates.
+                    this.pendingWheelEvent.wheel.dx += dx;
+                    this.pendingWheelEvent.wheel.dy += dy;
+                    this.pendingWheelEvent.x = event.offsetX;
+                    this.pendingWheelEvent.y = event.offsetY;
+                    this.pendingWheelEvent.modifiers =
+                            WebRtcStreamer._getModifiers(event);
+                    this.pendingWheelEvent.wheel.isTrackpad =
+                            isTrackpad ? 1 : 0;
+                }
             }, {passive: false});
         }
     };
@@ -462,6 +508,48 @@ let WebRtcStreamer = (function() {
 
             if (stream) {
                 this.pc.addStream(stream);
+            }
+
+            // Prefer VP9 via the standard setCodecPreferences() API.
+            // Must be called on the transceiver BEFORE createOffer().
+            // For receive-only mode (no local stream), we create the video
+            // transceiver explicitly — offerToReceiveVideo creates it lazily
+            // inside createOffer(), which is too late to set preferences.
+            // Falls back silently to VP8 if the browser does not support the
+            // API or if VP9 is not in the browser's capabilities.
+            var pc = this.pc;
+            if (typeof RTCRtpReceiver !== 'undefined' &&
+                    RTCRtpReceiver.getCapabilities && pc.addTransceiver) {
+                var videoCaps = RTCRtpReceiver.getCapabilities('video');
+                if (videoCaps) {
+                    var vp9Codecs = videoCaps.codecs.filter(function(c) {
+                        return c.mimeType === 'video/VP9';
+                    });
+                    if (vp9Codecs.length) {
+                        var preferredCodecs = vp9Codecs.concat(
+                                videoCaps.codecs.filter(function(c) {
+                                    return c.mimeType !== 'video/VP9';
+                                }));
+                        if (stream) {
+                            // Local video being sent: find the transceiver
+                            // addStream() created and apply preferences.
+                            pc.getTransceivers().forEach(function(t) {
+                                if (t.sender && t.sender.track &&
+                                        t.sender.track.kind === 'video' &&
+                                        t.setCodecPreferences) {
+                                    t.setCodecPreferences(preferredCodecs);
+                                }
+                            });
+                        } else {
+                            // Receive-only: create transceiver explicitly.
+                            var vt = pc.addTransceiver(
+                                    'video', {direction: 'recvonly'});
+                            if (vt.setCodecPreferences) {
+                                vt.setCodecPreferences(preferredCodecs);
+                            }
+                        }
+                    }
+                }
             }
 
             // clear early candidates
@@ -599,9 +687,17 @@ let WebRtcStreamer = (function() {
             }
         };
 
-        // Local datachannel sends data
+        // Local datachannel sends data.
+        // Use unordered, unreliable delivery for mouse/input events. Ordered
+        // reliable delivery causes head-of-line blocking: a lost packet stalls
+        // all subsequent events until it is retransmitted. For interactive
+        // mouse events the latest position is all that matters, so a dropped
+        // message is better than a delayed one. maxRetransmits: 0 means the
+        // browser sends once and moves on; ordered: false removes sequencing.
         try {
-            this.dataChannel = pc.createDataChannel('ClientDataChannel');
+            this.dataChannel = pc.createDataChannel(
+                    'ClientDataChannel',
+                    {ordered: false, maxRetransmits: 0});
             var dataChannel = this.dataChannel;
             dataChannel.onopen = function() {
                 console.log('local datachannel open');

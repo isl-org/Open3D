@@ -364,8 +364,10 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
         if (impl_->data_channel_message_callbacks_.count(class_name) != 0) {
             reply = impl_->data_channel_message_callbacks_.at(class_name)(
                     message);
-            const auto os_window = GetOSWindowByUID(window_uid);
-            if (os_window) PostRedrawEvent(os_window);
+            // Do not call PostRedrawEvent here. Mouse/keyboard callbacks
+            // already schedule a redraw via Window::OnMouseEvent → PostRedraw.
+            // An extra PostRedrawEvent here creates a duplicate draw event
+            // before the input event is even processed, causing backlog.
             return reply;
         } else {
             reply = fmt::format(
@@ -405,7 +407,7 @@ void WebRTCWindowSystem::OnFrame(const std::string &window_uid,
 void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
     utility::LogInfo("Sending init frames to {}.", window_uid);
     static const int s_max_initial_frames = 5;
-    static const int s_sleep_between_frames_ms = 100;
+    static const int s_sleep_between_frames_ms = 50;
     const auto os_window = GetOSWindowByUID(window_uid);
     if (!os_window) return;
     for (int i = 0; os_window != nullptr && i < s_max_initial_frames; ++i) {

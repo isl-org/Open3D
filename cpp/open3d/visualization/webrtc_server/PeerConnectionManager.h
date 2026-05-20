@@ -21,6 +21,8 @@
 #include <api/peer_connection_interface.h>
 #include <rtc_base/strings/json.h>
 
+#include <atomic>
+#include <condition_variable>
 #include <future>
 #include <mutex>
 #include <regex>
@@ -451,6 +453,18 @@ protected:
     const std::regex publish_filter_;
     std::map<std::string, HttpServerRequestHandler::HttpFunction> func_;
     std::string webrtc_port_range_;
+
+    // Async encoder thread: decouples the render thread from the blocking
+    // libyuv + WebRTC encode path. OnFrame() posts the latest frame per window;
+    // the thread drains the map and calls video_track_source->OnFrame().
+    std::unordered_map<std::string, std::shared_ptr<core::Tensor>>
+            pending_frames_;
+    std::mutex pending_frames_mutex_;
+    std::condition_variable pending_frames_cv_;
+    std::atomic<bool> encoder_running_{false};
+    std::thread encoder_thread_;
+
+    void EncoderThreadLoop();
 };
 
 }  // namespace webrtc_server
