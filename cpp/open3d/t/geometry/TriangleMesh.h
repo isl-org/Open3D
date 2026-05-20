@@ -26,6 +26,7 @@ namespace geometry {
 
 class LineSet;
 class PointCloud;
+class RaycastingScene;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -402,6 +403,26 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a ellipsoid triangle mesh. The ellipsoid will be centered
+    /// at (0, 0, 0).
+    /// \param radius_x defines first radii of the ellipsoid.
+    /// \param radius_y defines second radii of the ellipsoid.
+    /// \param radius_z defines third radii of the ellipsoid.
+    /// \param resolution defines the resolution of the ellipsoid.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateEllipsoid(
+            double radius_x = 1.0,
+            double radius_y = 1.0,
+            double radius_z = 1.0,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
     /// Create a tetrahedron triangle mesh. The centroid of the mesh will be
     /// placed at (0, 0, 0) and the vertices have a distance of radius to the
     /// center.
@@ -612,6 +633,24 @@ public:
     static TriangleMesh CreateIsosurfaces(
             const core::Tensor &volume,
             const std::vector<double> contour_values = {0.0},
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a solid TriangleMesh representing the surface of an
+    /// OrientedBoundingEllipsoid.
+    /// \param ellipsoid The oriented bounding ellipsoid.
+    /// \param scale Scale factor applied to each semi-axis radius before
+    /// constructing the mesh. Default is (1, 1, 1).
+    /// \param resolution Resolution of the generated ellipsoid surface mesh.
+    /// \param float_dtype The data type for vertex attributes.
+    /// \param int_dtype The data type for triangle indices.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &ellipsoid,
+            const core::Tensor &scale = core::Tensor::Ones(
+                    {3}, core::Float64, core::Device("CPU:0")),
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
 public:
@@ -836,6 +875,10 @@ public:
 
     /// Create an oriented bounding box from vertex attribute "positions".
     OrientedBoundingBox GetOrientedBoundingBox() const;
+
+    /// Create an oriented bounding ellipsoid from vertex attribute "positions".
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust = false) const;
 
     /// Fill holes by triangulating boundary edges.
     ///
@@ -1094,6 +1137,73 @@ public:
             const TriangleMesh &mesh2,
             std::vector<Metric> metrics = {Metric::ChamferDistance},
             MetricParameters params = MetricParameters()) const;
+
+    /// \brief Computes an ambient occlusion texture for the mesh.
+    ///
+    /// This method generates an ambient occlusion map by casting rays from the
+    /// surface of the mesh and measuring occlusion. The mesh must have texture
+    /// coordinates ("texture_uvs" triangle attribute). The resulting texture is
+    /// a single-channel grayscale image with values in [0, 255], where 0 is
+    /// fully occluded and 255 is fully exposed.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param tex_width The width and height of the output texture in pixels
+    /// (square).
+    /// \param n_rays The number of rays to cast per texel for occlusion
+    /// estimation.
+    /// \param max_hit_distance The maximum distance for ray intersection. The
+    /// default is INFINITY, i.e. very far occlusions also count.
+    /// \param update_material If true, updates the mesh material with the
+    /// computed ambient occlusion texture.
+    /// \return The computed ambient occlusion texture as an Image (single
+    /// channel, UInt8).
+    Image ComputeAmbientOcclusion(int tex_width = 256,
+                                  int n_rays = 32,
+                                  float max_hit_distance = INFINITY,
+                                  bool update_material = true);
+
+    /// Computes tangent space for the triangle mesh with MikkTSpace.  The mesh
+    /// must have vertex positions, vertex normals, and texture UVs (triangle
+    /// attribute 'texture_uvs'). The computed tangents will be added as vertex
+    /// attributes 'tangents' with shape {N, 4}, where the 4th element is the
+    /// sign.  Bitangents are normally computed as needed with the formula:
+    /// \verbatim
+    /// vB = sign * cross(vN, vT);
+    /// \endverbatim
+    /// This function works on the CPU and will transfer data to the CPU if
+    /// necessary.
+    /// \param bake If true, the tangents and normals will also be
+    /// baked to textures (unnormalized, interpolated) and saved to the
+    /// material.
+    /// \param tex_width Baked texture size. Default 512.
+    void ComputeTangentSpace(bool bake = true, int tex_width = 512);
+
+    /// \brief Converts a normal map between world and tangent space.
+    ///
+    /// The conversion is performed for each pixel of the map. The mesh must
+    /// have vertex normals (shape {N, 3}), tangents with sign (shape {N, 4})
+    /// and texture UVs.  The tangent space attributes can be computed with
+    /// `ComputeTangentSpace()`. Bitangents are normally computed as needed with
+    /// the formula:
+    /// \verbatim
+    /// vB = sign * cross(vN, vT);
+    /// \endverbatim
+    ///
+    /// \param normal_map The normal map to convert.  When converting to tangent
+    /// space, this is the world-space normal map.  When converting to world
+    /// space, this is the tangent-space normal map.  It is expected to have 3
+    /// channels with Float32 or Float64 data type, with values in range [-1,
+    /// 1], or UInt8 data type in the range [0, 255].
+    /// \param to_tangent_space If true, converts from world to tangent space.
+    /// If false, converts from tangent to world space.
+    /// \param update_material If true and we are converting to tangent space,
+    /// the mesh material will be updated to contain the new normal map.
+    /// \return The converted normal map as an Image. This will have 3 channels,
+    /// UInt8 data type, with values in range [0, 255].
+    Image TransformNormalMap(const Image &normal_map,
+                             bool to_tangent_space = true,
+                             bool update_material = false);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

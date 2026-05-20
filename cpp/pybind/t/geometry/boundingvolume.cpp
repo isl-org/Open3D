@@ -35,6 +35,21 @@ with the properties:
 
 - (``center``, ``rotation``, ``extent``): The oriented bounding box is defined by its center position (shape (3,)), rotation maxtrix (shape (3,3)) and extent (shape (3,)).  Each of these tensors must have the same data type and device. The data type can only be ``open3d.core.float32`` (default) or ``open3d.core.float64``. The device of the tensor determines the device of the box.
 - ``color``: Color of the bounding box is a tensor with shape (3,) and a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. Values can only be in the range [0.0, 1.0].)");
+    py::class_<OrientedBoundingEllipsoid, PyGeometry<OrientedBoundingEllipsoid>,
+               std::shared_ptr<OrientedBoundingEllipsoid>, Geometry>
+            obe(m, "OrientedBoundingEllipsoid",
+                R"(A minimum-volume bounding ellipsoid oriented along an
+arbitrary frame of reference with the properties:
+
+- (``center``, ``rotation``, ``radii``): The oriented bounding ellipsoid is
+  defined by its center position (shape (3,)), rotation matrix (shape (3,3))
+  and semi-axis radii (shape (3,)). Each of these tensors must have the same
+  data type and device. The data type can only be ``open3d.core.float32``
+  (default) or ``open3d.core.float64``. The device of the tensor determines
+  the device of the ellipsoid.
+- ``color``: Color of the bounding ellipsoid is a tensor with shape (3,) and
+  a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``.
+  Values can only be in the range [0.0, 1.0].)");
 }
 void pybind_boundingvolume_definitions(py::module& m) {
     auto aabb = static_cast<py::class_<AxisAlignedBoundingBox,
@@ -436,6 +451,144 @@ Example:
               "If set to true uses a more robust method which works in "
               "degenerate cases but introduces noise to the points "
               "coordinates."}});
+
+    // OrientedBoundingEllipsoid
+    auto obe = static_cast<py::class_<
+            OrientedBoundingEllipsoid, PyGeometry<OrientedBoundingEllipsoid>,
+            std::shared_ptr<OrientedBoundingEllipsoid>, Geometry>>(
+            m.attr("OrientedBoundingEllipsoid"));
+    obe.def(py::init<const core::Device&>(), "device"_a = core::Device("CPU:0"),
+            "Construct an empty OrientedBoundingEllipsoid on the provided "
+            "device.");
+    obe.def(py::init<const core::Tensor&, const core::Tensor&,
+                     const core::Tensor&>(),
+            "center"_a, "rotation"_a, "radii"_a,
+            R"(Construct an OrientedBoundingEllipsoid from center, rotation and radii.
+The OrientedBoundingEllipsoid will be created on the device of the given
+tensors, which must be on the same device and have the same data type.)");
+    py::detail::bind_copy_functions<OrientedBoundingEllipsoid>(obe);
+    obe.def("__repr__", &OrientedBoundingEllipsoid::ToString);
+
+    obe.def("to", &OrientedBoundingEllipsoid::To,
+            "Transfer the oriented bounding ellipsoid to a specified device.",
+            "device"_a, "dtype"_a, "copy"_a = false);
+    obe.def("clone", &OrientedBoundingEllipsoid::Clone,
+            "Returns a copy of the oriented bounding ellipsoid on the same "
+            "device.");
+    obe.def(
+            "cpu",
+            [](const OrientedBoundingEllipsoid& obe) {
+                return obe.To(core::Device("CPU:0"), obe.GetDtype());
+            },
+            "Transfer the oriented bounding ellipsoid to CPU. No-op if already "
+            "on CPU.");
+    obe.def(
+            "cuda",
+            [](const OrientedBoundingEllipsoid& obe, int device_id) {
+                return obe.To(core::Device("CUDA", device_id), obe.GetDtype());
+            },
+            "Transfer the oriented bounding ellipsoid to a CUDA device.",
+            "device_id"_a = 0);
+
+    obe.def("set_center", &OrientedBoundingEllipsoid::SetCenter, "center"_a,
+            "Set the center of the oriented bounding ellipsoid.");
+    obe.def("set_rotation", &OrientedBoundingEllipsoid::SetRotation,
+            "rotation"_a,
+            "Set the rotation matrix of the oriented bounding ellipsoid.");
+    obe.def("set_radii", &OrientedBoundingEllipsoid::SetRadii, "radii"_a,
+            "Set the semi-axis radii of the oriented bounding ellipsoid.");
+    obe.def("set_color", &OrientedBoundingEllipsoid::SetColor, "color"_a,
+            "Set the color of the oriented bounding ellipsoid.");
+
+    obe.def_property_readonly("center", &OrientedBoundingEllipsoid::GetCenter,
+                              "Center of the oriented bounding ellipsoid.");
+    obe.def_property_readonly(
+            "rotation", &OrientedBoundingEllipsoid::GetRotation,
+            "Rotation matrix of the oriented bounding ellipsoid.");
+    obe.def_property_readonly("radii", &OrientedBoundingEllipsoid::GetRadii,
+                              "Semi-axis radii of the oriented bounding "
+                              "ellipsoid.");
+    obe.def_property_readonly("color", &OrientedBoundingEllipsoid::GetColor,
+                              "Color of the oriented bounding ellipsoid.");
+
+    obe.def("translate", &OrientedBoundingEllipsoid::Translate,
+            "Translate the oriented bounding ellipsoid.", "translation"_a,
+            "relative"_a = true);
+    obe.def("rotate", &OrientedBoundingEllipsoid::Rotate,
+            "Rotate the oriented bounding ellipsoid.", "rotation"_a,
+            "center"_a = std::nullopt);
+    obe.def("scale", &OrientedBoundingEllipsoid::Scale,
+            "Scale the oriented bounding ellipsoid.", "scale"_a,
+            "center"_a = std::nullopt);
+
+    obe.def("volume", &OrientedBoundingEllipsoid::Volume,
+            "Returns the volume of the bounding ellipsoid.");
+    obe.def("get_ellipsoid_points",
+            &OrientedBoundingEllipsoid::GetEllipsoidPoints,
+            "Returns the six critical points of the bounding ellipsoid. "
+            "Return tensor has shape {6, 3}.");
+    obe.def("get_point_indices_within_bounding_ellipsoid",
+            &OrientedBoundingEllipsoid::GetPointIndicesWithinBoundingEllipsoid,
+            "Indices to points that are within the bounding ellipsoid.",
+            "points"_a);
+    obe.def("get_axis_aligned_bounding_box",
+            &OrientedBoundingEllipsoid::GetAxisAlignedBoundingBox,
+            "Returns the axis-aligned bounding box that contains this "
+            "ellipsoid.");
+    obe.def("get_oriented_bounding_box",
+            &OrientedBoundingEllipsoid::GetOrientedBoundingBox,
+            "Returns an oriented bounding box around the ellipsoid.",
+            "robust"_a = false);
+    obe.def("get_minimal_oriented_bounding_box",
+            &OrientedBoundingEllipsoid::GetMinimalOrientedBoundingBox,
+            "Returns the minimal oriented bounding box around the ellipsoid.",
+            "robust"_a = false);
+    obe.def("to_legacy", &OrientedBoundingEllipsoid::ToLegacy,
+            "Convert to a legacy Open3D oriented bounding ellipsoid.");
+    obe.def_static(
+            "from_legacy", &OrientedBoundingEllipsoid::FromLegacy,
+            "ellipsoid"_a, "dtype"_a = core::Float32,
+            "device"_a = core::Device("CPU:0"),
+            "Create an OrientedBoundingEllipsoid from a legacy Open3D oriented "
+            "bounding ellipsoid.");
+    obe.def_static(
+            "create_from_points", &OrientedBoundingEllipsoid::CreateFromPoints,
+            R"(Creates the minimum-volume oriented bounding ellipsoid using Khachiyan's algorithm.
+
+Args:
+    points (open3d.core.Tensor): A list of points with data type of float32 or
+        float64 (N x 3 tensor, where N must be larger than 3).
+    robust (bool): If set to true uses a more robust method which works in
+        degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+    OrientedBoundingEllipsoid with same data type and device as input points.
+
+Example::
+
+        import open3d as o3d
+        import open3d.t.geometry as o3g
+        import numpy as np
+
+        pcd = o3g.PointCloud()
+        pcd.point["positions"] = o3d.core.Tensor(
+                np.random.randn(100, 3).astype(np.float32))
+        obe = o3g.OrientedBoundingEllipsoid.create_from_points(
+                pcd.point["positions"])
+        obe.set_color((0.0, 0.44, 0.77))
+        print(f"Volume: {obe.volume()}")
+        print(f"Center: {obe.center}")
+        print(f"Radii: {obe.radii}")
+        
+        # Option 1: wireframe visualization via LineSet
+        ellipsoid_lines = o3g.LineSet.create_from_oriented_bounding_ellipsoid(obe)
+        o3d.visualization.draw([pcd, ellipsoid_lines])
+
+        # Option 2: solid ellipsoid mesh
+        ellipsoid_mesh = o3g.TriangleMesh.create_from_oriented_bounding_ellipsoid(obe)
+        o3d.visualization.draw([pcd, ellipsoid_mesh])
+)",
+            "points"_a, "robust"_a = false);
 }
 
 }  // namespace geometry
