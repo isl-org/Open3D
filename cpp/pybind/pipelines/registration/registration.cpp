@@ -105,6 +105,23 @@ void pybind_registration_declarations(py::module &m) {
             te_p2l(m_registration, "TransformationEstimationPointToPlane",
                    "Class to estimate a transformation for point to plane "
                    "distance.");
+    py::class_<DCRegOption> dcreg_option(
+            m_registration, "DCRegOption",
+            "Options for the DCReg degeneracy-aware point-to-plane ICP "
+            "estimator.");
+    py::class_<DCRegDegeneracyAnalysis> dcreg_analysis(
+            m_registration, "DCRegDegeneracyAnalysis",
+            "Diagnostic summary for the DCReg normal equation at one ICP "
+            "linearization.");
+    py::class_<TransformationEstimationPointToPlaneDCReg,
+               PyTransformationEstimation<
+                       TransformationEstimationPointToPlaneDCReg>,
+               TransformationEstimationPointToPlane>
+            te_p2l_dcreg(m_registration,
+                         "TransformationEstimationPointToPlaneDCReg",
+                         "Degeneracy-aware point-to-plane transformation "
+                         "estimation for ICP, based on the DCReg "
+                         "Schur-complement preconditioning idea.");
     py::class_<
             TransformationEstimationForColoredICP,
             PyTransformationEstimation<TransformationEstimationForColoredICP>,
@@ -306,6 +323,256 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             .def_readwrite("kernel",
                            &TransformationEstimationPointToPlane::kernel_,
                            "Robust Kernel used in the Optimization");
+    auto dcreg_option = static_cast<py::class_<DCRegOption>>(
+            m_registration.attr("DCRegOption"));
+    py::detail::bind_copy_functions<DCRegOption>(dcreg_option);
+    dcreg_option
+            .def(py::init([](double degeneracy_condition_threshold,
+                             double kappa_target, double pcg_tolerance,
+                             int pcg_max_iteration, int local_plane_knn,
+                             double local_plane_max_thickness,
+                             double local_plane_weight_slope,
+                             double local_plane_min_weight,
+                             bool local_plane_use_weight_derivative,
+                             double local_frame_convergence_rotation,
+                             double local_frame_convergence_translation) {
+                     return new DCRegOption(
+                             degeneracy_condition_threshold, kappa_target,
+                             pcg_tolerance, pcg_max_iteration, local_plane_knn,
+                             local_plane_max_thickness,
+                             local_plane_weight_slope, local_plane_min_weight,
+                             local_plane_use_weight_derivative,
+                             local_frame_convergence_rotation,
+                             local_frame_convergence_translation);
+                 }),
+                 "degeneracy_condition_threshold"_a = 10.0,
+                 "kappa_target"_a = 10.0, "pcg_tolerance"_a = 1e-6,
+                 "pcg_max_iteration"_a = 10, "local_plane_knn"_a = 5,
+                 "local_plane_max_thickness"_a = 0.2,
+                 "local_plane_weight_slope"_a = 0.9,
+                 "local_plane_min_weight"_a = 0.1,
+                 "local_plane_use_weight_derivative"_a = true,
+                 "local_frame_convergence_rotation"_a = 1e-5,
+                 "local_frame_convergence_translation"_a = 1e-3)
+            .def_readwrite("degeneracy_condition_threshold",
+                           &DCRegOption::degeneracy_condition_threshold_,
+                           "Schur condition threshold for weak directions.")
+            .def_readwrite(
+                    "kappa_target", &DCRegOption::kappa_target_,
+                    "Target condition number used when clamping weak Schur "
+                    "eigenvalues.")
+            .def_readwrite("pcg_tolerance", &DCRegOption::pcg_tolerance_,
+                           "Relative residual threshold for the PCG solve.")
+            .def_readwrite("pcg_max_iteration",
+                           &DCRegOption::pcg_max_iteration_,
+                           "Maximum number of PCG iterations.")
+            .def_readwrite("local_plane_knn", &DCRegOption::local_plane_knn_,
+                           "Number of target neighbors used by the "
+                           "DCReg-local plane fit.")
+            .def_readwrite("local_plane_max_thickness",
+                           &DCRegOption::local_plane_max_thickness_,
+                           "Maximum accepted local plane residual on its "
+                           "supporting neighbors.")
+            .def_readwrite("local_plane_weight_slope",
+                           &DCRegOption::local_plane_weight_slope_,
+                           "Slope for the original DCReg piecewise-linear "
+                           "robust weight.")
+            .def_readwrite("local_plane_min_weight",
+                           &DCRegOption::local_plane_min_weight_,
+                           "Minimum accepted original DCReg robust weight.")
+            .def_readwrite("local_plane_use_weight_derivative",
+                           &DCRegOption::local_plane_use_weight_derivative_,
+                           "Whether to include the original robust-weight "
+                           "derivative term.")
+            .def_readwrite("local_frame_convergence_rotation",
+                           &DCRegOption::local_frame_convergence_rotation_,
+                           "Local-frame SO(3) rotation-step convergence "
+                           "threshold.")
+            .def_readwrite("local_frame_convergence_translation",
+                           &DCRegOption::local_frame_convergence_translation_,
+                           "Local-frame SO(3) translation-step convergence "
+                           "threshold.")
+            .def("__repr__", [](const DCRegOption &option) {
+                return fmt::format(
+                        "DCRegOption("
+                        "degeneracy_condition_threshold={:e}, "
+                        "kappa_target={:e}, "
+                        "pcg_tolerance={:e}, "
+                        "pcg_max_iteration={:d}, "
+                        "local_plane_knn={:d}, "
+                        "local_plane_max_thickness={:e}, "
+                        "local_plane_weight_slope={:e}, "
+                        "local_plane_min_weight={:e}, "
+                        "local_plane_use_weight_derivative={}, "
+                        "local_frame_convergence_rotation={:e}, "
+                        "local_frame_convergence_translation={:e})",
+                        option.degeneracy_condition_threshold_,
+                        option.kappa_target_, option.pcg_tolerance_,
+                        option.pcg_max_iteration_, option.local_plane_knn_,
+                        option.local_plane_max_thickness_,
+                        option.local_plane_weight_slope_,
+                        option.local_plane_min_weight_,
+                        option.local_plane_use_weight_derivative_ ? "True"
+                                                                  : "False",
+                        option.local_frame_convergence_rotation_,
+                        option.local_frame_convergence_translation_);
+            });
+
+    auto dcreg_analysis = static_cast<py::class_<DCRegDegeneracyAnalysis>>(
+            m_registration.attr("DCRegDegeneracyAnalysis"));
+    py::detail::bind_default_constructor<DCRegDegeneracyAnalysis>(
+            dcreg_analysis);
+    py::detail::bind_copy_functions<DCRegDegeneracyAnalysis>(dcreg_analysis);
+    dcreg_analysis
+            .def_readwrite("has_correspondence",
+                           &DCRegDegeneracyAnalysis::has_correspondence_,
+                           "Whether the input correspondence set is non-empty.")
+            .def_readwrite("has_target_normals",
+                           &DCRegDegeneracyAnalysis::has_target_normals_,
+                           "Whether the target point cloud has normals.")
+            .def_readwrite("is_rank_deficient",
+                           &DCRegDegeneracyAnalysis::is_rank_deficient_,
+                           "Whether the 6x6 normal equation has a numerical "
+                           "null space.")
+            .def_readwrite("schur_factorization_ok",
+                           &DCRegDegeneracyAnalysis::schur_factorization_ok_,
+                           "Whether rotational and translational Schur "
+                           "complements were computed.")
+            .def_readwrite("is_degenerate",
+                           &DCRegDegeneracyAnalysis::is_degenerate_,
+                           "Whether DCReg detected degeneracy.")
+            .def_readwrite("condition_number_full",
+                           &DCRegDegeneracyAnalysis::condition_number_full_,
+                           "Condition number of the full 6x6 normal equation.")
+            .def_readwrite("condition_number_rotation",
+                           &DCRegDegeneracyAnalysis::condition_number_rotation_,
+                           "Condition number of the rotational Schur "
+                           "complement.")
+            .def_readwrite(
+                    "condition_number_translation",
+                    &DCRegDegeneracyAnalysis::condition_number_translation_,
+                    "Condition number of the translational Schur "
+                    "complement.")
+            .def_readwrite(
+                    "schur_eigenvalues_rotation",
+                    &DCRegDegeneracyAnalysis::schur_eigenvalues_rotation_,
+                    "Raw rotational Schur eigenvalues, or block-Hessian "
+                    "fallback eigenvalues if Schur factorization failed.")
+            .def_readwrite(
+                    "schur_eigenvalues_translation",
+                    &DCRegDegeneracyAnalysis::schur_eigenvalues_translation_,
+                    "Raw translational Schur eigenvalues, or block-Hessian "
+                    "fallback eigenvalues if Schur factorization failed.")
+            .def_readwrite("axis_aligned_eigenvalues_rotation",
+                           &DCRegDegeneracyAnalysis::
+                                   axis_aligned_eigenvalues_rotation_,
+                           "Rotational diagnostic eigenvalues aligned to "
+                           "x/y/z.")
+            .def_readwrite("axis_aligned_eigenvalues_translation",
+                           &DCRegDegeneracyAnalysis::
+                                   axis_aligned_eigenvalues_translation_,
+                           "Translational diagnostic eigenvalues aligned to "
+                           "x/y/z.")
+            .def_readwrite(
+                    "clamped_eigenvalues_rotation",
+                    &DCRegDegeneracyAnalysis::clamped_eigenvalues_rotation_,
+                    "Rotational eigenvalues used by the preconditioner.")
+            .def_readwrite(
+                    "clamped_eigenvalues_translation",
+                    &DCRegDegeneracyAnalysis::clamped_eigenvalues_translation_,
+                    "Translational eigenvalues used by the preconditioner.")
+            .def_readwrite("weak_rotation_axes",
+                           &DCRegDegeneracyAnalysis::weak_rotation_axes_,
+                           "Weak rotational x/y/z axis flags.")
+            .def_readwrite("weak_translation_axes",
+                           &DCRegDegeneracyAnalysis::weak_translation_axes_,
+                           "Weak translational x/y/z axis flags.")
+            .def_readwrite(
+                    "coordinate_frame",
+                    &DCRegDegeneracyAnalysis::coordinate_frame_,
+                    "Coordinate frame used by the weak-axis diagnostics. "
+                    "For Open3D legacy ICP this is the target/world frame of "
+                    "the left-multiplied SE(3) update.")
+            .def_readwrite(
+                    "weak_rotation_axes_description",
+                    &DCRegDegeneracyAnalysis::weak_rotation_axes_description_,
+                    "Human-readable weak rotational axis list.")
+            .def_readwrite("weak_translation_axes_description",
+                           &DCRegDegeneracyAnalysis::
+                                   weak_translation_axes_description_,
+                           "Human-readable weak translational axis list.")
+            .def_readwrite("degeneracy_description",
+                           &DCRegDegeneracyAnalysis::degeneracy_description_,
+                           "Human-readable DCReg degeneracy summary.")
+            .def_readwrite("solver_type",
+                           &DCRegDegeneracyAnalysis::solver_type_,
+                           "Solver path selected for the normal equation.")
+            .def_readwrite("pcg_converged",
+                           &DCRegDegeneracyAnalysis::pcg_converged_,
+                           "Whether the PCG path converged before fallback.")
+            .def_readwrite("pcg_iteration",
+                           &DCRegDegeneracyAnalysis::pcg_iteration_,
+                           "Number of PCG iterations executed.")
+            .def("__repr__", [](const DCRegDegeneracyAnalysis &analysis) {
+                return fmt::format(
+                        "DCRegDegeneracyAnalysis("
+                        "is_degenerate={}, "
+                        "is_rank_deficient={}, "
+                        "condition_number_full={:e}, "
+                        "condition_number_rotation={:e}, "
+                        "condition_number_translation={:e}, "
+                        "solver_type='{}')",
+                        analysis.is_degenerate_ ? "True" : "False",
+                        analysis.is_rank_deficient_ ? "True" : "False",
+                        analysis.condition_number_full_,
+                        analysis.condition_number_rotation_,
+                        analysis.condition_number_translation_,
+                        analysis.solver_type_);
+            });
+
+    auto te_p2l_dcreg = static_cast<
+            py::class_<TransformationEstimationPointToPlaneDCReg,
+                       PyTransformationEstimation<
+                               TransformationEstimationPointToPlaneDCReg>,
+                       TransformationEstimationPointToPlane>>(
+            m_registration.attr("TransformationEstimationPointToPlaneDCReg"));
+    py::detail::bind_default_constructor<
+            TransformationEstimationPointToPlaneDCReg>(te_p2l_dcreg);
+    py::detail::bind_copy_functions<TransformationEstimationPointToPlaneDCReg>(
+            te_p2l_dcreg);
+    te_p2l_dcreg
+            .def(py::init([](DCRegOption option) {
+                     return new TransformationEstimationPointToPlaneDCReg(
+                             std::move(option));
+                 }),
+                 "option"_a)
+            .def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                     return new TransformationEstimationPointToPlaneDCReg(
+                             std::move(kernel));
+                 }),
+                 "kernel"_a)
+            .def(py::init([](DCRegOption option,
+                             std::shared_ptr<RobustKernel> kernel) {
+                     return new TransformationEstimationPointToPlaneDCReg(
+                             std::move(option), std::move(kernel));
+                 }),
+                 "option"_a, "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationPointToPlaneDCReg &te) {
+                     return fmt::format(
+                             "TransformationEstimationPointToPlaneDCReg("
+                             "degeneracy_condition_threshold={:e}, "
+                             "kappa_target={:e}, "
+                             "pcg_tolerance={:e}, "
+                             "pcg_max_iteration={:d})",
+                             te.option_.degeneracy_condition_threshold_,
+                             te.option_.kappa_target_,
+                             te.option_.pcg_tolerance_,
+                             te.option_.pcg_max_iteration_);
+                 })
+            .def_readwrite("option",
+                           &TransformationEstimationPointToPlaneDCReg::option_,
+                           "DCReg solver options.");
 
     // open3d.registration.TransformationEstimationForColoredICP :
     auto te_col = static_cast<py::class_<
@@ -627,6 +894,7 @@ must hold true for all edges.)");
                      "Estimation method. One of "
                      "(``TransformationEstimationPointToPoint``, "
                      "``TransformationEstimationPointToPlane``, "
+                     "``TransformationEstimationPointToPlaneDCReg``, "
                      "``TransformationEstimationForGeneralizedICP``, "
                      "``TransformationEstimationForColoredICP``)"},
                     {"init", "Initial transformation estimation"},
@@ -659,6 +927,36 @@ must hold true for all edges.)");
                                  map_shared_argument_docstrings);
 
     m_registration.def(
+            "compute_dcreg_degeneracy_analysis",
+            [](const geometry::PointCloud &source,
+               const geometry::PointCloud &target,
+               const CorrespondenceSet &corres, const DCRegOption &option,
+               std::shared_ptr<RobustKernel> kernel) {
+                return ComputeDCRegDegeneracyAnalysis(source, target, corres,
+                                                      option, *kernel);
+            },
+            py::call_guard<py::gil_scoped_release>(),
+            "Compute DCReg degeneracy diagnostics for one point-to-plane ICP "
+            "linearization.",
+            "source"_a, "target"_a, "corres"_a, "option"_a = DCRegOption(),
+            "kernel"_a = std::make_shared<L2Loss>());
+    docstring::FunctionDocInject(m_registration,
+                                 "compute_dcreg_degeneracy_analysis",
+                                 map_shared_argument_docstrings);
+
+    m_registration.def(
+            "compute_dcreg_local_degeneracy_analysis",
+            &ComputeDCRegLocalDegeneracyAnalysis,
+            py::call_guard<py::gil_scoped_release>(),
+            "Compute DCReg diagnostics using the standalone-compatible kNN "
+            "local-plane residual and local body-frame SO(3) Jacobian.",
+            "source"_a, "target"_a, "max_correspondence_distance"_a,
+            "transformation"_a, "option"_a = DCRegOption());
+    docstring::FunctionDocInject(m_registration,
+                                 "compute_dcreg_local_degeneracy_analysis",
+                                 map_shared_argument_docstrings);
+
+    m_registration.def(
             "registration_icp", &RegistrationICP,
             py::call_guard<py::gil_scoped_release>(),
             "Function for ICP registration", "source"_a, "target"_a,
@@ -667,6 +965,17 @@ must hold true for all edges.)");
             "estimation_method"_a = TransformationEstimationPointToPoint(false),
             "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m_registration, "registration_icp",
+                                 map_shared_argument_docstrings);
+
+    m_registration.def(
+            "registration_icp_dcreg_local", &RegistrationICPDCRegLocal,
+            py::call_guard<py::gil_scoped_release>(),
+            "Function for DCReg-compatible ICP registration with kNN "
+            "local-plane residuals and local body-frame SO(3) updates.",
+            "source"_a, "target"_a, "max_correspondence_distance"_a,
+            "init"_a = Eigen::Matrix4d::Identity(), "option"_a = DCRegOption(),
+            "criteria"_a = ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m_registration, "registration_icp_dcreg_local",
                                  map_shared_argument_docstrings);
 
     m_registration.def("registration_colored_icp", &RegistrationColoredICP,
