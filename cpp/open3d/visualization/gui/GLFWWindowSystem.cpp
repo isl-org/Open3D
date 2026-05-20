@@ -130,8 +130,8 @@ Size GLFWWindowSystem::GetScreenSize(OSWindow w) {
         monitor = glfwGetPrimaryMonitor();
     }
     if (monitor) {
-        glfwGetMonitorWorkarea(monitor, nullptr, nullptr,
-                               &screen_width, &screen_height);
+        glfwGetMonitorWorkarea(monitor, nullptr, nullptr, &screen_width,
+                               &screen_height);
     }
 
     return Size(screen_width, screen_height);
