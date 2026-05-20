@@ -167,6 +167,7 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
                                                             int height,
                                                             const char* title,
                                                             int flags) {
+    // Filament manages its own rendering context; tell GLFW not to create one.
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 #if __APPLE__
@@ -238,12 +239,20 @@ bool GLFWWindowSystem::IsActiveWindow(OSWindow w) const {
 
 Point GLFWWindowSystem::GetWindowPos(OSWindow w) const {
     int x, y;
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+        utility::LogDebug("[GLFW] getWindowPos() is not supported on Wayland.");
+        return Point(0, 0);
+    }
     glfwGetWindowPos((GLFWwindow*)w, &x, &y);
     return Point(x, y);
 }
 
 void GLFWWindowSystem::SetWindowPos(OSWindow w, int x, int y) {
-    glfwSetWindowPos((GLFWwindow*)w, x, y);
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+        utility::LogDebug("[GLFW] setWindowPos() is not supported on Wayland.");
+    } else {
+        glfwSetWindowPos((GLFWwindow*)w, x, y);
+    }
 }
 
 Size GLFWWindowSystem::GetWindowSize(OSWindow w) const {

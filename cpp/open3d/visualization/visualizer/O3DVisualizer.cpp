@@ -8,8 +8,10 @@
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
 
 #include <json/json.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_reduce.h>
 
-#include <execution>
+#include <cmath>
 #include <set>
 #include <unordered_map>
 
@@ -2162,43 +2164,49 @@ Ctrl-alt-click to polygon select)";
 
     void ExportCurrentDepthImage(const std::string &path) {
         scene_->EnableSceneCaching(false);
-        scene_->GetScene()->GetScene()->RenderToDepthImage(
-                [this, path](std::shared_ptr<geometry::Image> image) mutable {
-                    bool ok = false;
-                    if (image && image->num_of_channels_ == 1 &&
-                        image->bytes_per_channel_ == 4) {
-                        // Depth export stores normalized depth in 16-bit PNG.
-                        auto depth_float =
-                                std::make_shared<geometry::Image>(*image);
-                        float *depth_data = depth_float->PointerAs<float>();
-                        size_t num_pixels = static_cast<size_t>(
-                                depth_float->GetMaxBound().prod());
-                        float max_val =
-                                std::reduce(std::execution::par_unseq,
-                                            depth_data, depth_data + num_pixels,
-                                            0.0f, [](float a, float b) {
-                                                if (!std::isfinite(a)) return b;
-                                                if (!std::isfinite(b)) return a;
-                                                return std::max(a, b);
-                                            });
-                        if (max_val > 0)
-                            depth_float->LinearTransform(65535.0 / max_val,
-                                                         0.0);
-                        auto depth_u16 =
-                                depth_float
-                                        ->CreateImageFromFloatImage<uint16_t>();
-                        ok = io::WriteImage(path, *depth_u16);
-                    }
-                    if (!ok) {
-                        this->window_->ShowMessageBox(
-                                "Error",
-                                (std::string(
-                                         "Could not write depth image to ") +
-                                 path + ".")
-                                        .c_str());
-                    }
-                    scene_->EnableSceneCaching(true);
-                });
+        auto fs = scene_->GetScene()->GetScene();
+        fs->RenderToDepthImage([this,
+                                path](std::shared_ptr<geometry::Image> image) {
+            bool ok = false;
+            auto finite_max = [](float a, float b) {
+                if (!std::isfinite(a)) return b;
+                if (!std::isfinite(b)) return a;
+                return std::max(a, b);
+            };
+            if (image && image->num_of_channels_ == 1 &&
+                image->bytes_per_channel_ == 4) {
+                // Depth export stores normalized depth in 16-bit PNG.
+                auto depth_float = std::make_shared<geometry::Image>(*image);
+                float *depth_data = depth_float->PointerAs<float>();
+                size_t num_pixels =
+                        static_cast<size_t>(depth_float->GetMaxBound().prod());
+                auto depth_subrange_finite_max =
+                        [depth_data](const tbb::blocked_range<size_t> &r,
+                                     float cmax) {
+                            for (size_t i = r.begin(); i != r.end(); ++i) {
+                                if (std::isfinite(depth_data[i])) {
+                                    cmax = std::max(cmax, depth_data[i]);
+                                }
+                            }
+                            return cmax;
+                        };
+                float max_val = tbb::parallel_reduce(
+                        tbb::blocked_range<size_t>(0, num_pixels), -INFINITY,
+                        depth_subrange_finite_max, finite_max);
+                if (max_val > 0)
+                    depth_float->LinearTransform(65535.0 / max_val, 0.0);
+                auto depth_u16 =
+                        depth_float->CreateImageFromFloatImage<uint16_t>();
+                ok = io::WriteImage(path, *depth_u16);
+            }
+            if (!ok) {
+                this->window_->ShowMessageBox(
+                        "Error",
+                        fmt::format("Could not write depth image to {}.", path)
+                                .c_str());
+            }
+            scene_->EnableSceneCaching(true);
+        });
     }
 
     void OnAbout() {
@@ -2209,7 +2217,7 @@ Ctrl-alt-click to polygon select)";
                 (std::string("Open3D ") + OPEN3D_VERSION).c_str());
         auto text = std::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
-                "Copyright (c) 2018-2023 www.open3d.org\n\n"
+                "Copyright (c) 2018-2026 www.open3d.org\n\n"
 
                 "Permission is hereby granted, free of charge, to any person "
                 "obtaining a copy of this software and associated "
