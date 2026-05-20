@@ -198,17 +198,15 @@ PeerConnectionManager::PeerConnectionManager(
 
     // Start async encoder thread.
     encoder_running_ = true;
-    encoder_thread_ = std::thread(&PeerConnectionManager::EncoderThreadLoop,
-                                  this);
+    encoder_thread_ =
+            std::thread(&PeerConnectionManager::EncoderThreadLoop, this);
 }
 
 PeerConnectionManager::~PeerConnectionManager() {
     // Stop async encoder thread before WebRTC resources are torn down.
     encoder_running_ = false;
     pending_frames_cv_.notify_all();
-    if (encoder_thread_.joinable()) {
-        encoder_thread_.join();
-    }
+    encoder_thread_.join();
 }
 
 // Return deviceList as JSON vector.

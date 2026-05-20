@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "open3d/core/Dtype.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/TensorFunction.h"
 #include "open3d/t/io/ImageIO.h"
@@ -177,11 +178,31 @@ bool ReadTriangleMeshUsingASSIMP(
     return true;
 }
 
-static void SetTextureMaterialProperty(aiMaterial* mat,
-                                       aiScene* scene,
-                                       int texture_idx,
-                                       aiTextureType tt,
-                                       t::geometry::Image& img) {
+namespace {
+
+// Checks whether a texture map is present, not empty and uint8 or uint16
+// datatype.
+bool HasValidTexture(const visualization::rendering::Material& material,
+                     const std::string& key) {
+    if (!material.HasTextureMap(key) || material.GetTextureMap(key).IsEmpty()) {
+        return false;
+    }
+    const auto& dt = material.GetTextureMap(key).GetDtype();
+    if (dt != core::UInt8 && dt != core::UInt16) {
+        utility::LogWarning(
+                "Skipping texture map '{}' with unsupported data type '{}'. "
+                "Only uint8 and uint16 are supported.",
+                key, dt.ToString());
+        return false;
+    }
+    return true;
+}
+
+void SetTextureMaterialProperty(aiMaterial* mat,
+                                aiScene* scene,
+                                int texture_idx,
+                                aiTextureType tt,
+                                t::geometry::Image& img) {
     // Encode image as PNG
     std::vector<uint8_t> img_buffer;
     WriteImageToPNGInMemory(img_buffer, img, 6);
@@ -208,7 +229,6 @@ static void SetTextureMaterialProperty(aiMaterial* mat,
     mat->AddProperty(&mode, 1, AI_MATKEY_MAPPINGMODE_V(tt, 0));
 }
 
-namespace {
 // Add hash function for tuple key
 struct TupleHash {
     size_t operator()(const std::tuple<int64_t, float, float>& t) const {
@@ -551,17 +571,18 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
         // model has one we just export it, otherwise if both roughness and
         // metal maps are available we combine them, otherwise if only one or
         // the other is available we just export the one map.
+        const auto& material = w_mesh.GetMaterial();
         int n_textures = 0;
-        if (w_mesh.GetMaterial().HasAlbedoMap()) ++n_textures;
-        if (w_mesh.GetMaterial().HasNormalMap()) ++n_textures;
-        if (w_mesh.GetMaterial().HasAORoughnessMetalMap()) {
+        if (HasValidTexture(material, "albedo")) ++n_textures;
+        if (HasValidTexture(material, "normal")) ++n_textures;
+        if (HasValidTexture(material, "ao_rough_metal")) {
             ++n_textures;
-        } else if (w_mesh.GetMaterial().HasRoughnessMap() &&
-                   w_mesh.GetMaterial().HasMetallicMap()) {
+        } else if (HasValidTexture(material, "roughness") &&
+                   HasValidTexture(material, "metallic")) {
             ++n_textures;
         } else {
-            if (w_mesh.GetMaterial().HasRoughnessMap()) ++n_textures;
-            if (w_mesh.GetMaterial().HasMetallicMap()) ++n_textures;
+            if (HasValidTexture(material, "roughness")) ++n_textures;
+            if (HasValidTexture(material, "metallic")) ++n_textures;
         }
         if (n_textures > 0) {
             ai_scene->mTextures = new aiTexture*[n_textures];
@@ -573,23 +594,23 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
 
         // Now embed the textures that are available...
         int current_idx = 0;
-        if (w_mesh.GetMaterial().HasAlbedoMap()) {
-            auto img = w_mesh.GetMaterial().GetAlbedoMap();
+        if (HasValidTexture(material, "albedo")) {
+            auto img = material.GetAlbedoMap();
             SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
                                        aiTextureType_DIFFUSE, img);
             SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
                                        aiTextureType_BASE_COLOR, img);
             ++current_idx;
         }
-        if (w_mesh.GetMaterial().HasAORoughnessMetalMap()) {
-            auto img = w_mesh.GetMaterial().GetAORoughnessMetalMap();
+        if (HasValidTexture(material, "ao_rough_metal")) {
+            auto img = material.GetAORoughnessMetalMap();
             SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
                                        aiTextureType_UNKNOWN, img);
             ++current_idx;
-        } else if (w_mesh.GetMaterial().HasRoughnessMap() &&
-                   w_mesh.GetMaterial().HasMetallicMap()) {
-            auto rough = w_mesh.GetMaterial().GetRoughnessMap();
-            auto metal = w_mesh.GetMaterial().GetMetallicMap();
+        } else if (HasValidTexture(material, "roughness") &&
+                   HasValidTexture(material, "metallic")) {
+            auto rough = material.GetRoughnessMap();
+            auto metal = material.GetMetallicMap();
             auto rows = rough.GetRows();
             auto cols = rough.GetCols();
             auto rough_metal =
@@ -620,21 +641,21 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
                                        aiTextureType_UNKNOWN, rough_metal);
             ++current_idx;
         } else {
-            if (w_mesh.GetMaterial().HasRoughnessMap()) {
-                auto img = w_mesh.GetMaterial().GetRoughnessMap();
+            if (HasValidTexture(material, "roughness")) {
+                auto img = material.GetRoughnessMap();
                 SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
                                            aiTextureType_UNKNOWN, img);
                 ++current_idx;
             }
-            if (w_mesh.GetMaterial().HasMetallicMap()) {
-                auto img = w_mesh.GetMaterial().GetMetallicMap();
+            if (HasValidTexture(material, "metallic")) {
+                auto img = material.GetMetallicMap();
                 SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
                                            aiTextureType_UNKNOWN, img);
                 ++current_idx;
             }
         }
-        if (w_mesh.GetMaterial().HasNormalMap()) {
-            auto img = w_mesh.GetMaterial().GetNormalMap();
+        if (HasValidTexture(material, "normal")) {
+            auto img = material.GetNormalMap();
             SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
                                        aiTextureType_NORMALS, img);
             ++current_idx;
