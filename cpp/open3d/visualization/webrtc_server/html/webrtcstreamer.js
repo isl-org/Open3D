@@ -677,11 +677,22 @@ let WebRtcStreamer = (function() {
                 const recvs = pc.getReceivers();
 
                 recvs.forEach((recv) => {
-                    if (recv.track && recv.track.kind === 'video' &&
-                        typeof recv.getParameters != 'undefined') {
-                        console.log(
-                                'codecs:' +
-                                JSON.stringify(recv.getParameters().codecs));
+                    if (recv.track && recv.track.kind === 'video') {
+                        // Minimize browser jitter buffer to reduce playout
+                        // latency. The server already sends RTP playout-delay
+                        // header extensions with min=max=0 via the
+                        // WebRTC-ForceSendPlayoutDelay field trial, but set
+                        // jitterBufferTarget as well for browsers that honour
+                        // the JS API over the in-band RTP extension.
+                        if (typeof recv.jitterBufferTarget !== 'undefined') {
+                            recv.jitterBufferTarget = 0;
+                        }
+                        if (typeof recv.getParameters != 'undefined') {
+                            console.log(
+                                    'codecs:' +
+                                    JSON.stringify(
+                                            recv.getParameters().codecs));
+                        }
                     }
                 });
             }

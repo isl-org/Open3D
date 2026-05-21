@@ -24,6 +24,7 @@
 #include <media/engine/webrtc_media_engine.h>
 #include <modules/audio_device/include/fake_audio_device.h>
 #include <p2p/client/basic_port_allocator.h>
+#include <system_wrappers/include/field_trial.h>
 
 #include <fstream>
 #include <functional>
@@ -87,6 +88,18 @@ static IceServer GetIceServerFromUrl(const std::string &url) {
 
 static webrtc::PeerConnectionFactoryDependencies
 CreatePeerConnectionFactoryDependencies() {
+    // Disable WebRTC's pacing delay and allow the pacer to drain its queue
+    // immediately. This reduces the added latency from packet smoothing, which
+    // is unnecessary for a local interactive streaming use case.
+    // Force playout delay to zero in the RTP header extension so the receiver
+    // renders frames immediately rather than buffering for jitter smoothing.
+    // Disable automatic resolution reduction so quality is only degraded if the
+    // encoder is genuinely overloaded (content hint kFluid still allows it).
+    webrtc::field_trial::InitFieldTrialsFromString(
+            "WebRTC-Pacer-DrainQueue/Enabled/"
+            "WebRTC-ForceSendPlayoutDelay/min_ms:0,max_ms:0/"
+            "WebRTC-Video-DisableAutomaticResize/Enabled/");
+
     webrtc::PeerConnectionFactoryDependencies dependencies;
     dependencies.network_thread = nullptr;
     dependencies.worker_thread = rtc::Thread::Current();
@@ -531,6 +544,10 @@ bool PeerConnectionManager::InitializePeerConnection() {
 PeerConnectionManager::PeerConnectionObserver *
 PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
     webrtc::PeerConnectionInterface::RTCConfiguration config;
+    // Max bundle multiplexes all media and data channels on a single transport,
+    // eliminating separate ICE/DTLS handshakes per track and reducing latency.
+    config.bundle_policy =
+            webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
     for (auto ice_server : ice_server_list_) {
         webrtc::PeerConnectionInterface::IceServer server;
         IceServer srv = GetIceServerFromUrl(ice_server);
@@ -664,6 +681,12 @@ bool PeerConnectionManager::AddStreams(
                                                              opts);
                     video_track = peer_connection_factory_->CreateVideoTrack(
                             window_uid + "_video", videoScaled);
+                    // Prefer framerate over resolution when the encoder
+                    // is under pressure (bandwidth or CPU constrained).
+                    // For interactive 3D rendering, motion smoothness
+                    // matters more than pixel-perfect resolution.
+                    video_track->set_content_hint(
+                            webrtc::VideoTrackInterface::ContentHint::kFluid);
                 }
 
                 if ((video_track) && (!stream->AddTrack(video_track))) {
