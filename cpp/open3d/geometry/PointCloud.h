@@ -55,6 +55,8 @@ public:
             bool robust = false) const override;
     OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust = false) const;
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     PointCloud &Translate(const Eigen::Vector3d &translation,
                           bool relative = true) override;
@@ -281,7 +283,8 @@ public:
     ///
     ///
     /// \param input PointCloud to use for covariance computation.
-    /// \param search_param The KDTree search parameters for neighborhood search.
+    /// \param search_param The KDTree search parameters for neighborhood
+    /// search.
     static std::vector<Eigen::Matrix3d> EstimatePerPointCovariances(
             const PointCloud &input,
             const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());

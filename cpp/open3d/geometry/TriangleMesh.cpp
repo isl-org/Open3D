@@ -1692,7 +1692,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const OrientedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "AxisAlignedBoundingBox either has zeros "
+                "OrientedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
         return std::make_shared<TriangleMesh>();
     }

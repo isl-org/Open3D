@@ -1,5 +1,6 @@
 ## Main
 -   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
+-   Use glfwGetMonitorWorkarea for accurate screen size in GetScreenSize, remove unusable_height estimation hack, and subtract window-decoration extents before clamping auto-sized windows (PR #7469)
 -   Upgrade stdgpu third-party library to commit d7c07d0.
 -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
 -   Corrected documentation for Link Open3D in C++ projects (broken links).
@@ -70,6 +71,7 @@
 -   Fix advanced indexing bug with sliced boolean masks on CUDA devices (PR #7340)
 -   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
 -   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
+-   Implement CUDA multipass for KNN > `GPU_MAX_SELECTION_K` (PR #7381)
 -   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
 -   Python 3.13+3.14 support

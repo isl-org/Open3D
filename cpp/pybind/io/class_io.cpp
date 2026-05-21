@@ -92,6 +92,8 @@ void pybind_class_io_declarations(py::module &m_io) {
             .value("CONTAINS_POINTS", FileGeometry::CONTAINS_POINTS)
             .value("CONTAINS_LINES", FileGeometry::CONTAINS_LINES)
             .value("CONTAINS_TRIANGLES", FileGeometry::CONTAINS_TRIANGLES)
+            .value("CONTAINS_GAUSSIAN_SPLATS",
+                   FileGeometry::CONTAINS_GAUSSIAN_SPLATS)
             .export_values()
             .finalize();
 }
