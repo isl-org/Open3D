@@ -11,6 +11,7 @@ target_sources(tgeometry_kernel PRIVATE
     Metrics.cpp
     MinimumOBB.cpp
     MinimumOBE.cpp
+    MinimumBS.cpp
     TriangleMesh.cpp
     TriangleMeshCPU.cpp
     Transform.cpp

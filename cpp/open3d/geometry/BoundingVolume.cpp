@@ -225,8 +225,9 @@ std::vector<Eigen::Vector3d> BoundingSphere::GetSpherePoints() const {
 // }
 
 BoundingSphere BoundingSphere::CreateFromPoints(
-        const std::vector<Eigen::Vector3d>& points) {
-    return t::geometry::kernel::bounding_sphere::ComputeMinimumBSWelzl(points);
+        const std::vector<Eigen::Vector3d>& points, bool robust) {
+    return t::geometry::kernel::bounding_sphere::ComputeMinimumBSWelzl(points,
+    robust);
 
 }
 

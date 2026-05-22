@@ -893,8 +893,11 @@ public:
     /// Creates the minimum bounding sphere using Welzl's algorithm.
     /// \param points A list of points with data type of float32 or float64 (N x
     /// 3 tensor, where N must be larger than 0).
+    /// \param robust If set to true uses a more robust method which works in
+    /// degenerate cases but introduces noise to the points coordinates.    
     /// \return BoundingSphere with same data type and device as input points.
-    static BoundingSphere CreateFromPoints(const core::Tensor &points);
+    static BoundingSphere CreateFromPoints(const core::Tensor &points, 
+        bool robust);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

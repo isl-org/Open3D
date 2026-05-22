@@ -116,6 +116,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
         case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
+        case geometry::Geometry::GeometryType::BoundingSphere:
         case geometry::Geometry::GeometryType::Unspecified:
             return false;
     }
@@ -216,6 +217,7 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
         case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
+        case geometry::Geometry::GeometryType::BoundingSphere:
         case geometry::Geometry::GeometryType::Unspecified:
             break;
     }
@@ -789,6 +791,7 @@ VisualizerWithVertexSelection::GetGeometryPoints(
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
         case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
+        case geometry::Geometry::GeometryType::BoundingSphere:
         case geometry::Geometry::GeometryType::Unspecified:
             points = nullptr;
             break;

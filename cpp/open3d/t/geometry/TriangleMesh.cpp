@@ -795,6 +795,40 @@ TriangleMesh TriangleMesh::CreateFromOrientedBoundingEllipsoid(
     return mesh;
 }
 
+BoundingSphere TriangleMesh::GetBoundingSphere(
+        bool robust) const {
+    return BoundingSphere::CreateFromPoints(GetVertexPositions(),
+                                                       robust);
+}
+
+TriangleMesh TriangleMesh::CreateFromBoundingSphere(
+        const BoundingSphere &sphere,
+        double scale = 1.0,
+        int resolution,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    // Extract radii scaled by the per-axis scale factors.
+    double radius =
+            sphere.GetRadius().To(core::Float64).Item<double>();
+
+    TriangleMesh mesh = CreateSphere(
+        radius * scale, 
+        resolution,
+        float_dtype,
+        int_dtype,
+        device);
+    // Apply the sphere translation.
+    core::Tensor center = sphere.GetCenter().To(device, float_dtype);
+    mesh.Translate(center);
+    // Copy color from the ellipsoid to all vertices.
+    core::Tensor color = sphere.GetColor().To(device, float_dtype);
+    int64_t num_vertices = mesh.GetVertexPositions().GetLength();
+    mesh.SetVertexColors(
+            color.Reshape({1, 3}).Expand({num_vertices, 3}).Contiguous());
+    return mesh;
+}
+
 TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     using namespace vtkutils;
     // do not include triangle attributes because they will not be preserved by

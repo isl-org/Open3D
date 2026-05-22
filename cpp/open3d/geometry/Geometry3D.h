@@ -20,6 +20,7 @@ namespace geometry {
 class AxisAlignedBoundingBox;
 class OrientedBoundingBox;
 class OrientedBoundingEllipsoid;
+class BoundingSphere;
 
 /// \class Geometry3D
 ///
@@ -65,6 +66,14 @@ public:
     ///               in degenerate cases but introduces noise to the points
     ///               coordinates.
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const = 0;
+
+    /// Creates a bounding sphere around the points of the object.
+    /// Further details in BoundingSphere::CreateFromPoints()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    virtual BoundingSphere GetBoundingSphere(
             bool robust = false) const = 0;
 
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
