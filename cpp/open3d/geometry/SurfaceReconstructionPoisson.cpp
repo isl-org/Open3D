@@ -400,6 +400,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
              float width,
              float scale,
              bool linear_fit,
+             bool use_normal_length_as_confidence,
              UIntPack<FEMSigs...>) {
     static const int Dim = sizeof...(FEMSigs);
     typedef UIntPack<FEMSigs...> Sigs;
@@ -421,6 +422,9 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     int base_depth = 0;
     int base_v_cycles = 1;
     float confidence = 0.f;
+    if (use_normal_length_as_confidence) {
+        confidence = 1.f;
+    }
     float point_weight = 2.f * DEFAULT_FEM_DEGREE;
     float confidence_bias = 0.f;
     float samples_per_node = 1.5f;
@@ -716,12 +720,14 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 }  // namespace
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
-TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
-                                          size_t depth,
-                                          float width,
-                                          float scale,
-                                          bool linear_fit,
-                                          int n_threads) {
+TriangleMesh::CreateFromPointCloudPoisson(
+        const PointCloud& pcd,
+        size_t depth,
+        float width,
+        float scale,
+        bool linear_fit,
+        int n_threads,
+        bool use_normal_length_as_confidence) {
     static const BoundaryType BType = DEFAULT_FEM_BOUNDARY;
     typedef IsotropicUIntPack<
             DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
@@ -746,7 +752,7 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
     auto mesh = std::make_shared<TriangleMesh>();
     std::vector<double> densities;
     Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale,
-                   linear_fit, FEMSigs());
+                   linear_fit, use_normal_length_as_confidence, FEMSigs());
 
     ThreadPool::Terminate();
 
