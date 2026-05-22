@@ -14,6 +14,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/kernel/MinimumBS.h"
 #include "open3d/t/geometry/kernel/MinimumOBB.h"
 #include "open3d/t/geometry/kernel/MinimumOBE.h"
 #include "open3d/utility/Logging.h"
@@ -114,6 +115,119 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points, bool robust) {
     return t::geometry::kernel::minimum_obe::ComputeMinimumOBEKhachiyan(points,
                                                                         robust);
+}
+
+// checked
+BoundingSphere& BoundingSphere::Clear() {
+    center_.setZero();
+    radius_ = 0;
+    color_.setOnes();
+    return *this;
+}
+
+// checked
+bool BoundingSphere::IsEmpty() const { return Volume() <= 0; }
+
+// checked
+Eigen::Vector3d BoundingSphere::GetMinBound() const {
+    return center_ - Eigen::Vector3d(radius_, radius_, radius_);
+}
+
+// checked
+Eigen::Vector3d BoundingSphere::GetMaxBound() const {
+    return center_ + Eigen::Vector3d(radius_, radius_, radius_);
+}
+
+// checked
+Eigen::Vector3d BoundingSphere::GetCenter() const { return center_; }
+
+// checked
+AxisAlignedBoundingBox BoundingSphere::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetSpherePoints());
+}
+
+OrientedBoundingBox BoundingSphere::GetOrientedBoundingBox(
+        bool) const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+        GetAxisAlignedBoundingBox());
+}
+
+OrientedBoundingBox BoundingSphere::GetMinimalOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+        GetAxisAlignedBoundingBox());
+}
+
+// checked
+BoundingSphere& BoundingSphere::Transform(
+        const Eigen::Matrix4d& transformation) {
+    utility::LogError(
+            "A general transform of a BoundingSphere is not "
+            "implemented. "
+            "Call Translate, Scale, and Rotate.");
+    return *this;
+}
+
+// checked
+BoundingSphere& BoundingSphere::Translate(const Eigen::Vector3d& translation,
+                                          bool relative) {
+    if (relative) {
+        center_ += translation;
+    } else {
+        center_ = translation;
+    }
+    return *this;
+}
+
+// checked
+BoundingSphere& BoundingSphere::Scale(const double scale,
+                                      const Eigen::Vector3d& center) {
+    radius_ *= scale;
+    center_ = scale * (center_ - center) + center;
+    return *this;
+}
+
+// checked
+BoundingSphere& BoundingSphere::Rotate(const Eigen::Matrix3d& R,
+                                       const Eigen::Vector3d& center) {
+    center_ = R * (center_ - center) + center;
+    return *this;
+}
+
+// checked
+double BoundingSphere::Volume() const {
+    return 4.0 * M_PI * radius_ * radius_ * radius_ / 3.0;
+}
+
+// checked
+std::vector<Eigen::Vector3d> BoundingSphere::GetSpherePoints() const {
+    std::vector<Eigen::Vector3d> points(6);
+    points[0] = center_ + Eigen::Vector3d(radius_, 0, 0);
+    points[1] = center_ - Eigen::Vector3d(radius_, 0, 0);
+    points[2] = center_ + Eigen::Vector3d(0, radius_, 0);
+    points[3] = center_ - Eigen::Vector3d(0, radius_, 0);
+    points[4] = center_ + Eigen::Vector3d(0, 0, radius_);
+    points[5] = center_ - Eigen::Vector3d(0, 0, radius_);
+    return points;
+}
+
+// std::vector<size_t> BoundingSphere::GetPointIndicesWithinBoundingSphere(
+//         const std::vector<Eigen::Vector3d>& points) const {
+//     std::vector<size_t> indices;
+//     double radius_sq = radius_ * radius_;
+//     for (size_t idx = 0; idx < points.size(); idx++) {
+//         Eigen::Vector3d diff = points[idx] - center_;
+//         if (diff.squaredNorm() <= radius_sq) {
+//             indices.push_back(idx);
+//         }
+//     }
+//     return indices;
+// }
+
+BoundingSphere BoundingSphere::CreateFromPoints(
+        const std::vector<Eigen::Vector3d>& points) {
+    return t::geometry::kernel::bounding_sphere::ComputeMinimumBSWelzl(points);
+
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Clear() {

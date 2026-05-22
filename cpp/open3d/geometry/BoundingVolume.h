@@ -129,6 +129,85 @@ public:
     Eigen::Vector3d color_;
 };
 
+/// \class BoundingSphere
+///
+/// \brief A bounding sphere defined by a center point and a radius.
+///
+/// The bounding sphere is the smallest sphere that encloses a set of points.
+class BoundingSphere : public Geometry3D {
+public:
+    /// \brief Default constructor.
+    ///
+    /// Creates an empty Bounding Sphere.
+    BoundingSphere()
+        : Geometry3D(Geometry::GeometryType::BoundingSphere),
+          center_(0, 0, 0),
+          radius_(0),
+          color_(1, 1, 1) {}
+
+    /// \brief Parameterized constructor.
+    ///
+    /// \param center Specifies the center position of the bounding sphere.
+    /// \param radius The radius of the bounding sphere.
+    BoundingSphere(const Eigen::Vector3d& center, double radius)
+        : Geometry3D(Geometry::GeometryType::BoundingSphere),
+          center_(center),
+          radius_(radius),
+          color_(1, 1, 1) {}
+    ~BoundingSphere() override {}
+
+public:
+    BoundingSphere& Clear() override;
+    bool IsEmpty() const override;
+    virtual Eigen::Vector3d GetMinBound() const override;
+    virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Creates an axis-aligned bounding box around the sphere.
+    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    /// Returns an oriented bounding box around the sphere.
+    /// internally calls GetAxisAlignedBoundingBox() since the oriented 
+    /// bounding box of a sphere is the same as its axis-aligned bounding box.
+    virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust) const override;
+    /// Returns an oriented bounding box around the sphere.
+    /// internally calls GetAxisAlignedBoundingBox() since the minimum oriented 
+    /// bounding box of a sphere is the same as its axis-aligned bounding box.
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust) const override;
+
+    virtual BoundingSphere& Transform(const Eigen::Matrix4d& transformation) override;
+    virtual BoundingSphere& Translate(const Eigen::Vector3d& translation,
+                                      bool relative = true) override;
+    virtual BoundingSphere& Scale(const double scale,
+                                  const Eigen::Vector3d& center) override;
+    virtual BoundingSphere& Rotate(const Eigen::Matrix3d& R,
+                                   const Eigen::Vector3d& center) override;
+
+    /// Returns the volume of the bounding sphere.
+    double Volume() const;
+
+    /// Returns six critical points on the surface of the bounding sphere.
+    std::vector<Eigen::Vector3d> GetSpherePoints() const;
+
+    /// Return indices to points that are within the bounding sphere.
+    std::vector<size_t> GetPointIndicesWithinBoundingSphere(
+            const std::vector<Eigen::Vector3d>& points) const;
+
+    /// Creates a bounding sphere using Welzl's algorithm.
+    /// \param points The input points
+    static BoundingSphere CreateFromPoints(
+            const std::vector<Eigen::Vector3d>& points);
+
+public:
+    /// The center point of the bounding sphere.
+    Eigen::Vector3d center_;
+    /// The radius of the bounding sphere.
+    double radius_;
+    /// The color of the bounding sphere in RGB.
+    Eigen::Vector3d color_;
+};
+
 /// \class OrientedBoundingBox
 ///
 /// \brief A bounding box oriented along an arbitrary frame of reference.
