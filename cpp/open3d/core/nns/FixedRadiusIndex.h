@@ -376,6 +376,40 @@ void HybridSearchCUDA(const Tensor& points,
                       Tensor& neighbors_distance);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+template <class T, class TIndex>
+void FixedRadiusSearchSYCL(const Tensor& points,
+                           const Tensor& queries,
+                           double radius,
+                           const Tensor& points_row_splits,
+                           const Tensor& queries_row_splits,
+                           const Tensor& hash_table_splits,
+                           const Tensor& hash_table_index,
+                           const Tensor& hash_table_cell_splits,
+                           const Metric metric,
+                           const bool ignore_query_point,
+                           const bool return_distances,
+                           const bool sort,
+                           Tensor& neighbors_index,
+                           Tensor& neighbors_row_splits,
+                           Tensor& neighbors_distance);
+
+template <class T, class TIndex>
+void HybridSearchSYCL(const Tensor& points,
+                      const Tensor& queries,
+                      double radius,
+                      int max_knn,
+                      const Tensor& points_row_splits,
+                      const Tensor& queries_row_splits,
+                      const Tensor& hash_table_splits,
+                      const Tensor& hash_table_index,
+                      const Tensor& hash_table_cell_splits,
+                      const Metric metric,
+                      Tensor& neighbors_index,
+                      Tensor& neighbors_count,
+                      Tensor& neighbors_distance);
+#endif
+
 /// \class FixedRadiusIndex
 ///
 /// \brief FixedRadiusIndex for nearest neighbor range search.
