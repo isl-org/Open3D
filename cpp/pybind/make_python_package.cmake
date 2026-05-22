@@ -122,6 +122,10 @@ if (BUILD_SYCL_MODULE)
     list(APPEND requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt)
 endif()
 
+if (BUILD_VISUALIZATION)
+    list(APPEND requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements_viz.txt)
+endif()
+
 # These will be installed when the user does `pip install open3d`.
  execute_process(COMMAND ${CMAKE_COMMAND} -E cat ${requirement_files}
         OUTPUT_FILE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt
