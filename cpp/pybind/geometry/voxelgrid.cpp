@@ -135,6 +135,10 @@ void pybind_voxelgrid_definitions(py::module &m) {
                         "carving",
                         "origin"_a, "color"_a, "voxel_size"_a, "width"_a,
                         "height"_a, "depth"_a)
+            .def_static("create_from_sparse_indices",
+                        &VoxelGrid::CreateFromSparseIndices,
+                        "Creates a voxel grid given sparse 3d indices",
+                        "indices"_a, "colors"_a, "origin"_a, "voxel_size"_a)
             .def_static(
                     "create_from_point_cloud", &VoxelGrid::CreateFromPointCloud,
                     "Creates a VoxelGrid from a given PointCloud. The "
@@ -231,6 +235,12 @@ void pybind_voxelgrid_definitions(py::module &m) {
              {"width", "Spatial width extend of the VoxelGrid."},
              {"height", "Spatial height extend of the VoxelGrid."},
              {"depth", "Spatial depth extend of the VoxelGrid."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "create_from_sparse_indices",
+            {{"indices", "3d indices of each VoxelGrid."},
+             {"colors", "Voxel colors for each voxel of the VoxelGrid."},
+             {"origin", "Coordinate center of the VoxelGrid."},
+             {"voxel_size", "Voxel size of of the VoxelGrid construction."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "create_from_point_cloud",
             {{"input", "The input PointCloud"},
