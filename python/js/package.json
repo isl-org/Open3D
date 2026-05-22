@@ -37,8 +37,7 @@
   },
   "resolutions": {
     "glob": "7.2.3",
-    "abab": "^2.0.6",
-    "license-webpack-plugin": "^4.0.0"
+    "abab": "^2.0.6"
   },
   "dependencies": {
     "@jupyter-widgets/base": "^2 || ^3 || ^4 || ^5 || ^6",
