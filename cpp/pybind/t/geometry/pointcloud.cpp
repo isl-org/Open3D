@@ -620,6 +620,11 @@ Example:
                    "Create an oriented bounding ellipsoid from attribute "
                    "'positions'.",
                    "robust"_a = false);
+    pointcloud.def("get_bounding_sphere",
+                   &PointCloud::GetBoundingSphere,
+                   "Create a bounding sphere from attribute "
+                   "'positions'.",
+                   "robust"_a = false);
     pointcloud.def("crop",
                    (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,
                                               bool) const) &

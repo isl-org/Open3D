@@ -821,7 +821,7 @@ TriangleMesh TriangleMesh::CreateFromBoundingSphere(
     // Apply the sphere translation.
     core::Tensor center = sphere.GetCenter().To(device, float_dtype);
     mesh.Translate(center);
-    // Copy color from the ellipsoid to all vertices.
+    // Copy color from the sphere to all vertices.
     core::Tensor color = sphere.GetColor().To(device, float_dtype);
     int64_t num_vertices = mesh.GetVertexPositions().GetLength();
     mesh.SetVertexColors(

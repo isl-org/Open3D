@@ -119,6 +119,17 @@ Args:
 
 Returns:
     open3d.geometry.OrientedBoundingEllipsoid)")
+            .def("get_bounding_sphere",
+                 &PointCloud::GetBoundingSphere, "robust"_a = false,
+                 R"(Compute the minimum volume bounding sphere that
+encloses the point cloud using welzl's algorithm.
+
+Args:
+    robust (bool): If set to true uses a more robust method which works in
+        degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+    open3d.geometry.BoundingSphere)")
             .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  "Removes all points from the point cloud that have a nan "
                  "entry, or infinite entries. It also removes the "

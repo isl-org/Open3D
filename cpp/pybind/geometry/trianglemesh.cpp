@@ -363,6 +363,11 @@ void pybind_trianglemesh_definitions(py::module &m) {
                         "ellipsoid.",
                         "obel"_a, "scale"_a = Eigen::Vector3d::Ones(),
                         "resolution"_a = 20, "create_uv_map"_a = false)
+            .def_static("create_from_bounding_sphere",
+                        &TriangleMesh::CreateFromBoundingSphere,
+                        "Factory function to create a solid bounding sphere.",
+                        "bsphere"_a, "scale"_a = Eigen::Vector3d::Ones(),
+                        "resolution"_a = 20, "create_uv_map"_a = false)
             .def_static("create_box", &TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
