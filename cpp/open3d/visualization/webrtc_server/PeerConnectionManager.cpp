@@ -24,6 +24,7 @@
 #include <media/engine/webrtc_media_engine.h>
 #include <modules/audio_device/include/fake_audio_device.h>
 #include <p2p/client/basic_port_allocator.h>
+#include <system_wrappers/include/field_trial.h>
 
 #include <fstream>
 #include <functional>
@@ -87,6 +88,18 @@ static IceServer GetIceServerFromUrl(const std::string &url) {
 
 static webrtc::PeerConnectionFactoryDependencies
 CreatePeerConnectionFactoryDependencies() {
+    // Disable WebRTC's pacing delay and allow the pacer to drain its queue
+    // immediately. This reduces the added latency from packet smoothing, which
+    // is unnecessary for a local interactive streaming use case.
+    // Force playout delay to zero in the RTP header extension so the receiver
+    // renders frames immediately rather than buffering for jitter smoothing.
+    // Disable automatic resolution reduction so quality is only degraded if the
+    // encoder is genuinely overloaded (content hint kFluid still allows it).
+    webrtc::field_trial::InitFieldTrialsFromString(
+            "WebRTC-Pacer-DrainQueue/Enabled/"
+            "WebRTC-ForceSendPlayoutDelay/min_ms:0,max_ms:0/"
+            "WebRTC-Video-DisableAutomaticResize/Enabled/");
+
     webrtc::PeerConnectionFactoryDependencies dependencies;
     dependencies.network_thread = nullptr;
     dependencies.worker_thread = rtc::Thread::Current();
@@ -195,9 +208,19 @@ PeerConnectionManager::PeerConnectionManager(
         }
         return this->HangUp(peerid);
     };
+
+    // Start async encoder thread.
+    encoder_running_ = true;
+    encoder_thread_ =
+            std::thread(&PeerConnectionManager::EncoderThreadLoop, this);
 }
 
-PeerConnectionManager::~PeerConnectionManager() {}
+PeerConnectionManager::~PeerConnectionManager() {
+    // Stop async encoder thread before WebRTC resources are torn down.
+    encoder_running_ = false;
+    pending_frames_cv_.notify_all();
+    encoder_thread_.join();
+}
 
 // Return deviceList as JSON vector.
 const Json::Value PeerConnectionManager::GetMediaList() {
@@ -521,6 +544,10 @@ bool PeerConnectionManager::InitializePeerConnection() {
 PeerConnectionManager::PeerConnectionObserver *
 PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
     webrtc::PeerConnectionInterface::RTCConfiguration config;
+    // Max bundle multiplexes all media and data channels on a single transport,
+    // eliminating separate ICE/DTLS handshakes per track and reducing latency.
+    config.bundle_policy =
+            webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
     for (auto ice_server : ice_server_list_) {
         webrtc::PeerConnectionInterface::IceServer server;
         IceServer srv = GetIceServerFromUrl(ice_server);
@@ -654,6 +681,12 @@ bool PeerConnectionManager::AddStreams(
                                                              opts);
                     video_track = peer_connection_factory_->CreateVideoTrack(
                             window_uid + "_video", videoScaled);
+                    // Prefer framerate over resolution when the encoder
+                    // is under pressure (bandwidth or CPU constrained).
+                    // For interactive 3D rendering, motion smoothness
+                    // matters more than pixel-perfect resolution.
+                    video_track->set_content_hint(
+                            webrtc::VideoTrackInterface::ContentHint::kFluid);
                 }
 
                 if ((video_track) && (!stream->AddTrack(video_track))) {
@@ -729,19 +762,44 @@ void PeerConnectionManager::CloseWindowConnections(
     }
 }
 
+// Encoder thread: wakes on each new frame, drains the per-window latest-frame
+// map, and calls video_track_source->OnFrame() (libyuv + WebRTC encode)
+// off the render thread so frame delivery never blocks GUI redraws.
+void PeerConnectionManager::EncoderThreadLoop() {
+    while (encoder_running_) {
+        std::unordered_map<std::string, std::shared_ptr<core::Tensor>> snapshot;
+        {
+            std::unique_lock<std::mutex> lock(pending_frames_mutex_);
+            pending_frames_cv_.wait(lock, [this] {
+                return !pending_frames_.empty() || !encoder_running_;
+            });
+            if (!encoder_running_) break;
+            // Drain: take all pending frames in one batch; late-arriving frames
+            // for the same window have already overwritten earlier ones, so we
+            // encode only the latest per window (implicit frame coalescing).
+            snapshot = std::move(pending_frames_);
+        }
+        for (const auto &kv : snapshot) {
+            auto video_track_source = GetVideoTrackSource(kv.first);
+            if (video_track_source && kv.second) {
+                video_track_source->OnFrame(kv.second);
+            }
+        }
+    }
+}
+
 void PeerConnectionManager::OnFrame(const std::string &window_uid,
                                     const std::shared_ptr<core::Tensor> &im) {
-    // Get the WebRTC stream that corresponds to the window_uid.
-    // video_track_source is nullptr if the server is running but no client is
-    // connected.
-    rtc::scoped_refptr<BitmapTrackSourceInterface> video_track_source =
-            GetVideoTrackSource(window_uid);
-    if (video_track_source) {
-        // TODO: this OnFrame(im); is a blocking call. Do we need to handle
-        // OnFrame in a separate thread? e.g. attach to a queue of frames, even
-        // if the queue size is just 1.
-        video_track_source->OnFrame(im);
+    // Skip if no peer is connected for this window.
+    if (!GetVideoTrackSource(window_uid)) return;
+    // Post the latest frame; overwrites any pending unencoded frame for this
+    // window (frame coalescing) so the encoder thread always sees the freshest
+    // content without blocking the render thread.
+    {
+        std::lock_guard<std::mutex> lock(pending_frames_mutex_);
+        pending_frames_[window_uid] = im;
     }
+    pending_frames_cv_.notify_one();
 }
 
 }  // namespace webrtc_server
