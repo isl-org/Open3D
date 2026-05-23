@@ -364,10 +364,8 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
         if (impl_->data_channel_message_callbacks_.count(class_name) != 0) {
             reply = impl_->data_channel_message_callbacks_.at(class_name)(
                     message);
-            // Do not call PostRedrawEvent here. Mouse/keyboard callbacks
-            // already schedule a redraw via Window::OnMouseEvent → PostRedraw.
-            // An extra PostRedrawEvent here creates a duplicate draw event
-            // before the input event is even processed, causing backlog.
+            // Custom callbacks that mutate GUI state (e.g. add/remove geometry)
+            // must call window->PostRedraw() or post_redraw() themselves.
             return reply;
         } else {
             reply = fmt::format(

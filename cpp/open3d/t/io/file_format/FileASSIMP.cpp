@@ -566,96 +566,96 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             ai_mat->AddProperty(&ac, 1, AI_MATKEY_COLOR_EMISSIVE);
         }
 
-        // Count texture maps...
+        // Build a list of texture-embed actions in a single pass. Each action
+        // is a lambda that writes one texture slot into the assimp scene; the
+        // slot index is passed at call time. .
+        //
         // NOTE: GLTF2 expects a single combined roughness/metal map. If the
         // model has one we just export it, otherwise if both roughness and
         // metal maps are available we combine them, otherwise if only one or
         // the other is available we just export the one map.
         const auto& material = w_mesh.GetMaterial();
-        int n_textures = 0;
-        if (HasValidTexture(material, "albedo")) ++n_textures;
-        if (HasValidTexture(material, "normal")) ++n_textures;
-        if (HasValidTexture(material, "ambient_occlusion")) ++n_textures;
+        using TextureAction = std::function<void(int /*slot*/)>;
+        std::vector<TextureAction> texture_actions;
+
+        if (HasValidTexture(material, "albedo")) {
+            texture_actions.push_back([&](int idx) {
+                auto img = material.GetAlbedoMap();
+                SetTextureMaterialProperty(ai_mat, ai_scene.get(), idx,
+                                           aiTextureType_DIFFUSE, img);
+                SetTextureMaterialProperty(ai_mat, ai_scene.get(), idx,
+                                           aiTextureType_BASE_COLOR, img);
+            });
+        }
+        if (HasValidTexture(material, "ambient_occlusion")) {
+            texture_actions.push_back([&](int idx) {
+                auto img = material.GetAOMap();
+                SetTextureMaterialProperty(ai_mat, ai_scene.get(), idx,
+                                           aiTextureType_LIGHTMAP, img);
+            });
+        }
         if (HasValidTexture(material, "ao_rough_metal")) {
-            ++n_textures;
+            texture_actions.push_back([&](int idx) {
+                auto img = material.GetAORoughnessMetalMap();
+                SetTextureMaterialProperty(ai_mat, ai_scene.get(), idx,
+                                           aiTextureType_UNKNOWN, img);
+            });
         } else if (HasValidTexture(material, "roughness") &&
                    HasValidTexture(material, "metallic")) {
-            ++n_textures;
+            texture_actions.push_back([&](int idx) {
+                auto rough = material.GetRoughnessMap().AsTensor();
+                auto metal = material.GetMetallicMap().AsTensor();
+                if (rough.GetShape() != metal.GetShape()) {
+                    utility::LogError(
+                            "RoughnessMap (shape={}) and MetallicMap "
+                            "(shape={}) must have the same shape.",
+                            rough.GetShape(), metal.GetShape());
+                }
+                auto rows = rough.GetShape(0);
+                auto cols = rough.GetShape(1);
+                auto rough_metal = core::Tensor::Full({rows, cols, 4}, 255,
+                                                      core::Dtype::UInt8);
+                rough_metal.Slice(2, 2, 3) =
+                        metal.Slice(2, 0, 1);  // blue channel is metal
+                rough_metal.Slice(2, 1, 2) =
+                        rough.Slice(2, 0, 1);  // green channel is roughness
+                geometry::Image rough_metal_img(rough_metal);
+                SetTextureMaterialProperty(ai_mat, ai_scene.get(), idx,
+                                           aiTextureType_UNKNOWN,
+                                           rough_metal_img);
+            });
         } else {
-            if (HasValidTexture(material, "roughness")) ++n_textures;
-            if (HasValidTexture(material, "metallic")) ++n_textures;
+            if (HasValidTexture(material, "roughness")) {
+                texture_actions.push_back([&](int idx) {
+                    auto img = material.GetRoughnessMap();
+                    SetTextureMaterialProperty(ai_mat, ai_scene.get(), idx,
+                                               aiTextureType_UNKNOWN, img);
+                });
+            }
+            if (HasValidTexture(material, "metallic")) {
+                texture_actions.push_back([&](int idx) {
+                    auto img = material.GetMetallicMap();
+                    SetTextureMaterialProperty(ai_mat, ai_scene.get(), idx,
+                                               aiTextureType_UNKNOWN, img);
+                });
+            }
         }
+        if (HasValidTexture(material, "normal")) {
+            texture_actions.push_back([&](int idx) {
+                auto img = material.GetNormalMap();
+                SetTextureMaterialProperty(ai_mat, ai_scene.get(), idx,
+                                           aiTextureType_NORMALS, img);
+            });
+        }
+
+        int n_textures = static_cast<int>(texture_actions.size());
         if (n_textures > 0) {
             ai_scene->mTextures = new aiTexture*[n_textures];
             for (int i = 0; i < n_textures; ++i) {
                 ai_scene->mTextures[i] = new aiTexture();
+                texture_actions[i](i);
             }
             ai_scene->mNumTextures = n_textures;
-        }
-
-        // Now embed the textures that are available...
-        int current_idx = 0;
-        if (HasValidTexture(material, "albedo")) {
-            auto img = material.GetAlbedoMap();
-            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                       aiTextureType_DIFFUSE, img);
-            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                       aiTextureType_BASE_COLOR, img);
-            ++current_idx;
-        }
-        if (HasValidTexture(w_mesh.GetMaterial(), "ambient_occlusion")) {
-            auto img = w_mesh.GetMaterial().GetAOMap();
-            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                       aiTextureType_LIGHTMAP, img);
-            ++current_idx;
-        }
-        if (HasValidTexture(w_mesh.GetMaterial(), "ao_rough_metal")) {
-            auto img = w_mesh.GetMaterial().GetAORoughnessMetalMap();
-            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                       aiTextureType_UNKNOWN, img);
-            ++current_idx;
-        } else if (HasValidTexture(w_mesh.GetMaterial(), "roughness") &&
-                   HasValidTexture(w_mesh.GetMaterial(), "metallic")) {
-            auto rough = w_mesh.GetMaterial().GetRoughnessMap().AsTensor();
-            auto metal = w_mesh.GetMaterial().GetMetallicMap().AsTensor();
-            if (rough.GetShape() != metal.GetShape()) {
-                utility::LogError(
-                        "RoughnessMap (shape={}) and MetallicMap (shape={}) "
-                        "must have the same shape.",
-                        rough.GetShape(), metal.GetShape());
-            }
-            auto rows = rough.GetShape(0);
-            auto cols = rough.GetShape(1);
-            auto rough_metal = core::Tensor::Full({rows, cols, 4}, 255,
-                                                  core::Dtype::UInt8);
-            rough_metal.Slice(2, 2, 3) =
-                    metal.Slice(2, 0, 1);  // blue channel is metal
-            rough_metal.Slice(2, 1, 2) =
-                    rough.Slice(2, 0, 1);  // green channel is roughness
-
-            geometry::Image rough_metal_img(rough_metal);
-            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                       aiTextureType_UNKNOWN, rough_metal_img);
-            ++current_idx;
-        } else {
-            if (HasValidTexture(material, "roughness")) {
-                auto img = material.GetRoughnessMap();
-                SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                           aiTextureType_UNKNOWN, img);
-                ++current_idx;
-            }
-            if (HasValidTexture(material, "metallic")) {
-                auto img = material.GetMetallicMap();
-                SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                           aiTextureType_UNKNOWN, img);
-                ++current_idx;
-            }
-        }
-        if (HasValidTexture(material, "normal")) {
-            auto img = material.GetNormalMap();
-            SetTextureMaterialProperty(ai_mat, ai_scene.get(), current_idx,
-                                       aiTextureType_NORMALS, img);
-            ++current_idx;
         }
     }
     ai_scene->mMaterials[0] = ai_mat;

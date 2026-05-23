@@ -699,16 +699,15 @@ let WebRtcStreamer = (function() {
         };
 
         // Local datachannel sends data.
-        // Use unordered, unreliable delivery for mouse/input events. Ordered
-        // reliable delivery causes head-of-line blocking: a lost packet stalls
-        // all subsequent events until it is retransmitted. For interactive
-        // mouse events the latest position is all that matters, so a dropped
-        // message is better than a delayed one. maxRetransmits: 0 means the
-        // browser sends once and moves on; ordered: false removes sequencing.
+        // Use reliable ordered delivery (the default). While unordered +
+        // unreliable would reduce head-of-line blocking for mouse MOVE/DRAG,
+        // the same channel carries discrete events (BUTTON_DOWN/UP, key events,
+        // resize) and application-level RPC (tensorboard/update_geometry etc.)
+        // that must not be lost or reordered. Mouse coalescing (rAF + server-
+        // side replace_or_merge_mouse) already prevents event backlog, so the
+        // extra reliability is free in practice on a local network.
         try {
-            this.dataChannel = pc.createDataChannel(
-                    'ClientDataChannel',
-                    {ordered: false, maxRetransmits: 0});
+            this.dataChannel = pc.createDataChannel('ClientDataChannel');
             var dataChannel = this.dataChannel;
             dataChannel.onopen = function() {
                 console.log('local datachannel open');
