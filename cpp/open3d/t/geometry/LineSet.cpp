@@ -240,7 +240,6 @@ LineSet LineSet::CreateFromOrientedBoundingEllipsoid(
 // support for de-deuplicating the edges of the triangle mesh.
 LineSet LineSet::CreateFromBoundingSphere(
         const BoundingSphere &sphere,
-        double scale,
         int resolution,
         core::Dtype float_dtype,
         core::Dtype int_dtype,
@@ -248,7 +247,6 @@ LineSet LineSet::CreateFromBoundingSphere(
     // Build a solid sphere mesh then extract its wireframe edges.
     TriangleMesh mesh = TriangleMesh::CreateFromBoundingSphere(
             sphere,
-            scale,
             resolution,
             float_dtype,
             int_dtype,

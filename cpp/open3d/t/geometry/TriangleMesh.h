@@ -656,9 +656,7 @@ public:
     /// Create a solid TriangleMesh representing the surface of a
     /// BoundingSphere.
     /// \param sphere The bounding sphere.
-    /// \param scale Scale factor applied to radius before
-    /// constructing the mesh.
-    /// \param resolution Resolution of the generated ellipsoid surface mesh.
+    /// \param resolution Resolution of the generated sphere surface mesh.
     /// \param float_dtype The data type for vertex attributes.
     /// \param int_dtype The data type for triangle indices.
     /// \param device The device for the returned mesh.
