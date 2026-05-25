@@ -13,7 +13,7 @@ webrtc_download.cmake # Used by Open3D CMake. Consume pre-compiled WebRTC. (Meth
 webrtc_build.cmake    # Used by Open3D CMake. Build and consume WebRTC.    (Method 2)
 
 # Other files
-0001-xxx.patch x3     # Git patch for -DBUILD_WEBRTC_FROM_SOURCE=ON.       (Method 1 Prepare-Phase & Method 2)
+0001-xxx.patch x3     # Git patch for old-ABI WebRTC source builds.        (Method 1 Prepare-Phase & Method 2)
 CMakeLists.txt        # Used by `webrtc_build.sh` to compile WebRTC.       (Method 1 Prepare-Phase)
 Dockerfile.webrtc     # Calls `webrtc_build.sh` to compile WebRTC.         (Method 1 Prepare-Phase)
 webrtc_build.sh       # Used by `Dockerfile.webrtc`.                       (Method 1 Prepare-Phase)
@@ -53,7 +53,8 @@ need to build WebRTC manually.
    how to do that.
 2. `depot_tools` and `webrtc` need to be compatible, see:
    https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
-3. Apply the following patch to enable GLIBCXX_USE_CXX11_ABI selection:
+3. For old-ABI builds (`GLIBCXX_USE_CXX11_ABI=0`), apply the following patches
+   to enable GLIBCXX_USE_CXX11_ABI selection:
    ```
    0001-build-enable-rtc_use_cxx11_abi-option.patch       # apply to webrtc/src
    0001-src-enable-rtc_use_cxx11_abi-option.patch         # apply to webrtc/src/build

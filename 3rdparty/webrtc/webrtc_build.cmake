@@ -12,9 +12,24 @@ cmake_dependent_option(WEBRTC_IS_DEBUG
     "WebRTC Debug build. Use ON for Win32 Open3D Debug." OFF
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 
-# Set paths
-set(WEBRTC_ROOT ${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc)
-set(DEPOT_TOOLS_ROOT ${PROJECT_SOURCE_DIR}/../depot_tools)
+# Set paths. WebRTC source builds intentionally consume an existing checkout
+# prepared by webrtc_build.sh or the WebRTC workflow; CMake does not fetch it.
+set(WEBRTC_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../webrtc" CACHE PATH
+    "Path to the WebRTC checkout containing src/.")
+set(DEPOT_TOOLS_ROOT "${PROJECT_SOURCE_DIR}/../depot_tools" CACHE PATH
+    "Path to depot_tools.")
+set(WEBRTC_ROOT ${WEBRTC_SOURCE_DIR})
+
+if(NOT EXISTS ${WEBRTC_ROOT}/src)
+    message(FATAL_ERROR "Cannot find ${WEBRTC_ROOT}/src. Please run "
+        "3rdparty/webrtc/webrtc_build.sh::download_webrtc_sources() first, "
+        "or set WEBRTC_SOURCE_DIR to an existing WebRTC checkout.")
+endif()
+if(NOT EXISTS ${DEPOT_TOOLS_ROOT}/gn)
+    message(FATAL_ERROR "Cannot find ${DEPOT_TOOLS_ROOT}/gn. Please run "
+        "3rdparty/webrtc/webrtc_build.sh::download_webrtc_sources() first, "
+        "or set DEPOT_TOOLS_ROOT to an existing depot_tools checkout.")
+endif()
 
 # Set WebRTC build type path
 if(WEBRTC_IS_DEBUG)
@@ -37,8 +52,8 @@ endif()
 ExternalProject_Add(
     ext_webrtc
     PREFIX webrtc
-    DOWNLOAD_COMMAND ${CMAKE_COMMAND} -E rm -rf ext_webrtc
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/../webrtc ext_webrtc
+    SOURCE_DIR ${WEBRTC_ROOT}
+    DOWNLOAD_COMMAND ""
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/args.gn
         ${WEBRTC_NINJA_ROOT}/args.gn

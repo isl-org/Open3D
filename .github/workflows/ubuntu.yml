@@ -35,7 +35,7 @@ jobs:
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -64,14 +64,14 @@ jobs:
           fi
       - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: open3d-devel-linux-x86_64
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
       - name: Upload viewer to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: open3d-viewer-Linux
           path: open3d-viewer-*-Linux.deb

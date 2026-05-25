@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+repo_args=()
+if [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
+    repo_args=(--repo "$GITHUB_REPOSITORY")
+fi
+
 for artifact in "$@"; do
     # extract filename supporting both POSIX and Windows-style paths
     # normalize backslashes to forward slashes for safe filename extraction
