@@ -117,6 +117,27 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
                                                                         robust);
 }
 
+std::vector<size_t> OrientedBoundingEllipsoid::GetPointIndicesWithinBoundingEllipsoid(
+        const std::vector<Eigen::Vector3d>& points) const {
+    std::vector<size_t> indices;
+    for (size_t idx = 0; idx < points.size(); idx++) {
+        // Transform point to ellipsoid's local frame
+        Eigen::Vector3d p_centered = points[idx] - center_;
+        Eigen::Vector3d p_local = R_.transpose() * p_centered;
+        
+        // Normalize by radii
+        Eigen::Vector3d p_normalized(p_local(0) / radii_(0),
+                                      p_local(1) / radii_(1),
+                                      p_local(2) / radii_(2));
+        
+        // Check if norm squared is <= 1
+        if (p_normalized.squaredNorm() <= 1.0) {
+            indices.push_back(idx);
+        }
+    }
+    return indices;
+}
+
 // checked
 BoundingSphere& BoundingSphere::Clear() {
     center_.setZero();
@@ -211,18 +232,18 @@ std::vector<Eigen::Vector3d> BoundingSphere::GetSpherePoints() const {
     return points;
 }
 
-// std::vector<size_t> BoundingSphere::GetPointIndicesWithinBoundingSphere(
-//         const std::vector<Eigen::Vector3d>& points) const {
-//     std::vector<size_t> indices;
-//     double radius_sq = radius_ * radius_;
-//     for (size_t idx = 0; idx < points.size(); idx++) {
-//         Eigen::Vector3d diff = points[idx] - center_;
-//         if (diff.squaredNorm() <= radius_sq) {
-//             indices.push_back(idx);
-//         }
-//     }
-//     return indices;
-// }
+std::vector<size_t> BoundingSphere::GetPointIndicesWithinBoundingSphere(
+        const std::vector<Eigen::Vector3d>& points) const {
+    std::vector<size_t> indices;
+    double radius_sq = radius_ * radius_;
+    for (size_t idx = 0; idx < points.size(); idx++) {
+        Eigen::Vector3d diff = points[idx] - center_;
+        if (diff.squaredNorm() <= radius_sq) {
+            indices.push_back(idx);
+        }
+    }
+    return indices;
+}
 
 BoundingSphere BoundingSphere::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points, bool robust) {
