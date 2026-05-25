@@ -62,6 +62,10 @@ public:
     virtual Size GetWindowSize(OSWindow w) const = 0;
     virtual void SetWindowSize(OSWindow w, int width, int height) = 0;
 
+    // Returns total window-decoration extents as Size(left+right, top+bottom)
+    // so callers can subtract them from the screen work area before sizing.
+    virtual Size GetWindowFrameSize(OSWindow w) const = 0;
+
     virtual Size GetWindowSizePixels(OSWindow w) const = 0;
     virtual void SetWindowSizePixels(OSWindow w, const Size& size) = 0;
 
