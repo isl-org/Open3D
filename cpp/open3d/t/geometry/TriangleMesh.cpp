@@ -803,7 +803,6 @@ BoundingSphere TriangleMesh::GetBoundingSphere(
 
 TriangleMesh TriangleMesh::CreateFromBoundingSphere(
         const BoundingSphere &sphere,
-        double scale = 1.0,
         int resolution,
         core::Dtype float_dtype,
         core::Dtype int_dtype,
@@ -813,7 +812,7 @@ TriangleMesh TriangleMesh::CreateFromBoundingSphere(
             sphere.GetRadius().To(core::Float64).Item<double>();
 
     TriangleMesh mesh = CreateSphere(
-        radius * scale, 
+        radius, 
         resolution,
         float_dtype,
         int_dtype,

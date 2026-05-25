@@ -585,14 +585,12 @@ Returns:
     triangle_mesh.def_static(
             "create_from_bounding_sphere",
             &TriangleMesh::CreateFromBoundingSphere, "sphere"_a,
-            "scale"_a = 1.0,
             "resolution"_a = 20, "float_dtype"_a = core::Float32,
             "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"),
             R"(Create a solid TriangleMesh representing the surface of a BoundingSphere.
 
 Args:
     sphere (open3d.t.geometry.BoundingSphere): The bounding sphere.
-    scale (float): Scale factor applied to the radius.
     resolution (int): Resolution of the generated sphere surface mesh.
     float_dtype (open3d.core.Dtype): Float32 or Float64, for vertex attributes.
     int_dtype (open3d.core.Dtype): Int32 or Int64, for triangle indices.

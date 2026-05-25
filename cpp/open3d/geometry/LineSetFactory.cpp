@@ -76,10 +76,10 @@ std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingEllipsoid(
 
 std::shared_ptr<LineSet> LineSet::CreateFromBoundingSphere(
         const BoundingSphere& sphere) {
-    std::shared_ptr<TriangleMesh> ebs =
+    std::shared_ptr<TriangleMesh> bs =
             geometry::TriangleMesh::CreateSphere(sphere.radius_);
-    ebs->Translate(sphere.center_);
-    auto line_set = CreateFromTriangleMesh(*ebs);
+    bs->Translate(sphere.center_);
+    auto line_set = CreateFromTriangleMesh(*bs);
     line_set->PaintUniformColor(sphere.color_);
     return line_set;
 }

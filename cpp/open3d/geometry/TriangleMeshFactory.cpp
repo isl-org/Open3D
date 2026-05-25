@@ -167,17 +167,14 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromOrientedBoundingEllipsoid(
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromBoundingSphere(
-        const BoundingSphere &ebs,
-        double scale /*= 1.0*/,        
+        const BoundingSphere &bs,
         int resolution /* = 20 */,
         bool create_uv_map /*= false*/) {
 
-    auto mesh = CreateSphere(ebs.radius_ * scale, resolution,
+    auto mesh = CreateSphere(bs.radius_, resolution,
                                 create_uv_map);
-    Eigen::Matrix4d t = Eigen::Matrix4d::Identity();
-    t.block<3, 1>(0, 3) = ebs.center_;
-    mesh->Transform(t);
-    mesh->PaintUniformColor(ebs.color_);
+    mesh->Translate(bs.center_);
+    mesh->PaintUniformColor(bs.color_);
     return mesh;
 }
 

@@ -602,13 +602,11 @@ public:
             bool create_uv_map = false);
     
     /// Factory function to create solid mesh from a BoundingSphere.
-    /// \param ebs BoundingSphere object to create a mesh of
-    /// \param scale scale factor along radius of the BoundingSphere
+    /// \param bs BoundingSphere object to create a mesh of
     /// \param resolution defines the resolution of the sphere.
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateFromBoundingSphere(
-            const BoundingSphere &ebs,
-            double scale = 1.0,
+            const BoundingSphere &bs,
             int resolution = 20,
             bool create_uv_map = false);
 

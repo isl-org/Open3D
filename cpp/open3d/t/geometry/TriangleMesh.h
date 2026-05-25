@@ -664,7 +664,6 @@ public:
     /// \param device The device for the returned mesh.
     static TriangleMesh CreateFromBoundingSphere(
             const BoundingSphere &sphere,
-            double scale = 1.0,
             int resolution = 20,
             core::Dtype float_dtype = core::Float32,
             core::Dtype int_dtype = core::Int64,

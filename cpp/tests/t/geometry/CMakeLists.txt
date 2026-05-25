@@ -7,6 +7,7 @@ target_sources(tests PRIVATE
     AxisAlignedBoundingBox.cpp
     OrientedBoundingBox.cpp
     OrientedBoundingEllipsoid.cpp
+    BoundingSphere.cpp
     VoxelBlockGrid.cpp
     VtkUtils.cpp
 )
